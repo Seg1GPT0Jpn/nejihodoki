@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>くるま出し</title>
+<meta name="description" content="ぎゅうぎゅうの駐車場から、車を一台ずつ道路へ出していくパズル。">
+<meta name="theme-color" content="#1d2a35">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="くるま出し">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* Look: a sunny low-poly parking lot seen from a tilted bird's-eye view. WebGL draws the lot; DOM draws header, tools and cards. */
+:root {
+  --ink: #1d2a35;
+  --ink-2: #263746;
+  --line: #3b5163;
+  --paper: #f6f3ea;
+  --paper-dim: #a9bccb;
+  --sun: #ffcf3f;
+  --sun-ink: #3a2a00;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; color: var(--paper); font-family: var(--font-body); background: var(--ink);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent; overflow: hidden; overscroll-behavior: none;
+}
+#app {
+  position: fixed; inset: 0; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+header { display: flex; align-items: center; gap: 6px; padding: 8px 10px 6px; flex: none; background: var(--ink); }
+.back {
+  color: var(--paper-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
+  padding: 6px 8px; margin-left: -4px; border-radius: 10px;
+}
+.back:active { background: var(--ink-2); }
+.hud { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.chip {
+  display: flex; align-items: baseline; gap: 4px; background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 10px; white-space: nowrap; font-size: 11px; font-weight: 800; color: var(--paper-dim);
+}
+.chip b { font-family: var(--font-display); font-weight: 400; font-size: 16px; color: var(--paper); font-variant-numeric: tabular-nums; }
+.chip b.lv { color: var(--sun); }
+.chip .par { color: var(--paper-dim); font-size: 11px; }
+.icon {
+  width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2);
+  color: var(--paper); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none;
+}
+.icon svg { width: 20px; height: 20px; }
+.icon:active { transform: scale(.94); }
+.back:focus-visible, .icon:focus-visible, .tool:focus-visible, .btn:focus-visible, .lvbtn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+#play { position: relative; flex: 1; min-height: 0; touch-action: none; background: #7fbf63; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.tip {
+  position: absolute; left: 50%; top: 8px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px);
+  background: rgba(29,42,53,.9); border: 1px solid var(--line); color: var(--paper); font-weight: 800; font-size: 13px; line-height: 1.45;
+  padding: 8px 14px; border-radius: 14px; pointer-events: none; text-align: center; transition: opacity .3s;
+}
+.tip.off { opacity: 0; }
+.toast {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: rgba(29,42,53,.94); border: 1px solid var(--line);
+  color: var(--paper); font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+  transition: opacity .2s;
+}
+.toast.off { opacity: 0; }
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 10px 10px; flex: none; background: var(--ink); }
+.tool {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 4px 6px;
+  border-radius: 14px; border: 1px solid var(--line); background: var(--ink-2); color: var(--paper);
+  font: 800 12px var(--font-body); cursor: pointer;
+}
+.tool svg { width: 22px; height: 22px; }
+.tool:active { transform: translateY(2px); }
+.tool:disabled { opacity: .4; cursor: default; }
+.tool .n {
+  position: absolute; top: -6px; right: 6px; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
+  background: var(--sun); color: var(--sun-ink); font: 400 12px/20px var(--font-display);
+}
+.overlay {
+  position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 10;
+  background: rgba(14,22,30,.6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  animation: fade .3s ease-out;
+}
+.card {
+  width: min(330px, 100%); max-height: calc(100vh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); display: flex; flex-direction: column; background: linear-gradient(#2c4152, #213342);
+  border: 1px solid var(--line); border-radius: 22px; padding: 22px 20px 18px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.45);
+  animation: rise .35s cubic-bezier(.2,1.4,.4,1);
+}
+.card h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: .05em; }
+.stars { display: flex; justify-content: center; gap: 6px; margin: 4px 0 10px; }
+.stars svg { width: 46px; height: 46px; }
+.stars svg.on { animation: pop .45s cubic-bezier(.2,1.6,.4,1) both; }
+.stars svg:nth-child(2) { margin-top: -10px; animation-delay: .12s; }
+.stars svg:nth-child(3) { animation-delay: .24s; }
+.result { color: var(--paper-dim); font-size: 14px; font-weight: 800; }
+.result b { color: var(--paper); font-family: var(--font-display); font-weight: 400; font-size: 20px; }
+.btn {
+  display: block; width: 100%; margin-top: 16px; border: 0; border-radius: 14px; padding: 13px; cursor: pointer;
+  font: 800 17px var(--font-body); background: var(--sun); color: var(--sun-ink); box-shadow: 0 4px 0 #b88c12;
+}
+.btn.sub { background: var(--ink-2); color: var(--paper); box-shadow: 0 4px 0 #142029; border: 1px solid var(--line); margin-top: 10px; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b88c12; }
+.lvgrid { flex: 1 1 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; overflow-y: auto; padding: 4px 2px 6px; min-height: 0; overscroll-behavior: contain; }
+.lvbtn {
+  border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); color: var(--paper); padding: 7px 0 4px; cursor: pointer;
+  font: 400 16px var(--font-display); display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.lvbtn.cur { border-color: var(--sun); box-shadow: inset 0 0 0 1px var(--sun); }
+.lvbtn i { font-style: normal; font: 800 9px var(--font-body); color: var(--sun); letter-spacing: 1px; min-height: 11px; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
+@keyframes pop { from { transform: scale(0) rotate(-40deg); } }
+@media (prefers-reduced-motion: reduce) { .overlay, .card, .stars svg.on { animation: none; } }
+@media (max-width: 370px) { .back { font-size: 12px; padding: 6px 4px; } .chip { padding: 4px 8px; } .chip b { font-size: 15px; } }
+@media (max-height: 600px) { .tool span { display: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../">← ゲーム一覧</a>
+    <div class="hud">
+      <div class="chip">Lv<b class="lv" id="lvl">1</b></div>
+      <div class="chip">手数<b id="moves">0</b><span class="par" id="par">/ 目標 0</span></div>
+    </div>
+    <button class="icon" id="sound" type="button" aria-label="サウンド" aria-pressed="true"></button>
+  </header>
+  <div id="play">
+    <canvas id="cv" aria-label="駐車場。車をタップすると前へ、前後にスワイプするとその向きへ走る"></canvas>
+    <div class="tip off" id="tip"></div>
+    <div class="toast off" id="toast"></div>
+  </div>
+  <div class="tools">
+    <button class="tool" id="undo" type="button" aria-label="一手戻す">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      <span>戻す</span><em class="n" id="undoN">3</em>
+    </button>
+    <button class="tool" id="hint" type="button" aria-label="ヒント">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
+      <span>ヒント</span><em class="n" id="hintN">3</em>
+    </button>
+    <button class="tool" id="restart" type="button" aria-label="リスタート">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
+      <span>リスタート</span>
+    </button>
+    <button class="tool" id="levels" type="button" aria-label="ステージ選択">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
+      <span>ステージ</span>
+    </button>
+  </div>
+</div>
+<div class="overlay" id="win" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="card">
+    <h2 id="winTitle">ぜんぶ出た！</h2>
+    <div class="stars" id="winStars"></div>
+    <div class="result">手数 <b id="winMoves">0</b> ／ 目標 <b id="winPar">0</b></div>
+    <button class="btn" id="next" type="button">次のステージへ</button>
+    <button class="btn sub" id="again" type="button">もう一度</button>
+  </div>
+</div>
+<div class="overlay" id="select" hidden role="dialog" aria-modal="true" aria-labelledby="selTitle">
+  <div class="card">
+    <h2 id="selTitle">ステージ</h2>
+    <div class="lvgrid" id="lvgrid"></div>
+    <button class="btn sub" id="selClose" type="button">とじる</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* CORE-BEGIN : pure puzzle logic (no DOM). Grid cell types, sliding rules, solver, seeded generator. */
+const Core = (() => {
+  const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0]; // 0 up(far) 1 right 2 down(near) 3 left
+  const T_EMPTY = 0, T_CONE = 1, T_PILLAR = 2, T_TURN = 3;
+
+  function rng32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // state: Int8Array [x,y,d]*nCars ; x = -1 means the car has left
+  function makeState(lv) {
+    const s = new Int8Array(lv.cars.length * 3);
+    lv.cars.forEach((c, i) => { s[i * 3] = c.x; s[i * 3 + 1] = c.y; s[i * 3 + 2] = c.d; });
+    return s;
+  }
+  function aliveCount(s) { let n = 0; for (let i = 0; i < s.length; i += 3) if (s[i] >= 0) n++; return n; }
+  function buildOcc(lv, s) {
+    const W = lv.W, o = new Int16Array(W * lv.H);
+    for (let i = 0; i < lv.lens.length; i++) {
+      const x = s[i * 3]; if (x < 0) continue;
+      const y = s[i * 3 + 1], h = s[i * 3 + 2] & 1, L = lv.lens[i];
+      for (let k = 0; k < L; k++) o[(y + (h ? 0 : k)) * W + x + (h ? k : 0)] = i + 1;
+    }
+    return o;
+  }
+  function cellsOf(x, y, d, L) {
+    const h = d & 1, out = [];
+    for (let k = 0; k < L; k++) out.push([x + (h ? k : 0), y + (h ? 0 : k)]);
+    return out;
+  }
+  // Drive car i toward direction m (must be along its axis). left = cars already gone.
+  function slide(lv, s, o, i, m, left) {
+    const x = s[i * 3], y = s[i * 3 + 1], L = lv.lens[i], W = lv.W, H = lv.H;
+    let lx = x, ly = y;
+    if (m === 1) lx = x + L - 1; else if (m === 2) ly = y + L - 1;
+    for (let k = 1; ; k++) {
+      const cx = lx + DX[m] * k, cy = ly + DY[m] * k;
+      if (cx < 0 || cy < 0 || cx >= W || cy >= H) {
+        if (lv.barrier && lv.barrier.side === m && left < lv.barrier.need) return { exit: false, k: k - 1, hit: 'barrier' };
+        return { exit: true, k: k - 1 };
+      }
+      const t = lv.grid[cy * W + cx];
+      if (t === T_CONE || t === T_PILLAR) return { exit: false, k: k - 1, hit: 'block', hx: cx, hy: cy };
+      const oc = o[cy * W + cx];
+      if (oc && oc !== i + 1) return { exit: false, k: k - 1, hit: 'car', car: oc - 1 };
+    }
+  }
+  // Turntable: rotate car 90° clockwise around the turntable cell it covers.
+  function rotTarget(lv, s, o, i) {
+    const x = s[i * 3], y = s[i * 3 + 1], d = s[i * 3 + 2], L = lv.lens[i], W = lv.W, H = lv.H;
+    const cs = cellsOf(x, y, d, L);
+    let tx = -1, ty = -1;
+    for (const [cx, cy] of cs) if (lv.grid[cy * W + cx] === T_TURN) { tx = cx; ty = cy; break; }
+    if (tx < 0) return null;
+    let mx = 99, my = 99;
+    for (const [cx, cy] of cs) {
+      const nx = tx - (cy - ty), ny = ty + (cx - tx);
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) return { ok: false, tx, ty };
+      const t = lv.grid[ny * W + nx];
+      if (t === T_CONE || t === T_PILLAR) return { ok: false, tx, ty, hx: nx, hy: ny };
+      const oc = o[ny * W + nx];
+      if (oc && oc !== i + 1) return { ok: false, tx, ty, car: oc - 1 };
+      mx = Math.min(mx, nx); my = Math.min(my, ny);
+    }
+    return { ok: true, x: mx, y: my, d: (d + 1) & 3, tx, ty };
+  }
+
+  // Remove every car that can drive straight out, in waves, until none can. Returns number of waves.
+  function closure(lv, s, exits) {
+    const nc = lv.lens.length; let waves = 0;
+    for (;;) {
+      const o = buildOcc(lv, s), left = nc - aliveCount(s), rm = [];
+      for (let i = 0; i < nc; i++) {
+        if (s[i * 3] < 0) continue;
+        const d = s[i * 3 + 2];
+        if (slide(lv, s, o, i, d, left).exit) rm.push([i, d]);
+        else if (slide(lv, s, o, i, d ^ 2, left).exit) rm.push([i, d ^ 2]);
+      }
+      if (!rm.length) return waves;
+      waves++;
+      for (const [i, m] of rm) { s[i * 3] = -1; if (exits) exits.push({ i, m }); }
+    }
+  }
+  const keyOf = s => String.fromCharCode.apply(null, s);
+
+  // Dijkstra over states; exits are applied greedily (closure), branching only on partial slides and rotations.
+  // Returns { taps, moves:[{i,m}|{i,rot:1}], waves, partial, nodes } or null (unsolvable / over cap).
+  function solve(lv, s0, cap) {
+    cap = cap || 40000;
+    const nc = lv.lens.length;
+    const st0 = Int8Array.from(s0), ex0 = [];
+    const w0 = closure(lv, st0, ex0);
+    const S = [st0], G = [ex0.length], P = [-1], M = [ex0], WV = [w0], PA = [0], done = [false];
+    const idx = new Map([[keyOf(st0), 0]]);
+    const heap = [[ex0.length, 0]];
+    const push = (it) => { heap.push(it); let c = heap.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (heap[p][0] <= heap[c][0]) break; [heap[p], heap[c]] = [heap[c], heap[p]]; c = p; } };
+    const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0; for (;;) { const l = c * 2 + 1, r = l + 1; let m = c; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top; };
+    while (heap.length) {
+      const [g, id] = pop();
+      if (done[id] || g > G[id]) continue;
+      done[id] = true;
+      const s = S[id];
+      if (aliveCount(s) === 0) {
+        const moves = []; let n = id;
+        while (n >= 0) { moves.unshift(...M[n]); n = P[n]; }
+        return { taps: g, moves, waves: WV[id], partial: PA[id], nodes: S.length };
+      }
+      const o = buildOcc(lv, s), left = nc - aliveCount(s);
+      const relax = (ns, first) => {
+        const ex = []; const w = closure(lv, ns, ex);
+        const ng = g + 1 + ex.length, k = keyOf(ns);
+        let j = idx.get(k);
+        if (j === undefined) {
+          j = S.length; idx.set(k, j);
+          S.push(ns); G.push(ng); P.push(id); M.push([first, ...ex]); WV.push(WV[id] + w); PA.push(PA[id] + 1); done.push(false);
+          push([ng, j]);
+        } else if (!done[j] && ng < G[j]) {
+          G[j] = ng; P[j] = id; M[j] = [first, ...ex]; WV[j] = WV[id] + w; PA[j] = PA[id] + 1; push([ng, j]);
+        }
+      };
+      for (let i = 0; i < nc; i++) {
+        if (s[i * 3] < 0) continue;
+        const d = s[i * 3 + 2];
+        for (const m of [d, d ^ 2]) {
+          const r = slide(lv, s, o, i, m, left);
+          if (r.k > 0 && !r.exit) {
+            const ns = Int8Array.from(s); ns[i * 3] += DX[m] * r.k; ns[i * 3 + 1] += DY[m] * r.k;
+            relax(ns, { i, m });
+          }
+        }
+        const rt = rotTarget(lv, s, o, i);
+        if (rt && rt.ok) {
+          const ns = Int8Array.from(s); ns[i * 3] = rt.x; ns[i * 3 + 1] = rt.y; ns[i * 3 + 2] = rt.d;
+          relax(ns, { i, rot: 1 });
+        }
+      }
+      if (S.length > cap) return null;
+    }
+    return null;
+  }
+
+  // ---------- Levels ----------
+  const SIZES = [[4, 6, 6], [12, 6, 7], [22, 7, 7], [35, 7, 8], [55, 7, 9], [75, 8, 9], [100, 8, 10], [130, 9, 10], [160, 9, 11]];
+  function config(n) {
+    let W = 6, H = 6;
+    for (const [from, w, h] of SIZES) if (n >= from) { W = w; H = h; }
+    const r = rng32(n * 7919 + 17);
+    const t = Math.min(1, (n - 4) / 150);
+    const c = {
+      n, W, H,
+      fill: Math.min(0.9, 0.5 + 0.4 * Math.sqrt(t)),
+      truckP: n < 8 ? 0 : Math.min(0.3, 0.12 + t * 0.2),
+      cones: n < 16 ? 0 : (n === 16 ? 2 : Math.floor(r() * (2 + Math.min(3, n / 40)))),
+      barrier: n === 30 || (n > 30 && r() < 0.45),
+      turn: n === 50 ? 1 : (n > 50 && r() < 0.4 ? (n > 120 && r() < 0.4 ? 2 : 1) : 0),
+      cat: n === 70 || (n > 70 && r() < 0.35),
+      bias: 0.3 + 0.5 * t,
+    };
+    // target difficulty band rises steadily with level
+    c.lo = 10 + 27 * Math.pow(Math.min(1, (n - 4) / 196), 0.9);
+    c.hi = c.lo + 2.5 + c.lo * 0.1;
+    return c;
+  }
+  function difficulty(sol, nc) { return sol.taps * 0.4 + sol.waves * 3 + sol.partial * 4; }
+
+  function randomLot(c, r) {
+    const W = c.W, H = c.H, grid = new Uint8Array(W * H), occ = new Int16Array(W * H), cars = [];
+    const ri = n => Math.floor(r() * n);
+    const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !occ[y * W + x] && grid[y * W + x] !== T_CONE && grid[y * W + x] !== T_PILLAR;
+    const put = (x, y, d, L) => {
+      const cs = cellsOf(x, y, d, L);
+      if (!cs.every(([a, b]) => free(a, b))) return false;
+      cars.push({ x, y, d, len: L }); cs.forEach(([a, b]) => occ[b * W + a] = cars.length); return true;
+    };
+    for (let k = 0; k < c.turn; k++) {
+      for (let tries = 0; tries < 30; tries++) {
+        const tx = 1 + ri(W - 2), ty = 1 + ri(H - 2);
+        let bad = false;
+        for (let yy = ty - 1; yy <= ty + 1; yy++) for (let xx = tx - 1; xx <= tx + 1; xx++) if (grid[yy * W + xx]) bad = true;
+        if (bad) continue;
+        grid[ty * W + tx] = T_TURN;
+        const h = r() < 0.5, L = 2, back = r() < 0.5;
+        const x = h ? tx - (back ? 1 : 0) : tx, y = h ? ty : ty - (back ? 1 : 0);
+        const d = h ? (r() < 0.5 ? 1 : 3) : (r() < 0.5 ? 0 : 2);
+        if (put(x, y, d, L) && r() < 0.6) {
+          // lock its lane with cones so the turntable matters
+          for (const sgn of [-1, 1]) {
+            const dist = 1 + ri(2);
+            const ex = h ? (sgn < 0 ? x - dist : x + L - 1 + dist) : x, ey = h ? y : (sgn < 0 ? y - dist : y + L - 1 + dist);
+            if (free(ex, ey) && grid[ey * W + ex] === 0) grid[ey * W + ex] = r() < 0.5 ? T_CONE : T_PILLAR;
+          }
+        }
+        break;
+      }
+    }
+    for (let k = 0; k < c.cones; k++) {
+      const x = ri(W), y = ri(H);
+      if (free(x, y) && grid[y * W + x] === 0) grid[y * W + x] = r() < 0.6 ? T_CONE : T_PILLAR;
+    }
+    const order = [];
+    for (let i = 0; i < W * H; i++) order.push(i);
+    for (let i = order.length - 1; i > 0; i--) { const j = ri(i + 1); [order[i], order[j]] = [order[j], order[i]]; }
+    for (const p of order) {
+      const x = p % W, y = (p / W) | 0;
+      if (!free(x, y) || r() > c.fill) continue;
+      const L = r() < c.truckP ? 3 : 2;
+      // bias: cars near the rim tend to park parallel to it, forming walls that must be opened in order
+      const ex = Math.min(x, W - 1 - x), ey = Math.min(y, H - 1 - y);
+      const h0 = r() < (c.bias || 0) ? ey < ex || (ey === ex && r() < 0.5) : r() < 0.5;
+      done: for (const h of [h0, !h0]) {
+        const offs = []; for (let j = 0; j < L; j++) offs.push(j);
+        for (let j = offs.length - 1; j > 0; j--) { const q = ri(j + 1); [offs[j], offs[q]] = [offs[q], offs[j]]; }
+        for (const j of offs) {
+          const ax = h ? x - j : x, ay = h ? y : y - j;
+          const d = h ? (r() < 0.5 ? 1 : 3) : (r() < 0.5 ? 0 : 2);
+          if (put(ax, ay, d, L)) break done;
+        }
+      }
+    }
+    return { W, H, grid, cars };
+  }
+
+  function finish(lv, n) {
+    lv.n = n;
+    lv.lens = lv.cars.map(c => c.len);
+    return lv;
+  }
+
+  // Handmade tutorials (d: 0 up 1 right 2 down 3 left)
+  const TUTORIAL = [
+    { W: 6, H: 6, cones: [], cars: [[2, 2, 0, 2], [0, 4, 1, 2], [4, 0, 2, 2]], tip: '車をタップすると、ライトの向きへ走り出すよ' },
+    { W: 6, H: 6, cones: [[0, 2], [4, 1], [5, 4]], cars: [[1, 2, 1, 2], [4, 2, 2, 2], [3, 4, 3, 2], [2, 4, 2, 2], [0, 0, 1, 2]], tip: '前がふさがっていたら、じゃまな車から先に出そう' },
+    { W: 6, H: 6, cones: [[4, 3]], cars: [[2, 3, 1, 2], [1, 2, 2, 2], [0, 5, 1, 3], [4, 0, 0, 2], [5, 1, 0, 2]], tip: '車を前後にスワイプすると、バックでも走れるよ' },
+  ];
+  function tutorial(n) {
+    const t = TUTORIAL[n - 1];
+    const grid = new Uint8Array(t.W * t.H);
+    t.cones.forEach(([x, y]) => grid[y * t.W + x] = T_CONE);
+    const lv = finish({ W: t.W, H: t.H, grid, cars: t.cars.map(([x, y, d, len]) => ({ x, y, d, len })), barrier: null, cat: null, tip: t.tip }, n);
+    const sol = solve(lv, makeState(lv));
+    lv.par = sol.taps; lv.diff = difficulty(sol, lv.cars.length); lv.sol = sol;
+    return lv;
+  }
+
+  function cloneLot(lv) {
+    return { W: lv.W, H: lv.H, grid: Uint8Array.from(lv.grid), cars: lv.cars.map(c => Object.assign({}, c)), barrier: lv.barrier && Object.assign({}, lv.barrier), cat: lv.cat, bfrac: lv.bfrac };
+  }
+  // Local edit of a lot: re-park a car, re-orient one, add one, or move a cone.
+  function mutate(src, c, r) {
+    const lv = cloneLot(src), W = lv.W, H = lv.H;
+    const ri = n => Math.floor(r() * n);
+    const occ = new Int16Array(W * H);
+    const mark = () => { occ.fill(0); lv.cars.forEach((cr, i) => cellsOf(cr.x, cr.y, cr.d, cr.len).forEach(([x, y]) => occ[y * W + x] = i + 1)); };
+    mark();
+    const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !occ[y * W + x] && (lv.grid[y * W + x] === 0 || lv.grid[y * W + x] === T_TURN);
+    const tryPut = (x, y, h, L) => {
+      for (let j = 0; j < L; j++) {
+        const ax = h ? x - j : x, ay = h ? y : y - j;
+        const d = h ? (r() < 0.5 ? 1 : 3) : (r() < 0.5 ? 0 : 2);
+        if (cellsOf(ax, ay, d, L).every(([a, b]) => free(a, b))) { lv.cars.push({ x: ax, y: ay, d, len: L }); mark(); return true; }
+      }
+      return false;
+    };
+    const op = r();
+    if (op < 0.5 && lv.cars.length > 3) { // remove one car, refill its area
+      const k = ri(lv.cars.length), old = lv.cars[k];
+      lv.cars.splice(k, 1); mark();
+      const cs = cellsOf(old.x, old.y, old.d, old.len);
+      for (let q = 0; q < 3; q++) { const [x, y] = cs[ri(cs.length)]; if (free(x, y)) tryPut(x, y, r() < 0.5, r() < c.truckP ? 3 : 2); }
+    } else if (op < 0.8) { // turn a car sideways where it stands
+      const k = ri(lv.cars.length), old = lv.cars[k];
+      lv.cars.splice(k, 1); mark();
+      const cs = cellsOf(old.x, old.y, old.d, old.len), [x, y] = cs[ri(cs.length)];
+      if (!tryPut(x, y, !(old.d & 1), old.len)) { lv.cars.push(old); mark(); }
+    } else if (op < 0.92) { // squeeze in another car
+      for (let q = 0; q < 12; q++) { const x = ri(W), y = ri(H); if (free(x, y) && tryPut(x, y, r() < 0.5, r() < c.truckP ? 3 : 2)) break; }
+    } else { // move a cone / pillar
+      const cones = []; lv.grid.forEach((t, i) => { if (t === T_CONE || t === T_PILLAR) cones.push(i); });
+      if (cones.length) {
+        const from = cones[ri(cones.length)], x = ri(W), y = ri(H);
+        if (free(x, y) && lv.grid[y * W + x] === 0) { lv.grid[y * W + x] = lv.grid[from]; lv.grid[from] = 0; }
+      }
+    }
+    return lv;
+  }
+  function evaluate(lv, n) {
+    finish(lv, n);
+    if (lv.barrier) lv.barrier.need = Math.max(1, Math.round(lv.cars.length * lv.bfrac));
+    const sol = solve(lv, makeState(lv), 6000);
+    if (!sol) return false;
+    lv.sol = sol; lv.diff = difficulty(sol, lv.cars.length); lv.pen = 0;
+    // a featured obstacle must matter: the turntable gets used, the gate changes the solution
+    if (lv.grid.includes(T_TURN) && !sol.moves.some(m => m.rot)) lv.pen += 6;
+    if (lv.barrier) {
+      const free = Object.assign({}, lv, { barrier: null }), s2 = solve(free, makeState(free), 6000);
+      if (s2 && s2.taps === sol.taps && s2.waves === sol.waves) lv.pen += 4;
+    }
+    return true;
+  }
+
+  function generate(n) {
+    n = Math.max(1, n | 0);
+    if (n <= 3) return tutorial(n);
+    const c = config(n), r = rng32((n * 2654435761 >>> 0) ^ 0x5eed);
+    const score = l => (l.diff < c.lo ? (c.lo - l.diff) * 2 : l.diff > c.hi ? l.diff - c.hi : 0) + l.pen;
+    let cur = null, tries = 0;
+    for (let k = 0; k < 40 && !(cur && k >= 6); k++) {
+      const lv = randomLot(c, r);
+      lv.barrier = null; lv.cat = null;
+      if (c.barrier) { lv.bfrac = 0.22 + r() * 0.2; lv.barrier = { side: [1, 2, 3][Math.floor(r() * 3)], need: 1 }; }
+      if (c.cat) { const side = Math.floor(r() * 4), span = side & 1 ? lv.H : lv.W; lv.cat = { side, pos: Math.floor(r() * (span - 1)), len: 2 }; }
+      if (lv.cars.length < 3 || !evaluate(lv, n)) continue;
+      if (!cur || score(lv) < score(cur)) cur = lv;
+    }
+    for (; tries < 900 && score(cur) > 0; tries++) { // hill-climb toward the level's difficulty band
+      const lv = mutate(cur, c, r);
+      if (!evaluate(lv, n)) continue;
+      if (score(lv) <= score(cur)) cur = lv;
+    }
+    cur.par = cur.sol.taps;
+    cur.tries = tries;
+    cur.tip = n === 4 ? 'どの車から出せるか、よく見て順番を考えよう' : n === 8 ? 'トラックは3マス。長いぶん、道をふさぎやすい' : n === 16 ? 'コーンと柱は動かない。車はその手前で止まる' :
+      n === 30 ? 'しましまのゲートは「あと○台」出るまで開かない' : n === 50 ? '回転台の上の車はタップで90°回る（スワイプなら発進）' : n === 70 ? 'ねこが横断歩道をわたる間は、その出口から出られない' : '';
+    return cur;
+  }
+
+  return { DX, DY, T_EMPTY, T_CONE, T_PILLAR, T_TURN, makeState, aliveCount, buildOcc, cellsOf, slide, rotTarget, closure, solve, generate, config, difficulty, rng32 };
+})();
+/* CORE-END */
+</script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const KEY_SAVE = 'kusoge.parking.save', KEY_SOUND = 'kusoge.sound';
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+const reduceMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const { DX, DY } = Core;
+const UNDO_MAX = 3, HINT_MAX = 3;
+
+// ---------- Save ----------
+function loadSave() {
+  try {
+    const s = JSON.parse(store.get(KEY_SAVE) || 'null');
+    if (s && typeof s === 'object') {
+      const level = Math.max(1, s.level | 0 || 1);
+      return { level, best: Math.max(level, s.best | 0 || 1), stars: s.stars && typeof s.stars === 'object' ? s.stars : {} };
+    }
+  } catch (e) {}
+  return { level: 1, best: 1, stars: {} };
+}
+let save = loadSave();
+const persist = () => store.set(KEY_SAVE, JSON.stringify(save));
+
+// ---------- UI bits ----------
+let toastT = 0, tipT = 0;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('off');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), 1800);
+}
+function showTip(msg) {
+  const t = $('tip'); clearTimeout(tipT);
+  if (!msg) { t.classList.add('off'); return; }
+  t.textContent = msg; t.classList.remove('off');
+  tipT = setTimeout(() => t.classList.add('off'), 8000);
+}
+
+// ---------- Sound & haptics ----------
+let soundOn = store.get(KEY_SOUND) !== '0';
+let actx = null;
+function ensureAudio() {
+  if (!soundOn) return;
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+  } catch (e) { actx = null; }
+}
+function tone(freq, dur, type, vol, delay, slide, cutoff) {
+  if (!soundOn || !actx) return;
+  try {
+    const t = actx.currentTime + (delay || 0);
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.1, t + Math.min(0.03, dur / 4));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    let node = o;
+    if (cutoff) { const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff; o.connect(f); node = f; }
+    node.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
+  } catch (e) {}
+}
+const sfx = {
+  vroom() { tone(52, 0.5, 'sawtooth', 0.09, 0, 150, 520); tone(104, 0.4, 'square', 0.025, 0.02, 260, 700); },
+  honk() { [0, 0.15].forEach(d => { tone(392, 0.12, 'square', 0.045, d, 0, 1800); tone(494, 0.12, 'square', 0.035, d, 0, 1800); }); },
+  thud() { tone(150, 0.14, 'sine', 0.22, 0, 55); },
+  whir() { tone(220, 0.32, 'triangle', 0.07, 0, 470); },
+  meow() { tone(880, 0.12, 'sine', 0.06, 0, 1150); tone(1150, 0.22, 'sine', 0.06, 0.1, 620); },
+  click() { tone(720, 0.05, 'sine', 0.05); },
+  gate() { tone(523, 0.12, 'triangle', 0.08); tone(784, 0.18, 'triangle', 0.08, 0.1); },
+  win() { [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, k) => tone(f, 0.22, 'triangle', 0.1, k * 0.09)); },
+};
+function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+function renderSoundBtn() {
+  const b = $('sound');
+  b.setAttribute('aria-pressed', String(soundOn));
+  b.setAttribute('aria-label', soundOn ? 'サウンド オン' : 'サウンド オフ');
+  b.innerHTML = soundOn
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+}
+renderSoundBtn();
+$('sound').addEventListener('click', () => {
+  soundOn = !soundOn; store.set(KEY_SOUND, soundOn ? '1' : '0'); renderSoundBtn();
+  if (soundOn) { ensureAudio(); sfx.click(); }
+});
+window.addEventListener('pointerdown', ensureAudio, { passive: true });
+
+// ---------- Three.js scene ----------
+const play = $('play'), cv = $('cv');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'low-power' });
+} catch (e) {
+  showTip('このブラウザでは3D表示が使えません'); return;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#7fbf63');
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6b7f8e, 0.78));
+const sun = new THREE.DirectionalLight(0xfff4e0, 0.62); sun.position.set(-4, 10, 5); scene.add(sun);
+
+// shared geometry & materials
+const G = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 12),
+  wheel: new THREE.CylinderGeometry(0.5, 0.5, 1, 10).rotateZ(Math.PI / 2),
+  cone: new THREE.ConeGeometry(0.5, 1, 10),
+  plane: new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+  arrow: (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.5, -0.42, 0, 0.32, 0.42, 0, 0.32], 3)); g.computeVertexNormals(); return g; })(),
+  ring: new THREE.TorusGeometry(0.3, 0.055, 6, 20, Math.PI * 1.45).rotateX(Math.PI / 2),
+};
+const matCache = {};
+const lam = c => matCache['l' + c] || (matCache['l' + c] = new THREE.MeshLambertMaterial({ color: c }));
+const bas = c => matCache['b' + c] || (matCache['b' + c] = new THREE.MeshBasicMaterial({ color: c }));
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+}
+const shadowMat = new THREE.MeshBasicMaterial({
+  transparent: true, depthWrite: false, opacity: 0.55,
+  map: canvasTex(64, 64, (g, w, h) => {
+    const r = g.createRadialGradient(32, 32, 4, 32, 32, 31); r.addColorStop(0, 'rgba(0,0,0,.6)'); r.addColorStop(0.6, 'rgba(0,0,0,.35)'); r.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, h);
+  }),
+});
+const stripeMat = new THREE.MeshLambertMaterial({
+  map: canvasTex(64, 16, (g) => { g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 16); g.fillStyle = '#e53935'; for (let x = -16; x < 64; x += 16) { g.beginPath(); g.moveTo(x, 16); g.lineTo(x + 8, 0); g.lineTo(x + 16, 0); g.lineTo(x + 8, 16); g.fill(); } }),
+});
+stripeMat.map.wrapS = THREE.RepeatWrapping;
+const glassMat = lam('#2b3a4a'), tireMat = lam('#22252b'), hubMat = lam('#c9ced6'), headMat = bas('#fff7cf'), tailMat = bas('#ff4040');
+const arrowMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+const COLORS = ['#ff5a5f', '#ffb238', '#3fb7f2', '#68d16b', '#a97cf8', '#ff7ec0', '#ffe14d', '#4f74ff', '#1fc8a9', '#f4f1ea', '#ff8a3d', '#8fd4ff'];
+const CARGO = ['#f4f1ea', '#d6dde4', '#ffe9b0'];
+
+function mesh(geo, mat, sx, sy, sz, x, y, z, parent) {
+  const m = new THREE.Mesh(geo, mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); if (parent) parent.add(m); return m;
+}
+// car model faces -Z (screen up) and is centered on its footprint
+function buildCar(len, ci) {
+  const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
+  const L = len - 0.16, Wd = 0.74, col = lam(COLORS[ci % COLORS.length]);
+  mesh(G.plane, shadowMat, Wd + 0.3, 1, L + 0.3, 0, 0.012, 0, g);
+  mesh(G.box, col, Wd, 0.28, L, 0, 0.27, 0, inner);
+  if (len === 2) {
+    mesh(G.box, glassMat, Wd - 0.1, 0.22, L * 0.48, 0, 0.5, 0.06, inner);
+    mesh(G.box, col, Wd - 0.08, 0.06, L * 0.44, 0, 0.63, 0.07, inner);
+  } else {
+    mesh(G.box, glassMat, Wd - 0.08, 0.26, 0.5, 0, 0.52, -L / 2 + 0.42, inner);
+    mesh(G.box, col, Wd - 0.06, 0.06, 0.46, 0, 0.67, -L / 2 + 0.42, inner);
+    mesh(G.box, lam(CARGO[ci % CARGO.length]), Wd + 0.02, 0.56, L - 0.84, 0, 0.62, 0.38, inner);
+    mesh(G.box, col, Wd + 0.04, 0.06, L - 0.84, 0, 0.62, 0.38, inner);
+  }
+  // painted arrow on the roof shows which way "forward" is
+  const top = len === 2 ? 0.665 : 0.905, az = len === 2 ? 0.05 : 0.38;
+  mesh(G.arrow, arrowMat, 0.36, 1, len === 2 ? 0.4 : 0.6, 0, top, az, inner);
+  const wz = L / 2 - 0.22, wheels = len === 3 ? [-wz, 0.25, wz] : [-wz, wz];
+  for (const z of wheels) for (const sx of [-1, 1]) {
+    mesh(G.wheel, tireMat, 0.1, 0.26, 0.26, sx * (Wd / 2 - 0.02), 0.13, z, inner);
+    mesh(G.wheel, hubMat, 0.11, 0.1, 0.1, sx * (Wd / 2 - 0.02), 0.13, z, inner);
+  }
+  for (const sx of [-1, 1]) {
+    mesh(G.box, headMat, 0.16, 0.08, 0.04, sx * 0.22, 0.31, -L / 2 - 0.01, inner);
+    mesh(G.box, tailMat, 0.16, 0.07, 0.04, sx * 0.22, 0.31, L / 2 + 0.01, inner);
+  }
+  const hit = new THREE.Mesh(G.box, new THREE.MeshBasicMaterial({ visible: false }));
+  hit.scale.set(0.98, 0.6, len - 0.02); hit.position.y = 0.3; g.add(hit);
+  return { group: g, inner, hit };
+}
+function buildCone(pillar) {
+  const g = new THREE.Group();
+  mesh(G.plane, shadowMat, 0.8, 1, 0.8, 0, 0.012, 0, g);
+  if (pillar) {
+    mesh(G.box, lam('#c4c8cf'), 0.55, 1.15, 0.55, 0, 0.575, 0, g);
+    mesh(G.box, lam('#ffcf3f'), 0.57, 0.14, 0.57, 0, 0.18, 0, g);
+    mesh(G.box, lam('#2b2b2b'), 0.575, 0.06, 0.575, 0, 0.18, 0, g);
+  } else {
+    mesh(G.box, lam('#3a3a3a'), 0.62, 0.06, 0.62, 0, 0.03, 0, g);
+    mesh(G.cone, lam('#ff7a1a'), 0.42, 0.62, 0.42, 0, 0.36, 0, g);
+    mesh(G.cyl, lam('#ffffff'), 0.28, 0.1, 0.28, 0, 0.38, 0, g);
+  }
+  return g;
+}
+function buildTurntable() {
+  const g = new THREE.Group();
+  mesh(G.cyl, lam('#ffd23f'), 1.0, 0.04, 1.0, 0, 0.02, 0, g);
+  mesh(G.cyl, lam('#5b6270'), 0.9, 0.042, 0.9, 0, 0.021, 0, g);
+  mesh(G.cyl, lam('#aab3bf'), 0.8, 0.045, 0.8, 0, 0.025, 0, g);
+  const ar = mesh(G.ring, bas('#ffd23f'), 1, 1, 1, 0, 0.055, 0, g);
+  const tip = mesh(G.cone, bas('#ffd23f'), 0.2, 0.22, 0.2, 0.3, 0.055, 0, g); tip.rotation.x = Math.PI / 2;
+  ar.rotation.y = 0;
+  return g;
+}
+function buildCat() {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const fur = lam('#f2a03d'), dark = lam('#7a4a1e');
+  mesh(G.plane, shadowMat, 0.4, 1, 0.55, 0, 0.012, 0, g);
+  mesh(G.box, fur, 0.22, 0.18, 0.38, 0, 0.2, 0, body);
+  mesh(G.box, fur, 0.22, 0.2, 0.2, 0, 0.33, -0.22, body);
+  for (const sx of [-1, 1]) {
+    const ear = mesh(G.cone, dark, 0.07, 0.1, 0.07, sx * 0.07, 0.47, -0.22, body);
+    ear.rotation.z = sx * -0.2;
+    mesh(G.box, dark, 0.05, 0.12, 0.05, sx * 0.07, 0.06, -0.12, body);
+    mesh(G.box, dark, 0.05, 0.12, 0.05, sx * 0.07, 0.06, 0.13, body);
+  }
+  const tail = mesh(G.box, fur, 0.05, 0.05, 0.28, 0, 0.36, 0.25, body); tail.rotation.x = 0.9;
+  g.scale.setScalar(1.35);
+  return { group: g, body };
+}
+
+// ---------- Level state ----------
+let lv = null, st = null, nc = 0, moves = 0, undoStack = [], undosLeft = UNDO_MAX, hintsLeft = HINT_MAX, won = false;
+let world = null; // per-level scene objects
+let cars = [];   // visuals per car index
+let anims = [];
+let catForce = null, catT0 = 0, hintMark = null, hintFor = -1;
+const RC = 0.82, ROAD_OUT = 1.55, CAT_P = 6.2, CAT_C = 2.6;
+const now = () => performance.now() / 1000;
+const leftCount = () => nc - Core.aliveCount(st);
+function carCenter(x, y, d, L) { const h = d & 1; return [x + (h ? L / 2 : 0.5) - lv.W / 2, y + (h ? 0.5 : L / 2) - lv.H / 2]; }
+const headingOf = d => -d * Math.PI / 2;
+
+function tween(dur, fn, done) {
+  const a = { t0: now(), dur: Math.max(0.001, dur), fn, done, dead: false };
+  anims.push(a); fn(0); return a;
+}
+
+function paintGround() {
+  const W = lv.W, H = lv.H, PX = 6, PZT = 11, PZB = 7, S = Math.min(44, Math.floor(2048 / (H + PZT + PZB)));
+  const minX = -W / 2 - PX, minZ = -H / 2 - PZT, ww = W + PX * 2, hh = H + PZT + PZB;
+  const tex = canvasTex(Math.round(ww * S), Math.round(hh * S), (g) => {
+    const X = x => (x - minX) * S, Z = z => (z - minZ) * S;
+    const rect = (x0, z0, x1, z1, col) => { g.fillStyle = col; g.fillRect(X(x0), Z(z0), (x1 - x0) * S, (z1 - z0) * S); };
+    rect(minX, minZ, minX + ww, minZ + hh, '#7fbf63');
+    const rr = Core.rng32(lv.n * 31 + 7);
+    for (let i = 0; i < 70; i++) { g.fillStyle = rr() < 0.5 ? 'rgba(60,120,50,.18)' : 'rgba(170,220,120,.18)'; g.beginPath(); g.arc(rr() * ww * S, rr() * hh * S, (0.3 + rr() * 0.9) * S, 0, 7); g.fill(); }
+    const ex = W / 2, ez = H / 2;
+    // sidewalk, road ring, exit road
+    rect(-ex - ROAD_OUT - 0.3, -ez - ROAD_OUT - 0.3, ex + ROAD_OUT + 0.3, ez + ROAD_OUT + 0.3, '#d8d3c4');
+    rect(-1.05, minZ, 1.05, -ez, '#d8d3c4');
+    rect(-ex - ROAD_OUT, -ez - ROAD_OUT, ex + ROAD_OUT, ez + ROAD_OUT, '#474c57');
+    rect(-0.75, minZ, 0.75, -ez, '#474c57');
+    rect(-ex - 0.14, -ez - 0.14, ex + 0.14, ez + 0.14, '#ece8dc');
+    rect(-ex, -ez, ex, ez, '#5c6371');
+    // asphalt speckle
+    for (let i = 0; i < W * H * 6; i++) { g.fillStyle = rr() < 0.5 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.07)'; g.fillRect(X(-ex + rr() * W), Z(-ez + rr() * H), 2, 2); }
+    // stall lines
+    g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = Math.max(1.5, S * 0.04);
+    g.beginPath();
+    for (let x = 1; x < W; x++) { g.moveTo(X(-ex + x), Z(-ez)); g.lineTo(X(-ex + x), Z(ez)); }
+    for (let z = 1; z < H; z++) { g.moveTo(X(-ex), Z(-ez + z)); g.lineTo(X(ex), Z(-ez + z)); }
+    g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = S * 0.07; g.strokeRect(X(-ex) + S * 0.04, Z(-ez) + S * 0.04, W * S - S * 0.08, H * S - S * 0.08);
+    // road centre line
+    g.strokeStyle = '#ffd75e'; g.lineWidth = S * 0.06; g.setLineDash([S * 0.32, S * 0.28]);
+    g.strokeRect(X(-ex - RC), Z(-ez - RC), (W + RC * 2) * S, (H + RC * 2) * S);
+    g.beginPath(); g.moveTo(X(0), Z(-ez - RC)); g.lineTo(X(0), Z(minZ)); g.stroke(); g.setLineDash([]);
+    // exit sign painted on the road
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.font = `900 ${Math.round(S * 0.52)}px "M PLUS Rounded 1c", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('出口', X(0), Z(-ez - 3.2));
+    g.beginPath(); g.moveTo(X(0), Z(-ez - 4.6)); g.lineTo(X(0.32), Z(-ez - 4.05)); g.lineTo(X(-0.32), Z(-ez - 4.05)); g.fill();
+    // zebra crossing for the cat
+    if (lv.cat) {
+      const c = lv.cat, a0 = c.pos - (c.side & 1 ? H : W) / 2, a1 = a0 + c.len;
+      g.fillStyle = 'rgba(255,255,255,.92)';
+      for (let o = 0.24; o < ROAD_OUT - 0.1; o += 0.27) {
+        if (c.side === 0) rect(a0 + 0.1, -ez - o - 0.13, a1 - 0.1, -ez - o, '#fff');
+        if (c.side === 2) rect(a0 + 0.1, ez + o, a1 - 0.1, ez + o + 0.13, '#fff');
+        if (c.side === 3) rect(-ex - o - 0.13, a0 + 0.1, -ex - o, a1 - 0.1, '#fff');
+        if (c.side === 1) rect(ex + o, a0 + 0.1, ex + o + 0.13, a1 - 0.1, '#fff');
+      }
+    }
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(ww, hh).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex }));
+  m.position.set(minX + ww / 2, 0, minZ + hh / 2);
+  return m;
+}
+
+function disposeWorld() {
+  if (!world) return;
+  scene.remove(world.root);
+  world.ground.geometry.dispose(); world.ground.material.map.dispose(); world.ground.material.dispose();
+  if (world.sign) { world.sign.material.map.dispose(); world.sign.material.dispose(); }
+  cars.forEach(c => c.hit.material.dispose());
+  world = null; cars = []; anims = []; hintMark = null;
+}
+
+function signTexture(text, color) {
+  return canvasTex(256, 96, (g) => {
+    g.fillStyle = color; g.strokeStyle = '#1d2a35'; g.lineWidth = 8;
+    g.beginPath(); g.moveTo(20, 6); g.arcTo(250, 6, 250, 90, 18); g.arcTo(250, 90, 6, 90, 18); g.arcTo(6, 90, 6, 6, 18); g.arcTo(6, 6, 250, 6, 18); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#1d2a35'; g.font = '900 46px "M PLUS Rounded 1c", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 50);
+  });
+}
+
+function buildWorld() {
+  disposeWorld();
+  const root = new THREE.Group(); scene.add(root);
+  world = { root, ground: paintGround(), blocks: {}, turns: {}, arms: [], sign: null, cat: null, gateOpen: false };
+  root.add(world.ground);
+  const W = lv.W, H = lv.H;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = lv.grid[y * W + x]; if (!t) continue;
+    const [wx, wz] = carCenter(x, y, 0, 1);
+    const o = t === Core.T_TURN ? buildTurntable() : buildCone(t === Core.T_PILLAR);
+    o.position.set(wx, 0, wz); root.add(o);
+    (t === Core.T_TURN ? world.turns : world.blocks)[y * W + x] = o;
+  }
+  // trees around the lot
+  const rr = Core.rng32(lv.n * 97 + 3), trunk = lam('#8a5a36'), leaf = [lam('#3f9a4a'), lam('#56b45a'), lam('#2f8a50')];
+  for (let i = 0; i < 16; i++) {
+    const side = i % 4, along = rr() * 2 - 1, off = ROAD_OUT + 0.9 + rr() * 2.2;
+    let x = side & 1 ? (side === 1 ? W / 2 + off : -W / 2 - off) : along * (W / 2 + 2);
+    let z = side & 1 ? along * (H / 2 + 2) : (side === 2 ? H / 2 + off : -H / 2 - off);
+    if (side === 0 && Math.abs(x) < 1.6) x += 2.4 * Math.sign(x || 1);
+    const t = new THREE.Group(), s = 0.7 + rr() * 0.5;
+    mesh(G.plane, shadowMat, 1.1, 1, 1.1, 0, 0.012, 0, t);
+    mesh(G.cyl, trunk, 0.16, 0.5, 0.16, 0, 0.25, 0, t);
+    mesh(G.cone, leaf[i % 3], 0.9, 1.0, 0.9, 0, 0.9, 0, t);
+    mesh(G.cone, leaf[(i + 1) % 3], 0.7, 0.8, 0.7, 0, 1.35, 0, t);
+    t.scale.setScalar(s); t.position.set(x, 0, z); root.add(t);
+  }
+  // gate barrier
+  if (lv.barrier) {
+    const s = lv.barrier.side, span = s & 1 ? H : W, segs = Math.max(1, Math.round(span / 2.5)), seg = span / segs;
+    for (let k = 0; k < segs; k++) {
+      const a = -span / 2 + k * seg, yaw = new THREE.Group(), lift = new THREE.Group();
+      const off = 0.32;
+      if (s === 2) { yaw.position.set(a, 0, H / 2 + off); }
+      else if (s === 1) { yaw.position.set(W / 2 + off, 0, a); yaw.rotation.y = -Math.PI / 2; }
+      else { yaw.position.set(-W / 2 - off, 0, a); yaw.rotation.y = -Math.PI / 2; }
+      mesh(G.box, lam('#e53935'), 0.16, 0.5, 0.16, 0.08, 0.25, 0, yaw);
+      lift.position.set(0.08, 0.42, 0); yaw.add(lift);
+      const arm = mesh(G.box, stripeMat, seg - 0.2, 0.09, 0.09, (seg - 0.2) / 2, 0, 0, lift);
+      yaw.userData.x = yaw.position.x; root.add(yaw); world.arms.push(lift);
+    }
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture('', '#ffcf3f'), depthTest: false }));
+    sp.scale.set(1.7, 0.64, 1); sp.renderOrder = 5;
+    if (s === 2) sp.position.set(0, 1.1, H / 2 + 0.9); else sp.position.set((s === 1 ? 1 : -1) * (W / 2 + 0.9), 1.1, 0);
+    root.add(sp); world.sign = sp;
+  }
+  if (lv.cat) {
+    const c = buildCat(); root.add(c.group); world.cat = c;
+  }
+  // cars
+  cars = lv.cars.map((c, i) => {
+    const v = buildCar(c.len, i * 5 + lv.n);
+    v.hit.userData.car = i; root.add(v.group);
+    return Object.assign(v, { motion: null, len: c.len });
+  });
+  syncAll();
+}
+
+function placeCar(i) {
+  const v = cars[i], x = st[i * 3];
+  if (v.motion) { v.motion.dead = true; v.motion = null; }
+  v.inner.position.set(0, 0, 0); v.inner.scale.set(1, 1, 1); v.group.scale.set(1, 1, 1);
+  if (x < 0) { v.group.visible = false; return; }
+  const [wx, wz] = carCenter(x, st[i * 3 + 1], st[i * 3 + 2], v.len);
+  v.group.visible = true; v.group.position.set(wx, 0, wz); v.group.rotation.y = headingOf(st[i * 3 + 2]);
+}
+function syncAll() { for (let i = 0; i < nc; i++) placeCar(i); if (world) Object.values(world.blocks).forEach(b => b.rotation.z = 0); updateGate(true); dirty = true; }
+
+function updateGate(instant) {
+  if (!lv.barrier || !world) return;
+  const remain = lv.barrier.need - leftCount(), open = remain <= 0;
+  const sp = world.sign;
+  sp.material.map.dispose();
+  sp.material.map = signTexture(open ? 'OPEN!' : 'あと' + remain + '台', open ? '#7ee081' : '#ffcf3f');
+  sp.material.needsUpdate = true;
+  const to = open ? 1.35 : 0;
+  if (instant) { world.gateOpen = open; world.arms.forEach(a => { a.rotation.z = to; a.parent.position.x = a.parent.userData.x; }); }
+  else if (open !== world.gateOpen) {
+    world.gateOpen = open;
+    if (open) sfx.gate();
+    const from = world.arms.length ? world.arms[0].rotation.z : 0;
+    tween(0.6, p => { const e = 1 - Math.pow(1 - p, 3); world.arms.forEach(a => a.rotation.z = from + (to - from) * e); });
+  }
+  sp.material.opacity = 1;
+  dirty = true;
+}
+
+// ---------- Cat ----------
+function catPhase(t) { return ((t - catT0) % CAT_P + CAT_P) % CAT_P; }
+function catActive(t) { if (catForce !== null) return catForce; return catPhase(t) < CAT_C; }
+function catBlocks(m, i) {
+  const c = lv.cat; if (!c || c.side !== m) return false;
+  const coord = m & 1 ? st[i * 3 + 1] : st[i * 3];
+  if (coord < c.pos || coord >= c.pos + c.len) return false;
+  const t = now(); return catActive(t) || catActive(t + 0.25);
+}
+let catJump = 0;
+function updateCat(t) {
+  const c = lv.cat, cat = world.cat; if (!c) return;
+  const a = c.pos + c.len / 2 - (c.side & 1 ? lv.H : lv.W) / 2;
+  let off, walking, dir;
+  if (catForce !== null) { off = catForce ? 0.8 : ROAD_OUT + 0.25; walking = !!catForce; dir = 1; }
+  else {
+    const ph = catPhase(t);
+    if (ph < CAT_C) { const q = ph / CAT_C; walking = true; dir = q < 0.5 ? -1 : 1; off = ROAD_OUT + 0.25 - (ROAD_OUT + 0.05) * (q < 0.5 ? q * 2 : 2 - q * 2); }
+    else { off = ROAD_OUT + 0.25; walking = false; dir = 1; }
+  }
+  // dir -1: walking toward the lot, +1: walking away
+  const nx = c.side === 1 ? 1 : c.side === 3 ? -1 : 0, nz = c.side === 2 ? 1 : c.side === 0 ? -1 : 0;
+  const ex = lv.W / 2, ez = lv.H / 2;
+  const px = nx ? nx * (ex + off) : a, pz = nz ? nz * (ez + off) : a;
+  cat.group.position.set(px, 0, pz);
+  const vx = nx * dir, vz = nz * dir;
+  cat.group.rotation.y = walking ? Math.atan2(-vx, -vz) : Math.atan2(nx, nz);
+  const jump = Math.max(0, catJump - t);
+  cat.body.position.y = (walking ? Math.abs(Math.sin(t * 14)) * 0.03 : 0) + Math.sin(jump / 0.5 * Math.PI) * 0.25 * (jump > 0 ? 1 : 0);
+}
+
+// ---------- Moves ----------
+function busy(i) { return !!cars[i].motion; }
+function pushUndo() { undoStack.push({ st: Int8Array.from(st), moves }); if (undoStack.length > 60) undoStack.shift(); }
+function shake(obj, amp, dur) {
+  const base = obj.position.x;
+  tween(dur || 0.35, p => { obj.position.x = base + Math.sin(p * Math.PI * 7) * (amp || 0.06) * (1 - p); }, () => { obj.position.x = base; });
+}
+function hitFx(i, r) {
+  buzz(30);
+  if (r.hit === 'car') { sfx.honk(); shake(cars[r.car].inner, 0.07); }
+  else if (r.hit === 'block') { sfx.thud(); const b = world.blocks[r.hy * lv.W + r.hx]; if (b) { const base = b.rotation.z; tween(0.4, p => { b.rotation.z = base + Math.sin(p * Math.PI * 5) * 0.18 * (1 - p); }); } }
+  else if (r.hit === 'barrier') { sfx.thud(); world.arms.forEach(a => shake(a.parent, 0.04)); toast('ゲートはあと' + (lv.barrier.need - leftCount()) + '台出ると開く'); }
+  else if (r.hit === 'cat') { sfx.meow(); catJump = now() + 0.5; toast('ねこが渡ってる！ちょっと待って'); }
+}
+function bumpLocal(v, sgn, amp, dur) {
+  // sgn -1 = toward the nose
+  v.inner.position.z = 0;
+  return tween(dur, p => { v.inner.position.z = sgn * Math.sin(p * Math.PI) * amp; v.inner.scale.z = 1 - Math.sin(p * Math.PI) * 0.05; },
+    () => { v.inner.position.z = 0; v.inner.scale.z = 1; });
+}
+
+function drive(i, m) {
+  if (won || st[i * 3] < 0 || busy(i)) return;
+  const d = st[i * 3 + 2];
+  if ((m & 1) !== (d & 1)) return;
+  const o = Core.buildOcc(lv, st);
+  let r = Core.slide(lv, st, o, i, m, leftCount());
+  if (r.exit && catBlocks(m, i)) r = { exit: false, k: r.k, hit: 'cat' };
+  clearHint();
+  const v = cars[i], sgn = m === d ? -1 : 1;
+  if (!r.exit && r.k === 0) { // can't budge: lurch and honk
+    const a = bumpLocal(v, sgn, 0.13, 0.22); v.motion = a; const done = a.done;
+    a.done = () => { done(); v.motion = null; };
+    setTimeout(() => hitFx(i, r), 90);
+    return;
+  }
+  pushUndo(); moves++; showTip('');
+  const [x0, z0] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len);
+  if (r.exit) {
+    st[i * 3] = -1;
+    sfx.vroom();
+    animateExit(i, m, x0, z0);
+    updateGate(false);
+  } else {
+    st[i * 3] += DX[m] * r.k; st[i * 3 + 1] += DY[m] * r.k;
+    const [x1, z1] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len);
+    sfx.vroom();
+    const dur = 0.1 + 0.07 * r.k;
+    v.motion = tween(dur, p => { const e = p * p * (1.6 - 0.6 * p); v.group.position.set(x0 + (x1 - x0) * e, 0, z0 + (z1 - z0) * e); }, () => {
+      v.motion = bumpLocal(v, sgn, 0.07, 0.16);
+      const done = v.motion.done; v.motion.done = () => { done(); v.motion = null; };
+      hitFx(i, r);
+    });
+  }
+  afterMove();
+}
+
+function animateExit(i, m, x0, z0) {
+  const v = cars[i], d = st[i * 3 + 2] < 0 ? lv.cars[i].d : st[i * 3 + 2];
+  const ex = lv.W / 2 + RC, ez = lv.H / 2 + RC;
+  const P1 = m === 0 ? [x0, -ez] : m === 2 ? [x0, ez] : m === 1 ? [ex, z0] : [-ex, z0];
+  const pts = [[x0, z0], P1];
+  if (m === 1 || m === 3) pts.push([m === 1 ? ex : -ex, -ez]);
+  else if (m === 2) { const sx = x0 >= 0 ? ex : -ex; pts.push([sx, ez], [sx, -ez]); }
+  pts.push([0, -ez], [0, -ez - 7]);
+  const segs = []; let total = 0;
+  for (let k = 1; k < pts.length; k++) {
+    const dx = pts[k][0] - pts[k - 1][0], dz = pts[k][1] - pts[k - 1][1], l = Math.hypot(dx, dz);
+    if (l < 1e-4) continue;
+    segs.push({ a: pts[k - 1], dx, dz, l, s0: total }); total += l;
+  }
+  const vmax = 12, ta = 0.22, T = total / vmax + ta / 2;
+  let heading = v.group.rotation.y, last = now();
+  const reversing = m !== d;
+  v.motion = null; // exiting cars are not interactive any more
+  const a = tween(T, p => {
+    const t = p * T, s = t < ta ? vmax * t * t / (2 * ta) : vmax * (t - ta / 2);
+    let sg = segs[segs.length - 1];
+    for (const q of segs) if (s <= q.s0 + q.l) { sg = q; break; }
+    const u = Math.min(1, (s - sg.s0) / sg.l);
+    v.group.position.set(sg.a[0] + sg.dx * u, 0, sg.a[1] + sg.dz * u);
+    const tn = now(), dt = Math.min(0.05, tn - last); last = tn;
+    let want = Math.atan2(-sg.dx, -sg.dz);
+    if (sg === segs[0] && reversing) want = headingOf(d);
+    let diff = want - heading; while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+    heading += diff * Math.min(1, dt * 13);
+    v.group.rotation.y = heading;
+    const fade = total - s; v.group.scale.setScalar(fade < 2.5 ? Math.max(0.01, fade / 2.5) : 1);
+  }, () => { v.group.visible = false; v.group.scale.setScalar(1); });
+  v.exitAnim = a;
+}
+
+function rotateCar(i) {
+  if (won || st[i * 3] < 0 || busy(i)) return;
+  const o = Core.buildOcc(lv, st), rt = Core.rotTarget(lv, st, o, i), v = cars[i];
+  if (!rt) return;
+  clearHint();
+  if (!rt.ok) {
+    const base = v.group.rotation.y;
+    v.motion = tween(0.3, p => { v.group.rotation.y = base - Math.sin(p * Math.PI) * 0.18; }, () => { v.group.rotation.y = base; v.motion = null; });
+    setTimeout(() => hitFx(i, rt.car !== undefined ? { hit: 'car', car: rt.car } : rt.hx !== undefined ? { hit: 'block', hx: rt.hx, hy: rt.hy } : { hit: 'wall' }), 120);
+    if (rt.car === undefined && rt.hx === undefined) { sfx.thud(); buzz(30); }
+    return;
+  }
+  pushUndo(); moves++; showTip('');
+  const [px, pz] = carCenter(rt.tx, rt.ty, 0, 1);
+  const p0 = v.group.position.clone(), h0 = v.group.rotation.y;
+  st[i * 3] = rt.x; st[i * 3 + 1] = rt.y; st[i * 3 + 2] = rt.d;
+  const disc = world.turns[rt.ty * lv.W + rt.tx], d0 = disc ? disc.rotation.y : 0;
+  sfx.whir();
+  v.motion = tween(0.42, p => {
+    const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2, ang = -Math.PI / 2 * e;
+    const ox = p0.x - px, oz = p0.z - pz, c = Math.cos(ang), s = Math.sin(ang);
+    v.group.position.set(px + ox * c + oz * s, 0, pz - ox * s + oz * c);
+    v.group.rotation.y = h0 + ang;
+    if (disc) disc.rotation.y = d0 + ang;
+  }, () => { v.motion = null; placeCar(i); });
+  afterMove();
+}
+
+function afterMove() {
+  updateHUD();
+  if (Core.aliveCount(st) === 0) {
+    won = true;
+    const par = lv.par, stars = moves <= par ? 3 : moves <= par + Math.max(2, Math.ceil(par * 0.12)) ? 2 : 1;
+    const n = lv.n;
+    save.stars[n] = Math.max(save.stars[n] || 0, stars);
+    save.best = Math.max(save.best, n + 1); save.level = n + 1; persist();
+    setTimeout(() => { sfx.win(); showWin(stars); }, 1300);
+  }
+  dirty = true;
+}
+
+function undo() {
+  if (won) return;
+  if (!undoStack.length) { toast('戻せる手がない'); return; }
+  if (undosLeft <= 0) { toast('このステージの「戻す」は使い切った'); return; }
+  const s = undoStack.pop(); undosLeft--;
+  anims.forEach(a => { a.dead = true; }); anims = [];
+  cars.forEach(c => { c.motion = null; });
+  st = s.st; moves = s.moves; clearHint();
+  syncAll(); updateHUD(); sfx.click();
+}
+
+function clearHint() {
+  if (hintMark) { world.root.remove(hintMark); hintMark = null; }
+  hintFor = -1; dirty = true;
+}
+function hint() {
+  if (won) return;
+  if (hintsLeft <= 0) { toast('このステージのヒントは使い切った'); return; }
+  const sol = Core.solve(lv, st, 60000);
+  if (!sol || !sol.moves.length) { toast('行き詰まり…「戻す」かリスタートを'); return; }
+  hintsLeft--; updateHUD(); clearHint(); sfx.click();
+  const mv = sol.moves[0], i = mv.i, v = cars[i];
+  const g = new THREE.Group(), yel = bas('#ffd23f');
+  if (mv.rot) {
+    mesh(G.ring, yel, 1.3, 1.3, 1.3, 0, 0, 0, g);
+    const tip = mesh(G.cone, yel, 0.24, 0.3, 0.24, 0.39, 0, 0, g); tip.rotation.x = Math.PI / 2;
+    toast('この車をタップして回そう');
+  } else {
+    const arm = new THREE.Group(); g.add(arm);
+    mesh(G.box, yel, 0.16, 0.08, 0.5, 0, 0, 0.15, arm);
+    const tip = mesh(G.cone, yel, 0.42, 0.4, 0.42, 0, 0, -0.25, arm); tip.rotation.x = -Math.PI / 2;
+    arm.rotation.y = headingOf(mv.m);
+    if (mv.m !== st[i * 3 + 2]) toast('うしろへスワイプしてバック！');
+  }
+  g.scale.setScalar(1.5); g.position.copy(v.group.position); g.position.y = 1.15;
+  world.root.add(g); hintMark = g; hintFor = i;
+}
+
+function updateHUD() {
+  $('lvl').textContent = lv.n;
+  $('moves').textContent = moves;
+  $('par').textContent = '/ 目標 ' + lv.par;
+  $('undoN').textContent = undosLeft; $('hintN').textContent = hintsLeft;
+  $('undo').disabled = undosLeft <= 0; $('hint').disabled = hintsLeft <= 0;
+}
+
+let curLevelHints = { n: 0, left: HINT_MAX };
+function startLevel(n, keepHints) {
+  n = Math.max(1, n | 0);
+  $('win').hidden = true;
+  lv = Core.generate(n);
+  nc = lv.cars.length; st = Core.makeState(lv); moves = 0; undoStack = []; undosLeft = UNDO_MAX; won = false;
+  if (curLevelHints.n !== n || !keepHints) curLevelHints = { n, left: HINT_MAX };
+  hintsLeft = curLevelHints.left;
+  catT0 = now() + 1.5; catForce = null;
+  save.level = n; save.best = Math.max(save.best, n); persist();
+  buildWorld(); fitCamera(); updateHUD();
+  showTip(lv.tip || '');
+}
+
+// ---------- Camera ----------
+const _v = new THREE.Vector3();
+function fitCamera() {
+  const w = Math.max(1, play.clientWidth), h = Math.max(1, play.clientHeight);
+  renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!lv) return;
+  const tilt = (h / w > 1.25 ? 58 : 50) * Math.PI / 180, cs = Math.cos(tilt), sn = Math.sin(tilt);
+  const ex = lv.W / 2 + ROAD_OUT + 0.1, ez = lv.H / 2 + ROAD_OUT + 0.1;
+  const pts = [];
+  for (const x of [-ex, ex]) for (const z of [-ez, ez]) for (const y of [0, 0.7]) pts.push([x, y, z]);
+  let tz = 0, D = 20;
+  const bounds = () => {
+    camera.position.set(0, D * sn, tz + D * cs); camera.lookAt(0, 0, tz); camera.updateMatrixWorld(); camera.updateProjectionMatrix();
+    let mx = 0, y0 = 9, y1 = -9;
+    for (const p of pts) { _v.set(p[0], p[1], p[2]).project(camera); mx = Math.max(mx, Math.abs(_v.x)); y0 = Math.min(y0, _v.y); y1 = Math.max(y1, _v.y); }
+    return { mx, y0, y1 };
+  };
+  for (let it = 0; it < 4; it++) {
+    let lo = 4, hi = 90;
+    for (let k = 0; k < 26; k++) { D = (lo + hi) / 2; const b = bounds(); if (b.mx <= 0.97 && b.y0 >= -0.96 && b.y1 <= 0.96) hi = D; else lo = D; }
+    D = hi; const b = bounds();
+    tz -= (b.y1 + b.y0) / 2 * ez * 0.8;
+  }
+  bounds();
+  dirty = true;
+}
+let resizeT = 0;
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(fitCamera, 60); });
+
+// ---------- Input ----------
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(cx, cy) {
+  const r = cv.getBoundingClientRect();
+  ndc.set((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(cars.filter((c, i) => st[i * 3] >= 0).map(c => c.hit), false);
+  return hits.length ? hits[0].object.userData.car : -1;
+}
+function toScreen(x, y, z) {
+  _v.set(x, y, z).project(camera); const r = cv.getBoundingClientRect();
+  return { x: r.left + (_v.x + 1) / 2 * r.width, y: r.top + (1 - _v.y) / 2 * r.height };
+}
+let down = null;
+cv.addEventListener('pointerdown', e => {
+  if (!lv || won) return;
+  down = { id: e.pointerId, x: e.clientX, y: e.clientY, car: pick(e.clientX, e.clientY) };
+  try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+});
+cv.addEventListener('pointerup', e => {
+  if (!down || down.id !== e.pointerId) return;
+  const d0 = down; down = null;
+  let i = d0.car;
+  const dx = e.clientX - d0.x, dy = e.clientY - d0.y, dist = Math.hypot(dx, dy);
+  if (dist < 14) {
+    if (i < 0) i = pick(e.clientX, e.clientY);
+    if (i < 0) return;
+    const o = Core.buildOcc(lv, st);
+    if (Core.rotTarget(lv, st, o, i)) rotateCar(i); else drive(i, st[i * 3 + 2]);
+    return;
+  }
+  if (i < 0 || st[i * 3] < 0) return;
+  const d = st[i * 3 + 2], [wx, wz] = carCenter(st[i * 3], st[i * 3 + 1], d, cars[i].len);
+  const a = toScreen(wx, 0.3, wz), b = toScreen(wx + DX[d] * 0.5, 0.3, wz + DY[d] * 0.5);
+  const fx = b.x - a.x, fy = b.y - a.y, fl = Math.hypot(fx, fy) || 1;
+  const dot = (dx * fx + dy * fy) / fl;
+  if (Math.abs(dot) < dist * 0.35) { shake(cars[i].inner, 0.04, 0.25); return; }
+  drive(i, dot > 0 ? d : d ^ 2);
+});
+cv.addEventListener('pointercancel', () => { down = null; });
+
+$('undo').addEventListener('click', undo);
+$('hint').addEventListener('click', hint);
+$('restart').addEventListener('click', () => { sfx.click(); curLevelHints.left = hintsLeft; startLevel(lv.n, true); });
+$('next').addEventListener('click', () => { sfx.click(); startLevel(lv.n + 1); });
+$('again').addEventListener('click', () => { sfx.click(); startLevel(lv.n, true); });
+$('levels').addEventListener('click', openSelect);
+$('selClose').addEventListener('click', () => { $('select').hidden = true; });
+$('select').addEventListener('click', e => { if (e.target === $('select')) $('select').hidden = true; });
+
+const STAR = on => `<svg viewBox="0 0 24 24" class="${on ? 'on' : ''}"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="${on ? '#ffcf3f' : '#3b5163'}" stroke="${on ? '#b88c12' : '#2c4152'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+function showWin(stars) {
+  $('winStars').innerHTML = STAR(stars >= 1) + STAR(stars >= 2) + STAR(stars >= 3);
+  $('winMoves').textContent = moves; $('winPar').textContent = lv.par;
+  $('winTitle').textContent = stars === 3 ? 'かんぺき！' : 'ぜんぶ出た！';
+  $('win').hidden = false;
+}
+function openSelect() {
+  sfx.click();
+  const g = $('lvgrid'); g.innerHTML = '';
+  for (let n = 1; n <= save.best; n++) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lvbtn' + (lv && n === lv.n ? ' cur' : '');
+    const s = save.stars[n] || 0;
+    b.innerHTML = n + '<i>' + '★'.repeat(s) + '</i>';
+    b.setAttribute('aria-label', 'ステージ ' + n + (s ? ' 星' + s : ''));
+    b.addEventListener('click', () => { $('select').hidden = true; startLevel(n); });
+    g.appendChild(b);
+  }
+  $('select').hidden = false;
+  const cur = g.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
+}
+
+// ---------- Loop ----------
+let dirty = true, timeScale = 1;
+function frame() {
+  requestAnimationFrame(frame);
+  const t = now();
+  if (anims.length) {
+    const list = anims.slice();
+    for (const a of list) {
+      if (a.dead) continue;
+      const p = Math.min(1, (t - a.t0) * timeScale / a.dur);
+      a.fn(p);
+      if (p >= 1) { a.dead = true; if (a.done) a.done(); }
+    }
+    anims = anims.filter(a => !a.dead);
+    dirty = true;
+  }
+  if (lv && lv.cat && world) { updateCat(t); dirty = true; }
+  if (hintMark) { hintMark.position.y = 1.15 + Math.sin(t * 5) * 0.12; dirty = true; }
+  if (dirty) { renderer.render(scene, camera); dirty = false; }
+}
+
+// ---------- Debug / test hooks ----------
+window.__parking = {
+  Core,
+  state: () => ({ n: lv.n, W: lv.W, H: lv.H, st: Array.from(st), moves, par: lv.par, alive: Core.aliveCount(st), won, undosLeft, hintsLeft,
+    left: leftCount(), gateOpen: world && world.gateOpen, barrier: lv.barrier, cat: lv.cat, cars: lv.cars.length, hintFor }),
+  level: () => lv,
+  carScreen(i) { const d = st[i * 3 + 2], [x, z] = carCenter(st[i * 3], st[i * 3 + 1], d, cars[i].len); return toScreen(x, 0.6, z); },
+  carAxis(i) { const d = st[i * 3 + 2], [x, z] = carCenter(st[i * 3], st[i * 3 + 1], d, cars[i].len); const a = toScreen(x, 0.6, z), b = toScreen(x + DX[d], 0.6, z + DY[d]); return { x: b.x - a.x, y: b.y - a.y }; },
+  solve: () => Core.solve(lv, st, 60000),
+  pick: (x, y) => pick(x, y),
+  idle: () => anims.length === 0,
+  setCat(v) { catForce = v; },
+  speed(k) { timeScale = k; },
+  goto: n => startLevel(n),
+};
+
+startLevel(save.level);
+requestAnimationFrame(frame);
+
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
+})();
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.parking.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>
