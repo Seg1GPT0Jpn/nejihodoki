@@ -60,6 +60,10 @@ h1 span { color: var(--brass); }
 .install {
   display: flex; gap: 12px; align-items: center; border: 1px dashed var(--rail); border-radius: 16px; padding: 12px 14px;
 }
+.acct { display: flex; gap: 10px; align-items: center; background: var(--steel-2); border: 1px solid var(--rail); border-radius: 16px; padding: 10px 14px; }
+.acct .kc-msg { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--chalk-dim); flex: 1; min-width: 0; }
+.acct button { border: 0; border-radius: 12px; padding: 9px 12px; font: 800 13px var(--font-body); cursor: pointer; background: var(--brass); color: var(--brass-ink); flex: none; }
+.acct .kc-out { background: transparent; color: var(--chalk); border: 1px solid var(--rail); }
 .install p { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--chalk-dim); flex: 1; min-width: 0; }
 .btn { border: 0; border-radius: 12px; padding: 10px 14px; font: 800 14px var(--font-body); cursor: pointer; background: var(--brass); color: var(--brass-ink); flex: none; }
 .btn:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
@@ -81,6 +85,8 @@ footer { font-size: 11px; color: var(--chalk-dim); text-align: center; line-heig
     <p id="installMsg"></p>
     <button class="btn" id="installBtn" hidden>ホーム画面に追加</button>
   </div>
+
+  <div class="acct" id="acct" hidden></div>
 
   <nav class="games" aria-label="ゲーム一覧">
     <a class="game" href="neji/" id="g-neji">
@@ -110,18 +116,23 @@ footer { font-size: 11px; color: var(--chalk-dim); text-align: center; line-heig
     </a>
   </nav>
 
-  <footer>どのゲームも、進み具合はこの端末のブラウザに保存されます。<br>ネジほどきは Google ログインで端末間の同期もできます。</footer>
+  <footer>記録はこの端末のブラウザに保存されます。Googleでログインすると、全ゲームの記録をクラウドに保存して、どの端末でも続きから遊べます。</footer>
 </div>
+<script src="firebase-config.js"></script>
+<script src="common/cloud.js"></script>
 <script>
 (() => {
   const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
   const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
-  const nejiMax = get('nejihodoki3d.maxLevel', 0);
-  if (nejiMax > 1) set('r-neji', 'LEVEL ' + nejiMax + ' まで到達');
-  const bb = get('kusoge.blocks.best', 0); if (bb) set('r-blocks', 'ベスト ' + Number(bb).toLocaleString() + ' 点');
-  const db = get('kusoge.drop.best', 0); if (db) set('r-drop', 'ベスト ' + Number(db).toLocaleString() + ' 点');
-  const rb = get('kusoge.raft.best', 0); if (rb) set('r-raft', '最長 ' + rb + ' 日生存');
-  const gs = get('kusoge.gates.save', null); if (gs && (gs.best || gs.bestStage || gs.stage)) set('r-gates', 'ステージ ' + (gs.best || gs.bestStage || gs.stage) + ' まで到達');
+  function refreshRecords() {
+    const nejiMax = get('nejihodoki3d.maxLevel', 0);
+    if (nejiMax > 1) set('r-neji', 'LEVEL ' + nejiMax + ' まで到達');
+    const bb = get('kusoge.blocks.best', 0); if (bb) set('r-blocks', 'ベスト ' + Number(bb).toLocaleString() + ' 点');
+    const db = get('kusoge.drop.best', 0); if (db) set('r-drop', 'ベスト ' + Number(db).toLocaleString() + ' 点');
+    const rb = get('kusoge.raft.best', 0); if (rb) set('r-raft', '最長 ' + rb + ' 日生存');
+    const gs = get('kusoge.gates.save', null); if (gs && (gs.best || gs.bestStage || gs.stage)) set('r-gates', 'ステージ ' + (gs.best || gs.bestStage || gs.stage) + ' まで到達');
+  }
+  refreshRecords();
 
   // home screen install
   let evt = null;
@@ -139,6 +150,10 @@ footer { font-size: 11px; color: var(--chalk-dim); text-align: center; line-heig
   addEventListener('appinstalled', () => { evt = null; render(); });
   document.getElementById('installBtn').onclick = async () => { if (!evt) return; evt.prompt(); try { await evt.userChoice; } catch (e) {} evt = null; render(); };
   render();
+  KoboCloud.mountLogin(document.getElementById('acct'));
+  KoboCloud.sync({ 'kusoge.blocks.best': 'max', 'kusoge.blocks.state': 'newest', 'kusoge.drop.best': 'max',
+    'kusoge.raft.best': 'max', 'kusoge.raft.save': 'newest', 'kusoge.gates.save': 'newest' });
+  KoboCloud.onChange(s => { if (s.synced) refreshRecords(); });
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

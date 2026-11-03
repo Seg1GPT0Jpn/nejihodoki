@@ -1,0 +1,30 @@
+# main に変更が入るたびに、Firebase Hosting（https://neji-5913a.web.app/）へ自動で公開する
+name: Firebase Hosting に公開
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 秘密鍵が登録されているか確認
+        id: check
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$SA" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"
+          else echo "::warning::FIREBASE_SERVICE_ACCOUNT が未登録のため、Firebase Hosting への公開をスキップしました（HOSTING_SETUP.md を参照）"; fi
+      - name: Firebase Hosting に公開
+        if: steps.check.outputs.ok == '1'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: neji-5913a
