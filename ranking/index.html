@@ -9,6 +9,35 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'ひまつぶし工房ランキング': 'Himatsubushi Kobo Rankings',
+  '← ゲーム一覧': '← Games',
+  'ランキング<span>表</span>': 'Leader<span>board</span>',
+  'ゲームを選ぶ': 'Choose a game',
+  '総合': 'Overall',
+  'ネジほどき': 'Unscrew 3D', 'ブロックはめ': 'Block Fit', 'おちものタワー': 'Drop Tower', 'いかだ暮らし': 'Raft Life',
+  'ゲートランナー': 'Gate Runner', 'いろみず分け': 'Color Water Sort', 'くるま出し': 'Car Out', 'あなぼこシティ': 'Hole City',
+  '{n}点': '{n} pts',
+  '{n}日生存': '{n} days',
+  'LEVEL {n} クリア': 'LEVEL {n} cleared',
+  '{n} ステージ': '{n} stages',
+  '{n} 人が参加': '{n} players',
+  '名無し': 'Anonymous',
+  '{n} 本のゲームに記録': 'Records in {n} games',
+  'まだ記録がありません。最初の1人になろう。': 'No records yet. Be the first!',
+  'ニックネームが未登録です。トップページのログイン欄で登録すると、ランキングに載ります。': 'You have no nickname yet. Set one in the sign-in box on the top page to appear in the rankings.',
+  '{name} さんの記録は、このゲームではまだありません。': '{name}, you have no record in this game yet.',
+  '{name} さんは ': '{name}, you are ',
+  '{n} 位': '#{n}',
+  '（{v}）': ' ({v})',
+  '読み込み中…': 'Loading…',
+  'ランキングは準備中です（管理者の設定待ち）。': 'Rankings are not ready yet (waiting for admin setup).',
+  'ランキングを読み込めませんでした。通信状態を確認してください。': 'Could not load the rankings. Please check your connection.',
+  '総合は、ゲームごとの順位を点数にして合計したものです（各ゲームで1位＝100点、参加人数に応じて下がる）。ランキングに載るには、トップページでGoogleログインしてニックネームを登録してください。': 'The overall score adds up points from your rank in each game (1st place = 100 points, fewer the more players there are). To appear in the rankings, sign in with Google on the top page and set a nickname.',
+} });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -23,7 +52,8 @@
 }
 [hidden] { display: none !important; }
 html { background: var(--steel); }
-body { margin: 0; min-height: 100vh; background: var(--steel); color: var(--chalk); font-family: var(--font-body);
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100%; box-sizing: border-box; overflow-x: hidden; background: var(--steel); color: var(--chalk); font-family: var(--font-body);
   padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-tap-highlight-color: transparent; }
 .wrap { max-width: 560px; margin: 0 auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 28px; }
@@ -37,7 +67,7 @@ h1 span { color: var(--brass); }
 .tabs button[aria-selected="true"] { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
 .tabs button:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
 .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.head h2 { margin: 0; font-size: 17px; }
+.head h2 { margin: 0; font-size: 17px; flex: none; }
 .head p { margin: 0; font-size: 11.5px; color: var(--chalk-dim); text-align: right; }
 .me { background: var(--steel-2); border: 1px solid var(--brass); border-radius: 14px; padding: 10px 14px; font-size: 13px; line-height: 1.6; }
 .me b { color: var(--brass); }
@@ -55,34 +85,35 @@ li:nth-child(1) .rk { color: var(--gold); } li:nth-child(2) .rk { color: var(--s
 </head>
 <body>
 <div class="wrap">
-  <header><a href="../">← ゲーム一覧</a><h1>ランキング<span>表</span></h1></header>
-  <div class="tabs" role="tablist" id="tabs" aria-label="ゲームを選ぶ"></div>
+  <header><a href="../" data-i18n>← ゲーム一覧</a><h1 data-i18n-html>ランキング<span>表</span></h1></header>
+  <div class="tabs" role="tablist" id="tabs" aria-label="ゲームを選ぶ" data-i18n-attr="aria-label"></div>
   <div class="me" id="me" hidden></div>
-  <div class="head"><h2 id="title">総合</h2><p id="sub"></p></div>
+  <div class="head"><h2 id="title" data-i18n>総合</h2><p id="sub"></p></div>
   <ol id="list"></ol>
-  <div class="empty" id="empty">読み込み中…</div>
-  <p class="note">総合は、ゲームごとの順位を点数にして合計したものです（各ゲームで1位＝100点、参加人数に応じて下がる）。ランキングに載るには、トップページでGoogleログインしてニックネームを登録してください。</p>
+  <div class="empty" id="empty" data-i18n>読み込み中…</div>
+  <p class="note" data-i18n>総合は、ゲームごとの順位を点数にして合計したものです（各ゲームで1位＝100点、参加人数に応じて下がる）。ランキングに載るには、トップページでGoogleログインしてニックネームを登録してください。</p>
 </div>
 <script src="../firebase-config.js"></script>
 <script src="../common/cloud.js"></script>
 <script>
 (() => {
+  const T = KoboI18n.t;
   const GAMES = [
     { id: 'total', name: '総合', unit: '点' },
-    { id: 'neji', name: 'ネジほどき', fmt: v => 'LEVEL ' + v + ' クリア' },
+    { id: 'neji', name: 'ネジほどき', fmt: v => T('LEVEL {n} クリア', { n: v }) },
     { id: 'blocks', name: 'ブロックはめ', unit: '点' },
     { id: 'drop', name: 'おちものタワー', unit: '点' },
     { id: 'raft', name: 'いかだ暮らし', unit: '日生存' },
     { id: 'gates', name: 'ゲートランナー', fmt: v => 'STAGE ' + v },
     { id: 'n59049', name: '59049', unit: '点' },
-    { id: 'water', name: 'いろみず分け', fmt: v => v + ' ステージ' },
-    { id: 'parking', name: 'くるま出し', fmt: v => v + ' ステージ' },
+    { id: 'water', name: 'いろみず分け', fmt: v => T('{n} ステージ', { n: v }) },
+    { id: 'parking', name: 'くるま出し', fmt: v => T('{n} ステージ', { n: v }) },
     { id: 'hole', name: 'あなぼこシティ', unit: '点' },
   ];
   const $ = id => document.getElementById(id);
   let rows = [], cur = 'total';
   try { const h = location.hash.slice(1); if (GAMES.some(g => g.id === h)) cur = h; } catch (e) {}
-  const fmt = (g, v) => g.fmt ? g.fmt(v) : Number(v).toLocaleString() + (g.unit || '');
+  const fmt = (g, v) => g.fmt ? g.fmt(v) : T('{n}' + (g.unit || ''), { n: Number(v).toLocaleString() });
 
   function ranked(id) {
     if (id !== 'total') return rows.filter(r => r.scores && r.scores[id] > 0).map(r => ({ ...r, v: r.scores[id] })).sort((a, b) => b.v - a.v || (a.updatedAt || 0) - (b.updatedAt || 0));
@@ -101,32 +132,32 @@ li:nth-child(1) .rk { color: var(--gold); } li:nth-child(2) .rk { color: var(--s
   function draw() {
     const g = GAMES.find(x => x.id === cur);
     [...$('tabs').children].forEach(b => b.setAttribute('aria-selected', b.dataset.id === cur ? 'true' : 'false'));
-    $('title').textContent = g.name;
+    $('title').textContent = T(g.name);
     const list = ranked(cur), me = KoboCloud.me();
-    $('sub').textContent = list.length ? list.length + ' 人が参加' : '';
+    $('sub').textContent = list.length ? T('{n} 人が参加', { n: list.length }) : '';
     $('list').innerHTML = '';
     list.slice(0, 100).forEach((r, i) => {
       const li = document.createElement('li'); if (r.uid === me) li.className = 'mine';
       const rk = document.createElement('div'); rk.className = 'rk'; rk.textContent = i + 1;
-      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = r.name || '名無し';
-      if (cur === 'total') { const sm = document.createElement('small'); sm.textContent = r.games + ' 本のゲームに記録'; nm.appendChild(sm); }
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = r.name || T('名無し');
+      if (cur === 'total') { const sm = document.createElement('small'); sm.textContent = T('{n} 本のゲームに記録', { n: r.games }); nm.appendChild(sm); }
       const sc = document.createElement('div'); sc.className = 'sc'; sc.textContent = fmt(g, r.v);
       li.append(rk, nm, sc); $('list').appendChild(li);
     });
     $('empty').hidden = list.length > 0;
-    if (!list.length) $('empty').textContent = 'まだ記録がありません。最初の1人になろう。';
+    if (!list.length) $('empty').textContent = T('まだ記録がありません。最初の1人になろう。');
     const mine = list.findIndex(r => r.uid === me);
     if (me) {
       $('me').hidden = false;
       const nick = KoboCloud.nickname();
       $('me').innerHTML = '';
-      if (!nick) $('me').textContent = 'ニックネームが未登録です。トップページのログイン欄で登録すると、ランキングに載ります。';
-      else if (mine < 0) $('me').textContent = nick + ' さんの記録は、このゲームではまだありません。';
-      else { $('me').append(nick + ' さんは '); const b = document.createElement('b'); b.textContent = (mine + 1) + ' 位'; $('me').append(b, '（' + fmt(g, list[mine].v) + '）'); }
+      if (!nick) $('me').textContent = T('ニックネームが未登録です。トップページのログイン欄で登録すると、ランキングに載ります。');
+      else if (mine < 0) $('me').textContent = T('{name} さんの記録は、このゲームではまだありません。', { name: nick });
+      else { $('me').append(T('{name} さんは ', { name: nick })); const b = document.createElement('b'); b.textContent = T('{n} 位', { n: mine + 1 }); $('me').append(b, T('（{v}）', { v: fmt(g, list[mine].v) })); }
     } else $('me').hidden = true;
   }
   for (const g of GAMES) {
-    const b = document.createElement('button'); b.type = 'button'; b.role = 'tab'; b.dataset.id = g.id; b.textContent = g.name;
+    const b = document.createElement('button'); b.type = 'button'; b.role = 'tab'; b.dataset.id = g.id; b.textContent = T(g.name);
     b.onclick = () => { cur = g.id; try { history.replaceState(null, '', '#' + g.id); } catch (e) {} draw(); };
     $('tabs').appendChild(b);
   }
@@ -134,7 +165,7 @@ li:nth-child(1) .rk { color: var(--gold); } li:nth-child(2) .rk { color: var(--s
     try { rows = await KoboCloud.loadRanks(); draw(); }
     catch (e) {
       $('empty').hidden = false;
-      $('empty').textContent = e.code === 'permission-denied' ? 'ランキングは準備中です（管理者の設定待ち）。' : 'ランキングを読み込めませんでした。通信状態を確認してください。';
+      $('empty').textContent = T(e.code === 'permission-denied' ? 'ランキングは準備中です（管理者の設定待ち）。' : 'ランキングを読み込めませんでした。通信状態を確認してください。');
     }
   }
   KoboCloud.onChange(() => { if (rows.length) draw(); });

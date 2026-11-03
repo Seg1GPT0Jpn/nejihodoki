@@ -13,6 +13,56 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="いろみず分け">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'いろみず分け': 'Color Water Sort',
+  '← ゲーム一覧': '← Games',
+  'あそびかた': 'How to play',
+  '音': '♪', 'サウンド': 'Sound',
+  'ステージをえらぶ': 'Choose a stage',
+  'このままクリアしたときの星': 'Stars if you clear it now',
+  '試験管': 'Test tubes',
+  'そろった！': 'Sorted!',
+  'つぎのステージへ': 'Next stage',
+  'もう一度あそぶ': 'Play again',
+  '手づまり…': 'Stuck…',
+  'もう注げる試験管がありません。': 'There are no more tubes you can pour into.',
+  '↶ 戻す': '↶ Undo',
+  'リスタート': 'Restart',
+  '試験管を追加': 'Add tube',
+  'とじる': 'Close',
+  'ステージ': 'Stages',
+  'あそんだところまで、どこからでも選べます。': 'Pick any stage up to the furthest you have played.',
+  '試験管をタップして持ち上げ、別の試験管をタップして注ぎます。': 'Tap a tube to lift it, then tap another tube to pour.',
+  '注げるのは「空の試験管」か「いちばん上が同じ色」の試験管だけ。上の同じ色がまとめて、入るぶんだけ移ります。': 'You can only pour into an empty tube or one whose top color matches. All matching layers on top move together, as much as fits.',
+  'どの試験管も「1色でいっぱい」か「空」になればクリア。': 'You win when every tube is either full of one color or empty.',
+  '<b>？</b> の色は、いちばん上に出るまでわかりません。': '<b>？</b> colors stay hidden until they reach the top.',
+  '<b>錠つき</b>の試験管は、指定の数だけ色をそろえると開きます。': '<b>Locked</b> tubes open after you complete the shown number of colors.',
+  '<b>のっぽ</b>の試験管はたくさん入ります。': '<b>Tall</b> tubes hold more.',
+  '★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。': '★3: clear without hints or an extra tube. Each one you use costs one ★ (minimum ★1).',
+  '<b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。': '<b>Undo</b> is free and unlimited. Hints: 3 per stage. Extra tube: once per stage. Restarting resets these counts.',
+  '言語 / Language': 'Language / 言語',
+  '戻す': 'Undo', '何回でも': 'Unlimited', 'ヒント': 'Hint', 'のこり{n}': '{n} left',
+  '1面1回': '1 per stage', '使用ずみ': 'Used', 'はじめから': 'Start over',
+  'つくっています…': 'Building…',
+  '？の色は、いちばん上に出るまでわかりません': '？ colors stay hidden until they reach the top',
+  '錠つきの試験管は、色をそろえると開きます': 'Locked tubes open when you complete colors',
+  'のっぽの試験管が登場！たくさん入ります': 'Tall tubes are here! They hold more',
+  '試験管をタップして持ち上げ、別の試験管をタップして注ごう': 'Tap a tube to lift it, then tap another to pour',
+  'ここから試験管は5段！': 'From here on, tubes hold 5 layers!',
+  '{n}色': '{n} colors', '5段': '5 layers', '錠': 'Lock', 'のっぽ': 'Tall', '空き1': '1 spare',
+  '錠が開いた！': 'Unlocked!',
+  '空の試験管を1本追加しました（★−1）': 'Added an empty tube (★−1)',
+  'むずかしい形です。少し戻してみよう': 'Tricky position. Try undoing a few moves',
+  'この形からは解けません。戻すかリスタートを': 'This can\'t be solved from here. Undo or restart',
+  '光っている試験管から、矢印の先へ（★−1）': 'Pour from the glowing tube to where the arrow points (★−1)',
+  'ヒント{n}回': '{n} hint(s)', '試験管追加': 'extra tube', '・': ', ',
+  ' ・ ': ' · ', '{n}手': '{n} moves', '（戻す{n}回）': ' ({n} undos)', '{list}を使用': 'used {list}', '道具なし！': 'no tools!',
+  'この試験管はあと{n}色そろえると開きます': 'Complete {n} more color(s) to open this tube',
+  '錠がかかっています': 'This tube is locked',
+} });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -33,6 +83,7 @@
   color-scheme: dark;
 }
 html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
 [hidden] { display: none !important; }
 body {
   position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
@@ -91,13 +142,31 @@ h1 {
 .tool:active { transform: translateY(2px); box-shadow: 0 1px 0 #0005; }
 .tool:disabled { opacity: .38; cursor: default; }
 .overlay {
-  position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
-  background: #06101acc; padding: 16px; box-sizing: border-box;
+  position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+  background: #06101acc; box-sizing: border-box; overscroll-behavior: contain;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 .card {
   width: 100%; max-width: 340px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column;
   background: linear-gradient(#1d3d55, #132b3d); border: 1px solid var(--line); border-radius: 22px; padding: 18px 16px 16px; text-align: center;
-  box-shadow: 0 12px 40px #0008;
+  box-shadow: 0 12px 40px #0008; overflow-y: auto; overscroll-behavior: contain;
+}
+.card > * { flex: none; }
+.card #lvGrid, .card .help-body { flex: 0 1 auto; }
+.help-body { overflow-y: auto; min-height: 0; touch-action: pan-y; overscroll-behavior: contain; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; font-weight: 800; color: var(--dim); }
+.langrow select { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 800 14px var(--font-body); padding: 4px 8px; }
+.langrow select:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
+html[lang="en"] .back { font-size: 12.5px; }
+html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
+@media (max-width: 359px) { html[lang="en"] h1 { font-size: 14px; } .hrow { gap: 4px; } .ibtn { min-width: 36px; padding: 0 6px; } }
+@media (max-width: 340px) { .tool span { font-size: 11px; letter-spacing: -.05em; } }
+@media (max-height: 560px) {
+  .tool { height: 48px; }
+  .card { padding: 14px 14px 12px; }
+  .card h2 { font-size: 21px; }
+  .card .big { font-size: 34px; }
+  .btn { padding: 11px; margin-top: 8px; }
 }
 .card h2 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--lemon); }
 .card p { margin: 6px 0; font-size: 13px; line-height: 1.55; color: var(--dim); }
@@ -125,71 +194,74 @@ h1 {
 <div id="app">
   <header>
     <div class="hrow">
-      <a class="back" href="../">← ゲーム一覧</a>
-      <h1>いろみず分け</h1>
-      <button class="ibtn" id="helpBtn" aria-label="あそびかた">？</button>
-      <button class="ibtn" id="sndBtn" aria-pressed="true" aria-label="音">音</button>
+      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+      <h1 data-i18n>いろみず分け</h1>
+      <button class="ibtn" id="helpBtn" aria-label="あそびかた" data-i18n-attr="aria-label">？</button>
+      <button class="ibtn" id="sndBtn" aria-pressed="true" aria-label="音" data-i18n>音</button>
     </div>
     <div class="info">
-      <button class="ibtn" id="lvBtn" aria-label="ステージをえらぶ">Lv.1</button>
+      <button class="ibtn" id="lvBtn" aria-label="ステージをえらぶ" data-i18n-attr="aria-label">Lv.1</button>
       <div class="chips" id="chips"></div>
-      <div class="mstars" id="mstars" aria-label="このままクリアしたときの星"></div>
+      <div class="mstars" id="mstars" aria-label="このままクリアしたときの星" data-i18n-attr="aria-label"></div>
     </div>
   </header>
   <div id="stage">
-    <canvas id="cv" aria-label="試験管"></canvas>
+    <canvas id="cv" aria-label="試験管" data-i18n-attr="aria-label"></canvas>
     <div id="toast"></div>
     <div id="msg"></div>
     <div class="overlay" id="ovWin" hidden>
       <div class="card">
-        <h2>そろった！</h2>
+        <h2 data-i18n>そろった！</h2>
         <div class="big" id="winStars"></div>
         <p id="winText"></p>
-        <button class="btn" id="nextBtn">つぎのステージへ</button>
-        <button class="btn sub" id="replayBtn">もう一度あそぶ</button>
+        <button class="btn" id="nextBtn" data-i18n>つぎのステージへ</button>
+        <button class="btn sub" id="replayBtn" data-i18n>もう一度あそぶ</button>
       </div>
     </div>
     <div class="overlay" id="ovStuck" hidden>
       <div class="card">
-        <h2>手づまり…</h2>
-        <p>もう注げる試験管がありません。</p>
-        <div class="row2"><button class="btn" id="stUndo">↶ 戻す</button><button class="btn sub" id="stRestart">リスタート</button></div>
-        <button class="btn sub" id="stExtra">試験管を追加</button>
-        <button class="btn sub" id="stClose">とじる</button>
+        <h2 data-i18n>手づまり…</h2>
+        <p data-i18n>もう注げる試験管がありません。</p>
+        <div class="row2"><button class="btn" id="stUndo" data-i18n>↶ 戻す</button><button class="btn sub" id="stRestart" data-i18n>リスタート</button></div>
+        <button class="btn sub" id="stExtra" data-i18n>試験管を追加</button>
+        <button class="btn sub" id="stClose" data-i18n>とじる</button>
       </div>
     </div>
     <div class="overlay" id="ovLevels" hidden>
       <div class="card" style="max-width:380px">
-        <h2>ステージ</h2>
-        <p>あそんだところまで、どこからでも選べます。</p>
+        <h2 data-i18n>ステージ</h2>
+        <p data-i18n>あそんだところまで、どこからでも選べます。</p>
         <div id="lvGrid"></div>
-        <button class="btn sub" id="lvClose">とじる</button>
+        <button class="btn sub" id="lvClose" data-i18n>とじる</button>
       </div>
     </div>
     <div class="overlay" id="ovHelp" hidden>
       <div class="card help">
-        <h2 style="text-align:center">あそびかた</h2>
+        <h2 style="text-align:center" data-i18n>あそびかた</h2>
+        <div class="help-body">
         <ul>
-          <li>試験管をタップして持ち上げ、別の試験管をタップして注ぎます。</li>
-          <li>注げるのは「空の試験管」か「いちばん上が同じ色」の試験管だけ。上の同じ色がまとめて、入るぶんだけ移ります。</li>
-          <li>どの試験管も「1色でいっぱい」か「空」になればクリア。</li>
-          <li><b>？</b> の色は、いちばん上に出るまでわかりません。</li>
-          <li><b>錠つき</b>の試験管は、指定の数だけ色をそろえると開きます。</li>
-          <li><b>のっぽ</b>の試験管はたくさん入ります。</li>
+          <li data-i18n>試験管をタップして持ち上げ、別の試験管をタップして注ぎます。</li>
+          <li data-i18n>注げるのは「空の試験管」か「いちばん上が同じ色」の試験管だけ。上の同じ色がまとめて、入るぶんだけ移ります。</li>
+          <li data-i18n>どの試験管も「1色でいっぱい」か「空」になればクリア。</li>
+          <li data-i18n-html><b>？</b> の色は、いちばん上に出るまでわかりません。</li>
+          <li data-i18n-html><b>錠つき</b>の試験管は、指定の数だけ色をそろえると開きます。</li>
+          <li data-i18n-html><b>のっぽ</b>の試験管はたくさん入ります。</li>
         </ul>
         <ul>
-          <li>★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。</li>
-          <li><b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。</li>
+          <li data-i18n>★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。</li>
+          <li data-i18n-html><b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。</li>
         </ul>
+        </div>
+        <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
         <button class="btn" id="helpClose">OK</button>
       </div>
     </div>
   </div>
   <div id="tools">
-    <button class="tool" id="undoBtn"><b>↶</b><span>戻す</span><small>何回でも</small></button>
-    <button class="tool" id="hintBtn"><b>？</b><span>ヒント</span><small id="hintLeft">のこり3</small></button>
-    <button class="tool" id="extraBtn"><b>＋</b><span>試験管を追加</span><small id="extraLeft">1面1回</small></button>
-    <button class="tool" id="restartBtn"><b>⟲</b><span>リスタート</span><small>はじめから</small></button>
+    <button class="tool" id="undoBtn"><b>↶</b><span data-i18n>戻す</span><small data-i18n>何回でも</small></button>
+    <button class="tool" id="hintBtn"><b>？</b><span data-i18n>ヒント</span><small id="hintLeft">のこり3</small></button>
+    <button class="tool" id="extraBtn"><b>＋</b><span data-i18n>試験管を追加</span><small id="extraLeft">1面1回</small></button>
+    <button class="tool" id="restartBtn"><b>⟲</b><span data-i18n>リスタート</span><small data-i18n>はじめから</small></button>
   </div>
 </div>
 <script>
@@ -388,6 +460,7 @@ const Engine = (() => {
 // ENGINE-END
 
 // ================= game =================
+const T = KoboI18n.t;
 const SAVE_KEY = 'kusoge.water.save';
 const COLORS = ['#f2475c', '#ff9a2e', '#ffd83a', '#9be04a', '#2aa865', '#2ccac2', '#53b6ff', '#3d55dc', '#9353e6', '#ff7ac8', '#9a6239', '#eef2f7'];
 const COLOR_NAMES = ['いちご', 'みかん', 'レモン', 'ライム', 'メロン', 'ソーダ', 'そら', 'ラムネ', 'ぶどう', 'もも', 'ココア', 'ミルク'];
@@ -453,7 +526,7 @@ const sfx = {
   hint() { tone(988, 0.09, 'sine', 0.07); tone(1319, 0.14, 'sine', 0.07, 0.08); },
 };
 function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
-function renderSound() { $('sndBtn').setAttribute('aria-pressed', soundOn ? 'true' : 'false'); }
+function renderSound() { const b = $('sndBtn'); b.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); if (KoboI18n.lang !== 'ja') b.setAttribute('aria-label', T('サウンド')); }
 
 // ---------- state ----------
 const HINTS_PER_LEVEL = 3;
@@ -464,7 +537,7 @@ function startLevel(L) {
   save.level = L; if (L > save.best) save.best = L; writeSave();
   G = null; anims = []; fx = []; hintMark = null;
   hideAll();
-  $('msg').textContent = 'つくっています…';
+  $('msg').textContent = T('つくっています…');
   draw();
   setTimeout(() => {
     const pz = Engine.generate(L);
@@ -500,25 +573,25 @@ function introGimmick(pz) {
   else if (g.lock && pz.L === GIM_INTRO.lock[0]) t = GIM_INTRO.lock[1];
   else if (g.tall && pz.L === GIM_INTRO.tall[0]) t = GIM_INTRO.tall[1];
   else if (pz.L === 100) t = 'ここから試験管は5段！';
-  $('msg').textContent = t;
+  $('msg').textContent = T(t);
 }
 function refreshUI() {
   $('lvBtn').textContent = 'Lv.' + (G ? G.L : save.level);
   const chips = $('chips'); chips.innerHTML = '';
   if (G) {
     const add = (txt, cls) => { const s = document.createElement('span'); s.className = 'chip' + (cls ? ' ' + cls : ''); s.textContent = txt; chips.appendChild(s); };
-    add(G.pz.colors + '色');
+    add(T('{n}色', { n: G.pz.colors }));
     const g = G.pz.spec.gim;
-    if (G.K === 5) add('5段');
+    if (G.K === 5) add(T('5段'));
     if (g.hidden) add('？', 'g');
-    if (g.lock) add('錠', 'g');
-    if (g.tall) add('のっぽ', 'g');
-    if (G.pz.spec.empties === 1) add('空き1', 'g');
+    if (g.lock) add(T('錠'), 'g');
+    if (g.tall) add(T('のっぽ'), 'g');
+    if (G.pz.spec.empties === 1) add(T('空き1'), 'g');
   }
   const st = starsNow();
   $('mstars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
-  $('hintLeft').textContent = 'のこり' + (G ? HINTS_PER_LEVEL - G.hintsUsed : HINTS_PER_LEVEL);
-  $('extraLeft').textContent = G && G.extraUsed ? '使用ずみ' : '1面1回';
+  $('hintLeft').textContent = T('のこり{n}', { n: G ? HINTS_PER_LEVEL - G.hintsUsed : HINTS_PER_LEVEL });
+  $('extraLeft').textContent = T(G && G.extraUsed ? '使用ずみ' : '1面1回');
   $('undoBtn').disabled = !G || !G.history.length || G.won;
   $('hintBtn').disabled = !G || G.won || G.hintsUsed >= HINTS_PER_LEVEL;
   $('extraBtn').disabled = !G || G.won || G.extraUsed > 0;
@@ -562,7 +635,7 @@ function afterChange(fromPour) {
   setTimeout(() => {
     newly.forEach(i => { burst(i, 18); sfx.done(); vibrate([12, 30, 12]); });
     revealed.forEach(i => { burst(i, 6, '#ffffff'); sfx.reveal(); });
-    opened.forEach(i => { burst(i, 14, '#ffe066'); sfx.unlock(); toast('錠が開いた！'); });
+    opened.forEach(i => { burst(i, 14, '#ffe066'); sfx.unlock(); toast(T('錠が開いた！')); });
   }, delay);
   if (newly.length && $('msg').textContent && G.L === 1) $('msg').textContent = '';
   refreshUI();
@@ -600,20 +673,20 @@ function addTube() {
   finishAnims();
   G.extraUsed = 1; G.tubes.push([]); G.hid.push([]); G.caps.push(G.K); G.locks.push(0); G.open.push(true); G.done.push(false);
   hideAll(); layout(); refreshUI();
-  burst(G.tubes.length - 1, 10, '#5fe3e0'); sfx.unlock(); toast('空の試験管を1本追加しました（★−1）');
+  burst(G.tubes.length - 1, 10, '#5fe3e0'); sfx.unlock(); toast(T('空の試験管を1本追加しました（★−1）'));
 }
 function restart() { if (!G) return; ensureAudio(); startLevel(G.L); }
 function hint() {
   if (!G || G.won || G.hintsUsed >= HINTS_PER_LEVEL) return;
   const meta = metaNow();
   const res = Engine.solve(G.tubes.map(t => t.slice()), meta, { limit: 60000, w: 2 });
-  if (!res.path) { toast(res.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを'); sfx.bad(); return; }
+  if (!res.path) { toast(T(res.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを')); sfx.bad(); return; }
   if (!res.path.length) return;
   const m = res.path[0];
   G.hintsUsed++; G.sel = -1;
   hintMark = { f: m[0], t: m[1], t0: performance.now() };
   sfx.hint(); refreshUI();
-  if (G.hintsUsed === 1) toast('光っている試験管から、矢印の先へ（★−1）');
+  if (G.hintsUsed === 1) toast(T('光っている試験管から、矢印の先へ（★−1）'));
 }
 function win() {
   const st = starsNow();
@@ -624,9 +697,9 @@ function win() {
   for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, 12);
   $('winStars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
   const used = [];
-  if (G.hintsUsed) used.push('ヒント' + G.hintsUsed + '回');
-  if (G.extraUsed) used.push('試験管追加');
-  $('winText').textContent = 'Lv.' + L + ' ・ ' + G.moves + '手' + (G.undos ? '（戻す' + G.undos + '回）' : '') + (used.length ? ' ・ ' + used.join('・') + 'を使用' : ' ・ 道具なし！');
+  if (G.hintsUsed) used.push(T('ヒント{n}回', { n: G.hintsUsed }));
+  if (G.extraUsed) used.push(T('試験管追加'));
+  $('winText').textContent = 'Lv.' + L + T(' ・ ') + T('{n}手', { n: G.moves }) + (G.undos ? T('（戻す{n}回）', { n: G.undos }) : '') + T(' ・ ') + (used.length ? T('{list}を使用', { list: used.join(T('・')) }) : T('道具なし！'));
   setTimeout(() => { $('ovWin').hidden = false; }, 500);
 }
 function showStuck() {
@@ -866,7 +939,7 @@ function drawTube(i, now, view) {
   // tall mark
   if (G.caps[i] > G.K && !v.ang) {
     ctx.save(); ctx.fillStyle = 'rgba(169,196,212,0.8)'; ctx.font = '800 10px ' + FONT;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('のっぽ', v.ox, s.bottom + 7); ctx.restore();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(T('のっぽ'), v.ox, s.bottom + 7); ctx.restore();
   }
 }
 function star(x, y, r, col) {
@@ -948,7 +1021,7 @@ function hitTube(x, y) {
 function tap(i) {
   if (!G || G.won || i < 0) return;
   if (G.sel < 0) {
-    if (!G.open[i]) { sfx.bad(); toast('この試験管はあと' + (G.locks[i] - Engine.doneCount(G.tubes, G.K)) + '色そろえると開きます'); return; }
+    if (!G.open[i]) { sfx.bad(); toast(T('この試験管はあと{n}色そろえると開きます', { n: G.locks[i] - Engine.doneCount(G.tubes, G.K) })); return; }
     if (!G.tubes[i].length || G.done[i]) { sfx.bad(); return; }
     G.sel = i; sfx.lift(); return;
   }
@@ -957,7 +1030,7 @@ function tap(i) {
   if (doPour(f, i)) return;
   // not possible: pick the tapped tube instead (if it can pour), else shake
   if (G.open[i] && G.tubes[i].length && !G.done[i]) { G.sel = i; sfx.lift(); }
-  else { G.sel = -1; sfx.bad(); vibrate(20); if (!G.open[i]) toast('錠がかかっています'); }
+  else { G.sel = -1; sfx.bad(); vibrate(20); if (!G.open[i]) toast(T('錠がかかっています')); }
 }
 cv.addEventListener('pointerdown', e => {
   ensureAudio();
@@ -985,7 +1058,7 @@ function openLevels() {
   for (let L = 1; L <= save.best; L++) {
     const b = document.createElement('button'); b.className = 'lv' + (G && G.L === L ? ' cur' : '');
     const st = save.stars[L] || 0;
-    b.innerHTML = L + '<small>' + (st ? '★'.repeat(st) : '・') + '</small>';
+    b.innerHTML = L + '<small>' + (st ? '★'.repeat(st) : (KoboI18n.lang === 'ja' ? '・' : '·')) + '</small>';
     b.addEventListener('click', () => startLevel(L));
     grid.appendChild(b);
   }
@@ -996,6 +1069,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'z' || e.key === 'Backspace') undo();
 });
 window.addEventListener('resize', () => { layout(); });
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { layout(); });
+try { new ResizeObserver(() => layout()).observe(stage); } catch (e) {}
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
 window.addEventListener('storage', e => { if (e.key === SAVE_KEY) save = loadSave(); });
 
 // test hook (harmless in production)

@@ -13,6 +13,34 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="59049">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  '← ゲーム一覧': '← Games',
+  'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  'スコア': 'SCORE', '次の目標': 'Next goal', 'ベスト': 'BEST',
+  '3×3×3の立体盤。スワイプで数字を寄せる': '3×3×3 cube board. Swipe to slide the numbers',
+  'スワイプで寄せる ・ 2本指ドラッグで視点を回す': 'Swipe to slide · drag with 2 fingers to turn',
+  '数字の色': 'Number colors',
+  '奥へ寄せる': 'Slide away from you', '奥へ': 'Far',
+  '視点を90度回す': 'Turn the view 90°', '回す': 'Turn',
+  '視点の高さを変える': 'Change the view height', '傾ける': 'Tilt',
+  '手前へ寄せる': 'Slide toward you', '手前へ': 'Near',
+  '1手戻す': 'Undo', '残り{n}': '{n} left', '新しく始める': 'New game',
+  '59049 到達！': '59049 reached!',
+  '3の10乗。立体の頂点にたどり着きました。': '3 to the 10th power. You reached the top of the cube.',
+  'このまま続ける': 'Keep playing',
+  'もう動かせない！': 'No more moves!',
+  'ベスト {best} ・ 最高 {tile}': 'Best {best} · Top tile {tile}',
+  '最高 {n}': 'Top {n}',
+  'ベスト更新！': 'New best!',
+  'もう一度': 'Play again',
+  '1手戻しました（残り{n}）': 'Undid 1 move ({n} left)',
+  '新しいゲーム': 'New game',
+  'もう一度押すと新しく始めます': 'Tap again to start a new game',
+  '言語 / Language': 'Language / 言語',
+} });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -33,6 +61,7 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
 [hidden] { display: none !important; }
 body {
   margin: 0; color: var(--text); font-family: var(--font-body);
@@ -42,9 +71,9 @@ body {
 }
 #app {
   position: fixed; inset: 0; display: flex; flex-direction: column;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
 }
-header { flex: none; padding: 8px 12px 0; }
+header { flex: none; padding: 8px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
 .top { display: flex; align-items: center; gap: 8px; }
 .back {
   color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
@@ -59,6 +88,8 @@ h1 span { color: var(--ice); }
   color: var(--text); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none;
 }
 .icon svg { width: 20px; height: 20px; }
+.icon.lang { font: 800 12px var(--font-body); letter-spacing: .02em; }
+.ctl .n, .ctl > span { overflow: hidden; text-overflow: ellipsis; }
 .icon:active { transform: scale(.94); }
 .scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 6px; padding: 4px 4px 2px; }
 .label { font-size: 11px; color: var(--dim); letter-spacing: .12em; font-weight: 800; display: block; }
@@ -90,7 +121,7 @@ h1 span { color: var(--ice); }
 }
 .chip.got { opacity: 1; }
 .chip.top { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--text); }
-.controls { flex: none; display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.25fr; gap: 6px; padding: 0 10px 10px; }
+.controls { flex: none; display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.25fr; gap: 6px; padding: 0 max(10px, env(safe-area-inset-right)) 10px max(10px, env(safe-area-inset-left)); }
 .ctl {
   height: 50px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(#1c2550, #131a3a);
   color: var(--text); font: 800 14px var(--font-body); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
@@ -105,11 +136,12 @@ h1 span { color: var(--ice); }
 .ctl .n { font-size: 11px; color: var(--dim); }
 .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .overlay {
-  position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 10;
+  position: fixed; inset: 0; display: grid; place-items: center; z-index: 10; overflow-y: auto; overscroll-behavior: contain;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   background: rgba(4,6,16,.7); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade .3s ease-out;
 }
 .card {
-  width: min(320px, 100%); background: linear-gradient(#1d2650, #121836); border: 1px solid var(--line); border-radius: 22px;
+  width: min(320px, 100%); max-height: 100%; overflow-y: auto; background: linear-gradient(#1d2650, #121836); border: 1px solid var(--line); border-radius: 22px;
   padding: 22px 20px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.5); animation: rise .35s cubic-bezier(.2,.9,.3,1.2);
 }
 .card h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 24px; letter-spacing: .04em; }
@@ -132,66 +164,83 @@ h1 span { color: var(--ice); }
   .ctl { height: 44px; }
   .ctl.small { height: 34px; }
 }
+@media (max-width: 340px) { .ctl.v svg { display: none; } .ctl.v { font-size: 12.5px; } }
+@media (max-height: 520px) {
+  header { padding-top: 4px; }
+  .icon { width: 32px; height: 32px; }
+  .score-main b { font-size: 22px; }
+  .score-best b { font-size: 15px; }
+  .goal { margin-bottom: 2px; padding: 2px 8px; }
+  .ctl { height: 40px; }
+  .ctl.small { height: 32px; }
+  #legend { padding-bottom: 4px; }
+  .controls { padding-bottom: 6px; }
+  .card { padding: 16px 16px 14px; }
+  .card .big { font-size: 36px; }
+  .btn { padding: 11px; }
+}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="top">
-      <a class="back" href="../">← ゲーム一覧</a>
+      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
       <h1>590<span>49</span></h1>
+      <button class="icon lang" id="langBtn" type="button" aria-label="言語 / Language"></button>
       <button class="icon" id="sound" type="button" aria-label="サウンド" aria-pressed="true"></button>
     </div>
     <div class="scores">
-      <div class="score-main"><span class="label">スコア</span><b id="score">0</b></div>
-      <div class="goal" id="goal">次の目標<b id="goalV">27</b></div>
-      <div class="score-best"><span class="label">ベスト</span><b id="best">0</b><small id="bestTile"></small></div>
+      <div class="score-main"><span class="label" data-i18n>スコア</span><b id="score">0</b></div>
+      <div class="goal" id="goal"><span data-i18n>次の目標</span><b id="goalV">27</b></div>
+      <div class="score-best"><span class="label" data-i18n>ベスト</span><b id="best">0</b><small id="bestTile"></small></div>
     </div>
   </header>
   <div id="play">
-    <canvas id="cv" aria-label="3×3×3の立体盤。スワイプで数字を寄せる"></canvas>
+    <canvas id="cv" data-i18n-attr="aria-label" aria-label="3×3×3の立体盤。スワイプで数字を寄せる"></canvas>
     <div class="toast off" id="toast"></div>
-    <div class="hint" id="hint">スワイプで寄せる ・ 2本指ドラッグで視点を回す</div>
+    <div class="hint" id="hint" data-i18n>スワイプで寄せる ・ 2本指ドラッグで視点を回す</div>
   </div>
-  <div id="legend" aria-label="数字の色"></div>
+  <div id="legend" aria-label="数字の色" data-i18n-attr="aria-label"></div>
   <div class="controls">
-    <button class="ctl depth" id="bFar" type="button" aria-label="奥へ寄せる">奥へ</button>
-    <button class="ctl v" id="bRot" type="button" aria-label="視点を90度回す">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/></svg>回す</button>
-    <button class="ctl v" id="bTilt" type="button" aria-label="視点の高さを変える">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg>傾ける</button>
-    <button class="ctl depth" id="bNear" type="button" aria-label="手前へ寄せる">手前へ</button>
+    <button class="ctl depth" id="bFar" type="button" aria-label="奥へ寄せる" data-i18n-attr="aria-label"><span data-i18n>奥へ</span></button>
+    <button class="ctl v" id="bRot" type="button" aria-label="視点を90度回す" data-i18n-attr="aria-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/></svg><span data-i18n>回す</span></button>
+    <button class="ctl v" id="bTilt" type="button" aria-label="視点の高さを変える" data-i18n-attr="aria-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg><span data-i18n>傾ける</span></button>
+    <button class="ctl depth" id="bNear" type="button" aria-label="手前へ寄せる" data-i18n-attr="aria-label"><span data-i18n>手前へ</span></button>
     <div class="row2">
-      <button class="ctl small" id="bUndo" type="button">1手戻す <span class="n" id="undoN">残り3</span></button>
-      <button class="ctl small" id="bNew" type="button">新しく始める</button>
+      <button class="ctl small" id="bUndo" type="button"><span data-i18n>1手戻す</span> <span class="n" id="undoN">残り3</span></button>
+      <button class="ctl small" id="bNew" type="button" data-i18n>新しく始める</button>
     </div>
   </div>
 </div>
 <div class="overlay" id="winOv" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
   <div class="card">
-    <h2 id="winTitle">59049 到達！</h2>
-    <p>3の10乗。立体の頂点にたどり着きました。</p>
-    <div class="label">スコア</div>
+    <h2 id="winTitle" data-i18n>59049 到達！</h2>
+    <p data-i18n>3の10乗。立体の頂点にたどり着きました。</p>
+    <div class="label" data-i18n>スコア</div>
     <div class="big" id="winScore">0</div>
-    <button class="btn" id="winGo" type="button">このまま続ける</button>
-    <button class="btn sub" id="winNew" type="button">新しく始める</button>
+    <button class="btn" id="winGo" type="button" data-i18n>このまま続ける</button>
+    <button class="btn sub" id="winNew" type="button" data-i18n>新しく始める</button>
   </div>
 </div>
 <div class="overlay" id="overOv" hidden role="dialog" aria-modal="true" aria-labelledby="overTitle">
   <div class="card">
-    <h2 id="overTitle">もう動かせない！</h2>
-    <div class="label">スコア</div>
+    <h2 id="overTitle" data-i18n>もう動かせない！</h2>
+    <div class="label" data-i18n>スコア</div>
     <div class="big" id="overScore">0</div>
-    <div class="best">ベスト <b id="overBest">0</b> ・ 最高 <b id="overTile">3</b></div>
-    <div id="overNew" class="newrec" hidden>ベスト更新！</div>
-    <button class="btn" id="again" type="button">もう一度</button>
-    <button class="btn sub" id="overUndo" type="button">1手戻す</button>
+    <div class="best" id="overBestLine">ベスト <b id="overBest">0</b> ・ 最高 <b id="overTile">3</b></div>
+    <div id="overNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+    <button class="btn" id="again" type="button" data-i18n>もう一度</button>
+    <button class="btn sub" id="overUndo" type="button" data-i18n>1手戻す</button>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (() => {
 'use strict';
+const T = KoboI18n.t;
 const KEY_BEST = 'kusoge.n59049.best', KEY_TILE = 'kusoge.n59049.bestTile', KEY_STATE = 'kusoge.n59049.state', KEY_SOUND = 'kusoge.sound';
 const GOAL_E = 10, UNDO_MAX = 3, SLIDE = 110, POP = 180, APPEAR = 160;
 const $ = id => document.getElementById(id);
@@ -493,7 +542,7 @@ function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e
 function renderSoundBtn() {
   const b = $('sound');
   b.setAttribute('aria-pressed', String(soundOn));
-  b.setAttribute('aria-label', soundOn ? 'サウンド オン' : 'サウンド オフ');
+  b.setAttribute('aria-label', T(soundOn ? 'サウンド オン' : 'サウンド オフ'));
   b.innerHTML = soundOn
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
@@ -515,11 +564,11 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.rem
 function renderHud() {
   $('score').textContent = fmt(score);
   $('best').textContent = fmt(best);
-  $('bestTile').textContent = bestTile ? '最高 ' + fmt(bestTile) : '';
+  $('bestTile').textContent = bestTile ? T('最高 {n}', { n: fmt(bestTile) }) : '';
   const m = maxE();
   $('goalV').textContent = fmt(pow3(Math.max(2, m + 1)));
   [...legend.children].forEach((c, k) => { c.classList.toggle('got', k + 1 <= m); c.classList.toggle('top', k + 1 === m); });
-  $('undoN').textContent = '残り' + undoLeft;
+  $('undoN').textContent = T('残り{n}', { n: undoLeft });
   $('bUndo').disabled = !prev || undoLeft <= 0;
   $('overUndo').hidden = !prev || undoLeft <= 0;
 }
@@ -530,7 +579,10 @@ function updateRecords() {
 const anyOverlay = () => !$('winOv').hidden || !$('overOv').hidden;
 let startBest = best;
 function showOver() {
-  $('overScore').textContent = fmt(score); $('overBest').textContent = fmt(best); $('overTile').textContent = fmt(pow3(maxE()));
+  $('overScore').textContent = fmt(score);
+  const bl = $('overBestLine'), parts = T('ベスト {best} ・ 最高 {tile}').split(/(\{best\}|\{tile\})/);
+  bl.textContent = '';
+  for (const p of parts) { if (p === '{best}' || p === '{tile}') { const b = document.createElement('b'); b.textContent = p === '{best}' ? fmt(best) : fmt(pow3(maxE())); bl.appendChild(b); } else if (p) bl.append(p); }
   $('overNew').hidden = !(score > 0 && score >= best && score > startBest);
   renderHud(); $('overOv').hidden = false;
 }
@@ -575,7 +627,7 @@ function undo() {
   finishAnims();
   cells = fromExps(prev.cells); score = prev.score; prev = null; undoLeft--; over = false;
   $('overOv').hidden = true;
-  rebuildMeshes(); renderHud(); save(); tone(330, 0.1, 'sine', 0.06); toast('1手戻しました（残り' + undoLeft + '）');
+  rebuildMeshes(); renderHud(); save(); tone(330, 0.1, 'sine', 0.06); toast(T('1手戻しました（残り{n}）', { n: undoLeft }));
 }
 function newGame() {
   finishAnims();
@@ -595,8 +647,8 @@ $('bUndo').addEventListener('click', undo);
 $('overUndo').addEventListener('click', undo);
 let newArmed = 0;
 $('bNew').addEventListener('click', () => {
-  if (Date.now() - newArmed < 2500 || !movesMade && score === 0) { newArmed = 0; newGame(); toast('新しいゲーム'); return; }
-  newArmed = Date.now(); toast('もう一度押すと新しく始めます');
+  if (Date.now() - newArmed < 2500 || !movesMade && score === 0) { newArmed = 0; newGame(); toast(T('新しいゲーム')); return; }
+  newArmed = Date.now(); toast(T('もう一度押すと新しく始めます'));
 });
 $('again').addEventListener('click', newGame);
 $('winGo').addEventListener('click', () => { $('winOv').hidden = true; if (over) showOver(); });
@@ -673,6 +725,9 @@ try { new ResizeObserver(resize).observe(play); } catch (e) { window.addEventLis
 
 // ---------- boot ----------
 renderSoundBtn();
+{ const lb = $('langBtn'); lb.textContent = KoboI18n.lang === 'ja' ? 'EN' : 'JA'; lb.title = T('言語 / Language'); lb.addEventListener('click', () => KoboI18n.set(KoboI18n.lang === 'ja' ? 'en' : 'ja')); }
+if (window.visualViewport) visualViewport.addEventListener('resize', resize);
+window.addEventListener('resize', resize);
 if (!load()) { spawn(); spawn(); }
 resize(); rebuildMeshes();
 updateRecords(); renderHud();
