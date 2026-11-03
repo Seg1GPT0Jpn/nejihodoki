@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>いろみず分け</title>
+<meta name="theme-color" content="#0f2233">
+<meta name="description" content="試験管の色水を注ぎ分けて、1本1色にそろえるパズル。毎回解ける面がずっと続きます。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="いろみず分け">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* いろみず分け: night laboratory look. Header / info chips / canvas stage (tubes) / tool bar. */
+:root {
+  --bg: #0f2233;
+  --bg-2: #16334a;
+  --panel: rgba(255, 255, 255, .07);
+  --line: rgba(190, 235, 255, .2);
+  --ink: #f2fbff;
+  --dim: #a9c4d4;
+  --aqua: #5fe3e0;
+  --lemon: #ffe066;
+  --pink: #ff7ab6;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: radial-gradient(120% 70% at 50% 0%, #1f4a66 0%, var(--bg) 62%) var(--bg);
+  color: var(--ink); font-family: var(--font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app {
+  position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+header { flex: none; padding: 6px 10px 2px; max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 6px; }
+.back { color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 8px 4px; border-radius: 8px; }
+h1 {
+  flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--font-display); font-weight: 400;
+  font-size: 19px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: linear-gradient(90deg, var(--pink), var(--lemon) 40%, var(--aqua) 75%, #8f9bff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.ibtn {
+  flex: none; min-width: 40px; height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--panel); color: var(--ink); font: 800 13px var(--font-body); cursor: pointer;
+}
+.ibtn[aria-pressed="false"] { color: var(--dim); text-decoration: line-through; }
+.back:focus-visible, .ibtn:focus-visible, .tool:focus-visible, .btn:focus-visible, .lv:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
+.info { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-height: 28px; }
+#lvBtn { font-family: var(--font-display); font-weight: 400; font-size: 15px; min-width: 76px; }
+.chips { flex: 1; min-width: 0; display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+.chip { flex: none; font-size: 11px; font-weight: 800; padding: 3px 7px; border-radius: 999px; background: var(--panel); color: var(--dim); white-space: nowrap; }
+.chip.g { color: #10202c; background: var(--lemon); }
+.mstars { flex: none; font-size: 15px; letter-spacing: 1px; color: var(--lemon); }
+.mstars i { font-style: normal; color: #ffffff30; }
+#stage { flex: 1; min-height: 0; position: relative; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; cursor: pointer; }
+#msg {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); max-width: 92%;
+  font-size: 13px; font-weight: 800; color: var(--dim); text-align: center; pointer-events: none; line-height: 1.35;
+}
+#toast {
+  position: absolute; left: 50%; top: 8px; transform: translate(-50%, -8px); opacity: 0; transition: opacity .2s, transform .2s;
+  background: #08141ee6; border: 1px solid var(--line); color: var(--ink); padding: 8px 14px; border-radius: 14px;
+  font-size: 13px; font-weight: 800; pointer-events: none; z-index: 4; max-width: 88%; text-align: center; line-height: 1.4;
+}
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+#tools { flex: none; display: flex; gap: 6px; padding: 6px 10px 10px; width: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box; }
+.tool {
+  flex: 1; min-width: 0; height: 56px; border-radius: 16px; border: 1px solid var(--line); cursor: pointer; position: relative;
+  background: linear-gradient(#ffffff1f, #ffffff08); color: var(--ink); box-shadow: 0 3px 0 #0005;
+  font: 800 13px var(--font-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0 2px;
+}
+.tool b { font-size: 19px; line-height: 1; }
+.tool span { white-space: nowrap; font-size: 12.5px; letter-spacing: -.03em; }
+.tool small { font-size: 10px; color: var(--dim); white-space: nowrap; }
+.tool:active { transform: translateY(2px); box-shadow: 0 1px 0 #0005; }
+.tool:disabled { opacity: .38; cursor: default; }
+.overlay {
+  position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+  background: #06101acc; padding: 16px; box-sizing: border-box;
+}
+.card {
+  width: 100%; max-width: 340px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column;
+  background: linear-gradient(#1d3d55, #132b3d); border: 1px solid var(--line); border-radius: 22px; padding: 18px 16px 16px; text-align: center;
+  box-shadow: 0 12px 40px #0008;
+}
+.card h2 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--lemon); }
+.card p { margin: 6px 0; font-size: 13px; line-height: 1.55; color: var(--dim); }
+.card .big { font-size: 40px; letter-spacing: 4px; color: var(--lemon); margin: 4px 0; }
+.card .big i { font-style: normal; color: #ffffff26; }
+.btn {
+  display: block; width: 100%; margin-top: 10px; padding: 13px; border-radius: 16px; border: 0; cursor: pointer;
+  background: linear-gradient(#7af0e8, #36bfc6); color: #062030; font: 800 16px var(--font-body); box-shadow: 0 3px 0 #0006;
+}
+.btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; padding: 10px; }
+.row2 { display: flex; gap: 8px; } .row2 .btn { flex: 1; }
+#lvGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; overflow-y: auto; min-height: 0; margin-top: 8px; padding: 2px; overscroll-behavior: contain; touch-action: pan-y; }
+.lv {
+  aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  font: 800 15px var(--font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0;
+}
+.lv small { font-size: 9px; color: var(--lemon); letter-spacing: 0; }
+.lv.cur { border-color: var(--aqua); box-shadow: 0 0 0 2px #5fe3e055 inset; }
+.help { text-align: left; }
+.help li { margin: 4px 0; }
+.help ul { padding-left: 18px; margin: 6px 0; font-size: 13px; line-height: 1.5; color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../">← ゲーム一覧</a>
+      <h1>いろみず分け</h1>
+      <button class="ibtn" id="helpBtn" aria-label="あそびかた">？</button>
+      <button class="ibtn" id="sndBtn" aria-pressed="true" aria-label="音">音</button>
+    </div>
+    <div class="info">
+      <button class="ibtn" id="lvBtn" aria-label="ステージをえらぶ">Lv.1</button>
+      <div class="chips" id="chips"></div>
+      <div class="mstars" id="mstars" aria-label="このままクリアしたときの星"></div>
+    </div>
+  </header>
+  <div id="stage">
+    <canvas id="cv" aria-label="試験管"></canvas>
+    <div id="toast"></div>
+    <div id="msg"></div>
+    <div class="overlay" id="ovWin" hidden>
+      <div class="card">
+        <h2>そろった！</h2>
+        <div class="big" id="winStars"></div>
+        <p id="winText"></p>
+        <button class="btn" id="nextBtn">つぎのステージへ</button>
+        <button class="btn sub" id="replayBtn">もう一度あそぶ</button>
+      </div>
+    </div>
+    <div class="overlay" id="ovStuck" hidden>
+      <div class="card">
+        <h2>手づまり…</h2>
+        <p>もう注げる試験管がありません。</p>
+        <div class="row2"><button class="btn" id="stUndo">↶ 戻す</button><button class="btn sub" id="stRestart">リスタート</button></div>
+        <button class="btn sub" id="stExtra">試験管を追加</button>
+        <button class="btn sub" id="stClose">とじる</button>
+      </div>
+    </div>
+    <div class="overlay" id="ovLevels" hidden>
+      <div class="card" style="max-width:380px">
+        <h2>ステージ</h2>
+        <p>あそんだところまで、どこからでも選べます。</p>
+        <div id="lvGrid"></div>
+        <button class="btn sub" id="lvClose">とじる</button>
+      </div>
+    </div>
+    <div class="overlay" id="ovHelp" hidden>
+      <div class="card help">
+        <h2 style="text-align:center">あそびかた</h2>
+        <ul>
+          <li>試験管をタップして持ち上げ、別の試験管をタップして注ぎます。</li>
+          <li>注げるのは「空の試験管」か「いちばん上が同じ色」の試験管だけ。上の同じ色がまとめて、入るぶんだけ移ります。</li>
+          <li>どの試験管も「1色でいっぱい」か「空」になればクリア。</li>
+          <li><b>？</b> の色は、いちばん上に出るまでわかりません。</li>
+          <li><b>錠つき</b>の試験管は、指定の数だけ色をそろえると開きます。</li>
+          <li><b>のっぽ</b>の試験管はたくさん入ります。</li>
+        </ul>
+        <ul>
+          <li>★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。</li>
+          <li><b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。</li>
+        </ul>
+        <button class="btn" id="helpClose">OK</button>
+      </div>
+    </div>
+  </div>
+  <div id="tools">
+    <button class="tool" id="undoBtn"><b>↶</b><span>戻す</span><small>何回でも</small></button>
+    <button class="tool" id="hintBtn"><b>？</b><span>ヒント</span><small id="hintLeft">のこり3</small></button>
+    <button class="tool" id="extraBtn"><b>＋</b><span>試験管を追加</span><small id="extraLeft">1面1回</small></button>
+    <button class="tool" id="restartBtn"><b>⟲</b><span>リスタート</span><small>はじめから</small></button>
+  </div>
+</div>
+<script>
+'use strict';
+// ENGINE-BEGIN
+const Engine = (() => {
+  'use strict';
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  // ---- level design: smooth curve, gimmicks unlock gradually ----
+  const COLOR_STEPS = [[1, 3], [3, 4], [6, 5], [10, 6], [15, 7], [21, 8], [28, 9], [37, 10], [48, 11], [62, 12]];
+  function spec(L) {
+    const r = rng(L * 7919 + 13);
+    let colors = 3;
+    for (const [lv, c] of COLOR_STEPS) if (L >= lv) colors = c;
+    let cap = 4;
+    if (L >= 100) cap = 5;                                        // capacity 5 from level 100
+    if (cap === 5) colors = Math.min(colors, 9 + Math.floor((L - 100) / 20)); // ease the step to 5
+    let empties = 2;
+    if (L >= 80 && L % 4 === 3) empties = 1;                      // occasionally only one spare tube
+    const gim = { hidden: 0, lock: 0, tall: 0 };
+    if (L >= 12 && (L === 12 || r() < 0.4)) gim.hidden = L < 30 ? 0.5 : 0.55 + 0.1 * Math.floor(r() * 4);    // share of tubes with ？ layers
+    if (L >= 25 && (L === 25 || r() < 0.3)) gim.lock = L < 60 ? 1 : 1 + (r() < 0.5 ? 1 : 0);
+    if (L >= 40 && (L === 40 || r() < 0.25)) gim.tall = 1;
+    // target band for solver moves (near-minimum) — grows with colors and level
+    const units = colors * cap;
+    const lo = Math.round(units * (0.66 + 0.1 * Math.min(L, 300) / 300));
+    const band = { lo, hi: Math.round(units * 0.84 + 3) };
+    return { L, colors, cap, empties, gim, band };
+  }
+
+  // ---- solver ----
+  // state: array of tubes, each array of color ints (bottom→top)
+  // meta: caps[], locks[] (0 = none, N = opens after N colors done), K = units per color
+  function isDone(t, K) { if (t.length !== K) return false; for (let i = 1; i < K; i++) if (t[i] !== t[0]) return false; return true; }
+  function doneCount(st, K) { let n = 0; for (const t of st) if (isDone(t, K)) n++; return n; }
+  function isWin(st, K) { for (const t of st) if (t.length && !isDone(t, K)) return false; return true; }
+  function runLen(t) { const n = t.length; if (!n) return 0; const c = t[n - 1]; let k = 1; while (k < n && t[n - 1 - k] === c) k++; return k; }
+  function keyOf(st, meta) {
+    const a = new Array(st.length);
+    for (let i = 0; i < st.length; i++) a[i] = meta.tag[i] + String.fromCharCode.apply(null, st[i].map(c => 97 + c));
+    return a.sort().join(',');
+  }
+  function legal(st, meta, from, to, unlockedSet) {
+    if (from === to) return 0;
+    const a = st[from], b = st[to];
+    if (!a.length) return 0;
+    if (unlockedSet && (!unlockedSet[from] || !unlockedSet[to])) return 0;
+    const space = meta.caps[to] - b.length;
+    if (space <= 0) return 0;
+    if (b.length && b[b.length - 1] !== a[a.length - 1]) return 0;
+    return Math.min(space, runLen(a));
+  }
+  function openSet(st, meta, stickyOpen) {
+    const d = doneCount(st, meta.K), o = new Array(st.length);
+    for (let i = 0; i < st.length; i++) o[i] = !meta.locks[i] || d >= meta.locks[i] || (stickyOpen && stickyOpen[i]);
+    return o;
+  }
+  // useful moves (prunes pointless ones) for search
+  function moves(st, meta) {
+    const K = meta.K, open = openSet(st, meta), out = [];
+    for (let i = 0; i < st.length; i++) {
+      const a = st[i];
+      if (!a.length || !open[i] || isDone(a, K)) continue;
+      const rl = runLen(a), uniform = rl === a.length;
+      let emptyTried = {};
+      for (let j = 0; j < st.length; j++) {
+        if (i === j || !open[j]) continue;
+        const b = st[j];
+        const n = legal(st, meta, i, j);
+        if (!n) continue;
+        if (!b.length) {
+          if (uniform && meta.caps[j] <= meta.caps[i]) continue; // moving a pure tube into an empty one is pointless
+          if (emptyTried[meta.caps[j]]) continue;
+          emptyTried[meta.caps[j]] = 1;
+        }
+        out.push([i, j, n]);
+      }
+    }
+    return out;
+  }
+  function apply(st, m) {
+    const s = st.slice(); const a = s[m[0]].slice(), b = s[m[1]].slice();
+    for (let k = 0; k < m[2]; k++) b.push(a.pop());
+    s[m[0]] = a; s[m[1]] = b; return s;
+  }
+  function heur(st, meta) {
+    let h = 0; const bottoms = {};
+    for (const t of st) {
+      if (!t.length) continue;
+      let segs = 1; for (let i = 1; i < t.length; i++) if (t[i] !== t[i - 1]) segs++;
+      h += segs - 1;
+      bottoms[t[0]] = (bottoms[t[0]] || 0) + 1;
+    }
+    for (const c in bottoms) h += bottoms[c] - 1;
+    return h;
+  }
+  // weighted best-first search -> near-minimum solution (array of moves) or null
+  function solve(st, meta, opts) {
+    opts = opts || {};
+    const limit = opts.limit || 40000, w = opts.w || 1.6;
+    const heap = []; const push = (n) => { heap.push(n); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p].f <= n.f) break; heap[i] = heap[p]; i = p; } heap[i] = n; };
+    const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { let i = 0; for (;;) { let l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l].f < (m === i ? last.f : heap[m].f)) m = l; if (r < heap.length && heap[r].f < (m === i ? last.f : heap[m].f)) m = r; if (m === i) break; heap[i] = heap[m]; i = m; } heap[i] = last; } return top; };
+    const seen = new Map();
+    const start = { s: st, g: 0, f: w * heur(st, meta), m: null, p: null };
+    seen.set(keyOf(st, meta), 0); push(start);
+    let n = 0;
+    while (heap.length) {
+      const cur = pop();
+      if (isWin(cur.s, meta.K)) { const path = []; for (let c = cur; c.p; c = c.p) path.push(c.m); path.reverse(); return { path, nodes: n }; }
+      if (++n > limit) return { path: null, nodes: n, aborted: true };
+      for (const m of moves(cur.s, meta)) {
+        const s2 = apply(cur.s, m), k = keyOf(s2, meta), g = cur.g + 1;
+        const old = seen.get(k);
+        if (old !== undefined && old <= g) continue;
+        seen.set(k, g);
+        push({ s: s2, g, f: g + w * heur(s2, meta), m, p: cur });
+      }
+    }
+    return { path: null, nodes: n };
+  }
+  // random-player trap rate: share of random playouts that get stuck
+  function trapRate(st, meta, r, tries) {
+    let stuck = 0;
+    for (let t = 0; t < tries; t++) {
+      let s = st; const seen = new Set([keyOf(s, meta)]);
+      for (let step = 0; step < 400; step++) {
+        if (isWin(s, meta.K)) break;
+        const ms = moves(s, meta).map(m => apply(s, m)).filter(s2 => !seen.has(keyOf(s2, meta)));
+        if (!ms.length) { stuck++; break; }
+        s = ms[Math.floor(r() * ms.length)]; seen.add(keyOf(s, meta));
+      }
+    }
+    return stuck / tries;
+  }
+  function makeMeta(caps, locks, K) {
+    return { caps, locks, K, tag: caps.map((c, i) => String.fromCharCode(65 + c) + (locks[i] ? String(locks[i]) : '') + ':') };
+  }
+
+  // ---- generator ----
+  const cache = new Map();
+  function generate(L) {
+    if (cache.has(L)) return cache.get(L);
+    const sp = spec(L), r = rng(L * 2654435761 + 7);
+    const K = sp.cap, C = sp.colors;
+    let best = null, bestErr = Infinity, tried = 0;
+    const MAXC = 40;
+    for (let cand = 0; cand < MAXC; cand++) {
+      tried++;
+      const units = []; for (let c = 0; c < C; c++) for (let k = 0; k < K; k++) units.push(c);
+      for (let i = units.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [units[i], units[j]] = [units[j], units[i]]; }
+      const tubes = [];
+      if (sp.empties >= 2) { for (let i = 0; i < C; i++) tubes.push(units.slice(i * K, i * K + K)); }
+      else { // one empty tube: the other spare space is scattered over C+1 partly filled tubes
+        const lens = new Array(C + 1).fill(K); let rem = K;
+        while (rem > 0) { const i = Math.floor(r() * (C + 1)); if (lens[i] > K - 2) { lens[i]--; rem--; } }
+        let p = 0; for (const n of lens) { tubes.push(units.slice(p, p + n)); p += n; }
+      }
+      // reject boring starts: a tube already 3+ same at top/bottom chunk
+      let boring = false;
+      for (const t of tubes) { if (!t.length) { boring = true; continue; } let m = 1, run = 1; for (let i = 1; i < K; i++) { run = t[i] === t[i - 1] ? run + 1 : 1; m = Math.max(m, run); } if (m >= K - 1 && C > 3) boring = true; if (m === t.length && t.length > 1) boring = true; }
+      if (boring) continue;
+      const caps = tubes.map(() => K), locks = tubes.map(() => 0);
+      for (let e = 0; e < (sp.empties >= 2 ? 2 : 1); e++) { tubes.push([]); caps.push(K); locks.push(0); }
+      if (sp.gim.tall) caps[caps.length - 1] = K + 2;
+      if (sp.gim.lock) { const li = Math.floor(r() * (tubes.length - (sp.empties >= 2 ? 2 : 1))); locks[li] = sp.gim.lock; }
+      const meta = makeMeta(caps, locks, K);
+      const res = solve(tubes, meta, { limit: C >= 10 ? 12000 : 8000 });
+      if (!res.path) continue;
+      const moves = res.path.length;
+      const err = moves < sp.band.lo ? (sp.band.lo - moves) * 3 : moves > sp.band.hi ? moves - sp.band.hi : 0;
+      const pz = { tubes, caps, locks, K, moves, sol: res.path, nodes: res.nodes };
+      if (err < bestErr) { best = pz; bestErr = err; }
+      if (err === 0 && cand >= 2) break; // take an in-band candidate after looking at a few
+    }
+    if (!best) { // fallback: always solvable (should not happen) – 2 colors swapped
+      throw new Error('no puzzle for level ' + L);
+    }
+    // hidden layers: everything below the top is ？ in chosen tubes
+    const hid = best.tubes.map(t => t.map(() => false));
+    if (sp.gim.hidden) {
+      const idx = []; best.tubes.forEach((t, i) => { if (t.length > 1) idx.push(i); });
+      const n = Math.max(1, Math.round(idx.length * sp.gim.hidden));
+      for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      for (const i of idx.slice(0, n)) for (let k = 0; k < best.tubes[i].length - 1; k++) hid[i][k] = true;
+    }
+    const out = { L, spec: sp, K, colors: C, tubes: best.tubes, caps: best.caps, locks: best.locks, hid, moves: best.moves, sol: best.sol, tried, inBand: bestErr === 0 };
+    out.trap = trapRate(best.tubes, makeMeta(best.caps, best.locks, K), rng(L + 99), 24);
+    cache.set(L, out);
+    return out;
+  }
+  return { rng, spec, generate, solve, makeMeta, moves, apply, legal, isDone, isWin, doneCount, runLen, openSet, keyOf };
+})();
+// ENGINE-END
+
+// ================= game =================
+const SAVE_KEY = 'kusoge.water.save';
+const COLORS = ['#f2475c', '#ff9a2e', '#ffd83a', '#9be04a', '#2aa865', '#2ccac2', '#53b6ff', '#3d55dc', '#9353e6', '#ff7ac8', '#9a6239', '#eef2f7'];
+const COLOR_NAMES = ['いちご', 'みかん', 'レモン', 'ライム', 'メロン', 'ソーダ', 'そら', 'ラムネ', 'ぶどう', 'もも', 'ココア', 'ミルク'];
+const HIDDEN_COLOR = '#2c3446';
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+function loadSave() {
+  let s = null;
+  try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  if (!s || typeof s !== 'object') s = {};
+  const level = Math.max(1, parseInt(s.level, 10) || 1);
+  const best = Math.max(level, parseInt(s.best, 10) || 1);
+  const stars = (s.stars && typeof s.stars === 'object') ? s.stars : {};
+  return { level, best, stars };
+}
+let save = loadSave();
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
+let soundOn = store.get('kusoge.sound') !== '0';
+
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
+
+// ---------- audio ----------
+let actx = null;
+function ensureAudio() {
+  if (!actx) { try { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); } catch (e) { actx = null; } }
+  if (actx && actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
+}
+function tone(freq, dur, type, vol, delay, slideTo) {
+  if (!soundOn || !actx || actx.state !== 'running') return;
+  try {
+    const t = actx.currentTime + (delay || 0);
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.1, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  } catch (e) {}
+}
+const sfx = {
+  lift() { tone(520, 0.06, 'triangle', 0.06, 0, 700); },
+  drop() { tone(420, 0.06, 'triangle', 0.05, 0, 300); },
+  // bubbly "ぽこぽこ": short sine blips that climb as the tube fills
+  glug(n, fill0, delay) {
+    const count = 2 + n * 2;
+    for (let i = 0; i < count; i++) {
+      const f = 170 + (fill0 + (i / count) * n) * 55 + (i % 2) * 25;
+      tone(f, 0.07, 'sine', 0.16, delay + i * 0.075, f * 1.7);
+    }
+  },
+  done() { [880, 1175, 1568].forEach((f, i) => tone(f, 0.35, 'sine', 0.09, i * 0.07)); tone(2349, 0.25, 'triangle', 0.03, 0.2); },
+  reveal() { tone(1320, 0.1, 'sine', 0.06, 0, 990); },
+  unlock() { tone(600, 0.08, 'square', 0.04); tone(900, 0.18, 'triangle', 0.08, 0.08, 1300); },
+  bad() { tone(160, 0.12, 'square', 0.04, 0, 120); },
+  win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.3, 'triangle', 0.09, i * 0.09)); tone(262, 0.7, 'sine', 0.08, 0.1); },
+  undo() { tone(500, 0.07, 'sine', 0.06, 0, 330); },
+  hint() { tone(988, 0.09, 'sine', 0.07); tone(1319, 0.14, 'sine', 0.07, 0.08); },
+};
+function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+function renderSound() { $('sndBtn').setAttribute('aria-pressed', soundOn ? 'true' : 'false'); }
+
+// ---------- state ----------
+const HINTS_PER_LEVEL = 3;
+let G = null; // current game
+let anims = [], fx = [], hintMark = null;
+
+function startLevel(L) {
+  save.level = L; if (L > save.best) save.best = L; writeSave();
+  G = null; anims = []; fx = []; hintMark = null;
+  hideAll();
+  $('msg').textContent = 'つくっています…';
+  draw();
+  setTimeout(() => {
+    const pz = Engine.generate(L);
+    G = {
+      L, pz, K: pz.K,
+      tubes: pz.tubes.map(t => t.slice()), hid: pz.hid.map(h => h.slice()),
+      caps: pz.caps.slice(), locks: pz.locks.slice(), open: pz.locks.map(n => !n),
+      done: pz.tubes.map(() => false), sel: -1, history: [],
+      hintsUsed: 0, extraUsed: 0, undos: 0, moves: 0, won: false,
+    };
+    G.done = G.tubes.map(t => Engine.isDone(t, G.K));
+    refreshUI(); layout(); draw();
+    introGimmick(pz);
+    // prepare the next stage in the background
+    setTimeout(() => { try { Engine.generate(L + 1); } catch (e) {} }, 900);
+  }, 30);
+}
+function metaNow() {
+  // locks that were opened stay open (sticky), so the solver sees them as plain tubes
+  return Engine.makeMeta(G.caps, G.locks.map((n, i) => G.open[i] ? 0 : n), G.K);
+}
+function starsNow() { if (!G) return 3; return Math.max(1, 3 - (G.hintsUsed ? 1 : 0) - (G.extraUsed ? 1 : 0)); }
+
+const GIM_INTRO = {
+  hidden: [12, '？の色は、いちばん上に出るまでわかりません'],
+  lock: [25, '錠つきの試験管は、色をそろえると開きます'],
+  tall: [40, 'のっぽの試験管が登場！たくさん入ります'],
+};
+function introGimmick(pz) {
+  const g = pz.spec.gim; let t = '';
+  if (pz.L === 1) t = '試験管をタップして持ち上げ、別の試験管をタップして注ごう';
+  else if (g.hidden && pz.L === GIM_INTRO.hidden[0]) t = GIM_INTRO.hidden[1];
+  else if (g.lock && pz.L === GIM_INTRO.lock[0]) t = GIM_INTRO.lock[1];
+  else if (g.tall && pz.L === GIM_INTRO.tall[0]) t = GIM_INTRO.tall[1];
+  else if (pz.L === 100) t = 'ここから試験管は5段！';
+  $('msg').textContent = t;
+}
+function refreshUI() {
+  $('lvBtn').textContent = 'Lv.' + (G ? G.L : save.level);
+  const chips = $('chips'); chips.innerHTML = '';
+  if (G) {
+    const add = (txt, cls) => { const s = document.createElement('span'); s.className = 'chip' + (cls ? ' ' + cls : ''); s.textContent = txt; chips.appendChild(s); };
+    add(G.pz.colors + '色');
+    const g = G.pz.spec.gim;
+    if (G.K === 5) add('5段');
+    if (g.hidden) add('？', 'g');
+    if (g.lock) add('錠', 'g');
+    if (g.tall) add('のっぽ', 'g');
+    if (G.pz.spec.empties === 1) add('空き1', 'g');
+  }
+  const st = starsNow();
+  $('mstars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
+  $('hintLeft').textContent = 'のこり' + (G ? HINTS_PER_LEVEL - G.hintsUsed : HINTS_PER_LEVEL);
+  $('extraLeft').textContent = G && G.extraUsed ? '使用ずみ' : '1面1回';
+  $('undoBtn').disabled = !G || !G.history.length || G.won;
+  $('hintBtn').disabled = !G || G.won || G.hintsUsed >= HINTS_PER_LEVEL;
+  $('extraBtn').disabled = !G || G.won || G.extraUsed > 0;
+  $('restartBtn').disabled = !G;
+}
+
+// ---------- moves ----------
+function topRun(i) { return Engine.runLen(G.tubes[i]); }
+function canPour(f, t) {
+  if (f === t || !G.open[f] || !G.open[t]) return 0;
+  return Engine.legal(G.tubes, { caps: G.caps }, f, t);
+}
+function finishAnims() { anims = []; }
+function doPour(f, t, fromHint) {
+  const n = canPour(f, t);
+  if (!n) return false;
+  finishAnims();
+  const src = G.tubes[f], dst = G.tubes[t];
+  const color = src[src.length - 1];
+  const before = { src: src.slice(), dst: dst.slice(), srcHid: G.hid[f].slice(), dstHid: G.hid[t].slice() };
+  for (let k = 0; k < n; k++) { dst.push(src.pop()); G.hid[f].pop(); G.hid[t].push(false); }
+  G.history.push({ f, t, n });
+  G.moves++; G.sel = -1; hintMark = null;
+  const dur = 0.24 + 0.2 + 0.11 * n + 0.22;
+  anims.push({ f, t, n, color, before, t0: performance.now(), dur, revealDone: false });
+  sfx.glug(n, before.dst.length, 0.2);
+  vibrate(8);
+  afterChange(true);
+  return true;
+}
+function afterChange(fromPour) {
+  // completed tubes (cork), reveals and locks are judged on the new state; effects fire when the pour lands
+  const newly = [];
+  G.tubes.forEach((t, i) => { const d = Engine.isDone(t, G.K); if (d && !G.done[i]) newly.push(i); G.done[i] = d; });
+  const dc = Engine.doneCount(G.tubes, G.K);
+  const opened = [];
+  G.locks.forEach((n, i) => { if (n && !G.open[i] && dc >= n) { G.open[i] = true; opened.push(i); } });
+  const revealed = [];
+  G.tubes.forEach((t, i) => { if (t.length && G.hid[i][t.length - 1]) { G.hid[i][t.length - 1] = false; revealed.push(i); } });
+  const delay = fromPour ? 600 : 0;
+  setTimeout(() => {
+    newly.forEach(i => { burst(i, 18); sfx.done(); vibrate([12, 30, 12]); });
+    revealed.forEach(i => { burst(i, 6, '#ffffff'); sfx.reveal(); });
+    opened.forEach(i => { burst(i, 14, '#ffe066'); sfx.unlock(); toast('錠が開いた！'); });
+  }, delay);
+  if (newly.length && $('msg').textContent && G.L === 1) $('msg').textContent = '';
+  refreshUI();
+  if (Engine.isWin(G.tubes, G.K)) {
+    G.won = true; refreshUI();
+    setTimeout(win, delay + 350);
+  } else if (isStuck()) {
+    setTimeout(() => { if (G && !G.won && isStuck()) showStuck(); }, delay + 250);
+  }
+}
+function isStuck() {
+  for (let i = 0; i < G.tubes.length; i++) {
+    const a = G.tubes[i];
+    if (!a.length || G.done[i]) continue;
+    for (let j = 0; j < G.tubes.length; j++) {
+      const n = canPour(i, j);
+      if (!n) continue;
+      if (!G.tubes[j].length && Engine.runLen(a) === a.length) continue; // just moving a pure tube around
+      return false;
+    }
+  }
+  return true;
+}
+function undo() {
+  if (!G || G.won || !G.history.length) return;
+  finishAnims(); hintMark = null;
+  const m = G.history.pop();
+  for (let k = 0; k < m.n; k++) { G.tubes[m.f].push(G.tubes[m.t].pop()); G.hid[m.t].pop(); G.hid[m.f].push(false); }
+  G.undos++; G.sel = -1;
+  G.done = G.tubes.map(t => Engine.isDone(t, G.K));
+  sfx.undo(); hideAll(); refreshUI(); layout(); draw();
+}
+function addTube() {
+  if (!G || G.won || G.extraUsed) return;
+  finishAnims();
+  G.extraUsed = 1; G.tubes.push([]); G.hid.push([]); G.caps.push(G.K); G.locks.push(0); G.open.push(true); G.done.push(false);
+  hideAll(); layout(); refreshUI();
+  burst(G.tubes.length - 1, 10, '#5fe3e0'); sfx.unlock(); toast('空の試験管を1本追加しました（★−1）');
+}
+function restart() { if (!G) return; ensureAudio(); startLevel(G.L); }
+function hint() {
+  if (!G || G.won || G.hintsUsed >= HINTS_PER_LEVEL) return;
+  const meta = metaNow();
+  const res = Engine.solve(G.tubes.map(t => t.slice()), meta, { limit: 60000, w: 2 });
+  if (!res.path) { toast(res.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを'); sfx.bad(); return; }
+  if (!res.path.length) return;
+  const m = res.path[0];
+  G.hintsUsed++; G.sel = -1;
+  hintMark = { f: m[0], t: m[1], t0: performance.now() };
+  sfx.hint(); refreshUI();
+  if (G.hintsUsed === 1) toast('光っている試験管から、矢印の先へ（★−1）');
+}
+function win() {
+  const st = starsNow();
+  const L = G.L;
+  save.stars[L] = Math.max(save.stars[L] || 0, st);
+  save.level = L + 1; save.best = Math.max(save.best, L + 1); writeSave();
+  sfx.win(); vibrate([20, 40, 20, 40, 60]);
+  for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, 12);
+  $('winStars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
+  const used = [];
+  if (G.hintsUsed) used.push('ヒント' + G.hintsUsed + '回');
+  if (G.extraUsed) used.push('試験管追加');
+  $('winText').textContent = 'Lv.' + L + ' ・ ' + G.moves + '手' + (G.undos ? '（戻す' + G.undos + '回）' : '') + (used.length ? ' ・ ' + used.join('・') + 'を使用' : ' ・ 道具なし！');
+  setTimeout(() => { $('ovWin').hidden = false; }, 500);
+}
+function showStuck() {
+  $('stExtra').hidden = !!G.extraUsed;
+  $('ovStuck').hidden = false;
+  sfx.bad(); vibrate(30);
+}
+function hideAll() { ['ovWin', 'ovStuck', 'ovLevels', 'ovHelp'].forEach(id => { $(id).hidden = true; }); }
+
+// ---------- toast ----------
+let toastTimer = 0;
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 2200); }
+
+// ---------- geometry ----------
+// a tube in local coords: origin = mouth centre, +y goes down the tube. Inner width w, layer height lh.
+let W = 0, H = 0, DPR = 1, LY = null;
+function tubeGeom(cap) {
+  const w = LY.tw, lh = LY.lh, hs = LY.hs, r = w / 2;
+  const straight = hs + cap * lh - Math.PI * w / 8; // the round bottom holds as much as a π·w/8 slice
+  const pts = [[-r, 0], [r, 0], [r, straight]];
+  for (let k = 1; k < 12; k++) { const a = (k / 12) * Math.PI; pts.push([r * Math.cos(a), straight + r * Math.sin(a)]); }
+  pts.push([-r, straight]);
+  return { w, lh, hs, r, straight, depth: straight + r, pts, unit: w * lh, cap };
+}
+function layout() {
+  const rect = stage.getBoundingClientRect();
+  W = Math.max(1, rect.width); H = Math.max(1, rect.height);
+  DPR = Math.min(3, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  if (!G) { LY = null; return; }
+  const n = G.tubes.length, maxCap = Math.max(...G.caps);
+  let best = null;
+  for (let rows = 1; rows <= 2; rows++) {
+    if (rows === 1 && n > 7) continue;
+    const per = Math.ceil(n / rows);
+    const slotW = Math.min(84, (W - 12) / per);
+    let tw = Math.min(46, slotW * 0.64);
+    const topPad = 26, botPad = 44;
+    const rowH = (H - topPad - botPad) / rows;
+    let lh = (rowH - 16 - 0.11 * tw) / (maxCap + 1.9);
+    lh = Math.min(lh, tw * 0.9, 44);
+    if (!best || lh > best.lh + 0.5) best = { rows, per, slotW, tw, lh, topPad, botPad, rowH };
+  }
+  LY = best; LY.hs = LY.lh * 0.5; LY.lift = LY.lh * 1.1;
+  const geoms = {};
+  LY.slots = [];
+  const rows = LY.rows, firstRow = Math.ceil(n / rows);
+  // shrink rows to their content and centre the whole rack
+  const need = LY.lift + 22 + tubeGeom(maxCap).depth + 26;
+  LY.rowH = Math.min(LY.rowH, need);
+  const usedH = rows * LY.rowH;
+  const y0 = LY.topPad + (H - LY.topPad - LY.botPad - usedH) / 2;
+  for (let i = 0; i < n; i++) {
+    const row = i < firstRow ? 0 : 1, inRow = row === 0 ? firstRow : n - firstRow, col = row === 0 ? i : i - firstRow;
+    const cap = G.caps[i];
+    const g = geoms[cap] || (geoms[cap] = tubeGeom(cap));
+    const cx = W / 2 + (col - (inRow - 1) / 2) * LY.slotW;
+    const bottom = y0 + (row + 1) * LY.rowH - 10;
+    LY.slots.push({ cx, my: bottom - g.depth, bottom, g, row });
+  }
+}
+
+// polygon helpers (world coords)
+function xform(pts, ox, oy, a) { const c = Math.cos(a), s = Math.sin(a); return pts.map(([x, y]) => [ox + x * c - y * s, oy + x * s + y * c]); }
+function areaBelow(poly, yl) { // area of polygon part with y >= yl
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length];
+    const pin = p[1] >= yl, qin = q[1] >= yl;
+    if (pin) out.push(p);
+    if (pin !== qin) { const t = (yl - p[1]) / (q[1] - p[1]); out.push([p[0] + (q[0] - p[0]) * t, yl]); }
+  }
+  let a = 0; for (let i = 0; i < out.length; i++) { const p = out[i], q = out[(i + 1) % out.length]; a += p[0] * q[1] - q[0] * p[1]; }
+  return Math.abs(a) / 2;
+}
+function levelFor(poly, vol, ymin, ymax) {
+  if (vol <= 0) return ymax;
+  let lo = ymin, hi = ymax; // find y with areaBelow(y) = vol (areaBelow decreases with y)
+  for (let k = 0; k < 22; k++) { const m = (lo + hi) / 2; if (areaBelow(poly, m) > vol) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+function yRange(poly) { let a = Infinity, b = -Infinity; for (const p of poly) { if (p[1] < a) a = p[1]; if (p[1] > b) b = p[1]; } return [a, b]; }
+// tilt where the liquid of volume vol reaches the mouth lip
+function tiltFor(g, vol, dir) {
+  let lo = 0.2, hi = 2.2;
+  for (let k = 0; k < 18; k++) {
+    const a = (lo + hi) / 2;
+    const poly = xform(g.pts, 0, 0, a * dir), [y0, y1] = yRange(poly);
+    const lip = xform([[dir * g.r, 0]], 0, 0, a * dir)[0][1];
+    const lvl = levelFor(poly, vol, y0, y1);
+    if (lvl > lip) lo = a; else hi = a;
+  }
+  return (lo + hi) / 2;
+}
+
+// ---------- drawing ----------
+const ease = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+function tubeView(i, now) {
+  const s = LY.slots[i];
+  let ox = s.cx, oy = s.my, ang = 0, units = null, hid = null, partial = null, stream = null;
+  if (G.sel === i) oy -= LY.lift;
+  for (const a of anims) {
+    const p = (now - a.t0) / 1000;
+    const tIn = 0.24, tPour = 0.2 + 0.11 * a.n, tOut = 0.22;
+    if (a.f === i) {
+      const ds = LY.slots[a.t], g = s.g;
+      const dir = ds.cx >= W / 2 ? 1 : -1;
+      if (!a.geo) {
+        const v0 = a.before.src.length * g.unit, v1 = (a.before.src.length - a.n) * g.unit;
+        a.geo = { dir, a0: Math.min(tiltFor(g, v0, dir), 1.95), a1: Math.min(tiltFor(g, Math.max(v1, g.unit * 0.15), dir) + 0.1, 2.05) };
+      }
+      const { a0, a1 } = a.geo;
+      const target = [ds.cx - dir * (ds.g.w * 0.12), ds.my - LY.lh * 0.55];
+      let k, angle, prog;
+      if (p < tIn) { k = ease(p / tIn); angle = a0 * k; prog = 0; }
+      else if (p < tIn + tPour) { k = 1; prog = (p - tIn) / tPour; angle = a0 + (a1 - a0) * prog; }
+      else { k = 1 - ease((p - tIn - tPour) / tOut); angle = a1 * k; prog = 1; }
+      const c = Math.cos(angle * dir), sn = Math.sin(angle * dir), lx = dir * g.r;
+      const pos = [target[0] - (lx * c), target[1] - (lx * sn)];
+      const start = [s.cx, s.my - LY.lift];
+      ox = start[0] + (pos[0] - start[0]) * k; oy = start[1] + (pos[1] - start[1]) * k;
+      ang = angle * dir;
+      const left = a.n * (1 - prog);
+      units = a.before.src.slice(0, a.before.src.length - a.n); hid = a.before.srcHid.slice(0, units.length);
+      partial = left > 0.001 ? { c: a.color, v: left } : null;
+      if (prog > 0 && prog < 1) stream = { x: target[0], y: target[1], color: a.color, to: a.t, w: ds.g.w };
+    } else if (a.t === i) {
+      const prog = p < tIn ? 0 : p < tIn + tPour ? (p - tIn) / tPour : 1;
+      units = a.before.dst.slice(); hid = a.before.dstHid.slice();
+      partial = prog > 0 ? { c: a.color, v: a.n * prog } : null;
+    }
+  }
+  if (!units) { units = G.tubes[i]; hid = G.hid[i]; }
+  return { ox, oy, ang, units, hid, partial, stream };
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tubePath(g, ox, oy, ang, grow) {
+  const pts = xform(g.pts.map(([x, y]) => [x * (1 + grow / g.r), y + (y > g.straight ? grow : 0)]), ox, oy, ang);
+  ctx.beginPath(); pts.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
+  return pts;
+}
+function drawTube(i, now, view) {
+  const s = LY.slots[i], g = s.g, v = view || tubeView(i, now);
+  const poly = xform(g.pts, v.ox, v.oy, v.ang), [ymin, ymax] = yRange(poly);
+  let xmin = Infinity, xmax = -Infinity; for (const p of poly) { xmin = Math.min(xmin, p[0]); xmax = Math.max(xmax, p[0]); }
+  const locked = !G.open[i];
+  // hint glow
+  if (hintMark && (hintMark.f === i || hintMark.t === i) && !v.ang) {
+    const pulse = 0.5 + 0.5 * Math.sin((now - hintMark.t0) / 160);
+    ctx.save(); ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 14 + pulse * 10; ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255,224,102,' + (0.5 + 0.5 * pulse) + ')'; tubePath(g, v.ox, v.oy, 0, 5); ctx.stroke(); ctx.restore();
+  }
+  // glass back
+  ctx.save();
+  tubePath(g, v.ox, v.oy, v.ang, 0);
+  ctx.fillStyle = 'rgba(200,235,255,0.07)'; ctx.fill();
+  ctx.clip();
+  // liquid: horizontal bands, levels found from the volume (works for tilted tubes too)
+  const list = [];
+  for (let k = 0; k < v.units.length; k++) list.push({ c: v.units[k], v: 1, h: v.hid[k] });
+  if (v.partial) list.push({ c: v.partial.c, v: v.partial.v, h: false });
+  let cum = 0, prevY = ymax + 2;
+  const bandsY = [];
+  for (let k = 0; k < list.length; k++) {
+    cum += list[k].v;
+    const y = levelFor(poly, cum * g.unit, ymin, ymax);
+    const u = list[k];
+    const col = u.h ? HIDDEN_COLOR : COLORS[u.c];
+    ctx.fillStyle = col;
+    ctx.fillRect(xmin - 2, y, xmax - xmin + 4, prevY - y + 0.6);
+    bandsY.push([y, prevY]);
+    prevY = y;
+  }
+  if (list.length) {
+    // gloss + surface line
+    const topC = list[list.length - 1];
+    ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(xmin - 2, prevY, xmax - xmin + 4, Math.max(1.5, g.lh * 0.07));
+    if (!v.ang) {
+      const gr = ctx.createLinearGradient(v.ox - g.r, 0, v.ox + g.r, 0);
+      gr.addColorStop(0, 'rgba(0,0,0,0.18)'); gr.addColorStop(0.3, 'rgba(255,255,255,0.10)'); gr.addColorStop(0.55, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.22)');
+      ctx.fillStyle = gr; ctx.fillRect(v.ox - g.r, prevY, g.w, ymax - prevY);
+      // hidden marks
+      ctx.font = '800 ' + Math.round(g.lh * 0.55) + 'px ' + FONT;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let k = 0; k < list.length; k++) if (list[k].h) {
+        const [a, b] = bandsY[k];
+        ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText('？', v.ox, (a + b) / 2 + 1);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(v.ox - g.r, a, g.w, 1);
+      }
+    }
+    void topC;
+  }
+  ctx.restore();
+  // glass outline + highlight
+  ctx.save();
+  tubePath(g, v.ox, v.oy, v.ang, 1.5);
+  ctx.lineWidth = 2.2; ctx.strokeStyle = locked ? 'rgba(255,224,102,0.55)' : 'rgba(210,240,255,0.75)'; ctx.stroke();
+  const c = Math.cos(v.ang), sn = Math.sin(v.ang);
+  const P = (x, y) => [v.ox + x * c - y * sn, v.oy + x * sn + y * c];
+  // lip
+  const l1 = P(-g.r - 4, 0), l2 = P(g.r + 4, 0);
+  ctx.lineCap = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = locked ? 'rgba(255,224,102,0.7)' : 'rgba(225,245,255,0.9)';
+  ctx.beginPath(); ctx.moveTo(l1[0], l1[1]); ctx.lineTo(l2[0], l2[1]); ctx.stroke();
+  // shine
+  const h1 = P(-g.r * 0.55, g.lh * 0.35), h2 = P(-g.r * 0.55, g.straight - g.lh * 0.2);
+  ctx.lineWidth = Math.max(2, g.w * 0.09); ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.beginPath(); ctx.moveTo(h1[0], h1[1]); ctx.lineTo(h2[0], h2[1]); ctx.stroke();
+  ctx.restore();
+  // cork on a finished tube
+  if (G.done[i] && !v.ang && !anims.some(a => a.t === i)) {
+    const cw = g.w * 0.86, ch = g.lh * 0.5;
+    ctx.save();
+    const gr = ctx.createLinearGradient(0, v.oy - ch, 0, v.oy + ch * 0.3);
+    gr.addColorStop(0, '#e2b07a'); gr.addColorStop(1, '#a8743f');
+    ctx.fillStyle = gr; roundRect(v.ox - cw / 2, v.oy - ch * 0.7, cw, ch, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(80,45,15,0.35)';
+    for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(v.ox - cw * 0.25 + k * cw * 0.25, v.oy - ch * 0.25 + (k % 2) * 3, 1.3, 0, 7); ctx.fill(); }
+    // twinkle
+    const tw = 0.5 + 0.5 * Math.sin(now / 300 + i * 1.7);
+    star(v.ox + g.r + 3, v.oy + g.lh * 0.4, 3 + tw * 3, 'rgba(255,255,255,' + (0.35 + tw * 0.5) + ')');
+    ctx.restore();
+  }
+  // lock
+  if (locked) {
+    const need = G.locks[i] - Engine.doneCount(G.tubes, G.K);
+    const y = v.oy + g.depth * 0.45;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,224,102,0.8)'; ctx.lineWidth = 2;
+    for (let k = -1; k <= 1; k += 2) { ctx.beginPath(); ctx.moveTo(v.ox - g.r - 3, y + k * g.lh * 0.9); ctx.lineTo(v.ox + g.r + 3, y + k * g.lh * 0.9 + g.lh * 0.4); ctx.stroke(); }
+    const bw = Math.max(g.w * 0.9, 24), bh = bw * 0.8;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#ffe066'; ctx.beginPath(); ctx.arc(v.ox, y - bh * 0.35, bw * 0.28, Math.PI, 0); ctx.stroke();
+    ctx.fillStyle = '#ffe066'; roundRect(v.ox - bw / 2, y - bh * 0.35, bw, bh, 5); ctx.fill();
+    ctx.fillStyle = '#10202c'; ctx.font = '800 ' + Math.round(bh * 0.62) + 'px ' + FONT;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(Math.max(0, need)), v.ox, y + bh * 0.17);
+    ctx.restore();
+  }
+  // tall mark
+  if (G.caps[i] > G.K && !v.ang) {
+    ctx.save(); ctx.fillStyle = 'rgba(169,196,212,0.8)'; ctx.font = '800 10px ' + FONT;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('のっぽ', v.ox, s.bottom + 7); ctx.restore();
+  }
+}
+function star(x, y, r, col) {
+  ctx.fillStyle = col; ctx.beginPath();
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, rr = k % 2 ? r * 0.3 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  ctx.closePath(); ctx.fill();
+}
+function drawStream(st, now) {
+  const ds = LY.slots[st.to], g = ds.g;
+  const a = anims.find(x => x.t === st.to);
+  let n = a ? a.before.dst.length : 0;
+  const p = a ? Math.min(1, Math.max(0, ((now - a.t0) / 1000 - 0.24) / (0.2 + 0.11 * a.n))) : 0;
+  const filled = n + (a ? a.n * p : 0);
+  const poly = xform(g.pts, ds.cx, ds.my, 0), [y0, y1] = yRange(poly);
+  const yEnd = levelFor(poly, filled * g.unit, y0, y1);
+  const w = Math.max(3, st.w * 0.2);
+  ctx.save();
+  ctx.fillStyle = COLORS[st.color];
+  const wob = Math.sin(now / 40) * 0.8;
+  ctx.beginPath();
+  ctx.moveTo(st.x - w * 0.6, st.y); ctx.quadraticCurveTo(ds.cx + wob, (st.y + yEnd) / 2, ds.cx - w / 2 + wob, yEnd);
+  ctx.lineTo(ds.cx + w / 2 + wob, yEnd); ctx.quadraticCurveTo(ds.cx + wob, (st.y + yEnd) / 2, st.x + w * 0.4, st.y);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function burst(i, count, color) {
+  if (!LY || !LY.slots[i]) return;
+  const s = LY.slots[i];
+  for (let k = 0; k < count; k++) {
+    const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 110;
+    fx.push({ x: s.cx, y: s.my, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0.7 + Math.random() * 0.5, age: 0, col: color || (G.tubes[i].length ? COLORS[G.tubes[i][0]] : '#fff'), r: 2 + Math.random() * 3 });
+  }
+}
+let lastT = 0, FONT = '"M PLUS Rounded 1c", sans-serif';
+try { FONT = getComputedStyle(document.body).fontFamily || FONT; } catch (e) {}
+function draw() {
+  const now = performance.now();
+  const dt = Math.min(0.05, (now - (lastT || now)) / 1000); lastT = now;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (!G || !LY) return;
+  anims = anims.filter(a => (now - a.t0) / 1000 < a.dur);
+  // shelf lines
+  ctx.save(); ctx.strokeStyle = 'rgba(190,235,255,0.12)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  const rowsSeen = {};
+  for (const s of LY.slots) { if (rowsSeen[s.row]) continue; rowsSeen[s.row] = 1; ctx.beginPath(); const xs = LY.slots.filter(t => t.row === s.row).map(t => t.cx); ctx.moveTo(Math.min(...xs) - LY.slotW / 2 + 4, s.bottom + 3); ctx.lineTo(Math.max(...xs) + LY.slotW / 2 - 4, s.bottom + 3); ctx.stroke(); }
+  ctx.restore();
+  // still tubes first, then each pouring tube with its stream (stream under the tube, over the target)
+  const pouring = new Set(anims.map(a => a.f));
+  for (let i = 0; i < G.tubes.length; i++) if (!pouring.has(i)) drawTube(i, now);
+  for (const i of pouring) { const v = tubeView(i, now); if (v.stream) drawStream(v.stream, now); drawTube(i, now, v); }
+  // hint arrow
+  if (hintMark && LY.slots[hintMark.f] && LY.slots[hintMark.t]) {
+    const a = LY.slots[hintMark.f], b = LY.slots[hintMark.t];
+    const y = Math.min(a.my, b.my) - LY.lift * 0.9 - (a.row !== b.row ? 0 : 0);
+    const bob = Math.sin(now / 200) * 3;
+    ctx.save(); ctx.strokeStyle = '#ffe066'; ctx.fillStyle = '#ffe066'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    const x1 = a.cx, y1 = a.my - 8 + bob, x2 = b.cx, y2 = b.my - 8 + bob, mx = (x1 + x2) / 2, my = y - 18 + bob;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2); ctx.stroke();
+    const ang = Math.atan2(y2 - my, x2 - mx);
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 10 * Math.cos(ang - 0.45), y2 - 10 * Math.sin(ang - 0.45)); ctx.lineTo(x2 - 10 * Math.cos(ang + 0.45), y2 - 10 * Math.sin(ang + 0.45)); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  // particles
+  fx = fx.filter(p => (p.age += dt) < p.life);
+  for (const p of fx) { p.vy += 260 * dt; p.x += p.vx * dt; p.y += p.vy * dt; const k = 1 - p.age / p.life; star(p.x, p.y, p.r * k + 0.5, p.col); }
+}
+function loop() { draw(); requestAnimationFrame(loop); }
+
+// ---------- input ----------
+function hitTube(x, y) {
+  if (!LY) return -1;
+  for (let i = 0; i < LY.slots.length; i++) {
+    const s = LY.slots[i];
+    if (Math.abs(x - s.cx) <= LY.slotW / 2 && y >= s.my - LY.lift - 18 && y <= s.bottom + 14) return i;
+  }
+  return -1;
+}
+function tap(i) {
+  if (!G || G.won || i < 0) return;
+  if (G.sel < 0) {
+    if (!G.open[i]) { sfx.bad(); toast('この試験管はあと' + (G.locks[i] - Engine.doneCount(G.tubes, G.K)) + '色そろえると開きます'); return; }
+    if (!G.tubes[i].length || G.done[i]) { sfx.bad(); return; }
+    G.sel = i; sfx.lift(); return;
+  }
+  if (G.sel === i) { G.sel = -1; sfx.drop(); return; }
+  const f = G.sel;
+  if (doPour(f, i)) return;
+  // not possible: pick the tapped tube instead (if it can pour), else shake
+  if (G.open[i] && G.tubes[i].length && !G.done[i]) { G.sel = i; sfx.lift(); }
+  else { G.sel = -1; sfx.bad(); vibrate(20); if (!G.open[i]) toast('錠がかかっています'); }
+}
+cv.addEventListener('pointerdown', e => {
+  ensureAudio();
+  const r = cv.getBoundingClientRect();
+  tap(hitTube(e.clientX - r.left, e.clientY - r.top));
+});
+
+$('undoBtn').addEventListener('click', () => { ensureAudio(); undo(); });
+$('hintBtn').addEventListener('click', () => { ensureAudio(); hint(); });
+$('extraBtn').addEventListener('click', () => { ensureAudio(); addTube(); });
+$('restartBtn').addEventListener('click', restart);
+$('nextBtn').addEventListener('click', () => { ensureAudio(); startLevel(G.L + 1); });
+$('replayBtn').addEventListener('click', () => { ensureAudio(); startLevel(G.L); });
+$('stUndo').addEventListener('click', () => { undo(); });
+$('stRestart').addEventListener('click', restart);
+$('stExtra').addEventListener('click', () => { addTube(); });
+$('stClose').addEventListener('click', () => { $('ovStuck').hidden = true; });
+$('helpBtn').addEventListener('click', () => { ensureAudio(); $('ovHelp').hidden = false; });
+$('helpClose').addEventListener('click', () => { $('ovHelp').hidden = true; });
+$('lvBtn').addEventListener('click', () => { ensureAudio(); openLevels(); });
+$('lvClose').addEventListener('click', () => { $('ovLevels').hidden = true; });
+$('sndBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('kusoge.sound', soundOn ? '1' : '0'); ensureAudio(); renderSound(); if (soundOn) sfx.done(); });
+function openLevels() {
+  const grid = $('lvGrid'); grid.innerHTML = '';
+  for (let L = 1; L <= save.best; L++) {
+    const b = document.createElement('button'); b.className = 'lv' + (G && G.L === L ? ' cur' : '');
+    const st = save.stars[L] || 0;
+    b.innerHTML = L + '<small>' + (st ? '★'.repeat(st) : '・') + '</small>';
+    b.addEventListener('click', () => startLevel(L));
+    grid.appendChild(b);
+  }
+  $('ovLevels').hidden = false;
+  const cur = grid.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'z' || e.key === 'Backspace') undo();
+});
+window.addEventListener('resize', () => { layout(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) save = loadSave(); });
+
+// test hook (harmless in production)
+window.__water = {
+  get G() { return G; }, Engine, tap,
+  tubeXY(i) { const r = cv.getBoundingClientRect(), s = LY.slots[i]; return [r.left + s.cx, r.top + s.my + s.g.depth * 0.5]; },
+  busy() { return anims.length > 0; },
+};
+
+renderSound();
+startLevel(save.level);
+requestAnimationFrame(loop);
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.water.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>
