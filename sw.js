@@ -1,6 +1,6 @@
 // ひまつぶし工房：オフラインでも遊べるようにするための Service Worker（全ゲーム共通）
 // ページ本体と設定は「通信優先（だめなら保存分）」、ライブラリとフォントは「保存分優先」で配る。
-const VERSION = 'kobo-v4';
+const VERSION = 'kobo-v5';
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png', './common/cloud.js'];
 const GAMES = ['./neji/', './blocks/', './drop/', './raft/', './gates/', './n59049/', './water/', './parking/', './hole/', './ranking/'];
@@ -32,7 +32,8 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       const c = await caches.open(VERSION);
       try {
-        const r = await fetch(req);
+        // bypass the browser's HTTP cache so a new version shows up on the next open
+        const r = await fetch(req, { cache: 'no-cache' });
         if (r.ok) c.put(req, r.clone());
         return r;
       } catch (err) {
