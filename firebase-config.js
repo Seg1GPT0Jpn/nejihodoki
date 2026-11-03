@@ -1,12 +1,10 @@
-// Firebase の接続設定。空（null）のあいだはログイン機能は「準備中」と表示され、ゲームはそのまま遊べます。
-// Firebase コンソールの「プロジェクトの設定 → マイアプリ → SDK の設定と構成（構成）」に出る値を貼り付けます。
-// ここに入れる apiKey などは公開してよい値です（読み書きの権限は firestore.rules で守ります）。
-//
-// 例:
-// window.NEJI_FIREBASE = {
-//   apiKey: "AIza...",
-//   authDomain: "your-project.firebaseapp.com",
-//   projectId: "your-project",
-//   appId: "1:1234567890:web:abcdef"
-// };
-window.NEJI_FIREBASE = null;
+// Firebase の接続設定（プロジェクト neji-5913a）。
+// apiKey などは公開してよい値です。読み書きの権限は Firestore のルール（firestore.rules）で守ります。
+window.NEJI_FIREBASE = {
+  apiKey: "AIzaSyAajs1PtJiv5csAIo5ANSdHYBMyqKApjBY",
+  authDomain: "neji-5913a.firebaseapp.com",
+  projectId: "neji-5913a",
+  storageBucket: "neji-5913a.firebasestorage.app",
+  messagingSenderId: "183565713528",
+  appId: "1:183565713528:web:c7926e41ecd68025892d8d"
+};
