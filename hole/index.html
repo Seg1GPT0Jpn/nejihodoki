@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="あなぼこシティ">
+<script src="../common/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -127,6 +128,8 @@ h1 {
 .btn.mint { background: linear-gradient(#8ff0cd, #4fd6a6); color: #003a28; box-shadow: 0 4px 0 #1f8f68; }
 .btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; padding: 10px; }
 .btn:disabled { opacity: .45; cursor: default; }
+/* keep the shop's back button on screen on short phones while the list scrolls */
+#btnShopBack { position: sticky; bottom: 0; z-index: 1; background: #24344c; box-shadow: 0 -8px 12px #1a2538; }
 .coins { font-weight: 800; color: var(--sun); }
 .shop h3 { font-size: 13px; margin: 10px 0 4px; color: var(--mint); text-align: left; }
 .skins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -140,6 +143,9 @@ h1 {
 .perk .lv { color: var(--sun); letter-spacing: 1px; }
 .perk button { flex: none; border: 0; border-radius: 10px; padding: 8px 10px; font: 800 12px var(--font-body); background: var(--sun); color: #3a2a00; cursor: pointer; min-width: 74px; }
 .perk button:disabled { background: #ffffff22; color: var(--dim); cursor: default; }
+.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--dim); font-weight: 800; }
+.langrow select { font: 800 13px var(--font-body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
+.langrow option { color: #000; }
 @keyframes pulse { 50% { opacity: .5; } }
 @media (max-height: 640px) { .how { display: none; } .stat b { font-size: 14px; } .logo { font-size: 28px; } }
 @media (prefers-reduced-motion: reduce) { #toast.show { animation-duration: .01s; } .stat b.warn { animation: none; } }
@@ -149,20 +155,20 @@ h1 {
 <div id="app">
   <header>
     <div class="hrow">
-      <a class="back" href="../">← ゲーム一覧</a>
-      <h1>あなぼこシティ</h1>
-      <button class="ibtn" id="sndBtn" type="button" aria-pressed="true" aria-label="サウンド">♪</button>
-      <button class="ibtn" id="pauseBtn" type="button" aria-label="一時停止">Ⅱ</button>
+      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+      <h1 data-i18n>あなぼこシティ</h1>
+      <button class="ibtn" id="sndBtn" type="button" aria-pressed="true" aria-label="サウンド" data-i18n-attr="aria-label">♪</button>
+      <button class="ibtn" id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label">Ⅱ</button>
     </div>
     <div class="stats">
-      <div class="stat"><span>タイム</span><b id="hTime">2:00</b></div>
-      <div class="stat"><span>サイズ</span><b id="hSize">2.0m</b></div>
-      <div class="stat"><span>のみこみ</span><b id="hEat">0</b></div>
-      <div class="stat"><span id="hRankL">じゅんい</span><b id="hRank">-</b></div>
+      <div class="stat"><span data-i18n>タイム</span><b id="hTime">2:00</b></div>
+      <div class="stat"><span data-i18n>サイズ</span><b id="hSize">2.0m</b></div>
+      <div class="stat"><span data-i18n>のみこみ</span><b id="hEat">0</b></div>
+      <div class="stat"><span id="hRankL" data-i18n>じゅんい</span><b id="hRank">-</b></div>
     </div>
   </header>
   <div id="stage">
-    <canvas id="cv" aria-label="あなぼこシティのゲーム画面"></canvas>
+    <canvas id="cv" aria-label="あなぼこシティのゲーム画面" data-i18n-attr="aria-label"></canvas>
     <div id="rank" hidden></div>
     <div id="toast"></div>
     <div id="msg" hidden></div>
@@ -170,35 +176,36 @@ h1 {
 
     <div class="overlay" id="ovTitle">
       <div class="card">
-        <div class="logo">あなぼこシティ<small>のみこめ！ まちじゅう まるごと</small></div>
-        <p class="rule">街にあいた ふしぎな<em>あな</em>になって、<br>小さいものから のみこんで <em>どんどん大きく</em>なろう！</p>
+        <div class="logo"><span data-i18n>あなぼこシティ</span><small data-i18n>のみこめ！ まちじゅう まるごと</small></div>
+        <p class="rule" data-i18n-html>街にあいた ふしぎな<em>あな</em>になって、<br>小さいものから のみこんで <em>どんどん大きく</em>なろう！</p>
         <ul class="how">
-          <li><b>ドラッグ</b>で いどう</li>
-          <li><b>じぶんより小さい</b>ものだけ おちる</li>
-          <li>大きいあなは <b>小さいあな</b>も のむ</li>
-          <li>PCは <b>WASD・矢印</b></li>
+          <li data-i18n-html><b>ドラッグ</b>で いどう</li>
+          <li data-i18n-html><b>じぶんより小さい</b>ものだけ おちる</li>
+          <li data-i18n-html>大きいあなは <b>小さいあな</b>も のむ</li>
+          <li data-i18n-html>PCは <b>WASD・矢印</b></li>
         </ul>
-        <button class="btn" id="btnMatch" type="button">たいせん（2分）</button>
-        <button class="btn mint" id="btnSolo" type="button">ひとりで のみこみチャレンジ</button>
-        <button class="btn sub" id="btnShop" type="button">ショップ　<span class="coins">● <span id="tCoins">0</span></span></button>
+        <button class="btn" id="btnMatch" type="button" data-i18n>たいせん（2分）</button>
+        <button class="btn mint" id="btnSolo" type="button" data-i18n>ひとりで のみこみチャレンジ</button>
+        <button class="btn sub" id="btnShop" type="button"><span data-i18n>ショップ</span>　<span class="coins">● <span id="tCoins">0</span></span></button>
         <div class="recs">
-          <div>ベスト順位 <b id="rRank">-</b></div>
-          <div>ベスト のみこみ率 <b id="rSolo">-</b></div>
-          <div>最大サイズ <b id="rSize">-</b></div>
-          <div>ライバル <b id="rLv">Lv1</b></div>
+          <div><span data-i18n>ベスト順位</span> <b id="rRank">-</b></div>
+          <div><span data-i18n>ベスト のみこみ率</span> <b id="rSolo">-</b></div>
+          <div><span data-i18n>最大サイズ</span> <b id="rSize">-</b></div>
+          <div><span data-i18n>ライバル</span> <b id="rLv">Lv1</b></div>
         </div>
+        <div class="langrow"><span data-i18n>言語</span> <span id="langPickT"></span></div>
       </div>
     </div>
 
     <div class="overlay shop" id="ovShop" hidden>
       <div class="card">
-        <h2 class="ttl">ショップ</h2>
-        <div class="coins">● <span id="sCoins">0</span> コイン</div>
-        <h3>あなの ふち（スキン）</h3>
+        <h2 class="ttl" data-i18n>ショップ</h2>
+        <div class="coins">● <span id="sCoins">0</span> <span data-i18n>コイン</span></div>
+        <h3 data-i18n>あなの ふち（スキン）</h3>
         <div class="skins" id="skinList"></div>
-        <h3>パワーアップ（ずっと有効）</h3>
+        <h3 data-i18n>パワーアップ（ずっと有効）</h3>
         <div id="perkList"></div>
-        <button class="btn sub" id="btnShopBack" type="button">もどる</button>
+        <button class="btn sub" id="btnShopBack" type="button" data-i18n>もどる</button>
       </div>
     </div>
 
@@ -207,41 +214,78 @@ h1 {
         <h2 class="ttl" id="resTtl">けっか</h2>
         <div class="big" id="resBig">1位</div>
         <div class="stars" id="resStars" hidden></div>
-        <div id="resNew" hidden><span class="newrec">ベスト更新！</span></div>
+        <div id="resNew" hidden><span class="newrec" data-i18n>ベスト更新！</span></div>
         <div class="res">
-          <div>のみこんだ数<b id="resEat">0</b></div>
-          <div>最大サイズ<b id="resSize">0m</b></div>
-          <div>ポイント<b id="resPts">0</b></div>
-          <div>もらったコイン<b id="resCoin" class="coins">+0</b></div>
+          <div><span data-i18n>のみこんだ数</span><b id="resEat">0</b></div>
+          <div><span data-i18n>最大サイズ</span><b id="resSize">0m</b></div>
+          <div><span data-i18n>ポイント</span><b id="resPts">0</b></div>
+          <div><span data-i18n>もらったコイン</span><b id="resCoin" class="coins">+0</b></div>
         </div>
-        <button class="btn" id="btnAgain" type="button">もういちど</button>
-        <button class="btn sub" id="btnToTitle" type="button">タイトルへ</button>
+        <button class="btn" id="btnAgain" type="button" data-i18n>もういちど</button>
+        <button class="btn sub" id="btnToTitle" type="button" data-i18n>タイトルへ</button>
       </div>
     </div>
 
     <div class="overlay" id="ovPause" hidden>
       <div class="card">
-        <h2 class="ttl">ひとやすみ</h2>
-        <button class="btn" id="btnResume" type="button">つづける</button>
-        <button class="btn sub" id="btnQuit" type="button">やめてタイトルへ</button>
+        <h2 class="ttl" data-i18n>ひとやすみ</h2>
+        <button class="btn" id="btnResume" type="button" data-i18n>つづける</button>
+        <button class="btn sub" id="btnQuit" type="button" data-i18n>やめてタイトルへ</button>
+        <div class="langrow"><span data-i18n>言語</span> <span id="langPick"></span></div>
       </div>
     </div>
 
     <div class="overlay" id="ovErr" hidden>
-      <div class="card"><h2 class="ttl">よみこみ失敗</h2><p class="rule">3D表示の部品を読みこめませんでした。<br>通信できる場所で もういちど開いてください。</p></div>
+      <div class="card"><h2 class="ttl" data-i18n>よみこみ失敗</h2><p class="rule" data-i18n-html>3D表示の部品を読みこめませんでした。<br>通信できる場所で もういちど開いてください。</p></div>
     </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+KoboI18n.add({ en: {
+  'あなぼこシティ': 'Hole City',
+  '← ゲーム一覧': '← Games',
+  'サウンド': 'Sound', '一時停止': 'Pause',
+  'タイム': 'Time', 'サイズ': 'Size', 'のみこみ': 'Eaten', 'じゅんい': 'Rank', 'のみこみ率': 'Eaten %',
+  'あなぼこシティのゲーム画面': 'Hole City game screen',
+  'のみこめ！ まちじゅう まるごと': 'Swallow the whole town!',
+  '街にあいた ふしぎな<em>あな</em>になって、<br>小さいものから のみこんで <em>どんどん大きく</em>なろう！': 'Become a mysterious <em>hole</em> in the city.<br>Swallow small things first and <em>grow bigger and bigger</em>!',
+  '<b>ドラッグ</b>で いどう': '<b>Drag</b> to move',
+  '<b>じぶんより小さい</b>ものだけ おちる': 'Only things <b>smaller than you</b> fall in',
+  '大きいあなは <b>小さいあな</b>も のむ': 'Big holes eat <b>small holes</b> too',
+  'PCは <b>WASD・矢印</b>': 'PC: <b>WASD / arrows</b>',
+  'たいせん（2分）': 'Battle (2 min)',
+  'ひとりで のみこみチャレンジ': 'Solo Swallow Challenge',
+  'ショップ': 'Shop', 'コイン': 'coins',
+  'ベスト順位': 'Best rank', 'ベスト のみこみ率': 'Best eaten %', '最大サイズ': 'Max size', 'ライバル': 'Rivals',
+  'あなの ふち（スキン）': 'Hole rims (skins)', 'パワーアップ（ずっと有効）': 'Power-ups (permanent)',
+  'もどる': 'Back', 'ベスト更新！': 'New best!',
+  'のみこんだ数': 'Things eaten', 'ポイント': 'Points', 'もらったコイン': 'Coins earned',
+  'もういちど': 'Play again', 'タイトルへ': 'To title', 'ひとやすみ': 'Paused', 'つづける': 'Resume', 'やめてタイトルへ': 'Quit to title',
+  '言語': 'Language',
+  'よみこみ失敗': 'Loading failed',
+  '3D表示の部品を読みこめませんでした。<br>通信できる場所で もういちど開いてください。': 'Could not load the 3D engine.<br>Please reopen this page with a connection.',
+  'あなた': 'You', 'もぐらん': 'Molly', 'ごまだんご': 'Sesame', 'ドーナツ': 'Donut', 'のみこ丸': 'Gulpy', 'くろまめ': 'Bean',
+  'サイズUP！': 'Size UP!', 'スタート！': 'Start!', 'のみこめ！': 'Swallow!',
+  '{name}に のまれた！': 'Swallowed by {name}!', '{name}を のみこんだ！': 'Swallowed {name}!',
+  '{n}位': '#{n}', 'まちいちばんの あな！': 'Top hole in town!', 'けっか': 'Results', 'のみこみチャレンジ': 'Swallow Challenge',
+  'そうび中': 'Equipped', 'もってる': 'Owned',
+  'ふつう': 'Classic', 'さくら': 'Sakura', 'ミント': 'Mint', 'レモン': 'Lemon', 'そらしま': 'Sky', 'みずたま': 'Polka', 'ネオン': 'Neon', 'にじいろ': 'Rainbow',
+  'スタートが大きい': 'Bigger start', 'はじめから 1段 大きい': 'Start 1 size bigger', 'すばやい': 'Speedy', 'いどう +5%': 'Move +5%',
+} });
+</script>
+<script>
 (function () {
 'use strict';
 const $ = id => document.getElementById(id);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
+KoboI18n.apply();
 if (!window.THREE) { $('ovTitle').hidden = true; $('ovErr').hidden = false; return; }
 
 const DEBUG = /[?&]debug\b/.test(location.search);
+const T = KoboI18n.t;
+KoboI18n.picker($('langPick')); KoboI18n.picker($('langPickT'));
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
@@ -371,6 +415,7 @@ function resize() {
   renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
 
 // shared temps (no per-frame allocation)
@@ -723,7 +768,7 @@ function labelTex(text, color) {
   g.font = '800 30px "M PLUS Rounded 1c", "Hiragino Sans", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   const w = Math.min(250, g.measureText(text).width + 30);
   g.fillStyle = 'rgba(16,24,38,.7)'; g.beginPath(); if (g.roundRect) g.roundRect(128 - w / 2, 10, w, 44, 22); else g.rect(128 - w / 2, 10, w, 44); g.fill();
-  g.fillStyle = color; g.fillText(text, 128, 33);
+  g.fillStyle = color; g.fillText(text, 128, 33, 220);
   const t = new THREE.CanvasTexture(c); return t;
 }
 const holes = [];
@@ -763,9 +808,9 @@ function holeSpeed(h) {
 
 // ---------------------------------------------------------------- game state
 const G = { mode: 'title', playing: false, paused: false, t: ROUND, time: 0, ts: 1, diff: 0.25, eatVal: 0, resultShown: false, hudT: 0, lastSec: 99, aiOff: false };
-let player = makeHole('あなた', '#ffffff', true);
+let player = makeHole(T('あなた'), '#ffffff', true);
 let rivals = [];
-for (let n = 0; n < 5; n++) { const r = makeHole(RIVALS[n].name, RIVALS[n].color, false); r.ai = { think: 0, mode: 'eat', tx: 0, tz: 0, tobj: null, prey: null, fx: 0, fz: 0, wx: 0, wz: 0, diff: 0.3 }; rivals.push(r); }
+for (let n = 0; n < 5; n++) { const r = makeHole(T(RIVALS[n].name), RIVALS[n].color, false); r.ai = { think: 0, mode: 'eat', tx: 0, tz: 0, tobj: null, prey: null, fx: 0, fz: 0, wx: 0, wz: 0, diff: 0.3 }; rivals.push(r); }
 function applySkin() {
   const sk = SKINS.find(s => s.id === SV.skins.sel) || SKINS[0];
   setHoleColor(player, '#ffffff', sk); player.skin = sk;
@@ -790,7 +835,7 @@ function setStage(h, instant) {
     h.stage = s; h.Rf = h.R; h.Rt = RADII[Math.min(s, RADII.length - 1)];
     if (instant) { h.R = h.Rt; h.popT = 1; setHoleSize(h, h.R); }
     else h.popT = 0;
-    if (grew && !instant && h.isPlayer) { sfx.whoosh(); toast('サイズUP！'); vibrate(30); }
+    if (grew && !instant && h.isPlayer) { sfx.whoosh(); toast(T('サイズUP！')); vibrate(30); }
   }
 }
 function addPts(h, v) { h.pts += v; setStage(h, false); }
@@ -815,11 +860,11 @@ function startRound(mode) {
   }
   camSnap = true;
   $('rank').hidden = mode !== 'match';
-  $('hRankL').textContent = mode === 'match' ? 'じゅんい' : 'のみこみ率';
+  $('hRankL').textContent = mode === 'match' ? T('じゅんい') : T('のみこみ率');
   ['ovTitle', 'ovResult', 'ovPause', 'ovShop'].forEach(id => $(id).hidden = true);
   $('msg').hidden = true;
   buildRankRows();
-  sfx.start(); toast(mode === 'match' ? 'スタート！' : 'のみこめ！');
+  sfx.start(); toast(mode === 'match' ? T('スタート！') : T('のみこめ！'));
   updateHud(true);
 }
 
@@ -958,8 +1003,8 @@ function respawnObj(o) {
 function killHole(v, killer) {
   v.alive = false; v.dying = 0.45; v.killer = killer; v.deadT = 3;
   addPts(killer, Math.floor(v.pts * 0.4) + 10); killer.kills++;
-  if (v.isPlayer) { sfx.eaten(); vibrate(120); showMsg(killer.name + 'に のまれた！', 3); }
-  else if (killer.isPlayer) { sfx.gulp(); vibrate(60); toast(v.name + 'を のみこんだ！'); }
+  if (v.isPlayer) { sfx.eaten(); vibrate(120); showMsg(T('{name}に のまれた！', { name: killer.name }), 3); }
+  else if (killer.isPlayer) { sfx.gulp(); vibrate(60); toast(T('{name}を のみこんだ！', { name: v.name })); }
   v.pts = Math.floor(v.pts * 0.5); v.stage = stageOf(v.pts);
 }
 function respawnHole(h) {
@@ -1066,7 +1111,7 @@ function updateHud(force) {
   setText('hSize', 's', (player.R * 2).toFixed(1) + 'm');
   setText('hEat', 'e', String(player.eaten));
   if (G.mode === 'match') {
-    setText('hRank', 'r', rankOf(player) + '位');
+    setText('hRank', 'r', T('{n}位', { n: rankOf(player) }));
     rankOf(player);
     for (let k = 0; k < sortBuf.length; k++) {
       const row = rankRows.find(x => x.h === sortBuf[k]); if (!row) continue;
@@ -1094,15 +1139,15 @@ function endRound() {
     coins = [50, 32, 22, 14, 10, 6][rank - 1] + Math.floor(player.pts / 25);
     if (rank === 1) SV.wins++;
     if (!SV.best.matchRank || rank < SV.best.matchRank || (rank === SV.best.matchRank && player.pts > SV.best.matchPts)) { isNew = true; SV.best.matchRank = rank; SV.best.matchPts = player.pts; }
-    $('resTtl').textContent = rank === 1 ? 'まちいちばんの あな！' : 'けっか';
-    $('resBig').textContent = rank + '位';
+    $('resTtl').textContent = rank === 1 ? T('まちいちばんの あな！') : T('けっか');
+    $('resBig').textContent = T('{n}位', { n: rank });
     resStars.hidden = true;
   } else {
     const pct = soloPct(); const stars = SOLO_STARS.filter(v => pct >= v).length;
     coins = stars * 25 + Math.floor(pct / 2) + 5;
     if (pct > SV.best.soloPct) { isNew = true; SV.best.soloPct = +pct.toFixed(1); }
     SV.best.soloStars = Math.max(SV.best.soloStars, stars);
-    $('resTtl').textContent = 'のみこみチャレンジ';
+    $('resTtl').textContent = T('のみこみチャレンジ');
     $('resBig').textContent = pct.toFixed(1) + '%';
     resStars.hidden = false; resStars.innerHTML = '';
     for (let i = 0; i < 3; i++) { const s = document.createElement('span'); s.textContent = '★'; if (i < stars) s.className = 'on'; resStars.appendChild(s); }
@@ -1124,7 +1169,7 @@ function showTitle() {
 }
 function renderTitle() {
   $('tCoins').textContent = SV.coins;
-  $('rRank').textContent = SV.best.matchRank ? SV.best.matchRank + '位' : '-';
+  $('rRank').textContent = SV.best.matchRank ? T('{n}位', { n: SV.best.matchRank }) : '-';
   $('rSolo').textContent = SV.best.soloPct ? SV.best.soloPct + '%' : '-';
   $('rSize').textContent = SV.best.maxSize ? SV.best.maxSize + 'm' : '-';
   $('rLv').textContent = 'Lv' + (1 + Math.min(9, Math.floor((Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160)) - 0.22) / 0.078)));
@@ -1145,8 +1190,8 @@ function renderShop() {
     const c = document.createElement('canvas'); c.width = c.height = 80; const g = c.getContext('2d');
     g.drawImage(rimTexture(sk, 80), 0, 0); g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(40, 40, 32, 0, 7); g.fill();
     const own = SV.skins.owned.indexOf(sk.id) >= 0;
-    const sm = document.createElement('small'); sm.textContent = own ? (SV.skins.sel === sk.id ? 'そうび中' : 'もってる') : '● ' + sk.price;
-    b.append(c, sk.name, sm);
+    const sm = document.createElement('small'); sm.textContent = own ? (SV.skins.sel === sk.id ? T('そうび中') : T('もってる')) : '● ' + sk.price;
+    b.append(c, T(sk.name), sm);
     if (!own && SV.coins < sk.price) b.disabled = true, b.style.opacity = 0.55;
     sl.appendChild(b);
   }
@@ -1154,9 +1199,9 @@ function renderShop() {
   for (const p of PERKS) {
     const lv = SV.perks[p.id] || 0;
     const row = document.createElement('div'); row.className = 'perk';
-    const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = p.name;
+    const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = T(p.name);
     const lvS = document.createElement('span'); lvS.className = 'lv'; lvS.textContent = '■'.repeat(lv) + '□'.repeat(p.max - lv);
-    d.append(b, p.desc + ' ', lvS);
+    d.append(b, T(p.desc) + ' ', lvS);
     const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.perk = p.id;
     if (lv >= p.max) { btn.textContent = 'MAX'; btn.disabled = true; } else { btn.textContent = '● ' + p.cost[lv]; btn.disabled = SV.coins < p.cost[lv]; }
     row.append(d, btn); pl.appendChild(row);
