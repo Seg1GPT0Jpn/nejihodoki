@@ -4,6 +4,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#1d2a35">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ネジほどき">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -189,6 +196,11 @@ input[type="text"] {
     <p class="note" id="dailyNote"></p>
     <h3>レベルを選ぶ</h3>
     <div class="levels" id="levelGrid"></div>
+    <div id="installBox">
+      <h3>ホーム画面に追加（アプリのように開く）</h3>
+      <button class="btn small" id="installBtn" hidden>ホーム画面に追加する</button>
+      <p class="note" id="installMsg" style="text-align:left"></p>
+    </div>
     <h3>アカウント（進み具合をクラウドに保存）</h3>
     <div id="acctBox" class="row" style="align-items:center">
       <p class="note" id="acctMsg" style="text-align:left">確認中…</p>
@@ -1512,6 +1524,33 @@ $('loginBtn').onclick = () => cloud.login();
 $('logoutBtn').onclick = () => cloud.logout();
 cloud.init();
 
+/* ---- home screen install + offline (service worker) ---- */
+let installEvt = null;
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; toast('ホーム画面に追加しました', true); renderInstall(); });
+function renderInstall() {
+  const box = $('installBox'), btn = $('installBtn'), msg = $('installMsg');
+  if (!box) return;
+  if (isStandalone()) { box.hidden = true; return; }
+  const canSW = 'serviceWorker' in navigator && location.protocol === 'https:';
+  if (!canSW) { box.hidden = true; return; }
+  box.hidden = false;
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (installEvt) { btn.hidden = false; msg.textContent = '追加すると、アイコンから全画面で開けます。一度開けば通信がなくても遊べます。'; }
+  else if (ios) { btn.hidden = true; msg.textContent = 'Safari の下にある共有ボタン（□に↑）→「ホーム画面に追加」→「追加」を押してください。'; }
+  else { btn.hidden = true; msg.textContent = 'ブラウザのメニュー（︙）→「ホーム画面に追加」または「アプリをインストール」を押してください。'; }
+}
+$('installBtn').onclick = async () => {
+  if (!installEvt) return renderInstall();
+  installEvt.prompt();
+  try { await installEvt.userChoice; } catch (e) {}
+  installEvt = null; renderInstall();
+};
+if ('serviceWorker' in navigator && location.protocol === 'https:' && /github\.io$/.test(location.hostname)) {
+  navigator.serviceWorker.register('sw.js').catch(e => console.warn('sw', e));
+}
+
 function openMenu() {
   const grid = $('levelGrid'); grid.innerHTML = '';
   const stars = store.get('stars', {});
@@ -1530,7 +1569,7 @@ function openMenu() {
   }
   const dd = store.get('daily', {})[todayKey()];
   $('dailyNote').textContent = dd ? '今日はクリア済み（星 ' + dd + '）。何度でも挑戦できます。' : '毎日1問。日付ごとに同じ盤面で、難易度は高めです。';
-  cloud.render();
+  cloud.render(); renderInstall();
   $('codeOut').textContent = makeCode(maxLevel);
   $('codeMsg').textContent = 'このコードを別の端末で入力すると、LEVEL ' + maxLevel + ' まで遊べる状態になります。';
   show('ovMenu');
