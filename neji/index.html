@@ -11,6 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ネジほどき">
+<script src="../common/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -43,7 +44,7 @@ body {
   padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); gap: 6px; max-width: 560px; margin: 0 auto;
 }
 header { display: flex; align-items: center; gap: 8px; }
-.logo { font-family: var(--font-display); font-size: 21px; letter-spacing: .03em; line-height: 1; white-space: nowrap; }
+.logo { font-family: var(--font-display); font-size: clamp(13px, 4.4vw, 21px); letter-spacing: .03em; line-height: 1; white-space: nowrap; }
 .logo span { color: var(--brass); }
 .lv {
   margin-left: auto; font-family: var(--font-display); font-size: 13px; letter-spacing: .06em;
@@ -79,17 +80,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); out
 .toast {
   position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--danger); color: #fff;
   font-weight: 800; font-size: 13px; padding: 6px 14px; border-radius: 999px; pointer-events: none;
-  opacity: 0; transition: opacity .2s; white-space: nowrap; z-index: 2;
+  opacity: 0; transition: opacity .2s; z-index: 2;
+  width: max-content; max-width: calc(100% - 24px); box-sizing: border-box; text-align: center; line-height: 1.4;
 }
 .toast.ok { background: var(--brass); color: var(--brass-ink); }
 .toast.show { opacity: 1; }
 .overlay {
-  position: fixed; inset: 0; background: rgba(10, 16, 22, .72); display: grid; place-items: center; z-index: 20;
+  position: fixed; inset: 0; background: rgba(10, 16, 22, .72); display: flex; align-items: center; justify-content: center; z-index: 20;
+  box-sizing: border-box;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(12px, env(safe-area-inset-top, 0px)); padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
 }
 .card {
   background: var(--steel-2); border: 1px solid var(--rail); border-radius: 20px; padding: 22px 20px 18px;
-  width: min(360px, 100%); max-height: 88vh; overflow-y: auto; box-sizing: border-box; text-align: center;
+  width: min(360px, 100%); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box; text-align: center;
   display: flex; flex-direction: column; gap: 12px;
 }
 .card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: .04em; text-wrap: balance; }
@@ -102,6 +106,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); out
   background: var(--brass); color: var(--brass-ink);
 }
 .btn.ghost { background: transparent; color: var(--chalk); border: 1px solid var(--rail); }
+/* primary action stays visible at the bottom of a scrolling card on short screens */
+.card .sticky { position: sticky; bottom: 0; flex: none; box-shadow: 0 -12px 0 var(--steel-2), 0 18px 0 var(--steel-2); }
+.card .btn.ghost.sticky { background: var(--steel-2); }
+.lang-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lang-row h3 { margin: 0; }
+.lang-row select { background: var(--steel); color: var(--chalk); border: 1px solid var(--rail); border-radius: 10px; padding: 7px 10px; font: 800 14px var(--font-body); flex: none; min-width: 7.5em; }
+.tool > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn { overflow-wrap: anywhere; }
 .btn.small { padding: 9px 12px; font-size: 14px; }
 .note { font-size: 12px; color: var(--chalk-dim); }
 .stars { font-size: 34px; letter-spacing: .15em; color: var(--brass); line-height: 1; }
@@ -128,51 +141,58 @@ input[type="text"] {
   color: var(--chalk-dim); font-size: 15px; letter-spacing: .1em; pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
-@media (max-width: 400px) { .logo { font-size: 17px; } .icon-btn { width: 32px; height: 32px; } header { gap: 6px; } .lv { padding: 4px 9px; } }
+@media (max-width: 400px) { .icon-btn { width: 32px; height: 32px; } header { gap: 6px; } .lv { padding: 4px 9px; } }
+header { min-width: 0; }
+.logo { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 360px) {
+  header { gap: 5px; } .lv { font-size: 12px; padding: 4px 7px; letter-spacing: .02em; }
+  .tool { font-size: 12px; } .tool small { font-size: 10px; } .tools { gap: 5px; }
+}
+@media (max-width: 340px) { .logo { letter-spacing: 0; } .icon-btn { width: 30px; height: 30px; } header { gap: 4px; } .lv { font-size: 11px; padding: 4px 6px; } }
 /* fit the visible viewport on phones (browser bars included) */
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 </style>
 
 <div id="app">
   <header>
-    <a class="icon-btn" href="../" aria-label="ゲーム一覧に戻る" style="text-decoration:none">←</a>
-    <div class="logo">ネジ<span>ほどき</span></div>
+    <a class="icon-btn" href="../" aria-label="ゲーム一覧に戻る" data-i18n-attr="aria-label" style="text-decoration:none">←</a>
+    <div class="logo" data-i18n-html>ネジ<span>ほどき</span></div>
     <div class="lv" id="lvLabel">LEVEL 1</div>
-    <button class="icon-btn" id="soundBtn" aria-label="サウンド切り替え">♪</button>
-    <button class="icon-btn" id="helpBtn" aria-label="遊び方">?</button>
-    <button class="icon-btn" id="menuBtn" aria-label="メニュー">≡</button>
+    <button class="icon-btn" id="soundBtn" aria-label="サウンド切り替え" data-i18n-attr="aria-label">♪</button>
+    <button class="icon-btn" id="helpBtn" aria-label="遊び方" data-i18n-attr="aria-label">?</button>
+    <button class="icon-btn" id="menuBtn" aria-label="メニュー" data-i18n-attr="aria-label">≡</button>
   </header>
   <div id="tray"></div>
   <div id="stage">
     <canvas id="gl"></canvas>
-    <div id="loading">組み立て中…</div>
-    <div class="toast" id="toast">予備スロットがいっぱい</div>
-    <div class="hint-line">ドラッグで回転（下からも見られる） ・ ピンチ / ホイールで拡大</div>
+    <div id="loading" data-i18n>組み立て中…</div>
+    <div class="toast" id="toast" data-i18n>予備スロットがいっぱい</div>
+    <div class="hint-line" data-i18n>ドラッグで回転（下からも見られる） ・ ピンチ / ホイールで拡大</div>
   </div>
   <div class="tools">
-    <button class="tool" id="undoBtn">戻す<small id="undoLeft">のこり 3</small></button>
-    <button class="tool" id="hintBtn">ヒント<small id="hintLeft">のこり 2</small></button>
-    <button class="tool" id="peekBtn">のぞく<small>押している間</small></button>
-    <button class="tool" id="slotBtn">＋スロット<small id="slotLeft">のこり 1</small></button>
+    <button class="tool" id="undoBtn"><span data-i18n>戻す</span><small id="undoLeft">のこり 3</small></button>
+    <button class="tool" id="hintBtn"><span data-i18n>ヒント</span><small id="hintLeft">のこり 2</small></button>
+    <button class="tool" id="peekBtn"><span data-i18n>のぞく</span><small data-i18n>押している間</small></button>
+    <button class="tool" id="slotBtn"><span data-i18n>＋スロット</span><small id="slotLeft">のこり 1</small></button>
   </div>
 </div>
 <canvas id="fx"></canvas>
 
 <div class="overlay" id="ovHelp" hidden>
   <div class="card">
-    <h2>遊び方</h2>
+    <h2 data-i18n>遊び方</h2>
     <ol>
-      <li>立体を<b>ドラッグで回して</b>、裏側のネジも探す</li>
-      <li>ネジの頭の先に<b>他の部品があると抜けない</b>。先に手前の部品を外す</li>
-      <li>外したネジは<b>同じ色の箱</b>へ。合う箱がなければ<b>予備スロット</b>へ</li>
-      <li>箱は3本で出荷。次の箱が来ると予備のネジも自動で入る</li>
-      <li>ネジは<b>部屋の中・床下・足の裏</b>などにも隠れている。下からものぞける</li>
-      <li><b>のぞく</b>を押している間は、いちばん外側の部品が透けて一段奥が見える</li>
-      <li>黒い輪の<b>鍵つきネジ</b>は、金の印のネジを抜くまで抜けない</li>
-      <li>あと1本で外れる部品はゆらゆら揺れる。予備が埋まって動けなくなったら失敗（<b>戻す</b>で1手ずつ戻せる）</li>
+      <li data-i18n-html>立体を<b>ドラッグで回して</b>、裏側のネジも探す</li>
+      <li data-i18n-html>ネジの頭の先に<b>他の部品があると抜けない</b>。先に手前の部品を外す</li>
+      <li data-i18n-html>外したネジは<b>同じ色の箱</b>へ。合う箱がなければ<b>予備スロット</b>へ</li>
+      <li data-i18n-html>箱は3本で出荷。次の箱が来ると予備のネジも自動で入る</li>
+      <li data-i18n-html>ネジは<b>部屋の中・床下・足の裏</b>などにも隠れている。下からものぞける</li>
+      <li data-i18n-html><b>のぞく</b>を押している間は、いちばん外側の部品が透けて一段奥が見える</li>
+      <li data-i18n-html>黒い輪の<b>鍵つきネジ</b>は、金の印のネジを抜くまで抜けない</li>
+      <li data-i18n-html>あと1本で外れる部品はゆらゆら揺れる。予備が埋まって動けなくなったら失敗（<b>戻す</b>で1手ずつ戻せる）</li>
     </ol>
-    <p class="note">広告なし・課金なし・個人情報の送信なし。</p>
-    <button class="btn" id="helpClose">はじめる</button>
+    <p class="note" data-i18n>広告なし・課金なし・個人情報の送信なし。</p>
+    <button class="btn sticky" id="helpClose" data-i18n>はじめる</button>
   </div>
 </div>
 <div class="overlay" id="ovWin" hidden>
@@ -181,46 +201,47 @@ input[type="text"] {
     <div class="stars" id="winStars" aria-label="評価"></div>
     <p id="winText">すべての部品を外しました。</p>
     <p class="note" id="winNote"></p>
-    <button class="btn" id="nextBtn">次のレベルへ</button>
+    <button class="btn sticky" id="nextBtn">次のレベルへ</button>
   </div>
 </div>
 <div class="overlay" id="ovLose" hidden>
   <div class="card">
-    <h2>詰まった…</h2>
-    <p>予備スロットがいっぱいで、どの箱にも入れられるネジがありません。</p>
-    <button class="btn" id="loseUndo">1手戻す</button>
-    <button class="btn ghost" id="loseSlot">＋スロットで続ける</button>
-    <button class="btn ghost" id="loseRetry">最初から</button>
+    <h2 data-i18n>詰まった…</h2>
+    <p data-i18n>予備スロットがいっぱいで、どの箱にも入れられるネジがありません。</p>
+    <button class="btn" id="loseUndo" data-i18n>1手戻す</button>
+    <button class="btn ghost" id="loseSlot" data-i18n>＋スロットで続ける</button>
+    <button class="btn ghost" id="loseRetry" data-i18n>最初から</button>
   </div>
 </div>
 <div class="overlay" id="ovMenu" hidden>
   <div class="card">
-    <h2>メニュー</h2>
-    <button class="btn" id="dailyBtn">今日のチャレンジ</button>
+    <h2 data-i18n>メニュー</h2>
+    <div class="lang-row"><h3 data-i18n>言語 / Language</h3><span id="langPick"></span></div>
+    <button class="btn" id="dailyBtn" data-i18n>今日のチャレンジ</button>
     <p class="note" id="dailyNote"></p>
-    <h3>レベルを選ぶ</h3>
+    <h3 data-i18n>レベルを選ぶ</h3>
     <div class="levels" id="levelGrid"></div>
     <div id="installBox">
-      <h3>ホーム画面に追加（アプリのように開く）</h3>
-      <button class="btn small" id="installBtn" hidden>ホーム画面に追加する</button>
+      <h3 data-i18n>ホーム画面に追加（アプリのように開く）</h3>
+      <button class="btn small" id="installBtn" hidden data-i18n>ホーム画面に追加する</button>
       <p class="note" id="installMsg" style="text-align:left"></p>
     </div>
-    <h3>アカウント（進み具合をクラウドに保存）</h3>
+    <h3 data-i18n>アカウント（進み具合をクラウドに保存）</h3>
     <div id="acctBox" class="row" style="align-items:center">
       <p class="note" id="acctMsg" style="text-align:left">確認中…</p>
-      <button class="btn small" id="loginBtn" style="flex:0 0 auto" hidden>Googleでログイン</button>
-      <button class="btn small ghost" id="logoutBtn" style="flex:0 0 auto" hidden>ログアウト</button>
+      <button class="btn small" id="loginBtn" style="flex:0 0 auto" hidden data-i18n>Googleでログイン</button>
+      <button class="btn small ghost" id="logoutBtn" style="flex:0 0 auto" hidden data-i18n>ログアウト</button>
     </div>
-    <h3>引き継ぎコード（別の端末で続きから遊ぶ）</h3>
+    <h3 data-i18n>引き継ぎコード（別の端末で続きから遊ぶ）</h3>
     <div class="code" id="codeOut">—</div>
-    <button class="btn small ghost" id="copyBtn">コードをコピー</button>
+    <button class="btn small ghost" id="copyBtn" data-i18n>コードをコピー</button>
     <div class="row">
-      <input type="text" id="codeIn" placeholder="コードを入力" maxlength="16" autocomplete="off" aria-label="引き継ぎコード">
-      <button class="btn small" id="loadBtn" style="flex:0 0 auto">読み込む</button>
+      <input type="text" id="codeIn" placeholder="コードを入力" maxlength="16" autocomplete="off" aria-label="引き継ぎコード" data-i18n-attr="placeholder,aria-label">
+      <button class="btn small" id="loadBtn" style="flex:0 0 auto" data-i18n>読み込む</button>
     </div>
     <p class="note" id="codeMsg">進み具合はこの端末のブラウザに保存されています。</p>
-    <button class="btn ghost" id="retryBtn">このレベルを最初から</button>
-    <button class="btn ghost" id="menuClose">閉じる</button>
+    <button class="btn ghost" id="retryBtn" data-i18n>このレベルを最初から</button>
+    <button class="btn ghost sticky" id="menuClose" data-i18n>閉じる</button>
   </div>
 </div>
 
@@ -229,6 +250,73 @@ input[type="text"] {
 <script>
 (() => {
 'use strict';
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  'ネジほどき 3D': 'Unscrew 3D',
+  'ゲーム一覧に戻る': 'Back to games', 'ネジ<span>ほどき</span>': 'Un<span>screw</span>',
+  'サウンド切り替え': 'Toggle sound', '遊び方': 'How to play', 'メニュー': 'Menu',
+  '組み立て中…': 'Assembling…', '予備スロットがいっぱい': 'Spare slots are full',
+  'ドラッグで回転（下からも見られる） ・ ピンチ / ホイールで拡大': 'Drag to rotate (even from below) · Pinch / wheel to zoom',
+  '戻す': 'Undo', 'ヒント': 'Hint', 'のぞく': 'Peek', '＋スロット': '+Slot', '押している間': 'Hold',
+  'のこり {n}': '{n} left',
+  '立体を<b>ドラッグで回して</b>、裏側のネジも探す': '<b>Drag to rotate</b> the model and look for screws on the back too',
+  'ネジの頭の先に<b>他の部品があると抜けない</b>。先に手前の部品を外す': 'A screw <b>can’t come out while another part is in front of its head</b>. Remove the parts in front first',
+  '外したネジは<b>同じ色の箱</b>へ。合う箱がなければ<b>予備スロット</b>へ': 'Removed screws go into the <b>box of the same color</b>. If no box matches, they wait in a <b>spare slot</b>',
+  '箱は3本で出荷。次の箱が来ると予備のネジも自動で入る': 'A box ships once it holds 3 screws. When the next box arrives, matching spare screws hop in automatically',
+  'ネジは<b>部屋の中・床下・足の裏</b>などにも隠れている。下からものぞける': 'Screws also hide <b>inside rooms, under floors and on the soles of feet</b>. You can look from below too',
+  '<b>のぞく</b>を押している間は、いちばん外側の部品が透けて一段奥が見える': 'While you hold <b>Peek</b>, the outermost parts turn see-through so you can see one layer deeper',
+  '黒い輪の<b>鍵つきネジ</b>は、金の印のネジを抜くまで抜けない': '<b>Locked screws</b> (black ring) stay put until the screw with the gold mark is removed',
+  'あと1本で外れる部品はゆらゆら揺れる。予備が埋まって動けなくなったら失敗（<b>戻す</b>で1手ずつ戻せる）': 'A part that is one screw from falling off wobbles. If the spare slots fill up and you’re stuck, you lose (<b>Undo</b> takes back one move at a time)',
+  '広告なし・課金なし・個人情報の送信なし。': 'No ads, no purchases, no personal data sent.',
+  'はじめる': 'Start', 'クリア！': 'Cleared!', '{label} クリア！': '{label} cleared!', '次のレベルへ': 'Next level', 'いつものレベルに戻る': 'Back to my level',
+  '詰まった…': 'Stuck…', '予備スロットがいっぱいで、どの箱にも入れられるネジがありません。': 'The spare slots are full and no screw fits any box.',
+  '1手戻す': 'Undo 1 move', '＋スロットで続ける': 'Continue with +Slot', '最初から': 'Restart',
+  '言語 / Language': 'Language',
+  '今日のチャレンジ': 'Daily challenge', 'レベルを選ぶ': 'Choose a level',
+  'ホーム画面に追加（アプリのように開く）': 'Add to Home Screen (opens like an app)', 'ホーム画面に追加する': 'Add to Home Screen',
+  'アカウント（進み具合をクラウドに保存）': 'Account (save progress to the cloud)', '確認中…': 'Checking…',
+  'Googleでログイン': 'Sign in with Google', 'ログアウト': 'Sign out',
+  '引き継ぎコード（別の端末で続きから遊ぶ）': 'Transfer code (continue on another device)', 'コードをコピー': 'Copy code',
+  'コードを入力': 'Enter code', '引き継ぎコード': 'Transfer code', '読み込む': 'Load',
+  '進み具合はこの端末のブラウザに保存されています。': 'Your progress is saved in this device’s browser.',
+  'このレベルを最初から': 'Restart this level', '閉じる': 'Close',
+  'ふた部屋の家': 'Two-Room House', 'ロボット': 'Robot', 'ボールの中のボール': 'Balls in a Ball', 'トラック': 'Truck', '風車': 'Windmill',
+  '灯台': 'Lighthouse', 'ロケット': 'Rocket', 'タンス': 'Dresser', '置き時計': 'Mantel Clock', '飛行機': 'Airplane',
+  '入門': 'Beginner', '初級': 'Easy', '中級': 'Normal', '上級': 'Hard', '熟練': 'Expert', '超上級': 'Master', '最高難度': 'Insane',
+  '次の箱': 'Next', '予備 {used}/{n}': 'Spare {used}/{n}',
+  '{name} ・ のこり {left} 本 ・ 箱 {boxes}': '{name} · {left} left · {boxes} boxes', 'のこり {left} 本 ・ 箱 {boxes}': '{left} left · {boxes} boxes',
+  '鍵つきネジ。金の印のネジを先に抜こう': 'Locked screw. Remove the gold-marked one first',
+  '赤く光った部品がじゃまで抜けない': 'The red-glowing part is in the way',
+  '星 {n} / 3': '{n} of 3 stars', '星 {n}': '{n} stars',
+  '{name}を分解しました。ネジ {screws} 本、部品 {parts} 個。': 'You took apart the {name}: {screws} screws, {parts} parts.',
+  'ヒント・戻す・＋スロットなしで完璧です。': 'Perfect: no Hint, Undo or +Slot used.',
+  'ヒント・戻す・＋スロットを使わずに解くと星3つ。': 'Solve without Hint, Undo or +Slot for 3 stars.',
+  '　難易度：{ja}（{en}）': ' Difficulty: {en}',
+  'クラウドと同期しました（LEVEL {n} まで）': 'Synced with the cloud (up to LEVEL {n})',
+  'Firestoreのルールで拒否されました': 'denied by Firestore rules', '通信できませんでした': 'could not connect',
+  'Firestoreのデータベースが見つかりません': 'Firestore database not found', '原因不明のエラー': 'unknown error',
+  '同期できませんでした（{why}：{code}）': 'Could not sync ({why}: {code})', '同期できませんでした：{code}': 'Sync failed: {code}',
+  'Googleログインは準備中です（管理者の設定待ち）。今は引き継ぎコードを使ってください。': 'Google sign-in isn’t set up yet. Please use a transfer code for now.',
+  'ログイン機能を読み込めませんでした。通信状態を確認してください。': 'Couldn’t load sign-in. Check your connection.',
+  'ログイン中': 'Signed in', '{name} さん：進み具合はクラウドに自動保存されます。': '{name}: your progress is saved to the cloud automatically.',
+  'ログインすると、どの端末でも続きから遊べます。': 'Sign in to continue on any device.',
+  'このサイトのドメインがFirebaseで許可されていません（管理者の設定待ち）。': 'This site’s domain isn’t authorized in Firebase yet.',
+  'ログインできませんでした：{e}': 'Couldn’t sign in: {e}',
+  'ホーム画面に追加しました': 'Added to Home Screen',
+  '追加すると、アイコンから全画面で開けます。一度開けば通信がなくても遊べます。': 'Once added, it opens full screen from its icon and works offline after the first visit.',
+  'Safari の下にある共有ボタン（□に↑）→「ホーム画面に追加」→「追加」を押してください。': 'In Safari, tap the Share button (□ with ↑) → “Add to Home Screen” → “Add”.',
+  'ブラウザのメニュー（︙）→「ホーム画面に追加」または「アプリをインストール」を押してください。': 'Open the browser menu (︙) → “Add to Home screen” or “Install app”.',
+  'はじめての工房': 'First Workshop', 'からくり横丁': 'Gadget Alley', '職人の試練': 'Craftsman’s Trial', '達人の工場': 'Master’s Factory', '究極の工房': 'Ultimate Workshop', '無限工房': 'Endless Workshop',
+  '今日はクリア済み（星 {n}）。何度でも挑戦できます。': 'Cleared today ({n} stars). Play as often as you like.',
+  '毎日1問。日付ごとに同じ盤面で、難易度は高めです。': 'One puzzle a day — the same for everyone on that date, and on the hard side.',
+  'このコードを別の端末で入力すると、LEVEL {n} まで遊べる状態になります。': 'Enter this code on another device to unlock up to LEVEL {n}.',
+  'コードを選択しました。長押しでコピーしてください。': 'Code selected. Long-press to copy.',
+  'コピーしました: {code}': 'Copied: {code}',
+  'コードが正しくありません。「NJ」で始まる7文字を確認してください。': 'Invalid code. Check the 7 characters starting with “NJ”.',
+  'LEVEL {n} から再開します': 'Resuming from LEVEL {n}',
+  'この状態からは解けないかも。「戻す」がおすすめ': 'This may be unsolvable now. Try “Undo”.',
+  'これ以上戻せません': 'Nothing more to undo',
+} });
 const COLORS = ['#e5484d', '#3e8ef7', '#f5c518', '#30a46c', '#8e4ec6', '#f76b15', '#e93d82', '#12b5a5'];
 const BUF0 = 5, UNDOS = 3, HINTS = 2;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -1110,7 +1198,7 @@ function takeScrew(s) {
   if (i >= 0) { const b = S.active[i]; target = { kind: 'box', i, slot: b.reserved, box: b }; b.reserved++; }
   else {
     const k = S.buffer.indexOf(null);
-    if (k < 0) { S.bufShake = .4; toast('予備スロットがいっぱい'); beep(140, .12, 'square'); buzz(40); return; }
+    if (k < 0) { S.bufShake = .4; toast(T('予備スロットがいっぱい')); beep(140, .12, 'square'); buzz(40); return; }
     S.buffer[k] = { color: s.color, arrived: false }; target = { kind: 'buf', k };
   }
   S.history.push(snap); if (S.history.length > 60) S.history.shift();
@@ -1293,7 +1381,7 @@ function drawTray() {
   ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#9fb1bd';
   const g2y = g.by + g.bh + 10;
   if (nextQ.length) {
-    ctx.fillText('次の箱', g.r.left + 2, g2y + 4);
+    ctx.fillText(T('次の箱'), g.r.left + 2, g2y + 4);
     nextQ.forEach((c, i) => { ctx.fillStyle = COLORS[c]; rrect(g.r.left + 40 + i * 16, g2y - 3, 12, 9, 3); ctx.fill(); });
   }
   const n = S.buffer.length, a = bufSlotPos(0), z = bufSlotPos(n - 1);
@@ -1306,11 +1394,20 @@ function drawTray() {
   const used = S.buffer.filter(Boolean).length;
   ctx.font = '800 11px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left';
   ctx.fillStyle = used >= n - 1 ? '#ff6b5e' : '#9fb1bd';
-  ctx.fillText(`予備 ${used}/${n}`, g.r.left + 2, g.r.top + 146);
+  const spareTxt = T('予備 {used}/{n}', { used, n }), rankTxt = T(RANK_JA[S.rank]);
+  ctx.fillText(spareTxt, g.r.left + 2, g.r.top + 146);
+  const rankX = g.r.left + Math.max(62, ctx.measureText(spareTxt).width + 12);
   ctx.fillStyle = ['#7fd6a0', '#7fd6a0', '#9fc4ff', '#f2b33d', '#f76b15', '#ff6b5e', '#e93d82'][S.rank];
-  ctx.fillText(RANK_JA[S.rank], g.r.left + 62, g.r.top + 146);
+  ctx.fillText(rankTxt, rankX, g.r.top + 146);
   ctx.textAlign = 'right'; ctx.fillStyle = '#9fb1bd';
-  ctx.fillText(`${S.name} ・ のこり ${liveScrews().length} 本 ・ 箱 ${S.queue.length + S.active.filter(Boolean).length}`, g.r.right - 2, g.r.top + 146);
+  // right-hand status: drop the model name, then shrink, so it never runs into the rank label or off the tray
+  const info = { name: T(S.name), left: liveScrews().length, boxes: S.queue.length + S.active.filter(Boolean).length };
+  const room = g.r.right - 2 - (rankX + ctx.measureText(rankTxt).width + 10);
+  let infoTxt = T('{name} ・ のこり {left} 本 ・ 箱 {boxes}', info);
+  if (ctx.measureText(infoTxt).width > room) infoTxt = T('のこり {left} 本 ・ 箱 {boxes}', info);
+  const iw = ctx.measureText(infoTxt).width;
+  if (iw > room) ctx.font = '800 ' + Math.max(8, Math.floor(11 * room / iw)) + 'px "M PLUS Rounded 1c", sans-serif';
+  ctx.fillText(infoTxt, g.r.right - 2, g.r.top + 146);
   for (const f of S.flyers) {
     const t = f.target.kind === 'box' ? boxSlotPos(f.target.i, f.target.slot) : bufSlotPos(f.target.k);
     const k = Math.min(1, f.t / f.dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
@@ -1391,11 +1488,11 @@ function tap(cx, cy) {
     s.shake = .35; beep(160, .07, 'square'); buzz(25);
     if (S.hint) S.hint.s.g.scale.setScalar(1);
     S.hint = { s: s.lockKey, t: 1.6 };
-    toast('鍵つきネジ。金の印のネジを先に抜こう');
+    toast(T('鍵つきネジ。金の印のネジを先に抜こう'));
   } else {
     s.shake = .35; beep(160, .07, 'square'); buzz(25);
     s.blockers.forEach(id => { const p = S.parts[id]; if (p.state === 'on') p.flash = .5; });
-    toast('赤く光った部品がじゃまで抜けない');
+    toast(T('赤く光った部品がじゃまで抜けない'));
   }
 }
 
@@ -1408,9 +1505,9 @@ function ui() {
   $('lvLabel').textContent = daily ? daily.label : 'LEVEL ' + level;
   $('soundBtn').style.opacity = soundOn ? 1 : .4;
   if (!S) return;
-  $('hintLeft').textContent = 'のこり ' + S.hints; $('hintBtn').disabled = S.hints <= 0;
-  $('undoLeft').textContent = 'のこり ' + S.undos; $('undoBtn').disabled = S.undos <= 0 || !S.history.length;
-  $('slotLeft').textContent = S.slotUsed ? 'のこり 0' : 'のこり 1'; $('slotBtn').disabled = S.slotUsed;
+  $('hintLeft').textContent = T('のこり {n}', { n: S.hints }); $('hintBtn').disabled = S.hints <= 0;
+  $('undoLeft').textContent = T('のこり {n}', { n: S.undos }); $('undoBtn').disabled = S.undos <= 0 || !S.history.length;
+  $('slotLeft').textContent = T('のこり {n}', { n: S.slotUsed ? 0 : 1 }); $('slotBtn').disabled = S.slotUsed;
   $('loseSlot').hidden = S.slotUsed;
   $('loseUndo').hidden = S.undos <= 0 || !S.history.length;
 }
@@ -1422,21 +1519,21 @@ function toast(msg, ok) {
 function win() {
   S.won = true;
   const stars = Math.max(1, 3 - (S.hintUsed ? 1 : 0) - (S.undoUsed ? 1 : 0) - (S.slotUsed ? 1 : 0));
-  $('winTitle').textContent = (daily ? daily.label : 'LEVEL ' + level) + ' クリア！';
+  $('winTitle').textContent = T('{label} クリア！', { label: daily ? daily.label : 'LEVEL ' + level });
   $('winStars').innerHTML = '★'.repeat(stars) + '<span class="off">' + '★'.repeat(3 - stars) + '</span>';
-  $('winStars').setAttribute('aria-label', '星 ' + stars + ' / 3');
-  $('winText').textContent = S.name + 'を分解しました。ネジ ' + S.screws.length + ' 本、部品 ' + S.parts.filter(p => p.size0).length + ' 個。';
-  $('winNote').textContent = stars === 3 ? 'ヒント・戻す・＋スロットなしで完璧です。' : 'ヒント・戻す・＋スロットを使わずに解くと星3つ。';
-  $('winNote').textContent += '　難易度：' + RANK_JA[S.rank] + '（' + RANKS[S.rank] + '）';
+  $('winStars').setAttribute('aria-label', T('星 {n} / 3', { n: stars }));
+  $('winText').textContent = T('{name}を分解しました。ネジ {screws} 本、部品 {parts} 個。', { name: T(S.name), screws: S.screws.length, parts: S.parts.filter(p => p.size0).length });
+  $('winNote').textContent = stars === 3 ? T('ヒント・戻す・＋スロットなしで完璧です。') : T('ヒント・戻す・＋スロットを使わずに解くと星3つ。');
+  $('winNote').textContent += T('　難易度：{ja}（{en}）', { ja: RANK_JA[S.rank], en: RANKS[S.rank] });
   if (daily) {
     const d = store.get('daily', {}); if (!d[daily.key] || d[daily.key] < stars) { d[daily.key] = stars; store.set('daily', d); }
     setTimeout(() => cloud.push().catch(e => console.warn('sync', e)), 0);
-    $('nextBtn').textContent = 'いつものレベルに戻る';
+    $('nextBtn').textContent = T('いつものレベルに戻る');
   } else {
     const best = store.get('stars', {}); if (!best[level] || best[level] < stars) { best[level] = stars; store.set('stars', best); }
     store.set('level', level + 1); setTimeout(() => cloud.push().catch(e => console.warn('sync', e)), 0);
     if (level + 1 > maxLevel) { maxLevel = level + 1; store.set('maxLevel', maxLevel); }
-    $('nextBtn').textContent = '次のレベルへ';
+    $('nextBtn').textContent = T('次のレベルへ');
   }
   [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle'), i * 90));
   burst(); show('ovWin');
@@ -1492,13 +1589,13 @@ const cloud = (() => {
       if (snap.exists) mergeInto(snap.data());
       await push();
       if (!$('ovMenu').hidden) openMenu();
-      toast('クラウドと同期しました（LEVEL ' + maxLevel + ' まで）', true);
+      toast(T('クラウドと同期しました（LEVEL {n} まで）', { n: maxLevel }), true);
     } catch (e) {
       console.warn(e);
       const code = (e && (e.code || e.name)) || 'unknown';
-      const why = code === 'permission-denied' ? 'Firestoreのルールで拒否されました' : code === 'unavailable' ? '通信できませんでした' : code === 'not-found' ? 'Firestoreのデータベースが見つかりません' : '原因不明のエラー';
-      setMsg('同期できませんでした（' + why + '：' + code + '）');
-      toast('同期できませんでした：' + code);
+      const why = T(code === 'permission-denied' ? 'Firestoreのルールで拒否されました' : code === 'unavailable' ? '通信できませんでした' : code === 'not-found' ? 'Firestoreのデータベースが見つかりません' : '原因不明のエラー');
+      setMsg(T('同期できませんでした（{why}：{code}）', { why, code }));
+      toast(T('同期できませんでした：{code}', { code }));
     }
   }
   async function push() {
@@ -1508,18 +1605,18 @@ const cloud = (() => {
   function setMsg(t) { const m = $('acctMsg'); if (m) m.textContent = t; }
   function render() {
     const li = $('loginBtn'), lo = $('logoutBtn');
-    if (!cfg()) { li.hidden = lo.hidden = true; setMsg('Googleログインは準備中です（管理者の設定待ち）。今は引き継ぎコードを使ってください。'); return; }
-    if (!auth) { li.hidden = lo.hidden = true; setMsg('ログイン機能を読み込めませんでした。通信状態を確認してください。'); return; }
-    if (user) { li.hidden = true; lo.hidden = false; setMsg((user.displayName || 'ログイン中') + ' さん：進み具合はクラウドに自動保存されます。'); }
-    else { li.hidden = false; lo.hidden = true; setMsg('ログインすると、どの端末でも続きから遊べます。'); }
+    if (!cfg()) { li.hidden = lo.hidden = true; setMsg(T('Googleログインは準備中です（管理者の設定待ち）。今は引き継ぎコードを使ってください。')); return; }
+    if (!auth) { li.hidden = lo.hidden = true; setMsg(T('ログイン機能を読み込めませんでした。通信状態を確認してください。')); return; }
+    if (user) { li.hidden = true; lo.hidden = false; setMsg(T('{name} さん：進み具合はクラウドに自動保存されます。', { name: user.displayName || T('ログイン中') })); }
+    else { li.hidden = false; lo.hidden = true; setMsg(T('ログインすると、どの端末でも続きから遊べます。')); }
   }
   async function login() {
     if (!(await init()) || !auth) return render();
     try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
     catch (e) {
       if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
-      else if (e && e.code === 'auth/unauthorized-domain') setMsg('このサイトのドメインがFirebaseで許可されていません（管理者の設定待ち）。');
-      else if (e && e.code !== 'auth/popup-closed-by-user') setMsg('ログインできませんでした：' + (e.code || e.message));
+      else if (e && e.code === 'auth/unauthorized-domain') setMsg(T('このサイトのドメインがFirebaseで許可されていません（管理者の設定待ち）。'));
+      else if (e && e.code !== 'auth/popup-closed-by-user') setMsg(T('ログインできませんでした：{e}', { e: e.code || e.message }));
     }
   }
   return { init: () => init().then(render), login, logout: () => auth && auth.signOut(), push, render };
@@ -1532,7 +1629,7 @@ cloud.init();
 let installEvt = null;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
-window.addEventListener('appinstalled', () => { installEvt = null; toast('ホーム画面に追加しました', true); renderInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; toast(T('ホーム画面に追加しました'), true); renderInstall(); });
 function renderInstall() {
   const box = $('installBox'), btn = $('installBtn'), msg = $('installMsg');
   if (!box) return;
@@ -1541,9 +1638,9 @@ function renderInstall() {
   if (!canSW) { box.hidden = true; return; }
   box.hidden = false;
   const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  if (installEvt) { btn.hidden = false; msg.textContent = '追加すると、アイコンから全画面で開けます。一度開けば通信がなくても遊べます。'; }
-  else if (ios) { btn.hidden = true; msg.textContent = 'Safari の下にある共有ボタン（□に↑）→「ホーム画面に追加」→「追加」を押してください。'; }
-  else { btn.hidden = true; msg.textContent = 'ブラウザのメニュー（︙）→「ホーム画面に追加」または「アプリをインストール」を押してください。'; }
+  if (installEvt) { btn.hidden = false; msg.textContent = T('追加すると、アイコンから全画面で開けます。一度開けば通信がなくても遊べます。'); }
+  else if (ios) { btn.hidden = true; msg.textContent = T('Safari の下にある共有ボタン（□に↑）→「ホーム画面に追加」→「追加」を押してください。'); }
+  else { btn.hidden = true; msg.textContent = T('ブラウザのメニュー（︙）→「ホーム画面に追加」または「アプリをインストール」を押してください。'); }
 }
 $('installBtn').onclick = async () => {
   if (!installEvt) return renderInstall();
@@ -1563,37 +1660,37 @@ function openMenu() {
     if ((i - 1) % 8 === 0) {
       const w = Math.floor((i - 1) / 8), h = document.createElement('div');
       h.style.cssText = 'grid-column:1/-1;text-align:left;font-size:12px;color:var(--brass);font-weight:800;margin-top:4px';
-      h.textContent = 'WORLD ' + (w + 1) + '　' + (WORLDS[w] || '無限工房'); grid.appendChild(h);
+      h.textContent = 'WORLD ' + (w + 1) + '　' + T(WORLDS[w] || '無限工房'); grid.appendChild(h);
     }
     const bt = document.createElement('button'); bt.id = 'lvl-' + i;
     bt.textContent = i; if (i === level) bt.className = 'cur';
-    if (stars[i]) bt.title = '星 ' + stars[i];
+    if (stars[i]) bt.title = T('星 {n}', { n: stars[i] });
     bt.onclick = () => { hide('ovMenu'); startLevel(i); };
     grid.appendChild(bt);
   }
   const dd = store.get('daily', {})[todayKey()];
-  $('dailyNote').textContent = dd ? '今日はクリア済み（星 ' + dd + '）。何度でも挑戦できます。' : '毎日1問。日付ごとに同じ盤面で、難易度は高めです。';
+  $('dailyNote').textContent = dd ? T('今日はクリア済み（星 {n}）。何度でも挑戦できます。', { n: dd }) : T('毎日1問。日付ごとに同じ盤面で、難易度は高めです。');
   cloud.render(); renderInstall();
   $('codeOut').textContent = makeCode(maxLevel);
-  $('codeMsg').textContent = 'このコードを別の端末で入力すると、LEVEL ' + maxLevel + ' まで遊べる状態になります。';
+  $('codeMsg').textContent = T('このコードを別の端末で入力すると、LEVEL {n} まで遊べる状態になります。', { n: maxLevel });
   show('ovMenu');
 }
 $('copyBtn').onclick = () => {
   const code = $('codeOut').textContent;
-  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('codeOut')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); $('codeMsg').textContent = 'コードを選択しました。長押しでコピーしてください。'; };
-  try { navigator.clipboard.writeText(code).then(() => { $('codeMsg').textContent = 'コピーしました: ' + code; }, fallback); } catch (e) { fallback(); }
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('codeOut')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); $('codeMsg').textContent = T('コードを選択しました。長押しでコピーしてください。'); };
+  try { navigator.clipboard.writeText(code).then(() => { $('codeMsg').textContent = T('コピーしました: {code}', { code }); }, fallback); } catch (e) { fallback(); }
 };
 $('loadBtn').onclick = () => {
   const lv = readCode($('codeIn').value);
-  if (!lv) { $('codeMsg').textContent = 'コードが正しくありません。「NJ」で始まる7文字を確認してください。'; return; }
+  if (!lv) { $('codeMsg').textContent = T('コードが正しくありません。「NJ」で始まる7文字を確認してください。'); return; }
   maxLevel = Math.max(maxLevel, lv); store.set('maxLevel', maxLevel);
-  hide('ovMenu'); startLevel(lv); toast('LEVEL ' + lv + ' から再開します', true);
+  hide('ovMenu'); startLevel(lv); toast(T('LEVEL {n} から再開します', { n: lv }), true);
 };
 
 $('hintBtn').onclick = () => {
   if (!S || S.hints <= 0 || S.over || S.won) return;
   const plan = solve(solverState(), S.buffer.length, 12000);
-  if (!plan || !plan.length) { toast('この状態からは解けないかも。「戻す」がおすすめ'); return; }
+  if (!plan || !plan.length) { toast(T('この状態からは解けないかも。「戻す」がおすすめ')); return; }
   const s = S.screws[plan[0]];
   S.hint = { s, t: 3.5 }; S.hints--; S.hintUsed = true; ui();
   const w = s.g.getWorldPosition(V(0, 0, 0)); cam.yawTo = Math.atan2(w.x, w.z);
@@ -1607,7 +1704,7 @@ function solverState() {
     act: S.active.filter(Boolean).map(b => ({ c: b.color, n: b.reserved })).concat([null, null]).slice(0, 2),
     locks: S.screws.map(s => s.lockKey ? [s.lockKey.i] : null) };
 }
-$('undoBtn').onclick = () => { if (!undo()) toast('これ以上戻せません'); };
+$('undoBtn').onclick = () => { if (!undo()) toast(T('これ以上戻せません')); };
 // peek: the outermost layer (parts with a reachable screw that cover other screws) turns see-through
 let peeking = false;
 function setPeek(on) {
@@ -1668,12 +1765,16 @@ function frame(now) {
 }
 function onResize() { resizeFx(); resize3d(); }
 window.addEventListener('resize', onResize);
+if (window.visualViewport) visualViewport.addEventListener('resize', onResize);
+KoboI18n.picker($('langPick'));
 onResize(); ui();
 const boot = data => {
   startLevel(data && data.level ? data.level : level);
   if (!store.get('seenHelp', false)) show('ovHelp');
   requestAnimationFrame(frame);
 };
+// ---------- debug hook (?debug only): lets automated layout tests open every screen ----------
+if (/[?&]debug\b/.test(location.search)) window.__neji = { win, lose() { if (S) { S.over = true; lose(); } }, toast, openMenu, get ready() { return !!S; } };
 window.claude?.hot?.snapshot?.(() => ({ level }));
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();

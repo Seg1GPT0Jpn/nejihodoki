@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="おちものタワー">
+<script src="../common/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -44,9 +45,9 @@ body {
 }
 #app {
   position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: 0;
 }
-header { flex: none; padding: 6px 10px 2px; max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+header { flex: none; padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 2px max(10px, env(safe-area-inset-left, 0px)); max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
 .hrow { display: flex; align-items: center; gap: 6px; }
 .back { color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 8px 4px; border-radius: 8px; }
 .back:focus-visible, .ibtn:focus-visible, #pad button:focus-visible, .btn:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
@@ -63,29 +64,37 @@ h1 {
 .ibtn[aria-pressed="false"] { color: var(--dim); text-decoration: line-through; }
 .stats { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr 1fr; gap: 6px; margin-top: 4px; }
 .stat { background: var(--panel); border-radius: 10px; padding: 2px 6px 3px; text-align: center; line-height: 1.15; }
-.stat span { display: block; font-size: 10px; color: var(--dim); font-weight: 800; }
+.stat span { display: block; font-size: 10px; color: var(--dim); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stat b { display: block; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
 #main { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
-#stage { flex: 1; min-height: 0; position: relative; touch-action: none; cursor: pointer; }
+#stage { flex: 1; min-height: 0; position: relative; touch-action: none; cursor: pointer; margin: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-#pad { flex: none; display: flex; gap: 6px; padding: 6px 10px 10px; width: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box; }
+#pad { flex: none; display: flex; gap: 6px; padding: 6px max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); width: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box; }
 #pad button {
   flex: 1; height: 54px; border-radius: 16px; border: 1px solid var(--line); cursor: pointer;
   background: linear-gradient(#ffffff1f, #ffffff08); color: var(--ink);
   font: 800 17px var(--font-body); touch-action: none; box-shadow: 0 3px 0 #0005;
+  min-width: 0; padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+html[lang="en"] #pad button.small { font-size: 14px; }
 #pad button.small { font-size: 15px; }
 #pad button.on { transform: translateY(2px); box-shadow: 0 1px 0 #0005; background: #ffffff2e; }
 .overlay {
   position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
   background: rgba(20, 8, 30, .74); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
-  padding: 12px; box-sizing: border-box; overflow: auto;
+  padding: 12px max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box; overflow: hidden;
 }
 .card {
   width: 100%; max-width: 340px; text-align: center; background: linear-gradient(#3a2150, #24132f);
   border: 1px solid var(--line); border-radius: 22px; padding: 18px 16px; box-sizing: border-box;
   box-shadow: 0 10px 40px #0008;
+  max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
 }
+/* primary action stays visible at the bottom of a scrolling card on short screens */
+.card .sticky { position: sticky; bottom: 0; z-index: 1; }
+.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; font-size: 12px; color: var(--dim); font-weight: 800; }
+.langrow select { background: #24132f; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: 800 14px var(--font-body); }
 .logo { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: .04em; margin-bottom: 6px; }
 .logo .a { color: var(--pink); } .logo .b { color: var(--lemon); }
 .how { list-style: none; padding: 0; margin: 10px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 12px; text-align: left; }
@@ -106,6 +115,7 @@ h1 {
   text-decoration: none; box-sizing: border-box;
 }
 .btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; padding: 10px; }
+@media (max-width: 340px) { h1 { font-size: 16px; letter-spacing: 0; } .back { padding: 8px 2px; } }
 @media (max-height: 600px) { .how { display: none; } .stats { margin-top: 2px; } .stat b { font-size: 14px; } #pad button { height: 46px; } }
 @media (prefers-reduced-motion: reduce) { .tapstart { animation: none; } }
 /* fit the visible viewport on phones (browser bars included) */
@@ -116,64 +126,65 @@ h1 {
 <div id="app">
   <header>
     <div class="hrow">
-      <a class="back" href="../">← ゲーム一覧</a>
-      <h1>おちものタワー</h1>
-      <button class="ibtn" id="sndBtn" type="button" aria-pressed="true" aria-label="サウンド">♪</button>
-      <button class="ibtn" id="pauseBtn" type="button" aria-label="一時停止">Ⅱ</button>
+      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+      <h1 data-i18n>おちものタワー</h1>
+      <button class="ibtn" id="sndBtn" type="button" aria-pressed="true" aria-label="サウンド" data-i18n-attr="aria-label">♪</button>
+      <button class="ibtn" id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label">Ⅱ</button>
     </div>
     <div class="stats">
-      <div class="stat"><span>スコア</span><b id="hScore">0</b></div>
-      <div class="stat"><span>ベスト</span><b id="hBest">0</b></div>
-      <div class="stat"><span>レベル</span><b id="hLevel">1</b></div>
-      <div class="stat"><span>ライン</span><b id="hLines">0</b></div>
+      <div class="stat"><span data-i18n>スコア</span><b id="hScore">0</b></div>
+      <div class="stat"><span data-i18n>ベスト</span><b id="hBest">0</b></div>
+      <div class="stat"><span data-i18n>レベル</span><b id="hLevel">1</b></div>
+      <div class="stat"><span data-i18n>ライン</span><b id="hLines">0</b></div>
     </div>
   </header>
   <div id="main">
-    <div id="stage"><canvas id="cv" aria-label="おちものタワーのゲーム画面"></canvas></div>
+    <div id="stage"><canvas id="cv" aria-label="おちものタワーのゲーム画面" data-i18n-attr="aria-label"></canvas></div>
     <div id="pad">
-      <button type="button" data-act="left" aria-label="左へ">←</button>
-      <button type="button" data-act="rot" class="small">回転</button>
-      <button type="button" data-act="right" aria-label="右へ">→</button>
-      <button type="button" data-act="down" aria-label="下へ（2回タップで一気に）">↓</button>
-      <button type="button" data-act="hold" class="small">ため</button>
+      <button type="button" data-act="left" aria-label="左へ" data-i18n-attr="aria-label">←</button>
+      <button type="button" data-act="rot" class="small" data-i18n>回転</button>
+      <button type="button" data-act="right" aria-label="右へ" data-i18n-attr="aria-label">→</button>
+      <button type="button" data-act="down" aria-label="下へ（2回タップで一気に）" data-i18n-attr="aria-label">↓</button>
+      <button type="button" data-act="hold" class="small" data-i18n>ため</button>
     </div>
 
     <div class="overlay" id="ovStart">
       <div class="card">
-        <div class="logo"><span class="a">おちもの</span><br><span class="b">タワー</span></div>
+        <div class="logo" data-i18n-html><span class="a">おちもの</span><br><span class="b">タワー</span></div>
         <ul class="how">
-          <li><b>タップ</b> 回転</li>
-          <li><b>左右ドラッグ</b> 移動</li>
-          <li><b>下へサッ</b> 一気に落とす</li>
-          <li><b>ゆっくり下</b> 少し落とす</li>
-          <li><b>上へサッ</b> ためておく</li>
-          <li><b>↓ 2回</b> 一気に落とす</li>
+          <li data-i18n-html><b>タップ</b> 回転</li>
+          <li data-i18n-html><b>左右ドラッグ</b> 移動</li>
+          <li data-i18n-html><b>下へサッ</b> 一気に落とす</li>
+          <li data-i18n-html><b>ゆっくり下</b> 少し落とす</li>
+          <li data-i18n-html><b>上へサッ</b> ためておく</li>
+          <li data-i18n-html><b>↓ 2回</b> 一気に落とす</li>
         </ul>
-        <p class="rule">横1列うまったら消える！<br>1列ぜんぶ<em>同じ色</em>なら<em>「そろい消し」</em><br>大ボーナス＆すぐ下の列もいっしょに消える</p>
-        <p class="keys">キーボード：←→ 移動 / ↑・X・Z 回転 / ↓ 少し / スペース 一気に / C ため / P 一時停止</p>
-        <p class="tapstart">タップでスタート</p>
-        <p class="small">ベスト <span id="stBest">0</span></p>
+        <p class="rule" data-i18n-html>横1列うまったら消える！<br>1列ぜんぶ<em>同じ色</em>なら<em>「そろい消し」</em><br>大ボーナス＆すぐ下の列もいっしょに消える</p>
+        <p class="keys" data-i18n>キーボード：←→ 移動 / ↑・X・Z 回転 / ↓ 少し / スペース 一気に / C ため / P 一時停止</p>
+        <p class="tapstart" data-i18n>タップでスタート</p>
+        <p class="small"><span data-i18n>ベスト</span> <span id="stBest">0</span></p>
       </div>
     </div>
 
     <div class="overlay" id="ovPause" hidden>
       <div class="card">
-        <p class="ttl">ひとやすみ中</p>
-        <p class="small">スコア <span id="psScore">0</span></p>
-        <button class="btn" id="resumeBtn" type="button">つづける</button>
-        <button class="btn sub" id="quitBtn" type="button">さいしょから</button>
+        <p class="ttl" data-i18n>ひとやすみ中</p>
+        <p class="small"><span data-i18n>スコア</span> <span id="psScore">0</span></p>
+        <button class="btn sticky" id="resumeBtn" type="button" data-i18n>つづける</button>
+        <button class="btn sub" id="quitBtn" type="button" data-i18n>さいしょから</button>
+        <div class="langrow"><span data-i18n>言語 / Language</span><span id="langPick"></span></div>
       </div>
     </div>
 
     <div class="overlay" id="ovOver" hidden>
       <div class="card">
-        <p class="ttl">タワーがいっぱい！</p>
-        <p class="small">スコア</p>
+        <p class="ttl" data-i18n>タワーがいっぱい！</p>
+        <p class="small" data-i18n>スコア</p>
         <p class="big" id="goScore">0</p>
-        <p class="small">ベスト <span id="goBest">0</span> <span class="newrec" id="goNew" hidden>新記録！</span></p>
-        <p class="small"><span id="goLines">0</span>ライン ・ レベル<span id="goLevel">1</span> ・ そろい消し<span id="goSoroi">0</span>回</p>
-        <button class="btn" id="againBtn" type="button">もう一度</button>
-        <a class="btn sub" href="../">ゲーム一覧へ</a>
+        <p class="small"><span data-i18n>ベスト</span> <span id="goBest">0</span> <span class="newrec" id="goNew" hidden data-i18n>新記録！</span></p>
+        <p class="small" data-i18n-html><span id="goLines">0</span>ライン ・ レベル<span id="goLevel">1</span> ・ そろい消し<span id="goSoroi">0</span>回</p>
+        <button class="btn sticky" id="againBtn" type="button" data-i18n>もう一度</button>
+        <a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a>
       </div>
     </div>
   </div>
@@ -181,6 +192,31 @@ h1 {
 <script>
 (() => {
 'use strict';
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  'おちものタワー': 'Drop Tower', '← ゲーム一覧': '← Games', 'サウンド': 'Sound', '一時停止': 'Pause',
+  'スコア': 'Score', 'ベスト': 'Best', 'レベル': 'Level', 'ライン': 'Lines',
+  'おちものタワーのゲーム画面': 'Drop Tower game screen',
+  '左へ': 'Left', '右へ': 'Right', '下へ（2回タップで一気に）': 'Down (double-tap to hard drop)', '回転': 'Rotate', 'ため': 'Hold',
+  '<span class="a">おちもの</span><br><span class="b">タワー</span>': '<span class="a">Drop</span><br><span class="b">Tower</span>',
+  '<b>タップ</b> 回転': '<b>Tap</b> rotate', '<b>左右ドラッグ</b> 移動': '<b>Drag ←→</b> move',
+  '<b>下へサッ</b> 一気に落とす': '<b>Flick down</b> hard drop', '<b>ゆっくり下</b> 少し落とす': '<b>Slow drag ↓</b> soft drop',
+  '<b>上へサッ</b> ためておく': '<b>Flick up</b> hold', '<b>↓ 2回</b> 一気に落とす': '<b>↓ twice</b> hard drop',
+  '横1列うまったら消える！<br>1列ぜんぶ<em>同じ色</em>なら<em>「そろい消し」</em><br>大ボーナス＆すぐ下の列もいっしょに消える':
+    'Fill a row to clear it!<br>A row all in <em>one color</em> is a <em>“Match Clear”</em>:<br>big bonus, and the row below clears too',
+  'キーボード：←→ 移動 / ↑・X・Z 回転 / ↓ 少し / スペース 一気に / C ため / P 一時停止':
+    'Keyboard: ←→ move / ↑·X·Z rotate / ↓ soft drop / Space hard drop / C hold / P pause',
+  'タップでスタート': 'Tap to start', 'ひとやすみ中': 'Paused', 'つづける': 'Resume', 'さいしょから': 'Restart',
+  '言語 / Language': 'Language',
+  'タワーがいっぱい！': 'Tower full!', '新記録！': 'New record!',
+  '<span id="goLines">0</span>ライン ・ レベル<span id="goLevel">1</span> ・ そろい消し<span id="goSoroi">0</span>回':
+    '<span id="goLines">0</span> lines · Level <span id="goLevel">1</span> · <span id="goSoroi">0</span> Match Clears',
+  'もう一度': 'Play again', 'ゲーム一覧へ': 'Back to games',
+  'つぎ': 'Next', '同じ色で': 'Same color', 'そろい消し': 'Match clear',
+  '4ライン！': '4 lines!', '1ライン': '1 line', '{n}ライン': '{n} lines', 'そろい消し！': 'Match Clear!',
+  'レベル {n}！': 'Level {n}!', 'スピードアップ': 'Speed up!',
+  'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+} });
 
 // ---------- constants ----------
 const COLS = 9, ROWS = 16, HID = 2, H = ROWS + HID;   // 2 hidden rows above the visible well
@@ -370,9 +406,9 @@ function lockPiece() {
     soroiCount += soroi.length;
     clearing = { remove, full, soroi, extra, t: 0, dur: soroi.length ? 560 : 300 };
     for (const r of remove) for (let c = 0; c < COLS; c++) if (board[r][c] >= 0) burst(c, r, board[r][c], soroi.length ? 3 : 1);
-    const label = full.length >= 4 ? '4ライン！' : full.length + 'ライン';
+    const label = full.length >= 4 ? T('4ライン！') : T(full.length === 1 ? '1ライン' : '{n}ライン', { n: full.length });
     if (soroi.length) {
-      addPopup('そろい消し！', '+' + pts, '#ffe36e', 1.25);
+      addPopup(T('そろい消し！'), '+' + pts, '#ffe36e', 1.25);
       sfx.soroi(); vibrate([30, 40, 70]); shake = 8;
     } else {
       addPopup(label, '+' + pts, '#ffffff', full.length >= 3 ? 1.1 : 0.9);
@@ -392,7 +428,7 @@ function finishClear() {
   lines += rm.size;
   level = 1 + Math.floor(lines / 10);
   clearing = null;
-  if (level > oldLevel) { addPopup('レベル ' + level + '！', 'スピードアップ', '#9ff5d0', 1); sfx.level(); }
+  if (level > oldLevel) { addPopup(T('レベル {n}！', { n: level }), T('スピードアップ'), '#9ff5d0', 1); sfx.level(); }
   if (board.slice(0, HID).some(row => row.some(v => v >= 0))) { gameOver(); return; }
   spawnNext();
 }
@@ -602,6 +638,13 @@ function drawMini(spec, bx, by, bw, bh, dim) {
   const x0 = bx + (bw - w * m) / 2, y0 = by + (bh - h * m) / 2;
   for (const [cx, cy] of s.c) drawCell(x0 + (cx - minX) * m, y0 + (cy - minY) * m, spec.c, m, dim ? 0.4 : 1);
 }
+// side-panel label, shrunk to the panel width when a translation is longer
+function sideText(txt, y, size) {
+  const w = ctx.measureText(txt).width, room = sideW - 4;
+  if (w <= room) { ctx.fillText(txt, sideX + 2, y); return; }
+  const f = ctx.font; ctx.font = f.replace(/\d+px/, Math.max(7, Math.floor(size * room / w)) + 'px');
+  ctx.fillText(txt, sideX + 2, y); ctx.font = f;
+}
 function drawSide() {
   const label = Math.max(10, Math.round(cell * 0.46));
   ctx.font = '800 ' + label + 'px "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif';
@@ -609,14 +652,14 @@ function drawSide() {
   let y = oy;
   const boxH = Math.round(cell * 2.9);
   // hold
-  ctx.fillStyle = '#c8b3d6'; ctx.fillText('ため', sideX + 2, y);
+  ctx.fillStyle = '#c8b3d6'; sideText(T('ため'), y, label);
   y += label + 4;
   rr(ctx, sideX, y, sideW, boxH, 12); ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fill();
   ctx.strokeStyle = 'rgba(255,210,240,0.18)'; ctx.lineWidth = 1; ctx.stroke();
   drawMini(holdP, sideX, y, sideW, boxH, !canHold);
   y += boxH + Math.round(cell * 0.5);
   // next
-  ctx.fillStyle = '#c8b3d6'; ctx.fillText('つぎ', sideX + 2, y);
+  ctx.fillStyle = '#c8b3d6'; sideText(T('つぎ'), y, label);
   y += label + 4;
   const n1 = boxH, n2 = Math.round(cell * 2.3);
   const nh = n1 + n2 * 2 + 12;
@@ -629,8 +672,8 @@ function drawSide() {
   y += nh + Math.round(cell * 0.5);
   // colour legend: reminds the soroi rule
   if (y + cell * 1.8 < oy + cell * ROWS) {
-    ctx.fillStyle = '#c8b3d6'; ctx.fillText('同じ色で', sideX + 2, y);
-    y += label + 2; ctx.fillText('そろい消し', sideX + 2, y);
+    ctx.fillStyle = '#c8b3d6'; sideText(T('同じ色で'), y, label);
+    y += label + 2; sideText(T('そろい消し'), y, label);
     y += label + 6;
     const m = Math.min(cell * 0.8, (sideW - 6) / 4);
     for (let i = 0; i < 4; i++) drawCell(sideX + i * (sideW / 4) + (sideW / 4 - m) / 2, y, i, m);
@@ -642,10 +685,12 @@ function drawPopups() {
     const k = p.t / p.life;
     const a = k < 0.15 ? k / 0.15 : k > 0.7 ? (1 - k) / 0.3 : 1;
     const y = oy + cell * ROWS * 0.38 - k * cell * 1.5 + i * cell * 1.6;
-    const sz = Math.round(cell * 0.95 * p.scale * (k < 0.15 ? 0.8 + k * 1.33 : 1));
+    let sz = Math.round(cell * 0.95 * p.scale * (k < 0.15 ? 0.8 + k * 1.33 : 1));
     ctx.globalAlpha = Math.max(0, a);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = sz + 'px "Dela Gothic One", "Hiragino Sans", sans-serif';
+    const tw = ctx.measureText(p.text).width, room = cell * COLS - cell * 0.4;
+    if (tw > room) { sz = Math.max(8, Math.floor(sz * room / tw)); ctx.font = sz + 'px "Dela Gothic One", "Hiragino Sans", sans-serif'; }
     ctx.lineWidth = Math.max(3, sz * 0.16); ctx.strokeStyle = '#2a0f37'; ctx.lineJoin = 'round';
     ctx.strokeText(p.text, cx, y); ctx.fillStyle = p.color; ctx.fillText(p.text, cx, y);
     if (p.sub) {
@@ -824,7 +869,7 @@ document.querySelectorAll('#pad button').forEach(btn => {
 
 // ---------- header + overlays ----------
 const sndBtn = $('sndBtn');
-function renderSound() { sndBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); sndBtn.textContent = soundOn ? '♪' : '♪'; sndBtn.title = soundOn ? 'サウンド オン' : 'サウンド オフ'; }
+function renderSound() { sndBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); sndBtn.textContent = soundOn ? '♪' : '♪'; sndBtn.title = T(soundOn ? 'サウンド オン' : 'サウンド オフ'); }
 sndBtn.addEventListener('click', () => { soundOn = !soundOn; store.set('kusoge.sound', soundOn ? '1' : '0'); ensureAudio(); renderSound(); if (soundOn) sfx.rot(); });
 renderSound();
 $('pauseBtn').addEventListener('click', () => { ensureAudio(); togglePause(); });
@@ -837,6 +882,8 @@ $('stBest').textContent = best.toLocaleString('ja-JP');
 
 if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
 window.addEventListener('resize', resize);
+if (window.visualViewport) visualViewport.addEventListener('resize', resize);
+KoboI18n.picker($('langPick'));
 resize();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {}).catch(() => {});
 requestAnimationFrame(t => { last = t; frame(t); });
