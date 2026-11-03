@@ -1,8 +1,9 @@
-// ネジほどき：オフラインでも遊べるようにするための Service Worker
+// ひまつぶし工房：オフラインでも遊べるようにするための Service Worker（全ゲーム共通）
 // ページ本体と設定は「通信優先（だめなら保存分）」、ライブラリとフォントは「保存分優先」で配る。
-const VERSION = 'neji-v1';
+const VERSION = 'kobo-v1';
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png'];
+const GAMES = ['./neji/', './blocks/', './drop/', './raft/', './gates/'];
 const LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 const CACHE_FIRST_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
@@ -10,6 +11,8 @@ self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
     await c.addAll(CORE);
+    // each game page separately, so one missing page never blocks the install
+    await Promise.all(GAMES.map(u => c.add(u).catch(() => {})));
     await Promise.all(LIBS.map(u => fetch(u, { mode: 'cors' }).then(r => r.ok && c.put(u, r)).catch(() => {})));
     self.skipWaiting();
   })());
@@ -33,7 +36,7 @@ self.addEventListener('fetch', e => {
         if (r.ok) c.put(req, r.clone());
         return r;
       } catch (err) {
-        return (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? c.match('./index.html') : Response.error());
+        return (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? (await c.match(new URL('./', location).href)) : Response.error());
       }
     })());
   } else if (CACHE_FIRST_HOSTS.includes(url.hostname)) {
