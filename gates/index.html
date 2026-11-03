@@ -12,6 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ゲートランナー">
+<script src="../common/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -136,6 +137,8 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
 .rew.note { color: var(--dim); font-size: 12px; font-weight: 500; justify-content: center; }
 .row2 { display: flex; gap: 10px; width: 100%; max-width: 360px; }
 .row2 .btn { flex: 1; padding: 12px 8px; }
+/* short phones: the bottom button row stays on screen while the list above scrolls */
+.screen > .row2:last-child { position: sticky; bottom: -14px; z-index: 2; padding: 8px 0 14px; margin-bottom: -14px; background: linear-gradient(rgba(14,20,32,0), rgba(14,20,32,.92) 30%); }
 .slots { display: flex; gap: 8px; justify-content: center; }
 .slot { width: 92px; height: 70px; border-radius: 12px; border: 2px dashed #ffffff44; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--dim); background: #0003; cursor: pointer; }
 .slot.on { border-style: solid; color: #fff; }
@@ -146,6 +149,9 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
 .hc.sel { border-color: var(--sun); }
 .hc.inteam::after { content: "編成中"; position: absolute; top: -6px; right: -4px; background: var(--good); color: #062; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; }
 .hc.lock { opacity: .45; }
+html[lang="en"] .hc.inteam::after { content: "Team"; }
+.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; color: var(--dim); font-weight: 800; }
+.langrow select { font: 800 13px var(--font-body); color: var(--chalk); background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
 .stars { color: var(--sun); letter-spacing: -1px; }
 .hd { text-align: left; font-size: 12px; line-height: 1.55; }
 .hd .t { font-family: var(--font-display); font-size: 18px; }
@@ -192,20 +198,20 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
 <body>
 <div id="app">
   <header>
-    <a class="back" href="../">← ゲーム一覧</a>
-    <div class="logo">ゲート<span>ランナー</span></div>
-    <button id="sndBtn" class="icon-btn" aria-label="サウンド切り替え">♪</button>
+    <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+    <div class="logo" data-i18n-html>ゲート<span>ランナー</span></div>
+    <button id="sndBtn" class="icon-btn" aria-label="サウンド切り替え" data-i18n-attr="aria-label">♪</button>
   </header>
   <main id="stage">
     <canvas id="cv"></canvas>
-    <div id="nogl" hidden>3D表示を開始できませんでした。<br>通信状態を確認して再読み込みしてください。</div>
+    <div id="nogl" hidden data-i18n-html>3D表示を開始できませんでした。<br>通信状態を確認して再読み込みしてください。</div>
     <div id="squadTag" hidden>0</div>
     <div id="floats"></div>
     <div id="hud" hidden>
       <div class="hrow">
         <div class="chip" id="hudStage">STAGE 1</div>
-        <div class="chip w" id="hudWeapon">ハンドガン</div>
-        <button class="icon-btn" id="pauseBtn" aria-label="一時停止">Ⅱ</button>
+        <div class="chip w" id="hudWeapon"></div>
+        <button class="icon-btn" id="pauseBtn" aria-label="一時停止" data-i18n-attr="aria-label">Ⅱ</button>
       </div>
       <div id="pbar"><i id="pfill"></i><span id="ptext"></span></div>
       <div id="banner" hidden></div>
@@ -223,97 +229,148 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
     </div>
 
     <section class="screen" id="scrTitle">
-      <div class="big-logo">ゲート<span>ランナー</span></div>
-      <p class="tagline">ゲートで仲間を増やし、英雄と共に<br>群れとボスを撃ち倒せ！</p>
+      <div class="big-logo" data-i18n-html>ゲート<span>ランナー</span></div>
+      <p class="tagline" data-i18n-html>ゲートで仲間を増やし、英雄と共に<br>群れとボスを撃ち倒せ！</p>
       <div class="card stats">
-        <div>クリア<b id="tBest">0</b></div>
-        <div>コイン<b id="tCoins">0</b></div>
-        <div>戦力<b id="tPower">0</b></div>
+        <div><span data-i18n>クリア</span><b id="tBest">0</b></div>
+        <div><span data-i18n>コイン</span><b id="tCoins">0</b></div>
+        <div><span data-i18n>戦力</span><b id="tPower">0</b></div>
       </div>
-      <button class="btn" id="btnGo">出撃する</button>
+      <button class="btn" id="btnGo" data-i18n>出撃する</button>
       <div class="row2">
-        <button class="btn sub" id="btnBase">基地</button>
-        <button class="btn sub" id="btnHeroes">英雄</button>
+        <button class="btn sub" id="btnBase" data-i18n>基地</button>
+        <button class="btn sub" id="btnHeroes" data-i18n>英雄</button>
       </div>
-      <p class="howto">左右にドラッグで移動（PCは ← → / A D、Esc で一時停止）<br>部隊は自動で撃つ。▲のゲートは撃つと数字が上がり、▼は下がる！<br>赤く光る地面はボスの攻撃。よけろ！</p>
+      <div class="langrow"><span data-i18n>言語</span><span id="langPickT"></span></div>
+      <p class="howto" data-i18n-html>左右にドラッグで移動（PCは ← → / A D、Esc で一時停止）<br>部隊は自動で撃つ。▲のゲートは撃つと数字が上がり、▼は下がる！<br>赤く光る地面はボスの攻撃。よけろ！</p>
     </section>
 
     <section class="screen" id="scrBase" hidden>
-      <h2>基地</h2>
+      <h2 data-i18n>基地</h2>
       <div class="res" id="bRes"></div>
       <div class="card" id="bRows"></div>
       <div class="row2">
-        <button class="btn sub" id="btnBaseBack">もどる</button>
-        <button class="btn" id="btnBaseGo">出撃する</button>
+        <button class="btn sub" id="btnBaseBack" data-i18n>もどる</button>
+        <button class="btn" id="btnBaseGo" data-i18n>出撃する</button>
       </div>
     </section>
 
     <section class="screen" id="scrHeroes" hidden>
-      <h2>英雄</h2>
+      <h2 data-i18n>英雄</h2>
       <div class="res" id="hRes"></div>
       <div class="slots" id="hSlots"></div>
       <div class="card"><div class="roster" id="hRoster"></div></div>
       <div class="card hd" id="hDetail"></div>
       <div class="row2">
-        <button class="btn sub" id="btnHeroBack">もどる</button>
-        <button class="btn" id="btnHeroGo">出撃する</button>
+        <button class="btn sub" id="btnHeroBack" data-i18n>もどる</button>
+        <button class="btn" id="btnHeroGo" data-i18n>出撃する</button>
       </div>
     </section>
 
     <section class="screen" id="scrSelect" hidden>
-      <h2>出撃</h2>
+      <h2 data-i18n>出撃</h2>
       <div class="stsel">
-        <button class="icon-btn" id="stPrev" aria-label="前のステージ">◀</button>
+        <button class="icon-btn" id="stPrev" aria-label="前のステージ" data-i18n-attr="aria-label">◀</button>
         <div class="num" id="stNum">STAGE 1</div>
-        <button class="icon-btn" id="stNext" aria-label="次のステージ">▶</button>
+        <button class="icon-btn" id="stNext" aria-label="次のステージ" data-i18n-attr="aria-label">▶</button>
       </div>
       <div class="card pw">
-        <div>推奨戦力<b id="stRec">0</b></div>
-        <div>あなたの戦力<b id="stPow">0</b></div>
+        <div><span data-i18n>推奨戦力</span><b id="stRec">0</b></div>
+        <div><span data-i18n>あなたの戦力</span><b id="stPow">0</b></div>
       </div>
       <div class="card foes" id="stFoes"></div>
       <div class="warn" id="stWarn"></div>
-      <button class="btn" id="btnStart">出撃！</button>
+      <button class="btn" id="btnStart" data-i18n>出撃！</button>
       <div class="row2">
-        <button class="btn sub" id="btnSelBack">もどる</button>
-        <button class="btn sub" id="btnSelHero">英雄の編成</button>
+        <button class="btn sub" id="btnSelBack" data-i18n>もどる</button>
+        <button class="btn sub" id="btnSelHero" data-i18n>英雄の編成</button>
       </div>
     </section>
 
     <section class="screen" id="scrPause" hidden>
-      <h2>一時停止</h2>
-      <button class="btn" id="btnResume">つづける</button>
-      <button class="btn sub" id="btnQuit">撤退する（トラックの中身だけ持ち帰る）</button>
+      <h2 data-i18n>一時停止</h2>
+      <button class="btn" id="btnResume" data-i18n>つづける</button>
+      <button class="btn sub" id="btnQuit" data-i18n>撤退する（トラックの中身だけ持ち帰る）</button>
+      <div class="langrow"><span data-i18n>言語</span><span id="langPickP"></span></div>
     </section>
 
     <section class="screen" id="scrClear" hidden>
-      <h2><em id="cStage">STAGE 1</em><br>クリア！</h2>
+      <h2><em id="cStage">STAGE 1</em><br><span data-i18n>クリア！</span></h2>
       <div class="card" id="cList"></div>
-      <button class="btn" id="btnNext">次のステージへ</button>
+      <button class="btn" id="btnNext" data-i18n>次のステージへ</button>
       <div class="row2">
-        <button class="btn sub" id="btnClearBase">基地で強化</button>
-        <button class="btn sub" id="btnClearHero">英雄</button>
+        <button class="btn sub" id="btnClearBase" data-i18n>基地で強化</button>
+        <button class="btn sub" id="btnClearHero" data-i18n>英雄</button>
       </div>
     </section>
 
     <section class="screen" id="scrFail" hidden>
-      <h2>全滅…</h2>
+      <h2 data-i18n>全滅…</h2>
       <div class="card" id="fInfo"></div>
-      <button class="btn" id="btnRetry">リトライ</button>
+      <button class="btn" id="btnRetry" data-i18n>リトライ</button>
       <div class="row2">
-        <button class="btn sub" id="btnFailBase">基地で強化</button>
-        <button class="btn sub" id="btnFailHero">英雄</button>
+        <button class="btn sub" id="btnFailBase" data-i18n>基地で強化</button>
+        <button class="btn sub" id="btnFailHero" data-i18n>英雄</button>
       </div>
     </section>
   </main>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+KoboI18n.add({ en: {
+  'ゲートランナー': 'Gate Runner', '← ゲーム一覧': '← Games', 'ゲート<span>ランナー</span>': 'Gate <span>Runner</span>',
+  'サウンド切り替え': 'Toggle sound', '一時停止': 'Paused', '前のステージ': 'Previous stage', '次のステージ': 'Next stage', '言語': 'Language',
+  '3D表示を開始できませんでした。<br>通信状態を確認して再読み込みしてください。': 'Could not start 3D graphics.<br>Check your connection and reload.',
+  'ゲートで仲間を増やし、英雄と共に<br>群れとボスを撃ち倒せ！': 'Grow your squad through gates and<br>blast hordes and bosses with your heroes!',
+  'クリア': 'Cleared', 'コイン': 'Coins', '戦力': 'Power', '出撃する': 'Deploy', '基地': 'Base', '英雄': 'Heroes',
+  '左右にドラッグで移動（PCは ← → / A D、Esc で一時停止）<br>部隊は自動で撃つ。▲のゲートは撃つと数字が上がり、▼は下がる！<br>赤く光る地面はボスの攻撃。よけろ！': 'Drag left/right to move (PC: ← → / A D, Esc to pause)<br>Your squad fires automatically. Shooting ▲ gates raises them, ▼ lowers them!<br>Glowing red ground is a boss attack. Dodge it!',
+  'もどる': 'Back', '出撃': 'Deploy', '推奨戦力': 'Recommended', 'あなたの戦力': 'Your power', '出撃！': 'Go!', '英雄の編成': 'Hero team',
+  'つづける': 'Resume', '撤退する（トラックの中身だけ持ち帰る）': 'Retreat (keep only the truck\'s cargo)',
+  'クリア！': 'Clear!', '次のステージへ': 'Next stage', '基地で強化': 'Upgrade base', '全滅…': 'Wiped out…', 'リトライ': 'Retry',
+  'ハンドガン': 'Handgun', 'ライフル': 'Rifle', 'マシンガン': 'Machine gun', 'ガトリング': 'Gatling', '火炎放射': 'Flamer', 'ロケット': 'Rockets',
+  'ゾンビ': 'Zombie', 'ランナー': 'Runner', 'タンク': 'Tank', 'スピッター': 'Spitter', '自爆ゾンビ': 'Bomber', '盾ゾンビ': 'Shield zombie',
+  'レン': 'Ren', 'ミナ': 'Mina', 'バルク': 'Bulk', 'シズク': 'Shizuku', 'ゴウ': 'Gou', 'ソラ': 'Sora', 'カイ': 'Kai',
+  '突撃兵': 'Assault', '衛生兵': 'Medic', '擲弾兵': 'Grenadier', '狙撃手': 'Sniper', '工兵': 'Engineer', '通信兵': 'Radio', '指揮官': 'Commander',
+  '突': 'A', '衛': 'M', '擲': 'G', '狙': 'S', '工': 'E', '通': 'R', '指': 'C',
+  '突撃号令': 'Charge', '救護': 'Heal', 'グレネード斉射': 'Grenades', '貫通狙撃': 'Pierce', 'シールド壁': 'Shield', '空爆要請': 'Airstrike', '増援': 'Backup',
+  '数秒間、部隊の連射 ×1.7': 'Squad fire rate ×1.7 for a few seconds', '失った仲間の一部を復帰させる': 'Revives some lost soldiers',
+  '敵の群れに榴弾を5発': 'Fires 5 grenades into the horde', '一直線上の敵をまとめて撃ち抜く': 'Shoots through every enemy in a line',
+  '前方に盾を展開（接触・酸・ボス攻撃を軽減）': 'Raises a shield ahead (less contact, acid and boss damage)', '前方一帯を空爆': 'Bombs the area ahead', '仲間を呼び寄せる': 'Calls in reinforcements',
+  '部隊の攻撃力 +8%': 'Squad damage +8%', '接触で受ける被害 −15%': 'Contact damage −15%', '爆発ダメージ +30%': 'Explosion damage +30%', 'ボスへのダメージ +20%': 'Boss damage +20%',
+  '障害物・箱へのダメージ +60%': 'Damage to obstacles/crates +60%', '射程 +15%': 'Range +15%', '開始人数 +3〜': 'Starting squad +3 or more',
+  '司令部': 'HQ', '兵舎': 'Barracks', '研究所': 'Lab', '武器庫': 'Armory', '補給トラック': 'Supply truck',
+  '司': 'HQ', '兵': 'B', '研': 'L', '武': 'W', '車': 'T',
+  '中ボスとボスが待ち構える': 'A mid-boss and a boss await', 'ボスを倒せ！': 'Defeat the boss!', '赤い地面から逃げろ': 'Get off the red ground',
+  '中ボス出現': 'Mid-boss!', '倒さないと進めない': 'Beat it to move on', '撃破！': 'Defeated!', '中ボス撃破！': 'Mid-boss down!',
+  '補給トラック（{p}%回収）': 'Supply truck ({p}% collected)', '満載': 'FULL', 'ステージ報酬': 'Stage reward', '資材': 'Materials', '経験値': 'EXP',
+  '英雄カード': 'Hero cards', '生き残り / 最大': 'Survivors / peak', '{a} / {b}人': '{a} / {b}', 'コイン合計': 'Total coins',
+  'STAGE {n} へ': 'To STAGE {n}', '基地を強化して先へ': 'Upgrade base to go on', 'ステージ': 'Stage', '最大人数': 'Peak squad', '{n}人': '{n}',
+  '倒した敵': 'Enemies killed', 'トラック回収': 'Truck haul', '資材 / 経験値': 'Materials / EXP', '戦力 / 推奨': 'Power / rec.',
+  '基地と英雄を強化して戦力を上げよう': 'Upgrade your base and heroes to raise power', 'ゲートの選び方と回避を見直そう': 'Rethink your gate picks and dodging',
+  '罠！武器ダウン→{w}': 'Trap! Weapon down → {w}', '罠！ 仲間 −30%': 'Trap! Squad −30%', '罠！ 待ち伏せ': 'Trap! Ambush', '+{n}人': '+{n} men',
+  '武器強化 → {w}': 'Weapon up → {w}', '{w}！': '{w}!', '援軍 +{n}人': 'Backup +{n}',
+  '▲ 撃つと増える': '▲ Shoot to raise', '▼ 撃つと減る': '▼ Shoot to lower', '武器強化': 'Weapon up', '援軍': 'Backup', '？？？': '???',
+  '{w} 連射!': '{w} RAPID!', '中ボス': 'Mid-boss',
+  '建物の上限Lv {a}・挑戦できるステージ {b}まで': 'Building cap Lv {a} · stages up to {b}', '・次Lvで英雄解放': ' · next Lv unlocks a hero',
+  '開始人数 {n}人': 'Starting squad {n}', '攻撃力 +{a}%・連射 +{b}%': 'Damage +{a}% · fire rate +{b}%', '初期武器 {w}・威力 +{p}%': 'Start weapon {w} · power +{p}%',
+  '撃破コインの {p}% を回収・積載 {c}': 'Collects {p}% of kill coins · holds {c}',
+  '司令部Lv{n}が必要': 'Needs HQ Lv{n}', 'STAGE {n} クリアで解放': 'Clear STAGE {n} to unlock', '空き枠<br>下から選ぶ': 'Empty<br>pick below', '司令部Lv{n}': 'HQ Lv{n}',
+  'スキル「{s}」': 'Skill "{s}"', '（{n}秒ごとに自動）': ' (auto every {n}s)', 'パッシブ': 'Passive', '強さ': 'Power', 'カード': 'Cards',
+  '編成から外す': 'Remove', '編成に入れる': 'Add to team', 'Lv上限': 'Max Lv', '昇格 カード{n}': 'Rank up ({n})', '司令部 Lv{n} で加入': 'Joins at HQ Lv{n}',
+  'ランナー（速い）': 'Runner (fast)', 'タンク（硬い・大被害）': 'Tank (tough, hits hard)', 'スピッター（遠くから酸）': 'Spitter (acid from afar)',
+  '自爆ゾンビ（近くで爆発）': 'Bomber (explodes up close)', '盾ゾンビ（正面は効かない・横から撃て）': 'Shield zombie (immune from the front, shoot its side)',
+  '出現する敵': 'Enemies', '・': ', ', 'ボス': 'Boss', '体力 {n}・叩きつけ': 'HP {n} · slam', '・突進・呼び寄せ': ' · charge · summon',
+  '次のステージには司令部Lv{n}が必要': 'Next stage needs HQ Lv{n}', '戦力不足！ 基地と英雄を強化しよう': 'Too weak! Upgrade your base and heroes',
+} });
+</script>
+<script>
 (() => {
 'use strict';
 const SAVE_KEY = 'kusoge.gates.save', SND_KEY = 'kusoge.sound';
 const DEBUG = /[?&]debug(?:[=&]|$)/.test(location.search);
 const $ = id => document.getElementById(id);
+const T = KoboI18n.t;
+KoboI18n.apply(); KoboI18n.picker($('langPickT')); KoboI18n.picker($('langPickP'));
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const frnd = Math.random; // visual-only randomness
 let seed = (Date.now() ^ 0x5bd1e995) >>> 0;
@@ -364,6 +421,10 @@ const BLD = [
   { id: 'truck', name: '補給トラック', ch: '車', col: '#ffd27a', c: 50, cm: 1.45, m: 2, mm: 1.35 },
 ];
 const HQ_MAX = 15;
+// display names follow the chosen language (data is never saved by name)
+WEAPONS.forEach(w => w.name = T(w.name)); Object.values(SPECIAL).forEach(w => w.name = T(w.name)); ZK.forEach(z => z.name = T(z.name));
+HEROES.forEach(h => { for (const k of ['name', 'role', 'ch', 'sk', 'skd', 'pas']) h[k] = T(h[k]); });
+BLD.forEach(b => { b.name = T(b.name); b.ch = T(b.ch); });
 
 /* =============================== save =============================== */
 function defSave() {
@@ -759,7 +820,7 @@ function startRun(st) {
   updRad();
   mode = 'run'; show(null); $('hud').hidden = false;
   $('hudStage').textContent = 'STAGE ' + s;
-  setBanner('STAGE ' + s, s >= 4 ? '中ボスとボスが待ち構える' : 'ボスを倒せ！', 1.6);
+  setBanner('STAGE ' + s, s >= 4 ? T('中ボスとボスが待ち構える') : T('ボスを倒せ！'), 1.6);
   hudCache.reset();
   buildSkillHud();
 }
@@ -772,7 +833,7 @@ function startBoss() {
   const s = R.stage;
   e.kind = 0; e.x = 0; e.z = R.dist + 42; e.w = 1.9; e.hp = e.max = Math.round(bossHP(s)); e.vz = 1.05 + Math.min(s, 15) * 0.03; e.atkT = 3; e.sz = 1;
   R.boss = e; R.stompT = 0;
-  sfx.boss(); setBanner('BOSS!', '赤い地面から逃げろ', 1.6);
+  sfx.boss(); setBanner('BOSS!', T('赤い地面から逃げろ'), 1.6);
   logEv('boss');
 }
 function startMini() {
@@ -781,7 +842,7 @@ function startMini() {
   const s = R.stage;
   e.kind = 1; e.x = 0; e.z = R.dist + 34; e.w = 1.3; e.hp = e.max = Math.round(bossHP(s) * 0.28); e.vz = 1.5; e.atkT = 2.5; e.sz = 0.65;
   R.mini = e;
-  sfx.boss(); setBanner('中ボス出現', '倒さないと進めない', 1.4);
+  sfx.boss(); setBanner(T('中ボス出現'), T('倒さないと進めない'), 1.4);
   logEv('mini');
 }
 function loseMen(k, why) {
@@ -808,7 +869,7 @@ function win() {
   if (b) { burst(b.x, b.z, 2, 60, 0xffcf33, 9, 0.3); burst(b.x, b.z, 2, 40, 0x9aa3ad, 7, 0.25); flash(b.x, b.z, 5, 0xffb030); b.on = false; }
   for (let i = 0; i < ENT_N; i++) { const e = ents[i]; if (e.on && e.t === T_Z) { burst(e.x, e.z, 0.6, 5, 0x7cd65c, 4, 0.14); e.on = false; } }
   for (const t of tele) t.on = false;
-  sfx.boom(); sfx.clear(); setBanner('撃破！', '', 1.5);
+  sfx.boom(); sfx.clear(); setBanner(T('撃破！'), '', 1.5);
 }
 let lastResult = null;
 function endRun(won) {
@@ -834,21 +895,21 @@ function endRun(won) {
     $('cStage').textContent = 'STAGE ' + s;
     const cc = {}; res.cards.forEach(n => cc[n] = (cc[n] || 0) + 1);
     $('cList').innerHTML =
-      rew('補給トラック（' + Math.round(R.truckPct * 100) + '%回収）', '<span class="cost"><i class="coin-ico"></i>' + truck + (truck >= R.truckCap ? ' 満載' : '') + '</span>') +
-      rew('ステージ報酬', '<span class="cost"><i class="coin-ico"></i>' + res.bonus + '</span>') +
-      rew('資材', '<span class="cost"><i class="mat-ico"></i>' + res.mats + '</span>') +
-      rew('経験値', '<span class="cost"><i class="exp-ico"></i>' + res.exp + '</span>') +
-      rew('英雄カード', Object.keys(cc).map(k => k + '×' + cc[k]).join(' ') || '-') +
-      rew('生き残り / 最大', R.n + ' / ' + R.peak + '人') +
-      '<div class="rew tot"><span>コイン合計</span><span class="cost"><i class="coin-ico"></i>' + (truck + res.bonus) + '</span></div>';
-    $('btnNext').textContent = save.stage > s ? 'STAGE ' + save.stage + ' へ' : '基地を強化して先へ';
+      rew(T('補給トラック（{p}%回収）', { p: Math.round(R.truckPct * 100) }), '<span class="cost"><i class="coin-ico"></i>' + truck + (truck >= R.truckCap ? ' ' + T('満載') : '') + '</span>') +
+      rew(T('ステージ報酬'), '<span class="cost"><i class="coin-ico"></i>' + res.bonus + '</span>') +
+      rew(T('資材'), '<span class="cost"><i class="mat-ico"></i>' + res.mats + '</span>') +
+      rew(T('経験値'), '<span class="cost"><i class="exp-ico"></i>' + res.exp + '</span>') +
+      rew(T('英雄カード'), Object.keys(cc).map(k => k + '×' + cc[k]).join(' ') || '-') +
+      rew(T('生き残り / 最大'), T('{a} / {b}人', { a: R.n, b: R.peak })) +
+      '<div class="rew tot"><span>' + T('コイン合計') + '</span><span class="cost"><i class="coin-ico"></i>' + (truck + res.bonus) + '</span></div>';
+    $('btnNext').textContent = save.stage > s ? T('STAGE {n} へ', { n: save.stage }) : T('基地を強化して先へ');
     mode = 'clear'; show('scrClear');
   } else {
     const pw = calcPower(), rc = recPower(s);
-    $('fInfo').innerHTML = rew('ステージ', s) + rew('最大人数', R.peak + '人') + rew('倒した敵', R.kills) +
-      rew('トラック回収', '<span class="cost"><i class="coin-ico"></i>' + truck + '</span>') + rew('資材 / 経験値', res.mats + ' / ' + res.exp) +
-      rew('戦力 / 推奨', '<span style="color:' + (pw >= rc ? 'var(--good)' : 'var(--bad)') + '">' + pw + '</span> / ' + rc) +
-      '<div class="rew note">' + (pw < rc ? '基地と英雄を強化して戦力を上げよう' : 'ゲートの選び方と回避を見直そう') + '</div>';
+    $('fInfo').innerHTML = rew(T('ステージ'), s) + rew(T('最大人数'), T('{n}人', { n: R.peak })) + rew(T('倒した敵'), R.kills) +
+      rew(T('トラック回収'), '<span class="cost"><i class="coin-ico"></i>' + truck + '</span>') + rew(T('資材 / 経験値'), res.mats + ' / ' + res.exp) +
+      rew(T('戦力 / 推奨'), '<span style="color:' + (pw >= rc ? 'var(--good)' : 'var(--bad)') + '">' + pw + '</span> / ' + rc) +
+      '<div class="rew note">' + (pw < rc ? T('基地と英雄を強化して戦力を上げよう') : T('ゲートの選び方と回避を見直そう')) + '</div>';
     mode = 'fail'; show('scrFail'); sfx.fail();
   }
 }
@@ -959,7 +1020,7 @@ function damage(e, d, src) {
           e.on = false; R.mini = null; R.miniDone = true; R.phase = 'road';
           burst(e.x, e.z, 1.5, 40, 0xffcf33, 8, 0.25); flash(e.x, e.z, 3.5, 0xffb030); sfx.boom(); sfx.good();
           R.coinsRaw += 20; R.truck = Math.min(R.truckCap, R.truck + 20 * R.truckPct * (1 + 0.25 * (R.stage - 1)));
-          setBanner('中ボス撃破！', '', 1.2); logEv('mini down');
+          setBanner(T('中ボス撃破！'), '', 1.2); logEv('mini down');
           for (const t of tele) t.on = false;
         } else win();
       }
@@ -977,19 +1038,19 @@ function openCrate(e) {
     else {
       good = false;
       const b = rnd();
-      if (b < 0.34) { if (R.sp) R.sp = ''; else R.tier = Math.max(0, R.tier - 1); msg = '罠！武器ダウン→' + weaponName(); }
-      else if (b < 0.67) { loseMen(Math.ceil(R.n * 0.3), 'trap crate'); msg = '罠！ 仲間 −30%'; }
-      else { for (let i = 0; i < 6 + s; i++) mkZombie(clamp(R.px + (rnd() - 0.5) * 6, -4.5, 4.5), R.dist + 14 + rnd() * 6, ZR); msg = '罠！ 待ち伏せ'; }
+      if (b < 0.34) { if (R.sp) R.sp = ''; else R.tier = Math.max(0, R.tier - 1); msg = T('罠！武器ダウン→{w}', { w: weaponName() }); }
+      else if (b < 0.67) { loseMen(Math.ceil(R.n * 0.3), 'trap crate'); msg = T('罠！ 仲間 −30%'); }
+      else { for (let i = 0; i < 6 + s; i++) mkZombie(clamp(R.px + (rnd() - 0.5) * 6, -4.5, 4.5), R.dist + 14 + rnd() * 6, ZR); msg = T('罠！ 待ち伏せ'); }
     }
   }
   if (good) {
     if (k === 'up') {
       if (R.sp) { R.sp = ''; R.tier = Math.min(3, R.tier + 1); }
       else if (R.tier < 3) R.tier++;
-      else { addMen(6 + 3 * s); msg = '+' + (6 + 3 * s) + '人'; }
-      if (!msg) msg = '武器強化 → ' + weaponName();
-    } else if (k === 'fl' || k === 'rk') { R.sp = k; msg = weaponName() + '！'; }
-    else if (k === 'tr') { const a = 6 + 3 * s; addMen(a); msg = '援軍 +' + a + '人'; }
+      else { addMen(6 + 3 * s); msg = T('+{n}人', { n: 6 + 3 * s }); }
+      if (!msg) msg = T('武器強化 → {w}', { w: weaponName() });
+    } else if (k === 'fl' || k === 'rk') { R.sp = k; msg = T('{w}！', { w: weaponName() }); }
+    else if (k === 'tr') { const a = 6 + 3 * s; addMen(a); msg = T('援軍 +{n}人', { n: a }); }
     sfx.power();
   } else { sfx.bad(); vibrate(60); }
   logEv('crate ' + e.ck + '->' + (good ? k : 'trap') + ' ' + weaponName());
@@ -1573,20 +1634,20 @@ function drawGateLabel(slot, e) {
   x.fillStyle = good > 0 ? '#ffffff' : good < 0 ? '#ffe0e0' : '#f0f0f0'; x.fillText(txt, 128, 74);
   if (e.sh) {
     x.font = '30px ' + FONT;
-    const m = e.sh > 0 ? '▲ 撃つと増える' : '▼ 撃つと減る';
-    x.lineWidth = 8; x.strokeText(m, 128, 140);
-    x.fillStyle = e.sh > 0 ? '#9dffb8' : '#ffb0a0'; x.fillText(m, 128, 140);
+    const m = e.sh > 0 ? T('▲ 撃つと増える') : T('▼ 撃つと減る');
+    x.lineWidth = 8; x.strokeText(m, 128, 140, 244);
+    x.fillStyle = e.sh > 0 ? '#9dffb8' : '#ffb0a0'; x.fillText(m, 128, 140, 244);
   }
   slot.lt.t.needsUpdate = true;
 }
-const CRATE_INFO = { up: ['武器強化', 0x3d7bd9], tr: ['援軍', 0x2fae5f], fl: ['火炎放射', 0xe0581f], rk: ['ロケット', 0x6a6f7a], '?': ['？？？', 0x8a4fd0] };
+const CRATE_INFO = { up: [T('武器強化'), 0x3d7bd9], tr: [T('援軍'), 0x2fae5f], fl: [T('火炎放射'), 0xe0581f], rk: [T('ロケット'), 0x6a6f7a], '?': [T('？？？'), 0x8a4fd0] };
 function drawCrateLabel(slot, e) {
   const { c, x } = slot.lt;
   x.clearRect(0, 0, c.width, c.height);
   x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
   x.font = '38px ' + FONT; x.lineWidth = 9; x.strokeStyle = '#14202e';
   const t = CRATE_INFO[e.ck][0];
-  x.strokeText(t, 128, 30); x.fillStyle = e.ck === '?' ? '#e2c4ff' : '#fff2a8'; x.fillText(t, 128, 30);
+  x.strokeText(t, 128, 30, 240); x.fillStyle = e.ck === '?' ? '#e2c4ff' : '#fff2a8'; x.fillText(t, 128, 30, 240);
   x.fillStyle = '#14202ecc'; x.fillRect(28, 62, 200, 24);
   x.fillStyle = '#ffcf33'; x.fillRect(31, 65, 194 * clamp(e.hp / e.max, 0, 1), 18);
   slot.lt.t.needsUpdate = true;
@@ -1829,7 +1890,7 @@ let hudT = 0;
 function syncHud(dt) {
   if (mode !== 'run') return;
   hudT -= dt; if (hudT > 0) return; hudT = 0.08;
-  const wn = weaponName() + (R.rapid > 0 ? ' 連射!' : '');
+  const wn = R.rapid > 0 ? T('{w} 連射!', { w: weaponName() }) : weaponName();
   if (hudCache.w !== wn) { hudCache.w = wn; $('hudWeapon').textContent = wn; }
   const b = R.boss && R.boss.on ? R.boss : R.mini && R.mini.on ? R.mini : null;
   const isB = !!b;
@@ -1837,7 +1898,7 @@ function syncHud(dt) {
   const p = isB ? b.hp / b.max : clamp(R.dist / R.L, 0, 1);
   const pk = Math.round(p * 400);
   if (hudCache.p !== pk) { hudCache.p = pk; $('pfill').style.width = (p * 100).toFixed(1) + '%'; }
-  const ptxt = isB ? (b.kind === 1 ? '中ボス ' : 'BOSS ') + Math.ceil(b.hp) : '';
+  const ptxt = isB ? (b.kind === 1 ? T('中ボス') + ' ' : 'BOSS ') + Math.ceil(b.hp) : '';
   if (hudCache.ptxt !== ptxt) { hudCache.ptxt = ptxt; $('ptext').textContent = ptxt; }
   const tr = Math.floor(R.truck) + '/' + R.truckCap;
   if (hudCache.tr !== tr) { hudCache.tr = tr; $('ttext').textContent = tr; $('tfill').style.width = (R.truck / R.truckCap * 100).toFixed(1) + '%'; $('truck').classList.toggle('full', R.truck >= R.truckCap); }
@@ -1852,7 +1913,7 @@ function syncHud(dt) {
     }
   }
   const bn = R.bannerT > 0 ? R.banner + '|' + R.bannerSub : '';
-  if (hudCache.banner !== bn) { hudCache.banner = bn; const el = $('banner'); el.hidden = !bn; if (bn) { el.innerHTML = ''; el.appendChild(document.createTextNode(R.banner)); if (R.bannerSub) { const s = document.createElement('small'); s.textContent = R.bannerSub; el.appendChild(s); } el.style.color = /BOSS|ボス/.test(R.banner) ? '#ff6b5b' : '#ffcf33'; } }
+  if (hudCache.banner !== bn) { hudCache.banner = bn; const el = $('banner'); el.hidden = !bn; if (bn) { el.innerHTML = ''; el.appendChild(document.createTextNode(R.banner)); if (R.bannerSub) { const s = document.createElement('small'); s.textContent = R.bannerSub; el.appendChild(s); } el.style.color = /BOSS|ボス|boss/i.test(R.banner) ? '#ff6b5b' : '#ffcf33'; } }
 }
 
 /* =============================== screens =============================== */
@@ -1867,11 +1928,11 @@ function toTitle() {
 const resHtml = () => '<span><i class="coin-ico"></i>' + save.coins + '</span><span><i class="mat-ico"></i>' + save.mat + '</span><span><i class="exp-ico"></i>' + save.exp + '</span>';
 function bldEffect(id, lv) {
   switch (id) {
-    case 'hq': return '建物の上限Lv ' + lv * 2 + '・挑戦できるステージ ' + lv * 5 + 'まで' + (HEROES.some(h => h.hq === lv + 1) ? '・次Lvで英雄解放' : '');
-    case 'bar': return '開始人数 ' + (8 + 5 * (lv - 1)) + '人';
-    case 'lab': return '攻撃力 +' + 15 * (lv - 1) + '%・連射 +' + 5 * (lv - 1) + '%';
-    case 'arm': { const t = lv >= 7 ? 3 : lv >= 5 ? 2 : lv >= 3 ? 1 : 0; return '初期武器 ' + WEAPONS[t].name + '・威力 +' + 4 * (lv - 1) + '%'; }
-    case 'truck': return '撃破コインの ' + Math.round(Math.min(1, 0.35 + 0.07 * (lv - 1)) * 100) + '% を回収・積載 ' + (60 + 70 * (lv - 1));
+    case 'hq': return T('建物の上限Lv {a}・挑戦できるステージ {b}まで', { a: lv * 2, b: lv * 5 }) + (HEROES.some(h => h.hq === lv + 1) ? T('・次Lvで英雄解放') : '');
+    case 'bar': return T('開始人数 {n}人', { n: 8 + 5 * (lv - 1) });
+    case 'lab': return T('攻撃力 +{a}%・連射 +{b}%', { a: 15 * (lv - 1), b: 5 * (lv - 1) });
+    case 'arm': { const t = lv >= 7 ? 3 : lv >= 5 ? 2 : lv >= 3 ? 1 : 0; return T('初期武器 {w}・威力 +{p}%', { w: WEAPONS[t].name, p: 4 * (lv - 1) }); }
+    case 'truck': return T('撃破コインの {p}% を回収・積載 {c}', { p: Math.round(Math.min(1, 0.35 + 0.07 * (lv - 1)) * 100), c: 60 + 70 * (lv - 1) });
   }
   return '';
 }
@@ -1882,8 +1943,8 @@ function renderBase() {
   for (const b of BLD) {
     const lv = save.bld[b.id], max = bldMax(b), cost = bldCost(b, lv);
     let block = '';
-    if (lv >= max) block = b.id === 'hq' ? 'MAX' : '司令部Lv' + (Math.floor(lv / 2) + 1) + 'が必要';
-    else if (b.id === 'hq' && save.best < hqReq(lv)) block = 'STAGE ' + hqReq(lv) + ' クリアで解放';
+    if (lv >= max) block = b.id === 'hq' ? 'MAX' : T('司令部Lv{n}が必要', { n: Math.floor(lv / 2) + 1 });
+    else if (b.id === 'hq' && save.best < hqReq(lv)) block = T('STAGE {n} クリアで解放', { n: hqReq(lv) });
     const can = !block && save.coins >= cost.c && save.mat >= cost.m;
     h += '<div class="uprow"><div class="ic" style="background:' + b.col + '">' + b.ch + '</div><div><div class="nm">' + b.name + '<span class="lv">Lv' + lv + '</span></div><div class="ds">' + bldEffect(b.id, lv) +
       (lv < max ? '<span class="nx"><br>→ ' + bldEffect(b.id, lv + 1) + '</span>' : '') + '</div></div>' +
@@ -1908,27 +1969,27 @@ function renderHeroes() {
   for (let i = 0; i < 3; i++) {
     const id = save.sel[i], h = HMAP[id];
     s += h ? '<div class="slot on" data-slot="' + i + '" style="border-color:' + h.col + '"><b style="color:' + h.col + '">' + h.name + '</b>' + h.role + '<span>Lv' + save.heroes[id].lv + '</span></div>'
-      : '<div class="slot" data-slot="' + i + '">空き枠<br>下から選ぶ</div>';
+      : '<div class="slot" data-slot="' + i + '">' + T('空き枠<br>下から選ぶ') + '</div>';
   }
   $('hSlots').innerHTML = s;
   let r = '';
   for (const h of HEROES) {
     const x = save.heroes[h.id], un = heroUnlocked(h);
     r += '<div class="hc' + (heroFocus === h.id ? ' sel' : '') + (save.sel.indexOf(h.id) >= 0 ? ' inteam' : '') + (un ? '' : ' lock') + '" data-h="' + h.id + '"><b style="color:' + h.col + '">' + h.name + '</b>' + h.role + '<br>' +
-      (un ? 'Lv' + x.lv + ' <span class="stars">' + '★'.repeat(x.star) + '</span>' : '司令部Lv' + h.hq) + '</div>';
+      (un ? 'Lv' + x.lv + ' <span class="stars">' + '★'.repeat(x.star) + '</span>' : T('司令部Lv{n}', { n: h.hq })) + '</div>';
   }
   $('hRoster').innerHTML = r;
   const h = HMAP[heroFocus], x = save.heroes[h.id], un = heroUnlocked(h);
   const maxLv = heroMaxLv(h.id), ec = expCost(x.lv), sc = STAR_COST[x.star];
   const inTeam = save.sel.indexOf(h.id) >= 0;
   $('hDetail').innerHTML = '<div><span class="t" style="color:' + h.col + '">' + h.name + '</span> ' + h.role + ' <span class="stars">' + ('★'.repeat(x.star) || '☆') + '</span> Lv' + x.lv + '/' + maxLv + '</div>' +
-    '<div><span class="k">スキル「' + h.sk + '」</span>' + h.skd + '（' + h.cd + '秒ごとに自動）</div>' +
-    '<div><span class="k">パッシブ</span> ' + h.pas + '</div>' +
-    '<div>強さ ×' + heroMul(h.id).toFixed(2) + '　カード ' + x.cards + (sc ? '/' + sc : '') + '</div>' +
-    (un ? '<div class="hbtns"><button class="btn sub" id="hTeam">' + (inTeam ? '編成から外す' : '編成に入れる') + '</button>' +
-      '<button class="btn" id="hLv"' + (x.lv < maxLv && save.exp >= ec ? '' : ' disabled') + '>' + (x.lv >= maxLv ? 'Lv上限' : 'Lv UP <i class="exp-ico"></i>' + ec) + '</button>' +
-      '<button class="btn" id="hStar"' + (sc && x.cards >= sc ? '' : ' disabled') + '>' + (sc ? '昇格 カード' + sc : '★MAX') + '</button></div>'
-      : '<div class="warn">司令部 Lv' + h.hq + ' で加入</div>');
+    '<div><span class="k">' + T('スキル「{s}」', { s: h.sk }) + '</span>' + h.skd + T('（{n}秒ごとに自動）', { n: h.cd }) + '</div>' +
+    '<div><span class="k">' + T('パッシブ') + '</span> ' + h.pas + '</div>' +
+    '<div>' + T('強さ') + ' ×' + heroMul(h.id).toFixed(2) + '　' + T('カード') + ' ' + x.cards + (sc ? '/' + sc : '') + '</div>' +
+    (un ? '<div class="hbtns"><button class="btn sub" id="hTeam">' + (inTeam ? T('編成から外す') : T('編成に入れる')) + '</button>' +
+      '<button class="btn" id="hLv"' + (x.lv < maxLv && save.exp >= ec ? '' : ' disabled') + '>' + (x.lv >= maxLv ? T('Lv上限') : 'Lv UP <i class="exp-ico"></i>' + ec) + '</button>' +
+      '<button class="btn" id="hStar"' + (sc && x.cards >= sc ? '' : ' disabled') + '>' + (sc ? T('昇格 カード{n}', { n: sc }) : '★MAX') + '</button></div>'
+      : '<div class="warn">' + T('司令部 Lv{n} で加入', { n: h.hq }) + '</div>');
 }
 $('hSlots').addEventListener('click', ev => {
   const sl = ev.target.closest('[data-slot]'); if (!sl) return;
@@ -1958,14 +2019,14 @@ function renderSelect() {
   const s = selStage, rc = recPower(s), pw = calcPower();
   $('stNum').textContent = 'STAGE ' + s;
   $('stRec').textContent = rc; $('stPow').textContent = pw; $('stPow').className = pw >= rc ? 'ok' : 'ng';
-  const foes = ['ゾンビ'];
-  if (s >= 2) foes.push('ランナー（速い）', 'タンク（硬い・大被害）');
-  if (s >= 3) foes.push('スピッター（遠くから酸）', '自爆ゾンビ（近くで爆発）');
-  if (s >= 4) foes.push('盾ゾンビ（正面は効かない・横から撃て）', '中ボス');
-  $('stFoes').innerHTML = '<b>出現する敵</b><br>' + foes.join('・') + '<br><b>ボス</b> 体力 ' + Math.round(bossHP(s)) + '・叩きつけ' + (s >= 1 ? '・突進・呼び寄せ' : '');
+  const foes = [T('ゾンビ')];
+  if (s >= 2) foes.push(T('ランナー（速い）'), T('タンク（硬い・大被害）'));
+  if (s >= 3) foes.push(T('スピッター（遠くから酸）'), T('自爆ゾンビ（近くで爆発）'));
+  if (s >= 4) foes.push(T('盾ゾンビ（正面は効かない・横から撃て）'), T('中ボス'));
+  $('stFoes').innerHTML = '<b>' + T('出現する敵') + '</b><br>' + foes.join(T('・')) + '<br><b>' + T('ボス') + '</b> ' + T('体力 {n}・叩きつけ', { n: Math.round(bossHP(s)) }) + (s >= 1 ? T('・突進・呼び寄せ') : '');
   $('stPrev').disabled = s <= 1; $('stNext').disabled = s >= maxStage();
   const need = stageHQ(s + 1);
-  $('stWarn').textContent = s >= maxStage() && save.best >= s ? '次のステージには司令部Lv' + need + 'が必要' : pw < rc ? '戦力不足！ 基地と英雄を強化しよう' : '';
+  $('stWarn').textContent = s >= maxStage() && save.best >= s ? T('次のステージには司令部Lv{n}が必要', { n: need }) : pw < rc ? T('戦力不足！ 基地と英雄を強化しよう') : '';
 }
 $('stPrev').addEventListener('click', () => { if (selStage > 1) { selStage--; sfx.click(); renderSelect(); } });
 $('stNext').addEventListener('click', () => { if (selStage < maxStage()) { selStage++; sfx.click(); renderSelect(); } });

@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="いかだ暮らし">
+<script src="../common/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -103,6 +104,8 @@ h1 span { color: var(--sun); }
   padding: 3px 5px; font-size: 10.5px; font-weight: 800; min-width: 0; white-space: nowrap; border: 1px solid transparent;
 }
 .rc span { color: var(--sand-dim); overflow: hidden; text-overflow: ellipsis; }
+html[lang="en"] .rc { padding: 3px 4px; letter-spacing: -.02em; } html[lang="en"] .rc span { font-size: 9.5px; }
+@media (max-width: 400px) { html[lang="en"] .rc b small, html[lang="en"] #res .rc:last-child span { display: none; } }
 .rc b { font-variant-numeric: tabular-nums; font-size: 11.5px; }
 .rc b small { color: var(--sand-dim); font-size: 9px; font-weight: 500; }
 .rc.full { border-color: var(--sun); } .rc.full b { color: var(--sun); }
@@ -177,7 +180,7 @@ h1 span { color: var(--sun); }
 @keyframes glow { 50% { box-shadow: 0 0 0 6px rgba(255,201,74,.15); } }
 
 /* bottom sheet */
-#sheetWrap { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(4,20,26,.4); }
+#sheetWrap { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(4,20,26,.4); padding-top: max(8px, env(safe-area-inset-top, 0px)); }
 #sheet {
   background: var(--sand); color: var(--ink); border-radius: 22px 22px 0 0; max-width: 560px; width: 100%; margin: 0 auto;
   max-height: 76%; display: flex; flex-direction: column; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
@@ -233,7 +236,7 @@ h1 span { color: var(--sun); }
 .prog i { display: block; height: 100%; background: var(--coral); }
 
 /* overlays */
-#ov { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(4,22,28,.62); padding: 18px; }
+#ov { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(4,22,28,.62); padding: max(18px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) max(18px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); }
 #ovPanel { max-height: calc(100% - 8px); overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
 #ovPanel > .row:last-child { position: sticky; bottom: -18px; background: inherit; padding-block: 10px 4px; margin-bottom: -4px; z-index: 1; }
 @media (max-height: 620px) { #ovPanel ul li { padding-block: 6px; } #ovPanel { font-size: 13px; } }
@@ -256,6 +259,8 @@ h1 span { color: var(--sun); }
 .btn.sub2 { background: var(--ink); box-shadow: 0 3px 0 #11262d; color: var(--sand); }
 .recs { display: flex; justify-content: center; gap: 14px; font-size: 12px; font-weight: 800; color: #4f6f78; margin-top: 8px; flex-wrap: wrap; }
 .recs b { display: block; font-size: 19px; color: var(--ink); }
+.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font-size: 12px; font-weight: 800; color: #4f6f78; }
+.langrow select { font: 800 13px var(--font-body); color: var(--ink); background: #fff; border: 2px solid #cfd8d6; border-radius: 10px; padding: 6px 8px; }
 #loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40; background: var(--deep); font-weight: 800; color: var(--sand-dim); text-align: center; padding: 20px; line-height: 1.7; }
 @media (max-height: 660px) {
   #tabs button { min-height: 46px; } #tabs button svg { width: 18px; height: 18px; }
@@ -266,18 +271,18 @@ h1 span { color: var(--sun); }
 <body>
 <div id="app">
   <header>
-    <a class="back" href="../">← ゲーム一覧</a>
-    <h1>いかだ<span>暮らし</span></h1>
-    <div id="dayChip"><i id="dayIcon"></i><span id="dayText">1日目</span></div>
-    <button class="icon-btn" id="helpBtn" aria-label="遊び方">?</button>
-    <button class="icon-btn" id="soundBtn" aria-label="音のオンオフ"></button>
+    <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+    <h1 data-i18n-html>いかだ<span>暮らし</span></h1>
+    <div id="dayChip"><i id="dayIcon"></i><span id="dayText"></span></div>
+    <button class="icon-btn" id="helpBtn" aria-label="遊び方" data-i18n-attr="aria-label">?</button>
+    <button class="icon-btn" id="soundBtn" aria-label="音のオンオフ" data-i18n-attr="aria-label"></button>
   </header>
   <div id="hud">
-    <button id="mission" aria-label="現在の任務"><span id="lvBadge">船長Lv<b id="lvNum">1</b></span><span class="mtxt"><small>メイン任務</small><b id="mText">…</b></span><span id="mProg"></span><i id="xpBar"></i></button>
+    <button id="mission" aria-label="現在の任務" data-i18n-attr="aria-label"><span id="lvBadge"><span data-i18n>船長Lv</span><b id="lvNum">1</b></span><span class="mtxt"><small data-i18n>メイン任務</small><b id="mText">…</b></span><span id="mProg"></span><i id="xpBar"></i></button>
     <div id="stats">
-      <div class="stat" id="stHp"><div class="lbl">体力<b>100</b></div><div class="bar"><i></i></div></div>
-      <div class="stat" id="stWater"><div class="lbl">水分<b>100</b></div><div class="bar"><i></i></div></div>
-      <div class="stat" id="stFood"><div class="lbl">空腹<b>100</b></div><div class="bar"><i></i></div></div>
+      <div class="stat" id="stHp"><div class="lbl"><span data-i18n>体力</span><b>100</b></div><div class="bar"><i></i></div></div>
+      <div class="stat" id="stWater"><div class="lbl"><span data-i18n>水分</span><b>100</b></div><div class="bar"><i></i></div></div>
+      <div class="stat" id="stFood"><div class="lbl"><span data-i18n>空腹</span><b>100</b></div><div class="bar"><i></i></div></div>
     </div>
     <div id="res"></div>
   </div>
@@ -285,35 +290,175 @@ h1 span { color: var(--sun); }
     <canvas id="cv"></canvas>
     <div id="labels"></div>
     <div id="weatherChip" class="sidechip" hidden></div>
-    <div id="side"><div class="sidechip" id="crewChip">クルー 0/1</div><div class="sidechip" id="expChip" hidden></div></div>
-    <div id="alert" hidden><span id="alertText"></span><button id="alertBtn">陣形</button></div>
+    <div id="side"><div class="sidechip" id="crewChip"></div><div class="sidechip" id="expChip" hidden></div></div>
+    <div id="alert" hidden><span id="alertText"></span><button id="alertBtn" data-i18n>陣形</button></div>
     <div id="toast"></div>
-    <div id="coach" hidden><p id="coachText"></p><button id="coachClose" aria-label="ヒントを閉じる">×</button></div>
-    <div id="placeBar" hidden><span id="placeText">置く床をタップ</span><button id="placeCancel">やめる</button></div>
+    <div id="coach" hidden><p id="coachText"></p><button id="coachClose" aria-label="ヒントを閉じる" data-i18n-attr="aria-label">×</button></div>
+    <div id="placeBar" hidden><span id="placeText" data-i18n>置く床をタップ</span><button id="placeCancel" data-i18n>やめる</button></div>
   </div>
   <nav id="tabs">
-    <button data-tab="build"><i class="dot"></i><svg viewBox="0 0 24 24"><path d="M4 20 L13 11 M11 5 l5 -2 l5 5 l-2 5 l-3 -1 l-4 -4 z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>建設</button>
-    <button data-tab="crew"><i class="dot"></i><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20 c0-4 3-6 6-6 s6 2 6 6 M15 15 c3 0 6 1.5 6 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>クルー</button>
-    <button data-tab="mission"><i class="dot"></i><svg viewBox="0 0 24 24"><path d="M6 21 V4 M6 4 h11 l-2.5 4 l2.5 4 H6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/></svg>任務</button>
-    <button data-tab="exp"><i class="dot"></i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 8.5 L13.2 13.2 L8.5 15.5 L10.8 10.8 Z" fill="currentColor"/></svg>遠征</button>
+    <button data-tab="build"><i class="dot"></i><svg viewBox="0 0 24 24"><path d="M4 20 L13 11 M11 5 l5 -2 l5 5 l-2 5 l-3 -1 l-4 -4 z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n>建設</span></button>
+    <button data-tab="crew"><i class="dot"></i><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20 c0-4 3-6 6-6 s6 2 6 6 M15 15 c3 0 6 1.5 6 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span data-i18n>クルー</span></button>
+    <button data-tab="mission"><i class="dot"></i><svg viewBox="0 0 24 24"><path d="M6 21 V4 M6 4 h11 l-2.5 4 l2.5 4 H6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/></svg><span data-i18n>任務</span></button>
+    <button data-tab="exp"><i class="dot"></i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 8.5 L13.2 13.2 L8.5 15.5 L10.8 10.8 Z" fill="currentColor"/></svg><span data-i18n>遠征</span></button>
   </nav>
 </div>
 <div id="sheetWrap" hidden>
   <div id="sheet" role="dialog">
-    <div class="sheet-head"><h2 id="sheetTitle"></h2><button id="sheetClose">閉じる</button></div>
+    <div class="sheet-head"><h2 id="sheetTitle"></h2><button id="sheetClose" data-i18n>閉じる</button></div>
     <div id="sheetBody"></div>
   </div>
 </div>
 <div id="ov" hidden><div class="panel" id="ovPanel"></div></div>
-<div id="loading">海を読み込み中…</div>
+<div id="loading" data-i18n>海を読み込み中…</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+KoboI18n.add({ en: {
+  // static UI
+  'いかだ暮らし': 'Raft Life', 'いかだ<span>暮らし</span>': 'Raft <span>Life</span>', '← ゲーム一覧': '← Games', '遊び方': 'How to play', '音のオンオフ': 'Sound on/off',
+  '現在の任務': 'Current mission', '船長Lv': 'Cap Lv', 'メイン任務': 'Main mission', '体力': 'HP', '水分': 'Water', '空腹': 'Food',
+  '陣形': 'Formation', 'ヒントを閉じる': 'Close hint', '置く床をタップ': 'Tap a tile to place', 'やめる': 'Cancel',
+  '建設': 'Build', 'クルー': 'Crew', '任務': 'Missions', '遠征': 'Expedition', '閉じる': 'Close', '海を読み込み中…': 'Loading the sea…',
+  '・': ' · ', '：': ': ', '！': '!', '？？？': '???',
+  // resources
+  '木材': 'Wood', 'プラ': 'Plastic', '布': 'Cloth', '鉄くず': 'Scrap', '部品': 'Parts', '生魚': 'Raw fish', '料理': 'Meal', '野菜': 'Veggies', '真水': 'Water',
+  '鉄': 'Scrap', '魚': 'Fish', '水': 'Water', '樽': 'Barrel',
+  // facilities
+  '海水精製所': 'Water purifier', '釣り場': 'Fishing spot', '調理場': 'Kitchen', '網': 'Net', '居住区': 'Quarters', '雨水タンク': 'Rain tank',
+  '作業台': 'Workbench', '菜園': 'Garden', '見張り台': 'Lookout', '砲台': 'Ballista', '帆': 'Sail', '倉庫': 'Storage',
+  '雨': 'Rain', '改': 'Up', '床': 'Tile',
+  '海水をこして真水をつくる。': 'Filters seawater into fresh water.', '魚を釣る。漁師を置くと大漁に。': 'Catches fish. Big hauls with a fisher.',
+  '生魚を料理にする。料理を食べたクルーは回復する。': 'Cooks raw fish into meals. Meals heal the crew.',
+  '外周の床に置くと、近くを流れる漂流物を自動で拾う。上流（奥）側が効果的。': 'On an edge tile, auto-catches nearby debris. Best on the upstream (far) side.',
+  'クルーの定員が1レベルごとに+2。': 'Crew capacity +2 per level.', '雨のときに真水がたまる。嵐なら大量に。': 'Collects water when it rains. Lots in storms.',
+  '改良（フック・槍・床・矢）を解放。技師を置くと床を自動修理。': 'Unlocks upgrades (hook, spear, tiles, arrows). An engineer auto-repairs tiles.',
+  '野菜を育てる。料理人が世話をすると早い。': 'Grows veggies. Faster with a cook.',
+  '海賊と嵐を早く見つける。配置した射手は高所から射る（近接攻撃を受けない）。': 'Spots pirates and storms early. Archers here shoot from above (safe from melee).',
+  '射程内の海賊とサメを自動で撃つ。置き場所で守れる方向が変わる。': 'Auto-shoots pirates and sharks in range. Placement decides which side it covers.',
+  '豊かな潮目へ移動し、島への遠征ができる。': 'Sail to richer currents and send expeditions to islands.', '資源の上限が増える。': 'Raises resource caps.',
+  // roles / skills
+  '漁師': 'Fisher', '技師': 'Engineer', '料理人': 'Cook', '戦士': 'Warrior', '射手': 'Archer', '船乗り': 'Sailor',
+  '名人': 'Expert', '少食': 'Light eater', '頑丈': 'Tough', '怪力': 'Strong', '鷹の目': 'Hawk eye', '手当て': 'Medic', '航海術': 'Navigator',
+  '得意な施設で生産+30%': '+30% output at favored facility', '食事と水が半分ですむ': 'Needs half food and water', '最大HP+30%': 'Max HP +30%', '攻撃力+25%': 'Attack +25%',
+  '射撃ダメージ+30%': 'Ranged damage +30%', '戦闘後に仲間を回復': 'Heals the crew after battle', '遠征の戦力+30%': 'Expedition power +30%',
+  '釣り場が得意': 'Good at fishing spots', '海水精製所・作業台が得意': 'Good at purifier and workbench', '調理場・菜園が得意': 'Good at kitchen and garden',
+  '前列で敵を食い止める': 'Holds the front line', '後列から射る。砲台・見張り台が得意': 'Shoots from the back. Good at ballista and lookout', '帆と遠征が得意': 'Good at sails and expeditions',
+  // crew names
+  'ハル': 'Haru', 'ミナト': 'Minato', 'ソラ': 'Sora', 'カイ': 'Kai', 'ナギ': 'Nagi', 'ツムギ': 'Tsumugi', 'リク': 'Riku', 'コハク': 'Kohaku', 'ウミ': 'Umi', 'アオイ': 'Aoi',
+  'トキ': 'Toki', 'シオ': 'Shio', 'モモ': 'Momo', 'ゲン': 'Gen', 'ヨシノ': 'Yoshino', 'サク': 'Saku', 'ホタル': 'Hotaru', 'イブキ': 'Ibuki', 'マツ': 'Matsu', 'チヨ': 'Chiyo',
+  'ロク': 'Roku', 'ヒナタ': 'Hinata', 'スズ': 'Suzu', 'タケル': 'Takeru', 'フジ': 'Fuji', 'アカネ': 'Akane', 'ジン': 'Jin', 'ミオ': 'Mio',
+  // islands
+  'ヤシの小島': 'Palm Islet', '沈んだ街の屋上': 'Sunken Rooftops', '錆びた灯台': 'Rusty Lighthouse', '漂う貨物船': 'Drifting Freighter', '霧の環礁': 'Misty Atoll',
+  '崩れた橋げた': 'Broken Bridge', '鳥の岩礁': 'Bird Reef', '古い給水塔': 'Old Water Tower', '流木の砂州': 'Driftwood Bar', '難破船の墓場': 'Shipwreck Graveyard',
+  '傾いた観覧車': 'Leaning Ferris Wheel', '水没した駅': 'Flooded Station',
+  // missions
+  '漂流物を6個拾う': 'Catch 6 pieces of debris', '海水精製所を建てる': 'Build a water purifier', '釣り場を建てる': 'Build a fishing spot', '調理場を建てる': 'Build a kitchen',
+  '居住区を建てる': 'Build quarters', '漂流者を助けてクルーにする': 'Rescue a castaway as crew', 'クルーを施設に配置する': 'Assign crew to a facility',
+  '床を12枚に広げる': 'Expand to 12 tiles', '見張り台を建てる': 'Build a lookout', '砲台を建てる': 'Build a ballista', '海賊を撃退する': 'Repel pirates',
+  'クルーを3人にする': 'Have 3 crew', '作業台でフックを強化する': 'Upgrade the hook at the workbench', '帆を張る': 'Raise a sail', '遠征を成功させる': 'Win an expedition',
+  '海水精製所をLv3にする': 'Purifier to Lv3', '海賊を3回撃退する': 'Repel pirates 3 times', 'クルーを5人にする': 'Have 5 crew', '砲台をLv3にする': 'Ballista to Lv3',
+  '遠征を3回成功させる': 'Win 3 expeditions', '10日目を迎える': 'Reach day 10', '{d}日目を迎える': 'Reach day {d}',
+  '流れてくる<b>漂流物をタップ</b>するとフックを投げて拾える。画面を<b>ドラッグで回転</b>、ピンチで拡大縮小。': '<b>Tap floating debris</b> to throw your hook. <b>Drag to rotate</b>, pinch to zoom.',
+  '下の<b>建設</b>から<b>海水精製所</b>を選び、光っている床をタップして置こう。真水がないと干からびる。': 'Open <b>Build</b> below, pick the <b>water purifier</b> and tap a glowing tile. No water, no life.',
+  '<b>釣り場</b>で魚がとれる。布は漂流物から拾える。': 'A <b>fishing spot</b> catches fish. Cloth comes from debris.',
+  '<b>調理場</b>は生魚を料理にする。クルーは毎日朝と夕に食事と水をとる。': 'A <b>kitchen</b> turns raw fish into meals. The crew eat and drink every morning and evening.',
+  '船長Lv2で<b>居住区</b>が解放。クルーの定員が増える。': '<b>Quarters</b> unlock at captain Lv2 and raise crew capacity.',
+  '人がしがみついた漂流物（<b>漂流者</b>）は時間内にフックで引き寄せると仲間になる。': 'Hook a <b>castaway</b> (a person clinging to debris) in time and they join you.',
+  '<b>クルー</b>タブで配置先を選ぶ。得意な施設に置くと生産が大きく上がる。配置していないクルーは防衛に回る。': 'Assign jobs in the <b>Crew</b> tab. Favored facilities boost output a lot. Unassigned crew defend.',
+  '<b>建設→床を広げる</b>。床が多いほど施設を置けるが、サメに狙われる外周も増える。': '<b>Build → Expand raft</b>. More tiles fit more facilities, but more edge for sharks.',
+  '2日目の夜から<b>海賊</b>が来る。<b>見張り台</b>があれば早く気づき、陣形を整えられる。': '<b>Pirates</b> come from night 2. A <b>lookout</b> spots them early so you can set your formation.',
+  '<b>砲台</b>は射程内の敵を自動で撃つ。射程の円を見て、海賊が乗りこむ外周をカバーしよう。': 'A <b>ballista</b> auto-shoots enemies in range. Use the range ring to cover the edges pirates board.',
+  '襲撃中は<b>陣形</b>ボタンで並びを変えられる。<b>戦士は前列</b>で受け止め、<b>射手は後列</b>から射るのが基本。': 'During raids, use <b>Formation</b> to rearrange. <b>Warriors in front</b>, <b>archers in back</b>.',
+  // upgrades / debris
+  'フック強化': 'Better hook', '槍': 'Spear', '床の補強': 'Sturdy tiles', '鋭い矢': 'Sharp arrows',
+  '射程 {n}m・巻き取りが速くなる': 'Range {n}m · faster reeling', '船長の攻撃力 {n}': 'Captain attack {n}', '床の耐久 {n}': 'Tile durability {n}', '射手と砲台のダメージ x{n}': 'Archer & ballista damage x{n}',
+  // toasts
+  '{name}（{role}）が仲間になった！': '{name} ({role}) joined the crew!', '{r}が満杯！ 倉庫を建てるか使おう': '{r} is full! Build storage or use it up',
+  '船長Lv{n}！': 'Captain Lv{n}!', ' 解放：{list}': ' Unlocked: {list}', ' 床と施設の上限アップ': ' Tile and facility caps up',
+  '水分+30': 'Water +30', '料理 空腹+42': 'Meal Food +42', '野菜 空腹+28': 'Veggies Food +28', '生魚… 空腹+16': 'Raw fish… Food +16',
+  '水分がない！ 体力が減っていく': 'No water! Losing HP', '空腹で体力が減っていく': 'Starving, losing HP',
+  '{name}がLv{n}に上がった！': '{name} reached Lv{n}!', '{d}日目の朝。': 'Day {d} morning. ', '今夜も海賊に備えよう': 'Get ready for pirates tonight',
+  '日が沈む。夜はサメと海賊が活発になる': 'Sunset. Sharks and pirates are busier at night', '嵐が近づいている！': 'A storm is coming!', '嵐が過ぎ去った': 'The storm has passed',
+  '{f}ごと床が壊れて沈んだ！': 'A tile broke and sank with the {f}!', '床が壊れて沈んだ！': 'A tile broke and sank!', '漂流者が力尽きて沈んでしまった…': 'The castaway sank…',
+  'フックを巻き取り中…': 'Reeling in the hook…', '遠すぎる（射程{n}m）': 'Too far (range {n}m)', '救助成功！ ': 'Rescued! ',
+  '居住区が満員…漂流者はお礼を置いて去った（居住区を増やそう）': 'Quarters full… the castaway left a gift and moved on (build more quarters)',
+  'サメだ！ 床をかじられる前にタップで追い払え': 'Shark! Tap it away before it bites your tiles', 'サメを追い払った！ 生魚+2': 'Shark driven off! Raw fish +2',
+  'サメが遠い。近づいてきたら突こう': 'Shark too far. Poke it when it comes closer',
+  '北（奥）': 'north (far)', '東（右）': 'east (right)', '南（手前）': 'south (near)', '西（左）': 'west (left)',
+  '見張り：海賊船が{side}から接近！': 'Lookout: pirate ship approaching from the {side}!', '海賊船だ！ 見張りがいなくて気づくのが遅れた': 'Pirate ship! No lookout, spotted late',
+  '海賊が{n}人で襲ってくる！': 'Pirate raid! {n} attackers', '{name}が倒れた！': '{name} is down!', '海賊を撃退した！ ': 'Pirates repelled! ',
+  '海賊に荒らされた… 資源を3割奪われ、床が壊された': 'Pirates raided you… 30% of resources stolen, tiles wrecked', '。仲間{n}人を失った': '. Lost {n} crew',
+  '帆が必要': 'Needs a sail', 'すでに遠征中': 'Already on an expedition', '戦闘中は出発できない': "Can't leave during battle", '行き先がない': 'No destination', 'メンバーを選んで': 'Pick members',
+  '{isle}へ遠征に出発（{n}人）': 'Expedition to {isle} set out ({n})', '遠征成功！ ': 'Expedition success! ', '／{name}（{role}）が仲間に！': ' / {name} ({role}) joined!',
+  '遠征失敗… 傷だらけで戻ってきた': 'Expedition failed… they came back battered', '。{name}は帰ってこなかった': '. {name} never returned',
+  '穏やかな潮': 'Calm current', '漂流物は少なめ。危険も少ない。': 'Less debris. Less danger.', '豊かな潮': 'Rich current', '漂流物+35%。鉄くずと樽が増える。サメと海賊が少し強い。': 'Debris +35%. More scrap and barrels. Sharks and pirates a bit tougher.',
+  '荒れた潮': 'Rough current', '漂流物+70%、部品入りの樽も。サメと海賊がかなり強い。': 'Debris +70%, barrels with parts. Sharks and pirates much tougher.', '深い潮': 'Deep current', '漂流物が最も多い。最も危険。': 'Most debris. Most danger.',
+  '帆を上げた。{lane}へ移動中…': 'Sail up. Heading to {lane}…', '到着：{lane}': 'Arrived: {lane}',
+  '船長Lv{n}で解放': 'Unlocks at Cap Lv{n}', '1つまで': 'Max 1', '空いた外周の床がない': 'No free edge tile', '空いた床がない': 'No free tile', '資源が足りない': 'Not enough resources',
+  'そこには置けない': "Can't place there", '外周の床に置こう': 'Place it on an edge tile', '{f}を建てた！': 'Built {f}!', 'なし': 'None', '最大レベル': 'Max level',
+  '船長Lv{n}で強化可': 'Upgrade at Cap Lv{n}', '{f}をLv{n}に強化！': '{f} upgraded to Lv{n}!', '{f}を撤去した': 'Removed {f}', 'すでに床がある': 'Tile already there',
+  '床は船長Lvで{n}枚まで': 'Max {n} tiles at this captain Lv', 'となりにしか置けない': 'Must be adjacent', '修理不要': 'No repair needed', '木材が足りない': 'Not enough wood', '最大': 'Max',
+  '作業台が必要': 'Needs a workbench', '作業台Lv{n}が必要': 'Needs workbench Lv{n}', 'いない': 'Not found', '遠征中': 'Away', '施設がない': 'No facility', '空きがない': 'No free slot',
+  '任務達成：{m}（{loot}）': 'Mission done: {m} ({loot})', '救助 {n}秒': 'Rescue {n}s',
+  '潮': 'Tide', '穏': 'Calm', '豊': 'Rich', '荒': 'Rough', '深': 'Deep', '{d}日目': 'Day {d}', '嵐': 'Storm', '移動中': 'Sailing',
+  '海賊接近！ {side}から あと{n}秒': 'Pirates from the {side}! {n}s', '海賊船が来る！ あと{n}秒': 'Pirate ship coming! {n}s', '海賊船が接舷する！': 'Pirates are boarding!',
+  '前列が崩れた！ 略奪中 ': 'Front line broken! Looting · ', '交戦中 ': 'Fighting · ', '敵{n}人・撤退まで{s}秒': '{n} foes · retreat in {s}s',
+  '嵐が来る！ あと{n}秒 床が傷む': 'Storm in {n}s! Tiles will take damage', '嵐！ 外周の床が波で傷んでいく': 'Storm! Waves are damaging edge tiles',
+  '/日': '/day', '生魚→料理': 'Raw fish → meal', '真水 晴れ{a}・雨{b}・嵐{c}/日': 'Water: clear {a} · rain {b} · storm {c} /day', '床の修理 {n}HP/日': 'Tile repair {n}HP/day',
+  '技師を置くと床を自動修理': 'Assign an engineer to auto-repair tiles', 'クルー定員 +{a}（合計{b}）': 'Crew cap +{a} (total {b})', '資材の上限 {a}・食料と水 {b}': 'Material cap {a} · food & water {b}',
+  '警戒 {n}秒前に発見・射手は塔から射撃': 'Spots raids {n}s early · archers shoot from the tower', '射程 {a}m・威力 {b}・間隔 {c}秒': 'Range {a}m · power {b} · every {c}s',
+  '潮目 {a}（最大{b}）': 'Current: {a} (max {b})', '網の幅 {n}m': 'Net width {n}m', '戦闘不能': 'Down',
+  '建設・改良': 'Build & upgrade', '空いている床': 'Empty tile', 'クルー（{a}/{b}）': 'Crew ({a}/{b})', '任務と船長': 'Missions & captain',
+  '施設（床に1つずつ置ける・最大Lv {n}）': 'Facilities (one per tile · max Lv {n})', '所持 {n}': 'Have {n}', ' 得意：{r}': ' Best: {r}', '未解放': 'Locked', '建設済': 'Built', '建てる': 'Build',
+  'イカダ': 'Raft', '床を広げる': 'Expand raft', '{a}/{b}枚': '{a}/{b} tiles', 'となりに床を1枚。上限は船長Lvで増える。': 'Adds one adjacent tile. Cap rises with captain Lv.', '広げる': 'Expand',
+  '改良（作業台 Lv{n}）': 'Upgrades (workbench Lv{n})', '改良（作業台が必要）': 'Upgrades (needs workbench)', '（最大）': ' (max)', '（作業台Lv{n}）': ' (workbench Lv{n})', '改良': 'Upgrade',
+  '耐久': 'Durability', '・外周（サメと波に狙われやすい）': ' · edge (sharks and waves hit it)', '修理（木材{n}）': 'Repair (wood {n})', 'ここに建てる': 'Build here', '外周のみ': 'Edge only',
+  '床の耐久': 'Tile durability', '床を修理（木材{n}）': 'Repair tile (wood {n})', '配置クルー {a}/{b}（得意：{r}）生産 +{p}%': 'Crew {a}/{b} (best: {r}) output +{p}%', '外す': 'Remove',
+  '誰を配置する？（防衛中のクルーは配置すると戦わない）': 'Who works here? (assigned crew stop defending)', '空いているクルーがいない。漂流者を助けよう。': 'No free crew. Rescue castaways.',
+  '{f}から移動': 'from {f}', '防衛中': 'Defending', '配置': 'Assign', '＋ クルーを配置': '+ Assign crew', '潮目を選ぶ（移動中は漂流物が減る）': 'Choose a current (less debris while sailing)',
+  '帆Lv{n}が必要': 'Needs sail Lv{n}', '現在': 'Here', '向かう': 'Go', '強化': 'Upgrade', '生産量が上がる。': 'More output. ', '配置枠+1。': 'Worker slot +1. ',
+  '本当に撤去する？': 'Really remove?', '撤去（資材半分が戻る）': 'Remove (refunds half)',
+  '陣形：敵は<span style="color:#c45a2c">{side}</span>から': 'Formation: enemy from the <span style="color:#c45a2c">{side}</span>', '不明': 'unknown', '陣形（襲撃時に防衛するクルー）': 'Formation (crew who defend in raids)',
+  '前列': 'Front', '後列': 'Back', '船長': 'Captain', '塔': 'Tower',
+  '前列が敵を食い止める間、後列は狙われにくい。<b>戦士</b>は前列で被ダメ-40%、<b>射手</b>は後列で全力（前列だと威力6割・被ダメ増）。前列が全滅すると海賊が後列・船長・床を襲う。': 'While the front holds, the back is rarely targeted. <b>Warriors</b> take −40% damage in front; <b>archers</b> are at full power in back (60% power and more damage taken in front). If the front falls, pirates hit the back, the captain and the tiles.',
+  '総員迎撃：オン（施設の仕事は止まる）': 'All hands: ON (facility work stops)', '総員迎撃：オフ（配置中は戦わない）': 'All hands: OFF (assigned crew stay working)',
+  'まだクルーがいない。人がしがみついた漂流物（漂流者）をフックで助けよう。定員は居住区で増える。': 'No crew yet. Hook castaways clinging to debris to rescue them. Quarters raise the cap.',
+  '{f}で作業': 'Working: {f}', '防衛（前列）': 'Defending (front)', '防衛（後列）': 'Defending (back)', '配置を変える': 'Change job', '施設に配置': 'Assign job', '外して防衛に回す': 'Unassign to defend',
+  '配置できる施設がない。釣り場や海水精製所を建てよう。': 'No facility to assign. Build a fishing spot or purifier.',
+  '経験': 'XP', '床の上限 {a}枚・施設の最大Lv {b}': 'Tile cap {a} · facility max Lv {b}', '現在の任務': 'Current mission', '進み具合 {a}/{b}・報酬 船長経験+{x}・': 'Progress {a}/{b} · reward XP +{x} · ',
+  '任務の流れ': 'Mission list', '済 ': '✓ ', '経験+{n}': 'XP+{n}', '船長Lvで解放': 'Captain Lv unlocks', '施設Lv上限アップ': 'Facility Lv cap up', '床{n}枚': '{n} tiles',
+  '記録：{d}日目・拾った物 {c}・撃退 {r}回・サメ {s}・遠征成功 {e}・最長 {b}日': 'Stats: day {d} · caught {c} · raids won {r} · sharks {s} · expeditions {e} · best {b} days',
+  '遠征には<b>帆</b>が必要（船長Lv4で解放）。帆を張ると島が見つかり、クルーを送り出して部品や新しい仲間を探せる。遠征中のクルーは防衛も仕事もできない。': 'Expeditions need a <b>sail</b> (unlocks at captain Lv4). With a sail you find islands and can send crew to look for parts and new mates. Crew away can\'t defend or work.',
+  '{isle}へ遠征中': 'Expedition: {isle}', '・成功率 {p}%・残り {t}': ' · success {p}% · {t} left', '見える島がない。明日の朝、見張りが新しい島を見つけるかも。': 'No islands in sight. The lookout may spot one tomorrow morning.',
+  '行き先を選び、メンバー（最大4人）を選んで出発。戦力が高いほど成功しやすい。船乗りが得意。': 'Pick a destination and up to 4 members, then set out. Higher power means better odds. Sailors excel.',
+  '必要戦力 {n}': 'Power {n}', '期間 {t}・見込み：': 'Time {t} · loot: ', '・<b>仲間の気配</b>': ' · <b>possible recruit</b>', '選択中': 'Selected', '選ぶ': 'Pick',
+  'メンバー（{n}/4）': 'Members ({n}/4)', '（負傷）': ' (hurt)', '戦力 {a} / 必要 {b}・成功率': 'Power {a} / need {b} · success', '・失敗すると帰らない者が出るかも': ' · someone may not return if it fails', '出発する': 'Set out',
+  '{f}を置く床をタップ': 'Tap a tile for the {f}', '床を広げる場所をタップ（{c}）': 'Tap where to expand ({c})', '黄色い場所をタップ': 'Tap a yellow spot', '光っている床をタップ': 'Tap a glowing tile',
+  '船長：体力{a}・水分{b}・空腹{c}': 'Captain: HP {a} · water {b} · food {c}',
+  '水に沈んだ世界。小さなイカダを海上基地に育てて生き延びろ。': 'The world is underwater. Grow a tiny raft into a sea base and survive.',
+  '<b>漂流物をタップ</b>でフックを投げて拾う。<b>ドラッグで視点を回転</b>、ピンチ／ホイールで拡大。': '<b>Tap debris</b> to hook it. <b>Drag to rotate</b> the view, pinch/wheel to zoom.',
+  '下の<b>建設</b>で施設を置く。施設や床をタップで強化・修理・クルー配置。資源には上限があるので使い切ろう。': 'Place facilities from <b>Build</b> below. Tap facilities or tiles to upgrade, repair or assign crew. Resources have caps, so spend them.',
+  '<b>漂流者</b>を助けるとクルーに。得意な施設に配置すると生産が大きく上がる。クルーは毎日朝夕に<b>食事と水</b>をとり、足りないと弱って去っていく。': 'Rescue <b>castaways</b> to gain crew. Favored jobs boost output. Crew need <b>food and water</b> every morning and evening, or they weaken and leave.',
+  '2日目の夜から<b>海賊</b>が来る。配置していないクルーが自動で戦う。<b>陣形</b>が大事：戦士は前列、射手は後列。<b>見張り台</b>と<b>砲台</b>で備えよう。': '<b>Pirates</b> come from night 2. Unassigned crew fight automatically. <b>Formation</b> matters: warriors in front, archers in back. Prepare with a <b>lookout</b> and <b>ballista</b>.',
+  '<b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。': 'Tap <b>sharks</b> to poke them. <b>Storms</b> damage edge tiles. Clear the <b>main mission</b> above to raise captain Lv and unlock facilities.',
+  '言語': 'Language', 'はじめる': 'Start', '続ける': 'Continue', '一時停止': 'Paused', '再開': 'Resume',
+  'イカダが<span>沈んだ</span>': 'The raft <span>sank</span>', '力<span>尽きた</span>': 'You <span>collapsed</span>', 'まで生き延びた（船長Lv{n}）': 'survived (captain Lv{n})',
+  '最長記録': 'Best', '{n}日': '{n} days', '撃退': 'Raids won', '{n}回': '{n}', '仲間': 'Crew', '{n}人': '{n}', '拾った物': 'Caught', 'もう一度': 'Try again', 'ゲーム一覧': 'Games',
+  'この端末では3D表示（WebGL）が使えないため遊べません。': "This device can't show 3D (WebGL), so the game can't run.", 'ゲーム一覧へ': 'Back to games', '{d}日目から再開': 'Resumed from day {d}',
+  '{name}が飢えと渇きで倒れた…': '{name} died of hunger and thirst…', '{name}は空腹に耐えかねてイカダを去った…': '{name} left the raft, too hungry to stay…',
+  '朝食：{n}人が食事か水にありつけなかった': 'Breakfast: {n} went without food or water', '夕食：{n}人が食事か水にありつけなかった': 'Dinner: {n} went without food or water',
+  '朝食：クルー{n}人が食事をとった': 'Breakfast: {n} crew ate', '夕食：クルー{n}人が食事をとった': 'Dinner: {n} crew ate',
+} });
+</script>
 <script>
 'use strict';
 // ======================================================================
 //  いかだ暮らし 3D  —  core data
 // ======================================================================
 const $ = s => document.querySelector(s);
+const T = KoboI18n.t;
+KoboI18n.apply();
 const DEBUG = /[?&]debug\b/.test(location.search);
 const SAVE_V = 3;
 const TS = 2;                // world size of one raft tile
@@ -388,6 +533,8 @@ const ROLE_DESC = {
 const NAMES = ['ハル', 'ミナト', 'ソラ', 'カイ', 'ナギ', 'ツムギ', 'リク', 'コハク', 'ウミ', 'アオイ', 'トキ', 'シオ', 'モモ', 'ゲン', 'ヨシノ', 'サク', 'ホタル', 'イブキ', 'マツ', 'チヨ', 'ロク', 'ヒナタ', 'スズ', 'タケル', 'フジ', 'アカネ', 'ジン', 'ミオ'];
 const HAIR = [0x2a1d14, 0x5a3a20, 0x111111, 0x8a5a2a, 0xd8c08a, 0x6a2a2a];
 const SKIN = [0xf1c9a0, 0xd9a878, 0xb07a52, 0xf5d7b8];
+// display helpers: saved crew data keeps the Japanese source names; translate only when shown
+const cName = c => T(c.name), cRole = c => T(c.role), cSkill = c => T(c.skill), LIST = a => a.join(T('・'));
 function crewMaxHp(c) { return Math.round(ROLES[c.role].hp * (1 + 0.12 * (c.lv - 1)) * (c.skill === '頑丈' ? 1.3 : 1)); }
 function crewAtk(c) { return ROLES[c.role].atk * (1 + 0.12 * (c.lv - 1)) * (c.skill === '怪力' ? 1.25 : 1); }
 function crewXpNeed(c) { return 18 + 14 * c.lv; }
@@ -402,7 +549,7 @@ function makeCrew(role) {
 }
 function addCrew(c, why) {
   S.crew.push(c); crewChanged();
-  toast((why || '') + c.name + '（' + c.role + '）が仲間になった！', 'good'); SFX.join();
+  toast((why || '') + T('{name}（{role}）が仲間になった！', { name: cName(c), role: cRole(c) }), 'good'); SFX.join();
 }
 function crewCap() { return 1 + 2 * facLevels('quarters'); }
 function crewHere() { return S.crew.filter(c => !c.away); }
@@ -434,8 +581,14 @@ const MISSIONS = [
 function missionAt(i) {
   if (i < MISSIONS.length) return MISSIONS[i];
   const d = 10 + 3 * (i - MISSIONS.length + 1);
-  return { t: d + '日目を迎える', need: d, v: () => S.day, xp: 100, rw: { gear: 2, meal: 4 } };
+  return { t: T('{d}日目を迎える', { d }), need: d, v: () => S.day, xp: 100, rw: { gear: 2, meal: 4 } };
 }
+// translate display data in place (these tables are never saved by name)
+for (const r in RES) RES[r].n = T(RES[r].n);
+if (KoboI18n.lang !== 'ja') Object.assign(RES_SHORT, { wood: 'Wood', plastic: 'Plas', cloth: 'Cloth', scrap: 'Iron', gear: 'Gear', fish: 'Fish', meal: 'Meal', veg: 'Veg', water: 'Water' });
+const FAC_AB_EN = { purifier: 'Pu', fishing: 'Fi', grill: 'Ki', net: 'Ne', quarters: 'Qu', tank: 'Ta', workbench: 'Wb', garden: 'Ga', lookout: 'Lo', ballista: 'Ba', sail: 'Sa', storage: 'St' };
+for (const t in FAC) { FAC[t].n = T(FAC[t].n); FAC[t].desc = T(FAC[t].desc); if (KoboI18n.lang !== 'ja') FAC[t].ab = FAC_AB_EN[t] || FAC[t].ab; }
+for (const m of MISSIONS) { m.t = T(m.t); if (m.tip) m.tip = T(m.tip); }
 const XP_TABLE = [0, 0, 30, 80, 160, 270, 420, 620, 880, 1200, 1600, 2100, 2700];
 function lvFromXp(xp) { let lv = 1; while (lv < XP_TABLE.length - 1 && xp >= XP_TABLE[lv + 1]) lv++; return lv; }
 function maxTiles() { return 9 + 3 * S.cap.lv; }
@@ -457,11 +610,13 @@ function debrisLoot(type) {
 
 // upgrades at the workbench -------------------------------------------------
 const UPS = {
-  hook: { n: 'フック強化', max: 5, desc: lv => '射程 ' + hookRange(lv).toFixed(0) + 'm・巻き取りが速くなる', cost: lv => [null, null, { scrap: 2, plastic: 3 }, { scrap: 4, wood: 4 }, { scrap: 6, gear: 1 }, { scrap: 8, gear: 3 }][lv], wb: lv => lv - 1 },
-  spear: { n: '槍', max: 3, desc: lv => '船長の攻撃力 ' + spearDmg(lv), cost: lv => [null, null, { wood: 4, plastic: 1 }, { scrap: 4, wood: 3 }][lv], wb: lv => lv - 1 },
-  plank: { n: '床の補強', max: 3, desc: lv => '床の耐久 ' + tileMaxHp(lv), cost: lv => [null, null, { wood: 10, scrap: 3 }, { wood: 14, scrap: 6, gear: 1 }][lv], wb: lv => lv },
-  arrow: { n: '鋭い矢', max: 3, desc: lv => '射手と砲台のダメージ x' + arrowMul(lv).toFixed(2), cost: lv => [null, null, { scrap: 4, wood: 4 }, { scrap: 7, gear: 2 }][lv], wb: lv => lv }
+  hook: { n: 'フック強化', max: 5, desc: lv => T('射程 {n}m・巻き取りが速くなる', { n: hookRange(lv).toFixed(0) }), cost: lv => [null, null, { scrap: 2, plastic: 3 }, { scrap: 4, wood: 4 }, { scrap: 6, gear: 1 }, { scrap: 8, gear: 3 }][lv], wb: lv => lv - 1 },
+  spear: { n: '槍', max: 3, desc: lv => T('船長の攻撃力 {n}', { n: spearDmg(lv) }), cost: lv => [null, null, { wood: 4, plastic: 1 }, { scrap: 4, wood: 3 }][lv], wb: lv => lv - 1 },
+  plank: { n: '床の補強', max: 3, desc: lv => T('床の耐久 {n}', { n: tileMaxHp(lv) }), cost: lv => [null, null, { wood: 10, scrap: 3 }, { wood: 14, scrap: 6, gear: 1 }][lv], wb: lv => lv },
+  arrow: { n: '鋭い矢', max: 3, desc: lv => T('射手と砲台のダメージ x{n}', { n: arrowMul(lv).toFixed(2) }), cost: lv => [null, null, { scrap: 4, wood: 4 }, { scrap: 7, gear: 2 }][lv], wb: lv => lv }
 };
+for (const d in DEB) DEB[d].n = T(DEB[d].n);
+for (const u in UPS) UPS[u].n = T(UPS[u].n);
 function hookRange(lv) { return 9 + 2.2 * ((lv || S.up.hook) - 1); }
 function spearDmg(lv) { return [0, 6, 12, 20][lv || S.up.spear]; }
 function tileMaxHp(lv) { return [0, 100, 150, 210][lv || S.up.plank]; }
@@ -527,7 +682,7 @@ function pay(c) { for (const r in c) S.res[r] -= c[r]; resChanged(); }
 function gain(r, n, silent) { // returns amount actually stored
   const before = S.res[r]; S.res[r] = Math.min(cap(r), S.res[r] + n);
   const got = S.res[r] - before;
-  if (got < n && !silent) toastOnce('cap' + r, RES[r].n + 'が満杯！ 倉庫を建てるか使おう');
+  if (got < n && !silent) toastOnce('cap' + r, T('{r}が満杯！ 倉庫を建てるか使おう', { r: RES[r].n }));
   if (got > 0) bumpRes(r);
   return got;
 }
@@ -1125,7 +1280,7 @@ function addXp(n) {
   while (S.cap.lv < nl) {
     S.cap.lv++;
     const un = FAC_ORDER.filter(t => FAC[t].unlock === S.cap.lv).map(t => FAC[t].n);
-    toast('船長Lv' + S.cap.lv + '！' + (un.length ? ' 解放：' + un.join('・') : ' 床と施設の上限アップ'), 'good');
+    toast(T('船長Lv{n}！', { n: S.cap.lv }) + (un.length ? T(' 解放：{list}', { list: LIST(un) }) : T(' 床と施設の上限アップ')), 'good');
     SFX.level(); setTabBadge('build', true);
   }
   uiDirty = true;
@@ -1134,14 +1289,14 @@ function updateCaptain(dt) {
   const c = S.cap;
   c.water -= dt * 100 / (0.85 * DAY_LEN) * (S.weather.storm > 0.5 ? 0.8 : 1);
   c.food -= dt * 100 / (1.3 * DAY_LEN);
-  if (c.water < 45 && S.res.water >= 1) { S.res.water--; c.water = Math.min(100, c.water + 30); resChanged(); capPop('水分+30', 'good'); }
+  if (c.water < 45 && S.res.water >= 1) { S.res.water--; c.water = Math.min(100, c.water + 30); resChanged(); capPop(T('水分+30'), 'good'); }
   if (c.food < 45) {
-    if (S.res.meal >= 1) { S.res.meal--; c.food = Math.min(100, c.food + 42); c.hp = Math.min(100, c.hp + 4); resChanged(); capPop('料理 空腹+42', 'good'); }
-    else if (S.res.veg >= 1) { S.res.veg--; c.food = Math.min(100, c.food + 28); resChanged(); capPop('野菜 空腹+28', 'good'); }
-    else if (S.res.fish >= 1 && c.food < 25) { S.res.fish--; c.food = Math.min(100, c.food + 16); c.hp -= 2; resChanged(); capPop('生魚… 空腹+16', ''); }
+    if (S.res.meal >= 1) { S.res.meal--; c.food = Math.min(100, c.food + 42); c.hp = Math.min(100, c.hp + 4); resChanged(); capPop(T('料理 空腹+42'), 'good'); }
+    else if (S.res.veg >= 1) { S.res.veg--; c.food = Math.min(100, c.food + 28); resChanged(); capPop(T('野菜 空腹+28'), 'good'); }
+    else if (S.res.fish >= 1 && c.food < 25) { S.res.fish--; c.food = Math.min(100, c.food + 16); c.hp -= 2; resChanged(); capPop(T('生魚… 空腹+16'), ''); }
   }
-  if (c.water <= 0) { c.water = 0; c.hp -= 1.1 * dt; warnOnce('thirst', '水分がない！ 体力が減っていく', 25); }
-  if (c.food <= 0) { c.food = 0; c.hp -= 0.6 * dt; warnOnce('hunger', '空腹で体力が減っていく', 25); }
+  if (c.water <= 0) { c.water = 0; c.hp -= 1.1 * dt; warnOnce('thirst', T('水分がない！ 体力が減っていく'), 25); }
+  if (c.food <= 0) { c.food = 0; c.hp -= 0.6 * dt; warnOnce('hunger', T('空腹で体力が減っていく'), 25); }
   if (c.water > 40 && c.food > 40 && c.hp < 100 && !B) c.hp = Math.min(100, c.hp + 0.45 * dt);
 }
 function capPop(txt, cls) { const p = capPos(); popText(p.x, 2.2, p.z, txt, cls); }
@@ -1170,11 +1325,11 @@ function feedCrew(label) {
   }
   for (const [c, why] of gone) {
     removeCrew(c);
-    toast(c.name + (why === 'died' ? 'が飢えと渇きで倒れた…' : 'は空腹に耐えかねてイカダを去った…'), 'warn');
+    toast(T(why === 'died' ? '{name}が飢えと渇きで倒れた…' : '{name}は空腹に耐えかねてイカダを去った…', { name: cName(c) }), 'warn');
   }
   resChanged();
-  if (hungry) { toast((label === '朝' ? '朝食' : '夕食') + '：' + hungry + '人が食事か水にありつけなかった', 'warn'); vibrate(80); }
-  else if (fed) toastSoft((label === '朝' ? '朝食' : '夕食') + '：クルー' + fed + '人が食事をとった');
+  if (hungry) { toast(T(label === '朝' ? '朝食：{n}人が食事か水にありつけなかった' : '夕食：{n}人が食事か水にありつけなかった', { n: hungry }), 'warn'); vibrate(80); }
+  else if (fed) toastSoft(T(label === '朝' ? '朝食：クルー{n}人が食事をとった' : '夕食：クルー{n}人が食事をとった', { n: fed }));
 }
 function removeCrew(c) {
   const i = S.crew.indexOf(c); if (i >= 0) S.crew.splice(i, 1);
@@ -1186,14 +1341,14 @@ function crewGainXp(c, n) {
   c.xp += n;
   while (c.lv < 10 && c.xp >= crewXpNeed(c)) {
     c.xp -= crewXpNeed(c); const r = c.hp / crewMaxHp(c); c.lv++; c.hp = Math.max(1, Math.round(crewMaxHp(c) * Math.min(1, r + 0.2)));
-    toastSoft(c.name + 'がLv' + c.lv + 'に上がった！');
+    toastSoft(T('{name}がLv{n}に上がった！', { name: cName(c), n: c.lv }));
   }
 }
 
 // ---- day cycle ----
 function onDawn() {
   SFX.day();
-  toast(S.day + '日目の朝。' + (S.day >= 2 ? '今夜も海賊に備えよう' : ''), '');
+  toast(T('{d}日目の朝。', { d: S.day }) + (S.day >= 2 ? T('今夜も海賊に備えよう') : ''), '');
   feedCrew('朝');
   for (const c of S.crew) if (c.job && !c.away) crewGainXp(c, 8);
   // weather
@@ -1214,19 +1369,19 @@ function onDawn() {
 }
 function onDusk() {
   feedCrew('夕');
-  toastSoft('日が沈む。夜はサメと海賊が活発になる');
+  toastSoft(T('日が沈む。夜はサメと海賊が活発になる'));
 }
 
 // ---- weather ----
 function updateWeather(dt) {
   const w = S.weather;
   const warnLead = 8 + facLevels('lookout') * 10;
-  if (w.kind === 'storm' && !w.warned && S.elapsed >= w.next - warnLead && S.elapsed < w.next) { w.warned = true; toast('嵐が近づいている！', 'warn'); SFX.warn(); }
+  if (w.kind === 'storm' && !w.warned && S.elapsed >= w.next - warnLead && S.elapsed < w.next) { w.warned = true; toast(T('嵐が近づいている！'), 'warn'); SFX.warn(); }
   const active = S.elapsed >= w.next && S.elapsed < w.until;
   const tr = active ? (w.kind === 'storm' ? 1 : 0.6) : 0, ts = active && w.kind === 'storm' ? 1 : 0;
   w.rain += clamp(tr - w.rain, -dt * 0.25, dt * 0.25);
   w.storm += clamp(ts - w.storm, -dt * 0.2, dt * 0.2);
-  if (S.elapsed >= w.until && w.next < 1e11) { w.next = 1e12; if (w.kind === 'storm') toastSoft('嵐が過ぎ去った'); }
+  if (S.elapsed >= w.until && w.next < 1e11) { w.next = 1e12; if (w.kind === 'storm') toastSoft(T('嵐が過ぎ去った')); }
   WAVE.amp = 1 + w.storm * 1.3 + w.rain * 0.2 + S.lane * 0.08;
   if (w.storm > 0.4) {
     stormTick -= dt;
@@ -1252,7 +1407,7 @@ function destroyTile(k, src) {
   for (const c of S.crew) if (c.job === k) c.job = null;
   raftChanged(); crewChanged();
   SFX.crack(); vibrate([60, 40, 120]); splash(t.i * TS, 0.3, t.j * TS, 10);
-  toast((t.f ? FAC[t.f.t].n + 'ごと' : '') + '床が壊れて沈んだ！', 'warn');
+  toast(t.f ? T('{f}ごと床が壊れて沈んだ！', { f: FAC[t.f.t].n }) : T('床が壊れて沈んだ！'), 'warn');
 }
 
 // ---- production ----
@@ -1338,7 +1493,7 @@ function updateDebris(dt) {
     const d = debris[i];
     if (d.type === 'castaway') {
       d.t -= dt;
-      if (d.t <= 0 && !d.hooked) { toast('漂流者が力尽きて沈んでしまった…', 'warn'); splash(d.x, 0.3, d.z, 8); removeDebris(d); continue; }
+      if (d.t <= 0 && !d.hooked) { toast(T('漂流者が力尽きて沈んでしまった…'), 'warn'); splash(d.x, 0.3, d.z, 8); removeDebris(d); continue; }
     }
     if (d.hooked) continue;
     d.z += d.vz * dt; d.x += d.vx * dt;
@@ -1348,7 +1503,7 @@ function updateDebris(dt) {
       if (d.type !== 'castaway') for (const n of nets) { if (Math.abs(n.i * TS - d.x) < 2.4 + n.f.lv * 0.6 && Math.abs(n.j * TS - d.z) < 2.8) { caught = true; break; } }
       if (caught) {
         const l = debrisLoot(d.type); gainAll(l, true); S.stats.caught++;
-        if (!headless) popText(d.x, 1.2, d.z, '網 ' + lootText(l), 'good');
+        if (!headless) popText(d.x, 1.2, d.z, T('網') + ' ' + lootText(l), 'good');
         removeDebris(d); continue;
       }
       d.x += (d.x < rb.cx ? -1 : 1) * 2.6 * dt; d.z -= d.vz * dt * 0.8;
@@ -1360,10 +1515,10 @@ function updateDebris(dt) {
 // ---- hook ----
 function hookSpeeds() { return { out: 13 + 3 * S.up.hook, back: 4.6 + 1.4 * S.up.hook }; }
 function throwHook(d) {
-  if (hook) { toastSoft('フックを巻き取り中…'); return false; }
+  if (hook) { toastSoft(T('フックを巻き取り中…')); return false; }
   const cp = capPos();
   const dist = Math.hypot(d.x - cp.x, d.z - cp.z);
-  if (dist > hookRange()) { toastSoft('遠すぎる（射程' + hookRange().toFixed(0) + 'm）'); return false; }
+  if (dist > hookRange()) { toastSoft(T('遠すぎる（射程{n}m）', { n: hookRange().toFixed(0) })); return false; }
   hook = { st: 'out', x: cp.x, y: 1.4, z: cp.z, tgt: d, d0: dist, sx: cp.x, sz: cp.z };
   SFX.throw();
   return true;
@@ -1398,10 +1553,10 @@ function collect(d) {
   if (d.type === 'castaway') {
     if (S.crew.length < crewCap()) {
       const role = S.castN < CAST_ROLES.length ? CAST_ROLES[S.castN] : null; S.castN++;
-      addCrew(makeCrew(role), '救助成功！ '); S.stats.rescued++; addXp(3);
+      addCrew(makeCrew(role), T('救助成功！ ')); S.stats.rescued++; addXp(3);
     } else {
       const l = { wood: 2, cloth: 1 }; gainAll(l, true);
-      toast('居住区が満員…漂流者はお礼を置いて去った（居住区を増やそう）', 'warn');
+      toast(T('居住区が満員…漂流者はお礼を置いて去った（居住区を増やそう）'), 'warn');
     }
     removeDebris(d); SFX.catch(); return;
   }
@@ -1419,7 +1574,7 @@ function spawnShark() {
   const hp = 30 + 7 * S.day + 6 * S.lane;
   const s = { hp, max: hp, st: 'circle', a, r: rb.rad + 6, x: rb.cx + Math.cos(a) * (rb.rad + 16), z: rb.cz + Math.sin(a) * (rb.rad + 16), k: null, t: rand(6, 10), biteT: 1, life: 32, hitCd: 0, g: getPooled(sharkPool, makeShark), yaw: 0 };
   sharks.push(s);
-  toast('サメだ！ 床をかじられる前にタップで追い払え', 'warn'); SFX.warn();
+  toast(T('サメだ！ 床をかじられる前にタップで追い払え'), 'warn'); SFX.warn();
   return s;
 }
 function updateSharks(dt) {
@@ -1470,13 +1625,13 @@ function hurtShark(s, dmg, src) {
   splash(s.x, 0.3, s.z, 3);
   if (s.hp <= 0) {
     s.st = 'flee'; S.stats.sharks++; addXp(4); gain('fish', 2, true); resChanged();
-    toast('サメを追い払った！ 生魚+2', 'good'); SFX.win();
+    toast(T('サメを追い払った！ 生魚+2'), 'good'); SFX.win();
   }
 }
 function strikeShark(s) {
   const rb = raftBox();
   const near = s.x > rb.x0 - 4.5 && s.x < rb.x1 + 4.5 && s.z > rb.z0 - 4.5 && s.z < rb.z1 + 4.5;
-  if (!near) { toastSoft('サメが遠い。近づいてきたら突こう'); return; }
+  if (!near) { toastSoft(T('サメが遠い。近づいてきたら突こう')); return; }
   if (s.hitCd > 0) return;
   s.hitCd = 0.28;
   SFX.hit();
@@ -1485,7 +1640,7 @@ function strikeShark(s) {
 }
 
 // ---- raids & auto-battle ----
-const SIDES = [{ x: 0, z: -1, n: '北（奥）' }, { x: 1, z: 0, n: '東（右）' }, { x: 0, z: 1, n: '南（手前）' }, { x: -1, z: 0, n: '西（左）' }];
+const SIDES = [{ x: 0, z: -1, n: T('北（奥）') }, { x: 1, z: 0, n: T('東（右）') }, { x: 0, z: 1, n: T('南（手前）') }, { x: -1, z: 0, n: T('西（左）') }];
 function warnLead() {
   const lv = facLevels('lookout'); if (!lv) return 6;
   let a = 0; for (const t of facList('lookout')) a += facBonus(key(t.i, t.j));
@@ -1502,7 +1657,7 @@ function updateRaid(dt) {
     if (R.queue.length && S.elapsed >= R.queue[0] - warnLead()) {
       R.at = Math.max(S.elapsed + 3, R.queue.shift()); R.side = ri(0, 3); R.state = 'warn';
       SFX.horn(); vibrate(120);
-      toast(facCount('lookout') ? '見張り：海賊船が' + SIDES[R.side].n + 'から接近！' : '海賊船だ！ 見張りがいなくて気づくのが遅れた', 'warn');
+      toast(facCount('lookout') ? T('見張り：海賊船が{side}から接近！', { side: SIDES[R.side].n }) : T('海賊船だ！ 見張りがいなくて気づくのが遅れた'), 'warn');
       uiDirty = true;
     }
   } else if (R.state === 'warn') {
@@ -1576,7 +1731,7 @@ function startBattle() {
     B.raiders.push(r);
   }
   buildDefenders();
-  toast('海賊が' + P.n + '人で襲ってくる！', 'warn'); SFX.horn(); vibrate(150);
+  toast(T('海賊が{n}人で襲ってくる！', { n: P.n }), 'warn'); SFX.horn(); vibrate(150);
   uiDirty = true;
 }
 function nearestRaider(x, z, range, boardedOnly) {
@@ -1602,7 +1757,7 @@ function hitDef(d, dmg) {
   if (!headless) { const p = defPos(d); popText(p.x, 2.0, p.z, '-' + Math.round(dmg), 'bad'); }
   if (d.cap) { S.cap.hp -= dmg; vibrate(40); return; }
   d.c.hp -= dmg;
-  if (d.c.hp <= 0) { d.c.hp = 0; d.c.down = true; toast(d.c.name + 'が倒れた！', 'warn'); crewDirty = true; }
+  if (d.c.hp <= 0) { d.c.hp = 0; d.c.down = true; toast(T('{name}が倒れた！', { name: cName(d.c) }), 'warn'); crewDirty = true; }
 }
 const turretCd = {}, turretAim = {};
 function updateTurrets(dt) {
@@ -1736,7 +1891,7 @@ function endBattle(win) {
     gainAll(l, true); addXp(15 + d * 2);
     for (const df of B.defs) if (df.c) crewGainXp(df.c, 10);
     for (const c of downed) { c.down = false; c.hp = Math.round(crewMaxHp(c) * 0.15); }
-    msg = '海賊を撃退した！ ' + lootText(l); SFX.win();
+    msg = T('海賊を撃退した！ ') + lootText(l); SFX.win();
   } else {
     S.stats.raidsLost++;
     const take = {};
@@ -1745,7 +1900,7 @@ function endBattle(win) {
     for (let i = 0; i < n; i++) { const k = pick(Object.keys(S.tiles)); if (k) damageTile(k, rand(40, 80), '海賊'); }
     let died = 0;
     for (const c of downed) { if (rnd() < 0.5) { removeCrew(c); died++; } else { c.down = false; c.hp = Math.round(crewMaxHp(c) * 0.1); } }
-    msg = '海賊に荒らされた… 資源を3割奪われ、床が壊された' + (died ? '。仲間' + died + '人を失った' : '');
+    msg = T('海賊に荒らされた… 資源を3割奪われ、床が壊された') + (died ? T('。仲間{n}人を失った', { n: died }) : '');
     SFX.lose(); vibrate([100, 60, 200]);
   }
   for (const c of S.crew) if (c.skill === '手当て' && !c.away) { for (const o of S.crew) o.hp = Math.min(crewMaxHp(o), o.hp + crewMaxHp(o) * 0.2); break; }
@@ -1779,18 +1934,18 @@ function partyStr(ids) {
 }
 function expChance(str, diff) { return clamp(str / (str + diff) * 1.3 - 0.12, 0.08, 0.95); }
 function sendExp(isleId, ids) {
-  if (!facCount('sail')) return '帆が必要';
-  if (S.exp) return 'すでに遠征中';
-  if (B) return '戦闘中は出発できない';
-  const isle = S.isles.find(x => x.id === isleId); if (!isle) return '行き先がない';
+  if (!facCount('sail')) return T('帆が必要');
+  if (S.exp) return T('すでに遠征中');
+  if (B) return T('戦闘中は出発できない');
+  const isle = S.isles.find(x => x.id === isleId); if (!isle) return T('行き先がない');
   ids = ids.filter(id => { const c = S.crew.find(x => x.id === id); return c && !c.away && !c.down; }).slice(0, 4);
-  if (!ids.length) return 'メンバーを選んで';
+  if (!ids.length) return T('メンバーを選んで');
   const str = partyStr(ids);
   S.exp = { isle, ids, start: S.elapsed, end: S.elapsed + isle.dur * DAY_LEN, str, chance: expChance(str, isle.diff) };
   for (const id of ids) S.crew.find(x => x.id === id).away = true;
   S.isles = S.isles.filter(x => x !== isle);
   crewChanged(); SFX.build();
-  toast(isle.name + 'へ遠征に出発（' + ids.length + '人）', 'good');
+  toast(T('{isle}へ遠征に出発（{n}人）', { isle: T(isle.name), n: ids.length }), 'good');
   return null;
 }
 function updateExpedition() {
@@ -1804,15 +1959,15 @@ function updateExpedition() {
     S.stats.expWon++;
     gainAll(E.isle.loot, true);
     for (const c of party) crewGainXp(c, 25);
-    msg = '遠征成功！ ' + lootText(E.isle.loot);
-    if (E.isle.crew && S.crew.length < crewCap()) { const c = makeCrew(rnd() < 0.4 ? '船乗り' : null); S.crew.push(c); msg += '／' + c.name + '（' + c.role + '）が仲間に！'; SFX.join(); }
+    msg = T('遠征成功！ ') + lootText(E.isle.loot);
+    if (E.isle.crew && S.crew.length < crewCap()) { const c = makeCrew(rnd() < 0.4 ? '船乗り' : null); S.crew.push(c); msg += T('／{name}（{role}）が仲間に！', { name: cName(c), role: cRole(c) }); SFX.join(); }
     addXp(20); SFX.win();
   } else {
     const l = {}; for (const r in E.isle.loot) l[r] = Math.floor(E.isle.loot[r] * 0.3);
     gainAll(l, true);
     for (const c of party) { c.hp = Math.max(1, c.hp - crewMaxHp(c) * rand(0.4, 0.8)); crewGainXp(c, 8); }
-    msg = '遠征失敗… 傷だらけで戻ってきた';
-    if (E.str < E.isle.diff * 0.75 && party.length && rnd() < 0.5) { const c = pick(party); removeCrew(c); msg += '。' + c.name + 'は帰ってこなかった'; }
+    msg = T('遠征失敗… 傷だらけで戻ってきた');
+    if (E.str < E.isle.diff * 0.75 && party.length && rnd() < 0.5) { const c = pick(party); removeCrew(c); msg += T('。{name}は帰ってこなかった', { name: cName(c) }); }
     SFX.lose();
   }
   if (facCount('sail')) genIsles();
@@ -1822,20 +1977,20 @@ function updateExpedition() {
 
 // ---- lanes (sail) ----
 const LANES = [
-  { n: '穏やかな潮', d: '漂流物は少なめ。危険も少ない。' },
-  { n: '豊かな潮', d: '漂流物+35%。鉄くずと樽が増える。サメと海賊が少し強い。' },
-  { n: '荒れた潮', d: '漂流物+70%、部品入りの樽も。サメと海賊がかなり強い。' },
-  { n: '深い潮', d: '漂流物が最も多い。最も危険。' }
+  { n: T('穏やかな潮'), d: T('漂流物は少なめ。危険も少ない。') },
+  { n: T('豊かな潮'), d: T('漂流物+35%。鉄くずと樽が増える。サメと海賊が少し強い。') },
+  { n: T('荒れた潮'), d: T('漂流物+70%、部品入りの樽も。サメと海賊がかなり強い。') },
+  { n: T('深い潮'), d: T('漂流物が最も多い。最も危険。') }
 ];
 function maxLane() { return Math.min(3, facMax('sail')); }
 function setLane(n) {
   if (n === S.lane || S.laneT > 0 || n > maxLane()) return;
   const sk = facList('sail')[0];
   S.laneTo = n; S.laneT = 14 / (1 + (sk ? facBonus(key(sk.i, sk.j)) : 0));
-  toast('帆を上げた。' + LANES[n].n + 'へ移動中…', ''); SFX.build();
+  toast(T('帆を上げた。{lane}へ移動中…', { lane: LANES[n].n }), ''); SFX.build();
 }
 function updateLane(dt) {
-  if (S.laneT > 0) { S.laneT -= dt; if (S.laneT <= 0) { S.laneT = 0; S.lane = S.laneTo; toast('到着：' + LANES[S.lane].n, 'good'); uiDirty = true; } }
+  if (S.laneT > 0) { S.laneT -= dt; if (S.laneT <= 0) { S.laneT = 0; S.lane = S.laneTo; toast(T('到着：{lane}', { lane: LANES[S.lane].n }), 'good'); uiDirty = true; } }
   if (S.lane > maxLane()) S.lane = maxLane();
 }
 
@@ -1855,36 +2010,36 @@ function expandSpots() {
 function freeTilesFor(t) { return Object.values(S.tiles).filter(x => !x.f && (!FAC[t].edge || edgeTile(x))); }
 function buildCheck(t) {
   const F = FAC[t];
-  if (S.cap.lv < F.unlock) return '船長Lv' + F.unlock + 'で解放';
-  if (F.once && facCount(t)) return '1つまで';
-  if (!freeTilesFor(t).length) return F.edge ? '空いた外周の床がない' : '空いた床がない';
-  if (!canPay(facCost(t, 1))) return '資源が足りない';
+  if (S.cap.lv < F.unlock) return T('船長Lv{n}で解放', { n: F.unlock });
+  if (F.once && facCount(t)) return T('1つまで');
+  if (!freeTilesFor(t).length) return F.edge ? T('空いた外周の床がない') : T('空いた床がない');
+  if (!canPay(facCost(t, 1))) return T('資源が足りない');
   return null;
 }
 function buildFac(t, k) {
   const tile = S.tiles[k];
   const err = buildCheck(t); if (err) return err;
-  if (!tile || tile.f) return 'そこには置けない';
-  if (FAC[t].edge && !edgeTile(tile)) return '外周の床に置こう';
+  if (!tile || tile.f) return T('そこには置けない');
+  if (FAC[t].edge && !edgeTile(tile)) return T('外周の床に置こう');
   pay(facCost(t, 1));
   tile.f = { t, lv: 1, acc: 0 };
   raftChanged(); crewChanged(); SFX.build(); addXp(2);
   splash(tile.i * TS, 0.6, tile.j * TS, 6, 0xd9b27a);
-  toast(FAC[t].n + 'を建てた！', 'good');
+  toast(T('{f}を建てた！', { f: FAC[t].n }), 'good');
   if (t === 'sail' && !S.exp) genIsles();
   return null;
 }
 function upgradeCheck(k) {
-  const t = S.tiles[k]; if (!t || !t.f) return 'なし';
-  if (t.f.lv >= facMaxLv()) return t.f.lv >= 6 ? '最大レベル' : '船長Lv' + (t.f.lv + 1) + 'で強化可';
-  if (!canPay(facCost(t.f.t, t.f.lv + 1))) return '資源が足りない';
+  const t = S.tiles[k]; if (!t || !t.f) return T('なし');
+  if (t.f.lv >= facMaxLv()) return t.f.lv >= 6 ? T('最大レベル') : T('船長Lv{n}で強化可', { n: t.f.lv + 1 });
+  if (!canPay(facCost(t.f.t, t.f.lv + 1))) return T('資源が足りない');
   return null;
 }
 function upgradeFac(k) {
   const err = upgradeCheck(k); if (err) return err;
   const t = S.tiles[k]; pay(facCost(t.f.t, t.f.lv + 1)); t.f.lv++;
   raftChanged(); crewChanged(); SFX.build(); addXp(3 + t.f.lv);
-  toast(FAC[t.f.t].n + 'をLv' + t.f.lv + 'に強化！', 'good');
+  toast(T('{f}をLv{n}に強化！', { f: FAC[t.f.t].n, n: t.f.lv }), 'good');
   return null;
 }
 function demolish(k) {
@@ -1892,46 +2047,46 @@ function demolish(k) {
   const c = facCost(t.f.t, 1), l = {}; for (const r in c) l[r] = Math.floor(c[r] / 2);
   gainAll(l, true);
   for (const cr of S.crew) if (cr.job === k) cr.job = null;
-  toast(FAC[t.f.t].n + 'を撤去した ' + lootText(l));
+  toast(T('{f}を撤去した', { f: FAC[t.f.t].n }) + ' ' + lootText(l));
   t.f = null; raftChanged(); crewChanged();
 }
 function addTile(i, j) {
   const k = key(i, j);
-  if (S.tiles[k]) return 'すでに床がある';
-  if (tileCount() >= maxTiles()) return '床は船長Lvで' + maxTiles() + '枚まで';
-  if (!expandSpots().some(s => s.i === i && s.j === j)) return 'となりにしか置けない';
-  const c = tileCost(); if (!canPay(c)) return '資源が足りない';
+  if (S.tiles[k]) return T('すでに床がある');
+  if (tileCount() >= maxTiles()) return T('床は船長Lvで{n}枚まで', { n: maxTiles() });
+  if (!expandSpots().some(s => s.i === i && s.j === j)) return T('となりにしか置けない');
+  const c = tileCost(); if (!canPay(c)) return T('資源が足りない');
   pay(c); S.tiles[k] = { i, j, hp: tileMaxHp(), f: null };
   raftChanged(); crewChanged(); SFX.build(); splash(i * TS, 0.4, j * TS, 6);
   return null;
 }
 function repairCost(t) { return { wood: Math.ceil((tileMaxHp() - t.hp) / 40) }; }
 function repairTile(k) {
-  const t = S.tiles[k]; if (!t || t.hp >= tileMaxHp()) return '修理不要';
-  const c = repairCost(t); if (!canPay(c)) return '木材が足りない';
+  const t = S.tiles[k]; if (!t || t.hp >= tileMaxHp()) return T('修理不要');
+  const c = repairCost(t); if (!canPay(c)) return T('木材が足りない');
   pay(c); t.hp = tileMaxHp(); SFX.build(); return null;
 }
 function upCheck(id) {
   const U = UPS[id], nx = S.up[id] + 1;
-  if (nx > U.max) return '最大';
-  if (!facCount('workbench')) return '作業台が必要';
-  if (facMax('workbench') < U.wb(nx)) return '作業台Lv' + U.wb(nx) + 'が必要';
-  if (!canPay(U.cost(nx))) return '資源が足りない';
+  if (nx > U.max) return T('最大');
+  if (!facCount('workbench')) return T('作業台が必要');
+  if (facMax('workbench') < U.wb(nx)) return T('作業台Lv{n}が必要', { n: U.wb(nx) });
+  if (!canPay(U.cost(nx))) return T('資源が足りない');
   return null;
 }
 function buyUp(id) {
   const err = upCheck(id); if (err) return err;
   const nx = S.up[id] + 1; pay(UPS[id].cost(nx)); S.up[id] = nx;
   if (id === 'plank') for (const k in S.tiles) S.tiles[k].hp += tileMaxHp(nx) - tileMaxHp(nx - 1);
-  SFX.build(); addXp(3); toast(UPS[id].n + ' Lv' + nx + '！', 'good'); raftChanged();
+  SFX.build(); addXp(3); toast(UPS[id].n + ' Lv' + nx + T('！'), 'good'); raftChanged();
   return null;
 }
 function assignCrew(cid, k) {
-  const c = S.crew.find(x => x.id === cid); if (!c) return 'いない';
-  if (c.away) return '遠征中';
+  const c = S.crew.find(x => x.id === cid); if (!c) return T('いない');
+  if (c.away) return T('遠征中');
   if (k) {
-    const t = S.tiles[k]; if (!t || !t.f) return '施設がない';
-    if (facSlots(t.f.t, t.f.lv) <= facWorkers(k).filter(x => x !== c).length) return '空きがない';
+    const t = S.tiles[k]; if (!t || !t.f) return T('施設がない');
+    if (facSlots(t.f.t, t.f.lv) <= facWorkers(k).filter(x => x !== c).length) return T('空きがない');
     c.job = k;
   } else c.job = null;
   crewChanged(); SFX.tap(); return null;
@@ -1944,7 +2099,7 @@ function checkMission() {
     const m = missionAt(S.mission);
     if (m.v() < m.need) return;
     gainAll(m.rw, true); S.mission++;
-    toast('任務達成：' + m.t + '（' + lootText(m.rw) + '）', 'good'); SFX.win();
+    toast(T('任務達成：{m}（{loot}）', { m: m.t, loot: lootText(m.rw) }), 'good'); SFX.win();
     $('#mission').classList.remove('done'); void $('#mission').offsetWidth; $('#mission').classList.add('done');
     addXp(m.xp);
     uiDirty = true;
@@ -2182,7 +2337,7 @@ function renderLabels(rdt) {
     if (d.type !== 'castaway' || ti >= TAGS.length) continue;
     const tg = TAGS[ti++], s = toScreen(d.g.position.x, 1.8, d.g.position.z);
     if (!s.vis) { tg.el.style.display = 'none'; continue; }
-    const txt = '救助 ' + Math.ceil(Math.max(0, d.t)) + '秒';
+    const txt = T('救助 {n}秒', { n: Math.ceil(Math.max(0, d.t)) });
     if (txt !== tg.txt) { tg.txt = txt; tg.el.textContent = txt; }
     tg.el.style.display = 'block'; setEl(tg.el, s.x - 30, s.y - 10);
   }
@@ -2211,7 +2366,7 @@ for (const r of RES_ORDER) {
   const d = document.createElement('div'); d.className = 'rc'; d.innerHTML = '<span>' + RES_SHORT[r] + '</span><b></b>';
   resEl.appendChild(d); RC[r] = { el: d, b: d.querySelector('b'), txt: '' };
 }
-{ const d = document.createElement('div'); d.className = 'rc'; d.innerHTML = '<span>潮</span><b id="laneTxt">穏</b>'; resEl.appendChild(d); }
+{ const d = document.createElement('div'); d.className = 'rc'; d.innerHTML = '<span>' + T('潮') + '</span><b id="laneTxt">' + T('穏') + '</b>'; resEl.appendChild(d); }
 const hudC = {};
 function setText(id, txt) { if (hudC[id] === txt) return; hudC[id] = txt; const e = document.getElementById(id); if (e) e.textContent = txt; }
 function clockStr(t) {
@@ -2230,7 +2385,7 @@ let hudAcc = 0;
 function updateHUD(rdt) {
   if (!S) return;
   hudAcc += rdt;
-  setText('dayText', S.day + '日目 ' + clockStr(S.time));
+  setText('dayText', T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time));
   const night = isNight(S.time);
   if (hudC.night !== night) { hudC.night = night; $('#dayIcon').classList.toggle('night', night); }
   statBar('stHp', S.cap.hp); statBar('stWater', S.cap.water); statBar('stFood', S.cap.food);
@@ -2244,7 +2399,7 @@ function updateHUD(rdt) {
       if (txt !== c.txt) { c.txt = txt; c.b.innerHTML = v + '<small>/' + cp + '</small>'; c.el.classList.toggle('full', v >= cp); c.el.classList.toggle('zero', v <= 0 && (r === 'water' || r === 'meal')); }
       if (resBumps[r]) { resBumps[r] = 0; c.el.classList.remove('bump'); void c.el.offsetWidth; c.el.classList.add('bump'); }
     }
-    setText('laneTxt', ['穏', '豊', '荒', '深'][S.lane] + (S.laneT > 0 ? '…' : ''));
+    setText('laneTxt', T(['穏', '豊', '荒', '深'][S.lane]) + (S.laneT > 0 ? '…' : ''));
   }
   // mission
   const m = missionAt(S.mission);
@@ -2254,22 +2409,22 @@ function updateHUD(rdt) {
   const xpw = Math.round(clamp((S.cap.xp - a) / (b - a), 0, 1) * 100) + '%';
   if (hudC.xp !== xpw) { hudC.xp = xpw; $('#xpBar').style.width = xpw; }
   const here = crewHere().length;
-  setText('crewChip', 'クルー ' + here + (S.crew.length !== here ? '(+' + (S.crew.length - here) + ')' : '') + '/' + crewCap());
+  setText('crewChip', T('クルー') + ' ' + here + (S.crew.length !== here ? '(+' + (S.crew.length - here) + ')' : '') + '/' + crewCap());
   // expedition chip
   const ex = $('#expChip');
-  if (S.exp) { ex.hidden = false; setText('expChip', '遠征中 ' + fmtSec(S.exp.end - S.elapsed)); } else ex.hidden = true;
+  if (S.exp) { ex.hidden = false; setText('expChip', T('遠征中') + ' ' + fmtSec(S.exp.end - S.elapsed)); } else ex.hidden = true;
   // weather chip
   const wc = $('#weatherChip'); const w = S.weather;
   let wt = '';
-  if (w.storm > 0.3) wt = '嵐'; else if (w.rain > 0.2) wt = '雨';
-  if (S.laneT > 0) wt += (wt ? '・' : '') + '移動中'; else if (S.lane > 0) wt += (wt ? '・' : '') + LANES[S.lane].n;
+  if (w.storm > 0.3) wt = T('嵐'); else if (w.rain > 0.2) wt = T('雨');
+  if (S.laneT > 0) wt += (wt ? T('・') : '') + T('移動中'); else if (S.lane > 0) wt += (wt ? T('・') : '') + LANES[S.lane].n;
   if (wt) { wc.hidden = false; setText('weatherChip', wt); } else wc.hidden = true;
   // alert
   const al = $('#alert'); const R = S.raid;
   let atxt = '', astorm = false, abtn = false;
-  if (R.state === 'warn') { atxt = (facCount('lookout') ? '海賊接近！ ' + SIDES[R.side].n + 'から あと' : '海賊船が来る！ あと') + Math.ceil(Math.max(0, R.at - S.elapsed)) + '秒'; abtn = true; }
-  else if (B) { const alive = B.raiders.filter(r => !r.dead).length; atxt = B.phase === 'come' ? '海賊船が接舷する！' : (B.broken ? '前列が崩れた！ 略奪中 ' : '交戦中 ') + '敵' + alive + '人・撤退まで' + Math.ceil(Math.max(0, 45 - B.plunder)) + '秒'; abtn = true; }
-  else if (w.kind === 'storm' && w.warned && S.elapsed < w.until && S.elapsed > w.next - 40) { astorm = true; atxt = S.elapsed < w.next ? '嵐が来る！ あと' + Math.ceil(w.next - S.elapsed) + '秒 床が傷む' : '嵐！ 外周の床が波で傷んでいく'; }
+  if (R.state === 'warn') { atxt = facCount('lookout') ? T('海賊接近！ {side}から あと{n}秒', { side: SIDES[R.side].n, n: Math.ceil(Math.max(0, R.at - S.elapsed)) }) : T('海賊船が来る！ あと{n}秒', { n: Math.ceil(Math.max(0, R.at - S.elapsed)) }); abtn = true; }
+  else if (B) { const alive = B.raiders.filter(r => !r.dead).length; atxt = B.phase === 'come' ? T('海賊船が接舷する！') : (B.broken ? T('前列が崩れた！ 略奪中 ') : T('交戦中 ')) + T('敵{n}人・撤退まで{s}秒', { n: alive, s: Math.ceil(Math.max(0, 45 - B.plunder)) }); abtn = true; }
+  else if (w.kind === 'storm' && w.warned && S.elapsed < w.until && S.elapsed > w.next - 40) { astorm = true; atxt = S.elapsed < w.next ? T('嵐が来る！ あと{n}秒 床が傷む', { n: Math.ceil(w.next - S.elapsed) }) : T('嵐！ 外周の床が波で傷んでいく'); }
   if (atxt) { al.hidden = false; setText('alertText', atxt); al.classList.toggle('storm', astorm); $('#alertBtn').hidden = !abtn; } else al.hidden = true;
   // coach
   const ch = $('#coach');
@@ -2300,105 +2455,105 @@ for (const b of document.querySelectorAll('#tabs button')) b.addEventListener('c
 const ico = t => '<span class="ico" style="background:' + FAC[t].col + '">' + FAC[t].ab + '</span>';
 function rateText(k) {
   const t = S.tiles[k], f = t.f, F = FAC[f.t];
-  if (F.out) return RES[F.out].n + ' ' + facRate(k).toFixed(1) + '/日';
-  if (F.conv) return '生魚→料理 ' + facRate(k).toFixed(1) + '/日';
-  if (f.t === 'tank') return '真水 晴れ' + (0.8 * f.lv).toFixed(1) + '・雨' + (10 * f.lv) + '・嵐' + (24 * f.lv) + '/日';
-  if (f.t === 'workbench') return facRate(k) > 0 ? '床の修理 ' + Math.round(facRate(k)) + 'HP/日' : '技師を置くと床を自動修理';
-  if (f.t === 'quarters') return 'クルー定員 +' + 2 * f.lv + '（合計' + crewCap() + '）';
-  if (f.t === 'storage') return '資材の上限 ' + cap('wood') + '・食料と水 ' + cap('water');
-  if (f.t === 'lookout') return '警戒 ' + Math.round(warnLead()) + '秒前に発見・射手は塔から射撃';
-  if (f.t === 'ballista') return '射程 ' + (7 + 1.2 * f.lv).toFixed(1) + 'm・威力 ' + Math.round(13 * f.lv * arrowMul()) + '・間隔 ' + (2.6 / (1 + facBonus(k))).toFixed(1) + '秒';
-  if (f.t === 'sail') return '潮目 ' + LANES[S.lane].n + '（最大' + LANES[maxLane()].n + '）';
-  if (f.t === 'net') return '網の幅 ' + (2.4 + f.lv * 0.6).toFixed(1) + 'm';
+  if (F.out) return RES[F.out].n + ' ' + facRate(k).toFixed(1) + T('/日');
+  if (F.conv) return T('生魚→料理') + ' ' + facRate(k).toFixed(1) + T('/日');
+  if (f.t === 'tank') return T('真水 晴れ{a}・雨{b}・嵐{c}/日', { a: (0.8 * f.lv).toFixed(1), b: 10 * f.lv, c: 24 * f.lv });
+  if (f.t === 'workbench') return facRate(k) > 0 ? T('床の修理 {n}HP/日', { n: Math.round(facRate(k)) }) : T('技師を置くと床を自動修理');
+  if (f.t === 'quarters') return T('クルー定員 +{a}（合計{b}）', { a: 2 * f.lv, b: crewCap() });
+  if (f.t === 'storage') return T('資材の上限 {a}・食料と水 {b}', { a: cap('wood'), b: cap('water') });
+  if (f.t === 'lookout') return T('警戒 {n}秒前に発見・射手は塔から射撃', { n: Math.round(warnLead()) });
+  if (f.t === 'ballista') return T('射程 {a}m・威力 {b}・間隔 {c}秒', { a: (7 + 1.2 * f.lv).toFixed(1), b: Math.round(13 * f.lv * arrowMul()), c: (2.6 / (1 + facBonus(k))).toFixed(1) });
+  if (f.t === 'sail') return T('潮目 {a}（最大{b}）', { a: LANES[S.lane].n, b: LANES[maxLane()].n });
+  if (f.t === 'net') return T('網の幅 {n}m', { n: (2.4 + f.lv * 0.6).toFixed(1) });
   return '';
 }
 function crewLine(c, extra) {
   const mx = crewMaxHp(c);
-  const st = c.away ? '<span class="pill y">遠征中</span>' : c.down ? '<span class="pill r">戦闘不能</span>' : c.starve ? '<span class="pill r">空腹' + c.starve + '</span>' : '';
-  return '<div class="txt"><div class="nm">' + c.name + '<small>' + c.role + ' Lv' + c.lv + '</small></div>' +
-    '<div class="ds"><span class="pill">' + c.skill + '</span>' + st + (extra || '') + '</div>' +
+  const st = c.away ? '<span class="pill y">' + T('遠征中') + '</span>' : c.down ? '<span class="pill r">' + T('戦闘不能') + '</span>' : c.starve ? '<span class="pill r">' + T('空腹') + c.starve + '</span>' : '';
+  return '<div class="txt"><div class="nm">' + cName(c) + '<small>' + cRole(c) + ' Lv' + c.lv + '</small></div>' +
+    '<div class="ds"><span class="pill">' + cSkill(c) + '</span>' + st + (extra || '') + '</div>' +
     '<div class="hpmini"><i style="width:' + Math.round(c.hp / mx * 100) + '%"></i></div></div>';
 }
 function renderSheet() {
   if (!sheetOpen) return;
   const so = sheetOpen; let h = '', title = '';
-  if (so.kind === 'build') { title = '建設・改良'; h = renderBuild(); }
+  if (so.kind === 'build') { title = T('建設・改良'); h = renderBuild(); }
   else if (so.kind === 'fac') { const t = S.tiles[so.arg]; if (!t) return closeSheet(); if (!t.f) { so.kind = 'tile'; return renderSheet(); } title = FAC[t.f.t].n + ' Lv' + t.f.lv; h = renderFac(so.arg); }
-  else if (so.kind === 'tile') { title = '空いている床'; h = renderTile(so.arg); }
-  else if (so.kind === 'crew') { title = 'クルー（' + S.crew.length + '/' + crewCap() + '）'; h = renderCrew(); }
-  else if (so.kind === 'mission') { title = '任務と船長'; h = renderMission(); }
-  else if (so.kind === 'exp') { title = '遠征'; h = renderExp(); }
+  else if (so.kind === 'tile') { title = T('空いている床'); h = renderTile(so.arg); }
+  else if (so.kind === 'crew') { title = T('クルー（{a}/{b}）', { a: S.crew.length, b: crewCap() }); h = renderCrew(); }
+  else if (so.kind === 'mission') { title = T('任務と船長'); h = renderMission(); }
+  else if (so.kind === 'exp') { title = T('遠征'); h = renderExp(); }
   $('#sheetTitle').textContent = title;
   const st = sheetBody.scrollTop; sheetBody.innerHTML = h; sheetBody.scrollTop = st;
 }
-function invLine() { return '<div class="sinfo">' + RES_ORDER.map(r => RES_SHORT[r] + ' ' + Math.floor(S.res[r])).join('・') + '</div>'; }
+function invLine() { return '<div class="sinfo">' + LIST(RES_ORDER.map(r => RES_SHORT[r] + ' ' + Math.floor(S.res[r]))) + '</div>'; }
 function renderBuild() {
-  let h = invLine() + '<div class="sec">施設（床に1つずつ置ける・最大Lv ' + facMaxLv() + '）</div>';
+  let h = invLine() + '<div class="sec">' + T('施設（床に1つずつ置ける・最大Lv {n}）', { n: facMaxLv() }) + '</div>';
   for (const t of FAC_ORDER) {
     const F = FAC[t], lock = S.cap.lv < F.unlock, err = buildCheck(t), n = facCount(t);
-    h += '<div class="card' + (lock ? ' lock' : '') + '">' + ico(t) + '<div class="txt"><div class="nm">' + F.n + (n ? '<small>所持 ' + n + '</small>' : '') + (lock ? '<small>船長Lv' + F.unlock + 'で解放</small>' : '') + '</div>' +
-      '<div class="ds">' + F.desc + (F.role ? ' 得意：' + F.role : '') + '</div><div class="cost">' + costHtml(facCost(t, 1)) + '</div></div>' +
-      '<button data-act="place" data-t="' + t + '"' + (err ? ' disabled' : '') + '>' + (lock ? '未解放' : F.once && n ? '建設済' : '建てる') + '</button></div>';
+    h += '<div class="card' + (lock ? ' lock' : '') + '">' + ico(t) + '<div class="txt"><div class="nm">' + F.n + (n ? '<small>' + T('所持 {n}', { n }) + '</small>' : '') + (lock ? '<small>' + T('船長Lv{n}で解放', { n: F.unlock }) + '</small>' : '') + '</div>' +
+      '<div class="ds">' + F.desc + (F.role ? T(' 得意：{r}', { r: T(F.role) }) : '') + '</div><div class="cost">' + costHtml(facCost(t, 1)) + '</div></div>' +
+      '<button data-act="place" data-t="' + t + '"' + (err ? ' disabled' : '') + '>' + (lock ? T('未解放') : F.once && n ? T('建設済') : T('建てる')) + '</button></div>';
   }
   const tc = tileCost(), full = tileCount() >= maxTiles();
-  h += '<div class="sec">イカダ</div><div class="card"><span class="ico" style="background:#b98a52">床</span><div class="txt"><div class="nm">床を広げる<small>' + tileCount() + '/' + maxTiles() + '枚</small></div>' +
-    '<div class="ds">となりに床を1枚。上限は船長Lvで増える。</div><div class="cost">' + costHtml(tc) + '</div></div><button data-act="expand"' + (full || !canPay(tc) ? ' disabled' : '') + '>広げる</button></div>';
-  h += '<div class="sec">改良（作業台' + (facCount('workbench') ? ' Lv' + facMax('workbench') : 'が必要') + '）</div>';
+  h += '<div class="sec">' + T('イカダ') + '</div><div class="card"><span class="ico" style="background:#b98a52">' + T('床') + '</span><div class="txt"><div class="nm">' + T('床を広げる') + '<small>' + T('{a}/{b}枚', { a: tileCount(), b: maxTiles() }) + '</small></div>' +
+    '<div class="ds">' + T('となりに床を1枚。上限は船長Lvで増える。') + '</div><div class="cost">' + costHtml(tc) + '</div></div><button data-act="expand"' + (full || !canPay(tc) ? ' disabled' : '') + '>' + T('広げる') + '</button></div>';
+  h += '<div class="sec">' + (facCount('workbench') ? T('改良（作業台 Lv{n}）', { n: facMax('workbench') }) : T('改良（作業台が必要）')) + '</div>';
   for (const id in UPS) {
     const U = UPS[id], cur = S.up[id], nx = cur + 1, err = upCheck(id);
-    h += '<div class="card' + (nx > U.max ? ' lock' : '') + '"><span class="ico" style="background:#6d6d78">改</span><div class="txt"><div class="nm">' + U.n + '<small>Lv' + cur + (nx <= U.max ? '→' + nx : '（最大）') + '</small></div>' +
-      '<div class="ds">' + (nx <= U.max ? U.desc(nx) + (U.wb(nx) > 0 ? '（作業台Lv' + U.wb(nx) + '）' : '') : U.desc(cur)) + '</div>' + (nx <= U.max ? '<div class="cost">' + costHtml(U.cost(nx)) + '</div>' : '') + '</div>' +
-      '<button data-act="up" data-id="' + id + '"' + (err ? ' disabled' : '') + '>改良</button></div>';
+    h += '<div class="card' + (nx > U.max ? ' lock' : '') + '"><span class="ico" style="background:#6d6d78">' + T('改') + '</span><div class="txt"><div class="nm">' + U.n + '<small>Lv' + cur + (nx <= U.max ? '→' + nx : T('（最大）')) + '</small></div>' +
+      '<div class="ds">' + (nx <= U.max ? U.desc(nx) + (U.wb(nx) > 0 ? T('（作業台Lv{n}）', { n: U.wb(nx) }) : '') : U.desc(cur)) + '</div>' + (nx <= U.max ? '<div class="cost">' + costHtml(U.cost(nx)) + '</div>' : '') + '</div>' +
+      '<button data-act="up" data-id="' + id + '"' + (err ? ' disabled' : '') + '>' + T('改良') + '</button></div>';
   }
   return h;
 }
 function renderTile(k) {
   const t = S.tiles[k]; let h = '';
-  h += '<div class="sinfo">耐久 ' + Math.ceil(t.hp) + '/' + tileMaxHp() + (edgeTile(t) ? '・外周（サメと波に狙われやすい）' : '') + '</div>';
-  if (t.hp < tileMaxHp()) h += '<div class="btnrow"><button class="sbtn ok" data-act="repair" data-k="' + k + '"' + (canPay(repairCost(t)) ? '' : ' disabled') + '>修理（木材' + repairCost(t).wood + '）</button></div>';
-  h += '<div class="sec">ここに建てる</div>';
+  h += '<div class="sinfo">' + T('耐久') + ' ' + Math.ceil(t.hp) + '/' + tileMaxHp() + (edgeTile(t) ? T('・外周（サメと波に狙われやすい）') : '') + '</div>';
+  if (t.hp < tileMaxHp()) h += '<div class="btnrow"><button class="sbtn ok" data-act="repair" data-k="' + k + '"' + (canPay(repairCost(t)) ? '' : ' disabled') + '>' + T('修理（木材{n}）', { n: repairCost(t).wood }) + '</button></div>';
+  h += '<div class="sec">' + T('ここに建てる') + '</div>';
   for (const tt of FAC_ORDER) {
     const F = FAC[tt]; if (S.cap.lv < F.unlock) continue;
-    let err = buildCheck(tt); if (!err && F.edge && !edgeTile(t)) err = '外周のみ';
-    h += '<div class="card">' + ico(tt) + '<div class="txt"><div class="nm">' + F.n + (err && err !== '資源が足りない' ? '<small>' + err + '</small>' : '') + '</div><div class="cost">' + costHtml(facCost(tt, 1)) + '</div></div>' +
-      '<button data-act="buildHere" data-t="' + tt + '" data-k="' + k + '"' + (err ? ' disabled' : '') + '>建てる</button></div>';
+    let err = buildCheck(tt); if (!err && F.edge && !edgeTile(t)) err = T('外周のみ');
+    h += '<div class="card">' + ico(tt) + '<div class="txt"><div class="nm">' + F.n + (err && err !== T('資源が足りない') ? '<small>' + err + '</small>' : '') + '</div><div class="cost">' + costHtml(facCost(tt, 1)) + '</div></div>' +
+      '<button data-act="buildHere" data-t="' + tt + '" data-k="' + k + '"' + (err ? ' disabled' : '') + '>' + T('建てる') + '</button></div>';
   }
   return h;
 }
 function renderFac(k) {
   const t = S.tiles[k], f = t.f, F = FAC[f.t];
-  let h = '<div class="sinfo">' + F.desc + '<br><b>' + rateText(k) + '</b><br>床の耐久 ' + Math.ceil(t.hp) + '/' + tileMaxHp() + '</div>';
-  if (t.hp < tileMaxHp()) h += '<div class="btnrow"><button class="sbtn ok" data-act="repair" data-k="' + k + '"' + (canPay(repairCost(t)) ? '' : ' disabled') + '>床を修理（木材' + repairCost(t).wood + '）</button></div>';
+  let h = '<div class="sinfo">' + F.desc + '<br><b>' + rateText(k) + '</b><br>' + T('床の耐久') + ' ' + Math.ceil(t.hp) + '/' + tileMaxHp() + '</div>';
+  if (t.hp < tileMaxHp()) h += '<div class="btnrow"><button class="sbtn ok" data-act="repair" data-k="' + k + '"' + (canPay(repairCost(t)) ? '' : ' disabled') + '>' + T('床を修理（木材{n}）', { n: repairCost(t).wood }) + '</button></div>';
   const slots = facSlots(f.t, f.lv);
   if (slots) {
     const ws = facWorkers(k);
-    h += '<div class="sec">配置クルー ' + ws.length + '/' + slots + '（得意：' + F.role + '）生産 +' + Math.round(facBonus(k) * 100) + '%</div>';
-    for (const c of ws) h += '<div class="card">' + crewLine(c, ' <span class="pill g">+' + Math.round(crewBonus(c, f.t) * 100) + '%</span>') + '<button class="sbtn alt" data-act="assign" data-c="' + c.id + '" data-k="">外す</button></div>';
+    h += '<div class="sec">' + T('配置クルー {a}/{b}（得意：{r}）生産 +{p}%', { a: ws.length, b: slots, r: T(F.role), p: Math.round(facBonus(k) * 100) }) + '</div>';
+    for (const c of ws) h += '<div class="card">' + crewLine(c, ' <span class="pill g">+' + Math.round(crewBonus(c, f.t) * 100) + '%</span>') + '<button class="sbtn alt" data-act="assign" data-c="' + c.id + '" data-k="">' + T('外す') + '</button></div>';
     if (ws.length < slots) {
       const cand = S.crew.filter(c => c.job !== k && !c.away).sort((a, b) => crewBonus(b, f.t) - crewBonus(a, f.t));
       if (sheetOpen.sel === 'pick') {
-        h += '<div class="sec">誰を配置する？（防衛中のクルーは配置すると戦わない）</div>';
-        if (!cand.length) h += '<div class="sinfo">空いているクルーがいない。漂流者を助けよう。</div>';
+        h += '<div class="sec">' + T('誰を配置する？（防衛中のクルーは配置すると戦わない）') + '</div>';
+        if (!cand.length) h += '<div class="sinfo">' + T('空いているクルーがいない。漂流者を助けよう。') + '</div>';
         for (const c of cand) {
-          const where = c.job && S.tiles[c.job] && S.tiles[c.job].f ? FAC[S.tiles[c.job].f.t].n + 'から移動' : '防衛中';
-          h += '<div class="card">' + crewLine(c, ' <span class="pill g">+' + Math.round(crewBonus(c, f.t) * 100) + '%</span> <span class="pill">' + where + '</span>') + '<button data-act="assign" data-c="' + c.id + '" data-k="' + k + '">配置</button></div>';
+          const where = c.job && S.tiles[c.job] && S.tiles[c.job].f ? T('{f}から移動', { f: FAC[S.tiles[c.job].f.t].n }) : T('防衛中');
+          h += '<div class="card">' + crewLine(c, ' <span class="pill g">+' + Math.round(crewBonus(c, f.t) * 100) + '%</span> <span class="pill">' + where + '</span>') + '<button data-act="assign" data-c="' + c.id + '" data-k="' + k + '">' + T('配置') + '</button></div>';
         }
-      } else h += '<div class="btnrow"><button class="sbtn" data-act="pick">＋ クルーを配置</button></div>';
+      } else h += '<div class="btnrow"><button class="sbtn" data-act="pick">' + T('＋ クルーを配置') + '</button></div>';
     }
   }
   if (f.t === 'sail') {
-    h += '<div class="sec">潮目を選ぶ（移動中は漂流物が減る）</div>';
+    h += '<div class="sec">' + T('潮目を選ぶ（移動中は漂流物が減る）') + '</div>';
     for (let i = 0; i < 4; i++) {
       const lock = i > maxLane();
-      h += '<div class="card' + (lock ? ' lock' : '') + (S.lane === i ? ' sel' : '') + '"><div class="txt"><div class="nm">' + LANES[i].n + (lock ? '<small>帆Lv' + i + 'が必要</small>' : '') + '</div><div class="ds">' + LANES[i].d + '</div></div>' +
-        '<button data-act="lane" data-n="' + i + '"' + (lock || S.lane === i || S.laneT > 0 ? ' disabled' : '') + '>' + (S.lane === i ? '現在' : '向かう') + '</button></div>';
+      h += '<div class="card' + (lock ? ' lock' : '') + (S.lane === i ? ' sel' : '') + '"><div class="txt"><div class="nm">' + LANES[i].n + (lock ? '<small>' + T('帆Lv{n}が必要', { n: i }) + '</small>' : '') + '</div><div class="ds">' + LANES[i].d + '</div></div>' +
+        '<button data-act="lane" data-n="' + i + '"' + (lock || S.lane === i || S.laneT > 0 ? ' disabled' : '') + '>' + (S.lane === i ? T('現在') : T('向かう')) + '</button></div>';
     }
   }
   const nx = f.lv + 1, err = upgradeCheck(k);
-  h += '<div class="sec">強化</div><div class="card"><div class="txt"><div class="nm">Lv' + f.lv + (nx <= 6 ? ' → Lv' + nx : '') + '</div><div class="ds">' +
-    (F.out || F.conv ? '生産量が上がる。' : '') + (facSlots(f.t, nx) > facSlots(f.t, f.lv) ? '配置枠+1。' : '') + (err && err !== '資源が足りない' ? err : '') + '</div>' +
-    (nx <= 6 ? '<div class="cost">' + costHtml(facCost(f.t, nx)) + '</div>' : '') + '</div><button data-act="facup" data-k="' + k + '"' + (err ? ' disabled' : '') + '>強化</button></div>';
-  h += '<div class="btnrow"><button class="sbtn alt" data-act="demolish" data-k="' + k + '">' + (sheetOpen.confirm === 'demolish' ? '本当に撤去する？' : '撤去（資材半分が戻る）') + '</button></div>';
+  h += '<div class="sec">' + T('強化') + '</div><div class="card"><div class="txt"><div class="nm">Lv' + f.lv + (nx <= 6 ? ' → Lv' + nx : '') + '</div><div class="ds">' +
+    (F.out || F.conv ? T('生産量が上がる。') : '') + (facSlots(f.t, nx) > facSlots(f.t, f.lv) ? T('配置枠+1。') : '') + (err && err !== T('資源が足りない') ? err : '') + '</div>' +
+    (nx <= 6 ? '<div class="cost">' + costHtml(facCost(f.t, nx)) + '</div>' : '') + '</div><button data-act="facup" data-k="' + k + '"' + (err ? ' disabled' : '') + '>' + T('強化') + '</button></div>';
+  h += '<div class="btnrow"><button class="sbtn alt" data-act="demolish" data-k="' + k + '">' + (sheetOpen.confirm === 'demolish' ? T('本当に撤去する？') : T('撤去（資材半分が戻る）')) + '</button></div>';
   if (f.t === 'ballista') { rangeRing.visible = true; rangeRing.position.set(t.i * TS, 0.25, t.j * TS); const r = 7 + 1.2 * f.lv; rangeRing.scale.set(r, r, 1); }
   return h;
 }
@@ -2409,27 +2564,27 @@ function renderCrew() {
     const side = fighting ? SIDES[R.side].n : null;
     const defs = S.crew.filter(c => !c.away && !c.down && (!c.job || S.allHands) && !(c.job && S.tiles[c.job] && S.tiles[c.job].f && (S.tiles[c.job].f.t === 'lookout' || S.tiles[c.job].f.t === 'ballista')));
     const tower = S.crew.filter(c => !c.away && !c.down && c.job && S.tiles[c.job] && S.tiles[c.job].f && S.tiles[c.job].f.t === 'lookout');
-    const names = row => defs.filter(c => c.row === row).map(c => '<span class="pill' + (c.role === '戦士' ? ' r' : c.role === '射手' ? ' g' : '') + '">' + c.name + '・' + c.role + '</span>').join('') || '<span class="pill">なし</span>';
-    h += '<div class="formation"><div>陣形' + (fighting ? '：敵は<span style="color:#c45a2c">' + (facCount('lookout') || B ? side : '不明') + '</span>から' : '（襲撃時に防衛するクルー）') + '</div>' +
-      '<div class="frow"><b>前列</b>' + names('front') + '</div><div class="frow"><b>後列</b>' + names('back') + '<span class="pill y">船長</span></div>' +
-      (tower.length ? '<div class="frow"><b>塔</b>' + tower.map(c => '<span class="pill g">' + c.name + '</span>').join('') + '</div>' : '') +
-      '<div style="font-weight:500;color:#4f6f78;line-height:1.5">前列が敵を食い止める間、後列は狙われにくい。<b>戦士</b>は前列で被ダメ-40%、<b>射手</b>は後列で全力（前列だと威力6割・被ダメ増）。前列が全滅すると海賊が後列・船長・床を襲う。</div>' +
-      '<div class="btnrow"><button class="sbtn ' + (S.allHands ? 'ok' : 'alt') + '" data-act="allhands">' + (S.allHands ? '総員迎撃：オン（施設の仕事は止まる）' : '総員迎撃：オフ（配置中は戦わない）') + '</button></div></div>';
+    const names = row => defs.filter(c => c.row === row).map(c => '<span class="pill' + (c.role === '戦士' ? ' r' : c.role === '射手' ? ' g' : '') + '">' + cName(c) + T('・') + cRole(c) + '</span>').join('') || '<span class="pill">' + T('なし') + '</span>';
+    h += '<div class="formation"><div>' + (fighting ? T('陣形：敵は<span style="color:#c45a2c">{side}</span>から', { side: facCount('lookout') || B ? side : T('不明') }) : T('陣形（襲撃時に防衛するクルー）')) + '</div>' +
+      '<div class="frow"><b>' + T('前列') + '</b>' + names('front') + '</div><div class="frow"><b>' + T('後列') + '</b>' + names('back') + '<span class="pill y">' + T('船長') + '</span></div>' +
+      (tower.length ? '<div class="frow"><b>' + T('塔') + '</b>' + tower.map(c => '<span class="pill g">' + cName(c) + '</span>').join('') + '</div>' : '') +
+      '<div style="font-weight:500;color:#4f6f78;line-height:1.5">' + T('前列が敵を食い止める間、後列は狙われにくい。<b>戦士</b>は前列で被ダメ-40%、<b>射手</b>は後列で全力（前列だと威力6割・被ダメ増）。前列が全滅すると海賊が後列・船長・床を襲う。') + '</div>' +
+      '<div class="btnrow"><button class="sbtn ' + (S.allHands ? 'ok' : 'alt') + '" data-act="allhands">' + (S.allHands ? T('総員迎撃：オン（施設の仕事は止まる）') : T('総員迎撃：オフ（配置中は戦わない）')) + '</button></div></div>';
   }
-  if (!S.crew.length) h += '<div class="sinfo">まだクルーがいない。人がしがみついた漂流物（漂流者）をフックで助けよう。定員は居住区で増える。</div>';
+  if (!S.crew.length) h += '<div class="sinfo">' + T('まだクルーがいない。人がしがみついた漂流物（漂流者）をフックで助けよう。定員は居住区で増える。') + '</div>';
   for (const c of S.crew) {
     const job = c.job && S.tiles[c.job] && S.tiles[c.job].f ? S.tiles[c.job].f : null;
-    const where = c.away ? '遠征中' : job ? FAC[job.t].n + 'で作業' : '防衛（' + (c.row === 'front' ? '前列' : '後列') + '）';
+    const where = c.away ? T('遠征中') : job ? T('{f}で作業', { f: FAC[job.t].n }) : T(c.row === 'front' ? '防衛（前列）' : '防衛（後列）');
     h += '<div class="card" style="flex-wrap:wrap">' + crewLine(c, ' <span class="pill">' + where + '</span>') +
-      '<div style="width:100%;display:flex;gap:6px;align-items:center;justify-content:space-between"><span style="font-size:11.5px;color:#6c8a92;font-weight:800">' + ROLE_DESC[c.role] + '・' + SKILL_DESC[c.skill] + '</span></div>' +
-      '<div style="width:100%;display:flex;gap:6px;align-items:center"><span class="seg"><button data-act="row" data-c="' + c.id + '" data-row="front" class="' + (c.row === 'front' ? 'on' : '') + '">前列</button><button data-act="row" data-c="' + c.id + '" data-row="back" class="' + (c.row === 'back' ? 'on' : '') + '">後列</button></span>' +
-      '<button class="sbtn" style="flex:1" data-act="jobpick" data-c="' + c.id + '"' + (c.away ? ' disabled' : '') + '>' + (job ? '配置を変える' : '施設に配置') + '</button></div>';
+      '<div style="width:100%;display:flex;gap:6px;align-items:center;justify-content:space-between"><span style="font-size:11.5px;color:#6c8a92;font-weight:800">' + T(ROLE_DESC[c.role]) + T('・') + T(SKILL_DESC[c.skill]) + '</span></div>' +
+      '<div style="width:100%;display:flex;gap:6px;align-items:center"><span class="seg"><button data-act="row" data-c="' + c.id + '" data-row="front" class="' + (c.row === 'front' ? 'on' : '') + '">' + T('前列') + '</button><button data-act="row" data-c="' + c.id + '" data-row="back" class="' + (c.row === 'back' ? 'on' : '') + '">' + T('後列') + '</button></span>' +
+      '<button class="sbtn" style="flex:1" data-act="jobpick" data-c="' + c.id + '"' + (c.away ? ' disabled' : '') + '>' + (job ? T('配置を変える') : T('施設に配置')) + '</button></div>';
     if (sheetOpen.sel === c.id) {
       h += '<div style="width:100%;display:flex;flex-direction:column;gap:6px">';
-      if (c.job) h += '<button class="sbtn alt" data-act="assign" data-c="' + c.id + '" data-k="">外して防衛に回す</button>';
+      if (c.job) h += '<button class="sbtn alt" data-act="assign" data-c="' + c.id + '" data-k="">' + T('外して防衛に回す') + '</button>';
       const fl = Object.keys(S.tiles).filter(k => { const f = S.tiles[k].f; return f && facSlots(f.t, f.lv) > 0 && k !== c.job; });
       fl.sort((a, b) => crewBonus(c, S.tiles[b].f.t) - crewBonus(c, S.tiles[a].f.t));
-      if (!fl.length) h += '<div class="sinfo">配置できる施設がない。釣り場や海水精製所を建てよう。</div>';
+      if (!fl.length) h += '<div class="sinfo">' + T('配置できる施設がない。釣り場や海水精製所を建てよう。') + '</div>';
       for (const k of fl) {
         const f = S.tiles[k].f, full = facWorkers(k).length >= facSlots(f.t, f.lv);
         h += '<button class="sbtn alt" data-act="assign" data-c="' + c.id + '" data-k="' + k + '"' + (full ? ' disabled' : '') + '>' + FAC[f.t].n + ' Lv' + f.lv + '（' + facWorkers(k).length + '/' + facSlots(f.t, f.lv) + '）+' + Math.round(crewBonus(c, f.t) * 100) + '%</button>';
@@ -2443,47 +2598,47 @@ function renderCrew() {
 function renderMission() {
   const m = missionAt(S.mission);
   const a = XP_TABLE[S.cap.lv], b = XP_TABLE[S.cap.lv + 1] || (a + 600);
-  let h = '<div class="card"><span class="ico" style="background:#ffc94a;color:#3a2600">' + S.cap.lv + '</span><div class="txt"><div class="nm">船長 Lv' + S.cap.lv + '<small>経験 ' + S.cap.xp + '/' + b + '</small></div>' +
-    '<div class="prog"><i style="width:' + Math.round(clamp((S.cap.xp - a) / (b - a), 0, 1) * 100) + '%"></i></div><div class="ds">床の上限 ' + maxTiles() + '枚・施設の最大Lv ' + facMaxLv() + '</div></div></div>';
-  h += '<div class="sec">現在の任務</div><div class="card"><div class="txt"><div class="nm">' + m.t + '</div><div class="ds">進み具合 ' + Math.min(m.v(), m.need) + '/' + m.need + '・報酬 船長経験+' + m.xp + '・' + lootText(m.rw) + '</div>' + (m.tip ? '<div class="ds" style="margin-top:4px">' + m.tip + '</div>' : '') + '</div></div>';
-  h += '<div class="sec">任務の流れ</div><div class="mlist">';
+  let h = '<div class="card"><span class="ico" style="background:#ffc94a;color:#3a2600">' + S.cap.lv + '</span><div class="txt"><div class="nm">' + T('船長') + ' Lv' + S.cap.lv + '<small>' + T('経験') + ' ' + S.cap.xp + '/' + b + '</small></div>' +
+    '<div class="prog"><i style="width:' + Math.round(clamp((S.cap.xp - a) / (b - a), 0, 1) * 100) + '%"></i></div><div class="ds">' + T('床の上限 {a}枚・施設の最大Lv {b}', { a: maxTiles(), b: facMaxLv() }) + '</div></div></div>';
+  h += '<div class="sec">' + T('現在の任務') + '</div><div class="card"><div class="txt"><div class="nm">' + m.t + '</div><div class="ds">' + T('進み具合 {a}/{b}・報酬 船長経験+{x}・', { a: Math.min(m.v(), m.need), b: m.need, x: m.xp }) + lootText(m.rw) + '</div>' + (m.tip ? '<div class="ds" style="margin-top:4px">' + m.tip + '</div>' : '') + '</div></div>';
+  h += '<div class="sec">' + T('任務の流れ') + '</div><div class="mlist">';
   for (let i = Math.max(0, S.mission - 3); i < S.mission + 4; i++) {
     const mm = missionAt(i);
-    h += '<div class="mitem' + (i < S.mission ? ' done' : i === S.mission ? ' cur' : '') + '">' + (i < S.mission ? '済 ' : i === S.mission ? '▶ ' : '') + (i > S.mission + 1 ? '？？？' : mm.t) + '<i>経験+' + mm.xp + '</i></div>';
+    h += '<div class="mitem' + (i < S.mission ? ' done' : i === S.mission ? ' cur' : '') + '">' + (i < S.mission ? T('済 ') : i === S.mission ? '▶ ' : '') + (i > S.mission + 1 ? T('？？？') : mm.t) + '<i>' + T('経験+{n}', { n: mm.xp }) + '</i></div>';
   }
-  h += '</div><div class="sec">船長Lvで解放</div><div class="mlist">';
+  h += '</div><div class="sec">' + T('船長Lvで解放') + '</div><div class="mlist">';
   for (let lv = 2; lv <= 5; lv++) {
     const un = FAC_ORDER.filter(t => FAC[t].unlock === lv).map(t => FAC[t].n);
-    h += '<div class="mitem' + (S.cap.lv >= lv ? ' done' : '') + '">Lv' + lv + '：' + (un.length ? un.join('・') : '施設Lv上限アップ') + '<i>床' + (9 + 3 * lv) + '枚</i></div>';
+    h += '<div class="mitem' + (S.cap.lv >= lv ? ' done' : '') + '">Lv' + lv + T('：') + (un.length ? LIST(un) : T('施設Lv上限アップ')) + '<i>' + T('床{n}枚', { n: 9 + 3 * lv }) + '</i></div>';
   }
-  h += '</div><div class="sinfo">記録：' + S.day + '日目・拾った物 ' + S.stats.caught + '・撃退 ' + S.stats.raidsWon + '回・サメ ' + S.stats.sharks + '・遠征成功 ' + S.stats.expWon + '・最長 ' + bestDays() + '日</div>';
+  h += '</div><div class="sinfo">' + T('記録：{d}日目・拾った物 {c}・撃退 {r}回・サメ {s}・遠征成功 {e}・最長 {b}日', { d: S.day, c: S.stats.caught, r: S.stats.raidsWon, s: S.stats.sharks, e: S.stats.expWon, b: bestDays() }) + '</div>';
   return h;
 }
 function renderExp() {
-  if (!facCount('sail')) return '<div class="sinfo">遠征には<b>帆</b>が必要（船長Lv4で解放）。帆を張ると島が見つかり、クルーを送り出して部品や新しい仲間を探せる。遠征中のクルーは防衛も仕事もできない。</div>';
+  if (!facCount('sail')) return '<div class="sinfo">' + T('遠征には<b>帆</b>が必要（船長Lv4で解放）。帆を張ると島が見つかり、クルーを送り出して部品や新しい仲間を探せる。遠征中のクルーは防衛も仕事もできない。') + '</div>';
   let h = '';
   if (S.exp) {
     const E = S.exp, k = clamp((S.elapsed - E.start) / (E.end - E.start), 0, 1);
-    h += '<div class="card"><div class="txt"><div class="nm">' + E.isle.name + 'へ遠征中</div><div class="ds">' + E.ids.map(id => (S.crew.find(c => c.id === id) || {}).name).filter(Boolean).join('・') + '・成功率 ' + Math.round(E.chance * 100) + '%・残り ' + fmtSec(E.end - S.elapsed) + '</div><div class="prog" style="margin-top:6px"><i style="width:' + Math.round(k * 100) + '%"></i></div></div></div>';
+    h += '<div class="card"><div class="txt"><div class="nm">' + T('{isle}へ遠征中', { isle: T(E.isle.name) }) + '</div><div class="ds">' + LIST(E.ids.map(id => (S.crew.find(c => c.id === id) || {}).name).filter(Boolean).map(n => T(n))) + T('・成功率 {p}%・残り {t}', { p: Math.round(E.chance * 100), t: fmtSec(E.end - S.elapsed) }) + '</div><div class="prog" style="margin-top:6px"><i style="width:' + Math.round(k * 100) + '%"></i></div></div></div>';
     return h;
   }
-  if (!S.isles.length) return '<div class="sinfo">見える島がない。明日の朝、見張りが新しい島を見つけるかも。</div>';
-  h += '<div class="sinfo">行き先を選び、メンバー（最大4人）を選んで出発。戦力が高いほど成功しやすい。船乗りが得意。</div>';
+  if (!S.isles.length) return '<div class="sinfo">' + T('見える島がない。明日の朝、見張りが新しい島を見つけるかも。') + '</div>';
+  h += '<div class="sinfo">' + T('行き先を選び、メンバー（最大4人）を選んで出発。戦力が高いほど成功しやすい。船乗りが得意。') + '</div>';
   for (const is of S.isles) {
     const sel = sheetOpen.sel === is.id;
-    h += '<div class="card' + (sel ? ' sel' : '') + '"><div class="txt"><div class="nm">' + is.name + '<small>' + '★'.repeat(is.stars) + '☆'.repeat(3 - is.stars) + ' 必要戦力 ' + is.diff + '</small></div>' +
-      '<div class="ds">期間 ' + fmtSec(is.dur * DAY_LEN) + '・見込み：' + lootText(is.loot) + (is.crew ? '・<b>仲間の気配</b>' : '') + '</div></div>' +
-      '<button data-act="isle" data-id="' + is.id + '"' + (sel ? ' disabled' : '') + '>' + (sel ? '選択中' : '選ぶ') + '</button></div>';
+    h += '<div class="card' + (sel ? ' sel' : '') + '"><div class="txt"><div class="nm">' + T(is.name) + '<small>' + '★'.repeat(is.stars) + '☆'.repeat(3 - is.stars) + ' ' + T('必要戦力 {n}', { n: is.diff }) + '</small></div>' +
+      '<div class="ds">' + T('期間 {t}・見込み：', { t: fmtSec(is.dur * DAY_LEN) }) + lootText(is.loot) + (is.crew ? T('・<b>仲間の気配</b>') : '') + '</div></div>' +
+      '<button data-act="isle" data-id="' + is.id + '"' + (sel ? ' disabled' : '') + '>' + (sel ? T('選択中') : T('選ぶ')) + '</button></div>';
   }
   if (sheetOpen.sel) {
     const is = S.isles.find(x => x.id === sheetOpen.sel);
     const av = S.crew.filter(c => !c.away && !c.down);
     sheetOpen.party = sheetOpen.party.filter(id => av.some(c => c.id === id));
     const str = partyStr(sheetOpen.party), ch = expChance(str, is.diff);
-    h += '<div class="sec">メンバー（' + sheetOpen.party.length + '/4）</div><div class="chipsel">' +
-      av.map(c => '<button data-act="party" data-c="' + c.id + '" class="' + (sheetOpen.party.includes(c.id) ? 'on' : '') + '">' + c.name + ' ' + c.role + ' Lv' + c.lv + (c.hp < crewMaxHp(c) * 0.5 ? '（負傷）' : '') + '</button>').join('') + '</div>' +
-      '<div class="sinfo">戦力 ' + Math.round(str) + ' / 必要 ' + is.diff + '・成功率 <b style="color:' + (ch > 0.6 ? '#1d7a45' : ch > 0.35 ? '#8a5a00' : '#c0392b') + '">' + Math.round(ch * 100) + '%</b>' + (str < is.diff * 0.75 ? '・失敗すると帰らない者が出るかも' : '') + '</div>' +
-      '<div class="btnrow"><button class="sbtn" data-act="send"' + (sheetOpen.party.length && !B ? '' : ' disabled') + '>出発する</button></div>';
+    h += '<div class="sec">' + T('メンバー（{n}/4）', { n: sheetOpen.party.length }) + '</div><div class="chipsel">' +
+      av.map(c => '<button data-act="party" data-c="' + c.id + '" class="' + (sheetOpen.party.includes(c.id) ? 'on' : '') + '">' + cName(c) + ' ' + cRole(c) + ' Lv' + c.lv + (c.hp < crewMaxHp(c) * 0.5 ? T('（負傷）') : '') + '</button>').join('') + '</div>' +
+      '<div class="sinfo">' + T('戦力 {a} / 必要 {b}・成功率', { a: Math.round(str), b: is.diff }) + ' <b style="color:' + (ch > 0.6 ? '#1d7a45' : ch > 0.35 ? '#8a5a00' : '#c0392b') + '">' + Math.round(ch * 100) + '%</b>' + (str < is.diff * 0.75 ? T('・失敗すると帰らない者が出るかも') : '') + '</div>' +
+      '<div class="btnrow"><button class="sbtn" data-act="send"' + (sheetOpen.party.length && !B ? '' : ' disabled') + '>' + T('出発する') + '</button></div>';
   }
   return h;
 }
@@ -2517,20 +2672,20 @@ sheetBody.addEventListener('click', e => {
 let place = null;
 function startPlace(t) {
   const list = freeTilesFor(t);
-  if (!list.length) { toast('空いた床がない', 'warn'); return; }
+  if (!list.length) { toast(T('空いた床がない'), 'warn'); return; }
   place = { kind: 'fac', t };
   setHighlights(list.map(x => ({ x: x.i * TS, z: x.j * TS, mat: MB.hlOk, pick: { kind: 'place', k: key(x.i, x.j) } })));
-  $('#placeText').textContent = FAC[t].n + 'を置く床をタップ';
+  $('#placeText').textContent = T('{f}を置く床をタップ', { f: FAC[t].n });
   $('#placeBar').hidden = false;
   if (t === 'ballista') { rangeRing.visible = true; const rb = raftBox(); rangeRing.position.set(rb.cx, 0.25, rb.cz); rangeRing.scale.set(8.2, 8.2, 1); }
   uiDirty = true;
 }
 function startExpand() {
-  if (tileCount() >= maxTiles()) { toast('床は船長Lvで' + maxTiles() + '枚まで', 'warn'); return; }
+  if (tileCount() >= maxTiles()) { toast(T('床は船長Lvで{n}枚まで', { n: maxTiles() }), 'warn'); return; }
   place = { kind: 'tile' };
   setHighlights(expandSpots().map(s => ({ x: s.i * TS, z: s.j * TS, y: 0.05, mat: MB.hlGhost, pick: { kind: 'place', i: s.i, j: s.j } })));
   const c = tileCost();
-  $('#placeText').textContent = '床を広げる場所をタップ（' + lootText(c).replace(/\+/g, '') + '）';
+  $('#placeText').textContent = T('床を広げる場所をタップ（{c}）', { c: lootText(c).replace(/\+/g, '') });
   $('#placeBar').hidden = false; uiDirty = true;
 }
 function endPlace() { place = null; setHighlights([]); $('#placeBar').hidden = true; rangeRing.visible = false; uiDirty = true; }
@@ -2617,7 +2772,7 @@ function onTap(x, y) {
   if (gameState !== 'play' || paused) return;
   if (place) {
     const p = raftPick(x, y);
-    if (p && p.kind === 'place') doPlace(p); else toast(place.kind === 'tile' ? '黄色い場所をタップ' : '光っている床をタップ', '');
+    if (p && p.kind === 'place') doPlace(p); else toast(place.kind === 'tile' ? T('黄色い場所をタップ') : T('光っている床をタップ'), '');
     return;
   }
   const sp = screenPick(x, y);
@@ -2627,7 +2782,7 @@ function onTap(x, y) {
   if (p) {
     if (p.kind === 'tile') { const t = S.tiles[p.k]; if (!t) return; SFX.tap(); openSheet(t.f ? 'fac' : 'tile', p.k); return; }
     if (p.kind === 'crew') { SFX.tap(); openSheet('crew'); return; }
-    if (p.kind === 'cap') { toast('船長：体力' + Math.round(S.cap.hp) + '・水分' + Math.round(S.cap.water) + '・空腹' + Math.round(S.cap.food), ''); return; }
+    if (p.kind === 'cap') { toast(T('船長：体力{a}・水分{b}・空腹{c}', { a: Math.round(S.cap.hp), b: Math.round(S.cap.water), c: Math.round(S.cap.food) }), ''); return; }
   }
 }
 
@@ -2644,19 +2799,22 @@ function showOv(html) { $('#ovPanel').innerHTML = html; $('#ov').hidden = false;
 function hideOv() { $('#ov').hidden = true; }
 function showHowto(first) {
   paused = true;
-  showOv('<h2>いかだ<span>暮らし</span></h2><p class="sub">水に沈んだ世界。小さなイカダを海上基地に育てて生き延びろ。</p><ul>' +
-    '<li><b>漂流物をタップ</b>でフックを投げて拾う。<b>ドラッグで視点を回転</b>、ピンチ／ホイールで拡大。</li>' +
-    '<li>下の<b>建設</b>で施設を置く。施設や床をタップで強化・修理・クルー配置。資源には上限があるので使い切ろう。</li>' +
-    '<li><b>漂流者</b>を助けるとクルーに。得意な施設に配置すると生産が大きく上がる。クルーは毎日朝夕に<b>食事と水</b>をとり、足りないと弱って去っていく。</li>' +
-    '<li>2日目の夜から<b>海賊</b>が来る。配置していないクルーが自動で戦う。<b>陣形</b>が大事：戦士は前列、射手は後列。<b>見張り台</b>と<b>砲台</b>で備えよう。</li>' +
-    '<li><b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。</li></ul>' +
-    '<div class="row"><button class="btn" id="ovGo">' + (first ? 'はじめる' : '続ける') + '</button></div>');
+  showOv('<h2>' + T('いかだ<span>暮らし</span>') + '</h2><p class="sub">' + T('水に沈んだ世界。小さなイカダを海上基地に育てて生き延びろ。') + '</p><ul>' +
+    '<li>' + T('<b>漂流物をタップ</b>でフックを投げて拾う。<b>ドラッグで視点を回転</b>、ピンチ／ホイールで拡大。') + '</li>' +
+    '<li>' + T('下の<b>建設</b>で施設を置く。施設や床をタップで強化・修理・クルー配置。資源には上限があるので使い切ろう。') + '</li>' +
+    '<li>' + T('<b>漂流者</b>を助けるとクルーに。得意な施設に配置すると生産が大きく上がる。クルーは毎日朝夕に<b>食事と水</b>をとり、足りないと弱って去っていく。') + '</li>' +
+    '<li>' + T('2日目の夜から<b>海賊</b>が来る。配置していないクルーが自動で戦う。<b>陣形</b>が大事：戦士は前列、射手は後列。<b>見張り台</b>と<b>砲台</b>で備えよう。') + '</li>' +
+    '<li>' + T('<b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。') + '</li></ul>' +
+    '<div class="langrow"><span>' + T('言語') + '</span><span id="langPick"></span></div>' +
+    '<div class="row"><button class="btn" id="ovGo">' + (first ? T('はじめる') : T('続ける')) + '</button></div>');
+  KoboI18n.picker($('#langPick'));
   $('#ovGo').addEventListener('click', () => { lsSet(LS_SEEN, '1'); hideOv(); paused = false; ensureAudio(); });
 }
 function showPause() {
   if (gameState !== 'play' || !$('#ov').hidden) return;
   paused = true;
-  showOv('<h2>一時停止</h2><p class="sub">' + S.day + '日目 ' + clockStr(S.time) + '</p><div class="row"><button class="btn" id="ovGo">再開</button></div>');
+  showOv('<h2>' + T('一時停止') + '</h2><p class="sub">' + T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time) + '</p><div class="langrow"><span>' + T('言語') + '</span><span id="langPick"></span></div><div class="row"><button class="btn" id="ovGo">' + T('再開') + '</button></div>');
+  KoboI18n.picker($('#langPick'));
   $('#ovGo').addEventListener('click', () => { hideOv(); paused = false; ensureAudio(); });
 }
 function gameOver(why) {
@@ -2667,10 +2825,10 @@ function gameOver(why) {
   if (headless) return;
   const best = bestDays();
   setTimeout(() => {
-    showOv('<h2>' + (why === 'sunk' ? 'イカダが<span>沈んだ</span>' : '力<span>尽きた</span>') + '</h2>' +
-      '<p class="big">' + S.day + '日目</p><p class="sub">まで生き延びた（船長Lv' + S.cap.lv + '）</p>' +
-      '<div class="recs"><div>最長記録<b>' + best + '日</b></div><div>撃退<b>' + S.stats.raidsWon + '回</b></div><div>仲間<b>' + S.crew.length + '人</b></div><div>拾った物<b>' + S.stats.caught + '</b></div></div>' +
-      '<div class="row"><button class="btn" id="ovRetry">もう一度</button><a class="btn sub2" href="../">ゲーム一覧</a></div>');
+    showOv('<h2>' + (why === 'sunk' ? T('イカダが<span>沈んだ</span>') : T('力<span>尽きた</span>')) + '</h2>' +
+      '<p class="big">' + T('{d}日目', { d: S.day }) + '</p><p class="sub">' + T('まで生き延びた（船長Lv{n}）', { n: S.cap.lv }) + '</p>' +
+      '<div class="recs"><div>' + T('最長記録') + '<b>' + T('{n}日', { n: best }) + '</b></div><div>' + T('撃退') + '<b>' + T('{n}回', { n: S.stats.raidsWon }) + '</b></div><div>' + T('仲間') + '<b>' + T('{n}人', { n: S.crew.length }) + '</b></div><div>' + T('拾った物') + '<b>' + S.stats.caught + '</b></div></div>' +
+      '<div class="row"><button class="btn" id="ovRetry">' + T('もう一度') + '</button><a class="btn sub2" href="../">' + T('ゲーム一覧') + '</a></div>');
     $('#ovRetry').addEventListener('click', () => { hideOv(); startNew(); });
   }, 800);
 }
@@ -2729,11 +2887,11 @@ function frame(now) {
 // ---- boot ----
 renderSoundBtn();
 if (!glOk || !renderer) {
-  $('#loading').innerHTML = 'この端末では3D表示（WebGL）が使えないため遊べません。<br><a href="../" style="color:#ffc94a">ゲーム一覧へ</a>';
+  $('#loading').innerHTML = T('この端末では3D表示（WebGL）が使えないため遊べません。') + '<br><a href="../" style="color:#ffc94a">' + T('ゲーム一覧へ') + '</a>';
 } else {
   resize();
   const loaded = loadSave();
-  if (loaded) { S = loaded; gameState = 'play'; afterLoad(); const rb = raftBox(); camT.set(rb.cx, 0, rb.cz); prefill(); toast(S.day + '日目から再開', ''); }
+  if (loaded) { S = loaded; gameState = 'play'; afterLoad(); const rb = raftBox(); camT.set(rb.cx, 0, rb.cz); prefill(); toast(T('{d}日目から再開', { d: S.day }), ''); }
   else startNew();
   simT = S.elapsed;
   if (!lsGet(LS_SEEN)) showHowto(true);
