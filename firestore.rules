@@ -1,0 +1,10 @@
+rules_version = '2';
+// ネジほどき：ログインした本人だけが自分の進み具合を読み書きできる
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /nejiUsers/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid
+        && (request.resource == null || request.resource.data.keys().hasOnly(['level', 'maxLevel', 'stars', 'daily', 'name', 'updatedAt']));
+    }
+  }
+}
