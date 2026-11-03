@@ -1414,11 +1414,11 @@ function win() {
   $('winNote').textContent += '　難易度：' + RANK_JA[S.rank] + '（' + RANKS[S.rank] + '）';
   if (daily) {
     const d = store.get('daily', {}); if (!d[daily.key] || d[daily.key] < stars) { d[daily.key] = stars; store.set('daily', d); }
-    setTimeout(() => cloud.push(), 0);
+    setTimeout(() => cloud.push().catch(e => console.warn('sync', e)), 0);
     $('nextBtn').textContent = 'いつものレベルに戻る';
   } else {
     const best = store.get('stars', {}); if (!best[level] || best[level] < stars) { best[level] = stars; store.set('stars', best); }
-    store.set('level', level + 1); setTimeout(() => cloud.push(), 0);
+    store.set('level', level + 1); setTimeout(() => cloud.push().catch(e => console.warn('sync', e)), 0);
     if (level + 1 > maxLevel) { maxLevel = level + 1; store.set('maxLevel', maxLevel); }
     $('nextBtn').textContent = '次のレベルへ';
   }
@@ -1477,12 +1477,17 @@ const cloud = (() => {
       await push();
       if (!$('ovMenu').hidden) openMenu();
       toast('クラウドと同期しました（LEVEL ' + maxLevel + ' まで）', true);
-    } catch (e) { console.warn(e); setMsg('同期できませんでした。通信状態を確認してください。'); }
+    } catch (e) {
+      console.warn(e);
+      const code = (e && (e.code || e.name)) || 'unknown';
+      const why = code === 'permission-denied' ? 'Firestoreのルールで拒否されました' : code === 'unavailable' ? '通信できませんでした' : code === 'not-found' ? 'Firestoreのデータベースが見つかりません' : '原因不明のエラー';
+      setMsg('同期できませんでした（' + why + '：' + code + '）');
+      toast('同期できませんでした：' + code);
+    }
   }
   async function push() {
     if (!user || !db) return;
-    try { await db.collection('nejiUsers').doc(user.uid).set({ ...local(), name: user.displayName || '', updatedAt: Date.now() }); }
-    catch (e) { console.warn(e); }
+    await db.collection('nejiUsers').doc(user.uid).set({ ...local(), name: user.displayName || '', updatedAt: Date.now() });
   }
   function setMsg(t) { const m = $('acctMsg'); if (m) m.textContent = t; }
   function render() {

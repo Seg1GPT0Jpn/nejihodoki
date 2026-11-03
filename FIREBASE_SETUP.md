@@ -39,8 +39,8 @@ Googleログインのしくみはゲームに組み込み済みです。
    service cloud.firestore {
      match /databases/{database}/documents {
        match /nejiUsers/{uid} {
-         allow read, write: if request.auth != null && request.auth.uid == uid
-           && (request.resource == null || request.resource.data.keys().hasOnly(['level', 'maxLevel', 'stars', 'daily', 'name', 'updatedAt']));
+         allow read: if request.auth != null && request.auth.uid == uid;
+         allow create, update: if request.auth != null && request.auth.uid == uid;
        }
      }
    }
