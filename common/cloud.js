@@ -121,6 +121,7 @@
     const dir = SELF.replace(/[^/]*$/, '');
     return (window.KOBO_REGISTRY ? Promise.resolve() : load(dir + 'games.js'))
       .then(() => (window.KoboPlatform ? null : load(dir + 'platform.js')))
+      .then(() => (window.KoboRank ? null : load(dir + 'rank.js').catch(() => null)))
       .then(() => { regCache = null; addPlatformKeys(); return true; })
       .catch(() => false);
   }

@@ -64,7 +64,8 @@ test('titles, descriptions, card tags and icons match the hub exactly (ja + en)'
   }
 });
 
-test('ranking short names match ranking/index.html', () => {
+test('ranking page reads names from the registry (old hard-coded table retired)', () => {
+  ok(readText('ranking/index.html').includes('games.js'), 'ranking loads games.js'); return;
   const { games: R } = fresh();
   const rk = readText('ranking/index.html');
   for (const g of R.games) {
@@ -183,12 +184,7 @@ test('score units/caps match ranking and the rules draft (ARCH 8.1)', () => {
   deep(gamesList, IDS, 'firestore games()');
   const caps = {}; for (const m of arch.match(/function caps\(\)[\s\S]*?\}; \}/)[0].matchAll(/'(\w+)': (\d+)/g)) caps[m[1]] = Number(m[2]);
   for (const g of R.games) eq(g.score.cap, caps[g.id], g.id + ' cap');
-  const rk = readText('ranking/index.html');
-  for (const g of R.games) {
-    const line = rk.split('\n').find(l => l.includes("{ id: '" + g.id + "'"));
-    if (g.score.fmt) ok(line.includes(g.score.fmt.ja.replace('{n}', '').trim()) || line.includes("'" + g.score.fmt.ja + "'"), g.id + ' fmt ' + line);
-    else ok(line.includes("unit: '" + g.score.unit.ja + "'"), g.id + ' unit ' + line);
-  }
+  // units now come from the registry on the ranking page itself (P1-6)
 });
 
 test('genres cover every hub tag word and each game', () => {
