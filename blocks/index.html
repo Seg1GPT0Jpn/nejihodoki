@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ブロックはめ">
 <script src="../common/i18n.js"></script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -82,6 +83,11 @@ h1 span { color: var(--gold); }
   transition: opacity .2s;
 }
 .toast.off { opacity: 0; }
+.vs-slot { display: contents; }
+#vsSlotOver .kvs-entry { margin-top: 12px; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+@media (max-width: 370px) { header { gap: 5px !important; } .back { font-size: 12px; padding: 6px 4px; margin-left: -4px; } h1 { font-size: 15px !important; letter-spacing: .02em !important; } }
+@media (max-width: 340px) { h1 { font-size: 14px !important; letter-spacing: 0 !important; } }
 .overlay {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;
   padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
@@ -124,6 +130,7 @@ h1 span { color: var(--gold); }
   <header>
     <a class="back" href="../" data-i18n>← ゲーム一覧</a>
     <h1 data-i18n-html>ブロック<span>はめ</span></h1>
+    <span id="vsSlot" class="vs-slot"></span>
     <button class="icon" id="restart" type="button" aria-label="最初から" data-i18n-attr="aria-label">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
     </button>
@@ -147,6 +154,7 @@ h1 span { color: var(--gold); }
     <div class="best"><span data-i18n>ベスト</span> <b id="overBest">0</b></div>
     <div id="overNew" class="newrec" hidden data-i18n>ベスト更新！</div>
     <button class="btn" id="again" type="button" data-i18n>もう一度</button>
+    <div id="vsSlotOver"></div>
   </div>
 </div>
 <script>
@@ -161,6 +169,7 @@ KoboI18n.add({ en: {
   '全消し！': 'All clear!', '{n}ライン！': '{n} lines!', 'ダブル！': 'Double!',
   'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
   '新しいゲーム': 'New game', 'もう一度押すと最初から': 'Tap again to restart',
+  '点': 'pts', '置き場がない！ 盤をリセット': 'No room! Board reset',
 } });
 const N = 8;
 const KEY_BEST = 'kusoge.blocks.best', KEY_STATE = 'kusoge.blocks.state', KEY_SOUND = 'kusoge.sound';
@@ -213,8 +222,10 @@ for (const [name, base, nrot, weight, color] of FAMILIES) {
   }
 }
 const TOTAL_W = PIECES.reduce((s, p) => s + p.weight, 0);
+// online battle: every player draws pieces from the same seeded sequence (see KoboVersus below)
+let rnd = Math.random, vs = null; // vs = { snap } while a versus match owns the board
 function randomPiece() {
-  let r = Math.random() * TOTAL_W;
+  let r = rnd() * TOTAL_W;
   for (let i = 0; i < PIECES.length; i++) { r -= PIECES[i].weight; if (r <= 0) return i; }
   return PIECES.length - 1;
 }
@@ -234,6 +245,11 @@ function fitsAnywhere(pid) {
   return false;
 }
 function deal() {
+  if (vs) { // seeded: the same three pieces for everyone, whatever their board looks like
+    tray = [randomPiece(), randomPiece(), randomPiece()];
+    dealAnim = reduced() ? null : { t0: performance.now() };
+    return;
+  }
   let best3 = null;
   for (let attempt = 0; attempt < 14; attempt++) {
     const hand = [randomPiece(), randomPiece(), randomPiece()];
@@ -257,6 +273,7 @@ function newGame() {
   hideOver(); updateHud(true); save(); requestDraw();
 }
 function save() {
+  if (vs) return; // online matches never touch the single-player save
   if (over) { store.del(KEY_STATE); return; }
   store.set(KEY_STATE, JSON.stringify({ v: 1, board, tray, score, combo, moves }));
 }
@@ -325,6 +342,7 @@ function place(i, r0, c0) {
   if (tray.every(v => v === null)) deal();
   updateHud();
   if (!tray.some(v => v !== null && fitsAnywhere(v))) {
+    if (vs) { setTimeout(vsStuck, reduced() ? 150 : 450); requestDraw(); return; }
     over = true;
     save();
     setTimeout(gameOver, reduced() ? 250 : 750);
@@ -350,7 +368,7 @@ let prevBestAtStart = best;
 const $ = id => document.getElementById(id);
 let shownScore = 0, hudAnim = 0;
 function updateHud(instant) {
-  if (score > best) { best = score; store.set(KEY_BEST, String(best)); }
+  if (!vs && score > best) { best = score; store.set(KEY_BEST, String(best)); }
   $('best').textContent = best.toLocaleString('ja-JP');
   const chip = $('comboChip');
   if (combo >= 2) { chip.textContent = T('コンボ ×{n}', { n: combo }); chip.classList.remove('off'); } else chip.classList.add('off');
@@ -419,6 +437,7 @@ $('sound').addEventListener('click', () => {
 });
 let restartArmed = 0;
 $('restart').addEventListener('click', () => {
+  if (vs) return;
   const now = Date.now();
   if (over || moves === 0 || now - restartArmed < 2500) { restartArmed = 0; newGame(); toast(T('新しいゲーム')); }
   else { restartArmed = now; toast(T('もう一度押すと最初から')); }
@@ -558,6 +577,7 @@ function snapFor(gx, gy, pid) {
 function local(e) { return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
 cv.addEventListener('pointerdown', e => {
   if (over || drag || !e.isPrimary) return;
+  if (vs && !KoboVersus.canPlay()) return;
   if (!rect) layout();
   const p = local(e);
   if (p.y < trayY - cell * 0.6) return;
@@ -587,7 +607,7 @@ function endDrag(e, cancel) {
   if (!cancel) { const p = local(e); d.x = p.x; d.y = p.y; }
   const pc = PIECES[d.pid];
   const g = ghostTopLeft(d.x, d.y, pc, d.type);
-  const snap = cancel ? null : snapFor(g.x, g.y, d.pid);
+  const snap = cancel || (vs && !KoboVersus.canPlay()) ? null : snapFor(g.x, g.y, d.pid);
   if (snap) place(d.i, snap.r, snap.c);
   else {
     if (!reduced()) returning = { i: d.i, x: g.x, y: g.y, t0: performance.now() };
@@ -727,6 +747,43 @@ function frame(now) {
   }
   if (busy) requestDraw();
 }
+
+// ---------- Online battle (common/versus.js) ----------
+// stuck in a match: wipe the board and keep going (the piece sequence stays the same for everyone)
+function vsStuck() {
+  if (!vs || !KoboVersus.canPlay() || tray.some(v => v !== null && fitsAnywhere(v))) return;
+  for (let i = 0; i < N * N; i++) if (board[i] >= 0) effects.push({ r: (i / N) | 0, c: i % N, color: board[i], t0: performance.now() });
+  board.fill(-1); combo = 0;
+  toast(T('置き場がない！ 盤をリセット')); sfxOver(); buzz(40);
+  updateHud(); requestDraw();
+}
+KoboVersus.init({
+  game: 'blocks', title: T('ブロックはめ'), duration: 180, unit: T('点'),
+  theme: { accent: '#f4b740', accentInk: '#2d1b04', accentShadow: '#a8731a', card: 'linear-gradient(#3d2a1d, #2e1f15)', line: '#5a3f2c',
+    ink: '#fbf1e3', dim: '#c9b29a', hud: 'rgba(36,23,15,.97)', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header'),
+  onStart({ seed }) {
+    if (!vs) vs = { snap: { board: board.slice(), tray: tray.slice(), score, combo, moves, over, overShown: !$('over').hidden } };
+    rnd = KoboVersus.rng(seed);
+    drag = null; returning = null; restartArmed = 0;
+    board = new Array(N * N).fill(-1); score = 0; combo = 0; moves = 0; over = false;
+    effects.length = 0; popups.length = 0; placeFx = null;
+    $('over').hidden = true;
+    deal(); updateHud(true); requestDraw();
+  },
+  getScore: () => score,
+  onEnd() { drag = null; returning = null; requestDraw(); },
+  onExit() {
+    if (!vs) return;
+    const s = vs.snap; vs = null; rnd = Math.random;
+    drag = null; returning = null; effects.length = 0; popups.length = 0; placeFx = null;
+    board = s.board; tray = s.tray; score = s.score; combo = s.combo; moves = s.moves; over = s.over;
+    $('over').hidden = !s.overShown;
+    updateHud(true); requestDraw();
+  },
+});
+KoboVersus.button($('vsSlot'), { compact: true });
+KoboVersus.button($('vsSlotOver'));
 
 // ---------- Boot ----------
 renderSoundBtn();

@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="おちものタワー">
 <script src="../common/i18n.js"></script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -114,6 +115,7 @@ html[lang="en"] #pad button.small { font-size: 14px; }
   font: 800 17px var(--font-body); background: linear-gradient(#ff8db4, #ff5d8f); color: #3b0019; box-shadow: 0 4px 0 #a3194c;
   text-decoration: none; box-sizing: border-box;
 }
+.card .kvs-entry { margin-top: 10px; }
 .btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; padding: 10px; }
 @media (max-width: 340px) { h1 { font-size: 16px; letter-spacing: 0; } .back { padding: 8px 2px; } }
 @media (max-height: 600px) { .how { display: none; } .stats { margin-top: 2px; } .stat b { font-size: 14px; } #pad button { height: 46px; } }
@@ -163,6 +165,7 @@ html[lang="en"] #pad button.small { font-size: 14px; }
         <p class="keys" data-i18n>キーボード：←→ 移動 / ↑・X・Z 回転 / ↓ 少し / スペース 一気に / C ため / P 一時停止</p>
         <p class="tapstart" data-i18n>タップでスタート</p>
         <p class="small"><span data-i18n>ベスト</span> <span id="stBest">0</span></p>
+        <div id="vsSlotStart"></div>
       </div>
     </div>
 
@@ -172,6 +175,7 @@ html[lang="en"] #pad button.small { font-size: 14px; }
         <p class="small"><span data-i18n>スコア</span> <span id="psScore">0</span></p>
         <button class="btn sticky" id="resumeBtn" type="button" data-i18n>つづける</button>
         <button class="btn sub" id="quitBtn" type="button" data-i18n>さいしょから</button>
+        <div id="vsSlotPause"></div>
         <div class="langrow"><span data-i18n>言語 / Language</span><span id="langPick"></span></div>
       </div>
     </div>
@@ -184,6 +188,7 @@ html[lang="en"] #pad button.small { font-size: 14px; }
         <p class="small"><span data-i18n>ベスト</span> <span id="goBest">0</span> <span class="newrec" id="goNew" hidden data-i18n>新記録！</span></p>
         <p class="small" data-i18n-html><span id="goLines">0</span>ライン ・ レベル<span id="goLevel">1</span> ・ そろい消し<span id="goSoroi">0</span>回</p>
         <button class="btn sticky" id="againBtn" type="button" data-i18n>もう一度</button>
+        <div id="vsSlotOver"></div>
         <a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a>
       </div>
     </div>
@@ -216,6 +221,7 @@ KoboI18n.add({ en: {
   '4ライン！': '4 lines!', '1ライン': '1 line', '{n}ライン': '{n} lines', 'そろい消し！': 'Match Clear!',
   'レベル {n}！': 'Level {n}!', 'スピードアップ': 'Speed up!',
   'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '点': 'pts', 'リセットして つづけよう': 'Well reset — keep going',
 } });
 
 // ---------- constants ----------
@@ -309,7 +315,9 @@ let popups = [], particles = [], shake = 0;
 
 function emptyRow() { return new Array(COLS).fill(-1); }
 function emptyBoard() { const b = []; for (let r = 0; r < H; r++) b.push(emptyRow()); return b; }
-function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+// online battle: the bags are shuffled from a seeded sequence shared by every player (see KoboVersus below)
+let rnd = Math.random, vs = null; // vs = { snap } while a versus match owns the well
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function nextFromBag() {
   if (!bag.length) bag = shuffle(BAG.slice());
   if (!cbag.length) cbag = shuffle(COLOR_BAG.slice());
@@ -334,7 +342,7 @@ function makePiece(spec) {
 }
 function spawn(spec) {
   const p = makePiece(spec);
-  if (collides(p.cells, p.x, p.y)) { p.y -= 1; if (collides(p.cells, p.x, p.y)) { cur = null; gameOver(); return false; } }
+  if (collides(p.cells, p.x, p.y)) { p.y -= 1; if (collides(p.cells, p.x, p.y)) { if (vs) { vsReset(); p.y += 1; } else { cur = null; gameOver(); return false; } } }
   cur = p; gravAcc = 0; lockT = 0; lockResets = 0; lowestY = p.y;
   return true;
 }
@@ -416,7 +424,7 @@ function lockPiece() {
     }
     return;
   }
-  if (board.slice(0, HID).some(row => row.some(v => v >= 0))) { gameOver(); return; }
+  if (board.slice(0, HID).some(row => row.some(v => v >= 0))) { if (vs) vsReset(); else { gameOver(); return; } }
   spawnNext();
 }
 function finishClear() {
@@ -429,8 +437,14 @@ function finishClear() {
   level = 1 + Math.floor(lines / 10);
   clearing = null;
   if (level > oldLevel) { addPopup(T('レベル {n}！', { n: level }), T('スピードアップ'), '#9ff5d0', 1); sfx.level(); }
-  if (board.slice(0, HID).some(row => row.some(v => v >= 0))) { gameOver(); return; }
+  if (board.slice(0, HID).some(row => row.some(v => v >= 0))) { if (vs) vsReset(); else { gameOver(); return; } }
   spawnNext();
+}
+// a full well in an online match: empty it and keep playing (score and the piece sequence carry on)
+function vsReset() {
+  for (let r = HID; r < H; r++) for (let c = 0; c < COLS; c++) if (board[r][c] >= 0 && (r + c) % 2) burst(c, r, board[r][c], 1);
+  board = emptyBoard();
+  addPopup(T('タワーがいっぱい！'), T('リセットして つづけよう'), '#ff9fc0', 1); sfx.over(); vibrate(60); shake = 6;
 }
 function gravityMs() { return Math.max(45, 850 * Math.pow(0.82, level - 1)); }
 
@@ -483,6 +497,7 @@ function update(dt) {
   particles = particles.filter(p => p.t < p.life);
   shake = Math.max(0, shake - dt * 0.03);
   if (mode !== 'play' || paused) return;
+  if (vs && !KoboVersus.canPlay()) return;
   if (clearing) { clearing.t += dt; if (clearing.t >= clearing.dur) finishClear(); return; }
   if (!cur) return;
   // auto-repeat for held left/right
@@ -719,7 +734,7 @@ function setText(el, key, v) { if (hud[key] !== v) { hud[key] = v; el.textConten
 function updateHUD() {
   const sc = score || 0;
   setText(hScore, 's', sc.toLocaleString('ja-JP'));
-  setText(hBest, 'b', Math.max(best, sc).toLocaleString('ja-JP'));
+  setText(hBest, 'b', (vs ? best : Math.max(best, sc)).toLocaleString('ja-JP'));
   setText(hLevel, 'l', String(level || 1));
   setText(hLines, 'n', String(lines || 0));
 }
@@ -735,7 +750,7 @@ function frame(now) {
 }
 
 // ---------- input: shared ----------
-function canAct() { return mode === 'play' && !paused; }
+function canAct() { return mode === 'play' && !paused && (vs ? KoboVersus.canPlay() : !KoboVersus.active()); }
 function pressDir(d) {
   if (!canAct()) return;
   dirHeld[d] = true; heldDir = d; dasT = 0; arrT = 0; move(d);
@@ -744,12 +759,13 @@ function releaseDir(d) {
   dirHeld[d] = false;
   if (heldDir === d) { heldDir = dirHeld[-d] ? -d : 0; dasT = 0; arrT = 0; }
 }
-function togglePause() { if (mode === 'play') setPaused(!paused); }
+function togglePause() { if (mode === 'play' && !vs && !KoboVersus.active()) setPaused(!paused); }
 
 // ---------- keyboard ----------
 window.addEventListener('keydown', e => {
   const k = e.code;
   ensureAudio();
+  if (KoboVersus.active() && !vs) return;
   if (mode === 'title' && (k === 'Enter' || k === 'Space')) { e.preventDefault(); startGame(); return; }
   if (mode === 'over' && (k === 'Enter' || k === 'Space') && !ovOver.hidden) { e.preventDefault(); startGame(); return; }
   if (k === 'KeyP' || k === 'Escape') { e.preventDefault(); togglePause(); return; }
@@ -875,10 +891,42 @@ renderSound();
 $('pauseBtn').addEventListener('click', () => { ensureAudio(); togglePause(); });
 $('resumeBtn').addEventListener('click', () => setPaused(false));
 $('quitBtn').addEventListener('click', () => { paused = false; ovPause.hidden = true; startGame(); });
-ovStart.addEventListener('click', () => startGame());
+ovStart.addEventListener('click', () => { if (!KoboVersus.active()) startGame(); });
 $('againBtn').addEventListener('click', () => { if (performance.now() - overAt > 700) startGame(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused) setPaused(true); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused && !vs) setPaused(true); });
 $('stBest').textContent = best.toLocaleString('ja-JP');
+
+// ---------- online battle (common/versus.js) ----------
+KoboVersus.init({
+  game: 'drop', title: T('おちものタワー'), duration: 180, unit: T('点'),
+  theme: { accent: '#ff7aa6', accentBg: 'linear-gradient(#ff8db4, #ff5d8f)', accentInk: '#3b0019', accentShadow: '#a3194c', card: 'linear-gradient(#3a2150, #24132f)',
+    line: 'rgba(255, 210, 240, .18)', ink: '#fff4fb', dim: '#c8b3d6', hud: 'rgba(30, 15, 42, .97)', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header .hrow'),
+  onOpen() { if (mode === 'play' && !paused) setPaused(true); },
+  onStart({ seed }) {
+    if (!vs) vs = { snap: { board, cur, holdP, canHold, queue, bag, cbag, score, lines, level, soroiCount, mode, paused,
+      ov: { start: !ovStart.hidden, pause: !ovPause.hidden, over: !ovOver.hidden } } };
+    rnd = KoboVersus.rng(seed);
+    gesture = null;
+    startGame();
+  },
+  getScore: () => score || 0,
+  onEnd() { softKey = softBtn = false; dirHeld['-1'] = dirHeld['1'] = false; heldDir = 0; gesture = null; },
+  onExit() {
+    if (!vs) return;
+    const s = vs.snap; vs = null; rnd = Math.random;
+    ({ board, cur, holdP, canHold, queue, bag, cbag, score, lines, level, soroiCount, mode, paused } = s);
+    clearing = null; popups = []; particles = []; shake = 0; gesture = null;
+    softKey = softBtn = false; dirHeld['-1'] = dirHeld['1'] = false; heldDir = 0;
+    if (!board) board = emptyBoard();
+    if (mode === 'play') paused = true; // come back to the paused single-player game
+    ovStart.hidden = !s.ov.start; ovOver.hidden = !s.ov.over; ovPause.hidden = !(s.ov.pause || mode === 'play');
+    $('psScore').textContent = (score || 0).toLocaleString('ja-JP');
+  },
+});
+KoboVersus.button($('vsSlotStart'));
+KoboVersus.button($('vsSlotPause'));
+KoboVersus.button($('vsSlotOver'));
 
 if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
 window.addEventListener('resize', resize);
