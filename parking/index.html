@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="くるま出し">
 <script src="../common/i18n.js"></script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -136,6 +137,12 @@ header {
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); } }
 @media (prefers-reduced-motion: reduce) { .overlay, .card, .stars svg.on { animation: none; } }
+/* online battle entry (common/versus.js) */
+.vs-slot { display: contents; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+/* narrow phones: the battle button takes header room, so the move chip drops its label and the chips tighten */
+@media (max-width: 430px) { header { gap: 4px; } .hud { gap: 4px; } .chip { padding: 4px 7px; gap: 3px; } .chip .mlabel { display: none; } }
+@media (max-width: 340px) { .back { font-size: 11px; padding: 6px 2px; margin-left: -2px; min-width: 0; overflow: hidden; text-overflow: ellipsis; } .chip .lvlabel { display: none; } .hud { flex: 1 0 auto; } .chip { padding: 4px 5px; } .chip b { font-size: 14px; } .chip .par { font-size: 10px; } }
 @media (max-width: 370px) { .back { font-size: 12px; padding: 6px 4px; } .chip { padding: 4px 8px; } .chip b { font-size: 15px; } }
 @media (max-height: 600px) { .tool span { display: none; } }
 /* fit the visible viewport on phones (browser bars included) */
@@ -147,9 +154,10 @@ header {
   <header>
     <a class="back" href="../" data-i18n>← ゲーム一覧</a>
     <div class="hud">
-      <div class="chip">Lv<b class="lv" id="lvl">1</b></div>
-      <div class="chip"><span data-i18n>手数</span><b id="moves">0</b><span class="par" id="par">/ 目標 0</span></div>
+      <div class="chip"><span class="lvlabel">Lv</span><b class="lv" id="lvl">1</b></div>
+      <div class="chip"><span class="mlabel" data-i18n>手数</span><b id="moves">0</b><span class="par" id="par">/ 目標 0</span></div>
     </div>
+    <span id="vsSlot" class="vs-slot"></span>
     <button class="icon" id="sound" type="button" aria-label="サウンド" data-i18n-attr="aria-label" aria-pressed="true"></button>
   </header>
   <div id="play">
@@ -341,10 +349,11 @@ const Core = (() => {
 
   // ---------- Levels ----------
   const SIZES = [[4, 6, 6], [12, 6, 7], [22, 7, 7], [35, 7, 8], [55, 7, 9], [75, 8, 9], [100, 8, 10], [130, 9, 10], [160, 9, 11]];
-  function config(n) {
+  // salt (optional, 32-bit): another lot for the same level number (online battles); 0 = the normal stages
+  function config(n, salt) {
     let W = 6, H = 6;
     for (const [from, w, h] of SIZES) if (n >= from) { W = w; H = h; }
-    const r = rng32(n * 7919 + 17);
+    const r = rng32((n * 7919 + 17) ^ (salt | 0));
     const t = Math.min(1, (n - 4) / 150);
     const c = {
       n, W, H,
@@ -521,10 +530,10 @@ const Core = (() => {
     return true;
   }
 
-  function generate(n) {
-    n = Math.max(1, n | 0);
-    if (n <= 3) return tutorial(n);
-    const c = config(n), r = rng32((n * 2654435761 >>> 0) ^ 0x5eed);
+  function generate(n, salt) {
+    n = Math.max(1, n | 0); salt = salt | 0;
+    if (n <= 3 && !salt) return tutorial(n);
+    const c = config(n, salt), r = rng32((n * 2654435761 >>> 0) ^ 0x5eed ^ salt);
     const score = l => (l.diff < c.lo ? (c.lo - l.diff) * 2 : l.diff > c.hi ? l.diff - c.hi : 0) + l.pen;
     let cur = null, tries = 0;
     for (let k = 0; k < 400 && !(cur && k >= 6); k++) {
@@ -580,6 +589,7 @@ KoboI18n.add({ en: {
   '戻せる手がない': 'Nothing to undo', 'このステージの「戻す」は使い切った': 'No undos left for this stage',
   'このステージのヒントは使い切った': 'No hints left for this stage', '行き詰まり…「戻す」かリスタートを': 'Stuck… try Undo or Restart',
   'この車をタップして回そう': 'Tap this car to turn it',
+  '点': 'pts', '駐車場 {n}': 'Lot {n}', '目標 {n}手': 'par {n} moves', 'ぜんぶ出た！ +{n}点': 'All out! +{n} pts', ' ・ ': ' · ',
 } });
 const $ = id => document.getElementById(id);
 const KEY_SAVE = 'kusoge.parking.save', KEY_SOUND = 'kusoge.sound';
@@ -796,6 +806,7 @@ function buildCat() {
 }
 
 // ---------- Level state ----------
+let vs = null; // { snap, salt, idx, score, tips } while an online match owns the lot
 let lv = null, st = null, nc = 0, moves = 0, undoStack = [], undosLeft = UNDO_MAX, hintsLeft = HINT_MAX, won = false;
 let world = null; // per-level scene objects
 let cars = [];   // visuals per car index
@@ -1120,6 +1131,7 @@ function rotateCar(i) {
 
 function afterMove() {
   updateHUD();
+  if (Core.aliveCount(st) === 0 && vs) { won = true; vsCleared(); dirty = true; return; }
   if (Core.aliveCount(st) === 0) {
     won = true;
     const par = lv.par, stars = moves <= par ? 3 : moves <= par + Math.max(2, Math.ceil(par * 0.12)) ? 2 : 1;
@@ -1134,6 +1146,7 @@ function afterMove() {
 
 function undo() {
   if (won) return;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   if (!undoStack.length) { toast(T('戻せる手がない')); return; }
   if (undosLeft <= 0) { toast(T('このステージの「戻す」は使い切った')); return; }
   const s = undoStack.pop(); undosLeft--;
@@ -1148,7 +1161,7 @@ function clearHint() {
   hintFor = -1; dirty = true;
 }
 function hint() {
-  if (won) return;
+  if (won || vs || KoboVersus.active()) return;
   if (hintsLeft <= 0) { toast(T('このステージのヒントは使い切った')); return; }
   const sol = Core.solve(lv, st, 60000);
   if (!sol || !sol.moves.length) { toast(T('行き詰まり…「戻す」かリスタートを')); return; }
@@ -1174,11 +1187,13 @@ function updateHUD() {
   $('moves').textContent = moves;
   $('par').textContent = T('/ 目標 {n}', { n: lv.par });
   $('undoN').textContent = undosLeft; $('hintN').textContent = hintsLeft;
-  $('undo').disabled = undosLeft <= 0; $('hint').disabled = hintsLeft <= 0;
+  $('undo').disabled = undosLeft <= 0; $('hint').disabled = hintsLeft <= 0 || !!vs;
+  $('levels').disabled = !!vs;
 }
 
 let curLevelHints = { n: 0, left: HINT_MAX };
 function startLevel(n, keepHints) {
+  if (vs) return; // a match owns the lot
   n = Math.max(1, n | 0);
   $('win').hidden = true;
   lv = Core.generate(n);
@@ -1240,12 +1255,14 @@ function toScreen(x, y, z) {
 let down = null;
 cv.addEventListener('pointerdown', e => {
   if (!lv || won) return;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   down = { id: e.pointerId, x: e.clientX, y: e.clientY, car: pick(e.clientX, e.clientY) };
   try { cv.setPointerCapture(e.pointerId); } catch (er) {}
 });
 cv.addEventListener('pointerup', e => {
   if (!down || down.id !== e.pointerId) return;
   const d0 = down; down = null;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   let i = d0.car;
   const dx = e.clientX - d0.x, dy = e.clientY - d0.y, dist = Math.hypot(dx, dy);
   if (dist < 14) {
@@ -1268,10 +1285,14 @@ cv.addEventListener('pointercancel', () => { down = null; });
 
 $('undo').addEventListener('click', undo);
 $('hint').addEventListener('click', hint);
-$('restart').addEventListener('click', () => { sfx.click(); curLevelHints.left = hintsLeft; startLevel(lv.n, true); });
+$('restart').addEventListener('click', () => {
+  if (vs) { if (KoboVersus.canPlay() && !won) { sfx.click(); vsLot(vs.idx); } return; }
+  if (KoboVersus.active()) return;
+  sfx.click(); curLevelHints.left = hintsLeft; startLevel(lv.n, true);
+});
 $('next').addEventListener('click', () => { sfx.click(); startLevel(lv.n + 1); });
 $('again').addEventListener('click', () => { sfx.click(); startLevel(lv.n, true); });
-$('levels').addEventListener('click', openSelect);
+$('levels').addEventListener('click', () => { if (!vs && !KoboVersus.active()) openSelect(); });
 $('selClose').addEventListener('click', () => { $('select').hidden = true; });
 $('select').addEventListener('click', e => { if (e.target === $('select')) $('select').hidden = true; });
 
@@ -1334,6 +1355,59 @@ window.__parking = {
   goto: n => startLevel(n),
   showWin: stars => showWin(stars),   // layout tests: open the result card directly
 };
+
+// ---------- Online battle (common/versus.js) ----------
+// Everyone gets the same seeded run of lots (the stage generator with a salt; forward-only, solver-checked), harder one by one.
+// Score: 100 per cleared lot + 50 at par, 10 less per extra move. No hints; undo (3 per lot) and restart are allowed.
+const VS_BONUS = 50;
+const vsLevel = i => Math.min(69, 6 + 4 * i); // stays below the cat stages (a timing gimmick)
+function vsLot(i) {
+  vs.idx = i;
+  $('win').hidden = true; $('select').hidden = true;
+  anims.forEach(a => { a.dead = true; }); anims = [];
+  lv = Core.generate(vsLevel(i), vs.salt);
+  nc = lv.cars.length; st = Core.makeState(lv); moves = 0; undoStack = []; undosLeft = UNDO_MAX; hintsLeft = 0; won = false;
+  catT0 = now() + 1.5; catForce = null; hintMark = null; hintFor = -1;
+  buildWorld(); fitCamera(); updateHUD();
+  showTip(T('駐車場 {n}', { n: i + 1 }) + T(' ・ ') + T('目標 {n}手', { n: lv.par }));
+  if (lv.barrier && !vs.tips.gate) { vs.tips.gate = 1; showTip(T('しましまのゲートは「あと○台」出るまで開かない')); }
+  if (lv.grid.includes(Core.T_TURN) && !vs.tips.turn) { vs.tips.turn = 1; showTip(T('回転台の上の車はタップで90°回る（矢印の向きへスワイプで発進）')); }
+  const salt = vs.salt; // build the next lot while this one is played
+  setTimeout(() => { try { Core.generate(vsLevel(i + 1), salt); } catch (e) {} }, 600);
+}
+function vsCleared() {
+  const gain = 100 + Math.max(0, VS_BONUS - 10 * Math.max(0, moves - lv.par));
+  vs.score += gain;
+  const lot = lv;
+  setTimeout(() => { if (vs && lv === lot) { sfx.win(); toast(T('ぜんぶ出た！ +{n}点', { n: gain })); } }, 700);
+  setTimeout(() => { if (vs && lv === lot && KoboVersus.canPlay()) vsLot(vs.idx + 1); }, 1700);
+}
+KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。',
+  game: 'parking', title: T('くるま出し'), duration: 240, unit: T('点'),
+  theme: { accent: '#ffcf3f', accentInk: '#3a2a00', accentShadow: '#b88c12', card: 'linear-gradient(#2c4152, #213342)', line: '#3b5163',
+    ink: '#f6f3ea', dim: '#a9bccb', hud: '#1d2a35', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header'),
+  onOpen() { $('select').hidden = true; },
+  onStart({ seed }) {
+    if (!vs) vs = { snap: { lv, st: Int8Array.from(st), moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, win: !$('win').hidden } };
+    vs.salt = (seed | 0) || 1; vs.score = 0; vs.tips = {};
+    down = null;
+    vsLot(0);
+  },
+  getScore: () => (vs ? vs.score : 0),
+  onEnd() { down = null; },
+  onExit() {
+    if (!vs) return;
+    const s = vs.snap; vs = null;
+    anims.forEach(a => { a.dead = true; }); anims = [];
+    ({ lv, moves, undoStack, undosLeft, hintsLeft, won, curLevelHints } = s);
+    st = s.st; nc = lv.cars.length; hintMark = null; hintFor = -1; down = null;
+    catT0 = now() + 1.5; catForce = null;
+    buildWorld(); fitCamera(); updateHUD(); showTip('');
+    $('win').hidden = !s.win;
+  },
+});
+KoboVersus.button($('vsSlot'), { compact: true });
 
 startLevel(save.level);
 requestAnimationFrame(frame);

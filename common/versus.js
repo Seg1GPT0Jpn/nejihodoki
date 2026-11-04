@@ -63,6 +63,7 @@
     'オンライン {w}勝 / {p}戦 ・ ベスト {b}': 'Online · wins {w} / games {p} · best {b}',
     '練習': 'Practice', '練習の記録は残りません': 'Practice scores are not saved',
     '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} score battle. Everyone gets the same pieces in the same order.',
+    '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。': '2–4 players, {t} score battle. Everyone gets the same puzzles in the same order.',
     '{m}分': '{m} min', '{s}秒': '{s} s', '{m}分{s}秒': '{m} min {s} s', '{n}位': '#{n}', 'スコア': 'Score',
   } });
   const T = (s, v) => (I18N ? I18N.t(s, v) : String(s).replace(/\{(\w+)\}/g, (m, k) => (v && k in v ? v[k] : m)));
@@ -301,7 +302,7 @@
   function lobbyCard() {
     card({ title: T('オンライン対戦'),
       html: '<p class="kvs-p kvs-stat"><span class="kvs-spin"></span><span></span></p><ul class="kvs-names"></ul><p class="kvs-sub kvs-left"></p>' +
-        '<p class="kvs-sub">' + esc(T('2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。', { t: durText(duration()) })) + '</p>',
+        '<p class="kvs-sub">' + esc(T((O && O.sameText) || '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。', { t: durText(duration()) })) + '</p>',
       buttons: [{ id: 'cancel', label: T('キャンセル'), on: close }, { id: 'practice', label: T('ひとりで練習'), sub: true, on: practice }] });
   }
   function lobby(stat, names, sub) {

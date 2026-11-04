@@ -39,8 +39,10 @@ KoboI18n.add({ en: {
   '新しいゲーム': 'New game',
   'もう一度押すと新しく始めます': 'Tap again to start a new game',
   '言語 / Language': 'Language / 言語',
+  '点': 'pts', 'もう動かせない！ 盤をリセット': 'No moves! Board reset',
 } });
 </script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -164,6 +166,10 @@ h1 span { color: var(--ice); }
   .ctl { height: 44px; }
   .ctl.small { height: 34px; }
 }
+/* online battle entry (common/versus.js) */
+.vs-slot { display: contents; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+@media (max-width: 359px) { .top { gap: 5px; } .back { font-size: 12px; padding: 6px 4px; margin-left: -4px; } h1 { font-size: 17px; letter-spacing: .02em; } }
 @media (max-width: 340px) { .ctl.v svg { display: none; } .ctl.v { font-size: 12.5px; } }
 @media (max-height: 520px) {
   header { padding-top: 4px; }
@@ -187,6 +193,7 @@ h1 span { color: var(--ice); }
     <div class="top">
       <a class="back" href="../" data-i18n>← ゲーム一覧</a>
       <h1>590<span>49</span></h1>
+      <span id="vsSlot" class="vs-slot"></span>
       <button class="icon lang" id="langBtn" type="button" aria-label="言語 / Language"></button>
       <button class="icon" id="sound" type="button" aria-label="サウンド" aria-pressed="true"></button>
     </div>
@@ -286,6 +293,7 @@ const exps = () => cells.map(c => (c ? c.e : 0));
 const fromExps = arr => arr.map(e => (e > 0 ? { e, id: nextId++ } : null));
 const maxE = () => cells.reduce((m, c) => Math.max(m, c ? c.e : 0), 0);
 function save() {
+  if (vs) return; // online matches never touch the single-player save
   store.set(KEY_STATE, JSON.stringify({ v: 1, cells: exps(), score, undoLeft, prev, won, yaw: cam.tyaw, pitch: cam.tpitch, t: Date.now() }));
 }
 function load() {
@@ -300,11 +308,13 @@ function load() {
     return true;
   } catch (e) { return false; }
 }
+// online battle: spawns draw from a seeded sequence shared by every player (see KoboVersus below)
+let rnd = Math.random, vs = null; // vs = { snap } while a versus match owns the board
 function spawn() {
   const empty = []; cells.forEach((c, i) => { if (!c) empty.push(i); });
   if (!empty.length) return null;
-  const i = empty[(Math.random() * empty.length) | 0];
-  cells[i] = { e: Math.random() < 0.9 ? 1 : 2, id: nextId++ };
+  const i = empty[(rnd() * empty.length) | 0];
+  cells[i] = { e: rnd() < 0.9 ? 1 : 2, id: nextId++ };
   return i;
 }
 
@@ -569,10 +579,12 @@ function renderHud() {
   $('goalV').textContent = fmt(pow3(Math.max(2, m + 1)));
   [...legend.children].forEach((c, k) => { c.classList.toggle('got', k + 1 <= m); c.classList.toggle('top', k + 1 === m); });
   $('undoN').textContent = T('残り{n}', { n: undoLeft });
-  $('bUndo').disabled = !prev || undoLeft <= 0;
+  $('bUndo').disabled = !!vs || !prev || undoLeft <= 0;
+  $('bNew').disabled = !!vs;
   $('overUndo').hidden = !prev || undoLeft <= 0;
 }
 function updateRecords() {
+  if (vs) return; // a match never updates the bests
   if (score > best) { best = score; store.set(KEY_BEST, String(best)); }
   const t = pow3(maxE()); if (maxE() && t > bestTile) { bestTile = t; store.set(KEY_TILE, String(bestTile)); }
 }
@@ -589,6 +601,7 @@ function showOver() {
 
 function doMove(dir) {
   if (anyOverlay() || !DIRS[dir]) return false;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return false;
   finishAnims();
   const r = slide(cells, dir);
   if (!r.changed) { sfxBump(); shakeT = performance.now(); shakeDir = DIRS[dir]; return false; }
@@ -613,6 +626,12 @@ function doMove(dir) {
 function afterChange(animate) {
   renderHud(); save();
   const delay = animate ? SLIDE + POP + 120 : 0;
+  if (vs) { // a match: no win card, and a stuck board is wiped so play goes on (score kept)
+    if (maxE() >= GOAL_E) won = true;
+    over = !canMove(cells);
+    if (over) setTimeout(vsStuck, delay + 200);
+    return;
+  }
   if (!won && maxE() >= GOAL_E) {
     won = true; save();
     setTimeout(() => { $('winScore').textContent = fmt(score); sfxWin(); buzz([30, 40, 60]); $('winOv').hidden = false; }, delay);
@@ -623,6 +642,7 @@ function afterChange(animate) {
   if (over) setTimeout(() => { if (over) { sfxOver(); showOver(); } }, delay + 200);
 }
 function undo() {
+  if (vs || KoboVersus.active()) return;
   if (!prev || undoLeft <= 0) return;
   finishAnims();
   cells = fromExps(prev.cells); score = prev.score; prev = null; undoLeft--; over = false;
@@ -647,6 +667,7 @@ $('bUndo').addEventListener('click', undo);
 $('overUndo').addEventListener('click', undo);
 let newArmed = 0;
 $('bNew').addEventListener('click', () => {
+  if (vs || KoboVersus.active()) return;
   if (Date.now() - newArmed < 2500 || !movesMade && score === 0) { newArmed = 0; newGame(); toast(T('新しいゲーム')); return; }
   newArmed = Date.now(); toast(T('もう一度押すと新しく始めます'));
 });
@@ -696,6 +717,7 @@ cv.addEventListener('pointercancel', endPtr);
 
 window.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (KoboVersus.active() && !(vs && KoboVersus.canPlay())) return; // lobby / result cards own the keyboard
   const k = e.key;
   const scr = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
   if (scr) { e.preventDefault(); doMove(mapSwipe(scr[0], scr[1])); return; }
@@ -722,6 +744,43 @@ function frame(now) {
   if (busy || dirty) { renderer.render(scene, camera); dirty = false; }
 }
 try { new ResizeObserver(resize).observe(play); } catch (e) { window.addEventListener('resize', resize); }
+
+// ---------- online battle (common/versus.js) ----------
+function vsStuck() {
+  if (!vs || !KoboVersus.canPlay() || canMove(cells)) return;
+  finishAnims();
+  cells.forEach((c, i) => { if (c) burst(cellPos(i), c.e); });
+  cells = new Array(27).fill(null); prev = null; over = false;
+  spawn(); spawn();
+  rebuildMeshes(); renderHud(); dirty = true;
+  toast(T('もう動かせない！ 盤をリセット')); sfxOver(); buzz(40);
+}
+KoboVersus.init({
+  game: 'n59049', title: '59049', duration: 180, unit: T('点'),
+  theme: { accent: '#ffd36b', accentInk: '#2b1d00', accentShadow: '#a07a1c', card: 'linear-gradient(#1d2650, #121836)', line: '#2b3666',
+    ink: '#eef2ff', dim: '#9aa6d6', hud: '#0b1020', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header'),
+  onStart({ seed }) {
+    if (!vs) vs = { snap: { cells: exps(), score, undoLeft, prev, won, over, movesMade, startBest, win: !$('winOv').hidden, ov: !$('overOv').hidden } };
+    rnd = KoboVersus.rng(seed);
+    finishAnims(); ptrs.clear(); rot = null; swipeStart = null;
+    cells = new Array(27).fill(null); score = 0; prev = null; won = false; over = false; movesMade = 0;
+    spawn(); spawn();
+    $('overOv').hidden = true; $('winOv').hidden = true;
+    rebuildMeshes(); renderHud(); dirty = true;
+  },
+  getScore: () => score,
+  onEnd() { swipeStart = null; },
+  onExit() {
+    if (!vs) return;
+    const s = vs.snap; vs = null; rnd = Math.random;
+    finishAnims();
+    cells = fromExps(s.cells); score = s.score; undoLeft = s.undoLeft; prev = s.prev; won = s.won; over = s.over; movesMade = s.movesMade; startBest = s.startBest;
+    $('winOv').hidden = !s.win; $('overOv').hidden = !s.ov;
+    rebuildMeshes(); renderHud(); dirty = true;
+  },
+});
+KoboVersus.button($('vsSlot'), { compact: true });
 
 // ---------- boot ----------
 renderSoundBtn();

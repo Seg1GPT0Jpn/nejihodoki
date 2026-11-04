@@ -61,8 +61,15 @@ KoboI18n.add({ en: {
   ' ・ ': ' · ', '{n}手': '{n} moves', '（戻す{n}回）': ' ({n} undos)', '{list}を使用': 'used {list}', '道具なし！': 'no tools!',
   'この試験管はあと{n}色そろえると開きます': 'Complete {n} more color(s) to open this tube',
   '錠がかかっています': 'This tube is locked',
+  '点': 'pts', 'スキップ': 'Skip', '−{n}点': '−{n} pts',
+  '第{n}問': 'Puzzle {n}', '目標 {n}手': 'par {n} moves',
+  'もう一度押すと スキップ（−{n}点）': 'Tap again to skip (−{n} pts)',
+  'スキップ（−{n}点）': 'Skipped (−{n} pts)',
+  'そろった！ +{n}点': 'Sorted! +{n} pts',
+  '手づまり… 戻すかスキップを': 'Stuck… Undo or Skip',
 } });
 </script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -157,6 +164,9 @@ h1 {
 .langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; font-weight: 800; color: var(--dim); }
 .langrow select { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 800 14px var(--font-body); padding: 4px 8px; }
 .langrow select:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
+/* online battle entry (common/versus.js) */
+.vs-slot { display: contents; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
 html[lang="en"] .back { font-size: 12.5px; }
 html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
 @media (max-width: 359px) { html[lang="en"] h1 { font-size: 14px; } .hrow { gap: 4px; } .ibtn { min-width: 36px; padding: 0 6px; } }
@@ -196,6 +206,7 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
     <div class="hrow">
       <a class="back" href="../" data-i18n>← ゲーム一覧</a>
       <h1 data-i18n>いろみず分け</h1>
+      <span id="vsSlot" class="vs-slot"></span>
       <button class="ibtn" id="helpBtn" aria-label="あそびかた" data-i18n-attr="aria-label">？</button>
       <button class="ibtn" id="sndBtn" aria-pressed="true" aria-label="音" data-i18n>音</button>
     </div>
@@ -275,8 +286,9 @@ const Engine = (() => {
   }
   // ---- level design: smooth curve, gimmicks unlock gradually ----
   const COLOR_STEPS = [[1, 3], [3, 4], [6, 5], [10, 6], [15, 7], [21, 8], [28, 9], [37, 10], [48, 11], [62, 12]];
-  function spec(L) {
-    const r = rng(L * 7919 + 13);
+  // salt (optional, 32-bit): a different puzzle family for the same level number (online battles); 0 = the normal stages
+  function spec(L, salt) {
+    const r = rng((L * 7919 + 13) ^ (salt | 0));
     let colors = 3;
     for (const [lv, c] of COLOR_STEPS) if (L >= lv) colors = c;
     let cap = 4;
@@ -405,9 +417,11 @@ const Engine = (() => {
 
   // ---- generator ----
   const cache = new Map();
-  function generate(L) {
-    if (cache.has(L)) return cache.get(L);
-    const sp = spec(L), r = rng(L * 2654435761 + 7);
+  function generate(L, salt) {
+    salt = salt | 0;
+    const ck = salt ? L + ':' + salt : L;
+    if (cache.has(ck)) return cache.get(ck);
+    const sp = spec(L, salt), r = rng(((L * 2654435761 + 7) >>> 0) ^ salt);
     const K = sp.cap, C = sp.colors;
     let best = null, bestErr = Infinity, tried = 0;
     const MAXC = 40;
@@ -451,8 +465,8 @@ const Engine = (() => {
       for (const i of idx.slice(0, n)) for (let k = 0; k < best.tubes[i].length - 1; k++) hid[i][k] = true;
     }
     const out = { L, spec: sp, K, colors: C, tubes: best.tubes, caps: best.caps, locks: best.locks, hid, moves: best.moves, sol: best.sol, tried, inBand: bestErr === 0 };
-    out.trap = trapRate(best.tubes, makeMeta(best.caps, best.locks, K), rng(L + 99), 24);
-    cache.set(L, out);
+    out.trap = trapRate(best.tubes, makeMeta(best.caps, best.locks, K), rng((L + 99) ^ salt), 24);
+    cache.set(ck, out);
     return out;
   }
   return { rng, spec, generate, solve, makeMeta, moves, apply, legal, isDone, isWin, doneCount, runLen, openSet, keyOf };
@@ -534,12 +548,14 @@ let G = null; // current game
 let anims = [], fx = [], hintMark = null;
 
 function startLevel(L) {
+  if (vs) return;
   save.level = L; if (L > save.best) save.best = L; writeSave();
   G = null; anims = []; fx = []; hintMark = null;
   hideAll();
   $('msg').textContent = T('つくっています…');
   draw();
   setTimeout(() => {
+    if (vs) return; // a match started meanwhile (onExit rebuilds the stage)
     const pz = Engine.generate(L);
     G = {
       L, pz, K: pz.K,
@@ -590,6 +606,12 @@ function refreshUI() {
   }
   const st = starsNow();
   $('mstars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
+  if (vs) { // a match: the hint button becomes "skip"; no extra tube, no stage list
+    $('undoBtn').disabled = !G || !G.history.length || G.won;
+    $('hintBtn').disabled = !G || G.won; $('extraBtn').disabled = true; $('restartBtn').disabled = !G || G.won; $('lvBtn').disabled = true;
+    return;
+  }
+  $('lvBtn').disabled = false;
   $('hintLeft').textContent = T('のこり{n}', { n: G ? HINTS_PER_LEVEL - G.hintsUsed : HINTS_PER_LEVEL });
   $('extraLeft').textContent = T(G && G.extraUsed ? '使用ずみ' : '1面1回');
   $('undoBtn').disabled = !G || !G.history.length || G.won;
@@ -641,8 +663,10 @@ function afterChange(fromPour) {
   refreshUI();
   if (Engine.isWin(G.tubes, G.K)) {
     G.won = true; refreshUI();
+    if (vs) { vsSolved(delay); return; }
     setTimeout(win, delay + 350);
   } else if (isStuck()) {
+    if (vs) { const g = G; setTimeout(() => { if (G === g && !G.won && isStuck()) { toast(T('手づまり… 戻すかスキップを')); sfx.bad(); vibrate(30); } }, delay + 250); return; }
     setTimeout(() => { if (G && !G.won && isStuck()) showStuck(); }, delay + 250);
   }
 }
@@ -661,6 +685,7 @@ function isStuck() {
 }
 function undo() {
   if (!G || G.won || !G.history.length) return;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   finishAnims(); hintMark = null;
   const m = G.history.pop();
   for (let k = 0; k < m.n; k++) { G.tubes[m.f].push(G.tubes[m.t].pop()); G.hid[m.t].pop(); G.hid[m.f].push(false); }
@@ -669,15 +694,22 @@ function undo() {
   sfx.undo(); hideAll(); refreshUI(); layout(); draw();
 }
 function addTube() {
-  if (!G || G.won || G.extraUsed) return;
+  if (!G || G.won || G.extraUsed || vs || KoboVersus.active()) return;
   finishAnims();
   G.extraUsed = 1; G.tubes.push([]); G.hid.push([]); G.caps.push(G.K); G.locks.push(0); G.open.push(true); G.done.push(false);
   hideAll(); layout(); refreshUI();
   burst(G.tubes.length - 1, 10, '#5fe3e0'); sfx.unlock(); toast(T('空の試験管を1本追加しました（★−1）'));
 }
-function restart() { if (!G) return; ensureAudio(); startLevel(G.L); }
+function restart() {
+  if (!G) return;
+  ensureAudio();
+  if (vs) { if (KoboVersus.canPlay() && !G.won) vsPuzzle(vs.idx); return; }
+  if (KoboVersus.active()) return;
+  startLevel(G.L);
+}
 function hint() {
-  if (!G || G.won || G.hintsUsed >= HINTS_PER_LEVEL) return;
+  if (vs) { vsSkip(); return; }
+  if (!G || G.won || G.hintsUsed >= HINTS_PER_LEVEL || KoboVersus.active()) return;
   const meta = metaNow();
   const res = Engine.solve(G.tubes.map(t => t.slice()), meta, { limit: 60000, w: 2 });
   if (!res.path) { toast(T(res.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを')); sfx.bad(); return; }
@@ -1020,6 +1052,7 @@ function hitTube(x, y) {
 }
 function tap(i) {
   if (!G || G.won || i < 0) return;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   if (G.sel < 0) {
     if (!G.open[i]) { sfx.bad(); toast(T('この試験管はあと{n}色そろえると開きます', { n: G.locks[i] - Engine.doneCount(G.tubes, G.K) })); return; }
     if (!G.tubes[i].length || G.done[i]) { sfx.bad(); return; }
@@ -1048,9 +1081,9 @@ $('stUndo').addEventListener('click', () => { undo(); });
 $('stRestart').addEventListener('click', restart);
 $('stExtra').addEventListener('click', () => { addTube(); });
 $('stClose').addEventListener('click', () => { $('ovStuck').hidden = true; });
-$('helpBtn').addEventListener('click', () => { ensureAudio(); $('ovHelp').hidden = false; });
+$('helpBtn').addEventListener('click', () => { if (KoboVersus.active() && !vs) return; ensureAudio(); $('ovHelp').hidden = false; });
 $('helpClose').addEventListener('click', () => { $('ovHelp').hidden = true; });
-$('lvBtn').addEventListener('click', () => { ensureAudio(); openLevels(); });
+$('lvBtn').addEventListener('click', () => { if (vs || KoboVersus.active()) return; ensureAudio(); openLevels(); });
 $('lvClose').addEventListener('click', () => { $('ovLevels').hidden = true; });
 $('sndBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('kusoge.sound', soundOn ? '1' : '0'); ensureAudio(); renderSound(); if (soundOn) sfx.done(); });
 function openLevels() {
@@ -1066,6 +1099,7 @@ function openLevels() {
   const cur = grid.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
 }
 document.addEventListener('keydown', e => {
+  if (KoboVersus.active() && !vs) return; // e.g. typing the nickname
   if (e.key === 'z' || e.key === 'Backspace') undo();
 });
 window.addEventListener('resize', () => { layout(); });
@@ -1080,6 +1114,85 @@ window.__water = {
   tubeXY(i) { const r = cv.getBoundingClientRect(), s = LY.slots[i]; return [r.left + s.cx, r.top + s.my + s.g.depth * 0.5]; },
   busy() { return anims.length > 0; },
 };
+
+// ---------- online battle (common/versus.js) ----------
+// Everyone gets the same seeded run of puzzles (the stage generator with a salt), getting harder one by one.
+// Score: 100 per sorted puzzle + up to 50 for few moves (par = the solver's near-minimum); skipping costs 50.
+const VS_SKIP = 50, VS_BONUS = 50;
+let vs = null; // { snap, salt, idx, score, skipAt } while a match owns the rack
+const vsLevel = i => Math.min(80, 8 + 3 * i);
+function vsPuzzle(i) {
+  vs.idx = i; vs.skipAt = 0;
+  finishAnims(); fx = []; hintMark = null;
+  hideAll();
+  const pz = Engine.generate(vsLevel(i), vs.salt);
+  G = {
+    L: pz.L, pz, K: pz.K, vsN: i + 1,
+    tubes: pz.tubes.map(t => t.slice()), hid: pz.hid.map(h => h.slice()),
+    caps: pz.caps.slice(), locks: pz.locks.slice(), open: pz.locks.map(n => !n),
+    done: [], sel: -1, history: [], hintsUsed: 0, extraUsed: 0, undos: 0, moves: 0, won: false,
+  };
+  G.done = G.tubes.map(t => Engine.isDone(t, G.K));
+  const g = pz.spec.gim, tags = [T('第{n}問', { n: i + 1 }), T('{n}色', { n: pz.colors }), T('目標 {n}手', { n: pz.moves })];
+  if (pz.K === 5) tags.push(T('5段'));
+  if (g.hidden) tags.push('？');
+  if (g.lock) tags.push(T('錠'));
+  if (g.tall) tags.push(T('のっぽ'));
+  $('msg').textContent = tags.join(T(' ・ '));
+  refreshUI(); layout(); draw();
+  const salt = vs.salt; // build the next one while this one is played
+  setTimeout(() => { try { Engine.generate(vsLevel(i + 1), salt); } catch (e) {} }, 700);
+}
+function vsSolved(delay) {
+  const gain = 100 + Math.max(0, VS_BONUS - 5 * Math.max(0, G.moves - G.pz.moves));
+  vs.score += gain;
+  const g = G;
+  setTimeout(() => {
+    if (!vs || G !== g) return;
+    sfx.win(); vibrate([20, 40, 20]); toast(T('そろった！ +{n}点', { n: gain }));
+    for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, 10);
+  }, delay + 200);
+  setTimeout(() => { if (vs && G === g && KoboVersus.canPlay()) vsPuzzle(vs.idx + 1); }, delay + 1300);
+}
+function vsSkip() {
+  if (!vs || !G || G.won || !KoboVersus.canPlay()) return;
+  if (Date.now() - vs.skipAt > 2500) { vs.skipAt = Date.now(); toast(T('もう一度押すと スキップ（−{n}点）', { n: VS_SKIP })); return; }
+  vs.score = Math.max(0, vs.score - VS_SKIP);
+  sfx.bad(); vsPuzzle(vs.idx + 1); toast(T('スキップ（−{n}点）', { n: VS_SKIP }));
+}
+function vsTools(on) {
+  const b = $('hintBtn');
+  b.querySelector('b').textContent = on ? '»' : '？';
+  b.querySelector('span').textContent = T(on ? 'スキップ' : 'ヒント');
+  if (on) $('hintLeft').textContent = T('−{n}点', { n: VS_SKIP });
+}
+KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。',
+  game: 'water', title: T('いろみず分け'), duration: 240, unit: T('点'),
+  theme: { accent: '#5fe3e0', accentBg: 'linear-gradient(#7af0e8, #36bfc6)', accentInk: '#062030', accentShadow: '#1d7f86', card: 'linear-gradient(#1d3d55, #132b3d)',
+    line: 'rgba(190, 235, 255, .2)', ink: '#f2fbff', dim: '#a9c4d4', hud: '#0f2233', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header'),
+  onOpen() { ['ovHelp', 'ovLevels'].forEach(id => { $(id).hidden = true; }); },
+  onStart({ seed }) {
+    if (!vs) vs = { snap: { G, msg: $('msg').textContent, ov: ['ovWin', 'ovStuck'].filter(id => !$(id).hidden) } };
+    vs.salt = (seed | 0) || 1; vs.score = 0;
+    vsTools(true);
+    vsPuzzle(0);
+  },
+  getScore: () => (vs ? vs.score : 0),
+  onEnd() { if (G) G.sel = -1; hintMark = null; },
+  onExit() {
+    if (!vs) return;
+    const s = vs.snap; vs = null;
+    finishAnims(); fx = []; hintMark = null; hideAll();
+    vsTools(false);
+    if (!s.G) { startLevel(save.level); return; }
+    G = s.G; G.sel = -1;
+    $('msg').textContent = s.msg;
+    s.ov.forEach(id => { $(id).hidden = false; });
+    refreshUI(); layout(); draw();
+  },
+});
+KoboVersus.button($('vsSlot'), { compact: true });
 
 renderSound();
 startLevel(save.level);
