@@ -291,7 +291,8 @@
       // R9：今のハブは best.score / best.size を読むが、そのフィールドはない（いつも空）。ランキングと同じ最高点を出す
       record: { key: 'kusoge.hole.save', paths: ['best.maxPts', 'best.matchPts'], agg: 'max', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best: {n} pts' } },
       keys: {
-        'kusoge.hole.save': '{ best:{ matchRank, matchPts, maxPts?, soloPct, soloStars, maxSize }, coins, skins:{ owned:[…], sel }, perks:{ size, speed }, wins, camp:{ open, stars:[10], best:[10] }, online:{ plays, wins, best }, city }',
+        'kusoge.hole.save': '{ best:{ matchRank, matchPts, maxPts?, soloPct, soloStars, maxSize }, coins, skins:{ owned:[…], sel }, perks:{ size, speed }, wins, camp:{ open, stars:[14], best:[14] }, online:{ plays, wins, best }, city, seen, tut }',
+        'kusoge.hole.rooms': 'この端末で最近入ったオンライン部屋（最大8件の { r, t }。同期しない）',
       },
       // R4：コイン（使うと減る）・選んだスキン・選んだ街は newest。持っているスキンは和集合、強化・記録・まちめぐりは大きい方。
       // 最高順位とそのときの点数は組なので、良い方（順位が小さい → 点が大きい）の端末からまとめて取る。
@@ -309,6 +310,8 @@
             camp: { fields: { open: 'max', stars: 'arrMax', best: 'arrMax' } },
             online: { fields: { plays: 'max', wins: 'max', best: 'minPos' } },
             city: 'newest',
+            seen: 'max',
+            tut: 'max',
           },
         },
       },
@@ -399,8 +402,8 @@
       { id: 'hole.win10', tier: 2, icon: 'trophy', title: { ja: '街のぬし', en: 'City Boss' }, desc: { ja: 'CPU 戦で10回1位になる', en: 'Finish 1st in 10 CPU battles' }, when: { rec: { key: 'kusoge.hole.save', path: 'wins' }, gte: 10 } },
       { id: 'hole.pts1k', tier: 2, icon: 'star', title: { ja: '千点のみこみ', en: '1,000 Swallowed' }, desc: { ja: '1回で1,000点', en: 'Score 1,000 in one battle' }, when: { rec: { key: 'kusoge.hole.save', paths: ['best.maxPts', 'best.matchPts'], agg: 'max' }, gte: 1000 } },
       { id: 'hole.size12', tier: 2, icon: 'star', title: { ja: '大あな', en: 'Huge Hole' }, desc: { ja: '穴の大きさを12にする', en: 'Grow your hole to size 12' }, when: { rec: { key: 'kusoge.hole.save', path: 'best.maxSize' }, gte: 12 } },
-      { id: 'hole.camp10', tier: 3, icon: 'globe', title: { ja: 'まちめぐり', en: 'City Tour' }, desc: { ja: 'まちめぐりで10都市すべてをクリア', en: 'Clear all 10 cities in City Tour' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'countGte', min: 1 }, gte: 10 } },
-      { id: 'hole.camp30', tier: 4, icon: 'trophy', title: { ja: 'あなぼこ市長', en: 'Hole Mayor' }, desc: { ja: 'まちめぐりの星を30個そろえる', en: 'Collect all 30 City Tour stars' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'sum' }, gte: 30 }, grantsTitle: { ja: 'あなぼこ市長', en: 'Hole Mayor' } },
+      { id: 'hole.camp10', tier: 3, icon: 'globe', title: { ja: 'まちめぐり', en: 'City Tour' }, desc: { ja: 'まちめぐりで10都市をクリア', en: 'Clear 10 cities in City Tour' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'countGte', min: 1 }, gte: 10 } },
+      { id: 'hole.camp30', tier: 4, icon: 'trophy', title: { ja: 'あなぼこ市長', en: 'Hole Mayor' }, desc: { ja: 'まちめぐりの星を30個あつめる', en: 'Collect 30 City Tour stars' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'sum' }, gte: 30 }, grantsTitle: { ja: 'あなぼこ市長', en: 'Hole Mayor' } },
       { id: 'hole.skins4', tier: 2, icon: 'theme', title: { ja: 'おしゃれな穴', en: 'Stylish Hole' }, desc: { ja: 'スキンを4つ持つ', en: 'Own 4 skins' }, when: { rec: { key: 'kusoge.hole.save', path: 'skins.owned', measure: 'count' }, gte: 4 } },
       { id: 'hole.online1', tier: 2, icon: 'globe', title: { ja: 'ネットの大穴', en: 'Online Champion' }, desc: { ja: 'オンライン対戦で1位になる', en: 'Finish 1st in an online battle' }, when: { rec: { key: 'kusoge.hole.save', path: 'online.wins' }, gte: 1 } },
     ],

@@ -1,4 +1,4 @@
-// あなぼこシティ：まちめぐり（実在の街をモチーフにした 10 ステージ）のデータ。
+// あなぼこシティ：まちめぐり（実在の街をモチーフにした 10 ステージ）と、最初から選べる神奈川の4つの街（free）のデータ。
 // 地図はすべて手づくりのデフォルメ（縮尺・位置は正確ではありません）。看板や建物に実在の会社名・ロゴは使いません。
 // 座標: x = 東, z = 南（画面の上が北）, 1 = 1m。 部品: [形, 色, 色づけ(0/1), x, y, z, 幅, 高さ, 奥行, rx, ry, rz, 光(0/1/2/3)]
 //   光: 1 = いつも光る看板, 2 = 夜に灯る窓, 3 = 点滅するネオン
@@ -1137,6 +1137,425 @@ const fukuoka = {
   },
 };
 
-const CITIES = [shibuya, asakusa, shinjuku, yokohama, dotonbori, osakajo, kyoto, nagoya, sapporo, fukuoka];
+// ================================================================ 11〜14. 神奈川の街（最初から自由に選べる：free）
+// 藤沢・湘南台・上大岡・湘南高校付近。実在の街をモチーフにしたデフォルメ。会社名・学校名・ロゴは書かない。
+// ---- shared things of the four maps
+const SH_O = '#f08a24', SH_G = '#2f8a4a';
+const KCAR = ['carJ', 'carJ', 'taxi', 'carJ', 'busJ', 'taxi'], KSTUFF = ['vend', 'bike', 'trash', 'bike', 'vend'];
+// commuter train with the orange + green stripes of the coast line
+def('shonanCar', { s: 4.6, h: 3.8, val: 50, rs: 1, sh: [11.4, 3.4], pal: ['#e8eaee'], parts: [
+  bx('#dfe3e8', 0, 0.5, 0, 10.6, 3.1, 3.0), bx(SH_G, 0, 0.72, 0, 10.65, 0.5, 3.05), bx(SH_O, 0, 1.22, 0, 10.65, 0.42, 3.05), bx('#2c3a4e', 0, 1.9, 0, 9.8, 0.9, 3.05, { g: 2 }),
+  bx('#9aa1ab', 0, 3.6, 0, 9.6, 0.2, 2.4), bx('#3a3f48', 3.6, 0, 0, 2.2, 0.55, 2.2), bx('#3a3f48', -3.6, 0, 0, 2.2, 0.55, 2.2), bx('#2c3a4e', 5.32, 1.9, 0, 0.06, 1.2, 2.2, { g: 2 }),
+  bx(SH_O, 5.33, 0.7, 0, 0.06, 0.9, 2.6)] });
+// red commuter train with a white window band
+def('redCar', { s: 4.6, h: 3.8, val: 50, rs: 1, sh: [11.4, 3.4], pal: ['#d8282a'], parts: [
+  bx('#d8282a', 0, 0.5, 0, 10.6, 3.1, 3.0), bx('#f4f2ec', 0, 1.7, 0, 10.65, 1.3, 3.05), bx('#2c3a4e', 0, 1.95, 0, 9.8, 0.85, 3.08, { g: 2 }),
+  bx('#9aa1ab', 0, 3.6, 0, 9.6, 0.2, 2.4), bx('#3a3f48', 3.6, 0, 0, 2.2, 0.55, 2.2), bx('#3a3f48', -3.6, 0, 0, 2.2, 0.55, 2.2), bx('#2c3a4e', 5.32, 1.9, 0, 0.06, 1.2, 2.2, { g: 2 })] });
+// a little two-car tram (green and cream), one object: it runs back and forth on its single track
+def('miniTram', { s: 3.6, h: 3.9, val: 44, rs: 1, sh: [16.4, 2.8], pal: ['#2f7a4a'], parts: [
+  ...[-4.05, 4.05].flatMap(x => [bx('#ffffff', x, 0.35, 0, 7.9, 1.45, 2.4, T1), bx('#f2ead2', x, 1.8, 0, 7.9, 1.35, 2.4), bx('#2c3a4e', x, 2.0, 0, 7.3, 0.8, 2.44, { g: 2 }),
+    bx('#ffffff', x, 3.15, 0, 7.7, 0.3, 2.2, T1), bx('#3a3f48', x, 0, 0, 5.6, 0.4, 1.8)]),
+  bx('#2c3a4e', 8.02, 1.9, 0, 0.06, 1.0, 1.8, { g: 2 }), bx('#2c3a4e', -8.02, 1.9, 0, 0.06, 1.0, 1.8, { g: 2 }), bx('#fff6c8', 8.03, 0.9, 0, 0.05, 0.3, 0.5, { g: 2 }),
+  bx('#555', 2, 3.45, 0, 1.4, 0.2, 0.9), seg('#333', 2, 3.5, 0, 2.8, 3.9, 0, 0.07)] });
+// Japanese black pine of the coast (leaning trunk, flat cloud foliage)
+def('pineK', { s: 1.4, h: 6.6, val: 8, rs: 0, sh: [3.2, 3.2], pal: ['#24573a', '#2c6040', '#1f4f34'], parts: [
+  seg('#5a4030', 0, 0, 0, 0.5, 3.6, 0.1, 0.42), seg('#5a4030', 0.5, 3.6, 0.1, -0.2, 5.6, 0, 0.3),
+  P('ico', '#ffffff', 0.9, 3.7, 0.3, 3.4, 1.1, 2.9, T1), P('ico', '#ffffff', -0.9, 4.5, -0.4, 2.6, 1.0, 2.4, T1), P('ico', '#ffffff', 0.2, 5.4, 0.1, 3.0, 1.0, 2.6, T1),
+  P('ico', '#ffffff', -0.1, 6.2, 0, 1.8, 0.8, 1.6, T1)] });
+def('hedge', { s: 1.0, h: 1.3, val: 2, rs: 0, sh: [3.2, 1.0], pal: ['#4f9a52', '#5aa65a', '#3f8a4e'], parts: [
+  bx('#ffffff', 0, 0, 0, 3.0, 1.0, 0.8, T1), P('ico', '#ffffff', -0.8, 1.0, 0, 1.4, 0.6, 0.9, T1), P('ico', '#ffffff', 0.7, 1.0, 0, 1.5, 0.6, 0.9, T1)] });
+// pedestrian deck: a slab on posts at 5 m (people walk on top)
+def('deck', { s: 4.2, h: 6.4, val: 30, rs: 0, sh: [10.6, 6.6], pal: ['#d8d4cc'], parts: [
+  bx('#d8d4cc', 0, 4.4, 0, 10.4, 0.8, 6.4), bx('#c4bfb4', 0, 5.2, 0, 10.4, 0.05, 6.0), bx('#9fb4c8', 0, 5.2, 3.15, 10.4, 1.1, 0.1), bx('#9fb4c8', 0, 5.2, -3.15, 10.4, 1.1, 0.1),
+  bx('#7a8896', 0, 6.25, 3.15, 10.4, 0.1, 0.16), bx('#7a8896', 0, 6.25, -3.15, 10.4, 0.1, 0.16), ...[-3.6, 3.6].map(x => cy('#b8b2a6', x, 0, 0, 0.42, 4.4))] });
+// shopping street entrance: two posts and a lit arch
+def('shotenGate', { s: 2.8, h: 6.6, val: 20, rs: 0, sh: [9.4, 1.2], pal: ['#e8413a', '#3f8fe0', '#2fb37b'], parts: [
+  ...[-4.3, 4.3].map(x => cy('#8a96a2', x, 0, 0, 0.22, 6.0)), bx('#ffffff', 0, 4.9, 0, 9.0, 1.1, 0.3, { t: 1, g: 1 }), bx('#fff6d8', 0, 5.1, 0.17, 6.4, 0.6, 0.04, { g: 1 }),
+  P('box', '#8a96a2', 0, 6.25, 0, 9.0, 0.16, 0.2), ...[-3, -1, 1, 3].map(x => bx('#ffd84d', x, 3.6, 0, 0.7, 1.0, 0.04, { g: 1 }))] });
+def('busShelter', { s: 1.9, h: 2.8, val: 10, rs: 0, sh: [4.4, 1.8], pal: ['#c8d4e0'], parts: [
+  bx('#c8d4e0', 0, 2.5, 0, 4.4, 0.18, 1.8), ...[-2, 2].map(x => cy('#7a8896', x, 0, -0.7, 0.07, 2.5)), bx('#cfefff', 0, 0.4, -0.8, 3.8, 2.0, 0.05), bx('#8a6a4a', 0, 0.45, -0.45, 3.0, 0.1, 0.5),
+  bx('#ffffff', 2.2, 0.8, 0.6, 0.12, 1.6, 0.5, { g: 1 })] });
+def('houseK', { s: 3.2, h: 6.6, val: 34, rs: 0, sh: [7, 6.2], pal: ['#4a4a52', '#5a3a30', '#3e4a5a', '#5a6a5a'], parts: [
+  bx('#f4efe4', -0.6, 0, 0, 5.0, 5.4, 4.8), P('pyr', '#ffffff', -0.6, 6.0, 0, 6.0, 1.3, 5.8, T1), bx('#efe6d6', 2.6, 0, 0.4, 2.6, 3.0, 4.0), P('tri', '#ffffff', 2.6, 3.4, 0.4, 3.0, 0.8, 4.6, { t: 1, ry: R90 }),
+  bx('#bfe3ff', -1.6, 3.2, 2.42, 1.6, 1.0, 0.05, { g: 2 }), bx('#bfe3ff', 0.6, 3.2, 2.42, 1.2, 1.0, 0.05, { g: 2 }), bx('#bfe3ff', 2.6, 1.0, 2.42, 1.4, 1.0, 0.05, { g: 2 }), bx('#6a4a30', -0.4, 0, 2.43, 0.9, 2.0, 0.05)] });
+def('kusu', { s: 2.0, h: 8.4, val: 14, rs: 0, sh: [5.6, 5.6], pal: ['#3f7f45', '#4a8a4a'], parts: [
+  cy('#6a4a34', 0, 0, 0, 0.5, 3.2), P('ico', '#ffffff', 0, 4.6, 0, 5.4, 3.6, 5.4, T1), P('ico', '#ffffff', 0.8, 6.6, 0.4, 3.4, 2.6, 3.4, T1), P('ico', '#ffffff', -1.4, 5.8, -0.6, 2.6, 2.0, 2.6, T1)] });
+
+// ================================================================ 11. 藤沢（駅の南北のデッキ・小さな電車）
+def('bridgeSta', { s: 11.2, h: 14, val: 540, rs: 0, sh: [42, 27], pal: ['#d8d4cc'], lm: '線路の上の駅', parts: [
+  bx('#b8b2a6', 0, 0, 0, 44, 1.0, 4.4), bx('#e8e4da', 0, 3.6, 0, 44, 0.3, 5.2), ...[-18, -9, 9, 18].map(x => cy('#8a96a2', x, 1.0, 0, 0.18, 2.6)),
+  bx('#d8d4cc', 0, 6.4, 0, 26, 5.6, 26.6), ...bands(26, 12.0, 26.6, 2.4, '#34465e', 6.4, 2), ...[-13.35, 13.35].map(z => bx('#cfe6f6', 0, 7.2, z, 22, 3.6, 0.1, { g: 2 })),
+  ...[-13.45, 13.45].flatMap(z => [bx(SH_G, 0, 10.9, z, 24, 0.35, 0.1, { g: 1 }), bx(SH_O, 0, 11.25, z, 24, 0.35, 0.1, { g: 1 })]),
+  bx('#c8c2b6', 0, 12.0, 0, 26.6, 0.6, 27), bx('#e8e4da', -6, 12.6, 0, 9, 1.8, 10), ...[-6, 6].map(x => cy('#b8b2a6', x, 0, -10, 0.6, 6.4)), ...[-6, 6].map(x => cy('#b8b2a6', x, 0, 10, 0.6, 6.4)),
+  P('cyl12', '#ffffff', 8, 9.0, 13.5, 2.0, 0.12, 2.0, { rx: R90, g: 2 }), bx('#2a2a2a', 8, 9.0, 13.58, 0.12, 0.8, 0.04)] });
+def('deptSouth', { s: 10.6, h: 28, val: 470, rs: 0, sh: [27, 31], pal: ['#e6dfd2'], lm: '小さな電車が出る駅ビル', parts: [
+  bx('#e6dfd2', 0, 0, 0, 24, 24, 30), ...bands(24, 24, 30, 3.0, '#3a4a60', 4, 2), bx('#d8d0c0', 0, 24, 0, 18, 3.2, 22), bx('#ffffff', 0, 20.5, 15.05, 14, 1.6, 0.1, { g: 1 }),
+  bx('#2c3a4e', 0, 0, 15.05, 18, 3.6, 0.1, { g: 2 }), bx('#cfc8b8', 0, 3.6, 15.6, 22, 0.4, 1.4),
+  // the little tram's station on the 2nd floor: a dark opening and a short raised track with a tram waiting on it
+  bx('#1e2632', 12.06, 4.6, 6, 0.1, 4.8, 6.4), bx('#b8b2a6', 17.5, 4.4, 6, 11, 0.9, 4.0), ...[16, 22].map(x => cy('#a8a296', x, 0, 6, 0.5, 4.4)),
+  bx('#2f7a4a', 17, 5.4, 6, 8.6, 1.3, 2.4), bx('#f2ead2', 17, 6.7, 6, 8.6, 1.2, 2.4), bx('#2c3a4e', 17, 6.9, 6, 8.0, 0.7, 2.44, { g: 2 }), bx('#2f7a4a', 17, 7.9, 6, 8.4, 0.25, 2.2)] });
+def('cityHall', { s: 9.2, h: 42, val: 380, rs: 0, sh: [32, 20], pal: ['#e8ecef'], lm: '新しい市役所', parts: [
+  bx('#cfd4d8', 0, 0, 0, 32, 7, 20), ...bands(32, 7, 20, 3, '#34465e', 0, 2), bx('#e8ecef', 0, 7, -1, 26, 32, 16), ...bands(26, 39, 16, 2.8, '#34465e', 7, 2),
+  ...[-12, -8, -4, 0, 4, 8, 12].map(x => bx('#f6f8fa', x, 7, 7.05, 0.35, 32, 0.25)), bx('#c8ccd2', 0, 39, -1, 20, 2.4, 12), bx('#ffffff', 0, 3.4, 10.05, 10, 1.4, 0.1, { g: 1 })] });
+def('deptNorth', { s: 8.4, h: 30, val: 300, rs: 0, sh: [22, 20], pal: ['#d8c8b0'], lm: '駅前のデパート', parts: [
+  bx('#d8c8b0', 0, 0, 0, 22, 27, 20), ...bands(22, 27, 20, 3.2, '#3a4a60', 4, 2), bx('#b8a890', 0, 27, 0, 16, 3, 14), bx('#ffffff', 0, 23, 10.05, 12, 2.2, 0.1, { g: 1 }),
+  bx('#2c3a4e', 0, 0, 10.05, 16, 3.4, 0.1, { g: 2 }), bx('#e8413a', 9, 8, 10.1, 1.4, 12, 0.2, { g: 1 })] });
+def('tramStop', { s: 2.6, h: 3.2, val: 16, rs: 0, sh: [9, 2.6], pal: ['#c8c2b6'], parts: [
+  bx('#c8c2b6', 0, 0, 0, 9, 0.7, 2.2), bx('#5a6a7a', 0, 2.9, 0, 6, 0.2, 2.4), ...[-2.6, 2.6].map(x => cy('#7a8896', x, 0.7, -0.8, 0.08, 2.2)),
+  bx('#8a6a4a', 0, 0.7, -0.6, 3, 0.4, 0.5), bx('#ffffff', 3.6, 0.7, 0, 0.1, 1.6, 0.8, { g: 1 })] });
+
+const fujisawa = {
+  id: 'fujisawa', name: '藤沢', free: 1, sub: '線路の上の駅・空中のデッキ・海へ向かう小さな電車',
+  desc: '線路をまたぐ駅と、南北にのびる空中の歩道。南の駅ビルの2階から 小さな電車が 家のあいだをぬけて 海へ向かう。',
+  ext: [-110, -96, 110, 96], start: [-9, 36], time: 135, rivals: 2, diff: 0.48, stars: [12, 22, 35],
+  pal: { sky: '#bfe2ff', hemi: ['#ffffff', '#8796a8', 0.66], sun: ['#fff1dc', 0.52, -0.5, 1, 0.4], ground: '#d0c9bc', outer: '#c4bdb0' },
+  icon(g, w, h) {
+    g.fillStyle = '#bfe2ff'; g.fillRect(0, 0, w, h); g.fillStyle = '#3f8fc4'; g.fillRect(0, h * 0.84, w, h * 0.16);
+    g.fillStyle = '#8c8478'; g.fillRect(0, h * 0.62, w, h * 0.1);
+    g.fillStyle = '#d8d4cc'; g.fillRect(w * 0.3, h * 0.3, w * 0.4, h * 0.3); g.fillStyle = SH_G; g.fillRect(w * 0.3, h * 0.42, w * 0.4, h * 0.04); g.fillStyle = SH_O; g.fillRect(w * 0.3, h * 0.46, w * 0.4, h * 0.04);
+    g.fillStyle = '#c4bfb4'; g.fillRect(0, h * 0.5, w * 0.3, h * 0.05); g.fillRect(w * 0.7, h * 0.5, w * 0.3, h * 0.05);
+    g.fillStyle = '#2f7a4a'; g.fillRect(w * 0.1, h * 0.74, w * 0.22, h * 0.07); g.fillStyle = '#f2ead2'; g.fillRect(w * 0.1, h * 0.7, w * 0.22, h * 0.05);
+  },
+  build(B) {
+    B.ground('#d0c9bc'); B.speck(-124, -110, 124, 110, 900, ['#c8c1b4', '#d8d2c6'], 0.8);
+    // the sea in the south, the beach and the coast road with its pines
+    B.rect(-124, 84, 124, 110, '#3f8fc4', 'w'); B.speck(-124, 84, 124, 110, 300, ['#5aa4d4', '#3484bc', '#e8f4ff'], 1.2);
+    B.rect(-124, 74, 124, 84, '#e6d6a8', 'r'); B.speck(-124, 74, 124, 84, 260, ['#d8c896', '#f0e4c0'], 0.6);
+    B.line([[-124, 84], [124, 84]], 0.6, '#f4f8ff');
+    street(B, [[-124, 68], [124, 68]], 10, { cars: 12, ppl: 6, carT: KCAR, trees: ['pineK'], treeStep: 9 });
+    // the coast railway bed (E-W) with two tracks under the bridge station
+    B.rect(-124, -8, 124, 8, '#8c8478', 'r');
+    for (const z of [-4, 4]) B.rail([[-124, z], [124, z]], { w: 3.6, flag: null });
+    B.train([[130, -4], [-130, -4]], { type: 'shonanCar', cars: 5, spd: 11 });
+    B.train([[-130, 4], [130, 4]], { type: 'shonanCar', cars: 5, spd: 11, p: 120 });
+    // the private line: a terminal under the south station building, its tracks split west of it (north / south)
+    const odN = [[-90, -112], [-84, -60], [-80, -14], [-74, 10], [-62, 16], [-44, 16]], odS = [[-44, 21], [-62, 21], [-74, 28], [-82, 50], [-98, 60], [-130, 64]];
+    B.rail(odN, { w: 4.0 }); B.rail(odS, { w: 4.0 });
+    B.train(odN, { cars: 4, col: '#2a6fd0', spd: 9 }); B.train(odS, { cars: 4, col: '#2a6fd0', spd: 9, p: 70 });
+    // station plazas (north: bus rotary, south: taxis), tiles
+    B.rect(-22, -44, 24, -12, '#d9d0bf', 'r'); B.tiles(-22, -44, 24, -12, 1.5, '#cdbfa8', 0.08);
+    B.rect(-26, 12, 26, 44, '#d9d0bf', 'r'); B.tiles(-26, 12, 26, 44, 1.5, '#cdbfa8', 0.08);
+    const rot = [[-14, -40], [16, -40], [18, -34], [16, -28], [-14, -28], [-16, -34]];
+    B.road(rot, 6, { close: true, side: 0, mid: false }); B.rect(-11, -36.5, 13, -31.5, '#8fc46a', 'r');
+    B.cars(rot, 4, { close: true, two: false, lane: 0, types: ['busJ', 'taxi', 'busJ', 'taxi'], spd: 3 });
+    // streets: shopping streets fan out from both plazas
+    const nMain = [[2, -44], [2, -110]], nDiag = [[16, -40], [60, -74], [124, -96]], nWest = [[-14, -40], [-60, -60], [-124, -66]];
+    street(B, [[-124, -52], [124, -52]], 12, { cars: 12, ppl: 10, trees: ['tree'], carT: KCAR });
+    street(B, nMain, 8, { cars: 0, ppl: 22, stuff: KSTUFF, lampStep: 10, side: 1 });
+    street(B, nDiag, 8, { cars: 6, ppl: 12, stuff: KSTUFF, carT: KCAR });
+    street(B, nWest, 8, { cars: 6, ppl: 10, stuff: KSTUFF, carT: KCAR });
+    street(B, [[60, -110], [60, -8]], 10, { cars: 8, ppl: 8, carT: KCAR });
+    street(B, [[-124, 50], [124, 50]], 10, { cars: 10, ppl: 8, trees: ['tree'], carT: KCAR });
+    street(B, [[24, 44], [40, 68]], 8, { cars: 4, ppl: 10, stuff: KSTUFF });
+    street(B, [[50, 8], [50, 68]], 10, { cars: 8, ppl: 8, carT: KCAR });
+    const sShop = [[0, 44], [6, 50], [8, 68]];
+    street(B, sShop, 7, { cars: 0, ppl: 14, stuff: KSTUFF, side: 1 });
+    // the little tram's own narrow track: from the station building, between the houses, to the stop by the beach
+    const tramP = [[-15, 32], [-12, 46], [-20, 58], [-34, 66], [-52, 72]];
+    B.rail(tramP, { w: 3.2, bed: '#a89c88' });
+    B.train(tramP, { type: 'miniTram', cars: 1, spd: 4.5, mode: 'pong', p: 10 });
+    B.o('tramStop', -44, 76, 0);
+    // landmarks: the bridge station, the decks, the station buildings, the city hall
+    B.o('bridgeSta', 0, 0, 0);
+    B.o('deptSouth', -39, 26, 0);
+    B.o('deptNorth', 38, -26, 0);
+    B.o('cityHall', 30, -84, 0);
+    for (const x of [-20.8, -10.4, 0, 10.4, 20.8]) { B.o('deck', x, -16.6, 0); B.o('deck', x, 16.6, 0); }
+    B.o('deck', 2, -27, R90); B.o('deck', 2, 27, R90);
+    B.walk([[-24, -16.6], [24, -16.6]], 12, { y: 5.25, w: 3 }); B.walk([[-25, 16.6], [24, 16.6]], 14, { y: 5.25, w: 3 });
+    B.walk([[2, -14], [2, -31]], 5, { y: 5.25, w: 3 }); B.walk([[2, 14], [2, 31]], 5, { y: 5.25, w: 3 });
+    B.o('shotenGate', 2, -46, 0); B.o('shotenGate', 1, 46, 0);
+    // plazas
+    for (const [x, z] of [[-18, -22], [20, -22], [-22, 36], [22, 30], [-6, 38]]) B.o('tree', x, z, 0);
+    for (const [x, z] of [[-10, 24], [12, 24], [-20, 22]]) B.o('busShelter', x, z, 0);
+    B.o('kiosk', 14, 36, -R90); B.o('vend', -24, 26, R90); B.o('vend', -24, 28, R90); B.o('bench', 10, 40, 0); B.o('bench', -12, -20, 0);
+    B.crowd(-24, 20, 24, 42, 34); B.crowd(-20, -26, 22, -13, 18);
+    // beach: parasols, people, boats out at sea
+    B.fill(-110, 75, 110, 83, ['umbrella', 'umbrella', 'bench', 'pineK'], { step: 7, need: 'any', jit: 2.4, p: 0.7 });
+    B.crowd(-110, 75, 110, 83, 24);
+    B.boats([[-130, 92], [130, 92]], 3, { types: ['boat'], mode: 'wrap', off: 0, spd: 2.2 });
+    // town: shops and offices near the station, houses with pines toward the sea
+    B.fill(-110, -96, 110, -8, ['office', 'shopN', 'shop', 'officeT', 'apt', 'shop', 'office'], { step: 9.5, alt: ['shop', 'shopN'] });
+    B.fill(-110, 8, 110, 48, ['shop', 'apt', 'office', 'shopN', 'apt', 'houseJ'], { step: 9, alt: ['shop', 'houseJ'] });
+    B.fill(-110, 48, 110, 74, ['houseK', 'houseJ', 'houseK', 'apt', 'houseS', 'pineK'], { step: 7.6, alt: ['houseJ', 'pineK'] });
+    B.fill(-110, 48, 110, 74, ['pineK', 'hedge', 'bike', 'tree'], { step: 5, p: 0.4 });
+    B.fill(-110, -96, 110, 48, ['shop', 'vend', 'bike', 'tree', 'shopN'], { step: 5, p: 0.42 });
+  },
+};
+
+// ================================================================ 12. 湘南台（地球儀のドーム・広い道・住宅街）
+def('cultureCtr', { s: 12.8, h: 30, val: 860, rs: 0, sh: [46, 34], pal: ['#c8d4e0'], lm: '地球儀のようなドーム', parts: (() => {
+  const G0 = 15, R = 11, p = [];
+  p.push(bx('#d8d4cc', 0, 0, 0, 46, 5, 30), ...bands(46, 5, 30, 2.4, '#34465e', 0, 2), bx('#8fc46a', -2, 5, 0, 40, 0.3, 26));
+  p.push(cy('#a8b2bc', -6, 5, -2, 6.5, 2.6, null, 'cyl16'));
+  p.push(P('dome', '#c8d4e0', -6, G0, -2, R * 2, R * 2, R * 2), P('dome', '#b8c4d0', -6, G0, -2, R * 2, R * 2, R * 2, { rx: PI }));
+  p.push(P('ring', '#5a7a9a', -6, G0, -2, R * 2.04, R * 2.04, 30, { rx: R90 }), P('ring', '#5a7a9a', -6, G0, -2, R * 2.04, R * 2.04, 30), P('ring', '#5a7a9a', -6, G0, -2, R * 2.04, R * 2.04, 30, { ry: R90 }));
+  p.push(P('ring', '#7fd0ff', -6, G0 + 5.5, -2, R * 1.72, R * 1.72, 20, { rx: R90, g: 1 }), P('ring', '#7fd0ff', -6, G0 - 5.5, -2, R * 1.72, R * 1.72, 20, { rx: R90, g: 1 }));
+  p.push(P('dome', '#d8e0e8', 13, 5, 6, 11, 11, 11), P('dome', '#c8d0d8', 13, 5, 6, 11, 5, 11, { rx: PI }), P('ring', '#5a7a9a', 13, 5.6, 6, 11.2, 11.2, 20, { rx: R90 }));
+  for (const [x, z, hh] of [[6, 10, 9], [10, -9, 11], [18, -6, 8], [-20, 9, 8], [-22, -10, 10], [2, -11, 7]]) {
+    p.push(cy('#9aa6b4', x, 5, z, 0.22, hh), P('cyl12', '#b8c4d0', x, 5 + hh, z, 4.2, 0.2, 4.2), P('cone', '#9aa6b4', x, 5 + hh - 0.9, z, 3.2, 1.6, 3.2, { rx: PI }));
+  }
+  p.push(bx('#ffffff', 16, 1.2, 15.05, 10, 1.4, 0.1, { g: 1 }));
+  return p;
+})() });
+def('staEntry', { s: 1.9, h: 3.2, val: 12, rs: 0, sh: [4.4, 3.4], pal: ['#cfe6f6'], parts: [
+  bx('#8a96a2', 0, 0, 0, 4.2, 1.0, 3.2), bx('#3a3f48', 0, 0.05, 0.9, 3.2, 0.9, 1.4), bx('#cfe6f6', 0, 1.0, -0.3, 4.2, 2.0, 2.6, { g: 2 }), P('tri', '#6a8aa8', 0, 3.25, -0.3, 4.4, 0.5, 2.8),
+  bx('#2a6fd0', 1.6, 2.2, 1.05, 0.9, 0.5, 0.05, { g: 1 })] });
+def('busTerm', { s: 6.2, h: 6.2, val: 110, rs: 0, sh: [30, 8], pal: ['#e8ecef'], lm: 'バスのりばの屋根', parts: [
+  bx('#e8ecef', 0, 5.2, 0, 30, 0.5, 7), bx('#cfd6de', 0, 5.7, 0, 26, 0.4, 5), ...[-12, -4, 4, 12].map(x => cy('#8a96a2', x, 0, -2.4, 0.25, 5.2)),
+  ...[-10, 0, 10].map(x => bx('#8a6a4a', x, 0.45, -2.2, 4, 0.1, 0.5)), bx('#ffffff', 0, 4.1, 3.3, 20, 0.8, 0.1, { g: 1 })] });
+def('stationMall', { s: 8.0, h: 30, val: 280, rs: 0, sh: [22, 18], pal: ['#e6dccc'], lm: '駅前のショッピングビル', parts: [
+  bx('#e6dccc', 0, 0, 0, 22, 26, 18), ...bands(22, 26, 18, 3.2, '#3a4a60', 4, 2), bx('#2c3a4e', 0, 0, 9.05, 18, 3.6, 0.1, { g: 2 }), bx('#c8bca8', 0, 26, 0, 16, 3, 12),
+  bx('#ffd84d', -6, 18, 9.1, 6, 3, 0.15, { g: 1 }), bx('#4dc3ff', 6, 12, 9.1, 5, 2.4, 0.15, { g: 1 })] });
+def('playSlide', { s: 1.5, h: 2.6, val: 6, rs: 0, sh: [3.4, 1.6], pal: ['#ff6b6b', '#ffd84d', '#4dc3ff'], parts: [
+  bx('#ffffff', -1.0, 1.6, 0, 1.2, 0.2, 1.2, T1), ...[-1.5, -0.5].flatMap(x => [cy('#9aa6b4', x, 0, -0.5, 0.06, 2.4), cy('#9aa6b4', x, 0, 0.5, 0.06, 2.4)]),
+  P('box', '#ffffff', 0.7, 0.9, 0, 2.6, 0.12, 0.9, { t: 1, rz: -0.6 }), seg('#9aa6b4', -1.6, 0, 0, -1.6, 1.6, 0, 0.1)] });
+
+const shonandai = {
+  id: 'shonandai', name: '湘南台', free: 1, sub: '地球儀のようなドーム・広い大通り・住宅街',
+  desc: '電車は地下を走り、地上には 広い大通りと 駅の入口。西の文化センターには 地球儀のような大きなドーム。そのまわりは 静かな住宅街。',
+  ext: [-112, -100, 112, 100], start: [15, 27], time: 130, rivals: 2, diff: 0.5, stars: [10, 18, 27],
+  pal: { sky: '#b8dcff', hemi: ['#ffffff', '#8a96a0', 0.66], sun: ['#fff4e0', 0.52, -0.6, 1, 0.3], ground: '#cfcabf', outer: '#bdb8ac' },
+  icon(g, w, h) {
+    g.fillStyle = '#b8dcff'; g.fillRect(0, 0, w, h); g.fillStyle = '#8fc46a'; g.fillRect(0, h * 0.8, w, h * 0.2);
+    g.fillStyle = '#d8d4cc'; g.fillRect(w * 0.1, h * 0.62, w * 0.6, h * 0.2);
+    g.fillStyle = '#c8d4e0'; g.beginPath(); g.arc(w * 0.34, h * 0.42, h * 0.3, 0, 7); g.fill();
+    g.strokeStyle = '#5a7a9a'; g.lineWidth = w * 0.012; g.beginPath(); g.arc(w * 0.34, h * 0.42, h * 0.3, 0, 7); g.moveTo(w * 0.34 - h * 0.3, h * 0.42); g.lineTo(w * 0.34 + h * 0.3, h * 0.42); g.stroke();
+    g.beginPath(); g.ellipse(w * 0.34, h * 0.42, h * 0.12, h * 0.3, 0, 0, 7); g.stroke();
+    g.fillStyle = '#d8e0e8'; g.beginPath(); g.arc(w * 0.62, h * 0.62, h * 0.14, PI, 0); g.fill();
+    g.fillStyle = '#5c6472'; g.fillRect(w * 0.78, 0, w * 0.1, h); g.fillStyle = '#6fb85a'; g.fillRect(w * 0.82, 0, w * 0.02, h);
+  },
+  build(B) {
+    B.ground('#cfcabf'); B.speck(-126, -114, 126, 114, 900, ['#c6c1b4', '#d8d3c8'], 0.8);
+    // wide boulevards with a planted median (the station is under their crossing)
+    const NS = [[0, -114], [0, 114]], EW = [[-126, 4], [126, 4]];
+    street(B, NS, 18, { cars: 16, ppl: 14, carT: KCAR, lane: 5.5, lampStep: 13 });
+    street(B, EW, 16, { cars: 14, ppl: 14, carT: KCAR, lane: 5, lampStep: 13 });
+    B.line([[0, -114], [0, -6]], 2.4, '#8fc46a', 'r'); B.line([[0, 14], [0, 114]], 2.4, '#8fc46a', 'r');
+    B.line([[-126, 4], [-10, 4]], 2.2, '#8fc46a', 'r'); B.line([[10, 4], [126, 4]], 2.2, '#8fc46a', 'r');
+    B.along([[0, -110], [0, -10]], 0, 10, ['tree'], { need: 'any' }); B.along([[0, 18], [0, 110]], 0, 10, ['tree'], { need: 'any' });
+    B.along([[-122, 4], [-14, 4]], 0, 10, ['tree'], { need: 'any' }); B.along([[14, 4], [122, 4]], 0, 10, ['tree'], { need: 'any' });
+    B.zebra(-9, -7.5, 9, -7.5, 3.4); B.zebra(-9, 15.5, 9, 15.5, 3.4); B.zebra(-11, -5, -11, 13, 3.4); B.zebra(11, -5, 11, 13, 3.4);
+    // station plazas at the corners with the entrances down to the trains
+    B.rect(-40, 15, -11, 38, '#d9d0bf', 'r'); B.tiles(-40, 15, -11, 38, 1.5, '#cdbfa8', 0.08);
+    B.rect(11, 15, 40, 38, '#d9d0bf', 'r'); B.tiles(11, 15, 40, 38, 1.5, '#cdbfa8', 0.08);
+    for (const [x, z, y] of [[-15, -10, 0], [15, -10, 0], [-16, 19, PI], [16, 19, PI], [-34, 22, R90]]) B.o('staEntry', x, z, y);
+    // bus terminal (north-east), with a loop road
+    B.rect(12, -46, 60, -9, '#d9d0bf', 'r');
+    const loop = [[18, -42], [54, -42], [56, -36], [54, -30], [18, -30], [16, -36]];
+    B.road(loop, 6, { close: true, side: 0, mid: false }); B.rect(21, -38, 51, -34, '#8fc46a', 'r');
+    B.cars(loop, 3, { close: true, two: false, lane: 0, types: ['busJ'], spd: 2.6 });
+    B.o('busTerm', 36, -24, 0); B.o('busShelter', 22, -14, 0); B.o('busShelter', 48, -14, 0);
+    // the culture center with its globe dome (west), on its own plaza
+    B.rect(-90, -54, -14, -8, '#ddd6c6', 'r'); B.tiles(-90, -54, -14, -8, 2, '#cfc6b2', 0.06);
+    B.o('cultureCtr', -52, -32, 0);
+    B.crowd(-88, -52, -16, -10, 26);
+    for (const x of [-86, -76, -28, -18]) B.o('tree', x, -12, 0);
+    // a park with a pond and a playground (north-east)
+    B.rect(64, -96, 112, -52, '#8fc46a', 'r'); B.speck(64, -96, 112, -52, 160, ['#7fb85a', '#9fd07a'], 1);
+    B.ell(88, -78, 12, 7, 0.2, '#5a9ec8', 'w');
+    B.line([[64, -60], [86, -64], [112, -60]], 2, '#d8c8a8', 'r');
+    B.fill(64, -96, 112, -52, ['tree', 'tree', 'sakura', 'bench', 'flower'], { step: 6, need: 'any', jit: 2, p: 0.75 });
+    B.o('playSlide', 72, -58, 0.3); B.o('playSlide', 76, -62, -0.4); B.o('fountain', 100, -60, 0);
+    B.crowd(66, -94, 110, -54, 16);
+    // residential streets (a grid of narrow streets around the center)
+    const RS = { cars: 2, ppl: 4, lampStep: 18, carT: ['carJ', 'carJ', 'taxi'] };
+    for (const [x, a, b] of [[-92, -114, 114], [-64, -114, -57], [-64, -6, 114], [-36, -114, -57], [-36, -6, 114], [36, -114, -48], [36, 14, 114], [64, -50, 114], [92, -50, 114]]) street(B, [[x, a], [x, b]], 6, RS);
+    for (const [z, a, b] of [[-82, -126, 60], [-58, -126, 60], [62, -126, 126], [88, -126, 126]]) street(B, [[a, z], [b, z]], 6, RS);
+    // town: shops and offices by the station, apartments on the boulevards, houses behind
+    B.o('stationMall', 28, 48, PI); B.o('stationMall', -26, 48, PI);
+    B.fill(-40, -6, 40, 30, ['shop', 'shopN', 'officeT', 'shop'], { step: 8, alt: ['shop'] });
+    B.fill(-126, -114, 126, 114, ['apt', 'houseJ', 'houseS', 'houseJ', 'houseK', 'houseS', 'shop', 'houseJ'], { step: 7.4, alt: ['houseJ', 'houseS', 'tree'] });
+    B.fill(-126, -114, 126, 114, ['tree', 'hedge', 'bike', 'vend', 'flower'], { step: 5, p: 0.38 });
+  },
+};
+
+// ================================================================ 13. 上大岡（駅ビルのタワー・赤い電車・坂の住宅街）
+def('kamiTower', { s: 12.9, h: 122, val: 900, rs: 0, sh: [22, 22], pal: ['#9fb2c8'], lm: '駅前の超高層タワー', parts: [
+  bx('#c8ccd2', 0, 0, 0, 24, 14, 22), ...bands(24, 14, 22, 3.2, '#3a4a60', 0, 2),
+  bx('#9fb2c8', 0, 14, 0, 18, 96, 16), ...bands(18, 110, 16, 2.6, '#2c3a52', 14, 2), ...[-9, 9].map(x => bx('#e8eef4', x, 14, 0, 0.6, 96, 16.4)),
+  bx('#b8c8d8', 0, 110, 0, 15, 6, 13), bx('#d8dde4', 0, 116, 0, 12, 1.2, 10), ...[-5, 5].map(x => bx('#d8dde4', x, 117.2, 0, 0.4, 3, 9)),
+  bx('#e8413a', 4, 120, 3, 0.5, 2, 0.5, { g: 3 }), bx('#ffffff', 0, 10, 11.05, 14, 2, 0.1, { g: 1 })] });
+def('kamiDept', { s: 11.6, h: 34, val: 560, rs: 0, sh: [36, 42], pal: ['#e2d8c8'], lm: 'デパートのある駅ビル', parts: [
+  bx('#b8b2a6', 0, 0, 0, 34, 4.6, 40), bx('#e2d8c8', 0, 4.6, 0, 34, 25, 40), ...bands(34, 29.6, 40, 3.0, '#3a4a60', 7, 2),
+  bx('#1e2632', 0, 4.8, 20.05, 10, 3.2, 0.1), bx('#1e2632', 0, 4.8, -20.05, 10, 3.2, 0.1), bx('#c8bca8', 0, 29.6, 0, 26, 3, 30),
+  bx('#ffffff', 0, 25, 20.1, 20, 2.6, 0.12, { g: 1 }), bx('#d8282a', -14, 12, 20.12, 3, 10, 0.12, { g: 1 }), bx('#2c3a4e', 0, 0, 20.05, 26, 4, 0.1, { g: 2 })] });
+def('stoneWall', { s: 2.6, h: 2.4, val: 10, rs: 0, sh: [6.4, 1.2], pal: ['#a8a294'], parts: [
+  bx('#a8a294', 0, 0, 0, 6.2, 2.2, 0.9), ...[0.5, 1.2, 1.9].map(y => bx('#8f8a7e', 0, y, 0.46, 6.2, 0.08, 0.02)), bx('#8f8a7e', 0, 2.2, 0, 6.3, 0.2, 1.0)] });
+def('hillHouse', { s: 3.2, h: 8.0, val: 40, rs: 0, sh: [6.6, 6.0], pal: ['#5a5f6a', '#6b4a3a', '#3e5a7a', '#7a6a5a', '#c4503a'], parts: [
+  bx('#a8a294', 0, 0, 0, 6.2, 2.4, 5.6), bx('#8f8a7e', 0, 0.8, 2.81, 6.2, 0.08, 0.02), bx('#8f8a7e', 0, 1.6, 2.81, 6.2, 0.08, 0.02),
+  ...shift(TY.houseJ.parts, 0, 2.4, -0.2, 0.92)] });
+def('hillHouse2', { s: 3.4, h: 10.4, val: 48, rs: 0, sh: [6.8, 6.2], pal: ['#5a5f6a', '#6b4a3a', '#3e5a7a', '#5a7a4a'], parts: [
+  bx('#a8a294', 0, 0, 0, 6.4, 4.4, 5.8), ...[0.9, 1.8, 2.7, 3.6].map(y => bx('#8f8a7e', 0, y, 2.91, 6.4, 0.08, 0.02)), bx('#5f9a52', 0, 4.4, 2.7, 6.4, 0.3, 0.4),
+  ...shift(TY.houseS.parts, 0, 4.4, -0.3, 0.9)] });
+def('stairs', { s: 1.8, h: 3.4, val: 8, rs: 0, sh: [2.2, 4.2], pal: ['#b8b2a6'], parts: [
+  ...[0, 1, 2, 3, 4, 5].map(i => bx('#b8b2a6', 0, 0, -1.8 + i * 0.6, 2.0, 0.5 + i * 0.5, 0.62)), seg('#7a8896', 1.05, 1.0, 1.8, 1.05, 3.9, -1.8, 0.08), seg('#7a8896', -1.05, 1.0, 1.8, -1.05, 3.9, -1.8, 0.08)] });
+
+const kamiooka = {
+  id: 'kamiooka', name: '上大岡', free: 1, sub: '駅ビルの高層タワー・赤い電車・坂の住宅街',
+  desc: '谷あいの駅に、デパートの駅ビルと 高いタワー。高架を 赤い電車が走り、川ぞいには 桜。東と西の丘には 石垣の上の家と 坂道が つづく。',
+  ext: [-112, -100, 112, 100], start: [0, 25], time: 130, rivals: 3, diff: 0.55, stars: [11, 21, 33],
+  pal: { sky: '#bcdcf8', hemi: ['#ffffff', '#8a96a0', 0.65], sun: ['#fff2dc', 0.52, -0.5, 1, 0.45], ground: '#cdc7bb', outer: '#8fb470' },
+  icon(g, w, h) {
+    g.fillStyle = '#bcdcf8'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#8fb470'; g.beginPath(); g.moveTo(0, h * 0.4); g.lineTo(w * 0.25, h * 0.7); g.lineTo(w * 0.75, h * 0.7); g.lineTo(w, h * 0.35); g.lineTo(w, h); g.lineTo(0, h); g.fill();
+    for (const [x, y] of [[0.05, 0.42], [0.14, 0.52], [0.82, 0.4], [0.9, 0.34]]) { g.fillStyle = '#f2ebdc'; g.fillRect(w * x, h * y, w * 0.07, h * 0.08); g.fillStyle = '#6b4a3a'; g.fillRect(w * x - w * 0.01, h * y - h * 0.04, w * 0.09, h * 0.04); }
+    g.fillStyle = '#9fb2c8'; g.fillRect(w * 0.52, h * 0.06, w * 0.12, h * 0.66); g.fillStyle = '#e2d8c8'; g.fillRect(w * 0.3, h * 0.42, w * 0.22, h * 0.3);
+    g.fillStyle = '#b8b2a6'; g.fillRect(0, h * 0.7, w, h * 0.06); g.fillStyle = '#d8282a'; g.fillRect(w * 0.06, h * 0.62, w * 0.24, h * 0.08); g.fillStyle = '#f4f2ec'; g.fillRect(w * 0.06, h * 0.64, w * 0.24, h * 0.03);
+    g.fillStyle = '#ffb7d0'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(w * (0.1 + i * 0.16), h * 0.88, w * 0.04, 0, 7); g.fill(); }
+  },
+  build(B) {
+    B.ground('#cdc7bb'); B.speck(-126, -114, 126, 114, 700, ['#c6c0b4', '#d6d0c4'], 0.8);
+    // hills on both sides of the valley: green slopes with contour terraces
+    const HW = -44, HE = 66;
+    B.rect(-126, -114, HW, 114, '#a8c48a'); B.rect(HE, -114, 126, 114, '#a8c48a');
+    const wave = (x0, k) => [...Array(12)].map((_, i) => [x0 + Math.sin(i * 1.3 + k) * 2.2, -114 + i * 21]);
+    const terr = [[HW - 12, 0.3], [HW - 26, 1.1], [HW - 56, 2], [HE + 12, 0.7], [HE + 22, 1.6], [HE + 46, 2.4]];
+    terr.forEach(([x0, k], i) => { B.rect(i < 3 ? -126 : x0, -114, i < 3 ? x0 : 126, 114, i % 3 === 0 ? '#9fbe82' : i % 3 === 1 ? '#96b87a' : '#8db272'); });
+    terr.forEach(([x0, k]) => { const L = wave(x0, k); B.line(L, 0.5, '#8f8a7e'); B.along(L, 0, 6.4, ['stoneWall'], { need: 'build' }); });
+    // the river (cherry trees on both banks) and the main road beside it
+    B.rect(46, -114, 54, 114, '#4a8ec0', 'w'); B.speck(46, -114, 54, 114, 160, ['#6aa8d8', '#ffc8dc'], 0.4);
+    B.line([[45.6, -114], [45.6, 114]], 0.6, '#9a958a'); B.line([[54.4, -114], [54.4, 114]], 0.6, '#9a958a');
+    B.along([[43.5, -110], [43.5, 110]], 0, 7, ['sakura'], { need: 'any' }); B.along([[56.5, -110], [56.5, 110]], 0, 7, ['sakura'], { need: 'any' });
+    B.walk([[57.8, -110], [57.8, 110]], 10, { w: 1.2 });
+    street(B, [[32, -114], [32, 114]], 12, { cars: 14, ppl: 12, carT: KCAR, trees: ['tree'] });
+    // the raised railway through the station building (N-S) with two tracks on top
+    for (let z = -110; z <= 110; z += 10.4) { if (z > -24 && z < 24) continue; B.o('viaduct', -12, z, R90); }
+    B.rect(-17, -114, -7, 114, '#bdb7aa', 'r');
+    B.train([[-13.6, 122], [-13.6, -122]], { y: 6.15, cars: 6, type: 'redCar', spd: 12 });
+    B.train([[-10.4, -122], [-10.4, 122]], { y: 6.15, cars: 6, type: 'redCar', spd: 12, p: 110 });
+    // streets: E-W across the valley (bridges over the river), then climbing the hills in zigzags
+    for (const z of [-60, 40]) street(B, [[-126, z], [126, z]], 9, { cars: 8, ppl: 8, carT: KCAR });
+    street(B, [[-30, 12], [-46, 12]], 7, { cars: 0, ppl: 8, stuff: KSTUFF, side: 1 });
+    street(B, [[-36, -114], [-36, 114]], 8, { cars: 6, ppl: 8, stuff: KSTUFF, carT: KCAR });
+    // narrow streets along the slopes (between the terrace walls) and a hairpin road up each hill
+    for (const [x0, k] of [[-80, 1.2], [96, 1.6]]) street(B, wave(x0, k), 5, { cars: 2, ppl: 4, lampStep: 17 });
+    street(B, [[-46, -84], [-64, -90], [-86, -84], [-104, -92]], 5, { cars: 2, ppl: 3, lampStep: 17 });
+    street(B, [[-46, 70], [-64, 76], [-86, 70], [-104, 78]], 5, { cars: 2, ppl: 3, lampStep: 17 });
+    street(B, [[66, -86], [86, -92], [104, -86], [120, -92]], 5, { cars: 2, ppl: 3, lampStep: 17 });
+    street(B, [[66, 76], [86, 70], [104, 76], [120, 70]], 5, { cars: 2, ppl: 3, lampStep: 17 });
+    for (const [x, z, y] of [[-48, -24, R90], [-68, 26, R90], [-88, -44, R90], [70, -20, -R90], [92, 30, -R90], [104, -64, -R90]]) B.o('stairs', x, z, y);
+    B.walk([[-44, -24], [-112, -30]], 6, { w: 2 }); B.walk([[66, -20], [120, -24]], 6, { w: 2 });
+    // the station: department store building over the tracks, the tower, the bus terminal
+    B.rect(-30, -26, 28, 26, '#d9d0bf', 'r'); B.tiles(-30, -26, 28, 26, 1.5, '#cdbfa8', 0.08);
+    B.o('kamiDept', -12, 0, 0);
+    B.o('kamiTower', 12, -40, 0);
+    B.o('glassT', 14, 62, 0); B.o('officeT', -26, 62, 0); B.o('officeT', -26, -76, 0);
+    for (const [x, z] of [[12, 6], [12, 16], [20, 6], [20, 16]]) B.o('busShelter', x, z, R90);
+    B.cars([[8, 22], [24, 22], [24, 0], [8, 0]], 3, { close: true, two: false, lane: 0, types: ['busJ', 'taxi', 'busJ'], spd: 2.4 });
+    B.road([[8, 22], [24, 22], [24, 0], [8, 0]], 5, { close: true, side: 0, mid: false });
+    B.o('shotenGate', -31, 12, R90);
+    B.crowd(-30, 21, 6, 26, 24); B.crowd(4, -24, 28, -2, 14);
+    for (const [x, z] of [[-24, 23], [-6, 24.5], [4, 23]]) B.o('vend', x, z, PI); B.o('bench', -16, 24, 0); B.o('busShelter', -2, 23, 0);
+    // town: shops by the station, houses on the slopes (the higher, the taller the stone base)
+    B.fill(-44, -114, 46, 114, ['shop', 'shopN', 'office', 'apt', 'shop', 'officeT', 'shopN'], { step: 9, alt: ['shop', 'shopN'] });
+    B.fill(-126, -114, HW, 114, ['hillHouse', 'hillHouse2', 'hillHouse', 'houseJ', 'hillHouse2', 'hillHouse'], { step: 6.6, alt: ['hillHouse', 'tree'] });
+    B.fill(HE, -114, 126, 114, ['hillHouse2', 'hillHouse', 'hillHouse', 'houseS', 'hillHouse2'], { step: 6.6, alt: ['hillHouse', 'tree'] });
+    B.fill(-126, -114, 126, 114, ['tree', 'bike', 'vend', 'trash', 'tree'], { step: 5, p: 0.36 });
+  },
+};
+
+// ================================================================ 14. 湘南高校付近（大きな高校・松の住宅街・小さな神社）
+def('schoolMain', { s: 11.0, h: 18, val: 520, rs: 0, sh: [50, 13], pal: ['#f2efe8'], lm: '大きな校舎', parts: [
+  bx('#f2efe8', 0, 0, 0, 48, 15, 11), ...[1.2, 4.8, 8.4, 12].map(y => bx('#34465e', 0, y, 0, 48.1, 1.8, 11.1, { g: 2 })), ...[3.6, 7.2, 10.8].map(y => bx('#dcd8d0', 0, y, 5.8, 48, 0.25, 1.0)),
+  bx('#f2efe8', 0, 0, 6.2, 8, 17.4, 3.4), P('cyl12', '#ffffff', 0, 15.2, 7.95, 2.4, 0.15, 2.4, { rx: R90, g: 2 }), bx('#2a2a2a', 0, 15.3, 8.04, 0.12, 0.9, 0.04), P('box', '#2a2a2a', 0.25, 15.2, 8.04, 0.6, 0.1, 0.04),
+  ...[-23.5, 23.5].map(x => bx('#8fc46a', x, 15, 0, 0.1, 1.2, 11)), bx('#9aa6b4', 0, 15, 5.45, 47, 1.2, 0.08), bx('#9aa6b4', 0, 15, -5.45, 47, 1.2, 0.08),
+  bx('#2c3a4e', 0, 0, 5.52, 6, 2.6, 0.1, { g: 2 })] });
+def('schoolWing', { s: 8.2, h: 13, val: 320, rs: 0, sh: [36, 12], pal: ['#ece8dc'], lm: 'となりの校舎', parts: [
+  bx('#ece8dc', 0, 0, 0, 34, 11.4, 10), ...[1.2, 4.8, 8.4].map(y => bx('#34465e', 0, y, 0, 34.1, 1.8, 10.1, { g: 2 })), ...[3.6, 7.2].map(y => bx('#d8d4c8', 0, y, 5.3, 34, 0.25, 0.9)),
+  bx('#9aa6b4', 0, 11.4, 4.9, 33, 1.1, 0.08), bx('#c8ccd2', 10, 11.4, 0, 6, 2, 6)] });
+def('gymHall', { s: 9.4, h: 14, val: 340, rs: 0, sh: [27, 35], pal: ['#e8e4da'], lm: '体育館', parts: [
+  bx('#e8e4da', 0, 0, 0, 26, 8.6, 34), ...[-13.02, 13.02].map(x => bx('#34465e', x, 5.4, 0, 0.05, 1.8, 30, { g: 2 })), P('cyl16', '#6f8a9e', 0, 8.6, 0, 26.4, 34.4, 9, { rx: R90 }),
+  bx('#2c3a4e', 0, 0, 17.05, 6, 3, 0.1, { g: 2 }), bx('#dcd6c8', 0, 2.8, 17.6, 9, 0.3, 1.2)] });
+def('schoolPool', { s: 6.4, h: 2.6, val: 80, rs: 0, sh: [16, 27], pal: ['#4dc3ff'], lm: 'プール', parts: [
+  bx('#d8d4cc', 0, 0, 0, 15, 0.9, 26), bx('#4db8f0', 0, 0.9, 0, 12.4, 0.06, 25, { g: 1 }), ...[-4, -1.3, 1.3, 4].map(x => bx('#ffffff', x, 0.97, 0, 0.12, 0.02, 24)),
+  bx('#8fbf9a', 0, 0.9, 13.1, 15, 1.7, 0.1), bx('#8fbf9a', 0, 0.9, -13.1, 15, 1.7, 0.1), bx('#8fbf9a', 7.5, 0.9, 0, 0.1, 1.7, 26), bx('#8fbf9a', -7.5, 0.9, 0, 0.1, 1.7, 26)] });
+def('soccerGoal', { s: 3.0, h: 2.5, val: 8, rs: 0, sh: [7.6, 2.2], pal: ['#ffffff'], parts: [
+  ...[-3.66, 3.66].map(x => bx('#ffffff', x, 0, 0, 0.14, 2.44, 0.14)), bx('#ffffff', 0, 2.38, 0, 7.46, 0.14, 0.14), bx('#e8ecef', 0, 0.02, -1.6, 7.3, 2.3, 0.05),
+  P('box', '#e8ecef', 0, 1.2, -0.8, 7.3, 0.05, 2.6, { rx: 0.9 })] });
+def('backNet', { s: 4.0, h: 8.4, val: 30, rs: 0, sh: [10, 3], pal: ['#3f7a4a'], parts: [
+  ...[-4.6, -1.6, 1.6, 4.6].map(x => cy('#6a7682', x, 0, 0, 0.12, 8.2)), bx('#5a8a6a', 0, 1, 0, 9.4, 7, 0.06), P('box', '#5a8a6a', 0, 7.6, 1.0, 9.4, 0.06, 2.2, { rx: -0.6 }), bx('#3a4a5a', 0, 0, 0, 9.4, 1, 0.12)] });
+def('schoolGate', { s: 2.8, h: 2.8, val: 18, rs: 0, sh: [9, 1.4], pal: ['#9aa6b4'], parts: [
+  ...[-4.2, -2.2, 2.2, 4.2].map(x => bx('#b8b2a6', x, 0, 0, 0.9, 2.6, 0.9)), bx('#8a8478', -3.2, 1.2, 0.3, 1.4, 0.8, 0.06), bx('#7a8896', 3.2, 0, 0, 1.2, 1.6, 0.08), bx('#7a8896', -3.2, 0, -0.1, 1.2, 1.1, 0.06)] });
+def('fenceG', { s: 2.4, h: 2.2, val: 6, rs: 0, sh: [6.2, 0.6], pal: ['#3f7a4a'], parts: [
+  ...[-3, 0, 3].map(x => cy('#5a6a5a', x, 0, 0, 0.06, 2.1)), bx('#5a8a6a', 0, 0.1, 0, 6, 1.9, 0.04), bx('#5a6a5a', 0, 2.0, 0, 6, 0.08, 0.08)] });
+def('student', { s: 0.36, h: 1.7, val: 2, rs: 1, sh: [0.8, 0.8], pal: ['#1e2a44', '#24304a', '#2a2a36'], parts: [
+  P('cyl6', '#2a3040', 0, 0.42, 0, 0.36, 0.84, 0.3), P('cyl6', '#ffffff', 0, 1.1, 0, 0.56, 0.72, 0.44, T1), bx('#f4f4f0', 0, 1.36, 0.16, 0.18, 0.2, 0.1), P('ico', '#ffd6ad', 0, 1.56, 0, 0.38, 0.38, 0.38),
+  P('ico', '#2a221c', 0, 1.67, -0.02, 0.4, 0.22, 0.4), bx('#3a3a40', 0.32, 0.8, 0, 0.12, 0.5, 0.5)] });
+def('shrineH', { s: 4.0, h: 7.4, val: 70, rs: 0, sh: [9, 9], pal: ['#c49a6a'], lm: '小さな神社', parts: [
+  bx('#9a958a', 0, 0, 0, 9, 0.8, 9), bx('#9a958a', 0, 0, 5.2, 3, 0.4, 2), bx('#c49a6a', 0, 0.8, -0.6, 6, 3.4, 5.6), ...[-2.6, 2.6].map(x => cy('#a87a4a', x, 0.8, 2.4, 0.18, 3.4)),
+  P('tri', '#3e3e44', 0, 5.0, 0, 8.2, 2.0, 8.2, { ry: R90 }), bx('#3e3e44', 0, 4.1, 0, 7.6, 0.25, 8.6), ...[-2.4, 2.4].map(z => P('box', '#3e3e44', 0, 6.4, z, 0.2, 1.6, 0.2, { rx: 0.5 })),
+  bx('#7a5235', 0, 0.8, 2.6, 2, 0.9, 0.8), bx('#f4f0e0', 0, 3.6, 2.9, 3.4, 0.25, 0.1), ...[-0.8, 0, 0.8].map(x => bx('#f4f0e0', x, 3.0, 2.92, 0.2, 0.6, 0.05))] });
+
+const shonanHs = {
+  id: 'shonanhs', name: '湘南高校付近', free: 1, sub: '大きな高校・松のある住宅街・小さな神社',
+  desc: '広い校庭と 体育館のある 大きな高校。まわりは 生け垣と松の木のある 静かな住宅街。森の中には 小さな神社。',
+  ext: [-104, -92, 104, 92], start: [12, 25], time: 130, rivals: 1, diff: 0.4, stars: [16, 29, 44],
+  pal: { sky: '#c0e2ff', hemi: ['#ffffff', '#8a9a88', 0.66], sun: ['#fff2dc', 0.54, -0.4, 1, 0.5], ground: '#cfc9b8', outer: '#b8b2a2' },
+  icon(g, w, h) {
+    g.fillStyle = '#c0e2ff'; g.fillRect(0, 0, w, h); g.fillStyle = '#c8a878'; g.fillRect(0, h * 0.7, w, h * 0.3);
+    g.strokeStyle = '#ffffff'; g.lineWidth = w * 0.012; g.beginPath(); g.ellipse(w * 0.5, h * 0.86, w * 0.4, h * 0.1, 0, 0, 7); g.stroke();
+    g.fillStyle = '#f2efe8'; g.fillRect(w * 0.12, h * 0.3, w * 0.76, h * 0.4); g.fillStyle = '#34465e'; for (let i = 0; i < 3; i++) g.fillRect(w * 0.12, h * (0.36 + i * 0.11), w * 0.76, h * 0.04);
+    g.fillStyle = '#f2efe8'; g.fillRect(w * 0.44, h * 0.18, w * 0.12, h * 0.14); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(w * 0.5, h * 0.24, h * 0.05, 0, 7); g.fill();
+    g.fillStyle = '#2f6a3e'; g.beginPath(); g.ellipse(w * 0.92, h * 0.36, w * 0.1, h * 0.07, 0, 0, 7); g.fill(); g.fillStyle = '#6a4a34'; g.fillRect(w * 0.91, h * 0.4, w * 0.02, h * 0.3);
+  },
+  build(B) {
+    B.ground('#cfc9b8'); B.speck(-118, -106, 118, 106, 800, ['#c6c0ae', '#d8d2c2'], 0.8);
+    // the school grounds: buildings in the north, the sports field, gym and pool in the east
+    const X0 = -44, X1 = 62, Z0 = -72, Z1 = 20, HCAR = ['carJ'];
+    B.rect(X0, Z0, X1, Z1, '#d8d0bc', 'r'); B.rect(X0 + 2, -40, 34, Z1 - 3, '#c8a878', 'r'); B.speck(X0 + 2, -40, 34, Z1 - 3, 300, ['#bc9c6c', '#d4b488'], 0.5);
+    B.line([[X0 + 8, -34], [28, -34], [28, 11], [X0 + 8, 11]], 0.3, '#f4f1e8', null, { close: true });
+    B.line([...Array(25)].map((_, i) => [-6 + Math.cos(i / 24 * 6.2832) * 30, -11.5 + Math.sin(i / 24 * 6.2832) * 19]), 0.35, '#f4f1e8');
+    B.line([...Array(25)].map((_, i) => [-6 + Math.cos(i / 24 * 6.2832) * 26, -11.5 + Math.sin(i / 24 * 6.2832) * 15]), 0.3, '#f4f1e8');
+    B.line([[-6, -26.5], [-6, 3.5]], 0.3, '#f4f1e8');
+    B.rect(38, 0, 60, 18, '#5f9a6a', 'r'); B.line([[38.6, 0.6], [59.4, 0.6], [59.4, 17.4], [38.6, 17.4]], 0.25, '#f4f1e8', null, { close: true }); B.line([[38.6, 9], [59.4, 9]], 0.25, '#f4f1e8');
+    B.rect(X0, -72, X1, -46, '#cfc8b6', 'r');
+    B.o('schoolMain', 4, -62, 0);
+    B.o('schoolWing', -26, -50, 0);
+    B.o('gymHall', 49, -48, 0);
+    B.o('schoolPool', 50, -15, 0);
+    B.o('soccerGoal', -32, -11.5, R90); B.o('soccerGoal', 20, -11.5, -R90); B.o('backNet', -36, -34, Math.PI / 4);
+    B.o('schoolGate', 12, Z1, 0);
+    B.crowd(X0 + 4, -38, 32, 14, 30, { types: ['student', 'student', 'person'] });
+    B.crowd(X0 + 2, -45, X1 - 2, -41, 14, { types: ['student'] });
+    // the fence around the grounds, cherry trees inside it
+    B.along([[X0, Z1], [6, Z1]], 0, 6.2, ['fenceG'], { need: 'any' }); B.along([[18, Z1], [X1, Z1]], 0, 6.2, ['fenceG'], { need: 'any' });
+    B.along([[X1, Z1], [X1, Z0], [X0, Z0], [X0, Z1]], 0, 6.2, ['fenceG'], { need: 'any' });
+    B.along([[X0 + 3, Z1 - 2], [8, Z1 - 2]], 0, 7, ['sakura'], { need: 'any' }); B.along([[16, Z1 - 2], [36, Z1 - 2]], 0, 7, ['sakura'], { need: 'any' });
+    B.along([[X0 + 3, -42], [X0 + 3, 14]], 0, 7, ['sakura', 'tree'], { need: 'any' });
+    for (const [x, z] of [[-40, -68], [58, -68], [36, -30], [36, 20 - 6], [-12, -44], [22, -44]]) B.o('tree', x, z, 0);
+    for (const x of [26, 27.4, 28.8, 30.2]) B.o('bike', x, 14, R90);
+    // streets around the school; quiet residential streets beyond
+    street(B, [[-118, 28], [118, 28]], 8, { cars: 6, ppl: 4, pplT: ['student', 'person'], lampStep: 16, carT: HCAR });
+    street(B, [[X0 - 7, -106], [X0 - 7, 106]], 7, { cars: 4, ppl: 4, pplT: ['student', 'person'], lampStep: 16, carT: HCAR });
+    street(B, [[X1 + 7, -106], [X1 + 7, 106]], 7, { cars: 4, ppl: 4, pplT: ['student', 'person'], lampStep: 16, carT: HCAR });
+    street(B, [[-118, Z0 - 7], [73, Z0 - 7]], 7, { cars: 3, ppl: 4, lampStep: 16, carT: HCAR });
+    for (const z of [58, 84]) street(B, [[-118, z], [118, z]], 5, { cars: 2, ppl: 3, lamp: false, carT: HCAR });
+    for (const x of [-20, 20, 96]) street(B, [[x, 28], [x, 106]], 5, { cars: 1, ppl: 3, lamp: false, carT: HCAR });
+    street(B, [[-78, -106], [-78, 106]], 5, { cars: 2, ppl: 3, lamp: false, carT: HCAR });
+    for (const x of [-12, 40]) street(B, [[x, -79], [x, -106]], 5, { cars: 1, ppl: 2, lamp: false, carT: HCAR });
+    B.walk([[20, 30], [20, 104]], 8, { types: ['student'], w: 1.4 }); B.walk([[-118, 31], [118, 31]], 14, { types: ['student', 'student', 'person'], w: 1.2 });
+    // the railway on the west edge (a level crossing on each street)
+    B.rect(-102, -106, -92, 106, '#8c8478', 'r');
+    for (const z of [28, -79, 58, 84]) { B.rect(-102, z - 3, -92, z + 3, '#5c6472', 'r'); B.zebra(-102, z - 3.4, -92, z - 3.4, 0.5, '#ffd84d'); B.zebra(-102, z + 3.4, -92, z + 3.4, 0.5, '#ffd84d'); }
+    for (const x of [-99, -95]) B.rail([[x, -106], [x, 106]], { w: 3.4, flag: null });
+    B.train([[-99, 116], [-99, -116]], { cars: 4, col: '#2a6fd0', spd: 9 }); B.train([[-95, -116], [-95, 116]], { cars: 4, col: '#2a6fd0', spd: 9, p: 80 });
+    // the shrine in its grove (north-east)
+    B.rect(76, -106, 118, -54, '#7aa860', 'r'); B.speck(76, -106, 118, -54, 160, ['#6a9a52', '#8ab870'], 1);
+    B.line([[90, -54], [90, -78]], 2.6, '#d8cfb8', 'r');
+    B.o('shrineH', 90, -82, 0); B.o('toriiS', 90, -57, 0); B.o('toriiS', 90, -69, 0);
+    for (const z of [-64, -74]) { B.o('stoneL', 87.5, z, 0); B.o('stoneL', 92.5, z, 0); }
+    for (const r of [[76, -92, 87.5, -54], [92.5, -92, 104, -54], [87.5, -92, 92.5, -87]]) B.fill(r[0], r[1], r[2], r[3], ['kusu', 'kusu', 'pineK', 'tree'], { step: 6, need: 'any', jit: 2 });
+    B.crowd(88.5, -78, 91.5, -58, 4);
+    // houses with hedges and pines on big lots, a few shops on the main street
+    B.along([[-40, 37.5], [40, 37.5]], 0, 8, ['shop', 'shop', 'apt'], { need: 'build' });
+    B.fill(-118, -106, 118, 106, ['houseK', 'houseJ', 'houseK', 'houseS', 'houseK', 'apt', 'houseK'], { step: 8.2, alt: ['houseJ', 'pineK'] });
+    B.fill(-118, -106, 118, 106, ['pineK', 'hedge', 'hedge', 'tree', 'pineK'], { step: 4.8, p: 0.55 });
+    B.fill(-118, -106, 118, 106, ['bike', 'vend', 'post', 'trash'], { step: 9, p: 0.25 });
+  },
+};
+
+const CITIES = [shibuya, asakusa, shinjuku, yokohama, dotonbori, osakajo, kyoto, nagoya, sapporo, fukuoka,
+  fujisawa, shonandai, kamiooka, shonanHs];
 window.HOLE_CITIES = { types: TY, cities: CITIES };
 })();

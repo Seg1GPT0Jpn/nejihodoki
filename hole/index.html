@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>あなぼこシティ</title>
-<meta name="theme-color" content="#16202f">
-<meta name="description" content="街にあいた ふしぎな あな。小さいものから のみこんで どんどん大きくなろう。日本の10の街で、CPUや オンラインの ライバルと 2分間の のみこみ勝負！">
+<meta name="theme-color" content="#1d2a35" data-kb-theme-color>
+<meta name="description" content="街にあいた ふしぎな あな。小さいものから のみこんで どんどん大きくなろう。日本の14の街で、CPUや オンラインの ライバルと 2分間の のみこみ勝負！">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="icon" href="../favicon-32.png">
@@ -13,25 +13,50 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="あなぼこシティ">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* あなぼこシティ: toy-town pastel city under a navy UI. Header (nav + stats) / stage (WebGL canvas + HUD + overlays). */
+/* あなぼこシティ: toy-town pastel city (3D) under a themed UI.
+   UI chrome (header, stats, menu cards, buttons) follows the shared theme tokens (common/theme.css: light + dark).
+   Things drawn on top of the 3D city (ranking chips, toasts, the joystick, the tutorial coach) keep a dark glass look. */
 :root {
-  --bg: #16202f;
+  --bg: var(--kb-bg);
+  --ink: var(--kb-ink);
+  --dim: var(--kb-dim);
+  --line: var(--kb-line);
   --panel: rgba(255, 255, 255, .08);
-  --line: rgba(200, 225, 255, .2);
-  --ink: #f4f8ff;
-  --dim: #a9b8cc;
+  --scrim: rgba(12, 18, 30, .62);
+  --card-bg: linear-gradient(#26364f, #1a2538);
+  --card-line: rgba(200, 225, 255, .2);
+  --sunk: #0003;
   --sun: #ffd84d;
+  --sun-text: #ffd84d;
   --mint: #5fe0b5;
+  --mint-text: #5fe0b5;
   --coral: #ff6b6b;
   --sky: #6cc6ff;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
-  color-scheme: dark;
+  --ts: 0 3px 0 #0008;
+  --font-display: var(--kb-font-display);
+  --font-body: var(--kb-font-body);
+  --glass: rgba(16, 24, 38, .7);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --panel: rgba(31, 42, 51, .06); --scrim: rgba(244, 241, 234, .5); --card-bg: rgba(255, 255, 255, .96); --card-line: var(--kb-line);
+    --sunk: rgba(31, 42, 51, .06); --sun-text: var(--kb-accent-text); --mint-text: #13805b; --ts: none;
+  }
+}
+:root[data-kb-theme="light"] {
+  --panel: rgba(31, 42, 51, .06); --scrim: rgba(244, 241, 234, .5); --card-bg: rgba(255, 255, 255, .96); --card-line: var(--kb-line);
+  --sunk: rgba(31, 42, 51, .06); --sun-text: var(--kb-accent-text); --mint-text: #13805b; --ts: none;
 }
 html, body { height: 100%; margin: 0; }
 [hidden] { display: none !important; }
@@ -43,39 +68,42 @@ body {
 }
 #app {
   position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal);
 }
-header { flex: none; padding: 6px 10px 4px; max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
-.hrow { display: flex; align-items: center; gap: 6px; }
-.back { color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 8px 4px; border-radius: 8px; }
-.back:focus-visible, .ibtn:focus-visible, .btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+header { flex: none; padding: 2px 8px 4px; max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; min-height: 44px; }
+.back { color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; min-height: 44px; min-width: 44px; padding: 0 6px;
+  border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; flex: none; }
+.back span { margin-left: 4px; }
+.back:focus-visible, .ibtn:focus-visible, .btn:focus-visible, .cst:focus-visible, .skin:focus-visible, .perk button:focus-visible, select:focus-visible, .coach button:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
 h1 {
   flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--font-display); font-weight: 400;
-  font-size: 19px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--sun);
-  text-shadow: 0 2px 0 #0006;
+  font-size: clamp(15px, 5vw, 19px); letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--sun-text);
+  text-shadow: var(--ts);
 }
 .ibtn {
-  flex: none; min-width: 40px; height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 12px;
-  background: var(--panel); color: var(--ink); font: 800 13px var(--font-body); cursor: pointer;
+  flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center;
+  background: var(--kb-surface); color: var(--ink); font: 800 15px var(--font-body); cursor: pointer;
 }
-.ibtn[aria-pressed="false"] { color: var(--dim); text-decoration: line-through; }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 4px; }
+.ibtn svg { width: 22px; height: 22px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 2px; }
 .stat { background: var(--panel); border-radius: 10px; padding: 2px 6px 3px; text-align: center; line-height: 1.15; }
 .stat span { display: block; font-size: 10px; color: var(--dim); font-weight: 800; }
 .stat b { display: block; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.stat b.warn { color: var(--coral); animation: pulse .5s ease-in-out infinite; }
+.stat b.warn { color: var(--kb-danger); animation: pulse .5s ease-in-out infinite; }
+@media (max-width: 345px) { .back span { display: none; } .back { font-size: 18px; } }
 #stage { flex: 1; min-height: 0; position: relative; touch-action: none; overflow: hidden; background: #a9dcff; }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #rank {
-  position: absolute; top: 8px; right: 8px; z-index: 2; pointer-events: none; min-width: 128px;
+  position: absolute; top: 8px; right: 8px; z-index: 2; pointer-events: none; min-width: 128px; color: #f4f8ff;
   background: rgba(16, 24, 38, .62); border-radius: 12px; padding: 5px 8px; font-size: 12px; font-weight: 800;
   display: flex; flex-direction: column;
 }
 #rank .r { display: flex; align-items: center; gap: 5px; line-height: 1.55; }
 #rank .r i { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px #0005 inset; }
 #rank .r span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 84px; }
-#rank .r em { font-style: normal; font-variant-numeric: tabular-nums; color: var(--dim); }
-#rank .r.me span { color: var(--sun); }
+#rank .r em { font-style: normal; font-variant-numeric: tabular-nums; color: #a9b8cc; }
+#rank .r.me span { color: #ffd84d; }
 #rank .r.dead { opacity: .45; }
 #toast {
   position: absolute; left: 0; right: 0; top: 30%; z-index: 3; text-align: center; pointer-events: none;
@@ -84,124 +112,164 @@ h1 {
 #toast.show { animation: toast 1s ease-out forwards; }
 @keyframes toast { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1.12); } 30% { transform: scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
 #msg {
-  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; text-align: center;
+  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; text-align: center; color: #f4f8ff;
   background: rgba(16, 24, 38, .78); border-radius: 16px; padding: 12px 18px; font-weight: 800; font-size: 15px; white-space: nowrap;
 }
-#msg b { display: block; font-family: var(--font-display); font-size: 34px; color: var(--sun); font-weight: 400; }
+#msg b { display: block; font-family: var(--font-display); font-size: 34px; color: #ffd84d; font-weight: 400; }
 #joy { position: absolute; z-index: 2; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none;
   border: 2px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .12); }
 #knob { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(255, 255, 255, .7); }
+/* tutorial coach (first city, first time): above the city, only its button takes taps */
+.coach { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 4; display: flex; justify-content: center; pointer-events: none; }
+.coach > div { pointer-events: auto; max-width: 420px; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 8px;
+  background: rgba(16, 24, 38, .9); color: #f4f8ff; border: 2px solid #ffd84d; border-radius: 14px; padding: 6px 6px 6px 12px; box-shadow: 0 6px 18px #0006; }
+.coach .cs { font-family: var(--font-display); font-size: 12px; color: #ffd84d; flex: none; }
+.coach p { margin: 0; font-weight: 800; font-size: 13.5px; line-height: 1.4; flex: 1; }
+.coach button { flex: none; min-height: 44px; min-width: 44px; border-radius: 10px; border: 1px solid #3a4d68; background: #223047; color: #c8d4e2; font: 800 12px var(--font-body); padding: 0 10px; cursor: pointer; }
+#coachHand { position: absolute; left: 50%; top: 58%; width: 64px; height: 64px; margin: -32px 0 0 -32px; z-index: 3; pointer-events: none; animation: hand 1.6s ease-in-out infinite; }
+@keyframes hand { 0%, 100% { transform: translate(-26px, 10px); } 50% { transform: translate(26px, -10px); } }
 .overlay {
   position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
-  background: rgba(12, 18, 30, .62); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-  padding: 12px; box-sizing: border-box; overflow: auto; touch-action: pan-y;
+  background: var(--scrim); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  padding: 10px; box-sizing: border-box; overflow: auto; touch-action: pan-y; overscroll-behavior: contain;
 }
 .card {
-  width: 100%; max-width: 350px; text-align: center; background: linear-gradient(#26364f, #1a2538);
-  border: 1px solid var(--line); border-radius: 22px; padding: 16px 16px; box-sizing: border-box; box-shadow: 0 10px 40px #0008;
+  width: 100%; max-width: 360px; text-align: center; background: var(--card-bg); color: var(--ink);
+  border: 1px solid var(--card-line); border-radius: 22px; padding: 14px 14px; box-sizing: border-box; box-shadow: var(--kb-shadow);
   margin: auto;
 }
-.logo { font-family: var(--font-display); font-size: 34px; line-height: 1.1; letter-spacing: .04em; margin: 2px 0 6px; color: var(--sun); text-shadow: 0 3px 0 #0008; }
-.logo small { display: block; font-size: 13px; color: var(--mint); letter-spacing: .1em; text-shadow: none; }
-.rule { font-size: 12.5px; line-height: 1.6; margin: 6px 0; }
-.rule em { font-style: normal; color: var(--sun); font-weight: 800; }
-.how { list-style: none; padding: 0; margin: 8px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 6px; font-size: 11.5px; text-align: left; }
-.how li { background: var(--panel); border-radius: 8px; padding: 4px 7px; }
-.how b { color: var(--mint); }
+.logo { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: .04em; margin: 0 0 4px; color: var(--sun-text); text-shadow: var(--ts); }
+.logo small { display: block; font-size: 13px; color: var(--mint-text); letter-spacing: .1em; text-shadow: none; }
+.rule { font-size: 12.5px; line-height: 1.6; margin: 4px 0; }
+.rule em { font-style: normal; color: var(--sun-text); font-weight: 800; }
 .recs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 6px; font-size: 11.5px; margin: 8px 0 0; }
-.recs div { background: #0003; border-radius: 8px; padding: 3px 6px; }
-.recs b { color: var(--sun); font-variant-numeric: tabular-nums; }
+.recs div { background: var(--sunk); border-radius: 8px; padding: 3px 6px; }
+.recs b { color: var(--sun-text); font-variant-numeric: tabular-nums; }
 .small { font-size: 12px; color: var(--dim); margin: 3px 0; }
-.big { font-family: var(--font-display); font-size: 42px; margin: 4px 0; color: var(--sun); }
+.big { font-family: var(--font-display); font-size: 42px; margin: 4px 0; color: var(--sun-text); }
 .ttl { font-family: var(--font-display); font-size: 24px; margin: 0 0 6px; font-weight: 400; }
 .newrec { display: inline-block; background: var(--sun); color: #3a2400; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 2px 10px; }
 .res { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
 .res div { background: var(--panel); border-radius: 10px; padding: 4px; font-size: 11px; color: var(--dim); font-weight: 800; }
 .res b { display: block; color: var(--ink); font-size: 18px; font-variant-numeric: tabular-nums; }
-.stars { font-size: 30px; letter-spacing: 4px; color: #ffffff30; }
+.stars { font-size: 30px; letter-spacing: 4px; color: var(--line); }
 .stars .on { color: var(--sun); text-shadow: 0 0 10px #ffd84d88; }
 .btn {
-  display: block; width: 100%; margin-top: 10px; border: 0; border-radius: 14px; padding: 12px 14px; cursor: pointer;
-  font: 800 17px var(--font-body); background: linear-gradient(#ffe27a, #ffc93a); color: #3a2a00; box-shadow: 0 4px 0 #b88a12;
+  display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; width: 100%; min-height: 44px; margin-top: 8px; border: 0; border-radius: 14px;
+  padding: 8px 14px; cursor: pointer; font: 800 16px var(--font-body); line-height: 1.2; background: linear-gradient(#ffe27a, #ffc93a); color: #3a2a00; box-shadow: 0 4px 0 #b88a12;
   text-decoration: none; box-sizing: border-box;
 }
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b88a12; }
 .btn.mint { background: linear-gradient(#8ff0cd, #4fd6a6); color: #003a28; box-shadow: 0 4px 0 #1f8f68; }
-.btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; padding: 10px; }
+.btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; }
 .btn:disabled { opacity: .45; cursor: default; }
 /* keep the shop's back button on screen on short phones while the list scrolls */
-#btnShopBack { position: sticky; bottom: 0; z-index: 1; background: #24344c; box-shadow: 0 -8px 12px #1a2538; }
-.coins { font-weight: 800; color: var(--sun); }
-.shop h3 { font-size: 13px; margin: 10px 0 4px; color: var(--mint); text-align: left; }
+#btnShopBack { position: sticky; bottom: 0; z-index: 1; background: var(--kb-surface); box-shadow: 0 -8px 12px var(--kb-surface); }
+.coins { font-weight: 800; color: var(--sun-text); }
+.shop h3 { font-size: 13px; margin: 10px 0 4px; color: var(--mint-text); text-align: left; }
 .skins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.skin { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 6px 2px; color: var(--ink); font: 800 10px var(--font-body); cursor: pointer; }
+.skin { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 6px 2px; color: var(--ink); font: 800 10px var(--font-body); cursor: pointer; min-height: 44px; }
 .skin.sel { border-color: var(--sun); box-shadow: 0 0 0 2px var(--sun) inset; }
 .skin canvas { width: 40px; height: 40px; display: block; margin: 0 auto 3px; }
-.skin small { display: block; color: var(--sun); font-size: 10px; }
+.skin small { display: block; color: var(--sun-text); font-size: 10px; }
 .perk { display: flex; align-items: center; gap: 8px; background: var(--panel); border-radius: 12px; padding: 6px 8px; margin-bottom: 6px; text-align: left; font-size: 12px; }
 .perk div { flex: 1; }
 .perk b { display: block; font-size: 13px; }
-.perk .lv { color: var(--sun); letter-spacing: 1px; }
-.perk button { flex: none; border: 0; border-radius: 10px; padding: 8px 10px; font: 800 12px var(--font-body); background: var(--sun); color: #3a2a00; cursor: pointer; min-width: 74px; }
-.perk button:disabled { background: #ffffff22; color: var(--dim); cursor: default; }
-.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--dim); font-weight: 800; }
-.langrow select { font: 800 13px var(--font-body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
-.langrow option { color: #000; }
+.perk .lv { color: var(--sun-text); letter-spacing: 1px; }
+.perk button { flex: none; border: 0; border-radius: 10px; min-height: 44px; padding: 0 10px; font: 800 12px var(--font-body); background: var(--sun); color: #3a2a00; cursor: pointer; min-width: 74px; }
+.perk button:disabled { background: var(--panel); color: var(--dim); cursor: default; }
+.cityrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--dim); font-weight: 800; }
+.cityrow select { font: 800 14px var(--font-body); color: var(--ink); background: var(--kb-surface); border: 1px solid var(--line); border-radius: 10px; min-height: 44px; padding: 0 8px; max-width: 12em; }
+.cityrow option { color: #000; background: #fff; }
 /* campaign: stage list + stage card */
 .btn.coral { background: linear-gradient(#ff9a8a, #ff6b6b); color: #3a0606; box-shadow: 0 4px 0 #b23c3c; }
 .cstar { font-size: 13px; white-space: nowrap; }
 .note { font-size: 11px; color: var(--dim); margin: 2px 0 6px; }
 .card.camp { display: flex; flex-direction: column; max-height: 100%; max-width: 380px; }
-.clist { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; grid-template-columns: minmax(0, 1fr); -webkit-overflow-scrolling: touch; touch-action: pan-y; display: grid; gap: 6px; padding: 2px; text-align: left; }
-.cst { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 6px 8px;
+.clist { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; grid-template-columns: minmax(0, 1fr); -webkit-overflow-scrolling: touch; touch-action: pan-y; display: grid; grid-auto-rows: max-content; align-content: start; gap: 6px; padding: 2px; text-align: left; }
+.csec { padding: 8px 4px 2px; border-top: 1px solid var(--line); margin-top: 4px; }
+.csec b { display: block; font-size: 13px; color: var(--mint-text); }
+.csec small { display: block; font-size: 10.5px; color: var(--dim); font-weight: 800; }
+.cst { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 6px 8px;
   color: var(--ink); font: 800 12px var(--font-body); cursor: pointer; text-align: left; box-sizing: border-box; }
 .cst:disabled { opacity: .5; cursor: default; }
 .cst canvas { flex: none; width: 56px; height: 42px; border-radius: 8px; }
 .cst .tx { flex: 1; min-width: 0; line-height: 1.3; }
 .cst .tx b { display: block; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
 .cst .tx small { display: block; color: var(--dim); font-size: 10.5px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
-.cst .st { flex: none; color: #ffffff30; font-size: 14px; letter-spacing: 1px; text-align: right; }
+.cst .st { flex: none; color: var(--line); font-size: 14px; letter-spacing: 1px; text-align: right; }
 .cst .st .on { color: var(--sun); }
 .cst .st em { display: block; font-style: normal; color: var(--dim); font-size: 10px; letter-spacing: 0; }
 #stIcon { width: 200px; height: 100px; display: block; margin: 0 auto 4px; border-radius: 12px; }
-.goal { background: #0003; border-radius: 10px; padding: 6px 8px; font-size: 13px; font-weight: 800; margin: 6px 0; }
-.stline { font-size: 12px; color: var(--sun); font-weight: 800; }
+.goal { background: var(--sunk); border-radius: 10px; padding: 6px 8px; font-size: 13px; font-weight: 800; margin: 6px 0; }
+.stline { font-size: 12px; color: var(--sun-text); font-weight: 800; }
 #ovStage .ttl { margin-bottom: 2px; }
 #ovStage .rule { margin: 2px 0; }
 #btnCampBack { flex: none; }
+/* how to play */
+#ovHow { z-index: 7; background: var(--bg); }
+.hw { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; text-align: left; }
+.hw li { display: flex; align-items: center; gap: 10px; background: var(--panel); border-radius: 12px; padding: 6px 8px; }
+.hw svg { width: 52px; height: 40px; flex: none; border-radius: 8px; }
+.hw p { margin: 0; font-size: 12.5px; line-height: 1.45; }
+.hw b { color: var(--sun-text); }
+.hw small { display: block; color: var(--dim); font-size: 11px; }
+/* no WebGL */
+#nogl { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px; text-align: center; background: var(--bg); color: var(--ink); }
+#nogl > div { max-width: 310px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+#nogl b { font-family: var(--font-display); font-weight: 400; font-size: 19px; }
+#nogl p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--dim); }
 @media (max-height: 600px) { #stIcon { height: 64px; width: 128px; } #ovStage .rule { display: none; }
   #ovResult .big { font-size: 34px; margin: 0; } #ovResult .stars { font-size: 24px; } #ovResult .res { margin: 4px 0; } #ovResult .res b { font-size: 16px; }
-  #ovResult .btn { margin-top: 8px; padding: 10px 12px; } #ovResult .ttl { font-size: 21px; margin-bottom: 2px; } }
+  #ovResult .btn { margin-top: 6px; } #ovResult .ttl { font-size: 21px; margin-bottom: 2px; } .hw svg { width: 40px; height: 30px; } .hw li { padding: 4px 8px; } }
 /* online battle */
 .btn.sky { background: linear-gradient(#a6dcff, #5cb8f5); color: #00263f; box-shadow: 0 4px 0 #2a7fb8; }
-.nickin { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line);
-  background: #0003; color: var(--ink); font: 800 16px var(--font-body); text-align: center; -webkit-user-select: text; user-select: text; }
+.nickin { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 2px; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--sunk); color: var(--ink); font: 800 16px var(--font-body); text-align: center; -webkit-user-select: text; user-select: text; }
 .onlist { list-style: none; padding: 0; margin: 6px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 13px; font-weight: 800; }
 .onlist li { background: var(--panel); border-radius: 8px; padding: 5px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .olist { list-style: none; padding: 0; margin: 6px 0; text-align: left; font-size: 12.5px; font-weight: 800; }
 .olist li { display: flex; align-items: center; gap: 6px; background: var(--panel); border-radius: 8px; padding: 3px 8px; margin-bottom: 3px; }
-.olist li.me { color: var(--sun); }
+.olist li.me { color: var(--sun-text); }
 .olist i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .olist span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .olist em { font-style: normal; color: var(--dim); font-variant-numeric: tabular-nums; flex: none; }
-.langrow { flex-wrap: wrap; row-gap: 4px; }
-.langrow select { max-width: 9.5em; }
-@media (max-height: 700px) { #ovTitle .how { display: none; } #ovTitle .btn { padding: 10px 12px; margin-top: 8px; } }
-@media (max-height: 600px) { #ovTitle .btn { padding: 8px 12px; margin-top: 7px; font-size: 15px; } #ovTitle .rule { margin: 3px 0; font-size: 12px; } #ovTitle .langrow { margin-top: 6px; }
-  #ovTitle .logo { margin-bottom: 2px; } #ovTitle .logo small { display: none; } #ovTitle .recs { margin-top: 6px; }
-  #ovResult .olist { font-size: 11.5px; margin: 4px 0; } #ovResult .olist li { padding: 1px 8px; margin-bottom: 2px; } #ovResult .card { padding: 12px 14px; } }
+.langrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--dim); font-weight: 800; }
+@media (max-height: 700px) { #ovTitle .btn { margin-top: 6px; } #ovTitle .logo small { display: none; } }
+@media (max-height: 640px) { .stat b { font-size: 14px; } .logo { font-size: 26px; } #ovTitle .rule { display: none; } #ovTitle .recs { margin-top: 6px; } }
+@media (max-height: 600px) {
+  #ovTitle .card, #ovResult .card { padding: 10px 12px; } #ovTitle .cityrow { margin-top: 6px; }
+  #ovResult .olist { font-size: 11.5px; margin: 4px 0; } #ovResult .olist li { padding: 1px 8px; margin-bottom: 2px; } }
+/* short landscape phones: the stats go next to the title bar, the title menu gets two columns */
+@media (max-height: 480px) and (min-width: 560px) {
+  header { display: flex; align-items: center; gap: 8px; max-width: none; padding-top: 0; padding-bottom: 2px; }
+  .hrow { flex: 1 1 auto; min-width: 0; }
+  .stats { flex: 0 0 300px; margin-top: 0; }
+  #ovTitle .card { max-width: 640px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; align-items: start; }
+  #ovTitle .tcol { min-width: 0; }
+  #ovTitle .logo { font-size: 24px; }
+  #ovHow .card { max-width: 660px; padding: 10px 12px; } #ovHow .ttl { font-size: 19px; margin: 0; }
+  .hw { grid-template-columns: 1fr 1fr; gap: 4px 6px; } .hw small { display: none; } .hw svg { width: 40px; height: 30px; }
+  #ovHow .btn { margin-top: 6px; }
+  #ovResult .card { max-width: 560px; padding: 8px 12px; } #ovResult .res { grid-template-columns: repeat(4, 1fr); margin: 4px 0; }
+  #ovResult .big { font-size: 28px; margin: 0; } #ovResult .ttl { font-size: 19px; margin: 0; } #ovResult .stars { font-size: 20px; }
+  #ovResult .btn { margin-top: 6px; } #ovResult .res b { font-size: 15px; }
+}
+#howGo { position: sticky; bottom: 0; z-index: 1; }
 @keyframes pulse { 50% { opacity: .5; } }
-@media (max-height: 640px) { .how { display: none; } .stat b { font-size: 14px; } .logo { font-size: 28px; } }
-@media (prefers-reduced-motion: reduce) { #toast.show { animation-duration: .01s; } .stat b.warn { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #toast.show { animation-duration: .01s; } .stat b.warn { animation: none; } #coachHand { animation: none; } .btn:active { transform: none; } }
+:root[data-kb-motion="reduce"] #coachHand, :root[data-kb-motion="reduce"] .stat b.warn { animation: none; }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="hrow">
-      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+      <a class="back" href="../" aria-label="ゲーム一覧に戻る" data-i18n-attr="aria-label">←<span data-i18n>ゲーム一覧</span></a>
       <h1 data-i18n>あなぼこシティ</h1>
-      <button class="ibtn" id="sndBtn" type="button" aria-pressed="true" aria-label="サウンド" data-i18n-attr="aria-label">♪</button>
-      <button class="ibtn" id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label">Ⅱ</button>
+      <button class="ibtn" id="helpBtn" type="button" aria-label="遊び方" data-i18n-attr="aria-label">?</button>
+      <button class="ibtn" id="setBtn" type="button" aria-label="設定" data-i18n-attr="aria-label">⚙</button>
+      <button class="ibtn" id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label" hidden>Ⅱ</button>
     </div>
     <div class="stats">
       <div class="stat"><span data-i18n>タイム</span><b id="hTime">2:00</b></div>
@@ -216,29 +284,47 @@ h1 {
     <div id="toast"></div>
     <div id="msg" hidden></div>
     <div id="joy" hidden><div id="knob"></div></div>
+    <div class="coach" id="coach" hidden><div role="status" aria-live="polite"><span class="cs" id="coachStep">1/4</span><p id="coachText"></p><button type="button" id="coachSkip" data-i18n>スキップ</button></div></div>
+    <svg id="coachHand" hidden viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><circle cx="32" cy="32" r="10" fill="#ffd84d" stroke="#16202e" stroke-width="3"/></svg>
 
-    <div class="overlay" id="ovTitle">
+    <div class="overlay" id="ovTitle" hidden>
       <div class="card">
-        <div class="logo"><span data-i18n>あなぼこシティ</span><small data-i18n>のみこめ！ まちじゅう まるごと</small></div>
-        <p class="rule" data-i18n-html>街にあいた ふしぎな<em>あな</em>になって、<br>小さいものから のみこんで <em>どんどん大きく</em>なろう！</p>
-        <ul class="how">
-          <li data-i18n-html><b>ドラッグ</b>で いどう</li>
-          <li data-i18n-html><b>じぶんより小さい</b>ものだけ おちる</li>
-          <li data-i18n-html>大きいあなは <b>小さいあな</b>も のむ</li>
-          <li data-i18n-html>PCは <b>WASD・矢印</b></li>
-        </ul>
-        <button class="btn coral" id="btnCamp" type="button"><span data-i18n>まちめぐり（10の街）</span> <span class="cstar">★ <span id="tCampStars">0/30</span></span></button>
-        <button class="btn" id="btnMatch" type="button" data-i18n>CPUと たいせん（2分）</button>
-        <button class="btn sky" id="btnOnline" type="button" data-i18n>オンライン対戦（4人まで）</button>
-        <button class="btn mint" id="btnSolo" type="button" data-i18n>ひとりで のみこみチャレンジ</button>
-        <button class="btn sub" id="btnShop" type="button"><span data-i18n>ショップ</span>　<span class="coins">● <span id="tCoins">0</span></span></button>
-        <div class="recs">
-          <div><span data-i18n>ベスト順位</span> <b id="rRank">-</b></div>
-          <div><span data-i18n>ベスト のみこみ率</span> <b id="rSolo">-</b></div>
-          <div><span data-i18n>最大サイズ</span> <b id="rSize">-</b></div>
-          <div><span data-i18n>ライバル</span> <b id="rLv">Lv1</b></div>
+        <div class="tcol">
+          <div class="logo"><span data-i18n>あなぼこシティ</span><small data-i18n>のみこめ！ まちじゅう まるごと</small></div>
+          <p class="rule" data-i18n-html>街にあいた ふしぎな<em>あな</em>になって、<br>小さいものから のみこんで <em>どんどん大きく</em>なろう！</p>
+          <button class="btn coral" id="btnCamp" type="button"><span id="tCampName">まちめぐり（14の街）</span><span class="cstar">★ <span id="tCampStars">0/30</span></span></button>
+          <button class="btn" id="btnMatch" type="button"><span data-i18n>CPUと たいせん（2分）</span><span class="cstar" id="rLv">Lv1</span></button>
+          <button class="btn sky" id="btnOnline" type="button" data-i18n>オンライン対戦（4人まで）</button>
         </div>
-        <div class="langrow"><label for="citySel" data-i18n>街</label> <select id="citySel" title="たいせん・ひとりで遊ぶ街" data-i18n-attr="title"></select> <span data-i18n>言語</span> <span id="langPickT"></span></div>
+        <div class="tcol">
+          <button class="btn mint" id="btnSolo" type="button" data-i18n>ひとりで のみこみチャレンジ</button>
+          <button class="btn sub" id="btnShop" type="button"><span data-i18n>ショップ</span><span class="coins">● <span id="tCoins">0</span></span></button>
+          <div class="recs">
+            <div><span data-i18n>ベスト得点</span> <b id="rPts">-</b></div>
+            <div><span data-i18n>ベスト順位</span> <b id="rRank">-</b></div>
+            <div><span data-i18n>ベスト のみこみ率</span> <b id="rSolo">-</b></div>
+            <div><span data-i18n>最大サイズ</span> <b id="rSize">-</b></div>
+          </div>
+          <div class="cityrow"><label for="citySel" data-i18n>たいせん・ひとりで遊ぶ街</label> <select id="citySel"></select></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="ovHow" data-kb-howto hidden role="dialog" aria-modal="true" aria-labelledby="howTtl">
+      <div class="card">
+        <h2 class="ttl" id="howTtl" data-i18n>遊び方</h2>
+        <ul class="hw">
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#8cc96a"/><ellipse cx="26" cy="22" rx="11" ry="7" fill="#111"/><ellipse cx="26" cy="22" rx="11" ry="7" fill="none" stroke="#fff" stroke-width="2"/><path d="M6 8l8 0M6 8l3-3M6 8l3 3M46 32l-8 0M46 32l-3-3M46 32l-3 3" stroke="#16202e" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+            <p data-i18n-html><b>どこでもドラッグ</b>して あなを動かす<small>PC は WASD・矢印キー、Esc で一時停止</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#8cc96a"/><ellipse cx="22" cy="26" rx="13" ry="8" fill="#111"/><path d="M19 8l5 0-2.5 8z" fill="#ff7a26"/><rect x="36" y="6" width="10" height="22" fill="#e8e2d6"/><path d="M41 30v4" stroke="#e5484d" stroke-width="2"/></svg>
+            <p data-i18n-html><b>じぶんより小さい</b>ものだけ おちる<small>大きなビルは、あなが育つまで ゆれるだけ</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#8cc96a"/><ellipse cx="18" cy="22" rx="12" ry="8" fill="#111"/><ellipse cx="18" cy="22" rx="12" ry="8" fill="none" stroke="#ffd84d" stroke-width="2"/><ellipse cx="40" cy="22" rx="6" ry="4" fill="#111"/><ellipse cx="40" cy="22" rx="6" ry="4" fill="none" stroke="#ff5d8f" stroke-width="2"/></svg>
+            <p data-i18n-html>たくさん のみこむと <b>あなが大きくなる</b><small>大きいあなは 小さいあなも のみこむ。のまれたら3秒で復活</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#5c6670"/><text x="26" y="25" font-size="13" font-weight="900" text-anchor="middle" fill="#ffd84d" font-family="sans-serif">★★★</text></svg>
+            <p data-i18n-html><b>まちめぐり</b>は 時間内に 目標の量を のみこむと クリア<small>コインで スキンや パワーアップが買える</small></p></li>
+        </ul>
+        <button class="btn" id="howGo" type="button" data-i18n>はじめる</button>
+        <button class="btn sub" id="howTut" type="button" data-i18n>チュートリアルをもう一度</button>
       </div>
     </div>
 
@@ -263,9 +349,10 @@ h1 {
           <button class="btn sub" id="onCancel" type="button" data-i18n>やめる</button>
         </div>
         <div id="onErr" hidden>
-          <p class="goal" data-i18n>オンライン対戦は準備中です</p>
+          <p class="goal" data-i18n>オンライン対戦に つなげませんでした</p>
           <p class="note" id="onErrD"></p>
           <p class="rule" data-i18n>オフラインのモードは そのまま遊べます。</p>
+          <button class="btn sky" id="onErrRetry" type="button" data-i18n>もういちど つなぐ</button>
           <button class="btn sub" id="onErrBack" type="button" data-i18n>タイトルへ</button>
         </div>
       </div>
@@ -295,7 +382,7 @@ h1 {
     <div class="overlay" id="ovStage" hidden>
       <div class="card">
         <canvas id="stIcon" width="240" height="120" aria-hidden="true"></canvas>
-        <div class="small" id="stNo">1</div>
+        <div class="small" id="stNo"></div>
         <h2 class="ttl" id="stName"></h2>
         <p class="rule" id="stDesc"></p>
         <div class="goal" id="stGoal"></div>
@@ -309,9 +396,9 @@ h1 {
 
     <div class="overlay" id="ovResult" hidden>
       <div class="card">
-        <h2 class="ttl" id="resTtl">けっか</h2>
+        <h2 class="ttl" id="resTtl"></h2>
         <div class="small" id="resCity"></div>
-        <div class="big" id="resBig">1位</div>
+        <div class="big" id="resBig"></div>
         <div class="stars" id="resStars" hidden></div>
         <div id="resNew" hidden><span class="newrec" data-i18n>ベスト更新！</span></div>
         <div class="small" id="resGoal" hidden></div>
@@ -328,24 +415,21 @@ h1 {
       </div>
     </div>
 
+    <!-- used only when common/ui.js is missing (the shared pause menu replaces it) -->
     <div class="overlay" id="ovPause" hidden>
       <div class="card">
         <h2 class="ttl" data-i18n>ひとやすみ</h2>
         <p class="note" id="pauseNote" data-i18n hidden>オンライン対戦中は 止まりません</p>
         <button class="btn" id="btnResume" type="button" data-i18n>つづける</button>
         <button class="btn sub" id="btnQuit" type="button" data-i18n>やめてタイトルへ</button>
-        <div class="langrow"><span data-i18n>言語</span> <span id="langPick"></span></div>
       </div>
-    </div>
-
-    <div class="overlay" id="ovErr" hidden>
-      <div class="card"><h2 class="ttl" data-i18n>よみこみ失敗</h2><p class="rule" data-i18n-html>3D表示の部品を読みこめませんでした。<br>通信できる場所で もういちど開いてください。</p></div>
     </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="cities.js"></script>
+<script src="../common/game.js"></script>
 <script>
 KoboI18n.add({ en: {
   'あなぼこシティ': 'Hole City',
@@ -422,6 +506,41 @@ KoboI18n.add({ en: {
   '公園のはしのテレビ塔': 'the TV tower', '時計台': 'the clock tower', '赤れんがの庁舎': 'the red brick office', 'れんがのビアホール': 'the brick beer hall', '駅の高いタワー': 'the station tower', '大きな雪の像': 'a giant snow sculpture',
   '海辺のタワー': 'the seaside tower', 'ドーム球場': 'the dome stadium', '曲線のショッピングモール': 'the curved shopping mall',
   'スタートが大きい': 'Bigger start', 'はじめから 1段 大きい': 'Start 1 size bigger', 'すばやい': 'Speedy', 'いどう +5%': 'Move +5%',
+  // the Kanagawa cities (free: open from the start)
+  'まちめぐり（{n}の街）': 'City Tour ({n} cities)', '神奈川の街': 'Kanagawa cities', '最初から 自由に あそべます': 'Open from the start',
+  '藤沢': 'Fujisawa', '線路の上の駅・空中のデッキ・海へ向かう小さな電車': 'Station over the tracks, raised walkways, a little tram to the sea',
+  '線路をまたぐ駅と、南北にのびる空中の歩道。南の駅ビルの2階から 小さな電車が 家のあいだをぬけて 海へ向かう。': 'A station built over the tracks, with raised walkways to the north and south. From the 2nd floor of the south station building, a little tram slips between the houses toward the sea.',
+  '湘南台': 'Shonandai', '地球儀のようなドーム・広い大通り・住宅街': 'A globe-like dome, wide avenues, quiet homes',
+  '電車は地下を走り、地上には 広い大通りと 駅の入口。西の文化センターには 地球儀のような大きなドーム。そのまわりは 静かな住宅街。': 'The trains run underground; above are wide avenues and station entrances. The culture center in the west has a huge globe-like dome, surrounded by quiet streets of houses.',
+  '上大岡': 'Kami-Ooka', '駅ビルの高層タワー・赤い電車・坂の住宅街': 'Station tower, red trains, hillside streets',
+  '谷あいの駅に、デパートの駅ビルと 高いタワー。高架を 赤い電車が走り、川ぞいには 桜。東と西の丘には 石垣の上の家と 坂道が つづく。': 'A station in a valley with a department-store station building and a tall tower. Red trains run on the viaduct, cherry trees line the river, and the hills on both sides are covered with houses on stone walls and steep streets.',
+  '湘南高校付近': 'Near Shonan High School', '大きな高校・松のある住宅街・小さな神社': 'A big high school, homes with pines, a small shrine',
+  '広い校庭と 体育館のある 大きな高校。まわりは 生け垣と松の木のある 静かな住宅街。森の中には 小さな神社。': 'A large high school with a wide sports ground and a gym, surrounded by quiet homes with hedges and pine trees. A small shrine hides in the woods.',
+  '線路の上の駅': 'the station over the tracks', '小さな電車が出る駅ビル': 'the station building of the little tram', '新しい市役所': 'the new city hall', '駅前のデパート': 'the department store by the station',
+  '地球儀のようなドーム': 'the globe-like dome', 'バスのりばの屋根': 'the bus terminal roof', '駅前のショッピングビル': 'the shopping building by the station',
+  '駅前の超高層タワー': 'the skyscraper by the station', 'デパートのある駅ビル': 'the station building with a department store',
+  '大きな校舎': 'the big school building', 'となりの校舎': 'the second school building', '体育館': 'the gym', 'プール': 'the pool', '小さな神社': 'the small shrine',
+  // platform: header, how to play, tutorial, pause, no WebGL, online
+  'ゲーム一覧': 'Games', 'ゲーム一覧に戻る': 'Back to the game list', '遊び方': 'How to play', '設定': 'Settings', 'メニュー': 'Menu',
+  'ベスト得点': 'Best points', '{n}点': '{n} pts',
+  '<b>どこでもドラッグ</b>して あなを動かす<small>PC は WASD・矢印キー、Esc で一時停止</small>': '<b>Drag anywhere</b> to move your hole<small>PC: WASD / arrow keys, Esc to pause</small>',
+  '<b>じぶんより小さい</b>ものだけ おちる<small>大きなビルは、あなが育つまで ゆれるだけ</small>': 'Only things <b>smaller than you</b> fall in<small>Big buildings just wobble until your hole grows</small>',
+  'たくさん のみこむと <b>あなが大きくなる</b><small>大きいあなは 小さいあなも のみこむ。のまれたら3秒で復活</small>': 'Swallow a lot and <b>your hole grows</b><small>Big holes swallow small holes too. If you get swallowed, you are back in 3 s</small>',
+  '<b>まちめぐり</b>は 時間内に 目標の量を のみこむと クリア<small>コインで スキンや パワーアップが買える</small>': '<b>City Tour</b>: swallow the target amount in time to clear a city<small>Spend coins on rims and power-ups</small>',
+  'はじめる': 'Start', 'チュートリアルをもう一度': 'Play the tutorial again', 'スキップ': 'Skip',
+  'どこでもドラッグして、あなを動かそう': 'Drag anywhere to move your hole',
+  '小さいもの（人・コーン・ゴミ箱）の上へ動いて、3つ のみこもう': 'Move over small things (people, cones, bins) and swallow 3',
+  'その調子！ のみこむほど あなが大きくなる': 'Nice! The more you swallow, the bigger you get',
+  'さあ本番！ 時間内に 街の{p}%を のみこめば ★1': 'Now for real! Swallow {p}% of the city in time for ★1',
+  'チュートリアル中は 時計が止まっています': 'The clock is stopped during the tutorial',
+  'はじめから': 'Restart', 'ホームへ戻る': 'Back to Home',
+  '3D を表示できません': 'Cannot show 3D',
+  '3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。': 'The 3D engine could not be loaded. Check your connection and open the page again.',
+  'この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。': 'This game needs 3D (WebGL), which this device or browser cannot use.',
+  'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on "hardware acceleration" in your browser settings.',
+  '画面が一時的に止まりました。少し待つと元に戻ります。': 'The screen stopped for a moment. It will come back shortly.',
+  'オンライン対戦に つなげませんでした': 'Could not connect to the online battle', 'もういちど つなぐ': 'Try again',
+  'オンライン対戦中は 止まりません。やめると この試合は 負けになります。': 'An online battle cannot be paused. If you quit, this match counts as a loss.',
 } });
 </script>
 <script>
@@ -430,39 +549,106 @@ KoboI18n.add({ en: {
 const $ = id => document.getElementById(id);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 KoboI18n.apply();
-if (!window.THREE) { $('ovTitle').hidden = true; $('ovErr').hidden = false; return; }
-
-const DEBUG = /[?&]debug\b/.test(location.search);
 const T = KoboI18n.t;
-KoboI18n.picker($('langPick')); KoboI18n.picker($('langPickT'));
+const P = window.KoboPlatform || null, A = window.KoboAudio || null, KG = window.KoboGame || null, UI = window.KoboUI || null;
+const DEBUG = /[?&]debug\b/.test(location.search);
+const emit = (type, p) => { if (KG) { try { KG.emit(type, Object.assign({ game: 'hole' }, p)); } catch (e) {} } };
+if (UI) {
+  const ico = (id, name) => { const b = $(id); b.textContent = ''; b.appendChild(UI.icon(name)); };
+  ico('helpBtn', 'help'); ico('setBtn', 'settings'); ico('pauseBtn', 'pause');
+}
+// a clear notice instead of a crash when 3D cannot start
+function glAvailable() {
+  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; }
+}
+function showNoGL(why) {
+  const box = document.createElement('div'); box.id = 'nogl'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><p></p><a class="btn" href="../"></a></div>';
+  box.querySelector('b').textContent = T('3D を表示できません');
+  const ps = box.querySelectorAll('p');
+  ps[0].textContent = why === 'three' ? T('3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。') : T('この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。');
+  ps[1].textContent = why === 'three' ? '' : T('ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。');
+  box.querySelector('a').textContent = T('ゲーム一覧に戻る');
+  document.querySelectorAll('.overlay').forEach(o => { o.hidden = true; });
+  $('helpBtn').disabled = true; $('pauseBtn').hidden = true;
+  $('stage').appendChild(box);
+  $('setBtn').addEventListener('click', () => { if (UI) UI.openSettings(); });
+}
+if (!window.THREE) { showNoGL('three'); return; }
+if (!glAvailable()) { showNoGL('webgl'); return; }
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
 
 // ---------------------------------------------------------------- save
+// kusoge.hole.save = { best:{ matchRank, matchPts, maxPts, soloPct, soloStars, maxSize }, coins, skins:{ owned, sel }, perks:{ size, speed },
+//                      wins, camp:{ open, stars:[14], best:[14] }, online:{ plays, wins, best }, city, seen?, tut? }
+// (camp.stars / best: one entry per city of hole/cities.js; 10 in saves from before the Kanagawa cities)
+// The cloud merges it field by field (common/games.js: coins / sel / city newest, owned skins union, perks / records max), so:
+//  - every write re-reads the stored save first and changes only what this action changes (mutate), never a stale copy;
+//  - fields this version does not know are kept as they are (a newer page may have written them).
+// best.maxPts (R10) = the highest points of a CPU battle; the ranking uses max(maxPts, matchPts).
 const SAVE_KEY = 'kusoge.hole.save';
-function loadSave() {
-  let d = null;
-  try { d = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { d = null; }
-  if (!d || typeof d !== 'object') d = {};
-  const best = Object.assign({ matchRank: 0, matchPts: 0, soloPct: 0, soloStars: 0, maxSize: 0 }, d.best && typeof d.best === 'object' ? d.best : {});
+// number of cities (hole/cities.js): the 10 tour cities + the free ones. Per-city arrays have one entry per city
+// (old saves have 10; entries a newer page added are kept)
+const NCITY = Math.max(10, (window.HOLE_CITIES && window.HOLE_CITIES.cities && window.HOLE_CITIES.cities.length) || 0);
+const NTOUR = Math.max(1, ((window.HOLE_CITIES && window.HOLE_CITIES.cities) || []).filter(C => !C.free).length || 10);
+const posNum = (v, max) => { v = Number(v); return isFinite(v) && v > 0 ? Math.min(max, v) : 0; };
+function normSave(d) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) d = {};
+  const out = Object.assign({}, d);
+  const b0 = d.best && typeof d.best === 'object' ? d.best : {};
+  const best = Object.assign({}, b0, {
+    matchRank: Math.floor(posNum(b0.matchRank, 99)), matchPts: Math.floor(posNum(b0.matchPts, 1e6)),
+    soloPct: posNum(b0.soloPct, 100), soloStars: Math.floor(posNum(b0.soloStars, 3)), maxSize: posNum(b0.maxSize, 1000),
+  });
+  best.maxPts = Math.max(Math.floor(posNum(b0.maxPts, 1e6)), best.matchPts);
+  out.best = best;
+  out.coins = Math.floor(posNum(d.coins, 1e9));
   const sk = d.skins && typeof d.skins === 'object' ? d.skins : {};
-  const skins = { owned: Array.isArray(sk.owned) ? sk.owned.slice() : ['kuro'], sel: typeof sk.sel === 'string' ? sk.sel : 'kuro' };
-  if (skins.owned.indexOf('kuro') < 0) skins.owned.unshift('kuro');
+  const owned = [];
+  (Array.isArray(sk.owned) ? sk.owned : []).forEach(id => { if (typeof id === 'string' && id.length <= 24 && owned.indexOf(id) < 0) owned.push(id); });
+  if (owned.indexOf('kuro') < 0) owned.unshift('kuro');
+  out.skins = Object.assign({}, sk, { owned, sel: typeof sk.sel === 'string' && owned.indexOf(sk.sel) >= 0 ? sk.sel : 'kuro' });
   const pk = d.perks && typeof d.perks === 'object' ? d.perks : {};
+  out.perks = Object.assign({}, pk, { size: Math.floor(posNum(pk.size, 3)), speed: Math.floor(posNum(pk.speed, 5)) });
+  out.wins = Math.floor(posNum(d.wins, 1e9));
   // campaign (まちめぐり): open = how many stages are playable, stars / best % per stage. Old saves start at stage 1.
   const cp = d.camp && typeof d.camp === 'object' ? d.camp : {};
-  const arr = a => Array.from({ length: 10 }, (_, i) => Array.isArray(a) && Number(a[i]) > 0 ? Number(a[i]) : 0);
-  const camp = { open: Math.max(1, Math.min(10, cp.open | 0)), stars: arr(cp.stars).map(v => Math.min(3, v | 0)), best: arr(cp.best).map(v => Math.min(100, +v.toFixed(1))) };
+  const arr = a => Array.from({ length: Math.max(NCITY, Array.isArray(a) ? Math.min(64, a.length) : 0) }, (_, i) => Array.isArray(a) && Number(a[i]) > 0 ? Number(a[i]) : 0);
+  // open counts the tour cities only (the free cities are always open)
+  out.camp = Object.assign({}, cp, { open: Math.max(1, Math.min(NTOUR, cp.open | 0)), stars: arr(cp.stars).map(v => Math.min(3, v | 0)), best: arr(cp.best).map(v => Math.min(100, +v.toFixed(1))) });
   // online: plays / wins / best rank of online battles. city: -1 = random city for battle & solo, else a city index
   const on = d.online && typeof d.online === 'object' ? d.online : {};
-  const online = { plays: Math.max(0, on.plays | 0), wins: Math.max(0, on.wins | 0), best: Math.max(0, on.best | 0) };
-  const city = Number.isInteger(d.city) && d.city >= 0 && d.city < 10 ? d.city : -1;
-  return { best, coins: Math.max(0, d.coins | 0), skins, perks: { size: Math.max(0, pk.size | 0), speed: Math.max(0, pk.speed | 0) }, wins: Math.max(0, d.wins | 0), camp, online, city };
+  out.online = Object.assign({}, on, { plays: Math.floor(posNum(on.plays, 1e9)), wins: Math.floor(posNum(on.wins, 1e9)), best: Math.floor(posNum(on.best, 99)) });
+  out.city = Number.isInteger(d.city) && d.city >= -1 && d.city < NCITY ? d.city : -1;
+  return out;
 }
+function readSave() { try { return JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { return null; } }
+function loadSave() { return normSave(readSave()); }
+// migration (runs once per device; doing it twice gives the same result): add best.maxPts to old saves, and players who
+// already played do not get the first-time how-to and tutorial again. The old fields stay as they are.
+function migrateSave(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const d = Object.assign({}, raw), b = Object.assign({}, raw.best && typeof raw.best === 'object' ? raw.best : {});
+  b.maxPts = Math.max(Math.floor(posNum(b.maxPts, 1e6)), Math.floor(posNum(b.matchPts, 1e6)));
+  d.best = b;
+  const cp = raw.camp || {}, on = raw.online || {};
+  const played = b.matchRank > 0 || b.soloPct > 0 || (Array.isArray(cp.best) && cp.best.some(v => v > 0)) || on.plays > 0;
+  if (played && !d.seen) d.seen = 1;
+  if (played && !d.tut) d.tut = 1;
+  return d;
+}
+function runMigration() {
+  const raw = readSave(), d = migrateSave(raw);
+  if (d && JSON.stringify(d) !== JSON.stringify(raw)) store.set(SAVE_KEY, JSON.stringify(d));
+}
+if (P && P.migrations) { P.migrations.add({ id: 'hole-save-1', v: 1, run() { runMigration(); } }); P.migrations.run(); }
+else runMigration();
 let SV = loadSave();
-function save() { store.set(SAVE_KEY, JSON.stringify(SV)); }
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(SV)); }
+function mutate(fn) { SV = loadSave(); const r = fn(SV); writeSave(); return r; }
 
 // ---------------------------------------------------------------- constants
 const RADII = [1.0, 1.25, 1.55, 1.9, 2.3, 2.8, 3.4, 4.1, 4.9, 5.8, 6.9, 8.2, 9.7, 11.4, 13.4, 15.6];
@@ -491,64 +677,88 @@ const RIVALS = [
   { name: 'くろまめ', color: '#b98bff' },
 ];
 
-// ---------------------------------------------------------------- audio
-let soundOn = store.get('kusoge.sound') !== '0';
-let AC = null, master = null, noiseBuf = null;
-function ensureAudio() {
-  if (!AC) {
-    try {
-      AC = new (window.AudioContext || window.webkitAudioContext)();
-      master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
-      noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.6, AC.sampleRate);
-      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    } catch (e) { AC = null; }
-  }
-  if (AC && AC.state === 'suspended') AC.resume().catch(() => {});
-}
-let lastPop = 0;
+// ---------------------------------------------------------------- audio (common/audio.js: shared volume and mute)
+// the game's own synth voices, played on KoboAudio's effects bus (so the shared master / effects volume and mute apply)
+function ensureAudio() { if (A) A.resume(); }
+let noiseBuf = null, lastPop = 0, quiet = false; // quiet: headless simulation (debug step)
 function tone(type, f0, f1, dur, vol, delay) {
-  const t = AC.currentTime + (delay || 0);
-  const o = AC.createOscillator(), g = AC.createGain();
-  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  if (!A || quiet) return;
+  A.tone(f0, dur, { type, vol: vol * 0.5, slide: f1 !== f0 ? Math.max(20, f1) : 0, delay: delay || 0 });
 }
 function noise(f0, f1, dur, vol, q) {
-  const t = AC.currentTime;
-  const s = AC.createBufferSource(), bp = AC.createBiquadFilter(), g = AC.createGain();
-  s.buffer = noiseBuf; bp.type = 'bandpass'; bp.Q.value = q || 1.2;
-  bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  s.connect(bp); bp.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.02);
+  if (!A || quiet || !A.canPlay()) return;
+  const ac = A.ctx(); if (!ac || !A.se) return;
+  try {
+    if (!noiseBuf || noiseBuf.sampleRate !== ac.sampleRate) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.6, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t = ac.currentTime;
+    const s = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = noiseBuf; bp.type = 'bandpass'; bp.Q.value = q || 1.2;
+    bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * 0.5, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(bp); bp.connect(g); g.connect(A.se); s.start(t); s.stop(t + dur + 0.02);
+    s.onended = () => { try { s.disconnect(); bp.disconnect(); g.disconnect(); } catch (e) {} };
+  } catch (e) {}
 }
 const sfx = {
   pop(size) {
-    if (!soundOn || !AC) return;
-    const now = AC.currentTime; if (now - lastPop < 0.035) return; lastPop = now;
+    const now = performance.now(); if (now - lastPop < 35) return; lastPop = now;
     const f = 1150 / Math.pow(size + 0.4, 0.55) * (0.94 + Math.random() * 0.12);
     tone('sine', f, f * 0.45, 0.13, 0.32);
     if (size > 1.5) tone('triangle', 140 / Math.pow(size, 0.3), 45, 0.28, 0.38);
     if (size > 4) noise(500, 120, 0.4, 0.25);
   },
-  whoosh() { if (!soundOn || !AC) return; noise(250, 2400, 0.55, 0.32, 0.9); tone('sine', 300, 900, 0.35, 0.12, 0.05); },
-  gulp() { if (!soundOn || !AC) return; tone('square', 420, 60, 0.5, 0.14); noise(1600, 150, 0.5, 0.3); },
-  eaten() { if (!soundOn || !AC) return; tone('sawtooth', 500, 70, 0.8, 0.14); },
-  tick() { if (!soundOn || !AC) return; tone('square', 880, 860, 0.06, 0.08); },
-  start() { if (!soundOn || !AC) return; tone('triangle', 523, 523, 0.12, 0.2); tone('triangle', 784, 784, 0.2, 0.2, 0.12); },
-  end() { if (!soundOn || !AC) return; [523, 659, 784, 1046].forEach((f, i) => tone('triangle', f, f, 0.22, 0.2, i * 0.1)); },
-  buy() { if (!soundOn || !AC) return; tone('sine', 880, 1760, 0.15, 0.2); tone('sine', 1320, 2000, 0.2, 0.15, 0.08); },
+  whoosh() { noise(250, 2400, 0.55, 0.32, 0.9); tone('sine', 300, 900, 0.35, 0.12, 0.05); },
+  gulp() { tone('square', 420, 60, 0.5, 0.14); noise(1600, 150, 0.5, 0.3); },
+  big() { noise(900, 60, 1.2, 0.4, 0.7); tone('triangle', 90, 30, 1.2, 0.4); },
+  eaten() { tone('sawtooth', 500, 70, 0.8, 0.14); },
+  tick() { tone('square', 880, 860, 0.06, 0.08); },
+  start() { tone('triangle', 523, 523, 0.12, 0.2); tone('triangle', 784, 784, 0.2, 0.2, 0.12); },
+  end() { [523, 659, 784, 1046].forEach((f, i) => tone('triangle', f, f, 0.22, 0.2, i * 0.1)); },
+  buy() { tone('sine', 880, 1760, 0.15, 0.2); tone('sine', 1320, 2000, 0.2, 0.15, 0.08); },
+  click() { if (A && !quiet) A.sfx('tap'); },
+  step() { if (A && !quiet) A.sfx('ok'); },
+  best() { if (A && !quiet) A.sfx('win'); },
+  fail() { if (A && !quiet) A.sfx('fail'); },
 };
 let lastVib = 0;
 function vibrate(ms) {
+  if (quiet) return;
   const n = performance.now(); if (n - lastVib < 140) return; lastVib = n;
-  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  if (A) A.vibrate(ms); else { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 }
 
 // ---------------------------------------------------------------- renderer / scene
 const stage = $('stage'), cv = $('cv');
-let PR = Math.min(window.devicePixelRatio || 1, 2);
-const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: PR < 1.5, stencil: true, powerPreference: 'high-performance' });
+let dirty = true, glLost = false; // render loop: draw when something changed (menus), every frame during a round
+// adaptive quality: the pixel ratio follows the measured frame rate during rounds (a heavy scene: at most 1.5).
+// Modest devices start lower. Gameplay never depends on it.
+const LOWEND = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 2;
+const DPR = window.devicePixelRatio || 1;
+const QUAL = [0.75, 1, 1.25, 1.5].filter((v, i) => i < 2 || v <= Math.max(1, DPR));
+let qMax = QUAL.length - 1, qLv = LOWEND ? Math.min(1, qMax) : qMax;
+let PR = QUAL[qLv];
+let renderer = null;
+try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !LOWEND && DPR < 1.5, stencil: true, powerPreference: 'high-performance' }); }
+catch (e) { showNoGL('webgl'); return; }
 renderer.setPixelRatio(PR);
+const fpsMon = { t: 0, n: 0, slow: 0, fast: 0, last: 0 };
+function setQuality(lv) {
+  lv = Math.max(0, Math.min(qMax, lv));
+  if (lv === qLv) return;
+  qLv = lv; PR = QUAL[lv]; renderer.setPixelRatio(PR); resize();
+}
+function watchFps(dt) {
+  if (dt <= 0) return;
+  fpsMon.t += dt; fpsMon.n++;
+  if (fpsMon.t < 2) return;
+  const fps = fpsMon.n / fpsMon.t; fpsMon.t = fpsMon.n = 0; fpsMon.last = Math.round(fps);
+  if (fps < 38) { fpsMon.fast = 0; setQuality(qLv - 1); }
+  else if (fps > 57) { if (++fpsMon.fast >= 5) { fpsMon.fast = 0; setQuality(qLv + 1); } }
+  else fpsMon.fast = 0;
+}
 const SKY = new THREE.Color('#a9dcff');
 const scene = new THREE.Scene();
 scene.background = SKY;
@@ -559,7 +769,7 @@ const sun = new THREE.DirectionalLight(0xfff1dc, 0.5); sun.position.set(-0.5, 1,
 
 function resize() {
   const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
-  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); dirty = true;
 }
 window.addEventListener('resize', resize);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -703,6 +913,9 @@ defType('fountain', { s: 2.4, h: 2.0, val: 18, rs: 0, sh: [5.4, 5.4], pal: ['#ff
 const HC = window.HOLE_CITIES || { types: {}, cities: [] };
 for (const n in HC.types) defType(n, HC.types[n]);
 const CITIES = HC.cities || [];
+// まちめぐり: the tour cities open one after another (camp.open); the free cities (Kanagawa) are open from the start
+const TOUR_N = NTOUR;
+const isOpen = i => !!CITIES[i] && (CITIES[i].free || i < SV.camp.open);
 
 // ---------------------------------------------------------------- world (rebuilt per map: one of the campaign cities)
 const objs = [];
@@ -925,7 +1138,7 @@ function buildCity(C) {
       const P = mkPath(pts, o.close), cars = o.cars || 4, trains = o.trains || 1, gap = o.gap || 11.4, dir = o.dir || 1;
       for (let t = 0; t < trains; t++) for (let c = 0; c < cars; c++) {
         let p = (t / trains) * P.len + (o.p || 0) - c * gap * dir; p = ((p % P.len) + P.len) % P.len;
-        addPathObj(o.type || 'trainCar', { k: 'path', P, p, spd: o.spd || 9, dir, off: o.off || 0, mode: o.close ? 'loop' : 'wrap', seg: 0, y: o.y || 0 }, o.col);
+        addPathObj(o.type || 'trainCar', { k: 'path', P, p, spd: o.spd || 9, dir, off: o.off || 0, mode: o.mode || (o.close ? 'loop' : 'wrap'), seg: 0, y: o.y || 0 }, o.col);
       }
     },
     boats(pts, n, o) {
@@ -1121,7 +1334,7 @@ function holeSpeed(h) {
 }
 
 // ---------------------------------------------------------------- game state
-const G = { mode: 'title', playing: false, paused: false, t: ROUND, time: 0, ts: 1, diff: 0.25, eatVal: 0, resultShown: false, hudT: 0, lastSec: 99, aiOff: false };
+const G = { mode: 'title', playing: false, paused: false, t: ROUND, time: 0, ts: 1, diff: 0.25, eatVal: 0, resultShown: false, hudT: 0, lastSec: 99, aiOff: false, ended: true, played: 0 };
 let player = makeHole(T('あなた'), '#ffffff', true);
 let rivals = [];
 for (let n = 0; n < 5; n++) { const r = makeHole(T(RIVALS[n].name), RIVALS[n].color, false); r.ai = { think: 0, mode: 'eat', tx: 0, tz: 0, tobj: null, prey: null, fx: 0, fz: 0, wx: 0, wz: 0, diff: 0.3 }; rivals.push(r); }
@@ -1155,7 +1368,7 @@ function addPts(h, v) { h.pts += v; setStage(h, false); }
 
 // battle / solo: the chosen city (if unlocked) or a random one of the 10
 function pickCity() {
-  if (SV.city >= 0 && SV.city < Math.min(CITIES.length, SV.camp.open)) return SV.city;
+  if (SV.city >= 0 && isOpen(SV.city)) return SV.city;
   return (Math.random() * CITIES.length) | 0;
 }
 // solo stars per city: the campaign goals, scaled to the 2-minute round
@@ -1167,12 +1380,15 @@ function resetNetHoles() {
   }
   for (const h of holes) { h.nid = null; h.remote = false; h.isBot = false; h.inMatch = false; h.left = false; h.buf = null; h.net = null; }
 }
-function startRound(mode, si, net) {
+function startRound(mode, si, net, opt) {
+  opt = opt || {};
   ensureAudio();
+  if (G.playing && !G.ended) endPlay('quit'); // a restart from the pause menu
   if (mode !== 'camp' && mode !== 'online') si = pickCity();
   const C = CITIES[si], online = mode === 'online';
   buildWorld(si, online ? net.sd : 0);
   G.mode = mode; G.stage = mode === 'camp' ? si : -1; G.city = si; G.playing = true; G.paused = false; G.t = mode === 'camp' ? C.time : online ? NET.len || ROUND : ROUND; G.time = 0; G.eatVal = 0; G.resultShown = false; G.lastSec = 99; G.climax = 0;
+  G.ended = false; G.played = 0; dirty = true;
   G.diff = mode === 'camp' ? C.diff : online ? 0.5 : Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160));
   resetWorld();
   resetNetHoles();
@@ -1211,12 +1427,28 @@ function startRound(mode, si, net) {
   camSnap = true;
   $('rank').hidden = nR === 0;
   $('hRankL').textContent = mode === 'match' || online ? T('じゅんい') : T('のみこみ率');
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline'].forEach(id => $(id).hidden = true);
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow'].forEach(id => $(id).hidden = true);
   $('msg').hidden = true;
+  if (pm && pm.isOpen) pm.close();
+  setPlayingUi(true);
   buildRankRows();
+  // the first city of the tour teaches the controls (first time, or "play the tutorial again")
+  tutStop();
+  if (mode === 'camp' && si === 0 && (opt.tutorial || !SV.tut)) tutBegin();
   if (!online) { sfx.start(); toast(mode === 'match' ? T('{city}で スタート！', { city: T(C.name) }) : T(C.name)); }
   else toast(T(C.name));
   updateHud(true);
+  emit('play_start', { mode: online ? 'versus' : 'normal', stage: mode === 'camp' ? si + 1 : undefined, city: CITIES[si].id, kind: mode });
+}
+// one play_end per round: 'over' (time up), 'clear' (a campaign city with ★), 'quit'
+function endPlay(reason, extra) {
+  if (G.ended) return;
+  G.ended = true;
+  emit('play_end', Object.assign({ mode: G.mode === 'online' ? 'versus' : 'normal', score: Math.max(0, player.pts | 0), reason,
+    durationMs: Math.round(G.played * 1000), stage: G.mode === 'camp' ? G.stage + 1 : undefined, kind: G.mode }, extra || {}));
+}
+function setPlayingUi(on) {
+  $('pauseBtn').hidden = !on; $('helpBtn').hidden = !!on;
 }
 
 // ---------------------------------------------------------------- input
@@ -1244,7 +1476,9 @@ function showJoy() { const j = $('joy'); j.hidden = false; j.style.left = joy.ox
 window.addEventListener('keydown', e => {
   ensureAudio();
   keys[e.code] = true;
-  if ((e.code === 'Escape' || e.code === 'KeyP') && G.playing) { G.paused ? resume() : pauseGame(); }
+  // (Esc inside an open menu is handled by the menu itself: common/ui.js marks it defaultPrevented)
+  if ((e.code === 'Escape' || e.code === 'KeyP') && G.playing && !G.paused && !e.defaultPrevented && !document.querySelector('.kb-layer:not([hidden])')) pauseGame();
+  else if (e.code === 'Escape' && !$('ovHow').hidden && !e.defaultPrevented) closeHow();
   if (/^Arrow/.test(e.code) && G.playing) e.preventDefault();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -1331,7 +1565,7 @@ function landmarkFall(o, h) {
   if (h.isPlayer) {
     toast(KoboI18n.t('{name}を のみこんだ！', { name: KoboI18n.t(o.T.lm) }));
     camShake = Math.max(camShake, top ? 1.6 : 0.8); vibrate(top ? 160 : 80);
-    if (soundOn && AC) { sfx.gulp(); if (top) { noise(900, 60, 1.2, 0.4, 0.7); tone('triangle', 90, 30, 1.2, 0.4); } }
+    sfx.gulp(); if (top) sfx.big();
     if (top) G.climax = 1;
   }
 }
@@ -1398,11 +1632,12 @@ function update(dt) {
     if (sec <= 10 && sec !== G.lastSec && sec > 0) sfx.tick();
     G.lastSec = sec;
   } else if (live) {
-    G.t -= dt;
+    if (!tutClock()) G.t -= dt; // the clock waits while the tutorial teaches the controls
     const sec = Math.ceil(G.t);
     if (sec <= 10 && sec !== G.lastSec && sec > 0) sfx.tick();
     G.lastSec = sec;
   }
+  if (live) G.played += dt;
   // movers
   for (let n = 0; n < objs.length; n++) {
     const o = objs[n];
@@ -1427,7 +1662,7 @@ function update(dt) {
     steer(player, ix * sp, iz * sp, dt);
   }
   for (const r of rivals) if (r.alive && !G.aiOff && !r.remote && (!online || r.isBot)) aiMove(r, dt);
-  if (online) for (const h of holes) if (h.remote && h.inMatch) netInterp(h);
+  if (online) for (const h of holes) if (h.remote && h.inMatch) netInterp(h, dt);
   // holes: growth anim, death, respawn
   for (const h of holes) {
     if (!h.grp.visible && h.deadT <= 0) continue;
@@ -1461,6 +1696,7 @@ function update(dt) {
     }
   }
   for (const h of holes) if (h.alive && !h.remote) swallowCheck(h);
+  if (tut.on) tutUpdate(dt);
   if (G.t <= 0) endRound();
 }
 function easeBack(t) { const c = 1.70158, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; }
@@ -1519,44 +1755,60 @@ function showMsg(t) { const el = $('msg'); el.innerHTML = ''; el.append(t); cons
 function endRound() {
   if (!G.playing) return;
   G.playing = false; G.t = 0; joy.on = false; $('joy').hidden = true; $('msg').hidden = true;
+  tutStop(); setPlayingUi(false); dirty = true; lastInput = performance.now();
   sfx.end();
   if (G.mode === 'online') return netEnd();
   showResult();
 }
+function stars3(el, n) {
+  el.hidden = false; el.innerHTML = '';
+  for (let i = 0; i < 3; i++) { const s = document.createElement('span'); s.textContent = '★'; if (i < n) s.className = 'on'; el.appendChild(s); }
+}
+// the save is changed through mutate (fresh copy from storage); online battles change only coins and the online record
+// (they never touch best: the platform rule for versus play)
 function showResult(online) {
-  const maxSize = +(player.maxR * 2).toFixed(1);
-  let coins = 0, isNew = false;
+  const maxSize = +(player.maxR * 2).toFixed(1), pts = Math.max(0, player.pts | 0);
+  let coins = 0, isNew = false, newPts = false, reason = 'over', extra = {};
   const resStars = $('resStars');
-  $('btnNext').hidden = true; $('resList').hidden = true;
+  $('btnNext').hidden = true; $('resList').hidden = true; resStars.hidden = true; $('resGoal').hidden = true;
   $('resCity').textContent = G.mode === 'camp' ? '' : T('街：{city}', { city: T(CITIES[G.city].name) });
   $('btnToTitle').textContent = G.mode === 'camp' ? T('まちめぐりへ') : T('タイトルへ');
   if (G.mode === 'camp') {
     const si = G.stage, C = CITIES[si], pct = soloPct(), stars = C.stars.filter(v => pct >= v).length;
-    const firstClear = stars > 0 && !(SV.camp.stars[si] > 0);
-    coins = stars * 25 + Math.floor(pct / 2) + 5 + (firstClear ? 40 : 0);
-    if (pct > (SV.camp.best[si] || 0)) { isNew = true; SV.camp.best[si] = +pct.toFixed(1); }
-    SV.camp.stars[si] = Math.max(SV.camp.stars[si] || 0, stars);
-    if (stars > 0) SV.camp.open = Math.max(SV.camp.open, Math.min(CITIES.length, si + 2));
+    let firstClear = false;
+    mutate(sv => {
+      firstClear = stars > 0 && !(sv.camp.stars[si] > 0);
+      coins = stars * 25 + Math.floor(pct / 2) + 5 + (firstClear ? 40 : 0);
+      if (pct > (sv.camp.best[si] || 0)) { isNew = true; sv.camp.best[si] = +pct.toFixed(1); }
+      sv.camp.stars[si] = Math.max(sv.camp.stars[si] || 0, stars);
+      if (stars > 0 && si < TOUR_N) sv.camp.open = Math.max(sv.camp.open, Math.min(TOUR_N, si + 2));
+      if (maxSize > sv.best.maxSize) sv.best.maxSize = maxSize;
+      sv.coins += coins;
+    });
     G.lastStars = stars; G.lastPct = pct;
     $('resTtl').textContent = stars > 0 ? T('{name} クリア！', { name: T(C.name) }) : T('あと すこし！');
     $('resBig').textContent = pct.toFixed(1) + '%';
-    resStars.hidden = false; resStars.innerHTML = '';
-    for (let i = 0; i < 3; i++) { const s = document.createElement('span'); s.textContent = '★'; if (i < stars) s.className = 'on'; resStars.appendChild(s); }
-    $('resGoal').hidden = false;
-    $('resGoal').textContent = stars > 0 ? (si + 1 < CITIES.length ? (firstClear ? T('つぎの街が ひらいた！') : '') : T('ぜんぶの街を めぐった！')) : T('★1は {p}% いじょう', { p: C.stars[0] });
-    if (!$('resGoal').textContent) $('resGoal').hidden = true;
-    $('btnNext').hidden = !(stars > 0 && si + 1 < CITIES.length);
+    stars3(resStars, stars);
+    const goal = stars > 0 ? (si + 1 < TOUR_N ? (firstClear ? T('つぎの街が ひらいた！') : '') : si + 1 === TOUR_N ? T('ぜんぶの街を めぐった！') : '') : T('★1は {p}% いじょう', { p: C.stars[0] });
+    $('resGoal').textContent = goal; $('resGoal').hidden = !goal;
+    // the next city: the next tour city once it is open, or the next free city
+    $('btnNext').hidden = !(si + 1 < CITIES.length && isOpen(si + 1) && (stars > 0 || C.free) && !!CITIES[si + 1].free === !!C.free);
+    if (stars > 0) { reason = 'clear'; emit('stage_clear', { stage: si + 1, stars, timeMs: Math.round(G.played * 1000) }); sfx.best(); }
+    else sfx.fail();
+    extra = { stars, pct: +pct.toFixed(1) };
   } else if (G.mode === 'online') {
     // online ranking: everyone still in the room + the CPU seats, by points
     const list = holes.filter(h => h.inMatch && !h.left).sort((a, b) => b.pts - a.pts);
     const rank = list.indexOf(player) + 1;
-    coins = [50, 32, 22, 14][rank - 1] + Math.floor(player.pts / 25);
-    SV.online.plays++; if (rank === 1) SV.online.wins++;
-    if (!SV.online.best || rank < SV.online.best) { SV.online.best = rank; isNew = true; }
+    coins = [50, 32, 22, 14][rank - 1] + Math.floor(pts / 25);
+    mutate(sv => {
+      sv.online.plays++; if (rank === 1) sv.online.wins++;
+      if (!sv.online.best || rank < sv.online.best) { sv.online.best = rank; isNew = true; }
+      sv.coins += coins;
+    });
     $('resGoal').hidden = false; $('resGoal').textContent = T('オンライン {w}勝 / {p}戦', { w: SV.online.wins, p: SV.online.plays });
     $('resTtl').textContent = rank === 1 ? T('まちいちばんの あな！') : T('けっか');
     $('resBig').textContent = T('{n}位', { n: rank });
-    resStars.hidden = true;
     const ol = $('resList'); ol.textContent = ''; ol.hidden = false;
     list.forEach((h, i) => {
       const li = document.createElement('li'); if (h === player) li.className = 'me';
@@ -1565,62 +1817,113 @@ function showResult(online) {
       const pt = document.createElement('em'); pt.textContent = h.pts + 'pt · ' + (h.R * 2).toFixed(1) + 'm';
       li.append(dot, nm, pt); ol.appendChild(li);
     });
+    if (rank === 1) sfx.best();
+    extra = { rank };
   } else if (G.mode === 'match') {
-    $('resGoal').hidden = true;
     const rank = rankOf(player);
-    coins = [50, 32, 22, 14, 10, 6][rank - 1] + Math.floor(player.pts / 25);
-    if (rank === 1) SV.wins++;
-    if (!SV.best.matchRank || rank < SV.best.matchRank || (rank === SV.best.matchRank && player.pts > SV.best.matchPts)) { isNew = true; SV.best.matchRank = rank; SV.best.matchPts = player.pts; }
+    coins = [50, 32, 22, 14, 10, 6][rank - 1] + Math.floor(pts / 25);
+    mutate(sv => {
+      if (rank === 1) sv.wins++;
+      if (!sv.best.matchRank || rank < sv.best.matchRank || (rank === sv.best.matchRank && pts > sv.best.matchPts)) { isNew = true; sv.best.matchRank = rank; sv.best.matchPts = pts; }
+      // R10: the ranking value is the highest score of a battle, whatever the rank
+      if (pts > (sv.best.maxPts || 0)) { sv.best.maxPts = pts; newPts = true; isNew = true; }
+      if (maxSize > sv.best.maxSize) sv.best.maxSize = maxSize;
+      sv.coins += coins;
+    });
     $('resTtl').textContent = rank === 1 ? T('まちいちばんの あな！') : T('けっか');
     $('resBig').textContent = T('{n}位', { n: rank });
-    resStars.hidden = true;
+    $('resGoal').hidden = false; $('resGoal').textContent = T('ベスト得点') + ' ' + T('{n}点', { n: SV.best.maxPts });
+    if (newPts) { emit('best', { score: SV.best.maxPts }); sfx.best(); }
+    extra = { rank };
   } else {
-    $('resGoal').hidden = true;
     const pct = soloPct(), goal = soloStars(CITIES[G.city]), stars = goal.filter(v => pct >= v).length;
-    $('resGoal').hidden = false; $('resGoal').textContent = '★ ' + goal[0] + '%　★★ ' + goal[1] + '%　★★★ ' + goal[2] + '%';
     coins = stars * 25 + Math.floor(pct / 2) + 5;
-    if (pct > SV.best.soloPct) { isNew = true; SV.best.soloPct = +pct.toFixed(1); }
-    SV.best.soloStars = Math.max(SV.best.soloStars, stars);
+    mutate(sv => {
+      if (pct > sv.best.soloPct) { isNew = true; sv.best.soloPct = +pct.toFixed(1); }
+      sv.best.soloStars = Math.max(sv.best.soloStars, stars);
+      if (maxSize > sv.best.maxSize) sv.best.maxSize = maxSize;
+      sv.coins += coins;
+    });
+    $('resGoal').hidden = false; $('resGoal').textContent = '★ ' + goal[0] + '%　★★ ' + goal[1] + '%　★★★ ' + goal[2] + '%';
     $('resTtl').textContent = T('のみこみチャレンジ');
     $('resBig').textContent = pct.toFixed(1) + '%';
-    resStars.hidden = false; resStars.innerHTML = '';
-    for (let i = 0; i < 3; i++) { const s = document.createElement('span'); s.textContent = '★'; if (i < stars) s.className = 'on'; resStars.appendChild(s); }
+    stars3(resStars, stars);
+    extra = { stars, pct: +pct.toFixed(1) };
   }
-  if (maxSize > SV.best.maxSize) SV.best.maxSize = maxSize;
-  SV.coins += coins; save();
+  applySkin();
+  endPlay(reason, extra);
   $('resNew').hidden = !isNew;
   $('resEat').textContent = player.eaten; $('resSize').textContent = maxSize.toFixed(1) + 'm';
-  $('resPts').textContent = player.pts; $('resCoin').textContent = '+' + coins;
+  $('resPts').textContent = pts; $('resCoin').textContent = '+' + coins;
   G.resultShown = true; G.lastCoins = coins;
-  setTimeout(() => { $('ovResult').hidden = false; }, 600);
+  setTimeout(() => { if (G.resultShown && !G.playing) { $('ovResult').hidden = false; dirty = true; } }, 600);
   updateHud(true);
 }
-function showTitle() {
-  G.playing = false; G.mode = 'title'; G.paused = false;
-  ['ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline'].forEach(id => $(id).hidden = true);
-  $('ovTitle').hidden = false; $('msg').hidden = true; $('rank').hidden = true;
-  renderTitle();
+function hideOverlays(except) {
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline'].forEach(id => { if (id !== except) $(id).hidden = true; });
 }
+// leave a round that is still running (pause menu): it counts as a quit (no records, no coins)
+function quitRound() {
+  if (G.playing) { endPlay('quit'); if (G.mode === 'online') netLeave(); }
+  G.playing = false; G.paused = false; tutStop(); setPlayingUi(false);
+  if (KG) KG.resume('api');
+  G.mode === 'camp' ? openCamp() : showTitle();
+}
+function showTitle() {
+  G.playing = false; G.mode = 'title'; G.paused = false; G.resultShown = false;
+  hideOverlays('ovTitle'); setPlayingUi(false); tutStop();
+  $('ovTitle').hidden = false; $('msg').hidden = true; $('rank').hidden = true;
+  renderTitle(); dirty = true;
+}
+function rivalLv() { return 1 + Math.min(9, Math.floor((Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160)) - 0.22) / 0.078)); }
 function renderTitle() {
   $('tCoins').textContent = SV.coins; renderCitySel();
   $('btnCamp').hidden = !CITIES.length;
+  $('tCampName').textContent = T('まちめぐり（{n}の街）', { n: CITIES.length });
   $('tCampStars').textContent = SV.camp.stars.reduce((a, b) => a + (b || 0), 0) + '/' + CITIES.length * 3;
+  $('rPts').textContent = SV.best.maxPts ? T('{n}点', { n: SV.best.maxPts }) : '-';
   $('rRank').textContent = SV.best.matchRank ? T('{n}位', { n: SV.best.matchRank }) : '-';
   $('rSolo').textContent = SV.best.soloPct ? SV.best.soloPct + '%' : '-';
   $('rSize').textContent = SV.best.maxSize ? SV.best.maxSize + 'm' : '-';
-  $('rLv').textContent = 'Lv' + (1 + Math.min(9, Math.floor((Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160)) - 0.22) / 0.078)));
+  $('rLv').textContent = T('ライバル') + ' Lv' + rivalLv();
+}
+// pause: the shared pause menu (common/ui.js). common/game.js pauses on hide / pagehide / context lost; it stays paused
+// until つづける. An online battle cannot be paused: its menu only offers to quit.
+const pm = UI ? UI.pauseMenu({
+  title: T('ひとやすみ'), home: '../',
+  extra: [{ label: T('やめてタイトルへ'), icon: 'back', onClick: () => { pm.close(); quitRound(); } }],
+  onResume() { resume(); },
+  onRestart() { const m = G.mode, si = G.stage, tu = tut.on; G.paused = false; if (KG) KG.resume('api'); startRound(m, si, null, { tutorial: tu }); },
+  onOpen() { if (KG) KG.menuOpened(); },
+}) : null;
+let onMenu = null;
+function openOnlineMenu() {
+  if (!UI) { $('ovPause').hidden = false; $('pauseNote').hidden = false; return; }
+  if (onMenu && onMenu.isOpen) return;
+  onMenu = UI.modal({ title: T('メニュー'), body: T('オンライン対戦中は 止まりません。やめると この試合は 負けになります。'),
+    actions: [{ label: T('やめてタイトルへ'), variant: 'ghost', onClick: () => { quitRound(); } },
+              { label: T('つづける'), variant: 'primary' }] }).open();
 }
 function pauseGame() {
   if (!G.playing || G.paused) return;
-  joy.on = false; $('joy').hidden = true; $('ovPause').hidden = false;
-  // an online match cannot be paused: the menu opens but the round keeps running
-  $('pauseNote').hidden = G.mode !== 'online';
-  if (G.mode !== 'online') G.paused = true;
+  if (G.mode === 'online') { openOnlineMenu(); return; }
+  joy.on = false; $('joy').hidden = true; for (const k in keys) keys[k] = false;
+  G.paused = true; dirty = true;
+  if (pm) pm.open(); else { $('ovPause').hidden = false; $('pauseNote').hidden = true; }
 }
-function resume() { G.paused = false; $('ovPause').hidden = true; last = performance.now(); }
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { if (G.mode !== 'online') pauseGame(); if (AC && AC.state === 'running') AC.suspend().catch(() => {}); }
-  else if (AC && soundOn) AC.resume().catch(() => {});
+function resume() {
+  $('ovPause').hidden = true;
+  if (!G.paused) return;
+  G.paused = false; last = performance.now(); dirty = true;
+  if (KG) KG.resume('api');
+}
+if (!KG) document.addEventListener('visibilitychange', () => { if (document.hidden && G.mode !== 'online') pauseGame(); });
+// another tab (or the cloud sync) changed the save while this page is not in a round
+addEventListener('storage', e => {
+  if (e.key !== SAVE_KEY || G.playing) return;
+  SV = loadSave(); applySkin();
+  if (!$('ovTitle').hidden) renderTitle();
+  if (!$('ovShop').hidden) renderShop();
 });
 
 // ---------------------------------------------------------------- shop
@@ -1652,15 +1955,89 @@ function renderShop() {
 $('skinList').addEventListener('click', e => {
   const b = e.target.closest('.skin'); if (!b || b.disabled) return;
   const sk = SKINS.find(s => s.id === b.dataset.skin); if (!sk) return;
-  if (SV.skins.owned.indexOf(sk.id) < 0) { if (SV.coins < sk.price) return; SV.coins -= sk.price; SV.skins.owned.push(sk.id); sfx.buy(); }
-  SV.skins.sel = sk.id; save(); applySkin(); renderShop();
+  const ok = mutate(sv => {
+    if (sv.skins.owned.indexOf(sk.id) < 0) { if (sv.coins < sk.price) return false; sv.coins -= sk.price; sv.skins.owned.push(sk.id); sfx.buy(); }
+    else sfx.click();
+    sv.skins.sel = sk.id; return true;
+  });
+  if (ok) { applySkin(); dirty = true; }
+  renderShop();
 });
 $('perkList').addEventListener('click', e => {
   const b = e.target.closest('button[data-perk]'); if (!b || b.disabled) return;
-  const p = PERKS.find(x => x.id === b.dataset.perk); const lv = SV.perks[p.id] || 0;
-  if (lv >= p.max || SV.coins < p.cost[lv]) return;
-  SV.coins -= p.cost[lv]; SV.perks[p.id] = lv + 1; save(); sfx.buy(); renderShop();
+  const p = PERKS.find(x => x.id === b.dataset.perk); if (!p) return;
+  mutate(sv => {
+    const lv = sv.perks[p.id] || 0;
+    if (lv >= p.max || sv.coins < p.cost[lv]) return;
+    sv.coins -= p.cost[lv]; sv.perks[p.id] = lv + 1; sfx.buy();
+  });
+  renderShop();
 });
+
+// ---------------------------------------------------------------- tutorial (the first city of the tour, first time)
+// Each step is done by really doing it: move, swallow 3 small things, grow once. The clock waits until then.
+const TUT = [
+  { id: 'move', text: 'どこでもドラッグして、あなを動かそう' },
+  { id: 'eat', text: '小さいもの（人・コーン・ゴミ箱）の上へ動いて、3つ のみこもう' },
+  { id: 'grow', text: 'その調子！ のみこむほど あなが大きくなる' },
+  { id: 'goal', text: 'さあ本番！ 時間内に 街の{p}%を のみこめば ★1' },
+];
+const tut = { on: false, step: 0, done: false, skipped: false, t: 0, x0: 0, z0: 0, e0: 0, s0: 0 };
+const tutClock = () => tut.on && tut.step < 3;
+function tutBegin() {
+  Object.assign(tut, { on: true, step: 0, done: false, skipped: false, t: 0, x0: player.x, z0: player.z, e0: player.eaten, s0: player.stage });
+  tutShow();
+}
+function tutShow() {
+  const st = TUT[tut.step];
+  $('coach').hidden = false;
+  $('coachStep').textContent = (tut.step + 1) + '/' + TUT.length;
+  $('coachText').textContent = T(st.text, { p: CITIES[0].stars[0] });
+  $('coach').firstElementChild.title = tut.step < 3 ? T('チュートリアル中は 時計が止まっています') : '';
+  $('coachHand').hidden = st.id !== 'move';
+}
+function tutNext() {
+  tut.step++; tut.t = 0; sfx.step();
+  if (tut.step >= TUT.length) { tutFinish(false); return; }
+  if (TUT[tut.step].id === 'grow') tut.s0 = player.stage;
+  tutShow();
+}
+function tutFinish(skipped) {
+  if (!tut.on) return;
+  tut.on = false; tut.done = true; tut.skipped = !!skipped; tut.step = TUT.length;
+  $('coach').hidden = true; $('coachHand').hidden = true;
+  if (!SV.tut) mutate(sv => { sv.tut = 1; });
+}
+function tutStop() { tut.on = false; $('coach').hidden = true; $('coachHand').hidden = true; }
+function tutUpdate(dt) {
+  tut.t += dt;
+  const id = TUT[tut.step].id;
+  if (id === 'move') { if (Math.hypot(player.x - tut.x0, player.z - tut.z0) > 4) tutNext(); }
+  else if (id === 'eat') { if (player.eaten - tut.e0 >= 3) tutNext(); }
+  else if (id === 'grow') { if (player.stage > tut.s0 || tut.t > 8) tutNext(); }
+  else if (id === 'goal') { if (tut.t > 5) tutFinish(false); }
+}
+$('coachSkip').addEventListener('click', e => { e.stopPropagation(); sfx.click(); tutFinish(true); });
+$('coachSkip').addEventListener('pointerdown', e => e.stopPropagation());
+
+// ---------------------------------------------------------------- how to play (first visit and the ? button)
+let howFirst = false;
+function openHow(first) {
+  if (G.playing) return;
+  howFirst = !!first;
+  $('howTut').hidden = !!first;
+  $('ovHow').hidden = false; dirty = true;
+  setTimeout(() => { try { $('howGo').focus({ preventScroll: true }); } catch (e) {} }, 30);
+}
+function closeHow() {
+  $('ovHow').hidden = true; dirty = true;
+  if (!SV.seen) mutate(sv => { sv.seen = 1; });
+}
+$('howGo').addEventListener('click', () => {
+  const f = howFirst; closeHow();
+  if (f && !SV.tut && !G.playing && CITIES.length) startRound('camp', 0, null, { tutorial: true }); // first time: straight into the coached first city
+});
+$('howTut').addEventListener('click', () => { closeHow(); if (!G.playing && CITIES.length) startRound('camp', 0, null, { tutorial: true }); });
 
 // ---------------------------------------------------------------- campaign screens (まちめぐり)
 const fmtTime = t => Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
@@ -1674,16 +2051,22 @@ function drawIcon(cv, C, locked) {
 }
 function starStr(n) { let t = ''; for (let i = 0; i < 3; i++) t += '<span' + (i < n ? ' class="on"' : '') + '>★</span>'; return t; }
 function openCamp() {
-  G.playing = false; G.mode = 'title'; G.paused = false;
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovStage'].forEach(id => $(id).hidden = true);
+  G.playing = false; G.mode = 'title'; G.paused = false; G.resultShown = false; dirty = true;
+  hideOverlays('ovCamp'); setPlayingUi(false); tutStop();
   $('msg').hidden = true; $('rank').hidden = true;
   const list = $('campList'); list.textContent = '';
   CITIES.forEach((C, i) => {
-    const locked = i >= SV.camp.open;
+    const locked = !isOpen(i);
+    if (C.free && !(i > 0 && CITIES[i - 1].free)) { // section heading before the free cities
+      const hd = document.createElement('div'); hd.className = 'csec';
+      const hb = document.createElement('b'); hb.textContent = T('神奈川の街');
+      const hs = document.createElement('small'); hs.textContent = T('最初から 自由に あそべます');
+      hd.append(hb, hs); list.appendChild(hd);
+    }
     const b = document.createElement('button'); b.type = 'button'; b.className = 'cst'; b.dataset.si = i; b.disabled = locked;
     const cv = document.createElement('canvas'); cv.width = 112; cv.height = 84; drawIcon(cv, C, locked);
     const tx = document.createElement('div'); tx.className = 'tx';
-    const nm = document.createElement('b'); nm.textContent = (i + 1) + '. ' + (locked ? T('？？？') : T(C.name));
+    const nm = document.createElement('b'); nm.textContent = (C.free ? '' : (i + 1) + '. ') + (locked ? T('？？？') : T(C.name));
     const sm = document.createElement('small'); sm.textContent = locked ? T('前の街をクリアで ひらく') : T(C.sub);
     const gl = document.createElement('small'); gl.textContent = goalText(C) + ' / ' + rivalText(C);
     tx.append(nm, sm, gl);
@@ -1692,17 +2075,17 @@ function openCamp() {
     b.append(cv, tx, st); list.appendChild(b);
   });
   $('ovCamp').hidden = false;
-  const cur = list.children[Math.min(SV.camp.open, CITIES.length) - 1];
+  const cur = list.querySelector('.cst[data-si="' + (Math.min(SV.camp.open, TOUR_N) - 1) + '"]');
   if (cur && cur.scrollIntoView) try { cur.scrollIntoView({ block: 'nearest' }); } catch (e) {}
 }
 function openStage(si) {
-  const C = CITIES[si]; if (!C || si >= SV.camp.open) return openCamp();
-  G.stage = si;
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp'].forEach(id => $(id).hidden = true);
+  const C = CITIES[si]; if (!C || !isOpen(si)) return openCamp();
+  G.stage = si; G.mode = 'title'; G.playing = false; G.resultShown = false; dirty = true;
+  hideOverlays('ovStage'); setPlayingUi(false);
   // show the city itself behind the card
   buildWorld(si); camSnap = true;
   drawIcon($('stIcon'), C, false);
-  $('stNo').textContent = T('ステージ {n}', { n: si + 1 }) + ' / ' + CITIES.length;
+  $('stNo').textContent = C.free ? T('神奈川の街') : T('ステージ {n}', { n: si + 1 }) + ' / ' + TOUR_N;
   $('stName').textContent = T(C.name);
   $('stDesc').textContent = T(C.desc);
   $('stGoal').textContent = goalText(C) + '　' + rivalText(C);
@@ -1718,13 +2101,19 @@ $('btnStGo').addEventListener('click', () => startRound('camp', G.stage));
 $('btnNext').addEventListener('click', () => openStage(G.stage + 1));
 
 // ---------------------------------------------------------------- buttons
-function renderSound() { $('sndBtn').setAttribute('aria-pressed', soundOn ? 'true' : 'false'); }
-$('sndBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('kusoge.sound', soundOn ? '1' : '0'); ensureAudio(); renderSound(); if (soundOn) sfx.pop(0.5); });
-$('pauseBtn').addEventListener('click', () => { if (G.playing) G.paused ? resume() : pauseGame(); });
+$('pauseBtn').addEventListener('click', () => { sfx.click(); if (G.playing) pauseGame(); });
+$('setBtn').addEventListener('click', () => {
+  sfx.click();
+  if (G.playing && G.mode !== 'online') { pauseGame(); return; } // the pause menu has 設定
+  if (UI) UI.openSettings({ onClose() { dirty = true; } });
+});
+$('helpBtn').addEventListener('click', () => { sfx.click(); openHow(false); });
 $('btnMatch').addEventListener('click', () => startRound('match'));
 $('btnOnline').addEventListener('click', () => onlineOpen());
 $('btnSolo').addEventListener('click', () => startRound('solo'));
 $('btnShop').addEventListener('click', () => { ensureAudio(); $('ovTitle').hidden = true; $('ovShop').hidden = false; renderShop(); });
+// menu buttons click (the shop's own buttons have their own sounds)
+$('stage').addEventListener('click', e => { if (e.target.closest('.overlay .btn, .cst')) sfx.click(); });
 $('btnShopBack').addEventListener('click', () => { $('ovShop').hidden = true; $('ovTitle').hidden = false; renderTitle(); });
 $('btnAgain').addEventListener('click', () => (G.mode === 'online' ? onlineOpen() : startRound(G.mode === 'title' ? 'match' : G.mode, G.stage)));
 $('btnToTitle').addEventListener('click', () => (G.mode === 'camp' ? openCamp() : showTitle()));
@@ -1733,30 +2122,39 @@ function renderCitySel() {
   const sel = $('citySel'); sel.textContent = '';
   const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
   add(-1, T('ランダム'));
-  CITIES.forEach((C, i) => { if (i < SV.camp.open) add(i, T(C.name)); });
-  sel.value = SV.city >= 0 && SV.city < SV.camp.open ? SV.city : -1;
+  CITIES.forEach((C, i) => { if (isOpen(i)) add(i, T(C.name)); });
+  sel.value = SV.city >= 0 && isOpen(SV.city) ? SV.city : -1;
 }
-$('citySel').addEventListener('change', e => { SV.city = +e.target.value; save(); });
-$('btnResume').addEventListener('click', () => (G.paused ? resume() : ($('ovPause').hidden = true)));
-$('btnQuit').addEventListener('click', () => { if (G.mode === 'online') netLeave(); G.mode === 'camp' ? openCamp() : showTitle(); });
-renderSound();
+$('citySel').addEventListener('change', e => { const v = +e.target.value; mutate(sv => { sv.city = v; }); });
+$('btnResume').addEventListener('click', () => resume());
+$('btnQuit').addEventListener('click', () => { $('ovPause').hidden = true; quitRound(); });
 
 // ---------------------------------------------------------------- online battle (Firebase Realtime Database)
-// hole/queue/{uid}        = { n: nick, s: skin, t: server ms }  (+ r: room id, m: [uids] once that player formed a room)
+// hole/queue/{uid}        = { n: nick, s: skin, t: server ms, m: ['c14'] }  (+ r: room id, m: [uids] once that player formed a room)
+//                           m: ['c<N>'] while waiting = this page knows the cities 0..N-1 (pages from before the Kanagawa
+//                           cities write no m: they know 10). The room's creator picks a city every member knows.
 // hole/rooms/{room}       = { at, c: city, sd: seed, h: creator uid, inv: { uid: 1 },
 //                             m: { uid: { n, s, j } }        members (each removes itself on disconnect)
-//                             g: { pl: [uids], b: bots, st } the start signal: seats + start time (server ms)
-//                             p: { id: { x, z, p, a, v, k, e, t, i } }  hole states, ~10/s (bots b1.. written by the host)
+//                             g: { pl: [uids], b: bots, st, len } the start signal: seats + start time (server ms)
+//                             p: { id: { x, z, p, a, v, k, e, t, i } }  hole states, 5/s + a heartbeat (CPU holes b1.. written by the host)
 //                             o: { objIndex: { u, t } }      who swallowed which object (transaction: first claim wins)
 //                             k: { push: { v, b, p } }       hole v was swallowed by hole b (reported by v's owner) }
+// Works with the current rules and with database.rules.json (P1-4): only the creator writes g, each player writes its own
+// m / p (the host also p/b1..b3), anyone invited may delete the room. Every write that can be refused has a catch.
+// Room cleanup (R13): the host deletes the room after the round; a player who is the last one left deletes it (also on a
+// disconnect: onDisconnect on the whole room once alone); rooms this device took part in are remembered locally and the
+// leftovers are removed the next time it goes online (kusoge.hole.rooms, device only).
 const FB_SDK = 'https://cdn.jsdelivr.net/npm/firebase@10.12.2/';
-const ON_MAX = 4, ON_WAIT = 15000, CLAIM_WIN = 15000, INTERP = 110;
+const ON_MAX = 4, ON_WAIT = 15000, CLAIM_WIN = 15000;
+const SEND_MS = 200, INTERP = 260; // 5 Hz states (R12); remote holes are drawn 260 ms in the past, between two states
 const NET = { db: null, uid: null, TS: null, off: 0, gen: 0, phase: 'off', nick: '', q: null, rid: null, rref: null, meta: null, members: {}, host: false,
-  st0: 0, pl: [], timers: [], offs: [], sendT: 0, lastSent: '', lastSentAt: 0, lat: 0, latN: 0, latMax: 0, seenK: {}, connected: false };
+  st0: 0, pl: [], timers: [], offs: [], sendT: 0, lastSent: '', lastSentAt: 0, lat: 0, latN: 0, latMax: 0, seenK: {}, connected: false,
+  bad: new Set(), gone: false, odRoom: false, retries: 0, sent: 0, recv: 0 };
 const sNow = () => Date.now() + NET.off;
 const r1 = v => Math.round(v * 10) / 10;
 const cleanNick = n => String(n || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
 const netErr = c => Object.assign(new Error(c), { code: c });
+const quietly = pr => { if (pr && pr.catch) pr.catch(() => {}); return pr; }; // a write that may be refused (room already gone)
 function loadJs(src) {
   return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(netErr('sdk-load')); document.head.appendChild(s); });
 }
@@ -1797,22 +2195,59 @@ function netConnect() {
     NET.db.ref('.info/serverTimeOffset').on('value', s => { NET.off = s.val() || 0; });
   });
 }
-// after a network drop the server may have run our onDisconnect handlers: put our entries back
+// after a network drop the server may have run our onDisconnect handlers: put our entries back.
+// If the room was deleted meanwhile, the new rules refuse the member write: then the room is gone for us (no more writes).
 function netReconnected() {
-  if (NET.phase === 'queue' && NET.qref) { NET.qref.onDisconnect().remove(); NET.qref.update({ n: NET.nick, s: SV.skins.sel }); }
-  if ((NET.phase === 'room' || NET.phase === 'play') && NET.rref) {
-    const m = NET.rref.child('m/' + NET.uid);
-    m.onDisconnect().remove(); NET.rref.child('p/' + NET.uid).onDisconnect().remove();
-    m.update({ n: NET.nick, s: SV.skins.sel });
+  if (NET.phase === 'queue' && NET.qref) { quietly(NET.qref.onDisconnect().remove()); quietly(NET.qref.set(queueEntry())); }
+  if ((NET.phase === 'room' || NET.phase === 'play') && NET.rref && !NET.gone) {
+    const rref = NET.rref, m = rref.child('m/' + NET.uid);
+    quietly(m.onDisconnect().remove()); quietly(rref.child('p/' + NET.uid).onDisconnect().remove());
+    if (NET.odRoom) quietly(rref.onDisconnect().remove());
+    m.update({ n: NET.nick, s: SV.skins.sel }).catch(() => { if (rref === NET.rref) netGone(); });
   }
 }
 function holeById(id) { for (const h of holes) if (h.inMatch && h.nid === id) return h; return null; }
+// the room was deleted under us (or refused our writes): stop writing, play the round out locally
+function netGone() {
+  if (NET.gone) return;
+  NET.gone = true;
+  if (NET.phase === 'room') { if (NET.rid) NET.bad.add(NET.rid); onlineOpenRetry(); }
+}
+
+// ---- rooms this device took part in (device only): leftovers are removed the next time it goes online
+const ROOMS_KEY = 'kusoge.hole.rooms';
+function roomsList() {
+  try { const a = JSON.parse(store.get(ROOMS_KEY) || '[]'); return Array.isArray(a) ? a.filter(e => e && typeof e.r === 'string' && /^[-\w]{1,40}$/.test(e.r) && typeof e.t === 'number') : []; }
+  catch (e) { return []; }
+}
+function roomsSave(a) { store.set(ROOMS_KEY, JSON.stringify(a.slice(-8))); }
+function roomRemember(rid) { roomsSave(roomsList().filter(e => e.r !== rid).concat([{ r: rid, t: Date.now() }])); }
+function roomForget(rid) { roomsSave(roomsList().filter(e => e.r !== rid)); }
+// remove a whole room, only if it is still there (deleting a room that someone else already removed is refused by the rules)
+function roomRemove(rref, rid) {
+  return rref.child('h').once('value').then(s => (s.exists() ? rref.remove() : null)).then(() => roomForget(rid), () => {});
+}
+async function netSweep() {
+  const db = NET.db; if (!db) return;
+  for (const e of roomsList()) {
+    if (e.r === NET.rid || Date.now() - e.t < 20000) continue;
+    let v;
+    try { v = (await db.ref('hole/rooms/' + e.r).once('value')).val(); } catch (err) { continue; }
+    if (!v) { roomForget(e.r); continue; }
+    const others = v.m ? Object.keys(v.m).filter(id => id !== NET.uid) : [];
+    const old = typeof v.at === 'number' && sNow() - v.at > 10 * 60000; // a round lasts at most 5 minutes
+    const mine = v.h === NET.uid || !!(v.inv && v.inv[NET.uid]);
+    if ((!others.length || old) && mine) {
+      try { await db.ref('hole/rooms/' + e.r).remove(); roomForget(e.r); } catch (err) { if (Date.now() - e.t > 86400000) roomForget(e.r); }
+    } else if (!mine || Date.now() - e.t > 86400000) roomForget(e.r);
+  }
+}
 
 // ---- screens
 function onlineShow(state, o) {
   o = o || {};
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage'].forEach(id => $(id).hidden = true);
-  $('ovOnline').hidden = false;
+  hideOverlays('ovOnline'); setPlayingUi(false);
+  $('ovOnline').hidden = false; dirty = true;
   $('onNick').hidden = state !== 'nick'; $('onWait').hidden = state !== 'wait'; $('onErr').hidden = state !== 'err';
   $('onRec').textContent = T('オンライン {w}勝 / {p}戦', { w: SV.online.wins, p: SV.online.plays });
   if (state === 'err') { $('onErrD').textContent = o.detail ? '(' + o.detail + ')' : ''; }
@@ -1823,10 +2258,11 @@ function onlineStatus(t, names, sub) {
   const ul = $('onList'); ul.textContent = '';
   (names || []).forEach(n => { const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
 }
-async function onlineOpen() {
+async function onlineOpen(retry) {
   ensureAudio();
   netLeave();
-  G.playing = false; G.mode = 'title'; $('rank').hidden = true; $('msg').hidden = true;
+  if (!retry) NET.retries = 0;
+  G.playing = false; G.mode = 'title'; G.resultShown = false; $('rank').hidden = true; $('msg').hidden = true;
   const nick = cleanNick(store.get('kobo.nick'));
   if (!nick) return onlineShow('nick');
   NET.nick = nick;
@@ -1846,70 +2282,99 @@ $('onNickForm').addEventListener('submit', ev => {
   const n = cleanNick($('onNickIn').value);
   if (!n) { $('onNickNote').textContent = T('ニックネームを1文字以上入れてください'); return; }
   store.set('kobo.nick', n);
-  if (window.KoboCloud && KoboCloud.setNickname) KoboCloud.setNickname(n).catch(() => {});
+  if (window.KoboCloud && KoboCloud.setNickname) { try { quietly(KoboCloud.setNickname(n)); } catch (e) {} }
   onlineOpen();
 });
 $('onCancel').addEventListener('click', () => { netLeave(); showTitle(); });
 $('onNickBack').addEventListener('click', showTitle);
 $('onErrBack').addEventListener('click', showTitle);
+$('onErrRetry').addEventListener('click', () => onlineOpen());
 
 // ---- listeners / timers that belong to the current online session
 function netOn(ref, ev, f) { ref.on(ev, f, e => { if (NET.phase !== 'off') onlineFail(e); }); NET.offs.push(() => ref.off(ev, f)); }
 function netTimer(f, ms) { const id = setInterval(f, ms); NET.timers.push(id); return id; }
+function netStopListening() { NET.offs.forEach(f => { try { f(); } catch (e) {} }); NET.offs = []; NET.timers.forEach(clearInterval); NET.timers = []; }
+// the other people still in the room (from the latest member list)
+const netOthers = () => Object.keys(NET.members || {}).filter(id => id !== NET.uid);
 function netLeave() {
   NET.gen++;
-  NET.offs.forEach(f => { try { f(); } catch (e) {} }); NET.offs = [];
-  NET.timers.forEach(clearInterval); NET.timers = [];
-  if (NET.qref) { try { NET.qref.onDisconnect().cancel(); NET.qref.remove(); } catch (e) {} NET.qref = null; }
+  netStopListening();
+  if (NET.qref) { try { quietly(NET.qref.onDisconnect().cancel()); quietly(NET.qref.remove()); } catch (e) {} NET.qref = null; }
   if (NET.rref && NET.phase !== 'done') {
+    const rref = NET.rref, rid = NET.rid;
     try {
-      const m = NET.rref.child('m/' + NET.uid), p = NET.rref.child('p/' + NET.uid);
-      m.onDisconnect().cancel(); p.onDisconnect().cancel(); m.remove(); p.remove();
+      const m = rref.child('m/' + NET.uid), p = rref.child('p/' + NET.uid);
+      quietly(m.onDisconnect().cancel()); quietly(p.onDisconnect().cancel()); if (NET.odRoom) quietly(rref.onDisconnect().cancel());
+      // the creator leaving before the start, or the last one out of a running round, removes the whole room
+      // (the others then look for another match); otherwise only our own entries
+      const whole = !NET.gone && (NET.phase === 'room' ? NET.host : NET.phase === 'play' && !netOthers().length);
+      if (whole) roomRemove(rref, rid);
+      else { quietly(m.remove()); quietly(p.remove()); }
     } catch (e) {}
   }
-  NET.rref = null; NET.rid = null; NET.phase = 'off'; NET.host = false; NET.q = null;
+  NET.rref = null; NET.rid = null; NET.phase = 'off'; NET.host = false; NET.q = null; NET.members = {}; NET.gone = false; NET.odRoom = false; NET.goSent = false;
 }
 
 // ---- matchmaking through hole/queue
+// what this page writes into the queue (m: the cities it knows, see above)
+function queueEntry() {
+  if (DEBUG && /[?&]oldq\b/.test(location.search)) return { n: NET.nick, s: SV.skins.sel, t: NET.TS }; // test hook: act like a page from before the marker
+  return { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c' + CITIES.length] };
+}
+// how many cities a waiting player's page knows (old pages: 10)
+function knownCities(e) {
+  const k = e && !e.r && Array.isArray(e.m) && typeof e.m[0] === 'string' && /^c(\d{1,3})$/.exec(e.m[0]);
+  return k ? Math.max(10, +k[1]) : 10;
+}
 async function netQueue(gen) {
   NET.phase = 'queue';
   NET.qref = NET.db.ref('hole/queue/' + NET.uid);
   try {
     await NET.qref.onDisconnect().remove();
-    await NET.qref.set({ n: NET.nick, s: SV.skins.sel, t: NET.TS });
+    await NET.qref.set(queueEntry());
   } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
   if (gen !== NET.gen) return;
   onlineStatus(T('対戦相手を さがしています…'), [NET.nick]);
   netOn(NET.db.ref('hole/queue'), 'value', s => { NET.q = s.val() || {}; netQueueEval(); });
   netTimer(netQueueEval, 400);
+  netSweep().catch(() => {});
 }
 function netQueueEval() {
   if (NET.phase !== 'queue' || !NET.q) return;
   const q = NET.q, now = sNow(), me = NET.uid;
-  // someone formed a room with me in it
+  // someone formed a room with me in it (rooms that turned out to be gone or already started are skipped)
   for (const id in q) {
     const e = q[id];
-    if (e && e.r && Array.isArray(e.m) && e.m.indexOf(me) >= 0 && id !== me && now - (e.t || 0) < 90000) return netJoin(e.r, false);
+    if (e && e.r && !NET.bad.has(e.r) && Array.isArray(e.m) && e.m.indexOf(me) >= 0 && id !== me && now - (e.t || 0) < 90000) return netJoin(e.r, false);
   }
   const open = Object.keys(q).filter(id => { const e = q[id]; return e && !e.r && typeof e.t === 'number' && now - e.t < 120000; })
     .sort((a, b) => q[a].t - q[b].t || (a < b ? -1 : 1));
   const my = open.indexOf(me);
   if (my < 0) return;
   const g0 = my - my % ON_MAX, grp = open.slice(g0, g0 + ON_MAX);
-  const left = Math.max(0, Math.ceil((q[grp[0]].t + ON_WAIT - now) / 1000));
+  const waited = now - q[grp[0]].t - ON_WAIT;
+  const left = Math.max(0, Math.ceil(-waited / 1000));
   onlineStatus(T('対戦相手を さがしています…'), grp.map(id => cleanNick(q[id].n) + (id === me ? ' (' + T('あなた') + ')' : '')),
     T('あと {n}秒で スタート（足りない席は CPU）', { n: left }));
-  // the oldest player of each group of 4 forms the room (everyone agrees on the order, so only one does it)
-  if (grp[0] === me && (grp.length >= ON_MAX || now - q[me].t >= ON_WAIT)) netCreate(grp);
+  // the oldest player of each group of 4 forms the room (everyone agrees on the order, so only one does it).
+  // If that player does not (a frozen background tab), the next one takes over every 6 s.
+  const lead = waited > 6000 ? Math.min(grp.length - 1, Math.floor(waited / 6000)) : 0;
+  if (grp[lead] === me && (grp.length >= ON_MAX || waited >= 0)) netCreate(grp);
 }
 async function netCreate(grp) {
   NET.phase = 'creating';
   const gen = NET.gen;
   const ref = NET.db.ref('hole/rooms').push(), inv = {};
   grp.forEach(id => inv[id] = 1);
+  roomRemember(ref.key);
+  // a city every member's page can build (an older page that does not know the newer cities gets one of the first 10)
+  const q = NET.q || {};
+  const nc = Math.min(CITIES.length, ...grp.map(id => (id === NET.uid ? knownCities(queueEntry()) : knownCities(q[id]))));
+  const oc = DEBUG && /[?&]ocity=(\d+)/.exec(location.search); // test hook: this city when everyone knows it
+  const c = oc && +oc[1] < nc ? +oc[1] : (Math.random() * nc) | 0;
   try {
-    await ref.set({ at: NET.TS, c: (Math.random() * CITIES.length) | 0, sd: 1 + Math.floor(Math.random() * 2e9), h: NET.uid, inv });
-    if (gen !== NET.gen) { ref.remove(); return; }
+    await ref.set({ at: NET.TS, c, sd: 1 + Math.floor(Math.random() * 2e9), h: NET.uid, inv });
+    if (gen !== NET.gen) { ref.remove().then(() => roomForget(ref.key), () => {}); return; }
     await NET.qref.update({ r: ref.key, m: grp });
   } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
   if (gen !== NET.gen) return;
@@ -1917,26 +2382,45 @@ async function netCreate(grp) {
 }
 async function netJoin(rid, creator) {
   const gen = NET.gen;
-  NET.offs.forEach(f => f()); NET.offs = []; NET.timers.forEach(clearInterval); NET.timers = [];
-  NET.phase = 'room'; NET.rid = rid; NET.rref = NET.db.ref('hole/rooms/' + rid); NET.seenK = {};
+  netStopListening();
+  NET.phase = 'room'; NET.rid = rid; NET.rref = NET.db.ref('hole/rooms/' + rid); NET.seenK = {}; NET.gone = false; NET.odRoom = false; NET.goSent = false; NET.members = {};
   const qref = NET.qref; NET.qref = null;
-  if (qref) { if (creator) setTimeout(() => { qref.onDisconnect().cancel(); qref.remove(); }, 5000); else { qref.onDisconnect().cancel(); qref.remove(); } }
+  if (qref) {
+    const drop = () => { quietly(qref.onDisconnect().cancel()); quietly(qref.remove()); };
+    if (creator) setTimeout(drop, 5000); else drop();
+  }
   try {
     const meta = (await NET.rref.once('value')).val();
     if (gen !== NET.gen) return;
-    if (!meta || meta.c == null || meta.g) { NET.rref = null; return onlineOpenRetry(); } // room gone or already started
+    // room gone, already started, or a city this page does not know (made by a newer page): look for another match
+    if (!meta || meta.c == null || meta.g || !CITIES[meta.c]) { NET.bad.add(rid); NET.rref = null; return onlineOpenRetry(); }
     NET.meta = meta; NET.host = meta.h === NET.uid;
+    roomRemember(rid);
     const m = NET.rref.child('m/' + NET.uid);
     await m.onDisconnect().remove(); await NET.rref.child('p/' + NET.uid).onDisconnect().remove();
     await m.set({ n: NET.nick, s: SV.skins.sel, j: NET.TS });
-  } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  } catch (e) {
+    if (gen !== NET.gen) return;
+    // the room was removed while we were joining (its creator left): look for another match
+    NET.bad.add(rid); NET.rref = null;
+    if (++NET.retries <= 3) return onlineOpenRetry();
+    onlineFail(e); return;
+  }
   if (gen !== NET.gen) return;
   onlineStatus(T('対戦相手が 見つかりました！'), [], T('まもなく スタート…'));
   netOn(NET.rref.child('m'), 'value', s => netMembers(s.val() || {}));
   netOn(NET.rref.child('g'), 'value', s => { const g = s.val(); if (g && NET.phase === 'room') netGo(g); });
+  netOn(NET.rref.child('h'), 'value', s => { if (s.val() == null && (NET.phase === 'room' || NET.phase === 'play')) netGone(); });
   if (NET.host) netTimer(netHostWait, 250);
+  // no start signal in time (the creator vanished): look for another match
+  const joined = Date.now();
+  netTimer(() => { if (NET.phase === 'room' && Date.now() - joined > 12000) { NET.bad.add(rid); onlineOpenRetry(); } }, 1000);
 }
-function onlineOpenRetry() { NET.phase = 'off'; setTimeout(() => { if (!$('ovOnline').hidden) onlineOpen(); }, 300); }
+function onlineOpenRetry() {
+  const gen = NET.gen;
+  netLeave();
+  setTimeout(() => { if (NET.gen === gen + 1 && NET.phase === 'off' && !$('ovOnline').hidden) onlineOpen(true); }, 300);
+}
 function netHostWait() {
   if (NET.phase !== 'room' || !NET.host || NET.goSent) return;
   const m = NET.members, at = NET.meta.at || sNow(), inv = Object.keys(NET.meta.inv || {});
@@ -1962,6 +2446,8 @@ function netMembers(m) {
   }
   const host = NET.pl.find(id => m[id]);
   if (host === NET.uid && !NET.host) netBecomeHost();
+  // the only player left: if this page disappears too, the server removes the whole room (R13)
+  if (!netOthers().length && m[NET.uid] && !NET.odRoom && !NET.gone && NET.rref) { NET.odRoom = true; quietly(NET.rref.onDisconnect().remove()); }
 }
 function netBecomeHost() {
   NET.host = true;
@@ -1972,8 +2458,9 @@ function netBecomeHost() {
 }
 function netGo(g) {
   const m = NET.members;
-  if (!Array.isArray(g.pl) || g.pl.indexOf(NET.uid) < 0) { onlineFail(netErr('late')); return; }
+  if (!Array.isArray(g.pl) || g.pl.indexOf(NET.uid) < 0) { NET.bad.add(NET.rid); onlineOpenRetry(); return; } // started without us
   NET.phase = 'play'; NET.pl = g.pl.slice(); NET.st0 = g.st; NET.len = Math.max(10, Math.min(300, +g.len || ROUND)); NET.lastSent = ''; NET.lastSentAt = 0; NET.lat = 0; NET.latN = 0; NET.latMax = 0; G.cd = 0;
+  NET.sent = 0; NET.recv = 0;
   const seats = g.pl.map(id => ({ id, n: id === NET.uid ? NET.nick : cleanNick(m[id] && m[id].n) || '?', s: m[id] && m[id].s }));
   for (let i = 1; i <= (g.b | 0); i++) seats.push({ id: 'b' + i, n: T(RIVALS[(i + 1) % RIVALS.length].name), bot: true });
   startRound('online', NET.meta.c, { sd: NET.meta.sd, seats });
@@ -1990,7 +2477,7 @@ function netGo(g) {
 // ---- hole states
 function holeState(h) { return { x: r1(h.x), z: r1(h.z), p: h.pts, a: h.alive ? 1 : 0, v: h.inv > 0 ? 1 : 0, k: h.kills, e: h.eaten, i: document.hidden ? 1 : 0 }; }
 function netSend(force) {
-  if (!NET.rref) return;
+  if (!NET.rref || NET.gone) return;
   const up = {}; up[NET.uid] = holeState(player);
   if (NET.host) for (const h of holes) if (h.inMatch && h.isBot) up[h.nid] = holeState(h);
   const key = JSON.stringify(up), now = performance.now();
@@ -1999,7 +2486,8 @@ function netSend(force) {
   NET.lastSent = key; NET.lastSentAt = now;
   const t = Math.round(sNow());
   for (const id in up) up[id].t = t;
-  NET.rref.child('p').update(up).catch(() => {});
+  const rref = NET.rref; NET.sent++;
+  rref.child('p').update(up).catch(() => { if (rref === NET.rref) netGone(); });
 }
 function netTick() {
   if (NET.phase !== 'play') return;
@@ -2010,7 +2498,7 @@ function netTick() {
     const steps = Math.ceil(dt / 0.05); for (let i = 0; i < steps; i++) update(dt / steps);
   }
   if (!G.playing || sNow() < NET.st0) return;
-  if (now - NET.sendT < (document.hidden ? 900 : 95)) return;
+  if (now - NET.sendT < (document.hidden ? 900 : SEND_MS - 35)) return; // (the tick runs every 100 ms: every 2nd one sends)
   NET.sendT = now; netSend(false);
 }
 function netState(id, v) {
@@ -2018,8 +2506,10 @@ function netState(id, v) {
   const h = holeById(id); if (!h || !h.remote || h.left) return;
   const t = +v.t || sNow();
   if (h.net && t <= h.net.t) return;
+  NET.recv++;
   const lat = sNow() - t;
   if (lat > -500 && lat < 10000) { NET.lat += lat; NET.latN++; NET.latMax = Math.max(NET.latMax, lat); }
+  const prev = h.net;
   h.net = { t, x: +v.x || 0, z: +v.z || 0, p: Math.max(0, v.p | 0), a: !!v.a, v: !!v.v, i: !!v.i, rt: performance.now() };
   h.kills = v.k | 0; h.eaten = v.e | 0; h.inv = v.v ? 0.3 : 0;
   if (h.net.a && !h.alive && h.dying <= 0) { // respawned
@@ -2027,25 +2517,33 @@ function netState(id, v) {
     h.x = h.net.x; h.z = h.net.z; h.buf.length = 0; h.pts = h.net.p; h.stage = -1; setStage(h, true);
   } else if (!h.net.a && h.alive) { h.alive = false; h.dying = 0.45; h.killer = h.killer && h.killer.alive ? h.killer : h; }
   if (h.pts !== h.net.p) { h.pts = h.net.p; setStage(h, false); }
-  h.buf.push({ t, x: h.net.x, z: h.net.z }); if (h.buf.length > 20) h.buf.shift();
+  // after a pause in the updates (a hole that stood still sends only a heartbeat), start moving from where it stood
+  // a moment ago instead of sliding slowly over the whole gap
+  const lastB = h.buf[h.buf.length - 1];
+  if (lastB && t - lastB.t > SEND_MS * 2.2) h.buf.push({ t: t - SEND_MS, x: lastB.x, z: lastB.z });
+  h.buf.push({ t, x: h.net.x, z: h.net.z }); if (h.buf.length > 20) h.buf.splice(0, h.buf.length - 20);
+  if (!prev) { h.x = h.net.x; h.z = h.net.z; }
 }
-// draw remote holes a little in the past, between two received states (extrapolate a moment when one is late)
-function netInterp(h) {
+// draw remote holes a little in the past, between two received states; extrapolate up to 300 ms when one is late.
+// The drawn position follows that target with a short ease, so corrections never jump (big jumps snap: respawn).
+function netInterp(h, dt) {
   const b = h.buf; if (!b || !b.length || !h.alive) return;
   const rt = sNow() - INTERP;
   let x, z, i = b.length - 1;
   while (i > 0 && b[i].t > rt) i--;
   const a = b[i], c = b[i + 1];
-  if (c) { const k = (rt - a.t) / Math.max(1, c.t - a.t); x = a.x + (c.x - a.x) * k; z = a.z + (c.z - a.z) * k; }
-  else if (i > 0 && rt > a.t) { const p = b[i - 1], k = Math.min(250, rt - a.t) / Math.max(1, a.t - p.t); x = a.x + (a.x - p.x) * k; z = a.z + (a.z - p.z) * k; }
+  if (c && rt >= a.t) { const k = Math.min(1, (rt - a.t) / Math.max(1, c.t - a.t)); x = a.x + (c.x - a.x) * k; z = a.z + (c.z - a.z) * k; }
+  else if (!c && i > 0 && rt > a.t) { const p = b[i - 1], k = Math.min(300, rt - a.t) / Math.max(1, a.t - p.t); x = a.x + (a.x - p.x) * k; z = a.z + (a.z - p.z) * k; }
   else { x = a.x; z = a.z; }
-  h.x = x; h.z = z;
+  const dx = x - h.x, dz = z - h.z;
+  if (dx * dx + dz * dz > 100 || !(dt > 0)) { h.x = x; h.z = z; }
+  else { const f = 1 - Math.exp(-dt * 16); h.x += dx * f; h.z += dz * f; }
 }
 
 // ---- swallowed objects: first claim wins (transaction), everyone removes the object
 function netClaim(o, h) {
   const rref = NET.rref, id = h.nid, now = Math.round(sNow());
-  if (!rref || !id) return;
+  if (!rref || !id || NET.gone) return;
   rref.child('o/' + o.gi).transaction(cur => {
     if (cur && typeof cur.t === 'number' && now - cur.t < CLAIM_WIN) return; // already taken: abort
     return { u: id, t: now };
@@ -2083,7 +2581,7 @@ function netVictims() {
 }
 function netKill(V, A) {
   const bonus = Math.floor(V.pts * 0.4) + 10;
-  if (NET.rref) NET.rref.child('k').push({ v: V.nid, b: A.nid, p: bonus }).catch(() => {});
+  if (NET.rref && !NET.gone) quietly(NET.rref.child('k').push({ v: V.nid, b: A.nid, p: bonus }));
   V.alive = false; V.dying = 0.45; V.killer = A; V.deadT = 3;
   if (V === player) { sfx.eaten(); vibrate(120); showMsg(T('{name}に のまれた！', { name: A.name })); }
   V.pts = Math.floor(V.pts * 0.5); V.stage = stageOf(V.pts);
@@ -2102,19 +2600,28 @@ function netKillSeen(key, ev) {
 // ---- end of the round: final states, a short wait for everyone's last update, then the ranking
 function netEnd() {
   netSend(true);
-  const rref = NET.rref, gen = NET.gen;
+  const rref = NET.rref, rid = NET.rid, gen = NET.gen;
   showMsg(T('けっかを 集計中…')); $('msgN').textContent = '';
   setTimeout(() => { if (gen === NET.gen) netSend(true); }, 800); // points from late swallow confirmations
   setTimeout(() => {
     if (gen !== NET.gen) return;
     $('msg').hidden = true; showResult(true);
     NET.phase = 'done';
-    NET.offs.forEach(f => { try { f(); } catch (e) {} }); NET.offs = []; NET.timers.forEach(clearInterval); NET.timers = [];
-    // leave the room; the seat running the CPU holes deletes the room a little later
-    const host = NET.host;
-    try { const m = rref.child('m/' + NET.uid), p = rref.child('p/' + NET.uid); m.onDisconnect().cancel(); p.onDisconnect().cancel(); if (!host) { m.remove(); p.remove(); } } catch (e) {}
-    if (host) setTimeout(() => rref.remove().catch(() => {}), 6000);
-    NET.rref = null; NET.rid = null; NET.host = false;
+    netStopListening();
+    // leave the room. The seat running the CPU holes deletes the room a little later; so does a player who is the last one
+    // left (when everyone leaves at once, the onDisconnect on the room or the next sweep of this device removes it)
+    const host = NET.host, last = !netOthers().length, gone = NET.gone;
+    if (rref && !gone) {
+      try {
+        const m = rref.child('m/' + NET.uid), p = rref.child('p/' + NET.uid);
+        quietly(m.onDisconnect().cancel()); quietly(p.onDisconnect().cancel());
+        if (host || last) {
+          if (!NET.odRoom) quietly(rref.onDisconnect().remove()); // if this page closes before the timer below
+          setTimeout(() => { roomRemove(rref, rid); }, host ? 6000 : 1500);
+        } else { quietly(m.remove()); quietly(p.remove()); }
+      } catch (e) {}
+    } else if (rid) roomForget(rid);
+    NET.rref = null; NET.rid = null; NET.host = false; NET.odRoom = false;
   }, 1800);
 }
 
@@ -2144,21 +2651,35 @@ function updateCamera(dt) {
     h.label.scale.set(dist * 0.16, dist * 0.04, 1);
   }
 }
-let last = performance.now(), frames = 0, ftAcc = 0, ftN = 0, fpsLog = [];
+/* render loop: a round (and its countdown) draws every frame. Menus animate the city at 30 fps for a while after the last
+   input, then the picture stops (it is drawn again only when something changed: dirty). Paused: one frame, then nothing. */
+let last = performance.now(), frames = 0, ftAcc = 0, ftN = 0, fpsLog = [], menuAcc = 0, lastInput = performance.now();
+const MENU_ANIM_MS = 20000;
+const reduced = () => document.documentElement.getAttribute('data-kb-motion') === 'reduce' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+addEventListener('pointerdown', () => { lastInput = performance.now(); }, { capture: true, passive: true });
+addEventListener('keydown', () => { lastInput = performance.now(); }, { capture: true });
+function menuStill() { return reduced() || !$('ovHow').hidden || !!document.querySelector('.kb-layer:not([hidden])'); }
 function frame(now) {
   requestAnimationFrame(frame);
-  const t0 = performance.now();
   let dt = (now - last) / 1000; last = now;
+  if (!(dt > 0)) dt = 0;
   if (dt > 0.1) dt = 0.1;
-  frames++;
-  ftAcc += dt; ftN++;
-  if (ftAcc > 2) {
-    const avg = ftAcc / ftN; fpsLog.push(1 / avg); if (fpsLog.length > 30) fpsLog.shift();
-    if (avg > 0.024 && PR > 1) { PR = Math.max(1, PR - 0.25); renderer.setPixelRatio(PR); resize(); }
-    else if (avg > 0.04 && PR > 0.75) { PR = 0.75; renderer.setPixelRatio(PR); resize(); }
-    ftAcc = 0; ftN = 0;
+  if (glLost) return;
+  const live = G.playing && !G.paused;
+  if (!live) {
+    if (G.playing) { if (!dirty) return; dt = 0; } // paused: draw the current picture once
+    else if (now - lastInput < MENU_ANIM_MS && !menuStill()) { menuAcc += dt; if (menuAcc < 1 / 30) return; dt = Math.min(0.1, menuAcc); menuAcc = 0; }
+    else if (!dirty) return;
+    else dt = 0;
+  } else {
+    ftAcc += dt; ftN++;
+    if (ftAcc > 2) { fpsLog.push(ftN / ftAcc); if (fpsLog.length > 30) fpsLog.shift(); ftAcc = 0; ftN = 0; }
+    watchFps(dt);
   }
-  if (!G.paused) {
+  dirty = false;
+  const t0 = performance.now();
+  frames++;
+  if (dt > 0 && !G.paused) {
     const sdt = dt * G.ts;
     const steps = Math.ceil(sdt / 0.05);
     for (let i = 0; i < steps; i++) update(sdt / steps);
@@ -2182,6 +2703,36 @@ for (const r of rivals) { r.grp.visible = false; r.alive = false; r.label.visibl
 player.label.visible = false;
 showTitle();
 requestAnimationFrame(frame);
+// (?debug&olen=N is the online test hook: those test pages go straight to the online button, without the first-visit how-to)
+if (!SV.seen && !(DEBUG && /[?&]olen=\d+/.test(location.search))) openHow(true);
+// ?stage=N from the hub opens that campaign city (when it is unlocked)
+{
+  const L = P ? P.launch() : null, st = L && L.stage ? +L.stage : 0;
+  if (st >= 1 && st <= CITIES.length && isOpen(st - 1) && SV.seen) openStage(st - 1);
+}
+
+/* platform contract (common/game.js): a real-time game (flags.pause). Hidden / pagehide / context lost → the pause menu,
+   and it stays paused until つづける. Online battles keep running (they cannot be paused). */
+if (KG) {
+  KG.register({
+    id: 'hole',
+    pause() { if (G.playing && G.mode !== 'online') pauseGame(); },
+    resume() { /* stays paused until the player presses つづける */ },
+    isIdle() { return !G.playing && NET.phase === 'off'; },
+    restore() { glLost = false; last = performance.now(); resize(); dirty = true; },
+    dispose() {
+      netLeave();
+      try { renderer.dispose(); if (renderer.forceContextLoss) renderer.forceContextLoss(); } catch (e) {}
+    },
+  });
+  KG.watchGL(cv, {
+    onLost() { glLost = true; if (UI) UI.toast(T('画面が一時的に止まりました。少し待つと元に戻ります。')); },
+    onRestored() { glLost = false; last = performance.now(); resize(); dirty = true; },
+  });
+} else {
+  cv.addEventListener('webglcontextlost', e => { e.preventDefault(); glLost = true; pauseGame(); });
+  cv.addEventListener('webglcontextrestored', () => { glLost = false; resize(); dirty = true; });
+}
 
 if (DEBUG) {
   window.__hole = {
@@ -2193,14 +2744,65 @@ if (DEBUG) {
     setPts(h, p) { h.pts = p; setStage(h, false); },
     aiOff(b) { G.aiOff = b; },
     aerial(x, z, h) { G.camOv = h ? { x, z, h } : null; },
-    net: NET, sNow,
+    net: NET, sNow, normSave, migrateSave, roomsList,
     bot(b) { G.bot = b; player.ai = { think: 0, mode: 'eat', diff: 1 }; },
+    quality() { return { lv: qLv, max: qMax, pr: PR, fps: fpsMon.last || null }; }, setQuality,
   };
+  // window.__kb (GAME_QUALITY_STANDARDS.md): common/game.js made the base object, the game adds its own hooks
+  const kbState = () => ({
+    mode: G.mode === 'online' ? 'versus' : 'normal', screen: G.playing ? (G.paused ? 'paused' : 'play') : G.resultShown ? 'result' : 'menu', kind: G.mode,
+    score: Math.max(0, player.pts | 0), time: G.t, over: !G.playing && (G.resultShown || !!G.ended), stage: G.stage >= 0 ? G.stage + 1 : null,
+    paused: G.paused, playing: G.playing, pct: TOTAL_VAL ? +soloPct().toFixed(2) : 0, eaten: player.eaten, size: +(player.R * 2).toFixed(1),
+    best: SV.best.maxPts, coins: SV.coins, howto: !$('ovHow').hidden, result: !$('ovResult').hidden,
+    tutorial: tut.on || tut.done ? { step: tut.step, done: tut.done } : null, quality: qLv, frames: renderer.info.render.frame, drawn: frames,
+    net: { phase: NET.phase, sent: NET.sent, recv: NET.recv, lat: NET.latN ? Math.round(NET.lat / NET.latN) : null },
+  });
+  // advance n seconds of game time with the bot steering the player (no sound)
+  const stepSim = (n, botOn) => {
+    if (!G.playing || G.paused) return kbState();
+    const was = G.bot; G.bot = botOn !== false; if (G.bot && !player.ai) player.ai = { think: 0, mode: 'eat', diff: 1 };
+    if (G.bot) player.ai = player.ai || { think: 0, mode: 'eat', diff: 1 };
+    quiet = true;
+    try { for (let t = 0; t < (n || 1) && G.playing; t += 0.05) update(0.05); }
+    finally { quiet = false; G.bot = was; dirty = true; }
+    return kbState();
+  };
+  window.__kb = Object.assign(window.__kb || {}, {
+    ready: () => !!renderer && frames > 0,
+    state: kbState,
+    win() {
+      if (!G.playing || G.mode === 'online') return false;
+      if (tut.on) tutFinish(true);
+      if (G.mode === 'camp') G.eatVal = TOTAL_VAL * (CITIES[G.stage].stars[2] + 1) / 100;
+      else if (G.mode === 'solo') G.eatVal = TOTAL_VAL * 0.6;
+      else { player.pts = Math.max(player.pts, 5000); for (const r of rivals) if (r.alive) r.pts = Math.min(r.pts, 100); }
+      G.t = 0; endRound(); return true;
+    },
+    lose() {
+      if (!G.playing || G.mode === 'online') return false;
+      if (tut.on) tutFinish(true);
+      G.eatVal = 0; player.pts = 0; G.t = 0; endRound(); return true;
+    },
+    step: n => stepSim(n, true),
+    sim: (n, botOn) => stepSim(n, botOn),
+    tutorial: () => ({ step: tut.step, done: tut.on ? false : (tut.done || !!SV.tut), id: tut.on ? TUT[tut.step].id : null, total: TUT.length, active: tut.on, skipped: tut.skipped }),
+    skipTutorial() { if (tut.on) tutFinish(true); },
+    start(kind, stage, opt) { startRound(kind || 'match', stage == null ? 0 : stage, null, opt); return kbState(); },
+    pause: pauseGame, resume, openHow, closeHow, quit: quitRound, showTitle,
+    move(x, z) { joy.x = x; joy.y = z; joy.on = !!(x || z); },
+  });
 }
 })();
 </script>
 <script src="../firebase-config.js"></script>
 <script src="../common/cloud.js"></script>
-<script>KoboCloud.sync({ 'kusoge.hole.save': 'newest' }, { reloadOnNewer: true });</script>
+<script>
+// per-field merge from the registry (common/games.js: R4); 'newest' when the registry is missing
+(function () {
+  var P = window.KoboPlatform, map = null;
+  try { map = P && P.syncMap ? P.syncMap({ games: ['hole'], platform: false, shared: false }) : null; } catch (e) { map = null; }
+  KoboCloud.sync(map && map['kusoge.hole.save'] ? map : { 'kusoge.hole.save': 'newest' }, { reloadOnNewer: true });
+})();
+</script>
 </body>
 </html>
