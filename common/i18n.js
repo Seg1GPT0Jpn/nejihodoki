@@ -51,6 +51,39 @@
     el.appendChild(sel);
     return sel;
   }
+  // ---- fit one-screen games to the area that is really visible ----
+  // Some browsers (in-app browsers such as LINE, some Android/iOS toolbars) report a height that
+  // includes their bottom toolbar, so CSS 100% / 100dvh can put bottom buttons behind it.
+  // Measure the visible height and pin the page to it. Scrolling pages (hub, ranking) are left alone.
+  (function fitViewport() {
+    if (!/\/(neji|blocks|drop|raft|gates|n59049|water|parking|hole)\//.test(location.pathname)) return;
+    const root = document.documentElement;
+    const st = document.createElement('style');
+    st.textContent = 'html,body{height:var(--kobo-h,100%)!important;min-height:0!important;max-height:var(--kobo-h,100%)!important;overflow:hidden!important}' +
+      'body{top:0!important;bottom:auto!important}';
+    (document.head || root).appendChild(st);
+    let last = 0;
+    function measure() {
+      const vv = window.visualViewport;
+      // the smaller of the reported heights is what the user can actually see
+      let h = Math.min(window.innerHeight || 1e9, vv ? vv.height * (vv.scale || 1) : 1e9, root.clientHeight || 1e9);
+      if (!isFinite(h) || h < 200) h = window.innerHeight || 600;
+      h = Math.round(h);
+      if (h !== last) {
+        last = h; root.style.setProperty('--kobo-h', h + 'px');
+        // let canvases and 3D views re-layout
+        requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+      }
+      if (window.scrollY) window.scrollTo(0, 0);
+    }
+    measure();
+    window.addEventListener('resize', () => setTimeout(measure, 0));
+    window.addEventListener('orientationchange', () => setTimeout(measure, 300));
+    if (window.visualViewport) visualViewport.addEventListener('resize', measure);
+    document.addEventListener('DOMContentLoaded', measure);
+    window.addEventListener('load', () => { measure(); setTimeout(measure, 500); setTimeout(measure, 1500); });
+  })();
+
   window.KoboI18n = { get lang() { return lang; }, langs: LANGS, t, add, apply, set, picker };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => apply()); else apply();
 })();

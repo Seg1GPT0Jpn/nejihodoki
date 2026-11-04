@@ -1,6 +1,6 @@
 // ひまつぶし工房：オフラインでも遊べるようにするための Service Worker（全ゲーム共通）
 // ページ本体と設定は「通信優先（だめなら保存分）」、ライブラリとフォントは「保存分優先」で配る。
-const VERSION = 'kobo-v9';
+const VERSION = 'kobo-v10';
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png', './common/cloud.js', './common/i18n.js', './common/versus.js', './hole/cities.js'];
 const GAMES = ['./neji/', './blocks/', './drop/', './raft/', './gates/', './n59049/', './water/', './parking/', './hole/', './ranking/'];
