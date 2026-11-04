@@ -13,559 +13,341 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="くるま出し">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* Look: a sunny low-poly parking lot seen from a tilted bird's-eye view. WebGL draws the lot; DOM draws header, tools and cards. */
-:root {
-  --ink: #1d2a35;
-  --ink-2: #263746;
-  --line: #3b5163;
-  --paper: #f6f3ea;
-  --paper-dim: #a9bccb;
-  --sun: #ffcf3f;
-  --sun-ink: #3a2a00;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+/* Look: a sunny low-poly parking lot seen from a tilted bird's-eye view. WebGL draws the lot (same in both themes);
+   DOM draws header, tools and cards with the shared --kb-* tokens, tinted here to the parking palette (dark: night-blue
+   asphalt, light: paper and concrete) so KoboUI's menu and settings sheet match the game. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1d2a35; --kb-surface: #263746; --kb-surface-2: #2c4152; --kb-sunken: #18232c; --kb-line: #3b5163;
+  --kb-ink: #f6f3ea; --kb-dim: #a9bccb;
+  --kb-accent: #ffcf3f; --kb-accent-ink: #3a2a00; --kb-accent-text: #ffcf3f; --kb-accent-soft: rgba(255, 207, 63, .16);
+  --kb-scrim: rgba(14, 22, 30, .6); --kb-toast-bg: rgba(29, 42, 53, .94); --kb-focus: #ffcf3f;
+  --kb-shadow: 0 20px 50px rgba(0, 0, 0, .45);
+  --pk-card: linear-gradient(#2c4152, #213342); --pk-btn-shadow: #b88c12;
+  --pk-float: rgba(29, 42, 53, .92); --pk-float-ink: #f6f3ea; --pk-star-off: #3b5163; --pk-star-off-line: #2c4152;
   color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f3f1ea; --kb-surface: #ffffff; --kb-surface-2: #e8ece9; --kb-sunken: #e3e0d6; --kb-line: #cdd5d9;
+    --kb-ink: #1d2a35; --kb-dim: #4f6170;
+    --kb-accent: #ffcf3f; --kb-accent-ink: #3a2a00; --kb-accent-text: #8a6100; --kb-accent-soft: rgba(201, 150, 16, .16);
+    --kb-scrim: rgba(31, 42, 51, .42); --kb-toast-bg: rgba(29, 42, 53, .94); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 16px 40px rgba(31, 42, 51, .2);
+    --pk-card: linear-gradient(#ffffff, #f3f1ea); --pk-btn-shadow: #c99a17;
+    --pk-float: rgba(255, 255, 255, .95); --pk-float-ink: #1d2a35; --pk-star-off: #d5dbde; --pk-star-off-line: #b9c2c7;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f3f1ea; --kb-surface: #ffffff; --kb-surface-2: #e8ece9; --kb-sunken: #e3e0d6; --kb-line: #cdd5d9;
+  --kb-ink: #1d2a35; --kb-dim: #4f6170;
+  --kb-accent: #ffcf3f; --kb-accent-ink: #3a2a00; --kb-accent-text: #8a6100; --kb-accent-soft: rgba(201, 150, 16, .16);
+  --kb-scrim: rgba(31, 42, 51, .42); --kb-toast-bg: rgba(29, 42, 53, .94); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 16px 40px rgba(31, 42, 51, .2);
+  --pk-card: linear-gradient(#ffffff, #f3f1ea); --pk-btn-shadow: #c99a17;
+  --pk-float: rgba(255, 255, 255, .95); --pk-float-ink: #1d2a35; --pk-star-off: #d5dbde; --pk-star-off-line: #b9c2c7;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 [hidden] { display: none !important; }
 body {
-  margin: 0; color: var(--paper); font-family: var(--font-body); background: var(--ink);
+  margin: 0; color: var(--kb-ink); font-family: var(--kb-font-body); background: var(--kb-bg);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent; overflow: hidden; overscroll-behavior: none;
 }
-#app {
-  position: fixed; inset: 0; display: flex; flex-direction: column;
-  padding: 0;
-}
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0; }
 header {
-  display: flex; align-items: center; gap: 6px; flex: none; background: var(--ink);
-  padding: max(8px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: 6px; flex: none; background: var(--kb-bg);
+  padding: max(4px, var(--kb-sat)) max(10px, var(--kb-sar)) 4px max(10px, var(--kb-sal));
 }
 .back {
-  color: var(--paper-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
-  padding: 6px 8px; margin-left: -4px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-height: 44px; min-width: 44px; flex: none;
+  color: var(--kb-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
+  padding: 0 8px 0 4px; margin-left: -4px; border-radius: 12px;
 }
-.back:active { background: var(--ink-2); }
+.back svg { width: 22px; height: 22px; flex: none; }
+.back:active { background: var(--kb-surface); }
 .hud { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .chip {
-  display: flex; align-items: baseline; gap: 4px; background: var(--ink-2); border: 1px solid var(--line);
-  border-radius: 999px; padding: 4px 10px; white-space: nowrap; font-size: 11px; font-weight: 800; color: var(--paper-dim);
+  display: flex; align-items: baseline; gap: 4px; background: var(--kb-surface); border: 1px solid var(--kb-line);
+  border-radius: 999px; padding: 4px 10px; white-space: nowrap; font-size: 11px; font-weight: 800; color: var(--kb-dim);
 }
-.chip b { font-family: var(--font-display); font-weight: 400; font-size: 16px; color: var(--paper); font-variant-numeric: tabular-nums; }
-.chip b.lv { color: var(--sun); }
-.chip .par { color: var(--paper-dim); font-size: 11px; }
+.chip b { font-family: var(--kb-font-display); font-weight: 400; font-size: 16px; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.chip b.lv { color: var(--kb-accent-text); }
+.chip .par { color: var(--kb-dim); font-size: 11px; }
 .icon {
-  width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2);
-  color: var(--paper); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none;
+  width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-surface);
+  color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; touch-action: manipulation;
 }
-.icon svg { width: 20px; height: 20px; }
+.icon svg { width: 22px; height: 22px; }
 .icon:active { transform: scale(.94); }
-.back:focus-visible, .icon:focus-visible, .tool:focus-visible, .btn:focus-visible, .lvbtn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+.back:focus-visible, .icon:focus-visible, .tool:focus-visible, .btn:focus-visible, .lvbtn:focus-visible, .skip:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.mode-bar {
+  flex: none; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 4px; max-width: calc(100% - 24px);
+  padding: 3px 12px; border-radius: 999px; background: var(--kb-accent-soft); border: 1px solid var(--kb-accent);
+  color: var(--kb-ink); font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden;
+}
+.mode-bar svg { width: 15px; height: 15px; flex: none; color: var(--kb-accent-text); }
+.mode-bar span { overflow: hidden; text-overflow: ellipsis; }
+.mode-bar b { color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
 #play { position: relative; flex: 1; min-height: 0; touch-action: none; background: #7fbf63; }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .tip {
   position: absolute; left: 50%; top: 8px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px);
-  background: rgba(29,42,53,.9); border: 1px solid var(--line); color: var(--paper); font-weight: 800; font-size: 13px; line-height: 1.45;
+  background: var(--pk-float); border: 1px solid var(--kb-line); color: var(--pk-float-ink); font-weight: 800; font-size: 13px; line-height: 1.45;
   padding: 8px 14px; border-radius: 14px; pointer-events: none; text-align: center; transition: opacity .3s;
 }
 .tip.off { opacity: 0; }
+/* tutorial coach: one real move at a time on the first two stages */
+.coach {
+  position: absolute; left: 50%; top: 8px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 16px);
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 10px; border-radius: 16px;
+  background: var(--pk-float); color: var(--pk-float-ink); border: 2px solid var(--kb-accent); box-shadow: 0 6px 18px rgba(0,0,0,.22);
+  animation: rise .3s cubic-bezier(.2,1.3,.4,1);
+}
+.coach .step { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 14px var(--kb-font-display); }
+.coach p { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.coach p small { display: block; font-size: 11.5px; font-weight: 500; opacity: .8; margin-top: 1px; }
+.skip {
+  flex: none; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--kb-line); background: transparent;
+  color: inherit; font: 800 13px var(--kb-font-body); cursor: pointer; touch-action: manipulation;
+}
 .toast {
-  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: rgba(29,42,53,.94); border: 1px solid var(--line);
-  color: var(--paper); font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; pointer-events: none;
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: var(--kb-toast-bg); border: 1px solid var(--kb-line);
+  color: #f6f3ea; font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; pointer-events: none;
   width: max-content; max-width: calc(100% - 24px); text-align: center; line-height: 1.4;
   transition: opacity .2s;
 }
+.toast.gold { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
 .toast.off { opacity: 0; }
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; flex: none; background: var(--ink);
-  padding: 8px max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
-.tool {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 4px 6px;
-  border-radius: 14px; border: 1px solid var(--line); background: var(--ink-2); color: var(--paper);
-  font: 800 12px var(--font-body); cursor: pointer; min-width: 0;
+/* WebGL unavailable / lost: a clear notice instead of a blank lot */
+.nogl {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 5;
+  background: var(--kb-bg); color: var(--kb-ink); text-align: center;
 }
-.tool span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tool svg { width: 22px; height: 22px; }
+.nogl > div { max-width: 320px; }
+.nogl svg { width: 56px; height: 56px; color: var(--kb-accent-text); }
+.nogl h2 { margin: 6px 0 8px; font-family: var(--kb-font-display); font-weight: 400; font-size: 20px; letter-spacing: .04em; }
+.nogl p { margin: 0; color: var(--kb-dim); font-size: 14px; font-weight: 800; line-height: 1.55; }
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; flex: none; background: var(--kb-bg);
+  padding: 8px max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.tool {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 6px 4px;
+  border-radius: 14px; border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink);
+  font: 800 12px var(--kb-font-body); cursor: pointer; min-width: 0; touch-action: manipulation;
+}
+.tool span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
+.tool svg { width: 22px; height: 22px; flex: none; }
 .tool:active { transform: translateY(2px); }
-.tool:disabled { opacity: .4; cursor: default; }
+.tool:disabled { opacity: .45; cursor: default; }
 .tool .n {
   position: absolute; top: -6px; right: 6px; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
-  background: var(--sun); color: var(--sun-ink); font: 400 12px/20px var(--font-display);
+  background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 12px/20px var(--kb-font-display); font-style: normal;
 }
 .overlay {
-  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;
-  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  background: rgba(14,22,30,.6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 30; height: var(--kb-vh);
+  padding: max(12px, var(--kb-sat)) max(12px, var(--kb-sar)) max(12px, var(--kb-sab)) max(12px, var(--kb-sal));
+  background: var(--kb-scrim); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
   animation: fade .3s ease-out;
 }
 .card {
-  width: min(330px, 100%); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; background: linear-gradient(#2c4152, #213342);
-  border: 1px solid var(--line); border-radius: 22px; padding: 22px 20px 18px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.45);
+  width: min(340px, 100%); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; background: var(--pk-card);
+  border: 1px solid var(--kb-line); border-radius: 22px; padding: 22px 20px 16px; text-align: center; box-shadow: var(--kb-shadow); color: var(--kb-ink);
   animation: rise .35s cubic-bezier(.2,1.4,.4,1);
 }
-.card h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: .05em; }
+.card h2 { margin: 0 0 10px; font-family: var(--kb-font-display); font-weight: 400; font-size: 25px; letter-spacing: .05em; line-height: 1.2; overflow-wrap: anywhere; }
 .stars { display: flex; justify-content: center; gap: 6px; margin: 4px 0 10px; }
 .stars svg { width: 46px; height: 46px; }
+.stars svg path { fill: var(--pk-star-off); stroke: var(--pk-star-off-line); }
+.stars svg.on path { fill: #ffcf3f; stroke: #b88c12; }
 .stars svg.on { animation: pop .45s cubic-bezier(.2,1.6,.4,1) both; }
 .stars svg:nth-child(2) { margin-top: -10px; animation-delay: .12s; }
 .stars svg:nth-child(3) { animation-delay: .24s; }
-.result { color: var(--paper-dim); font-size: 14px; font-weight: 800; }
-.result b { color: var(--paper); font-family: var(--font-display); font-weight: 400; font-size: 20px; }
+.result { color: var(--kb-dim); font-size: 14px; font-weight: 800; }
+.result b { color: var(--kb-ink); font-family: var(--kb-font-display); font-weight: 400; font-size: 20px; }
+#dres h2 { font-size: 22px; }
+.gain { display: inline-block; margin: 8px auto 0; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; }
+.big { font-family: var(--kb-font-display); font-size: clamp(28px, 9vw, 40px); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sub-line { margin-top: 6px; color: var(--kb-dim); font-size: 13px; font-weight: 800; }
+.lots { display: flex; justify-content: center; gap: 8px; margin: 12px 0 2px; flex-wrap: wrap; }
+.lots span { min-width: 78px; padding: 6px 8px; border-radius: 12px; background: var(--kb-surface); border: 1px solid var(--kb-line); font-size: 11px; font-weight: 800; color: var(--kb-dim); }
+.lots span i { display: block; font-style: normal; color: var(--kb-accent-text); font-size: 15px; letter-spacing: 1px; }
 .btn {
-  display: block; width: 100%; margin-top: 16px; border: 0; border-radius: 14px; padding: 13px; cursor: pointer;
-  font: 800 17px var(--font-body); background: var(--sun); color: var(--sun-ink); box-shadow: 0 4px 0 #b88c12;
+  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px; margin-top: 16px; border: 0; border-radius: 14px; padding: 10px 14px; cursor: pointer;
+  font: 800 17px var(--kb-font-body); background: var(--kb-accent); color: var(--kb-accent-ink); box-shadow: 0 4px 0 var(--pk-btn-shadow); text-decoration: none; touch-action: manipulation;
 }
-.btn.sub { background: var(--ink-2); color: var(--paper); box-shadow: 0 4px 0 #142029; border: 1px solid var(--line); margin-top: 10px; }
-.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b88c12; }
+.btn.sub { min-height: 46px; margin-top: 10px; font-size: 15px; background: transparent; color: var(--kb-ink); border: 1px solid var(--kb-line); box-shadow: none; }
+.btn.link { min-height: 44px; margin-top: 6px; font-size: 14px; background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--pk-btn-shadow); }
+.btn.sub:active, .btn.link:active { transform: scale(.98); box-shadow: none; }
 .lvgrid { flex: 1 1 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; overflow-y: auto; padding: 4px 2px 6px; min-height: 0; overscroll-behavior: contain; }
 .lvbtn {
-  border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); color: var(--paper); padding: 7px 0 4px; cursor: pointer;
-  font: 400 16px var(--font-display); display: flex; flex-direction: column; align-items: center; gap: 1px;
+  min-height: 48px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink); padding: 6px 0 3px; cursor: pointer;
+  font: 400 16px var(--kb-font-display); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; touch-action: manipulation;
 }
-.lvbtn.cur { border-color: var(--sun); box-shadow: inset 0 0 0 1px var(--sun); }
-.lvbtn i { font-style: normal; font: 800 9px var(--font-body); color: var(--sun); letter-spacing: 1px; min-height: 11px; }
+.lvbtn.cur { border-color: var(--kb-accent); box-shadow: inset 0 0 0 1px var(--kb-accent); }
+.lvbtn i { font-style: normal; font: 800 9px var(--kb-font-body); color: var(--kb-accent-text); letter-spacing: 1px; min-height: 11px; }
 .card > .btn { flex: none; }
-.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; font-size: 12px; font-weight: 800; color: var(--paper-dim); flex: none; }
-.langrow select { background: var(--ink-2); color: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: 800 14px var(--font-body); }
+.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; font-size: 12px; font-weight: 800; color: var(--kb-dim); flex: none; }
+.langrow select { min-height: 44px; background: var(--kb-surface); color: var(--kb-ink); border: 1px solid var(--kb-line); border-radius: 10px; padding: 6px 10px; font: 800 14px var(--kb-font-body); }
+/* how to play */
+.howto h2 { margin-bottom: 8px; }
+.howto ol { list-style: none; margin: 0; padding: 0; text-align: left; display: grid; gap: 10px; }
+.howto li { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; background: var(--kb-surface); border: 1px solid var(--kb-line); }
+.howto li svg { flex: none; width: 64px; height: 48px; }
+.howto li p { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
+.howto li p small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 2px; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); } }
-@media (prefers-reduced-motion: reduce) { .overlay, .card, .stars svg.on { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .overlay, .card, .coach, .stars svg.on { animation: none; } .tip, .toast { transition: none; } }
 /* online battle entry (common/versus.js) */
 .vs-slot { display: contents; }
-@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
-/* narrow phones: the battle button takes header room, so the move chip drops its label and the chips tighten */
-@media (max-width: 430px) { header { gap: 4px; } .hud { gap: 4px; } .chip { padding: 4px 7px; gap: 3px; } .chip .mlabel { display: none; } }
-@media (max-width: 340px) { .back { font-size: 11px; padding: 6px 2px; margin-left: -2px; min-width: 0; overflow: hidden; text-overflow: ellipsis; } .chip .lvlabel { display: none; } .hud { flex: 1 0 auto; } .chip { padding: 4px 5px; } .chip b { font-size: 14px; } .chip .par { font-size: 10px; } }
-@media (max-width: 370px) { .back { font-size: 12px; padding: 6px 4px; } .chip { padding: 4px 8px; } .chip b { font-size: 15px; } }
-@media (max-height: 600px) { .tool span { display: none; } }
-/* fit the visible viewport on phones (browser bars included) */
-@supports (height: 100dvh) { html, body { height: 100dvh; } }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+/* narrow phones: the header holds back, two chips, battle, sound and menu; labels give way first */
+@media (max-width: 430px) { header { gap: 4px; } .hud { gap: 4px; } .chip { padding: 4px 7px; gap: 3px; } .chip .mlabel { display: none; } .back span { display: none; } .back { padding: 0; } }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+@media (max-width: 370px) { .chip { padding: 4px 6px; } .chip b { font-size: 15px; } }
+/* the sound toggle is also in the menu (settings: mute and volume), so the narrowest phones drop the shortcut */
+@media (max-width: 350px) { #sound { display: none; } .chip .lvlabel { display: none; } .chip .par { font-size: 10px; } }
+/* short screens: the tools keep their labels, the icon and padding shrink (44px tall) */
+@media (max-height: 640px) {
+  .tools { padding-top: 6px; gap: 6px; }
+  .tool { min-height: 44px; padding: 3px 4px; gap: 1px; font-size: 11px; }
+  .tool svg { width: 18px; height: 18px; }
+  .howto li { padding: 6px 8px; } .howto li svg { width: 52px; height: 40px; }
+  .card { padding-top: 16px; padding-bottom: 12px; } .card h2 { font-size: 22px; margin-bottom: 8px; }
+  .stars svg { width: 40px; height: 40px; }
+}
+/* landscape phones: icon beside the label, the how-to steps side by side */
+@media (max-height: 440px) {
+  .tool { flex-direction: row; gap: 6px; }
+  .howto ol { grid-template-columns: 1fr 1fr 1fr; gap: 6px; } .howto li { flex-direction: column; text-align: center; gap: 4px; }
+  .card { width: min(560px, 100%); } .card.narrow { width: min(380px, 100%); }
+  .btn { margin-top: 10px; min-height: 46px; }
+}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+    <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
     <div class="hud">
-      <div class="chip"><span class="lvlabel">Lv</span><b class="lv" id="lvl">1</b></div>
+      <div class="chip"><span class="lvlabel" id="lvlabel">Lv</span><b class="lv" id="lvl">1</b></div>
       <div class="chip"><span class="mlabel" data-i18n>手数</span><b id="moves">0</b><span class="par" id="par">/ 目標 0</span></div>
     </div>
     <span id="vsSlot" class="vs-slot"></span>
     <button class="icon" id="sound" type="button" aria-label="サウンド" data-i18n-attr="aria-label" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
+  <div class="mode-bar" id="modeBar" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span id="modeText"></span></div>
   <div id="play">
     <canvas id="cv" data-i18n-attr="aria-label" aria-label="駐車場。車をタップすると矢印の向きへ走る"></canvas>
     <div class="tip off" id="tip"></div>
-    <div class="toast off" id="toast"></div>
+    <div class="coach" id="coach" hidden role="status" aria-live="polite">
+      <span class="step" id="coachStep">1</span>
+      <p id="coachText"></p>
+      <button class="skip" id="coachBtn" type="button" data-i18n>スキップ</button>
+    </div>
+    <div class="toast off" id="toast" role="status" aria-live="polite"></div>
+    <div class="nogl" id="nogl" hidden role="alert">
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16l1.6-5.2A2 2 0 0 1 8.5 9.4h7a2 2 0 0 1 1.9 1.4L19 16"/><rect x="3.5" y="16" width="17" height="3.5" rx="1.2"/><path d="M7 19.5v1.5M17 19.5v1.5M3 3l18 18"/></svg>
+        <h2 id="noglTitle"></h2>
+        <p id="noglText"></p>
+        <button class="btn" id="noglBtn" type="button" data-i18n>再読み込み</button>
+      </div>
+    </div>
   </div>
   <div class="tools">
     <button class="tool" id="undo" type="button" aria-label="一手戻す" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-      <span data-i18n>戻す</span><em class="n" id="undoN">3</em>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      <span data-i18n>戻す</span><em class="n" id="undoN" aria-hidden="true">3</em>
     </button>
     <button class="tool" id="hint" type="button" aria-label="ヒント" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
-      <span data-i18n>ヒント</span><em class="n" id="hintN">3</em>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
+      <span data-i18n>ヒント</span><em class="n" id="hintN" aria-hidden="true">3</em>
     </button>
     <button class="tool" id="restart" type="button" aria-label="リスタート" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
       <span data-i18n>リスタート</span>
     </button>
     <button class="tool" id="levels" type="button" aria-label="ステージ選択" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
       <span data-i18n>ステージ</span>
     </button>
   </div>
 </div>
 <div class="overlay" id="win" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
-  <div class="card">
+  <div class="card narrow">
     <h2 id="winTitle" data-i18n>ぜんぶ出た！</h2>
     <div class="stars" id="winStars"></div>
     <div class="result" data-i18n-html>手数 <b id="winMoves">0</b> ／ 目標 <b id="winPar">0</b></div>
+    <div class="gain" id="winGain" hidden></div>
     <button class="btn" id="next" type="button" data-i18n>次のステージへ</button>
     <button class="btn sub" id="again" type="button" data-i18n>もう一度</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="dres" hidden role="dialog" aria-modal="true" aria-labelledby="dresTitle">
+  <div class="card narrow">
+    <h2 id="dresTitle" data-i18n>今日のチャレンジ クリア！</h2>
+    <div class="sub-line" id="dresDate"></div>
+    <div class="big" id="dresScore">0</div>
+    <div class="lots" id="dresLots"></div>
+    <div class="sub-line" id="dresBest"></div>
+    <button class="btn" id="dresAgain" type="button" data-i18n>もう一度挑戦</button>
+    <button class="btn sub" id="dresNormal" type="button" data-i18n>ふつうのステージへ</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
 <div class="overlay" id="select" hidden role="dialog" aria-modal="true" aria-labelledby="selTitle">
   <div class="card">
     <h2 id="selTitle" data-i18n>ステージ</h2>
     <div class="lvgrid" id="lvgrid"></div>
+    <button class="btn sub" id="selDaily" type="button" data-i18n>今日のチャレンジ</button>
     <div class="langrow"><span data-i18n>言語 / Language</span><span id="langPick"></span></div>
     <button class="btn sub" id="selClose" type="button" data-i18n>とじる</button>
   </div>
 </div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <ol>
+      <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="44" rx="6" fill="#5c6371"/><rect x="24" y="16" width="16" height="26" rx="4" fill="#3fb7f2"/><path d="M32 20l-5 7h10z" fill="#fff"/><path d="M32 13V4" stroke="#ffcf3f" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 3"/><circle cx="44" cy="34" r="5" fill="none" stroke="#ffcf3f" stroke-width="2.4"/></svg>
+        <p data-i18n-html>車を<b>タップ</b>すると、<b>矢印の向き</b>へ走る<small>前へだけ。後ろには下がれません</small></p></li>
+      <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="44" rx="6" fill="#5c6371"/><rect x="6" y="18" width="24" height="12" rx="3" fill="#ff5a5f"/><path d="M27 24l-6-4v8z" fill="#fff"/><rect x="34" y="8" width="12" height="24" rx="3" fill="#68d16b"/><path d="M40 11l-4 6h8z" fill="#fff"/><path d="M31 15l2 3M31 33l2-3" stroke="#ffcf3f" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <p data-i18n-html>前がふさがっていたら、<b>じゃまな車から先に</b>出す<small>ぶつかる手前で止まる。順番がカギ</small></p></li>
+      <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="44" rx="6" fill="#5c6371"/><g fill="#ffcf3f" stroke="#b88c12" stroke-width="1"><path d="M16 14l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z"/><path d="M32 8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L32 22.8l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z"/><path d="M48 14l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z"/></g><rect x="8" y="34" width="48" height="8" rx="4" fill="#263746"/><path d="M15 38h4M30 38h4M45 38h4" stroke="#f6f3ea" stroke-width="2" stroke-linecap="round"/></svg>
+        <p data-i18n-html><b>全部の車を出したら</b>クリア<small>少ない手数ほど星が増える。下の「戻す」「ヒント」も使える</small></p></li>
+    </ol>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-/* CORE-BEGIN : pure puzzle logic (no DOM). Grid cell types, sliding rules, solver, seeded generator. */
-const Core = (() => {
-  const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0]; // 0 up(far) 1 right 2 down(near) 3 left
-  const T_EMPTY = 0, T_CONE = 1, T_PILLAR = 2, T_TURN = 3;
-
-  function rng32(a) {
-    return function () {
-      a |= 0; a = a + 0x6D2B79F5 | 0;
-      let t = Math.imul(a ^ a >>> 15, 1 | a);
-      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-  }
-
-  // state: Int8Array [x,y,d]*nCars ; x = -1 means the car has left
-  function makeState(lv) {
-    const s = new Int8Array(lv.cars.length * 3);
-    lv.cars.forEach((c, i) => { s[i * 3] = c.x; s[i * 3 + 1] = c.y; s[i * 3 + 2] = c.d; });
-    return s;
-  }
-  function aliveCount(s) { let n = 0; for (let i = 0; i < s.length; i += 3) if (s[i] >= 0) n++; return n; }
-  function buildOcc(lv, s) {
-    const W = lv.W, o = new Int16Array(W * lv.H);
-    for (let i = 0; i < lv.lens.length; i++) {
-      const x = s[i * 3]; if (x < 0) continue;
-      const y = s[i * 3 + 1], h = s[i * 3 + 2] & 1, L = lv.lens[i];
-      for (let k = 0; k < L; k++) o[(y + (h ? 0 : k)) * W + x + (h ? k : 0)] = i + 1;
-    }
-    return o;
-  }
-  function cellsOf(x, y, d, L) {
-    const h = d & 1, out = [];
-    for (let k = 0; k < L; k++) out.push([x + (h ? k : 0), y + (h ? 0 : k)]);
-    return out;
-  }
-  // Drive car i toward direction m (must be along its axis). left = cars already gone.
-  function slide(lv, s, o, i, m, left) {
-    const x = s[i * 3], y = s[i * 3 + 1], L = lv.lens[i], W = lv.W, H = lv.H;
-    let lx = x, ly = y;
-    if (m === 1) lx = x + L - 1; else if (m === 2) ly = y + L - 1;
-    for (let k = 1; ; k++) {
-      const cx = lx + DX[m] * k, cy = ly + DY[m] * k;
-      if (cx < 0 || cy < 0 || cx >= W || cy >= H) {
-        if (lv.barrier && lv.barrier.side === m && left < lv.barrier.need) return { exit: false, k: k - 1, hit: 'barrier' };
-        return { exit: true, k: k - 1 };
-      }
-      const t = lv.grid[cy * W + cx];
-      if (t === T_CONE || t === T_PILLAR) return { exit: false, k: k - 1, hit: 'block', hx: cx, hy: cy };
-      const oc = o[cy * W + cx];
-      if (oc && oc !== i + 1) return { exit: false, k: k - 1, hit: 'car', car: oc - 1 };
-    }
-  }
-  // Turntable: rotate car 90° clockwise around the turntable cell it covers.
-  function rotTarget(lv, s, o, i) {
-    const x = s[i * 3], y = s[i * 3 + 1], d = s[i * 3 + 2], L = lv.lens[i], W = lv.W, H = lv.H;
-    const cs = cellsOf(x, y, d, L);
-    let tx = -1, ty = -1;
-    for (const [cx, cy] of cs) if (lv.grid[cy * W + cx] === T_TURN) { tx = cx; ty = cy; break; }
-    if (tx < 0) return null;
-    let mx = 99, my = 99;
-    for (const [cx, cy] of cs) {
-      const nx = tx - (cy - ty), ny = ty + (cx - tx);
-      if (nx < 0 || ny < 0 || nx >= W || ny >= H) return { ok: false, tx, ty };
-      const t = lv.grid[ny * W + nx];
-      if (t === T_CONE || t === T_PILLAR) return { ok: false, tx, ty, hx: nx, hy: ny };
-      const oc = o[ny * W + nx];
-      if (oc && oc !== i + 1) return { ok: false, tx, ty, car: oc - 1 };
-      mx = Math.min(mx, nx); my = Math.min(my, ny);
-    }
-    return { ok: true, x: mx, y: my, d: (d + 1) & 3, tx, ty };
-  }
-
-  // Cars only ever drive forward (the way their arrow points); there is no reversing anywhere.
-  // Remove every car that can drive straight out forward, in waves, until none can. Returns number of waves.
-  function closure(lv, s, exits) {
-    const nc = lv.lens.length; let waves = 0;
-    for (;;) {
-      const o = buildOcc(lv, s), left = nc - aliveCount(s), rm = [];
-      for (let i = 0; i < nc; i++) {
-        if (s[i * 3] < 0) continue;
-        const d = s[i * 3 + 2];
-        if (slide(lv, s, o, i, d, left).exit) rm.push([i, d]);
-      }
-      if (!rm.length) return waves;
-      waves++;
-      for (const [i, m] of rm) { s[i * 3] = -1; if (exits) exits.push({ i, m }); }
-    }
-  }
-  const keyOf = s => String.fromCharCode.apply(null, s);
-
-  // Dijkstra over states; exits are applied greedily (closure), branching only on partial forward slides and rotations.
-  // Returns { taps, moves:[{i,m}|{i,rot:1}], waves, partial, nodes } or null (unsolvable / over cap).
-  function solve(lv, s0, cap) {
-    cap = cap || 40000;
-    const nc = lv.lens.length;
-    const st0 = Int8Array.from(s0), ex0 = [];
-    const w0 = closure(lv, st0, ex0);
-    const S = [st0], G = [ex0.length], P = [-1], M = [ex0], WV = [w0], PA = [0], done = [false];
-    const idx = new Map([[keyOf(st0), 0]]);
-    const heap = [[ex0.length, 0]];
-    const push = (it) => { heap.push(it); let c = heap.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (heap[p][0] <= heap[c][0]) break; [heap[p], heap[c]] = [heap[c], heap[p]]; c = p; } };
-    const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0; for (;;) { const l = c * 2 + 1, r = l + 1; let m = c; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top; };
-    while (heap.length) {
-      const [g, id] = pop();
-      if (done[id] || g > G[id]) continue;
-      done[id] = true;
-      const s = S[id];
-      if (aliveCount(s) === 0) {
-        const moves = []; let n = id;
-        while (n >= 0) { moves.unshift(...M[n]); n = P[n]; }
-        return { taps: g, moves, waves: WV[id], partial: PA[id], nodes: S.length };
-      }
-      const o = buildOcc(lv, s), left = nc - aliveCount(s);
-      const relax = (ns, first) => {
-        const ex = []; const w = closure(lv, ns, ex);
-        const ng = g + 1 + ex.length, k = keyOf(ns);
-        let j = idx.get(k);
-        if (j === undefined) {
-          j = S.length; idx.set(k, j);
-          S.push(ns); G.push(ng); P.push(id); M.push([first, ...ex]); WV.push(WV[id] + w); PA.push(PA[id] + 1); done.push(false);
-          push([ng, j]);
-        } else if (!done[j] && ng < G[j]) {
-          G[j] = ng; P[j] = id; M[j] = [first, ...ex]; WV[j] = WV[id] + w; PA[j] = PA[id] + 1; push([ng, j]);
-        }
-      };
-      for (let i = 0; i < nc; i++) {
-        if (s[i * 3] < 0) continue;
-        const d = s[i * 3 + 2];
-        const r = slide(lv, s, o, i, d, left);   // forward only
-        if (r.k > 0 && !r.exit) {
-          const ns = Int8Array.from(s); ns[i * 3] += DX[d] * r.k; ns[i * 3 + 1] += DY[d] * r.k;
-          relax(ns, { i, m: d });
-        }
-        const rt = rotTarget(lv, s, o, i);
-        if (rt && rt.ok) {
-          const ns = Int8Array.from(s); ns[i * 3] = rt.x; ns[i * 3 + 1] = rt.y; ns[i * 3 + 2] = rt.d;
-          relax(ns, { i, rot: 1 });
-        }
-      }
-      if (S.length > cap) return null;
-    }
-    return null;
-  }
-
-  // ---------- Levels ----------
-  const SIZES = [[4, 6, 6], [12, 6, 7], [22, 7, 7], [35, 7, 8], [55, 7, 9], [75, 8, 9], [100, 8, 10], [130, 9, 10], [160, 9, 11]];
-  // salt (optional, 32-bit): another lot for the same level number (online battles); 0 = the normal stages
-  function config(n, salt) {
-    let W = 6, H = 6;
-    for (const [from, w, h] of SIZES) if (n >= from) { W = w; H = h; }
-    const r = rng32((n * 7919 + 17) ^ (salt | 0));
-    const t = Math.min(1, (n - 4) / 150);
-    const c = {
-      n, W, H,
-      fill: Math.min(0.9, 0.5 + 0.4 * Math.sqrt(t)),
-      truckP: n < 8 ? 0 : Math.min(0.3, 0.12 + t * 0.2),
-      cones: n < 16 ? 0 : (n === 16 ? 2 : Math.floor(r() * (2 + Math.min(3, n / 40)))),
-      barrier: n === 30 || (n > 30 && r() < 0.45),
-      turn: n === 50 ? 1 : (n > 50 && r() < 0.4 ? (n > 120 && r() < 0.4 ? 2 : 1) : 0),
-      cat: n === 70 || (n > 70 && r() < 0.35),
-      bias: 0.3 + 0.5 * t,
-    };
-    // target difficulty band rises steadily with level
-    c.lo = 10 + 27 * Math.pow(Math.min(1, (n - 4) / 196), 0.9);
-    c.hi = c.lo + 2.5 + c.lo * 0.1;
-    return c;
-  }
-  function difficulty(sol, nc) { return sol.taps * 0.4 + sol.waves * 3 + sol.partial * 4; }
-
-  function randomLot(c, r) {
-    const W = c.W, H = c.H, grid = new Uint8Array(W * H), occ = new Int16Array(W * H), cars = [];
-    const ri = n => Math.floor(r() * n);
-    const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !occ[y * W + x] && grid[y * W + x] !== T_CONE && grid[y * W + x] !== T_PILLAR;
-    const put = (x, y, d, L) => {
-      const cs = cellsOf(x, y, d, L);
-      if (!cs.every(([a, b]) => free(a, b))) return false;
-      cars.push({ x, y, d, len: L }); cs.forEach(([a, b]) => occ[b * W + a] = cars.length); return true;
-    };
-    // forward-only: a car whose lane ahead is empty right now can always leave before every car parked earlier,
-    // so parking each new car facing a clear lane keeps the lot solvable (leave in reverse parking order)
-    const clearAhead = (x, y, d, L) => {
-      let fx = x + (d === 1 ? L - 1 : 0), fy = y + (d === 2 ? L - 1 : 0);
-      for (;;) {
-        fx += DX[d]; fy += DY[d];
-        if (fx < 0 || fy < 0 || fx >= W || fy >= H) return true;
-        if (occ[fy * W + fx] || grid[fy * W + fx] === T_CONE || grid[fy * W + fx] === T_PILLAR) return false;
-      }
-    };
-    for (let k = 0; k < c.turn; k++) {
-      for (let tries = 0; tries < 30; tries++) {
-        const tx = 1 + ri(W - 2), ty = 1 + ri(H - 2);
-        let bad = false;
-        for (let yy = ty - 1; yy <= ty + 1; yy++) for (let xx = tx - 1; xx <= tx + 1; xx++) if (grid[yy * W + xx]) bad = true;
-        if (bad) continue;
-        grid[ty * W + tx] = T_TURN;
-        const h = r() < 0.5, L = 2, back = r() < 0.5;
-        const x = h ? tx - (back ? 1 : 0) : tx, y = h ? ty : ty - (back ? 1 : 0);
-        const d = h ? (r() < 0.5 ? 1 : 3) : (r() < 0.5 ? 0 : 2);
-        if (put(x, y, d, L) && r() < 0.6) {
-          // lock its lane with cones so the turntable matters
-          for (const sgn of [-1, 1]) {
-            const dist = 1 + ri(2);
-            const ex = h ? (sgn < 0 ? x - dist : x + L - 1 + dist) : x, ey = h ? y : (sgn < 0 ? y - dist : y + L - 1 + dist);
-            if (free(ex, ey) && grid[ey * W + ex] === 0) grid[ey * W + ex] = r() < 0.5 ? T_CONE : T_PILLAR;
-          }
-        }
-        break;
-      }
-    }
-    for (let k = 0; k < c.cones; k++) {
-      const x = ri(W), y = ri(H);
-      if (free(x, y) && grid[y * W + x] === 0) grid[y * W + x] = r() < 0.6 ? T_CONE : T_PILLAR;
-    }
-    const order = [];
-    for (let i = 0; i < W * H; i++) order.push(i);
-    for (let i = order.length - 1; i > 0; i--) { const j = ri(i + 1); [order[i], order[j]] = [order[j], order[i]]; }
-    for (const p of order) {
-      const x = p % W, y = (p / W) | 0;
-      if (!free(x, y) || r() > c.fill) continue;
-      const L = r() < c.truckP ? 3 : 2;
-      // bias: cars near the rim tend to park parallel to it, forming walls that must be opened in order
-      const ex = Math.min(x, W - 1 - x), ey = Math.min(y, H - 1 - y);
-      const h0 = r() < (c.bias || 0) ? ey < ex || (ey === ex && r() < 0.5) : r() < 0.5;
-      done: for (const h of [h0, !h0]) {
-        const offs = []; for (let j = 0; j < L; j++) offs.push(j);
-        for (let j = offs.length - 1; j > 0; j--) { const q = ri(j + 1); [offs[j], offs[q]] = [offs[q], offs[j]]; }
-        for (const j of offs) {
-          const ax = h ? x - j : x, ay = h ? y : y - j;
-          const ds = h ? (r() < 0.5 ? [1, 3] : [3, 1]) : (r() < 0.5 ? [0, 2] : [2, 0]);
-          const d = ds.find(dd => clearAhead(ax, ay, dd, L));
-          if (d !== undefined && put(ax, ay, d, L)) break done;
-        }
-      }
-    }
-    return { W, H, grid, cars };
-  }
-
-  function finish(lv, n) {
-    lv.n = n;
-    lv.lens = lv.cars.map(c => c.len);
-    return lv;
-  }
-
-  // Handmade tutorials (d: 0 up 1 right 2 down 3 left)
-  const TUTORIAL = [
-    { W: 6, H: 6, cones: [], cars: [[2, 2, 0, 2], [0, 4, 1, 2], [4, 0, 2, 2]], tip: '車をタップすると、矢印の向きへ走り出すよ' },
-    { W: 6, H: 6, cones: [[0, 2], [4, 1], [5, 4]], cars: [[1, 2, 1, 2], [4, 2, 2, 2], [3, 4, 3, 2], [2, 4, 2, 2], [0, 0, 1, 2]], tip: '前がふさがっていたら、じゃまな車から先に出そう' },
-    { W: 6, H: 6, cones: [[0, 0]], cars: [[1, 2, 1, 2], [4, 1, 0, 2], [2, 3, 2, 2], [1, 5, 3, 2], [3, 4, 3, 3]], tip: '車は矢印の向きにしか走れない。出す順番を考えよう' },
-  ];
-  function tutorial(n) {
-    const t = TUTORIAL[n - 1];
-    const grid = new Uint8Array(t.W * t.H);
-    t.cones.forEach(([x, y]) => grid[y * t.W + x] = T_CONE);
-    const lv = finish({ W: t.W, H: t.H, grid, cars: t.cars.map(([x, y, d, len]) => ({ x, y, d, len })), barrier: null, cat: null, tip: t.tip }, n);
-    const sol = solve(lv, makeState(lv));
-    lv.par = sol.taps; lv.diff = difficulty(sol, lv.cars.length); lv.sol = sol;
-    return lv;
-  }
-
-  function cloneLot(lv) {
-    return { W: lv.W, H: lv.H, grid: Uint8Array.from(lv.grid), cars: lv.cars.map(c => Object.assign({}, c)), barrier: lv.barrier && Object.assign({}, lv.barrier), cat: lv.cat, bfrac: lv.bfrac };
-  }
-  // Local edit of a lot: re-park a car, re-orient one, add one, or move a cone.
-  function mutate(src, c, r) {
-    const lv = cloneLot(src), W = lv.W, H = lv.H;
-    const ri = n => Math.floor(r() * n);
-    const occ = new Int16Array(W * H);
-    const mark = () => { occ.fill(0); lv.cars.forEach((cr, i) => cellsOf(cr.x, cr.y, cr.d, cr.len).forEach(([x, y]) => occ[y * W + x] = i + 1)); };
-    mark();
-    const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !occ[y * W + x] && (lv.grid[y * W + x] === 0 || lv.grid[y * W + x] === T_TURN);
-    const clearAhead = (x, y, d, L) => { // same rule as randomLot: face an empty lane so the lot stays solvable
-      let fx = x + (d === 1 ? L - 1 : 0), fy = y + (d === 2 ? L - 1 : 0);
-      for (;;) {
-        fx += DX[d]; fy += DY[d];
-        if (fx < 0 || fy < 0 || fx >= W || fy >= H) return true;
-        const t = lv.grid[fy * W + fx];
-        if (occ[fy * W + fx] || t === T_CONE || t === T_PILLAR) return false;
-      }
-    };
-    const tryPut = (x, y, h, L) => {
-      for (let j = 0; j < L; j++) {
-        const ax = h ? x - j : x, ay = h ? y : y - j;
-        if (!cellsOf(ax, ay, h ? 1 : 2, L).every(([a, b]) => free(a, b))) continue;
-        const ds = h ? (r() < 0.5 ? [1, 3] : [3, 1]) : (r() < 0.5 ? [0, 2] : [2, 0]);
-        // half the time ignore the lane rule: harder lots, the solver rejects any that can't be cleared
-        const d = r() < 0.5 ? ds[0] : ds.find(dd => clearAhead(ax, ay, dd, L));
-        if (d !== undefined) { lv.cars.push({ x: ax, y: ay, d, len: L }); mark(); return true; }
-      }
-      return false;
-    };
-    const op = r();
-    if (op < 0.5 && lv.cars.length > 3) { // remove one car, refill its area
-      const k = ri(lv.cars.length), old = lv.cars[k];
-      lv.cars.splice(k, 1); mark();
-      const cs = cellsOf(old.x, old.y, old.d, old.len);
-      for (let q = 0; q < 3; q++) { const [x, y] = cs[ri(cs.length)]; if (free(x, y)) tryPut(x, y, r() < 0.5, r() < c.truckP ? 3 : 2); }
-    } else if (op < 0.8) { // turn a car sideways where it stands
-      const k = ri(lv.cars.length), old = lv.cars[k];
-      lv.cars.splice(k, 1); mark();
-      const cs = cellsOf(old.x, old.y, old.d, old.len), [x, y] = cs[ri(cs.length)];
-      if (!tryPut(x, y, !(old.d & 1), old.len)) { lv.cars.push(old); mark(); }
-    } else if (op < 0.92) { // squeeze in another car
-      for (let q = 0; q < 12; q++) { const x = ri(W), y = ri(H); if (free(x, y) && tryPut(x, y, r() < 0.5, r() < c.truckP ? 3 : 2)) break; }
-    } else { // move a cone / pillar
-      const cones = []; lv.grid.forEach((t, i) => { if (t === T_CONE || t === T_PILLAR) cones.push(i); });
-      if (cones.length) {
-        const from = cones[ri(cones.length)], x = ri(W), y = ri(H);
-        if (free(x, y) && lv.grid[y * W + x] === 0) { lv.grid[y * W + x] = lv.grid[from]; lv.grid[from] = 0; }
-      }
-    }
-    return lv;
-  }
-  function evaluate(lv, n) {
-    finish(lv, n);
-    if (lv.barrier) lv.barrier.need = Math.max(1, Math.round(lv.cars.length * lv.bfrac));
-    const sol = solve(lv, makeState(lv), 6000);
-    if (!sol) return false;
-    lv.sol = sol; lv.diff = difficulty(sol, lv.cars.length); lv.pen = 0;
-    // a featured obstacle must matter: the turntable gets used, the gate changes the solution
-    if (lv.grid.includes(T_TURN) && !sol.moves.some(m => m.rot)) lv.pen += 6;
-    if (lv.barrier) {
-      const free = Object.assign({}, lv, { barrier: null }), s2 = solve(free, makeState(free), 6000);
-      if (s2 && s2.taps === sol.taps && s2.waves === sol.waves) lv.pen += 4;
-    }
-    return true;
-  }
-
-  function generate(n, salt) {
-    n = Math.max(1, n | 0); salt = salt | 0;
-    if (n <= 3 && !salt) return tutorial(n);
-    const c = config(n, salt), r = rng32((n * 2654435761 >>> 0) ^ 0x5eed ^ salt);
-    const score = l => (l.diff < c.lo ? (c.lo - l.diff) * 2 : l.diff > c.hi ? l.diff - c.hi : 0) + l.pen;
-    let cur = null, tries = 0;
-    for (let k = 0; k < 400 && !(cur && k >= 6); k++) {
-      const lv = randomLot(c, r);
-      lv.barrier = null; lv.cat = null;
-      if (c.barrier) { lv.bfrac = 0.22 + r() * 0.2; lv.barrier = { side: [1, 2, 3][Math.floor(r() * 3)], need: 1 }; }
-      if (c.cat) { const side = Math.floor(r() * 4), span = side & 1 ? lv.H : lv.W; lv.cat = { side, pos: Math.floor(r() * (span - 1)), len: 2 }; }
-      if (lv.cars.length < 3 || !evaluate(lv, n)) continue;
-      if (!cur || score(lv) < score(cur)) cur = lv;
-    }
-    for (; tries < 900 && score(cur) > 0; tries++) { // hill-climb toward the level's difficulty band
-      const lv = mutate(cur, c, r);
-      if (!evaluate(lv, n)) continue;
-      if (score(lv) <= score(cur)) cur = lv;
-    }
-    cur.par = cur.sol.taps;
-    cur.tries = tries;
-    cur.tip = n === 4 ? 'どの車から出せるか、よく見て順番を考えよう' : n === 8 ? 'トラックは3マス。長いぶん、道をふさぎやすい' : n === 16 ? 'コーンと柱は動かない。車はその手前で止まる' :
-      n === 30 ? 'しましまのゲートは「あと○台」出るまで開かない' : n === 50 ? '回転台の上の車はタップで90°回る（矢印の向きへスワイプで発進）' : n === 70 ? 'ねこが横断歩道をわたる間は、その出口から出られない' : '';
-    return cur;
-  }
-
-  return { DX, DY, T_EMPTY, T_CONE, T_PILLAR, T_TURN, makeState, aliveCount, buildOcc, cellsOf, slide, rotTarget, closure, solve, generate, config, difficulty, rng32 };
-})();
-/* CORE-END */
-</script>
+<script src="engine.js"></script>
+<script src="../common/game.js"></script>
 <script>
 (() => {
 'use strict';
 const T = KoboI18n.t;
 KoboI18n.add({ en: {
-  'くるま出し': 'Car Out', '← ゲーム一覧': '← Games', '手数': 'Moves', '/ 目標 {n}': '/ par {n}',
+  'くるま出し': 'Car Out', 'ゲーム一覧': 'Games', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games',
+  '手数': 'Moves', '/ 目標 {n}': '/ par {n}', 'メニュー': 'Menu',
   'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
   '駐車場。車をタップすると矢印の向きへ走る': 'Parking lot. Tap a car to drive it the way its arrow points.',
   '一手戻す': 'Undo one move', 'ヒント': 'Hint', 'リスタート': 'Restart', 'ステージ選択': 'Choose stage', '戻す': 'Undo', 'ステージ': 'Stages',
@@ -582,7 +364,6 @@ KoboI18n.add({ en: {
   'しましまのゲートは「あと○台」出るまで開かない': 'The striped gate opens only after the shown number of cars leave',
   '回転台の上の車はタップで90°回る（矢印の向きへスワイプで発進）': 'A car on a turntable turns 90° when tapped (swipe along its arrow to drive)',
   'ねこが横断歩道をわたる間は、その出口から出られない': 'While the cat is on the crosswalk, that exit is closed',
-  'このブラウザでは3D表示が使えません': '3D isn’t available in this browser',
   '出口': 'EXIT', 'あと{n}台': '{n} more',
   'ゲートはあと{n}台出ると開く': 'The gate opens after {n} more cars leave',
   'ねこが渡ってる！ちょっと待って': 'A cat is crossing! Wait a moment',
@@ -590,24 +371,74 @@ KoboI18n.add({ en: {
   'このステージのヒントは使い切った': 'No hints left for this stage', '行き詰まり…「戻す」かリスタートを': 'Stuck… try Undo or Restart',
   'この車をタップして回そう': 'Tap this car to turn it',
   '点': 'pts', '駐車場 {n}': 'Lot {n}', '目標 {n}手': 'par {n} moves', 'ぜんぶ出た！ +{n}点': 'All out! +{n} pts', ' ・ ': ' · ',
+  // feedback
+  '前に車がいて動けない。先にその車を出そう': 'A car is in the way. Get that one out first',
+  'コーンや柱があって進めない': 'A cone or pillar is in the way',
+  '車は矢印の向きにしか走れない': 'Cars only drive the way their arrow points',
+  'まわりがふさがっていて回れない': 'No room to turn here',
+  // WebGL notice
+  '3D表示が使えません': '3D view isn’t available',
+  'このブラウザか端末では WebGL（3D表示）が使えないため、駐車場を表示できません。別のブラウザで開くか、ブラウザの設定でハードウェアアクセラレーションを有効にしてください。':
+    'This browser or device can’t use WebGL (3D graphics), so the parking lot can’t be shown. Try another browser, or turn on hardware acceleration in the browser settings.',
+  '3D表示が止まりました': 'The 3D view stopped',
+  '画面の描画（WebGL）が一時的に止まりました。少し待つと戻ります。戻らないときは再読み込みしてください。進み具合は保存されています。':
+    'Drawing (WebGL) stopped for a moment. It usually comes back by itself; if not, reload. Your progress is saved.',
+  '再読み込み': 'Reload',
+  // how to play
+  '遊び方': 'How to play', 'やってみる': 'Try it', '説明だけでOK': 'Skip the tutorial', 'チュートリアルをもう一度': 'Replay the tutorial',
+  '車を<b>タップ</b>すると、<b>矢印の向き</b>へ走る<small>前へだけ。後ろには下がれません</small>': '<b>Tap</b> a car and it drives <b>the way its arrow points</b><small>Forward only. Cars never back up</small>',
+  '前がふさがっていたら、<b>じゃまな車から先に</b>出す<small>ぶつかる手前で止まる。順番がカギ</small>': 'If the way is blocked, get <b>the car in the way out first</b><small>Cars stop just before they’d bump. Order is everything</small>',
+  '<b>全部の車を出したら</b>クリア<small>少ない手数ほど星が増える。下の「戻す」「ヒント」も使える</small>': 'Clear the lot by getting <b>every car out</b><small>Fewer moves, more stars. Undo and Hint are below</small>',
+  // tutorial
+  'スキップ': 'Skip', 'チュートリアル完了！ 次からは自分で考えよう': 'Tutorial done! From here on, it’s up to you',
+  '光っている車をタップしよう': 'Tap the car with the glow',
+  '車は矢印の向きにだけ走る': 'Cars only drive the way their arrow points',
+  '次は矢印の向きへスワイプ': 'Now swipe along the arrow',
+  'タップでもスワイプでも走る': 'Tapping and swiping both work',
+  '最後の1台も出そう': 'Get the last car out',
+  'ぜんぶ出したらクリア': 'All out and the lot is clear',
+  'じゃまな車から先に出そう': 'Clear the car in the way first',
+  '前がふさがった車は、ぶつかる手前で止まる': 'A blocked car stops just before it would bump',
+  'その調子！ ぜんぶ出そう': 'Nice! Get them all out',
+  '少ない手数ほど星が増える': 'Fewer moves, more stars',
+  // daily
+  '今日のチャレンジ': 'Daily challenge', '今日のチャレンジ（{d}）': 'Daily challenge ({d})', '{m}月{d}日': '{mon} {d}',
+  'ふつうのステージへ': 'Back to stages', 'ふつうのステージに戻る': 'Back to stages', '駐車場': 'Lot',
+  '{i}/{n} 台目の駐車場': 'Lot {i} of {n}', '{p} 点': '{p} pts', '+{n} 点': '+{n} pts',
+  '次の駐車場へ（{i}/{n}）': 'Next lot ({i}/{n})', '今日のチャレンジ クリア！': 'Daily challenge cleared!', 'もう一度挑戦': 'Try again',
+  '駐車場 {i}': 'Lot {i}', '今日のベスト {b} 点 ・ {n} 回目': 'Today’s best {b} pts · try #{n}',
+  '全員が同じ3つの駐車場に挑む、1日1つのチャレンジ。ヒントなし、何度でも挑戦できます。': 'One challenge a day: everyone gets the same three lots. No hints; try as often as you like.',
+  'デイリーではヒントは使えない': 'No hints in the daily challenge',
 } });
+const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const $ = id => document.getElementById(id);
-const KEY_SAVE = 'kusoge.parking.save', KEY_SOUND = 'kusoge.sound';
+const GAME = 'parking';
+const KEY_SAVE = 'kusoge.parking.save', KEY_STATE = 'kusoge.parking.state', KEY_DAILY = 'kusoge.parking.daily';
+const KEY_HOWTO = 'kusoge.parking.howto', KEY_TUT = 'kusoge.parking.tutorial';
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
+const readJSON = k => { try { return JSON.parse(store.get(k) || 'null'); } catch (e) { return null; } };
 const reduceMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const Core = window.ParkingEngine;
 const { DX, DY } = Core;
-const UNDO_MAX = 3, HINT_MAX = 3;
+const UNDO_MAX = 3, HINT_MAX = 3, DAILY_N = Core.DAILY_LEVELS.length;
+const clampInt = (v, lo, hi, d) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, Math.round(v))) : d; };
 
 // ---------- Save ----------
+// kusoge.parking.save = { level, best, stars:{ "<level>": 1〜3 } }. Synced with the registry's per-field merge (level newest,
+// best max, stars per level max), so progress never rolls back: best is at least the level, stars only go up.
 function loadSave() {
   try {
     const s = JSON.parse(store.get(KEY_SAVE) || 'null');
     if (s && typeof s === 'object') {
       const level = Math.max(1, s.level | 0 || 1);
-      return { level, best: Math.max(level, s.best | 0 || 1), stars: s.stars && typeof s.stars === 'object' ? s.stars : {} };
+      const stars = {};
+      if (s.stars && typeof s.stars === 'object') for (const k of Object.keys(s.stars)) { const v = s.stars[k] | 0; if (/^\d+$/.test(k) && v > 0) stars[k] = Math.min(3, v); }
+      return { level, best: Math.max(level, s.best | 0 || 1), stars };
     }
   } catch (e) {}
   return { level: 1, best: 1, stars: {} };
@@ -617,40 +448,36 @@ const persist = () => store.set(KEY_SAVE, JSON.stringify(save));
 
 // ---------- UI bits ----------
 let toastT = 0, tipT = 0;
-function toast(msg) {
-  const t = $('toast'); t.textContent = msg; t.classList.remove('off');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), 1800);
+function toast(msg, gold) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('off'); t.classList.toggle('gold', !!gold);
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), 1900);
 }
 function showTip(msg) {
   const t = $('tip'); clearTimeout(tipT);
-  if (!msg) { t.classList.add('off'); return; }
+  if (!msg || !$('coach').hidden) { t.classList.add('off'); return; }
   t.textContent = msg; t.classList.remove('off');
   tipT = setTimeout(() => t.classList.add('off'), 8000);
 }
+const once = {}; // feedback toasts that explain a rule: a couple of times per visit, then the sound and shake are enough
+function explain(key, msg, max) { once[key] = (once[key] || 0) + 1; if (once[key] <= (max || 2)) toast(msg); }
 
-// ---------- Sound & haptics ----------
-let soundOn = store.get(KEY_SOUND) !== '0';
-let actx = null;
-function ensureAudio() {
-  if (!soundOn) return;
-  try {
-    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
-  } catch (e) { actx = null; }
-}
+// ---------- Sound & haptics (KoboAudio: shared volume and mute) ----------
+// The engine sounds need a low-pass filter, so they are built on KoboAudio's context and effect bus.
 function tone(freq, dur, type, vol, delay, slide, cutoff) {
-  if (!soundOn || !actx) return;
+  if (!A || !A.canPlay()) return;
+  const ac = A.ctx(), bus = A.se; if (!ac || !bus) return;
   try {
-    const t = actx.currentTime + (delay || 0);
-    const o = actx.createOscillator(), g = actx.createGain();
+    const t = ac.currentTime + (delay || 0);
+    const o = ac.createOscillator(), g = ac.createGain();
     o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol || 0.1, t + Math.min(0.03, dur / 4));
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    let node = o;
-    if (cutoff) { const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff; o.connect(f); node = f; }
-    node.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
+    let node = o, f = null;
+    if (cutoff) { f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff; o.connect(f); node = f; }
+    node.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 0.03);
+    o.onended = () => { try { o.disconnect(); g.disconnect(); if (f) f.disconnect(); } catch (e) {} };
   } catch (e) {}
 }
 const sfx = {
@@ -662,30 +489,43 @@ const sfx = {
   click() { tone(720, 0.05, 'sine', 0.05); },
   gate() { tone(523, 0.12, 'triangle', 0.08); tone(784, 0.18, 'triangle', 0.08, 0.1); },
   win() { [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, k) => tone(f, 0.22, 'triangle', 0.1, k * 0.09)); },
+  daily() { if (A) A.sfx('win'); },
 };
-function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+function buzz(p) { if (A) A.vibrate(p); }
 function renderSoundBtn() {
-  const b = $('sound');
-  b.setAttribute('aria-pressed', String(soundOn));
-  b.setAttribute('aria-label', T(soundOn ? 'サウンド オン' : 'サウンド オフ'));
-  b.innerHTML = soundOn
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  const b = $('sound'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
 }
 renderSoundBtn();
-$('sound').addEventListener('click', () => {
-  soundOn = !soundOn; store.set(KEY_SOUND, soundOn ? '1' : '0'); renderSoundBtn();
-  if (soundOn) { ensureAudio(); sfx.click(); }
-});
-window.addEventListener('pointerdown', ensureAudio, { passive: true });
+if (A) A.onChange(renderSoundBtn);
+$('sound').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx.click(); });
+
+// ---------- WebGL notice (unavailable at start, or the context was lost) ----------
+function showNoGL(lost) {
+  $('noglTitle').textContent = T(lost ? '3D表示が止まりました' : '3D表示が使えません');
+  $('noglText').textContent = T(lost ? '画面の描画（WebGL）が一時的に止まりました。少し待つと戻ります。戻らないときは再読み込みしてください。進み具合は保存されています。'
+    : 'このブラウザか端末では WebGL（3D表示）が使えないため、駐車場を表示できません。別のブラウザで開くか、ブラウザの設定でハードウェアアクセラレーションを有効にしてください。');
+  $('nogl').hidden = false;
+  document.querySelectorAll('.tool').forEach(b => { b.disabled = true; });
+}
+$('noglBtn').addEventListener('click', () => { try { location.reload(); } catch (e) {} });
 
 // ---------- Three.js scene ----------
 const play = $('play'), cv = $('cv');
 let renderer;
 try {
+  if (!window.THREE || !Core) throw new Error('missing');
+  // ask for a context on a scratch canvas first, so a browser without WebGL gets the notice without three.js logging an error
+  const probe = document.createElement('canvas'), gl = window.WebGLRenderingContext && (probe.getContext('webgl2') || probe.getContext('webgl'));
+  if (!gl) throw new Error('no webgl');
+  try { const x = gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } catch (e) {}
   renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'low-power' });
 } catch (e) {
-  showTip(T('このブラウザでは3D表示が使えません')); return;
+  showNoGL(false); $('menuBtn').hidden = true; return;
 }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 const scene = new THREE.Scene();
@@ -693,6 +533,7 @@ scene.background = new THREE.Color('#7fbf63');
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x6b7f8e, 0.78));
 const sun = new THREE.DirectionalLight(0xfff4e0, 0.62); sun.position.set(-4, 10, 5); scene.add(sun);
+let dirty = true, timeScale = 1, glLost = false;
 
 // shared geometry & materials
 const G = {
@@ -806,12 +647,16 @@ function buildCat() {
 }
 
 // ---------- Level state ----------
-let vs = null; // { snap, salt, idx, score, tips } while an online match owns the lot
+let vs = null; // { snap, salt, idx, score, tips, playing } while an online match owns the lot
 let lv = null, st = null, nc = 0, moves = 0, undoStack = [], undosLeft = UNDO_MAX, hintsLeft = HINT_MAX, won = false;
 let world = null; // per-level scene objects
 let cars = [];   // visuals per car index
 let anims = [];
 let catForce = null, catT0 = 0, hintMark = null, hintFor = -1;
+let mode = 'normal'; // 'normal' (the stages) | 'daily' (today's three lots)
+let daily = null;    // { dateKey, seed, idx, score, stars, moves, done, best, tries } in daily mode
+let sess = null;     // KoboGame play session
+let tut = null;      // { step } while the first two stages teach the moves
 const RC = 0.82, ROAD_OUT = 1.55, CAT_P = 6.2, CAT_C = 2.6;
 const now = () => performance.now() / 1000;
 const leftCount = () => nc - Core.aliveCount(st);
@@ -1038,18 +883,24 @@ function drive(i, m) {
   let r = Core.slide(lv, st, o, i, m, leftCount());
   if (r.exit && catBlocks(m, i)) r = { exit: false, k: r.k, hit: 'cat' };
   clearHint();
-  const v = cars[i], sgn = m === d ? -1 : 1;
-  if (!r.exit && r.k === 0) { // can't budge: lurch and honk
+  const v = cars[i], sgn = -1;
+  if (!r.exit && r.k === 0) { // can't budge: lurch and honk, and say why (the first couple of times)
     const a = bumpLocal(v, sgn, 0.13, 0.22); v.motion = a; const done = a.done;
     a.done = () => { done(); v.motion = null; };
-    setTimeout(() => hitFx(i, r), 90);
+    setTimeout(() => {
+      hitFx(i, r);
+      if (r.hit === 'car') explain('car', T('前に車がいて動けない。先にその車を出そう'));
+      else if (r.hit === 'block') explain('block', T('コーンや柱があって進めない'));
+    }, 90);
+    renderCoach();
+    dirty = true;
     return;
   }
-  pushUndo(); moves++; showTip('');
+  startPlay(); pushUndo(); moves++; showTip('');
   const [x0, z0] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len);
   if (r.exit) {
     st[i * 3] = -1;
-    sfx.vroom();
+    sfx.vroom(); buzz(12);
     animateExit(i, m, x0, z0);
     updateGate(false);
   } else {
@@ -1111,9 +962,10 @@ function rotateCar(i) {
     v.motion = tween(0.3, p => { v.group.rotation.y = base - Math.sin(p * Math.PI) * 0.18; }, () => { v.group.rotation.y = base; v.motion = null; });
     setTimeout(() => hitFx(i, rt.car !== undefined ? { hit: 'car', car: rt.car } : rt.hx !== undefined ? { hit: 'block', hx: rt.hx, hy: rt.hy } : { hit: 'wall' }), 120);
     if (rt.car === undefined && rt.hx === undefined) { sfx.thud(); buzz(30); }
+    explain('turn', T('まわりがふさがっていて回れない'));
     return;
   }
-  pushUndo(); moves++; showTip('');
+  startPlay(); pushUndo(); moves++; showTip('');
   const [px, pz] = carCenter(rt.tx, rt.ty, 0, 1);
   const p0 = v.group.position.clone(), h0 = v.group.rotation.y;
   st[i * 3] = rt.x; st[i * 3 + 1] = rt.y; st[i * 3 + 2] = rt.d;
@@ -1131,17 +983,42 @@ function rotateCar(i) {
 
 function afterMove() {
   updateHUD();
-  if (Core.aliveCount(st) === 0 && vs) { won = true; vsCleared(); dirty = true; return; }
-  if (Core.aliveCount(st) === 0) {
-    won = true;
-    const par = lv.par, stars = moves <= par ? 3 : moves <= par + Math.max(2, Math.ceil(par * 0.12)) ? 2 : 1;
-    const n = lv.n;
-    save.stars[n] = Math.max(save.stars[n] || 0, stars);
-    save.best = Math.max(save.best, n + 1); save.level = n + 1; persist();
-    const wonLv = lv;   // don't pop this card over a different stage started in the meantime
-    setTimeout(() => { if (lv !== wonLv || !won) return; sfx.win(); showWin(stars); }, 1300);
-  }
+  const alive = Core.aliveCount(st);
+  if (alive === 0 && vs) { won = true; vsCleared(); dirty = true; return; }
+  if (alive === 0) { won = true; lotCleared(); }
+  else persistLot();
+  tutorialSync();
   dirty = true;
+}
+
+// A lot is clear: stars, save (normal stages) or the day's run (daily), events, then the result card.
+function lotCleared() {
+  const n = lv.n, par = lv.par, stars = Core.starsFor(moves, par), wonLv = lv, g = KG();
+  startPlay();
+  if (mode === 'daily' && daily) {
+    const pts = Core.lotPoints(moves, par), last = lv.dailyIdx >= DAILY_N - 1;
+    daily.score += pts; daily.stars[lv.dailyIdx] = stars; daily.moves += moves;
+    if (g) g.emit('stage_clear', { mode: 'daily', stage: lv.dailyIdx + 1, stars, moves, par, dateKey: daily.dateKey });
+    if (last) { daily.done = true; endPlay('clear', daily.score, { stats: { stars: daily.stars.slice(), moves: daily.moves } }); refreshDaily(); }
+    else daily.idx = lv.dailyIdx + 1;
+    persistDaily(null); renderMode();
+    setTimeout(() => {
+      if (lv !== wonLv || !won) return;
+      if (last) { sfx.daily(); buzz([30, 40, 70]); showDailyResult(); } else { sfx.win(); buzz([20, 30, 40]); showWin(stars, pts); }
+    }, 1300);
+    return;
+  }
+  const prevBest = save.best;
+  save.stars[n] = Math.max(save.stars[n] || 0, stars);
+  save.best = Math.max(save.best, n + 1); save.level = n + 1; persist();
+  store.set(KEY_STATE, 'null');
+  if (g) {
+    g.emit('stage_clear', { mode: 'normal', stage: n, stars, moves, par });
+    if (save.best > prevBest) g.emit('best', { score: save.best - 1, stage: n });
+  }
+  endPlay('clear', n, { stats: { stars, moves, par } });
+  if (n === 2 && tut) finishTutorial(true);
+  setTimeout(() => { if (lv !== wonLv || !won) return; sfx.win(); buzz([20, 30, 40]); showWin(stars); }, 1300);
 }
 
 function undo() {
@@ -1153,58 +1030,259 @@ function undo() {
   anims.forEach(a => { a.dead = true; }); anims = [];
   cars.forEach(c => { c.motion = null; });
   st = s.st; moves = s.moves; clearHint();
-  syncAll(); updateHUD(); sfx.click();
+  syncAll(); updateHUD(); sfx.click(); persistLot(); tutorialSync();
 }
 
 function clearHint() {
-  if (hintMark) { world.root.remove(hintMark); hintMark = null; }
-  hintFor = -1; dirty = true;
+  if (hintMark && world) world.root.remove(hintMark);
+  hintMark = null; hintFor = -1; dirty = true;
 }
+// a yellow arrow (drive) or ring (turn) floating over car mv.i: the hint, and the tutorial's "this one"
+function showHintMark(mv) {
+  clearHint();
+  const i = mv.i, d = st[i * 3 + 2], len = cars[i].len;
+  const root = new THREE.Group(), g = new THREE.Group(), yel = bas('#ffd23f'), rim = bas('#1d2a35');
+  root.add(g);
+  if (mv.rot) {
+    mesh(G.ring, rim, 1.42, 1.42, 1.42, 0, -0.01, 0, g);
+    mesh(G.ring, yel, 1.3, 1.3, 1.3, 0, 0, 0, g);
+    const tip = mesh(G.cone, yel, 0.24, 0.3, 0.24, 0.39, 0, 0, g); tip.rotation.x = Math.PI / 2;
+  } else {
+    const arm = new THREE.Group(); g.add(arm);
+    // a dark rim behind the yellow arrow keeps it readable over yellow and white cars
+    mesh(G.box, rim, 0.26, 0.06, 0.6, 0, -0.03, 0.15, arm);
+    const tipR = mesh(G.cone, rim, 0.56, 0.5, 0.56, 0, -0.03, -0.27, arm); tipR.rotation.x = -Math.PI / 2;
+    mesh(G.box, yel, 0.16, 0.08, 0.5, 0, 0, 0.15, arm);
+    const tip = mesh(G.cone, yel, 0.42, 0.4, 0.42, 0, 0, -0.25, arm); tip.rotation.x = -Math.PI / 2;
+    arm.rotation.y = headingOf(d);
+  }
+  g.scale.setScalar(1.5); g.position.y = 1.15;
+  // the glow on the ground around the car to move
+  const h = d & 1, glow = mesh(G.plane, glowMat, (h ? len : 1) + 0.3, 1, (h ? 1 : len) + 0.3, 0, 0.025, 0, root);
+  glow.renderOrder = 1;
+  const [x, z] = carCenter(st[i * 3], st[i * 3 + 1], d, len);
+  root.position.set(x, 0, z); root.userData.bob = g;
+  world.root.add(root); hintMark = root; hintFor = i; dirty = true;
+}
+const glowMat = new THREE.MeshBasicMaterial({ color: '#fff1a8', transparent: true, opacity: 0.6, depthWrite: false });
 function hint() {
   if (won || vs || KoboVersus.active()) return;
+  if (mode === 'daily') { toast(T('デイリーではヒントは使えない')); return; }
   if (hintsLeft <= 0) { toast(T('このステージのヒントは使い切った')); return; }
   const sol = Core.solve(lv, st, 60000);
   if (!sol || !sol.moves.length) { toast(T('行き詰まり…「戻す」かリスタートを')); return; }
-  hintsLeft--; updateHUD(); clearHint(); sfx.click();
-  const mv = sol.moves[0], i = mv.i, v = cars[i];
-  const g = new THREE.Group(), yel = bas('#ffd23f');
-  if (mv.rot) {
-    mesh(G.ring, yel, 1.3, 1.3, 1.3, 0, 0, 0, g);
-    const tip = mesh(G.cone, yel, 0.24, 0.3, 0.24, 0.39, 0, 0, g); tip.rotation.x = Math.PI / 2;
-    toast(T('この車をタップして回そう'));
-  } else {
-    const arm = new THREE.Group(); g.add(arm);
-    mesh(G.box, yel, 0.16, 0.08, 0.5, 0, 0, 0.15, arm);
-    const tip = mesh(G.cone, yel, 0.42, 0.4, 0.42, 0, 0, -0.25, arm); tip.rotation.x = -Math.PI / 2;
-    arm.rotation.y = headingOf(st[i * 3 + 2]);
-  }
-  g.scale.setScalar(1.5); g.position.copy(v.group.position); g.position.y = 1.15;
-  world.root.add(g); hintMark = g; hintFor = i;
+  hintsLeft--; curLevelHints.left = hintsLeft; updateHUD(); persistLot(); sfx.click();
+  showHintMark(sol.moves[0]);
+  if (sol.moves[0].rot) toast(T('この車をタップして回そう'));
 }
 
 function updateHUD() {
-  $('lvl').textContent = lv.n;
+  $('lvl').textContent = mode === 'daily' && lv.dailyIdx != null ? (lv.dailyIdx + 1) + '/' + DAILY_N : lv.n;
+  $('lvlabel').textContent = mode === 'daily' && lv.dailyIdx != null ? T('駐車場') : 'Lv';
   $('moves').textContent = moves;
   $('par').textContent = T('/ 目標 {n}', { n: lv.par });
-  $('undoN').textContent = undosLeft; $('hintN').textContent = hintsLeft;
-  $('undo').disabled = undosLeft <= 0; $('hint').disabled = hintsLeft <= 0 || !!vs;
+  const noHint = !!vs || mode === 'daily';
+  $('undoN').textContent = undosLeft; $('hintN').textContent = noHint ? 0 : hintsLeft;
+  $('undo').disabled = undosLeft <= 0; $('hint').disabled = hintsLeft <= 0 || noHint;
   $('levels').disabled = !!vs;
 }
 
+// ---------- Lots: normal stages, the daily run ----------
 let curLevelHints = { n: 0, left: HINT_MAX };
-function startLevel(n, keepHints) {
+function hideCards() { $('win').hidden = true; $('dres').hidden = true; }
+function resetLot() {
+  anims.forEach(a => { a.dead = true; }); anims = [];
+  nc = lv.cars.length; st = Core.makeState(lv); moves = 0; undoStack = []; undosLeft = UNDO_MAX; hintsLeft = HINT_MAX; won = false;
+  catT0 = now() + 1.5; catForce = null; down = null;
+}
+// a saved lot in progress { n, st, moves, undosLeft, hintsLeft }: used only if it fits this lot exactly
+function restoreLot(s) {
+  if (!s || typeof s !== 'object' || s.n !== lv.n || !Array.isArray(s.st) || s.st.length !== nc * 3) return false;
+  const a = Int8Array.from(s.st.map(v => v | 0)), seen = new Set();
+  let alive = 0;
+  for (let i = 0; i < nc; i++) {
+    const x = a[i * 3], y = a[i * 3 + 1], d = a[i * 3 + 2];
+    if (x < 0) { if (x !== -1) return false; continue; }
+    if (d < 0 || d > 3) return false;
+    alive++;
+    for (const [cx, cy] of Core.cellsOf(x, y, d, lv.lens[i])) {
+      if (cx < 0 || cy < 0 || cx >= lv.W || cy >= lv.H) return false;
+      const k = cy * lv.W + cx, t = lv.grid[k];
+      if (t === Core.T_CONE || t === Core.T_PILLAR || seen.has(k)) return false;
+      seen.add(k);
+    }
+  }
+  if (!alive) return false;
+  st = a; moves = clampInt(s.moves, 0, 9999, 0);
+  undosLeft = clampInt(s.undosLeft, 0, UNDO_MAX, UNDO_MAX); hintsLeft = clampInt(s.hintsLeft, 0, HINT_MAX, HINT_MAX);
+  return true;
+}
+function persistDaily(lot) {
+  if (!daily || vs) return;
+  store.set(KEY_DAILY, JSON.stringify({ v: 1, dateKey: daily.dateKey, idx: daily.idx, score: daily.score, stars: daily.stars, moves: daily.moves, done: !!daily.done, lot: lot || null }));
+}
+// the lot in progress, so closing the page and coming back continues the same lot (turn-based: Q-5/Q-6)
+function persistLot() {
+  if (vs || !lv || won) return;
+  const snap = { n: lv.n, st: Array.from(st), moves, undosLeft, hintsLeft };
+  if (mode === 'daily') { if (daily && !daily.done) persistDaily(Object.assign({ idx: lv.dailyIdx }, snap)); }
+  else store.set(KEY_STATE, JSON.stringify(Object.assign({ v: 1 }, snap)));
+}
+function startLevel(n, keepHints, snap) {
   if (vs) return; // a match owns the lot
+  endPlay('quit');
   n = Math.max(1, n | 0);
-  $('win').hidden = true;
+  hideCards();
+  if (mode === 'daily') persistLot();
+  mode = 'normal'; daily = null;
   lv = Core.generate(n);
-  nc = lv.cars.length; st = Core.makeState(lv); moves = 0; undoStack = []; undosLeft = UNDO_MAX; won = false;
+  resetLot();
   if (curLevelHints.n !== n || !keepHints) curLevelHints = { n, left: HINT_MAX };
   hintsLeft = curLevelHints.left;
-  catT0 = now() + 1.5; catForce = null;
+  if (snap && restoreLot(snap)) curLevelHints.left = hintsLeft;
   save.level = n; save.best = Math.max(save.best, n); persist();
-  buildWorld(); fitCamera(); updateHUD();
+  persistLot();
+  buildWorld(); fitCamera(); updateHUD(); renderMode();
+  tutorialSync();
   showTip(lv.tip ? T(lv.tip) : '');
 }
+function restartLot() {
+  if (vs) { if (KoboVersus.canPlay() && !won) { sfx.click(); vsLot(vs.idx); } return; }
+  if (KoboVersus.active()) return;
+  sfx.click();
+  if (mode === 'daily' && daily) { if (!daily.done) loadDailyLot(daily.idx, null); return; }
+  curLevelHints.left = hintsLeft; startLevel(lv.n, true);
+}
+
+// ---------- Daily challenge (JST date and seed from KoboPlatform; the result is recorded by the platform) ----------
+// Three seeded lots for the day (ParkingEngine.dailyLot): the same for everyone. Score: 100 per lot + 50 at par, 10 less per
+// extra move (the online-battle points). No hints; undo and restart are allowed. Progress for the day is kept on this device.
+function dateLabel(dk) {
+  const m = Math.floor(dk / 100) % 100, d = dk % 100;
+  return KoboI18n.lang === 'en' ? T('{m}月{d}日', { mon: EN_MON[m - 1], d }) : T('{m}月{d}日', { m, d });
+}
+function refreshDaily() {
+  if (!daily || !PF) return;
+  const rec = PF.daily.get(daily.dateKey, GAME) || {};
+  daily.best = Math.max(0, Number(rec.best) || 0);
+  daily.tries = Math.max(0, Number(rec.tries) || 0);
+}
+function startDaily(dateKey) {
+  if (!PF || vs) return;
+  const dk = PF.isDateKey(dateKey) && Number(dateKey) <= PF.jstDateKey() ? Number(dateKey) : PF.jstDateKey();
+  endPlay('quit');
+  if (mode === 'normal') persistLot();
+  $('select').hidden = true;
+  mode = 'daily';
+  daily = { dateKey: dk, seed: PF.dailySeed(GAME, dk), idx: 0, score: 0, stars: [], moves: 0, done: false, best: 0, tries: 0 };
+  const s = readJSON(KEY_DAILY);
+  let lot = null;
+  if (s && s.v === 1 && s.dateKey === dk) {
+    daily.idx = clampInt(s.idx, 0, DAILY_N - 1, 0); daily.score = clampInt(s.score, 0, 1e6, 0);
+    daily.stars = Array.isArray(s.stars) ? s.stars.slice(0, DAILY_N).map(v => clampInt(v, 0, 3, 0)) : [];
+    daily.moves = clampInt(s.moves, 0, 1e6, 0); daily.done = !!s.done;
+    if (s.lot && s.lot.idx === daily.idx) lot = s.lot;
+  }
+  refreshDaily();
+  hideCards();
+  loadDailyLot(daily.done ? DAILY_N - 1 : daily.idx, daily.done ? null : lot);
+  toast(T('今日のチャレンジ（{d}）', { d: dateLabel(dk) }), true);
+  if (daily.done) { won = true; showDailyResult(); }
+}
+function loadDailyLot(i, snap) {
+  lv = Core.dailyLot(daily.seed, i); lv.dailyIdx = i;
+  resetLot();
+  if (snap) restoreLot(snap);
+  buildWorld(); fitCamera(); updateHUD(); renderMode(); tutorialSync();
+  persistLot();
+  showTip(lv.barrier && !moves ? T('しましまのゲートは「あと○台」出るまで開かない') : T('駐車場 {n}', { n: i + 1 }) + T(' ・ ') + T('目標 {n}手', { n: lv.par }));
+}
+function dailyRetry() {
+  if (!daily || vs) return;
+  endPlay('quit');
+  Object.assign(daily, { idx: 0, score: 0, stars: [], moves: 0, done: false });
+  persistDaily(null); hideCards(); loadDailyLot(0, null);
+}
+// back to the normal stages (the lot in progress there was saved)
+function setMode(m) {
+  if (m !== 'normal' || vs) return;
+  startLevel(save.level, false, readJSON(KEY_STATE));
+}
+function renderMode() {
+  const bar = $('modeBar'), on = mode === 'daily' && !!daily && !vs;
+  bar.hidden = !on;
+  if (!on) return;
+  bar.title = T('全員が同じ3つの駐車場に挑む、1日1つのチャレンジ。ヒントなし、何度でも挑戦できます。');
+  const t = $('modeText'); t.textContent = '';
+  const i = lv && lv.dailyIdx != null ? lv.dailyIdx + 1 : daily.idx + 1;
+  const b1 = document.createElement('b'); b1.textContent = i + '/' + DAILY_N;
+  const b2 = document.createElement('b'); b2.textContent = T('{p} 点', { p: daily.score });
+  t.append(T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + T(' ・ '), b1, T(' ・ '), b2);
+}
+function showDailyResult() {
+  $('dresDate').textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) });
+  $('dresScore').textContent = T('{p} 点', { p: daily.score });
+  const box = $('dresLots'); box.textContent = '';
+  for (let i = 0; i < DAILY_N; i++) {
+    const s = daily.stars[i] || 0, e = document.createElement('span'), st2 = document.createElement('i');
+    e.textContent = T('駐車場 {i}', { i: i + 1 }); st2.textContent = '★'.repeat(s) + '☆'.repeat(3 - s);
+    e.setAttribute('aria-label', T('駐車場 {i}', { i: i + 1 }) + ' ' + s + '/3');
+    e.append(st2); box.append(e);
+  }
+  $('dresBest').textContent = daily.tries ? T('今日のベスト {b} 点 ・ {n} 回目', { b: daily.best, n: daily.tries }) : '';
+  $('win').hidden = true; $('dres').hidden = false;
+  setTimeout(() => $('dresAgain').focus({ preventScroll: true }), 50);
+}
+
+// ---------- Play sessions (KoboGame events) ----------
+// normal: one session per stage, from the first move to the clear (or leaving it). daily: one session for the day's run.
+function startPlay() {
+  if (sess || vs || !lv) return;
+  sess = { mode, t0: performance.now(), stage: mode === 'daily' ? (lv.dailyIdx || 0) + 1 : lv.n, dateKey: daily ? daily.dateKey : undefined };
+  const g = KG(); if (!g) return;
+  g.emit('play_start', mode === 'daily' ? { mode, dateKey: daily.dateKey, seed: daily.seed, stage: sess.stage } : { mode, stage: lv.n });
+}
+function endPlay(reason, score, extra) {
+  if (!sess) return;
+  const s = sess; sess = null;
+  const g = KG(); if (!g) return;
+  g.emit('play_end', Object.assign({ mode: s.mode, reason, score: score || 0, stage: s.stage, dateKey: s.dateKey, durationMs: Math.round(performance.now() - s.t0) }, extra || {}));
+}
+
+// ---------- Tutorial: the first two stages, one real move at a time ----------
+// Stage 1: tap the glowing car → swipe the next one → the last one. Stage 2: a blocked lot, the glowing car first.
+// A floating arrow (the hint marker, free here) points at the car to move. Skipping is always possible.
+const TUT = [
+  ['光っている車をタップしよう', '車は矢印の向きにだけ走る'],
+  ['次は矢印の向きへスワイプ', 'タップでもスワイプでも走る'],
+  ['最後の1台も出そう', 'ぜんぶ出したらクリア'],
+  ['じゃまな車から先に出そう', '前がふさがった車は、ぶつかる手前で止まる'],
+  ['その調子！ ぜんぶ出そう', '少ない手数ほど星が増える'],
+];
+function tutorialSync() {
+  const want = !store.get(KEY_TUT) && mode === 'normal' && !vs && !!lv && lv.n <= 2 && $('howto').hidden;
+  if (!want) { const had = !!tut; tut = null; if (had) clearHint(); renderCoach(); return; }
+  if (!tut) tut = { step: 0 };
+  const gone = nc - Core.aliveCount(st);
+  tut.step = lv.n === 1 ? Math.min(2, gone) : (gone > 0 ? 4 : 3);
+  renderCoach();
+}
+function renderCoach() {
+  const c = $('coach');
+  if (!tut || won) { c.hidden = true; return; }
+  c.hidden = false; $('tip').classList.add('off');
+  $('coachStep').textContent = tut.step + 1;
+  const [a, b] = TUT[tut.step], p = $('coachText'), sm = document.createElement('small');
+  sm.textContent = T(b); p.textContent = T(a); p.append(sm);
+  const sol = Core.solve(lv, st, 20000);
+  if (sol && sol.moves.length) showHintMark(sol.moves[0]);
+}
+function finishTutorial(done) {
+  store.set(KEY_TUT, done ? '1' : 'skip');
+  tut = null; clearHint(); renderCoach();
+  if (done) setTimeout(() => toast(T('チュートリアル完了！ 次からは自分で考えよう'), true), 1400);
+}
+$('coachBtn').addEventListener('click', () => { sfx.click(); finishTutorial(false); });
 
 // ---------- Camera ----------
 const _v = new THREE.Vector3();
@@ -1237,7 +1315,6 @@ const onResize = () => { clearTimeout(resizeT); resizeT = setTimeout(fitCamera, 
 window.addEventListener('resize', onResize);
 if (window.visualViewport) visualViewport.addEventListener('resize', onResize);
 if (window.ResizeObserver) new ResizeObserver(onResize).observe(play);
-KoboI18n.picker($('langPick'));
 
 // ---------- Input ----------
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -1253,16 +1330,16 @@ function toScreen(x, y, z) {
   return { x: r.left + (_v.x + 1) / 2 * r.width, y: r.top + (1 - _v.y) / 2 * r.height };
 }
 let down = null;
+const blocked = () => (vs ? !KoboVersus.canPlay() : KoboVersus.active()) || glLost;
 cv.addEventListener('pointerdown', e => {
-  if (!lv || won) return;
-  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
+  if (!lv || won || blocked()) return;
   down = { id: e.pointerId, x: e.clientX, y: e.clientY, car: pick(e.clientX, e.clientY) };
   try { cv.setPointerCapture(e.pointerId); } catch (er) {}
 });
 cv.addEventListener('pointerup', e => {
   if (!down || down.id !== e.pointerId) return;
   const d0 = down; down = null;
-  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
+  if (blocked() || !lv || won) return;
   let i = d0.car;
   const dx = e.clientX - d0.x, dy = e.clientY - d0.y, dist = Math.hypot(dx, dy);
   if (dist < 14) {
@@ -1277,49 +1354,112 @@ cv.addEventListener('pointerup', e => {
   const a = toScreen(wx, 0.3, wz), b = toScreen(wx + DX[d] * 0.5, 0.3, wz + DY[d] * 0.5);
   const fx = b.x - a.x, fy = b.y - a.y, fl = Math.hypot(fx, fy) || 1;
   const dot = (dx * fx + dy * fy) / fl;
-  // only a swipe roughly along the arrow drives the car; anything else just wiggles it
-  if (dot < dist * 0.5) { shake(cars[i].inner, 0.04, 0.25); return; }
+  // only a swipe roughly along the arrow drives the car; anything else just wiggles it (and says why)
+  if (dot < dist * 0.5) { shake(cars[i].inner, 0.04, 0.25); sfx.thud(); explain('dir', T('車は矢印の向きにしか走れない')); return; }
   drive(i, d);
 });
 cv.addEventListener('pointercancel', () => { down = null; });
 
 $('undo').addEventListener('click', undo);
 $('hint').addEventListener('click', hint);
-$('restart').addEventListener('click', () => {
-  if (vs) { if (KoboVersus.canPlay() && !won) { sfx.click(); vsLot(vs.idx); } return; }
-  if (KoboVersus.active()) return;
-  sfx.click(); curLevelHints.left = hintsLeft; startLevel(lv.n, true);
+$('restart').addEventListener('click', restartLot);
+$('next').addEventListener('click', () => {
+  sfx.click();
+  if (mode === 'daily' && daily) { hideCards(); loadDailyLot(daily.idx, null); return; }
+  startLevel(lv.n + 1);
 });
-$('next').addEventListener('click', () => { sfx.click(); startLevel(lv.n + 1); });
 $('again').addEventListener('click', () => { sfx.click(); startLevel(lv.n, true); });
+$('dresAgain').addEventListener('click', () => { sfx.click(); dailyRetry(); });
+$('dresNormal').addEventListener('click', () => { sfx.click(); setMode('normal'); });
 $('levels').addEventListener('click', () => { if (!vs && !KoboVersus.active()) openSelect(); });
 $('selClose').addEventListener('click', () => { $('select').hidden = true; });
+$('selDaily').addEventListener('click', () => { sfx.click(); $('select').hidden = true; startDaily(); });
 $('select').addEventListener('click', e => { if (e.target === $('select')) $('select').hidden = true; });
 
-const STAR = on => `<svg viewBox="0 0 24 24" class="${on ? 'on' : ''}"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="${on ? '#ffcf3f' : '#3b5163'}" stroke="${on ? '#b88c12' : '#2c4152'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
-function showWin(stars) {
+const STAR = on => `<svg viewBox="0 0 24 24" class="${on ? 'on' : ''}" aria-hidden="true"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+function showWin(stars, pts) {
   $('winStars').innerHTML = STAR(stars >= 1) + STAR(stars >= 2) + STAR(stars >= 3);
+  $('winStars').setAttribute('role', 'img'); $('winStars').setAttribute('aria-label', T('ステージ {n} 星{s}', { n: lv.n, s: stars }));
   $('winMoves').textContent = moves; $('winPar').textContent = lv.par;
   $('winTitle').textContent = T(stars === 3 ? 'かんぺき！' : 'ぜんぶ出た！');
+  const dl = mode === 'daily' && daily;
+  $('winGain').hidden = !dl; if (dl) $('winGain').textContent = T('+{n} 点', { n: pts || 0 });
+  $('next').textContent = dl ? T('次の駐車場へ（{i}/{n}）', { i: daily.idx + 1, n: DAILY_N }) : T('次のステージへ');
+  $('again').hidden = !!dl;
   $('win').hidden = false;
+  setTimeout(() => $('next').focus({ preventScroll: true }), 50);
 }
 function openSelect() {
   sfx.click();
   const g = $('lvgrid'); g.innerHTML = '';
   for (let n = 1; n <= save.best; n++) {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'lvbtn' + (lv && n === lv.n ? ' cur' : '');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lvbtn' + (lv && mode === 'normal' && n === lv.n ? ' cur' : '');
     const s = save.stars[n] || 0;
     b.innerHTML = n + '<i>' + '★'.repeat(s) + '</i>';
     b.setAttribute('aria-label', T(s ? 'ステージ {n} 星{s}' : 'ステージ {n}', { n, s }));
-    b.addEventListener('click', () => { $('select').hidden = true; startLevel(n); });
+    b.addEventListener('click', () => { $('select').hidden = true; startLevel(n, false, n === save.level ? readJSON(KEY_STATE) : null); });
     g.appendChild(b);
   }
+  $('selDaily').hidden = !PF || mode === 'daily';
   $('select').hidden = false;
   const cur = g.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
 }
 
-// ---------- Loop ----------
-let dirty = true, timeScale = 1;
+// ---------- Menu (KoboUI: settings, language, theme, volume) ----------
+function openMenu() {
+  if (!UI || KoboVersus.active()) return;
+  down = null;
+  const close = f => () => { m.close(); closedMenu(); f(); };
+  const extra = [
+    { label: T('遊び方'), icon: 'help', onClick: close(() => showHowto(false)) },
+    { label: T('ステージ選択'), icon: 'menu', onClick: close(openSelect) },
+  ];
+  if (mode === 'daily') extra.push({ label: T('ふつうのステージに戻る'), icon: 'home', onClick: close(() => setMode('normal')) });
+  else if (PF) extra.push({ label: T('今日のチャレンジ'), icon: 'star', onClick: close(() => startDaily()) });
+  const m = UI.pauseMenu({
+    title: T('メニュー'),
+    onResume: closedMenu,
+    onRestart: () => { closedMenu(); restartLot(); },
+    confirmRestart: moves > 0 && !won,
+    extra, home: '../',
+    onOpen: () => { const g = KG(); if (g) g.menuOpened(); },
+  });
+  m.open();
+}
+function closedMenu() { const g = KG(); if (g) g.menuClosed(); dirty = true; }
+$('menuBtn').addEventListener('click', () => { sfx.click(); openMenu(); });
+if (!UI) $('menuBtn').hidden = true;
+
+// ---------- How to play (first visit) ----------
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first; down = null;
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる');
+  $('howtoAlt').textContent = first ? T('説明だけでOK') : T('チュートリアルをもう一度');
+  $('howtoAlt').hidden = !first && (!!vs || mode === 'daily');
+  $('howto').hidden = false; $('coach').hidden = true;
+  setTimeout(() => $('howtoGo').focus({ preventScroll: true }), 50);
+}
+function closeHowto() { $('howto').hidden = true; store.set(KEY_HOWTO, '1'); dirty = true; }
+$('howtoGo').addEventListener('click', () => {
+  const f = howtoFirst; closeHowto(); sfx.click();
+  if (f && mode === 'normal' && !vs && lv.n > 2 && !store.get(KEY_TUT)) startLevel(1);
+  tutorialSync();
+});
+$('howtoAlt').addEventListener('click', () => {
+  const f = howtoFirst; closeHowto(); sfx.click();
+  if (f) { store.set(KEY_TUT, 'skip'); tutorialSync(); return; }
+  // replay the tutorial: stage 1 again (progress and stars stay)
+  try { localStorage.removeItem(KEY_TUT); } catch (e) {}
+  startLevel(1);
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); }
+  else if (!$('select').hidden) { e.preventDefault(); $('select').hidden = true; }
+});
+
+// ---------- Loop: render only when something changed ----------
 function frame() {
   requestAnimationFrame(frame);
   const t = now();
@@ -1335,15 +1475,25 @@ function frame() {
     dirty = true;
   }
   if (lv && lv.cat && world) { updateCat(t); dirty = true; }
-  if (hintMark) { hintMark.position.y = 1.15 + Math.sin(t * 5) * 0.12; dirty = true; }
-  if (dirty) { renderer.render(scene, camera); dirty = false; }
+  if (hintMark && !reduceMQ.matches) { hintMark.userData.bob.position.y = 1.15 + Math.sin(t * 5) * 0.12; glowMat.opacity = 0.45 + Math.sin(t * 5) * 0.2; dirty = true; }
+  if (dirty && !glLost) { renderer.render(scene, camera); dirty = false; frames++; }
+}
+let frames = 0;
+// finish every running animation now (test hook, so step() can move the next car at once)
+function flushAnims() {
+  for (let k = 0; k < 6 && anims.length; k++) {
+    const list = anims; anims = [];
+    for (const a of list) { if (a.dead) continue; a.fn(1); a.dead = true; if (a.done) a.done(); }
+  }
+  cars.forEach(c => { c.motion = null; });
+  dirty = true;
 }
 
-// ---------- Debug / test hooks ----------
+// ---------- Debug / test hooks (older scripts) ----------
 window.__parking = {
   Core,
   state: () => ({ n: lv.n, W: lv.W, H: lv.H, st: Array.from(st), moves, par: lv.par, alive: Core.aliveCount(st), won, undosLeft, hintsLeft,
-    left: leftCount(), gateOpen: world && world.gateOpen, barrier: lv.barrier, cat: lv.cat, cars: lv.cars.length, hintFor }),
+    left: leftCount(), gateOpen: world && world.gateOpen, barrier: lv.barrier, cat: lv.cat, cars: lv.cars.length, hintFor, mode }),
   level: () => lv,
   carScreen(i) { const d = st[i * 3 + 2], [x, z] = carCenter(st[i * 3], st[i * 3 + 1], d, cars[i].len); return toScreen(x, 0.6, z); },
   carAxis(i) { const d = st[i * 3 + 2], [x, z] = carCenter(st[i * 3], st[i * 3 + 1], d, cars[i].len); const a = toScreen(x, 0.6, z), b = toScreen(x + DX[d], 0.6, z + DY[d]); return { x: b.x - a.x, y: b.y - a.y }; },
@@ -1359,16 +1509,16 @@ window.__parking = {
 // ---------- Online battle (common/versus.js) ----------
 // Everyone gets the same seeded run of lots (the stage generator with a salt; forward-only, solver-checked), harder one by one.
 // Score: 100 per cleared lot + 50 at par, 10 less per extra move. No hints; undo (3 per lot) and restart are allowed.
-const VS_BONUS = 50;
+// While a match owns the lot nothing is saved and no best changes (the stage, the daily run and the lot in progress wait).
 const vsLevel = i => Math.min(69, 6 + 4 * i); // stays below the cat stages (a timing gimmick)
 function vsLot(i) {
   vs.idx = i;
-  $('win').hidden = true; $('select').hidden = true;
+  hideCards(); $('select').hidden = true; $('howto').hidden = true;
   anims.forEach(a => { a.dead = true; }); anims = [];
   lv = Core.generate(vsLevel(i), vs.salt);
   nc = lv.cars.length; st = Core.makeState(lv); moves = 0; undoStack = []; undosLeft = UNDO_MAX; hintsLeft = 0; won = false;
   catT0 = now() + 1.5; catForce = null; hintMark = null; hintFor = -1;
-  buildWorld(); fitCamera(); updateHUD();
+  buildWorld(); fitCamera(); updateHUD(); renderMode(); tutorialSync();
   showTip(T('駐車場 {n}', { n: i + 1 }) + T(' ・ ') + T('目標 {n}手', { n: lv.par }));
   if (lv.barrier && !vs.tips.gate) { vs.tips.gate = 1; showTip(T('しましまのゲートは「あと○台」出るまで開かない')); }
   if (lv.grid.includes(Core.T_TURN) && !vs.tips.turn) { vs.tips.turn = 1; showTip(T('回転台の上の車はタップで90°回る（矢印の向きへスワイプで発進）')); }
@@ -1376,41 +1526,132 @@ function vsLot(i) {
   setTimeout(() => { try { Core.generate(vsLevel(i + 1), salt); } catch (e) {} }, 600);
 }
 function vsCleared() {
-  const gain = 100 + Math.max(0, VS_BONUS - 10 * Math.max(0, moves - lv.par));
+  const gain = Core.lotPoints(moves, lv.par);
   vs.score += gain;
   const lot = lv;
-  setTimeout(() => { if (vs && lv === lot) { sfx.win(); toast(T('ぜんぶ出た！ +{n}点', { n: gain })); } }, 700);
+  setTimeout(() => { if (vs && lv === lot) { sfx.win(); buzz([20, 30]); toast(T('ぜんぶ出た！ +{n}点', { n: gain }), true); } }, 700);
   setTimeout(() => { if (vs && lv === lot && KoboVersus.canPlay()) vsLot(vs.idx + 1); }, 1700);
 }
+const vsEmit = (type, p) => { const g = KG(); if (g) g.emit(type, p); };
 KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。',
   game: 'parking', title: T('くるま出し'), duration: 240, unit: T('点'),
-  theme: { accent: '#ffcf3f', accentInk: '#3a2a00', accentShadow: '#b88c12', card: 'linear-gradient(#2c4152, #213342)', line: '#3b5163',
-    ink: '#f6f3ea', dim: '#a9bccb', hud: '#1d2a35', display: 'var(--font-display)' },
+  theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--kb-accent)', accentInk: 'var(--kb-accent-ink)', accentShadow: 'var(--pk-btn-shadow)', card: 'var(--pk-card)', line: 'var(--kb-line)',
+    ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
   hudCover: () => document.querySelector('header'),
-  onOpen() { $('select').hidden = true; },
-  onStart({ seed }) {
-    if (!vs) vs = { snap: { lv, st: Int8Array.from(st), moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, win: !$('win').hidden } };
+  onOpen() { $('select').hidden = true; down = null; persistLot(); const g = KG(); if (g) g.pause('versus'); },
+  onStart({ seed, practice }) {
+    if (!vs) {
+      endPlay('quit'); persistLot();
+      vs = { snap: { lv, st: Int8Array.from(st), moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, mode, daily, win: !$('win').hidden, dres: !$('dres').hidden } };
+    }
+    if (vs.playing) vsEmit('play_end', { mode: vs.playing, score: vs.score || 0, reason: 'quit' });
     vs.salt = (seed | 0) || 1; vs.score = 0; vs.tips = {};
     down = null;
     vsLot(0);
+    vs.playing = practice ? 'practice' : 'versus';
+    vsEmit('play_start', { mode: vs.playing, seed });
   },
   getScore: () => (vs ? vs.score : 0),
-  onEnd() { down = null; },
+  onEnd() {
+    down = null;
+    if (vs && vs.playing) { vsEmit('play_end', { mode: vs.playing, score: vs.score, reason: 'over' }); vs.playing = null; }
+  },
   onExit() {
     if (!vs) return;
+    if (vs.playing) vsEmit('play_end', { mode: vs.playing, score: vs.score, reason: 'quit' });
     const s = vs.snap; vs = null;
     anims.forEach(a => { a.dead = true; }); anims = [];
-    ({ lv, moves, undoStack, undosLeft, hintsLeft, won, curLevelHints } = s);
+    ({ lv, moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, mode, daily } = s);
     st = s.st; nc = lv.cars.length; hintMark = null; hintFor = -1; down = null;
     catT0 = now() + 1.5; catForce = null;
-    buildWorld(); fitCamera(); updateHUD(); showTip('');
-    $('win').hidden = !s.win;
+    buildWorld(); fitCamera(); updateHUD(); renderMode(); showTip(''); tutorialSync();
+    $('win').hidden = !s.win; $('dres').hidden = !s.dres;
   },
 });
 KoboVersus.button($('vsSlot'), { compact: true });
 
-startLevel(save.level);
-requestAnimationFrame(frame);
+// ---------- KoboGame: platform hooks (turn-based: flags.pause is false, so hiding the page just saves the lot) ----------
+// Migration: players who already have a save have played before → no first-visit how-to and tutorial for them.
+// Runs once (kobo.migrated), and running it again changes nothing. The save itself keeps its shape.
+if (PF && PF.migrations) PF.migrations.add({ id: 'parking-howto-1', v: 1, run(c) {
+  const has = c.store.raw(KEY_SAVE) != null;
+  if (has && c.store.raw(KEY_HOWTO) == null) c.store.setRaw(KEY_HOWTO, '1');
+  if (has && c.store.raw(KEY_TUT) == null) c.store.setRaw(KEY_TUT, 'old');
+} });
+let raf = 0, booted = false;
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { down = null; persistLot(); },
+  resume() { dirty = true; },
+  save() { down = null; persistLot(); },
+  isIdle: () => !vs && !sess && $('howto').hidden,
+  dispose() { cancelAnimationFrame(raf); raf = 0; disposeWorld(); try { renderer.dispose(); } catch (e) {} },
+  daily: { start({ dateKey }) { if (vs) return; if (mode === 'daily' && daily && daily.dateKey === dateKey) return; startDaily(dateKey); } },
+});
+// WebGL context lost (R15): a notice, then rebuild the lot when the context comes back
+function glLostNow() { glLost = true; down = null; persistLot(); showNoGL(true); }
+function glBack() {
+  glLost = false; $('nogl').hidden = true;
+  document.querySelectorAll('.tool').forEach(b => { b.disabled = false; });
+  if (lv) { buildWorld(); fitCamera(); updateHUD(); tutorialSync(); }
+  dirty = true;
+}
+if (window.KoboGame) KoboGame.watchGL(cv, { onLost: glLostNow, onRestored: glBack });
+else { cv.addEventListener('webglcontextlost', e => { e.preventDefault(); glLostNow(); }); cv.addEventListener('webglcontextrestored', glBack); }
+
+// ---------- Boot ----------
+KoboI18n.picker($('langPick'));
+const launch = PF ? PF.launch() : { daily: null, stage: null };
+if (launch.daily && PF) startDaily(launch.daily);           // ?daily=YYYYMMDD (the hub's "today's challenge")
+else if (launch.stage && launch.stage <= save.best) startLevel(launch.stage, false, launch.stage === save.level ? readJSON(KEY_STATE) : null);
+else startLevel(save.level, false, readJSON(KEY_STATE));
+if (store.get(KEY_HOWTO) == null) showHowto(true);
+// the browser bar follows the theme (KoboUI sets the hub's color by default)
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false;
+  m.setAttribute('content', light ? '#f3f1ea' : '#1d2a35');
+}
+themeColor();
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+raf = requestAnimationFrame(frame);
+booted = true;
+
+if (window.__kb) Object.assign(window.__kb, {
+  ready: () => booted && !!lv && frames > 0,
+  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score: mode === 'daily' && daily ? daily.score : save.best - 1,
+    time: sess ? Math.round(performance.now() - sess.t0) : 0, over: won, stage: lv ? lv.n : null,
+    paused: !!(window.KoboGame && KoboGame.paused()), moves, par: lv ? lv.par : 0, alive: lv ? Core.aliveCount(st) : 0,
+    level: save.level, best: save.best, stars: Object.assign({}, save.stars), undosLeft, hintsLeft,
+    daily: daily ? { dateKey: daily.dateKey, idx: daily.idx, lot: lv && lv.dailyIdx, score: daily.score, stars: daily.stars.slice(), done: daily.done, best: daily.best, tries: daily.tries } : null,
+    howto: !$('howto').hidden, winShown: !$('win').hidden, dailyShown: !$('dres').hidden, coach: !$('coach').hidden, glLost, frames }),
+  // clear the lot now (at par if no move was made yet)
+  win() {
+    if (!lv || won || vs) return false;
+    flushAnims(); startPlay(); if (!moves) moves = lv.par;
+    for (let i = 0; i < nc; i++) st[i * 3] = -1;
+    syncAll(); afterMove(); return true;
+  },
+  lose() { return false; }, // a puzzle has no game over: a stuck lot is undone or restarted (Q-4: the result card's buttons)
+  // the solver's next move, n times (animations are finished at once)
+  step(n) {
+    let k = 0;
+    for (; k < (n || 1); k++) {
+      if (!lv || won || (vs && !KoboVersus.canPlay())) break;
+      flushAnims();
+      const sol = Core.solve(lv, st, 60000); if (!sol || !sol.moves.length) break;
+      const mv = sol.moves[0], cf = catForce;
+      if (lv.cat) catForce = false;
+      if (mv.rot) rotateCar(mv.i); else drive(mv.i, st[mv.i * 3 + 2]);
+      catForce = cf;
+    }
+    flushAnims();
+    return k;
+  },
+  tutorial: () => ({ step: tut ? tut.step : (store.get(KEY_TUT) ? TUT.length : 0), done: !!store.get(KEY_TUT), active: !!tut }),
+  daily: dk => startDaily(dk), normal: () => setMode('normal'), menu: openMenu, howto: () => showHowto(false), restart: restartLot,
+  goto: n => startLevel(n), speed: k => { timeScale = k; }, carScreen: i => window.__parking.carScreen(i),
+});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 })();

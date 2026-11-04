@@ -99,7 +99,7 @@ test('flags reflect what the pages have today', () => {
     eq(g.flags.versus, true, g.id + ' versus');
     eq(g.versus, /KoboVersus\.init/.test(page) ? 'common' : 'own', g.id + ' versus impl');
   }
-  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049', 'games with a daily today');
+  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,parking', 'games with a daily today');
   eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole', 'realtime games (AUDIT 3)');
   ok(R.games.every(g => !g.flags.achievements), 'no achievements yet (P3-3)');
 });
