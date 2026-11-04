@@ -55,6 +55,7 @@ async function runCases(T, opt = {}) {
     await check(g, 'games map with 301 keys', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: many }, A, { merge: true }));
     await check(g, 'level not a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { level: 'x' }, A, { merge: true }));
     await check(g, 'games not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: 'x' }, A, { merge: true }));
+    await check(g, 'own reset (cloud.js fallback: set { games: {}, updatedAt })', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: {}, updatedAt: now }, A));
     await check(g, 'other user delete', 'deny', () => fsDelete(T, `nejiUsers/${A.uid}`, B));
     await check(g, 'own delete (R24)', 'allow', () => fsDelete(T, `nejiUsers/${A.uid}`, A));
   }

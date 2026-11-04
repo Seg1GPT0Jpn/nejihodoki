@@ -87,6 +87,20 @@ async function newPage(browser, env, T, nick, vp) {
   return page;
 }
 const getLog = p => p.evaluate(() => (window.__rulesLog || []).slice());
+// 対照のテスト用の値（記録の集計からは除く）
+const PROBE = 424242;
+async function probe(page, app, path, value) {
+  return page.evaluate(async ([app, path, value]) => {
+    try { await firebase.app(app).database().ref(path).set(value); return false; }
+    catch (e) { return /permission/i.test(String(e && (e.code || e.message))); }
+  }, [app, path, value === undefined ? PROBE : value]);
+}
+async function connectedTo(page, app, T) {
+  const u = await page.evaluate(app => firebase.app(app).options.databaseURL, app);
+  return T.emu ? u.startsWith('http://127.0.0.1:') : /firebasedatabase\.app/.test(u);
+}
+const PROBE_PATH = (rid, uid, kind) => kind === 'vs' ? `vs/rooms/${rid}/s/${uid}` : `hole/rooms/${rid}/g`;
+const isProbe = o => o.val === PROBE || (o.val && o.val.st === PROBE);
 
 // ---------------------------------------------------------------- versus.js（blocks）：2人で1試合 + 1人で並んでやめる
 async function runVersus(browser, env, T, opt = {}) {
@@ -96,7 +110,7 @@ async function runVersus(browser, env, T, opt = {}) {
   await sleep(1500);
   const info = { steps: [] };
   for (let i = 0; i < P.length; i++) {
-    await P[i].click('#vsSlot .kvs-entry');
+    await P[i].evaluate(() => KoboVersus.open());
     await P[i].waitForFunction(() => window.__koboVs && __koboVs.state.phase === 'queue', null, { timeout: 30000 });
     await sleep(800);
   }
@@ -105,6 +119,9 @@ async function runVersus(browser, env, T, opt = {}) {
   info.uids = st.map(s => s.uid); info.room = st[0].rid;
   info.steps.push(['match formed, same room', st[0].rid && st[0].rid === st[1].rid]);
   info.steps.push(['same seed', st[0].seed === st[1].seed]);
+  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], 'kobo-vs', T)]);
+  // negative control: B tries to overwrite A's score through the SDK (must be refused by the rules)
+  info.steps.push(['probe: B cannot overwrite A\'s score (s/{A})', await probe(P[1], 'kobo-vs', `vs/rooms/${st[0].rid}/s/${st[0].uid}`)]);
   for (const p of P) await p.waitForFunction(() => __koboVs.state.phase === 'result', null, { timeout: 90000 });
   const res = await Promise.all(P.map(p => p.evaluate(() => [...document.querySelectorAll('.kvs-res li')].length)));
   info.steps.push(['both see a result with 2 rows', res.every(n => n === 2)]);
@@ -112,20 +129,20 @@ async function runVersus(browser, env, T, opt = {}) {
   // the second page waits alone in the queue and cancels (queue remove, onDisconnect cancel)
   await P[1].evaluate(() => KoboVersus.close());
   await sleep(300);
-  await P[1].click('#vsSlot .kvs-entry').catch(() => {});
+  await P[1].evaluate(() => KoboVersus.open());
   await P[1].waitForFunction(() => __koboVs.state.phase === 'queue', null, { timeout: 30000 }).catch(() => {});
   await sleep(1500);
   await P[1].evaluate(() => KoboVersus.close());
   await sleep(1500);
   const logs = await Promise.all(P.map(getLog));
-  info.errors = P.flatMap((p, i) => p.errs.map(e => 'P' + i + ' ' + e));
+  info.errors = P.flatMap((p, i) => p.errs.filter(e => !e.includes(PROBE_PATH(st[0].rid, st[0].uid, 'vs'))).map(e => 'P' + i + ' ' + e));
   for (const p of P) await p.ctx.close();
   return { client: 'versus', info, ops: normalize(logs, info.uids, 'vs/rooms/') };
 }
 
 // ---------------------------------------------------------------- hole：2人＋CPU 2つで1ラウンド。物の取り合いと、のみこみ（人と CPU）
 async function runHole(browser, env, T, opt = {}) {
-  const url = `${env.url}/hole/index.html?debug&olen=${opt.len || 30}`;
+  const url = `${env.url}/hole/index.html?debug&olen=${opt.len || 60}`;
   const P = [await newPage(browser, env, T, 'Aoi'), await newPage(browser, env, T, 'Ben')];
   for (const p of P) await p.goto(url);
   await sleep(2500);
@@ -138,24 +155,32 @@ async function runHole(browser, env, T, opt = {}) {
   info.steps.push(['4 seats (2 players + 2 CPU)', st.every(s => s.seats === 4)]);
   const H = st.findIndex(s => s.host), G = 1 - H;
   info.steps.push(['exactly one host', H >= 0 && !st[G].host]);
+  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], 'hole-online', T)]);
+  // (a probe on p/{host} would be applied locally first and make the host's hole vanish on this page, so use the start signal)
+  info.steps.push(['probe: guest cannot replace the start signal (g)', await probe(P[G], 'hole-online', `hole/rooms/${st[0].rid}/g`, { pl: [st[G].uid], b: 3, st: PROBE })]);
   // wait for the start (3.5 s) and the spawn protection (2.5 s)
   await sleep(7000);
   for (const p of P) await p.evaluate(() => __hole.bot(true));
   await sleep(4000);
   // the guest's hole is swallowed by the (much bigger) host hole: the guest reports k { v: guest }
-  await P[H].evaluate(() => { __hole.aiOff(true); __hole.setPts(__hole.player, 4000); });
-  await sleep(1500);
-  const hp = await P[H].evaluate(() => [__hole.player.x, __hole.player.z]);
-  await P[G].evaluate(([x, z]) => { __hole.G.bot = false; __hole.teleport(__hole.player, x, z); }, hp);
-  await sleep(2500);
+  const kills = (p, v) => p.evaluate(v => (window.__rulesLog || []).filter(e => e.op === 'push' && /\/k\//.test(e.path) && e.val && (v === 'bot' ? /^b\d$/.test(e.val.v) : e.val.v === v)).length, v);
+  await P[H].evaluate(() => { __hole.G.bot = false; __hole.setPts(__hole.player, 4000); });
+  for (let i = 0; i < 8 && !(await kills(P[G], st[G].uid)); i++) {
+    await sleep(1200);
+    const hp = await P[H].evaluate(() => [__hole.player.x, __hole.player.z]);
+    await P[G].evaluate(([x, z]) => { __hole.G.bot = false; const p = __hole.player; if (p.alive) { p.inv = 0; __hole.teleport(p, x, z); } }, hp);
+    await sleep(800);
+    if (process.env.RULES_DEBUG) console.log('kill1', i, JSON.stringify(await P[G].evaluate(() => __hole.holes.filter(h => h.inMatch).map(h => [h.nid, h.isPlayer ? 'me' : '', h.alive, +h.R.toFixed(2), h.pts, +h.x.toFixed(1), +h.z.toFixed(1), +(h.inv || 0).toFixed(2), h.grp.visible, __hole.net.phase]))));
+  }
   // a CPU hole (run by the host) is swallowed by the guest: the host reports k { v: 'b1' }
-  await sleep(3500); // guest respawn + protection
-  await P[G].evaluate(() => __hole.setPts(__hole.player, 9000));
-  await sleep(1500);
-  const gp = await P[H].evaluate(() => { const h = __hole.holes.find(o => o.inMatch && o.nid !== __hole.net.uid && !o.isBot); return [h.x, h.z]; });
-  await P[H].evaluate(([x, z]) => { const b = __hole.holes.find(o => o.inMatch && o.isBot && o.alive); if (b) { b.inv = 0; __hole.teleport(b, x, z); } }, gp);
-  await sleep(2500);
-  await P[H].evaluate(() => __hole.aiOff(false));
+  for (let i = 0; i < 8 && !(await kills(P[H], 'bot')); i++) {
+    await sleep(1200);
+    await P[G].evaluate(n => { if (__hole.player.alive) __hole.setPts(__hole.player, n); }, 9000 + i);
+    await sleep(700);
+    const gp = await P[H].evaluate(id => { const h = __hole.holes.find(o => o.inMatch && o.nid === id); return h && h.alive ? [h.x, h.z] : null; }, st[G].uid);
+    if (gp) await P[H].evaluate(([x, z]) => { const b = __hole.holes.find(o => o.inMatch && o.isBot && o.alive); if (b) { b.inv = 0; __hole.teleport(b, x, z); } }, gp);
+    await sleep(800);
+  }
   for (const p of P) await p.waitForFunction(() => !document.getElementById('ovResult').hidden, null, { timeout: 90000 });
   info.steps.push(['both see the result', true]);
   await sleep(9000); // host removes the room 6 s after the result
@@ -166,7 +191,7 @@ async function runHole(browser, env, T, opt = {}) {
   await P[G].click('#onCancel').catch(() => {});
   await sleep(1500);
   const logs = await Promise.all(P.map(getLog));
-  info.errors = P.flatMap((p, i) => p.errs.map(e => 'P' + i + ' ' + e));
+  info.errors = P.flatMap((p, i) => p.errs.filter(e => !e.includes(PROBE_PATH(st[0].rid, st[H].uid, 'hole'))).map(e => 'P' + i + ' ' + e));
   info.host = H;
   for (const p of P) await p.ctx.close();
   return { client: 'hole', info, ops: normalize(logs, info.uids, 'hole/rooms/') };
@@ -223,6 +248,7 @@ const REQUIRED = {
 };
 
 function judge(run) {
+  run.ops = run.ops.filter(o => !isProbe(o));
   const inv = inventory(run.ops);
   const seen = new Set(inv.map(r => r.op + ' ' + r.path));
   const rows = [];

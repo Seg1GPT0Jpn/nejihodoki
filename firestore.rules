@@ -1,21 +1,189 @@
 rules_version = '2';
+// ひまつぶし工房：Firestore のルール（P1-4）。Firebase コンソールの Firestore → ルール に全文を貼り付けて「公開」する。
+// テスト：node tools/tests/rules/run.js（エミュレーター）／ --live（本番）
+// ゲームを足すとき：games()・caps()・okLegacyScores()・plus1() の4か所と、tools/tests/rules/spec.js の CAPS を直す。
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 自分の記録（本人だけが読み書き）
-    match /nejiUsers/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid;
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // ===== 管理者（オーナー） =====
+    // 'OWNER_UID_HERE' のままなら、だれも管理者にならない（安全）。
+    // オーナーの uid がわかったら、'OWNER_UID_HERE' をその uid に置き換えて、もう一度「公開」する。
+    function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
+
+    // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole']; }
+    function caps() {
+      return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000 };
     }
-    // ランキング（だれでも読める。書けるのは本人の行だけ）
+
+    // ===== 日本時間の日付と週 =====
+    function jst(t) { return t + duration.value(9, 'h'); }
+    function dayKey(t) { return jst(t).year() * 10000 + jst(t).month() * 100 + jst(t).day(); }
+    // 日本時間の月曜0時に切り替わる、1970年からの通し番号
+    function weekKey(t) { return (t.toMillis() + 32400000 + 259200000) / 604800000; }
+    function weekNo(t) { return int(math.floor(weekKey(t))); }
+    function graceT() { return request.time - duration.value(15, 'm'); }
+    function okDay(s) { return int(s) == dayKey(request.time) || int(s) == dayKey(graceT()); }
+    function okWeek(s) { return int(s) == weekNo(request.time) || int(s) == weekNo(graceT()); }
+    function okPeriod(p) {
+      return p == 'all'
+        || (p.matches('^d[0-9]{8}$') && okDay(p[1:]))
+        || (p.matches('^c[0-9]{8}$') && okDay(p[1:]))
+        || (p.matches('^w[0-9]{1,6}$') && okWeek(p[1:]));
+    }
+    function boardGame(b) { return b.split('~')[0]; }
+    function okBoard(b) { return b.split('~').size() == 2 && boardGame(b) in games() && okPeriod(b.split('~')[1]); }
+    function okName(n) { return n is string && n.size() >= 1 && n.size() <= 12; }
+    function okScore(v, g) { return v is number && v >= 0 && v <= caps()[g]; }
+
+    // ===== 自分の記録（本人だけ） =====
+    // 形：{ games: { "<key の . を ~ にしたもの>": { v: 文字列 | null（削除の印）, t: 時刻 } }, updatedAt,
+    //       （ネジほどきのページが書くもの）level, maxLevel, stars, daily, name }
+    // 昔の版が書いた知らないフィールドが残っているかもしれないので、トップレベルの許可リストは付けない。
+    // games の中は、map を1件ずつ確かめることができないので、件数の上限と、知っているキーの形を確かめる。
+    function okEnt(e) {
+      return e is map && e.keys().hasAll(['v', 't']) && e.size() <= 4
+        && (e.v == null || (e.v is string && e.v.size() <= 300000))
+        && e.t is number;
+    }
+    function okEntAt(g, k) { return !(k in g) || okEnt(g[k]); }
+    function okGames(g) {
+      return g is map && g.size() <= 300
+        && okEntAt(g, 'nejihodoki3d~maxLevel') && okEntAt(g, 'nejihodoki3d~stars') && okEntAt(g, 'nejihodoki3d~daily')
+        && okEntAt(g, 'kusoge~blocks~best') && okEntAt(g, 'kusoge~blocks~state')
+        && okEntAt(g, 'kusoge~drop~best')
+        && okEntAt(g, 'kusoge~raft~best') && okEntAt(g, 'kusoge~raft~save')
+        && okEntAt(g, 'kusoge~gates~save')
+        && okEntAt(g, 'kusoge~n59049~best') && okEntAt(g, 'kusoge~n59049~bestTile') && okEntAt(g, 'kusoge~n59049~state')
+        && okEntAt(g, 'kusoge~water~save') && okEntAt(g, 'kusoge~parking~save') && okEntAt(g, 'kusoge~hole~save')
+        && okEntAt(g, 'kusoge~vs~stats');
+    }
+    function okNejiUser(d) {
+      return (!('games' in d) || okGames(d.games))
+        && (!('updatedAt' in d) || d.updatedAt is number || d.updatedAt is timestamp)
+        && (!('level' in d) || (d.level is number && d.level >= 0 && d.level <= 100001))
+        && (!('maxLevel' in d) || (d.maxLevel is number && d.maxLevel >= 0 && d.maxLevel <= 100001))
+        && (!('stars' in d) || (d.stars is map && d.stars.size() <= 20000))
+        && (!('daily' in d) || (d.daily is map && d.daily.size() <= 5000))
+        && (!('name' in d) || (d.name is string && d.name.size() <= 128));
+    }
+    match /nejiUsers/{uid} {
+      allow read, delete: if isMe(uid);
+      allow create, update: if isMe(uid) && okNejiUser(request.resource.data);
+    }
+
+    // ===== 旧ランキング kusogeRanks（移行期間だけ書ける） =====
+    // { name: 1〜12文字, scores: { <ゲーム>: 0〜上限 }, updatedAt: 端末の時刻(ms) か サーバーの時刻 }
+    // 移行期間：2026-12-02 0:00（日本時間）まで。そのあとは読むだけになる（書き込みは拒否。古いページは失敗しても遊べる）。
+    // 延ばすときは、下の日付を書き換えて「公開」する。
+    function legacyOpen() { return request.time < timestamp.date(2026, 12, 1) + duration.value(15, 'h'); }
+    function okLegacyScores(s) {
+      return s is map && s.keys().hasOnly(games())
+        && okScore(s.get('neji', 0), 'neji') && okScore(s.get('blocks', 0), 'blocks') && okScore(s.get('drop', 0), 'drop')
+        && okScore(s.get('raft', 0), 'raft') && okScore(s.get('gates', 0), 'gates') && okScore(s.get('n59049', 0), 'n59049')
+        && okScore(s.get('water', 0), 'water') && okScore(s.get('parking', 0), 'parking') && okScore(s.get('hole', 0), 'hole');
+    }
+    // 端末の時計のずれを30分まで許す
+    function okUpdatedAt(t) {
+      return (t is timestamp && t == request.time)
+        || (t is number && t > request.time.toMillis() - 1800000 && t < request.time.toMillis() + 1800000);
+    }
     match /kusogeRanks/{uid} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == uid
+      allow create, update: if isMe(uid) && legacyOpen()
+        && request.resource.data.keys().hasAll(['name', 'scores', 'updatedAt'])
         && request.resource.data.keys().hasOnly(['name', 'scores', 'updatedAt'])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 12
-        && request.resource.data.scores is map
-        && request.resource.data.scores.size() <= 20;
-      allow delete: if request.auth != null && request.auth.uid == uid;
+        && okName(request.resource.data.name)
+        && okLegacyScores(request.resource.data.scores)
+        && okUpdatedAt(request.resource.data.updatedAt);
+      allow delete: if isMe(uid) || isAdmin();
     }
+
+    // ===== 新しいランキング（P1-6 の common/rank.js が使う）：1人1件 =====
+    // kbBoards/{board}/e/{uid} = { u: uid, n: ニックネーム, s: 値（整数、大きいほど良い）, t: サーバーの時刻, m?: { dur, seed, v, rp } }
+    // board = "<ゲーム>~all" | "<ゲーム>~w<週番号>" | "<ゲーム>~d<YYYYMMDD>" | "<ゲーム>~c<YYYYMMDD>"（日本時間。境目は15分の猶予）
+    // ゲスト（匿名ログイン）もニックネームがあれば載る。
+    function okEntry(b) {
+      let d = request.resource.data;
+      return d.keys().hasAll(['u', 'n', 's', 't']) && d.keys().hasOnly(['u', 'n', 's', 't', 'm'])
+        && d.u == request.auth.uid && okName(d.n)
+        && d.s is int && d.s > 0 && d.s <= caps()[boardGame(b)]
+        && d.t == request.time
+        && (!('m' in d) || (d.m is map && d.m.size() <= 8));
+    }
+    match /kbBoards/{board}/e/{uid} {
+      allow get: if true;
+      allow list: if request.query.limit <= 50;
+      allow create: if isMe(uid) && okBoard(board) && okEntry(board);
+      // 更新は、値が増えるときだけ。前の送信から5秒以上あける
+      allow update: if isMe(uid) && okBoard(board) && okEntry(board)
+        && request.resource.data.s > resource.data.s
+        && request.time > resource.data.t + duration.value(5, 's');
+      allow delete: if isMe(uid) || isAdmin();
+    }
+    // リプレイ（上位の検証用。最大20,000文字）
+    match /kbBoards/{board}/r/{uid} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isMe(uid) && okBoard(board)
+        && request.resource.data.keys().hasAll(['d', 't'])
+        && request.resource.data.keys().hasOnly(['d', 't', 'v'])
+        && request.resource.data.d is string && request.resource.data.d.size() <= 20000
+        && request.resource.data.t == request.time;
+      allow delete: if isMe(uid) || isAdmin();
+    }
+
+    // ===== 公開プロフィール（ランキングとフレンドの表示用） =====
+    // { n: ニックネーム, icon?, title?, lv: 1〜999, xpw: 今週の XP 0〜12000, wk: 今の週番号, code?: フレンドコード, t: サーバーの時刻 }
+    match /kbProfiles/{uid} {
+      allow get: if true;
+      allow list: if request.query.limit <= 50;
+      allow create, update: if isMe(uid)
+        && request.resource.data.keys().hasAll(['n', 'lv', 'xpw', 'wk', 't'])
+        && request.resource.data.keys().hasOnly(['n', 'icon', 'title', 'lv', 'xpw', 'wk', 'code', 't'])
+        && okName(request.resource.data.n)
+        && (!('icon' in request.resource.data) || (request.resource.data.icon is string && request.resource.data.icon.size() <= 16))
+        && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 24))
+        && (!('code' in request.resource.data) || (request.resource.data.code is string && request.resource.data.code.matches('^[2-9A-HJ-NP-Z]{8}$')))
+        && request.resource.data.lv is int && request.resource.data.lv >= 1 && request.resource.data.lv <= 999
+        && request.resource.data.xpw is int && request.resource.data.xpw >= 0 && request.resource.data.xpw <= 12000
+        && request.resource.data.wk == weekNo(request.time)
+        && request.resource.data.t == request.time
+        && (resource == null || request.time > resource.data.t + duration.value(60, 's'));
+      allow delete: if isMe(uid) || isAdmin();
+    }
+
+    // ===== フレンドコード → uid（1件ずつ読むだけ。一覧はできない） =====
+    match /kbCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() && code.matches('^[2-9A-HJ-NP-Z]{8}$')
+        && request.resource.data.keys().hasAll(['u', 't'])
+        && request.resource.data.keys().hasOnly(['u', 't'])
+        && request.resource.data.u == request.auth.uid && request.resource.data.t == request.time;
+      allow delete: if (signedIn() && resource.data.u == request.auth.uid) || isAdmin();
+    }
+
+    // ===== 匿名のプレイ回数：1週間に1件。1回の書き込みで、1つのゲームを1だけ増やす =====
+    // kbPlays/w<週番号> = { <ゲーム>: 回数 }
+    function prevPlays() { return resource == null ? {} : resource.data; }
+    function plus1(g) {
+      return request.resource.data.get(g, 0) == prevPlays().get(g, 0)
+          || request.resource.data.get(g, 0) == prevPlays().get(g, 0) + 1;
+    }
+    match /kbPlays/{week} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if signedIn() && week == 'w' + string(weekNo(request.time))
+        && request.resource.data.keys().hasOnly(games())
+        && request.resource.data.diff(prevPlays()).affectedKeys().size() == 1
+        && plus1('neji') && plus1('blocks') && plus1('drop') && plus1('raft') && plus1('gates')
+        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole');
+    }
+
+    // それ以外はすべて拒否（ルールに書いていないパスは、読むことも書くこともできない）
   }
 }
