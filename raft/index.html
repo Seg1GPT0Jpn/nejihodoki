@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>いかだ暮らし</title>
-<meta name="theme-color" content="#0f3d47">
+<meta name="theme-color" content="#1d2a35">
 <meta name="description" content="水没した世界。漂流物を拾い、クルーを集め、イカダを海上基地に育てて海賊と嵐を生き延びる3Dサバイバル。">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -13,29 +13,56 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="いかだ暮らし">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
+/* UI chrome uses the shared theme tokens (common/theme.css: light + dark, html[data-kb-theme]).
+   The 3D sea and the overlays drawn on top of it (toast, chips, alert) keep their own sea palette in both themes. */
 :root {
-  --deep: #0f3d47;
-  --deep-2: #155160;
-  --line: #2a6b78;
-  --sand: #fff6e3;
-  --sand-dim: #a9cdd2;
-  --sun: #ffc94a;
-  --sun-ink: #3a2600;
-  --coral: #ff7a59;
+  --deep: var(--kb-bg);
+  --deep-2: var(--kb-surface);
+  --line: var(--kb-line);
+  --sand: var(--kb-ink);
+  --sand-dim: var(--kb-dim);
+  --sun: var(--kb-accent);
+  --sun-ink: var(--kb-accent-ink);
+  --sun-text: var(--kb-accent-text);
+  --panel: var(--kb-bg);
+  --card: var(--kb-surface);
+  --chip: var(--kb-surface-2);
+  --ink: var(--kb-ink);
+  --dim: var(--kb-dim);
+  --hot: #ff9a6a;
+  --coral: #f06a45; --coral-sh: #b8492b;
+  --bad-bg: rgba(255,107,107,.2); --bad-ink: #ff9d8a;
+  --good-bg: rgba(76,195,138,.2); --good-ink: #7fe0ad;
+  --warn-bg: rgba(242,179,61,.2); --warn-ink: #f2c66b;
   --hp: #ff6b6b;
   --water: #4cc3ff;
   --food: #ffa94d;
   --ok: #4fd18b;
-  --ink: #23404a;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
-  color-scheme: dark;
+  --sea-ink: #fff6e3;
+  --font-display: var(--kb-font-display);
+  --font-body: var(--kb-font-body);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --hot: #b8481f; --coral: #e35d3a; --coral-sh: #a8401f;
+    --bad-bg: #ffe1db; --bad-ink: #b3261e; --good-bg: #d8f5e3; --good-ink: #17794a; --warn-bg: #fff0c2; --warn-ink: #7a5000;
+  }
+}
+[data-kb-theme="light"] {
+  --hot: #b8481f; --coral: #e35d3a; --coral-sh: #a8401f;
+  --bad-bg: #ffe1db; --bad-ink: #b3261e; --good-bg: #d8f5e3; --good-ink: #17794a; --warn-bg: #fff0c2; --warn-ink: #7a5000;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
@@ -47,35 +74,30 @@ body {
 button { font-family: var(--font-body); color: inherit; }
 #app {
   height: 100%; height: 100dvh; display: flex; flex-direction: column; max-width: 560px; margin: 0 auto;
-  padding-top: max(4px, env(safe-area-inset-top, 0px));
-  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  padding-left: max(8px, env(safe-area-inset-left, 0px));
-  padding-right: max(8px, env(safe-area-inset-right, 0px));
+  padding-top: max(4px, var(--kb-sat));
+  padding-bottom: max(8px, var(--kb-sab));
+  padding-left: max(8px, var(--kb-sal));
+  padding-right: max(8px, var(--kb-sar));
   gap: 5px;
 }
-header { display: flex; align-items: center; gap: 6px; min-height: 38px; }
-.back { color: var(--sand-dim); text-decoration: none; font-size: 12.5px; font-weight: 800; white-space: nowrap; padding: 9px 4px; flex: none; }
+#side-col { display: contents; }
+header { display: flex; align-items: center; gap: 6px; min-height: 44px; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 0; white-space: nowrap; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 400px) { h1 { font-size: 14px; } }
-h1 span { color: var(--sun); }
-#dayChip {
-  display: flex; align-items: center; gap: 5px; background: var(--deep-2); border: 1px solid var(--line);
-  border-radius: 999px; padding: 5px 10px 5px 7px; font-weight: 800; font-size: 12.5px; white-space: nowrap;
-  font-variant-numeric: tabular-nums; flex: none;
-}
-#dayIcon { width: 14px; height: 14px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 6px rgba(255,201,74,.7); flex: none; }
-#dayIcon.night { background: transparent; box-shadow: inset -4px -2px 0 0 #f3efcf; transform: rotate(-20deg); }
+h1 span { color: var(--sun-text); }
 .icon-btn {
-  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--deep-2);
-  display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; font-weight: 800; font-size: 16px;
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--deep-2); color: var(--sand);
+  display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; font-weight: 800; font-size: 16px; text-decoration: none;
 }
-.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn svg { width: 22px; height: 22px; }
+.icon-btn:disabled { opacity: .45; cursor: default; }
+.icon-btn:focus-visible, .btn:focus-visible, #tabs button:focus-visible, .card button:focus-visible, .sbtn:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
 
 /* HUD */
 #hud { display: flex; flex-direction: column; gap: 4px; }
 #mission {
-  display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--deep-2); border-radius: 14px;
-  padding: 5px 10px 5px 5px; text-align: left; cursor: pointer; position: relative; overflow: hidden; min-height: 40px;
+  display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--deep-2); border-radius: 14px; color: var(--sand);
+  padding: 5px 10px 5px 5px; text-align: left; cursor: pointer; position: relative; overflow: hidden; min-height: 44px;
 }
 #lvBadge {
   flex: none; width: 40px; height: 32px; border-radius: 10px; background: var(--sun); color: var(--sun-ink);
@@ -83,7 +105,7 @@ h1 span { color: var(--sun); }
 }
 #lvBadge b { font: 400 15px var(--font-display); }
 .mtxt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.mtxt small { font-size: 10px; color: var(--sun); font-weight: 800; }
+.mtxt small { font-size: 10px; color: var(--sun-text); font-weight: 800; }
 .mtxt b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #mProg { flex: none; font-weight: 800; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--sand-dim); }
 #xpBar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--sun); width: 0; transition: width .3s; }
@@ -93,15 +115,15 @@ h1 span { color: var(--sun); }
 .stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .stat .lbl { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: var(--sand-dim); }
 .stat .lbl b { color: var(--sand); font-variant-numeric: tabular-nums; }
-.bar { height: 8px; border-radius: 6px; background: rgba(0,0,0,.35); overflow: hidden; border: 1px solid rgba(255,255,255,.08); }
+.bar { height: 8px; border-radius: 6px; background: var(--kb-sunken); overflow: hidden; border: 1px solid var(--line); }
 .bar i { display: block; height: 100%; width: 100%; border-radius: 6px; }
 #stHp .bar i { background: var(--hp); } #stWater .bar i { background: var(--water); } #stFood .bar i { background: var(--food); }
 .stat.low .bar { animation: blink .7s steps(2) infinite; }
-.stat.low .lbl { color: #ffb4a8; }
+.stat.low .lbl { color: var(--bad-ink); }
 @keyframes blink { 50% { background: rgba(255,80,80,.55); } }
 #res { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
 .rc {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 2px; background: rgba(0,0,0,.22); border-radius: 8px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 2px; background: var(--kb-sunken); border-radius: 8px;
   padding: 3px 5px; font-size: 10.5px; font-weight: 800; min-width: 0; white-space: nowrap; border: 1px solid transparent;
 }
 .rc span { color: var(--sand-dim); overflow: hidden; text-overflow: ellipsis; }
@@ -109,178 +131,229 @@ html[lang="en"] .rc { padding: 3px 4px; letter-spacing: -.02em; } html[lang="en"
 @media (max-width: 400px) { html[lang="en"] .rc b small, html[lang="en"] #res .rc:last-child span { display: none; } }
 .rc b { font-variant-numeric: tabular-nums; font-size: 11.5px; }
 .rc b small { color: var(--sand-dim); font-size: 9px; font-weight: 500; }
-.rc.full { border-color: var(--sun); } .rc.full b { color: var(--sun); }
-.rc.zero b { color: #ff9d8a; }
+.rc.full { border-color: var(--sun); } .rc.full b { color: var(--sun-text); }
+.rc.zero b { color: var(--bad-ink); }
 .rc.bump { animation: bump .35s; }
-@keyframes bump { 40% { background: #2a7a8a; } }
+@keyframes bump { 40% { background: var(--kb-accent-soft); } }
 
-/* stage */
-#stage { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden; background: #3b8fa8; touch-action: none; }
+/* stage (the sea; these overlays sit on the 3D picture, so they keep the sea palette in both themes) */
+#stage { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden; background: #3b8fa8; touch-action: none; color: var(--sea-ink); }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .pop {
   position: absolute; left: 0; top: 0; font-weight: 800; font-size: 13px; white-space: nowrap; color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,.8), 0 0 6px rgba(0,0,0,.5); will-change: transform; display: none;
 }
-.pop.bad { color: #ff8a7a; } .pop.good { color: #b9ffc8; } .pop.gold { color: var(--sun); }
+.pop.bad { color: #ff8a7a; } .pop.good { color: #b9ffc8; } .pop.gold { color: #ffc94a; }
 .hpb { position: absolute; left: 0; top: 0; width: 30px; height: 5px; background: rgba(0,0,0,.6); border-radius: 3px; display: none; will-change: transform; }
 .hpb i { display: block; height: 100%; background: var(--ok); border-radius: 3px; }
 .hpb.foe i { background: #ff5a4a; }
 .tag {
-  position: absolute; left: 0; top: 0; display: none; font-size: 11px; font-weight: 800; background: rgba(10,40,48,.85); color: var(--sun);
-  border: 1px solid var(--sun); border-radius: 999px; padding: 2px 7px; white-space: nowrap; will-change: transform;
+  position: absolute; left: 0; top: 0; display: none; font-size: 11px; font-weight: 800; background: rgba(10,40,48,.85); color: #ffc94a;
+  border: 1px solid #ffc94a; border-radius: 999px; padding: 2px 7px; white-space: nowrap; will-change: transform;
 }
+.tag.tap { background: #ffc94a; color: #3a2600; border-color: #fff; }
 #toast {
   position: absolute; left: 50%; top: 8px; transform: translate(-50%, -8px); opacity: 0; pointer-events: none; z-index: 5;
-  background: rgba(10,40,48,.9); border: 1px solid rgba(255,255,255,.15); color: var(--sand);
+  background: rgba(10,40,48,.9); border: 1px solid rgba(255,255,255,.15); color: var(--sea-ink);
   padding: 7px 13px; border-radius: 999px; font-weight: 800; font-size: 13px; white-space: nowrap; max-width: 94%;
   overflow: hidden; text-overflow: ellipsis; transition: opacity .2s, transform .2s;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 #toast.warn { background: rgba(120,20,20,.92); border-color: #ff9a8a; }
 #toast.good { background: rgba(26,96,52,.92); border-color: #9fe8b4; }
+#banner {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); z-index: 6; pointer-events: none; text-align: center;
+  color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35), 0 0 18px rgba(0,0,0,.45); width: 92%;
+}
+#banner b { display: block; font: 400 clamp(26px, 8vw, 40px)/1.15 var(--font-display); color: #ffe08a; }
+#banner span { display: block; font-weight: 800; font-size: 14px; margin-top: 4px; }
+#banner.bad b { color: #ffb0a0; } #banner.good b { color: #b9ffc8; }
+#banner.show { animation: bannerIn 2.2s ease-out forwards; }
+@keyframes bannerIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  20% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  #banner.show { animation: bannerFade 1.6s linear forwards; }
+  @keyframes bannerFade { 0% { opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  #mission.done, .rc.bump, #tabs button.hint, .card.hint { animation: none !important; }
+  #sheet, .panel { animation: none !important; }
+}
 #alert {
-  position: absolute; left: 8px; right: 8px; top: 44px; display: flex; align-items: center; gap: 8px; z-index: 4;
-  background: rgba(120,24,24,.9); border: 1px solid #ff9a8a; border-radius: 14px; padding: 6px 6px 6px 12px; font-weight: 800; font-size: 13px;
+  position: absolute; left: 8px; right: 8px; top: 52px; display: flex; align-items: center; gap: 8px; z-index: 4;
+  background: rgba(120,24,24,.9); border: 1px solid #ff9a8a; border-radius: 14px; padding: 4px 4px 4px 12px; font-weight: 800; font-size: 13px;
 }
 #alert.storm { background: rgba(40,48,90,.92); border-color: #a9b8ff; }
 #alert span { flex: 1; min-width: 0; }
-#alert button { border: 0; border-radius: 10px; background: var(--sun); color: var(--sun-ink); font-weight: 800; font-size: 13px; padding: 9px 12px; cursor: pointer; }
+#alert button { border: 0; border-radius: 10px; background: #ffc94a; color: #3a2600; font-weight: 800; font-size: 13px; padding: 0 14px; min-height: 44px; cursor: pointer; }
 #placeBar {
   position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; z-index: 4;
-  background: rgba(255,246,227,.96); color: var(--ink); border-radius: 14px; padding: 8px 8px 8px 14px;
+  background: var(--card); color: var(--ink); border-radius: 14px; padding: 6px 6px 6px 14px; border: 1px solid var(--line);
   font-weight: 800; font-size: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
 }
 #placeBar span { flex: 1; }
-#placeBar button { border: 0; border-radius: 10px; background: var(--ink); color: var(--sand); font-weight: 800; padding: 10px 14px; font-size: 14px; cursor: pointer; }
+#placeBar button { border: 0; border-radius: 10px; background: var(--ink); color: var(--panel); font-weight: 800; padding: 0 16px; min-height: 44px; font-size: 14px; cursor: pointer; }
 #coach {
-  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; display: flex; gap: 8px; align-items: flex-start;
-  background: rgba(255,246,227,.95); color: var(--ink); border-radius: 14px; padding: 9px 8px 9px 12px; font-size: 13px; line-height: 1.5; font-weight: 800;
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; display: flex; gap: 4px; align-items: flex-start;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 9px 2px 9px 12px; font-size: 13px; line-height: 1.5; font-weight: 800;
   box-shadow: 0 4px 14px rgba(0,0,0,.25); pointer-events: auto;
 }
 #coach p { margin: 0; flex: 1; }
-#coach p b { color: #c45a2c; }
-#coach button { border: 0; background: transparent; color: #6c8a92; font-size: 18px; font-weight: 800; padding: 0 6px; cursor: pointer; line-height: 1; }
+#coach p b { color: var(--hot); }
+#coach .step { display: inline-block; font-size: 10.5px; color: var(--dim); margin-right: 6px; }
+#coach button { border: 0; background: transparent; color: var(--dim); font-size: 20px; font-weight: 800; width: 44px; height: 44px; margin: -9px 0 -9px 0; padding: 0; cursor: pointer; line-height: 1; flex: none; }
 #side { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 2; align-items: flex-end; }
+#chips { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .sidechip {
   background: rgba(10,40,48,.78); border: 1px solid rgba(255,255,255,.15); border-radius: 999px; padding: 4px 10px; font-size: 11.5px;
-  font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums;
+  font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--sea-ink);
 }
-#weatherChip { position: absolute; left: 8px; top: 8px; z-index: 2; }
+#dayChip { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 5px 11px 5px 7px; }
+#dayIcon { width: 14px; height: 14px; border-radius: 50%; background: #ffc94a; box-shadow: 0 0 6px rgba(255,201,74,.7); flex: none; }
+#dayIcon.night { background: transparent; box-shadow: inset -4px -2px 0 0 #f3efcf; transform: rotate(-20deg); }
 /* online battle (common/versus.js) */
-#vsSlot .kvs-entry { background: rgba(10,40,48,.82); border-color: rgba(255,255,255,.22); height: 32px; }
-.panel .kvs-entry { background: var(--deep); color: var(--sand); border-color: var(--deep); }
-#vsSlotOv { display: flex; } #vsSlotOv .kvs-entry { height: auto; border-radius: 14px; padding: 0 14px; }
+#vsSlot .kvs-entry { background: rgba(10,40,48,.82); border-color: rgba(255,255,255,.22); color: var(--sea-ink); min-height: 44px; }
+.panel .kvs-entry { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+#vsSlotOv { display: flex; } #vsSlotOv .kvs-entry { height: auto; min-height: 48px; border-radius: 14px; padding: 0 14px; }
 
 /* tabs */
 #tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
 #tabs button {
-  border: 1px solid var(--line); background: var(--deep-2); border-radius: 14px; min-height: 54px; display: flex; flex-direction: column;
+  border: 1px solid var(--line); background: var(--deep-2); border-radius: 14px; min-height: 54px; display: flex; flex-direction: column; color: var(--sand);
   align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 13px; cursor: pointer; padding: 4px 0; position: relative;
 }
 #tabs button svg { width: 22px; height: 22px; }
-#tabs button.hint { border-color: var(--sun); box-shadow: 0 0 0 3px rgba(255,201,74,.35); animation: glow 1.4s ease-in-out infinite; }
+#tabs button.hint { border-color: var(--sun); box-shadow: 0 0 0 3px var(--kb-accent-soft); animation: glow 1.4s ease-in-out infinite; }
 #tabs button .dot { position: absolute; top: 5px; right: 12px; width: 9px; height: 9px; border-radius: 50%; background: var(--coral); display: none; }
 #tabs button.badge .dot { display: block; }
-@keyframes glow { 50% { box-shadow: 0 0 0 6px rgba(255,201,74,.15); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
 
 /* bottom sheet */
-#sheetWrap { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(4,20,26,.4); padding-top: max(8px, env(safe-area-inset-top, 0px)); }
+#sheetWrap { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; background: var(--kb-scrim); padding-top: max(8px, var(--kb-sat)); }
 #sheet {
-  background: var(--sand); color: var(--ink); border-radius: 22px 22px 0 0; max-width: 560px; width: 100%; margin: 0 auto;
-  max-height: 76%; display: flex; flex-direction: column; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -8px 30px rgba(0,0,0,.3); animation: up .2s ease-out;
+  background: var(--panel); color: var(--ink); border-radius: 22px 22px 0 0; max-width: 560px; width: 100%; margin: 0 auto;
+  max-height: 76%; display: flex; flex-direction: column; padding-bottom: max(8px, var(--kb-sab));
+  box-shadow: var(--kb-shadow-up); animation: up .2s ease-out;
 }
 @keyframes up { from { transform: translateY(40px); opacity: .4; } }
-.sheet-head { display: flex; align-items: center; padding: 13px 14px 6px 16px; gap: 8px; }
+.sheet-head { display: flex; align-items: center; padding: 11px 14px 6px 16px; gap: 8px; }
 .sheet-head h2 { margin: 0; font: 400 18px var(--font-display); flex: 1; min-width: 0; }
-.sheet-head button { border: 0; background: var(--ink); color: var(--sand); border-radius: 12px; padding: 10px 14px; font-weight: 800; font-size: 14px; cursor: pointer; }
+.sheet-head button { border: 0; background: var(--ink); color: var(--panel); border-radius: 12px; padding: 0 16px; min-height: 44px; font-weight: 800; font-size: 14px; cursor: pointer; }
 #sheetBody { overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 0 12px 16px; display: flex; flex-direction: column; gap: 8px; }
-.sinfo { font-size: 12px; font-weight: 800; color: #4f6f78; padding: 0 4px; line-height: 1.5; }
-.sec { font-size: 12px; font-weight: 800; color: #6c8a92; margin: 6px 4px 0; }
-.card { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 1px 0 #e6dcc4; }
+.sinfo { font-size: 12px; font-weight: 800; color: var(--dim); padding: 0 4px; line-height: 1.5; }
+.sinfo.live { color: var(--bad-ink); }
+.sec { font-size: 12px; font-weight: 800; color: var(--dim); margin: 6px 4px 0; }
+.card { display: flex; gap: 10px; align-items: center; background: var(--card); border-radius: 16px; padding: 10px; border: 1px solid var(--line); }
+.card.hint { box-shadow: 0 0 0 3px var(--sun); animation: glow 1.4s ease-in-out infinite; }
 .card .ico { width: 42px; height: 42px; flex: none; border-radius: 12px; display: grid; place-items: center; font: 400 17px var(--font-display); color: #fff; }
 .card .txt { flex: 1; min-width: 0; }
 .card .nm { font-weight: 800; font-size: 15px; }
-.card .nm small { font-size: 11px; color: #6c8a92; margin-left: 4px; font-weight: 800; }
-.card .ds { font-size: 12px; color: #4f6f78; line-height: 1.45; margin-top: 1px; }
+.card .nm small { font-size: 11px; color: var(--dim); margin-left: 4px; font-weight: 800; }
+.card .ds { font-size: 12px; color: var(--dim); line-height: 1.45; margin-top: 1px; }
+.card .ds b { color: var(--hot); }
 .cost { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.cost span { font-size: 11.5px; font-weight: 800; background: #e9f5f3; color: var(--ink); border-radius: 999px; padding: 2px 8px; }
-.cost span.no { background: #ffe1db; color: #c0392b; }
+.cost span { font-size: 11.5px; font-weight: 800; background: var(--chip); color: var(--ink); border-radius: 999px; padding: 2px 8px; }
+.cost span.no { background: var(--bad-bg); color: var(--bad-ink); }
 .card button, .sbtn {
   flex: none; border: 0; border-radius: 12px; background: var(--coral); color: #fff; font-weight: 800; font-size: 14px;
-  padding: 0 12px; min-width: 64px; height: 44px; cursor: pointer;
+  padding: 0 12px; min-width: 64px; min-height: 44px; cursor: pointer;
 }
-.sbtn.alt { background: var(--ink); color: var(--sand); }
+.sbtn.alt { background: var(--ink); color: var(--panel); }
 .sbtn.ok { background: #2e9e63; }
-.card button:disabled, .sbtn:disabled { background: #cfd8d6; color: #8a9a9d; cursor: default; }
+.card button:disabled, .sbtn:disabled { background: var(--chip); color: var(--dim); cursor: default; }
 .card.lock { opacity: .55; }
 .card.sel { box-shadow: 0 0 0 3px var(--coral); }
 .btnrow { display: flex; gap: 6px; flex-wrap: wrap; }
 .btnrow .sbtn { flex: 1; }
-.hpmini { height: 5px; background: #e2e8e6; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.hpmini { height: 5px; background: var(--chip); border-radius: 3px; overflow: hidden; margin-top: 4px; }
 .hpmini i { display: block; height: 100%; background: #2e9e63; }
 .seg { display: inline-flex; border-radius: 10px; overflow: hidden; border: 2px solid var(--ink); flex: none; }
-.seg button { border: 0; border-radius: 0; height: 40px; min-width: 46px; padding: 0 8px; background: #fff; color: var(--ink); font-weight: 800; font-size: 13px; }
-.seg button.on { background: var(--ink); color: var(--sand); }
-.pill { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; background: #e9f5f3; margin-right: 3px; }
-.pill.r { background: #ffe1db; color: #c0392b; } .pill.g { background: #d8f5e3; color: #1d7a45; } .pill.y { background: #fff0c2; color: #8a5a00; }
-.formation { background: #fff; border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; }
+.seg button { border: 0; border-radius: 0; min-height: 44px; min-width: 50px; padding: 0 8px; background: var(--card); color: var(--ink); font-weight: 800; font-size: 13px; }
+.seg button.on { background: var(--ink); color: var(--panel); }
+.pill { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; background: var(--chip); margin-right: 3px; }
+.pill.r { background: var(--bad-bg); color: var(--bad-ink); } .pill.g { background: var(--good-bg); color: var(--good-ink); } .pill.y { background: var(--warn-bg); color: var(--warn-ink); }
+.hot { color: var(--hot); }
+.formation { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; }
+.formation .note { font-weight: 500; color: var(--dim); line-height: 1.5; }
+.formation .note b { color: var(--hot); }
 .frow { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; min-height: 28px; }
-.frow b { width: 34px; flex: none; color: #6c8a92; }
+.frow b { width: 34px; flex: none; color: var(--dim); }
 .frow .pill { font-size: 12px; padding: 3px 8px; }
+.crow { width: 100%; display: flex; gap: 6px; align-items: center; }
+.crow.desc { justify-content: space-between; font-size: 11.5px; color: var(--dim); font-weight: 800; }
+.crow.picks { flex-direction: column; align-items: stretch; }
 .mlist { display: flex; flex-direction: column; gap: 4px; }
-.mitem { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 800; background: #fff; border-radius: 12px; padding: 8px 10px; }
-.mitem.done { color: #8aa0a5; text-decoration: line-through; background: #f1ece0; }
+.mitem { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 800; background: var(--card); border-radius: 12px; padding: 8px 10px; }
+.mitem.done { color: var(--dim); text-decoration: line-through; background: var(--chip); }
 .mitem.cur { box-shadow: 0 0 0 2px var(--coral); }
-.mitem i { font-style: normal; color: #c45a2c; margin-left: auto; font-size: 11.5px; white-space: nowrap; }
+.mitem i { font-style: normal; color: var(--hot); margin-left: auto; font-size: 11.5px; white-space: nowrap; }
 .chipsel { display: flex; flex-wrap: wrap; gap: 6px; }
-.chipsel button { border: 2px solid #cfd8d6; background: #fff; color: var(--ink); border-radius: 12px; padding: 6px 10px; font-weight: 800; font-size: 12.5px; min-height: 40px; }
-.chipsel button.on { border-color: var(--coral); background: #fff0ea; }
-.prog { height: 8px; border-radius: 4px; background: #e2e8e6; overflow: hidden; }
+.chipsel button { border: 2px solid var(--line); background: var(--card); color: var(--ink); border-radius: 12px; padding: 6px 10px; font-weight: 800; font-size: 12.5px; min-height: 44px; }
+.chipsel button.on { border-color: var(--coral); background: var(--kb-accent-soft); }
+.prog { height: 8px; border-radius: 4px; background: var(--chip); overflow: hidden; }
 .prog i { display: block; height: 100%; background: var(--coral); }
 
-/* overlays */
-#ov { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(4,22,28,.62); padding: max(18px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) max(18px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); }
+/* overlays (how to play, game over) */
+#ov { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: var(--kb-scrim); padding: max(18px, var(--kb-sat)) max(18px, var(--kb-sar)) max(18px, var(--kb-sab)) max(18px, var(--kb-sal)); }
 #ovPanel { max-height: calc(100% - 8px); overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
 #ovPanel > .row:last-child { position: sticky; bottom: -18px; background: inherit; padding-block: 10px 4px; margin-bottom: -4px; z-index: 1; }
 @media (max-height: 620px) { #ovPanel ul li { padding-block: 6px; } #ovPanel { font-size: 13px; } }
 .panel {
-  background: var(--sand); color: var(--ink); border-radius: 22px; width: min(370px, 100%); padding: 20px 18px 16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,.4); text-align: center; animation: up .25s ease-out; max-height: 100%; overflow-y: auto;
+  background: var(--panel); color: var(--ink); border-radius: 22px; width: min(370px, 100%); padding: 20px 18px 16px; border: 1px solid var(--line);
+  box-shadow: var(--kb-shadow); text-align: center; animation: up .25s ease-out; max-height: 100%; overflow-y: auto;
 }
 .panel h2 { font: 400 25px var(--font-display); margin: 0 0 4px; }
 .panel h2 span { color: var(--coral); }
-.panel .sub { font-size: 13px; color: #4f6f78; margin: 0 0 12px; font-weight: 800; }
+.panel .sub { font-size: 13px; color: var(--dim); margin: 0 0 12px; font-weight: 800; }
 .panel ul { text-align: left; padding: 0; margin: 0 0 12px; list-style: none; display: flex; flex-direction: column; gap: 7px; }
-.panel li { font-size: 13px; line-height: 1.55; background: #fff; border-radius: 12px; padding: 7px 10px 7px 12px; }
-.panel li b { color: #c45a2c; }
+.panel li { font-size: 13px; line-height: 1.55; background: var(--card); border-radius: 12px; padding: 7px 10px 7px 12px; display: flex; gap: 9px; align-items: flex-start; }
+.panel li b { color: var(--hot); }
+.panel li .n { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sun); color: var(--sun-ink); font: 400 12px/22px var(--font-display); text-align: center; margin-top: 1px; }
 .big { font: 400 44px var(--font-display); color: var(--coral); margin: 6px 0 0; line-height: 1.1; }
+.newbest { display: inline-block; margin-top: 6px; background: var(--sun); color: var(--sun-ink); font-weight: 800; font-size: 13px; border-radius: 999px; padding: 3px 12px; }
 .panel .row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
 .btn {
-  border: 0; border-radius: 14px; padding: 13px 20px; font: 800 16px var(--font-body); cursor: pointer;
-  background: var(--coral); color: #fff; box-shadow: 0 3px 0 #c4553a; text-decoration: none; display: inline-block;
+  border: 0; border-radius: 14px; padding: 0 20px; min-height: 48px; font: 800 16px var(--font-body); cursor: pointer;
+  background: var(--coral); color: #fff; box-shadow: 0 3px 0 var(--coral-sh); text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
 }
-.btn.sub2 { background: var(--ink); box-shadow: 0 3px 0 #11262d; color: var(--sand); }
-.recs { display: flex; justify-content: center; gap: 14px; font-size: 12px; font-weight: 800; color: #4f6f78; margin-top: 8px; flex-wrap: wrap; }
+.btn.sub2 { background: var(--ink); box-shadow: 0 3px 0 rgba(0,0,0,.35); color: var(--panel); }
+.recs { display: flex; justify-content: center; gap: 14px; font-size: 12px; font-weight: 800; color: var(--dim); margin-top: 8px; flex-wrap: wrap; }
 .recs b { display: block; font-size: 19px; color: var(--ink); }
-.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font-size: 12px; font-weight: 800; color: #4f6f78; }
-.langrow select { font: 800 13px var(--font-body); color: var(--ink); background: #fff; border: 2px solid #cfd8d6; border-radius: 10px; padding: 6px 8px; }
+.langrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font-size: 12px; font-weight: 800; color: var(--dim); }
+.langrow select { font: 800 14px var(--font-body); color: var(--ink); background: var(--card); border: 2px solid var(--line); border-radius: 10px; padding: 0 8px; min-height: 44px; }
 #loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40; background: var(--deep); font-weight: 800; color: var(--sand-dim); text-align: center; padding: 20px; line-height: 1.7; }
+#nogl { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; background: var(--deep); padding: 24px max(20px, var(--kb-sar)) 24px max(20px, var(--kb-sal)); }
+#nogl > div { max-width: 340px; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px 18px; color: var(--ink); }
+#nogl b { display: block; font: 400 20px var(--font-display); margin-bottom: 8px; }
+#nogl p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--dim); font-weight: 800; }
+#nogl .btn { margin-top: 6px; }
 @media (max-height: 660px) {
   #tabs button { min-height: 46px; } #tabs button svg { width: 18px; height: 18px; }
   .rc { padding: 2px 4px; }
+}
+/* landscape phones: HUD and tabs on the left, the sea on the right */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: 980px; display: grid; grid-template-columns: minmax(250px, 34%) 1fr; grid-template-rows: 1fr; gap: 6px 8px; }
+  #side-col { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
+  #side-col #tabs { margin-top: auto; }
+  #tabs button { min-height: 46px; font-size: 12px; } #tabs button svg { width: 18px; height: 18px; }
+  header { min-height: 44px; } h1 { display: none; } header #helpBtn { margin-left: auto; }
+  #mission { min-height: 44px; padding-block: 3px; }
+  #res { grid-template-columns: repeat(3, 1fr); }
+  #stage { grid-column: 2; grid-row: 1; }
+  .rc { padding: 2px 4px; }
+  #sheet { max-height: 92%; }
 }
 </style>
 </head>
 <body>
 <div id="app">
+  <div id="side-col">
   <header>
-    <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+    <a class="icon-btn" id="homeBtn" href="../" aria-label="ゲーム一覧に戻る" title="ゲーム一覧に戻る" data-i18n-attr="aria-label,title"></a>
     <h1 data-i18n-html>いかだ<span>暮らし</span></h1>
-    <div id="dayChip"><i id="dayIcon"></i><span id="dayText"></span></div>
-    <button class="icon-btn" id="helpBtn" aria-label="遊び方" data-i18n-attr="aria-label">?</button>
-    <button class="icon-btn" id="soundBtn" aria-label="音のオンオフ" data-i18n-attr="aria-label"></button>
+    <button class="icon-btn" id="helpBtn" aria-label="遊び方" title="遊び方" data-i18n-attr="aria-label,title"></button>
+    <button class="icon-btn" id="soundBtn" aria-label="音を消す" aria-pressed="true"></button>
+    <button class="icon-btn" id="menuBtn" aria-label="一時停止とメニュー" title="一時停止とメニュー" data-i18n-attr="aria-label,title"></button>
   </header>
   <div id="hud">
     <button id="mission" aria-label="現在の任務" data-i18n-attr="aria-label"><span id="lvBadge"><span data-i18n>船長Lv</span><b id="lvNum">1</b></span><span class="mtxt"><small data-i18n>メイン任務</small><b id="mText">…</b></span><span id="mProg"></span><i id="xpBar"></i></button>
@@ -291,37 +364,39 @@ html[lang="en"] .rc { padding: 3px 4px; letter-spacing: -.02em; } html[lang="en"
     </div>
     <div id="res"></div>
   </div>
-  <div id="stage">
+  <nav id="tabs" style="order:2">
+    <button data-tab="build"><i class="dot"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 L13 11 M11 5 l5 -2 l5 5 l-2 5 l-3 -1 l-4 -4 z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n>建設</span></button>
+    <button data-tab="crew"><i class="dot"></i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20 c0-4 3-6 6-6 s6 2 6 6 M15 15 c3 0 6 1.5 6 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span data-i18n>クルー</span></button>
+    <button data-tab="mission"><i class="dot"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21 V4 M6 4 h11 l-2.5 4 l2.5 4 H6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/></svg><span data-i18n>任務</span></button>
+    <button data-tab="exp"><i class="dot"></i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 8.5 L13.2 13.2 L8.5 15.5 L10.8 10.8 Z" fill="currentColor"/></svg><span data-i18n>遠征</span></button>
+  </nav>
+  </div>
+  <div id="stage" style="order:1">
     <canvas id="cv"></canvas>
     <div id="labels"></div>
-    <div id="weatherChip" class="sidechip" hidden></div>
+    <div id="chips"><div id="dayChip" class="sidechip"><i id="dayIcon"></i><span id="dayText"></span></div><div id="weatherChip" class="sidechip" hidden></div></div>
     <div id="side"><div id="vsSlot"></div><div class="sidechip" id="vsChip" hidden></div><div class="sidechip" id="crewChip"></div><div class="sidechip" id="expChip" hidden></div></div>
     <div id="alert" hidden><span id="alertText"></span><button id="alertBtn" data-i18n>陣形</button></div>
-    <div id="toast"></div>
-    <div id="coach" hidden><p id="coachText"></p><button id="coachClose" aria-label="ヒントを閉じる" data-i18n-attr="aria-label">×</button></div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="banner" aria-hidden="true"></div>
+    <div id="coach" hidden><p id="coachText"></p><button id="coachClose" aria-label="ヒントを閉じる" title="ヒントを閉じる" data-i18n-attr="aria-label,title">×</button></div>
     <div id="placeBar" hidden><span id="placeText" data-i18n>置く床をタップ</span><button id="placeCancel" data-i18n>やめる</button></div>
   </div>
-  <nav id="tabs">
-    <button data-tab="build"><i class="dot"></i><svg viewBox="0 0 24 24"><path d="M4 20 L13 11 M11 5 l5 -2 l5 5 l-2 5 l-3 -1 l-4 -4 z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n>建設</span></button>
-    <button data-tab="crew"><i class="dot"></i><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20 c0-4 3-6 6-6 s6 2 6 6 M15 15 c3 0 6 1.5 6 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span data-i18n>クルー</span></button>
-    <button data-tab="mission"><i class="dot"></i><svg viewBox="0 0 24 24"><path d="M6 21 V4 M6 4 h11 l-2.5 4 l2.5 4 H6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/></svg><span data-i18n>任務</span></button>
-    <button data-tab="exp"><i class="dot"></i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 8.5 L13.2 13.2 L8.5 15.5 L10.8 10.8 Z" fill="currentColor"/></svg><span data-i18n>遠征</span></button>
-  </nav>
 </div>
 <div id="sheetWrap" hidden>
-  <div id="sheet" role="dialog">
+  <div id="sheet" role="dialog" aria-labelledby="sheetTitle">
     <div class="sheet-head"><h2 id="sheetTitle"></h2><button id="sheetClose" data-i18n>閉じる</button></div>
     <div id="sheetBody"></div>
   </div>
 </div>
-<div id="ov" hidden><div class="panel" id="ovPanel"></div></div>
+<div id="ov" hidden role="dialog" aria-modal="true"><div class="panel" id="ovPanel"></div></div>
 <div id="loading" data-i18n>海を読み込み中…</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../common/game.js"></script>
 <script>
 KoboI18n.add({ en: {
   // static UI
-  'いかだ暮らし': 'Raft Life', 'いかだ<span>暮らし</span>': 'Raft <span>Life</span>', '← ゲーム一覧': '← Games', '遊び方': 'How to play', '音のオンオフ': 'Sound on/off',
+  'いかだ暮らし': 'Raft Life', 'いかだ<span>暮らし</span>': 'Raft <span>Life</span>', '遊び方': 'How to play',
   '現在の任務': 'Current mission', '船長Lv': 'Cap Lv', 'メイン任務': 'Main mission', '体力': 'HP', '水分': 'Water', '空腹': 'Food',
   '陣形': 'Formation', 'ヒントを閉じる': 'Close hint', '置く床をタップ': 'Tap a tile to place', 'やめる': 'Cancel',
   '建設': 'Build', 'クルー': 'Crew', '任務': 'Missions', '遠征': 'Expedition', '閉じる': 'Close', '海を読み込み中…': 'Loading the sea…',
@@ -450,16 +525,26 @@ KoboI18n.add({ en: {
   '言語': 'Language', 'はじめる': 'Start', '続ける': 'Continue', '一時停止': 'Paused', '再開': 'Resume',
   'イカダが<span>沈んだ</span>': 'The raft <span>sank</span>', '力<span>尽きた</span>': 'You <span>collapsed</span>', 'まで生き延びた（船長Lv{n}）': 'survived (captain Lv{n})',
   '最長記録': 'Best', '{n}日': '{n} days', '撃退': 'Raids won', '{n}回': '{n}', '仲間': 'Crew', '{n}人': '{n}', '拾った物': 'Caught', 'もう一度': 'Try again', 'ゲーム一覧': 'Games',
-  'この端末では3D表示（WebGL）が使えないため遊べません。': "This device can't show 3D (WebGL), so the game can't run.", 'ゲーム一覧へ': 'Back to games', '{d}日目から再開': 'Resumed from day {d}',
   '{name}が飢えと渇きで倒れた…': '{name} died of hunger and thirst…', '{name}は空腹に耐えかねてイカダを去った…': '{name} left the raft, too hungry to stay…',
   '朝食：{n}人が食事か水にありつけなかった': 'Breakfast: {n} went without food or water', '夕食：{n}人が食事か水にありつけなかった': 'Dinner: {n} went without food or water',
   '朝食：クルー{n}人が食事をとった': 'Breakfast: {n} crew ate', '夕食：クルー{n}人が食事をとった': 'Dinner: {n} crew ate',
   // online battle
   '点': 'pts', '{n}点': '{n} pts', 'スコアはここで確定。時間切れまで待とう': 'Your score is locked in. Wait for the time to run out.',
-  '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} drifting challenge. Same small raft and same sea for everyone; days pass faster.',
+  '2〜4人で {t} のスコア勝負。全員が同じ海、同じいかだから始めます。': '2–4 players, {t} drifting challenge. Same small raft and same sea for everyone; days pass faster.',
+  // platform integration (P2-raft)
+  '3D を表示できません': "Can't show 3D", 'ゲーム一覧に戻る': 'Back to games', '一時停止とメニュー': 'Pause and menu',
+  '3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。': "Couldn't load the 3D engine. Check your connection and open the page again.",
+  'この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。': "This device or browser can't use 3D (WebGL), so this game can't be shown.",
+  'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on "hardware acceleration" in the browser settings.',
+  '迷ったら、画面下のヒントと上の「メイン任務」のとおりに進めよう。': 'Not sure what to do? Follow the tip at the bottom and the main mission at the top.',
+  'おかえり！': 'Welcome back!', '最長記録更新！': 'New best!', '{d}日目の朝を迎えた': 'Made it to the morning of day {d}', '夜を生き延びた！': 'You survived the night!',
+  '撃退！': 'Repelled!', '荒らされた…': 'Raided…', '資源の3割と床を失った': 'Lost 30% of resources and some tiles', 'タップ！': 'Tap!', 'ヒント {a}/{b}': 'Tip {a}/{b}',
+  '襲撃中：シートを開いていても時間はゆっくり進む': 'Raid on: time keeps moving (slowly) while this is open',
+  '画面が一時的に止まりました。少し待つと元に戻ります。': 'The screen stopped for a moment. It will come back shortly.',
 } });
 </script>
 <script>
+(() => {
 'use strict';
 // ======================================================================
 //  いかだ暮らし 3D  —  core data
@@ -468,13 +553,17 @@ const $ = s => document.querySelector(s);
 const T = KoboI18n.t;
 KoboI18n.apply();
 const DEBUG = /[?&]debug\b/.test(location.search);
+const P = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null, KG = window.KoboGame || null;
 const SAVE_V = 3;
 const TS = 2;                // world size of one raft tile
 let DAY_LEN = 150;           // game seconds per day (shorter in an online battle)
 const DUSK = 0.72;           // day fraction where night starts
-const LS_SAVE = 'kusoge.raft.save', LS_BEST = 'kusoge.raft.best', LS_SOUND = 'kusoge.sound', LS_SEEN = 'kusoge.raft.seen3';
+// localStorage keys stay kusoge.raft.* (hub record, ranking and cloud sync read them). The sound setting is the shared kobo.audio
+// (common/audio.js migrates the old kusoge.sound). kusoge.raft.gfx is this device's graphics level (not synced).
+const LS_SAVE = 'kusoge.raft.save', LS_BEST = 'kusoge.raft.best', LS_SEEN = 'kusoge.raft.seen3', LS_GFX = 'kusoge.raft.gfx';
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+// removeItem (not an empty value): common/cloud.js syncs the delete as a tombstone, so a finished run never comes back (R3)
 function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
 // seeded-able RNG (debug can reseed for deterministic tests)
 let rngState = (Math.random() * 4294967296) >>> 0;
@@ -669,12 +758,19 @@ function loadSave() {
     return s;
   } catch (e) { return null; }
 }
+// the whole run every 4 s while playing (and on dawn / hide / pagehide). Writing the same text again is free:
+// common/cloud.js only pushes keys whose value changed, batched to one write per 30 s (R2). Battles never save.
 function save() {
-  if (!S || gameState !== 'play' || vs) return;
-  try { localStorage.setItem(LS_SAVE, JSON.stringify(S)); } catch (e) {}
+  if (!S || gameState !== 'play' || vs || !touchedRun) return;
+  lsSet(LS_SAVE, JSON.stringify(S));
 }
 function bestDays() { return parseInt(lsGet(LS_BEST) || '0', 10) || 0; }
-function updateBest() { if (S && !vs && S.day > bestDays()) lsSet(LS_BEST, String(S.day)); }
+function updateBest() {
+  if (!S || vs || S.day <= bestDays()) return false;
+  lsSet(LS_BEST, String(S.day));
+  if (sess && !sess.best && KG) { sess.best = true; KG.emit('best', { score: S.day, mode: 'normal' }); }
+  return true;
+}
 
 // helpers over state ---------------------------------------------------------
 function tileCount() { return Object.keys(S.tiles).length; }
@@ -721,37 +817,24 @@ function capPos() { const r = raftBox(); return r.cap ? { x: r.cap.i * TS + 0.35
 // ======================================================================
 //  sound
 // ======================================================================
-let soundOn = lsGet(LS_SOUND) !== '0';
-let AC = null;
-function ensureAudio() {
-  if (!soundOn) return;
-  try {
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state === 'suspended') AC.resume().catch(() => {});
-  } catch (e) { AC = null; }
-}
+// shared KoboAudio: master / SE volume / mute are common to every game (kobo.audio); nothing plays while muted
+function ensureAudio() { if (A) A.resume(); }
 function tone(f, d, type, v, f2, delay) {
-  if (!soundOn || !AC || headless) return;
-  try {
-    const t = AC.currentTime + (delay || 0);
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v || 0.12, t + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + 0.05);
-  } catch (e) {}
+  if (!A || headless) return;
+  A.tone(f, d, { type: type || 'sine', vol: v || 0.12, slide: f2 || 0, delay: delay || 0, attack: 0.012 });
 }
 let noiseBuf = null;
 function noise(d, v, freq, delay, q) {
-  if (!soundOn || !AC || headless) return;
+  if (!A || headless || !A.canPlay()) return;
   try {
+    const AC = A.ctx(), bus = A.se; if (!AC || !bus) return;
     if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const a = noiseBuf.getChannelData(0); for (let i = 0; i < a.length; i++) a[i] = Math.random() * 2 - 1; }
     const t = AC.currentTime + (delay || 0);
     const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
     src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq || 1000; f.Q.value = q || 1;
     g.gain.setValueAtTime(v || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    src.connect(f); f.connect(g); g.connect(AC.destination); src.start(t, Math.random() * 0.5); src.stop(t + d + 0.05);
+    src.connect(f); f.connect(g); g.connect(bus); src.start(t, Math.random() * 0.5); src.stop(t + d + 0.05);
+    src.onended = () => { try { src.disconnect(); f.disconnect(); g.disconnect(); } catch (e) {} };
   } catch (e) {}
 }
 const SFX = {
@@ -773,20 +856,52 @@ const SFX = {
   crack() { noise(0.3, 0.4, 250, 0, 1); tone(90, 0.3, 'sawtooth', 0.1, 50); },
   day() { tone(659, 0.18, 'sine', 0.1); tone(880, 0.3, 'sine', 0.1, null, 0.16); },
   over() { tone(392, 0.3, 'triangle', 0.1, 330); tone(330, 0.3, 'triangle', 0.1, 262, 0.3); tone(262, 0.6, 'triangle', 0.1, 196, 0.6); },
-  tap() { tone(520, 0.05, 'triangle', 0.05); }
+  tap() { tone(520, 0.05, 'triangle', 0.05); },
+  dawn() { tone(523, 0.14, 'triangle', 0.09); tone(659, 0.14, 'triangle', 0.09, null, 0.12); tone(784, 0.14, 'triangle', 0.09, null, 0.24); tone(1047, 0.4, 'sine', 0.1, null, 0.36); },
+  best() { tone(784, 0.1, 'square', 0.05); tone(988, 0.1, 'square', 0.05, null, 0.08); tone(1175, 0.1, 'square', 0.05, null, 0.16); tone(1568, 0.45, 'triangle', 0.09, null, 0.24); }
 };
-function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+function vibrate(ms) { if (A) A.vibrate(ms); else try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 // ======================================================================
 //  three.js scene
 // ======================================================================
 let rebuildRaft = true;
 const cv = $('#cv');
-let renderer = null, glOk = true;
-try {
-  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-} catch (e) { glOk = false; }
+// a clear notice instead of a crash when three.js or WebGL is unavailable
+function showNoGL(why) {
+  $('#loading').hidden = true;
+  const box = document.createElement('div'); box.id = 'nogl'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><p></p><a class="btn" href="../"></a></div>';
+  box.querySelector('b').textContent = T('3D を表示できません');
+  const ps = box.querySelectorAll('p');
+  ps[0].textContent = why === 'three' ? T('3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。') : T('この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。');
+  ps[1].textContent = why === 'three' ? '' : T('ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。');
+  if (!ps[1].textContent) ps[1].remove();
+  box.querySelector('a').textContent = T('ゲーム一覧に戻る');
+  document.body.appendChild(box);
+  document.querySelectorAll('#tabs button, #helpBtn, #menuBtn, #soundBtn, #mission').forEach(b => { b.disabled = true; });
+}
+function glAvailable() {
+  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; }
+}
+if (typeof THREE === 'undefined') { showNoGL('three'); return; }
+
+// ---- graphics quality: picked from the device, then lowered automatically when the frame rate stays low (slow phones) ----
+// pixel ratio (max 1.5: this page draws the sea every frame), ocean mesh detail, rain amount. kusoge.raft.gfx remembers it on this device.
+const GFX = [
+  { dpr: 1, seg: 56, rain: 0.35 },
+  { dpr: 1.25, seg: 80, rain: 0.65 },
+  { dpr: 1.5, seg: 110, rain: 1 }
+];
+const gfx = (() => {
+  const saved = parseInt(lsGet(LS_GFX), 10);
+  const strong = (navigator.hardwareConcurrency || 4) >= 6 && (navigator.deviceMemory || 4) >= 4;
+  return { lv: saved >= 0 && saved <= 2 ? saved : (strong ? 2 : 1), dropped: false, frames: 0, t: 0, good: 0, skip: 1 }; // skip: the first window (shader compile)
+})();
+let renderer = null;
+if (glAvailable()) { try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: gfx.lv >= 2, powerPreference: 'default' }); } catch (e) { renderer = null; } }
+if (!renderer) { showNoGL('webgl'); return; }
+renderer.setPixelRatio(Math.min(GFX[gfx.lv].dpr, window.devicePixelRatio || 1));
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0xbfe6f2, 40, 120);
 const camera = new THREE.PerspectiveCamera(46, 1, 0.5, 400);
@@ -833,7 +948,7 @@ const oceanU = {
   uSunDir: { value: new THREE.Vector3(0.4, 0.8, 0.3) }, uSunCol: { value: new THREE.Color(0xffffff) }, uAmb: { value: new THREE.Color(0x5a7a88) },
   uFog: { value: new THREE.Color(0xbfe6f2) }, uFogN: { value: 40 }, uFogF: { value: 120 }
 };
-const ocean = new THREE.Mesh(new THREE.PlaneGeometry(260, 260, 110, 110), new THREE.ShaderMaterial({
+const ocean = new THREE.Mesh(new THREE.PlaneGeometry(260, 260, GFX[gfx.lv].seg, GFX[gfx.lv].seg), new THREE.ShaderMaterial({
   uniforms: oceanU, extensions: { derivatives: true },
   vertexShader: `uniform float uT; uniform float uAmp; varying vec3 vW;
     float wv(vec2 p){ return (sin(p.x*0.33+uT*1.1)*0.34 + sin(p.y*0.41-uT*0.9+p.x*0.1)*0.28 + sin((p.x+p.y)*0.8+uT*1.7)*0.1)*uAmp; }
@@ -854,6 +969,29 @@ const ocean = new THREE.Mesh(new THREE.PlaneGeometry(260, 260, 110, 110), new TH
     }`
 }));
 ocean.rotation.x = -Math.PI / 2; ocean.frustumCulled = false; scene.add(ocean);
+function setGfx(lv, why) {
+  lv = clamp(lv | 0, 0, GFX.length - 1);
+  if (lv === gfx.lv && why !== 'init') return;
+  const q = GFX[lv], old = ocean.geometry;
+  if (old.parameters.widthSegments !== q.seg) { ocean.geometry = new THREE.PlaneGeometry(260, 260, q.seg, q.seg); old.dispose(); }
+  if (lv < gfx.lv) gfx.dropped = true;
+  gfx.lv = lv; gfx.frames = 0; gfx.t = 0; gfx.good = 0;
+  renderer.setPixelRatio(Math.min(q.dpr, window.devicePixelRatio || 1));
+  lsSet(LS_GFX, String(lv));
+  resize(); redraw = true;
+}
+// called once per rendered frame while the sea is moving: 2.5 s windows; below 36 fps → one step lower,
+// above 56 fps for 4 windows → one step higher (only if this session has not had to lower it)
+function gfxSample(rdt) {
+  if (rdt <= 0 || rdt > 0.25) return;
+  gfx.frames++; gfx.t += rdt;
+  if (gfx.t < 2.5) return;
+  const fps = gfx.frames / gfx.t; gfx.frames = 0; gfx.t = 0; gfx.fps = Math.round(fps);
+  if (gfx.skip > 0) { gfx.skip--; return; }
+  if (fps < 36 && gfx.lv > 0) setGfx(gfx.lv - 1, 'slow');
+  else if (fps > 56 && gfx.lv < GFX.length - 1 && !gfx.dropped) { if (++gfx.good >= 4) setGfx(gfx.lv + 1, 'fast'); }
+  else gfx.good = 0;
+}
 
 // ---- sky ----
 const skyU = { uTop: { value: new THREE.Color(0x4fa3e0) }, uHor: { value: new THREE.Color(0xbfe6f2) } };
@@ -1117,6 +1255,8 @@ function makeIsland(seed) {
 // ======================================================================
 const raftG = new THREE.Group(); scene.add(raftG);
 const TV = {};
+let popOk = false; // build / expand animations only after the first drawn frame (not for a loaded raft)
+const easeBack = k => 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2);
 const PLANK_M = [M(0xb98a52), M(0xa87a46), M(0xc4965c)], DMG_M = M(0x86684a), BRK_M = M(0x5a4634);
 function tileState(t) { const r = t.hp / tileMaxHp(); return r < 0.3 ? 2 : r < 0.6 ? 1 : 0; }
 function syncRaft() {
@@ -1131,13 +1271,14 @@ function syncRaft() {
       for (let p = 0; p < 3; p++) v.planks.push(part(v.g, G.box, PLANK_M[(p + t.i + t.j + 3) % 3], -0.66 + p * 0.66, 0, 0, 0.62, 0.22, 1.94));
       part(v.g, G.box, 0x6a4a2a, 0, -0.16, -0.6, 1.94, 0.12, 0.2); part(v.g, G.box, 0x6a4a2a, 0, -0.16, 0.6, 1.94, 0.12, 0.2);
       raftG.add(v.g);
+      if (popOk) v.pop = 0.4; // a tile just added: drops in with a little bounce
     }
     let fk = '';
     if (t.f) { fk = t.f.t + t.f.lv; if (t.f.t === 'net') { const o = outward(t); fk += o.x + ':' + o.z; } }
     if (fk !== v.fk) {
       if (v.fac) v.g.remove(v.fac);
       v.fac = t.f ? makeFacModel(t.f.t, t.f.lv, t) : null;
-      if (v.fac) v.g.add(v.fac);
+      if (v.fac) { v.g.add(v.fac); v.fac.userData.base = v.fac.scale.x; if (popOk) v.fpop = 0.45; }
       v.fk = fk;
     }
     v.state = -1;
@@ -1262,6 +1403,23 @@ function mkEls(n, cls) { const a = []; for (let i = 0; i < n; i++) { const e = d
 const POPS = mkEls(18, 'pop').map(el => ({ el, on: false, x: 0, y: 0, z: 0, t: 0 }));
 const HPB = mkEls(30, 'hpb').map(el => { el.innerHTML = '<i></i>'; return { el, bar: el.firstChild, on: false, w: -1 }; });
 const TAGS = mkEls(4, 'tag').map(el => ({ el, on: false, txt: '' }));
+const TAPTAG = mkEls(1, 'tag tap')[0];
+// tutorial (Q-2): the first missions are done for real, one at a time; the coach card, a glowing tab / card and the
+// "tap!" marker over the right thing say what to do next. TUT_STEPS = missions that come with a coach tip.
+const TUT_STEPS = 11;
+const TUT_FAC = { 1: 'purifier', 2: 'fishing', 3: 'grill', 4: 'quarters', 8: 'lookout', 9: 'ballista' };
+function tutOn() { return !!S && !vs && !S.tutOff && S.mission < TUT_STEPS; }
+function tutTarget() { // the debris (or castaway) the "tap!" marker points at
+  if (!tutOn() || hook || place || sheetOpen || B || (S.mission !== 0 && S.mission !== 5)) return null;
+  const cp = capPos(), range = hookRange();
+  let best = null, bd = 1e9;
+  for (const d of debris) {
+    if (d.hooked || !d.g || (S.mission === 5) !== (d.type === 'castaway')) continue;
+    const dist = Math.hypot(d.x - cp.x, d.z - cp.z);
+    if (dist < range - 0.5 && dist < bd && d.z < cp.z + 2) { bd = dist; best = d; }
+  }
+  return best;
+}
 function popText(x, y, z, txt, cls) {
   if (headless) return;
   let p = null, oldest = null;
@@ -1358,8 +1516,10 @@ function crewGainXp(c, n) {
 
 // ---- day cycle ----
 function onDawn() {
-  SFX.day();
+  const prevBest = bestDays();
   toast(T('{d}日目の朝。', { d: S.day }) + (S.day >= 2 ? T('今夜も海賊に備えよう') : ''), '');
+  if (!vs && S.day > prevBest && prevBest >= 2) { banner(T('最長記録更新！'), T('{d}日目の朝を迎えた', { d: S.day }), 'good'); SFX.best(); vibrate([40, 40, 80]); }
+  else { banner(T('{d}日目', { d: S.day }), T('夜を生き延びた！'), ''); SFX.dawn(); vibrate(40); }
   feedCrew('朝');
   for (const c of S.crew) if (c.job && !c.away) crewGainXp(c, 8);
   seaRoll(dawnEvents);
@@ -1907,7 +2067,8 @@ function endBattle(win) {
     gainAll(l, true); addXp(15 + d * 2);
     for (const df of B.defs) if (df.c) crewGainXp(df.c, 10);
     for (const c of downed) { c.down = false; c.hp = Math.round(crewMaxHp(c) * 0.15); }
-    msg = T('海賊を撃退した！ ') + lootText(l); SFX.win();
+    msg = T('海賊を撃退した！ ') + lootText(l); SFX.win(); vibrate([50, 40, 50]);
+    if (gameState === 'play') banner(T('撃退！'), lootText(l), 'good');
   } else {
     S.stats.raidsLost++;
     const take = {};
@@ -1918,6 +2079,7 @@ function endBattle(win) {
     for (const c of downed) { if (rnd() < 0.5) { removeCrew(c); died++; } else { c.down = false; c.hp = Math.round(crewMaxHp(c) * 0.1); } }
     msg = T('海賊に荒らされた… 資源を3割奪われ、床が壊された') + (died ? T('。仲間{n}人を失った', { n: died }) : '');
     SFX.lose(); vibrate([100, 60, 200]);
+    if (gameState === 'play') banner(T('荒らされた…'), T('資源の3割と床を失った'), 'bad');
   }
   for (const c of S.crew) if (c.skill === '手当て' && !c.away) { for (const o of S.crew) o.hp = Math.min(crewMaxHp(o), o.hp + crewMaxHp(o) * 0.2); break; }
   for (const r of B.raiders) relPooled(raiderPool, r.g);
@@ -2159,6 +2321,7 @@ function resize() {
   W = Math.max(1, r.width); H = Math.max(1, r.height);
   if (renderer) renderer.setSize(W, H, false);
   camera.aspect = W / H; camera.updateProjectionMatrix();
+  redraw = true;
 }
 window.addEventListener('resize', resize);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -2267,9 +2430,12 @@ function renderWorld(rdt) {
     sideMarker.scale.set(sd.x ? 1.4 : span, sd.x ? span : 1.4, 1);
     sideMarker.position.set(sd.x ? (sd.x > 0 ? rb.x1 + 0.8 : rb.x0 - 0.8) : rb.cx, 0.1 + Math.sin(T * 5) * 0.05, sd.z ? (sd.z > 0 ? rb.z1 + 0.8 : rb.z0 - 0.8) : rb.cz);
   } else if (!B) sideMarker.visible = false;
-  // facility animation
+  // facility animation (+ the pop of something just built)
   for (const k in TV) {
-    const v = TV[k]; if (!v.fac) continue; const u = v.fac.userData;
+    const v = TV[k];
+    if (v.pop > 0) { v.pop = Math.max(0, v.pop - rdt); const e = easeBack(1 - v.pop / 0.4); v.g.position.y = (1 - Math.min(1, e)) * 1.2; v.g.scale.set(1, Math.max(0.2, e), 1); }
+    if (!v.fac) continue; const u = v.fac.userData;
+    if (v.fpop > 0) { v.fpop = Math.max(0, v.fpop - rdt); v.fac.scale.setScalar(u.base * Math.max(0.05, easeBack(1 - v.fpop / 0.45))); }
     if (u.fire) { u.fire.scale.y = 0.4 + Math.sin(T * 13 + v.g.position.x) * 0.08; u.fire2.scale.y = 0.28 + Math.cos(T * 11) * 0.06; }
     if (u.rod) u.rod.rotation.z = -0.9 + Math.sin(T * 1.7) * 0.06;
     if (u.sail) { u.sail.scale.z = 1 + Math.sin(T * 2) * 0.8; u.sail.position.z = 0.18 + Math.sin(T * 2) * 0.05 + 0.1; }
@@ -2297,7 +2463,7 @@ function renderWorld(rdt) {
   if (rain.visible) {
     rain.material.opacity = 0.25 + w.rain * 0.45;
     const a = rain.geometry.attributes.position.array, fall = rdt * (22 + w.storm * 10), wind = rdt * w.storm * 6;
-    const lim = Math.floor(RAIN_N * Math.min(1, 0.35 + w.rain * 0.65));
+    const lim = Math.floor(RAIN_N * GFX[gfx.lv].rain * Math.min(1, 0.35 + w.rain * 0.65));
     for (let i = 0; i < RAIN_N; i++) {
       const o = i * 6;
       if (i >= lim) { a[o + 1] = -100; a[o + 4] = -101; continue; }
@@ -2318,6 +2484,7 @@ function renderWorld(rdt) {
   ocean.position.set(Math.round(camT.x / 10) * 10, 0, Math.round(camT.z / 10) * 10);
   applySky(S.time, w.storm, w.rain);
   renderLabels(rdt);
+  popOk = true;
 }
 function setEl(el, x, y) { el.style.transform = 'translate(' + (x | 0) + 'px,' + (y | 0) + 'px)'; }
 function renderLabels(rdt) {
@@ -2360,6 +2527,11 @@ function renderLabels(rdt) {
     tg.el.style.display = 'block'; setEl(tg.el, s.x - 30, s.y - 10);
   }
   for (; ti < TAGS.length; ti++) if (TAGS[ti].el.style.display !== 'none') TAGS[ti].el.style.display = 'none';
+  const tt = tutTarget(), ts = tt ? toScreen(tt.g.position.x, 1.4, tt.g.position.z) : null;
+  if (ts && ts.vis) {
+    if (TAPTAG.textContent !== T('タップ！')) TAPTAG.textContent = T('タップ！');
+    TAPTAG.style.display = 'block'; setEl(TAPTAG, clamp(ts.x - TAPTAG.offsetWidth / 2, 4, W - TAPTAG.offsetWidth - 4), Math.max(4, ts.y - 34 - Math.abs(Math.sin(visT * 5)) * 6));
+  } else if (TAPTAG.style.display !== 'none') TAPTAG.style.display = 'none';
 }
 
 // ======================================================================
@@ -2393,7 +2565,7 @@ function clockStr(t) {
   return hh + ':' + (mm < 10 ? '0' : '') + mm;
 }
 function statBar(id, v) {
-  const el = document.getElementById(id); const k = Math.round(v);
+  const el = document.getElementById(id); const k = Math.max(0, Math.round(v));
   if (hudC[id] === k) return; hudC[id] = k;
   el.querySelector('b').textContent = k; el.querySelector('.bar i').style.width = clamp(k, 0, 100) + '%';
   el.classList.toggle('low', k < 25);
@@ -2447,8 +2619,11 @@ function updateHUD(rdt) {
   if (atxt) { al.hidden = false; setText('alertText', atxt); al.classList.toggle('storm', astorm); $('#alertBtn').hidden = !abtn; } else al.hidden = true;
   // coach
   const ch = $('#coach');
-  const tip = !S.tutOff && S.mission < 11 && m.tip && !place && !sheetOpen ? m.tip : '';
-  if (tip) { ch.hidden = false; if (hudC.tip !== tip) { hudC.tip = tip; $('#coachText').innerHTML = tip; } } else ch.hidden = true;
+  const tip = tutOn() && m.tip && !place && !sheetOpen ? m.tip : '';
+  if (tip) {
+    ch.hidden = false;
+    if (hudC.tip !== tip) { hudC.tip = tip; $('#coachText').innerHTML = '<span class="step">' + T('ヒント {a}/{b}', { a: S.mission + 1, b: TUT_STEPS }) + '</span>' + tip; }
+  } else ch.hidden = true;
   const hintTab = !tip ? null : (S.mission >= 1 && S.mission <= 4) || S.mission === 7 || S.mission === 8 || S.mission === 9 ? 'build' : S.mission === 6 || S.mission === 10 ? 'crew' : null;
   for (const bt of document.querySelectorAll('#tabs button')) bt.classList.toggle('hint', bt.dataset.tab === hintTab);
   setTabBadge('exp', !!(facCount('sail') && !S.exp && S.isles.length));
@@ -2468,7 +2643,7 @@ function openSheet(kind, arg) {
   if (kind === 'build') setTabBadge('build', false);
   renderSheet(); sheetWrap.hidden = false; sheetBody.scrollTop = 0;
 }
-function closeSheet() { sheetWrap.hidden = true; sheetOpen = null; rangeRing.visible = false; }
+function closeSheet() { sheetWrap.hidden = true; sheetOpen = null; rangeRing.visible = false; redraw = true; }
 $('#sheetClose').addEventListener('click', closeSheet);
 sheetWrap.addEventListener('click', e => { if (e.target === sheetWrap) closeSheet(); });
 for (const b of document.querySelectorAll('#tabs button')) b.addEventListener('click', () => { ensureAudio(); if (sheetOpen && sheetOpen.kind === b.dataset.tab) closeSheet(); else openSheet(b.dataset.tab); });
@@ -2503,20 +2678,23 @@ function renderSheet() {
   else if (so.kind === 'crew') { title = T('クルー（{a}/{b}）', { a: S.crew.length, b: crewCap() }); h = renderCrew(); }
   else if (so.kind === 'mission') { title = T('任務と船長'); h = renderMission(); }
   else if (so.kind === 'exp') { title = T('遠征'); h = renderExp(); }
+  if (B && !vs) h = '<div class="sinfo live">' + T('襲撃中：シートを開いていても時間はゆっくり進む') + '</div>' + h;
   $('#sheetTitle').textContent = title;
   const st = sheetBody.scrollTop; sheetBody.innerHTML = h; sheetBody.scrollTop = st;
+  redraw = true;
 }
 function invLine() { return '<div class="sinfo">' + LIST(RES_ORDER.map(r => RES_SHORT[r] + ' ' + Math.floor(S.res[r]))) + '</div>'; }
 function renderBuild() {
   let h = invLine() + '<div class="sec">' + T('施設（床に1つずつ置ける・最大Lv {n}）', { n: facMaxLv() }) + '</div>';
   for (const t of FAC_ORDER) {
     const F = FAC[t], lock = S.cap.lv < F.unlock, err = buildCheck(t), n = facCount(t);
-    h += '<div class="card' + (lock ? ' lock' : '') + '">' + ico(t) + '<div class="txt"><div class="nm">' + F.n + (n ? '<small>' + T('所持 {n}', { n }) + '</small>' : '') + (lock ? '<small>' + T('船長Lv{n}で解放', { n: F.unlock }) + '</small>' : '') + '</div>' +
+    const hint = tutOn() && TUT_FAC[S.mission] === t && !err;
+    h += '<div class="card' + (lock ? ' lock' : '') + (hint ? ' hint' : '') + '">' + ico(t) + '<div class="txt"><div class="nm">' + F.n + (n ? '<small>' + T('所持 {n}', { n }) + '</small>' : '') + (lock ? '<small>' + T('船長Lv{n}で解放', { n: F.unlock }) + '</small>' : '') + '</div>' +
       '<div class="ds">' + F.desc + (F.role ? T(' 得意：{r}', { r: T(F.role) }) : '') + '</div><div class="cost">' + costHtml(facCost(t, 1)) + '</div></div>' +
       '<button data-act="place" data-t="' + t + '"' + (err ? ' disabled' : '') + '>' + (lock ? T('未解放') : F.once && n ? T('建設済') : T('建てる')) + '</button></div>';
   }
   const tc = tileCost(), full = tileCount() >= maxTiles();
-  h += '<div class="sec">' + T('イカダ') + '</div><div class="card"><span class="ico" style="background:#b98a52">' + T('床') + '</span><div class="txt"><div class="nm">' + T('床を広げる') + '<small>' + T('{a}/{b}枚', { a: tileCount(), b: maxTiles() }) + '</small></div>' +
+  h += '<div class="sec">' + T('イカダ') + '</div><div class="card' + (tutOn() && S.mission === 7 && !full && canPay(tc) ? ' hint' : '') + '"><span class="ico" style="background:#b98a52">' + T('床') + '</span><div class="txt"><div class="nm">' + T('床を広げる') + '<small>' + T('{a}/{b}枚', { a: tileCount(), b: maxTiles() }) + '</small></div>' +
     '<div class="ds">' + T('となりに床を1枚。上限は船長Lvで増える。') + '</div><div class="cost">' + costHtml(tc) + '</div></div><button data-act="expand"' + (full || !canPay(tc) ? ' disabled' : '') + '>' + T('広げる') + '</button></div>';
   h += '<div class="sec">' + (facCount('workbench') ? T('改良（作業台 Lv{n}）', { n: facMax('workbench') }) : T('改良（作業台が必要）')) + '</div>';
   for (const id in UPS) {
@@ -2585,10 +2763,10 @@ function renderCrew() {
     const defs = S.crew.filter(c => !c.away && !c.down && (!c.job || S.allHands) && !(c.job && S.tiles[c.job] && S.tiles[c.job].f && (S.tiles[c.job].f.t === 'lookout' || S.tiles[c.job].f.t === 'ballista')));
     const tower = S.crew.filter(c => !c.away && !c.down && c.job && S.tiles[c.job] && S.tiles[c.job].f && S.tiles[c.job].f.t === 'lookout');
     const names = row => defs.filter(c => c.row === row).map(c => '<span class="pill' + (c.role === '戦士' ? ' r' : c.role === '射手' ? ' g' : '') + '">' + cName(c) + T('・') + cRole(c) + '</span>').join('') || '<span class="pill">' + T('なし') + '</span>';
-    h += '<div class="formation"><div>' + (fighting ? T('陣形：敵は<span style="color:#c45a2c">{side}</span>から', { side: facCount('lookout') || B ? side : T('不明') }) : T('陣形（襲撃時に防衛するクルー）')) + '</div>' +
+    h += '<div class="formation"><div>' + (fighting ? T('陣形：敵は<span style="color:#c45a2c">{side}</span>から', { side: facCount('lookout') || B ? side : T('不明') }).replace('style="color:#c45a2c"', 'class="hot"') : T('陣形（襲撃時に防衛するクルー）')) + '</div>' +
       '<div class="frow"><b>' + T('前列') + '</b>' + names('front') + '</div><div class="frow"><b>' + T('後列') + '</b>' + names('back') + '<span class="pill y">' + T('船長') + '</span></div>' +
       (tower.length ? '<div class="frow"><b>' + T('塔') + '</b>' + tower.map(c => '<span class="pill g">' + cName(c) + '</span>').join('') + '</div>' : '') +
-      '<div style="font-weight:500;color:#4f6f78;line-height:1.5">' + T('前列が敵を食い止める間、後列は狙われにくい。<b>戦士</b>は前列で被ダメ-40%、<b>射手</b>は後列で全力（前列だと威力6割・被ダメ増）。前列が全滅すると海賊が後列・船長・床を襲う。') + '</div>' +
+      '<div class="note">' + T('前列が敵を食い止める間、後列は狙われにくい。<b>戦士</b>は前列で被ダメ-40%、<b>射手</b>は後列で全力（前列だと威力6割・被ダメ増）。前列が全滅すると海賊が後列・船長・床を襲う。') + '</div>' +
       '<div class="btnrow"><button class="sbtn ' + (S.allHands ? 'ok' : 'alt') + '" data-act="allhands">' + (S.allHands ? T('総員迎撃：オン（施設の仕事は止まる）') : T('総員迎撃：オフ（配置中は戦わない）')) + '</button></div></div>';
   }
   if (!S.crew.length) h += '<div class="sinfo">' + T('まだクルーがいない。人がしがみついた漂流物（漂流者）をフックで助けよう。定員は居住区で増える。') + '</div>';
@@ -2596,11 +2774,11 @@ function renderCrew() {
     const job = c.job && S.tiles[c.job] && S.tiles[c.job].f ? S.tiles[c.job].f : null;
     const where = c.away ? T('遠征中') : job ? T('{f}で作業', { f: FAC[job.t].n }) : T(c.row === 'front' ? '防衛（前列）' : '防衛（後列）');
     h += '<div class="card" style="flex-wrap:wrap">' + crewLine(c, ' <span class="pill">' + where + '</span>') +
-      '<div style="width:100%;display:flex;gap:6px;align-items:center;justify-content:space-between"><span style="font-size:11.5px;color:#6c8a92;font-weight:800">' + T(ROLE_DESC[c.role]) + T('・') + T(SKILL_DESC[c.skill]) + '</span></div>' +
-      '<div style="width:100%;display:flex;gap:6px;align-items:center"><span class="seg"><button data-act="row" data-c="' + c.id + '" data-row="front" class="' + (c.row === 'front' ? 'on' : '') + '">' + T('前列') + '</button><button data-act="row" data-c="' + c.id + '" data-row="back" class="' + (c.row === 'back' ? 'on' : '') + '">' + T('後列') + '</button></span>' +
+      '<div class="crow desc"><span>' + T(ROLE_DESC[c.role]) + T('・') + T(SKILL_DESC[c.skill]) + '</span></div>' +
+      '<div class="crow"><span class="seg"><button data-act="row" data-c="' + c.id + '" data-row="front" class="' + (c.row === 'front' ? 'on' : '') + '">' + T('前列') + '</button><button data-act="row" data-c="' + c.id + '" data-row="back" class="' + (c.row === 'back' ? 'on' : '') + '">' + T('後列') + '</button></span>' +
       '<button class="sbtn" style="flex:1" data-act="jobpick" data-c="' + c.id + '"' + (c.away ? ' disabled' : '') + '>' + (job ? T('配置を変える') : T('施設に配置')) + '</button></div>';
     if (sheetOpen.sel === c.id) {
-      h += '<div style="width:100%;display:flex;flex-direction:column;gap:6px">';
+      h += '<div class="crow picks">';
       if (c.job) h += '<button class="sbtn alt" data-act="assign" data-c="' + c.id + '" data-k="">' + T('外して防衛に回す') + '</button>';
       const fl = Object.keys(S.tiles).filter(k => { const f = S.tiles[k].f; return f && facSlots(f.t, f.lv) > 0 && k !== c.job; });
       fl.sort((a, b) => crewBonus(c, S.tiles[b].f.t) - crewBonus(c, S.tiles[a].f.t));
@@ -2657,7 +2835,7 @@ function renderExp() {
     const str = partyStr(sheetOpen.party), ch = expChance(str, is.diff);
     h += '<div class="sec">' + T('メンバー（{n}/4）', { n: sheetOpen.party.length }) + '</div><div class="chipsel">' +
       av.map(c => '<button data-act="party" data-c="' + c.id + '" class="' + (sheetOpen.party.includes(c.id) ? 'on' : '') + '">' + cName(c) + ' ' + cRole(c) + ' Lv' + c.lv + (c.hp < crewMaxHp(c) * 0.5 ? T('（負傷）') : '') + '</button>').join('') + '</div>' +
-      '<div class="sinfo">' + T('戦力 {a} / 必要 {b}・成功率', { a: Math.round(str), b: is.diff }) + ' <b style="color:' + (ch > 0.6 ? '#1d7a45' : ch > 0.35 ? '#8a5a00' : '#c0392b') + '">' + Math.round(ch * 100) + '%</b>' + (str < is.diff * 0.75 ? T('・失敗すると帰らない者が出るかも') : '') + '</div>' +
+      '<div class="sinfo">' + T('戦力 {a} / 必要 {b}・成功率', { a: Math.round(str), b: is.diff }) + ' <span class="pill ' + (ch > 0.6 ? 'g' : ch > 0.35 ? 'y' : 'r') + '">' + Math.round(ch * 100) + '%</span>' + (str < is.diff * 0.75 ? T('・失敗すると帰らない者が出るかも') : '') + '</div>' +
       '<div class="btnrow"><button class="sbtn" data-act="send"' + (sheetOpen.party.length && !B ? '' : ' disabled') + '>' + T('出発する') + '</button></div>';
   }
   return h;
@@ -2741,11 +2919,11 @@ cv.addEventListener('pointermove', e => {
   if (!gest) return;
   if (ptrs.size >= 2 && gest.pinch) {
     const a = [...ptrs.values()]; const d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
-    cam.dist = clamp(gest.dist * gest.pinch / Math.max(20, d), 10, 44);
+    cam.dist = clamp(gest.dist * gest.pinch / Math.max(20, d), 10, 44); redraw = true;
   } else if (ptrs.size === 1 && gest.sx != null) {
     if (Math.hypot(p.x - gest.sx, p.y - gest.sy) > 9) gest.moved = true;
     if (gest.moved) {
-      cam.yaw -= (p.x - gest.lx) * 0.009; cam.pitch = clamp(cam.pitch + (p.y - gest.ly) * 0.006, 0.28, 1.35);
+      cam.yaw -= (p.x - gest.lx) * 0.009; cam.pitch = clamp(cam.pitch + (p.y - gest.ly) * 0.006, 0.28, 1.35); redraw = true;
     }
     gest.lx = p.x; gest.ly = p.y;
   }
@@ -2757,7 +2935,7 @@ function ptrEnd(e) {
   if (ptrs.size === 0) gest = null;
 }
 cv.addEventListener('pointerup', ptrEnd); cv.addEventListener('pointercancel', ptrEnd);
-cv.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * (1 + e.deltaY * 0.001), 10, 44); }, { passive: false });
+cv.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * (1 + e.deltaY * 0.001), 10, 44); redraw = true; }, { passive: false });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 function visibleChain(o) { while (o) { if (!o.visible) return false; o = o.parent; } return true; }
 function raftPick(x, y) {
@@ -2789,7 +2967,7 @@ function screenPick(x, y) {
   return best;
 }
 function onTap(x, y) {
-  if (gameState !== 'play' || (paused && !vs)) return;
+  if (gameState !== 'play' || (paused && !vs) || glLost) return;
   if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   if (place) {
     const p = raftPick(x, y);
@@ -2807,54 +2985,140 @@ function onTap(x, y) {
   }
 }
 
-// ---- sound button ----
+// ---- header buttons (shared icons; the sound button follows the shared KoboAudio mute) ----
+function iconInto(el, name) { el.textContent = ''; if (UI) el.append(UI.icon(name)); else el.textContent = name === 'help' ? '?' : name === 'back' ? '←' : name === 'menu' ? '≡' : '♪'; }
+iconInto($('#homeBtn'), 'back'); iconInto($('#helpBtn'), 'help'); iconInto($('#menuBtn'), 'menu');
 function renderSoundBtn() {
-  $('#soundBtn').innerHTML = soundOn
-    ? '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-    : '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const b = $('#soundBtn'), on = !(A && A.muted);
+  if (b.dataset.on === String(on)) return;
+  b.dataset.on = String(on); iconInto(b, on ? 'sound' : 'mute');
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute('aria-label', T(on ? '音を消す' : '音を出す')); b.title = T(on ? '音を消す' : '音を出す');
 }
-$('#soundBtn').addEventListener('click', () => { soundOn = !soundOn; lsSet(LS_SOUND, soundOn ? '1' : '0'); renderSoundBtn(); if (soundOn) { ensureAudio(); SFX.tap(); } });
+$('#soundBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) SFX.tap(); });
+if (A) A.onChange(renderSoundBtn);
+
+// ---- banner: big centred text for a survived day, a repelled raid, a new best (short; calmer with reduced motion) ----
+let bannerT = 0;
+function banner(title, sub, kind) {
+  if (headless) return;
+  const b = $('#banner'); b.innerHTML = ''; b.className = '';
+  const t = document.createElement('b'); t.textContent = title; b.appendChild(t);
+  if (sub) { const s = document.createElement('span'); s.textContent = sub; b.appendChild(s); }
+  void b.offsetWidth; b.className = 'show' + (kind ? ' ' + kind : '');
+  clearTimeout(bannerT); bannerT = setTimeout(() => { b.className = ''; b.innerHTML = ''; }, 2300);
+}
+
+// ---- play sessions (common/game.js events). One play = one stretch of a run on this page:
+// it starts when time first runs (new run, or a saved run resumed) and ends when the captain dies, the run is restarted
+// or an online battle takes over. score = days survived. Battles report their own plays with mode 'versus' / 'practice'.
+let sess = null, touchedRun = false;
+function beginPlay() {
+  if (sess || vs || !S || gameState !== 'play') return;
+  sess = { ms: 0, best: false, bestAt: bestDays(), day0: S.day };
+  if (KG) KG.emit('play_start', { mode: 'normal', stage: S.day, resumed: S.elapsed > 1 });
+}
+function endPlay(reason) {
+  if (!sess) return;
+  const s = sess; sess = null;
+  if (KG) KG.emit('play_end', { mode: 'normal', score: S ? S.day : 0, reason, durationMs: Math.round(s.ms), stage: S ? S.day : 0,
+    stats: S ? { caught: S.stats.caught, raidsWon: S.stats.raidsWon, crew: S.crew.length, lv: S.cap.lv } : undefined });
+}
 
 // ---- overlays ----
-function showOv(html) { $('#ovPanel').innerHTML = html; $('#ov').hidden = false; }
-function hideOv() { $('#ov').hidden = true; }
+function showOv(html, howto) {
+  $('#ovPanel').innerHTML = html; $('#ov').hidden = false;
+  if (howto) $('#ov').setAttribute('data-kb-howto', ''); else $('#ov').removeAttribute('data-kb-howto');
+}
+function hideOv() { $('#ov').hidden = true; $('#ov').removeAttribute('data-kb-howto'); redraw = true; }
+const HOWTO = [
+  '<b>漂流物をタップ</b>でフックを投げて拾う。<b>ドラッグで視点を回転</b>、ピンチ／ホイールで拡大。',
+  '下の<b>建設</b>で施設を置く。施設や床をタップで強化・修理・クルー配置。資源には上限があるので使い切ろう。',
+  '<b>漂流者</b>を助けるとクルーに。得意な施設に配置すると生産が大きく上がる。クルーは毎日朝夕に<b>食事と水</b>をとり、足りないと弱って去っていく。',
+  '2日目の夜から<b>海賊</b>が来る。配置していないクルーが自動で戦う。<b>陣形</b>が大事：戦士は前列、射手は後列。<b>見張り台</b>と<b>砲台</b>で備えよう。',
+  '<b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。'
+];
 function showHowto(first) {
-  paused = true;
+  if (vs) return;
+  paused = true; if (pm && pm.isOpen) pm.close();
   showOv('<h2>' + T('いかだ<span>暮らし</span>') + '</h2><p class="sub">' + T('水に沈んだ世界。小さなイカダを海上基地に育てて生き延びろ。') + '</p><ul>' +
-    '<li>' + T('<b>漂流物をタップ</b>でフックを投げて拾う。<b>ドラッグで視点を回転</b>、ピンチ／ホイールで拡大。') + '</li>' +
-    '<li>' + T('下の<b>建設</b>で施設を置く。施設や床をタップで強化・修理・クルー配置。資源には上限があるので使い切ろう。') + '</li>' +
-    '<li>' + T('<b>漂流者</b>を助けるとクルーに。得意な施設に配置すると生産が大きく上がる。クルーは毎日朝夕に<b>食事と水</b>をとり、足りないと弱って去っていく。') + '</li>' +
-    '<li>' + T('2日目の夜から<b>海賊</b>が来る。配置していないクルーが自動で戦う。<b>陣形</b>が大事：戦士は前列、射手は後列。<b>見張り台</b>と<b>砲台</b>で備えよう。') + '</li>' +
-    '<li>' + T('<b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。') + '</li></ul>' +
+    HOWTO.map((h, i) => '<li><span class="n">' + (i + 1) + '</span><span>' + T(h) + '</span></li>').join('') + '</ul>' +
+    '<p class="sub">' + T('迷ったら、画面下のヒントと上の「メイン任務」のとおりに進めよう。') + '</p>' +
     '<div class="langrow"><span>' + T('言語') + '</span><span id="langPick"></span></div>' +
-    '<div class="row"><button class="btn" id="ovGo">' + (first ? T('はじめる') : T('続ける')) + '</button><span id="vsSlotOv"></span></div>');
+    '<div class="row"><button class="btn" id="ovGo">' + (first ? T('はじめる') : T('続ける')) + '</button><span id="vsSlotOv"></span></div>', true);
   KoboI18n.picker($('#langPick')); KoboVersus.button($('#vsSlotOv'), { compact: true });
-  $('#ovGo').addEventListener('click', () => { lsSet(LS_SEEN, '1'); hideOv(); paused = false; ensureAudio(); });
+  $('#ovGo').addEventListener('click', () => {
+    lsSet(LS_SEEN, '1'); hideOv(); paused = false; ensureAudio(); last = performance.now();
+    if (KG) KG.resume('api');
+  });
+  setTimeout(() => { const b = $('#ovGo'); if (b && !$('#ov').hidden) try { b.focus({ preventScroll: true }); } catch (e) {} }, 0);
 }
-function showPause() {
-  if (gameState !== 'play' || !$('#ov').hidden) return;
-  paused = true;
-  showOv('<h2>' + T('一時停止') + '</h2><p class="sub">' + T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time) + '</p><div class="langrow"><span>' + T('言語') + '</span><span id="langPick"></span></div><div class="row"><button class="btn" id="ovGo">' + T('再開') + '</button><span id="vsSlotOv"></span></div>');
-  KoboI18n.picker($('#langPick')); KoboVersus.button($('#vsSlotOv'), { compact: true });
-  $('#ovGo').addEventListener('click', () => { hideOv(); paused = false; ensureAudio(); });
+
+// ---- pause (common/ui.js pause menu). common/game.js pauses on hide / pagehide; it stays paused until つづける.
+// Pausing only freezes the sea: nothing can be built, moved or repaired from the pause menu, so a raid cannot be "paused out".
+const pauseInfo = document.createElement('p'); pauseInfo.className = 'kb-dim'; pauseInfo.style.cssText = 'margin:0 0 4px;text-align:center;font-weight:800';
+const vsPauseWrap = document.createElement('div'); vsPauseWrap.style.cssText = 'display:flex;justify-content:center';
+function pauseText() {
+  if (!S) return '';
+  return T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time) + T('・') + T('船長') + ' Lv' + S.cap.lv + T('・') + T('最長記録') + ' ' + T('{n}日', { n: Math.max(bestDays(), S.day) });
 }
+function makePauseMenu(title) {
+  return UI ? UI.pauseMenu({
+    title, home: '../', extra: [pauseInfo, vsPauseWrap],
+    onResume() { resumePlay(); },
+    onRestart() { restartRun(); },
+    onOpen() {
+      if (KG) KG.menuOpened();
+      pauseInfo.textContent = pauseText();
+      if (pauseInfo.parentNode) pauseInfo.parentNode.prepend(pauseInfo);
+      if (!vsPauseWrap.firstChild) KoboVersus.button(vsPauseWrap);
+    },
+  }) : null;
+}
+let pm = null, pmWelcome = null;
+function doPause(reason) {
+  if (gameState !== 'play' || !S || vs || KoboVersus.active() || reason === 'versus') { save(); return; }
+  if (!$('#ov').hidden) { save(); return; } // the how-to already holds the game
+  paused = true; save(); redraw = true;
+  if (place) endPlace();
+  const m = reason === 'welcome' ? pmWelcome : pm;
+  if (m && !m.isOpen && !(pm && pm.isOpen) && !(pmWelcome && pmWelcome.isOpen)) m.open();
+}
+function resumePlay() {
+  if (gameState !== 'play') return;
+  paused = false; last = performance.now();
+  if (KG) KG.resume('api');
+}
+function restartRun() {
+  endPlay('quit');
+  startNew();
+  if (KG) KG.resume('api');
+}
+$('#menuBtn').addEventListener('click', () => { ensureAudio(); if (gameState === 'play' && !vs) doPause('menu'); });
+
 function gameOver(why) {
   if (gameState === 'over') return;
   if (vs) return vsOver(why);
-  gameState = 'over'; updateBest(); lsDel(LS_SAVE); SFX.over(); vibrate(200);
+  const prevBest = bestDays();
+  gameState = 'over'; updateBest(); endPlay('over');
+  lsDel(LS_SAVE); // removeItem → tombstone in the cloud: this run never comes back (R3)
+  SFX.over(); vibrate(200);
   if (place) endPlace();
   closeSheet();
   if (headless) return;
-  const best = bestDays();
+  const best = bestDays(), isBest = S.day > prevBest && prevBest > 0;
   setTimeout(() => {
+    if (gameState !== 'over' || vs) return;
     showOv('<h2>' + (why === 'sunk' ? T('イカダが<span>沈んだ</span>') : T('力<span>尽きた</span>')) + '</h2>' +
       '<p class="big">' + T('{d}日目', { d: S.day }) + '</p><p class="sub">' + T('まで生き延びた（船長Lv{n}）', { n: S.cap.lv }) + '</p>' +
+      (isBest ? '<p class="newbest">' + T('最長記録更新！') + '</p>' : '') +
       '<div class="recs"><div>' + T('最長記録') + '<b>' + T('{n}日', { n: best }) + '</b></div><div>' + T('撃退') + '<b>' + T('{n}回', { n: S.stats.raidsWon }) + '</b></div><div>' + T('仲間') + '<b>' + T('{n}人', { n: S.crew.length }) + '</b></div><div>' + T('拾った物') + '<b>' + S.stats.caught + '</b></div></div>' +
       '<div class="row"><button class="btn" id="ovRetry">' + T('もう一度') + '</button><a class="btn sub2" href="../">' + T('ゲーム一覧') + '</a></div>');
-    $('#ovRetry').addEventListener('click', () => { hideOv(); startNew(); });
+    $('#ovRetry').addEventListener('click', () => { hideOv(); startNew(); ensureAudio(); });
+    if (isBest) SFX.best();
   }, 800);
 }
-$('#helpBtn').addEventListener('click', () => { if (gameState === 'play') showHowto(false); });
+$('#helpBtn').addEventListener('click', () => { ensureAudio(); if (gameState === 'play' && !vs) showHowto(false); });
 
 // ---- lifecycle ----
 function clearWorld() {
@@ -2866,10 +3130,10 @@ function clearWorld() {
   for (const [, m] of CM) raftG.remove(m.g); CM.clear();
   if (capModel) { raftG.remove(capModel.g); capModel = null; }
   if (place) endPlace();
-  closeSheet(); raftChanged(); crewDirty = true; spawnAcc = 0;
+  closeSheet(); raftChanged(); crewDirty = true; spawnAcc = 0; popOk = false;
   for (const k in turretCd) delete turretCd[k];
   for (const k in hudC) delete hudC[k];
-  uiDirty = true; resDirty = true;
+  uiDirty = true; resDirty = true; redraw = true;
 }
 function prefill() {
   const rb = raftBox();
@@ -2884,41 +3148,81 @@ function afterLoad() {
   S.raid.queue = S.raid.queue || [];
   if (S.exp) for (const id of S.exp.ids) { const c = S.crew.find(x => x.id === id); if (c) c.away = true; }
 }
+// a new run is written to the device only once time has run in it (so opening the page never overwrites a newer
+// run from another device that the cloud is about to bring in)
 function startNew() {
   clearWorld();
-  S = newState(); gameState = 'play'; paused = false;
-  camT.set(0, 0, 0); prefill(); save();
+  S = newState(); gameState = 'play'; paused = false; touchedRun = false;
+  camT.set(0, 0, 0); prefill(); simT = 0;
 }
-document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); if (!DEBUG && !vs && !KoboVersus.active()) showPause(); } });
+if (!KG) document.addEventListener('visibilitychange', () => { if (document.hidden) doPause('hidden'); });
 window.addEventListener('pagehide', save);
 
-let last = performance.now(), saveAcc = 0, firstFrame = true;
+// ---- main loop. The sea is drawn every frame while time runs; when time stands still (pause, how-to, a sheet
+// outside battle, game over) a frame is drawn only when something changed (redraw), so an idle page costs nothing.
+// Battles keep running at reduced speed while a sheet is open: the formation can be changed, but not with time stopped.
+const SHEET_BATTLE_SPEED = 0.35;
+let last = performance.now(), saveAcc = 0, firstFrame = true, redraw = true, glLost = false, disposed = false, rafId = 0;
+function simRunning() {
+  if (gameState !== 'play' || !S) return false;
+  if (vs) return KoboVersus.canPlay();
+  return !paused && !KoboVersus.active() && (!sheetOpen || !!B);
+}
 function frame(now) {
-  requestAnimationFrame(frame);
+  rafId = disposed ? 0 : requestAnimationFrame(frame);
   const rdt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
-  if (gameState === 'play' && S && (vs ? KoboVersus.canPlay() : !paused && !sheetOpen && !KoboVersus.active())) {
-    let total = rdt * timeScale;
+  const run = simRunning();
+  if (run) {
+    if (!vs) { beginPlay(); touchedRun = true; if (sess) sess.ms += rdt * 1000; }
+    let total = rdt * timeScale * (sheetOpen && !vs ? SHEET_BATTLE_SPEED : 1);
     while (total > 1e-6) { const st = Math.min(0.05, total); update(st); total -= st; if (gameState !== 'play') break; }
     saveAcc += rdt; if (saveAcc > 4) { saveAcc = 0; save(); }
   }
-  if (!headless && renderer) { renderWorld(rdt); renderer.render(scene, camera); }
+  if (!headless && !glLost && (run || redraw)) {
+    renderWorld(rdt); renderer.render(scene, camera); redraw = false;
+    if (run) gfxSample(rdt);
+    if (firstFrame) { firstFrame = false; $('#loading').hidden = true; }
+  }
   updateHUD(rdt);
-  if (firstFrame) { firstFrame = false; $('#loading').hidden = true; }
 }
 
+// ---- platform contract (common/game.js) ----
+if (KG) {
+  KG.register({
+    id: 'raft',
+    pause(reason) { doPause(reason); },
+    resume() { /* stays paused until the player presses つづける */ },
+    save() { save(); },
+    // cloud.js may reload the page to bring in another device's run only while no play is going on here
+    isIdle() { return !sess && !(window.KoboVersus && KoboVersus.active()); },
+    dispose() {
+      disposed = true; if (rafId) cancelAnimationFrame(rafId); rafId = 0;
+      try { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); } catch (e) {}
+    },
+    restore() { glLost = false; redraw = true; },
+  });
+  KG.watchGL(cv, {
+    onLost() { glLost = true; toast(T('画面が一時的に止まりました。少し待つと元に戻ります。'), 'warn'); },
+    onRestored() { glLost = false; resize(); redraw = true; last = performance.now(); },
+  });
+}
 // ---- boot ----
 renderSoundBtn();
-if (!glOk || !renderer) {
-  $('#loading').innerHTML = T('この端末では3D表示（WebGL）が使えないため遊べません。') + '<br><a href="../" style="color:#ffc94a">' + T('ゲーム一覧へ') + '</a>';
-} else {
-  resize();
+resize();
+{
   const loaded = loadSave();
-  if (loaded) { S = loaded; gameState = 'play'; afterLoad(); const rb = raftBox(); camT.set(rb.cx, 0, rb.cz); prefill(); toast(T('{d}日目から再開', { d: S.day }), ''); }
+  if (loaded) { S = loaded; gameState = 'play'; afterLoad(); const rb = raftBox(); camT.set(rb.cx, 0, rb.cz); prefill(); touchedRun = false; }
   else startNew();
   simT = S.elapsed;
+  pm = makePauseMenu(T('一時停止'));
+  pmWelcome = makePauseMenu(T('おかえり！'));
   if (!lsGet(LS_SEEN)) showHowto(true);
-  requestAnimationFrame(frame);
+  else if (loaded) doPause('welcome'); // a saved run waits for つづける (and a newer run from another device can still be brought in)
+  rafId = requestAnimationFrame(frame);
+  if (headless) $('#loading').hidden = true;
 }
+
+if (UI && UI.theme) UI.theme.onChange(() => { redraw = true; });
 
 // ---- online battle (common/versus.js): 5-minute "drifting challenge" ----
 // Everyone starts from the same small raft on the same seeded sea, with days running faster (VS_DAY s).
@@ -2927,6 +3231,11 @@ if (!glOk || !renderer) {
 const VS_DAY = 90;
 function vsGot(l) { if (vs) for (const r in l) if (l[r] > 0) vs.got += l[r]; }
 function vsScore() { return vs && S ? vs.got * 10 + vs.built * 150 + S.stats.raidsWon * 400 + (S.day - 1) * 200 : 0; }
+function vsEndPlay(reason) {
+  if (!vs || !vs.playing) return;
+  vs.playing = false;
+  if (KG) KG.emit('play_end', { mode: vs.practice ? 'practice' : 'versus', score: vs.over ? vs.overScore : vsScore(), reason, durationMs: Date.now() - vs.t0 });
+}
 function vsOver(why) {
   if (vs.over) return;
   vs.overScore = vsScore(); vs.over = 1;
@@ -2938,15 +3247,18 @@ function vsOver(why) {
 }
 KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員が同じ海、同じいかだから始めます。',
   game: 'raft', title: T('いかだ暮らし'), duration: 300, unit: T('点'),
-  theme: { accent: '#ffc94a', accentInk: '#3a2600', accentShadow: '#b88a1c', card: '#155160', line: '#2a6b78',
-    ink: '#fff6e3', dim: '#a9cdd2', hud: '#0f3d47', display: 'var(--font-display)' },
+  theme: { accent: 'var(--kb-accent)', accentInk: 'var(--kb-accent-ink)', accentShadow: '#a8761c', card: 'var(--kb-surface)', line: 'var(--kb-line)',
+    ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--font-display)' },
   hudCover: () => document.querySelector('header'),
-  onStart({ seed }) {
+  onOpen() { if (KG) KG.pause('versus'); save(); },
+  onStart({ seed, practice }) {
     if (!vs) {
+      endPlay('quit'); // the solo run is set aside untouched (it comes back after the battle); its play ends here
       // put the single-player raft aside as it is (the object is not touched during the battle) and park its overlay
       const frag = document.createDocumentFragment(); while ($('#ovPanel').firstChild) frag.appendChild($('#ovPanel').firstChild);
-      vs = { snap: { S, gameState, paused, ov: !$('#ov').hidden, frag, camT: camT.clone(), cam: Object.assign({}, cam), simT } };
-    }
+      vs = { snap: { S, gameState, paused, touchedRun, ov: !$('#ov').hidden, howto: $('#ov').hasAttribute('data-kb-howto'), frag, camT: camT.clone(), cam: Object.assign({}, cam), simT } };
+      if (pm && pm.isOpen) pm.close(); if (pmWelcome && pmWelcome.isOpen) pmWelcome.close();
+    } else vsEndPlay('quit');
     hideOv(); clearWorld();
     for (const k in warnT) delete warnT[k];
     DAY_LEN = VS_DAY;
@@ -2954,21 +3266,28 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員が同�
     rngState = seed >>> 0; vs.sea = (seed ^ 0x5EA5EA) >>> 0; vs.got = 0; vs.built = 0; vs.over = 0; vs.overScore = 0; vs.log = [];
     camT.set(0, 0, 0); seaRoll(prefill); simT = 0;
     $('#vsSlot').hidden = true; $('#vsChip').hidden = false; uiDirty = true;
+    vs.practice = !!practice; vs.playing = true; vs.t0 = Date.now();
+    if (KG) KG.emit('play_start', { mode: vs.practice ? 'practice' : 'versus', seed: seed >>> 0 });
   },
   onGo() { ensureAudio(); },
   getScore: () => (vs && vs.over ? vs.overScore : vsScore()),
-  onEnd() { if (place) endPlace(); closeSheet(); },
+  onEnd() { if (place) endPlace(); closeSheet(); vsEndPlay('over'); },
   onExit() {
+    if (KG) KG.resume('api');
     if (!vs) return;
+    vsEndPlay('quit');
     const s = vs.snap; vs = null;
     hideOv(); clearWorld();
     for (const k in warnT) delete warnT[k];
     DAY_LEN = 150;
-    S = s.S; gameState = s.gameState; paused = s.paused; simT = s.simT;
+    S = s.S; gameState = s.gameState; paused = s.paused; simT = s.simT; touchedRun = s.touchedRun;
     camT.copy(s.camT); Object.assign(cam, s.cam);
     if (S && gameState === 'play') { afterLoad(); prefill(); }
     $('#ovPanel').textContent = ''; $('#ovPanel').appendChild(s.frag); $('#ov').hidden = !s.ov;
-    $('#vsSlot').hidden = false; $('#vsChip').hidden = true; uiDirty = true; resDirty = true;
+    if (s.ov && s.howto) $('#ov').setAttribute('data-kb-howto', '');
+    $('#vsSlot').hidden = false; $('#vsChip').hidden = true; uiDirty = true; resDirty = true; redraw = true;
+    // back to the solo run: it waits in the pause menu so the sea does not start moving under the player's hand
+    if (S && gameState === 'play' && !s.ov) { paused = false; doPause('menu'); }
   },
 });
 KoboVersus.button($('#vsSlot'), { compact: true });
@@ -2984,10 +3303,36 @@ if (DEBUG) {
     raidNow(side) { S.raid.queue = S.raid.queue || []; S.raid.queue.unshift(S.elapsed); S.raid.state = 'none'; updateRaid(0); if (side != null) S.raid.side = side; S.raid.at = S.elapsed; updateRaid(0); return B; },
     toScreen(x, y, z) { const s = toScreen(x, y, z); return { x: s.x, y: s.y, vis: s.vis }; }, raftY() { return raftG.position.y; },
     tilePos(k) { const t = S.tiles[k]; return t ? { x: t.i * TS, z: t.j * TS } : null; }, save, gameOver, endBattle, key, capPos, hookRange, crewCap, tileCount, maxTiles, cap,
-    setTime(t) { S.time = t; }, camera: cam, addXp, resetRaft() { S.tiles = newState().tiles; raftChanged(); crewChanged(); }, storm(sec) { const w = S.weather; w.kind = 'storm'; w.next = S.elapsed; w.until = S.elapsed + (sec || 40); w.warned = true; w.rain = 1; w.storm = 1; }, openSheet, closeSheet, startExpand, startPlace, feedCrew, crewMaxHp
+    setTime(t) { S.time = t; }, camera: cam, addXp, resetRaft() { S.tiles = newState().tiles; raftChanged(); crewChanged(); }, storm(sec) { const w = S.weather; w.kind = 'storm'; w.next = S.elapsed; w.until = S.elapsed + (sec || 40); w.warned = true; w.rain = 1; w.storm = 1; }, openSheet, closeSheet, startExpand, startPlace, feedCrew, crewMaxHp,
+    get gfx() { return { lv: gfx.lv, fps: gfx.fps, dropped: gfx.dropped, dpr: renderer.getPixelRatio(), seg: ocean.geometry.parameters.widthSegments }; }, setGfx,
+    get sess() { return sess; }, get touched() { return touchedRun; }, doPause, resumePlay, banner, tutTarget
   };
+  // window.__kb (GAME_QUALITY_STANDARDS.md): common/game.js makes it under ?debug; the game adds its own hooks
+  // step(n): a small bot plays n seconds (hooks the nearest debris in range, then lets time run 1 s)
+  const bot = () => {
+    if (!S || gameState !== 'play' || hook) return;
+    const cp = capPos(), r = hookRange();
+    const d = debris.filter(x => !x.hooked && Math.hypot(x.x - cp.x, x.z - cp.z) < r).sort((a, b) => Math.hypot(a.x - cp.x, a.z - cp.z) - Math.hypot(b.x - cp.x, b.z - cp.z))[0];
+    if (d) throwHook(d);
+  };
+  window.__kb = Object.assign(window.__kb || {}, {
+    ready: () => !!S && (headless || !firstFrame),
+    state: () => ({
+      mode: vs ? (vs.practice ? 'practice' : 'versus') : 'normal',
+      score: S ? (vs ? (vs.over ? vs.overScore : vsScore()) : S.day) : 0,
+      time: S ? S.elapsed : 0, over: gameState === 'over', stage: S ? S.day : 0, paused: paused || (KG ? KG.paused() : false),
+      day: S ? S.day : 0, best: bestDays(), mission: S ? S.mission : 0, sheet: sheetOpen ? sheetOpen.kind : null, battle: !!B,
+      frames: renderer.info.render.frame, rendering: simRunning() || redraw, playing: !!sess, gfx: gfx.lv, saved: lsGet(LS_SAVE) != null,
+    }),
+    win() { if (S && gameState === 'play') { S.time = 0.999; update(0.05); } }, // survive to the next morning
+    lose() { if (S && gameState === 'play') { S.cap.hp = -1; update(0.01); } },
+    step(n = 1) { for (let i = 0; i < n && S && gameState === 'play'; i++) { bot(); for (let k = 0; k < 20 && gameState === 'play'; k++) update(0.05); } return S ? S.stats.caught : 0; },
+    tutorial: () => ({ step: S ? Math.min(S.mission, TUT_STEPS) : 0, done: !S || S.mission >= TUT_STEPS || !!S.tutOff, total: TUT_STEPS, visible: !$('#coach').hidden, target: !!tutTarget() }),
+    openMenu: () => doPause('menu'), resume: resumePlay, sim: sec => window.__raft.sim(sec), headless: b => { headless = !!b; },
+  });
 }
 
+})();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 <script src="../firebase-config.js"></script>

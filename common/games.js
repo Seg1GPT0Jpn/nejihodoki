@@ -152,6 +152,7 @@
       rankSource: { key: 'kusoge.raft.best', paths: null, offset: 0 },
       record: { key: 'kusoge.raft.best', paths: null, min: 1, tpl: { ja: '最長 {n} 日生存', en: 'Longest: {n} days survived' } },
       keys: {
+        'kusoge.raft.gfx': 'この端末の画質（0〜2。同期しない）',
         'kusoge.raft.best': '最長の生存日数（数値の文字列）',
         'kusoge.raft.save': '今の回の状態まるごと（v, day, tiles, crew, res …）。死ぬと消す',
         'kusoge.raft.seen3': '遊び方を見たか',
