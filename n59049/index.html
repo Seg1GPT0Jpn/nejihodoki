@@ -13,198 +13,291 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="59049">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
-<script>
-KoboI18n.add({ en: {
-  '← ゲーム一覧': '← Games',
-  'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
-  'スコア': 'SCORE', '次の目標': 'Next goal', 'ベスト': 'BEST',
-  '3×3×3の立体盤。スワイプで数字を寄せる': '3×3×3 cube board. Swipe to slide the numbers',
-  'スワイプで寄せる ・ 2本指ドラッグで視点を回す': 'Swipe to slide · drag with 2 fingers to turn',
-  '数字の色': 'Number colors',
-  '奥へ寄せる': 'Slide away from you', '奥へ': 'Far',
-  '視点を90度回す': 'Turn the view 90°', '回す': 'Turn',
-  '視点の高さを変える': 'Change the view height', '傾ける': 'Tilt',
-  '手前へ寄せる': 'Slide toward you', '手前へ': 'Near',
-  '1手戻す': 'Undo', '残り{n}': '{n} left', '新しく始める': 'New game',
-  '59049 到達！': '59049 reached!',
-  '3の10乗。立体の頂点にたどり着きました。': '3 to the 10th power. You reached the top of the cube.',
-  'このまま続ける': 'Keep playing',
-  'もう動かせない！': 'No more moves!',
-  'ベスト {best} ・ 最高 {tile}': 'Best {best} · Top tile {tile}',
-  '最高 {n}': 'Top {n}',
-  'ベスト更新！': 'New best!',
-  'もう一度': 'Play again',
-  '1手戻しました（残り{n}）': 'Undid 1 move ({n} left)',
-  '新しいゲーム': 'New game',
-  'もう一度押すと新しく始めます': 'Tap again to start a new game',
-  '言語 / Language': 'Language / 言語',
-  '点': 'pts', 'もう動かせない！ 盤をリセット': 'No moves! Board reset',
-} });
-</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* Look: a night observatory. A glass lattice floats in deep indigo; tiles are gem-colored crystals, cool to warm as they grow. */
-:root {
-  --ink: #0b1020;
-  --ink-2: #151c38;
-  --line: #2b3666;
-  --text: #eef2ff;
-  --dim: #9aa6d6;
-  --ice: #8fe3ff;
-  --gold: #ffd36b;
-  --gold-ink: #2b1d00;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+/* Look: a night observatory (dark) or a daylight planetarium (light). A glass lattice floats in the room; tiles are
+   gem-colored crystals, cool to warm as they grow. The 3D board keeps its gem palette in both themes; the UI chrome
+   uses the shared --kb-* tokens, re-tinted here so KoboUI's menu and settings sheet match the game. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0b1020; --kb-surface: #151c38; --kb-surface-2: #1c2550; --kb-sunken: #0e1430; --kb-line: #2b3666;
+  --kb-ink: #eef2ff; --kb-dim: #9aa6d6;
+  --kb-accent: #ffd36b; --kb-accent-ink: #2b1d00; --kb-accent-text: #ffd36b; --kb-accent-soft: rgba(255, 211, 107, .16);
+  --kb-scrim: rgba(4, 6, 16, .7); --kb-toast-bg: rgba(8, 12, 28, .94); --kb-focus: #8fe3ff;
+  --kb-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  --nb-bg-1: #1b2550; --nb-bg-2: #0b1020; --nb-bg-3: #060914; --nb-ice: #8fe3ff;
+  --nb-card: linear-gradient(#1d2650, #121836); --nb-btn-shadow: #a07a1c; --nb-hud: rgba(11, 16, 32, .97);
+  --nb-ctl: linear-gradient(#1c2550, #131a3a); --nb-ctl-shadow: #070a18;
+  --nb-depth: linear-gradient(#25507a, #183659); --nb-depth-line: #3b74a8;
+  --nb-toast: rgba(8, 12, 28, .92); --nb-toast-ink: #eef2ff; --nb-pop: #fff1c4; --nb-pop-stroke: #14182e;
   color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #eef0fa; --kb-surface: #ffffff; --kb-surface-2: #e3e7f7; --kb-sunken: #dde2f4; --kb-line: #c3cae6;
+    --kb-ink: #1a2040; --kb-dim: #535d86;
+    --kb-accent: #f2b733; --kb-accent-ink: #2b1d00; --kb-accent-text: #8a5a00; --kb-accent-soft: rgba(201, 138, 16, .14);
+    --kb-scrim: rgba(26, 32, 64, .42); --kb-toast-bg: rgba(26, 32, 64, .94); --kb-focus: #2f5fd0;
+    --kb-shadow: 0 16px 40px rgba(30, 40, 90, .2);
+    --nb-bg-1: #ffffff; --nb-bg-2: #e9ecf8; --nb-bg-3: #d6dcf1; --nb-ice: #1f6fbf;
+    --nb-card: linear-gradient(#ffffff, #f1f3fb); --nb-btn-shadow: #b8861c; --nb-hud: rgba(255, 255, 255, .97);
+    --nb-ctl: linear-gradient(#ffffff, #eef1fb); --nb-ctl-shadow: #c3cae6;
+    --nb-depth: linear-gradient(#e2efff, #c9ddfa); --nb-depth-line: #7aa6dc;
+    --nb-toast: rgba(26, 32, 64, .9); --nb-toast-ink: #ffffff; --nb-pop: #1a2040; --nb-pop-stroke: #ffffff;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #eef0fa; --kb-surface: #ffffff; --kb-surface-2: #e3e7f7; --kb-sunken: #dde2f4; --kb-line: #c3cae6;
+  --kb-ink: #1a2040; --kb-dim: #535d86;
+  --kb-accent: #f2b733; --kb-accent-ink: #2b1d00; --kb-accent-text: #8a5a00; --kb-accent-soft: rgba(201, 138, 16, .14);
+  --kb-scrim: rgba(26, 32, 64, .42); --kb-toast-bg: rgba(26, 32, 64, .94); --kb-focus: #2f5fd0;
+  --kb-shadow: 0 16px 40px rgba(30, 40, 90, .2);
+  --nb-bg-1: #ffffff; --nb-bg-2: #e9ecf8; --nb-bg-3: #d6dcf1; --nb-ice: #1f6fbf;
+  --nb-card: linear-gradient(#ffffff, #f1f3fb); --nb-btn-shadow: #b8861c; --nb-hud: rgba(255, 255, 255, .97);
+  --nb-ctl: linear-gradient(#ffffff, #eef1fb); --nb-ctl-shadow: #c3cae6;
+  --nb-depth: linear-gradient(#e2efff, #c9ddfa); --nb-depth-line: #7aa6dc;
+  --nb-toast: rgba(26, 32, 64, .9); --nb-toast-ink: #ffffff; --nb-pop: #1a2040; --nb-pop-stroke: #ffffff;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 [hidden] { display: none !important; }
 body {
-  margin: 0; color: var(--text); font-family: var(--font-body);
-  background: radial-gradient(120% 70% at 50% 40%, #1b2550 0%, var(--ink) 65%, #060914 100%) fixed, var(--ink);
+  margin: 0; color: var(--kb-ink); font-family: var(--kb-font-body);
+  background: radial-gradient(120% 70% at 50% 40%, var(--nb-bg-1) 0%, var(--nb-bg-2) 65%, var(--nb-bg-3) 100%) fixed, var(--nb-bg-2);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent; overflow: hidden; overscroll-behavior: none;
 }
 #app {
   position: fixed; inset: 0; display: flex; flex-direction: column;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  padding: 0 0 var(--kb-sab) 0;
 }
-header { flex: none; padding: 8px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
-.top { display: flex; align-items: center; gap: 8px; }
+header {
+  flex: none; display: flex; align-items: center; gap: 6px;
+  padding: max(4px, var(--kb-sat)) max(10px, var(--kb-sar)) 0 max(10px, var(--kb-sal));
+}
 .back {
-  color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
-  padding: 6px 8px; margin-left: -8px; border-radius: 10px;
+  display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; flex: none;
+  color: var(--kb-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
+  padding: 0 8px 0 4px; margin-left: -4px; border-radius: 12px;
 }
-.back:active { background: var(--ink-2); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
-h1 { margin: 0 auto; font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: .08em; }
-h1 span { color: var(--ice); }
+.back svg { width: 22px; height: 22px; flex: none; }
+.back:active { background: var(--kb-surface); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+h1 { margin: 0 auto; font-family: var(--kb-font-display); font-weight: 400; font-size: 20px; letter-spacing: .08em; white-space: nowrap; }
+h1 span { color: var(--nb-ice); }
 .icon {
-  width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2);
-  color: var(--text); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none;
+  width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-surface);
+  color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; touch-action: manipulation;
 }
-.icon svg { width: 20px; height: 20px; }
-.icon.lang { font: 800 12px var(--font-body); letter-spacing: .02em; }
-.ctl .n, .ctl > span { overflow: hidden; text-overflow: ellipsis; }
+.icon svg { width: 22px; height: 22px; }
 .icon:active { transform: scale(.94); }
-.scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 6px; padding: 4px 4px 2px; }
-.label { font-size: 11px; color: var(--dim); letter-spacing: .12em; font-weight: 800; display: block; }
-.score-main b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.mode-bar {
+  flex: none; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px auto 0; max-width: calc(100% - 24px);
+  padding: 3px 12px; border-radius: 999px; background: var(--kb-accent-soft); border: 1px solid var(--kb-accent);
+  color: var(--kb-ink); font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mode-bar svg { width: 15px; height: 15px; flex: none; color: var(--kb-accent-text); }
+.mode-bar span { overflow: hidden; text-overflow: ellipsis; }
+.mode-bar b { color: var(--kb-accent-text); }
+.mode-bar.done { background: var(--kb-accent); color: var(--kb-accent-ink); }
+.mode-bar.done svg, .mode-bar.done b { color: var(--kb-accent-ink); }
+.scores { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 6px; padding: 2px max(14px, var(--kb-sar)) 2px max(14px, var(--kb-sal)); }
+.label { font-size: 11px; color: var(--kb-dim); letter-spacing: .12em; font-weight: 800; display: block; }
+.score-main b { display: block; font-family: var(--kb-font-display); font-weight: 400; font-size: 32px; line-height: 1.05; font-variant-numeric: tabular-nums; transform-origin: 20% 70%; }
+.score-main b.bump { animation: bump .32s cubic-bezier(.2,1.6,.4,1); }
 .goal {
   justify-self: center; margin-bottom: 4px; font-size: 12px; font-weight: 800; white-space: nowrap;
-  border: 1px solid var(--line); background: var(--ink-2); border-radius: 999px; padding: 4px 10px;
+  border: 1px solid var(--kb-line); background: var(--kb-surface); border-radius: 999px; padding: 4px 10px;
 }
-.goal b { font-family: var(--font-display); font-weight: 400; color: var(--gold); margin-left: 4px; font-size: 14px; }
-.score-best { text-align: right; justify-self: end; }
-.score-best b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--gold); font-variant-numeric: tabular-nums; line-height: 1.1; }
-.score-best small { font-size: 10px; color: var(--dim); font-weight: 800; }
-#play { position: relative; flex: 1; min-height: 0; touch-action: none; }
+.goal b { font-family: var(--kb-font-display); font-weight: 400; color: var(--kb-accent-text); margin-left: 4px; font-size: 14px; }
+.score-best { text-align: right; justify-self: end; min-width: 0; }
+.score-best b { display: block; font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; color: var(--kb-accent-text); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.score-best small { font-size: 10px; color: var(--kb-dim); font-weight: 800; white-space: nowrap; }
+/* tutorial coach: takes the place of the score row */
+.coach {
+  flex: none; display: flex; align-items: center; gap: 10px; margin: 4px max(12px, var(--kb-sar)) 2px max(12px, var(--kb-sal));
+  padding: 8px 8px 8px 14px; min-height: 60px; border-radius: 16px; background: var(--kb-surface); border: 1px solid var(--kb-accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,.18); animation: rise .3s cubic-bezier(.2,1.3,.4,1);
+}
+.coach .step { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 14px var(--kb-font-display); }
+.coach p { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
+.coach p small { display: block; font-size: 11.5px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.skip {
+  flex: none; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--kb-line); background: transparent;
+  color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; touch-action: manipulation;
+}
+.skip.go { background: var(--kb-accent); border-color: var(--kb-accent); color: var(--kb-accent-ink); padding: 0 16px; font-size: 15px; box-shadow: 0 3px 0 var(--nb-btn-shadow); }
+.coach.nudge { animation: nudge .35s; }
+#play { position: relative; flex: 1; min-height: 0; touch-action: none; margin: 0 var(--kb-sar) 0 var(--kb-sal); overflow: hidden; }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .hint {
-  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 11px; color: var(--dim);
-  font-weight: 800; white-space: nowrap; pointer-events: none; transition: opacity .6s; letter-spacing: .04em;
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 11px; color: var(--kb-dim);
+  font-weight: 800; white-space: nowrap; pointer-events: none; transition: opacity .6s; letter-spacing: .04em; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis;
 }
 .hint.off { opacity: 0; }
 .toast {
-  position: absolute; left: 50%; top: 6px; transform: translateX(-50%); background: rgba(8,12,28,.92); border: 1px solid var(--line);
+  position: absolute; left: 50%; top: 6px; transform: translateX(-50%); background: var(--nb-toast); border: 1px solid var(--kb-line); color: var(--nb-toast-ink);
   font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap; transition: opacity .2s;
+  max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; z-index: 3;
 }
+.toast.gold { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
 .toast.off { opacity: 0; }
-#legend { flex: none; display: flex; justify-content: center; gap: 3px; padding: 2px 8px 6px; flex-wrap: wrap; }
+/* merge feedback: floating "+N" over the merged tile, and a soft flash for big merges */
+.pops { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.pop {
+  position: absolute; transform: translate(-50%, -50%); font-family: var(--kb-font-display); font-size: 18px; color: var(--nb-pop);
+  -webkit-text-stroke: 3px var(--nb-pop-stroke); paint-order: stroke fill; white-space: nowrap; animation: popup .9s ease-out forwards;
+}
+.pop.big { font-size: 24px; color: var(--kb-accent-text); }
+.flash { position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(circle at var(--fx, 50%) var(--fy, 50%), rgba(255, 220, 140, .45), transparent 55%); animation: flash .5s ease-out forwards; }
+#nogl, #glLost { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; z-index: 4; }
+#glLost { background: var(--kb-scrim); }
+#nogl > div, #glLost > div { max-width: 300px; display: flex; flex-direction: column; gap: 10px; background: var(--nb-card); border: 1px solid var(--kb-line); border-radius: 18px; padding: 18px 16px; }
+#nogl b, #glLost b { font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; }
+#nogl p, #glLost p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--kb-dim); }
+#legend { flex: none; display: flex; justify-content: center; gap: 3px; padding: 2px 8px 6px; flex-wrap: nowrap; }
 .chip {
-  min-width: 30px; padding: 3px 3px; border-radius: 7px; font-size: 10px; font-weight: 800; text-align: center;
-  font-variant-numeric: tabular-nums; opacity: .32; transition: opacity .3s, transform .3s;
+  min-width: min(30px, 8vw); padding: 3px 2px; flex: 0 1 auto; border-radius: 7px; font-size: 10px; font-weight: 800; text-align: center;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em; opacity: .32; transition: opacity .3s, transform .3s;
 }
 .chip.got { opacity: 1; }
-.chip.top { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--text); }
-.controls { flex: none; display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.25fr; gap: 6px; padding: 0 max(10px, env(safe-area-inset-right)) 10px max(10px, env(safe-area-inset-left)); }
+.chip.top { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--kb-ink); }
+.controls { flex: none; display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.25fr; gap: 6px; padding: 0 max(10px, var(--kb-sar)) 10px max(10px, var(--kb-sal)); }
 .ctl {
-  height: 50px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(#1c2550, #131a3a);
-  color: var(--text); font: 800 14px var(--font-body); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
-  box-shadow: 0 3px 0 #070a18; touch-action: manipulation; white-space: nowrap; padding: 0 4px; min-width: 0;
+  height: 50px; min-height: 44px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--nb-ctl);
+  color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+  box-shadow: 0 3px 0 var(--nb-ctl-shadow); touch-action: manipulation; white-space: nowrap; padding: 0 4px; min-width: 0;
 }
-.ctl:active { transform: translateY(2px); box-shadow: 0 1px 0 #070a18; }
-.ctl.depth { background: linear-gradient(#25507a, #183659); border-color: #3b74a8; font-size: 15px; }
+.ctl:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--nb-ctl-shadow); }
+.ctl.depth { background: var(--nb-depth); border-color: var(--nb-depth-line); font-size: 15px; }
 .ctl svg { width: 16px; height: 16px; flex: none; }
 .ctl.v { font-size: 13px; gap: 2px; }
-.ctl.small { height: 38px; font-size: 13px; }
+.ctl.small { height: 44px; font-size: 13px; }
 .ctl:disabled { opacity: .4; }
-.ctl .n { font-size: 11px; color: var(--dim); }
+.ctl .n, .ctl > span { overflow: hidden; text-overflow: ellipsis; }
+.ctl .n { font-size: 11px; color: var(--kb-dim); }
+.ctl.pulse { animation: glow 1.2s ease-in-out infinite; border-color: var(--kb-accent); }
 .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .overlay {
-  position: fixed; inset: 0; display: grid; place-items: center; z-index: 10; overflow-y: auto; overscroll-behavior: contain;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  background: rgba(4,6,16,.7); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade .3s ease-out;
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 30; height: var(--kb-vh);
+  padding: max(12px, var(--kb-sat)) max(12px, var(--kb-sar)) max(12px, var(--kb-sab)) max(12px, var(--kb-sal));
+  background: var(--kb-scrim); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade .3s ease-out;
 }
 .card {
-  width: min(320px, 100%); max-height: 100%; overflow-y: auto; background: linear-gradient(#1d2650, #121836); border: 1px solid var(--line); border-radius: 22px;
-  padding: 22px 20px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.5); animation: rise .35s cubic-bezier(.2,.9,.3,1.2);
+  width: min(340px, 100%); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--nb-card); border: 1px solid var(--kb-line); border-radius: 22px;
+  color: var(--kb-ink); padding: 22px 20px 18px; text-align: center; box-shadow: var(--kb-shadow); animation: rise .35s cubic-bezier(.2,.9,.3,1.2);
 }
-.card h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 24px; letter-spacing: .04em; }
-.card .big { font-family: var(--font-display); font-size: 44px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.card .best { color: var(--dim); font-size: 13px; font-weight: 800; margin: 6px 0 14px; }
-.card .best b { color: var(--gold); }
-.card p { font-size: 13px; color: var(--dim); margin: 0 0 14px; line-height: 1.6; }
+.card h2 { margin: 0 0 10px; font-family: var(--kb-font-display); font-weight: 400; font-size: 24px; letter-spacing: .04em; line-height: 1.2; overflow-wrap: anywhere; }
+.card .big { font-family: var(--kb-font-display); font-size: clamp(28px, 10vw, 44px); line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.card .best { color: var(--kb-dim); font-size: 13px; font-weight: 800; margin: 6px 0 4px; }
+.card .best b { color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
+.card p { font-size: 13px; color: var(--kb-dim); margin: 0 0 14px; line-height: 1.6; }
 .btn {
-  display: block; width: 100%; border: 0; border-radius: 14px; padding: 13px; margin-top: 8px; font: 800 16px var(--font-body);
-  background: var(--gold); color: var(--gold-ink); box-shadow: 0 4px 0 #a07a1c; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px; border: 0; border-radius: 14px; padding: 10px 14px; margin-top: 12px; font: 800 16px var(--kb-font-body);
+  background: var(--kb-accent); color: var(--kb-accent-ink); box-shadow: 0 4px 0 var(--nb-btn-shadow); cursor: pointer; text-decoration: none; touch-action: manipulation;
 }
-.btn.sub { background: #26305e; color: var(--text); box-shadow: 0 4px 0 #0c1130; }
-.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #a07a1c; }
-.newrec { color: var(--gold); font-weight: 800; font-size: 13px; margin-bottom: 6px; }
+.btn.sub { min-height: 46px; margin-top: 10px; font-size: 15px; background: transparent; color: var(--kb-ink); border: 1px solid var(--kb-line); box-shadow: none; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--nb-btn-shadow); }
+.btn.sub:active { transform: scale(.98); }
+.btn.link { min-height: 44px; margin-top: 6px; font-size: 14px; background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; }
+.newrec { display: inline-block; margin-top: 8px; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; animation: glow 1.4s ease-in-out infinite; }
+.goalchip { display: inline-block; margin-top: 8px; font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--kb-line); color: var(--kb-dim); }
+.goalchip.ok { background: var(--kb-accent); border-color: var(--kb-accent); color: var(--kb-accent-ink); }
+#vsSlotOver .kvs-entry { margin-top: 10px; min-height: 44px; }
+/* how to play */
+.howto h2 { margin-bottom: 8px; }
+.howto ol { list-style: none; margin: 0; padding: 0; text-align: left; display: grid; gap: 8px; }
+.howto li { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; background: var(--kb-surface); border: 1px solid var(--kb-line); }
+.howto li svg { flex: none; width: 60px; height: 48px; }
+.howto li p { margin: 0; font-size: 13.5px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; color: var(--kb-ink); }
+.howto li p small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 2px; }
+.vs-slot { display: contents; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
-@media (prefers-reduced-motion: reduce) { .overlay, .card { animation: none; } }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
+@keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes popup { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -160%) scale(1); } }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .card, .coach, .newrec, .coach.nudge, .score-main b.bump, .ctl.pulse { animation: none; }
+  .pop { animation: popfade .8s linear forwards; }
+  .toast, .chip, .hint { transition: none; }
+}
+@keyframes popfade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } .back span { display: none; } .back { padding-right: 4px; } }
+@media (max-width: 359px) { header { gap: 4px; } h1 { font-size: 17px; letter-spacing: .02em; } .goal { padding: 3px 7px; } }
+@media (max-width: 340px) { .ctl.v svg { display: none; } .ctl.v { font-size: 12.5px; } .chip { font-size: 9px; } }
 @media (max-height: 640px) {
   .score-main b { font-size: 26px; }
-  .ctl { height: 44px; }
-  .ctl.small { height: 34px; }
+  .ctl { height: 46px; }
+  .howto li { padding: 6px 8px; } .howto li svg { width: 50px; height: 40px; }
+  .card { padding: 16px 16px 14px; } .card h2 { font-size: 21px; margin-bottom: 8px; }
 }
-/* online battle entry (common/versus.js) */
-.vs-slot { display: contents; }
-@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
-@media (max-width: 359px) { .top { gap: 5px; } .back { font-size: 12px; padding: 6px 4px; margin-left: -4px; } h1 { font-size: 17px; letter-spacing: .02em; } }
-@media (max-width: 340px) { .ctl.v svg { display: none; } .ctl.v { font-size: 12.5px; } }
 @media (max-height: 520px) {
-  header { padding-top: 4px; }
-  .icon { width: 32px; height: 32px; }
   .score-main b { font-size: 22px; }
   .score-best b { font-size: 15px; }
   .goal { margin-bottom: 2px; padding: 2px 8px; }
-  .ctl { height: 40px; }
-  .ctl.small { height: 32px; }
+  .ctl { height: 44px; }
   #legend { padding-bottom: 4px; }
   .controls { padding-bottom: 6px; }
-  .card { padding: 16px 16px 14px; }
-  .card .big { font-size: 36px; }
-  .btn { padding: 11px; }
+  .card .big { font-size: 34px; }
+  .btn { min-height: 46px; margin-top: 8px; }
+  .howto ol { grid-template-columns: 1fr 1fr; gap: 6px; } .howto li { gap: 8px; }
+  .card.howto { width: min(600px, 100%); }
+}
+/* landscape phones: the board on the left, scores and buttons on the right */
+@media (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  #app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 46%); grid-template-rows: auto auto auto auto auto 1fr;
+    grid-template-areas: "head head" "play mode" "play info" "play leg" "play ctl" "play ."; }
+  header { grid-area: head; } #modeBar { grid-area: mode; } #scores, #coach { grid-area: info; } #play { grid-area: play; margin-right: 0; }
+  #legend { grid-area: leg; padding-left: 0; } .controls { grid-area: ctl; padding-left: 0; }
+  #legend { gap: 2px; padding-right: max(10px, var(--kb-sar)); } .chip { font-size: 8.5px; min-width: 0; flex: 1 1 auto; padding: 3px 1px; } .ctl.v svg { display: none; }
+  .coach { margin-left: 0; }
 }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="top">
-      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
-      <h1>590<span>49</span></h1>
-      <span id="vsSlot" class="vs-slot"></span>
-      <button class="icon lang" id="langBtn" type="button" aria-label="言語 / Language"></button>
-      <button class="icon" id="sound" type="button" aria-label="サウンド" aria-pressed="true"></button>
-    </div>
-    <div class="scores">
-      <div class="score-main"><span class="label" data-i18n>スコア</span><b id="score">0</b></div>
-      <div class="goal" id="goal"><span data-i18n>次の目標</span><b id="goalV">27</b></div>
-      <div class="score-best"><span class="label" data-i18n>ベスト</span><b id="best">0</b><small id="bestTile"></small></div>
-    </div>
+    <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
+    <h1>590<span>49</span></h1>
+    <span id="vsSlot" class="vs-slot"></span>
+    <button class="icon" id="sound" type="button" aria-label="サウンド" data-i18n-attr="aria-label" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
   </header>
+  <div class="mode-bar" id="modeBar" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    <span id="modeText"></span>
+  </div>
+  <div class="scores" id="scores">
+    <div class="score-main"><span class="label" data-i18n>スコア</span><b id="score">0</b></div>
+    <div class="goal" id="goal"><span data-i18n>次の目標</span><b id="goalV">27</b></div>
+    <div class="score-best"><span class="label" id="bestLabel" data-i18n>ベスト</span><b id="best">0</b><small id="bestTile"></small></div>
+  </div>
+  <div class="coach" id="coach" hidden role="status" aria-live="polite">
+    <span class="step" id="coachStep">1</span>
+    <p id="coachText"></p>
+    <button class="skip" id="coachBtn" type="button" data-i18n>スキップ</button>
+  </div>
   <div id="play">
     <canvas id="cv" data-i18n-attr="aria-label" aria-label="3×3×3の立体盤。スワイプで数字を寄せる"></canvas>
+    <div class="pops" id="pops"></div>
     <div class="toast off" id="toast"></div>
     <div class="hint" id="hint" data-i18n>スワイプで寄せる ・ 2本指ドラッグで視点を回す</div>
   </div>
@@ -212,12 +305,12 @@ h1 span { color: var(--ice); }
   <div class="controls">
     <button class="ctl depth" id="bFar" type="button" aria-label="奥へ寄せる" data-i18n-attr="aria-label"><span data-i18n>奥へ</span></button>
     <button class="ctl v" id="bRot" type="button" aria-label="視点を90度回す" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/></svg><span data-i18n>回す</span></button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/></svg><span data-i18n>回す</span></button>
     <button class="ctl v" id="bTilt" type="button" aria-label="視点の高さを変える" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg><span data-i18n>傾ける</span></button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg><span data-i18n>傾ける</span></button>
     <button class="ctl depth" id="bNear" type="button" aria-label="手前へ寄せる" data-i18n-attr="aria-label"><span data-i18n>手前へ</span></button>
     <div class="row2">
-      <button class="ctl small" id="bUndo" type="button"><span data-i18n>1手戻す</span> <span class="n" id="undoN">残り3</span></button>
+      <button class="ctl small" id="bUndo" type="button"><span data-i18n>1手戻す</span> <span class="n" id="undoN"></span></button>
       <button class="ctl small" id="bNew" type="button" data-i18n>新しく始める</button>
     </div>
   </div>
@@ -237,27 +330,111 @@ h1 span { color: var(--ice); }
     <h2 id="overTitle" data-i18n>もう動かせない！</h2>
     <div class="label" data-i18n>スコア</div>
     <div class="big" id="overScore">0</div>
-    <div class="best" id="overBestLine">ベスト <b id="overBest">0</b> ・ 最高 <b id="overTile">3</b></div>
+    <div class="best" id="overBestLine"><span id="overBestLabel" data-i18n>ベスト</span> <b id="overBest">0</b><span id="overTileWrap"> · <span data-i18n>最高</span> <b id="overTile">3</b></span></div>
     <div id="overNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+    <div id="overGoal" class="goalchip" hidden></div>
     <button class="btn" id="again" type="button" data-i18n>もう一度</button>
     <button class="btn sub" id="overUndo" type="button" data-i18n>1手戻す</button>
+    <button class="btn sub" id="overAlt" type="button" hidden></button>
+    <div id="vsSlotOver"></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <ol>
+      <li><svg viewBox="0 0 60 48" aria-hidden="true"><g stroke="#8fe3ff" stroke-opacity=".5" fill="none"><rect x="3" y="14" width="54" height="20" rx="3"/></g><g font-family="sans-serif" font-weight="900" font-size="9" text-anchor="middle"><rect x="6" y="17" width="14" height="14" rx="3" fill="#7fd6c2"/><text x="13" y="27.5" fill="#14182e">3</text><rect x="23" y="17" width="14" height="14" rx="3" fill="#7fd6c2"/><text x="30" y="27.5" fill="#14182e">3</text><rect x="40" y="17" width="14" height="14" rx="3" fill="#7fd6c2"/><text x="47" y="27.5" fill="#14182e">3</text></g><path d="M14 42 H46 M40 38 l6 4 -6 4" fill="none" stroke="#f2b733" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p data-i18n-html><b>スワイプ</b>で、全部の数字を同じ向きに寄せる<small>動かすたびに 3 か 9 が1つ出てくる</small></p></li>
+      <li><svg viewBox="0 0 60 48" aria-hidden="true"><g font-family="sans-serif" font-weight="900" text-anchor="middle"><rect x="2" y="16" width="11" height="11" rx="2.5" fill="#4fb0e8"/><rect x="14" y="16" width="11" height="11" rx="2.5" fill="#4fb0e8"/><rect x="26" y="16" width="11" height="11" rx="2.5" fill="#4fb0e8"/><text x="7.5" y="24.5" font-size="7" fill="#fff">9</text><text x="19.5" y="24.5" font-size="7" fill="#fff">9</text><text x="31.5" y="24.5" font-size="7" fill="#fff">9</text><path d="M40 21.5 h5 M43 18.5 l3 3 -3 3" fill="none" stroke="#f2b733" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="47" y="13" width="12" height="17" rx="3" fill="#6f74f2"/><text x="53" y="24.5" font-size="7.5" fill="#fff">27</text></g></svg>
+        <p data-i18n-html>同じ数字が<b>1列に3つ</b>並ぶと合体して3倍<small>3 → 9 → 27 → … → 59049 を目指す</small></p></li>
+      <li><svg viewBox="0 0 60 48" aria-hidden="true"><g stroke="#8fe3ff" stroke-opacity=".6" fill="none" stroke-width="1.4"><path d="M16 14 L36 8 L52 14 L32 20z M16 14 V34 L32 40 V20 M52 14 V34 L32 40"/></g><path d="M8 40 a20 10 0 0 0 44 0" fill="none" stroke="#f2b733" stroke-width="2.4" stroke-linecap="round"/><path d="M48 36 l4 4 -5 2" fill="none" stroke="#f2b733" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p data-i18n-html>奥と手前は<b>「奥へ」「手前へ」</b>のボタンで<small>「回す」か2本指ドラッグで、裏側も見られる</small></p></li>
+    </ol>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../common/game.js"></script>
 <script>
 (() => {
 'use strict';
 const T = KoboI18n.t;
-const KEY_BEST = 'kusoge.n59049.best', KEY_TILE = 'kusoge.n59049.bestTile', KEY_STATE = 'kusoge.n59049.state', KEY_SOUND = 'kusoge.sound';
+KoboI18n.add({ en: {
+  'ゲーム一覧': 'Games', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'ゲーム一覧に戻る': 'Back to games', 'メニュー': 'Menu',
+  'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  'スコア': 'SCORE', '次の目標': 'Next goal', 'ベスト': 'BEST', '今日のベスト': 'TODAY',
+  '3×3×3の立体盤。スワイプで数字を寄せる': '3×3×3 cube board. Swipe to slide the numbers',
+  'スワイプで寄せる ・ 2本指ドラッグで視点を回す': 'Swipe to slide · drag with 2 fingers to turn',
+  '数字の色': 'Number colors',
+  '奥へ寄せる': 'Slide away from you', '奥へ': 'Far',
+  '視点を90度回す': 'Turn the view 90°', '回す': 'Turn',
+  '視点の高さを変える': 'Change the view height', '傾ける': 'Tilt',
+  '手前へ寄せる': 'Slide toward you', '手前へ': 'Near',
+  '1手戻す': 'Undo', '残り{n}': '{n} left', '新しく始める': 'New game',
+  '59049 到達！': '59049 reached!',
+  '3の10乗。立体の頂点にたどり着きました。': '3 to the 10th power. You reached the top of the cube.',
+  'このまま続ける': 'Keep playing',
+  'もう動かせない！': 'No more moves!',
+  '最高': 'Top tile', '最高 {n}': 'Top {n}',
+  'ベスト更新！': 'New best!',
+  'もう一度': 'Play again',
+  '1手戻しました（残り{n}）': 'Undid 1 move ({n} left)',
+  '新しいゲーム': 'New game',
+  'もう一度押すと新しく始めます': 'Tap again to start a new game',
+  '点': 'pts', 'もう動かせない！ 盤をリセット': 'No moves! Board reset',
+  '{n} ができた！': 'You made {n}!', '最高の数字を更新！ {n}': 'New top tile! {n}',
+  // how to play
+  '遊び方': 'How to play', 'やってみる': 'Try it', '説明だけでOK': 'Skip the tutorial', 'とじる': 'Close', 'チュートリアルをもう一度': 'Replay the tutorial',
+  '<b>スワイプ</b>で、全部の数字を同じ向きに寄せる<small>動かすたびに 3 か 9 が1つ出てくる</small>': '<b>Swipe</b> to slide every number the same way<small>Each move adds a new 3 or 9</small>',
+  '同じ数字が<b>1列に3つ</b>並ぶと合体して3倍<small>3 → 9 → 27 → … → 59049 を目指す</small>': '<b>Three equal numbers in a line</b> merge into one, worth 3×<small>3 → 9 → 27 → … aim for 59049</small>',
+  '奥と手前は<b>「奥へ」「手前へ」</b>のボタンで<small>「回す」か2本指ドラッグで、裏側も見られる</small>': 'Slide away or toward you with the <b>Far / Near</b> buttons<small>Turn or drag with two fingers to see the back</small>',
+  // tutorial
+  'スキップ': 'Skip', 'はじめる': 'Start', 'がんばって！': 'Good luck!',
+  '横にスワイプして、3つの 3 を合体させよう': 'Swipe sideways to merge the three 3s',
+  '同じ数字が1列に3つそろうと、1つになって3倍': 'Three equal numbers in a line become one, worth 3×',
+  '「奥へ」か「手前へ」を押して、9 を3つ合体': 'Tap Far or Near to merge the three 9s',
+  '画面の奥と手前の向きは、このボタンで寄せる': 'These buttons slide along the into-the-screen direction',
+  '「回す」を押して、立体を回してみよう': 'Tap Turn to rotate the cube',
+  '2本指でドラッグしても回せる': 'You can also drag with two fingers',
+  '準備OK！ 59049 を目指そう': 'Ready! Aim for 59049',
+  '動かすたびに 3 か 9 が出る。動かせなくなったらおしまい': 'Each move adds a 3 or 9. The game ends when nothing can move',
+  '横にスワイプしよう': 'Swipe sideways', '「奥へ」か「手前へ」を押そう': 'Tap Far or Near', '「回す」を押そう': 'Tap Turn',
+  // daily
+  '今日のチャレンジ': 'Daily challenge', '今日のチャレンジ（{d}）': 'Daily challenge ({d})', 'ふつうのゲームへ': 'Back to normal game',
+  'ふつうのゲームに戻る': 'Back to normal game', '{m}月{d}日': '{mon} {d}',
+  '目標 <b>{g}</b> 点': 'Goal <b>{g}</b> pts', '目標達成！ <b>{g}</b> 点': 'Goal reached! <b>{g}</b> pts',
+  '目標達成！': 'Goal reached!', '目標まで あと {n} 点': '{n} pts to the goal', '今日のチャレンジ 終了': 'Daily challenge over',
+  '全員に同じ順番で同じ数字が出る、1日1つの問題。1手戻すは使えません。何度でも挑戦できます。': 'One puzzle a day: everyone gets the same numbers in the same order. No undo. Try as many times as you like.',
+  'デイリーでは使えません': 'Not in the daily challenge',
+  // WebGL
+  '3D を表示できません': 'Can’t show 3D',
+  '3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。': 'The 3D engine could not be loaded. Check your connection and open the page again.',
+  'この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。': 'This device or browser can’t use 3D graphics (WebGL), so this game can’t be shown.',
+  'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on “hardware acceleration” in your browser settings.',
+  '画面が一時的に止まりました': 'The display paused for a moment',
+  '少し待つと元に戻ります。盤は保存してあります。': 'It should come back in a moment. Your board is saved.',
+  '読み込み直す': 'Reload',
+} });
+const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const GAME = 'n59049';
+const KEY_BEST = 'kusoge.n59049.best', KEY_TILE = 'kusoge.n59049.bestTile', KEY_STATE = 'kusoge.n59049.state';
+const KEY_DAILY = 'kusoge.n59049.daily', KEY_HOWTO = 'kusoge.n59049.howto', KEY_TUT = 'kusoge.n59049.tutorial';
 const GOAL_E = 10, UNDO_MAX = 3, SLIDE = 110, POP = 180, APPEAR = 160;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const G = () => window.KoboGame || null;
 const $ = id => document.getElementById(id);
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} },
 };
-const fmt = n => Number(n).toLocaleString('ja-JP');
+const reduceMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const reduced = () => reduceMQ.matches;
+const fmt = n => (Number(n) || 0).toLocaleString('ja-JP');
 const pow3 = e => Math.pow(3, e);
+const DEBUG = new URLSearchParams(location.search).has('debug');
 
 // ---------- pure rules ----------
 const idx = (x, y, z) => x + 3 * y + 9 * z;
@@ -287,29 +464,43 @@ function slide(cells, dir) {
 const canMove = cells => Object.keys(DIRS).some(d => slide(cells, d).changed);
 
 // ---------- state ----------
+// mode: 'normal' | 'daily' | 'tutorial' (an online match is `vs`, on top of whichever mode was showing)
+let mode = 'normal', daily = null, draws = 0, sess = null, tut = null;
 let cells = new Array(27).fill(null), score = 0, undoLeft = UNDO_MAX, prev = null, won = false, over = false, nextId = 1, movesMade = 0;
 let best = Number(store.get(KEY_BEST)) || 0, bestTile = Number(store.get(KEY_TILE)) || 0;
+let bestAtStart = best, bestToasted = false, goalToasted = false, runTop = 0;
 const exps = () => cells.map(c => (c ? c.e : 0));
 const fromExps = arr => arr.map(e => (e > 0 ? { e, id: nextId++ } : null));
 const maxE = () => cells.reduce((m, c) => Math.max(m, c ? c.e : 0), 0);
+const validCells = a => Array.isArray(a) && a.length === 27 && a.every(e => Number.isInteger(e) && e >= 0 && e < 30);
 function save() {
-  if (vs) return; // online matches never touch the single-player save
-  store.set(KEY_STATE, JSON.stringify({ v: 1, cells: exps(), score, undoLeft, prev, won, yaw: cam.tyaw, pitch: cam.tpitch, t: Date.now() }));
+  if (vs || mode === 'tutorial') return; // online matches and the tutorial never touch the saves
+  if (mode === 'daily') {
+    if (!daily) return;
+    if (over) { store.del(KEY_DAILY); return; } // a finished daily try is over for good (no undo in the daily)
+    store.set(KEY_DAILY, JSON.stringify({ v: 1, dateKey: daily.dateKey, draws, cells: exps(), score, won, mv: movesMade, yaw: cam.tyaw, pitch: cam.tpitch, t: Date.now() }));
+    return;
+  }
+  // the normal board is kept even when stuck, so "Undo" still works after a reload
+  store.set(KEY_STATE, JSON.stringify({ v: 1, cells: exps(), score, undoLeft, prev, won, yaw: cam.tyaw, pitch: cam.tpitch, b0: bestAtStart, mv: movesMade, t: Date.now() }));
 }
+// v:1 = { v, cells[27], score, undoLeft, prev, won, yaw, pitch, t } (+ b0: best when this run started, mv: moves, added in P2)
 function load() {
   try {
     const s = JSON.parse(store.get(KEY_STATE) || 'null');
-    if (!s || s.v !== 1 || !Array.isArray(s.cells) || s.cells.length !== 27) return false;
-    if (!s.cells.every(e => Number.isInteger(e) && e >= 0 && e < 30) || !s.cells.some(e => e > 0)) return false;
-    cells = fromExps(s.cells); score = Number(s.score) || 0;
+    if (!s || s.v !== 1 || !validCells(s.cells) || !s.cells.some(e => e > 0)) return false;
+    cells = fromExps(s.cells); score = Math.max(0, Number(s.score) || 0);
     undoLeft = Math.max(0, Math.min(UNDO_MAX, Number(s.undoLeft) | 0)); won = !!s.won;
-    prev = s.prev && Array.isArray(s.prev.cells) && s.prev.cells.length === 27 ? { cells: s.prev.cells.slice(), score: Number(s.prev.score) || 0 } : null;
-    if (typeof s.yaw === 'number' && typeof s.pitch === 'number') { cam.tyaw = cam.yaw = s.yaw; cam.tpitch = cam.pitch = s.pitch; }
+    prev = s.prev && validCells(s.prev.cells) ? { cells: s.prev.cells.slice(), score: Number(s.prev.score) || 0 } : null;
+    if (typeof s.yaw === 'number' && typeof s.pitch === 'number' && isFinite(s.yaw) && isFinite(s.pitch)) { cam.tyaw = cam.yaw = s.yaw; cam.tpitch = cam.pitch = s.pitch; }
+    bestAtStart = Number.isFinite(s.b0) ? Math.min(s.b0, best) : best;
+    movesMade = Math.max(0, Number(s.mv) | 0) || (score > 0 ? 1 : 0);
+    over = false; bestToasted = score > bestAtStart && bestAtStart > 0; runTop = maxE();
     return true;
   } catch (e) { return false; }
 }
-// online battle: spawns draw from a seeded sequence shared by every player (see KoboVersus below)
-let rnd = Math.random, vs = null; // vs = { snap } while a versus match owns the board
+// online battle and the daily challenge: spawns draw from a seeded sequence shared by every player
+let rnd = Math.random, vs = null; // vs = { snap, playing } while a versus match owns the board
 function spawn() {
   const empty = []; cells.forEach((c, i) => { if (!c) empty.push(i); });
   if (!empty.length) return null;
@@ -318,9 +509,27 @@ function spawn() {
   return i;
 }
 
-// ---------- three.js scene ----------
+// ---------- three.js scene (a clear notice instead of a crash when WebGL is unavailable) ----------
 const play = $('play'), cv = $('cv');
-const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+function showNoGL(why) {
+  const box = document.createElement('div'); box.id = 'nogl'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><p></p><a class="btn" href="../"></a></div>';
+  box.querySelector('b').textContent = T('3D を表示できません');
+  const ps = box.querySelectorAll('p');
+  ps[0].textContent = why === 'three' ? T('3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。') : T('この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。');
+  if (why === 'three') ps[1].remove(); else ps[1].textContent = T('ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。');
+  box.querySelector('a').textContent = T('ゲーム一覧に戻る');
+  play.appendChild(box);
+  $('hint').hidden = true;
+  document.querySelectorAll('.controls button, #menuBtn').forEach(b => { b.disabled = true; });
+}
+function glAvailable() {
+  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; }
+}
+if (typeof THREE === 'undefined') { showNoGL('three'); return; }
+let renderer = null;
+if (glAvailable()) { try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, powerPreference: 'low-power' }); } catch (e) { renderer = null; } }
+if (!renderer) { showNoGL('webgl'); return; }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setClearColor(0x000000, 0);
 const scene = new THREE.Scene();
@@ -333,19 +542,28 @@ const world = new THREE.Group(); scene.add(world);
 const SP = 1.0, TILE = 0.62;
 const cellPos = i => { const [x, y, z] = coords(i); return new THREE.Vector3((x - 1) * SP, (y - 1) * SP, (z - 1) * SP); };
 
-// lattice
+// lattice (its color follows the theme: ice on the night sky, deep blue on the daylight room)
+const latticeMats = [];
 (function lattice() {
   const inner = [], outer = [], h = 1.5 * SP, L = [-1.5, -0.5, 0.5, 1.5].map(v => v * SP);
   for (const p of L) for (const q of L) {
     const edge = Math.abs(p) === h && Math.abs(q) === h, arr = edge ? outer : inner;
     arr.push(-h, p, q, h, p, q, p, -h, q, p, h, q, p, q, -h, p, q, h);
   }
-  const mk = (arr, op) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x8fe3ff, transparent: true, opacity: op, depthWrite: false })); };
+  const mk = (arr, op) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); const m = new THREE.LineBasicMaterial({ color: 0x8fe3ff, transparent: true, opacity: op, depthWrite: false }); latticeMats.push(m); return new THREE.LineSegments(g, m); };
   world.add(mk(inner, 0.13)); world.add(mk(outer, 0.5));
   const dots = []; for (let i = 0; i < 27; i++) { const p = cellPos(i); dots.push(p.x, p.y, p.z); }
   const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(dots, 3));
-  world.add(new THREE.Points(dg, new THREE.PointsMaterial({ color: 0x8fe3ff, size: 0.07, transparent: true, opacity: 0.45, depthWrite: false })));
+  const pm = new THREE.PointsMaterial({ color: 0x8fe3ff, size: 0.07, transparent: true, opacity: 0.45, depthWrite: false }); latticeMats.push(pm);
+  world.add(new THREE.Points(dg, pm));
 })();
+let lightRoom = false;
+function applyTheme() {
+  lightRoom = !!(UI && UI.theme && UI.theme.resolved() === 'light');
+  latticeMats.forEach(m => m.color.set(lightRoom ? 0x2f5fa8 : 0x8fe3ff));
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', lightRoom ? '#e9ecf8' : '#0b1020');
+  invalidate();
+}
 
 // rounded cube geometry (each face keeps its own 0..1 UVs so the number texture sits on every face)
 function roundedBox(size, r, seg) {
@@ -402,7 +620,7 @@ function rebuildMeshes() {
   meshes.forEach(m => world.remove(m)); meshes.clear();
   dying.forEach(m => world.remove(m)); dying.clear();
   cells.forEach((c, i) => { if (c) addMesh(c, i, null); });
-  dirty = true;
+  invalidate();
 }
 function finishAnims() {
   dying.forEach(m => world.remove(m)); dying.clear();
@@ -412,7 +630,7 @@ function finishAnims() {
     if (a.newE != null) m.material = matFor(a.newE);
     m.userData.a = null;
   });
-  dirty = true;
+  invalidate();
 }
 const ease = k => 1 - Math.pow(1 - k, 3);
 function updateAnims(now) {
@@ -430,9 +648,9 @@ function updateAnims(now) {
       if (p >= 1) m.userData.a = null;
     } else if (a.newE != null) {
       if (t >= 0) {
-        if (!a.popped) { a.popped = true; m.material = matFor(a.newE); if (a.newE >= 4) burst(a.to, a.newE); }
+        if (!a.popped) { a.popped = true; m.material = matFor(a.newE); mergeFx(a.to, a.newE); }
         const p = Math.min(1, t / POP);
-        m.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * p));
+        m.scale.setScalar(1 + (reduced() ? 0.1 : 0.3) * Math.sin(Math.PI * p));
         if (p >= 1) { m.scale.setScalar(1); m.userData.a = null; }
       }
     } else if (k >= 1) m.userData.a = null;
@@ -445,6 +663,7 @@ function updateAnims(now) {
 // particles
 const bursts = [];
 function burst(at, e) {
+  if (reduced()) return;
   const n = 18 + e * 7, pos = new Float32Array(n * 3), vel = [];
   for (let i = 0; i < n; i++) {
     pos[i * 3] = at.x; pos[i * 3 + 1] = at.y; pos[i * 3 + 2] = at.z;
@@ -452,7 +671,7 @@ function burst(at, e) {
     vel.push(v);
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const mat = new THREE.PointsMaterial({ color: new THREE.Color(colorOf(Math.min(e, GOAL_E))), size: 0.09 + e * 0.006, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat = new THREE.PointsMaterial({ color: new THREE.Color(colorOf(Math.min(e, GOAL_E))), size: 0.09 + e * 0.006, transparent: true, opacity: 1, depthWrite: false, blending: lightRoom ? THREE.NormalBlending : THREE.AdditiveBlending });
   const p = new THREE.Points(g, mat); world.add(p);
   bursts.push({ p, vel, t0: performance.now(), life: 650 + e * 40 });
 }
@@ -468,6 +687,26 @@ function updateParticles(now) {
     b.p.material.opacity = 1 - k;
   }
   return bursts.length > 0;
+}
+// merge feedback: particles, "+N" over the tile, a flash for big merges
+function screenOf(v3) {
+  const v = v3.clone().applyMatrix4(world.matrixWorld).project(camera);
+  return { x: (v.x + 1) / 2 * play.clientWidth, y: (1 - v.y) / 2 * play.clientHeight };
+}
+function popText(at, text, big) {
+  const p = screenOf(at), el = document.createElement('div');
+  el.className = 'pop' + (big ? ' big' : ''); el.textContent = text;
+  el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+  $('pops').appendChild(el); setTimeout(() => el.remove(), 950);
+}
+function mergeFx(at, e) {
+  if (e >= 4) burst(at, e);
+  popText(at, '+' + fmt(pow3(e)), e >= 5);
+  if (e >= 6 && !reduced()) {
+    const p = screenOf(at), f = document.createElement('div'); f.className = 'flash';
+    f.style.setProperty('--fx', p.x + 'px'); f.style.setProperty('--fy', p.y + 'px');
+    $('pops').appendChild(f); setTimeout(() => f.remove(), 520);
+  }
 }
 
 // ---------- camera ----------
@@ -489,15 +728,19 @@ const snapPitch = p => PITCH_SNAPS.reduce((b, v) => (Math.abs(v - p) < Math.abs(
 function updateCam() {
   const dy = cam.tyaw - cam.yaw, dp = cam.tpitch - cam.pitch;
   if (Math.abs(dy) < 0.05 && Math.abs(dp) < 0.05) { cam.yaw = cam.tyaw; cam.pitch = cam.tpitch; camPose(camera, cam.yaw, cam.pitch); return false; }
-  cam.yaw += dy * 0.2; cam.pitch += dp * 0.2; camPose(camera, cam.yaw, cam.pitch); return true;
+  const k = reduced() ? 1 : 0.2;
+  cam.yaw += dy * k; cam.pitch += dp * k; camPose(camera, cam.yaw, cam.pitch); return true;
 }
+let lastW = 0, lastH = 0;
 function resize() {
   const w = play.clientWidth || 1, h = play.clientHeight || 1;
+  if (w === lastW && h === lastH) return;
+  lastW = w; lastH = h;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   const vf = camera.fov * D2R, hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
   cam.dist = 2.45 / Math.sin(Math.min(vf, hf) / 2);
-  camera.updateProjectionMatrix(); camPose(camera, cam.yaw, cam.pitch); dirty = true;
+  camera.updateProjectionMatrix(); camPose(camera, cam.yaw, cam.pitch); invalidate();
 }
 // view analysis uses the camera's *target* pose so input stays consistent while it animates
 const probe = new THREE.PerspectiveCamera();
@@ -524,88 +767,108 @@ function mapSwipe(dx, dy) { // screen px (y down) -> world direction name
   return bestD;
 }
 
-// ---------- audio ----------
-let soundOn = store.get(KEY_SOUND) !== '0', actx = null;
-function ensureAudio() {
-  if (!soundOn) return;
-  try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume().catch(() => {}); } catch (e) {}
-}
-function tone(f, d, type, vol, delay) {
-  if (!soundOn || !actx) return;
-  try {
-    const t = actx.currentTime + (delay || 0), o = actx.createOscillator(), g = actx.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + d + 0.02);
-  } catch (e) {}
-}
+// ---------- sound & haptics (KoboAudio: shared volume and mute) ----------
+const tone = (f, d, type, vol, delay) => { if (A) A.tone(f, d, { type, vol, delay }); };
 const sfxSlide = () => tone(150, 0.07, 'triangle', 0.05);
-function sfxMerge(e) {
+function sfxMerge(e, n) {
   const f = 196 * Math.pow(2, (e - 1) * 4 / 12), d = SLIDE / 1000;
   tone(f, 0.18, 'sine', 0.12, d); tone(f * 1.5, 0.2, 'triangle', 0.06, d + 0.05);
-  if (e >= 6) tone(f * 2, 0.3, 'sine', 0.05, d + 0.1);
+  if (e >= 6 || n > 1) tone(f * 2, 0.3, 'sine', 0.05, d + 0.1);
 }
 const sfxBump = () => tone(90, 0.08, 'square', 0.03);
 function sfxWin() { [523, 659, 784, 1047, 1319].forEach((f, k) => tone(f, 0.3, 'triangle', 0.09, k * 0.1)); }
 function sfxOver() { [392, 311, 262, 196].forEach((f, k) => tone(f, 0.24, 'triangle', 0.09, k * 0.13)); }
-function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+function sfxBest() { [784, 988, 1319].forEach((f, k) => tone(f, 0.14, 'triangle', 0.08, 0.1 + k * 0.07)); }
+function buzz(p) { if (A && !reduced()) A.vibrate(p); }
 function renderSoundBtn() {
-  const b = $('sound');
-  b.setAttribute('aria-pressed', String(soundOn));
-  b.setAttribute('aria-label', T(soundOn ? 'サウンド オン' : 'サウンド オフ'));
-  b.innerHTML = soundOn
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  const b = $('sound'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
 }
-$('sound').addEventListener('click', () => {
-  soundOn = !soundOn; store.set(KEY_SOUND, soundOn ? '1' : '0'); renderSoundBtn();
-  if (soundOn) { ensureAudio(); tone(660, 0.08, 'sine', 0.08); }
-});
-['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, ensureAudio, { capture: true, passive: true }));
+$('sound').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) tone(660, 0.08, 'sine', 0.08); });
+if (A) A.onChange(renderSoundBtn);
 
-// ---------- UI ----------
+// ---------- HUD ----------
 const legend = $('legend');
 for (let e = 1; e <= GOAL_E; e++) {
   const c = document.createElement('span'); c.className = 'chip'; c.textContent = pow3(e);
   c.style.background = colorOf(e); c.style.color = inkOf(colorOf(e)); legend.appendChild(c);
 }
 let toastT = 0;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.remove('off'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), 1500); }
+function toast(msg, gold) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('off'); t.classList.toggle('gold', !!gold);
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), 1600);
+}
+let lastScore = 0;
 function renderHud() {
-  $('score').textContent = fmt(score);
-  $('best').textContent = fmt(best);
-  $('bestTile').textContent = bestTile ? T('最高 {n}', { n: fmt(bestTile) }) : '';
+  const el = $('score'), txt = fmt(score);
+  if (el.textContent !== txt) {
+    if (score > lastScore && !reduced()) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    el.textContent = txt;
+  }
+  lastScore = score;
+  const isDaily = mode === 'daily' && !vs && daily;
+  $('bestLabel').textContent = isDaily ? T('今日のベスト') : T('ベスト');
+  $('best').textContent = fmt(isDaily ? Math.max(daily.best, score) : best);
+  $('bestTile').textContent = !isDaily && bestTile ? T('最高 {n}', { n: fmt(bestTile) }) : '';
   const m = maxE();
   $('goalV').textContent = fmt(pow3(Math.max(2, m + 1)));
   [...legend.children].forEach((c, k) => { c.classList.toggle('got', k + 1 <= m); c.classList.toggle('top', k + 1 === m); });
-  $('undoN').textContent = T('残り{n}', { n: undoLeft });
-  $('bUndo').disabled = !!vs || !prev || undoLeft <= 0;
-  $('bNew').disabled = !!vs;
-  $('overUndo').hidden = !prev || undoLeft <= 0;
+  const noUndo = !!vs || mode !== 'normal';
+  $('undoN').textContent = noUndo ? '' : T('残り{n}', { n: undoLeft });
+  $('bUndo').disabled = noUndo || !prev || undoLeft <= 0;
+  $('bUndo').title = mode === 'daily' && !vs ? T('デイリーでは使えません') : '';
+  $('bNew').disabled = !!vs || mode === 'tutorial';
+  $('overUndo').hidden = noUndo || !prev || undoLeft <= 0;
 }
 function updateRecords() {
-  if (vs) return; // a match never updates the bests
+  if (vs || mode !== 'normal') return false; // a match, the daily and the tutorial never update the bests
   if (score > best) { best = score; store.set(KEY_BEST, String(best)); }
-  const t = pow3(maxE()); if (maxE() && t > bestTile) { bestTile = t; store.set(KEY_TILE, String(bestTile)); }
+  const t = pow3(maxE());
+  if (maxE() && t > bestTile) {
+    const had = bestTile; bestTile = t; store.set(KEY_TILE, String(bestTile));
+    if (had && maxE() >= 4) { toast(T('最高の数字を更新！ {n}', { n: fmt(t) }), true); return true; }
+  }
+  return false;
 }
-const anyOverlay = () => !$('winOv').hidden || !$('overOv').hidden;
-let startBest = best;
-function showOver() {
-  $('overScore').textContent = fmt(score);
-  const bl = $('overBestLine'), parts = T('ベスト {best} ・ 最高 {tile}').split(/(\{best\}|\{tile\})/);
-  bl.textContent = '';
-  for (const p of parts) { if (p === '{best}' || p === '{tile}') { const b = document.createElement('b'); b.textContent = p === '{best}' ? fmt(best) : fmt(pow3(maxE())); bl.appendChild(b); } else if (p) bl.append(p); }
-  $('overNew').hidden = !(score > 0 && score >= best && score > startBest);
-  renderHud(); $('overOv').hidden = false;
+// small celebrations during a run, without stopping play
+function milestones(top, toasted) {
+  if (vs || mode === 'tutorial') return;
+  if (top > runTop) { if (top >= 5 && !toasted) toast(T('{n} ができた！', { n: fmt(pow3(top)) }), top >= 7); runTop = top; }
+  if (mode === 'normal' && !bestToasted && bestAtStart > 0 && score > bestAtStart) { bestToasted = true; toast(T('ベスト更新！'), true); sfxBest(); }
+  if (mode === 'daily' && daily && !goalToasted && score >= daily.goal) { goalToasted = true; toast(T('目標達成！'), true); sfxBest(); renderMode(); }
+}
+const anyOverlay = () => !$('winOv').hidden || !$('overOv').hidden || !$('howto').hidden || document.body.classList.contains('kb-lock');
+
+// ---------- play sessions (KoboGame events) ----------
+function startPlay() {
+  if (sess || vs || mode === 'tutorial') return;
+  sess = { mode, t0: performance.now(), merges: 0, dateKey: mode === 'daily' && daily ? daily.dateKey : undefined, b0: best, top: maxE() };
+  const g = G(); if (g) g.emit('play_start', mode === 'daily' ? { mode, dateKey: daily.dateKey, seed: daily.seed } : { mode });
+}
+function endPlay(reason) {
+  if (!sess) return;
+  const s = sess; sess = null;
+  const g = G(); if (!g) return;
+  if (s.mode === 'normal' && score > s.b0 && score > 0) g.emit('best', { score });
+  g.emit('play_end', { mode: s.mode, score, reason, dateKey: s.dateKey, durationMs: Math.round(performance.now() - s.t0),
+    stats: { moves: movesMade, merges: s.merges, topTile: pow3(maxE()) } });
 }
 
+// ---------- moves ----------
+let overInfo = null;
 function doMove(dir) {
-  if (anyOverlay() || !DIRS[dir]) return false;
+  if (anyOverlay() || !DIRS[dir] || glLost) return false;
   if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return false;
+  if (mode === 'tutorial' && !tutAllows(dir)) return false;
   finishAnims();
   const r = slide(cells, dir);
-  if (!r.changed) { sfxBump(); shakeT = performance.now(); shakeDir = DIRS[dir]; return false; }
-  prev = { cells: exps(), score };
+  if (!r.changed) { sfxBump(); if (!reduced()) { shakeT = performance.now(); shakeDir = DIRS[dir]; } invalidate(); return false; }
+  startPlay();
+  if (mode === 'normal' && !vs) prev = { cells: exps(), score };
   const now = performance.now();
   r.moves.forEach(mv => { const m = meshes.get(mv.id); if (m) m.userData.a = { from: cellPos(mv.from), to: cellPos(mv.to), t0: now }; });
   let top = 0;
@@ -615,17 +878,20 @@ function doMove(dir) {
     top = Math.max(top, mg.e);
   });
   cells = r.cells; score += r.gained; movesMade++;
-  const si = spawn(); if (si != null) addMesh(cells[si], si, now + SLIDE);
-  if (top) { sfxMerge(top); buzz(top >= 6 ? [20, 30, 40] : 12 + top * 3); } else sfxSlide();
-  updateRecords();
-  if (movesMade === 4) $('hint').classList.add('off');
+  if (sess) sess.merges += r.merges.length;
+  if (mode !== 'tutorial') { const si = spawn(); if (si != null) addMesh(cells[si], si, now + SLIDE); }
+  if (top) { sfxMerge(top, r.merges.length); buzz(top >= 6 ? [20, 30, 40] : 12 + top * 3); } else sfxSlide();
+  const recTile = updateRecords();
+  if (movesMade >= 4) $('hint').classList.add('off');
+  if (mode === 'tutorial') { renderHud(); tutAfterMove(r); invalidate(); return true; }
+  milestones(maxE(), recTile);
   afterChange(true);
-  dirty = true;
+  invalidate();
   return true;
 }
 function afterChange(animate) {
   renderHud(); save();
-  const delay = animate ? SLIDE + POP + 120 : 0;
+  const delay = animate && !reduced() ? SLIDE + POP + 120 : 0;
   if (vs) { // a match: no win card, and a stuck board is wiped so play goes on (score kept)
     if (maxE() >= GOAL_E) won = true;
     over = !canMove(cells);
@@ -634,30 +900,74 @@ function afterChange(animate) {
   }
   if (!won && maxE() >= GOAL_E) {
     won = true; save();
-    setTimeout(() => { $('winScore').textContent = fmt(score); sfxWin(); buzz([30, 40, 60]); $('winOv').hidden = false; }, delay);
+    const g = G(); if (g && mode !== 'tutorial') g.emit('progress', { key: 'tile59049', value: 1 });
+    setTimeout(() => { $('winScore').textContent = fmt(score); sfxWin(); buzz([30, 40, 60]); $('winOv').hidden = false; setTimeout(() => $('winGo').focus({ preventScroll: true }), 50); }, delay);
     over = !canMove(cells);
+    if (over) finishRun(false);
     return;
   }
   over = !canMove(cells);
-  if (over) setTimeout(() => { if (over) { sfxOver(); showOver(); } }, delay + 200);
+  if (over) finishRun(true, delay);
 }
+// the run is stuck: record it, then show the card (normal: Undo can still bring it back)
+function finishRun(show, delay) {
+  over = true;
+  const isNew = mode === 'normal' && score > 0 && score > bestAtStart;
+  updateRecords();
+  save(); // daily: deletes the try's save (a tombstone, so a finished try doesn't come back)
+  endPlay(mode === 'daily' && daily && score >= daily.goal ? 'clear' : 'over');
+  if (mode === 'daily') refreshDaily();
+  overInfo = { isNew, score };
+  if (show !== false) setTimeout(() => { if (over && !vs) { showOver(); } }, (delay || 0) + 200);
+}
+function showOver() {
+  const info = overInfo || { isNew: false };
+  const isDaily = mode === 'daily' && daily;
+  $('overTitle').textContent = isDaily ? T('今日のチャレンジ 終了') : T('もう動かせない！');
+  $('overScore').textContent = fmt(score);
+  $('overBestLabel').textContent = isDaily ? T('今日のベスト') : T('ベスト');
+  $('overBest').textContent = fmt(isDaily ? daily.best : best);
+  $('overTile').textContent = fmt(pow3(maxE()));
+  $('overNew').hidden = !info.isNew;
+  const goal = $('overGoal');
+  goal.hidden = !isDaily;
+  if (isDaily) {
+    goal.classList.toggle('ok', score >= daily.goal);
+    goal.textContent = score >= daily.goal ? T('目標達成！') : T('目標まで あと {n} 点', { n: fmt(daily.goal - score) });
+  }
+  const alt = $('overAlt');
+  alt.textContent = isDaily ? T('ふつうのゲームへ') : T('今日のチャレンジ');
+  alt.hidden = !isDaily && !dailyAvailable();
+  renderHud(); $('overOv').hidden = false;
+  if (info.isNew) { sfxWin(); buzz([20, 50, 20, 50, 40]); } else { sfxOver(); buzz([30, 60, 30]); }
+  setTimeout(() => $('again').focus({ preventScroll: true }), 50);
+}
+function hideOverlays() { $('overOv').hidden = true; $('winOv').hidden = true; }
 function undo() {
-  if (vs || KoboVersus.active()) return;
+  if (vs || KoboVersus.active() || mode !== 'normal') return;
   if (!prev || undoLeft <= 0) return;
   finishAnims();
   cells = fromExps(prev.cells); score = prev.score; prev = null; undoLeft--; over = false;
   $('overOv').hidden = true;
   rebuildMeshes(); renderHud(); save(); tone(330, 0.1, 'sine', 0.06); toast(T('1手戻しました（残り{n}）', { n: undoLeft }));
 }
-function newGame() {
+function resetRun() {
   finishAnims();
-  cells = new Array(27).fill(null); score = 0; undoLeft = UNDO_MAX; prev = null; won = false; over = false; movesMade = 0; startBest = best;
-  spawn(); spawn();
-  $('overOv').hidden = true; $('winOv').hidden = true;
-  rebuildMeshes(); renderHud(); save();
+  cells = new Array(27).fill(null); score = 0; undoLeft = UNDO_MAX; prev = null; won = false; over = false; movesMade = 0;
+  bestAtStart = best; bestToasted = false; goalToasted = false; runTop = 0; overInfo = null;
 }
-function rotate(step) { cam.tyaw = snapYaw(cam.tyaw + 90 * step); dirty = true; save(); }
-function tilt() { cam.tpitch = cam.tpitch >= 40 ? 22 : 58; dirty = true; save(); }
+function newGame() {
+  if (vs) return;
+  if (mode === 'tutorial') { startTutorial(); return; }
+  endPlay('quit');
+  resetRun();
+  if (mode === 'daily' && daily) rnd = dailyRng(daily.seed, 0);
+  spawn(); spawn();
+  runTop = maxE();
+  hideOverlays(); rebuildMeshes(); renderHud(); renderMode(); save();
+}
+function rotate(step) { if (glLost) return; cam.tyaw = snapYaw(cam.tyaw + 90 * step); invalidate(); save(); tutAfterView(); }
+function tilt() { if (glLost) return; cam.tpitch = cam.tpitch >= 40 ? 22 : 58; invalidate(); save(); tutAfterView(); }
 
 $('bFar').addEventListener('click', () => doMove(viewInfo().far));
 $('bNear').addEventListener('click', () => doMove(viewInfo().near));
@@ -667,11 +977,12 @@ $('bUndo').addEventListener('click', undo);
 $('overUndo').addEventListener('click', undo);
 let newArmed = 0;
 $('bNew').addEventListener('click', () => {
-  if (vs || KoboVersus.active()) return;
-  if (Date.now() - newArmed < 2500 || !movesMade && score === 0) { newArmed = 0; newGame(); toast(T('新しいゲーム')); return; }
+  if (vs || KoboVersus.active() || mode === 'tutorial') return;
+  if (Date.now() - newArmed < 2500 || !movesMade && score === 0 || over) { newArmed = 0; newGame(); toast(T('新しいゲーム')); return; }
   newArmed = Date.now(); toast(T('もう一度押すと新しく始めます'));
 });
 $('again').addEventListener('click', newGame);
+$('overAlt').addEventListener('click', () => { hideOverlays(); if (mode === 'daily') setMode('normal'); else startDaily(); });
 $('winGo').addEventListener('click', () => { $('winOv').hidden = true; if (over) showOver(); });
 $('winNew').addEventListener('click', newGame);
 
@@ -695,15 +1006,18 @@ cv.addEventListener('pointermove', e => {
     const m = mid();
     cam.tyaw = rot.yaw - (m.x - rot.x) * 0.45;
     cam.tpitch = Math.max(-45, Math.min(80, rot.pitch + (m.y - rot.y) * 0.35));
-    cam.yaw = cam.tyaw; cam.pitch = cam.tpitch; camPose(camera, cam.yaw, cam.pitch); dirty = true;
+    cam.yaw = cam.tyaw; cam.pitch = cam.tpitch; camPose(camera, cam.yaw, cam.pitch); invalidate();
   }
 });
 function endPtr(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (rot) {
-    if (ptrs.size === 0) { cam.tyaw = snapYaw(cam.tyaw); cam.tpitch = snapPitch(cam.tpitch); rot = null; save(); }
-    else { const m = mid(); rot = { x: m.x, y: m.y, yaw: cam.tyaw, pitch: cam.tpitch }; }
+    if (ptrs.size === 0) {
+      const moved = Math.abs(cam.tyaw - rot.yaw) > 20 || Math.abs(cam.tpitch - rot.pitch) > 15;
+      cam.tyaw = snapYaw(cam.tyaw); cam.tpitch = snapPitch(cam.tpitch); rot = null; invalidate(); save();
+      if (moved) tutAfterView();
+    } else { const m = mid(); rot = { x: m.x, y: m.y, yaw: cam.tyaw, pitch: cam.tpitch }; }
     return;
   }
   if (swipeStart && swipeStart.id === e.pointerId && e.type === 'pointerup') {
@@ -714,10 +1028,13 @@ function endPtr(e) {
 }
 cv.addEventListener('pointerup', endPtr);
 cv.addEventListener('pointercancel', endPtr);
+function cancelInput() { ptrs.clear(); rot = null; swipeStart = null; }
 
 window.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Escape' && !$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); return; }
   if (KoboVersus.active() && !(vs && KoboVersus.canPlay())) return; // lobby / result cards own the keyboard
+  if (anyOverlay()) return;
   const k = e.key;
   const scr = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
   if (scr) { e.preventDefault(); doMove(mapSwipe(scr[0], scr[1])); return; }
@@ -730,10 +1047,13 @@ window.addEventListener('keydown', e => {
   else if (lk === 'u' || lk === 'z') undo();
 });
 
-// ---------- loop ----------
-let dirty = true, shakeT = -1e9, shakeDir = [0, 1];
+// ---------- loop: draws only while something changes (render on demand) ----------
+let dirty = true, shakeT = -1e9, shakeDir = [0, 1], raf = 0, glLost = false, disposed = false;
+function invalidate() { dirty = true; kick(); }
+function kick() { if (!raf && !glLost && !disposed) raf = requestAnimationFrame(frame); }
 function frame(now) {
-  requestAnimationFrame(frame);
+  raf = 0;
+  if (glLost || disposed) return;
   let busy = updateCam();
   busy = updateAnims(now) || busy;
   busy = updateParticles(now) || busy;
@@ -742,8 +1062,243 @@ function frame(now) {
   world.position.set(0, 0, 0);
   if (st < 1) { const o = Math.sin(st * Math.PI * 4) * (1 - st) * 0.06; world.position.setComponent(shakeDir[0], o * shakeDir[1]); busy = true; }
   if (busy || dirty) { renderer.render(scene, camera); dirty = false; }
+  if (busy) kick();
 }
-try { new ResizeObserver(resize).observe(play); } catch (e) { window.addEventListener('resize', resize); }
+let ro = null;
+try { ro = new ResizeObserver(resize); ro.observe(play); } catch (e) {}
+
+// ---------- WebGL context lost / restored (KoboGame.watchGL) ----------
+function showGlLost(on) {
+  let box = $('glLost');
+  if (!on) { if (box) box.remove(); return; }
+  if (box) return;
+  box = document.createElement('div'); box.id = 'glLost'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><button class="btn sub" type="button"></button></div>';
+  box.querySelector('b').textContent = T('画面が一時的に止まりました');
+  box.querySelector('p').textContent = T('少し待つと元に戻ります。盤は保存してあります。');
+  const btn = box.querySelector('button'); btn.textContent = T('読み込み直す');
+  btn.addEventListener('click', () => { save(); location.reload(); });
+  play.appendChild(box);
+}
+function glRestored() {
+  glLost = false; showGlLost(false);
+  lastW = lastH = 0; resize(); finishAnims(); rebuildMeshes(); applyTheme(); invalidate();
+}
+
+// ---------- menu (KoboUI: settings, language, theme, volume) ----------
+function openMenu() {
+  if (!UI || (vs && KoboVersus.active())) return;
+  cancelInput();
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { m.close(); closedMenu(); showHowto(false); } }];
+  if (mode === 'daily') extra.push({ label: T('ふつうのゲームに戻る'), icon: 'home', onClick: () => { m.close(); closedMenu(); setMode('normal'); } });
+  else if (dailyAvailable() && mode !== 'tutorial') extra.push({ label: T('今日のチャレンジ'), icon: 'star', onClick: () => { m.close(); closedMenu(); startDaily(); } });
+  const m = UI.pauseMenu({
+    title: T('メニュー'),
+    onResume: closedMenu,
+    onRestart: () => { closedMenu(); if (mode === 'tutorial') startTutorial(); else { newGame(); toast(T('新しいゲーム')); } },
+    confirmRestart: movesMade > 0 && !over && mode !== 'tutorial',
+    extra, home: '../',
+    onOpen: () => { const g = G(); if (g) g.menuOpened(); },
+  });
+  m.open();
+}
+function closedMenu() { const g = G(); if (g) g.menuClosed(); invalidate(); }
+$('menuBtn').addEventListener('click', openMenu);
+
+// ---------- how to play (first visit) ----------
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first;
+  cancelInput();
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる');
+  $('howtoAlt').textContent = first ? T('説明だけでOK') : T('チュートリアルをもう一度');
+  $('howtoAlt').hidden = !first && (!!vs || mode === 'daily');
+  $('howto').hidden = false;
+  setTimeout(() => $('howtoGo').focus({ preventScroll: true }), 50);
+}
+function closeHowto() { $('howto').hidden = true; store.set(KEY_HOWTO, '1'); invalidate(); }
+$('howtoGo').addEventListener('click', () => { const f = howtoFirst; closeHowto(); if (f) startTutorial(); });
+$('howtoAlt').addEventListener('click', () => {
+  const f = howtoFirst; closeHowto();
+  if (f) { store.set(KEY_TUT, 'skip'); toast(T('がんばって！')); } else startTutorial();
+});
+
+// ---------- tutorial: one real action at a time on a practice board ----------
+// step 0: swipe sideways to merge three 3s → 1: Far/Near merges three 9s → 2: turn the view → 3: done ("start").
+// No spawns, saves, bests or events. Skipping is always possible; the normal board comes back afterwards.
+const TUT_STEPS = [
+  { text: '横にスワイプして、3つの 3 を合体させよう', sub: '同じ数字が1列に3つそろうと、1つになって3倍', wrong: '横にスワイプしよう', btn: null },
+  { text: '「奥へ」か「手前へ」を押して、9 を3つ合体', sub: '画面の奥と手前の向きは、このボタンで寄せる', wrong: '「奥へ」か「手前へ」を押そう', btn: ['bFar', 'bNear'] },
+  { text: '「回す」を押して、立体を回してみよう', sub: '2本指でドラッグしても回せる', wrong: '「回す」を押そう', btn: ['bRot'] },
+  { text: '準備OK！ 59049 を目指そう', sub: '動かすたびに 3 か 9 が出る。動かせなくなったらおしまい', wrong: '', btn: null },
+];
+function startTutorial() {
+  if (vs) return;
+  endPlay('quit');
+  const prevMode = mode === 'tutorial' && tut ? tut.prevMode : mode;
+  const prevDaily = mode === 'tutorial' && tut ? tut.prevDaily : (mode === 'daily' && daily ? daily.dateKey : null);
+  if (mode !== 'tutorial') save();
+  mode = 'tutorial'; daily = null; rnd = Math.random;
+  resetRun(); hideOverlays();
+  cam.tyaw = cam.yaw = 25; cam.tpitch = cam.pitch = 22; camPose(camera, cam.yaw, cam.pitch);
+  // three 3s on the middle line along the axis a sideways swipe moves
+  const H = DIRS[mapSwipe(1, 0)][0];
+  for (let p = 0; p < 3; p++) { const c = [1, 1, 1]; c[H] = p; cells[idx(c[0], c[1], c[2])] = { e: 1, id: nextId++ }; }
+  tut = { step: 0, axis: H, prevMode, prevDaily };
+  rebuildMeshes(); renderMode(); renderCoach(); renderHud();
+  $('hint').classList.add('off');
+}
+function tutAllows(dir) {
+  if (!tut) return true;
+  const s = tut.step, a = DIRS[dir][0];
+  if (s === 1 && !tut.ready) return false; // the 9s are still appearing
+  const ok = (s === 0 && a === tut.axis) || (s === 1 && a === viewInfo().depth);
+  if (!ok) { nudgeCoach(); if (TUT_STEPS[s].wrong) toast(T(TUT_STEPS[s].wrong)); }
+  return ok;
+}
+function tutAfterMove(r) {
+  if (!tut) return;
+  if (tut.step === 0 && r.merges.length) {
+    tut.step = 1;
+    // the new 9 gets two more 9s beside it, on the line that runs into the screen
+    const at = r.merges[0].to, D = viewInfo().depth, c = coords(at);
+    setTimeout(() => {
+      if (!tut || tut.step !== 1) return;
+      finishAnims();
+      const now = performance.now();
+      for (let p = 0; p < 3; p++) { if (p === c[D]) continue; const q = c.slice(); q[D] = p; const i = idx(q[0], q[1], q[2]); if (!cells[i]) { cells[i] = { e: 2, id: nextId++ }; addMesh(cells[i], i, now + SLIDE); } }
+      tut.ready = true; renderHud(); invalidate();
+    }, reduced() ? 60 : SLIDE + POP + 60);
+  } else if (tut.step === 1 && r.merges.length) {
+    tut.step = 2;
+  }
+  renderCoach();
+}
+function tutAfterView() {
+  if (!tut || tut.step !== 2) return;
+  tut.step = 3; sfxBest(); renderCoach();
+}
+function finishTutorial() {
+  if (!tut) return;
+  const prevMode = tut.prevMode, prevDaily = tut.prevDaily; tut = null;
+  store.set(KEY_TUT, '1');
+  renderCoach();
+  if (prevMode === 'daily' && prevDaily) { startDaily(prevDaily); return; } // came from a daily link: back to it
+  mode = 'normal'; daily = null; rnd = Math.random;
+  if (!load()) { resetRun(); spawn(); spawn(); runTop = maxE(); }
+  hideOverlays(); rebuildMeshes(); renderMode(); renderHud(); save();
+  toast(T('がんばって！'));
+  over = !canMove(cells); if (over) { overInfo = { isNew: false }; showOver(); }
+}
+let coachStepShown = -1;
+function renderCoach() {
+  const on = mode === 'tutorial' && !!tut;
+  if (on && tut.step !== coachStepShown) { clearTimeout(toastT); $('toast').classList.add('off'); }
+  coachStepShown = on ? tut.step : -1;
+  $('coach').hidden = !on; $('scores').hidden = on;
+  document.querySelectorAll('.ctl.pulse').forEach(b => b.classList.remove('pulse'));
+  if (!on) return;
+  const s = TUT_STEPS[tut.step], btn = $('coachBtn');
+  $('coachStep').textContent = String(tut.step + 1);
+  $('coachText').textContent = '';
+  $('coachText').append(T(s.text));
+  const sm = document.createElement('small'); sm.textContent = T(s.sub); $('coachText').append(sm);
+  btn.textContent = tut.step === 3 ? T('はじめる') : T('スキップ');
+  btn.classList.toggle('go', tut.step === 3);
+  if (s.btn && !reduced()) s.btn.forEach(id => $(id).classList.add('pulse'));
+  if (tut.step === 3) setTimeout(() => btn.focus({ preventScroll: true }), 50);
+}
+function nudgeCoach() {
+  const c = $('coach'); if (c.hidden) return;
+  c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge');
+  if (A) A.sfx('error');
+}
+$('coachBtn').addEventListener('click', finishTutorial);
+
+// ---------- daily challenge (JST date and seed from KoboPlatform; the result is recorded by the platform) ----------
+const dailyAvailable = () => !!(PF && PF.dailySeed && PF.daily);
+function dailyRng(seed, skip) {
+  const base = PF.rng(seed);
+  for (let i = 0; i < skip; i++) base();
+  draws = skip;
+  return () => { draws++; return base(); };
+}
+// Goal for the day, picked from the seed so everyone has the same target. Calibrated with a greedy one-ply bot on 400
+// daily seeds (seeded spawns, no undo): scores p25 2,835 / p50 3,627 / p75 5,607, so the bot reaches these in ~40–80% of runs.
+const GOALS = [2500, 3000, 3500, 4000, 4500];
+const goalFor = seed => GOALS[(seed >>> 8) % GOALS.length];
+function refreshDaily() {
+  if (!daily || !PF) return;
+  const rec = PF.daily.get(daily.dateKey, GAME) || {};
+  daily.best = Math.max(0, Number(rec.best) || 0);
+  daily.tries = Math.max(0, Number(rec.tries) || 0);
+}
+function dateLabel(dk) {
+  const m = Math.floor(dk / 100) % 100, d = dk % 100;
+  return KoboI18n.lang === 'en' ? T('{m}月{d}日', { mon: EN_MON[m - 1], d }) : T('{m}月{d}日', { m, d });
+}
+function readDaily(dk) {
+  try {
+    const s = JSON.parse(store.get(KEY_DAILY) || 'null');
+    if (!s || s.v !== 1 || s.dateKey !== dk || !validCells(s.cells) || !s.cells.some(e => e > 0)) return null;
+    if (!Number.isInteger(s.draws) || s.draws < 0 || s.draws > 1e6) return null;
+    return s;
+  } catch (e) { return null; }
+}
+function startDaily(dateKey) {
+  if (!dailyAvailable() || vs) return;
+  const wasTut = mode === 'tutorial'; // the practice board is never saved over the normal one
+  if (wasTut) { tut = null; store.set(KEY_TUT, '1'); renderCoach(); mode = 'normal'; }
+  const dk = PF.isDateKey(dateKey) && Number(dateKey) <= PF.jstDateKey() ? Number(dateKey) : PF.jstDateKey();
+  endPlay('quit');
+  if (mode === 'normal' && !wasTut) save();
+  finishAnims();
+  mode = 'daily';
+  const seed = PF.dailySeed(GAME, dk);
+  daily = { dateKey: dk, seed, goal: goalFor(seed), best: 0, tries: 0 };
+  refreshDaily();
+  const s = readDaily(dk);
+  resetRun();
+  if (s) {
+    rnd = dailyRng(seed, s.draws);
+    cells = fromExps(s.cells); score = Math.max(0, Number(s.score) || 0); won = !!s.won; movesMade = Math.max(0, Number(s.mv) | 0);
+    if (typeof s.yaw === 'number' && typeof s.pitch === 'number') { cam.tyaw = s.yaw; cam.tpitch = s.pitch; }
+    goalToasted = score >= daily.goal; runTop = maxE();
+  } else {
+    rnd = dailyRng(seed, 0);
+    spawn(); spawn(); runTop = maxE();
+  }
+  hideOverlays(); rebuildMeshes(); renderMode(); renderHud(); save();
+  toast(T('今日のチャレンジ（{d}）', { d: dateLabel(dk) }), true);
+  if (!canMove(cells)) finishRun(true);
+}
+// back to the normal game (its board was saved when the daily run started)
+function setMode(m) {
+  if (m !== 'normal' || vs) return;
+  endPlay('quit');
+  if (mode === 'daily') save();
+  if (mode === 'tutorial') { tut = null; renderCoach(); }
+  finishAnims();
+  mode = 'normal'; daily = null; rnd = Math.random;
+  resetRun();
+  if (!load()) { spawn(); spawn(); runTop = maxE(); }
+  hideOverlays(); rebuildMeshes(); renderMode(); renderHud(); save();
+  over = !canMove(cells); if (over) { overInfo = { isNew: false }; showOver(); }
+}
+function renderMode() {
+  const bar = $('modeBar');
+  const on = mode === 'daily' && !!daily && !vs;
+  bar.hidden = !on;
+  if (!on) return;
+  const reached = Math.max(daily.best, score) >= daily.goal;
+  bar.classList.toggle('done', reached);
+  bar.title = T('全員に同じ順番で同じ数字が出る、1日1つの問題。1手戻すは使えません。何度でも挑戦できます。');
+  $('modeText').textContent = '';
+  const lbl = document.createElement('span'); lbl.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + ' · ';
+  const g = document.createElement('span');
+  g.innerHTML = T(reached ? '目標達成！ <b>{g}</b> 点' : '目標 <b>{g}</b> 点', { g: fmt(daily.goal) });
+  $('modeText').append(lbl, g);
+}
 
 // ---------- online battle (common/versus.js) ----------
 function vsStuck() {
@@ -752,63 +1307,179 @@ function vsStuck() {
   cells.forEach((c, i) => { if (c) burst(cellPos(i), c.e); });
   cells = new Array(27).fill(null); prev = null; over = false;
   spawn(); spawn();
-  rebuildMeshes(); renderHud(); dirty = true;
+  rebuildMeshes(); renderHud(); invalidate();
   toast(T('もう動かせない！ 盤をリセット')); sfxOver(); buzz(40);
 }
 KoboVersus.init({
   game: 'n59049', title: '59049', duration: 180, unit: T('点'),
-  theme: { accent: '#ffd36b', accentInk: '#2b1d00', accentShadow: '#a07a1c', card: 'linear-gradient(#1d2650, #121836)', line: '#2b3666',
-    ink: '#eef2ff', dim: '#9aa6d6', hud: '#0b1020', display: 'var(--font-display)' },
+  theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--kb-accent)', accentInk: 'var(--kb-accent-ink)', accentShadow: 'var(--nb-btn-shadow)', card: 'var(--nb-card)', line: 'var(--kb-line)',
+    ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--nb-hud)', display: 'var(--kb-font-display)' },
   hudCover: () => document.querySelector('header'),
-  onStart({ seed }) {
-    if (!vs) vs = { snap: { cells: exps(), score, undoLeft, prev, won, over, movesMade, startBest, win: !$('winOv').hidden, ov: !$('overOv').hidden } };
+  onOpen() { cancelInput(); const g = G(); if (g) g.pause('versus'); },
+  onStart({ seed, practice }) {
+    if (mode === 'tutorial') { tut = null; store.set(KEY_TUT, '1'); renderCoach(); mode = 'normal'; rnd = Math.random; resetRun(); if (!load()) { spawn(); spawn(); } }
+    if (!vs) {
+      endPlay('quit');
+      vs = { snap: { cells: exps(), score, undoLeft, prev, won, over, movesMade, bestAtStart, bestToasted, goalToasted, runTop, mode, daily, draws, overInfo, win: !$('winOv').hidden, ov: !$('overOv').hidden } };
+    }
+    if (vs.playing) { const g = G(); if (g) g.emit('play_end', { mode: vs.playing, score, reason: 'quit' }); }
     rnd = KoboVersus.rng(seed);
-    finishAnims(); ptrs.clear(); rot = null; swipeStart = null;
+    finishAnims(); cancelInput();
     cells = new Array(27).fill(null); score = 0; prev = null; won = false; over = false; movesMade = 0;
     spawn(); spawn();
-    $('overOv').hidden = true; $('winOv').hidden = true;
-    rebuildMeshes(); renderHud(); dirty = true;
+    hideOverlays(); $('howto').hidden = true;
+    rebuildMeshes(); renderMode(); renderHud(); invalidate();
+    vs.playing = practice ? 'practice' : 'versus';
+    const g = G(); if (g) g.emit('play_start', { mode: vs.playing, seed });
   },
   getScore: () => score,
-  onEnd() { swipeStart = null; },
+  onEnd() {
+    swipeStart = null;
+    if (vs && vs.playing) { const g = G(); if (g) g.emit('play_end', { mode: vs.playing, score, reason: 'over' }); vs.playing = null; }
+  },
   onExit() {
     if (!vs) return;
-    const s = vs.snap; vs = null; rnd = Math.random;
-    finishAnims();
-    cells = fromExps(s.cells); score = s.score; undoLeft = s.undoLeft; prev = s.prev; won = s.won; over = s.over; movesMade = s.movesMade; startBest = s.startBest;
+    if (vs.playing) { const g = G(); if (g) g.emit('play_end', { mode: vs.playing, score, reason: 'quit' }); }
+    const s = vs.snap; vs = null;
+    finishAnims(); cancelInput();
+    cells = fromExps(s.cells); score = s.score; undoLeft = s.undoLeft; prev = s.prev; won = s.won; over = s.over; movesMade = s.movesMade;
+    bestAtStart = s.bestAtStart; bestToasted = s.bestToasted; goalToasted = s.goalToasted; runTop = s.runTop; overInfo = s.overInfo;
+    mode = s.mode; daily = s.daily;
+    rnd = mode === 'daily' && daily ? dailyRng(daily.seed, s.draws) : Math.random;
+    if (mode === 'daily') refreshDaily();
     $('winOv').hidden = !s.win; $('overOv').hidden = !s.ov;
-    rebuildMeshes(); renderHud(); dirty = true;
+    rebuildMeshes(); renderMode(); renderHud(); invalidate();
   },
 });
 KoboVersus.button($('vsSlot'), { compact: true });
+KoboVersus.button($('vsSlotOver'));
+
+// ---------- KoboGame: platform hooks (turn-based: flags.pause is false, so hiding the page just saves) ----------
+// Migration: players who already have a best score or a board in progress have played before → don't show the
+// first-visit how-to and tutorial to them. Runs once (kobo.migrated), and running it again changes nothing.
+if (PF && PF.migrations) PF.migrations.add({ id: 'n59049-howto-1', v: 1, run(c) {
+  const has = c.store.raw(KEY_BEST) != null || c.store.raw(KEY_STATE) != null;
+  if (has && c.store.raw(KEY_HOWTO) == null) c.store.setRaw(KEY_HOWTO, '1');
+  if (has && c.store.raw(KEY_TUT) == null) c.store.setRaw(KEY_TUT, 'old');
+} });
+const listeners = [];
+const on = (t, ev, f, o) => { t.addEventListener(ev, f, o); listeners.push(() => t.removeEventListener(ev, f, o)); };
+let booted = false;
+if (G()) {
+  G().register({
+    id: GAME,
+    pause() { cancelInput(); save(); },
+    resume() { invalidate(); },
+    save() { cancelInput(); save(); },
+    isIdle: () => !sess && !vs && mode !== 'tutorial' && !ptrs.size,
+    restore: glRestored,
+    dispose() {
+      disposed = true; if (raf) cancelAnimationFrame(raf); raf = 0;
+      listeners.splice(0).forEach(f => f()); if (ro) ro.disconnect();
+      try { meshes.forEach(m => world.remove(m)); Object.values(mats).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); tileGeo.dispose(); renderer.dispose(); } catch (e) {}
+    },
+    daily: { start({ dateKey }) { if (!vs) { $('howto').hidden = true; startDaily(dateKey); } } },
+  });
+  G().watchGL(cv, {
+    onLost() { glLost = true; if (raf) cancelAnimationFrame(raf); raf = 0; cancelInput(); save(); showGlLost(true); },
+    onRestored() { glRestored(); },
+  });
+}
 
 // ---------- boot ----------
 renderSoundBtn();
-{ const lb = $('langBtn'); lb.textContent = KoboI18n.lang === 'ja' ? 'EN' : 'JA'; lb.title = T('言語 / Language'); lb.addEventListener('click', () => KoboI18n.set(KoboI18n.lang === 'ja' ? 'en' : 'ja')); }
-if (window.visualViewport) visualViewport.addEventListener('resize', resize);
-window.addEventListener('resize', resize);
-if (!load()) { spawn(); spawn(); }
+on(window, 'resize', resize);
+if (window.visualViewport) on(visualViewport, 'resize', resize);
+on(document, 'visibilitychange', () => { if (document.visibilityState === 'hidden') { cancelInput(); save(); } else invalidate(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => invalidate());
+const launch = PF ? PF.launch() : { daily: null };
+if (!load()) { resetRun(); spawn(); spawn(); runTop = maxE(); }
 resize(); rebuildMeshes();
-updateRecords(); renderHud();
+updateRecords(); renderHud(); renderMode();
+applyTheme();
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(applyTheme, 0));
+// ?daily=YYYYMMDD (the hub's "today's challenge"): KoboGame starts it when the registry has flags.daily; until then, here
+if (launch.daily) {
+  const def = G() && G().info().def;
+  if (!(def && def.flags && def.flags.daily)) setTimeout(() => { if (!vs && mode !== 'tutorial') startDaily(launch.daily); }, 0);
+}
+const firstVisit = store.get(KEY_HOWTO) == null;
 over = !canMove(cells);
-if (over) showOver(); else save();
-requestAnimationFrame(frame);
+if (firstVisit) showHowto(true);
+else if (!launch.daily && over) { overInfo = { isNew: false }; showOver(); }
+else save();
+invalidate();
+booted = true;
 
-if (new URLSearchParams(location.search).has('debug')) {
-  window.__n59049 = {
+// ---------- test hooks (?debug only) ----------
+// greedy bot move: most points now, then the best follow-up, then the most room
+function botMove() {
+  if (mode === 'tutorial' && tut) {
+    if (tut.step === 0) return dirName(tut.axis, 1);
+    if (tut.step === 1) return viewInfo().far;
+    return null;
+  }
+  let bestD = null, bv = -1e9;
+  for (const d of Object.keys(DIRS)) {
+    const r = slide(cells, d); if (!r.changed) continue;
+    let la = 0; for (const d2 of Object.keys(DIRS)) { const r2 = slide(r.cells, d2); if (r2.changed) la = Math.max(la, r2.gained); }
+    const v = r.gained * 2 + la + r.cells.filter(c => !c).length * 30;
+    if (v > bv) { bv = v; bestD = d; }
+  }
+  return bestD;
+}
+if (DEBUG) {
+  window.__n59049 = { // kept for older scripts
     slide: (arr, dir) => { const r = slide(fromExps(arr), dir); return { cells: r.cells.map(c => (c ? c.e : 0)), changed: r.changed, gained: r.gained }; },
-    setBoard(arr, sc) { finishAnims(); cells = fromExps(arr); if (sc != null) score = sc; prev = null; won = maxE() >= GOAL_E; $('overOv').hidden = true; $('winOv').hidden = true; rebuildMeshes(); afterChange(false); },
+    setBoard(arr, sc) { finishAnims(); cells = fromExps(arr); if (sc != null) score = sc; prev = null; won = maxE() >= GOAL_E; hideOverlays(); rebuildMeshes(); afterChange(false); },
     board: () => exps(),
     move: doMove, mapSwipe, viewInfo: () => { const v = viewInfo(); return { depth: v.depth, far: v.far, near: v.near }; },
     rotate, tilt, undo, newGame,
     state: () => ({ score, best, bestTile, undoLeft, won, over, yaw: cam.tyaw, pitch: cam.tpitch, hasPrev: !!prev }),
   };
 }
+if (window.__kb) Object.assign(window.__kb, {
+  ready: () => booted && lastW > 0 && renderer.info.render.frame > 0,
+  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score, time: sess ? Math.round(performance.now() - sess.t0) : 0, over, stage: null,
+    paused: !!(G() && G().paused()), best, bestTile, undoLeft, moves: movesMade, maxTile: pow3(maxE()), won, board: exps(),
+    daily: daily ? { dateKey: daily.dateKey, goal: daily.goal, best: daily.best, tries: daily.tries, draws } : null,
+    howto: !$('howto').hidden, overShown: !$('overOv').hidden, winShown: !$('winOv').hidden, glLost }),
+  frames: () => renderer.info.render.frame,
+  // endless game: "win" makes a 59049 tile (daily: reaches the day's goal and ends the try); "lose" fills the board so nothing moves
+  win() {
+    if (over || vs || mode === 'tutorial') return false;
+    startPlay();
+    if (mode === 'daily') { score = Math.max(score, daily.goal); renderHud(); finishRun(true); return true; }
+    const i = cells.findIndex(c => !c); cells[i >= 0 ? i : 0] = { e: GOAL_E, id: nextId++ };
+    score += pow3(GOAL_E); updateRecords(); rebuildMeshes(); afterChange(false); return true;
+  },
+  lose() {
+    if (over || vs || mode === 'tutorial') return false;
+    startPlay(); finishAnims();
+    cells = cells.map((c, i) => { const [x, y, z] = coords(i); return { e: 1 + ((x + y + z) & 1), id: nextId++ }; });
+    rebuildMeshes(); prev = null; afterChange(false); return true;
+  },
+  step(n) {
+    let k = 0;
+    for (; k < (n || 1); k++) {
+      if (over || anyOverlay() || (vs && !KoboVersus.canPlay())) break;
+      if (mode === 'tutorial' && tut && tut.step === 2) { rotate(1); continue; }
+      const d = botMove(); if (!d) break;
+      if (!doMove(d)) break;
+    }
+    finishAnims();
+    return k;
+  },
+  tutorial: () => ({ step: tut ? tut.step : (store.get(KEY_TUT) ? TUT_STEPS.length : 0), done: !tut && !!store.get(KEY_TUT), active: !!tut }),
+  tutorialStart: startTutorial, tutorialFinish: finishTutorial,
+  daily: dk => startDaily(dk), normal: () => setMode('normal'), menu: openMenu, howto: () => showHowto(false),
+  goalFor, move: doMove, rotate, tilt, undo, newGame, viewInfo: () => { const v = viewInfo(); return { depth: v.depth, far: v.far, near: v.near }; },
+});
 })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 <script src="../firebase-config.js"></script>
 <script src="../common/cloud.js"></script>
-<script>KoboCloud.sync({ 'kusoge.n59049.best': 'max', 'kusoge.n59049.state': 'newest' }, { reloadOnNewer: true });</script>
+<script>KoboCloud.sync({ 'kusoge.n59049.best': 'max', 'kusoge.n59049.bestTile': 'max', 'kusoge.n59049.state': 'newest' }, { reloadOnNewer: true });</script>
 </body>
 </html>
