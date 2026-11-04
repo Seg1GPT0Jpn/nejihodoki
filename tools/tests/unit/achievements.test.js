@@ -91,9 +91,10 @@ const FIX = {
   'parking-save.json': { has: ['parking.first', 'parking.star3'], not: ['parking.st10', 'parking.stars20'] },
   'hole-no-camp.json': { has: ['hole.first', 'hole.win1'], not: ['hole.win10', 'hole.camp10', 'hole.skins4', 'hole.pts1k'] },
   'hitsumabushi-save.json': { has: ['hitsumabushi.first', 'hitsumabushi.day1', 'hitsumabushi.s300', 'hitsumabushi.perfect', 'hitsumabushi.rank2'], not: ['hitsumabushi.s1k', 'hitsumabushi.dish100', 'hitsumabushi.usual3', 'hitsumabushi.rank4'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first'], not: ['water.st10', 'hole.win1'] },
+  'planet-save.json': { has: ['planet.first', 'planet.life', 'planet.goe', 'planet.sc1'], not: ['planet.civ', 'planet.space', 'planet.sc8', 'planet.pts5k', 'planet.thaw'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first'], not: ['water.st10', 'hole.win1'] },
 };
-test('retroactive: fixture saves for all 10 games unlock exactly what the records show, once, marked as retroactive', () => {
+test('retroactive: fixture saves for all 11 games unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();
   for (const [file, exp] of Object.entries(FIX)) {
     const fx = fixture('saves/' + file);
@@ -224,7 +225,7 @@ test('titles: rank names by level plus grantsTitle from achievements; setTitle o
 test('progress(): value and goal for the profile page', () => {
   const { A } = load({ 'kusoge.raft.best': '23' });
   deep(A.progress('raft.d30'), { value: 23, goal: 30, done: false });
-  const p = A.progress('all.varietyAll'); eq(p.goal, 10); eq(p.value, 1);
+  const p = A.progress('all.varietyAll'); eq(p.goal, 11); eq(p.value, 1);
   eq(A.summary().total, A.all().length);
 });
 

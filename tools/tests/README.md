@@ -12,6 +12,7 @@ node tools/tests/run.js --suite smoke,save      # スイートを選ぶ（layout
 node tools/tests/run.js --vp all --lang en      # 画面サイズ（quick|core|all|se1,land|320x568）と言語（ja,en）
 node tools/tests/run.js --list                  # 実行するタスクの一覧だけ出す
 node tools/tests/hitsumabushi-play.js          # ひつまぶし工房の通しプレイ（チュートリアル・1営業日・採点・厳しさ・保存・デイリー・英語）
+node tools/tests/planet-play.js                # わくせいシミュレーターの通し（気候の物理・全球凍結と脱出・暴走温室・風化・シナリオの勝ち負け・保存・英語）
 node tools/tests/shots.js                       # サムネイルを tools/tests/out/thumbs/ に試し撮り
 node tools/tests/shots.js --write               # サムネイルを img/thumbs/ に書く（<id>.webp 360×240、<id>@2x.webp 720×480）
 ```

@@ -57,6 +57,7 @@
     { id: 'survival', ja: 'サバイバル', en: 'Survival' },
     { id: 'action', ja: 'アクション', en: 'Action' },
     { id: 'cooking', ja: '料理・お店', en: 'Cooking & shop' },
+    { id: 'simulation', ja: 'シミュレーション', en: 'Simulation' },
   ];
 
   var GAMES = [
@@ -350,6 +351,35 @@
         },
       },
     },
+    {
+      id: 'planet', order: 11, path: 'planet/', added: '2026-11-04',
+      title: { ja: 'わくせいシミュレーター', en: 'Planet Simulator' },
+      short: { ja: 'わくせい', en: 'Planet' },
+      desc: { ja: '地球のような星を、誕生から46億年かけて育てる。温室効果・氷の反射・岩の風化・プレート・海流・生命と酸素、そして文明。', en: 'Grow an Earth-like planet over 4.6 billion years: the greenhouse effect, reflecting ice, rock weathering, plates, ocean currents, life and oxygen, and finally a civilization.' },
+      label: { ja: 'シミュレーション', en: 'Simulation' },
+      genres: ['simulation'], tags: ['3d', 'sandbox', 'science', 'stages'],
+      keywords: { ja: ['惑星', 'わくせい', '地球', '気候', '温暖化', '進化', '生命', '文明', 'シミュレーション', '科学'], en: ['planet', 'earth', 'climate', 'warming', 'evolution', 'life', 'civilization', 'simulation', 'science'] },
+      icon: 'img/icons/planet.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#0b1430"/><g fill="#dfe8ff"><circle cx="9" cy="12" r="1"/><circle cx="20" cy="6" r=".8"/><circle cx="64" cy="58" r="1"/><circle cx="8" cy="62" r=".8"/></g><circle cx="58" cy="14" r="12" fill="#ffd36b" opacity=".18"/><circle cx="58" cy="14" r="7" fill="#ffd36b"/><circle cx="34" cy="39" r="23" fill="#2a78c2"/><path d="M16 31c5-6 11-2 15-6 5-4 12 0 14 5-4 5-9 2-13 6-4 5-10 6-16 3z" fill="#4fb35a"/><path d="M30 52c4-3 9-1 12-4 3 2 3 6-1 8-4 1-8 0-11-4z" fill="#4fb35a"/><path d="M25 18c3-1 6-2 10-2" stroke="#f4f8fc" stroke-width="5" stroke-linecap="round"/><path d="M20 21c5-3 12-4 19-3M40 44c4 0 7-1 10-3" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".8"/><path d="M13 47a23 23 0 0 0 42-5" stroke="#05122b" stroke-width="9" fill="none" opacity=".35"/><circle cx="34" cy="39" r="23" fill="none" stroke="#9fd6ff" stroke-width="1.5" opacity=".7"/></svg>', iconBg: '#0b1430',
+      thumb: 'img/thumbs/planet.webp', thumb2x: 'img/thumbs/planet@2x.webp',
+      tech: '3d',
+      // no online battle: a planet grows over millions of years, not in a 3-minute match
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      // the sum of the best score of each of the 8 scenarios (up to 1,000 each)
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n} 点', en: '{n} pts' }, order: 'desc', cap: 10000, maxRate: null },
+      rankSource: { key: 'kusoge.planet.save', paths: ['total'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.planet.save', paths: ['total'], agg: 'first', min: 1, num: true, tpl: { ja: 'シナリオ合計 {n} 点', en: 'Scenario total: {n} pts' } },
+      keys: {
+        'kusoge.planet.save': '{ v:1, sc:{ <シナリオid>:{ best（0〜1000）, stars（1〜3） } }（クリアしたものだけ）, total（best の合計＝ランキング）, stats:{ life, goe, thaw, civ, space, ext, collapse, worlds, clears, maxMyr }, tut }',
+        'kusoge.planet.world': '自由モードの星 { v:1, t（年）, p:{ dist, size, water, n2, co2, seed }, T[32], A, O, ch4, o2, wl, lost, iceL/iceO/veg（64×32 を1文字ずつ）, plates[], bumps[], craters[], volcs[], life{}, civ{}, ev[], flags{}, hist:{ r[], l[] }, spd, at }。15秒ごと・止めたとき・隠れたときに書く',
+        'kusoge.planet.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow: per-field max (stars and bests per scenario). The free-mode planet is one whole state: newest wins
+      sync: {
+        'kusoge.planet.save': { fields: { sc: { each: { fields: { best: 'max', stars: 'max' } } }, total: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
+        'kusoge.planet.world': 'newest',
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -451,6 +481,16 @@
       { id: 'hitsumabushi.rank2', tier: 2, icon: 'trophy', title: { ja: '町の人気店', en: 'Town Favorite' }, desc: { ja: '店の格を「町の人気店」にする', en: 'Grow your shop into the town favorite' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'rank' }, gte: 2 } },
       { id: 'hitsumabushi.rank4', tier: 4, icon: 'trophy', title: { ja: '鯱見町の老舗', en: 'Oldest Shop in Town' }, desc: { ja: '店の格を「老舗」にする', en: 'Make your shop a long-established one' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'rank' }, gte: 4 }, grantsTitle: { ja: '老舗の主人', en: 'Old Shop Master' } },
       { id: 'hitsumabushi.daily1', tier: 1, icon: 'star', title: { ja: '今日の一膳', en: 'Daily Bowl' }, desc: { ja: 'ひつまぶし工房のデイリーをクリア', en: 'Clear a Hitsumabushi Workshop daily' }, when: { stat: 'gameDaily', gte: 1 } },
+    ],
+    planet: [
+      { id: 'planet.life', tier: 1, icon: 'star', title: { ja: '生命の誕生', en: 'Spark of Life' }, desc: { ja: '星に生命が生まれる', en: 'Life appears on a planet' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.life' }, gte: 1 } },
+      { id: 'planet.goe', tier: 2, icon: 'globe', title: { ja: '酸素の空', en: 'Breath of Oxygen' }, desc: { ja: '大酸化イベントを起こす', en: 'Trigger the Great Oxidation' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.goe' }, gte: 1 } },
+      { id: 'planet.thaw', tier: 2, icon: 'globe', title: { ja: '雪だるまの春', en: 'Snowball Thaw' }, desc: { ja: '全球凍結から抜け出す', en: 'Escape a snowball planet' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.thaw' }, gte: 1 } },
+      { id: 'planet.civ', tier: 3, icon: 'trophy', title: { ja: '文明のあけぼの', en: 'First Cities' }, desc: { ja: '自分の星に文明が生まれる', en: 'A civilization rises on your planet' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.civ' }, gte: 1 } },
+      { id: 'planet.space', tier: 3, icon: 'star', title: { ja: '宇宙時代', en: 'Space Age' }, desc: { ja: '文明が技術100に届く', en: 'A civilization reaches technology 100' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.space' }, gte: 1 } },
+      { id: 'planet.sc1', tier: 1, icon: 'check', title: { ja: 'はじめてのお題', en: 'First Scenario' }, desc: { ja: 'シナリオを1つクリア', en: 'Clear a scenario' }, when: { rec: { key: 'kusoge.planet.save', path: 'sc', measure: 'count' }, gte: 1 } },
+      { id: 'planet.sc8', tier: 3, icon: 'trophy', title: { ja: '星の設計者', en: 'Planet Architect' }, desc: { ja: '8つのシナリオをすべてクリア', en: 'Clear all 8 scenarios' }, when: { rec: { key: 'kusoge.planet.save', path: 'sc', measure: 'count' }, gte: 8 }, grantsTitle: { ja: '星の設計者', en: 'Planet Architect' } },
+      { id: 'planet.pts5k', tier: 2, icon: 'star', title: { ja: '五千点の宇宙', en: '5,000-Point Cosmos' }, desc: { ja: 'シナリオ合計5,000点', en: 'Reach a scenario total of 5,000' }, when: { rec: { key: 'kusoge.planet.save', path: 'total' }, gte: 5000 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>わくせいシミュレーター</title>
+<meta name="theme-color" content="#070b18">
+<meta name="description" content="地球のような惑星を、46億年かけて育てるシミュレーション。温室効果、氷のアルベド、岩の風化、プレート、海流、生命と酸素、そして文明。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="わくせいシミュレーター">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'わくせいシミュレーター': 'Planet Simulator', 'ゲーム一覧': 'Games', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'ゲーム一覧に戻る': 'Back to games',
+  'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '遊び方': 'How to play', 'スキップ': 'Skip', 'つぎへ': 'Next', 'タイトルへ': 'Title screen',
+  '言語 / Language': 'Language', '星のようす': 'Planet status', '惑星の地球儀。ドラッグで回す': 'The planet globe. Drag to turn it', 'お題を見る': 'Show the task', '操作': 'Controls',
+  'ゆっくり': 'Slower', 'はやく': 'Faster', '表示を切りかえる': 'Change the view', '止める': 'Pause', '時間を進める': 'Run time',
+  // time
+  '1年/秒': '1 yr/s', '10年/秒': '10 yr/s', '100年/秒': '100 yr/s', '1000年/秒': '1,000 yr/s', '1万年/秒': '10,000 yr/s', '10万年/秒': '100,000 yr/s', '100万年/秒': '1 million yr/s',
+  '文明 {n}年目': 'Civilization year {n}', '現在': 'Today', '{y}前': '{y} ago', '{y}後': 'In {y}', '{y}前から': 'Last {y}', 'いま': 'Now',
+  'マグマの海': 'Magma ocean', '冥王代': 'Hadean', '太古代': 'Archean', '原生代': 'Proterozoic', '顕生代': 'Phanerozoic', '未来': 'Future',
+  // life
+  '生命なし': 'No life', '微生物': 'Microbes', '光合成をする細菌': 'Photosynthetic bacteria', '核をもつ細胞': 'Complex cells', '海の多細胞生物': 'Sea animals', '陸の植物': 'Land plants', '陸の動物': 'Land animals', '知的生命': 'Intelligent life',
+  '海ができると、やがて生命が生まれる（種をまくとすぐ）': 'Once there is an ocean, life will appear in time (at once if you seed it)',
+  '海の中の小さな細菌。メタンを出して星を暖める': 'Tiny bacteria in the sea. Their methane warms the planet',
+  '日光で酸素をつくる細菌。でも酸素は火山のガスにすぐ使われてしまう': 'Bacteria that make oxygen from sunlight. But volcanic gases use it up at once',
+  '核をもつ大きな細胞。藻が海をおおい、酸素がもっと増える': 'Large cells with a nucleus. Algae spread through the sea and make more oxygen',
+  '海に動物があらわれた（カンブリア紀の爆発）': 'Animals appear in the sea (the Cambrian explosion)',
+  '植物が陸へ。根が岩をくだき、風化が速くなってCO₂が減る': 'Plants move onto land. Roots break up rock, weathering speeds up and CO₂ falls',
+  '恐竜や哺乳類の時代': 'The age of dinosaurs and mammals', 'もうすぐ文明がはじまる': 'A civilization will begin soon',
+  '生命の種をまく': 'Seed life', '進化の後押し': 'Nudge evolution', 'えらんだ方向の進化が4倍速くなる。ただし酸素などの条件は必要': 'Evolution in the chosen direction runs 4× faster, but it still needs enough oxygen and so on',
+  'なし': 'None', '光合成': 'Photosynthesis', '大型化': 'Bigger life', '上陸': 'Onto land', '知能': 'Intelligence',
+  'この星ではもう生命は生まれない（海がない）': 'Life can no longer appear here (no ocean)', '生命の誕生まで': 'Until life appears', '海ができるのを待っている': 'Waiting for an ocean to form',
+  'つぎ：{s}': 'Next: {s}', '酸素 {n} 以上が必要': 'needs oxygen of {n} or more', '文明が動いている（「文明」タブ）': 'A civilization is running (Civ tab)', '文明の誕生を待っている': 'Waiting for a civilization',
+  '生き物の多様さ {n}': 'Biodiversity {n}',
+  '海がない星には、生命は生まれない': 'Life cannot appear on a planet without an ocean', 'まだ海がない。海ができるまで待とう': 'No ocean yet. Wait until one forms', '海が凍っているか、熱すぎる': 'The ocean is frozen or too hot',
+  // meters and views
+  '気温': 'Temp', '酸素': 'Oxygen', '氷': 'Ice', '生物量': 'Biomass', '文明': 'Civ', 'ふつう': 'Normal', '海流': 'Currents',
+  '星': 'Planet', '地形': 'Land', '生命': 'Life', 'グラフ': 'Graphs',
+  '「地形」タブで道具をえらぶと、地球儀をタップして使えます': 'Choose a tool in the Land tab, then tap the globe to use it',
+  // planet settings
+  '🔒 このシナリオでは使えない操作があります': '🔒 Some controls are locked in this scenario',
+  '太陽からの距離': 'Distance from the star', '近いほど暑い。地球は 1 AU': 'Closer is hotter. Earth is at 1 AU', '星の大きさ': 'Planet size', '{n}倍': '{n}×',
+  '小さい星は早く冷えて火山が止まる。大きい星は極が寒い': 'A small planet cools fast and its volcanoes stop. A big planet has colder poles',
+  '水の量': 'Water', '海がないと岩の風化が起きない。多すぎると陸が沈む': 'Without an ocean rocks cannot weather. Too much water drowns the land',
+  '窒素（気圧）': 'Nitrogen (pressure)', '{n}気圧': '{n} bar', '空気が濃いと熱がよく運ばれ、少し暖かい': 'Thicker air carries heat better and is a little warmer',
+  '二酸化炭素': 'Carbon dioxide', '温室効果ガス。でも岩の風化がゆっくり吸い取っていく': 'A greenhouse gas. But rock weathering slowly draws it down',
+  // tools
+  '火山': 'Volcano', 'CO₂を出す（10万年かけて）。灰が氷を黒くしてとかす': 'Releases CO₂ (over 100,000 years). Its ash darkens ice and melts it',
+  '隆起': 'Uplift', '山をつくる。新しい岩は風化しやすく、CO₂を吸う。海に栄養も流れる': 'Builds mountains. Fresh rock weathers fast and draws down CO₂. Nutrients wash into the sea',
+  '沈降': 'Sink', '陸を沈める。海の通り道ができ、風化が弱まる': 'Lowers the land. Opens seaways and weakens weathering',
+  '隕石': 'Asteroid', 'ちりで寒くなり、生き物が減る。若い星には水を運ぶ': 'Dust cools the planet and life suffers. On a young planet it brings water',
+  '大陸はプレートに乗って、1年に数cmずつ動いています。ぶつかると山脈ができます': 'Continents ride on plates, moving a few cm a year. Where they collide, mountains rise',
+  '地球儀をタップ：{t}': 'Tap the globe: {t}', '道具をえらんでから、地球儀をタップ': 'Choose a tool, then tap the globe',
+  'このシナリオでは使えない': 'Not available in this scenario', '火山が噴火！ CO₂がふえていく': 'Eruption! CO₂ is rising', '大地が盛り上がった': 'The land rose up', '大地が沈んだ': 'The land sank', '隕石が衝突！': 'Asteroid impact!',
+  // civilization
+  'エネルギー': 'Energy', '化石燃料': 'Fossil fuels', 'バランス': 'Mixed', '再生可能': 'Renewables', '資源': 'Resources', 'どんどん使う': 'Use freely', '節約': 'Save', 'リサイクル': 'Recycle',
+  '環境': 'Environment', '開発': 'Develop', '保全': 'Protect', '再生＋回収': 'Restore + capture',
+  '文明は崩壊した（{why}）。いつかまた文明が生まれるかもしれない': 'The civilization collapsed ({why}). Another may rise one day', '気候': 'the climate',
+  'まだ文明はない。知的生命が生まれると始まる（いま：{s}）': 'No civilization yet. It begins once intelligent life appears (now: {s})',
+  '人口': 'Population', '{n}億人': '{n}00 million', '技術': 'Technology', '気温の上昇': 'Warming', 'CO₂の排出': 'CO₂ emissions', '{n}億トン/年': '{n}00 Mt/yr', '安定': 'Stability', 'エネルギー不足': 'Energy shortfall',
+  'いちばんの心配：{w}': 'Biggest worry: {w}', '宇宙時代！ 文明は星の外へ': 'Space age! The civilization reaches beyond its planet', '技術が育つと、再生可能エネルギーやCO₂回収が使えるようになる': 'As technology grows, renewables and CO₂ capture become possible',
+  '温暖化で暑くなりすぎた': 'global warming made it too hot', '寒くなりすぎた': 'it became too cold', 'エネルギーが足りない': 'not enough energy', '資源を使い果たした': 'resources ran out', '食料が足りない': 'not enough food', '自然が壊れ、生き物が減りすぎた': 'nature was destroyed and too many species were lost', '気候が厳しすぎた': 'the climate was too harsh',
+  // graphs
+  'いまの早さ': 'Recent', '全期間': 'All time', 'しくみを見る': 'How it works', '時間を進めるとグラフができる': 'Run time to draw the graph',
+  // events
+  '隕石の衝突でちりが日光をさえぎり、植物が育たなくなった': 'An impact threw up dust that blocked the sunlight, and plants could not grow.', '星がまるごと凍りついた': 'The whole planet froze.', '暑すぎた': 'It was too hot.', '寒すぎた': 'It was too cold.',
+  '海と空気の酸素が足りなくなった': 'The sea and air ran short of oxygen.', '気温が急に変わり、生き物の進化が追いつかなかった': 'The temperature changed too fast for life to adapt.', '文明が森や草原を切り開き、すみかがなくなった': 'The civilization cleared the forests and grasslands, and wild places vanished.',
+  '全球凍結！': 'Snowball planet!', '氷が赤道まで広がり、星が真っ白に凍りついた。': 'Ice spread to the equator and the planet froze white.',
+  '酸素がメタン（強い温室効果ガス）をこわし、温室効果が弱まった。': 'Oxygen destroyed the methane (a strong greenhouse gas) and the greenhouse effect weakened. ',
+  '太陽からの光が足りない（遠すぎる、または若い太陽が暗い）。': 'Not enough sunlight (too far away, or the young star is dim). ',
+  'CO₂が {n} まで減って、温室効果が弱まった。': 'CO₂ fell to {n} and the greenhouse effect weakened. ',
+  '氷は日光をはね返す（アルベド）。氷が広がるほど冷え、さらに氷が広がる——この連鎖が止まらなくなった。': 'Ice reflects sunlight (albedo). The more ice, the colder it gets, and the more ice forms: this chain reaction ran away.',
+  '凍った星では雨が降らず、岩の風化が止まる。火山のCO₂は出つづけるので、待てばいつか温室効果でとける。火山を起こすと早い。': 'On a frozen planet there is no rain, so rock weathering stops. Volcanoes keep adding CO₂, so in time the greenhouse effect melts the ice. Eruptions make it faster.',
+  '海が沸騰しはじめた！': 'The oceans are starting to boil!', '気温が {t} をこえた。': 'The temperature passed {t}.', '太陽が近すぎる（明るすぎる）。': 'The star is too close (too bright). ', '温室効果が強すぎる。': 'The greenhouse effect is too strong. ',
+  '水蒸気も温室効果ガス。暑いほど水蒸気がふえ、宇宙へ出ていける熱が限界（約{L} W/m²）に達すると、もう冷えられない（暴走温室効果）。': 'Water vapour is a greenhouse gas too. The hotter it gets, the more vapour; once the heat that can escape to space hits its limit (about {L} W/m²), the planet can no longer cool (a runaway greenhouse).',
+  '太陽から遠ざけるか、CO₂を減らそう。海がなくなると、もう戻らない。': 'Move the planet away from its star or cut CO₂. Once the oceans are gone, they never come back.',
+  '海が干上がった': 'The oceans have dried up', '水蒸気は高い空で分解され、水素は宇宙へ逃げてしまった。': 'High in the sky, water vapour was split apart and the hydrogen escaped to space.',
+  '海がないと岩の風化も止まり、CO₂がたまる一方になる。金星と同じ道。': 'Without oceans, weathering stops too and CO₂ keeps piling up: the same path as Venus.', '新しい星をつくり直そう。太陽からの距離がだいじ。': 'Build a new planet. Distance from the star matters most.',
+  '大量絶滅': 'Mass extinction', '生き物の種類が半分以下に減った。': 'More than half of all species were lost.', '（数百万年かけて、また多様になっていく）': ' (Over millions of years, life will diversify again.)', '気温をおだやかに保つと、生き物はまた増えていく。': 'Keep the climate mild and life will spread again.',
+  '複雑な生き物が絶えた': 'Complex life is gone', '動物や植物がいなくなり、細胞だけの生き物が残った。': 'Animals and plants died out; only single-celled life remains.', '（きびしい状態が数百万年つづいた）': ' (Harsh conditions lasted millions of years.)', '気候が戻れば、また多細胞の生き物へ進化していく。': 'When the climate recovers, many-celled life will evolve again.',
+  '生命が絶えた': 'Life has ended', '海がなくなり、微生物も生きられなくなった。': 'The oceans are gone and not even microbes can survive.', '液体の水がないと、生命は生きられない。': 'Life cannot live without liquid water.', '新しい星をつくり直そう。': 'Build a new planet.',
+  '文明が崩壊した': 'The civilization collapsed', '人びとは都市を捨て、技術の多くが失われた。': 'People abandoned their cities and much of their technology was lost.',
+  'エネルギー・資源・環境のバランスがだいじ。数万年後、また文明が生まれるかもしれない。': 'Balance energy, resources and the environment. In tens of thousands of years another civilization may rise.',
+  '生命が誕生した！': 'Life has begun!', 'まいた種から、海に最初の微生物が生まれた': 'From your seed, the first microbes appeared in the sea', '海の中で、最初の微生物が生まれた': 'The first microbes appeared in the sea',
+  '進化：{s}': 'Evolution: {s}', '大酸化イベント！': 'The Great Oxidation!', '空気に酸素がたまりはじめた。メタンがこわれて寒くなるかも': 'Oxygen is building up in the air. Methane breaks down, so it may get colder',
+  '全球凍結から脱出！': 'Out of the snowball!', 'たまったCO₂の温室効果で氷がとけた（{d}かかった）': 'The greenhouse effect of the built-up CO₂ melted the ice (it took {d})',
+  '文明が生まれた！': 'A civilization is born!', 'ここから時間は1年ずつ。政策で星の未来が変わる': 'From now on time runs year by year. Your policies shape the planet\'s future',
+  '宇宙時代へ！': 'Into the space age!', '文明は星の外へふみ出した': 'The civilization has stepped beyond its planet',
+  '新しい星をつくる': 'Build a new planet', 'つづける': 'Continue', 'なぜ？': 'Why?', 'どうすれば？': 'What can I do?', 'グラフで見る': 'See the graph',
+  // how it works
+  '星のしくみ': 'How the planet works', 'とじる': 'Close', 'エネルギーのつりあい': 'Energy balance', '太陽から届く光': 'Sunlight arriving', '太陽の明るさ {l}倍・距離 {d} AU': 'star brightness {l}×, distance {d} AU',
+  'はね返す光（アルベド）': 'Reflected (albedo)', '雲・氷・陸・海': 'clouds, ice, land, sea', '吸収する光': 'Absorbed', '宇宙へ出る熱': 'Heat to space', '温室効果の強さ': 'Greenhouse effect', 'メタン': 'methane', '気圧': 'pressure', 'もや': 'haze',
+  '暴走温室の限界': 'Runaway limit', '吸収する光がこの限界をこえると、海が沸騰するまで暑くなる': 'If absorbed sunlight passes this limit, the planet heats up until the oceans boil',
+  '緯度ごとの気温': 'Temperature by latitude', '氷は−2〜−8℃より寒いところにできる。白い帯が氷。海流と大気が赤道の熱を極へ運ぶ': 'Ice forms where it is colder than about −2 to −8 °C (white bands). Ocean currents and winds carry heat from the equator to the poles',
+  'ppm/千年': 'ppm per 1,000 yr', '炭素の流れ（CO₂の出入り）': 'Carbon flows (CO₂ in and out)', '岩の風化': 'Rock weathering', '生物の埋没': 'Buried by life', '文明の排出': 'Civilization emissions', 'CO₂回収': 'CO₂ capture',
+  '気温が上がると雨がふえ、岩の風化が速くなってCO₂が減る。下がると遅くなりCO₂がふえる。数十万年かけて気温を保つ「炭素–ケイ酸塩サイクル」': 'When it warms, more rain speeds up rock weathering and CO₂ falls; when it cools, weathering slows and CO₂ rises. Over hundreds of thousands of years this carbonate–silicate cycle acts as a thermostat',
+  '光合成でできる酸素': 'Oxygen made by photosynthesis', '火山ガスが使う酸素': 'Oxygen used by volcanic gases', 'つくる量が使われる量をこえると、酸素がたまりはじめる（大酸化イベント）': 'When more is made than used, oxygen starts to build up (the Great Oxidation)',
+  '暖かい海水は極へ、冷たい海水は赤道へ流れて熱を運ぶ。陸で海の通り道がふさがると、極が寒くなる。「表示」で海流が見える': 'Warm water flows to the poles and cold water to the equator, carrying heat. If land blocks the seaways, the poles get colder. Use the view button to see the currents',
+  '南極': 'S. Pole', '赤道': 'Equator', '北極': 'N. Pole',
+  // scenarios
+  '氷河期の星を緑の星に': 'From Ice Age to Green Planet', '高い山が多く、岩の風化がCO₂を吸いすぎて氷河期になった星。': 'A planet of high mountains, where rock weathering drew down so much CO₂ that an ice age set in.',
+  '400万年以内に、氷を15%以下、陸の緑を30%以上に': 'Within 4 million years: ice 15% or less, and green land 30% or more', '山を沈めると風化が弱まってCO₂がふえる。火山もCO₂を出す': 'Sinking mountains weakens weathering so CO₂ rises. Volcanoes add CO₂ too',
+  '温暖化を止めろ': 'Stop Global Warming', '産業革命がはじまった。石炭と石油で豊かになるけれど……': 'The industrial revolution has begun. Coal and oil bring wealth, but…',
+  '300年後に、気温の上昇2℃未満・技術60以上で文明を守る': 'In 300 years: warming under 2 °C, technology 60 or more, and the civilization still standing', '技術が育ったら再生可能エネルギーへ。森を守り、CO₂回収も': 'Switch to renewables once technology allows. Protect forests, and capture CO₂',
+  '全球凍結からの脱出': 'Escape the Snowball', '星がまるごと凍りついた。氷が日光をはね返し、とけない。': 'The whole planet has frozen. The ice reflects sunlight and will not melt.',
+  '300万年以内に、氷を40%未満に': 'Within 3 million years: ice below 40%', '凍った星では風化が止まる。火山のCO₂と灰が氷をとかす': 'On a frozen planet weathering stops. Volcanic CO₂ and ash melt the ice',
+  '大酸化イベント': 'The Great Oxidation', '光合成をする細菌が生まれた。でも酸素は、火山のガスにすぐ使われてしまう。': 'Photosynthetic bacteria have appeared. But volcanic gases use up their oxygen at once.',
+  '2億5000万年以内に酸素を0.6%に（全球凍結させない）': 'Within 250 million years: oxygen to 0.6% (without a snowball)', '「光合成」を後押し。大陸を押し上げると栄養が海に流れる。メタンが減ると冷えるので注意': 'Nudge photosynthesis. Uplifting continents washes nutrients into the sea. Careful: less methane means colder',
+  '明るくなる太陽': 'The Brightening Sun', '太陽は少しずつ明るくなる。13億年後の未来、星は暑くなりすぎている。': 'Stars slowly brighten. 1.3 billion years from now, the planet is getting too hot.',
+  '2億5000万年後に気温32℃以下。海と生き物を守る': 'In 250 million years: temperature 32 °C or less, with oceans and life kept safe', '星を太陽から少しずつ遠ざけよう。遠すぎると凍る': 'Move the planet away from its star little by little. Too far and it freezes',
+  '生命のゆりかご': 'Cradle of Life', '遠くて水の少ない、凍った若い星。': 'A young, frozen planet, far from its star and short of water.',
+  '1億5000万年以内に生命を生み、海に広げる': 'Within 150 million years: start life and spread it through the sea', '距離・水・CO₂を変えよう。海ができたら「生命の種をまく」': 'Change distance, water and CO₂. Once there is an ocean, Seed life',
+  '海流の通り道': 'Open the Seaway', '北緯48度を陸がぐるりと一周していて、暖かい海流が北へ行けない。': 'A ring of land runs all the way round at 48° north, so warm currents cannot reach the far north.',
+  '200万年以内に、北極圏の気温を−22℃以上に': 'Within 2 million years: Arctic temperature −22 °C or warmer', '陸を沈めて、海の通り道をあけよう': 'Sink the land to open seaways',
+  '文明の夜明け': 'Dawn of Civilization', '知的生命が文明をはじめた。宇宙へ行けるだろうか。': 'Intelligent life has started a civilization. Can it reach space?',
+  '500年以内に技術100（宇宙時代）。生き物の多様さ50以上を守る': 'Within 500 years: technology 100 (space age), keeping biodiversity at 50 or more', '資源は節約・リサイクル。開発しすぎると自然が減る': 'Save and recycle resources. Too much development destroys nature',
+  '陸の緑': 'Green land', '海の生き物': 'Sea life', '北極圏の気温': 'Arctic temp', '生き物の多様さ': 'Biodiversity', 'あり': 'Yes', '年': 'Year',
+  'シナリオ {n}': 'Scenario {n}', 'のこり {t}': '{t} left', 'お題': 'Task', 'はじめる': 'Start', 'シナリオ一覧へ': 'Scenario list',
+  '全球凍結してしまった。氷が日光をはね返し、冷えるほど氷が広がる連鎖が止まらなかった。': 'The planet froze over. Ice reflected sunlight, and the colder it got the more ice spread.', '時間切れ。': 'Out of time.',
+  '気温が上がりすぎた。CO₂の排出が多すぎた。': 'It warmed too much: too much CO₂ was emitted.', '技術が足りなかった。': 'Technology fell short.', '文明が崩壊した。': 'The civilization collapsed:',
+  '暑くなりすぎた。明るくなる太陽に、CO₂の調節だけでは追いつけなかった。': 'It got too hot. The CO₂ thermostat alone could not keep up with the brightening star.', '複雑な生き物が絶えてしまった。': 'Complex life died out.',
+  '海が干上がってしまった。': 'The oceans dried up.', '自然が壊れ、生き物の多様さが減りすぎた。': 'Nature was destroyed and biodiversity fell too far.',
+  'クリア！': 'Cleared!', '失敗……': 'Failed…', '星 {n}つ': '{n} stars', 'ヒント：{h}': 'Hint: {h}', 'かかった時間：{t}': 'Time taken: {t}', 'ベスト {b} 点 ・ シナリオ合計 {s} 点': 'Best {b} pts · Scenario total {s} pts',
+  'ベスト更新！': 'New best!', 'つぎのシナリオへ': 'Next scenario', 'もう一度': 'Try again',
+  // free mode and title
+  '星の設定を決めて、▶で時間を進めよう': 'Set up your planet, then press ▶ to run time', '新しい星をつくりますか？': 'Build a new planet?', 'いま育てている星は消えます。': 'The planet you are growing now will be lost.', 'つくる': 'Build', 'やめる': 'Cancel',
+  '{a}・{s}': '{a} · {s}', 'シナリオ合計 {n} 点': 'Scenario total {n} pts', '保存した星を読み込めませんでした': 'Could not load the saved planet',
+  '星づくりから生命、そして文明へ。ひとつの星の46億年。': 'From building a planet to life and civilization: 4.6 billion years of one world.', 'つづきから（自由モード）': 'Continue (free mode)', 'シナリオ': 'Scenarios',
+  // tutorial
+  '地球儀を指でドラッグして、回してみよう': 'Drag the globe with your finger to turn it', '2本の指でひろげると拡大できる': 'Spread two fingers to zoom',
+  '▶ を押して時間を進めよう': 'Press ▶ to run time', 'いまは1秒で100万年。«» で早さを変えられる': 'Right now 1 second = 1 million years. Use « » to change speed',
+  '上のメーターで、気温・CO₂・酸素・氷・生物量がわかる': 'The meters at the top show temperature, CO₂, oxygen, ice and biomass', 'メーターをタップするとグラフになる': 'Tap a meter to see its graph',
+  '「星」タブで、太陽からの距離を動かしてみよう': 'In the Planet tab, move the distance from the star', '近いと暑く、遠いと寒い。メーターの気温を見てね': 'Closer is hotter, farther is colder. Watch the temperature meter',
+  '「地形」→「火山」をえらんで、地球儀をタップ': 'Choose Land → Volcano, then tap the globe', '火山はCO₂を出す。CO₂は温室効果で星を暖める': 'Volcanoes release CO₂, which warms the planet by the greenhouse effect',
+  '「生命」タブで「生命の種をまく」': 'In the Life tab, press Seed life', '海ができてからまける（あとでもOK）': 'You can seed once there is an ocean (later is fine too)',
+  'チュートリアル完了！ 46億年、星を育てよう': 'Tutorial done! Grow your planet for 4.6 billion years', '困ったら「グラフ」→「しくみを見る」': 'Stuck? Graphs → How it works', 'チュートリアルをとばしました': 'Tutorial skipped',
+  // gl
+  '3D を表示できません': 'Can’t show 3D', '3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。': 'The 3D engine could not be loaded. Check your connection and open the page again.',
+  'この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。': 'This device or browser can’t use 3D graphics (WebGL), so this game can’t be shown.',
+  'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on “hardware acceleration” in your browser settings.',
+  '画面が一時的に止まりました': 'The display paused for a moment', '少し待つと元に戻ります。星は保存してあります。': 'It should come back in a moment. Your planet is saved.', '読み込み直す': 'Reload',
+  // how to play
+  'やってみる': 'Let’s build one', '説明だけでOK': 'Skip the tutorial',
+  '<b>星をつくる</b>：太陽からの距離・大きさ・水・空気を決める<small>近すぎると海が沸騰、遠すぎると凍る</small>': '<b>Build a planet</b>: choose distance, size, water and air<small>Too close and the oceans boil; too far and it freezes</small>',
+  '<b>時間を進める</b>：1秒で100万年〜1年<small>地球儀は指で回す。メーターとグラフで変化を見る</small>': '<b>Run time</b>: from 1 million years to 1 year per second<small>Turn the globe with a finger. Watch the meters and graphs</small>',
+  '<b>しくみで調節</b>：CO₂の温室効果、氷の反射、岩の風化<small>火山・山・海の道・隕石で星を変える</small>': '<b>Use real science</b>: the CO₂ greenhouse, reflecting ice, rock weathering<small>Change the planet with volcanoes, mountains, seaways and asteroids</small>',
+  '<b>生命と文明</b>：生命の種をまき、進化を後押しする<small>文明が生まれたら、エネルギー・資源・環境の政策をえらぶ</small>': '<b>Life and civilization</b>: seed life and nudge evolution<small>When a civilization appears, choose energy, resource and environment policies</small>',
+  '星がだめになるとき': 'How a planet can fail', '全球凍結：氷が日光をはね返し、冷えるほど氷が広がる連鎖': 'Snowball: ice reflects sunlight, and the colder it gets the more ice spreads',
+  '暴走温室効果：暑すぎて水蒸気がふえ、海が沸騰して宇宙へ逃げる': 'Runaway greenhouse: so hot that water vapour builds up, the oceans boil and escape to space',
+  '大量絶滅：隕石や急な気候の変化で、生き物が一気に減る': 'Mass extinction: impacts or sudden climate change wipe out life', '文明の崩壊：温暖化・資源不足・食料不足': 'Collapse: warming, running out of resources, or food',
+  '遊び方のモード': 'Modes', '自由モード：1つの星を、何日もかけて育てる（自動で保存）': 'Free mode: grow one planet over days (saved automatically)',
+  'シナリオ：お題つきの短い挑戦。早く、うまくクリアすると高得点。合計点がランキングに': 'Scenarios: short challenges with a goal. Clear them fast and well for more points; your total goes on the ranking',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* わくせいシミュレーター: a globe in space (dark) or in a pale observatory (light).
+   Shared --kb-* tokens re-tinted to deep indigo and a living teal; --p-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #070b18; --kb-surface: #121a31; --kb-surface-2: #18223f; --kb-sunken: #0a1022; --kb-line: #2a3760;
+  --kb-ink: #ecf1ff; --kb-dim: #a8b4d8;
+  --kb-accent: #44cfae; --kb-accent-ink: #032019; --kb-accent-text: #62e0c2; --kb-accent-soft: rgba(68, 207, 174, .16);
+  --kb-scrim: rgba(3, 6, 16, .74); --kb-toast-bg: rgba(8, 12, 28, .94); --kb-focus: #ffd36b;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --p-panel: rgba(220, 230, 255, .06); --p-line: rgba(190, 205, 255, .16); --p-card: linear-gradient(#18223f, #0f1730);
+  --p-btn: linear-gradient(#6ee6c8, #2fb593); --p-btn-shadow: #146b57; --p-btn-ink: #03241c;
+  --p-title: linear-gradient(90deg, #8fe8ff, #62e0c2 45%, #ffd36b);
+  --p-sky: radial-gradient(120% 80% at 18% 8%, rgba(255, 214, 150, .16), transparent 46%), radial-gradient(90% 70% at 70% 90%, rgba(70, 90, 200, .18), transparent 60%), #050814;
+  --p-temp: #ff8a5c; --p-co2: #a99cff; --p-o2: #4fb8f0; --p-ice: #b9dcff; --p-bio: #5cc98a;
+  --p-good: #5cc98a; --p-bad: #ff6a4d; --p-warn: #ffc247;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #e9eff7; --kb-surface: #ffffff; --kb-surface-2: #f3f6fb; --kb-sunken: #dfe7f2; --kb-line: #c9d5e6;
+    --kb-ink: #121d36; --kb-dim: #4a5878;
+    --kb-accent: #1d9b80; --kb-accent-ink: #ffffff; --kb-accent-text: #12745f; --kb-accent-soft: rgba(29, 155, 128, .12);
+    --kb-scrim: rgba(18, 29, 54, .42); --kb-toast-bg: rgba(18, 29, 54, .94); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(18, 29, 54, .18);
+    --p-panel: rgba(18, 40, 90, .05); --p-line: #c9d5e6; --p-card: linear-gradient(#ffffff, #f3f6fb);
+    --p-btn: linear-gradient(#3fcfae, #1d9b80); --p-btn-shadow: #10664f; --p-btn-ink: #ffffff;
+    --p-title: linear-gradient(90deg, #1f6fbf, #12745f 50%, #b07a12);
+    --p-sky: radial-gradient(110% 80% at 18% 6%, rgba(255, 220, 160, .55), transparent 50%), radial-gradient(90% 70% at 75% 95%, rgba(120, 150, 220, .35), transparent 60%), #d6e1f0;
+    --p-temp: #d9542a; --p-co2: #6a56d9; --p-o2: #1d7fc0; --p-ice: #4f86b8; --p-bio: #23905a;
+    --p-good: #23905a; --p-bad: #c8381f; --p-warn: #a87300;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #e9eff7; --kb-surface: #ffffff; --kb-surface-2: #f3f6fb; --kb-sunken: #dfe7f2; --kb-line: #c9d5e6;
+  --kb-ink: #121d36; --kb-dim: #4a5878;
+  --kb-accent: #1d9b80; --kb-accent-ink: #ffffff; --kb-accent-text: #12745f; --kb-accent-soft: rgba(29, 155, 128, .12);
+  --kb-scrim: rgba(18, 29, 54, .42); --kb-toast-bg: rgba(18, 29, 54, .94); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(18, 29, 54, .18);
+  --p-panel: rgba(18, 40, 90, .05); --p-line: #c9d5e6; --p-card: linear-gradient(#ffffff, #f3f6fb);
+  --p-btn: linear-gradient(#3fcfae, #1d9b80); --p-btn-shadow: #10664f; --p-btn-ink: #ffffff;
+  --p-title: linear-gradient(90deg, #1f6fbf, #12745f 50%, #b07a12);
+  --p-sky: radial-gradient(110% 80% at 18% 6%, rgba(255, 220, 160, .55), transparent 50%), radial-gradient(90% 70% at 75% 95%, rgba(120, 150, 220, .35), transparent 60%), #d6e1f0;
+  --p-temp: #d9542a; --p-co2: #6a56d9; --p-o2: #1d7fc0; --p-ice: #4f86b8; --p-bio: #23905a;
+  --p-good: #23905a; --p-bad: #c8381f; --p-warn: #a87300;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+body.thumb header, body.thumb .info, body.thumb #meters, body.thumb #panel, body.thumb #timebar, body.thumb #tabs, body.thumb .tut, body.thumb #goal, body.thumb #toast, body.thumb #banner, body.thumb .kb-layer { display: none !important; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 8px 0; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 6px; }
+.back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box; color: var(--kb-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 0 8px 0 4px; margin-left: -4px; border-radius: 12px; }
+.back svg { width: 22px; height: 22px; flex: none; }
+h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--p-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.info { flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px 2px; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; }
+#iAge { font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.chip { flex: none; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--p-panel); color: var(--kb-dim); border: 1px solid var(--p-line); }
+.chip.stage { margin-left: auto; color: var(--kb-accent-text); background: var(--kb-accent-soft); border-color: transparent; max-width: 48%; overflow: hidden; text-overflow: ellipsis; }
+.chip.stage.s0 { color: var(--kb-dim); background: var(--p-panel); }
+/* meters */
+#meters { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 2px 8px 4px; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; }
+.meter { position: relative; min-width: 0; min-height: 44px; padding: 3px 2px 2px; border-radius: 12px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; cursor: pointer; font-family: var(--kb-font-body); touch-action: manipulation; }
+.meter .ml { font-size: 10px; font-weight: 800; color: var(--kb-dim); line-height: 1.2; white-space: nowrap; }
+.meter .mv { font-size: 13px; font-weight: 800; line-height: 1.25; white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -.02em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.meter .mt { position: absolute; top: 2px; right: 4px; font-size: 8px; font-style: normal; opacity: .85; }
+.meter::before { content: ''; position: absolute; left: 8px; right: 8px; top: 0; height: 2px; border-radius: 0 0 2px 2px; background: var(--mc); opacity: .9; }
+.m-temp { --mc: var(--p-temp); } .m-co2 { --mc: var(--p-co2); } .m-o2 { --mc: var(--p-o2); } .m-ice { --mc: var(--p-ice); } .m-bio { --mc: var(--p-bio); }
+.meter .mt { color: var(--mc); }
+.meter.bad { border-color: var(--p-bad); box-shadow: inset 0 0 0 1px var(--p-bad); }
+.meter:active { transform: scale(.96); }
+/* the stage */
+#stage { flex: 1 1 auto; min-height: 120px; position: relative; overflow: hidden; background: var(--p-sky); border-top: 1px solid var(--p-line); border-bottom: 1px solid var(--p-line); }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#cv:active { cursor: grabbing; }
+#toast { position: absolute; left: 50%; bottom: 8px; transform: translate(-50%, 8px); opacity: 0; transition: opacity .2s, transform .2s; background: var(--kb-toast-bg); border: 1px solid var(--p-line); color: #eef3ff; padding: 7px 13px; border-radius: 14px; font-size: 12.5px; font-weight: 800; pointer-events: none; z-index: 6; max-width: 88%; text-align: center; line-height: 1.4; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+.banner { position: absolute; left: 50%; top: 8px; transform: translate(-50%, -12px); opacity: 0; transition: opacity .25s, transform .25s; z-index: 5; pointer-events: none; width: min(92%, 420px); box-sizing: border-box; padding: 8px 12px; border-radius: 14px; background: var(--kb-toast-bg); border: 1px solid var(--p-good); color: #eef3ff; text-align: center; }
+#stage.hasgoal .banner { top: 84px; }
+.banner.on { opacity: 1; transform: translate(-50%, 0); }
+.banner.bad { border-color: var(--p-bad); }
+.banner b { display: block; font-size: 14px; font-family: var(--kb-font-display); font-weight: 400; color: #8ff0d4; }
+.banner.bad b { color: #ff9b85; }
+.banner span { display: block; font-size: 12px; line-height: 1.4; margin-top: 2px; }
+/* scenario goal */
+#goal { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 4; display: flex; align-items: flex-start; gap: 6px; padding: 6px 6px 6px 10px; border-radius: 14px; background: color-mix(in srgb, var(--kb-surface) 88%, transparent); border: 1px solid var(--p-line); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); max-width: 520px; margin: 0 auto; }
+@supports not (background: color-mix(in srgb, red 50%, blue)) { #goal { background: var(--kb-surface); } }
+#goal .gtx { flex: 1; min-width: 0; }
+#goal .gh { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; font-weight: 800; }
+#gTitle { color: var(--kb-accent-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#gLeft { margin-left: auto; color: var(--kb-dim); font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+#gRows { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11.5px; color: var(--kb-dim); margin-top: 2px; font-variant-numeric: tabular-nums; }
+#gRows b { color: var(--kb-ink); }
+#gRows .ok b { color: var(--p-good); }
+#gRows .ok::before { content: '✓ '; color: var(--p-good); font-weight: 800; }
+.gbar { height: 3px; border-radius: 2px; background: var(--p-panel); overflow: hidden; margin-top: 4px; }
+.gbar i { display: block; height: 100%; background: var(--kb-accent); transform-origin: left; transform: scaleX(0); }
+#goalHelp { width: 44px; height: 44px; font: 800 16px var(--kb-font-body); }
+/* tutorial coach */
+.tut { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 4; display: flex; align-items: center; gap: 8px; padding: 5px 5px 5px 10px; min-height: 50px; border-radius: 14px; background: var(--kb-surface); border: 1px solid var(--kb-accent); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); max-width: 560px; margin: 0 auto; animation: rise .3s cubic-bezier(.2, 1.3, .4, 1); }
+.tut .step { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 13px var(--kb-font-display); }
+.tut p { flex: 1; min-width: 0; margin: 0; font-size: 13px; font-weight: 800; line-height: 1.32; overflow-wrap: anywhere; }
+.tut p small { display: block; font-size: 11px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.skip { flex: none; min-height: 44px; min-width: 44px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--p-line); background: transparent; color: var(--kb-dim); font: 800 12.5px var(--kb-font-body); cursor: pointer; }
+.skip.go { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: transparent; }
+/* panel */
+#panel { flex: 0 1 auto; max-height: 34%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; padding: 6px 10px 2px; }
+@media (min-height: 760px) { #panel { max-height: 38%; } }
+.pbody { font-size: 12.5px; }
+.pbody .note, .pbody .thint { display: block; margin: 4px 0 2px; font-size: 11.5px; color: var(--kb-dim); line-height: 1.45; }
+.pbody .thint { color: var(--kb-ink); font-weight: 800; }
+.lock { margin: 0 0 4px; font-size: 11.5px; color: var(--p-warn); font-weight: 800; }
+.srow { margin-bottom: 4px; }
+.srow.dis { opacity: .45; }
+.sl { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: 800; margin-top: 2px; }
+.sl b { font-variant-numeric: tabular-nums; color: var(--kb-accent-text); white-space: nowrap; }
+.srow small { display: block; font-size: 10.5px; color: var(--kb-dim); line-height: 1.35; margin-top: -2px; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 44px; background: transparent; margin: -5px 0 -6px; cursor: pointer; touch-action: pan-y; }
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--kb-sunken); border: 1px solid var(--p-line); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; margin-top: -11px; background: var(--kb-accent); border: 3px solid var(--kb-surface); box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--kb-sunken); border: 1px solid var(--p-line); }
+input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--kb-accent); border: 3px solid var(--kb-surface); }
+input[type=range]:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; border-radius: 8px; }
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tl { min-width: 0; min-height: 58px; border-radius: 14px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: 800 12.5px var(--kb-font-body); cursor: pointer; }
+.tl svg { width: 26px; height: 26px; }
+.tl[aria-pressed="true"] { border-color: var(--kb-accent); background: var(--kb-accent-soft); box-shadow: inset 0 0 0 1px var(--kb-accent); }
+.tl:disabled { opacity: .35; cursor: default; }
+.seg { display: flex; gap: 3px; margin: 3px 0 6px; padding: 3px; border-radius: 12px; background: var(--kb-sunken); }
+.seg button { flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--kb-dim); font: 800 12px var(--kb-font-body); cursor: pointer; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg button[aria-checked="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+.seg button:disabled { opacity: .45; cursor: default; }
+.seg.sm { flex: 1; margin: 0; }
+.ladder { display: flex; gap: 4px; margin: 2px 0 6px; }
+.ladder .lv { flex: 1; height: 8px; border-radius: 4px; background: var(--kb-sunken); border: 1px solid var(--p-line); }
+.ladder .lv.done { background: var(--p-bio); border-color: transparent; }
+.ladder .lv.cur { background: var(--kb-accent); border-color: transparent; box-shadow: 0 0 0 2px var(--kb-accent-soft); }
+.lstage b { display: block; font-size: 15px; color: var(--kb-accent-text); }
+.lstage small { display: block; font-size: 11.5px; color: var(--kb-dim); line-height: 1.4; }
+.lnext { display: flex; flex-direction: column; gap: 3px; margin: 6px 0; font-size: 12px; font-weight: 800; }
+.bar { display: block; height: 5px; border-radius: 3px; background: var(--kb-sunken); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--kb-accent); transform-origin: left; transform: scaleX(0); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--p-btn); color: var(--p-btn-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--p-btn-shadow); text-decoration: none; touch-action: manipulation; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--p-btn-shadow); }
+.btn.sub { background: var(--p-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--p-line); font-size: 13.5px; padding: 8px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; padding: 6px; }
+.btn.act { min-height: 44px; font-size: 14px; margin: 4px 0 6px; }
+.btn.sm { width: auto; flex: 1; margin: 0; padding: 6px 10px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; margin-bottom: 4px; }
+.cgrid div { display: flex; justify-content: space-between; gap: 4px; padding: 3px 8px; border-radius: 8px; background: var(--p-panel); font-size: 12px; }
+.cgrid span { color: var(--kb-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cgrid b { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.civnone { margin: 6px 0; color: var(--kb-dim); line-height: 1.5; }
+.gsel { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.gsel button { min-width: 0; min-height: 44px; border-radius: 10px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-dim); font: 800 11.5px var(--kb-font-body); cursor: pointer; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gsel button[aria-checked="true"] { color: var(--kb-ink); border-color: var(--mc); box-shadow: inset 0 -3px 0 var(--mc); }
+.gwrap { position: relative; height: 120px; margin: 6px 0; border-radius: 12px; background: var(--kb-sunken); border: 1px solid var(--p-line); }
+#gcv { position: absolute; inset: 0; width: 100%; height: 100%; }
+.grow { display: flex; gap: 6px; align-items: stretch; }
+/* the time bar and tabs */
+#timebar { flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 8px 3px; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; }
+.tb { flex: none; min-width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-ink); display: grid; place-items: center; cursor: pointer; padding: 0 6px; font: 800 12px var(--kb-font-body); }
+.tb svg { width: 20px; height: 20px; }
+.tb:disabled { opacity: .35; cursor: default; }
+#playBtn { width: 56px; background: var(--p-btn); color: var(--p-btn-ink); border-color: transparent; box-shadow: 0 3px 0 var(--p-btn-shadow); }
+#playBtn.on { background: var(--kb-surface-2); color: var(--kb-ink); box-shadow: 0 3px 0 rgba(0, 0, 0, .25); border: 1px solid var(--p-line); }
+#spdV { flex: 1; min-width: 0; text-align: center; font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#viewBtn { display: flex; align-items: center; gap: 4px; padding: 0 10px; }
+#viewBtn span { white-space: nowrap; }
+#tabs { flex: none; display: flex; gap: 4px; padding: 3px 8px 6px; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; }
+#tabs button { flex: 1; min-width: 0; min-height: 48px; border-radius: 13px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-dim); font: 800 11.5px var(--kb-font-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; cursor: pointer; padding: 0 2px; }
+#tabs button svg { width: 20px; height: 20px; }
+#tabs button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+#tabs button[aria-selected="true"] { color: var(--kb-accent-ink); background: var(--kb-accent); border-color: transparent; }
+.back:focus-visible, .icon:focus-visible, .tb:focus-visible, .btn:focus-visible, #tabs button:focus-visible, .meter:focus-visible, .seg button:focus-visible, .tl:focus-visible, .gsel button:focus-visible, .skip:focus-visible, .scard:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .25s ease-out; padding: max(12px, var(--kb-sat)) max(12px, var(--kb-sar)) max(12px, var(--kb-sab)) max(12px, var(--kb-sal)); }
+.card { width: 100%; max-width: 400px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--p-card); border: 1px solid var(--p-line); border-radius: 22px; padding: 16px 14px 12px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); overflow: hidden; animation: rise .32s cubic-bezier(.2, 1.4, .4, 1); }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 4px; font-family: var(--kb-font-display); font-weight: 400; font-size: 21px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card p { margin: 5px 0; font-size: 12.5px; line-height: 1.55; color: var(--kb-dim); }
+.logo { font-family: var(--kb-font-display); font-size: 25px; line-height: 1.2; background: var(--p-title); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 2px 0 2px; }
+.tsub { font-size: 12px !important; margin: 0 0 4px !important; }
+.btn small { font-size: 11px; font-weight: 500; opacity: .85; }
+.btn.two { flex-direction: column; gap: 0; }
+.slabel { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--kb-dim); margin: 10px 2px 4px; letter-spacing: .04em; }
+.scard { display: flex !important; width: 100% !important; align-items: center; gap: 8px; text-align: left; margin-top: 5px !important; min-height: 52px !important; padding: 6px 8px !important; }
+.scard .sn { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--kb-accent-soft); color: var(--kb-accent-text); font: 400 13px var(--kb-font-display); }
+.scard .st { flex: 1; min-width: 0; }
+.scard .st b { display: block; font-size: 13.5px; overflow-wrap: anywhere; }
+.scard .st small { display: block; font-size: 10.5px; color: var(--kb-dim); line-height: 1.35; overflow-wrap: anywhere; }
+.scard .ss { flex: none; text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; }
+.scard .ss i { display: block; font-style: normal; color: #f2b632; letter-spacing: -1px; }
+.scard .ss em { font-style: normal; color: var(--kb-line); }
+.label { font-size: 11px; color: var(--kb-dim); letter-spacing: .12em; font-weight: 800; }
+.big { font-family: var(--kb-font-display); font-size: 40px; color: var(--kb-accent-text); margin: 2px 0; font-variant-numeric: tabular-nums; }
+.stars { font-size: 26px; letter-spacing: 4px; }
+.stars i { font-style: normal; color: var(--kb-line); } .stars i.on { color: #f2b632; }
+.newrec { align-self: center; display: inline-block; margin: 2px auto 4px; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 3px 12px; border-radius: 999px; }
+.evicon { width: 64px; height: 64px; margin: 0 auto 6px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #b9dcff 45%, #5d8ec4); }
+.evicon.hot { background: radial-gradient(circle at 35% 30%, #fff3c0, #ff9a3a 45%, #b8321c); }
+.evicon.bad { background: radial-gradient(circle at 35% 30%, #ffd6c0, #d8664a 45%, #5a1f1a); }
+.why { text-align: left; margin: 6px 0 0; padding: 8px 10px; border-radius: 12px; background: var(--p-panel); border: 1px solid var(--p-line); }
+.why b { display: block; font-size: 12px; color: var(--kb-accent-text); }
+.why p { margin: 2px 0 0 !important; color: var(--kb-ink) !important; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; }
+.goalbox { margin: 8px 0 4px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--kb-accent); background: var(--kb-accent-soft); text-align: left; }
+.goalbox b { display: block; font-size: 12px; color: var(--kb-accent-text); }
+.goalbox p { margin: 2px 0 0 !important; color: var(--kb-ink) !important; font-weight: 800; }
+.hintline { font-size: 11.5px !important; text-align: left; }
+/* how it works */
+.mech { max-width: 440px; text-align: left; }
+.mech h2 { text-align: center; }
+.mech h3 { margin: 10px 0 3px; font-size: 13px; color: var(--kb-accent-text); }
+.mrow { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px dashed var(--p-line); font-size: 12.5px; }
+.mrow span { color: var(--kb-dim); } .mrow b { text-align: right; font-variant-numeric: tabular-nums; }
+.mrow b small { font-weight: 500; color: var(--kb-dim); font-size: 10.5px; }
+.mrow.up b { color: var(--p-bad); } .mrow.dn b { color: var(--p-good); }
+.mbar { height: 6px; border-radius: 3px; background: var(--kb-sunken); overflow: hidden; margin: 4px 0 0; }
+.mbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--p-good), var(--p-warn) 75%, var(--p-bad)); transform-origin: left; }
+.msmall { font-size: 11.5px !important; margin: 3px 0 0 !important; }
+.latcv { display: block; width: 100%; height: 120px; border-radius: 10px; background: var(--kb-sunken); }
+/* how to play */
+.howto { max-width: 420px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto ol { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 6px; }
+.howto li { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 14px; background: var(--p-panel); border: 1px solid var(--p-line); }
+.howto li svg { flex: none; width: 46px; height: 40px; }
+.howto li p { margin: 0; font-size: 13px; font-weight: 800; line-height: 1.38; color: var(--kb-ink); overflow-wrap: anywhere; }
+.howto li p small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); margin-top: 1px; }
+.howto details { margin-top: 6px; border-radius: 14px; border: 1px solid var(--p-line); padding: 0 10px; }
+.howto summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--kb-accent-text); cursor: pointer; }
+.howto details ul { padding-left: 18px; margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--kb-dim); }
+.howto details li { display: list-item; padding: 0; background: none; border: 0; margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--p-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--p-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+#nogl, #glLost { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; z-index: 8; }
+#nogl > div, #glLost > div { max-width: 300px; display: flex; flex-direction: column; gap: 10px; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 18px; padding: 18px 16px; }
+#nogl b, #glLost b { font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; }
+#nogl p, #glLost p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--kb-dim); }
+html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
+html[lang="en"] .meter .ml { font-size: 9.5px; }
+html[lang="en"] #tabs button { font-size: 11px; }
+@media (max-width: 400px) { .back span { display: none; } .back { padding-right: 4px; } #viewBtn span { display: none; } #spdV { font-size: 12.5px; } }
+@media (max-width: 360px) { h1 { font-size: 16px; } .meter .mv { font-size: 12px; } .chip { font-size: 11px; padding: 2px 6px; } .tools { gap: 4px; } .tl { font-size: 11.5px; } html[lang="en"] h1 { font-size: 14px; } }
+@media (max-width: 330px) { .meter .mv { font-size: 11px; } .meter .ml { font-size: 9px; } #tabs { gap: 3px; } #tabs button { font-size: 10.5px; } .seg button { font-size: 11px; } #viewBtn { padding: 0 6px; } }
+@media (max-height: 600px) {
+  #meters { padding-bottom: 2px; }
+  .meter { min-height: 44px; padding-top: 2px; }
+  #tabs button { min-height: 46px; }
+  #tabs button svg { width: 18px; height: 18px; }
+  #panel { max-height: 30%; }
+  .card { padding: 12px 12px 10px; }
+  .card h2 { font-size: 19px; }
+  .btn { min-height: 46px; margin-top: 6px; padding: 8px; }
+  .howto li svg { width: 40px; height: 34px; }
+  .howto li { padding: 4px 8px; }
+  .howto li p { font-size: 12.5px; }
+  .gwrap { height: 96px; }
+  .logo { font-size: 22px; }
+}
+/* landscape phones: the globe on the left, everything else on the right */
+@media (max-height: 460px) and (min-width: 560px) {
+  #app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 46%); grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; }
+  header { grid-column: 1 / -1; max-width: none; }
+  .info { grid-column: 2; grid-row: 2; max-width: none; }
+  #meters { grid-column: 2; grid-row: 3; max-width: none; }
+  #stage { grid-column: 1; grid-row: 2 / 7; border: 0; border-top: 1px solid var(--p-line); }
+  #panel { grid-column: 2; grid-row: 4; max-height: none; max-width: none; }
+  #timebar { grid-column: 2; grid-row: 5; max-width: none; }
+  #tabs { grid-column: 2; grid-row: 6; max-width: none; }
+  #tabs button { min-height: 44px; flex-direction: row; gap: 4px; }
+  #tabs button svg { display: none; }
+  #viewBtn span { display: none; }
+  #spdV { font-size: 12px; }
+  #timebar .tb { min-width: 44px; }
+  .card { max-width: 620px; }
+  .howto ol { grid-template-columns: 1fr 1fr; }
+  .howto-btns, .tbtns { display: flex; flex-direction: row-reverse; gap: 8px; } .howto-btns .btn, .tbtns .btn { flex: 1; }
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(20px) scale(.95); } }
+@media (prefers-reduced-motion: reduce) { .overlay, .card, .tut { animation: none; } #toast, .banner { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
+      <h1 data-i18n>わくせいシミュレーター</h1>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="info"><span id="iAge"></span><span class="chip" id="iEra"></span><span class="chip stage" id="iStage"></span></div>
+  <div id="meters" aria-label="星のようす" data-i18n-attr="aria-label"></div>
+  <div id="stage">
+    <canvas id="cv" aria-label="惑星の地球儀。ドラッグで回す" data-i18n-attr="aria-label"></canvas>
+    <div id="goal" hidden>
+      <div class="gtx"><div class="gh"><span id="gTitle"></span><span id="gLeft"></span></div><div id="gRows"></div><div class="gbar"><i id="gBar"></i></div></div>
+      <button class="icon" id="goalHelp" type="button" aria-label="お題を見る" data-i18n-attr="aria-label">?</button>
+    </div>
+    <div class="tut" id="tut" hidden role="status" aria-live="polite">
+      <span class="step" id="tutStep">1</span>
+      <p id="tutText"></p>
+      <button class="skip go" id="tutNext" type="button" hidden data-i18n>つぎへ</button>
+      <button class="skip" id="tutSkip" type="button" data-i18n>スキップ</button>
+    </div>
+    <div class="banner" id="banner" role="status" aria-live="polite"><b id="bannerT"></b><span id="bannerX"></span></div>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <div id="panel"></div>
+  <div id="timebar">
+    <button class="tb" id="playBtn" type="button" aria-label="時間を進める" data-i18n-attr="aria-label"></button>
+    <button class="tb" id="slowBtn" type="button" aria-label="ゆっくり" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6l-6 6 6 6M19 6l-6 6 6 6"/></svg></button>
+    <span id="spdV" aria-live="polite"></span>
+    <button class="tb" id="fastBtn" type="button" aria-label="はやく" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg></button>
+    <button class="tb" id="viewBtn" type="button" aria-label="表示を切りかえる" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17"/></svg><span></span></button>
+  </div>
+  <nav id="tabs" role="tablist" aria-label="操作" data-i18n-attr="aria-label">
+    <button type="button" role="tab" data-tab="planet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5.5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-20 12 12)"/></svg><span data-i18n>星</span></button>
+    <button type="button" role="tab" data-tab="land"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M2 19l6.5-10 3.5 5 3-4.5L22 19z"/></svg><span data-i18n>地形</span></button>
+    <button type="button" role="tab" data-tab="life"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 21V10M12 13c-4 0-6-3-6-7 4 0 6 3 6 7zM12 11c0-4 2-7 6-7 0 4-2 7-6 7z"/></svg><span data-i18n>生命</span></button>
+    <button type="button" role="tab" data-tab="civ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V11l4-3v13M7 21V6l5-3v18M12 21V9h5v12M17 21v-8h4v8M2 21h20"/></svg><span data-i18n>文明</span></button>
+    <button type="button" role="tab" data-tab="graph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18M5 16l4-5 4 3 6-8"/></svg><span data-i18n>グラフ</span></button>
+  </nav>
+</div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
+  <div class="card">
+    <div class="logo" id="tLogo" data-i18n>わくせいシミュレーター</div>
+    <p class="tsub" data-i18n>星づくりから生命、そして文明へ。ひとつの星の46億年。</p>
+    <div class="tbtns">
+      <button class="btn two" id="tContinue" type="button"><span data-i18n>つづきから（自由モード）</span><small></small></button>
+      <button class="btn" id="tNew" type="button" data-i18n>新しい星をつくる</button>
+    </div>
+    <div class="slabel"><span data-i18n>シナリオ</span><span id="tTotal"></span></div>
+    <div class="scroll" id="tList"></div>
+    <div class="row2"><button class="btn link" id="tHow" type="button" data-i18n>遊び方</button><a class="btn link" href="../" data-i18n>ゲーム一覧へ</a></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovIntro" hidden role="dialog" aria-modal="true" aria-labelledby="inTitle">
+  <div class="card">
+    <div class="label" id="inNum"></div>
+    <h2 id="inTitle"></h2>
+    <div class="scroll">
+      <p id="inStory"></p>
+      <div class="goalbox"><b data-i18n>お題</b><p id="inGoal"></p></div>
+      <p class="hintline" id="inHint"></p>
+    </div>
+    <button class="btn" id="inGo" type="button" data-i18n>はじめる</button>
+    <button class="btn link" id="inBack" type="button" data-i18n>シナリオ一覧へ</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <p id="rName"></p>
+      <div class="big" id="rScore">0</div>
+      <div class="stars" id="rStars"></div>
+      <div class="newrec" id="rNew" hidden data-i18n>ベスト更新！</div>
+      <p id="rWhy"></p>
+      <p id="rBest"></p>
+    </div>
+    <button class="btn" id="rNext" type="button" data-i18n>つぎのシナリオへ</button>
+    <button class="btn" id="rAgain" type="button" data-i18n>もう一度</button>
+    <div class="row2"><button class="btn link" id="rList" type="button" data-i18n>シナリオ一覧へ</button><a class="btn link" href="../" data-i18n>ゲーム一覧へ</a></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovEvent" hidden role="dialog" aria-modal="true" aria-labelledby="evTitle">
+  <div class="card">
+    <div class="evicon" id="evIcon" aria-hidden="true"></div>
+    <h2 id="evTitle"></h2>
+    <div class="scroll">
+      <p id="evBody"></p>
+      <div class="why"><b data-i18n>なぜ？</b><p id="evWhy"></p></div>
+      <div class="why"><b data-i18n>どうすれば？</b><p id="evHow"></p></div>
+    </div>
+    <button class="btn" id="evGo" type="button" data-i18n>つづける</button>
+    <button class="btn link" id="evLook" type="button" data-i18n>グラフで見る</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovMech" hidden role="dialog" aria-modal="true" aria-labelledby="mechTitle">
+  <div class="card mech">
+    <h2 id="mechTitle" data-i18n>星のしくみ</h2>
+    <div class="scroll" id="mechBody"></div>
+    <button class="btn" id="mechClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll">
+      <ol>
+        <li><svg viewBox="0 0 46 40" aria-hidden="true"><circle cx="23" cy="20" r="15" fill="#2f7fbf"/><path d="M12 14c4-3 8 1 11-2s7 1 9 5c-3 4-7 1-10 4s-6 4-10 0z" fill="#5cb85c"/><circle cx="23" cy="20" r="15" fill="none" stroke="#bfe3ff" stroke-width="1.5"/><circle cx="6" cy="7" r="3.5" fill="#ffd36b"/></svg>
+          <p data-i18n-html><b>星をつくる</b>：太陽からの距離・大きさ・水・空気を決める<small>近すぎると海が沸騰、遠すぎると凍る</small></p></li>
+        <li><svg viewBox="0 0 46 40" aria-hidden="true"><rect x="3" y="12" width="40" height="16" rx="8" fill="#2a3760"/><path d="M12 15l8 5-8 5z" fill="#62e0c2"/><path d="M26 15l5 5-5 5M32 15l5 5-5 5" stroke="#ecf1ff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          <p data-i18n-html><b>時間を進める</b>：1秒で100万年〜1年<small>地球儀は指で回す。メーターとグラフで変化を見る</small></p></li>
+        <li><svg viewBox="0 0 46 40" aria-hidden="true"><path d="M4 32l10-16 4 6 5-9 10 19z" fill="#9a8a6a"/><path d="M24 12c-1-3 2-5 0-8" stroke="#ff9a3a" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="38" cy="10" r="5" fill="#cfe8ff"/><path d="M30 30h12" stroke="#5cc98a" stroke-width="3" stroke-linecap="round"/></svg>
+          <p data-i18n-html><b>しくみで調節</b>：CO₂の温室効果、氷の反射、岩の風化<small>火山・山・海の道・隕石で星を変える</small></p></li>
+        <li><svg viewBox="0 0 46 40" aria-hidden="true"><path d="M23 34V18M23 22c-6 0-9-4-9-10 6 0 9 4 9 10zM23 20c0-6 3-10 9-10 0 6-3 10-9 10z" fill="#5cc98a" stroke="#2f8f5a" stroke-width="1.5"/><path d="M5 34h36" stroke="#9a8a6a" stroke-width="3"/></svg>
+          <p data-i18n-html><b>生命と文明</b>：生命の種をまき、進化を後押しする<small>文明が生まれたら、エネルギー・資源・環境の政策をえらぶ</small></p></li>
+      </ol>
+      <details>
+        <summary data-i18n>星がだめになるとき</summary>
+        <ul>
+          <li data-i18n>全球凍結：氷が日光をはね返し、冷えるほど氷が広がる連鎖</li>
+          <li data-i18n>暴走温室効果：暑すぎて水蒸気がふえ、海が沸騰して宇宙へ逃げる</li>
+          <li data-i18n>大量絶滅：隕石や急な気候の変化で、生き物が一気に減る</li>
+          <li data-i18n>文明の崩壊：温暖化・資源不足・食料不足</li>
+        </ul>
+      </details>
+      <details>
+        <summary data-i18n>遊び方のモード</summary>
+        <ul>
+          <li data-i18n>自由モード：1つの星を、何日もかけて育てる（自動で保存）</li>
+          <li data-i18n>シナリオ：お題つきの短い挑戦。早く、うまくクリアすると高得点。合計点がランキングに</li>
+        </ul>
+      </details>
+    </div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <div class="howto-btns">
+      <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+      <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../common/game.js"></script>
+<script>
+// ===== PSim: the planet model (no DOM). Time unit: years. =====
+const PSim = (() => {
+'use strict';
+const NX = 64, NY = 32, N = NX * NY;          // simulation cells (5.6°)
+const HX = 256, HY = 128, HN = HX * HY;       // elevation / land mask (1.4°)
+const BX = HX / NX;                           // hi-res pixels per cell side (4)
+const D2R = Math.PI / 180, SEC = 3.156e7;
+const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+// ---- constants (see the しくみ panel) ----
+const K = {
+  S0: 1361,            // W/m² at 1 AU today
+  A: 213.9, B: 2.0,      // OLR = A + B·T(°C) − greenhouse forcing  (B includes the water-vapour feedback)
+  LIM: 292,            // Simpson–Nakajima limit of a wet atmosphere (W/m²) → runaway greenhouse
+  Datm: 0.28, Doc: 0.34, // heat transport (W/m²/K): air + open ocean currents
+  K_OC: 6,             // ocean holds 6× the atmosphere's CO2 at equilibrium (buffered)
+  TAU_EX: 100,         // atmosphere–ocean exchange (years)
+  V0: 0.047,           // volcanic CO2 today (ppm of atmosphere per year)
+  PAL_RATE: 2.7e-7,    // O2 made by today's burial, PAL per year
+};
+// present-day Earth reference values of the integrals (calibration)
+const REF = { w: 0.17, veg: 0.11, po: 0.556, pm: 0.598, hab: 0.62 };
+// rows (row 0 = north)
+const latC = new Float64Array(NY), xC = new Float64Array(NY), xE = new Float64Array(NY + 1), dX = new Float64Array(NY), wRow = new Float64Array(NY), sIns = new Float64Array(NY);
+for (let j = 0; j <= NY; j++) xE[j] = Math.sin((90 - j * 180 / NY) * D2R);
+for (let j = 0; j < NY; j++) {
+  latC[j] = 90 - (j + 0.5) * 180 / NY; xC[j] = Math.sin(latC[j] * D2R); dX[j] = xE[j] - xE[j + 1]; wRow[j] = dX[j] / 2;
+  sIns[j] = 1 - 0.482 * (3 * xC[j] * xC[j] - 1) / 2;
+}
+const cellA = j => wRow[j] / NX;
+// hi-res pixel directions and area weights
+const PX = new Float32Array(HN), PY = new Float32Array(HN), PZ = new Float32Array(HN), PW = new Float32Array(HN);
+{ let s = 0; for (let j = 0; j < HY; j++) { const la = (90 - (j + 0.5) * 180 / HY) * D2R, cl = Math.cos(la), sl = Math.sin(la);
+  for (let i = 0; i < HX; i++) { const lo = (-180 + (i + 0.5) * 360 / HX) * D2R, k = j * HX + i; PX[k] = cl * Math.cos(lo); PY[k] = sl; PZ[k] = -cl * Math.sin(lo); PW[k] = cl; s += cl; } }
+  for (let k = 0; k < HN; k++) PW[k] /= s; }
+function dirOf(lat, lon) { const la = lat * D2R, lo = lon * D2R, c = Math.cos(la); return [c * Math.cos(lo), Math.sin(la), -c * Math.sin(lo)]; }
+function latLonOf(x, y, z) { return [Math.asin(clamp(y, -1, 1)) / D2R, Math.atan2(-z, x) / D2R]; }
+
+// ---- deterministic noise ----
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function h3(i, j, k, s) { let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(k, 1440662683) + Math.imul(s, 951274213)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+function vn(x, y, z, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z), xf = x - xi, yf = y - yi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf), w = zf * zf * (3 - 2 * zf);
+  const a = lerp(lerp(h3(xi, yi, zi, s), h3(xi + 1, yi, zi, s), u), lerp(h3(xi, yi + 1, zi, s), h3(xi + 1, yi + 1, zi, s), u), v);
+  const b = lerp(lerp(h3(xi, yi, zi + 1, s), h3(xi + 1, yi, zi + 1, s), u), lerp(h3(xi, yi + 1, zi + 1, s), h3(xi + 1, yi + 1, zi + 1, s), u), v);
+  return lerp(a, b, w);
+}
+function fbm(x, y, z, s, oct) { let f = 0, a = 0.5, n = 0; for (let o = 0; o < (oct || 4); o++) { f += a * vn(x, y, z, s + o * 17); n += a; x *= 2.03; y *= 2.03; z *= 2.03; a *= 0.5; } return f / n; }
+// static ocean-floor roughness and fine detail (world-fixed)
+const FLOOR = new Float32Array(HN);
+for (let k = 0; k < HN; k++) FLOOR[k] = fbm(PX[k] * 3 + 9, PY[k] * 3 + 9, PZ[k] * 3 + 9, 5, 3) - 0.5;
+
+// ---- 3×3 rotations (row-major) ----
+function rotM(ax, ang) { const [x, y, z] = ax, c = Math.cos(ang), s = Math.sin(ang), t = 1 - c;
+  return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c]; }
+function mul(a, b) { const o = new Array(9); for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) o[r * 3 + c] = a[r * 3] * b[c] + a[r * 3 + 1] * b[3 + c] + a[r * 3 + 2] * b[6 + c]; return o; }
+function ortho(m) { // re-orthonormalise (drift over many products)
+  let a = [m[0], m[3], m[6]], b = [m[1], m[4], m[7]];
+  const n = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return v.map(q => q / l); };
+  a = n(a); const d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; b = n([b[0] - d * a[0], b[1] - d * a[1], b[2] - d * a[2]]);
+  const c = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  return [a[0], b[0], c[0], a[1], b[1], c[1], a[2], b[2], c[2]];
+}
+function randAxis(r) { const z = r() * 2 - 1, a = r() * Math.PI * 2, s = Math.sqrt(1 - z * z); return [s * Math.cos(a), z, s * Math.sin(a)]; }
+
+// ---- plates: continents ride on rigid caps that turn about Euler poles ----
+const PM = 40, PEXT = 1.45;
+function plateMap(seed) {
+  const r = rng(seed), amp = [], ph = [];
+  for (let k = 2; k <= 6; k++) { amp.push((0.5 + r()) / k); ph.push(r() * 6.283); }
+  const ridgeA = r() * 6.283, ridgeR = 0.35 + r() * 0.35, ridgeW = 0.6 + r() * 1.2, hBase = 0.15 + r() * 0.25;
+  const m = new Float32Array(PM * PM);
+  for (let b = 0; b < PM; b++) for (let a = 0; a < PM; a++) {
+    const u = (a / (PM - 1) * 2 - 1) * PEXT, v = (b / (PM - 1) * 2 - 1) * PEXT, d = Math.hypot(u, v), th = Math.atan2(v, u);
+    let rho = 1; for (let k = 0; k < amp.length; k++) rho += 0.2 * amp[k] * Math.sin((k + 2) * th + ph[k]);
+    const n = fbm(u * 1.7 + seed % 97, v * 1.7, seed % 31, seed & 255, 4);
+    const mm = (rho - d) / rho + 0.32 * (n - 0.5);
+    let h;
+    if (mm > 0) {
+      h = hBase + 0.55 * sstep(0, 0.3, mm) + 1.1 * (fbm(u * 3.1, v * 3.1, 7.7, (seed + 3) & 255, 4) - 0.45);
+      // an old mountain belt along an arc
+      let dd = Math.abs(th - ridgeA); dd = Math.min(dd, 6.283 - dd);
+      if (dd < ridgeW) h += 1.6 * Math.exp(-(((d - ridgeR) / 0.09) ** 2)) * (1 - dd / ridgeW) * (0.6 + n);
+      h = Math.max(h, 0.04);
+    } else h = -0.12 - 4.0 * sstep(0, 0.22, -mm);
+    m[b * PM + a] = h;
+  }
+  return m;
+}
+const mapCache = new Map();
+function pmap(seed) { let m = mapCache.get(seed); if (!m) { m = plateMap(seed); mapCache.set(seed, m); } return m; }
+
+function makePlates(seed, n, sizeScale) {
+  const r = rng(seed ^ 0x51ab), out = [];
+  for (let i = 0; i < n; i++) {
+    const c = randAxis(r);
+    // rotation that takes local +z to c
+    const z = [0, 0, 1], ax = [z[1] * c[2] - z[2] * c[1], z[2] * c[0] - z[0] * c[2], z[0] * c[1] - z[1] * c[0]], s = Math.hypot(ax[0], ax[1], ax[2]);
+    let M = s < 1e-6 ? [1, 0, 0, 0, 1, 0, 0, 0, 1] : rotM(ax.map(q => q / s), Math.acos(clamp(c[2], -1, 1)));
+    M = mul(M, rotM([0, 0, 1], r() * 6.283));
+    out.push({ M, ax: randAxis(r), w: (0.25 + r() * 0.55) * D2R, r: (0.30 + r() * 0.24) * (sizeScale || 1), seed: (seed * 31 + i * 977) >>> 0, next: 2.5e8 + r() * 2e8, ep: 0 });
+  }
+  return out;
+}
+function growth(t) { return 0.5 + 0.5 * sstep(1e8, 2.8e9, t); } // continental crust grows through the Archean
+
+// ---- world ----
+function create(o) {
+  o = o || {};
+  const p = Object.assign({ dist: 1, size: 1, water: 1, n2: 0.78, co2: 3e5, seed: 1 }, o.p || {});
+  const st = {
+    v: 1, t: o.t || 0, p, seed: p.seed >>> 0,
+    T: new Float64Array(NY).fill(20), A: p.co2, O: p.co2 * K.K_OC, ch4: 0.3, o2: 1e-6,
+    wl: o.t > 8e7 ? p.water : 0, // water that has condensed into oceans (×Earth)
+    lost: 0,                     // water lost to space (×Earth)
+    elev: new Float32Array(HN), sea: 0, land: new Uint8Array(HN),
+    lf: new Float32Array(N), el: new Float32Array(N), iceL: new Float32Array(N), iceO: new Float32Array(N), veg: new Float32Array(N), moist: new Float32Array(N), pop: new Float32Array(N),
+    Tc: new Float32Array(N),
+    plates: makePlates(p.seed, 8, 1), bumps: [], craters: [],
+    uplift: 0, dust: 0, ash: 0, pulses: [],
+    life: { st: 0, prog: 0, pre: 0, div: 0, nudge: null, euk: 0, seedT: -1 },
+    civ: null, civRest: 0,
+    ev: [], flags: {}, geoT: -1, geoDirty: true,
+    // diagnostics
+    d: {},
+  };
+  st.iceO.fill(0); st.iceL.fill(0);
+  geology(st, true);
+  for (let j = 0; j < NY; j++) st.T[j] = 25 - 30 * xC[j] * xC[j];
+  return st;
+}
+
+// rebuild elevation, sea level, land mask and the cell averages
+function geology(st, force) {
+  const g = growth(st.t), pl = st.plates, E = st.elev;
+  const prep = pl.map(P => { const rr = P.r * g; return { M: P.M, m: pmap(P.seed), cz: Math.cos(Math.min(1.5, rr * PEXT * 1.05)), it: 1 / Math.tan(rr) }; });
+  const bumps = st.bumps.map(b => { let q = b.lp; if (b.pl >= 0 && pl[b.pl]) { const M = pl[b.pl].M; q = [M[0] * q[0] + M[1] * q[1] + M[2] * q[2], M[3] * q[0] + M[4] * q[1] + M[5] * q[2], M[6] * q[0] + M[7] * q[1] + M[8] * q[2]]; } return { x: q[0], y: q[1], z: q[2], k: 2 / (b.r * b.r), h: b.h, c: 1 - 4.5 * b.r * b.r / 2 }; });
+  for (let k = 0; k < HN; k++) {
+    const x = PX[k], y = PY[k], z = PZ[k];
+    let h1 = -4.1 + 0.9 * FLOOR[k], h2 = -9;
+    for (let i = 0; i < prep.length; i++) {
+      const P = prep[i], M = P.M;
+      const qz = M[2] * x + M[5] * y + M[8] * z; if (qz < P.cz) continue;
+      const qx = M[0] * x + M[3] * y + M[6] * z, qy = M[1] * x + M[4] * y + M[7] * z;
+      const u = qx / qz * P.it, v = qy / qz * P.it;
+      const fa = (u / PEXT + 1) * 0.5 * (PM - 1), fb = (v / PEXT + 1) * 0.5 * (PM - 1);
+      if (fa < 0 || fb < 0 || fa >= PM - 1 || fb >= PM - 1) continue;
+      const a0 = fa | 0, b0 = fb | 0, ta = fa - a0, tb = fb - b0, m = P.m, q = b0 * PM + a0;
+      const h = (m[q] * (1 - ta) + m[q + 1] * ta) * (1 - tb) + (m[q + PM] * (1 - ta) + m[q + PM + 1] * ta) * tb;
+      if (h > h1) { h2 = h1; h1 = h; } else if (h > h2) h2 = h;
+    }
+    // two continents pushed together: a collision belt (mountains)
+    if (h2 > 0.05) h1 += 1.4 * Math.min(h2, 1.2) + 0.6;
+    for (let i = 0; i < bumps.length; i++) { const b = bumps[i], d = x * b.x + y * b.y + z * b.z; if (d > b.c) h1 += b.h * Math.exp(-(1 - d) * b.k); }
+    E[k] = h1;
+  }
+  seaLevel(st);
+  st.geoT = st.t; st.geoDirty = false;
+}
+function seaLevel(st) {
+  const E = st.elev, NB = 720, lo = -9, bw = 18 / NB, hist = new Float64Array(NB);
+  for (let k = 0; k < HN; k++) { const b = clamp(((E[k] - lo) / bw) | 0, 0, NB - 1); hist[b] += PW[k]; }
+  const target = Math.max(0, st.wl) * 2.69;
+  const vol = s => { let v = 0; for (let b = 0; b < NB; b++) { const h = lo + (b + 0.5) * bw; if (h >= s) break; v += hist[b] * (s - h); } return v; };
+  let a = -9, c = 9;
+  if (target <= 0) st.sea = -12; else { for (let i = 0; i < 32; i++) { const m = (a + c) / 2; if (vol(m) < target) a = m; else c = m; } st.sea = (a + c) / 2; }
+  const sea = st.sea, L = st.land;
+  for (let k = 0; k < HN; k++) L[k] = E[k] > sea ? 1 : 0;
+  // cells
+  for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+    let n = 0, e = 0;
+    for (let b = 0; b < BX; b++) for (let a = 0; a < BX; a++) { const k = (j * BX + b) * HX + i * BX + a; if (L[k]) { n++; e += E[k] - sea; } }
+    const c = j * NX + i; st.lf[c] = n / (BX * BX); st.el[c] = n ? e / n : 0;
+  }
+  moisture(st);
+}
+// rain: the latitude belts (ITCZ, dry subtropics, stormy mid-latitudes) and how far a cell is from the sea
+const MLAT = new Float32Array(NY);
+for (let j = 0; j < NY; j++) { const a = Math.abs(latC[j]); MLAT[j] = clamp(0.32 + 0.75 * Math.exp(-((a / 13) ** 2)) + 0.55 * Math.exp(-(((a - 52) / 15) ** 2)) - 0.25 * Math.exp(-(((a - 26) / 8) ** 2)), 0.05, 1.1); }
+function moisture(st) {
+  const dist = new Float32Array(N).fill(99), q = [];
+  for (let c = 0; c < N; c++) if (st.lf[c] < 0.5) { dist[c] = 0; q.push(c); }
+  for (let h = 0; h < q.length; h++) {
+    const c = q[h], j = (c / NX) | 0, i = c % NX, nd = dist[c] + 1;
+    const nb = [j * NX + (i + 1) % NX, j * NX + (i + NX - 1) % NX, j > 0 ? c - NX : -1, j < NY - 1 ? c + NX : -1];
+    for (const e of nb) if (e >= 0 && dist[e] > nd) { dist[e] = nd; q.push(e); }
+  }
+  for (let c = 0; c < N; c++) st.moist[c] = MLAT[(c / NX) | 0] * Math.exp(-Math.max(0, dist[c] - 1) / 4.5);
+}
+
+// ---- radiative forcing ----
+function forcing(st) {
+  const A = st.A, co2bar = A * 1e-6;
+  const fC = 5.35 * Math.log(Math.max(A, 1) / 280) + 12 * Math.log((1 + A / 3e4) / (1 + 280 / 3e4));
+  const fM = 6 * Math.log(1 + st.ch4 / 50) - 6 * Math.log(1 + 0.7 / 50);
+  const P = st.p.n2 + co2bar + 0.21 * Math.min(st.o2, 2);
+  const fP = 3.5 * Math.log(Math.max(P, 0.05));
+  const haze = -6 * sstep(0.1, 0.3, st.ch4 / Math.max(A, 1));
+  const fCiv = st.civ && st.civ.on ? -st.civ.aer : 0;
+  return { co2: fC, ch4: fM, p: fP, haze, dust: -st.dust, civ: fCiv, total: fC + fM + fP + haze - st.dust + fCiv, P, co2bar };
+}
+function lum(t) { return 1 / (1 + 0.4 * (1 - t / 4.57e9)); }
+function volc(st) { // outgassing relative to today's Earth
+  const s = st.p.size, t = st.t;
+  let v = s * (0.55 + 1.7 * Math.exp(-t / (2.2e9 * s))) / 0.763;
+  if (s < 0.65 && t > 2e9 * s) v *= 0.15; // a small planet cools: plate tectonics stops (stagnant lid)
+  return v;
+}
+
+// ---- one time step ----
+function step(st, dt) {
+  const p = st.p, f = forcing(st), d = st.d;
+  const ocean = st.wl > 0.02;
+  d.f = f;
+  const L = lum(st.t) * K.S0 / (p.dist * p.dist);
+  const lim = (ocean ? K.LIM * Math.pow(p.size, 0.12) : 1e9);
+  const ray = 0.25 * (1 - Math.exp(-f.co2bar / 5));
+  // row albedo, ocean fraction, heat capacity
+  const alb = new Float64Array(NY), ofr = new Float64Array(NY), oo = new Float64Array(NY), C = new Float64Array(NY);
+  for (let j = 0; j < NY; j++) {
+    const x2 = xC[j] * xC[j], ac = 0.42 + 0.12 * x2;
+    let sa = 0, so = 0, sop = 0;
+    for (let i = 0; i < NX; i++) {
+      const c = j * NX + i, lf = st.lf[c], io = st.iceO[c], il = st.iceL[c], v = st.veg[c];
+      const aO = (0.06 + 0.08 * x2) * (1 - io) + (0.64 - st.ash) * io;
+      const aL = (0.32 - 0.19 * v) * (1 - il) + (0.75 - st.ash) * il;
+      const as = lf * aL + (1 - lf) * (ocean ? aO : aL);
+      sa += 0.5 * ac + 0.5 * as;
+      so += ocean ? 1 - lf : 0; sop += ocean ? (1 - lf) * (1 - 0.6 * io) : 0; // currents still move some heat under sea ice
+    }
+    alb[j] = clamp(sa / NX + ray, 0, 0.95); ofr[j] = so / NX; oo[j] = sop / NX;
+    C[j] = (5e7 + 8e8 * ofr[j]);
+  }
+  // implicit EBM (linearised OLR, two passes)
+  const Pfac = Math.sqrt(Math.max(f.P, 0.02)), Dk = new Float64Array(NY + 1);
+  for (let j = 1; j < NY; j++) {
+    const D = (K.Datm * Pfac + K.Doc * Math.sqrt(Math.min(1, 2.5 * Math.min(oo[j - 1], oo[j])))) / (p.size * p.size); // currents need an open seaway
+    Dk[j] = D * (1 - xE[j] * xE[j]) / (xC[j - 1] - xC[j]);
+  }
+  const T0 = st.T, Tn = Float64Array.from(T0), dts = dt * SEC;
+  const a = new Float64Array(NY), b = new Float64Array(NY), c = new Float64Array(NY), r = new Float64Array(NY);
+  let absG = 0, olrG = 0;
+  for (let it = 0; it < 2; it++) {
+    for (let j = 0; j < NY; j++) {
+      const x0 = Math.max(20, K.A + K.B * Tn[j] - f.total);
+      const olr = Math.pow(Math.pow(x0, -8) + Math.pow(lim, -8), -1 / 8), dol = K.B * Math.pow(olr / x0, 9);
+      const Q = L / 4 * sIns[j] * (1 - alb[j]);
+      const kj = Dk[j], kj1 = Dk[j + 1];
+      a[j] = -kj / dX[j]; c[j] = -kj1 / dX[j];
+      b[j] = C[j] / dts + dol + (kj + kj1) / dX[j];
+      r[j] = C[j] / dts * T0[j] + Q - olr + dol * Tn[j];
+    }
+    // Thomas
+    for (let j = 1; j < NY; j++) { const m = a[j] / b[j - 1]; b[j] -= m * c[j - 1]; r[j] -= m * r[j - 1]; }
+    Tn[NY - 1] = r[NY - 1] / b[NY - 1];
+    for (let j = NY - 2; j >= 0; j--) Tn[j] = (r[j] - c[j] * Tn[j + 1]) / b[j];
+    for (let j = 0; j < NY; j++) Tn[j] = clamp(Tn[j], -150, 1200);
+  }
+  let Tg = 0;
+  for (let j = 0; j < NY; j++) {
+    st.T[j] = Tn[j]; Tg += wRow[j] * Tn[j];
+    const x0 = Math.max(20, K.A + K.B * Tn[j] - f.total), olr = Math.pow(Math.pow(x0, -8) + Math.pow(lim, -8), -1 / 8);
+    absG += wRow[j] * L / 4 * sIns[j] * (1 - alb[j]); olrG += wRow[j] * olr;
+  }
+  d.Tg = Tg; d.abs = absG; d.olr = olrG; d.inS = L / 4; d.alb = 1 - absG / (L / 4); d.lim = lim;
+  // ---- cells: temperature, ice, vegetation ----
+  const life = st.life, plants = life.st >= 5, co2f = sstep(6, 60, st.A); // plants starve below ~10 ppm CO2
+  const eS = 1 - Math.exp(-dt / 8), eSm = 1 - Math.exp(-dt / 3), eL = 1 - Math.exp(-dt / 4000), eLm = 1 - Math.exp(-dt / 1500), eV = 1 - Math.exp(-dt / 150);
+  const hum = clamp(1 + 0.035 * (Tg - 15), 0.25, 1.6) * (ocean ? 1 : 0.05);
+  let iceA = 0, landA = 0, wSum = 0, vegA = 0, prodO = 0, prodM = 0, hab = 0, oceanA = 0;
+  for (let j = 0; j < NY; j++) {
+    const ca = cellA(j);
+    for (let i = 0; i < NX; i++) {
+      const k = j * NX + i, lf = st.lf[k];
+      const Tl = Tn[j] - 6.5 * st.el[k], To = Tn[j];
+      st.Tc[k] = lf > 0.5 ? Tl : To;
+      const ieO = ocean ? clamp((-1.5 - To) / 6, 0, 1) : 0;
+      const ieL = clamp((-5 - Tl) / 6, 0, 1) * (ocean ? 1 : 0.3);
+      st.iceO[k] += (ieO - st.iceO[k]) * (ieO > st.iceO[k] ? eS : eSm);
+      st.iceL[k] += (ieL - st.iceL[k]) * (ieL > st.iceL[k] ? eL : eLm);
+      const il = st.iceL[k], io = st.iceO[k];
+      let ve = 0;
+      if (plants && lf > 0) ve = co2f * clamp(st.moist[k] * hum * 1.25, 0, 1) * sstep(-9, 6, Tl) * (1 - sstep(32, 44, Tl)) * (1 - il);
+      if (st.civ && st.civ.on) ve *= 1 - st.civ.lu * st.pop[k];
+      st.veg[k] += (ve - st.veg[k]) * eV;
+      iceA += ca * (lf * il + (ocean ? (1 - lf) * io : lf * 0 + (1 - lf) * il));
+      landA += ca * lf;
+      if (lf > 0) {
+        const run = Math.max(0, 1 + 0.038 * (Tl - 15));
+        wSum += ca * lf * (1 - il) * st.moist[k] * hum * Math.exp(0.06 * (Tl - 15)) * run;
+        vegA += ca * lf * st.veg[k];
+      }
+      if (ocean) {
+        const ow = ca * (1 - lf) * (1 - io);
+        oceanA += ca * (1 - lf);
+        prodO += ow * sstep(-2, 12, To) * (1 - sstep(30, 42, To));
+        prodM += ow * sstep(-2, 4, To) * (1 - sstep(70, 95, To));
+        hab += ow * sstep(-2, 6, To) * (1 - sstep(35, 50, To)) + ca * lf * st.veg[k] * 0.3;
+      }
+    }
+  }
+  d.ice = iceA; d.land = landA; d.vegA = vegA; d.prodO = prodO / REF.po; d.prodM = prodM / REF.pm; d.wSum = wSum; d.prodOr = prodO; d.prodMr = prodM; d.hab = hab; d.oceanA = oceanA;
+  // ---- carbon cycle (box model: atmosphere + ocean; volcanoes in, rock weathering and burial out) ----
+  const vf = volc(st), V = K.V0 * vf * (1 + st.uplift * 0.3);
+  let pulse = 0; st.pulses = st.pulses.filter(q => { const e = Math.min(dt, q.left); pulse += q.rate * e / dt; q.left -= dt; return q.left > 0; });
+  const bioF = 0.25 + 0.75 * clamp(vegA / REF.veg, 0, 1);        // roots and soils speed up weathering
+  const wl = ocean ? K.V0 * 0.8 * (wSum / REF.w) * bioF * (1 + st.uplift) : 0; // × √(CO2/280) below
+  const Wsf = ocean ? K.V0 * 0.08 * Math.pow(st.A / 280, 0.25) * vf : 0;     // seafloor weathering (weak)
+  const Pox = oxProd(st);                                                    // O2-making photosynthesis (today ≈ 1.15)
+  const Bur = K.V0 * 0.2 * Pox / 1.15;                                       // organic carbon buried in mud
+  let E = 0, cdr = 0; if (st.civ && st.civ.on) { E = st.civ.em / 2.13; cdr = st.civ.cdr / 2.13; }
+  const Vp = V + pulse + E - Wsf - Bur - cdr;
+  const tot0 = st.A + st.O, kk = K.K_OC * (ocean ? 1 : 0.02);
+  // implicit in the weathering: tot·x² + dt·Wa·x − (tot + dt·Vp) = 0,  x = √(tot_new / tot)
+  const Wa = wl * Math.sqrt(st.A / 280);
+  const qa = tot0, qb = dt * Wa, qc = Math.max(tot0 * 0.02, tot0 + dt * Vp);
+  const x = (-qb + Math.sqrt(qb * qb + 4 * qa * qc)) / (2 * qa);
+  const tot = Math.max(tot0 * x * x, 1 + kk), W = Wa * x;
+  const S = (tot - tot0) / dt;                                               // net flux actually applied
+  d.V = V + pulse; d.W = W + Wsf; d.Wl = W; d.Bur = Bur; d.E = E; d.cdr = cdr; d.S = S;
+  // the atmosphere and ocean share CO2: fast exchange, slow under a frozen-over sea
+  const tauEx = Math.min(4000, K.TAU_EX / Math.pow(Math.max(0.01, 1 - Math.min(0.995, iceFracOcean(st))), 2));
+  const lam = (1 + 1 / kk) / tauEx, ex = Math.exp(-lam * dt);
+  const dEq = S * tauEx * kk * kk / ((1 + kk) * (1 + kk));
+  let dev = st.A - tot0 / (1 + kk);
+  dev = dEq + (dev - dEq) * ex;
+  st.A = clamp(tot / (1 + kk) + dev, 1, 2e7); st.O = Math.max(0, tot - st.A);
+  // ---- oxygen (implicit) and methane ----
+  const R = 4 * Math.exp(-st.t / 8e8) * vf;
+  const rr = K.PAL_RATE * dt, cc = st.o2 + rr * (Pox - R), bb = rr * 1.05;
+  const s = (-bb + Math.sqrt(bb * bb + 4 * Math.max(cc, 0))) / 2;
+  st.o2 = clamp(Math.max(s * s, 1e-6), 1e-6, 2.2);
+  d.Pox = Pox; d.R = R;
+  const micro = life.st >= 1 ? d.prodM : 0;
+  const ch4eq = 0.3 * vf + 900 * micro / (1 + 500 * st.o2) + (st.civ && st.civ.on ? st.civ.ch4 : 0);
+  st.ch4 += (ch4eq - st.ch4) * (1 - Math.exp(-dt / 10));
+  // ---- slow things ----
+  st.uplift *= Math.exp(-dt / 1e7);
+  st.dust *= Math.exp(-dt / 1.5);
+  st.ash *= Math.exp(-dt / 3e5);
+  st.t += dt;
+  return d;
+}
+function iceFracOcean(st) { let a = 0, o = 0; for (let j = 0; j < NY; j++) { const ca = cellA(j); for (let i = 0; i < NX; i++) { const k = j * NX + i, w = ca * (1 - st.lf[k]); o += w; a += w * st.iceO[k]; } } return o > 0 ? a / o : 0; }
+function oxProd(st) {
+  const L = st.life, d = st.d;
+  let P = 0;
+  if (L.st >= 2) P += (d.prodO || 0) * (0.35 + 0.35 * L.euk) * (L.nudge === 'photo' ? 1.6 : 1) * (1 + 0.25 * Math.min(st.uplift, 3));
+  if (L.st >= 5) P += 0.45 * clamp((d.vegA || 0) / REF.veg, 0, 1.3);
+  return P;
+}
+
+// ================= the layer above the physics: plates, life, civilisation, events, tools =================
+const STAGES = 8; // 0 none, 1 microbes, 2 cyanobacteria, 3 eukaryotes, 4 multicellular (sea), 5 land plants, 6 land animals, 7 intelligent life
+// base rate (per Myr) to the next stage, and what it needs
+const EVO = [
+  null,
+  { rate: 1 / 1000, nudge: 'photo' },                 // 1 → 2 oxygen-making photosynthesis
+  { rate: 1 / 450, o2: 0.003, nudge: 'multi' },       // 2 → 3 cells with a nucleus (need some oxygen)
+  { rate: 1 / 500, o2: 0.08, nudge: 'multi' },        // 3 → 4 many-celled life (need much more oxygen)
+  { rate: 1 / 120, o2: 0.15, land: true, nudge: 'land' }, // 4 → 5 plants on land (ozone shield)
+  { rate: 1 / 60, o2: 0.2, nudge: 'land' },           // 5 → 6 animals on land
+  { rate: 1 / 450, o2: 0.25, nudge: 'mind' },         // 6 → 7 intelligence
+];
+const DIVK = [0, 4, 6, 10, 25, 55, 80, 100];
+function movePlates(st, dt) {
+  const my = dt / 1e6;
+  for (let i = 0; i < st.plates.length; i++) {
+    const P = st.plates[i];
+    P.M = mul(rotM(P.ax, P.w * my), P.M);
+    if ((st.pk = (st.pk || 0) + 1) % 64 === 0) P.M = ortho(P.M);
+    if (st.t >= P.next) { const r = rng((st.seed ^ P.seed) + (++P.ep) * 7919); P.ax = randAxis(r); P.w = (0.2 + r() * 0.6) * D2R; P.next = st.t + 2.5e8 + r() * 2e8; }
+  }
+  let dirty = false;
+  for (const b of st.bumps) if (!b.fix) { const h0 = b.h; b.h *= Math.exp(-dt / (b.tau || 8e7)); if (Math.abs(h0 - b.h) > 0.02) dirty = true; }
+  const nb = st.bumps.length; st.bumps = st.bumps.filter(b => b.fix || Math.abs(b.h) > 0.06); if (st.bumps.length !== nb) dirty = true;
+  st.craters = st.craters.filter(c => st.t - c.t < 3e8);
+  if (dirty) st.geoDirty = true;
+}
+function event(st, k, x) { const e = Object.assign({ t: st.t, k }, x || {}); st.ev.push(e); if (st.ev.length > 60) st.ev.splice(0, st.ev.length - 60); (st.news = st.news || []).push(e); return e; }
+function lifeStep(st, dt) {
+  const L = st.life, d = st.d, my = dt / 1e6, F = st.flags;
+  const ocean = st.wl > 0.05 && st.t > 8e7;
+  if (L.st === 0) {
+    if (ocean && !F.dead && d.prodM > 0.03) { L.pre += my / 450 * Math.min(1, d.prodM * 2); if (L.pre >= 1) { L.st = 1; L.prog = 0; event(st, 'life'); } }
+  } else if (L.st < 7) {
+    const e = EVO[L.st];
+    let ok = true;
+    if (e.o2 && st.o2 < e.o2) ok = false;
+    if (e.land && d.land < 0.03) ok = false;
+    const hab = L.st >= 4 ? clamp(d.hab / REF.hab, 0, 1.2) : Math.min(1, d.prodM * 1.5);
+    if (ok) {
+      const boost = L.nudge && L.nudge === e.nudge ? 4 : 1;
+      L.prog += my * e.rate * hab * boost * (F.snow ? 0.1 : 1);
+      if (L.prog >= 1) { L.st++; L.prog = 0; event(st, 'stage', { st: L.st }); }
+    }
+  }
+  if (L.st >= 3) L.euk = Math.min(1, L.euk + my / 800);
+  // diversity: the variety of life the planet can hold right now
+  const rate = Math.abs(d.Tg - (st.tRef == null ? d.Tg : st.tRef)); // °C away from the last ~50 kyr
+  st.tRef = st.tRef == null ? d.Tg : st.tRef + (d.Tg - st.tRef) * (1 - Math.exp(-dt / 5e4));
+  const stress = 1 / (1 + (rate / 4) ** 2);
+  let Kd = DIVK[L.st] * clamp(d.hab / REF.hab, 0, 1.15) * stress * (F.snow ? 0.3 : 1);
+  if (st.civ && st.civ.on) Kd *= 1 - 0.5 * st.civ.lu;
+  const tauUp = 2e7, tauDn = 3e5;
+  L.div += (Kd - L.div) * (1 - Math.exp(-dt / (Kd > L.div ? tauUp : tauDn)));
+  // mass extinction: the variety drops by half within a few million years
+  L.peak = Math.max(L.div, (L.peak || 0) * Math.exp(-dt / 3e6));
+  if (L.st >= 4 && L.div < 0.5 * L.peak && L.peak > 20 && !(F.extT > st.t - 5e6)) {
+    F.extT = st.t; F.ext = (F.ext || 0) + 1;
+    event(st, 'extinct', { why: whyHarsh(st, rate) });
+  }
+  // complex life cannot survive a long, harsh spell
+  const harsh = F.snow || d.Tg > 48 || d.Tg < -14 || st.o2 < 0.04 || !ocean;
+  F.harsh = harsh && L.st >= 4 ? (F.harsh || 0) + dt : Math.max(0, (F.harsh || 0) - dt * 2);
+  if (L.st >= 4 && F.harsh > 3e6) {
+    const why = whyHarsh(st, rate);
+    L.st = 3; L.prog = 0; L.div = Math.min(L.div, 8); F.harsh = 0;
+    if (st.civ && st.civ.on) endCiv(st, 'climate');
+    event(st, 'wipe', { why });
+  }
+  // only boiling oceans end microbial life
+  if (L.st > 0 && !ocean && st.t > 1e8) { L.st = 0; L.prog = 0; L.pre = 0; L.div = 0; F.dead = 1; event(st, 'dead'); }
+}
+function whyHarsh(st, rate) {
+  const d = st.d, F = st.flags;
+  if (st.lastImpact && st.t - st.lastImpact < 2e6) return 'impact';
+  if (F.snow) return 'snow';
+  if (d.Tg > 40) return 'hot';
+  if (d.Tg < -5) return 'cold';
+  if (st.o2 < 0.05) return 'anoxia';
+  if (rate > 3) return 'rapid';
+  if (st.civ && st.civ.on && st.civ.lu > 0.4) return 'civ';
+  return 'rapid';
+}
+function checks(st, dt) {
+  const d = st.d, F = st.flags;
+  // snowball
+  if (!F.snow && d.ice > 0.8 && st.wl > 0.05) { F.snow = 1; F.snowT = st.t; event(st, 'snow', { co2: st.A, why: snowWhy(st) }); }
+  else if (F.snow && d.ice < 0.45) { F.snow = 0; F.snowEsc = (F.snowEsc || 0) + 1; event(st, 'thaw', { dur: st.t - F.snowT, co2: st.A }); }
+  // great oxidation
+  if (!F.goe && st.o2 > 0.002) { F.goe = 1; event(st, 'goe'); }
+  // too hot: the oceans boil away and the hydrogen escapes to space
+  if (st.wl > 0.01 && d.Tg > 65) {
+    if (!F.boil) { F.boil = 1; event(st, 'boil', { why: boilWhy(st) }); }
+    const loss = st.wl * (1 - Math.exp(-dt / 3e7)) * sstep(65, 110, d.Tg);
+    st.wl -= loss; st.lost += loss; st.wlDirty = (st.wlDirty || 0) + loss;
+    if (st.wl < 0.05) { st.lost += st.wl; st.wl = 0; st.wlDirty = 1; if (!F.dry) { F.dry = 1; event(st, 'dry'); } }
+  } else if (F.boil && d.Tg < 55) F.boil = 0;
+  // the young planet: steam rains out into the first ocean
+  if (st.t < 1.2e8) { const tgt = Math.max(0, st.p.water - st.lost) * sstep(3e7, 9e7, st.t); if (Math.abs(tgt - st.wl) > 0.01) { st.wl = tgt; st.wlDirty = 1; } }
+  if (st.wlDirty && Math.abs(st.wlDirty) > 0.01) { st.wlDirty = 0; seaLevel(st); }
+}
+function snowWhy(st) {
+  const d = st.d;
+  if (st.lastCh4 && st.lastCh4 > st.ch4 * 4) return 'ch4';
+  if (lum(st.t) / (st.p.dist * st.p.dist) < 0.8) return 'sun';
+  if (st.A < 200) return 'co2';
+  return 'co2';
+}
+function boilWhy(st) { const s = lum(st.t) / (st.p.dist * st.p.dist); return s > 1.05 ? 'sun' : 'co2'; }
+
+// ---- civilisation (years) ----
+function startCiv(st) {
+  st.civ = { on: true, y: 0, pop: 0.7, tech: 8, fos: 5000, res: 100, stab: 75, pol: { en: 0, rs: 0, env: 0 }, T0: st.d.Tg, cum: 0, em: 0, cdr: 0, aer: 0, ch4: 0, lu: 0.05, food: 1, short: 0, why: null, space: false };
+  event(st, 'civ');
+}
+function endCiv(st, why) { const c = st.civ; if (!c || !c.on) return; c.on = false; c.why = why; c.endY = c.y; st.civRest = st.t + 5e4; st.flags.collapse = (st.flags.collapse || 0) + 1; event(st, 'collapse', { why }); }
+function civStep(st, dt) {
+  const c = st.civ, d = st.d;
+  if (!c || !c.on) {
+    if (st.life.st >= 7 && !st.noCiv && !(st.t < st.civRest) && d.Tg > -5 && d.Tg < 35 && !st.flags.snow) startCiv(st);
+    return;
+  }
+  c.y += dt;
+  const dT = d.Tg - c.T0, p = c.pol;
+  c.food = clamp(1 - 0.1 * Math.pow(Math.max(0, dT - 1), 1.4) - 0.15 * Math.pow(Math.max(0, -dT - 1), 1.4), 0.05, 1) * clamp(d.hab / REF.hab, 0.2, 1.1);
+  const renCap = clamp((c.tech - 12) / 55, 0, 0.95);
+  const r = renCap * [0.25, 0.65, 1][p.en];
+  let f = Math.min(1 - r, [1, 0.8, 0.45][p.en]); if (c.fos <= 0) f = 0;
+  const supply = Math.min(1, r + f); c.short = 1 - supply;
+  const demand = c.pop * (0.35 + 0.02 * c.tech);
+  const fosE = demand * f * 0.62;
+  c.fos = Math.max(0, c.fos - fosE * dt); c.cum += fosE * dt;
+  const lu = [0.9, 0.3, -0.5][p.env] * Math.min(1, c.pop / 8) * (c.tech < 90 ? 1 : 0.5);
+  c.cdr = p.env === 2 ? clamp((c.tech - 45) / 40, 0, 1) * 4 : 0;
+  c.em = fosE + lu; c.aer = 0.1 * demand * f * [1, 0.8, 0.6][p.en];
+  c.ch4 = 0.12 * c.pop * [1, 0.8, 0.6][p.env];
+  const luT = [0.55, 0.35, 0.18][p.env] * Math.min(1, c.pop / 8); c.lu += (luT - c.lu) * (1 - Math.exp(-dt / 30));
+  c.res = Math.max(0, c.res - dt * demand * [0.07, 0.04, 0.015][p.rs] * (1 - c.tech / 250));
+  const stabF = clamp(c.stab / 60, 0.2, 1.1);
+  const econ = supply * (c.res < 30 ? 0.4 + 0.6 * c.res / 30 : 1) * stabF * (c.tech < 40 ? [1, 0.92, 0.8][p.en] : 1) * [1.05, 0.95, 0.88][p.rs] * [1.05, 1, 0.9][p.env] * (p.env === 2 && c.cdr > 0 ? 0.95 : 1);
+  c.econ = econ;
+  c.tech = Math.min(100, c.tech + dt * 0.24 * econ * (0.6 + c.tech / 100));
+  const Kp = (1.2 + 10.5 * Math.min(1, c.tech / 60)) * c.food;
+  c.pop = Math.max(0.05, c.pop + dt * 0.03 * c.pop * (1 - c.pop / Kp) * (econ > 0.5 ? 1 : 0.5));
+  const terms = { heat: 14 * Math.max(0, dT - 1.5), cold: 10 * Math.max(0, -dT - 1), energy: 60 * c.short, res: c.res < 25 ? (25 - c.res) * 2.2 : 0, food: c.food < 0.85 ? (0.85 - c.food) * 120 : 0, nature: st.life.div < 40 ? (40 - st.life.div) * 0.6 : 0 };
+  let worst = 'heat', wv = -1, sum = 0; for (const k in terms) { sum += terms[k]; if (terms[k] > wv) { wv = terms[k]; worst = k; } }
+  c.worst = wv > 3 ? worst : null;
+  const target = clamp(85 - sum + 5 * (econ - 0.8), 0, 100);
+  c.stab += (target - c.stab) * (1 - Math.exp(-dt / 12));
+  // farms and cities take the wild land; a hotter world loses species too
+  const L = st.life, loss = 0.12 * Math.max(0, c.lu - 0.3) / 0.25 + 0.04 * Math.max(0, dT - 2);
+  L.div = Math.max(0, L.div - dt * loss + (loss === 0 ? dt * 0.01 : 0));
+  if (c.tech >= 100 && !c.space) { c.space = true; event(st, 'space'); }
+  if (c.stab < 8) endCiv(st, worst);
+}
+// where people live (for the night lights): mild, wet, low land near the sea
+function popMap(st) {
+  const c = st.civ, on = c && c.on;
+  for (let k = 0; k < N; k++) {
+    if (!on || st.lf[k] < 0.3) { st.pop[k] = 0; continue; }
+    const T = st.Tc[k], m = st.moist[k];
+    st.pop[k] = clamp(sstep(-2, 10, T) * (1 - sstep(28, 38, T)) * clamp(m * 1.4, 0, 1) * (1 - st.iceL[k]) * Math.exp(-st.el[k] / 1.5) * Math.min(1, c.pop / 6), 0, 1);
+  }
+}
+
+// ---- the main clock ----
+function advance(st, years, o) {
+  o = o || {};
+  let left = years, n = 0;
+  while (left > 1e-9) {
+    const civOn = st.civ && st.civ.on;
+    const maxDt = civOn ? 2 : (o.coarse || (st.t < 1e8 ? 2e4 : 1e4));
+    const dt = Math.min(left, maxDt);
+    movePlates(st, dt);
+    if (st.geoDirty || st.t - st.geoT > (o.geoEvery || 2e6)) geology(st);
+    if (st.civ && st.civ.on) popMap(st);
+    st.lastCh4 = st.lastCh4 == null ? st.ch4 : st.lastCh4 + (st.ch4 - st.lastCh4) * (1 - Math.exp(-dt / 2e6));
+    step(st, dt);
+    checks(st, dt);
+    lifeStep(st, dt);
+    civStep(st, dt);
+    left -= dt; n++;
+    if (o.maxSteps && n >= o.maxSteps) break;
+  }
+  return n;
+}
+
+// ---- tools ----
+function plateAt(st, v) { // which plate carries this point (the one whose map is highest there)
+  let best = -1, bh = -1e9;
+  st.plates.forEach((P, i) => { const M = P.M, qz = M[2] * v[0] + M[5] * v[1] + M[8] * v[2], rr = P.r * growth(st.t); if (qz > Math.cos(rr * 1.2) && qz > bh) { bh = qz; best = i; } });
+  return best;
+}
+function toLocal(st, pl, v) { if (pl < 0) return v.slice(); const M = st.plates[pl].M; return [M[0] * v[0] + M[3] * v[1] + M[6] * v[2], M[1] * v[0] + M[4] * v[1] + M[7] * v[2], M[2] * v[0] + M[5] * v[1] + M[8] * v[2]]; }
+function bump(st, lat, lon, h, rDeg, o) {
+  const v = dirOf(lat, lon), pl = o && o.fixed ? -1 : plateAt(st, v);
+  st.bumps.push({ pl, lp: toLocal(st, pl, v), r: rDeg * D2R, h, fix: !!(o && o.fixed), tau: o && o.tau });
+  if (st.bumps.length > 48) st.bumps.splice(0, st.bumps.length - 48);
+  st.geoDirty = true;
+}
+const tools = {
+  volcano(st, lat, lon) {
+    st.pulses.push({ rate: 9000 / 1e5, left: 1e5 });
+    st.dust += 4; st.ash = Math.min(0.2, st.ash + 0.04);
+    bump(st, lat, lon, 1.6, 2.6, { tau: 4e7 });
+    (st.volcs = st.volcs || []).push({ lat, lon, t: st.t }); if (st.volcs.length > 12) st.volcs.shift();
+    event(st, 'volcano', { lat, lon });
+  },
+  raise(st, lat, lon) { bump(st, lat, lon, 1.3, 9); st.uplift = Math.min(3, st.uplift + 0.5); event(st, 'raise', { lat, lon }); },
+  sink(st, lat, lon) { bump(st, lat, lon, -1.6, 9); st.uplift = Math.max(0, st.uplift - 0.5); event(st, 'sink', { lat, lon }); },
+  asteroid(st, lat, lon) {
+    st.dust += 90; st.lastImpact = st.t; st.ash = Math.min(0.2, st.ash + 0.06);
+    st.pulses.push({ rate: 400 / 1e3, left: 1e3 });
+    if (st.life.st >= 4) st.life.div *= 0.45; else st.life.div *= 0.85;
+    st.craters.push({ lat, lon, r: 5, t: st.t });
+    if (st.t < 1.2e9 && st.wl > 0) { st.p.water = Math.min(3, st.p.water + 0.02); st.wl += 0.02; st.wlDirty = 1; }
+    if (st.civ && st.civ.on) { st.civ.stab -= 70; st.civ.pop *= 0.6; }
+    event(st, 'impact', { lat, lon });
+  },
+  seed(st) {
+    const L = st.life;
+    if (L.st > 0 || st.flags.dead) return false;
+    if (!(st.wl > 0.05 && st.t > 8e7 && st.d.prodM > 0.02)) return false;
+    L.st = 1; L.prog = 0; L.pre = 1; L.seedT = st.t; event(st, 'life', { seeded: true }); return true;
+  },
+};
+function setParam(st, k, v) {
+  const p = st.p;
+  if (k === 'co2') { st.A = v; st.O = v * K.K_OC; return; }
+  if (k === 'water') { const dw = v - p.water; p.water = v; if (st.t >= 1.2e8) { st.wl = Math.max(0, st.wl + dw); } st.wlDirty = 1; seaLevel(st); return; }
+  p[k] = v;
+}
+
+// ---- save / load (compact) ----
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const enc = (a, s) => { let o = ''; for (let i = 0; i < a.length; i++) o += B64[clamp(Math.round(a[i] * s), 0, 63)]; return o; };
+const dec = (str, a, s) => { for (let i = 0; i < a.length; i++) { const q = B64.indexOf(str[i] || 'A'); a[i] = Math.max(0, q) / s; } };
+const r4 = x => Math.round(x * 1e4) / 1e4;
+function serialize(st) {
+  return {
+    v: 1, t: st.t, p: Object.assign({}, st.p), seed: st.seed, T: Array.from(st.T, x => Math.round(x * 10) / 10), A: st.A, O: st.O, ch4: st.ch4, o2: st.o2, wl: st.wl, lost: st.lost,
+    iceL: enc(st.iceL, 63), iceO: enc(st.iceO, 63), veg: enc(st.veg, 63),
+    plates: st.plates.map(P => ({ M: P.M.map(r4), ax: P.ax.map(r4), w: P.w, r: P.r, seed: P.seed, next: P.next, ep: P.ep })),
+    bumps: st.bumps.map(b => ({ pl: b.pl, lp: b.lp.map(r4), r: b.r, h: Math.round(b.h * 100) / 100, fix: b.fix ? 1 : 0, tau: b.tau })),
+    craters: st.craters, volcs: st.volcs || [], uplift: st.uplift, dust: st.dust, ash: st.ash, pulses: st.pulses,
+    life: Object.assign({}, st.life), civ: st.civ ? Object.assign({}, st.civ, { pol: Object.assign({}, st.civ.pol) }) : null, civRest: st.civRest,
+    ev: st.ev.slice(-40), flags: Object.assign({}, st.flags), tRef: st.tRef, lastCh4: st.lastCh4, lastImpact: st.lastImpact,
+  };
+}
+function deserialize(o) {
+  if (!o || typeof o !== 'object' || o.v !== 1 || !o.p) return null;
+  const st = create({ t: +o.t || 0, p: o.p });
+  const num = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);
+  st.t = num(o.t, 0); st.A = num(o.A, 280); st.O = num(o.O, st.A * K.K_OC); st.ch4 = num(o.ch4, 1); st.o2 = num(o.o2, 1e-6); st.wl = num(o.wl, st.p.water); st.lost = num(o.lost, 0);
+  if (Array.isArray(o.T) && o.T.length === NY) for (let j = 0; j < NY; j++) st.T[j] = num(o.T[j], 10);
+  if (typeof o.iceL === 'string') dec(o.iceL, st.iceL, 63); if (typeof o.iceO === 'string') dec(o.iceO, st.iceO, 63); if (typeof o.veg === 'string') dec(o.veg, st.veg, 63);
+  if (Array.isArray(o.plates) && o.plates.length) st.plates = o.plates.map(P => ({ M: P.M.slice(), ax: P.ax.slice(), w: P.w, r: P.r, seed: P.seed >>> 0, next: P.next, ep: P.ep || 0 }));
+  st.bumps = Array.isArray(o.bumps) ? o.bumps.map(b => Object.assign({}, b, { lp: b.lp.slice(), fix: !!b.fix })) : [];
+  st.craters = Array.isArray(o.craters) ? o.craters : []; st.volcs = Array.isArray(o.volcs) ? o.volcs : [];
+  st.uplift = num(o.uplift, 0); st.dust = num(o.dust, 0); st.ash = num(o.ash, 0); st.pulses = Array.isArray(o.pulses) ? o.pulses : [];
+  st.life = Object.assign(st.life, o.life || {}); st.civ = o.civ || null; st.civRest = num(o.civRest, 0);
+  st.ev = Array.isArray(o.ev) ? o.ev : []; st.flags = Object.assign({}, o.flags || {}); st.tRef = o.tRef; st.lastCh4 = o.lastCh4; st.lastImpact = o.lastImpact;
+  geology(st, true);
+  step(st, 1e-3); st.t -= 1e-3;
+  return st;
+}
+
+// ---- scenarios: a short task on a prepared planet ----
+function settle(st, years, co2) { // let the climate settle while the CO2 is held
+  let left = years; while (left > 0) { const dt = Math.min(left, 1e4); if (co2 != null) { st.A = co2; st.O = co2 * K.K_OC; } advance(st, dt); left -= dt; }
+  if (co2 != null) { st.A = co2; st.O = co2 * K.K_OC; }
+  st.ev = []; st.news = []; st.flags = st.o2 > 0.002 ? { goe: 1 } : {}; st.tRef = st.d.Tg;
+}
+function landVeg(st) { return st.d.land > 0.01 ? st.d.vegA / st.d.land : 0; }
+function arcticT(st, lat) { let a = 0, w = 0; for (let j = 0; j < NY; j++) if (latC[j] >= lat) { a += st.T[j] * wRow[j]; w += wRow[j]; } return w ? a / w : 0; }
+function seaIceNorth(st, lat) { let a = 0, o = 0; for (let j = 0; j < NY; j++) { if (latC[j] < lat) continue; const ca = cellA(j); for (let i = 0; i < NX; i++) { const k = j * NX + i, w = ca * (1 - st.lf[k]); o += w; a += w * st.iceO[k]; } } return o > 0 ? a / o : 0; }
+function lifeWorld(t, p, stage, o2) { const st = create({ t, p }); st.noCiv = true; st.wl = st.p.water; seaLevel(st); st.life.st = stage; st.life.euk = stage >= 3 ? 1 : 0; st.life.div = DIVK[stage] * 0.9; st.o2 = o2; return st; }
+const SCEN = [
+  { id: 'green', limit: 4e6, speed: 5, allow: { terrain: ['volcano', 'raise', 'sink'] },
+    setup() { const st = lifeWorld(4.3e9, { seed: 21, co2: 280 }, 5, 1); st.uplift = 3; settle(st, 3e5, 240); st.uplift = 3; return st; },
+    check(st) { const ice = st.d.ice, g = landVeg(st); return { win: ice <= 0.15 && g >= 0.3, fail: st.flags.snow ? 'snow' : null, goals: [{ k: 'ice', v: ice, goal: 0.15, le: true }, { k: 'green', v: g, goal: 0.3 }] }; },
+    quality(st) { return clamp((0.15 - st.d.ice) / 0.08, 0, 1); } },
+  { id: 'warm', limit: 300, speed: 1, maxSpeed: 2, allow: { civ: true },
+    setup() { const st = lifeWorld(4.57e9, { seed: 3, co2: 280 }, 7, 1); settle(st, 2e5, 280); st.noCiv = false; startCiv(st); st.civ.pop = 0.9; st.civ.tech = 14; st.ev = []; st.news = []; return st; },
+    check(st, sc) { const c = st.civ, dT = st.d.Tg - c.T0, done = c.y >= 300 - 1e-6;
+      return { win: done && c.on && dT < 2 && c.tech >= 60, fail: !c.on ? 'collapse' : dT >= 3 ? 'heat' : done ? (dT >= 2 ? 'heat' : 'tech') : null,
+        goals: [{ k: 'dT', v: dT, goal: 2, le: true }, { k: 'tech', v: c.tech, goal: 60 }, { k: 'year', v: c.y, goal: 300 }] }; },
+    quality(st) { return clamp((2 - (st.d.Tg - st.civ.T0)) / 1.5, 0, 1); } },
+  { id: 'snow', limit: 3e6, speed: 5, allow: { terrain: ['volcano', 'asteroid'] },
+    setup() { const st = lifeWorld(3.9e9, { seed: 5, co2: 280 }, 3, 0.2); settle(st, 1e5, 280); st.p.dist = 1.12; settle(st, 6e4); st.p.dist = 1; settle(st, 2e4); st.flags.snow = 1; st.flags.snowT = st.t; return st; },
+    check(st) { const ice = st.d.ice; return { win: ice < 0.4, fail: null, goals: [{ k: 'ice', v: ice, goal: 0.4, le: true }] }; },
+    quality(st) { return clamp(1 - Math.abs(st.d.Tg - 15) / 20, 0, 1); } },
+  { id: 'goe', limit: 2.5e8, speed: 6, allow: { terrain: ['volcano', 'raise', 'sink'], life: true },
+    setup() { const st = lifeWorld(2.0e9, { seed: 9, co2: 3e4 }, 2, 1e-6); st.ch4 = 1000; settle(st, 1e6); return st; },
+    check(st) { return { win: st.o2 >= 0.03, fail: st.flags.snow ? 'snow' : null, goals: [{ k: 'o2', v: st.o2, goal: 0.03 }] }; },
+    quality(st) { return clamp(1 - Math.abs(st.d.Tg - 15) / 20, 0, 1); } },
+  { id: 'sun', limit: 2.5e8, speed: 6, allow: { planet: ['dist'], terrain: ['volcano', 'raise', 'sink'] },
+    setup() { const st = lifeWorld(5.9e9, { seed: 4, co2: 280 }, 6, 1); settle(st, 2e6); return st; },
+    check(st, sc) { const T = st.d.Tg, end = sc && sc.end; return { win: !!end && T <= 32, fail: T > 42 ? 'hot' : st.flags.snow ? 'snow' : st.life.st < 4 ? 'wipe' : end && T > 32 ? 'hot' : null, goals: [{ k: 'temp', v: T, goal: 32, le: true }] }; },
+    quality(st, sc) { return clamp(1 - (sc.devSum || 0) / Math.max(1, sc.devN || 1) / 12, 0, 1); } },
+  { id: 'cradle', limit: 1.5e8, speed: 6, allow: { planet: ['dist', 'size', 'water', 'n2', 'co2'], terrain: ['volcano', 'raise', 'sink', 'asteroid'], life: true },
+    setup() { const st = create({ t: 1.0e8, p: { seed: 2, dist: 1.3, water: 0.25, n2: 0.5, co2: 2e4 } }); st.noCiv = true; st.wl = 0.25; seaLevel(st); settle(st, 2e5); st.life.pre = 0; return st; },
+    check(st) { return { win: st.life.st >= 1 && st.d.prodM >= 0.5, fail: st.flags.dry ? 'dry' : null, goals: [{ k: 'life', v: st.life.st >= 1 ? 1 : 0, goal: 1 }, { k: 'sea', v: st.d.prodM, goal: 0.5 }] }; },
+    quality(st) { return clamp(st.d.prodM / 1, 0, 1); } },
+  { id: 'gate', limit: 2e6, speed: 5, allow: { terrain: ['sink', 'raise', 'volcano'] },
+    setup() { const st = lifeWorld(4.4e9, { seed: 12, co2: 280 }, 6, 1);
+      // an open polar sea in the north, cut off by a ridge of land all the way round at 48°N
+      st.plates = st.plates.filter(P => P.M[7] < 0.35);
+      for (let lon = -180; lon < 180; lon += 9) bump(st, 48, lon, 3.4, 5.5, { fixed: true });
+      geology(st); settle(st, 3e5, 330); return st; },
+    check(st) { const n = arcticT(st, 60); return { win: n >= -22, fail: null, goals: [{ k: 'arctic', v: n, goal: -22 }] }; },
+    quality(st) { return clamp((arcticT(st, 60) + 22) / 5, 0, 1); } },
+  { id: 'dawn', limit: 500, speed: 1, maxSpeed: 2, allow: { civ: true },
+    setup() { const st = lifeWorld(4.57e9, { seed: 8, co2: 280 }, 7, 1); settle(st, 2e5, 280); st.noCiv = false; startCiv(st); st.civ.pop = 0.9; st.civ.tech = 14; st.ev = []; st.news = []; return st; },
+    check(st) { const c = st.civ; return { win: c.on && c.tech >= 100 && st.life.div >= 50, fail: !c.on ? 'collapse' : st.life.div < 40 ? 'nature' : null, goals: [{ k: 'tech', v: c.tech, goal: 100 }, { k: 'div', v: st.life.div, goal: 50 }] }; },
+    quality(st) { return clamp((st.civ.res) / 60, 0, 1); } },
+];
+
+return { SCEN, arcticT, settle, landVeg, seaIceNorth, STAGES, EVO, advance, tools, setParam, serialize, deserialize, startCiv, endCiv, popMap, movePlates, event, REF, NX, NY, N, HX, HY, HN, K, latC, xC, wRow, PX, PY, PZ, PW, FLOOR, create, step, geology, seaLevel, forcing, lum, volc, rng, fbm, dirOf, latLonOf, rotM, mul, ortho, randAxis, clamp, sstep };
+})();
+window.PSim = PSim;
+</script>
+<script>
+(() => {
+'use strict';
+// わくせいシミュレーター — grow one Earth-like planet through 4.6 billion years: build the planet, watch life evolve, steer a civilisation.
+// The model (PSim, above) is an energy-balance climate on latitude bands + a carbon/oxygen box model + plates, life and people.
+// This part draws the globe (three.js r128, textures painted from the model grids), the panels, scenarios, saving and the tutorial.
+const S = window.PSim;
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'planet';
+const SAVE_KEY = 'kusoge.planet.save';   // records: scenario bests, totals, milestones (registry: per-field merge)
+const WORLD_KEY = 'kusoge.planet.world'; // the free-mode planet (newest wins)
+const HOWTO_KEY = 'kusoge.planet.howto'; // '1' = the how-to was shown
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+};
+const clamp = S.clamp, sstep = S.sstep, lerp = (a, b, t) => a + (b - a) * t;
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+const NOW_T = 4.57e9;
+const SPEEDS = [1, 10, 100, 1e3, 1e4, 1e5, 1e6];
+const SPEED_LABEL = ['1年/秒', '10年/秒', '100年/秒', '1000年/秒', '1万年/秒', '10万年/秒', '100万年/秒'];
+const CIV_MAX = 3; // with people on the planet, time runs at most 1000 years a second
+
+// ---------- numbers ----------
+const nf = (n, d) => Number(n).toLocaleString(EN ? 'en-US' : 'ja-JP', { maximumFractionDigits: d || 0, minimumFractionDigits: 0 });
+function fmtY(y) {
+  y = Math.abs(y);
+  if (EN) {
+    if (y >= 1e9) return nf(y / 1e9, 2) + ' billion years';
+    if (y >= 1e6) return nf(y / 1e6, y < 1e7 ? 1 : 0) + ' million years';
+    return nf(Math.round(y)) + (Math.round(y) === 1 ? ' year' : ' years');
+  }
+  if (y >= 1e8) { let o = Math.floor(y / 1e8), m = Math.round((y - o * 1e8) / 1e6) * 100; if (m >= 10000) { o++; m = 0; } return o + '億' + (m ? m + '万' : '') + '年'; }
+  if (y >= 1e4) return (y >= 1e6 ? Math.round(y / 1e5) * 10 : Math.round(y / 1e4)) + '万年';
+  return Math.round(y) + '年';
+}
+function fmtT(t) { return (t < -0.5 ? '−' : '') + nf(Math.abs(Math.round(t))) + '°C'; }
+function fmtCO2(p) { return p >= 1e4 ? nf(p / 1e4, p < 1e5 ? 1 : 0) + '%' : nf(p) + ' ppm'; }
+function fmtO2(pal) { const v = pal * 21; return v < 0.01 ? '0%' : v < 1 ? nf(v, 2) + '%' : nf(v, v < 10 ? 1 : 0) + '%'; }
+function fmtPct(f) { return nf(Math.round(clamp(f, 0, 1) * 100)) + '%'; }
+function biomass(w) { const d = w.d; let b = 0; if (w.life.st >= 1) b += 3 * (d.prodM || 0); if (w.life.st >= 5) b += 600 * (d.vegA || 0) / S.REF.veg; return b; }
+function fmtBio(b) { return (b < 10 ? nf(b, 1) : nf(b)) + ' Gt'; }
+function dispT(w) { return w.d.Tg + 1300 * (1 - sstep(0, 4e7, w.t)); } // the magma ocean of the first tens of millions of years
+function ageText(w) {
+  if (w.civ && w.civ.on) return T('文明 {n}年目', { n: nf(Math.floor(w.civ.y) + 1) });
+  const bp = NOW_T - w.t;
+  if (Math.abs(bp) < 5e5) return T('現在');
+  return bp > 0 ? T('{y}前', { y: fmtY(bp) }) : T('{y}後', { y: fmtY(-bp) });
+}
+function eraName(w) {
+  const bp = NOW_T - w.t;
+  if (w.t < 4e7) return T('マグマの海');
+  return T(bp >= 4.0e9 ? '冥王代' : bp >= 2.5e9 ? '太古代' : bp >= 5.39e8 ? '原生代' : bp >= -1e6 ? '顕生代' : '未来');
+}
+const STAGE_NAME = ['生命なし', '微生物', '光合成をする細菌', '核をもつ細胞', '海の多細胞生物', '陸の植物', '陸の動物', '知的生命'];
+const STAGE_NOTE = [
+  '海ができると、やがて生命が生まれる（種をまくとすぐ）',
+  '海の中の小さな細菌。メタンを出して星を暖める',
+  '日光で酸素をつくる細菌。でも酸素は火山のガスにすぐ使われてしまう',
+  '核をもつ大きな細胞。藻が海をおおい、酸素がもっと増える',
+  '海に動物があらわれた（カンブリア紀の爆発）',
+  '植物が陸へ。根が岩をくだき、風化が速くなってCO₂が減る',
+  '恐竜や哺乳類の時代',
+  'もうすぐ文明がはじまる',
+];
+const NEXT_NEED = [null, null, 0.003, 0.08, 0.15, 0.2, 0.25];
+
+// ---------- save ----------
+const STAT_KEYS = ['life', 'goe', 'thaw', 'civ', 'space', 'ext', 'collapse', 'worlds', 'clears', 'maxMyr'];
+function defSave() { return { v: 1, sc: {}, total: 0, stats: {}, tut: 0 }; }
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const o = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return o;
+  const n = (v, lo, hi) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : 0; };
+  if (s.sc && typeof s.sc === 'object') for (const d of S.SCEN) { const x = s.sc[d.id]; if (x && typeof x === 'object') o.sc[d.id] = { best: n(x.best, 0, 1000), stars: n(x.stars, 0, 3) }; }
+  if (s.stats && typeof s.stats === 'object') for (const k of STAT_KEYS) o.stats[k] = n(s.stats[k], 0, 1e9);
+  o.tut = n(s.tut, 0, 1);
+  const sum = Object.values(o.sc).reduce((a, x) => a + x.best, 0);
+  o.total = Math.max(sum, n(s.total, 0, 10000));
+  return o;
+}
+let save = readSave();
+function writeSave() {
+  const cur = readSave();
+  for (const k of STAT_KEYS) save.stats[k] = Math.max(save.stats[k] || 0, cur.stats[k] || 0);
+  for (const id of Object.keys(cur.sc)) { const a = save.sc[id], b = cur.sc[id]; if (!a || b.best > a.best) save.sc[id] = { best: Math.max(b.best, a ? a.best : 0), stars: Math.max(b.stars, a ? a.stars : 0) }; else a.stars = Math.max(a.stars, b.stars); }
+  save.total = Math.max(Object.values(save.sc).reduce((a, x) => a + x.best, 0), cur.total);
+  save.tut = Math.max(save.tut, cur.tut);
+  store.set(SAVE_KEY, JSON.stringify(save));
+}
+function bumpStat(k, v) { if ((save.stats[k] || 0) >= v) return; save.stats[k] = v; writeSave(); }
+function addStat(k) { save.stats[k] = (save.stats[k] || 0) + 1; writeSave(); }
+
+// ---------- state ----------
+let mode = 'title';         // 'title' | 'free' | 'scen'
+let world = null;           // the PSim state on screen
+let sc = null;              // the running scenario
+let running = false, spd = 6, tab = 'planet', tool = null, view = 'normal', gVar = 'temp', gRange = 'r';
+let freeSession = false, booted = false, lastSaveAt = 0, needRender = true, texDirty = true, texDue = 0, cloudDue = 0;
+const hist = { r: [], l: [] }; // rows [t, T, CO2, O2, ice, bio]
+
+// ---------- sound ----------
+function tone(f, d, type, vol, delay, slide) { if (A) A.tone(f, d, { type: type || 'sine', vol: vol || 0.07, delay: delay || 0, slide: slide || 0 }); }
+const sfx = {
+  tap() { tone(560, 0.05, 'triangle', 0.05); },
+  good() { tone(523, 0.12, 'triangle', 0.07); tone(784, 0.18, 'triangle', 0.07, 0.1); },
+  warn() { tone(330, 0.25, 'sine', 0.09); tone(247, 0.35, 'sine', 0.08, 0.18); },
+  rumble() { tone(70, 0.5, 'sawtooth', 0.05, 0, 40); tone(110, 0.3, 'triangle', 0.05, 0.05); },
+  boom() { tone(180, 0.5, 'sawtooth', 0.08, 0, 40); tone(90, 0.7, 'sine', 0.09, 0.05, 30); },
+  win() { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, 'triangle', 0.07, i * 0.12)); },
+  lose() { [392, 330, 262].forEach((f, i) => tone(f, 0.3, 'sine', 0.07, i * 0.18)); },
+};
+function renderSound() {
+  const b = $('sndBtn'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+}
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx.tap(); });
+if (A) A.onChange(renderSound);
+
+// ---------- toast and banner ----------
+let toastT = 0;
+function toast(msg, ms) { const el = $('toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), ms || 2200); }
+const bannerQ = []; let bannerT = 0;
+function banner(title, text, kind) { bannerQ.push({ title, text, kind }); if (!bannerT) nextBanner(); }
+function clearBanners() { bannerQ.length = 0; clearTimeout(bannerT); bannerT = 0; $('banner').classList.remove('on'); crisisQ = []; }
+function nextBanner() {
+  const el = $('banner'), b = bannerQ.shift();
+  if (!b) { el.classList.remove('on'); bannerT = 0; return; }
+  el.className = 'banner on ' + (b.kind || ''); $('bannerT').textContent = b.title; $('bannerX').textContent = b.text || '';
+  bannerT = setTimeout(() => { el.classList.remove('on'); bannerT = setTimeout(nextBanner, 250); }, 4200);
+}
+
+// ================= 3D: the globe =================
+const stage = $('stage'), cv = $('cv');
+let renderer = null, scene = null, camera = null, globe = null, earth = null, cloudMesh = null, atmo = null, overMesh = null, starPts = null, sunL = null, amb = null;
+let glOk = false, glLost = false;
+const TW = 512, TH = 256, LW = S.HX, LH = S.HY;
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+const cSurf = mkCanvas(TW, TH), cBump = mkCanvas(LW, LH), cSpec = mkCanvas(LW, LH), cLight = mkCanvas(LW, LH), cCloud = mkCanvas(LW, LH), cOver = mkCanvas(TW, TH);
+const xSurf = cSurf.getContext('2d'), xBump = cBump.getContext('2d'), xSpec = cSpec.getContext('2d'), xLight = cLight.getContext('2d'), xCloud = cCloud.getContext('2d'), xOver = cOver.getContext('2d');
+const iSurf = xSurf.createImageData(TW, TH), iBump = xBump.createImageData(LW, LH), iSpec = xSpec.createImageData(LW, LH), iLight = xLight.createImageData(LW, LH), iCloud = xCloud.createImageData(LW, LH);
+let texSurf = null, texBump = null, texSpec = null, texLight = null, texCloud = null, texOver = null;
+const LOWEND = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 2;
+const DPR = window.devicePixelRatio || 1;
+const QUAL = [0.75, 1, 1.25, 1.5].filter((v, i) => i < 2 || v <= Math.max(1, DPR));
+let qMax = QUAL.length - 1, qLv = LOWEND ? Math.min(1, qMax) : qMax, PR = QUAL[qLv];
+const fpsMon = { t: 0, n: 0, fast: 0, last: 0 };
+const sunU = { value: null };
+
+function showNoGL(why) {
+  const box = document.createElement('div'); box.id = 'nogl'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><p></p><a class="btn" href="../"></a></div>';
+  box.querySelector('b').textContent = T('3D を表示できません');
+  const ps = box.querySelectorAll('p');
+  ps[0].textContent = why === 'three' ? T('3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。') : T('この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。');
+  if (why === 'three') ps[1].remove(); else ps[1].textContent = T('ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。');
+  box.querySelector('a').textContent = T('ゲーム一覧に戻る');
+  stage.appendChild(box);
+  document.querySelectorAll('#timebar button, #tabs button, #menuBtn, #meters button').forEach(b => { b.disabled = true; });
+}
+function glAvailable() { try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; } }
+
+function initGL() {
+  if (typeof THREE === 'undefined') { showNoGL('three'); return false; }
+  if (!glAvailable()) { showNoGL('webgl'); return false; }
+  try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !LOWEND && DPR < 1.5, alpha: true, powerPreference: 'default' }); } catch (e) { renderer = null; }
+  if (!renderer) { showNoGL('webgl'); return false; }
+  renderer.setPixelRatio(PR); renderer.setClearColor(0x000000, 0);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+  camera.position.set(0, 0, 4);
+  amb = new THREE.AmbientLight(0x8fa4c8, 0.32); scene.add(amb);
+  sunL = new THREE.DirectionalLight(0xfff3e0, 1.15); sunL.position.set(-3.2, 1.4, 2.4); scene.add(sunL);
+  globe = new THREE.Group(); globe.rotation.order = 'XYZ'; scene.add(globe);
+  const seg = LOWEND ? [72, 48] : [96, 64];
+  texSurf = new THREE.CanvasTexture(cSurf); texBump = new THREE.CanvasTexture(cBump); texSpec = new THREE.CanvasTexture(cSpec);
+  texLight = new THREE.CanvasTexture(cLight); texCloud = new THREE.CanvasTexture(cCloud); texOver = new THREE.CanvasTexture(cOver);
+  try { texSurf.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); } catch (e) {}
+  const mat = new THREE.MeshPhongMaterial({ map: texSurf, bumpMap: texBump, bumpScale: 0.035, specularMap: texSpec, specular: new THREE.Color(0x3a4656), shininess: 38,
+    emissive: new THREE.Color(0xffffff), emissiveMap: texLight, emissiveIntensity: 1 });
+  sunU.value = new THREE.Vector3(-1, 0.4, 0.8).normalize();
+  mat.onBeforeCompile = sh => { // city lights and lava glow show on the night side
+    sh.uniforms.sunDir = sunU;
+    sh.fragmentShader = 'uniform vec3 sunDir;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\n  float nd = dot(normalize(vNormal), sunDir);\n  totalEmissiveRadiance *= mix(1.0, 0.18, smoothstep(-0.2, 0.25, nd));');
+  };
+  earth = new THREE.Mesh(new THREE.SphereGeometry(1, seg[0], seg[1]), mat); globe.add(earth);
+  cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(1.014, seg[0], seg[1]), new THREE.MeshLambertMaterial({ map: texCloud, transparent: true, depthWrite: false }));
+  globe.add(cloudMesh);
+  overMesh = new THREE.Mesh(new THREE.SphereGeometry(1.006, seg[0], seg[1]), new THREE.MeshBasicMaterial({ map: texOver, transparent: true, depthWrite: false }));
+  overMesh.visible = false; globe.add(overMesh);
+  atmo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 64, 40), new THREE.ShaderMaterial({
+    uniforms: { col: { value: new THREE.Color(0x6fb3ff) }, amt: { value: 1 } },
+    vertexShader: 'varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 col; uniform float amt; varying vec3 vN; void main(){ float i = pow(clamp(0.78 - dot(vN, vec3(0.0,0.0,1.0)), 0.0, 1.0), 2.6) * amt; gl_FragColor = vec4(col * i, i); }',
+    side: THREE.BackSide, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false,
+  }));
+  scene.add(atmo);
+  // stars
+  const g = new THREE.BufferGeometry(), pos = [], rr = S.rng(77);
+  for (let i = 0; i < 700; i++) { const v = S.randAxis(rr), d = 40 + rr() * 30; pos.push(v[0] * d, v[1] * d, v[2] * d); }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  starPts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 0.16, sizeAttenuation: true, transparent: true, opacity: 0.8, depthWrite: false }));
+  scene.add(starPts);
+  glOk = true;
+  return true;
+}
+
+// ---- painting the textures from the model ----
+// world-fixed detail noise (512×256) and two cloud fields (256×128)
+const DET = new Float32Array(TW * TH), CLN = new Float32Array(LW * LH), CLN2 = new Float32Array(LW * LH);
+function bakeNoise() {
+  for (let y = 0; y < TH; y++) { const la = (90 - (y + 0.5) * 180 / TH) * Math.PI / 180, cl = Math.cos(la), sl = Math.sin(la);
+    for (let x = 0; x < TW; x++) { const lo = (-180 + (x + 0.5) * 360 / TW) * Math.PI / 180; DET[y * TW + x] = S.fbm(cl * Math.cos(lo) * 9 + 3, sl * 9 + 3, -cl * Math.sin(lo) * 9 + 3, 41, 3); } }
+  for (let k = 0; k < LW * LH; k++) { CLN[k] = S.fbm(S.PX[k] * 3.2, S.PY[k] * 6.5, S.PZ[k] * 3.2, 63, 4); CLN2[k] = S.fbm(S.PX[k] * 5 + 7, S.PY[k] * 9, S.PZ[k] * 5, 64, 3); }
+}
+const fT = new Float32Array(LW * LH), fIO = new Float32Array(LW * LH), fIL = new Float32Array(LW * LH), fV = new Float32Array(LW * LH), fP = new Float32Array(LW * LH), fM = new Float32Array(LW * LH);
+function upsample(src, dst) { // 64×32 cells → 256×128, bilinear (wraps in longitude)
+  const NX = S.NX, NY = S.NY, sx = NX / LW, sy = NY / LH;
+  for (let y = 0; y < LH; y++) {
+    const fy = clamp((y + 0.5) * sy - 0.5, 0, NY - 1), j0 = Math.floor(fy), j1 = Math.min(NY - 1, j0 + 1), ty = fy - j0;
+    for (let x = 0; x < LW; x++) {
+      let fx = (x + 0.5) * sx - 0.5; if (fx < 0) fx += NX;
+      const i0 = Math.floor(fx) % NX, i1 = (i0 + 1) % NX, tx = fx - Math.floor(fx);
+      const a = src[j0 * NX + i0] * (1 - tx) + src[j0 * NX + i1] * tx, b = src[j1 * NX + i0] * (1 - tx) + src[j1 * NX + i1] * tx;
+      dst[y * LW + x] = a + (b - a) * ty;
+    }
+  }
+}
+const C = {
+  deep: [10, 36, 86], shallow: [38, 118, 172], gdeep: [14, 58, 62], gshallow: [44, 118, 108], seaIce: [224, 237, 246],
+  rockLo: [132, 112, 86], rockHi: [122, 116, 110], basalt: [74, 62, 58], sand: [210, 178, 118], grass: [118, 160, 70], forest: [36, 94, 48], tundra: [128, 138, 104], snow: [244, 248, 252],
+  lava: [255, 122, 34], crust: [44, 30, 26],
+};
+const TSTOP = [[-50, [36, 36, 130]], [-20, [64, 124, 226]], [0, [196, 232, 255]], [12, [120, 200, 96]], [24, [240, 212, 70]], [34, [240, 122, 40]], [48, [200, 32, 44]], [120, [110, 0, 40]]];
+function tcol(t, o) { let i = 0; while (i < TSTOP.length - 2 && t > TSTOP[i + 1][0]) i++; const a = TSTOP[i], b = TSTOP[i + 1], f = clamp((t - a[0]) / (b[0] - a[0]), 0, 1); o[0] = lerp(a[1][0], b[1][0], f); o[1] = lerp(a[1][1], b[1][1], f); o[2] = lerp(a[1][2], b[1][2], f); return o; }
+const mix3 = (o, a, b, t) => { o[0] = a[0] + (b[0] - a[0]) * t; o[1] = a[1] + (b[1] - a[1]) * t; o[2] = a[2] + (b[2] - a[2]) * t; return o; };
+const mixIn = (o, b, t) => { o[0] += (b[0] - o[0]) * t; o[1] += (b[1] - o[1]) * t; o[2] += (b[2] - o[2]) * t; return o; };
+function paintSurface() {
+  const w = world; if (!w) return;
+  upsample(w.Tc, fT); upsample(w.iceO, fIO); upsample(w.iceL, fIL); upsample(w.veg, fV); upsample(w.moist, fM);
+  const civ = w.civ && w.civ.on; if (civ) upsample(w.pop, fP);
+  const E = w.elev, sea = w.sea, ocean = w.wl > 0.02, d = iSurf.data, magma = 1 - sstep(1.2e7, 4e7, w.t), green = 1 - sstep(1e-4, 0.01, w.o2);
+  const early = w.life.st < 5, tempView = view === 'temp';
+  const deep = mix3([0, 0, 0], C.deep, C.gdeep, green * 0.7), shallow = mix3([0, 0, 0], C.shallow, C.gshallow, green * 0.7);
+  const o = [0, 0, 0], t1 = [0, 0, 0];
+  for (let y = 0; y < TH; y++) {
+    const ky = (y >> 1) * LW;
+    for (let x = 0; x < TW; x++) {
+      const k = ky + (x >> 1), p = y * TW + x, det = DET[p], q = p * 4;
+      // bilinear elevation (smooth coastlines on the 2× texture)
+      const fx = x * 0.5 - 0.25, fy = clamp(y * 0.5 - 0.25, 0, LH - 1.001), x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+      const xa = (x0 + LW) % LW, xb = (x0 + 1) % LW, ra = y0 * LW, rb = Math.min(LH - 1, y0 + 1) * LW;
+      const e = (E[ra + xa] * (1 - tx) + E[ra + xb] * tx) * (1 - ty) + (E[rb + xa] * (1 - tx) + E[rb + xb] * tx) * ty + (det - 0.5) * 0.25;
+      const wet = ocean && e <= sea;
+      if (tempView) {
+        tcol(fT[k], o); if (!wet) { o[0] *= 0.82; o[1] *= 0.82; o[2] *= 0.82; }
+        const ic = wet ? fIO[k] : fIL[k]; if (ic > 0.5) mixIn(o, C.snow, 0.35);
+      } else if (wet) {
+        mix3(o, shallow, deep, clamp((sea - e) / 3.2, 0, 1));
+        const ic = fIO[k]; if (ic > 0.02) mixIn(o, C.seaIce, clamp((ic - 0.5) * 3 + 0.5 + (det - 0.5) * 1.4, 0, 1));
+      } else {
+        const h = ocean ? e - sea : e + 2.5;
+        if (early) mix3(o, C.basalt, C.rockHi, clamp(h / 3, 0, 1)); else mix3(o, C.rockLo, C.rockHi, clamp(h / 2.5, 0, 1));
+        const tc = fT[k], dry = 1 - clamp(fM[k] * 1.6, 0, 1);
+        if (tc > 8 && ocean) mixIn(o, C.sand, clamp(dry * 1.3 - 0.2, 0, 1) * sstep(8, 22, tc) * (early ? 0.5 : 0.85));
+        const v = fV[k];
+        if (v > 0.01) { mix3(t1, C.grass, C.forest, sstep(0.35, 0.8, v)); if (tc < 2) mixIn(t1, C.tundra, sstep(2, -6, tc)); mixIn(o, t1, clamp(v * 1.6, 0, 1)); }
+        if (civ && fP[k] > 0.05) mixIn(o, [150, 140, 120], fP[k] * 0.25);
+        const il = fIL[k]; if (il > 0.02) mixIn(o, C.snow, clamp((il - 0.5) * 2.5 + 0.5 + (det - 0.5) * 1.2, 0, 1));
+        if (!ocean && w.wl <= 0.02 && w.t > 4e7) mixIn(o, [196, 120, 70], 0.35); // a dry, rusty world
+      }
+      if (magma > 0) { mix3(t1, C.crust, C.lava, sstep(0.48, 0.62, det) * 0.9 + 0.1); mixIn(o, t1, magma); }
+      const sh = 0.9 + 0.2 * det;
+      d[q] = o[0] * sh; d[q + 1] = o[1] * sh; d[q + 2] = o[2] * sh; d[q + 3] = 255;
+    }
+  }
+  xSurf.putImageData(iSurf, 0, 0);
+  // impact craters (fade over 300 Myr) and fresh volcanoes
+  for (const c of w.craters) {
+    const age = clamp((w.t - c.t) / 3e8, 0, 1), cx = (c.lon + 180) / 360 * TW, cy = (90 - c.lat) / 180 * TH, r = c.r / 180 * TH, sx = 1 / Math.max(0.2, Math.cos(c.lat * Math.PI / 180));
+    xSurf.save(); xSurf.translate(cx, cy); xSurf.scale(sx, 1);
+    xSurf.strokeStyle = `rgba(40,30,25,${0.75 * (1 - age)})`; xSurf.lineWidth = 2.2; xSurf.beginPath(); xSurf.arc(0, 0, r, 0, 6.283); xSurf.stroke();
+    xSurf.fillStyle = `rgba(20,14,12,${0.4 * (1 - age)})`; xSurf.beginPath(); xSurf.arc(0, 0, r * 0.7, 0, 6.283); xSurf.fill();
+    xSurf.restore();
+  }
+  if (texSurf) texSurf.needsUpdate = true;
+  // relief, ocean shine
+  const bd = iBump.data, sd = iSpec.data;
+  for (let k = 0; k < LW * LH; k++) {
+    const e = E[k], wet = ocean && e <= sea, q = k * 4;
+    const bv = wet ? 110 : clamp(120 + (ocean ? e - sea : e + 2.5) * 38, 0, 255);
+    bd[q] = bd[q + 1] = bd[q + 2] = bv; bd[q + 3] = 255;
+    const sv = wet ? (fIO[k] > 0.5 ? 30 : 120) : 12; sd[q] = sd[q + 1] = sd[q + 2] = sv; sd[q + 3] = 255;
+  }
+  xBump.putImageData(iBump, 0, 0); xSpec.putImageData(iSpec, 0, 0);
+  if (texBump) texBump.needsUpdate = true; if (texSpec) texSpec.needsUpdate = true;
+  paintLights();
+}
+function paintLights() {
+  const w = world, d = iLight.data, magma = 1 - sstep(1.2e7, 4e7, w.t), civ = w.civ && w.civ.on;
+  for (let y = 0; y < LH; y++) for (let x = 0; x < LW; x++) {
+    const k = y * LW + x, q = k * 4, det = DET[(y * 2) * TW + x * 2];
+    let r = 0, g = 0, b = 0;
+    if (magma > 0) { const v = sstep(0.5, 0.62, det) * magma; r += 255 * v; g += 80 * v; b += 14 * v; }
+    if (civ && fP[k] > 0.02) { const v = fP[k] * clamp((det - 0.38) * 3, 0, 1) * (0.5 + 0.5 * world.civ.tech / 100); r += 255 * v; g += 196 * v; b += 110 * v; }
+    d[q] = Math.min(255, r); d[q + 1] = Math.min(255, g); d[q + 2] = Math.min(255, b); d[q + 3] = 255;
+  }
+  xLight.putImageData(iLight, 0, 0);
+  // fresh volcanoes glow (100 thousand years, or a few years when time runs slowly)
+  for (const v of w.volcs || []) {
+    const age = (w.t - v.t) / (SPEEDS[spd] >= 1e4 ? 2e5 : 30); if (age > 1 || age < 0) continue;
+    const cx = (v.lon + 180) / 360 * LW, cy = (90 - v.lat) / 180 * LH, gr = xLight.createRadialGradient(cx, cy, 0, cx, cy, 5);
+    gr.addColorStop(0, `rgba(255,140,40,${1 - age})`); gr.addColorStop(1, 'rgba(255,60,0,0)'); xLight.fillStyle = gr; xLight.fillRect(cx - 6, cy - 6, 12, 12);
+  }
+  if (texLight) texLight.needsUpdate = true;
+}
+let cloudShift = 0;
+function cloudLook(w) { // how the sky looks: cover, colour
+  const d = w.d, F = w.flags, P = (d.f && d.f.P) || 1, co2bar = w.A * 1e-6;
+  if (w.t < 4e7) return { c: 0.55, col: [255, 200, 160], k: 0.6 };
+  if (F.boil || d.Tg > 60) return { c: 0.97, col: [250, 250, 250], k: 0.2 };
+  if (w.wl <= 0.02) return { c: co2bar > 1 ? 0.95 : 0.05, col: co2bar > 1 ? [236, 214, 160] : [220, 170, 120], k: 0.4 };
+  if (w.ch4 / Math.max(w.A, 1) > 0.1) return { c: 0.5, col: [236, 176, 110], k: 1 };
+  if (F.snow || d.ice > 0.8) return { c: 0.3, col: [240, 246, 252], k: 1 };
+  return { c: clamp(0.42 + 0.008 * (d.Tg - 15), 0.25, 0.75) * clamp(Math.sqrt(P), 0.3, 1.2), col: [255, 255, 255], k: 1 };
+}
+function paintClouds() {
+  const w = world; if (!w) return;
+  const L = cloudLook(w), d = iCloud.data, sh = Math.floor(cloudShift) % LW;
+  for (let y = 0; y < LH; y++) {
+    const lat = 90 - (y + 0.5) * 180 / LH, a = Math.abs(lat);
+    const belt = clamp(0.35 + 0.55 * Math.exp(-((lat / 9) ** 2)) + 0.55 * Math.exp(-(((a - 55) / 14) ** 2)) - 0.35 * Math.exp(-(((a - 24) / 9) ** 2)), 0, 1.1);
+    for (let x = 0; x < LW; x++) {
+      const k = y * LW + x, xs = (x + sh) % LW, n = CLN[y * LW + xs] * 0.7 + CLN2[y * LW + (x + sh * 2) % LW] * 0.3;
+      const cover = L.c * (L.k * belt + (1 - L.k));
+      const al = sstep(0.62, 0.92, cover + n * 0.9) * 0.92;
+      const q = k * 4; d[q] = L.col[0]; d[q + 1] = L.col[1]; d[q + 2] = L.col[2]; d[q + 3] = al * 255;
+    }
+  }
+  xCloud.putImageData(iCloud, 0, 0);
+  if (texCloud) texCloud.needsUpdate = true;
+}
+function skyColor(w) { // the glow of the air: thin, blue, orange haze, or a thick yellow-white CO2 sky
+  const P = (w.d.f && w.d.f.P) || 1, co2bar = w.A * 1e-6;
+  let col = [0.43, 0.7, 1], amt = clamp(Math.sqrt(P), 0, 1.6);
+  if (w.ch4 / Math.max(w.A, 1) > 0.1) col = [1, 0.62, 0.3];
+  else if (co2bar > 1) col = [1, 0.9, 0.62];
+  else if (w.t < 4e7) col = [1, 0.5, 0.3];
+  return { col, amt };
+}
+function applyLook() {
+  if (!glOk || !world) return;
+  const sk = skyColor(world); atmo.material.uniforms.col.value.setRGB(sk.col[0], sk.col[1], sk.col[2]); atmo.material.uniforms.amt.value = sk.amt;
+  const sz = clamp(world.p.size, 0.4, 2); globe.scale.setScalar(0.74 + 0.26 * Math.sqrt(sz)); atmo.scale.setScalar(0.74 + 0.26 * Math.sqrt(sz));
+  sunL.intensity = clamp(1.15 * S.lum(world.t) / (world.p.dist * world.p.dist), 0.55, 1.6);
+  cloudMesh.visible = view !== 'temp';
+  overMesh.visible = view === 'currents';
+}
+function refreshTextures() { if (!world) return; paintSurface(); paintClouds(); applyLook(); needRender = true; }
+
+// ---- ocean currents (a view): surface currents follow the winds and turn along the coasts; colour = water temperature ----
+const parts = [];
+function seedPart(p) { const r = Math.random; for (let i = 0; i < 20; i++) { p.lat = (r() * 2 - 1) * 78; p.lon = r() * 360 - 180; if (isSea(p.lat, p.lon)) break; } p.age = r() * 60; return p; }
+function isSea(lat, lon) { const w = world; if (!w || w.wl <= 0.02) return false; const y = clamp(Math.floor((90 - lat) / 180 * LH), 0, LH - 1), x = ((Math.floor((lon + 180) / 360 * LW) % LW) + LW) % LW; return w.elev[y * LW + x] <= w.sea; }
+function windU(lat) { const a = Math.abs(lat); return a < 28 ? -1 : a < 33 ? -1 + (a - 28) / 2.5 : a < 62 ? 1 : a < 68 ? 1 - (a - 62) / 3 : -0.6; }
+function stepCurrents(dt) {
+  if (!world) return;
+  if (!parts.length) for (let i = 0; i < 420; i++) parts.push(seedPart({}));
+  xOver.globalCompositeOperation = 'destination-out'; xOver.fillStyle = 'rgba(0,0,0,0.09)'; xOver.fillRect(0, 0, TW, TH); xOver.globalCompositeOperation = 'source-over';
+  xOver.lineWidth = 1.6; xOver.lineCap = 'round';
+  const sp = 22 * dt, o = [0, 0, 0];
+  for (const p of parts) {
+    let u = windU(p.lat), v = 0.12 * Math.sin(p.lat * Math.PI / 30);
+    const cl = Math.max(0.15, Math.cos(p.lat * Math.PI / 180));
+    let nlon = p.lon + u * sp / cl, nlat = p.lat + v * sp;
+    if (!isSea(nlat, nlon)) { // a coast: run along it, toward the pole (warm western boundary currents) or the equator
+      const dir = Math.sign(p.lat || 1) * (u < 0 ? 1 : -1);
+      nlon = p.lon; nlat = p.lat + dir * sp * 0.9;
+      if (!isSea(nlat, nlon)) { nlat = p.lat - dir * sp * 0.9; if (!isSea(nlat, nlon)) { seedPart(p); continue; } }
+    }
+    if (Math.abs(nlon - p.lon) < 180) {
+      const j = clamp(Math.floor((90 - p.lat) / 180 * S.NY), 0, S.NY - 1); tcol(world.T[j], o);
+      xOver.strokeStyle = `rgba(${o[0] | 0},${o[1] | 0},${o[2] | 0},0.95)`;
+      xOver.beginPath(); xOver.moveTo((p.lon + 180) / 360 * TW, (90 - p.lat) / 180 * TH); xOver.lineTo((nlon + 180) / 360 * TW, (90 - nlat) / 180 * TH); xOver.stroke();
+    }
+    p.lon = ((nlon + 540) % 360) - 180; p.lat = clamp(nlat, -84, 84);
+    if ((p.age -= dt * 10) < 0) seedPart(p);
+  }
+  if (texOver) texOver.needsUpdate = true;
+}
+
+// ---- camera, input ----
+let W = 1, H = 1, zoom = 1;
+const rot = { yaw: 0.9, pitch: 0.32, vy: 0, vp: 0 };
+let lastInput = 0;
+function resize() {
+  const r = stage.getBoundingClientRect(); W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+  if (!glOk) return;
+  renderer.setSize(W, H, false); camera.aspect = W / H;
+  const vf = camera.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect), f = Math.min(vf, hf);
+  camera.position.z = 1.16 / Math.sin(f / 2) * zoom; camera.updateProjectionMatrix(); needRender = true;
+}
+function setQuality(lv) { lv = clamp(lv, 0, qMax); if (lv === qLv || !glOk) return; qLv = lv; PR = QUAL[lv]; renderer.setPixelRatio(PR); resize(); }
+function watchFps(dt) {
+  if (dt <= 0) return; fpsMon.t += dt; fpsMon.n++; if (fpsMon.t < 2) return;
+  const fps = fpsMon.n / fpsMon.t; fpsMon.t = fpsMon.n = 0; fpsMon.last = Math.round(fps);
+  if (fps < 30) { fpsMon.fast = 0; setQuality(qLv - 1); } else if (fps > 56) { if (++fpsMon.fast >= 5) { fpsMon.fast = 0; setQuality(qLv + 1); } } else fpsMon.fast = 0;
+}
+const ptrs = new Map(); let pinch0 = 0, zoom0 = 1, dragDist = 0;
+cv.addEventListener('pointerdown', e => {
+  if (!glOk) return;
+  try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), moved: 0 });
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; }
+  rot.vy = rot.vp = 0; lastInput = performance.now();
+});
+cv.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; p.moved += Math.hypot(dx, dy);
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch0 > 0) { zoom = clamp(zoom0 * pinch0 / d, 0.62, 1.6); resize(); } return; }
+  const k = 3.0 / Math.min(W, H);
+  rot.yaw += dx * k; rot.pitch = clamp(rot.pitch + dy * k, -1.25, 1.25); rot.vy = dx * k * 60; rot.vp = dy * k * 60;
+  dragDist += Math.hypot(dx, dy); lastInput = performance.now(); needRender = true;
+  if (tut && tut.step === 0 && dragDist > 90) tutNext();
+});
+function endPtr(e) {
+  const p = ptrs.get(e.pointerId); if (!p) return; ptrs.delete(e.pointerId);
+  if (ptrs.size === 0 && p.moved < 9 && performance.now() - p.t0 < 500) tap(e.clientX, e.clientY);
+  if (ptrs.size < 2) pinch0 = 0;
+}
+cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); });
+cv.addEventListener('wheel', e => { e.preventDefault(); zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.62, 1.6); resize(); }, { passive: false });
+let rayc = null;
+function pick(cx, cy) {
+  if (!glOk) return null;
+  const r = cv.getBoundingClientRect(), v = new THREE.Vector2((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  rayc = rayc || new THREE.Raycaster(); rayc.setFromCamera(v, camera);
+  const hit = rayc.intersectObject(earth, false)[0]; if (!hit) return null;
+  const q = earth.worldToLocal(hit.point.clone()).normalize();
+  const [lat, lon] = S.latLonOf(q.x, q.y, q.z); return { lat, lon, q };
+}
+function tap(cx, cy) {
+  if (!tool) { if (pick(cx, cy) && tab !== 'land' && mode !== 'title') { /* a hint once */ if (!tapHint) { tapHint = 1; toast(T('「地形」タブで道具をえらぶと、地球儀をタップして使えます')); } } return; }
+  const h = pick(cx, cy); if (!h) return;
+  useTool(tool, h.lat, h.lon);
+}
+let tapHint = 0;
+function surfacePoint(lat, lon, r) { const v = S.dirOf(lat, lon); return new THREE.Vector3(v[0] * r, v[1] * r, v[2] * r); }
+const marks = [];
+function marker(lat, lon, kind) {
+  if (!glOk) return;
+  const col = { volcano: 0xff7a2a, raise: 0xc8a05a, sink: 0x3aa0ff, asteroid: 0xffffff }[kind] || 0xffffff;
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.03, 0.05, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1, side: THREE.DoubleSide, depthWrite: false }));
+  const p = surfacePoint(lat, lon, 1.02); m.position.copy(p); m.lookAt(p.clone().multiplyScalar(2));
+  earth.add(m); marks.push({ m, t: 0, kind });
+  if (kind === 'asteroid') { const f = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff2c0, transparent: true, opacity: 1 })); f.position.copy(p); earth.add(f); marks.push({ m: f, t: 0, kind: 'flash' }); }
+}
+function animMarks(dt) {
+  for (let i = marks.length - 1; i >= 0; i--) {
+    const k = marks[i]; k.t += dt; const f = k.t / 1.3;
+    if (f >= 1) { earth.remove(k.m); k.m.geometry.dispose(); k.m.material.dispose(); marks.splice(i, 1); continue; }
+    if (k.kind === 'flash') { k.m.scale.setScalar(1 + f * 3); k.m.material.opacity = 1 - f; }
+    else { k.m.scale.setScalar(1 + f * 5); k.m.material.opacity = 1 - f; }
+  }
+  return marks.length > 0;
+}
+function render() {
+  if (!glOk || glLost) return;
+  globe.rotation.x = rot.pitch; globe.rotation.y = rot.yaw;
+  cloudMesh.rotation.y += 0; // clouds are painted drifting
+  // the sun's direction in view space (for the night lights)
+  const v = sunL.position.clone().normalize().transformDirection(camera.matrixWorldInverse); sunU.value.copy(v);
+  renderer.render(scene, camera); needRender = false;
+}
+
+// ================= the HUD =================
+const METERS = [
+  { k: 'temp', label: '気温', get: w => dispT(w), fmt: fmtT, log: false },
+  { k: 'co2', label: 'CO₂', get: w => w.A, fmt: fmtCO2, log: true },
+  { k: 'o2', label: '酸素', get: w => w.o2 * 21, fmt: v => fmtO2(v / 21), log: true },
+  { k: 'ice', label: '氷', get: w => w.d.ice || 0, fmt: fmtPct, log: false },
+  { k: 'bio', label: '生物量', get: w => biomass(w), fmt: fmtBio, log: false },
+];
+const METER = Object.fromEntries(METERS.map((m, i) => [m.k, Object.assign({ i }, m)]));
+function buildMeters() {
+  const box = $('meters'); box.textContent = '';
+  for (const m of METERS) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'meter m-' + m.k; b.dataset.k = m.k;
+    b.innerHTML = '<span class="ml"></span><b class="mv">–</b><i class="mt" aria-hidden="true"></i>';
+    b.querySelector('.ml').textContent = T(m.label);
+    b.addEventListener('click', () => { gVar = m.k; setTab('graph'); sfx.tap(); if (tut && tut.step === 2) tutNext(); });
+    box.appendChild(b);
+  }
+}
+function trend(k) { const r = hist.r; if (r.length < 6) return 0; const m = METER[k], a = r[r.length - 1][m.i + 1], b = r[Math.max(0, r.length - 9)][m.i + 1]; const d = m.log ? Math.log((a + 1e-9) / (b + 1e-9)) : a - b; const th = { temp: 0.3, co2: 0.02, o2: 0.02, ice: 0.004, bio: 2 }[k]; return d > th ? 1 : d < -th ? -1 : 0; }
+function renderHud() {
+  const w = world; if (!w) return;
+  $('iAge').textContent = ageText(w);
+  $('iEra').textContent = eraName(w);
+  const civOn = w.civ && w.civ.on;
+  $('iStage').textContent = civOn ? T('文明') : T(STAGE_NAME[w.life.st]);
+  $('iStage').className = 'chip stage s' + (civOn ? 8 : w.life.st);
+  for (const b of $('meters').children) {
+    const m = METER[b.dataset.k], v = m.get(w);
+    b.querySelector('.mv').textContent = m.fmt(v);
+    const tr = trend(m.k); b.querySelector('.mt').textContent = tr > 0 ? '▲' : tr < 0 ? '▼' : '';
+    b.classList.toggle('bad', (m.k === 'temp' && (v > 40 || v < -10)) || (m.k === 'ice' && v > 0.6));
+    b.setAttribute('aria-label', T(m.label) + ' ' + m.fmt(v));
+  }
+  renderTime(); renderGoal(); renderPanelLive();
+}
+function renderTime() {
+  $('playBtn').innerHTML = running ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>';
+  $('playBtn').setAttribute('aria-label', T(running ? '止める' : '時間を進める'));
+  $('playBtn').classList.toggle('on', running);
+  $('spdV').textContent = T(SPEED_LABEL[spd]);
+  const mx = maxSpeed();
+  $('fastBtn').disabled = spd >= mx; $('slowBtn').disabled = spd <= minSpeed();
+  $('viewBtn').querySelector('span').textContent = T({ normal: 'ふつう', temp: '気温', currents: '海流' }[view]);
+}
+function maxSpeed() { if (!world) return 6; if (sc && sc.def.maxSpeed != null) return sc.def.maxSpeed; return world.civ && world.civ.on ? CIV_MAX : 6; }
+function minSpeed() { return 0; }
+function setSpeed(i) { spd = clamp(i, minSpeed(), maxSpeed()); renderTime(); }
+function setRunning(on) {
+  if (!world || anyOverlay()) on = false;
+  if (sc && sc.ended) on = false;
+  if (on && mode === 'free' && !freeSession) { freeSession = true; emit('play_start', { mode: 'normal' }); }
+  running = on; renderTime();
+  if (on && tut && tut.step === 1) tutNext();
+  if (!on && mode === 'free') saveWorld();
+}
+$('playBtn').addEventListener('click', () => { setRunning(!running); sfx.tap(); });
+$('slowBtn').addEventListener('click', () => { setSpeed(spd - 1); sfx.tap(); });
+$('fastBtn').addEventListener('click', () => { setSpeed(spd + 1); sfx.tap(); });
+$('viewBtn').addEventListener('click', () => { view = view === 'normal' ? 'temp' : view === 'temp' ? 'currents' : 'normal'; if (view === 'currents') xOver.clearRect(0, 0, TW, TH); refreshTextures(); renderTime(); sfx.tap(); });
+
+// ---------- tabs and panels ----------
+const TABS = ['planet', 'land', 'life', 'civ', 'graph'];
+function setTab(t) { openTab(tab === t && t !== 'graph' ? null : t); }
+function openTab(t) {
+  tab = t;
+  for (const b of $('tabs').children) b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false');
+  $('panel').hidden = !tab;
+  if (tab !== 'land' && tool) { tool = null; }
+  buildPanel(); layoutSoon();
+}
+for (const b of $('tabs').children) b.addEventListener('click', () => { setTab(b.dataset.tab); sfx.tap(); });
+function allowed(kind, x) {
+  if (!sc) return true;
+  const a = sc.def.allow || {};
+  if (kind === 'planet') return !!(a.planet && a.planet.includes(x));
+  if (kind === 'terrain') return !!(a.terrain && a.terrain.includes(x));
+  return !!a[kind];
+}
+const lockNote = () => '<p class="lock">' + T('🔒 このシナリオでは使えない操作があります') + '</p>';
+const SLIDERS = [
+  { k: 'dist', label: '太陽からの距離', min: 0.7, max: 1.6, step: 0.01, get: w => w.p.dist, fmt: v => nf(v, 2) + ' AU', hint: '近いほど暑い。地球は 1 AU' },
+  { k: 'size', label: '星の大きさ', min: 0.4, max: 2, step: 0.05, get: w => w.p.size, fmt: v => T('{n}倍', { n: nf(v, 2) }), hint: '小さい星は早く冷えて火山が止まる。大きい星は極が寒い' },
+  { k: 'water', label: '水の量', min: 0, max: 3, step: 0.05, get: w => w.p.water, fmt: v => T('{n}倍', { n: nf(v, 2) }), hint: '海がないと岩の風化が起きない。多すぎると陸が沈む' },
+  { k: 'n2', label: '窒素（気圧）', min: -1, max: 0.7, step: 0.01, log: true, get: w => w.p.n2, fmt: v => T('{n}気圧', { n: nf(v, v < 1 ? 2 : 1) }), hint: '空気が濃いと熱がよく運ばれ、少し暖かい' },
+  { k: 'co2', label: '二酸化炭素', min: 1, max: 7, step: 0.01, log: true, get: w => w.A, fmt: fmtCO2, hint: '温室効果ガス。でも岩の風化がゆっくり吸い取っていく' },
+];
+const TOOLS = [
+  { k: 'volcano', label: '火山', hint: 'CO₂を出す（10万年かけて）。灰が氷を黒くしてとかす', icon: '<path d="M3 20l6-10 2 3 3-6 7 13z" fill="#c2593a"/><path d="M12 7c-1-2 1-3 0-5M15 6c1-1 0-3 1-4" stroke="#ff9a3a" stroke-width="1.6" fill="none" stroke-linecap="round"/>' },
+  { k: 'raise', label: '隆起', hint: '山をつくる。新しい岩は風化しやすく、CO₂を吸う。海に栄養も流れる', icon: '<path d="M2 20l7-11 3 4 4-7 6 14z" fill="#9a8a6a"/><path d="M12 9V2M9 5l3-3 3 3" stroke="#3fc29e" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' },
+  { k: 'sink', label: '沈降', hint: '陸を沈める。海の通り道ができ、風化が弱まる', icon: '<path d="M2 15h20v6H2z" fill="#2f7fbf"/><path d="M5 15l4-5 3 3 3-4 4 6z" fill="#8a7a5a"/><path d="M12 2v6M9 5l3 3 3-3" stroke="#59b6ff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' },
+  { k: 'asteroid', label: '隕石', hint: 'ちりで寒くなり、生き物が減る。若い星には水を運ぶ', icon: '<circle cx="15" cy="9" r="5" fill="#a39a92"/><path d="M11 13L3 21M13 15l-5 6M9 11l-6 4" stroke="#ffb35a" stroke-width="1.8" stroke-linecap="round"/>' },
+];
+const NUDGES = [['', 'なし'], ['photo', '光合成'], ['multi', '大型化'], ['land', '上陸'], ['mind', '知能']];
+const POLICIES = [
+  { k: 'en', label: 'エネルギー', opts: ['化石燃料', 'バランス', '再生可能'] },
+  { k: 'rs', label: '資源', opts: ['どんどん使う', '節約', 'リサイクル'] },
+  { k: 'env', label: '環境', opts: ['開発', '保全', '再生＋回収'] },
+];
+function segHtml(id, opts, cur, dis) {
+  return '<div class="seg" role="radiogroup" id="' + id + '">' + opts.map((o, i) => '<button type="button" role="radio" data-v="' + i + '" aria-checked="' + (i === cur ? 'true' : 'false') + '"' + (dis ? ' disabled' : '') + '>' + T(o) + '</button>').join('') + '</div>';
+}
+function buildPanel() {
+  const P = $('panel'); P.textContent = '';
+  if (!tab || !world) return;
+  const w = world, body = document.createElement('div'); body.className = 'pbody p-' + tab; P.appendChild(body);
+  if (tab === 'planet') {
+    const anyLock = sc && SLIDERS.some(s => !allowed('planet', s.k));
+    let h = anyLock ? lockNote() : '';
+    for (const s of SLIDERS) {
+      const dis = !allowed('planet', s.k);
+      h += '<div class="srow' + (dis ? ' dis' : '') + '"><div class="sl"><label for="s_' + s.k + '">' + T(s.label) + '</label><b id="v_' + s.k + '"></b></div>' +
+        '<input type="range" id="s_' + s.k + '" min="' + s.min + '" max="' + s.max + '" step="' + s.step + '"' + (dis ? ' disabled' : '') + '><small>' + T(s.hint) + '</small></div>';
+    }
+    body.innerHTML = h;
+    for (const s of SLIDERS) {
+      const inp = $('s_' + s.k);
+      inp.addEventListener('input', () => { const raw = +inp.value, v = s.log ? Math.pow(10, raw) : raw; setParam(s.k, v); const ve = $('v_' + s.k); if (ve) ve.textContent = s.fmt(v); });
+      inp.addEventListener('pointerdown', () => { inp.dataset.drag = '1'; }); inp.addEventListener('change', () => { delete inp.dataset.drag; });
+    }
+  } else if (tab === 'land') {
+    const anyLock = sc && TOOLS.some(t => !allowed('terrain', t.k));
+    let h = (anyLock ? lockNote() : '') + '<div class="tools">';
+    for (const t of TOOLS) { const dis = !allowed('terrain', t.k); h += '<button type="button" class="tl" data-k="' + t.k + '" aria-pressed="' + (tool === t.k ? 'true' : 'false') + '"' + (dis ? ' disabled' : '') + '><svg viewBox="0 0 24 24" aria-hidden="true">' + t.icon + '</svg><span>' + T(t.label) + '</span></button>'; }
+    h += '</div><p class="thint" id="toolHint"></p><p class="note">' + T('大陸はプレートに乗って、1年に数cmずつ動いています。ぶつかると山脈ができます') + '</p>';
+    body.innerHTML = h;
+    for (const b of body.querySelectorAll('.tl')) b.addEventListener('click', () => { tool = tool === b.dataset.k ? null : b.dataset.k; sfx.tap(); buildPanel(); });
+    const tt = TOOLS.find(t => t.k === tool); $('toolHint').textContent = tt ? T('地球儀をタップ：{t}', { t: T(tt.label) }) + ' — ' + T(tt.hint) : T('道具をえらんでから、地球儀をタップ');
+  } else if (tab === 'life') {
+    const can = allowed('life');
+    body.innerHTML = (sc && !can ? lockNote() : '') +
+      '<div class="ladder" id="ladder">' + STAGE_NAME.map((n, i) => '<i class="lv" data-i="' + i + '" title="' + T(n) + '"></i>').join('') + '</div>' +
+      '<div class="lstage"><b id="lName"></b><small id="lNote"></small></div>' +
+      '<div class="lnext"><span id="lNext"></span><span class="bar"><i id="lBar"></i></span></div>' +
+      '<button type="button" class="btn act" id="seedBtn"' + (can ? '' : ' disabled') + '>' + T('生命の種をまく') + '</button>' +
+      '<div class="sl"><span>' + T('進化の後押し') + '</span><b id="lDiv"></b></div>' + segHtml('nudge', NUDGES.map(x => x[1]), Math.max(0, NUDGES.findIndex(x => x[0] === (w.life.nudge || ''))), !can) +
+      '<small class="note">' + T('えらんだ方向の進化が4倍速くなる。ただし酸素などの条件は必要') + '</small>';
+    $('seedBtn').addEventListener('click', seedLife);
+    for (const b of $('nudge').children) b.addEventListener('click', () => { w.life.nudge = NUDGES[+b.dataset.v][0] || null; for (const c of $('nudge').children) c.setAttribute('aria-checked', c === b ? 'true' : 'false'); sfx.tap(); worldChanged(); });
+  } else if (tab === 'civ') {
+    const c = w.civ, can = allowed('civ');
+    if (!c || !c.on) {
+      body.innerHTML = (sc && !can ? lockNote() : '') + '<p class="civnone" id="civNone"></p>';
+    } else {
+      body.innerHTML = '<div class="cgrid" id="cgrid"></div>' + POLICIES.map(p => '<div class="sl"><span>' + T(p.label) + '</span></div>' + segHtml('pol_' + p.k, p.opts, c.pol[p.k], !can)).join('') +
+        '<small class="note" id="civHint"></small>';
+      for (const p of POLICIES) for (const b of $('pol_' + p.k).children) b.addEventListener('click', () => { setPolicy(p.k, +b.dataset.v); });
+    }
+  } else if (tab === 'graph') {
+    body.innerHTML = '<div class="gsel" role="radiogroup" id="gsel">' + METERS.map(m => '<button type="button" role="radio" data-k="' + m.k + '" class="m-' + m.k + '" aria-checked="' + (m.k === gVar ? 'true' : 'false') + '">' + T(m.label) + '</button>').join('') + '</div>' +
+      '<div class="gwrap"><canvas id="gcv" aria-label="' + T('グラフ') + '"></canvas></div>' +
+      '<div class="grow"><div class="seg sm" id="grange" role="radiogroup"><button type="button" role="radio" data-v="r" aria-checked="' + (gRange === 'r') + '">' + T('いまの早さ') + '</button><button type="button" role="radio" data-v="l" aria-checked="' + (gRange === 'l') + '">' + T('全期間') + '</button></div>' +
+      '<button type="button" class="btn act sm" id="mechBtn">' + T('しくみを見る') + '</button></div>';
+    for (const b of $('gsel').children) b.addEventListener('click', () => { gVar = b.dataset.k; for (const c of $('gsel').children) c.setAttribute('aria-checked', c === b ? 'true' : 'false'); drawGraph(); sfx.tap(); });
+    for (const b of $('grange').children) b.addEventListener('click', () => { gRange = b.dataset.v; for (const c of $('grange').children) c.setAttribute('aria-checked', c === b ? 'true' : 'false'); drawGraph(); sfx.tap(); });
+    $('mechBtn').addEventListener('click', showMech);
+  }
+  renderPanelLive(true);
+}
+function renderPanelLive(force) {
+  const w = world; if (!w || !tab) return;
+  if (tab === 'planet') {
+    for (const s of SLIDERS) { const inp = $('s_' + s.k); if (!inp) continue; const v = s.get(w); if (!inp.dataset.drag || force) inp.value = s.log ? Math.log10(Math.max(v, 1e-9)) : v; $('v_' + s.k).textContent = s.fmt(v); }
+  } else if (tab === 'life') {
+    const L = w.life, st = L.st;
+    for (const i of $('ladder').children) { const k = +i.dataset.i; i.className = 'lv' + (k < st ? ' done' : k === st ? ' cur' : ''); }
+    $('lName').textContent = T(STAGE_NAME[st]); $('lNote').textContent = T(STAGE_NOTE[st]);
+    let nx = '', pr = 0;
+    if (st === 0) { nx = w.flags.dead ? T('この星ではもう生命は生まれない（海がない）') : w.wl > 0.05 && w.t > 8e7 ? T('生命の誕生まで') : T('海ができるのを待っている'); pr = L.pre; }
+    else if (st < 7) { const need = NEXT_NEED[st]; nx = T('つぎ：{s}', { s: T(STAGE_NAME[st + 1]) }) + (need && w.o2 < need ? ' — ' + T('酸素 {n} 以上が必要', { n: fmtO2(need) }) : ''); pr = L.prog; }
+    else { nx = w.civ && w.civ.on ? T('文明が動いている（「文明」タブ）') : T('文明の誕生を待っている'); pr = 1; }
+    $('lNext').textContent = nx; $('lBar').style.transform = 'scaleX(' + clamp(pr, 0, 1) + ')';
+    $('lDiv').textContent = T('生き物の多様さ {n}', { n: nf(L.div) });
+    const sb = $('seedBtn'); sb.hidden = st > 0; sb.disabled = !allowed('life') || st > 0 || !!w.flags.dead;
+  } else if (tab === 'civ') {
+    const c = w.civ;
+    if (!c || !c.on) {
+      const el = $('civNone'); if (!el) { buildPanel(); return; }
+      el.textContent = c && !c.on ? T('文明は崩壊した（{why}）。いつかまた文明が生まれるかもしれない', { why: T(WHY_CIV[c.why] || '気候') }) : T('まだ文明はない。知的生命が生まれると始まる（いま：{s}）', { s: T(STAGE_NAME[w.life.st]) });
+      return;
+    }
+    if (!$('cgrid')) { buildPanel(); return; }
+    const dT = w.d.Tg - c.T0;
+    const rows = [['人口', EN ? nf(c.pop, 1) + ' billion' : T('{n}億人', { n: nf(c.pop * 10, c.pop < 1 ? 1 : 0) })], ['技術', nf(c.tech)], ['気温の上昇', (dT >= 0 ? '+' : '−') + nf(Math.abs(dT), 1) + '°C'], ['CO₂の排出', EN ? nf(Math.max(0, c.em) * 3.67, 1) + ' Gt/yr' : T('{n}億トン/年', { n: nf(Math.max(0, c.em) * 10 * 3.67, 0) })],
+      ['化石燃料', fmtPct(c.fos / 5000)], ['資源', fmtPct(c.res / 100)], ['安定', nf(c.stab)], ['エネルギー不足', fmtPct(c.short)]];
+    $('cgrid').innerHTML = rows.map(r => '<div><span>' + T(r[0]) + '</span><b>' + r[1] + '</b></div>').join('');
+    $('civHint').textContent = c.worst ? T('いちばんの心配：{w}', { w: T(WHY_CIV[c.worst]) }) : c.space ? T('宇宙時代！ 文明は星の外へ') : T('技術が育つと、再生可能エネルギーやCO₂回収が使えるようになる');
+  } else if (tab === 'graph') drawGraph();
+}
+function setParam(k, v) {
+  if (!world || !allowed('planet', k)) return;
+  S.setParam(world, k, v);
+  if (k === 'water') S.geology(world);
+  world.d.f = S.forcing(world);
+  worldChanged(true);
+  if (tut && tut.step === 3 && k === 'dist') tutNext();
+}
+function setPolicy(k, v) {
+  const c = world && world.civ; if (!c || !c.on || !allowed('civ')) return;
+  c.pol[k] = v; sfx.tap();
+  for (const b of $('pol_' + k).children) b.setAttribute('aria-checked', +b.dataset.v === v ? 'true' : 'false');
+  worldChanged();
+}
+function seedLife() {
+  if (!world || !allowed('life')) return;
+  const w = world;
+  if (S.tools.seed(w)) { sfx.good(); handleNews(); buildPanel(); if (tut && tut.step === 5) tutNext(); worldChanged(); return; }
+  toast(w.flags.dead ? T('海がない星には、生命は生まれない') : w.t < 8e7 || w.wl <= 0.05 ? T('まだ海がない。海ができるまで待とう') : T('海が凍っているか、熱すぎる'));
+}
+function useTool(k, lat, lon) {
+  if (!world) return;
+  if (!allowed('terrain', k)) { toast(T('このシナリオでは使えない')); return; }
+  S.tools[k](world, lat, lon); world.news = (world.news || []).filter(e => !['volcano', 'raise', 'sink', 'impact'].includes(e.k));
+  if (world.geoDirty) S.geology(world);
+  marker(lat, lon, k);
+  if (k === 'volcano') sfx.rumble(); else if (k === 'asteroid') sfx.boom(); else sfx.tap();
+  toast(T({ volcano: '火山が噴火！ CO₂がふえていく', raise: '大地が盛り上がった', sink: '大地が沈んだ', asteroid: '隕石が衝突！' }[k]));
+  if (sc) sc.actions = (sc.actions || 0) + 1;
+  worldChanged(true);
+  if (tut && tut.step === 4 && k === 'volcano') tutNext();
+}
+function worldChanged(tex) { if (tex) texDirty = true; needRender = true; if (mode === 'free') saveSoon(); renderHud(); }
+
+// ---------- graph ----------
+const GCOL = { temp: '#ff8a5c', co2: '#a99cff', o2: '#4fb8f0', ice: '#9fc7ea', bio: '#5cc98a' };
+function drawGraph() {
+  const c = $('gcv'); if (!c || !world) return;
+  const r = c.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1), cw = Math.max(1, Math.round(r.width)), ch = Math.max(1, Math.round(r.height));
+  if (c.width !== Math.round(cw * dpr)) { c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, cw, ch);
+  const cs = getComputedStyle(document.documentElement), ink = cs.getPropertyValue('--kb-dim').trim() || '#999', line = cs.getPropertyValue('--kb-line').trim() || '#444';
+  const m = METER[gVar], data = (gRange === 'l' ? hist.l : hist.r).filter(x => isFinite(x[m.i + 1]));
+  const pad = { l: 46, r: 10, t: 10, b: 20 }, pw = cw - pad.l - pad.r, ph = ch - pad.t - pad.b;
+  g.font = '600 10.5px ' + FONT; g.fillStyle = ink; g.strokeStyle = line; g.lineWidth = 1;
+  if (data.length < 2) { g.textAlign = 'center'; g.fillText(T('時間を進めるとグラフができる'), cw / 2, ch / 2); return; }
+  const t0 = data[0][0], t1 = data[data.length - 1][0];
+  let lo = Infinity, hi = -Infinity; for (const x of data) { const v = m.log ? Math.log10(Math.max(x[m.i + 1], 1e-4)) : x[m.i + 1]; lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  if (gVar === 'ice') { lo = 0; hi = Math.max(hi, 0.3); }
+  if (hi - lo < (m.log ? 0.3 : gVar === 'temp' ? 4 : 1e-6)) { const mid = (hi + lo) / 2, h = m.log ? 0.15 : gVar === 'temp' ? 2 : Math.max(0.5, Math.abs(mid) * 0.1); lo = mid - h; hi = mid + h; }
+  const X = t => pad.l + (t1 > t0 ? (t - t0) / (t1 - t0) : 1) * pw, Y = v => pad.t + (1 - (v - lo) / (hi - lo)) * ph;
+  // grid: 3 lines with labels
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (let i = 0; i <= 2; i++) { const v = lo + (hi - lo) * i / 2, y = Y(v); g.globalAlpha = 0.6; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(cw - pad.r, y); g.stroke(); g.globalAlpha = 1; g.fillText(m.fmt(m.log ? Math.pow(10, v) : v), pad.l - 4, y); }
+  if (gVar === 'temp' && lo < 0 && hi > 0) { g.setLineDash([3, 3]); g.beginPath(); g.moveTo(pad.l, Y(0)); g.lineTo(cw - pad.r, Y(0)); g.stroke(); g.setLineDash([]); }
+  // events in range
+  for (const e of world.ev) if (e.t >= t0 && e.t <= t1 && EV_MARK[e.k]) { const x = X(e.t); g.globalAlpha = 0.5; g.strokeStyle = EV_MARK[e.k]; g.beginPath(); g.moveTo(x, pad.t); g.lineTo(x, pad.t + ph); g.stroke(); g.globalAlpha = 1; }
+  g.strokeStyle = GCOL[gVar]; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+  data.forEach((x, i) => { const v = m.log ? Math.log10(Math.max(x[m.i + 1], 1e-4)) : x[m.i + 1], px = X(x[0]), py = Y(v); if (i) g.lineTo(px, py); else g.moveTo(px, py); });
+  g.stroke();
+  const lx = X(data[data.length - 1][0]), lv = data[data.length - 1][m.i + 1]; g.fillStyle = GCOL[gVar]; g.beginPath(); g.arc(lx, Y(m.log ? Math.log10(Math.max(lv, 1e-4)) : lv), 3.2, 0, 6.283); g.fill();
+  g.fillStyle = ink; g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillText(spanText(t1 - t0), pad.l, ch - 5);
+  g.textAlign = 'right'; g.fillText(T('いま'), cw - pad.r, ch - 5);
+}
+const EV_MARK = { life: '#5cc98a', goe: '#4fb8f0', snow: '#cfe8ff', thaw: '#ffd36b', extinct: '#ff6a4d', wipe: '#ff6a4d', civ: '#ffd36b', collapse: '#ff6a4d', boil: '#ff6a4d' };
+function spanText(dt) { return world.civ && world.civ.on && dt < 1e5 ? T('{y}前から', { y: fmtY(dt) }) : T('{y}前から', { y: fmtY(dt) }); }
+const FONT = '"M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif';
+function sampleHist(force) {
+  const w = world; if (!w) return;
+  const row = [w.t, Math.round(dispT(w) * 10) / 10, Math.round(w.A * 10) / 10, Math.round(w.o2 * 21 * 1e4) / 1e4, Math.round((w.d.ice || 0) * 1000) / 1000, Math.round(biomass(w) * 10) / 10];
+  const r = hist.r, l = hist.l, gap = SPEEDS[spd] * 0.25;
+  if (force || !r.length || w.t - r[r.length - 1][0] >= gap || w.t < r[r.length - 1][0]) { r.push(row); if (r.length > 240) r.splice(0, r.length - 240); }
+  if (force || !l.length || w.t - l[l.length - 1][0] >= 1e7 || w.t < l[l.length - 1][0]) { l.push(row); if (l.length > 700) l.splice(0, l.length - 700); }
+}
+
+// ================= events: milestones and crises =================
+const WHY_EXT = { impact: '隕石の衝突でちりが日光をさえぎり、植物が育たなくなった', snow: '星がまるごと凍りついた', hot: '暑すぎた', cold: '寒すぎた', anoxia: '海と空気の酸素が足りなくなった', rapid: '気温が急に変わり、生き物の進化が追いつかなかった', civ: '文明が森や草原を切り開き、すみかがなくなった' };
+const WHY_CIV = { heat: '温暖化で暑くなりすぎた', cold: '寒くなりすぎた', energy: 'エネルギーが足りない', res: '資源を使い果たした', food: '食料が足りない', nature: '自然が壊れ、生き物が減りすぎた', climate: '気候が厳しすぎた' };
+function explain(e) {
+  const w = world, d = w.d, L = d.lim ? Math.round(d.lim) : 290;
+  switch (e.k) {
+    case 'snow': return { kind: 'ice', title: T('全球凍結！'), body: T('氷が赤道まで広がり、星が真っ白に凍りついた。'),
+      why: (e.why === 'ch4' ? T('酸素がメタン（強い温室効果ガス）をこわし、温室効果が弱まった。') : e.why === 'sun' ? T('太陽からの光が足りない（遠すぎる、または若い太陽が暗い）。') : T('CO₂が {n} まで減って、温室効果が弱まった。', { n: fmtCO2(e.co2 || w.A) })) +
+        T('氷は日光をはね返す（アルベド）。氷が広がるほど冷え、さらに氷が広がる——この連鎖が止まらなくなった。'),
+      how: T('凍った星では雨が降らず、岩の風化が止まる。火山のCO₂は出つづけるので、待てばいつか温室効果でとける。火山を起こすと早い。') };
+    case 'boil': return { kind: 'hot', title: T('海が沸騰しはじめた！'), body: T('気温が {t} をこえた。', { t: fmtT(d.Tg) }),
+      why: (e.why === 'sun' ? T('太陽が近すぎる（明るすぎる）。') : T('温室効果が強すぎる。')) + T('水蒸気も温室効果ガス。暑いほど水蒸気がふえ、宇宙へ出ていける熱が限界（約{L} W/m²）に達すると、もう冷えられない（暴走温室効果）。', { L }),
+      how: T('太陽から遠ざけるか、CO₂を減らそう。海がなくなると、もう戻らない。') };
+    case 'dry': return { kind: 'hot', final: true, title: T('海が干上がった'), body: T('水蒸気は高い空で分解され、水素は宇宙へ逃げてしまった。'), why: T('海がないと岩の風化も止まり、CO₂がたまる一方になる。金星と同じ道。'), how: T('新しい星をつくり直そう。太陽からの距離がだいじ。') };
+    case 'extinct': return { kind: 'bad', title: T('大量絶滅'), body: T('生き物の種類が半分以下に減った。'), why: T(WHY_EXT[e.why] || WHY_EXT.rapid) + T('（数百万年かけて、また多様になっていく）'), how: T('気温をおだやかに保つと、生き物はまた増えていく。') };
+    case 'wipe': return { kind: 'bad', title: T('複雑な生き物が絶えた'), body: T('動物や植物がいなくなり、細胞だけの生き物が残った。'), why: T(WHY_EXT[e.why] || WHY_EXT.rapid) + T('（きびしい状態が数百万年つづいた）'), how: T('気候が戻れば、また多細胞の生き物へ進化していく。') };
+    case 'dead': return { kind: 'bad', final: true, title: T('生命が絶えた'), body: T('海がなくなり、微生物も生きられなくなった。'), why: T('液体の水がないと、生命は生きられない。'), how: T('新しい星をつくり直そう。') };
+    case 'collapse': return { kind: 'bad', title: T('文明が崩壊した'), body: T('人びとは都市を捨て、技術の多くが失われた。'), why: T(WHY_CIV[e.why] || WHY_CIV.climate), how: T('エネルギー・資源・環境のバランスがだいじ。数万年後、また文明が生まれるかもしれない。') };
+  }
+  return null;
+}
+const MILESTONE = {
+  life: e => [T('生命が誕生した！'), e.seeded ? T('まいた種から、海に最初の微生物が生まれた') : T('海の中で、最初の微生物が生まれた')],
+  stage: e => [T('進化：{s}', { s: T(STAGE_NAME[e.st]) }), T(STAGE_NOTE[e.st])],
+  goe: () => [T('大酸化イベント！'), T('空気に酸素がたまりはじめた。メタンがこわれて寒くなるかも')],
+  thaw: e => [T('全球凍結から脱出！'), T('たまったCO₂の温室効果で氷がとけた（{d}かかった）', { d: fmtY(e.dur || 0) })],
+  civ: () => [T('文明が生まれた！'), T('ここから時間は1年ずつ。政策で星の未来が変わる')],
+  space: () => [T('宇宙時代へ！'), T('文明は星の外へふみ出した')],
+};
+let crisisQ = [];
+function handleNews() {
+  const w = world; if (!w || !w.news || !w.news.length) return;
+  const q = w.news; w.news = [];
+  for (const e of q) onEvent(e);
+}
+function onEvent(e) {
+  if (e.k === 'life') bumpStat('life', 1);
+  if (e.k === 'goe') bumpStat('goe', 1);
+  if (e.k === 'thaw') addStat('thaw');
+  if (e.k === 'civ') bumpStat('civ', 1);
+  if (e.k === 'space') bumpStat('space', 1);
+  if (e.k === 'extinct' || e.k === 'wipe') addStat('ext');
+  if (e.k === 'collapse') addStat('collapse');
+  if (e.k === 'civ') { setSpeed(0); if (tab !== 'civ' && (!sc || allowed('civ'))) setTab('civ'); }
+  if (MILESTONE[e.k]) { const [t, x] = MILESTONE[e.k](e); banner(t, x, e.k === 'thaw' || e.k === 'goe' ? 'good' : 'good'); sfx.good(); texDirty = true; return; }
+  const ex = explain(e); if (!ex) return;
+  if (sc) { banner(ex.title, ex.body, 'bad'); sfx.warn(); return; } // a scenario decides with its own goal
+  crisisQ.push(ex); sfx.warn();
+}
+function showCrisis() {
+  const ex = crisisQ.shift(); if (!ex) return false;
+  running = false; renderTime();
+  $('evIcon').className = 'evicon ' + ex.kind; $('evTitle').textContent = ex.title; $('evBody').textContent = ex.body;
+  $('evWhy').textContent = ex.why; $('evHow').textContent = ex.how;
+  $('evGo').textContent = ex.final ? T('新しい星をつくる') : T('つづける');
+  $('evGo').dataset.final = ex.final ? '1' : '';
+  $('ovEvent').hidden = false; texDirty = true; saveWorld();
+  return true;
+}
+$('evGo').addEventListener('click', () => {
+  $('ovEvent').hidden = true; sfx.tap();
+  if ($('evGo').dataset.final) { newPlanetFlow(); return; }
+  if (!showCrisis()) setRunning(false);
+});
+$('evLook').addEventListener('click', () => { $('ovEvent').hidden = true; setTab('graph'); if (!showCrisis()) setRunning(false); });
+
+// ================= the "how it works" panel =================
+function showMech() { $('ovMech').hidden = false; running = false; renderTime(); renderMech(); sfx.tap(); }
+$('mechClose').addEventListener('click', () => { $('ovMech').hidden = true; });
+function renderMech() {
+  const w = world; if (!w) return; const d = w.d, f = d.f || S.forcing(w);
+  const lim = d.lim > 1e8 ? null : d.lim, abs = d.abs || 0;
+  const row = (k, v, cls) => '<div class="mrow' + (cls ? ' ' + cls : '') + '"><span>' + k + '</span><b>' + v + '</b></div>';
+  const W = x => nf(x, 0) + ' W/m²';
+  let h = '<h3>' + T('エネルギーのつりあい') + '</h3>' +
+    row(T('太陽から届く光'), W(d.inS || 0) + ' <small>(' + T('太陽の明るさ {l}倍・距離 {d} AU', { l: nf(S.lum(w.t), 2), d: nf(w.p.dist, 2) }) + ')</small>') +
+    row(T('はね返す光（アルベド）'), fmtPct(d.alb || 0) + ' <small>(' + T('雲・氷・陸・海') + ')</small>') +
+    row(T('吸収する光'), W(abs)) +
+    row(T('宇宙へ出る熱'), W(d.olr || 0)) +
+    row(T('温室効果の強さ'), W(f.total) + ' <small>(CO₂ ' + nf(f.co2, 0) + ' · ' + T('メタン') + ' ' + nf(f.ch4, 0) + ' · ' + T('気圧') + ' ' + nf(f.p, 0) + (f.haze < -0.5 ? ' · ' + T('もや') + ' ' + nf(f.haze, 0) : '') + ')</small>');
+  if (lim) h += row(T('暴走温室の限界'), W(lim)) + '<div class="mbar"><i style="transform:scaleX(' + clamp(abs / lim, 0, 1) + ')"></i></div><p class="msmall">' + T('吸収する光がこの限界をこえると、海が沸騰するまで暑くなる') + '</p>';
+  h += '<h3>' + T('緯度ごとの気温') + '</h3><canvas id="latcv" class="latcv" aria-label="' + T('緯度ごとの気温') + '"></canvas>' +
+    '<p class="msmall">' + T('氷は−2〜−8℃より寒いところにできる。白い帯が氷。海流と大気が赤道の熱を極へ運ぶ') + '</p>';
+  const k = v => nf(v * 1000, v * 1000 < 10 ? 1 : 0) + ' ' + T('ppm/千年');
+  h += '<h3>' + T('炭素の流れ（CO₂の出入り）') + '</h3>' +
+    row('＋ ' + T('火山'), k(d.V || 0), 'up') + row('− ' + T('岩の風化'), k(d.W || 0), 'dn') + row('− ' + T('生物の埋没'), k(d.Bur || 0), 'dn') +
+    (d.E > 0 ? row('＋ ' + T('文明の排出'), k(d.E), 'up') : '') + (d.cdr > 0 ? row('− ' + T('CO₂回収'), k(d.cdr), 'dn') : '') +
+    '<p class="msmall">' + T('気温が上がると雨がふえ、岩の風化が速くなってCO₂が減る。下がると遅くなりCO₂がふえる。数十万年かけて気温を保つ「炭素–ケイ酸塩サイクル」') + '</p>';
+  h += '<h3>' + T('酸素') + '</h3>' + row(T('光合成でできる酸素'), nf((d.Pox || 0) * 100, 0)) + row(T('火山ガスが使う酸素'), nf((d.R || 0) * 100, 0)) +
+    '<p class="msmall">' + T('つくる量が使われる量をこえると、酸素がたまりはじめる（大酸化イベント）') + '</p>';
+  h += '<h3>' + T('海流') + '</h3><p class="msmall">' + T('暖かい海水は極へ、冷たい海水は赤道へ流れて熱を運ぶ。陸で海の通り道がふさがると、極が寒くなる。「表示」で海流が見える') + '</p>';
+  $('mechBody').innerHTML = h;
+  drawLat();
+}
+function drawLat() {
+  const c = $('latcv'); if (!c || !world) return;
+  const r = c.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1), cw = Math.max(1, Math.round(r.width)), ch = Math.max(1, Math.round(r.height));
+  c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr);
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(document.documentElement), ink = cs.getPropertyValue('--kb-dim').trim() || '#999', line = cs.getPropertyValue('--kb-line').trim() || '#444';
+  const Tr = world.T, lo = Math.min(-40, ...Tr), hi = Math.max(40, ...Tr), pad = 30;
+  const X = la => pad + (la + 90) / 180 * (cw - pad - 8), Y = t => 8 + (1 - (t - lo) / (hi - lo)) * (ch - 26);
+  // ice by row
+  for (let j = 0; j < S.NY; j++) { let ic = 0; for (let i = 0; i < S.NX; i++) { const k = j * S.NX + i; ic += world.lf[k] * world.iceL[k] + (1 - world.lf[k]) * world.iceO[k]; } ic /= S.NX; if (ic > 0.3) { g.fillStyle = 'rgba(200,230,255,' + (0.15 + 0.35 * ic) + ')'; g.fillRect(X(S.latC[j] - 2.8), 8, X(S.latC[j] + 2.8) - X(S.latC[j] - 2.8), ch - 26); } }
+  g.strokeStyle = line; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(pad, Y(0)); g.lineTo(cw - 8, Y(0)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = ink; g.font = '600 10px ' + FONT; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText('0°C', pad - 3, Y(0)); g.fillText(fmtT(hi), pad - 3, Y(hi)); g.fillText(fmtT(lo), pad - 3, Y(lo));
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(T('南極'), X(-80), ch - 3); g.fillText(T('赤道'), X(0), ch - 3); g.fillText(T('北極'), X(80), ch - 3);
+  g.strokeStyle = GCOL.temp; g.lineWidth = 2; g.beginPath();
+  for (let j = S.NY - 1; j >= 0; j--) { const x = X(S.latC[j]), y = Y(Tr[j]); if (j === S.NY - 1) g.moveTo(x, y); else g.lineTo(x, y); }
+  g.stroke();
+}
+
+// ================= scenarios =================
+const SC_TEXT = {
+  green: { title: '氷河期の星を緑の星に', story: '高い山が多く、岩の風化がCO₂を吸いすぎて氷河期になった星。', goal: '400万年以内に、氷を15%以下、陸の緑を30%以上に', hint: '山を沈めると風化が弱まってCO₂がふえる。火山もCO₂を出す' },
+  warm: { title: '温暖化を止めろ', story: '産業革命がはじまった。石炭と石油で豊かになるけれど……', goal: '300年後に、気温の上昇2℃未満・技術60以上で文明を守る', hint: '技術が育ったら再生可能エネルギーへ。森を守り、CO₂回収も' },
+  snow: { title: '全球凍結からの脱出', story: '星がまるごと凍りついた。氷が日光をはね返し、とけない。', goal: '300万年以内に、氷を40%未満に', hint: '凍った星では風化が止まる。火山のCO₂と灰が氷をとかす' },
+  goe: { title: '大酸化イベント', story: '光合成をする細菌が生まれた。でも酸素は、火山のガスにすぐ使われてしまう。', goal: '2億5000万年以内に酸素を0.6%に（全球凍結させない）', hint: '「光合成」を後押し。大陸を押し上げると栄養が海に流れる。メタンが減ると冷えるので注意' },
+  sun: { title: '明るくなる太陽', story: '太陽は少しずつ明るくなる。13億年後の未来、星は暑くなりすぎている。', goal: '2億5000万年後に気温32℃以下。海と生き物を守る', hint: '星を太陽から少しずつ遠ざけよう。遠すぎると凍る' },
+  cradle: { title: '生命のゆりかご', story: '遠くて水の少ない、凍った若い星。', goal: '1億5000万年以内に生命を生み、海に広げる', hint: '距離・水・CO₂を変えよう。海ができたら「生命の種をまく」' },
+  gate: { title: '海流の通り道', story: '北緯48度を陸がぐるりと一周していて、暖かい海流が北へ行けない。', goal: '200万年以内に、北極圏の気温を−22℃以上に', hint: '陸を沈めて、海の通り道をあけよう' },
+  dawn: { title: '文明の夜明け', story: '知的生命が文明をはじめた。宇宙へ行けるだろうか。', goal: '500年以内に技術100（宇宙時代）。生き物の多様さ50以上を守る', hint: '資源は節約・リサイクル。開発しすぎると自然が減る' },
+};
+const GOAL_LABEL = { ice: '氷', green: '陸の緑', dT: '気温の上昇', tech: '技術', year: '年', o2: '酸素', temp: '気温', life: '生命', sea: '海の生き物', arctic: '北極圏の気温', div: '生き物の多様さ' };
+function goalFmt(k, v) {
+  if (k === 'ice' || k === 'green') return fmtPct(v);
+  if (k === 'dT') return (v >= 0 ? '+' : '−') + nf(Math.abs(v), 1) + '°C';
+  if (k === 'temp' || k === 'arctic') return fmtT(v);
+  if (k === 'o2') return fmtO2(v);
+  if (k === 'life') return v >= 1 ? T('あり') : T('なし');
+  if (k === 'sea') return fmtPct(Math.min(v, 1));
+  return nf(v);
+}
+function scUsed() { return sc.def.allow.civ ? world.civ.y : world.t - sc.t0; }
+function startScenario(i) {
+  const def = S.SCEN[i]; if (!def) return;
+  if (mode === 'free') leaveFree();
+  hideOverlays();
+  clearBanners(); world = def.setup(); mode = 'scen'; tool = null; view = 'normal';
+  sc = { def, i, t0: world.t, ended: false, devSum: 0, devN: 0, actions: 0 };
+  hist.r = []; hist.l = []; sampleHist(true);
+  spd = def.speed; running = false;
+  tab = def.allow.civ ? 'civ' : def.allow.planet ? 'planet' : def.allow.life && !def.allow.terrain ? 'life' : 'land';
+  for (const b of $('tabs').children) b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false');
+  $('panel').hidden = false; $('tut').hidden = true; tut = null;
+  refreshTextures(); buildPanel(); renderHud(); layoutSoon();
+  emit('play_start', { mode: 'normal', stage: i + 1 });
+  showIntro();
+}
+function showIntro() {
+  const t = SC_TEXT[sc.def.id];
+  $('inNum').textContent = T('シナリオ {n}', { n: sc.i + 1 }); $('inTitle').textContent = T(t.title); $('inStory').textContent = T(t.story);
+  $('inGoal').textContent = T(t.goal); $('inHint').textContent = T(t.hint);
+  $('ovIntro').hidden = false;
+}
+$('inGo').addEventListener('click', () => { $('ovIntro').hidden = true; sfx.tap(); setRunning(true); });
+$('inBack').addEventListener('click', () => { $('ovIntro').hidden = true; quitScenario(); });
+function renderGoal() {
+  const box = $('goal');
+  stage.classList.toggle('hasgoal', !!sc);
+  if (!sc) { box.hidden = true; return; }
+  box.hidden = false;
+  const t = SC_TEXT[sc.def.id], r = sc.last || sc.def.check(world, sc);
+  const used = scUsed(), left = Math.max(0, sc.def.limit - used);
+  $('gTitle').textContent = T(t.title);
+  $('gLeft').textContent = T('のこり {t}', { t: fmtY(left) });
+  $('gRows').innerHTML = r.goals.filter(g => g.k !== 'year').map(g => { const ok = g.le ? g.v <= g.goal : g.v >= g.goal; return '<span class="' + (ok ? 'ok' : '') + '">' + T(GOAL_LABEL[g.k]) + ' <b>' + goalFmt(g.k, g.v) + '</b> / ' + (g.le ? '≤' : '≥') + goalFmt(g.k, g.goal) + '</span>'; }).join('');
+  $('gBar').style.transform = 'scaleX(' + clamp(used / sc.def.limit, 0, 1) + ')';
+}
+$('goalHelp').addEventListener('click', () => { if (!sc) return; running = false; renderTime(); showIntro(); $('inGo').textContent = T('つづける'); });
+function scCheck() {
+  if (!sc || sc.ended) return;
+  const used = scUsed(); sc.end = used >= sc.def.limit - 1e-6;
+  if (sc.def.id === 'sun') { sc.devSum += Math.abs(world.d.Tg - 15); sc.devN++; }
+  const r = sc.def.check(world, sc); sc.last = r;
+  if (r.win) scEnd(true);
+  else if (r.fail) scEnd(false, r.fail);
+  else if (sc.end) scEnd(false, 'time');
+}
+const FAIL_TEXT = {
+  snow: '全球凍結してしまった。氷が日光をはね返し、冷えるほど氷が広がる連鎖が止まらなかった。', time: '時間切れ。', heat: '気温が上がりすぎた。CO₂の排出が多すぎた。', tech: '技術が足りなかった。',
+  collapse: '文明が崩壊した。', hot: '暑くなりすぎた。明るくなる太陽に、CO₂の調節だけでは追いつけなかった。', wipe: '複雑な生き物が絶えてしまった。', dry: '海が干上がってしまった。', nature: '自然が壊れ、生き物の多様さが減りすぎた。',
+};
+function scEnd(win, why) {
+  sc.ended = true; running = false; renderTime();
+  const def = sc.def, frac = clamp(scUsed() / def.limit, 0, 1), q = clamp(def.quality(world, sc), 0, 1);
+  let score = 0, stars = 0;
+  if (win) { score = Math.round(def.id === 'sun' ? 600 + 400 * q : 600 + 250 * (1 - frac) + 150 * q); score = clamp(score, 1, 1000); stars = score >= 900 ? 3 : score >= 750 ? 2 : 1; }
+  const prev = save.sc[def.id], isNew = win && (!prev || score > prev.best);
+  if (win) {
+    save.sc[def.id] = { best: Math.max(score, prev ? prev.best : 0), stars: Math.max(stars, prev ? prev.stars : 0) };
+    save.total = Object.values(save.sc).reduce((a, x) => a + x.best, 0);
+    save.stats.clears = Object.keys(save.sc).length;
+    writeSave();
+  }
+  emit('play_end', { mode: 'normal', score, reason: win ? 'clear' : 'over', stage: sc.i + 1, stats: { actions: sc.actions || 0 } });
+  if (win) emit('stage_clear', { stage: sc.i + 1, stars });
+  if (isNew) emit('best', { score: save.total });
+  (win ? sfx.win : sfx.lose)();
+  const t = SC_TEXT[def.id];
+  $('rTitle').textContent = win ? T('クリア！') : T('失敗……');
+  $('rName').textContent = T(t.title);
+  $('rScore').textContent = win ? nf(score) : '0';
+  $('rStars').innerHTML = [0, 1, 2].map(i => '<i class="' + (i < stars ? 'on' : '') + '">★</i>').join('');
+  $('rStars').setAttribute('aria-label', T('星 {n}つ', { n: stars }));
+  $('rNew').hidden = !isNew;
+  let msg = '';
+  if (!win) { msg = T(FAIL_TEXT[why] || FAIL_TEXT.time); if (why === 'collapse' && world.civ && WHY_CIV[world.civ.why]) msg += ' ' + T(WHY_CIV[world.civ.why]) + '。'; msg += ' ' + T('ヒント：{h}', { h: T(t.hint) }); }
+  else msg = T('かかった時間：{t}', { t: fmtY(scUsed()) });
+  $('rWhy').textContent = msg;
+  $('rBest').textContent = T('ベスト {b} 点 ・ シナリオ合計 {s} 点', { b: nf(save.sc[def.id] ? save.sc[def.id].best : 0), s: nf(save.total) });
+  const next = S.SCEN[sc.i + 1];
+  $('rNext').hidden = !win || !next; $('rAgain').classList.toggle('sub', win && !!next);
+  $('ovResult').hidden = false;
+}
+$('rAgain').addEventListener('click', () => { sfx.tap(); startScenario(sc.i); });
+$('rNext').addEventListener('click', () => { sfx.tap(); startScenario(sc.i + 1); });
+$('rList').addEventListener('click', () => { sfx.tap(); quitScenario(); });
+function quitScenario() {
+  if (sc && !sc.ended) emit('play_end', { mode: 'normal', score: 0, reason: 'quit', stage: sc.i + 1 });
+  sc = null; showTitle();
+}
+
+// ================= free mode =================
+function newWorld() {
+  const seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0;
+  const w = S.create({ t: 0, p: { seed, dist: 1, size: 1, water: 1, n2: 0.78, co2: 3e5 } });
+  w.d.f = S.forcing(w); S.step(w, 1e-3); w.t = 0;
+  return w;
+}
+function startFree(w, fresh) {
+  hideOverlays(); clearBanners(); sc = null; mode = 'free'; world = w; tool = null; freeSession = false;
+  if (fresh) { hist.r = []; hist.l = []; spd = 6; addStat('worlds'); }
+  sampleHist(true); running = false;
+  if (!tab) tab = 'planet';
+  for (const b of $('tabs').children) b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false');
+  $('panel').hidden = !tab;
+  refreshTextures(); buildPanel(); renderHud(); layoutSoon();
+  saveWorld();
+  if (fresh) toast(T('星の設定を決めて、▶で時間を進めよう'), 3500);
+}
+function leaveFree() { if (mode !== 'free') return; if (freeSession) emit('play_end', { mode: 'normal', score: 0, reason: 'quit' }); freeSession = false; saveWorld(); }
+function newPlanetFlow() {
+  const go = () => { startFree(newWorld(), true); if (!save.tut) startTutorial(); };
+  if (store.get(WORLD_KEY) && mode !== 'free' && UI && UI.confirm) {
+    UI.confirm({ title: T('新しい星をつくりますか？'), message: T('いま育てている星は消えます。'), ok: T('つくる'), cancel: T('やめる'), danger: true }).then(ok => { if (ok) go(); });
+  } else go();
+}
+function saveWorld() {
+  if (mode !== 'free' || !world) return;
+  try { const o = S.serialize(world); o.hist = { r: hist.r, l: hist.l }; o.spd = spd; o.at = Date.now(); store.set(WORLD_KEY, JSON.stringify(o)); lastSaveAt = performance.now(); } catch (e) {}
+  bumpStat('maxMyr', Math.floor(world.t / 1e6));
+}
+let saveTimer = 0;
+function saveSoon() { if (saveTimer) return; saveTimer = setTimeout(() => { saveTimer = 0; saveWorld(); }, 1500); }
+function loadWorld() {
+  let o = null; try { o = JSON.parse(store.get(WORLD_KEY) || 'null'); } catch (e) { o = null; }
+  let w = null; try { w = S.deserialize(o); } catch (e) { w = null; }
+  if (!w) return null;
+  hist.r = Array.isArray(o.hist && o.hist.r) ? o.hist.r.filter(Array.isArray) : []; hist.l = Array.isArray(o.hist && o.hist.l) ? o.hist.l.filter(Array.isArray) : [];
+  spd = clamp(Number.isInteger(o.spd) ? o.spd : 6, 0, 6);
+  return w;
+}
+
+// ================= title, overlays =================
+const OVERLAYS = ['ovTitle', 'ovIntro', 'ovResult', 'ovEvent', 'ovMech', 'howto'];
+function anyOverlay() { return OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer'); }
+function hideOverlays() { OVERLAYS.forEach(id => { $(id).hidden = true; }); }
+function showTitle() {
+  if (mode === 'free') leaveFree();
+  hideOverlays(); running = false; mode = 'title'; renderTime();
+  if (!world) { world = newWorld(); refreshTextures(); }
+  const saved = store.get(WORLD_KEY);
+  let info = null; try { const o = JSON.parse(saved || 'null'); if (o && typeof o.t === 'number') info = o; } catch (e) {}
+  $('tContinue').hidden = !info;
+  if (info) $('tContinue').querySelector('small').textContent = T('{a}・{s}', { a: info.civ && info.civ.on ? T('文明 {n}年目', { n: nf(Math.floor(info.civ.y) + 1) }) : NOW_T - info.t > 0 ? T('{y}前', { y: fmtY(NOW_T - info.t) }) : T('{y}後', { y: fmtY(info.t - NOW_T) }), s: T(STAGE_NAME[(info.life && info.life.st) || 0]) });
+  $('tNew').classList.toggle('sub', !!info);
+  $('tTotal').textContent = T('シナリオ合計 {n} 点', { n: nf(save.total) });
+  const list = $('tList'); list.textContent = '';
+  S.SCEN.forEach((d, i) => {
+    const r = save.sc[d.id], b = document.createElement('button'); b.type = 'button'; b.className = 'scard sub';
+    b.innerHTML = '<span class="sn">' + (i + 1) + '</span><span class="st"><b></b><small></small></span><span class="ss"></span>';
+    b.querySelector('b').textContent = T(SC_TEXT[d.id].title); b.querySelector('small').textContent = T(SC_TEXT[d.id].goal);
+    b.querySelector('.ss').innerHTML = r ? '<i>' + '★'.repeat(r.stars) + '<em>' + '★'.repeat(3 - r.stars) + '</em></i><small>' + nf(r.best) + '</small>' : '';
+    b.addEventListener('click', () => { sfx.tap(); startScenario(i); });
+    list.appendChild(b);
+  });
+  $('ovTitle').hidden = false;
+  renderHud(); needRender = true;
+}
+$('tContinue').addEventListener('click', () => { const w = loadWorld(); if (!w) { toast(T('保存した星を読み込めませんでした')); return; } sfx.tap(); startFree(w, false); });
+$('tNew').addEventListener('click', () => { sfx.tap(); newPlanetFlow(); });
+$('tHow').addEventListener('click', () => { showHowto(false); });
+
+// how to play
+let howFirst = false;
+function showHowto(first) { howFirst = !!first; running = false; renderTime(); $('howto').hidden = false; try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {} }
+function closeHowto(go) {
+  $('howto').hidden = true; store.set(HOWTO_KEY, '1');
+  if (howFirst && go) { howFirst = false; startFree(newWorld(), true); startTutorial(); return; }
+  if (howFirst && !go) { save.tut = 1; writeSave(); }
+  howFirst = false;
+  if (mode === 'title' || !world) showTitle();
+}
+$('howtoGo').addEventListener('click', () => closeHowto(true));
+$('howtoAlt').addEventListener('click', () => closeHowto(false));
+
+// ================= tutorial (first play) =================
+const TUT = [
+  { text: '地球儀を指でドラッグして、回してみよう', sub: '2本の指でひろげると拡大できる' },
+  { text: '▶ を押して時間を進めよう', sub: 'いまは1秒で100万年。«» で早さを変えられる' },
+  { text: '上のメーターで、気温・CO₂・酸素・氷・生物量がわかる', sub: 'メーターをタップするとグラフになる', next: true },
+  { text: '「星」タブで、太陽からの距離を動かしてみよう', sub: '近いと暑く、遠いと寒い。メーターの気温を見てね', tab: 'planet' },
+  { text: '「地形」→「火山」をえらんで、地球儀をタップ', sub: '火山はCO₂を出す。CO₂は温室効果で星を暖める', tab: 'land' },
+  { text: '「生命」タブで「生命の種をまく」', sub: '海ができてからまける（あとでもOK）', tab: 'life', next: true },
+  { text: 'チュートリアル完了！ 46億年、星を育てよう', sub: '困ったら「グラフ」→「しくみを見る」', next: true, last: true },
+];
+let tut = null;
+function startTutorial() { tut = { step: 0 }; renderTut(); }
+function renderTut() {
+  const box = $('tut');
+  if (!tut) { box.hidden = true; return; }
+  const s = TUT[tut.step]; box.hidden = false;
+  $('tutStep').textContent = String(tut.step + 1); $('tutText').innerHTML = ''; $('tutText').append(T(s.text)); const sm = document.createElement('small'); sm.textContent = T(s.sub); $('tutText').append(sm);
+  $('tutNext').hidden = !s.next; $('tutNext').textContent = s.last ? T('OK') : T('つぎへ');
+  $('tutSkip').hidden = !!s.last;
+  if (s.tab && tab !== s.tab) setTab(s.tab);
+}
+function tutNext() { if (!tut) return; tut.step++; if (tut.step >= TUT.length) { finishTutorial(); return; } sfx.good(); renderTut(); }
+function finishTutorial() { tut = null; save.tut = 1; writeSave(); renderTut(); }
+$('tutNext').addEventListener('click', () => { if (tut && TUT[tut.step].last) finishTutorial(); else tutNext(); });
+$('tutSkip').addEventListener('click', () => { finishTutorial(); toast(T('チュートリアルをとばしました')); });
+
+// ================= menu, pause =================
+function openMenu() {
+  if (!UI) return;
+  const was = running; running = false; renderTime();
+  const extra = [
+    { label: T('遊び方'), icon: 'help', onClick: () => { m.close(); showHowto(false); } },
+    { label: T('タイトルへ'), icon: 'home', onClick: () => { m.close(); if (sc) quitScenario(); else showTitle(); } },
+  ];
+  if (mode === 'free') extra.push({ label: T('新しい星をつくる'), icon: 'restart', onClick: () => { m.close(); UI.confirm({ title: T('新しい星をつくりますか？'), message: T('いま育てている星は消えます。'), ok: T('つくる'), cancel: T('やめる'), danger: true }).then(ok => { if (ok) { leaveFree(); startFree(newWorld(), true); } }); } });
+  const m = UI.pauseMenu({ title: T('メニュー'), home: '../', extra,
+    onRestart: sc ? () => startScenario(sc.i) : undefined,
+    onResume: () => { const g = KG(); if (g) { g.menuClosed(); } if (was) setRunning(true); },
+    onOpen: () => { const g = KG(); if (g) g.menuOpened(); } });
+  m.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+document.addEventListener('keydown', e => {
+  const tg = e.target && e.target.tagName;
+  if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer')) return;
+  if (e.key === 'Escape') { if (!$('howto').hidden) { $('howtoGo').click(); } else if (!$('ovMech').hidden) $('ovMech').hidden = true; else if (!anyOverlay()) openMenu(); return; }
+  if (anyOverlay() || !world || mode === 'title') return;
+  if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
+  else if (e.key === '+' || e.key === '=' || e.key === ']') setSpeed(spd + 1);
+  else if (e.key === '-' || e.key === '[') setSpeed(spd - 1);
+  else if (e.key === 'ArrowLeft') { rot.yaw -= 0.15; needRender = true; } else if (e.key === 'ArrowRight') { rot.yaw += 0.15; needRender = true; }
+  else if (e.key === 'ArrowUp') { rot.pitch = clamp(rot.pitch - 0.15, -1.25, 1.25); needRender = true; } else if (e.key === 'ArrowDown') { rot.pitch = clamp(rot.pitch + 0.15, -1.25, 1.25); needRender = true; }
+});
+
+// ================= KoboGame hooks =================
+let raf = 0;
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { if (running) { running = false; renderTime(); } saveWorld(); },
+  resume() { /* stays paused until the player presses ▶ */ },
+  save() { saveWorld(); },
+  isIdle: () => !running && !(sc && !sc.ended),
+  restore() { glLost = false; const b = $('glLost'); if (b) b.remove(); refreshTextures(); resize(); },
+  dispose() { cancelAnimationFrame(raf); raf = 0; try { if (renderer) renderer.dispose(); } catch (e) {} },
+});
+function showGlLost() {
+  if ($('glLost')) return;
+  const box = document.createElement('div'); box.id = 'glLost'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><button class="btn sub" type="button"></button></div>';
+  box.querySelector('b').textContent = T('画面が一時的に止まりました'); box.querySelector('p').textContent = T('少し待つと元に戻ります。星は保存してあります。');
+  const btn = box.querySelector('button'); btn.textContent = T('読み込み直す'); btn.addEventListener('click', () => { saveWorld(); location.reload(); });
+  stage.appendChild(box);
+}
+
+// ================= the loop =================
+let last = 0, hudT = 0, layoutQueued = false;
+function simTick(dt) {
+  const w = world; if (!w) return;
+  const mx = maxSpeed(); if (spd > mx) { spd = mx; renderTime(); }
+  let yrs = SPEEDS[spd] * Math.min(dt, 0.1);
+  if (sc) yrs = Math.min(yrs, Math.max(0, sc.def.limit - scUsed()));
+  if (yrs > 0) S.advance(w, yrs);
+  cloudShift += dt * (SPEEDS[spd] >= 1e4 ? 6 : 1.5);
+  sampleHist();
+  handleNews();
+  if (sc) scCheck();
+  if (crisisQ.length && !anyOverlay()) showCrisis();
+  if (mode === 'free' && performance.now() - lastSaveAt > 15000) saveWorld();
+}
+function loop(ts) {
+  raf = requestAnimationFrame(loop);
+  const t = ts / 1000; let dt = last ? t - last : 0; last = t; dt = clamp(dt, 0, 0.1);
+  if (document.hidden) return;
+  if (running && !anyOverlay()) simTick(dt);
+  const idle = performance.now() - lastInput > 1500 && !ptrs.size;
+  if (ptrs.size === 0 && (Math.abs(rot.vy) > 0.01 || Math.abs(rot.vp) > 0.01)) { rot.yaw += rot.vy * dt; rot.pitch = clamp(rot.pitch + rot.vp * dt, -1.25, 1.25); const k = Math.exp(-dt * 3.5); rot.vy *= k; rot.vp *= k; needRender = true; }
+  if (running && idle && !reduceMotion.matches) { rot.yaw += dt * 0.07; needRender = true; }
+  if (glOk && world) {
+    texDue -= dt; cloudDue -= dt;
+    if (texDirty || (running && texDue <= 0)) { const full = texDirty; texDirty = false; paintSurface(); if (full) paintClouds(); applyLook(); needRender = true; texDue = 0.35; }
+    else if (running && cloudDue <= 0) { paintClouds(); cloudDue = 0.5; needRender = true; }
+    if (view === 'currents' && overMesh.visible) { stepCurrents(dt); needRender = true; }
+    if (marks.length && animMarks(dt)) needRender = true;
+    if (needRender || running) { render(); if (running) watchFps(dt); }
+  }
+  hudT += dt; if (hudT > 0.2) { hudT = 0; if (world) renderHud(); }
+}
+function layout() {
+  resize();
+  if (tab === 'graph') drawGraph();
+}
+function layoutSoon() { if (layoutQueued) return; layoutQueued = true; requestAnimationFrame(() => { layoutQueued = false; layout(); }); }
+window.addEventListener('resize', layoutSoon);
+if (window.visualViewport) visualViewport.addEventListener('resize', layoutSoon);
+try { new ResizeObserver(() => layoutSoon()).observe(stage); } catch (e) {}
+window.addEventListener('pagehide', () => saveWorld());
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) save = readSave(); });
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (!m) return; const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false; m.setAttribute('content', light ? '#e9eff7' : '#070b18'); if (starPts) starPts.visible = !light; needRender = true; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(() => { themeColor(); if (tab === 'graph') drawGraph(); }, 0));
+
+// ---------- boot ----------
+buildMeters(); renderSound();
+if (initGL()) {
+  bakeNoise();
+  KG() && KG().watchGL(cv, { onLost() { glLost = true; running = false; renderTime(); saveWorld(); showGlLost(); }, onRestored() { glLost = false; const b = $('glLost'); if (b) b.remove(); refreshTextures(); resize(); } });
+}
+themeColor();
+resize();
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut;
+const savedWorld = store.get(WORLD_KEY) ? loadWorld() : null;
+if (savedWorld) { world = savedWorld; mode = 'title'; refreshTextures(); }
+if (firstVisit) { world = world || newWorld(); refreshTextures(); renderHud(); showHowto(true); }
+else showTitle();
+openTab(tab);
+raf = requestAnimationFrame(loop);
+booted = true;
+
+// ================= test hooks (?debug) =================
+function strat(id, k) { // a sensible player for each scenario (used by the tests): one move per call
+  const w = world;
+  if (id === 'green') { if (k < 2) for (let a = 0; a < 3; a++) useTool('sink', 0, a * 120 + k * 40); if (k < 6) for (let a = 0; a < 2; a++) useTool('volcano', 0, a * 120 + k * 20); }
+  if (id === 'snow') { if (k < 3) for (let a = 0; a < 4; a++) useTool('volcano', 0, a * 90 + k * 30); }
+  if (id === 'goe') { if (k === 0) w.life.nudge = 'photo'; for (let a = 0; a < (k === 0 ? 6 : 2); a++) useTool('raise', 10, a * 60 + k * 13); if (w.d.ice > 0.2) for (let a = 0; a < 3; a++) useTool('volcano', 0, k * 37 + a * 120); }
+  if (id === 'sun') { const t = w.d.Tg; if (t > 24) setParam('dist', w.p.dist + 0.01); if (t < 10) setParam('dist', w.p.dist - 0.01); }
+  if (id === 'cradle') { if (k === 0) { setParam('dist', 0.9); setParam('water', 1.0); setParam('co2', 1e5); } S.tools.seed(w); }
+  if (id === 'gate') { if (k === 0) for (let lon = -180; lon < 180; lon += 60) { useTool('sink', 48, lon); useTool('sink', 48, lon); } }
+  if (id === 'warm' || id === 'dawn') { const c = w.civ; setPolicy('en', c.tech > 25 ? 2 : c.tech > 15 ? 1 : 0); setPolicy('env', c.tech > 45 ? 2 : 1); setPolicy('rs', c.tech > 30 ? 2 : 1); }
+}
+if (DEBUG) {
+  const api = {
+    ready: () => booted && (!glOk || !!world),
+    state: () => {
+      const w = world, d = w ? w.d : {};
+      return {
+        mode, running, speed: spd, speedYps: SPEEDS[spd], tab, tool, view, glOk, quality: { lv: qLv, pr: PR, fps: fpsMon.last },
+        t: w ? w.t : 0, Tg: d.Tg, co2: w && w.A, ch4: w && w.ch4, o2: w && w.o2, ice: d.ice, land: d.land, bio: w ? biomass(w) : 0, div: w && w.life.div, stage: w && w.life.st,
+        water: w && w.wl, dist: w && w.p.dist, flags: w ? Object.assign({}, w.flags) : {}, events: w ? w.ev.map(e => e.k) : [],
+        civ: w && w.civ ? { on: w.civ.on, y: w.civ.y, tech: w.civ.tech, pop: w.civ.pop, stab: w.civ.stab, dT: d.Tg - w.civ.T0, pol: Object.assign({}, w.civ.pol), why: w.civ.why } : null,
+        sc: sc ? { id: sc.def.id, i: sc.i, ended: sc.ended, used: scUsed(), limit: sc.def.limit, last: sc.last || null } : null,
+        save: JSON.parse(JSON.stringify(save)), tutorial: tut ? tut.step : null,
+        overlays: OVERLAYS.filter(id => !$(id).hidden), score: sc && save.sc[sc.def.id] ? save.sc[sc.def.id].best : 0,
+        hist: hist.r.length, histL: hist.l.length,
+      };
+    },
+    win() { if (!sc || sc.ended) return false; scEnd(true); return true; },
+    lose() { if (!sc || sc.ended) return false; scEnd(false, 'time'); return true; },
+    step(n) { run(SPEEDS[spd] * (n || 1)); return world ? world.t : 0; },
+  };
+  function run(years, o) { // run the model now (synchronously), then refresh the screen
+    const w = world; if (!w) return 0;
+    let left = years; const chunk = (o && o.chunk) || Math.max(1, Math.min(left, SPEEDS[spd]));
+    while (left > 0) { let y = Math.min(chunk, left); if (sc) { y = Math.min(y, Math.max(0, sc.def.limit - scUsed())); if (y <= 0) break; } S.advance(w, y, o); left -= y; sampleHist(); handleNews(); if (sc) { scCheck(); if (sc.ended) break; } }
+    if (crisisQ.length && !anyOverlay() && !(o && o.quiet)) showCrisis();
+    crisisQ = (o && o.quiet) ? [] : crisisQ;
+    texDirty = true; renderHud(); return w.t;
+  }
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__planet = {
+    api, S, get world() { return world; }, get sc() { return sc; }, run, hist,
+    newPlanet(p) { const w = newWorld(); if (p) Object.assign(w.p, p); if (p && p.co2) { w.A = p.co2; w.O = p.co2 * S.K.K_OC; } startFree(w, true); return true; },
+    earthNow(o) { // a present-day Earth-like planet (no people), climate settled
+      o = o || {}; const w = S.create({ t: o.t || NOW_T, p: Object.assign({ seed: o.seed || 7, co2: 280 }, o.p || {}) });
+      w.noCiv = o.civ ? false : true; w.wl = w.p.water; S.seaLevel(w); w.life.st = o.stage != null ? o.stage : 6; w.life.euk = 1; w.life.div = 70; w.o2 = 1;
+      S.settle(w, o.settle || 2e5, o.hold); w.d.f = S.forcing(w);
+      startFree(w, true); return true;
+    },
+    set: setParam, tool: useTool, seed: seedLife, policy: setPolicy, nudge(v) { if (world) world.life.nudge = v || null; },
+    play: () => setRunning(true), pause: () => setRunning(false), speed: setSpeed, tab: setTab, view(v) { view = v; refreshTextures(); renderTime(); },
+    scenario: startScenario, strat(k) { if (sc) strat(sc.def.id, k); }, scenarios: () => S.SCEN.map(d => d.id),
+    begin() { $('ovIntro').hidden = true; },
+    title: showTitle, saveWorld, loadWorld: () => { const w = loadWorld(); if (w) startFree(w, false); return !!w; }, readSave,
+    finishTutorial, startTutorial, howto: () => showHowto(false), mech: showMech, closeAll: hideOverlays, menu: openMenu,
+    rotate(dy, dp) { rot.yaw += dy || 0; rot.pitch = clamp(rot.pitch + (dp || 0), -1.25, 1.25); needRender = true; },
+    pick, render: () => { texDirty = true; refreshTextures(); render(); return true; },
+    thumbScene() { // a living planet for the hub card: oceans, green continents, clouds, a little night side
+      hideOverlays(); store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb');
+      const w = S.create({ t: 4.5e9, p: { seed: 7, co2: 300 } }); w.noCiv = true; w.wl = 1; S.seaLevel(w); w.life.st = 6; w.life.euk = 1; w.o2 = 1;
+      S.settle(w, 3e5, 330); mode = 'free'; world = w; sc = null; running = false; view = 'normal'; zoom = 0.92; rot.yaw = 0.5; rot.pitch = 0.2; cloudShift = 40;
+      refreshTextures(); resize(); render(); return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.planet.save': 'newest', 'kusoge.planet.world': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

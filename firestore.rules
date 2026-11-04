@@ -13,10 +13,10 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
 
     // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
-    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi']; }
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet']; }
     function caps() {
       return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
-               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000 };
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000 };
     }
 
     // ===== 日本時間の日付と週 =====
@@ -60,6 +60,7 @@ service cloud.firestore {
         && okEntAt(g, 'kusoge~n59049~best') && okEntAt(g, 'kusoge~n59049~bestTile') && okEntAt(g, 'kusoge~n59049~state')
         && okEntAt(g, 'kusoge~water~save') && okEntAt(g, 'kusoge~parking~save') && okEntAt(g, 'kusoge~hole~save')
         && okEntAt(g, 'kusoge~hitsumabushi~save')
+        && okEntAt(g, 'kusoge~planet~save') && okEntAt(g, 'kusoge~planet~world')
         && okEntAt(g, 'kusoge~vs~stats');
     }
     function okNejiUser(d) {
@@ -86,7 +87,7 @@ service cloud.firestore {
         && okScore(s.get('neji', 0), 'neji') && okScore(s.get('blocks', 0), 'blocks') && okScore(s.get('drop', 0), 'drop')
         && okScore(s.get('raft', 0), 'raft') && okScore(s.get('gates', 0), 'gates') && okScore(s.get('n59049', 0), 'n59049')
         && okScore(s.get('water', 0), 'water') && okScore(s.get('parking', 0), 'parking') && okScore(s.get('hole', 0), 'hole')
-        && okScore(s.get('hitsumabushi', 0), 'hitsumabushi');
+        && okScore(s.get('hitsumabushi', 0), 'hitsumabushi') && okScore(s.get('planet', 0), 'planet');
     }
     // 端末の時計のずれを30分まで許す
     function okUpdatedAt(t) {
@@ -183,7 +184,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(games())
         && request.resource.data.diff(prevPlays()).affectedKeys().size() == 1
         && plus1('neji') && plus1('blocks') && plus1('drop') && plus1('raft') && plus1('gates')
-        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi');
+        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet');
     }
 
     // それ以外はすべて拒否（ルールに書いていないパスは、読むことも書くこともできない）
