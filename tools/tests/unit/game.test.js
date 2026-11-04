@@ -105,7 +105,7 @@ test('?daily=YYYYMMDD calls daily.start({ seed, dateKey }) for daily games only'
   const s = e.game.emit('play_start', { mode: 'daily', seed: got.seed }); eq(s.dateKey, 20261104);
   // not a daily game → not called
   e = env({ search: '?daily=20261104' }); got = null;
-  e.game.register({ id: 'blocks', daily: { start: x => { got = x; } } });
+  e.game.register({ id: 'raft', daily: { start: x => { got = x; } } });
   await flush(); eq(got, null);
 });
 

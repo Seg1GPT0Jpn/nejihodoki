@@ -11,25 +11,32 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ネジほどき">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* Layout: one-screen workbench — header, tray (color boxes + spare slots), 3D turntable, tool row. Single dark "workshop" look by choice. */
+/* Layout: one-screen workbench — header, tray (color boxes + spare slots), 3D turntable, tool row.
+   UI chrome uses the shared theme tokens (common/theme.css, light + dark); the 3D turntable keeps its own workshop palette. */
 :root {
-  --steel: #1d2a35;
-  --steel-2: #263744;
-  --rail: #3a4f5f;
-  --chalk: #eef2f4;
-  --chalk-dim: #9fb1bd;
-  --brass: #f2b33d;
-  --brass-ink: #2b1d05;
-  --danger: #ff6b5e;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
-  color-scheme: dark;
+  --steel: var(--kb-bg);
+  --steel-2: var(--kb-surface);
+  --rail: var(--kb-line);
+  --chalk: var(--kb-ink);
+  --chalk-dim: var(--kb-dim);
+  --brass: var(--kb-accent);
+  --brass-ink: var(--kb-accent-ink);
+  --brass-text: var(--kb-accent-text);
+  --danger: var(--kb-danger);
+  --font-display: var(--kb-font-display);
+  --font-body: var(--kb-font-body);
 }
 html, body { height: 100%; }
 [hidden] { display: none !important; }
@@ -40,22 +47,23 @@ body {
 }
 #app {
   height: 100%; display: flex; flex-direction: column; box-sizing: border-box;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); gap: 6px; max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, var(--kb-sal)); padding-right: max(16px, var(--kb-sar));
+  padding-top: max(6px, var(--kb-sat)); padding-bottom: max(8px, var(--kb-sab)); gap: 6px; max-width: 560px; margin: 0 auto;
 }
-header { display: flex; align-items: center; gap: 8px; }
-.logo { font-family: var(--font-display); font-size: clamp(13px, 4.4vw, 21px); letter-spacing: .03em; line-height: 1; white-space: nowrap; }
-.logo span { color: var(--brass); }
+header { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.logo { font-family: var(--font-display); font-size: clamp(12px, 3.3vw, 21px); letter-spacing: .03em; line-height: 1; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.logo span { color: var(--brass-text); }
 .lv {
-  margin-left: auto; font-family: var(--font-display); font-size: 13px; letter-spacing: .06em;
-  background: var(--steel-2); border: 1px solid var(--rail); border-radius: 999px; padding: 5px 11px;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
+  margin-left: auto; font-family: var(--font-display); font-size: 12px; letter-spacing: .05em;
+  background: var(--steel-2); border: 1px solid var(--rail); border-radius: 999px; padding: 5px 10px;
+  font-variant-numeric: tabular-nums; white-space: nowrap; flex: none;
 }
 .icon-btn {
-  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rail); background: var(--steel-2);
-  color: var(--chalk); font: 800 15px var(--font-body); cursor: pointer; display: grid; place-items: center; padding: 0; flex: none;
+  width: 44px; height: 44px; border-radius: 14px; border: 1px solid var(--rail); background: var(--steel-2);
+  color: var(--chalk); cursor: pointer; display: grid; place-items: center; padding: 0; flex: none; text-decoration: none;
 }
+.icon-btn svg { width: 22px; height: 22px; }
+.icon-btn[aria-pressed="false"] { color: var(--chalk-dim); }
 #tray { height: 150px; flex: none; }
 #stage {
   flex: 1; min-height: 0; position: relative; border-radius: 22px; overflow: hidden;
@@ -65,35 +73,46 @@ header { display: flex; align-items: center; gap: 8px; }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 .hint-line {
-  position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; color: var(--chalk-dim);
-  pointer-events: none; opacity: .8;
+  position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; color: #9fb1bd;
+  pointer-events: none; opacity: .8; padding: 0 8px;
 }
 .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: none; }
 .tool {
-  border: 1px solid var(--rail); background: var(--steel-2); color: var(--chalk); border-radius: 14px;
-  padding: 8px 2px 7px; font: 800 13px var(--font-body); cursor: pointer; display: flex; flex-direction: column;
-  align-items: center; gap: 2px; min-width: 0;
+  border: 1px solid var(--rail); background: var(--steel-2); color: var(--chalk); border-radius: 14px; min-height: 48px;
+  padding: 7px 2px 6px; font: 800 13px var(--font-body); cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px; min-width: 0;
 }
 .tool small { font-weight: 500; font-size: 11px; color: var(--chalk-dim); font-variant-numeric: tabular-nums; }
 .tool:disabled { opacity: .4; cursor: default; }
 .tool:active:not(:disabled), .icon-btn:active { transform: translateY(1px); }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.tool.pulse { border-color: var(--brass); box-shadow: 0 0 0 3px var(--kb-accent-soft); animation: nj-pulse 1.1s ease-in-out infinite; }
+@keyframes nj-pulse { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
 .toast {
-  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--danger); color: #fff;
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--kb-danger); color: var(--kb-danger-ink);
   font-weight: 800; font-size: 13px; padding: 6px 14px; border-radius: 999px; pointer-events: none;
   opacity: 0; transition: opacity .2s; z-index: 2;
   width: max-content; max-width: calc(100% - 24px); box-sizing: border-box; text-align: center; line-height: 1.4;
 }
 .toast.ok { background: var(--brass); color: var(--brass-ink); }
 .toast.show { opacity: 1; }
+/* tutorial coach (level 1): one action at a time */
+#coach {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; display: flex; align-items: center; gap: 8px;
+  background: var(--kb-surface); color: var(--kb-ink); border: 2px solid var(--kb-accent); border-radius: 16px;
+  padding: 6px 6px 6px 12px; box-shadow: var(--kb-shadow); font-size: 14px; font-weight: 800; line-height: 1.4;
+}
+#coach p { margin: 0; flex: 1; min-width: 0; }
+#coach small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+#coach button { flex: none; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--rail); background: transparent; color: var(--chalk-dim); font: 800 13px var(--font-body); cursor: pointer; }
 .overlay {
-  position: fixed; inset: 0; background: rgba(10, 16, 22, .72); display: flex; align-items: center; justify-content: center; z-index: 20;
+  position: fixed; inset: 0; background: var(--kb-scrim); display: flex; align-items: center; justify-content: center; z-index: 20;
   box-sizing: border-box;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-top: max(12px, env(safe-area-inset-top, 0px)); padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, var(--kb-sal)); padding-right: max(16px, var(--kb-sar));
+  padding-top: max(12px, var(--kb-sat)); padding-bottom: max(12px, var(--kb-sab));
 }
 .card {
-  background: var(--steel-2); border: 1px solid var(--rail); border-radius: 20px; padding: 22px 20px 18px;
+  background: var(--steel-2); border: 1px solid var(--rail); border-radius: 20px; padding: 22px 20px 18px; box-shadow: var(--kb-shadow);
   width: min(360px, 100%); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box; text-align: center;
   display: flex; flex-direction: column; gap: 12px;
 }
@@ -101,61 +120,70 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); out
 .card h3 { margin: 4px 0 0; font-size: 13px; letter-spacing: .08em; color: var(--chalk-dim); text-align: left; }
 .card p { margin: 0; color: var(--chalk-dim); line-height: 1.7; font-size: 14px; }
 .card ol { margin: 0; padding-left: 1.3em; text-align: left; line-height: 1.7; font-size: 14px; color: var(--chalk); }
-.card ol b { color: var(--brass); }
+.card ol b { color: var(--brass-text); }
 .btn {
-  border: 0; border-radius: 14px; padding: 12px; font: 800 16px var(--font-body); cursor: pointer;
-  background: var(--brass); color: var(--brass-ink);
+  border: 0; border-radius: 14px; padding: 12px; min-height: 48px; font: 800 16px var(--font-body); cursor: pointer;
+  background: var(--brass); color: var(--brass-ink); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box;
 }
+.btn svg { width: 20px; height: 20px; flex: none; }
 .btn.ghost { background: transparent; color: var(--chalk); border: 1px solid var(--rail); }
 /* primary action stays visible at the bottom of a scrolling card on short screens */
 .card .sticky { position: sticky; bottom: 0; flex: none; box-shadow: 0 -12px 0 var(--steel-2), 0 18px 0 var(--steel-2); }
 .card .btn.ghost.sticky { background: var(--steel-2); }
-.lang-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.lang-row h3 { margin: 0; }
-.lang-row select { background: var(--steel); color: var(--chalk); border: 1px solid var(--rail); border-radius: 10px; padding: 7px 10px; font: 800 14px var(--font-body); flex: none; min-width: 7.5em; }
 .tool > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tool small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .btn { overflow-wrap: anywhere; }
-.btn.small { padding: 9px 12px; font-size: 14px; }
+.btn.small { padding: 9px 12px; min-height: 44px; font-size: 14px; }
 .note { font-size: 12px; color: var(--chalk-dim); }
 .stars { font-size: 34px; letter-spacing: .15em; color: var(--brass); line-height: 1; }
 .stars .off { color: var(--rail); }
 .row { display: flex; gap: 8px; }
 .row > * { flex: 1; min-width: 0; }
 .code {
-  font: 800 22px var(--font-body); letter-spacing: .12em; background: var(--steel); border: 1px dashed var(--rail);
+  font: 800 22px var(--font-body); letter-spacing: .12em; background: var(--kb-sunken); border: 1px dashed var(--rail);
   border-radius: 12px; padding: 10px; user-select: text; -webkit-user-select: text; font-variant-numeric: tabular-nums;
 }
-input[type="text"] {
-  background: var(--steel); color: var(--chalk); border: 1px solid var(--rail); border-radius: 12px; padding: 10px 12px;
-  font: 800 16px var(--font-body); letter-spacing: .08em; text-transform: uppercase; box-sizing: border-box; width: 100%;
+input[type="text"], .kc-nick input {
+  background: var(--kb-sunken); color: var(--chalk); border: 1px solid var(--rail); border-radius: 12px; padding: 10px 12px; min-height: 44px;
+  font: 800 16px var(--font-body); letter-spacing: .08em; box-sizing: border-box; width: 100%;
   user-select: text; -webkit-user-select: text;
 }
-.levels { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+#codeIn { text-transform: uppercase; }
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
 .levels button {
-  border: 1px solid var(--rail); background: var(--steel); color: var(--chalk); border-radius: 10px; padding: 8px 0;
+  border: 1px solid var(--rail); background: var(--kb-sunken); color: var(--chalk); border-radius: 10px; padding: 0; min-height: 44px;
   font: 800 14px var(--font-body); cursor: pointer; font-variant-numeric: tabular-nums;
 }
 .levels button.cur { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
+.levels .world { grid-column: 1 / -1; text-align: left; font-size: 12px; color: var(--brass-text); font-weight: 800; margin-top: 4px; }
+/* account box (common/cloud.js KoboCloud.mountLogin) */
+#acctBox { text-align: left; }
+#acctBox .kc-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+#acctBox .kc-msg, #acctBox .kc-note { margin: 0; flex: 1 1 160px; font-size: 12px; color: var(--chalk-dim); line-height: 1.6; }
+#acctBox button { min-height: 44px; border: 0; border-radius: 12px; padding: 0 14px; font: 800 14px var(--font-body); cursor: pointer; background: var(--brass); color: var(--brass-ink); }
+#acctBox .kc-out { background: transparent; color: var(--chalk); border: 1px solid var(--rail); }
+#acctBox .kc-nick { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+#acctBox .kc-nick label { font-size: 12px; color: var(--chalk-dim); }
+#acctBox .kc-nick .kc-row { flex-wrap: nowrap; }
+#acctBox .kc-nick input { flex: 1; min-width: 0; text-transform: none; letter-spacing: .02em; }
 #loading {
   position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-display);
-  color: var(--chalk-dim); font-size: 15px; letter-spacing: .1em; pointer-events: none;
+  color: #9fb1bd; font-size: 15px; letter-spacing: .1em; pointer-events: none;
 }
-@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
-@media (max-width: 400px) { .icon-btn { width: 32px; height: 32px; } header { gap: 6px; } .lv { padding: 4px 9px; } }
-header { min-width: 0; }
-.logo { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 360px) {
-  header { gap: 5px; } .lv { font-size: 12px; padding: 4px 7px; letter-spacing: .02em; }
-  .tool { font-size: 12px; } .tool small { font-size: 10px; } .tools { gap: 5px; }
-}
-@media (max-width: 340px) { .logo { letter-spacing: 0; } .icon-btn { width: 30px; height: 30px; } header { gap: 4px; } .lv { font-size: 11px; padding: 4px 6px; } }
+#nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: #eef2f4; }
+#nogl div { max-width: 300px; display: flex; flex-direction: column; gap: 10px; }
+#nogl b { font-family: var(--font-display); font-weight: 400; font-size: 18px; }
+#nogl p { margin: 0; font-size: 13px; line-height: 1.7; color: #c8d3da; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } .tool.pulse { animation: none; } }
+@media (max-width: 374px) { .logo { display: none; } header { gap: 4px; } }
+@media (max-width: 340px) { .lv { font-size: 11px; padding: 4px 7px; letter-spacing: .02em; } .tool { font-size: 12px; } .tool small { font-size: 10px; } .tools { gap: 5px; } }
 /* fit the visible viewport on phones (browser bars included) */
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 /* online battle entry (common/versus.js) */
 #vsSlot { position: absolute; left: 8px; top: 8px; z-index: 1; }
-#vsSlot .kvs-entry { background: rgba(29,42,53,.82); }
-.card .kvs-entry { margin-top: 0; }
+#vsSlot .kvs-entry { background: rgba(29,42,53,.82); color: #eef2f4; border-color: rgba(255,255,255,.22); }
+#vsSlot .kvs-entry.compact { height: 44px; padding: 0 12px; }
+.card .kvs-entry { margin-top: 0; min-height: 48px; }
 .help-go { background: var(--steel-2); }
 .row > #vsSlotHelp { flex: none; display: flex; }
 #vsSlotHelp .kvs-entry { height: auto; }
@@ -163,20 +191,21 @@ header { min-width: 0; }
 
 <div id="app">
   <header>
-    <a class="icon-btn" href="../" aria-label="ゲーム一覧に戻る" data-i18n-attr="aria-label" style="text-decoration:none">←</a>
+    <a class="icon-btn" id="homeBtn" href="../" aria-label="ゲーム一覧に戻る" title="ゲーム一覧に戻る" data-i18n-attr="aria-label,title"></a>
     <div class="logo" data-i18n-html>ネジ<span>ほどき</span></div>
     <div class="lv" id="lvLabel">LEVEL 1</div>
-    <button class="icon-btn" id="soundBtn" aria-label="サウンド切り替え" data-i18n-attr="aria-label">♪</button>
-    <button class="icon-btn" id="helpBtn" aria-label="遊び方" data-i18n-attr="aria-label">?</button>
-    <button class="icon-btn" id="menuBtn" aria-label="メニュー" data-i18n-attr="aria-label">≡</button>
+    <button class="icon-btn" id="soundBtn" aria-label="音を出す" aria-pressed="true" data-i18n-attr="aria-label"></button>
+    <button class="icon-btn" id="helpBtn" aria-label="遊び方" title="遊び方" data-i18n-attr="aria-label,title"></button>
+    <button class="icon-btn" id="menuBtn" aria-label="メニュー" title="メニュー" data-i18n-attr="aria-label,title"></button>
   </header>
   <div id="tray"></div>
   <div id="stage">
     <canvas id="gl"></canvas>
     <div id="vsSlot"></div>
     <div id="loading" data-i18n>組み立て中…</div>
-    <div class="toast" id="toast" data-i18n>予備スロットがいっぱい</div>
-    <div class="hint-line" data-i18n>ドラッグで回転（下からも見られる） ・ ピンチ / ホイールで拡大</div>
+    <div class="toast" id="toast" role="status" aria-live="polite" data-i18n>予備スロットがいっぱい</div>
+    <div class="hint-line" id="hintLine" data-i18n>ドラッグで回転（下からも見られる） ・ ピンチ / ホイールで拡大</div>
+    <div id="coach" role="status" aria-live="polite" hidden><p><span id="coachText"></span><small id="coachSub"></small></p><button type="button" id="coachSkip" data-i18n>スキップ</button></div>
   </div>
   <div class="tools">
     <button class="tool" id="undoBtn"><span data-i18n>戻す</span><small id="undoLeft">のこり 3</small></button>
@@ -187,9 +216,9 @@ header { min-width: 0; }
 </div>
 <canvas id="fx"></canvas>
 
-<div class="overlay" id="ovHelp" hidden>
-  <div class="card">
-    <h2 data-i18n>遊び方</h2>
+<div class="overlay" id="ovHelp" data-kb-howto hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <h2 id="helpTitle" data-i18n>遊び方</h2>
     <ol>
       <li data-i18n-html>立体を<b>ドラッグで回して</b>、裏側のネジも探す</li>
       <li data-i18n-html>ネジの頭の先に<b>他の部品があると抜けない</b>。先に手前の部品を外す</li>
@@ -205,27 +234,29 @@ header { min-width: 0; }
   </div>
 </div>
 <div class="overlay" id="ovWin" hidden>
-  <div class="card">
-    <h2 id="winTitle">クリア！</h2>
-    <div class="stars" id="winStars" aria-label="評価"></div>
-    <p id="winText">すべての部品を外しました。</p>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <h2 id="winTitle" data-i18n>クリア！</h2>
+    <div class="stars" id="winStars" role="img" aria-label="評価" data-i18n-attr="aria-label"></div>
+    <p id="winText" data-i18n>すべての部品を外しました。</p>
     <p class="note" id="winNote"></p>
-    <button class="btn sticky" id="nextBtn">次のレベルへ</button>
+    <a class="btn ghost" id="winHome" href="../" data-i18n>ゲーム一覧に戻る</a>
+    <button class="btn sticky" id="nextBtn" data-i18n>次のレベルへ</button>
   </div>
 </div>
 <div class="overlay" id="ovLose" hidden>
-  <div class="card">
-    <h2 data-i18n>詰まった…</h2>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="loseTitle">
+    <h2 id="loseTitle" data-i18n>詰まった…</h2>
     <p data-i18n>予備スロットがいっぱいで、どの箱にも入れられるネジがありません。</p>
     <button class="btn" id="loseUndo" data-i18n>1手戻す</button>
     <button class="btn ghost" id="loseSlot" data-i18n>＋スロットで続ける</button>
     <button class="btn ghost" id="loseRetry" data-i18n>最初から</button>
+    <a class="btn ghost" id="loseHome" href="../" data-i18n>ゲーム一覧に戻る</a>
   </div>
 </div>
 <div class="overlay" id="ovMenu" hidden>
-  <div class="card">
-    <h2 data-i18n>メニュー</h2>
-    <div class="lang-row"><h3 data-i18n>言語 / Language</h3><span id="langPick"></span></div>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <h2 id="menuTitle" data-i18n>メニュー</h2>
+    <button class="btn ghost" id="settingsBtn"><span data-i18n>設定（言語・テーマ・音）</span></button>
     <button class="btn" id="dailyBtn" data-i18n>今日のチャレンジ</button>
     <p class="note" id="dailyNote"></p>
     <div id="vsSlotMenu"></div>
@@ -236,11 +267,9 @@ header { min-width: 0; }
       <button class="btn small" id="installBtn" hidden data-i18n>ホーム画面に追加する</button>
       <p class="note" id="installMsg" style="text-align:left"></p>
     </div>
-    <h3 data-i18n>アカウント（進み具合をクラウドに保存）</h3>
-    <div id="acctBox" class="row" style="align-items:center">
-      <p class="note" id="acctMsg" style="text-align:left">確認中…</p>
-      <button class="btn small" id="loginBtn" style="flex:0 0 auto" hidden data-i18n>Googleでログイン</button>
-      <button class="btn small ghost" id="logoutBtn" style="flex:0 0 auto" hidden data-i18n>ログアウト</button>
+    <div id="acctWrap">
+      <h3 data-i18n>アカウント（進み具合をクラウドに保存）</h3>
+      <div id="acctBox"></div>
     </div>
     <h3 data-i18n>引き継ぎコード（別の端末で続きから遊ぶ）</h3>
     <div class="code" id="codeOut">—</div>
@@ -249,14 +278,16 @@ header { min-width: 0; }
       <input type="text" id="codeIn" placeholder="コードを入力" maxlength="16" autocomplete="off" aria-label="引き継ぎコード" data-i18n-attr="placeholder,aria-label">
       <button class="btn small" id="loadBtn" style="flex:0 0 auto" data-i18n>読み込む</button>
     </div>
-    <p class="note" id="codeMsg">進み具合はこの端末のブラウザに保存されています。</p>
+    <p class="note" id="codeMsg" data-i18n>進み具合はこの端末のブラウザに保存されています。</p>
     <button class="btn ghost" id="retryBtn" data-i18n>このレベルを最初から</button>
     <button class="btn ghost sticky" id="menuClose" data-i18n>閉じる</button>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../common/game.js"></script>
 <script src="../firebase-config.js" onerror="window.NEJI_FIREBASE = null"></script>
+<script src="../common/cloud.js"></script>
 <script>
 (() => {
 'use strict';
@@ -329,38 +360,101 @@ KoboI18n.add({ en: {
   '点': 'pts', 'クリア！ +{n}点': 'Cleared! +{n} pts', '詰まった！ このレベルを最初から': 'Stuck! Restarting this level',
   '対戦中は使えません': 'Not available in a battle',
   '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} score battle. Everyone gets the same models in the same order. 10 pts a screw, 200 per clear.',
+  'すべての部品を外しました。': 'All parts removed.', '評価': 'Rating',
+  '設定（言語・テーマ・音）': 'Settings (language, theme, sound)', 'スキップ': 'Skip',
+  '音を出す': 'Sound on', '音を消す': 'Sound off',
+  '3D を表示できません': 'Can’t show 3D',
+  'この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。': 'This device or browser can’t use 3D graphics (WebGL), so this game can’t be shown.',
+  'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on “hardware acceleration” in your browser settings.',
+  '3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。': 'Couldn’t load the 3D engine. Check your connection and open the page again.',
+  '画面が一時的に止まりました。少し待つと元に戻ります。': 'The 3D view paused for a moment. It will come back shortly.',
+  'つづきから再開しました': 'Picked up where you left off',
+  'チュートリアル {n}/{m}': 'Tutorial {n}/{m}',
+  'ドラッグして模型を回してみよう': 'Drag the model to turn it around',
+  '裏や下にもネジが隠れている': 'Screws hide on the back and underneath too',
+  '光っているネジをタップして抜こう': 'Tap the glowing screw to pull it out',
+  '手前に部品がないネジだけ抜ける': 'Only screws with nothing in front of them come out',
+  'ネジは同じ色の箱へ。3本で箱が出荷される': 'Screws go to the box of the same color. A box ships at 3',
+  '合う箱がないネジは予備スロットで待つ': 'Screws with no matching box wait in a spare slot',
+  '「のぞく」を押している間、外側の部品が透ける': 'Hold “Peek” to see through the outer parts',
+  '押して、一段奥のネジを探そう': 'Press it and look for screws one layer deeper',
+  'できた！ あとは全部のネジを外そう': 'Nice! Now take out every screw',
 } });
 const COLORS = ['#e5484d', '#3e8ef7', '#f5c518', '#30a46c', '#8e4ec6', '#f76b15', '#e93d82', '#12b5a5'];
 const BUF0 = 5, UNDOS = 3, HINTS = 2;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const PI = Math.PI;
+const P = window.KoboPlatform, A = window.KoboAudio, G = window.KoboGame, UI = window.KoboUI;
+const DEBUG = /[?&]debug\b/.test(location.search);
 
+// localStorage keys stay nejihodoki3d.* (the hub record and the cloud rules read them); KoboPlatform.store adds the try/catch
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('nejihodoki3d.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('nejihodoki3d.' + k, JSON.stringify(v)); } catch (e) {} }
+  get(k, d) { return P.store.get('nejihodoki3d.' + k, d); },
+  set(k, v) { P.store.set('nejihodoki3d.' + k, v); },
+  del(k) { P.store.del('nejihodoki3d.' + k); },
 };
+// kept bit-for-bit as before (not KoboPlatform.rng): levels, dailies and battles must match players still on the old page
 function mulberry32(a) {
   return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 function shuffle(a, rnd) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const $ = id => document.getElementById(id);
+
+// old daily stars (nejihodoki3d.daily = { YYYYMMDD: stars }) also go into the shared kobo.daily, once (SYSTEM_ARCHITECTURE.md 6)
+P.migrations.add({ id: 'neji-daily-1', v: 1, run() {
+  const old = store.get('daily', {});
+  if (!old || typeof old !== 'object') return true;
+  const all = P.store.get(P.KEYS.daily, {}) || {}, cut = P.addDays(P.jstDateKey(), -60);
+  for (const [k, stars] of Object.entries(old)) {
+    const n = Number(stars) | 0;
+    if (!P.isDateKey(k) || Number(k) < cut || n < 1) continue;
+    const day = all[k] || (all[k] = {}), cur = day.neji || { best: 0, tries: 0, clearedAt: 0 };
+    cur.best = Math.max(Number(cur.best) || 0, n * 100000); cur.tries = Math.max(Number(cur.tries) || 0, 1);
+    if (!(cur.clearedAt > 0)) cur.clearedAt = P.jstDayStart(k) + 12 * 3600000;
+    day.neji = cur;
+  }
+  P.store.set(P.KEYS.daily, all);
+  return true;
+} });
 
 /* =========================================================
-   Three.js scene
+   Three.js scene (with a clear notice instead of a crash when WebGL is unavailable)
    ========================================================= */
-const glCanvas = document.getElementById('gl');
-const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const glCanvas = $('gl');
+function showNoGL(why) {
+  $('loading').hidden = true; $('coach').hidden = true; $('hintLine').hidden = true;
+  const box = document.createElement('div'); box.id = 'nogl'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><p></p><a class="btn" href="../"></a></div>';
+  box.querySelector('b').textContent = T('3D を表示できません');
+  const ps = box.querySelectorAll('p');
+  ps[0].textContent = why === 'three' ? T('3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。') : T('この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。');
+  ps[1].textContent = why === 'three' ? '' : T('ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。');
+  box.querySelector('a').textContent = T('ゲーム一覧に戻る');
+  $('stage').appendChild(box);
+  document.querySelectorAll('.tools button, #helpBtn, #menuBtn, #soundBtn').forEach(b => { b.disabled = true; });
+}
+function glAvailable() {
+  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; }
+}
+let renderer = null;
+if (typeof THREE === 'undefined') { showNoGL('three'); return; }
+if (glAvailable()) { try { renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, alpha: true, powerPreference: 'low-power' }); } catch (e) { renderer = null; } }
+if (!renderer) { showNoGL('webgl'); return; }
+// heavy 3D page: DPR up to 1.5 (CLAUDE_CODE_MASTER_PROMPT.md rule 9). Shadows: plain PCF, smaller map on modest devices
+const DPR_MAX = 1.5;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, DPR_MAX));
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
 scene.add(new THREE.HemisphereLight(0xfff3e0, 0x6a7c8c, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 0.9);
 sun.position.set(5, 11, 7); sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
+const strong = (navigator.hardwareConcurrency || 4) >= 6 && (navigator.deviceMemory || 4) >= 4;
+sun.shadow.mapSize.set(strong ? 1024 : 512, strong ? 1024 : 512);
 Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 8, bottom: -4, near: 1, far: 30 });
-sun.shadow.radius = 3;
+sun.shadow.radius = 2;
 scene.add(sun);
 const fill = new THREE.DirectionalLight(0x9fc4ff, 0.35); fill.position.set(-6, 4, -5); scene.add(fill);
 const under = new THREE.DirectionalLight(0xffe2c4, 0.45); under.position.set(2, -8, 3); scene.add(under);
@@ -1078,7 +1172,7 @@ function buildLevel(level, opt = {}) {
   screws.forEach((s, i) => {
     s.i = i; s.color = best.color[i];
     const g = new THREE.Group();
-    const head = new THREE.Mesh(headGeo, screwMats[s.color]); head.castShadow = true; g.add(head);
+    const head = new THREE.Mesh(headGeo, screwMats[s.color]); g.add(head); // tiny: no shadow (cheaper)
     const s1 = new THREE.Mesh(slotGeo, slotMats[s.color]); s1.position.y = 0.05; g.add(s1);
     const s2 = s1.clone(); s2.rotation.y = PI / 2; g.add(s2);
     const proxy = new THREE.Mesh(proxyGeo, proxyMat); proxy.userData.screw = s; g.add(proxy);
@@ -1116,24 +1210,56 @@ function disposeModel(g) {
    Game state
    ========================================================= */
 let S = null;
-let vs = null; // online battle: { snap, seed, k, banked, clears, gen } while a match owns the workbench
+let vs = null; // online battle: { snap, seed, k, banked, clears, gen, practice, playing } while a match owns the workbench
 let level = Math.max(1, store.get('level', 1) | 0);
 let maxLevel = Math.max(level, store.get('maxLevel', 1) | 0);
-let soundOn = store.get('sound', true);
 const cam = { yaw: 0.65, pitch: 0.42, dist: 11, distBase: 11, radius: 4, target: V(0, 2, 0), yawTo: null };
 
 function makeBox(color) { return { color, reserved: 0, filled: 0, state: 'in', t: 0 }; }
 function newBox() { return S.queue.length ? makeBox(S.queue.shift()) : null; }
-let daily = null; // { key, label } while playing today's challenge
-function todayKey() { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
-function startDaily() {
-  const key = todayKey();
+let daily = null; // { key, label } while playing a daily challenge
+// the day switches at midnight Japan time for everyone (R7); the board is the same as before for that date
+function todayKey() { return P.jstDateKey(); }
+function startDaily(key, resume) {
+  key = P.isDateKey(key) && Number(key) <= todayKey() ? Number(key) : todayKey();
   daily = { key, label: 'DAILY ' + String(key).slice(4, 6) + '/' + String(key).slice(6) };
-  startLevel(12 + key % 7, { seed: key, model: key % MODELS.length });
+  startLevel(12 + key % 7, { seed: key, model: key % MODELS.length }, resume);
 }
+
+/* ---- one play = one level attempt (KoboGame events). Starts with the first screw, ends on a clear or when the level is left ---- */
+function playMode() { return daily ? 'daily' : 'normal'; }
+function beginPlay() {
+  if (!S || S.started || vs) return;
+  S.started = true; S.t0 = Date.now();
+  G.emit('play_start', daily ? { mode: 'daily', dateKey: daily.key, seed: daily.key } : { mode: 'normal', stage: S.levelNo });
+}
+function endPlay(reason, score) {
+  if (!S || !S.started || S.ended || vs) return;
+  S.ended = true;
+  G.emit('play_end', Object.assign({ mode: playMode(), score: score || 0, reason, durationMs: Date.now() - S.t0 },
+    daily ? { dateKey: daily.key } : { stage: S.levelNo }));
+}
+// daily rank value (bigger is better): stars first, then time
+function dailyScore(stars, ms) { return stars * 100000 + Math.max(0, 99999 - Math.round(ms / 100)); }
+
+/* ---- mid-level save (nejihodoki3d.state, this device only): closing the page and coming back resumes the level ---- */
+function saveState() {
+  if (!S || vs || S.won || !S.sig) return;
+  if (!S.screws.some(x => x.removed) && !S.slotUsed) { store.del('state'); return; }
+  store.set('state', { v: 1, level: S.levelNo, daily: daily ? daily.key : null, sig: S.sig, snap: snapshot(), nbuf: S.buffer.length,
+    hints: S.hints, undos: S.undos, slotUsed: S.slotUsed, hintUsed: S.hintUsed, undoUsed: S.undoUsed, t: Date.now() });
+}
+function clearState() { store.del('state'); }
+function savedState() {
+  const st = store.get('state', null);
+  return st && st.v === 1 && st.snap && Array.isArray(st.snap.removed) ? st : null;
+}
+
 let buildGen = 0; // a newer startLevel (or leaving a battle) cancels a build that has not run yet
-function startLevel(n, opt) {
+function startLevel(n, opt, resume) {
+  if (S && !vs) endPlay('quit');
   if (!opt) { daily = null; level = n; store.set('level', n); if (n > maxLevel) { maxLevel = n; store.set('maxLevel', n); } }
+  if (!resume && !vs) clearState();
   $('loading').hidden = false; hide('ovWin'); hide('ovLose'); confetti = [];
   const gen = ++buildGen;
   setTimeout(() => {
@@ -1141,15 +1267,23 @@ function startLevel(n, opt) {
     const lv = buildLevel(n, opt || {});
     S = { ...lv, active: [null, null], buffer: new Array(lv.slots).fill(null), flyers: [], hints: HINTS, undos: UNDOS,
       slotUsed: false, hintUsed: false, undoUsed: false, history: [],
-      over: false, won: false, winT: 0, hint: null, bufShake: 0, time: 0 };
+      over: false, won: false, winT: 0, hint: null, bufShake: 0, time: 0, wobbleUntil: performance.now() + 3000, started: false, ended: false, t0: 0 };
+    S.sig = lv.screws.map(x => x.color).join('') + '|' + lv.queue.join('') + '|' + lv.parts.length;
     S.active = [newBox(), newBox()]; S.levelNo = n; S.opt = opt || null; S.vsK = vs ? vs.k : -1;
     const size = lv.bounds.getSize(V(0, 0, 0)), center = lv.bounds.getCenter(V(0, 0, 0));
     cam.target.set(0, center.y, 0);
     cam.radius = Math.max(size.x, size.z, size.y) * 0.62 + 0.6;
     fitCamera();
     cam.dist = cam.distBase; cam.yaw = 0.65; cam.pitch = 0.42; cam.yawTo = null;
+    if (resume && !vs && resume.sig === S.sig && resume.snap.removed.length === S.screws.length) {
+      S.buffer = new Array(Math.max(lv.slots, resume.nbuf | 0)).fill(null);
+      restore(resume.snap);
+      S.hints = Math.max(0, Math.min(HINTS, resume.hints | 0)); S.undos = Math.max(0, Math.min(UNDOS, resume.undos | 0));
+      S.slotUsed = !!resume.slotUsed; S.hintUsed = !!resume.hintUsed; S.undoUsed = !!resume.undoUsed;
+      toast(T('つづきから再開しました'), true);
+    } else if (resume && !vs) clearState();
     $('loading').hidden = true;
-    ui();
+    ui(); tutShow(); kick();
   }, 30);
 }
 function fitCamera() {
@@ -1207,8 +1341,8 @@ function undo() {
   if (vs) return false;
   if (!S || S.won || !S.history.length || S.undos <= 0) return false;
   restore(S.history.pop()); S.undos--; S.undoUsed = true;
-  hide('ovLose'); beep(500, .06, 'triangle'); setTimeout(() => beep(380, .08, 'triangle'), 60);
-  ui(); return true;
+  hide('ovLose'); beep(500, .06, 'triangle'); beep(380, .08, 'triangle', .06);
+  ui(); saveState(); kick(); return true;
 }
 
 function takeScrew(s) {
@@ -1217,25 +1351,27 @@ function takeScrew(s) {
   if (i >= 0) { const b = S.active[i]; target = { kind: 'box', i, slot: b.reserved, box: b }; b.reserved++; }
   else {
     const k = S.buffer.indexOf(null);
-    if (k < 0) { S.bufShake = .4; toast(T('予備スロットがいっぱい')); beep(140, .12, 'square'); buzz(40); return; }
+    if (k < 0) { S.bufShake = .4; toast(T('予備スロットがいっぱい')); beep(140, .12, 'square'); buzz(40); kick(); return; }
     S.buffer[k] = { color: s.color, arrived: false }; target = { kind: 'buf', k };
   }
+  beginPlay();
   S.history.push(snap); if (S.history.length > 60) S.history.shift();
   s.removed = true; s.anim = 0.001; s.target = target;
   if (S.hint && S.hint.s === s) { s.g.scale.setScalar(1); S.hint = null; }
-  beep(880, .05, 'triangle'); setTimeout(() => beep(1180, .05, 'triangle'), 70); buzz(12);
+  beep(880, .05, 'triangle'); beep(1180, .05, 'triangle', .07); buzz(12);
   const p = s.part; p.left--;
   if (p.left === 0) { p.state = 'loose'; p.fallDelay = .28; }
-  S.screws.forEach(o => { if (o.lockKey === s && o.lockRing) { o.lockRing.visible = false; setTimeout(() => beep(1320, .08, 'triangle'), 120); } });
+  S.screws.forEach(o => { if (o.lockKey === s && o.lockRing) { o.lockRing.visible = false; beep(1320, .08, 'triangle', .12); } });
+  S.wobbleUntil = performance.now() + 3000;
   if (peeking) setPeek(true);
-  ui();
+  ui(); saveState(); tutDone('take'); kick();
 }
 function arrive(f) {
   const t = f.target;
   if (t.kind === 'box') {
     if (!S.active.includes(t.box)) return;
     t.box.filled++;
-    if (t.box.filled === 3) { t.box.state = 'out'; t.box.t = 0; beep(660, .08, 'sine'); setTimeout(() => beep(990, .12, 'sine'), 80); buzz(20); }
+    if (t.box.filled === 3) { t.box.state = 'out'; t.box.t = 0; beep(660, .08, 'sine'); beep(990, .12, 'sine', .08); buzz(20); tutDone('box'); }
     else beep(520, .04, 'sine');
   } else if (S.buffer[t.k]) { S.buffer[t.k].arrived = true; beep(400, .04, 'sine'); pullFromBuffer(); }
 }
@@ -1253,11 +1389,14 @@ function exposedMatches() { return liveScrews().filter(s => boxFor(s.color) >= 0
 /* =========================================================
    Update
    ========================================================= */
+// returns true while something still moves (the loop keeps drawing); false = the scene is at rest and drawing stops (R16)
 function update(dt) {
-  if (!S) return;
+  if (!S) return false;
   S.time += dt;
+  let active = false;
   for (const s of S.screws) {
     if (s.anim > 0 && s.anim < 1) {
+      active = true;
       s.anim = Math.min(1, s.anim + dt / .26);
       s.g.translateY(dt * 1.6); s.g.rotateY(dt * 26);
       if (s.anim >= 1) {
@@ -1265,15 +1404,18 @@ function update(dt) {
         S.flyers.push({ color: s.color, x0: p.x, y0: p.y, t: 0, dur: .38, target: s.target, big: true });
       }
     }
-    if (s.shake > 0) { s.shake -= dt; s.g.rotateY(Math.sin(s.shake * 60) * .15); }
+    if (s.shake > 0) { active = true; s.shake -= dt; s.g.rotateY(Math.sin(s.shake * 60) * .15); }
   }
+  const wobble = performance.now() < S.wobbleUntil && !reducedMotion();
   for (const p of S.parts) {
-    if (p.flash > 0) { p.flash -= dt; p.mat.emissive.setRGB(Math.max(0, p.flash) * 1.4, 0, 0); }
-    if (p.state === 'on' && p.rot0) {   // one screw left: the part wobbles as a cue
-      const w = p.left === 1 ? Math.sin(S.time * 9 + p.id) * .03 : 0;
+    if (p.flash > 0) { active = true; p.flash -= dt; p.mat.emissive.setRGB(Math.max(0, p.flash) * 1.4, 0, 0); }
+    if (p.state === 'on' && p.rot0) {   // one screw left: the part wobbles as a cue (for a few seconds after each action)
+      const w = p.left === 1 && wobble ? Math.sin(S.time * 9 + p.id) * .03 : 0;
+      if (w) active = true;
       p.mesh.rotation.set(p.rot0.x + w, p.rot0.y + w * .6, p.rot0.z - w * .4);
     }
     if (p.state === 'loose') {
+      active = true;
       p.fallDelay -= dt;
       if (p.fallDelay <= 0) {
         p.state = 'fall'; p.t = 0;
@@ -1285,6 +1427,7 @@ function update(dt) {
         beep(240, .16, 'sine');
       }
     } else if (p.state === 'fall') {
+      active = true;
       p.t += dt; p.vel.y -= 16 * dt;
       p.mesh.position.addScaledVector(p.vel, dt);
       p.mesh.rotation.x += p.spin.x * dt; p.mesh.rotation.y += p.spin.y * dt; p.mesh.rotation.z += p.spin.z * dt;
@@ -1293,6 +1436,7 @@ function update(dt) {
       if (p.t > 1.05) { p.state = 'gone'; p.mesh.visible = false; }
     }
   }
+  if (S.flyers.length) active = true;
   for (let j = S.flyers.length - 1; j >= 0; j--) {
     const f = S.flyers[j]; f.t += dt;
     if (f.t >= f.dur) { S.flyers.splice(j, 1); arrive(f); }
@@ -1300,25 +1444,28 @@ function update(dt) {
   for (let i = 0; i < 2; i++) {
     const b = S.active[i]; if (!b) continue;
     b.t += dt;
+    if (b.state !== 'idle') active = true;
     if (b.state === 'in' && b.t >= .3) b.state = 'idle';
     else if (b.state === 'out' && b.t >= .38) { S.active[i] = newBox(); pullFromBuffer(); }
   }
-  if (S.bufShake > 0) S.bufShake -= dt;
+  if (S.bufShake > 0) { active = true; S.bufShake -= dt; }
   if (S.hint) {
     S.hint.t -= dt;
     if (S.hint.t <= 0 || S.hint.s.removed) { S.hint.s.g.scale.setScalar(1); S.hint = null; }
-    else S.hint.s.g.scale.setScalar(1 + .5 * (.5 + .5 * Math.sin(S.time * 12)));
+    else { active = true; S.hint.s.g.scale.setScalar(1 + .5 * (.5 + .5 * Math.sin(S.time * 12))); }
   }
 
-  if (S.won || S.over) return;
-  if (vs && !KoboVersus.canPlay()) return;
+  if (S.won || S.over) return active;
+  if (vs && !KoboVersus.canPlay()) return active;
   const animating = S.screws.some(s => s.anim > 0 && s.anim < 1);
   const idle = !animating && S.flyers.length === 0 && S.active.every(b => !b || b.state === 'idle');
   if (liveScrews().length === 0 && idle && S.active.every(b => !b) && !S.queue.length) {
+    active = true;
     S.winT += dt; if (S.winT > .9) win();
   } else if (idle && S.buffer.every(v => v) && exposedMatches().length === 0) {
     S.over = true; setTimeout(lose, 400);
-  }
+  } else if (liveScrews().length === 0) active = true; // boxes still shipping: the clear check needs more frames
+  return active;
 }
 
 /* =========================================================
@@ -1326,6 +1473,17 @@ function update(dt) {
    ========================================================= */
 const fx = document.getElementById('fx'), ctx = fx.getContext('2d'), trayEl = document.getElementById('tray');
 let dpr = 1, confetti = [];
+// the tray is drawn on the page background, so its colors follow the theme (light / dark)
+const pal = { dim: '#9fb1bd', well: '#152029', wellLine: '#3e5566', danger: '#ff6b5e', empty: 'rgba(159,177,189,.25)',
+  rank: ['#7fd6a0', '#7fd6a0', '#9fc4ff', '#f2b33d', '#f76b15', '#ff6b5e', '#e93d82'] };
+function readPalette() {
+  const cs = getComputedStyle(document.documentElement), v = (k, d) => (cs.getPropertyValue(k) || '').trim() || d;
+  const light = /light/.test(cs.colorScheme || '') || v('--kb-bg', '#1d2a35').toLowerCase() === '#f4f1ea';
+  pal.dim = v('--kb-dim', '#9fb1bd'); pal.danger = v('--kb-danger', '#ff6b5e');
+  pal.well = light ? '#e2dbcc' : '#152029'; pal.wellLine = light ? '#c9c0ae' : '#3e5566';
+  pal.empty = light ? 'rgba(91,104,115,.35)' : 'rgba(159,177,189,.25)';
+  pal.rank = light ? ['#17794a', '#17794a', '#1f6fbf', '#8a5a00', '#b8470a', '#c62828', '#b0245f'] : ['#7fd6a0', '#7fd6a0', '#9fc4ff', '#f2b33d', '#f76b15', '#ff6b5e', '#e93d82'];
+}
 function resizeFx() { dpr = Math.min(window.devicePixelRatio || 1, 3); fx.width = innerWidth * dpr; fx.height = innerHeight * dpr; }
 function trayGeom() {
   const r = trayEl.getBoundingClientRect();
@@ -1368,9 +1526,10 @@ function drawFx(dt) {
     ctx.fillRect(-5, -3, 10, 6); ctx.restore();
   }
 }
+function reducedMotion() { return P.fx.reducedMotion(); }
 function burst() {
-  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) return;
+  if (reducedMotion()) return;
+  kick();
   for (let i = 0; i < 120; i++) confetti.push({ x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .35,
     vx: (Math.random() - .5) * 700, vy: -250 - Math.random() * 450, r: Math.random() * 6, vr: (Math.random() - .5) * 12,
     color: COLORS[i % COLORS.length], life: 2.2 + Math.random() });
@@ -1379,7 +1538,7 @@ function drawTray() {
   const g = trayGeom();
   for (let i = 0; i < 2; i++) {
     const b = S.active[i], x = g.bx[i];
-    if (!b) { ctx.strokeStyle = 'rgba(159,177,189,.25)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; rrect(x, g.by, g.bw, g.bh, 16); ctx.stroke(); ctx.setLineDash([]); continue; }
+    if (!b) { ctx.strokeStyle = pal.empty; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; rrect(x, g.by, g.bw, g.bh, 16); ctx.stroke(); ctx.setLineDash([]); continue; }
     const oy = boxOffset(b), col = COLORS[b.color];
     ctx.save(); ctx.globalAlpha = b.state === 'out' ? Math.max(0, 1 - b.t / .38) : 1;
     ctx.beginPath(); ctx.rect(g.r.left - 20, g.r.top - 4, g.r.width + 40, 200); ctx.clip();
@@ -1398,7 +1557,7 @@ function drawTray() {
   }
   // next boxes preview
   const nextQ = S.queue.slice(0, 4);
-  ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#9fb1bd';
+  ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = pal.dim;
   const g2y = g.by + g.bh + 10;
   if (nextQ.length) {
     ctx.fillText(T('次の箱'), g.r.left + 2, g2y + 4);
@@ -1407,19 +1566,19 @@ function drawTray() {
   const n = S.buffer.length, a = bufSlotPos(0), z = bufSlotPos(n - 1);
   const sx = S.bufShake > 0 ? Math.sin(S.bufShake * 60) * 5 * S.bufShake / .4 : 0;
   ctx.save(); ctx.translate(sx, 0);
-  ctx.fillStyle = '#152029'; rrect(a.x - 27, a.y - 22, z.x - a.x + 54, 44, 22); ctx.fill();
-  ctx.strokeStyle = S.bufShake > 0 ? '#ff6b5e' : '#3e5566'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = pal.well; rrect(a.x - 27, a.y - 22, z.x - a.x + 54, 44, 22); ctx.fill();
+  ctx.strokeStyle = S.bufShake > 0 ? pal.danger : pal.wellLine; ctx.lineWidth = 2; ctx.stroke();
   S.buffer.forEach((v, k) => { const p = bufSlotPos(k); hole(p.x, p.y, 15); if (v && v.arrived) screw2d(p.x, p.y, COLORS[v.color]); });
   ctx.restore();
   const used = S.buffer.filter(Boolean).length;
   ctx.font = '800 11px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left';
-  ctx.fillStyle = used >= n - 1 ? '#ff6b5e' : '#9fb1bd';
+  ctx.fillStyle = used >= n - 1 ? pal.danger : pal.dim;
   const spareTxt = T('予備 {used}/{n}', { used, n }), rankTxt = T(RANK_JA[S.rank]);
   ctx.fillText(spareTxt, g.r.left + 2, g.r.top + 146);
   const rankX = g.r.left + Math.max(62, ctx.measureText(spareTxt).width + 12);
-  ctx.fillStyle = ['#7fd6a0', '#7fd6a0', '#9fc4ff', '#f2b33d', '#f76b15', '#ff6b5e', '#e93d82'][S.rank];
+  ctx.fillStyle = pal.rank[S.rank];
   ctx.fillText(rankTxt, rankX, g.r.top + 146);
-  ctx.textAlign = 'right'; ctx.fillStyle = '#9fb1bd';
+  ctx.textAlign = 'right'; ctx.fillStyle = pal.dim;
   // right-hand status: drop the model name, then shrink, so it never runs into the rank label or off the tray
   const info = { name: T(S.name), left: liveScrews().length, boxes: S.queue.length + S.active.filter(Boolean).length };
   const room = g.r.right - 2 - (rankX + ctx.measureText(rankTxt).width + 10);
@@ -1448,10 +1607,11 @@ function resize3d() {
   const r = glCanvas.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
   const ratio = cam.dist / (cam.distBase || 1); fitCamera(); cam.dist = cam.distBase * ratio;
+  kick();
 }
 const pointers = new Map(); let drag = null, pinch = null, spin = 0;
 glCanvas.addEventListener('pointerdown', e => {
-  initAudio(); try { glCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+  try { glCanvas.setPointerCapture(e.pointerId); } catch (err) {}
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   spin = 0;
   if (pointers.size === 1) drag = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, vx: 0 };
@@ -1469,7 +1629,9 @@ glCanvas.addEventListener('pointermove', e => {
     if (drag.moved < 8) return; // small finger jitter stays a tap
     cam.yawTo = null; drag.vx = dx;
     cam.yaw -= dx * 0.0085; cam.pitch = Math.max(-1.3, Math.min(1.35, cam.pitch + dy * 0.0065));
+    tut.rot += Math.abs(dx) + Math.abs(dy); if (tut.rot > 160) tutDone('rotate');
   }
+  kick();
 });
 const endPtr = e => {
   if (!pointers.has(e.pointerId)) return;
@@ -1479,11 +1641,12 @@ const endPtr = e => {
     else spin = -drag.vx * 0.0085 * 40; // gentle inertia
   }
   if (pointers.size < 2) pinch = null;
-  if (pointers.size === 0) drag = null;
+  if (pointers.size === 0) { drag = null; if (S) S.wobbleUntil = performance.now() + 3000; tutPoke(); }
+  kick();
 };
 glCanvas.addEventListener('pointerup', endPtr);
 glCanvas.addEventListener('pointercancel', endPtr);
-glCanvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist = Math.max(cam.distBase * .5, Math.min(cam.distBase * 1.6, cam.dist * (1 + e.deltaY * .001))); }, { passive: false });
+glCanvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist = Math.max(cam.distBase * .5, Math.min(cam.distBase * 1.6, cam.dist * (1 + e.deltaY * .001))); kick(); }, { passive: false });
 
 const ray = new THREE.Raycaster();
 function tap(cx, cy) {
@@ -1515,16 +1678,16 @@ function tap(cx, cy) {
     s.blockers.forEach(id => { const p = S.parts[id]; if (p.state === 'on') p.flash = .5; });
     toast(T('赤く光った部品がじゃまで抜けない'));
   }
+  kick();
 }
 
 /* =========================================================
    UI
    ========================================================= */
-function $(id) { return document.getElementById(id); }
 function show(id) { $(id).hidden = false; } function hide(id) { $(id).hidden = true; }
 function ui() {
   $('lvLabel').textContent = vs ? 'VS ' + (vs.k + 1) : daily ? daily.label : 'LEVEL ' + level;
-  $('soundBtn').style.opacity = soundOn ? 1 : .4;
+  drawSoundBtn();
   if (!S) return;
   if (vs) { // battle: no undo / hint / extra slot
     for (const id of ['hintBtn', 'undoBtn', 'slotBtn']) $(id).disabled = true;
@@ -1544,33 +1707,78 @@ function toast(msg, ok) {
 }
 function win() {
   if (vs) return vsCleared();
+  if (!S || S.won) return;
   S.won = true;
+  beginPlay(); // a level cleared through the debug hook still counts as one play
   const stars = Math.max(1, 3 - (S.hintUsed ? 1 : 0) - (S.undoUsed ? 1 : 0) - (S.slotUsed ? 1 : 0));
+  const ms = Date.now() - S.t0;
   $('winTitle').textContent = T('{label} クリア！', { label: daily ? daily.label : 'LEVEL ' + level });
   $('winStars').innerHTML = '★'.repeat(stars) + '<span class="off">' + '★'.repeat(3 - stars) + '</span>';
   $('winStars').setAttribute('aria-label', T('星 {n} / 3', { n: stars }));
   $('winText').textContent = T('{name}を分解しました。ネジ {screws} 本、部品 {parts} 個。', { name: T(S.name), screws: S.screws.length, parts: S.parts.filter(p => p.size0).length });
   $('winNote').textContent = stars === 3 ? T('ヒント・戻す・＋スロットなしで完璧です。') : T('ヒント・戻す・＋スロットを使わずに解くと星3つ。');
   $('winNote').textContent += T('　難易度：{ja}（{en}）', { ja: RANK_JA[S.rank], en: RANKS[S.rank] });
+  clearState();
   if (daily) {
     const d = store.get('daily', {}); if (!d[daily.key] || d[daily.key] < stars) { d[daily.key] = stars; store.set('daily', d); }
-    setTimeout(() => cloud.push().catch(e => console.warn('sync', e)), 0);
     $('nextBtn').textContent = T('いつものレベルに戻る');
+    endPlay('clear', dailyScore(stars, ms));
   } else {
     const best = store.get('stars', {}); if (!best[level] || best[level] < stars) { best[level] = stars; store.set('stars', best); }
-    store.set('level', level + 1); setTimeout(() => cloud.push().catch(e => console.warn('sync', e)), 0);
-    if (level + 1 > maxLevel) { maxLevel = level + 1; store.set('maxLevel', maxLevel); }
+    store.set('level', level + 1);
+    G.emit('stage_clear', { stage: level, stars, timeMs: ms, moves: S.screws.length });
+    if (level + 1 > maxLevel) { maxLevel = level + 1; store.set('maxLevel', maxLevel); G.emit('best', { score: maxLevel - 1 }); }
     $('nextBtn').textContent = T('次のレベルへ');
+    endPlay('clear', maxLevel - 1);
   }
-  [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle'), i * 90));
-  burst(); show('ovWin');
+  legacy.schedule();
+  A.sfx('clear'); A.vibrate([20, 40, 30]);
+  burst(); show('ovWin'); tutShow();
 }
-function lose() { if (!S.over) return; if (vs) return vsStuck(); ui(); show('ovLose'); beep(200, .25, 'sawtooth'); buzz([60, 40, 60]); }
+function lose() {
+  if (!S || !S.over) return; if (vs) return vsStuck();
+  ui(); show('ovLose'); beep(200, .25, 'sawtooth'); buzz([60, 40, 60]);
+}
 function addSlot() {
   if (!S || S.slotUsed || vs) return;
   S.slotUsed = true; S.buffer.push(null); ui();
   if (S.over) { S.over = false; hide('ovLose'); }
+  saveState(); kick();
 }
+
+/* ---- tutorial (level 1): one real action per step — turn, pull a screw, fill a box, peek (Q-2) ---- */
+const TUT = [
+  { id: 'rotate', t: 'ドラッグして模型を回してみよう', sub: '裏や下にもネジが隠れている' },
+  { id: 'take', t: '光っているネジをタップして抜こう', sub: '手前に部品がないネジだけ抜ける' },
+  { id: 'box', t: 'ネジは同じ色の箱へ。3本で箱が出荷される', sub: '合う箱がないネジは予備スロットで待つ' },
+  { id: 'peek', t: '「のぞく」を押している間、外側の部品が透ける', sub: '押して、一段奥のネジを探そう' },
+];
+const tut = { step: store.get('tutorial', false) === true ? TUT.length : 0, rot: 0 };
+function tutorialOn() { return tut.step < TUT.length && !!S && S.levelNo === 1 && !S.opt && !daily && !vs; }
+function tutShow() {
+  const on = tutorialOn() && $('ovHelp').hidden && !S.won;
+  $('coach').hidden = !on; $('hintLine').hidden = on;
+  $('peekBtn').classList.toggle('pulse', on && TUT[tut.step].id === 'peek');
+  if (!on) return;
+  const st = TUT[tut.step];
+  $('coachText').textContent = T(st.t);
+  $('coachSub').textContent = T('チュートリアル {n}/{m}', { n: tut.step + 1, m: TUT.length }) + ' · ' + T(st.sub);
+  tutPoke();
+}
+// the "take" step makes one reachable screw glow (for a few seconds; again after each touch)
+function tutPoke() {
+  if (!tutorialOn() || TUT[tut.step].id !== 'take' || !S || S.hint) return;
+  const s = exposedMatches()[0] || liveScrews().find(isExposed);
+  if (s) { S.hint = { s, t: 4 }; kick(); }
+}
+function tutDone(id) {
+  if (!tutorialOn() || TUT[tut.step].id !== id) return;
+  tut.step++;
+  A.sfx('ok');
+  if (tut.step >= TUT.length) { store.set('tutorial', true); toast(T('できた！ あとは全部のネジを外そう'), true); }
+  tutShow();
+}
+$('coachSkip').onclick = () => { tut.step = TUT.length; store.set('tutorial', true); tutShow(); };
 
 /* ---- transfer code: level + checksum, so progress can move to another device ---- */
 const CODE_ALPHA = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -1583,74 +1791,80 @@ function readCode(raw) {
   const lv = dec(m[1]); if (lv < 1) return 0;
   return dec(m[2]) === (lv * 7919 + 4099) % 1021 ? lv : 0;
 }
-/* ---- Google login + Firestore sync (only when firebase-config.js has a config) ---- */
-const cloud = (() => {
-  const V = '10.12.2', base = 'https://cdn.jsdelivr.net/npm/firebase@' + V + '/';
-  let auth = null, db = null, user = null, ready = null;
-  const cfg = () => window.NEJI_FIREBASE;
-  const load = src => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
-  function init() {
-    if (ready) return ready;
-    if (!cfg()) return (ready = Promise.resolve(false));
-    ready = load(base + 'firebase-app-compat.js')
-      .then(() => Promise.all([load(base + 'firebase-auth-compat.js'), load(base + 'firebase-firestore-compat.js')]))
-      .then(() => {
-        firebase.initializeApp(cfg()); auth = firebase.auth(); db = firebase.firestore();
-        auth.onAuthStateChanged(u => { user = u; render(); if (u) pull(); });
-        return true;
-      }).catch(e => { console.warn('firebase', e); return false; });
-    return ready;
+/* ---- account + cloud sync: common/cloud.js (R8) ----
+   maxLevel (max), stars and daily (per-key max) ride in nejiUsers/{uid}.games like every other game, and the hub's ranking
+   sender runs here too. The old top-level fields of nejiUsers/{uid} (level, maxLevel, stars, daily, name) are still read
+   once per sign-in (older pages wrote only those) and kept up to date (older pages still read them). */
+const SYNC_KEYS = P.syncMap({ games: ['neji'], platform: false, shared: false });
+const legacy = (() => {
+  let uid = null, sent = null, timer = 0, lastAt = 0, busy = false;
+  const db = () => (window.firebase && firebase.apps && firebase.apps.length && firebase.firestore ? firebase.firestore() : null);
+  const fields = () => ({ level: Math.max(1, store.get('level', 1) | 0), maxLevel, stars: store.get('stars', {}) || {}, daily: store.get('daily', {}) || {} });
+  const sig = f => JSON.stringify([f.level, f.maxLevel, f.stars, f.daily]);
+  function mergeIn(r) {
+    if (!r || typeof r !== 'object') return false;
+    let changed = false;
+    const each = (key, rv) => {
+      if (!rv || typeof rv !== 'object') return;
+      const cur = store.get(key, {}) || {}; let dirty = false;
+      for (const [k, v] of Object.entries(rv)) { const n = Number(v) | 0; if (n > 0 && !((cur[k] | 0) >= n)) { cur[k] = n; dirty = true; } }
+      if (dirty) { store.set(key, cur); changed = true; }
+    };
+    each('stars', r.stars); each('daily', r.daily);
+    const mx = Number(r.maxLevel) | 0;
+    if (mx > maxLevel && mx < 100000) { maxLevel = mx; store.set('maxLevel', mx); changed = true; }
+    return changed;
   }
-  const local = () => ({ level: store.get('level', 1), maxLevel: maxLevel, stars: store.get('stars', {}), daily: store.get('daily', {}) });
-  function mergeInto(r) {
-    const st = store.get('stars', {}), dl = store.get('daily', {});
-    for (const [k, v] of Object.entries(r.stars || {})) if (!st[k] || st[k] < v) st[k] = v;
-    for (const [k, v] of Object.entries(r.daily || {})) if (!dl[k] || dl[k] < v) dl[k] = v;
-    store.set('stars', st); store.set('daily', dl);
-    const mx = Math.max(maxLevel, r.maxLevel | 0);
-    if (mx > maxLevel) { maxLevel = mx; store.set('maxLevel', mx); }
-  }
-  async function pull() {
+  async function pull(u) {
+    const d = db(); if (!d) return;
+    uid = u;
     try {
-      const snap = await db.collection('nejiUsers').doc(user.uid).get();
-      if (snap.exists) mergeInto(snap.data());
-      await push();
-      if (!$('ovMenu').hidden) openMenu();
-      toast(T('クラウドと同期しました（LEVEL {n} まで）', { n: maxLevel }), true);
-    } catch (e) {
-      console.warn(e);
-      const code = (e && (e.code || e.name)) || 'unknown';
-      const why = T(code === 'permission-denied' ? 'Firestoreのルールで拒否されました' : code === 'unavailable' ? '通信できませんでした' : code === 'not-found' ? 'Firestoreのデータベースが見つかりません' : '原因不明のエラー');
-      setMsg(T('同期できませんでした（{why}：{code}）', { why, code }));
-      toast(T('同期できませんでした：{code}', { code }));
-    }
+      const snap = await d.collection('nejiUsers').doc(uid).get();
+      if (uid !== u) return;
+      const r = snap.exists ? snap.data() : {};
+      sent = sig({ level: Number(r.level) | 0, maxLevel: Number(r.maxLevel) | 0, stars: r.stars || {}, daily: r.daily || {} });
+      if (mergeIn(r)) afterCloud(true);
+      schedule(2000);
+    } catch (e) { console.warn('neji legacy pull', e && e.code); }
   }
-  async function push() {
-    if (!user || !db) return;
-    await db.collection('nejiUsers').doc(user.uid).set({ ...local(), name: user.displayName || '', updatedAt: Date.now() }, { merge: true });
+  function schedule(ms) {
+    if (!uid || timer) return;
+    timer = setTimeout(flush, Math.max(ms || 2000, lastAt + 30000 - Date.now()));
   }
-  function setMsg(t) { const m = $('acctMsg'); if (m) m.textContent = t; }
-  function render() {
-    const li = $('loginBtn'), lo = $('logoutBtn');
-    if (!cfg()) { li.hidden = lo.hidden = true; setMsg(T('Googleログインは準備中です（管理者の設定待ち）。今は引き継ぎコードを使ってください。')); return; }
-    if (!auth) { li.hidden = lo.hidden = true; setMsg(T('ログイン機能を読み込めませんでした。通信状態を確認してください。')); return; }
-    if (user) { li.hidden = true; lo.hidden = false; setMsg(T('{name} さん：進み具合はクラウドに自動保存されます。', { name: user.displayName || T('ログイン中') })); }
-    else { li.hidden = false; lo.hidden = true; setMsg(T('ログインすると、どの端末でも続きから遊べます。')); }
+  async function flush() {
+    clearTimeout(timer); timer = 0;
+    const d = db(); if (!uid || !d || busy) return;
+    const f = fields(), s = sig(f);
+    if (s === sent) return;
+    const u = window.KoboCloud && KoboCloud.user ? KoboCloud.user() : null;
+    busy = true; lastAt = Date.now();
+    try { await d.collection('nejiUsers').doc(uid).set(Object.assign(f, { name: (u && u.name) || '', updatedAt: Date.now() }), { merge: true }); sent = s; }
+    catch (e) { console.warn('neji legacy push', e && e.code); }
+    finally { busy = false; }
   }
-  async function login() {
-    if (!(await init()) || !auth) return render();
-    try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    catch (e) {
-      if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
-      else if (e && e.code === 'auth/unauthorized-domain') setMsg(T('このサイトのドメインがFirebaseで許可されていません（管理者の設定待ち）。'));
-      else if (e && e.code !== 'auth/popup-closed-by-user') setMsg(T('ログインできませんでした：{e}', { e: e.code || e.message }));
-    }
-  }
-  return { init: () => init().then(render), login, logout: () => auth && auth.signOut(), push, render };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && uid) flush(); });
+  window.addEventListener('pagehide', () => { if (uid) flush(); });
+  return { pull, schedule, flush, signOut() { uid = null; sent = null; clearTimeout(timer); timer = 0; }, get uid() { return uid; } };
 })();
-$('loginBtn').onclick = () => cloud.login();
-$('logoutBtn').onclick = () => cloud.logout();
-cloud.init();
+// cloud.js wrote merged values into localStorage: pick them up
+function afterCloud(toastIt) {
+  const mx = Math.max(level, store.get('maxLevel', 1) | 0);
+  if (mx > maxLevel) maxLevel = mx;
+  if (!$('ovMenu').hidden) openMenu();
+  if (toastIt) toast(T('クラウドと同期しました（LEVEL {n} まで）', { n: maxLevel }), true);
+}
+let syncedOnce = false;
+if (window.KoboCloud) {
+  KoboCloud.sync(SYNC_KEYS);
+  KoboCloud.onChange(st => {
+    if (!st.user) { if (legacy.uid) legacy.signOut(); return; }
+    if (st.synced) {
+      afterCloud(!syncedOnce); syncedOnce = true;
+      if (legacy.uid !== st.user.uid) legacy.pull(st.user.uid);
+    }
+  });
+  KoboCloud.mountLogin($('acctBox'));
+} else $('acctWrap').hidden = true;
 
 /* ---- home screen install + offline (service worker) ---- */
 let installEvt = null;
@@ -1681,27 +1895,28 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && /github\.i
 
 function openMenu() {
   const grid = $('levelGrid'); grid.innerHTML = '';
-  const stars = store.get('stars', {});
+  const stars = store.get('stars', {}) || {};
   const WORLDS = ['はじめての工房', 'からくり横丁', '職人の試練', '達人の工場', '究極の工房'];
   for (let i = 1; i <= maxLevel; i++) {
     if ((i - 1) % 8 === 0) {
       const w = Math.floor((i - 1) / 8), h = document.createElement('div');
-      h.style.cssText = 'grid-column:1/-1;text-align:left;font-size:12px;color:var(--brass);font-weight:800;margin-top:4px';
+      h.className = 'world';
       h.textContent = 'WORLD ' + (w + 1) + '　' + T(WORLDS[w] || '無限工房'); grid.appendChild(h);
     }
-    const bt = document.createElement('button'); bt.id = 'lvl-' + i;
-    bt.textContent = i; if (i === level) bt.className = 'cur';
-    if (stars[i]) bt.title = T('星 {n}', { n: stars[i] });
-    bt.onclick = () => { hide('ovMenu'); startLevel(i); };
+    const bt = document.createElement('button'); bt.id = 'lvl-' + i; bt.type = 'button';
+    bt.textContent = i; if (i === level && !daily) bt.className = 'cur';
+    if (stars[i]) { bt.title = T('星 {n}', { n: stars[i] }); bt.setAttribute('aria-label', 'LEVEL ' + i + ' · ' + T('星 {n}', { n: stars[i] })); }
+    bt.onclick = () => { closeMenu(); startLevel(i); };
     grid.appendChild(bt);
   }
-  const dd = store.get('daily', {})[todayKey()];
+  const dd = (store.get('daily', {}) || {})[todayKey()];
   $('dailyNote').textContent = dd ? T('今日はクリア済み（星 {n}）。何度でも挑戦できます。', { n: dd }) : T('毎日1問。日付ごとに同じ盤面で、難易度は高めです。');
-  cloud.render(); renderInstall();
+  renderInstall();
   $('codeOut').textContent = makeCode(maxLevel);
   $('codeMsg').textContent = T('このコードを別の端末で入力すると、LEVEL {n} まで遊べる状態になります。', { n: maxLevel });
-  show('ovMenu');
+  if ($('ovMenu').hidden) { show('ovMenu'); G.menuOpened(); }
 }
+function closeMenu() { if ($('ovMenu').hidden) return; hide('ovMenu'); G.menuClosed(); }
 $('copyBtn').onclick = () => {
   const code = $('codeOut').textContent;
   const fallback = () => { const r = document.createRange(); r.selectNodeContents($('codeOut')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); $('codeMsg').textContent = T('コードを選択しました。長押しでコピーしてください。'); };
@@ -1711,7 +1926,8 @@ $('loadBtn').onclick = () => {
   const lv = readCode($('codeIn').value);
   if (!lv) { $('codeMsg').textContent = T('コードが正しくありません。「NJ」で始まる7文字を確認してください。'); return; }
   maxLevel = Math.max(maxLevel, lv); store.set('maxLevel', maxLevel);
-  hide('ovMenu'); startLevel(lv); toast(T('LEVEL {n} から再開します', { n: lv }), true);
+  closeMenu(); startLevel(lv); toast(T('LEVEL {n} から再開します', { n: lv }), true);
+  legacy.schedule();
 };
 
 $('hintBtn').onclick = () => {
@@ -1723,6 +1939,7 @@ $('hintBtn').onclick = () => {
   S.hint = { s, t: 3.5 }; S.hints--; S.hintUsed = true; ui();
   const w = s.g.getWorldPosition(V(0, 0, 0)); cam.yawTo = Math.atan2(w.x, w.z);
   cam.pitch = w.y < .4 ? -0.9 : Math.max(cam.pitch, 0.2);
+  A.sfx('select'); saveState(); kick();
 };
 function solverState() {
   return { n: S.screws.length, part: S.screws.map(s => s.part.id), blockers: S.screws.map(s => s.blockers), color: S.screws.map(s => s.color),
@@ -1736,6 +1953,7 @@ $('undoBtn').onclick = () => { if (vs) return; if (!undo()) toast(T('これ以�
 // peek: the outermost layer (parts with a reachable screw that cover other screws) turns see-through
 let peeking = false;
 function setPeek(on) {
+  const was = peeking;
   peeking = on; if (!S) return;
   const live = liveScrews(), covering = new Set();
   live.forEach(s => s.blockers.forEach(id => covering.add(id)));
@@ -1746,64 +1964,107 @@ function setPeek(on) {
     p.mat.opacity = t ? .14 : p.baseOpacity; p.mat.depthWrite = !t; p.mesh.castShadow = !t;
     (p.decos || []).forEach(d => d.material.opacity = t ? .14 : 1);
   }
+  if (on && !was) tutDone('peek');
+  kick();
 }
 const peekBtn = $('peekBtn');
-peekBtn.addEventListener('pointerdown', e => { e.preventDefault(); initAudio(); setPeek(true); });
-['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => peekBtn.addEventListener(ev, () => setPeek(false)));
+peekBtn.addEventListener('pointerdown', e => { e.preventDefault(); setPeek(true); });
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => peekBtn.addEventListener(ev, () => { if (peeking) setPeek(false); }));
 peekBtn.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') setPeek(true); });
 peekBtn.addEventListener('keyup', () => setPeek(false));
 peekBtn.addEventListener('contextmenu', e => e.preventDefault());
 $('loseUndo').onclick = () => undo();
 $('slotBtn').onclick = addSlot;
 $('loseSlot').onclick = addSlot;
-$('retryBtn').onclick = () => { hide('ovMenu'); S && S.opt ? startLevel(S.levelNo, S.opt) : startLevel(level); };
+$('retryBtn').onclick = () => { closeMenu(); S && S.opt ? startLevel(S.levelNo, S.opt) : startLevel(level); };
 $('loseRetry').onclick = () => S && S.opt ? startLevel(S.levelNo, S.opt) : startLevel(level);
 $('nextBtn').onclick = () => daily ? startLevel(level) : startLevel(level + 1);
-$('helpBtn').onclick = () => show('ovHelp');
-$('helpClose').onclick = () => { hide('ovHelp'); store.set('seenHelp', true); initAudio(); };
+$('helpBtn').onclick = () => { show('ovHelp'); tutShow(); };
+$('helpClose').onclick = () => { hide('ovHelp'); store.set('seenHelp', true); tutShow(); };
 $('menuBtn').onclick = openMenu;
-$('dailyBtn').onclick = () => { hide('ovMenu'); startDaily(); };
-$('menuClose').onclick = () => hide('ovMenu');
-$('soundBtn').onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); ui(); initAudio(); };
+$('dailyBtn').onclick = () => { closeMenu(); startDaily(); };
+$('menuClose').onclick = closeMenu;
+$('settingsBtn').onclick = () => { saveState(); UI.openSettings({}); };
+$('soundBtn').onclick = () => { A.toggleMute(); if (!A.muted) A.sfx('tap'); };
 
-let ac = null;
-function initAudio() { if (ac || !soundOn) return; try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-function beep(freq, dur, type) {
-  if (!soundOn || !ac) return;
-  try {
-    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
-    o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
-    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + .02);
-  } catch (e) {}
+/* ---- sound: shared KoboAudio (kobo.audio — master / SE volume / mute for every game; nejihodoki3d.sound is migrated, R6) ---- */
+function beep(freq, dur, type, delay) { A.tone(freq, dur, { type, vol: .1, delay: delay || 0 }); }
+function buzz(p) { A.vibrate(p); }
+function drawSoundBtn() {
+  const b = $('soundBtn'), on = !A.muted;
+  if (b.dataset.on === String(on)) return;
+  b.dataset.on = String(on); b.textContent = ''; b.append(UI.icon(on ? 'sound' : 'mute'));
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute('aria-label', T(on ? '音を消す' : '音を出す')); b.title = T(on ? '音を消す' : '音を出す');
 }
-function buzz(p) { try { if (soundOn && navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+A.onChange(() => drawSoundBtn());
+$('homeBtn').append(UI.icon('back')); $('helpBtn').append(UI.icon('help')); $('menuBtn').append(UI.icon('menu'));
 
 /* =========================================================
-   Loop
+   Loop — draws only while something moves (R16, Q-15). kick() asks for frames; an idle scene costs nothing.
    ========================================================= */
-let last = performance.now();
+let last = 0, rafId = 0, glLost = false, disposed = false;
+function kick() {
+  if (rafId || glLost || disposed) return;
+  rafId = requestAnimationFrame(frame);
+}
 function frame(now) {
-  const dt = Math.min(.033, (now - last) / 1000); last = now;
+  rafId = 0;
+  const dt = last ? Math.min(.033, Math.max(0, now - last) / 1000) : 1 / 60; last = now;
+  let active = false;
   if (cam.yawTo != null) {
+    active = true;
     let d = cam.yawTo - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
     cam.yaw += d * Math.min(1, dt * 6); if (Math.abs(d) < .01) cam.yawTo = null;
-  } else if (Math.abs(spin) > .01 && !drag) { cam.yaw += spin * dt; spin *= Math.pow(.05, dt); }
-  update(dt); placeCamera(); renderer.render(scene, camera); drawFx(dt);
-  requestAnimationFrame(frame);
+  } else if (Math.abs(spin) > .01 && !drag) { active = true; cam.yaw += spin * dt; spin *= Math.pow(.05, dt); }
+  if (update(dt)) active = true;
+  if (confetti.length) active = true;
+  placeCamera(); renderer.render(scene, camera); drawFx(dt);
+  if (active) kick(); else last = 0;
 }
 function onResize() { resizeFx(); resize3d(); }
 window.addEventListener('resize', onResize);
 if (window.visualViewport) visualViewport.addEventListener('resize', onResize);
-KoboI18n.picker($('langPick'));
+readPalette();
+if (UI && UI.theme) UI.theme.onChange(() => { readPalette(); kick(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(kick).catch(() => {});
 onResize(); ui();
 const boot = data => {
-  startLevel(data && data.level ? data.level : level);
+  const info = G.info ? G.info() : {};
+  const launch = (info && info.launch) || {};
+  const saved = savedState();
+  if (data && data.level) startLevel(data.level);
+  else if (launch.daily) { /* KoboGame calls daily.start() */ }
+  else if (launch.stage && launch.stage <= maxLevel) startLevel(launch.stage);
+  else if (saved && saved.daily && saved.daily === todayKey()) startDaily(saved.daily, saved);
+  else if (saved && !saved.daily && saved.level === level) startLevel(level, null, saved);
+  else startLevel(level);
   if (!store.get('seenHelp', false)) show('ovHelp');
-  requestAnimationFrame(frame);
+  kick();
 };
+
+/* ---- platform contract (common/game.js): turn-based (flags.pause:false) → hidden = save only; context lost / restored; dispose ---- */
+G.register({
+  id: 'neji',
+  save() { saveState(); legacy.flush(); },
+  isIdle() { return !(S && S.started && !S.won && !S.ended) && !(window.KoboVersus && KoboVersus.active()); },
+  restore() { glLost = false; kick(); },
+  dispose() {
+    disposed = true; if (rafId) cancelAnimationFrame(rafId); rafId = 0;
+    try { scene.remove(model); disposeModel(model); renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); } catch (e) {}
+    window.removeEventListener('resize', onResize);
+  },
+  daily: { start({ dateKey }) { if (!vs) { closeMenu(); hide('ovHelp'); startDaily(dateKey); } } },
+});
+G.watchGL(glCanvas, {
+  onLost() { glLost = true; if (rafId) cancelAnimationFrame(rafId); rafId = 0; toast(T('画面が一時的に止まりました。少し待つと元に戻ります。')); },
+  onRestored() { glLost = false; last = 0; resize3d(); kick(); },
+});
+
 /* ---------- Online battle (common/versus.js) ----------
    Everyone gets the same seeded levels (fixed mid difficulty that rises by one each level, solver-checked as usual).
-   Score: 10 per screw pulled in the current try + 200 per clear. A stuck level restarts (that try's screws are lost; time keeps running). */
+   Score: 10 per screw pulled in the current try + 200 per clear. A stuck level restarts (that try's screws are lost; time keeps running).
+   Battles never touch the saved level, stars or best (versus.js rule); they only report play_start / play_end with mode 'versus'. */
 const VS_LV0 = 4; // difficulty of the first battle level (difficulty(4) = 4 colors, 4 spare slots)
 function vsLevel() {
   if (!vs) return;
@@ -1822,7 +2083,7 @@ function vsCleared() {
   const pts = S.screws.length * 10 + 200;
   vs.banked += pts; vs.clears++;
   toast(T('クリア！ +{n}点', { n: 200 }), true);
-  [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle'), i * 90));
+  A.sfx('clear');
   burst();
   const gen = vs.gen;
   setTimeout(() => { if (vs && vs.gen === gen && KoboVersus.canPlay()) { vs.k++; vsLevel(); } }, 1100);
@@ -1833,44 +2094,54 @@ function vsStuck() {
   const gen = vs.gen;
   setTimeout(() => { if (vs && vs.gen === gen && KoboVersus.canPlay()) vsLevel(); }, 1200);
 }
+function vsEnd(reason) {
+  if (!vs || !vs.playing) return;
+  vs.playing = false;
+  G.emit('play_end', { mode: vs.practice ? 'practice' : 'versus', score: vsScore(), reason, durationMs: Date.now() - vs.t0 });
+}
 const VS_OV = ['ovHelp', 'ovWin', 'ovLose', 'ovMenu'];
 KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じステージが同じ順番で出ます。',
   game: 'neji', title: T('ネジほどき 3D'), duration: 240, unit: T('点'),
-  theme: { accent: '#f2b33d', accentInk: '#2b1d05', accentShadow: '#a8761c', card: '#263744', line: '#3a4f5f',
-    ink: '#eef2f4', dim: '#9fb1bd', hud: '#1d2a35', display: 'var(--font-display)' },
+  theme: { accent: 'var(--kb-accent)', accentInk: 'var(--kb-accent-ink)', accentShadow: '#a8761c', card: 'var(--kb-surface)', line: 'var(--kb-line)',
+    ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--font-display)' },
   hudCover: () => document.querySelector('header'),
-  onStart({ seed }) {
+  onOpen() { G.pause('versus'); },
+  onStart({ seed, practice }) {
     if (!vs) {
+      endPlay('quit'); // the solo level is set aside (and comes back after the battle), so its play ends here
       // keep the single-player level (model, progress, overlays) aside untouched; the battle builds its own model
       vs = { snap: { S, model, level, daily, cam: { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, distBase: cam.distBase, radius: cam.radius, target: cam.target.clone() },
         open: VS_OV.filter(id => !$(id).hidden) } };
       scene.remove(model); model = new THREE.Group(); scene.add(model);
       S = null;
     }
-    VS_OV.forEach(hide); setPeek(false); $('vsSlot').hidden = true;
-    vs.seed = seed >>> 0; vs.k = 0; vs.banked = 0; vs.clears = 0; vs.gen = (vs.gen || 0) + 1;
+    vsEnd('quit');
+    VS_OV.forEach(hide); setPeek(false); $('vsSlot').hidden = true; $('coach').hidden = true; $('peekBtn').classList.remove('pulse');
+    vs.seed = seed >>> 0; vs.k = 0; vs.banked = 0; vs.clears = 0; vs.gen = (vs.gen || 0) + 1; vs.practice = !!practice;
+    vs.playing = true; vs.t0 = Date.now();
+    G.emit('play_start', { mode: vs.practice ? 'practice' : 'versus', seed: vs.seed });
     vsLevel();
   },
-  onGo() { initAudio(); },
   getScore: vsScore,
+  onEnd() { vsEnd('over'); },
   onExit() {
     if (!vs) return;
+    vsEnd('quit');
     const s = vs.snap; vs = null; buildGen++;
     scene.remove(model); disposeModel(model);
     model = s.model; scene.add(model);
     S = s.S; level = s.level; daily = s.daily;
+    if (S) { S.started = false; S.ended = false; }
     Object.assign(cam, s.cam); cam.target.copy(s.cam.target); cam.yawTo = null; spin = 0;
     confetti = []; $('loading').hidden = true; $('vsSlot').hidden = false;
     s.open.forEach(show);
     if (!S) startLevel(level);
-    setPeek(false); fitCamera(); ui();
+    setPeek(false); fitCamera(); ui(); tutShow(); kick();
   },
 });
 KoboVersus.button($('vsSlot'), { compact: true });
 KoboVersus.button($('vsSlotHelp'));
 KoboVersus.button($('vsSlotMenu'));
-// common/versus.js waits for this before loading Firebase, so it never races the account sync below
-if (!window.KoboCloud) window.KoboCloud = { ready: () => cloud.init() };
 
 // ---------- debug hook (?debug only): lets automated layout tests open every screen ----------
 if (/[?&]debug\b/.test(location.search)) window.__neji = { win, lose() { if (S) { S.over = true; lose(); } }, toast, openMenu, get ready() { return !!S; },
@@ -1887,6 +2158,39 @@ if (/[?&]debug\b/.test(location.search)) window.__neji = { win, lose() { if (S) 
     if (!s) return false;
     takeScrew(s); return true;
   } };
+// window.__kb (GAME_QUALITY_STANDARDS.md): common/game.js makes it under ?debug; the game adds its own hooks
+function dbgBusy() { return !!S && (S.flyers.length > 0 || S.screws.some(x => x.anim > 0 && x.anim < 1) || S.active.some(b => b && b.state !== 'idle') || S.parts.some(p => p.state === 'loose' || p.state === 'fall')); }
+function dbgSettle() { for (let i = 0; i < 900 && dbgBusy(); i++) update(1 / 30); kick(); }
+if (DEBUG) window.__kb = Object.assign(window.__kb || {}, {
+  ready: () => !!S && $('loading').hidden,
+  state: () => ({
+    mode: vs ? (vs.practice ? 'practice' : 'versus') : playMode(),
+    score: S ? (vs ? vsScore() : S.screws.filter(x => x.removed).length) : 0,
+    time: S && S.started ? (Date.now() - S.t0) / 1000 : 0,
+    over: !!(S && S.over), won: !!(S && S.won), stage: S ? S.levelNo : level, paused: G.paused(),
+    level, maxLevel, daily: daily ? daily.key : null, screws: S ? S.screws.length : 0, removed: S ? S.screws.filter(x => x.removed).length : 0,
+    buffer: S ? S.buffer.map(v => v ? v.color : null) : [], frames: renderer.info.render.frame, rendering: !!rafId, started: !!(S && S.started),
+  }),
+  win() { if (S && !S.won && $('loading').hidden) win(); },
+  lose() { if (S && !S.won) { S.over = true; lose(); } },
+  // pull n screws along a solver plan, playing every animation out at once (deterministic); returns how many were pulled
+  step(n = 1) {
+    let k = 0;
+    for (; k < n; k++) {
+      dbgSettle();
+      if (!S || S.won || S.over || !$('loading').hidden || (vs ? !KoboVersus.canPlay() : KoboVersus.active())) break;
+      const plan = solve(solverState(), S.buffer.length, 12000);
+      const sc = plan && plan.length ? S.screws[plan[0]] : liveScrews().find(isExposed);
+      if (!sc) break;
+      takeScrew(sc);
+    }
+    dbgSettle();
+    for (let i = 0; i < 90 && S && !S.won && !S.over && liveScrews().length === 0; i++) update(1 / 30);
+    return k;
+  },
+  tutorial: () => ({ step: tut.step, done: tut.step >= TUT.length, id: tut.step < TUT.length ? TUT[tut.step].id : null, total: TUT.length, visible: !$('coach').hidden }),
+  settle: dbgSettle, kick, openMenu, closeMenu,
+});
 window.claude?.hot?.snapshot?.(() => ({ level }));
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();

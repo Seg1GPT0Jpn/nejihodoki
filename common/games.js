@@ -78,10 +78,12 @@
         'nejihodoki3d.maxLevel': '到達した最高レベル（数値の JSON）',
         'nejihodoki3d.stars': 'レベルごとの星 { "<level>": 1〜3 }',
         'nejihodoki3d.daily': 'デイリーの星 { "YYYYMMDD": 1〜3 }',
-        'nejihodoki3d.sound': '音（true/false）。読むだけにする → kobo.audio（P1-3）',
+        'nejihodoki3d.sound': '音（true/false）。audio.js が kobo.audio に移行済み（旧キーは残す）',
+        'nejihodoki3d.state': '途中の盤 { v:1, level, daily, sig, snap, nbuf, hints, undos, slotUsed, hintUsed, undoUsed, t }（端末だけ。同期しない）',
+        'nejihodoki3d.tutorial': 'チュートリアルを終えたか（true）',
         'nejihodoki3d.seenHelp': '遊び方を見たか（true/false）',
       },
-      // neji は今は独自の同期（nejiUsers のトップレベル）。cloud.js に移すのは P2-neji。
+      // neji は cloud.js で同期（nejiUsers のトップレベルの古い項目もページ側で読み書きする）
       sync: { 'nejihodoki3d.maxLevel': 'max', 'nejihodoki3d.stars': 'mapMax', 'nejihodoki3d.daily': 'mapMax' },
     },
     {

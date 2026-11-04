@@ -433,7 +433,7 @@ test('syncMap: legacy mode returns only strings; platform keys included unless o
   for (const v of Object.values(legacy)) ok(v === 'max' || v === 'newest');
   ok('kobo.history' in all && 'kobo.fav' in all && 'kobo.stats' in all && 'kobo.daily' in all);
   ok(!('kobo.history' in P.syncMap({ platform: false })));
-  deep(Object.keys(P.syncMap({ games: ['drop'], platform: false, shared: false })), ['kusoge.drop.best']);
+  deep(Object.keys(P.syncMap({ games: ['drop'], platform: false, shared: false })), ['kusoge.drop.best', 'kusoge.drop.state']);
 });
 
 // ------------------------------------------------------------------ migrations
