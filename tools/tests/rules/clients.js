@@ -119,9 +119,9 @@ async function runVersus(browser, env, T, opt = {}) {
   info.uids = st.map(s => s.uid); info.room = st[0].rid;
   info.steps.push(['match formed, same room', st[0].rid && st[0].rid === st[1].rid]);
   info.steps.push(['same seed', st[0].seed === st[1].seed]);
-  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], 'kobo-vs', T)]);
+  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], '[DEFAULT]', T)]);
   // negative control: B tries to overwrite A's score through the SDK (must be refused by the rules)
-  info.steps.push(['probe: B cannot overwrite A\'s score (s/{A})', await probe(P[1], 'kobo-vs', `vs/rooms/${st[0].rid}/s/${st[0].uid}`)]);
+  info.steps.push(['probe: B cannot overwrite A\'s score (s/{A})', await probe(P[1], '[DEFAULT]', `vs/rooms/${st[0].rid}/s/${st[0].uid}`)]);
   for (const p of P) await p.waitForFunction(() => __koboVs.state.phase === 'result', null, { timeout: 90000 });
   const res = await Promise.all(P.map(p => p.evaluate(() => [...document.querySelectorAll('.kvs-res li')].length)));
   info.steps.push(['both see a result with 2 rows', res.every(n => n === 2)]);
@@ -155,9 +155,9 @@ async function runHole(browser, env, T, opt = {}) {
   info.steps.push(['4 seats (2 players + 2 CPU)', st.every(s => s.seats === 4)]);
   const H = st.findIndex(s => s.host), G = 1 - H;
   info.steps.push(['exactly one host', H >= 0 && !st[G].host]);
-  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], 'hole-online', T)]);
+  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], '[DEFAULT]', T)]);
   // (a probe on p/{host} would be applied locally first and make the host's hole vanish on this page, so use the start signal)
-  info.steps.push(['probe: guest cannot replace the start signal (g)', await probe(P[G], 'hole-online', `hole/rooms/${st[0].rid}/g`, { pl: [st[G].uid], b: 3, st: PROBE })]);
+  info.steps.push(['probe: guest cannot replace the start signal (g)', await probe(P[G], '[DEFAULT]', `hole/rooms/${st[0].rid}/g`, { pl: [st[G].uid], b: 3, st: PROBE })]);
   // wait for the start (3.5 s) and the spawn protection (2.5 s)
   await sleep(7000);
   for (const p of P) await p.evaluate(() => __hole.bot(true));

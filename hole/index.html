@@ -116,6 +116,19 @@ h1 {
   background: rgba(16, 24, 38, .78); border-radius: 16px; padding: 12px 18px; font-weight: 800; font-size: 15px; white-space: nowrap;
 }
 #msg b { display: block; font-family: var(--font-display); font-size: 34px; color: #ffd84d; font-weight: 400; }
+/* view mode (ながめる): a bar at the bottom, the city name at the top; map attribution */
+#viewUi { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+#viewUi .vtop { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+#viewUi .vtop > div { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+#viewUi .vtop .back { pointer-events: auto; flex: none; min-width: 64px; min-height: 44px; border-radius: 12px; border: 1px solid #ffd84d; background: #ffd84d; color: #16202e; font: 800 13px var(--font-body); cursor: pointer; }
+#viewUi .vtop b { background: rgba(16, 24, 38, .7); color: #ffd84d; border-radius: 10px; padding: 3px 10px; font-family: var(--font-display); font-weight: 400; font-size: 17px; }
+#viewUi .vtop small { background: rgba(16, 24, 38, .55); color: #e8eef6; border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: 800; }
+#viewUi .vbar { position: absolute; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 0 8px; }
+#viewUi .vbar button { pointer-events: auto; min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid #3a4d68; background: rgba(22, 32, 48, .86); color: #f4f8ff;
+  font: 800 18px var(--font-body); cursor: pointer; padding: 0 8px; }
+#attr { position: absolute; right: 6px; bottom: 2px; z-index: 2; pointer-events: none; font-size: 10px; font-weight: 700; color: #1d2a3a; background: rgba(255, 255, 255, .6); border-radius: 4px; padding: 0 4px; }
+#viewUi:not([hidden]) ~ #attr { bottom: calc(62px + env(safe-area-inset-bottom)); }
+#app.viewing .stats { display: none; }
 #joy { position: absolute; z-index: 2; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none;
   border: 2px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .12); }
 #knob { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(255, 255, 255, .7); }
@@ -284,6 +297,18 @@ h1 {
     <div id="toast"></div>
     <div id="msg" hidden></div>
     <div id="joy" hidden><div id="knob"></div></div>
+    <div id="viewUi" hidden>
+      <div class="vtop"><div><b id="vName"></b><small data-i18n>ドラッグで移動・ピンチでズーム・2本指で回転</small></div><button type="button" id="vBack" class="back" data-i18n>もどる</button></div>
+      <div class="vbar">
+        <button type="button" id="vZin" aria-label="ズームイン" data-i18n-attr="aria-label">＋</button>
+        <button type="button" id="vZout" aria-label="ズームアウト" data-i18n-attr="aria-label">－</button>
+        <button type="button" id="vRotL" aria-label="左にまわす" data-i18n-attr="aria-label">⟲</button>
+        <button type="button" id="vRotR" aria-label="右にまわす" data-i18n-attr="aria-label">⟳</button>
+        <button type="button" id="vTilt" aria-label="真上から／ななめから" data-i18n-attr="aria-label">⤢</button>
+        <button type="button" id="vHome" aria-label="駅にもどる" data-i18n-attr="aria-label">⌂</button>
+      </div>
+    </div>
+    <div id="attr" hidden>© OpenStreetMap contributors</div>
     <div class="coach" id="coach" hidden><div role="status" aria-live="polite"><span class="cs" id="coachStep">1/4</span><p id="coachText"></p><button type="button" id="coachSkip" data-i18n>スキップ</button></div></div>
     <svg id="coachHand" hidden viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><circle cx="32" cy="32" r="10" fill="#ffd84d" stroke="#16202e" stroke-width="3"/></svg>
 
@@ -298,6 +323,7 @@ h1 {
         </div>
         <div class="tcol">
           <button class="btn mint" id="btnSolo" type="button" data-i18n>ひとりで のみこみチャレンジ</button>
+          <button class="btn sub" id="btnView" type="button" data-i18n>街を ながめる</button>
           <button class="btn sub" id="btnShop" type="button"><span data-i18n>ショップ</span><span class="coins">● <span id="tCoins">0</span></span></button>
           <div class="recs">
             <div><span data-i18n>ベスト得点</span> <b id="rPts">-</b></div>
@@ -373,9 +399,19 @@ h1 {
     <div class="overlay" id="ovCamp" hidden>
       <div class="card camp">
         <h2 class="ttl" data-i18n>まちめぐり</h2>
-        <p class="note" data-i18n>実在の街をモチーフにしたデフォルメです</p>
+        <p class="note" data-i18n>まちめぐりの10都市はデフォルメ。神奈川の4つの街は 地図データどおりの実寸です</p>
         <div class="clist" id="campList"></div>
         <button class="btn sub" id="btnCampBack" type="button" data-i18n>もどる</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="ovView" hidden>
+      <div class="card camp">
+        <h2 class="ttl" data-i18n>街を ながめる</h2>
+        <p class="note" data-i18n>時間も あなもなし。上から 自由に 見てまわれます</p>
+        <div class="clist" id="viewList"></div>
+        <p class="note">© OpenStreetMap contributors</p>
+        <button class="btn sub" id="btnViewBack" type="button" data-i18n>もどる</button>
       </div>
     </div>
 
@@ -388,8 +424,9 @@ h1 {
         <div class="goal" id="stGoal"></div>
         <div class="stline" id="stStars"></div>
         <div class="small" id="stBest"></div>
-        <p class="note" data-i18n>実在の街をモチーフにしたデフォルメです</p>
+        <p class="note" id="stNote"></p>
         <button class="btn" id="btnStGo" type="button" data-i18n>スタート</button>
+        <button class="btn sub" id="btnStView" type="button" data-i18n>この街を ながめる</button>
         <button class="btn sub" id="btnStBack" type="button" data-i18n>もどる</button>
       </div>
     </div>
@@ -429,6 +466,7 @@ h1 {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="cities.js"></script>
+<script src="realcity.js"></script>
 <script src="../common/game.js"></script>
 <script>
 KoboI18n.add({ en: {
@@ -469,6 +507,12 @@ KoboI18n.add({ en: {
   'ふつう': 'Classic', 'さくら': 'Sakura', 'ミント': 'Mint', 'レモン': 'Lemon', 'そらしま': 'Sky', 'みずたま': 'Polka', 'ネオン': 'Neon', 'にじいろ': 'Rainbow',
   'まちめぐり（10の街）': 'City Tour (10 cities)', 'まちめぐり': 'City Tour', 'まちめぐりへ': 'To City Tour',
   '実在の街をモチーフにしたデフォルメです': 'Stylized after real places — not to scale',
+  'まちめぐりの10都市はデフォルメ。神奈川の4つの街は 地図データどおりの実寸です': 'The 10 tour cities are stylized. The 4 Kanagawa cities are life-size, made from map data',
+  '地図データ：© OpenStreetMap contributors（ODbL）・国土地理院の標高': 'Map data: © OpenStreetMap contributors (ODbL), elevation: GSI Japan',
+  '街を ながめる': 'View a city', 'この街を ながめる': 'View this city', '時間も あなもなし。上から 自由に 見てまわれます': 'No timer, no hole: look around the city freely from above',
+  'ドラッグで移動・ピンチでズーム・2本指で回転': 'Drag to move, pinch to zoom, two fingers to rotate',
+  'ズームイン': 'Zoom in', 'ズームアウト': 'Zoom out', '左にまわす': 'Rotate left', '右にまわす': 'Rotate right', '真上から／ななめから': 'Top-down / tilted', '駅にもどる': 'Back to the station',
+  '街を 読みこみ中…': 'Loading the city…', '街のデータを 読みこめませんでした': 'Could not load the city data',
   'スタート': 'Start', 'つぎの街へ': 'Next city', 'ステージ {n}': 'Stage {n}', '？？？': '???',
   '前の街をクリアで ひらく': 'Clear the previous city to unlock', 'ベスト {p}%': 'Best {p}%', 'まだ あそんでいません': 'Not played yet',
   '{t}で 街の{p}%を のみこもう': 'Swallow {p}% of the city in {t}', 'ライバル {n}体': 'Rivals: {n}', 'ライバルなし': 'No rivals',
@@ -508,18 +552,6 @@ KoboI18n.add({ en: {
   'スタートが大きい': 'Bigger start', 'はじめから 1段 大きい': 'Start 1 size bigger', 'すばやい': 'Speedy', 'いどう +5%': 'Move +5%',
   // the Kanagawa cities (free: open from the start)
   'まちめぐり（{n}の街）': 'City Tour ({n} cities)', '神奈川の街': 'Kanagawa cities', '最初から 自由に あそべます': 'Open from the start',
-  '藤沢': 'Fujisawa', '線路の上の駅・空中のデッキ・海へ向かう小さな電車': 'Station over the tracks, raised walkways, a little tram to the sea',
-  '線路をまたぐ駅と、南北にのびる空中の歩道。南の駅ビルの2階から 小さな電車が 家のあいだをぬけて 海へ向かう。': 'A station built over the tracks, with raised walkways to the north and south. From the 2nd floor of the south station building, a little tram slips between the houses toward the sea.',
-  '湘南台': 'Shonandai', '地球儀のようなドーム・広い大通り・住宅街': 'A globe-like dome, wide avenues, quiet homes',
-  '電車は地下を走り、地上には 広い大通りと 駅の入口。西の文化センターには 地球儀のような大きなドーム。そのまわりは 静かな住宅街。': 'The trains run underground; above are wide avenues and station entrances. The culture center in the west has a huge globe-like dome, surrounded by quiet streets of houses.',
-  '上大岡': 'Kami-Ooka', '駅ビルの高層タワー・赤い電車・坂の住宅街': 'Station tower, red trains, hillside streets',
-  '谷あいの駅に、デパートの駅ビルと 高いタワー。高架を 赤い電車が走り、川ぞいには 桜。東と西の丘には 石垣の上の家と 坂道が つづく。': 'A station in a valley with a department-store station building and a tall tower. Red trains run on the viaduct, cherry trees line the river, and the hills on both sides are covered with houses on stone walls and steep streets.',
-  '湘南高校付近': 'Near Shonan High School', '大きな高校・松のある住宅街・小さな神社': 'A big high school, homes with pines, a small shrine',
-  '広い校庭と 体育館のある 大きな高校。まわりは 生け垣と松の木のある 静かな住宅街。森の中には 小さな神社。': 'A large high school with a wide sports ground and a gym, surrounded by quiet homes with hedges and pine trees. A small shrine hides in the woods.',
-  '線路の上の駅': 'the station over the tracks', '小さな電車が出る駅ビル': 'the station building of the little tram', '新しい市役所': 'the new city hall', '駅前のデパート': 'the department store by the station',
-  '地球儀のようなドーム': 'the globe-like dome', 'バスのりばの屋根': 'the bus terminal roof', '駅前のショッピングビル': 'the shopping building by the station',
-  '駅前の超高層タワー': 'the skyscraper by the station', 'デパートのある駅ビル': 'the station building with a department store',
-  '大きな校舎': 'the big school building', 'となりの校舎': 'the second school building', '体育館': 'the gym', 'プール': 'the pool', '小さな神社': 'the small shrine',
   // platform: header, how to play, tutorial, pause, no WebGL, online
   'ゲーム一覧': 'Games', 'ゲーム一覧に戻る': 'Back to the game list', '遊び方': 'How to play', '設定': 'Settings', 'メニュー': 'Menu',
   'ベスト得点': 'Best points', '{n}点': '{n} pts',
@@ -653,7 +685,11 @@ function mutate(fn) { SV = loadSave(); const r = fn(SV); writeSave(); return r; 
 // ---------------------------------------------------------------- constants
 const RADII = [1.0, 1.25, 1.55, 1.9, 2.3, 2.8, 3.4, 4.1, 4.9, 5.8, 6.9, 8.2, 9.7, 11.4, 13.4, 15.6];
 const TH = [6, 16, 32, 56, 90, 140, 210, 300, 420, 580, 800, 1100, 1500, 2000, 2700];
-const stageOf = p => { let s = 0; while (s < TH.length && p >= TH[s]) s++; return s; };
+// the real-map cities (hole/cities/*.json, metres at real scale) are far bigger: the hole keeps growing past the last size
+const RADII_BIG = RADII.concat([18.4, 21.6, 25.4, 30, 35.5, 42, 50, 59, 70, 83, 98]);
+const TH_BIG = TH.concat([3300, 4100, 5100, 6300, 7800, 9600, 11800, 14500, 17800, 21800, 26700]);
+let THc = TH, RADc = RADII;
+const stageOf = p => { let s = 0; while (s < THc.length && p >= THc[s]) s++; return s; };
 const ROUND = 120;
 const SKINS = [
   { id: 'kuro', name: 'ふつう', price: 0, c1: '#f4f6fa', c2: '#f4f6fa' },
@@ -790,9 +826,14 @@ const pick = a => a[(rnd() * a.length) | 0];
 const GW = 160, GROUND_N = 2048;
 const STENCIL_TEST = { stencilWrite: true, stencilFunc: THREE.NotEqualStencilFunc, stencilRef: 1, stencilZPass: THREE.KeepStencilOp, stencilFail: THREE.KeepStencilOp, stencilZFail: THREE.KeepStencilOp };
 let groundMesh = null, outerMesh = null;
-function setGround(c, gx0, gz0, gw, gh, outerCol) {
-  if (groundMesh) { scene.remove(groundMesh); groundMesh.geometry.dispose(); groundMesh.material.map.dispose(); groundMesh.material.dispose(); }
-  if (outerMesh) { scene.remove(outerMesh); outerMesh.geometry.dispose(); outerMesh.material.dispose(); }
+function setGround(c, gx0, gz0, gw, gh, outerCol, outerY) {
+  if (groundMesh) { scene.remove(groundMesh); groundMesh.geometry.dispose(); groundMesh.material.map.dispose(); groundMesh.material.dispose(); groundMesh = null; }
+  if (outerMesh) { scene.remove(outerMesh); outerMesh.geometry.dispose(); outerMesh.material.dispose(); outerMesh = null; }
+  if (!c) { // real-map city: only the far ground around its own terrain
+    const og = new THREE.PlaneGeometry(9000, 9000); og.rotateX(-Math.PI / 2); og.translate(gx0 + gw / 2, 0, gz0 + gh / 2);
+    outerMesh = new THREE.Mesh(og, new THREE.MeshBasicMaterial(Object.assign({ color: outerCol }, STENCIL_TEST)));
+    outerMesh.position.y = outerY || -0.12; outerMesh.renderOrder = -7; scene.add(outerMesh); return;
+  }
   const tex = new THREE.CanvasTexture(c);
   tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   const geo = new THREE.PlaneGeometry(gw, gh); geo.rotateX(-Math.PI / 2); geo.translate(gx0 + gw / 2, 0, gz0 + gh / 2);
@@ -974,8 +1015,9 @@ function offsetPts(pts, d) {
 function buildCity(C) {
   const [x0, z0, x1, z1] = C.ext, M = 14;
   const gx0 = Math.floor(x0 - M), gz0 = Math.floor(z0 - M), gw = Math.ceil(x1 + M) - gx0, gh = Math.ceil(z1 + M) - gz0;
-  const c = document.createElement('canvas'); c.width = c.height = GROUND_N;
-  const g = c.getContext('2d'), kx = GROUND_N / gw, kz = GROUND_N / gh;
+  const GN = C.noGround ? 4 : GROUND_N; // the real-map cities draw their own ground (hole/realcity.js)
+  const c = document.createElement('canvas'); c.width = c.height = GN;
+  const g = c.getContext('2d'), kx = GN / gw, kz = GN / gh;
   g.setTransform(kx, 0, 0, kz, -gx0 * kx, -gz0 * kz);
   const mc = document.createElement('canvas'); mc.width = gw; mc.height = gh;
   const mg = mc.getContext('2d'); mg.setTransform(1, 0, 0, 1, -gx0, -gz0); mg.fillStyle = '#000'; mg.fillRect(gx0, gz0, gw, gh);
@@ -1164,7 +1206,7 @@ function buildCity(C) {
     }
   }
   W.wet = W.grid.some(b => b & 1);
-  setGround(c, gx0, gz0, gw, gh, C.pal.outer || C.pal.ground || '#8cc96a');
+  setGround(C.noGround ? null : c, gx0, gz0, gw, gh, C.pal.outer || C.pal.ground || '#8cc96a', C.outerY);
   setPalette(C.pal);
 }
 function setPalette(p) {
@@ -1179,9 +1221,11 @@ function finalizeWorld() {
   TOTAL_VAL = 0; W.lmTop = null;
   for (const o of objs) { TOTAL_VAL += o.T.val; if (o.T.lm && (!W.lmTop || o.T.s > W.lmTop.T.s)) W.lmTop = o; }
   if (shMesh) { scene.remove(shMesh); if (shMesh.dispose) shMesh.dispose(); }
-  shMesh = new THREE.InstancedMesh(shGeo, shMat, Math.max(1, objs.length));
+  // one blob shadow per object (not for the buildings of the real-map cities); o.ss = its instance
+  let ns = 0; for (const o of objs) o.ss = o.T.fp ? -1 : ns++;
+  shMesh = new THREE.InstancedMesh(shGeo, shMat, Math.max(1, ns));
   shMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); shMesh.frustumCulled = false; shMesh.renderOrder = -4; scene.add(shMesh);
-  if (!objs.length) shMesh.setMatrixAt(0, ZERO_M);
+  if (!ns) shMesh.setMatrixAt(0, ZERO_M);
   for (const T of ACTIVE) { scene.remove(T.mesh); T.mesh.geometry.dispose(); if (T.mesh.dispose) T.mesh.dispose(); T.mesh = null; }
   ACTIVE = [];
   for (const T of TLIST) {
@@ -1194,18 +1238,65 @@ function finalizeWorld() {
     geo.setAttribute('ishade', T.shade);
     T.mesh = new THREE.InstancedMesh(geo, objMat, n);
     T.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); T.mesh.frustumCulled = false;
-    for (let k = 0; k < n; k++) T.mesh.setColorAt(k, _c.set(T.list[k].col));
+    for (let k = 0; k < n; k++) { const o = T.list[k]; o.slot = k; o.shv = 1; o.cull = false; T.mesh.setColorAt(k, _c.set(o.col)); }
     T.dirty = true; T.shDirty = false; scene.add(T.mesh); ACTIVE.push(T);
   }
 }
 // si = city index; sd = layout seed (online rooms share one so every client builds the same city, object ids = order)
-function buildWorld(si, sd) {
-  const key = si + ':' + (sd || 0);
-  if (W.key === key) return;
+// area (real-map cities only): 'camp' (まちめぐり / ひとりで), 'battle' (CPU / online: a smaller centre), 'view' (the whole map, nothing to eat)
+function buildWorld(si, sd, area) {
+  const C = CITIES[si];
+  if (C.data && !C.D) return false; // not loaded yet (loadCity)
+  area = C.data ? area || 'camp' : '';
+  const key = si + ':' + (sd || 0) + ':' + area;
+  if (W.key === key) return true;
   for (const T of TLIST) T.list.length = 0;
   objs.length = 0; seed = sd ? 1 + (sd % 2147483640) : 20240607;
-  buildCity(CITIES[si]); W.si = si;
+  W.real = !!C.data; W.big = W.real; THc = W.big ? TH_BIG : TH; RADc = W.big ? RADII_BIG : RADII; W.area = area;
+  if (W.real) buildRealCity(C, area);
+  else { if (RC) RC.clear(); buildCity(C); }
+  W.si = si;
   finalizeWorld(); W.key = key; resetWorld();
+  return true;
+}
+// a real-map city: the play area becomes the world rectangle; realcity.js makes the meshes and the objects
+function buildRealCity(C, area) {
+  const Rl = C.real, A = area === 'view' ? C.D.box : Rl.areas[area];
+  let info = null;
+  const C2 = Object.assign(Object.create(C), { ext: A, start: area === 'view' ? Rl.center : Rl.start[area], noGround: true,
+    build(B) {
+      RCE.B = B;
+      const D = C.D;
+      // mask: water (holes cannot stand on it; bridges and roads over it are land), roads (spawn points)
+      for (const a of D.ar) if (a.c === 5) B.poly(a.p, null, 'w');
+      for (const w of D.wl) if (w.w >= 6) B.line(w.p, w.w, null, 'w');
+      for (const r of D.rd) if (r.c <= 7 && r.l <= 1) B.line(r.p, Math.max(2, r.w), null, 'r');
+      info = RC.build(C, A, { dens: area === 'view' ? 0.45 : 1, view: area === 'view' });
+      if (area !== 'view') W.start = RC.freeSpot(W.start[0], W.start[1]);
+    } });
+  buildCity(C2);
+  if (info) { if (outerMesh) outerMesh.position.y = info.outerY; }
+  W.view = C.D.box;
+}
+// the real-map cities (hole/realcity.js)
+function addFp(T, x, z) {
+  const o = { T, i: -1, gi: objs.length, x, z, y: 0, yaw: 0, tilt: 0, tdx: 0, tdz: 1, sc: 1, st: 0, hx: x, hz: z, hyaw: 0, mv: null, col: '#ffffff', fall: null, fx: 0, fz: 0, vy: 0, ft: 0, wob: 0, rsT: 0, pop: 0, ph: 0, wet: false };
+  objs.push(o); return o;
+}
+function objQuat(o, q) {
+  q.setFromAxisAngle(UP, o.yaw);
+  if (o.tilt) { _ax.set(o.tdz, 0, -o.tdx).normalize(); _qt.setFromAxisAngle(_ax, o.tilt); q.premultiply(_qt); }
+  return q;
+}
+const RCE = { THREE, scene, renderer, STENCIL_TEST, rnd, pick, TYPES, addObj, addFp, offsetPts, labelTex: (t, c) => labelTex(t, c), T, objQuat, B: null };
+const RC = window.HoleRealFactory ? window.HoleRealFactory(RCE) : null;
+const GY = (x, z) => (W.real ? RC.gy(x, z) : 0);
+// load a real-map city's data (resolves at once for the other cities)
+function loadCity(si) {
+  const C = CITIES[si];
+  if (!C || !C.data || C.D) return Promise.resolve(true);
+  if (!RC) return Promise.reject(new Error('realcity.js'));
+  return RC.load(C).then(() => true);
 }
 // instanced meshes
 const shadowTexC = document.createElement('canvas'); shadowTexC.width = shadowTexC.height = 64;
@@ -1215,20 +1306,21 @@ const shMat = new THREE.MeshBasicMaterial(Object.assign({ map: new THREE.CanvasT
 
 function writeObj(o) {
   const T = o.T;
-  if (o.st === 2 || o.sc <= 0.001) { T.mesh.setMatrixAt(o.i, ZERO_M); shMesh.setMatrixAt(o.gi, ZERO_M); }
+  if (T.fp) { RC.fpWrite(o); return; } // a building of a real-map city
+  if (o.st === 2 || o.sc <= 0.001 || o.cull) { T.mesh.setMatrixAt(o.slot, ZERO_M); shMesh.setMatrixAt(o.ss, ZERO_M); }
   else {
-    _q.setFromAxisAngle(UP, o.yaw);
-    if (o.tilt) { _ax.set(o.tdz, 0, -o.tdx).normalize(); _qt.setFromAxisAngle(_ax, o.tilt); _q.premultiply(_qt); }
-    _m.compose(_p.set(o.x, o.y, o.z), _q, _s.set(o.sc, o.sc, o.sc)); T.mesh.setMatrixAt(o.i, _m);
-    if (o.y < -0.1) shMesh.setMatrixAt(o.gi, ZERO_M);
+    const by = W.real ? (o.st === 1 && o.fall ? o.fall.gy : RC.gy(o.x, o.z)) : 0;
+    objQuat(o, _q);
+    _m.compose(_p.set(o.x, o.y + by, o.z), _q, _s.set(o.sc, o.sc, o.sc)); T.mesh.setMatrixAt(o.slot, _m);
+    if (o.y < -0.1 || o.y > 2) shMesh.setMatrixAt(o.ss, ZERO_M);
     else {
       _q.setFromAxisAngle(UP, o.yaw);
-      _m.compose(_p.set(o.x + 0.06 * T.h, 0.03, o.z + 0.04 * T.h), _q, _s.set(T.sh[0] * o.sc, 1, T.sh[1] * o.sc)); shMesh.setMatrixAt(o.gi, _m);
+      _m.compose(_p.set(o.x + 0.06 * T.h, by + 0.03, o.z + 0.04 * T.h), _q, _s.set(T.sh[0] * o.sc, 1, T.sh[1] * o.sc)); shMesh.setMatrixAt(o.ss, _m);
     }
   }
   T.dirty = true; shDirty = true;
 }
-function setShade(o, v) { if (o.T.shade.array[o.i] !== v) { o.T.shade.array[o.i] = v; o.T.shDirty = true; } }
+function setShade(o, v) { if (o.T.fp) { RC.fpShade(o, v); return; } o.shv = v; if (o.T.shade.array[o.slot] !== v) { o.T.shade.array[o.slot] = v; o.T.shDirty = true; } }
 
 // ---------------------------------------------------------------- movers
 // per-object random stream: walkers pick the same targets on every client of an online match
@@ -1259,6 +1351,7 @@ function moveObj(o, dt) {
   o.y = Math.abs(Math.sin(o.ph += dt * 9)) * 0.09;
 }
 function resetWorld() {
+  if (W.real) RC.reset();
   for (const o of objs) {
     o.x = o.hx; o.z = o.hz; o.yaw = o.hyaw; o.y = 0; o.rs = 1 + o.gi * 7919 % 2147483000; o.tilt = 0; o.sc = 1; o.st = 0; o.fall = null; o.wob = 0; o.rsT = 0; o.pop = 0;
     if (o.mv) { Object.assign(o.mv, o.mv0); moveObj(o, 0); }
@@ -1309,7 +1402,7 @@ function makeHole(name, color, isPlayer) {
   const spMat = new THREE.SpriteMaterial({ map: labelTex(name, color), depthTest: false, depthWrite: false, transparent: true });
   const label = new THREE.Sprite(spMat); label.renderOrder = 20; scene.add(label);
   const h = { name, color, isPlayer, grp, flat, rim, rimMat, glow, glowMat, well, bot, label, x: 0, z: 0, vx: 0, vz: 0, pts: 0, stage: 0, R: 1, Rt: 1, Rf: 1, popT: 1,
-    alive: true, deadT: 0, dying: 0, killer: null, inv: 0, eaten: 0, kills: 0, maxR: 1, ai: null, spin: 0 };
+    alive: true, deadT: 0, dying: 0, killer: null, inv: 0, eaten: 0, kills: 0, maxR: 1, ai: null, spin: 0, gy: 0 };
   setHoleColor(h, color);
   holes.push(h); return h;
 }
@@ -1329,7 +1422,8 @@ function setHoleSize(h, R) {
   h.well.scale.set(R, depth, R); h.bot.scale.set(R, 1, R); h.bot.position.y = -depth;
 }
 function holeSpeed(h) {
-  const base = 7.6 * (1 - Math.min(0.32, (h.R - 1) * 0.028));
+  let base = 7.6 * (1 - Math.min(0.32, (h.R - 1) * 0.028));
+  if (W.big && h.R > 12) base *= Math.pow(h.R / 12, 0.85); // a real-scale map: big holes travel faster
   return h.isPlayer ? base * (1 + 0.05 * SV.perks.speed) : base;
 }
 
@@ -1358,7 +1452,7 @@ function setStage(h, instant) {
   const s = stageOf(h.pts);
   if (s !== h.stage || instant) {
     const grew = s > h.stage;
-    h.stage = s; h.Rf = h.R; h.Rt = RADII[Math.min(s, RADII.length - 1)];
+    h.stage = s; h.Rf = h.R; h.Rt = RADc[Math.min(s, RADc.length - 1)];
     if (instant) { h.R = h.Rt; h.popT = 1; setHoleSize(h, h.R); }
     else h.popT = 0;
     if (grew && !instant && h.isPlayer) { sfx.whoosh(); toast(T('サイズUP！')); vibrate(30); }
@@ -1384,9 +1478,20 @@ function startRound(mode, si, net, opt) {
   opt = opt || {};
   ensureAudio();
   if (G.playing && !G.ended) endPlay('quit'); // a restart from the pause menu
-  if (mode !== 'camp' && mode !== 'online') si = pickCity();
+  if (mode !== 'camp' && mode !== 'online' && opt.si == null) si = pickCity();
   const C = CITIES[si], online = mode === 'online';
-  buildWorld(si, online ? net.sd : 0);
+  if (C.data && !C.D) { // a real-map city: fetch its data file first, then start
+    const tok = G.loadTok = { si };
+    G.playing = false; tutStop(); setPlayingUi(false);
+    ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow', 'ovView'].forEach(id => $(id).hidden = true);
+    showLoading();
+    loadCity(si).then(() => { if (G.loadTok !== tok) return; G.loadTok = null; $('msg').hidden = true; startRound(mode, si, net, Object.assign({}, opt, { si })); },
+      () => { if (G.loadTok !== tok) return; G.loadTok = null; $('msg').hidden = true; toast(T('街のデータを 読みこめませんでした')); showTitle(); });
+    return;
+  }
+  G.loadTok = null;
+  buildWorld(si, online ? net.sd : 0, mode === 'match' || online ? 'battle' : 'camp');
+  if (G.mode === 'view') endViewUi();
   G.mode = mode; G.stage = mode === 'camp' ? si : -1; G.city = si; G.playing = true; G.paused = false; G.t = mode === 'camp' ? C.time : online ? NET.len || ROUND : ROUND; G.time = 0; G.eatVal = 0; G.resultShown = false; G.lastSec = 99; G.climax = 0;
   G.ended = false; G.played = 0; dirty = true;
   G.diff = mode === 'camp' ? C.diff : online ? 0.5 : Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160));
@@ -1396,10 +1501,10 @@ function startRound(mode, si, net, opt) {
   const nR = online ? seats.length - 1 : mode === 'match' ? Math.min(5, 3 + Math.floor(SV.wins / 2)) : mode === 'camp' ? C.rivals : 0;
   G.rivN = nR;
   for (const h of holes) { h.alive = false; h.grp.visible = false; h.label.visible = false; }
-  const startPts = SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0;
+  const startPts = Math.max(SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0, W.big ? TH[2] : 0); // real-scale maps: start a little bigger
   const setup = (h, x, z, pts) => {
     h.x = x; h.z = z; h.vx = h.vz = 0; h.pts = pts; h.stage = -1; h.alive = true; h.dying = 0; h.deadT = 0; h.inv = 1.5; h.eaten = 0; h.kills = 0;
-    h.grp.visible = true; h.label.visible = nR > 0; setStage(h, true); h.maxR = h.R; h.grp.position.set(x, 0, z); h.grp.scale.set(1, 1, 1);
+    h.grp.visible = true; h.label.visible = nR > 0; setStage(h, true); h.maxR = h.R; h.gy = GY(x, z); h.grp.position.set(x, h.gy, z); h.grp.scale.set(1, 1, 1);
   };
   const corners = W.rstarts;
   if (online) {
@@ -1427,7 +1532,7 @@ function startRound(mode, si, net, opt) {
   camSnap = true;
   $('rank').hidden = nR === 0;
   $('hRankL').textContent = mode === 'match' || online ? T('じゅんい') : T('のみこみ率');
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow'].forEach(id => $(id).hidden = true);
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow', 'ovView'].forEach(id => $(id).hidden = true);
   $('msg').hidden = true;
   if (pm && pm.isOpen) pm.close();
   setPlayingUi(true);
@@ -1479,6 +1584,8 @@ window.addEventListener('keydown', e => {
   // (Esc inside an open menu is handled by the menu itself: common/ui.js marks it defaultPrevented)
   if ((e.code === 'Escape' || e.code === 'KeyP') && G.playing && !G.paused && !e.defaultPrevented && !document.querySelector('.kb-layer:not([hidden])')) pauseGame();
   else if (e.code === 'Escape' && !$('ovHow').hidden && !e.defaultPrevented) closeHow();
+  else if (e.code === 'Escape' && G.mode === 'view' && !e.defaultPrevented) showTitle();
+  if (G.mode === 'view' && /^Arrow/.test(e.code)) e.preventDefault();
   if (/^Arrow/.test(e.code) && G.playing) e.preventDefault();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -1501,11 +1608,11 @@ function aiThink(h) {
     if (best) { ai.mode = 'hunt'; ai.prey = best; return; }
   }
   let best = null, bs = 0;
-  const lim = R * 0.95, noise = 0.6 * (1 - diff);
+  const lim = R * 0.95, noise = 0.6 * (1 - diff), aiR2 = W.big ? (50 + R * 3) * (50 + R * 3) : 2500;
   for (const o of objs) {
     if (o.st || o.T.s >= lim || o.wet || o.x < W.x0 || o.x > W.x1 || o.z < W.z0 || o.z > W.z1) continue;
     const dx = o.x - h.x, dz = o.z - h.z, d2 = dx * dx + dz * dz;
-    if (d2 > 2500) continue;
+    if (d2 > aiR2) continue;
     const sc = Math.pow(o.T.val, 0.85) / (Math.sqrt(d2) + 3) * (1 + Math.random() * noise);
     if (sc > bs && clearPath(h.x, h.z, o.x, o.z, R * 0.8)) { bs = sc; best = o; }
   }
@@ -1555,7 +1662,7 @@ function swallowCheck(h) {
     const d2 = dx * dx + dz * dz;
     if (s < lim) {
       if (d2 < R2) { o.st = 1; o.fall = h; o.fx = dx; o.fz = dz; o.vy = 0; o.ft = 0; o.wob = 0; o.tdx = -dx || 0.01; o.tdz = -dz; if (o.T.lm) landmarkFall(o, h); if (G.mode === 'online') netClaim(o, h); }
-    } else if (d2 < (R + s * 0.35) * (R + s * 0.35) && !o.mv) {
+    } else if (d2 < (R + s * 0.35) * (R + s * 0.35) && !o.mv && !o.T.fp) {
       if (o.wob <= 0) { o.wob = 0.45; o.tdx = -dx || 0.01; o.tdz = -dz; }
     }
   }
@@ -1617,7 +1724,7 @@ function respawnHole(h) {
   if (h.isPlayer) { $('msg').hidden = true; camSnap = true; }
 }
 
-let camSnap = true, camH = 14, camD = 10, camX = 0, camZ = 0, camShake = 0;
+let camSnap = true, camH = 14, camD = 10, camX = 0, camZ = 0, camY = 0, camShake = 0;
 function update(dt) {
   G.time += dt;
   const live = G.playing && !G.paused;
@@ -1670,11 +1777,11 @@ function update(dt) {
       if (h.inv > 0) h.inv -= dt;
       if (h.popT < 1) { h.popT = Math.min(1, h.popT + dt / 0.42); h.R = h.Rf + (h.Rt - h.Rf) * easeBack(h.popT); setHoleSize(h, h.R); }
       if (h.R > h.maxR) h.maxR = h.R;
-      h.grp.position.set(h.x, 0, h.z);
+      h.gy = GY(h.x, h.z); h.grp.position.set(h.x, h.gy, h.z);
       h.rimMat.emissive && h.rimMat.emissive.setScalar(h.inv > 0 ? (Math.sin(G.time * 18) > 0 ? 0.35 : 0) : 0);
     } else if (h.dying > 0) {
       h.dying -= dt; const k = h.killer, f = Math.min(1, dt * 8);
-      h.x += (k.x - h.x) * f; h.z += (k.z - h.z) * f; h.grp.position.set(h.x, -0.01, h.z);
+      h.x += (k.x - h.x) * f; h.z += (k.z - h.z) * f; h.grp.position.set(h.x, h.gy - 0.01, h.z);
       const s = Math.max(0.001, h.dying / 0.45); h.grp.scale.set(s, 1, s);
       if (h.dying <= 0) { h.grp.visible = false; h.label.visible = false; }
     } else if (h.deadT > 0 && !h.remote) {
@@ -1860,8 +1967,10 @@ function showResult(online) {
   updateHud(true);
 }
 function hideOverlays(except) {
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline'].forEach(id => { if (id !== except) $(id).hidden = true; });
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovView'].forEach(id => { if (id !== except) $(id).hidden = true; });
+  G.loadTok = null; if (G.mode === 'view' && except !== 'none') endViewUi();
 }
+function showLoading() { const el = $('msg'); el.textContent = T('街を 読みこみ中…'); el.hidden = false; dirty = true; }
 // leave a round that is still running (pause menu): it counts as a quit (no records, no coins)
 function quitRound() {
   if (G.playing) { endPlay('quit'); if (G.mode === 'online') netLeave(); }
@@ -1870,6 +1979,8 @@ function quitRound() {
   G.mode === 'camp' ? openCamp() : showTitle();
 }
 function showTitle() {
+  G.loadTok = null;
+  if (G.mode === 'view') endViewUi();
   G.playing = false; G.mode = 'title'; G.paused = false; G.resultShown = false;
   hideOverlays('ovTitle'); setPlayingUi(false); tutStop();
   $('ovTitle').hidden = false; $('msg').hidden = true; $('rank').hidden = true;
@@ -2082,8 +2193,10 @@ function openStage(si) {
   const C = CITIES[si]; if (!C || !isOpen(si)) return openCamp();
   G.stage = si; G.mode = 'title'; G.playing = false; G.resultShown = false; dirty = true;
   hideOverlays('ovStage'); setPlayingUi(false);
-  // show the city itself behind the card
-  buildWorld(si); camSnap = true;
+  // show the city itself behind the card (a real-map city: once its data is loaded)
+  if (!buildWorld(si)) loadCity(si).then(() => { if (G.stage === si && !$('ovStage').hidden) { buildWorld(si); camSnap = true; dirty = true; } }, () => {});
+  camSnap = true;
+  $('stNote').textContent = C.data ? T('地図データ：© OpenStreetMap contributors（ODbL）・国土地理院の標高') : T('実在の街をモチーフにしたデフォルメです');
   drawIcon($('stIcon'), C, false);
   $('stNo').textContent = C.free ? T('神奈川の街') : T('ステージ {n}', { n: si + 1 }) + ' / ' + TOUR_N;
   $('stName').textContent = T(C.name);
@@ -2098,6 +2211,7 @@ $('btnCamp').addEventListener('click', () => { ensureAudio(); openCamp(); });
 $('btnCampBack').addEventListener('click', showTitle);
 $('btnStBack').addEventListener('click', openCamp);
 $('btnStGo').addEventListener('click', () => startRound('camp', G.stage));
+$('btnStView').addEventListener('click', () => startView(G.stage));
 $('btnNext').addEventListener('click', () => openStage(G.stage + 1));
 
 // ---------------------------------------------------------------- buttons
@@ -2111,6 +2225,87 @@ $('helpBtn').addEventListener('click', () => { sfx.click(); openHow(false); });
 $('btnMatch').addEventListener('click', () => startRound('match'));
 $('btnOnline').addEventListener('click', () => onlineOpen());
 $('btnSolo').addEventListener('click', () => startRound('solo'));
+$('btnView').addEventListener('click', () => openViewList());
+$('btnViewBack').addEventListener('click', showTitle);
+$('viewList').addEventListener('click', e => { const b = e.target.closest('.cst'); if (!b || b.disabled) return; ensureAudio(); startView(+b.dataset.si); });
+function openViewList() {
+  ensureAudio(); hideOverlays('ovView');
+  const list = $('viewList'); list.textContent = '';
+  CITIES.forEach((C, i) => {
+    const locked = !isOpen(i);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'cst'; b.dataset.si = i; b.disabled = locked;
+    const cv = document.createElement('canvas'); cv.width = 112; cv.height = 84; drawIcon(cv, C, locked);
+    const tx = document.createElement('div'); tx.className = 'tx';
+    const nm = document.createElement('b'); nm.textContent = locked ? T('？？？') : T(C.name);
+    const sm = document.createElement('small'); sm.textContent = locked ? T('前の街をクリアで ひらく') : T(C.sub);
+    tx.append(nm, sm); b.append(cv, tx); list.appendChild(b);
+  });
+  $('ovView').hidden = false;
+  const k = list.querySelector('.cst[data-si="10"]'); if (k && k.scrollIntoView) try { k.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+}
+function startView(si) {
+  const C = CITIES[si]; if (!C) return;
+  ensureAudio();
+  if (C.data && !C.D) {
+    hideOverlays('none'); const tok = G.loadTok = { si }; showLoading();
+    loadCity(si).then(() => { if (G.loadTok !== tok) return; G.loadTok = null; $('msg').hidden = true; startView(si); },
+      () => { if (G.loadTok !== tok) return; G.loadTok = null; $('msg').hidden = true; toast(T('街のデータを 読みこめませんでした')); showTitle(); });
+    return;
+  }
+  if (G.playing && !G.ended) endPlay('quit');
+  hideOverlays('none'); tutStop(); setPlayingUi(false);
+  buildWorld(si, 0, 'view');
+  G.mode = 'view'; G.playing = false; G.paused = false; G.resultShown = false; G.city = si;
+  for (const h of holes) { h.alive = false; h.grp.visible = false; h.label.visible = false; }
+  $('rank').hidden = true; $('msg').hidden = true;
+  const ext = C.data ? C.D.box : C.ext, size = Math.max(ext[2] - ext[0], ext[3] - ext[1]);
+  const c = C.data ? C.real.center : [(ext[0] + ext[2]) / 2, (ext[1] + ext[3]) / 2];
+  Object.assign(VW, { ext, x: c[0], z: c[1], home: c, d: C.data ? 420 : size * 0.7, dMin: 18, dMax: size * 1.25, yaw: 0, pitch: 0.95 });
+  VW.ptr.clear(); VW.last = null;
+  if (W.real) RC.labels(true);
+  $('vName').textContent = T(C.name); $('viewUi').hidden = false; $('app').classList.add('viewing');
+  lastInput = performance.now(); dirty = true;
+}
+function endViewUi() {
+  if (RC) RC.labels(false);
+  for (const T of ACTIVE) T.mesh.visible = true;
+  $('viewUi').hidden = true; $('app').classList.remove('viewing'); VW.ptr.clear();
+  if (G.mode === 'view') G.mode = 'title';
+}
+$('vBack').addEventListener('click', () => { sfx.click(); showTitle(); });
+$('vZin').addEventListener('click', () => viewZoom(0.7)); $('vZout').addEventListener('click', () => viewZoom(1 / 0.7));
+$('vRotL').addEventListener('click', () => { VW.yaw -= Math.PI / 8; dirty = true; }); $('vRotR').addEventListener('click', () => { VW.yaw += Math.PI / 8; dirty = true; });
+$('vTilt').addEventListener('click', () => { VW.pitch = VW.pitch > 1.2 ? 0.6 : 1.45; dirty = true; });
+$('vHome').addEventListener('click', () => { VW.x = VW.home[0]; VW.z = VW.home[1]; VW.yaw = 0; VW.pitch = 0.95; VW.d = Math.min(VW.dMax, 420); dirty = true; });
+// gestures: one finger / left mouse = move, right mouse or shift = rotate + tilt, two fingers = pinch zoom + rotate + tilt, wheel = zoom
+cv.addEventListener('pointerdown', e => {
+  if (G.mode !== 'view') return;
+  VW.ptr.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey || e.ctrlKey }); VW.last = null;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  e.preventDefault();
+});
+cv.addEventListener('pointermove', e => {
+  if (G.mode !== 'view' || !VW.ptr.has(e.pointerId)) return;
+  const P = VW.ptr.get(e.pointerId), px = P.x, py = P.y; P.x = e.clientX; P.y = e.clientY;
+  if (VW.ptr.size === 1) {
+    const dx = P.x - px, dy = P.y - py;
+    if (P.b === 2 || P.sh) { VW.yaw += dx * 0.006; VW.pitch = Math.max(0.2, Math.min(1.5, VW.pitch - dy * 0.005)); }
+    else { const k = 2 * VW.d * Math.tan(26 * Math.PI / 180) / Math.max(1, cv.clientHeight); viewPan(-dx * k, -dy * k / Math.max(0.5, Math.sin(VW.pitch))); }
+  } else if (VW.ptr.size === 2) {
+    const [a, b] = [...VW.ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x), my = (a.y + b.y) / 2;
+    if (VW.last) {
+      if (d > 10 && VW.last.d > 10) viewZoom(VW.last.d / d);
+      let da = ang - VW.last.ang; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
+      VW.yaw -= da; VW.pitch = Math.max(0.2, Math.min(1.5, VW.pitch - (my - VW.last.my) * 0.004));
+    }
+    VW.last = { d, ang, my };
+  }
+  lastInput = performance.now(); dirty = true; e.preventDefault();
+});
+const viewUp = e => { VW.ptr.delete(e.pointerId); VW.last = null; };
+cv.addEventListener('pointerup', viewUp); cv.addEventListener('pointercancel', viewUp);
+cv.addEventListener('wheel', e => { if (G.mode !== 'view') return; viewZoom(Math.exp(Math.max(-1, Math.min(1, e.deltaY * 0.0015)))); lastInput = performance.now(); e.preventDefault(); }, { passive: false });
+cv.addEventListener('contextmenu', e => { if (G.mode === 'view') e.preventDefault(); });
 $('btnShop').addEventListener('click', () => { ensureAudio(); $('ovTitle').hidden = true; $('ovShop').hidden = false; renderShop(); });
 // menu buttons click (the shop's own buttons have their own sounds)
 $('stage').addEventListener('click', e => { if (e.target.closest('.overlay .btn, .cst')) sfx.click(); });
@@ -2317,14 +2512,25 @@ function netLeave() {
 
 // ---- matchmaking through hole/queue
 // what this page writes into the queue (m: the cities it knows, see above)
+//                           m[1] = 'v' + one digit per city: the data version of each city (0 = hand-made, 1 = real map data). Pages from
+//                           before the real-map Kanagawa cities write only 'c14' (their cities 10..13 are the old hand-made ones), so a
+//                           new page writes m[0] = 'c10': old pages then only pick the 10 cities both sides build the same way.
+const CITY_SIG = 'v' + CITIES.map(C => C.v || 0).join('');
 function queueEntry() {
-  if (DEBUG && /[?&]oldq\b/.test(location.search)) return { n: NET.nick, s: SV.skins.sel, t: NET.TS }; // test hook: act like a page from before the marker
-  return { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c' + CITIES.length] };
+  if (DEBUG && /[?&]oldq\b/.test(location.search)) { // test hooks: act like a page from before the marker (oldq) / before the real maps (oldq=14)
+    const o = /[?&]oldq=(\d+)/.exec(location.search);
+    return o ? { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c' + o[1]] } : { n: NET.nick, s: SV.skins.sel, t: NET.TS };
+  }
+  return { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c10', CITY_SIG] };
 }
-// how many cities a waiting player's page knows (old pages: 10)
-function knownCities(e) {
+// which cities a waiting player's page builds exactly like this page (old pages: the hand-made ones they know)
+function cityCompat(e) {
+  const ok = CITIES.map(() => false);
   const k = e && !e.r && Array.isArray(e.m) && typeof e.m[0] === 'string' && /^c(\d{1,3})$/.exec(e.m[0]);
-  return k ? Math.max(10, +k[1]) : 10;
+  const sig = e && !e.r && Array.isArray(e.m) && typeof e.m[1] === 'string' && /^v(\d{1,64})$/.exec(e.m[1]);
+  const legacy = k ? Math.max(10, +k[1]) : 10;
+  CITIES.forEach((C, i) => { ok[i] = sig ? i < sig[1].length && +sig[1][i] === (C.v || 0) : i < legacy && !C.v; });
+  return ok;
 }
 async function netQueue(gen) {
   NET.phase = 'queue';
@@ -2369,9 +2575,10 @@ async function netCreate(grp) {
   roomRemember(ref.key);
   // a city every member's page can build (an older page that does not know the newer cities gets one of the first 10)
   const q = NET.q || {};
-  const nc = Math.min(CITIES.length, ...grp.map(id => (id === NET.uid ? knownCities(queueEntry()) : knownCities(q[id]))));
-  const oc = DEBUG && /[?&]ocity=(\d+)/.exec(location.search); // test hook: this city when everyone knows it
-  const c = oc && +oc[1] < nc ? +oc[1] : (Math.random() * nc) | 0;
+  const oks = grp.map(id => cityCompat(id === NET.uid ? queueEntry() : q[id])), cand = CITIES.map((C, i) => i).filter(i => oks.every(ok => ok[i]));
+  if (!cand.length) cand.push(0);
+  const oc = DEBUG && /[?&]ocity=(\d+)/.exec(location.search); // test hook: this city when everyone can build it
+  const c = oc && cand.indexOf(+oc[1]) >= 0 ? +oc[1] : cand[(Math.random() * cand.length) | 0];
   try {
     await ref.set({ at: NET.TS, c, sd: 1 + Math.floor(Math.random() * 2e9), h: NET.uid, inv });
     if (gen !== NET.gen) { ref.remove().then(() => roomForget(ref.key), () => {}); return; }
@@ -2395,6 +2602,7 @@ async function netJoin(rid, creator) {
     // room gone, already started, or a city this page does not know (made by a newer page): look for another match
     if (!meta || meta.c == null || meta.g || !CITIES[meta.c]) { NET.bad.add(rid); NET.rref = null; return onlineOpenRetry(); }
     NET.meta = meta; NET.host = meta.h === NET.uid;
+    loadCity(meta.c).catch(() => {}); // a real-map city: fetch its data while waiting for the start
     roomRemember(rid);
     const m = NET.rref.child('m/' + NET.uid);
     await m.onDisconnect().remove(); await NET.rref.child('p/' + NET.uid).onDisconnect().remove();
@@ -2457,6 +2665,11 @@ function netBecomeHost() {
   }
 }
 function netGo(g) {
+  const Cg = NET.meta && CITIES[NET.meta.c];
+  if (Cg && Cg.data && !Cg.D) { // the city data is still loading: start when it is here (the round clock is the server's)
+    if (!NET.goWait) { NET.goWait = 1; loadCity(NET.meta.c).then(() => { NET.goWait = 0; if (NET.phase === 'room') netGo(g); }, e => { NET.goWait = 0; onlineFail(e); }); }
+    return;
+  }
   const m = NET.members;
   if (!Array.isArray(g.pl) || g.pl.indexOf(NET.uid) < 0) { NET.bad.add(NET.rid); onlineOpenRetry(); return; } // started without us
   NET.phase = 'play'; NET.pl = g.pl.slice(); NET.st0 = g.st; NET.len = Math.max(10, Math.min(300, +g.len || ROUND)); NET.lastSent = ''; NET.lastSentAt = 0; NET.lat = 0; NET.latN = 0; NET.latMax = 0; G.cd = 0;
@@ -2626,28 +2839,85 @@ function netEnd() {
 }
 
 // ---------------------------------------------------------------- camera + render loop
+// real-map cities: things far from the camera are not drawn. The instances in view are packed at the front of each type's
+// instanced mesh and the mesh draws only those (the GPU would still transform the hidden ones otherwise).
+let cullT = 0;
+function cullProps(dt, cx, cz, r) {
+  if (!W.real || (cullT -= dt) > 0) return;
+  cullT = 0.3; let any = false;
+  for (const T of ACTIVE) {
+    let changed = false, nv = 0; const rr = Math.min(T.s < 1.2 ? r * 0.6 : T.s < 3 ? r * 0.8 : r, 40 + T.s * 160), r2 = rr * rr; // small things: only near the middle
+    for (const o of T.list) {
+      const dx = o.x - cx, dz = o.z - cz, c = o.st === 2 || (o.st === 0 && dx * dx + dz * dz > r2);
+      if (c !== o.cull) { o.cull = c; changed = true; }
+      if (!c) nv++;
+    }
+    if (!changed) continue;
+    let a = 0, b = nv;
+    for (const o of T.list) {
+      const sl = o.cull ? b++ : a++;
+      if (o.slot !== sl) { o.slot = sl; T.mesh.setColorAt(sl, _c.set(o.col)); T.shade.array[sl] = o.shv; T.shDirty = true; }
+      writeObj(o);
+    }
+    T.mesh.count = nv; if (T.mesh.instanceColor) T.mesh.instanceColor.needsUpdate = true; any = true;
+  }
+  if (!any) return;
+  // the shadows the same way (swiftshader pays for every instance, drawn or not)
+  let k = 0; const hid = [];
+  for (const o of objs) { if (o.ss < 0) continue; if (o.cull) { hid.push(o); continue; } if (o.ss !== k) { o.ss = k; writeObj(o); } k++; }
+  shMesh.count = k; for (const o of hid) { if (o.ss !== k) { o.ss = k; writeObj(o); } k++; }
+}
+function setClip(n, f) { if (Math.abs(camera.near - n) > n * 0.08 || Math.abs(camera.far - f) > f * 0.08) { camera.near = n; camera.far = f; camera.updateProjectionMatrix(); } }
+// view mode (ながめるモード): an orbit camera around a target on the ground; pan / zoom / rotate / tilt by touch, mouse and keys
+const VW = { x: 0, z: 0, d: 600, yaw: 0, pitch: 0.95, dMin: 25, dMax: 2600, ext: [-500, -500, 500, 500], ptr: new Map(), last: null };
+function viewCamera(dt) {
+  const k = keys, sp = VW.d * 0.9 * dt;
+  if (k.ArrowLeft || k.KeyA) viewPan(-sp, 0); if (k.ArrowRight || k.KeyD) viewPan(sp, 0); if (k.ArrowUp || k.KeyW) viewPan(0, -sp); if (k.ArrowDown || k.KeyS) viewPan(0, sp);
+  if (k.KeyQ) VW.yaw -= dt * 1.2; if (k.KeyE) VW.yaw += dt * 1.2; if (k.Equal || k.NumpadAdd) viewZoom(Math.exp(-dt * 1.5)); if (k.Minus || k.NumpadSubtract) viewZoom(Math.exp(dt * 1.5));
+  if (k.KeyR) VW.pitch = Math.min(1.5, VW.pitch + dt); if (k.KeyF) VW.pitch = Math.max(0.2, VW.pitch - dt);
+  const y = GY(VW.x, VW.z), cp = Math.cos(VW.pitch), h = Math.sin(VW.pitch) * VW.d;
+  camera.position.set(VW.x - Math.sin(VW.yaw) * cp * VW.d, y + h, VW.z + Math.cos(VW.yaw) * cp * VW.d);
+  // keep the camera above the ground (hills)
+  const gyc = GY(camera.position.x, camera.position.z) + 4; if (camera.position.y < gyc) camera.position.y = gyc;
+  camera.lookAt(_v.set(VW.x, y, VW.z));
+  scene.fog.near = VW.d * 2.2; scene.fog.far = VW.d * 6 + 600;
+  setClip(Math.max(0.5, VW.d * 0.01), Math.max(1500, VW.d * 8));
+  cullProps(dt || 0.3, VW.x, VW.z, Math.min(700, VW.d * 1.3));
+  if (W.real) RC.scaleLabels(VW.d);
+  // far away the small things are not drawn (cheaper)
+  for (const T of ACTIVE) T.mesh.visible = T.s >= 1.5 || VW.d < 700;
+}
+function viewPan(dx, dz) {
+  const c = Math.cos(VW.yaw), s = Math.sin(VW.yaw);
+  VW.x = Math.max(VW.ext[0], Math.min(VW.ext[2], VW.x + dx * c - dz * s)); VW.z = Math.max(VW.ext[1], Math.min(VW.ext[3], VW.z + dx * s + dz * c)); dirty = true;
+}
+function viewZoom(f) { VW.d = Math.max(VW.dMin, Math.min(VW.dMax, VW.d * f)); dirty = true; }
 function updateCamera(dt) {
+  if (G.mode === 'view') { viewCamera(dt); return; }
   const R = player.R, aspect = camera.aspect, wide = Math.sqrt(Math.max(1, 0.72 / aspect));
-  const th = (13 + R * 6) * wide, td = (9.5 + R * 3.2) * wide;
+  const Rc = W.big && R > 15 ? 15 + (R - 15) * 0.72 : R; // real-scale maps: a big hole is followed a little closer (less city to draw)
+  const th = (13 + Rc * 6) * wide, td = (9.5 + Rc * 3.2) * wide;
   const f = camSnap ? 1 : Math.min(1, dt * 3), fp = camSnap ? 1 : Math.min(1, dt * 7);
   camH += (th - camH) * f; camD += (td - camD) * f;
-  camX += (player.x - camX) * fp; camZ += (player.z - camZ) * fp;
+  camX += (player.x - camX) * fp; camZ += (player.z - camZ) * fp; camY += ((player.gy || 0) - camY) * fp;
   if (G.mode === 'title') {
-    const big = 1.35;
-    camX = W.cx + Math.sin(G.time * 0.08) * 12 * big; camZ = W.cz + Math.cos(G.time * 0.08) * 12 * big; camH = 34 * big; camD = 26 * big;
+    const big = W.real ? 4 : 1.35, cx = W.real ? W.start[0] : W.cx, cz = W.real ? W.start[1] : W.cz;
+    camX = cx + Math.sin(G.time * 0.08) * 12 * big; camZ = cz + Math.cos(G.time * 0.08) * 12 * big; camH = 34 * big; camD = 26 * big; camY = GY(cx, cz);
   }
   camSnap = false;
   let sx = 0, sz = 0;
   if (camShake > 0) { camShake = Math.max(0, camShake - dt * 1.4); const a = camShake * (0.3 + R * 0.05); sx = (Math.random() - 0.5) * a; sz = (Math.random() - 0.5) * a; }
-  camera.position.set(camX + sx, camH, camZ + camD + sz);
-  camera.lookAt(_v.set(camX + sx * 0.5, 0, camZ - R * 0.4));
-  if (G.camOv) { const c = G.camOv; camera.position.set(c.x, c.h, c.z + c.h * 0.75); camera.lookAt(_v.set(c.x, 0, c.z)); }
+  camera.position.set(camX + sx, camH + camY, camZ + camD + sz);
+  camera.lookAt(_v.set(camX + sx * 0.5, camY, camZ - R * 0.4));
+  if (G.camOv) { const c = G.camOv, y = GY(c.x, c.z); camera.position.set(c.x, c.h + y, c.z + c.h * 0.75); camera.lookAt(_v.set(c.x, y, c.z)); }
   const dist = Math.hypot(camH, camD);
-  scene.fog.near = dist * 1.6; scene.fog.far = dist * 4.2 + 40;
-  if (G.camOv) { scene.fog.near = G.camOv.h * 3; scene.fog.far = G.camOv.h * 8; }
+  if (W.real) { scene.fog.near = dist * 1.5; scene.fog.far = dist * (dist > 150 ? 2.8 : 4.6) + 120; setClip(Math.max(0.5, dist * 0.01), scene.fog.far * 1.05); cullProps(dt, camX, camZ - camD * 0.6, scene.fog.far * 0.8); }
+  else { scene.fog.near = dist * 1.6; scene.fog.far = dist * 4.2 + 40; setClip(0.5, 700); }
+  if (G.camOv) { scene.fog.near = G.camOv.h * 3; scene.fog.far = G.camOv.h * 8; if (W.real) setClip(Math.max(0.5, G.camOv.h * 0.01), G.camOv.h * 10); }
+  if (W.real) RC.scaleLabels(dist);
   for (const h of holes) {
     if (!h.label.visible) continue;
-    h.label.position.set(h.x, 0.5, h.z + h.R * 1.18 + dist * 0.035);
+    h.label.position.set(h.x, h.gy + 0.5, h.z + h.R * 1.18 + dist * 0.035);
     h.label.scale.set(dist * 0.16, dist * 0.04, 1);
   }
 }
@@ -2666,7 +2936,8 @@ function frame(now) {
   if (dt > 0.1) dt = 0.1;
   if (glLost) return;
   const live = G.playing && !G.paused;
-  if (!live) {
+  if (G.mode === 'view' && now - lastInput < MENU_ANIM_MS && !menuStill()) { watchFps(dt); } // view mode: full frame rate while used
+  else if (!live) {
     if (G.playing) { if (!dirty) return; dt = 0; } // paused: draw the current picture once
     else if (now - lastInput < MENU_ANIM_MS && !menuStill()) { menuAcc += dt; if (menuAcc < 1 / 30) return; dt = Math.min(0.1, menuAcc); menuAcc = 0; }
     else if (!dirty) return;
@@ -2691,13 +2962,15 @@ function frame(now) {
     if (T.shDirty) { T.shade.needsUpdate = true; T.shDirty = false; }
   }
   if (shDirty) { shMesh.instanceMatrix.needsUpdate = true; shDirty = false; }
+  if (W.real) RC.flush();
+  { const a = !!W.real && (G.playing || G.mode === 'view' || !$('ovStage').hidden); if ($('attr').hidden === a) $('attr').hidden = !a; }
   G.hudT -= dt; if (G.hudT <= 0 && (G.playing || G.resultShown)) { G.hudT = 0.2; updateHud(); }
   const t1 = performance.now();
   renderer.render(scene, camera);
   if (DEBUG) { const t2 = performance.now(); G.tUpd = (G.tUpd || 0) * 0.95 + (t1 - t0) * 0.05; G.tRen = (G.tRen || 0) * 0.95 + (t2 - t1) * 0.05; }
 }
 resize();
-buildWorld((Math.random() * CITIES.length) | 0);
+{ const nd = CITIES.map((C, i) => i).filter(i => !CITIES[i].data); buildWorld(nd[(Math.random() * nd.length) | 0] || 0); }
 player.x = 0; player.z = 0; player.grp.position.set(0, 0, 0); setStage(player, true);
 for (const r of rivals) { r.grp.visible = false; r.alive = false; r.label.visible = false; }
 player.label.visible = false;
@@ -2740,10 +3013,11 @@ if (DEBUG) {
     camp(i) { startRound('camp', i); }, active: () => ACTIVE.length, calls: () => renderer.info.render.calls, isWater, get player() { return player; }, get rivals() { return rivals; }, get SV() { return SV; },
     setTimeScale(v) { G.ts = v; }, start: startRound, endRound, showResult, stageOf, fps: () => fpsLog.slice(), pr: () => PR,
     frames: () => frames,
-    teleport(h, x, z) { h.x = x; h.z = z; h.vx = h.vz = 0; h.grp.position.set(x, 0, z); },
+    teleport(h, x, z) { h.x = x; h.z = z; h.vx = h.vz = 0; h.gy = GY(x, z); h.grp.position.set(x, h.gy, z); },
     setPts(h, p) { h.pts = p; setStage(h, false); },
     aiOff(b) { G.aiOff = b; },
     aerial(x, z, h) { G.camOv = h ? { x, z, h } : null; },
+    RC: () => RC, GY: (x, z) => GY(x, z), VW, startView, loadCity,
     net: NET, sNow, normSave, migrateSave, roomsList,
     bot(b) { G.bot = b; player.ai = { think: 0, mode: 'eat', diff: 1 }; },
     quality() { return { lv: qLv, max: qMax, pr: PR, fps: fpsMon.last || null }; }, setQuality,
@@ -2752,7 +3026,7 @@ if (DEBUG) {
   const kbState = () => ({
     mode: G.mode === 'online' ? 'versus' : 'normal', screen: G.playing ? (G.paused ? 'paused' : 'play') : G.resultShown ? 'result' : 'menu', kind: G.mode,
     score: Math.max(0, player.pts | 0), time: G.t, over: !G.playing && (G.resultShown || !!G.ended), stage: G.stage >= 0 ? G.stage + 1 : null,
-    paused: G.paused, playing: G.playing, pct: TOTAL_VAL ? +soloPct().toFixed(2) : 0, eaten: player.eaten, size: +(player.R * 2).toFixed(1),
+    paused: G.paused, playing: G.playing, loading: !!G.loadTok, view: G.mode === 'view', pct: TOTAL_VAL ? +soloPct().toFixed(2) : 0, eaten: player.eaten, size: +(player.R * 2).toFixed(1),
     best: SV.best.maxPts, coins: SV.coins, howto: !$('ovHow').hidden, result: !$('ovResult').hidden,
     tutorial: tut.on || tut.done ? { step: tut.step, done: tut.done } : null, quality: qLv, frames: renderer.info.render.frame, drawn: frames,
     net: { phase: NET.phase, sent: NET.sent, recv: NET.recv, lat: NET.latN ? Math.round(NET.lat / NET.latN) : null },
