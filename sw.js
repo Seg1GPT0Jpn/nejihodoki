@@ -1,9 +1,19 @@
 // ひまつぶし工房：オフラインでも遊べるようにするための Service Worker（全ゲーム共通）
 // ページ本体と設定は「通信優先（だめなら保存分）」、ライブラリとフォントは「保存分優先」で配る。
-const VERSION = 'kobo-v22';
+// 保存する一覧は、ゲームの登録簿（common/games.js）から作る：各ゲームのページ・サムネイル・アイコン。
+// ゲームを足すときは games.js に足すだけでよい（ここは直さない）。ページの中身を変えたら BUILD を上げる。
+importScripts('common/games.js');
+const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
+const BUILD = 23;
+const VERSION = 'kobo-v' + BUILD + '.' + REG.version;
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
-  './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png', './common/cloud.js', './common/i18n.js', './common/versus.js', './common/games.js', './common/platform.js', './common/rank.js', './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css', './parking/engine.js', './water/engine.js', './hole/cities.js'];
-const GAMES = ['./neji/', './blocks/', './drop/', './raft/', './gates/', './n59049/', './water/', './parking/', './hole/', './ranking/'];
+  './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png',
+  './common/cloud.js', './common/i18n.js', './common/versus.js', './common/games.js', './common/platform.js', './common/rank.js',
+  './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css'];
+// ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
+const ENGINES = ['./parking/engine.js', './water/engine.js', './hole/cities.js'];
+const PAGES = REG.games.map(g => './' + g.path).concat(['./ranking/', './about/']);
+const IMAGES = [].concat(...REG.games.map(g => [g.thumb, g.thumb2x, g.icon].filter(Boolean).map(p => './' + p)));
 const LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 const CACHE_FIRST_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
@@ -11,8 +21,8 @@ self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
     await c.addAll(CORE);
-    // each game page separately, so one missing page never blocks the install
-    await Promise.all(GAMES.map(u => c.add(u).catch(() => {})));
+    // each page / file separately, so one missing file never blocks the install
+    await Promise.all(PAGES.concat(ENGINES, IMAGES).map(u => c.add(new Request(u, { cache: 'no-cache' })).catch(() => {})));
     await Promise.all(LIBS.map(u => fetch(u, { mode: 'cors' }).then(r => r.ok && c.put(u, r)).catch(() => {})));
     self.skipWaiting();
   })());

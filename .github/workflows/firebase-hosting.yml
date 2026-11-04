@@ -1,5 +1,7 @@
-# main に変更が入るたびに、Firebase Hosting（https://neji-5913a.web.app/）へ自動で公開する
-name: Firebase Hosting に公開
+# main に変更が入るたびに、両方の公開先へ自動で反映する
+#   deploy: Firebase Hosting（https://neji-5913a.web.app/）
+#   pages : GitHub Pages（https://seg1gpt0jpn.github.io/nejihodoki/）。gh-pages ブランチを main と同じにする（R25）
+name: Firebase Hosting と GitHub Pages に公開
 on:
   push:
     branches: [main]
@@ -8,6 +10,9 @@ permissions:
   contents: read
   checks: write
   pull-requests: write
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -28,3 +33,16 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: neji-5913a
+
+  pages:
+    # main のときだけ（ほかのブランチから手で動かしても gh-pages は変えない）
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gh-pages を main と同じにする
+        run: git push --force origin "HEAD:refs/heads/gh-pages"

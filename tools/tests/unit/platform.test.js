@@ -488,7 +488,7 @@ test('game/games/genres/rankable/theme', () => {
   globalThis.document = { documentElement: { setAttribute(k, v) { attrs[k] = v; } }, querySelector: q => (q.includes('[data-kb-theme-color]') ? meta : null) };
   globalThis.matchMedia = q => ({ matches: q.includes('light') });
   eq(P.theme.apply(), 'light'); eq(attrs['data-kb-theme'], 'light'); eq(meta.attrs.content, '#f4f1ea');
-  P.theme.set('dark'); eq(attrs['data-kb-theme'], 'dark'); eq(st.getItem('kobo.theme'), '"dark"');
+  P.theme.set('dark'); eq(attrs['data-kb-theme'], 'dark'); eq(st.getItem('kobo.theme'), 'dark', 'same plain string as ui.js');
   P.theme.set('weird'); eq(P.theme.get(), 'system');
   ok(!P.fx.reducedMotion());
 });

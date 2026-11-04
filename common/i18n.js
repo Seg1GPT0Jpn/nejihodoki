@@ -55,8 +55,21 @@
   // Some browsers (in-app browsers such as LINE, some Android/iOS toolbars) report a height that
   // includes their bottom toolbar, so CSS 100% / 100dvh can put bottom buttons behind it.
   // Measure the visible height and pin the page to it. Scrolling pages (hub, ranking) are left alone.
-  (function fitViewport() {
-    if (!/\/(neji|blocks|drop|raft|gates|n59049|water|parking|hole)\//.test(location.pathname)) return;
+  // Which pages are one-screen games comes from the registry (common/games.js, loaded right after this file):
+  // a page whose path contains '/<game path>' of any registered game. If the registry is not loaded yet, wait for
+  // games.js to set window.KOBO_REGISTRY (still inside <head>, so the page is pinned before it is drawn).
+  function isGamePage(reg) {
+    const list = reg && Array.isArray(reg.games) ? reg.games : [];
+    return list.some(g => g && typeof g.path === 'string' && g.path && location.pathname.indexOf('/' + g.path) >= 0);
+  }
+  (function whenRegistry(run) {
+    if (window.KOBO_REGISTRY) { run(window.KOBO_REGISTRY); return; }
+    try {
+      Object.defineProperty(window, 'KOBO_REGISTRY', { configurable: true, enumerable: true, get() { return undefined; },
+        set(v) { delete window.KOBO_REGISTRY; window.KOBO_REGISTRY = v; run(v); } });
+    } catch (e) {}
+  })(reg => { if (isGamePage(reg)) fitViewport(); });
+  function fitViewport() {
     const root = document.documentElement;
     const st = document.createElement('style');
     st.textContent = 'html,body{height:var(--kobo-h,100%)!important;min-height:0!important;max-height:var(--kobo-h,100%)!important;overflow:hidden!important}' +
@@ -84,7 +97,7 @@
     if (window.visualViewport) visualViewport.addEventListener('resize', measure);
     document.addEventListener('DOMContentLoaded', measure);
     window.addEventListener('load', () => { measure(); setTimeout(measure, 500); setTimeout(measure, 1500); });
-  })();
+  }
 
   window.KoboI18n = { get lang() { return lang; }, langs: LANGS, t, add, apply, set, picker };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => apply()); else apply();

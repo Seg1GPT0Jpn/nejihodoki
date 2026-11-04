@@ -577,7 +577,8 @@
   // テーマ：kobo.theme（'system' | 'light' | 'dark'）→ html[data-kb-theme]。色そのものは theme.css（P1-3）
   var THEME_COLOR = { dark: '#1d2a35', light: '#f4f1ea' };
   var theme = {
-    get: function () { var t = store.get(KEYS.theme, 'system'); return t === 'light' || t === 'dark' ? t : 'system'; },
+    // ui.js stores the plain string (light), older code may store JSON ("light"): accept both
+    get: function () { var t = store.raw(KEYS.theme); if (t && t.charAt(0) === '"') { try { t = JSON.parse(t); } catch (e) {} } return t === 'light' || t === 'dark' ? t : 'system'; },
     resolved: function () {
       var t = theme.get(); if (t !== 'system') return t;
       try { return root.matchMedia && root.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; } catch (e) { return 'dark'; }
@@ -593,7 +594,7 @@
       } catch (e) {}
       return r;
     },
-    set: function (t) { store.set(KEYS.theme, t === 'light' || t === 'dark' ? t : 'system'); return theme.apply(); },
+    set: function (t) { store.setRaw(KEYS.theme, t === 'light' || t === 'dark' ? t : 'system'); return theme.apply(); },
   };
 
   // ------------------------------------------------------------------ event processing

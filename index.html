@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ひまつぶし工房</title>
-<meta name="description" content="広告なしで遊べるミニゲーム集。ネジ外し・ブロックはめ・おちもの・いかだ暮らし・ゲートランナー・59049・いろみず分け・くるま出し・あなぼこシティ。">
-<meta name="theme-color" content="#1d2a35">
+<meta name="description" content="広告なし・課金なしで遊べるミニゲーム集。ネジ外し・ブロックはめ・おちもの・いかだ暮らし・ゲートランナー・59049・いろみず分け・くるま出し・あなぼこシティ。">
+<meta name="theme-color" content="#1d2a35" data-kb-theme-color>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -13,303 +13,546 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ひまつぶし工房">
+<link rel="stylesheet" href="common/theme.css">
+<link rel="stylesheet" href="common/ui.css">
 <script src="common/i18n.js"></script>
+<script src="common/games.js"></script>
+<script src="common/platform.js"></script>
+<script src="common/audio.js"></script>
+<!-- ui.js も <head> で：kobo.theme をすぐ当てて、テーマがちらつかないようにする -->
+<script src="common/ui.js"></script>
 <script>
 KoboI18n.add({ en: {
   'ひまつぶし工房': 'Himatsubushi Kobo',
   'ひまつぶし<span>工房</span>': 'Himatsubushi <span>Kobo</span>',
-  '広告なし・課金なし。ネットで話題のあの遊び方を、自前で作りました。': 'Ad-free mini games. No ads, no purchases — our own takes on the games everyone is talking about.',
-  'ホーム画面に追加': 'Add to Home Screen',
-  'ランキング': 'Rankings',
-  'ゲームごとの順位と、全ゲームの総合順位': 'Per-game ranks and the overall ranking',
-  'ゲーム一覧': 'Games',
-  'ネジほどき 3D': 'Unscrew 3D', '立体パズル': '3D puzzle',
-  '模型を回して隠れたネジを探し、同じ色の箱へ。抜く順番を考えないと詰む。': 'Turn the model, find hidden screws and drop them in boxes of the same color. Pull them in the wrong order and you get stuck.',
-  'ブロックはめ': 'Block Fit', 'パズル': 'Puzzle',
-  '8×8の盤に3つのブロックをはめて、そろった列を消す。置き場がなくなったら終わり。': 'Fit three blocks at a time on an 8×8 board and clear full lines. The game ends when nothing fits.',
-  'おちものタワー': 'Drop Tower', '落ちもの': 'Falling blocks',
-  '落ちてくるブロックで横一列をそろえて消す。1色でそろえると大量得点。': 'Fill rows with falling blocks to clear them. Single-color rows score big.',
-  'いかだ暮らし': 'Raft Life', 'サバイバル': 'Survival',
-  '水没した世界で漂流物を拾い、イカダを広げて生き延びる。サメに注意。': 'In a flooded world, grab floating debris, grow your raft and survive. Watch out for the shark.',
-  'ゲートランナー': 'Gate Runner', 'アクション': 'Action',
-  '数字のゲートをくぐって仲間を増やし、敵の群れとボスを撃ち倒す。': 'Run through number gates to grow your crowd, then shoot down enemy hordes and the boss.',
-  '立体数字': '3D numbers',
-  '3×3×3の立体で、同じ数字を3つ並べると合体して3倍。目指せ 59049。': 'On a 3×3×3 cube, line up three equal numbers to merge them into triple. Aim for 59049.',
-  'いろみず分け': 'Color Water Sort',
-  '試験管の色水を注ぎ分けて、同じ色にそろえる。毎回解けることを確かめたステージ。': 'Pour colored water between tubes until each holds one color. Every stage is checked to be solvable.',
-  'くるま出し': 'Car Out',
-  '矢印の向き（前）にしか走れない車を、ぶつけずに順番に駐車場から出す。': 'Cars only drive the way their arrow points. Get them out of the parking lot one by one without crashing.',
-  'あなぼこシティ': 'Hole City', '3Dアクション': '3D action',
-  '穴を動かして街の物を吸い込み、大きくなる。ライバルの穴に食べられるな。': 'Move a hole to swallow the city and grow bigger. Don\'t get eaten by rival holes.',
+  '広告なし・課金なし。ネットで話題のあの遊び方を、自前で作りました。': 'No ads, no purchases — our own takes on the games everyone is talking about.',
+  'ゲームを探す': 'Search games', 'ゲームの名前やジャンルで探す': 'Search by name or genre', '検索をやめる': 'Clear search',
+  '「{q}」に合うゲームはありません。': 'No games match "{q}".', '{n} 本見つかりました': '{n} games found',
+  'プロフィールとログイン': 'Profile and sign-in', 'ゲスト': 'Guest', 'ログイン中': 'Signed in', '設定': 'Settings',
+  '今日のおすすめ': 'Today\'s pick', '遊ぶ': 'Play', '今日のチャレンジ': 'Daily challenge', '対戦あり': 'Online battles',
+  '続きから': 'Continue', '{n} 分前': '{n} min ago', '{n} 時間前': '{n} h ago', 'たった今': 'just now', '昨日': 'yesterday', '{n} 日前': '{n} days ago',
+  'スコア {n}': 'Score {n}', 'デイリー': 'Daily', '対戦': 'Battle',
+  '全員が同じ問題に挑戦します。日本時間の0時に切り替わります（あと {h} 時間 {m} 分）。': 'Everyone gets the same puzzle. It changes at 0:00 Japan time (in {h} h {m} min).',
+  '未挑戦': 'Not tried yet', '挑戦 {n} 回': 'Tried {n}×', 'クリア済み': 'Cleared', 'ベスト {n}': 'Best {n}', '★{n}': '★{n}', '挑戦する': 'Play',
+  'お気に入り': 'Favorites', 'お気に入りに追加': 'Add to favorites', 'お気に入りから外す': 'Remove from favorites',
+  '人気': 'Popular', '今週 {n} 回': '{n} plays this week', '先週 {n} 回': '{n} plays last week',
+  '今週のプレイ回数（匿名で数えた合計）の多い順です。': 'Ordered by this week\'s play count (counted anonymously).',
+  '先週のプレイ回数（匿名で数えた合計）の多い順です。': 'Ordered by last week\'s play count (counted anonymously).',
+  '新着': 'New', 'NEW': 'NEW', '{m}月{d}日に追加': 'Added {m}/{d}',
+  'ランキング': 'Rankings', 'ゲームごとの順位（通算・週間・日間）と総合': 'Per-game ranks (all-time, weekly, daily) and the overall ranking',
+  '今週の上位（{t} 時点）': 'This week\'s top ({t})', 'もっと見る': 'See more', '{n}位': '#{n}', '名無し': 'Anonymous',
+  'すべてのゲーム': 'All games', 'ジャンルで絞り込む': 'Filter by genre', 'すべて': 'All', '3D': '3D',
+  'お気に入りはまだありません。カードの ☆ を押すと、ここに並びます。': 'No favorites yet. Tap ☆ on a card to add it here.',
+  'このジャンルのゲームはありません。': 'No games in this genre.',
+  'アカウント': 'Account',
   '記録はこの端末のブラウザに保存されます。Googleでログインすると、全ゲームの記録をクラウドに保存して、どの端末でも続きから遊べます。': 'Records are saved in this device\'s browser. Sign in with Google to save every game to the cloud and continue on any device.',
-  'LEVEL {n} まで到達': 'Reached LEVEL {n}',
-  'ベスト {n} 点': 'Best: {n} pts',
-  '最長 {n} 日生存': 'Longest: {n} days survived',
-  'ステージ {n} まで到達': 'Reached stage {n}',
-  'ベスト {n}': 'Best: {n}',
+  'ホーム画面に追加': 'Add to Home Screen',
   'ホーム画面に追加すると、アプリのように全画面で開けます。一度開いたゲームは通信なしでも遊べます。': 'Add this site to your Home Screen to open it full screen like an app. Games you have opened once also work offline.',
   'ホーム画面に追加するには、Safari の共有ボタン（□に↑）→「ホーム画面に追加」を押してください。': 'To add it to your Home Screen, tap Safari\'s Share button (square with ↑), then "Add to Home Screen".',
   'ホーム画面に追加するには、ブラウザのメニュー（︙）→「ホーム画面に追加」を押してください。': 'To add it to your Home Screen, open the browser menu (︙) and choose "Add to Home Screen" (or "Install app").',
-  // login widget (common/cloud.js)
-  'Googleでログイン': 'Sign in with Google',
-  'ログアウト': 'Sign out',
-  'ニックネーム（ランキングに表示）': 'Nickname (shown in the rankings)',
-  '1〜12文字': '1–12 characters',
-  '登録': 'Save',
-  '「{n}」で登録しました。ランキングに記録が載ります。': 'Saved as "{n}". Your records will appear in the rankings.',
-  'ニックネームを1文字以上入れてください。': 'Please enter a nickname of at least 1 character.',
-  'ランキングは準備中です（管理者の設定待ち）。ニックネームはこの端末に保存しました。': 'Rankings are not ready yet (waiting for admin setup). Your nickname was saved on this device.',
-  '登録できませんでした（{n}）': 'Could not save ({n})',
-  '同期できませんでした（{n}）。通信状態を確認してください。': 'Could not sync ({n}). Please check your connection.',
-  '{name} さん：全ゲームの記録をクラウドに自動保存しています。（同期済み）': '{name}: records for all games are saved to the cloud automatically. (synced)',
-  '{name} さん：全ゲームの記録をクラウドに自動保存しています。': '{name}: records for all games are saved to the cloud automatically.',
-  'ログイン中': 'Signed in',
-  'Googleでログインすると、全ゲームの記録をどの端末でも引き継げます。': 'Sign in with Google to carry your records for all games over to any device.',
-  'ログイン機能を読み込み中…': 'Loading sign-in…',
-  '設定': 'Settings', 'サウンド': 'Sound', '全ゲーム共通の効果音': 'Sound effects in all games', 'オン': 'On', 'オフ': 'Off',
-  'アカウント': 'Account', 'Googleログインとニックネーム': 'Google sign-in and nickname', '開く': 'Open', 'とじる': 'Close',
-  'ログインはこの環境では使えません': 'Sign-in is not available here',
+  '多くのゲームで、ほかの人とオンライン対戦ができます（各ゲームの「対戦」ボタン）。': 'Many games have online battles against other players (the "Battle" button in each game).',
+  '利用規約・プライバシー': 'Terms & Privacy', 'お問い合わせ（GitHub Issues）': 'Contact (GitHub Issues)', 'バージョン {v}': 'Version {v}',
+  '広告なし・課金なし・分析の送信なし': 'No ads · no purchases · no analytics',
+  'Googleログインとニックネーム': 'Google sign-in and nickname', '開く': 'Open', 'ログインはこの環境では使えません': 'Sign-in is not available here',
+  '利用規約とプライバシー': 'Terms and privacy', '保存するデータと消し方': 'What we store and how to delete it',
+  'ネジほどき 3D': 'Unscrew 3D', 'パズル': 'Puzzle', '落ちもの': 'Falling blocks', 'サバイバル': 'Survival', 'アクション': 'Action',
 } });
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* Layout: one column of game "cartridges" on a workbench; header + install strip. Single dark look by choice. */
-:root {
-  --steel: #1d2a35; --steel-2: #263744; --rail: #3a4f5f; --chalk: #eef2f4; --chalk-dim: #9fb1bd;
-  --brass: #f2b33d; --brass-ink: #2b1d05;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
-  color-scheme: dark;
-}
+/* ハブ v2：ヘッダー（ロゴ・検索・プロフィール・設定）→ 今日のおすすめ → 続きから → 今日のチャレンジ → お気に入り → 人気 → 新着
+   → ランキング → すべてのゲーム（ジャンル） → アカウント → フッター。色はすべて theme.css のトークン（ライト / ダーク） */
 [hidden] { display: none !important; }
-html { background: var(--steel); height: 100%; -webkit-text-size-adjust: 100%; }
+html { background: var(--kb-bg); height: 100%; -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; min-height: 100%; box-sizing: border-box; background: var(--steel); color: var(--chalk); font-family: var(--font-body);
-  -webkit-tap-highlight-color: transparent; overflow-x: hidden;
-  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  margin: 0; min-height: 100%; box-sizing: border-box; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-tap-highlight-color: transparent; overflow-x: hidden; padding-top: var(--kb-sat); padding-bottom: var(--kb-sab);
 }
-.wrap {
-  max-width: 560px; margin: 0 auto; box-sizing: border-box;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 20px 28px; display: flex; flex-direction: column; gap: 14px;
-}
-header { display: flex; align-items: center; gap: 12px; }
-header > div { flex: 1; min-width: 0; }
-header img { width: 52px; height: 52px; border-radius: 14px; flex: none; }
-.setbtn { flex: none; align-self: flex-start; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 52px; min-height: 52px; padding: 6px 6px 5px; box-sizing: border-box;
-  border: 1px solid var(--rail); border-radius: 14px; background: var(--steel-2); color: var(--chalk); font: 800 11.5px var(--font-body); cursor: pointer; white-space: nowrap; }
-.setbtn svg { width: 24px; height: 24px; color: var(--brass); }
-.setbtn:active { transform: scale(.96); }
-.setbtn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-@media (max-width: 359px) { header { gap: 8px; } header img { width: 44px; height: 44px; border-radius: 12px; } }
-h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(19px, 6.2vw, 26px); letter-spacing: .04em; line-height: 1.1; }
-h1 span { color: var(--brass); }
-.sub { margin: 4px 0 0; font-size: 12px; color: var(--chalk-dim); }
-.games { display: flex; flex-direction: column; gap: 10px; }
-.game {
-  display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: center; text-decoration: none; color: inherit;
-  background: var(--steel-2); border: 1px solid var(--rail); border-radius: 18px; padding: 12px 14px 12px 12px;
-  transition: transform .12s, border-color .12s;
-}
-.game:hover { border-color: var(--brass); }
+*, *::before, *::after { box-sizing: border-box; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 12px max(16px, var(--kb-sar)) 28px max(16px, var(--kb-sal)); display: flex; flex-direction: column; gap: 22px; }
+.wrap > * { min-width: 0; }
+
+/* header */
+.top { display: flex; flex-direction: column; gap: 10px; }
+.hrow { display: flex; align-items: center; gap: 10px; }
+.logo { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; text-decoration: none; }
+.logo img { width: 44px; height: 44px; border-radius: 12px; flex: none; }
+.logo div { min-width: 0; }
+h1 { margin: 0; font-family: var(--kb-font-display); font-weight: 400; font-size: clamp(18px, 5.6vw, 26px); letter-spacing: .04em; line-height: 1.15; overflow-wrap: anywhere; }
+h1 span { color: var(--kb-accent-text); }
+.sub { margin: 3px 0 0; font-size: 11.5px; color: var(--kb-dim); line-height: 1.45; }
+.hbtn { flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 48px; min-height: 48px; max-width: 76px; padding: 3px 5px;
+  border: 1px solid var(--kb-line); border-radius: 14px; background: var(--kb-surface); color: var(--kb-ink); font: 800 10.5px var(--kb-font-body); cursor: pointer; text-decoration: none; }
+.hbtn svg { width: 22px; height: 22px; color: var(--kb-accent-text); flex: none; }
+.hbtn .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbtn .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; line-height: 1; }
+.hbtn:active { transform: scale(.96); }
+.search { position: relative; display: flex; align-items: center; }
+.search svg { position: absolute; left: 12px; width: 20px; height: 20px; color: var(--kb-dim); pointer-events: none; }
+.search input { width: 100%; min-height: 46px; border: 1px solid var(--kb-line); border-radius: 999px; background: var(--kb-surface); color: var(--kb-ink); font: 800 15px var(--kb-font-body); padding: 0 48px 0 40px; -webkit-appearance: none; appearance: none; }
+.search input::placeholder { color: var(--kb-dim); font-weight: 500; }
+.search input::-webkit-search-cancel-button { display: none; }
+.search button { position: absolute; right: 1px; width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent; color: var(--kb-dim); font-size: 20px; cursor: pointer; }
+.found { margin: -4px 0 0; font-size: 12px; color: var(--kb-dim); }
+body.searching .home-sec { display: none !important; }
+
+/* sections */
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.sec-h h2 { margin: 0; font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; letter-spacing: .04em; }
+.sec-h a { font-size: 12.5px; font-weight: 800; color: var(--kb-accent-text); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; }
+.sec-note { margin: -4px 0 0; font-size: 11.5px; color: var(--kb-dim); line-height: 1.55; }
+.thumb { position: relative; display: block; width: 100%; aspect-ratio: 3 / 2; overflow: hidden; background: var(--kb-surface-2); }
+.thumb img, .thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1fr; border-radius: 20px; overflow: hidden; background: var(--kb-surface); border: 1px solid var(--kb-line); box-shadow: var(--kb-shadow); }
+.hero .thumb { aspect-ratio: 16 / 9; }
+.hero .thumb img { object-position: center 65%; }
+.hero .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.hero .kicker { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--kb-accent-text); }
+.hero h3 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: .02em; }
+.hero p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--kb-dim); }
+.hero .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero .acts .kb-btn { flex: 1 1 130px; }
+@media (min-width: 720px) { .hero { grid-template-columns: 1.25fr 1fr; } .hero .thumb { aspect-ratio: auto; min-height: 240px; height: 100%; } .hero .body { justify-content: center; padding: 20px 22px; } }
+
+/* horizontal rails (continue, popular, new, favorites) */
+.rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 46%); gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: thin; }
+@media (min-width: 720px) { .rail { grid-auto-columns: minmax(180px, 23%); } }
+.tile { scroll-snap-align: start; display: flex; flex-direction: column; text-decoration: none; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 14px; overflow: hidden; min-width: 0; }
+.tile:hover { border-color: var(--kb-accent); }
+.tile .tb { padding: 7px 9px 9px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile small { font-size: 11px; color: var(--kb-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tile .rank { position: absolute; left: 6px; top: 6px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 800 13px var(--kb-font-body); z-index: 1; }
+
+/* daily */
+.dlist { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 720px) { .dlist { grid-template-columns: 1fr 1fr; } }
+.drow { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; text-decoration: none; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 14px; padding: 8px 10px 8px 8px; min-height: 64px; }
+.drow:hover { border-color: var(--kb-accent); }
+.drow .ic { width: 48px; height: 48px; border-radius: 12px; overflow: hidden; }
+.drow .ic svg, .drow .ic img { width: 100%; height: 100%; display: block; }
+.drow b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drow small { display: block; font-size: 11.5px; color: var(--kb-dim); }
+.drow.done small { color: var(--kb-ok); font-weight: 800; }
+.drow .go { flex: none; min-height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font: 800 13px var(--kb-font-body); white-space: nowrap; }
+.drow.done .go { background: transparent; color: var(--kb-ink); border: 1px solid var(--kb-line); }
+
+/* ranking */
+.rank-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; color: var(--kb-ink); background: linear-gradient(90deg, var(--kb-accent-soft), var(--kb-surface)); border: 1px solid var(--kb-accent); border-radius: 16px; padding: 12px 16px; font-weight: 800; font-size: 16px; min-height: 60px; }
+.rank-link small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 2px; }
+.rank-link svg { width: 30px; height: 30px; color: var(--kb-accent-text); flex: none; }
+.rboards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.rboard { background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 14px; padding: 10px 12px; min-width: 0; }
+.rboard h3 { margin: 0 0 6px; font-size: 13.5px; }
+.rboard ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.rboard li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 6px; font-size: 13px; align-items: baseline; }
+.rboard li .r { font-family: var(--kb-font-display); color: var(--kb-dim); }
+.rboard li .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
+.rboard li .s { font-variant-numeric: tabular-nums; }
+.rboard li.mine .n { color: var(--kb-accent-text); }
+
+/* all games */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: none; min-height: 44px; border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink); border-radius: 999px; padding: 0 14px; font: 800 13px var(--kb-font-body); cursor: pointer; white-space: nowrap; }
+.chips button[aria-pressed="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.games { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(130px, 100%), 1fr)); gap: 10px; }
+@media (min-width: 600px) { .games { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; } }
+.card { position: relative; min-width: 0; }
+.game { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 16px; overflow: hidden; transition: transform var(--kb-dur-fast), border-color var(--kb-dur-fast); }
+.game:hover { border-color: var(--kb-accent); }
 .game:active { transform: scale(.985); }
-.game:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-.game svg { width: 72px; height: 72px; border-radius: 16px; display: block; }
-.game h2 { margin: 0 0 2px; font-size: 17px; font-weight: 800; letter-spacing: .02em; }
-.game p { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--chalk-dim); }
-.game .rec { margin-top: 4px; font-size: 11.5px; color: var(--brass); font-variant-numeric: tabular-nums; min-height: 1em; }
-.game .go { font-size: 22px; color: var(--chalk-dim); }
-.game[data-soon] { opacity: .45; pointer-events: none; }
-.game[data-soon] .rec::before { content: "準備中・もうすぐ遊べます"; color: var(--chalk-dim); }
-html[lang="en"] .game[data-soon] .rec::before { content: "Coming soon"; }
-.game > div { min-width: 0; overflow-wrap: anywhere; }
-.tag { display: inline-block; font-size: 10px; letter-spacing: .08em; border: 1px solid var(--rail); border-radius: 999px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; color: var(--chalk-dim); font-weight: 800; }
-.install {
-  display: flex; gap: 12px; align-items: center; border: 1px dashed var(--rail); border-radius: 16px; padding: 12px 14px;
-}
-.acct { display: flex; flex-direction: column; gap: 8px; background: var(--steel-2); border: 1px solid var(--rail); border-radius: 16px; padding: 10px 14px; }
-.acct .kc-row { display: flex; gap: 10px; align-items: center; }
-.acct .kc-nick { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--rail); padding-top: 8px; }
-.acct label { font-size: 11px; letter-spacing: .06em; color: var(--chalk-dim); font-weight: 800; }
-.acct input { flex: 1; min-width: 0; background: var(--steel); color: var(--chalk); border: 1px solid var(--rail); border-radius: 10px; padding: 8px 10px; font: 800 15px var(--font-body); }
-.acct input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
-.acct .kc-note { margin: 0; font-size: 11.5px; color: var(--brass); min-height: 1em; }
-.rank-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; color: var(--chalk); background: linear-gradient(90deg, #3a2f14, var(--steel-2)); border: 1px solid #6e5a2a; border-radius: 16px; padding: 12px 14px; font-weight: 800; }
-.rank-link small { display: block; font-weight: 500; font-size: 12px; color: var(--chalk-dim); margin-top: 2px; }
-.rank-link .cup { font-size: 26px; line-height: 1; color: var(--brass); }
-.rank-link:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-.acct .kc-msg { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--chalk-dim); flex: 1; min-width: 0; }
-.acct button { border: 0; border-radius: 12px; padding: 9px 12px; font: 800 13px var(--font-body); cursor: pointer; background: var(--brass); color: var(--brass-ink); flex: none; }
-.acct .kc-out { background: transparent; color: var(--chalk); border: 1px solid var(--rail); }
-.install p { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--chalk-dim); flex: 1; min-width: 0; }
-.btn { border: 0; border-radius: 12px; padding: 10px 14px; font: 800 14px var(--font-body); cursor: pointer; background: var(--brass); color: var(--brass-ink); flex: none; }
-.btn:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
-.langrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: var(--steel-2); border: 1px solid var(--rail); border-radius: 16px; padding: 8px 10px 8px 14px; }
-.langrow label { font-size: 12.5px; font-weight: 800; color: var(--chalk-dim); letter-spacing: .04em; }
-.langrow select { min-height: 40px; min-width: 132px; border: 1px solid var(--rail); border-radius: 12px; background: var(--steel); color: var(--chalk); font: 800 15px var(--font-body); padding: 6px 10px; cursor: pointer; }
-.langrow select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(6,10,14,.66); box-sizing: border-box;
-  padding: max(12px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); overscroll-behavior: contain; }
-.sheet-card { width: 100%; max-width: 480px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--steel-2); border: 1px solid var(--rail); border-bottom: 0;
-  border-radius: 20px 20px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,.45); padding: 14px 16px max(14px, env(safe-area-inset-bottom)); }
-.sheet-card h2 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: .04em; flex: none; }
-.sheet-body { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
-.srow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--rail); }
-.srow:first-child { border-top: 0; }
-.srow label, .srow .k { font-size: 14px; font-weight: 800; }
-.srow small { display: block; font-size: 11.5px; font-weight: 500; color: var(--chalk-dim); margin-top: 2px; line-height: 1.5; }
-.srow select { min-height: 40px; min-width: 128px; border: 1px solid var(--rail); border-radius: 12px; background: var(--steel); color: var(--chalk); font: 800 15px var(--font-body); padding: 6px 10px; cursor: pointer; }
-.toggle { flex: none; min-width: 76px; min-height: 40px; border-radius: 999px; border: 1px solid var(--rail); background: var(--steel); color: var(--chalk-dim); font: 800 14px var(--font-body); cursor: pointer; }
-.toggle[aria-pressed="true"] { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
-.srow .go2 { flex: none; min-height: 40px; display: inline-flex; align-items: center; border-radius: 12px; border: 1px solid var(--rail); padding: 0 12px; color: var(--chalk); text-decoration: none; font: 800 14px var(--font-body); background: var(--steel); cursor: pointer; }
-.srow .go2[aria-disabled="true"] { opacity: .45; pointer-events: none; }
-.sheet .btn { flex: none; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
-.sheet select:focus-visible, .toggle:focus-visible, .go2:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-footer { font-size: 11px; color: var(--chalk-dim); text-align: center; line-height: 1.7; }
+.game .gb { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.game h3 { margin: 0; font-size: 14.5px; font-weight: 800; letter-spacing: .02em; line-height: 1.3; overflow-wrap: anywhere; }
+.game .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { display: inline-block; font-size: 10px; letter-spacing: .04em; border: 1px solid var(--kb-line); border-radius: 999px; padding: 1px 7px; color: var(--kb-dim); font-weight: 800; white-space: nowrap; }
+.tag.new { border-color: var(--kb-accent); color: var(--kb-accent-text); }
+.game p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--kb-dim); display: none; }
+@media (min-width: 600px) { .game h3 { font-size: 16px; } .game p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } }
+.game .rec { margin-top: auto; padding-top: 2px; font-size: 11.5px; color: var(--kb-accent-text); font-weight: 800; font-variant-numeric: tabular-nums; min-height: 1.3em; overflow-wrap: anywhere; }
+.fav { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; display: grid; place-items: center; padding: 0; z-index: 1; }
+.fav span { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; background: rgba(10, 16, 22, .55); color: #fff; font-size: 18px; line-height: 1; }
+.fav[aria-pressed="true"] span { background: var(--kb-accent); color: var(--kb-accent-ink); }
+.empty { text-align: center; color: var(--kb-dim); font-size: 13px; line-height: 1.7; padding: 20px 8px; border: 1px dashed var(--kb-line); border-radius: 16px; }
+
+/* account + install */
+.acct { display: flex; flex-direction: column; gap: 8px; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 16px; padding: 10px 14px; }
+.acct .kc-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.acct .kc-nick { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--kb-line); padding-top: 8px; }
+.acct label { font-size: 11px; letter-spacing: .06em; color: var(--kb-dim); font-weight: 800; }
+.acct input { flex: 1; min-width: 0; min-height: 44px; background: var(--kb-bg); color: var(--kb-ink); border: 1px solid var(--kb-line); border-radius: 10px; padding: 8px 10px; font: 800 15px var(--kb-font-body); }
+.acct .kc-note { margin: 0; font-size: 11.5px; color: var(--kb-accent-text); min-height: 1em; }
+.acct .kc-msg { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--kb-dim); flex: 1 1 180px; min-width: 0; }
+.acct button { border: 0; border-radius: 12px; min-height: 44px; padding: 0 14px; font: 800 13px var(--kb-font-body); cursor: pointer; background: var(--kb-accent); color: var(--kb-accent-ink); flex: none; }
+.acct .kc-out { background: transparent; color: var(--kb-ink); border: 1px solid var(--kb-line); }
+.install { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border: 1px dashed var(--kb-line); border-radius: 16px; padding: 12px 14px; }
+.install p, .vsnote { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--kb-dim); min-width: 0; }
+.install p { flex: 1 1 200px; }
+.acct-grid { display: grid; gap: 10px; }
+@media (min-width: 720px) { .acct-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
+
+footer { border-top: 1px solid var(--kb-line); padding-top: 14px; font-size: 11.5px; color: var(--kb-dim); text-align: center; line-height: 1.7; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
+footer nav a { color: var(--kb-ink); font-weight: 800; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px; }
+footer nav a:hover { color: var(--kb-accent-text); }
 @media (prefers-reduced-motion: reduce) { .game { transition: none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <img src="icon-192.png" alt="">
-    <div>
-      <h1 data-i18n-html>ひまつぶし<span>工房</span></h1>
-      <p class="sub" data-i18n>広告なし・課金なし。ネットで話題のあの遊び方を、自前で作りました。</p>
+  <header class="top">
+    <div class="hrow">
+      <a class="logo" href="./"><img src="icon-192.png" alt="" width="44" height="44"><div>
+        <h1 data-i18n-html>ひまつぶし<span>工房</span></h1>
+        <p class="sub" data-i18n>広告なし・課金なし。ネットで話題のあの遊び方を、自前で作りました。</p></div></a>
+      <button class="hbtn" id="profBtn" type="button" aria-label="プロフィールとログイン" data-i18n-attr="aria-label"><span class="av" id="profAv" aria-hidden="true"></span><span class="nm" id="profName"></span></button>
+      <button class="hbtn" id="setBtn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n>設定</span></button>
     </div>
-    <button class="setbtn" id="setBtn" type="button" aria-haspopup="dialog" aria-controls="settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n>設定</span></button>
+    <div class="search" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      <input id="q" type="search" enterkeyhint="search" autocomplete="off" aria-label="ゲームを探す" placeholder="ゲームの名前やジャンルで探す" data-i18n-attr="aria-label,placeholder">
+      <button id="qClear" type="button" hidden aria-label="検索をやめる" data-i18n-attr="aria-label">×</button>
+    </div>
+    <p class="found" id="found" role="status" aria-live="polite" hidden></p>
   </header>
 
-  <div class="langrow"><label for="langSel">言語 / Language</label><span id="langPick"></span></div>
+  <section class="sec home-sec" id="secHero" aria-labelledby="heroKick" hidden></section>
+  <section class="sec home-sec" id="secCont" aria-labelledby="hCont" hidden><div class="sec-h"><h2 id="hCont" data-i18n>続きから</h2></div><div class="rail" id="railCont"></div></section>
+  <section class="sec home-sec" id="secDaily" aria-labelledby="hDaily" hidden><div class="sec-h"><h2 id="hDaily" data-i18n>今日のチャレンジ</h2></div><p class="sec-note" id="dailyNote"></p><div class="dlist" id="dailyList"></div></section>
+  <section class="sec home-sec" id="secFav" aria-labelledby="hFav" hidden><div class="sec-h"><h2 id="hFav" data-i18n>お気に入り</h2></div><div class="rail" id="railFav"></div></section>
+  <section class="sec home-sec" id="secPop" aria-labelledby="hPop" hidden><div class="sec-h"><h2 id="hPop" data-i18n>人気</h2></div><p class="sec-note" id="popNote"></p><div class="rail" id="railPop"></div></section>
+  <section class="sec home-sec" id="secNew" aria-labelledby="hNew" hidden><div class="sec-h"><h2 id="hNew" data-i18n>新着</h2></div><div class="rail" id="railNew"></div></section>
+  <section class="sec home-sec" id="secRank" aria-labelledby="hRank">
+    <div class="sec-h"><h2 id="hRank" data-i18n>ランキング</h2></div>
+    <a class="rank-link" href="ranking/"><span><span data-i18n>ランキング</span><small data-i18n>ゲームごとの順位（通算・週間・日間）と総合</small></span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8"/></svg></a>
+    <div class="rboards" id="rboards" hidden></div>
+  </section>
 
-  <div class="install" id="installBox" hidden>
-    <p id="installMsg"></p>
-    <button class="btn" id="installBtn" hidden data-i18n>ホーム画面に追加</button>
-  </div>
+  <section class="sec" id="secAll" aria-labelledby="hAll">
+    <div class="sec-h"><h2 id="hAll" data-i18n>すべてのゲーム</h2></div>
+    <div class="chips" id="chips" role="group" aria-label="ジャンルで絞り込む" data-i18n-attr="aria-label"></div>
+    <nav class="games" id="games" aria-label="すべてのゲーム" data-i18n-attr="aria-label"></nav>
+    <div class="empty" id="gamesEmpty" hidden></div>
+  </section>
 
-  <div class="acct" id="acct" hidden></div>
-
-  <a class="rank-link" href="ranking/"><span><span data-i18n>ランキング</span><small data-i18n>ゲームごとの順位と、全ゲームの総合順位</small></span><svg class="cup" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f2b33d" d="M7 3h10v3h3v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V6h3zm0 5V8H6a2 2 0 0 0 1 1.7zm10 0v1.7A2 2 0 0 0 18 8z"/></svg></a>
-
-  <nav class="games" aria-label="ゲーム一覧" data-i18n-attr="aria-label">
-    <a class="game" href="neji/" id="g-neji">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2b3d4b"/><circle cx="37" cy="39" r="21" fill="#00000055"/><circle cx="36" cy="36" r="21" fill="#f2b33d"/><circle cx="36" cy="36" r="21" fill="none" stroke="#7a520f" stroke-width="2"/><g transform="rotate(-20 36 36)" fill="#4a3108"><rect x="22" y="33" width="28" height="6" rx="3"/><rect x="33" y="22" width="6" height="28" rx="3"/></g></svg>
-      <div><h2><span data-i18n>ネジほどき 3D</span><span class="tag" data-i18n>立体パズル</span></h2><p data-i18n>模型を回して隠れたネジを探し、同じ色の箱へ。抜く順番を考えないと詰む。</p><div class="rec" id="r-neji"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="blocks/" id="g-blocks">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b2a1e"/><g stroke="#00000033" stroke-width="1.5"><rect x="10" y="10" width="16" height="16" rx="3" fill="#e5484d"/><rect x="28" y="10" width="16" height="16" rx="3" fill="#e5484d"/><rect x="28" y="28" width="16" height="16" rx="3" fill="#f5c518"/><rect x="46" y="28" width="16" height="16" rx="3" fill="#f5c518"/><rect x="10" y="46" width="16" height="16" rx="3" fill="#3e8ef7"/><rect x="28" y="46" width="16" height="16" rx="3" fill="#3e8ef7"/><rect x="46" y="46" width="16" height="16" rx="3" fill="#3e8ef7"/></g></svg>
-      <div><h2><span data-i18n>ブロックはめ</span><span class="tag" data-i18n>パズル</span></h2><p data-i18n>8×8の盤に3つのブロックをはめて、そろった列を消す。置き場がなくなったら終わり。</p><div class="rec" id="r-blocks"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="drop/" id="g-drop">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2a2140"/><g stroke="#ffffff55" stroke-width="1.5"><rect x="12" y="50" width="12" height="12" rx="4" fill="#ff7eb6"/><rect x="24" y="50" width="12" height="12" rx="4" fill="#ff7eb6"/><rect x="36" y="50" width="12" height="12" rx="4" fill="#7ee0ff"/><rect x="48" y="50" width="12" height="12" rx="4" fill="#7ee0ff"/><rect x="24" y="38" width="12" height="12" rx="4" fill="#ffd36e"/><rect x="48" y="38" width="12" height="12" rx="4" fill="#7ee0ff"/><rect x="30" y="10" width="12" height="12" rx="4" fill="#a98bff"/><rect x="30" y="22" width="12" height="12" rx="4" fill="#a98bff"/><rect x="42" y="22" width="12" height="12" rx="4" fill="#a98bff"/></g></svg>
-      <div><h2><span data-i18n>おちものタワー</span><span class="tag" data-i18n>落ちもの</span></h2><p data-i18n>落ちてくるブロックで横一列をそろえて消す。1色でそろえると大量得点。</p><div class="rec" id="r-drop"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="raft/" id="g-raft">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#127a86"/><path d="M0 52 q9 -6 18 0 t18 0 t18 0 t18 0 V72 H0z" fill="#0d5f69"/><g fill="#c98b4f" stroke="#7a4f2a" stroke-width="1.5"><rect x="16" y="34" width="40" height="7" rx="2"/><rect x="16" y="42" width="40" height="7" rx="2"/></g><rect x="34" y="12" width="3" height="23" fill="#7a4f2a"/><path d="M37 13 L54 30 H37z" fill="#f4f2ec"/><circle cx="60" cy="14" r="5" fill="#f5c518"/></svg>
-      <div><h2><span data-i18n>いかだ暮らし</span><span class="tag" data-i18n>サバイバル</span></h2><p data-i18n>水没した世界で漂流物を拾い、イカダを広げて生き延びる。サメに注意。</p><div class="rec" id="r-raft"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="gates/" id="g-gates">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3a4a2a"/><path d="M26 0 H46 L66 72 H6z" fill="#5c6670"/><rect x="10" y="20" width="24" height="16" rx="3" fill="#30a46c"/><text x="22" y="32" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">×2</text><rect x="38" y="20" width="24" height="16" rx="3" fill="#e5484d"/><text x="50" y="32" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">−5</text><g fill="#3e8ef7"><circle cx="30" cy="56" r="4"/><circle cx="38" cy="56" r="4"/><circle cx="34" cy="49" r="4"/><circle cx="42" cy="49" r="4"/><circle cx="26" cy="49" r="4"/></g></svg>
-      <div><h2><span data-i18n>ゲートランナー</span><span class="tag" data-i18n>アクション</span></h2><p data-i18n>数字のゲートをくぐって仲間を増やし、敵の群れとボスを撃ち倒す。</p><div class="rec" id="r-gates"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="n59049/" id="g-n59049">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2d2a45"/><g stroke="#ffffff44" stroke-width="1.5"><path d="M36 12 L58 24 L36 36 L14 24z" fill="#8e7cf0"/><path d="M14 24 L36 36 V60 L14 48z" fill="#5b4bc4"/><path d="M58 24 L36 36 V60 L58 48z" fill="#463aa0"/></g><text x="36" y="28" font-size="10" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">243</text><text x="25" y="47" font-size="9" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">27</text><text x="47" y="47" font-size="9" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">9</text></svg>
-      <div><h2><span data-i18n>59049</span><span class="tag" data-i18n>立体数字</span></h2><p data-i18n>3×3×3の立体で、同じ数字を3つ並べると合体して3倍。目指せ 59049。</p><div class="rec" id="r-n59049"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="water/" id="g-water">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#1f3340"/><g stroke="#cfe8f5" stroke-width="2" fill="none"><path d="M14 12 V54 a6 6 0 0 0 12 0 V12"/><path d="M30 12 V54 a6 6 0 0 0 12 0 V12"/><path d="M46 12 V54 a6 6 0 0 0 12 0 V12"/></g><rect x="15" y="40" width="10" height="20" rx="4" fill="#e93d82"/><rect x="15" y="30" width="10" height="10" fill="#30a46c"/><rect x="31" y="44" width="10" height="16" rx="4" fill="#30a46c"/><rect x="47" y="36" width="10" height="24" rx="4" fill="#3e8ef7"/><rect x="47" y="28" width="10" height="8" fill="#e93d82"/></svg>
-      <div><h2><span data-i18n>いろみず分け</span><span class="tag" data-i18n>パズル</span></h2><p data-i18n>試験管の色水を注ぎ分けて、同じ色にそろえる。毎回解けることを確かめたステージ。</p><div class="rec" id="r-water"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="parking/" id="g-parking">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b4148"/><g stroke="#f4f2ec" stroke-width="1.5" stroke-dasharray="3 3"><path d="M24 8 V64"/><path d="M48 8 V64"/></g><rect x="8" y="12" width="12" height="22" rx="3" fill="#e5484d"/><rect x="28" y="30" width="16" height="12" rx="3" fill="#f5c518"/><rect x="52" y="16" width="12" height="30" rx="3" fill="#3e8ef7"/><rect x="8" y="42" width="34" height="12" rx="3" fill="#30a46c"/><path d="M60 54 l4 6 l-8 0z" fill="#f76b15"/></svg>
-      <div><h2><span data-i18n>くるま出し</span><span class="tag" data-i18n>パズル</span></h2><p data-i18n>矢印の向き（前）にしか走れない車を、ぶつけずに順番に駐車場から出す。</p><div class="rec" id="r-parking"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-    <a class="game" href="hole/" id="g-hole">
-      <svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#6fae5a"/><rect x="0" y="40" width="72" height="12" fill="#5c6670"/><rect x="8" y="10" width="12" height="18" fill="#e8e2d6"/><rect x="50" y="8" width="14" height="22" fill="#c9a46a"/><circle cx="62" cy="48" r="4" fill="#e5484d"/><ellipse cx="34" cy="50" rx="18" ry="9" fill="#111"/><ellipse cx="34" cy="50" rx="18" ry="9" fill="none" stroke="#f2b33d" stroke-width="2"/><rect x="28" y="38" width="8" height="8" fill="#3e8ef7" transform="rotate(25 32 42)"/></svg>
-      <div><h2><span data-i18n>あなぼこシティ</span><span class="tag" data-i18n>3Dアクション</span></h2><p data-i18n>穴を動かして街の物を吸い込み、大きくなる。ライバルの穴に食べられるな。</p><div class="rec" id="r-hole"></div></div>
-      <span class="go" aria-hidden="true">›</span>
-    </a>
-  </nav>
-
-  <footer data-i18n>記録はこの端末のブラウザに保存されます。Googleでログインすると、全ゲームの記録をクラウドに保存して、どの端末でも続きから遊べます。</footer>
-</div>
-<div class="sheet" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
-  <div class="sheet-card">
-    <h2 id="setTitle" data-i18n>設定</h2>
-    <div class="sheet-body">
-      <div class="srow"><label for="setLang">言語 / Language</label><span id="setLangPick"></span></div>
-      <div class="srow"><span class="k"><span data-i18n>サウンド</span><small data-i18n>全ゲーム共通の効果音</small></span><button class="toggle" id="setSound" type="button" aria-pressed="true" aria-labelledby="setSoundLbl"></button><span id="setSoundLbl" hidden data-i18n>サウンド</span></div>
-      <div class="srow"><span class="k"><span data-i18n>アカウント</span><small id="setAcctNote" data-i18n>Googleログインとニックネーム</small></span><a class="go2" id="setAcct" href="#acct" data-i18n>開く</a></div>
+  <section class="sec home-sec" id="secAcct" aria-labelledby="hAcct">
+    <div class="sec-h"><h2 id="hAcct" data-i18n>アカウント</h2></div>
+    <div class="acct-grid">
+      <div class="acct" id="acct" hidden></div>
+      <div class="install" id="installBox" hidden>
+        <p id="installMsg"></p>
+        <button class="kb-btn kb-btn--primary" id="installBtn" type="button" hidden data-i18n>ホーム画面に追加</button>
+      </div>
     </div>
-    <button class="btn" id="setClose" type="button" data-i18n>とじる</button>
-  </div>
+    <p class="vsnote" data-i18n>多くのゲームで、ほかの人とオンライン対戦ができます（各ゲームの「対戦」ボタン）。</p>
+  </section>
+
+  <footer>
+    <p style="margin:0" data-i18n>記録はこの端末のブラウザに保存されます。Googleでログインすると、全ゲームの記録をクラウドに保存して、どの端末でも続きから遊べます。</p>
+    <nav aria-label="ひまつぶし工房" data-i18n-attr="aria-label">
+      <a href="about/" data-i18n>利用規約・プライバシー</a>
+      <a href="https://github.com/Seg1GPT0Jpn/nejihodoki/issues" target="_blank" rel="noopener" data-i18n>お問い合わせ（GitHub Issues）</a>
+    </nav>
+    <span><span data-i18n>広告なし・課金なし・分析の送信なし</span> · <span id="ver"></span></span>
+  </footer>
 </div>
 <script src="firebase-config.js"></script>
 <script src="common/cloud.js"></script>
+<script src="common/rank.js"></script>
 <script>
 (() => {
-  const T = KoboI18n.t;
-  // language selector
-  const sel = KoboI18n.picker(document.getElementById('langPick'));
-  if (sel) sel.id = 'langSel';
-  // settings panel: language, shared sound switch, jump to the account box
-  const setEl = document.getElementById('settings'), setBtn = document.getElementById('setBtn');
-  const sel2 = KoboI18n.picker(document.getElementById('setLangPick'));
-  if (sel2) sel2.id = 'setLang';
-  const sndKey = 'kusoge.sound', sndBtn = document.getElementById('setSound');
-  const sndOn = () => { try { return localStorage.getItem(sndKey) !== '0'; } catch (e) { return true; } };
-  const drawSnd = () => { const on = sndOn(); sndBtn.setAttribute('aria-pressed', String(on)); sndBtn.textContent = T(on ? 'オン' : 'オフ'); };
-  sndBtn.onclick = () => { try { localStorage.setItem(sndKey, sndOn() ? '0' : '1'); } catch (e) {} drawSnd(); };
-  const openSet = () => {
-    drawSnd();
-    const acctOk = !document.getElementById('acct').hidden, a = document.getElementById('setAcct');
-    a.setAttribute('aria-disabled', String(!acctOk));
-    document.getElementById('setAcctNote').textContent = T(acctOk ? 'Googleログインとニックネーム' : 'ログインはこの環境では使えません');
-    setEl.hidden = false; document.getElementById('setClose').focus();
+  'use strict';
+  const I = KoboI18n, T = I.t, P = window.KoboPlatform, R = window.KOBO_REGISTRY, UI = window.KoboUI;
+  const lang = I.lang === 'en' ? 'en' : 'ja';
+  const L = o => (o && typeof o === 'object' ? (o[lang] || o.ja || '') : String(o == null ? '' : o));
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, kids) => {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else if (k === 'html') e.innerHTML = v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of [].concat(kids == null ? [] : kids)) if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return e;
   };
-  const closeSet = () => { setEl.hidden = true; setBtn.focus(); };
-  setBtn.onclick = openSet;
-  document.getElementById('setClose').onclick = closeSet;
-  setEl.addEventListener('click', e => { if (e.target === setEl) closeSet(); });
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !setEl.hidden) closeSet(); });
-  document.getElementById('setAcct').onclick = e => {
-    e.preventDefault(); setEl.hidden = true;
-    const ac = document.getElementById('acct'); if (ac.hidden) return;
-    ac.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const f = ac.querySelector('button:not([hidden]), input'); if (f) setTimeout(() => f.focus({ preventScroll: true }), 300);
-  };
-  window.addEventListener('storage', e => { if (e.key === sndKey && !setEl.hidden) drawSnd(); });
-  const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
-  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
-  function refreshRecords() {
-    const nejiMax = get('nejihodoki3d.maxLevel', 0);
-    if (nejiMax > 1) set('r-neji', T('LEVEL {n} まで到達', { n: nejiMax }));
-    const bb = get('kusoge.blocks.best', 0); if (bb) set('r-blocks', T('ベスト {n} 点', { n: Number(bb).toLocaleString() }));
-    const db = get('kusoge.drop.best', 0); if (db) set('r-drop', T('ベスト {n} 点', { n: Number(db).toLocaleString() }));
-    const rb = get('kusoge.raft.best', 0); if (rb) set('r-raft', T('最長 {n} 日生存', { n: rb }));
-    const nb = get('kusoge.n59049.best', 0); if (nb) set('r-n59049', T('ベスト {n} 点', { n: Number(nb).toLocaleString() }));
-    const ws = get('kusoge.water.save', null); if (ws && (ws.best || ws.level) > 1) set('r-water', T('ステージ {n} まで到達', { n: ws.best || ws.level }));
-    const ps = get('kusoge.parking.save', null); if (ps && (ps.best || ps.level) > 1) set('r-parking', T('ステージ {n} まで到達', { n: ps.best || ps.level }));
-    const hs = get('kusoge.hole.save', null); if (hs && hs.best) set('r-hole', T('ベスト {n}', { n: typeof hs.best === 'object' ? (hs.best.score || hs.best.size || '') : hs.best }));
-    const gs = get('kusoge.gates.save', null); if (gs && (gs.best || gs.bestStage || gs.stage)) set('r-gates', T('ステージ {n} まで到達', { n: gs.best || gs.bestStage || gs.stage }));
-  }
-  refreshRecords();
+  const GAMES = (R ? R.games.slice() : []).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const GENRES = R ? R.genres : [];
+  const byId = id => GAMES.find(g => g.id === id) || null;
+  const today = P.jstDateKey();
+  const num = n => Number(n).toLocaleString(lang === 'en' ? 'en-US' : 'ja-JP');
 
-  // home screen install
+  // ---------- thumbnails (webp screenshot, SVG icon as fallback) ----------
+  function thumb(g, big) {
+    const box = el('span', { class: 'thumb', style: 'background:' + (g.iconBg || '') });
+    const fallback = () => { box.innerHTML = g.iconSvg || ''; };
+    if (g.thumb) {
+      const img = el('img', { src: big && g.thumb2x ? g.thumb2x : g.thumb, srcset: g.thumb2x ? g.thumb + ' 360w, ' + g.thumb2x + ' 720w' : null,
+        sizes: big ? '(min-width: 720px) 560px, 100vw' : '(min-width: 600px) 260px, 46vw', alt: '', loading: big ? 'eager' : 'lazy', decoding: 'async', width: 360, height: 240 });
+      img.addEventListener('error', fallback, { once: true });
+      box.append(img);
+    } else fallback();
+    return box;
+  }
+  function icon(g) { const b = el('span', { class: 'ic', style: 'background:' + (g.iconBg || '') }); b.innerHTML = g.iconSvg || ''; return b; }
+  const genreName = id => { const x = GENRES.find(z => z.id === id); return x ? L(x) : id; };
+  // NEW：追加から21日以内。全部が新しいとき（公開したて）は印を付けても意味がないので付けない
+  const recent = g => { const t = Date.parse(g.added); return isFinite(t) && Date.now() - t < 21 * 864e5; };
+  const allNew = GAMES.every(recent);
+  const isNew = g => !allNew && recent(g);
+  const dailyHref = g => g.path + '?daily=' + today;
+
+  // ---------- all games (cards with records and favorites) ----------
+  const filter = { genre: 'all', q: '' };
+  function cardFor(g) {
+    const favOn = P.fav.has(g.id);
+    const tags = el('span', { class: 'tags' }, [el('span', { class: 'tag', text: L(g.label) })]);
+    if (g.flags && g.flags.versus) tags.append(el('span', { class: 'tag', text: T('対戦') }));
+    if (g.flags && g.flags.daily) tags.append(el('span', { class: 'tag', text: T('デイリー') }));
+    if (isNew(g)) tags.append(el('span', { class: 'tag new', text: T('NEW') }));
+    const a = el('a', { class: 'game', href: g.path, id: 'g-' + g.id }, [
+      thumb(g, false),
+      el('span', { class: 'gb' }, [el('h3', { text: L(g.title) }), tags, el('p', { text: L(g.desc) }), el('span', { class: 'rec', id: 'r-' + g.id })]),
+    ]);
+    const fav = el('button', { class: 'fav', type: 'button', 'aria-pressed': String(favOn), 'aria-label': T(favOn ? 'お気に入りから外す' : 'お気に入りに追加') + '：' + L(g.title),
+      onclick: () => { P.fav.toggle(g.id); renderFavState(); } }, [el('span', { 'aria-hidden': 'true', text: favOn ? '★' : '☆' })]);
+    fav.dataset.game = g.id;
+    return el('div', { class: 'card', 'data-game': g.id }, [a, fav]);
+  }
+  function renderGames() { const nav = $('games'); nav.textContent = ''; GAMES.forEach(g => nav.append(cardFor(g))); refreshRecords(); applyFilter(); }
+  function refreshRecords() { GAMES.forEach(g => { const r = $('r-' + g.id); if (r) r.textContent = P.recordText(g.id) || ''; }); }
+
+  function haystack(g) {
+    const parts = [g.id];
+    for (const o of [g.title, g.short, g.desc, g.label]) if (o) parts.push(o.ja, o.en);
+    if (g.keywords) parts.push(...(g.keywords.ja || []), ...(g.keywords.en || []));
+    (g.genres || []).forEach(id => { const x = GENRES.find(z => z.id === id); if (x) parts.push(x.ja, x.en); });
+    if (g.tech === '3d') parts.push('3D', '立体');
+    if (g.flags && g.flags.versus) parts.push('対戦', 'versus', 'battle', 'online');
+    if (g.flags && g.flags.daily) parts.push('デイリー', 'daily');
+    return parts.filter(Boolean).join(' ').normalize('NFKC').toLowerCase();
+  }
+  // ひらがなとカタカナを同じに扱う（「ねじ」で「ネジ」も見つかる）
+  const kana = s => s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  const HAY = {}; GAMES.forEach(g => { HAY[g.id] = kana(haystack(g)); });
+  function matches(g) {
+    if (filter.q) { const words = kana(filter.q.normalize('NFKC').toLowerCase()).split(/\s+/).filter(Boolean); if (!words.every(w => HAY[g.id].includes(w))) return false; }
+    const f = filter.genre;
+    if (f === 'all') return true;
+    if (f === 'fav') return P.fav.has(g.id);
+    if (f === '3d') return g.tech === '3d';
+    if (f === 'versus') return !!(g.flags && g.flags.versus);
+    return (g.genres || []).includes(f);
+  }
+  function applyFilter() {
+    let n = 0;
+    document.querySelectorAll('#games .card').forEach(c => { const ok = matches(byId(c.dataset.game)); c.hidden = !ok; if (ok) n++; });
+    const empty = $('gamesEmpty');
+    empty.hidden = n > 0;
+    if (!n) empty.textContent = filter.q ? T('「{q}」に合うゲームはありません。', { q: filter.q }) : filter.genre === 'fav' ? T('お気に入りはまだありません。カードの ☆ を押すと、ここに並びます。') : T('このジャンルのゲームはありません。');
+    const found = $('found');
+    found.hidden = !filter.q; if (filter.q) found.textContent = T('{n} 本見つかりました', { n });
+    document.body.classList.toggle('searching', !!filter.q);
+  }
+  function renderChips() {
+    const box = $('chips'); box.textContent = '';
+    const opts = [{ id: 'all', label: T('すべて') }, { id: 'fav', label: '★ ' + T('お気に入り') }];
+    GENRES.forEach(x => { if (GAMES.some(g => (g.genres || []).includes(x.id))) opts.push({ id: x.id, label: L(x) }); });
+    if (GAMES.some(g => g.tech === '3d')) opts.push({ id: '3d', label: T('3D') });
+    if (GAMES.some(g => g.flags && g.flags.versus)) opts.push({ id: 'versus', label: T('対戦') });
+    opts.forEach(o => box.append(el('button', { type: 'button', 'aria-pressed': String(filter.genre === o.id), 'data-f': o.id, text: o.label,
+      onclick: () => { filter.genre = o.id; box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === o.id))); applyFilter(); } })));
+  }
+  const q = $('q'), qClear = $('qClear');
+  q.addEventListener('input', () => { filter.q = q.value.trim(); qClear.hidden = !q.value; applyFilter(); });
+  q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q.blur(); $('secAll').scrollIntoView({ block: 'start' }); } if (e.key === 'Escape') { q.value = ''; q.dispatchEvent(new Event('input')); } });
+  qClear.onclick = () => { q.value = ''; q.dispatchEvent(new Event('input')); q.focus(); };
+
+  // ---------- small tiles for rails ----------
+  function tile(g, sub, opt) {
+    opt = opt || {};
+    const t = thumb(g, false);
+    if (opt.rank) t.append(el('span', { class: 'rank', text: opt.rank }));
+    return el('a', { class: 'tile', href: opt.href || g.path }, [t, el('span', { class: 'tb' }, [el('b', { text: L(g.title) }), sub ? el('small', { text: sub }) : null])]);
+  }
+  function fill(sec, rail, items) { const r = $(rail); r.textContent = ''; items.forEach(x => r.append(x)); $(sec).hidden = items.length === 0; }
+
+  // ---------- hero: today's pick (same for everyone each day; prefers a game this device has not played) ----------
+  function renderHero() {
+    if (!GAMES.length) return;
+    const played = new Set(P.history.list().map(e => e.g));
+    const pool = GAMES.filter(g => !played.has(g.id));
+    const list = pool.length ? pool : GAMES;
+    const g = list[P.hash32('kobo:hero:' + today) % list.length];
+    const acts = el('div', { class: 'acts' }, [el('a', { class: 'kb-btn kb-btn--primary kb-btn--lg', href: g.path, text: T('遊ぶ') })]);
+    if (g.flags && g.flags.daily) acts.append(el('a', { class: 'kb-btn kb-btn--ghost kb-btn--lg', href: dailyHref(g), text: T('今日のチャレンジ') }));
+    const tags = el('div', { class: 'tags', style: 'display:flex;gap:4px;flex-wrap:wrap' }, [el('span', { class: 'tag', text: L(g.label) })]);
+    if (g.flags && g.flags.versus) tags.append(el('span', { class: 'tag', text: T('対戦あり') }));
+    const sec = $('secHero'); sec.textContent = '';
+    sec.append(el('div', { class: 'hero' }, [
+      el('a', { href: g.path, tabindex: '-1', 'aria-hidden': 'true', style: 'display:block;min-width:0' }, [thumb(g, true)]),
+      el('div', { class: 'body' }, [el('span', { class: 'kicker', id: 'heroKick', text: T('今日のおすすめ') }), el('h3', { text: L(g.title) }), tags,
+        el('p', { text: L(g.desc) }), el('p', { class: 'rec', style: 'color:var(--kb-accent-text);font-weight:800;font-size:12px', text: P.recordText(g.id) || null }), acts]),
+    ]));
+    sec.hidden = false;
+  }
+
+  // ---------- continue (kobo.history: newest first, one per game, up to 6) ----------
+  function ago(t) {
+    const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (m < 1) return T('たった今'); if (m < 60) return T('{n} 分前', { n: m });
+    const h = Math.round(m / 60); if (h < 24) return T('{n} 時間前', { n: h });
+    const d = P.daysBetween(P.jstDateKey(t), today); return d <= 1 ? T('昨日') : T('{n} 日前', { n: d });
+  }
+  function renderContinue() {
+    const seen = new Set(), items = [];
+    for (const e of P.history.list()) {
+      const g = byId(e.g); if (!g || seen.has(g.id)) continue; seen.add(g.id);
+      const bits = [ago(e.t)];
+      if (e.m === 'daily') bits.push(T('デイリー')); else if (e.m === 'versus') bits.push(T('対戦'));
+      else if (e.s > 0) bits.push(T('スコア {n}', { n: num(e.s) }));
+      items.push(tile(g, bits.join(' · ')));
+      if (items.length >= 6) break;
+    }
+    fill('secCont', 'railCont', items);
+  }
+
+  // ---------- today's challenge (only games with flags.daily) ----------
+  function dailyStatus(g) {
+    const d = P.daily.get(today, g.id);
+    let stars = 0;
+    if (g.id === 'neji') { const o = P.store.get('nejihodoki3d.daily', {}); stars = Number(o && o[today]) || 0; }
+    if ((d && d.clearedAt > 0) || stars > 0) {
+      const bits = [T('クリア済み')];
+      if (stars) bits.push(T('★{n}', { n: stars })); else if (d && d.best > 0 && !(g.score && g.score.fmt)) bits.push(T('ベスト {n}', { n: num(d.best) }));
+      return { done: true, text: bits.join(' · ') };
+    }
+    if (d && d.tries > 0) return { done: false, text: T('挑戦 {n} 回', { n: d.tries }) + (d.best > 0 && !(g.score && g.score.fmt) ? ' · ' + T('ベスト {n}', { n: num(d.best) }) : '') };
+    return { done: false, text: T('未挑戦') };
+  }
+  function renderDaily() {
+    const list = $('dailyList'); list.textContent = '';
+    const ds = GAMES.filter(g => g.flags && g.flags.daily);
+    ds.forEach(g => {
+      const s = dailyStatus(g);
+      list.append(el('a', { class: 'drow' + (s.done ? ' done' : ''), href: dailyHref(g) }, [icon(g),
+        el('span', { style: 'min-width:0' }, [el('b', { text: L(g.title) }), el('small', { text: s.text })]), el('span', { class: 'go', text: T('挑戦する') })]));
+    });
+    const left = P.jstDayStart(P.addDays(today, 1)) - Date.now();
+    $('dailyNote').textContent = T('全員が同じ問題に挑戦します。日本時間の0時に切り替わります（あと {h} 時間 {m} 分）。', { h: Math.floor(left / 3600000), m: Math.floor(left / 60000) % 60 });
+    $('secDaily').hidden = ds.length === 0;
+  }
+
+  // ---------- favorites ----------
+  function renderFav() { fill('secFav', 'railFav', P.fav.list().map(byId).filter(Boolean).map(g => tile(g, P.recordText(g.id) || L(g.label)))); }
+  function renderFavState() {
+    document.querySelectorAll('#games .fav').forEach(b => {
+      const g = byId(b.dataset.game), on = P.fav.has(g.id);
+      b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', T(on ? 'お気に入りから外す' : 'お気に入りに追加') + '：' + L(g.title));
+      b.firstChild.textContent = on ? '★' : '☆';
+    });
+    renderFav(); if (filter.genre === 'fav') applyFilter();
+  }
+
+  // ---------- new (registry `added`, newest first) ----------
+  function renderNew() {
+    const list = GAMES.slice().sort((a, b) => String(b.added).localeCompare(String(a.added)) || (b.order || 0) - (a.order || 0)).slice(0, 6);
+    fill('secNew', 'railNew', list.map(g => { const d = String(g.added || '').split('-'); return tile(g, d.length === 3 ? T('{m}月{d}日に追加', { m: +d[1], d: +d[2] }) : L(g.label)); }));
+  }
+
+  // ---------- popular: anonymous weekly play counts (Firestore kbPlays/w<week>, 2 reads, cached 6h). Hidden without data ----------
+  const PLAYS_CACHE = 'kobo.playsCache', PLAYS_TTL = 6 * 3600000;
+  function drawPopular(c) {
+    if (!c) { $('secPop').hidden = true; return; }
+    const pick = o => GAMES.map(g => ({ g, n: Math.max(0, Math.floor(Number(o && o[g.id]) || 0)) })).filter(x => x.n > 0).sort((a, b) => b.n - a.n);
+    let rows = pick(c.cur), tpl = '今週 {n} 回', note = '今週のプレイ回数（匿名で数えた合計）の多い順です。';
+    if (!rows.length) { rows = pick(c.prev); tpl = '先週 {n} 回'; note = '先週のプレイ回数（匿名で数えた合計）の多い順です。'; }
+    $('popNote').textContent = T(note);
+    fill('secPop', 'railPop', rows.slice(0, 6).map((x, i) => tile(x.g, T(tpl, { n: num(x.n) }), { rank: i + 1 })));
+  }
+  function loadPopular() {
+    const wk = P.jstWeekKey(), c = P.store.get(PLAYS_CACHE, null), t = Date.now();
+    if (c && c.wk === wk && t - c.at < PLAYS_TTL && t >= c.at) { drawPopular(c); return; }
+    if (c && c.wk === wk) drawPopular(c);
+    if (!window.KoboCloud || navigator.onLine === false) return;
+    Promise.resolve(KoboCloud.ready()).then(ok => {
+      if (!ok || !window.firebase || !firebase.firestore) return;
+      const db = firebase.firestore();
+      return Promise.all([wk, wk - 1].map(w => db.collection('kbPlays').doc('w' + w).get().then(d => (d.exists ? d.data() || {} : {}), () => null))).then(r => {
+        if (r[0] === null && r[1] === null) return;
+        const out = { at: Date.now(), wk, cur: r[0] || {}, prev: r[1] || {} };
+        P.store.set(PLAYS_CACHE, out); drawPopular(out);
+      });
+    }).catch(() => {});
+  }
+
+  // ---------- ranking excerpt: only boards already in KoboRank's 5-minute cache (0 reads). Otherwise just the link ----------
+  function renderRankExcerpt() {
+    const box = $('rboards'), K = window.KoboRank;
+    box.textContent = ''; box.hidden = true;
+    if (!K || !K.top) return;
+    let cache = {}; try { cache = JSON.parse(localStorage.getItem(K.KEYS.cache) || '{}') || {}; } catch (e) {}
+    const fresh = GAMES.filter(g => { const b = K.board(g.id, 'week'), e = cache['b:' + b]; return e && Date.now() - e.at < K.CACHE_MS - 5000 && Date.now() >= e.at && e.rows && e.rows.length; }).slice(0, 3);
+    if (!fresh.length) return;
+    const me = window.KoboCloud && KoboCloud.me ? KoboCloud.me() : null;
+    Promise.all(fresh.map(g => K.top(g.id, 'week').then(r => ({ g, r })))).then(all => {
+      all.forEach(({ g, r }) => {
+        if (!r.cached || r.error) return;
+        const rows = r.rows.filter(x => !x.out).slice(0, 3); if (!rows.length) return;
+        const fmt = v => (g.score && g.score.fmt ? L(g.score.fmt).replace('{n}', num(v)) : num(v) + ' ' + L(g.score && g.score.unit));
+        box.append(el('div', { class: 'rboard' }, [el('h3', { text: L(g.short || g.title) }), el('ol', null, rows.map(x =>
+          el('li', { class: me && x.uid === me ? 'mine' : null }, [el('span', { class: 'r', text: T('{n}位', { n: x.rank }) }), el('span', { class: 'n', text: x.n || T('名無し') }), el('span', { class: 's', text: fmt(x.s) })])))]));
+      });
+      box.hidden = !box.children.length;
+    }).catch(() => {});
+  }
+
+  // ---------- profile entry (header) ----------
+  let cloudState = null;
+  function renderProfile() {
+    const nick = P.store.raw('kobo.nick') || '';
+    const name = nick || (cloudState && cloudState.user ? T('ログイン中') : T('ゲスト'));
+    $('profName').textContent = name;
+    const av = $('profAv'); av.textContent = '';
+    if (nick) av.textContent = Array.from(nick)[0].toUpperCase();
+    else av.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px;height:16px;color:inherit"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>';
+  }
+  function goAccount() {
+    const ac = $('acct');
+    if (filter.q) { q.value = ''; q.dispatchEvent(new Event('input')); }
+    $('secAcct').scrollIntoView({ behavior: P.fx.reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    if (ac.hidden) return;
+    const f = ac.querySelector('button:not([hidden]), input'); if (f) setTimeout(() => f.focus({ preventScroll: true }), 350);
+  }
+  $('profBtn').onclick = goAccount;
+
+  // ---------- settings (language, theme, volume via KoboUI + links) ----------
+  $('setBtn').onclick = () => {
+    if (!UI) return;
+    const acctOk = !$('acct').hidden;
+    const link = (title, sub, href, onClick) => UI.listRow({ title, sub, href, onClick, chevron: true });
+    const extra = [];
+    try {
+      extra.push(UI.list([
+        link(T('アカウント'), T(acctOk ? 'Googleログインとニックネーム' : 'ログインはこの環境では使えません'), acctOk ? '#secAcct' : null, acctOk ? e => { e && e.preventDefault && e.preventDefault(); s && s.close && s.close('acct'); setTimeout(goAccount, 50); } : null),
+        link(T('利用規約とプライバシー'), T('保存するデータと消し方'), 'about/'),
+      ]));
+    } catch (e) {}
+    const s = UI.openSettings({ extra });
+  };
+
+  // ---------- install to home screen ----------
   let evt = null;
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  function render() {
-    const box = document.getElementById('installBox'), btn = document.getElementById('installBtn'), msg = document.getElementById('installMsg');
+  function renderInstall() {
+    const box = $('installBox'), btn = $('installBtn'), msg = $('installMsg');
     if (standalone() || !('serviceWorker' in navigator) || location.protocol !== 'https:') { box.hidden = true; return; }
     box.hidden = false;
     const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
@@ -317,37 +560,34 @@ footer { font-size: 11px; color: var(--chalk-dim); text-align: center; line-heig
     else if (ios) { btn.hidden = true; msg.textContent = T('ホーム画面に追加するには、Safari の共有ボタン（□に↑）→「ホーム画面に追加」を押してください。'); }
     else { btn.hidden = true; msg.textContent = T('ホーム画面に追加するには、ブラウザのメニュー（︙）→「ホーム画面に追加」を押してください。'); }
   }
-  addEventListener('beforeinstallprompt', e => { e.preventDefault(); evt = e; render(); });
-  addEventListener('appinstalled', () => { evt = null; render(); });
-  document.getElementById('installBtn').onclick = async () => { if (!evt) return; evt.prompt(); try { await evt.userChoice; } catch (e) {} evt = null; render(); };
-  render();
-  const acct = document.getElementById('acct');
-  KoboCloud.mountLogin(acct);
-  // the login widget (common/cloud.js) writes Japanese text from JS; translate it as it changes
-  if (KoboI18n.lang !== 'ja') {
-    const JP = /[\u3040-\u30ff\u4e00-\u9fff]/;
-    const patterns = ['「{n}」で登録しました。ランキングに記録が載ります。', '登録できませんでした（{n}）', '同期できませんでした（{n}）。通信状態を確認してください。',
-      '{name} さん：全ゲームの記録をクラウドに自動保存しています。（同期済み）', '{name} さん：全ゲームの記録をクラウドに自動保存しています。']
-      .map(k => ({ k, re: new RegExp('^' + k.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{(\w+)\}/g, '(?<$1>[\\s\\S]*?)') + '$') }));
-    const tr = str => {
-      const s = str.trim(); if (!s || !JP.test(s)) return str;
-      const direct = T(s); if (direct !== s) return direct;
-      for (const p of patterns) { const m = p.re.exec(s); if (m) { const v = {}; for (const [k, x] of Object.entries(m.groups)) v[k] = T(x); return T(p.k, v); } }
-      return str;
-    };
-    const run = () => {
-      const w = document.createTreeWalker(acct, NodeFilter.SHOW_TEXT);
-      for (let n = w.nextNode(); n; n = w.nextNode()) { const v = tr(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; }
-      acct.querySelectorAll('[placeholder]').forEach(el => { const v = tr(el.placeholder); if (v !== el.placeholder) el.placeholder = v; });
-    };
-    run();
-    new MutationObserver(run).observe(acct, { childList: true, subtree: true, characterData: true });
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); evt = e; renderInstall(); });
+  addEventListener('appinstalled', () => { evt = null; renderInstall(); });
+  $('installBtn').onclick = async () => { if (!evt) return; evt.prompt(); try { await evt.userChoice; } catch (e) {} evt = null; renderInstall(); };
+
+  // ---------- version ----------
+  function renderVersion() {
+    const v = $('ver'); v.textContent = T('バージョン {v}', { v: 'r' + (R ? R.version : '?') });
+    try { if (window.caches && caches.keys) caches.keys().then(ks => { const k = ks.filter(x => /^kobo-/.test(x)).sort().pop(); if (k) v.textContent = T('バージョン {v}', { v: k.replace(/^kobo-/, '') }); }).catch(() => {}); } catch (e) {}
   }
-  KoboCloud.sync({ 'kusoge.blocks.best': 'max', 'kusoge.blocks.state': 'newest', 'kusoge.drop.best': 'max',
-    'kusoge.raft.best': 'max', 'kusoge.raft.save': 'newest', 'kusoge.gates.save': 'newest',
-    'kusoge.n59049.best': 'max', 'kusoge.n59049.state': 'newest', 'kusoge.water.save': 'newest', 'kusoge.parking.save': 'newest', 'kusoge.hole.save': 'newest' });
-  KoboCloud.onChange(s => { if (s.synced) refreshRecords(); });
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+  // ---------- render everything (all from this device; works offline and without login) ----------
+  function renderLocal() { renderHero(); renderContinue(); renderDaily(); renderFav(); renderNew(); refreshRecords(); renderFavState(); renderProfile(); }
+  renderChips(); renderGames(); renderLocal(); renderInstall(); renderVersion();
+  renderRankExcerpt();
+
+  // ---------- login widget + sync (common/cloud.js). Keys come from the registry ----------
+  if (window.KoboCloud) {
+    const acct = $('acct');
+    KoboCloud.mountLogin(acct);
+    let map = null;
+    try { map = P.syncMap(); } catch (e) { map = null; }
+    KoboCloud.sync(map || {});
+    KoboCloud.onChange(s => { cloudState = s; renderProfile(); if (s.synced) renderLocal(); });
+    setTimeout(loadPopular, 1200);
+  }
+  addEventListener('storage', e => { if (!e.key || /^(kobo\.(history|fav|daily|nick)|kusoge\.|nejihodoki3d\.)/.test(e.key)) renderLocal(); });
+  addEventListener('pageshow', e => { if (e.persisted) renderLocal(); });
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
 </body>
