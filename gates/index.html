@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ゲートランナー">
 <script src="../common/i18n.js"></script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -99,6 +100,8 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
   background: rgba(14,20,32,.66); padding: 14px; box-sizing: border-box; text-align: center; gap: 10px; overflow-y: auto; touch-action: pan-y;
 }
 .screen > :first-child { margin-top: auto; }
+#vsSlotTitle { width: 100%; max-width: 360px; }
+#vsSlotTitle .kvs-entry { margin-top: 0; background: rgba(22,32,46,.92); }
 .screen > :last-child { margin-bottom: auto; }
 .screen h2 { font-family: var(--font-display); font-weight: 400; margin: 0; font-size: 28px; line-height: 1.15; text-shadow: 0 3px 0 #0008; }
 .screen h2 em { font-style: normal; color: var(--sun); }
@@ -241,6 +244,7 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
         <button class="btn sub" id="btnBase" data-i18n>基地</button>
         <button class="btn sub" id="btnHeroes" data-i18n>英雄</button>
       </div>
+      <div id="vsSlotTitle"></div>
       <div class="langrow"><span data-i18n>言語</span><span id="langPickT"></span></div>
       <p class="howto" data-i18n-html>左右にドラッグで移動（PCは ← → / A D、Esc で一時停止）<br>部隊は自動で撃つ。▲のゲートは撃つと数字が上がり、▼は下がる！<br>赤く光る地面はボスの攻撃。よけろ！</p>
     </section>
@@ -361,6 +365,8 @@ KoboI18n.add({ en: {
   '自爆ゾンビ（近くで爆発）': 'Bomber (explodes up close)', '盾ゾンビ（正面は効かない・横から撃て）': 'Shield zombie (immune from the front, shoot its side)',
   '出現する敵': 'Enemies', '・': ', ', 'ボス': 'Boss', '体力 {n}・叩きつけ': 'HP {n} · slam', '・突進・呼び寄せ': ' · charge · summon',
   '次のステージには司令部Lv{n}が必要': 'Next stage needs HQ Lv{n}', '戦力不足！ 基地と英雄を強化しよう': 'Too weak! Upgrade your base and heroes',
+  '点': 'pts', '全滅！ {n}秒後に再出撃': 'Wiped out! Back in {n}s', '再出撃！': 'Back in action!',
+  '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} score battle. Same course and same standard team for everyone.',
 } });
 </script>
 <script>
@@ -374,6 +380,7 @@ KoboI18n.apply(); KoboI18n.picker($('langPickT')); KoboI18n.picker($('langPickP'
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const frnd = Math.random; // visual-only randomness
 let seed = (Date.now() ^ 0x5bd1e995) >>> 0;
+const rndG = () => rnd();
 function rnd() { // gameplay randomness (seedable for tests)
   seed = (seed + 0x6D2B79F5) | 0;
   let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
@@ -459,7 +466,8 @@ function migrate(s) {
 function loadSave() {
   try { const raw = localStorage.getItem(SAVE_KEY); save = migrate(raw ? JSON.parse(raw) : null); } catch (e) { save = defSave(); }
 }
-function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+function writeSave() { if (vs) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+let vs = null; // online battle: { snap, seed, leg, dist, bosses, minis } while a match owns the run (see KoboVersus below)
 loadSave();
 if (save.migrated) { delete save.migrated; writeSave(); }
 
@@ -858,13 +866,15 @@ function loseMen(k, why) {
 function addMen(k) { R.n = Math.min(SQUAD_MAX, R.n + Math.max(0, Math.round(k))); R.peak = Math.max(R.peak, R.n); R.bump = 1; updRad(); }
 function die() {
   if (R.phase === 'dead' || R.phase === 'won' || R.phase === 'over') return;
-  R.phase = 'dead'; R.endT = 1.3; R.shake = 0.5;
+  if (vs) { vs.back = R.phase; setBanner(T('全滅！ {n}秒後に再出撃', { n: VS_RESPAWN }), '', VS_RESPAWN - 0.2); }
+  R.phase = 'dead'; R.endT = vs ? VS_RESPAWN : 1.3; R.shake = 0.5;
   burst(R.px, R.dist, 0.6, 30, 0xff4d4d, 6, 0.18);
   vibrate(200); logEv('dead');
 }
 function win() {
   if (R.phase === 'won' || R.phase === 'over' || R.phase === 'dead') return;
   R.phase = 'won'; R.endT = 1.6; R.shake = 0.8;
+  if (vs) vs.bosses++;
   const b = R.boss;
   if (b) { burst(b.x, b.z, 2, 60, 0xffcf33, 9, 0.3); burst(b.x, b.z, 2, 40, 0x9aa3ad, 7, 0.25); flash(b.x, b.z, 5, 0xffb030); b.on = false; }
   for (let i = 0; i < ENT_N; i++) { const e = ents[i]; if (e.on && e.t === T_Z) { burst(e.x, e.z, 0.6, 5, 0x7cd65c, 4, 0.14); e.on = false; } }
@@ -1017,7 +1027,7 @@ function damage(e, d, src) {
       if (e.hp <= 0) {
         e.hp = 0;
         if (e.kind === 1) {
-          e.on = false; R.mini = null; R.miniDone = true; R.phase = 'road';
+          e.on = false; R.mini = null; R.miniDone = true; R.phase = 'road'; if (vs) vs.minis++;
           burst(e.x, e.z, 1.5, 40, 0xffcf33, 8, 0.25); flash(e.x, e.z, 3.5, 0xffb030); sfx.boom(); sfx.good();
           R.coinsRaw += 20; R.truck = Math.min(R.truckCap, R.truck + 20 * R.truckPct * (1 + 0.25 * (R.stage - 1)));
           setBanner(T('中ボス撃破！'), '', 1.2); logEv('mini down');
@@ -1031,6 +1041,8 @@ function openCrate(e) {
   e.on = false; R.mats += 1; R.cratesOpened++;
   burst(e.x, e.z, 0.6, 18, 0xffcf33, 5, 0.18);
   const s = R.stage;
+  // battle: the "?" result comes from the course seed, so the same crate gives everyone the same thing
+  const rnd = vs ? KoboVersus.rng((vs.seed ^ Math.imul(vs.leg + 1, 0x9E3779B1) ^ Math.round(e.z * 16)) >>> 0) : rndG;
   let k = e.ck, msg = '', good = true;
   if (k === '?') {
     const q = rnd();
@@ -1345,7 +1357,7 @@ function update(dt) {
   updParticles(dt);
   if (R.phase === 'dead' || R.phase === 'won') {
     R.endT -= dt;
-    if (R.endT <= 0) endRun(R.phase === 'won');
+    if (R.endT <= 0) { if (vs) { if (R.phase === 'won') vsNextLeg(); else vsRespawn(); } else endRun(R.phase === 'won'); }
   }
 }
 function demoUpdate(dt) {
@@ -2031,7 +2043,7 @@ function renderSelect() {
 $('stPrev').addEventListener('click', () => { if (selStage > 1) { selStage--; sfx.click(); renderSelect(); } });
 $('stNext').addEventListener('click', () => { if (selStage < maxStage()) { selStage++; sfx.click(); renderSelect(); } });
 $('btnStart').addEventListener('click', () => { sfx.click(); save.stage = selStage; writeSave(); startRun(selStage); });
-function pause() { if (mode !== 'run') return; mode = 'paused'; keyL = keyR = false; dragging = false; show('scrPause'); }
+function pause() { if (mode !== 'run' || vs) return; mode = 'paused'; keyL = keyR = false; dragging = false; show('scrPause'); }
 function resume() { if (mode !== 'paused') return; mode = 'run'; show(null); }
 $('btnGo').addEventListener('click', () => { sfx.click(); toSelect(); });
 $('btnBase').addEventListener('click', () => { sfx.click(); toBase(); });
@@ -2058,7 +2070,7 @@ addEventListener('blur', () => { keyL = keyR = false; });
 let dragging = false, dragId = -1, dragX0 = 0, dragP0 = 0;
 const stageEl = $('stage');
 stageEl.addEventListener('pointerdown', e => {
-  if (mode !== 'run' || e.target.closest('button')) return;
+  if (mode !== 'run' || e.target.closest('button') || (vs && !KoboVersus.canPlay())) return;
   dragging = true; dragId = e.pointerId; dragX0 = e.clientX; dragP0 = R.tpx;
   try { stageEl.setPointerCapture(e.pointerId); } catch (err) {}
   e.preventDefault();
@@ -2095,6 +2107,7 @@ function frame(ts) {
   dt = Math.min(dt, 0.05);
   if (simLock) return;
   if (mode === 'paused') { render(0); return; }
+  if (mode === 'run' && vs && !KoboVersus.canPlay()) { render(0); syncHud(dt); return; } // battle: frozen before the start and after time-up
   if (mode === 'run') {
     let rem = dt * timeScale;
     while (rem > 1e-6 && mode === 'run') { const st = Math.min(rem, 0.02); update(st); rem -= st; }
@@ -2111,11 +2124,73 @@ resize();
 toTitle();
 requestAnimationFrame(frame);
 
+/* =============================== online battle (common/versus.js) ===============================
+   3-minute endless run: everyone gets the same seeded course (stage 1, 2, 3… one after another) and the same standard team,
+   whatever their own base and heroes. Score = kills ×10 + distance + 500 per boss + 200 per mid-boss.
+   A wiped-out squad comes back with a small squad after a 3 s penalty and keeps running. */
+const VS_RESPAWN = 3, VS_RESPAWN_N = 10;
+function vsTeam() { // the standard team (never saved)
+  const d = defSave();
+  d.bld = { hq: 2, bar: 3, lab: 3, arm: 3, truck: 1 };
+  for (const h of HEROES) d.heroes[h.id] = { lv: 5, star: 0, cards: 0 };
+  d.sel = ['ren', 'mina', 'bulk'];
+  return d;
+}
+const vsLegSeed = leg => (Math.imul(vs.seed ^ 0x2545F491, leg + 1) ^ (leg * 0x9E3779B1)) >>> 0;
+function vsBuildLeg() { seed = vsLegSeed(vs.leg); buildStage(R.stage); }
+function vsNextLeg() {
+  vs.dist += R.dist; vs.leg++;
+  clearPools();
+  R.stage = 1 + vs.leg; R.dist = 0; R.phase = 'road'; R.boss = null; R.mini = null; R.miniDone = false; R.endT = 0; R.stompT = 0;
+  vsBuildLeg();
+  $('hudStage').textContent = 'STAGE ' + R.stage;
+  setBanner('STAGE ' + R.stage, R.stage >= 4 ? T('中ボスとボスが待ち構える') : T('ボスを倒せ！'), 1.6);
+  hudCache.reset();
+}
+function vsRespawn() {
+  // clear the zombies right in front so the new squad is not wiped out on the spot (no points for those)
+  for (let i = 0; i < ENT_N; i++) { const e = ents[i]; if (e.on && e.t === T_Z && e.z - R.dist < 16) { burst(e.x, e.z, 0.6, 4, 0x7cd65c, 4, 0.14); e.on = false; } }
+  for (const t of tele) t.on = false;
+  R.n = VS_RESPAWN_N; R.peak = Math.max(R.peak, R.n); R.healLost = 0; R.sp = ''; R.bump = 1; R.endT = 0;
+  R.phase = vs.back === 'boss' && R.boss && R.boss.on ? 'boss' : vs.back === 'mini' && R.mini && R.mini.on ? 'mini' : 'road';
+  if (R.phase === 'boss') R.stompT = 1.5;
+  updRad();
+  setBanner(T('再出撃！'), '', 1.2); sfx.power();
+}
+function vsScore() { return vs ? R.kills * 10 + Math.floor(vs.dist + R.dist) + vs.bosses * 500 + vs.minis * 200 : 0; }
+KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員が同じコースを走ります。',
+  game: 'gates', title: T('ゲートランナー'), duration: 180, unit: T('点'),
+  theme: { accent: '#ffcf33', accentInk: '#2d2100', accentShadow: '#b38a12', card: '#223047', line: '#3a4d68',
+    ink: '#f3f6fa', dim: '#a9b8cc', hud: '#16202e', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header'),
+  onOpen() { keyL = keyR = false; dragging = false; },
+  onStart({ seed: sd }) {
+    if (!vs) vs = { snap: { save } };
+    save = vsTeam();
+    vs.seed = sd >>> 0; vs.leg = 0; vs.dist = 0; vs.bosses = 0; vs.minis = 0; vs.back = 'road';
+    keyL = keyR = false; dragging = false; timeScale = 1;
+    startRun(1);           // the standard team on stage 1 (startRun builds a random course…
+    clearPools(); vsBuildLeg(); // …which is replaced by the seeded one)
+    $('pauseBtn').hidden = true;
+  },
+  getScore: vsScore,
+  onEnd() { keyL = keyR = false; dragging = false; },
+  onExit() {
+    if (!vs) return;
+    save = vs.snap.save; vs = null;
+    keyL = keyR = false; dragging = false;
+    $('pauseBtn').hidden = false;
+    toTitle();
+  },
+});
+KoboVersus.button($('vsSlotTitle'));
+
 /* =============================== debug hooks (?debug) =============================== */
 if (DEBUG) {
   window.__gates = {
     R, ents, tele, ZK, HEROES, WEAPONS, hpZ, bossHP, recPower, calcPower, loadout, soldierF, squadDPS, applyOp,
-    get save() { return save; }, get mode() { return mode; },
+    get save() { return save; }, get mode() { return mode; }, get vs() { return vs && { seed: vs.seed, leg: vs.leg, dist: vs.dist, bosses: vs.bosses, minis: vs.minis, score: vsScore() }; },
+    course() { return R.ev.map(e => e.t + ':' + e.z.toFixed(2) + ':' + (e.x != null ? e.x.toFixed(2) : '') + ':' + (e.p != null ? e.p : '') + (e.k != null ? e.k : '') + (e.kind || '')).join('|'); },
     setSeed(n) { seed = n >>> 0; },
     setTimeScale(s) { timeScale = s; },
     god(b) { R.god = !!b; },

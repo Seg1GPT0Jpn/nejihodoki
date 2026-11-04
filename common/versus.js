@@ -64,6 +64,9 @@
     '練習': 'Practice', '練習の記録は残りません': 'Practice scores are not saved',
     '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} score battle. Everyone gets the same pieces in the same order.',
     '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。': '2–4 players, {t} score battle. Everyone gets the same puzzles in the same order.',
+    '2〜4人で {t} のスコア勝負。全員に同じステージが同じ順番で出ます。': '2–4 players, {t} score battle. Everyone gets the same stages in the same order.',
+    '2〜4人で {t} のスコア勝負。全員が同じコースを走ります。': '2–4 players, {t} score battle. Everyone runs the same course.',
+    '2〜4人で {t} のスコア勝負。全員が同じ海、同じいかだから始めます。': '2–4 players, {t} score battle. Everyone starts on the same sea with the same raft.',
     '{m}分': '{m} min', '{s}秒': '{s} s', '{m}分{s}秒': '{m} min {s} s', '{n}位': '#{n}', 'スコア': 'Score',
   } });
   const T = (s, v) => (I18N ? I18N.t(s, v) : String(s).replace(/\{(\w+)\}/g, (m, k) => (v && k in v ? v[k] : m)));

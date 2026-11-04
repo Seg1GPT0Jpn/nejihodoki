@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ネジほどき">
 <script src="../common/i18n.js"></script>
+<script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
@@ -151,6 +152,13 @@ header { min-width: 0; }
 @media (max-width: 340px) { .logo { letter-spacing: 0; } .icon-btn { width: 30px; height: 30px; } header { gap: 4px; } .lv { font-size: 11px; padding: 4px 6px; } }
 /* fit the visible viewport on phones (browser bars included) */
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
+/* online battle entry (common/versus.js) */
+#vsSlot { position: absolute; left: 8px; top: 8px; z-index: 1; }
+#vsSlot .kvs-entry { background: rgba(29,42,53,.82); }
+.card .kvs-entry { margin-top: 0; }
+.help-go { background: var(--steel-2); }
+.row > #vsSlotHelp { flex: none; display: flex; }
+#vsSlotHelp .kvs-entry { height: auto; }
 </style>
 
 <div id="app">
@@ -165,6 +173,7 @@ header { min-width: 0; }
   <div id="tray"></div>
   <div id="stage">
     <canvas id="gl"></canvas>
+    <div id="vsSlot"></div>
     <div id="loading" data-i18n>組み立て中…</div>
     <div class="toast" id="toast" data-i18n>予備スロットがいっぱい</div>
     <div class="hint-line" data-i18n>ドラッグで回転（下からも見られる） ・ ピンチ / ホイールで拡大</div>
@@ -192,7 +201,7 @@ header { min-width: 0; }
       <li data-i18n-html>あと1本で外れる部品はゆらゆら揺れる。予備が埋まって動けなくなったら失敗（<b>戻す</b>で1手ずつ戻せる）</li>
     </ol>
     <p class="note" data-i18n>広告なし・課金なし・個人情報の送信なし。</p>
-    <button class="btn sticky" id="helpClose" data-i18n>はじめる</button>
+    <div class="row sticky help-go"><button class="btn" id="helpClose" data-i18n>はじめる</button><div id="vsSlotHelp"></div></div>
   </div>
 </div>
 <div class="overlay" id="ovWin" hidden>
@@ -219,6 +228,7 @@ header { min-width: 0; }
     <div class="lang-row"><h3 data-i18n>言語 / Language</h3><span id="langPick"></span></div>
     <button class="btn" id="dailyBtn" data-i18n>今日のチャレンジ</button>
     <p class="note" id="dailyNote"></p>
+    <div id="vsSlotMenu"></div>
     <h3 data-i18n>レベルを選ぶ</h3>
     <div class="levels" id="levelGrid"></div>
     <div id="installBox">
@@ -316,6 +326,9 @@ KoboI18n.add({ en: {
   'LEVEL {n} から再開します': 'Resuming from LEVEL {n}',
   'この状態からは解けないかも。「戻す」がおすすめ': 'This may be unsolvable now. Try “Undo”.',
   'これ以上戻せません': 'Nothing more to undo',
+  '点': 'pts', 'クリア！ +{n}点': 'Cleared! +{n} pts', '詰まった！ このレベルを最初から': 'Stuck! Restarting this level',
+  '対戦中は使えません': 'Not available in a battle',
+  '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} score battle. Everyone gets the same models in the same order. 10 pts a screw, 200 per clear.',
 } });
 const COLORS = ['#e5484d', '#3e8ef7', '#f5c518', '#30a46c', '#8e4ec6', '#f76b15', '#e93d82', '#12b5a5'];
 const BUF0 = 5, UNDOS = 3, HINTS = 2;
@@ -1021,7 +1034,8 @@ function buildLevel(level, opt = {}) {
 
   let best = null, bestScore = -1;
   const t0 = performance.now();
-  for (let attempt = 0; attempt < 400 && performance.now() - t0 < 4000; attempt++) {
+  // battles (opt.det): no time limit, so every device builds exactly the same level from the same seed
+  for (let attempt = 0; attempt < (opt.det ? 60 : 400) && (opt.det || performance.now() - t0 < 4000); attempt++) {
     const order = topoOrder();
     if (!order) { console.warn('model deadlock', mdef.name); break; }
     const queue = []; let prev = -1;
@@ -1102,6 +1116,7 @@ function disposeModel(g) {
    Game state
    ========================================================= */
 let S = null;
+let vs = null; // online battle: { snap, seed, k, banked, clears, gen } while a match owns the workbench
 let level = Math.max(1, store.get('level', 1) | 0);
 let maxLevel = Math.max(level, store.get('maxLevel', 1) | 0);
 let soundOn = store.get('sound', true);
@@ -1116,15 +1131,18 @@ function startDaily() {
   daily = { key, label: 'DAILY ' + String(key).slice(4, 6) + '/' + String(key).slice(6) };
   startLevel(12 + key % 7, { seed: key, model: key % MODELS.length });
 }
+let buildGen = 0; // a newer startLevel (or leaving a battle) cancels a build that has not run yet
 function startLevel(n, opt) {
   if (!opt) { daily = null; level = n; store.set('level', n); if (n > maxLevel) { maxLevel = n; store.set('maxLevel', n); } }
   $('loading').hidden = false; hide('ovWin'); hide('ovLose'); confetti = [];
+  const gen = ++buildGen;
   setTimeout(() => {
+    if (gen !== buildGen) return;
     const lv = buildLevel(n, opt || {});
     S = { ...lv, active: [null, null], buffer: new Array(lv.slots).fill(null), flyers: [], hints: HINTS, undos: UNDOS,
       slotUsed: false, hintUsed: false, undoUsed: false, history: [],
       over: false, won: false, winT: 0, hint: null, bufShake: 0, time: 0 };
-    S.active = [newBox(), newBox()]; S.levelNo = n; S.opt = opt || null;
+    S.active = [newBox(), newBox()]; S.levelNo = n; S.opt = opt || null; S.vsK = vs ? vs.k : -1;
     const size = lv.bounds.getSize(V(0, 0, 0)), center = lv.bounds.getCenter(V(0, 0, 0));
     cam.target.set(0, center.y, 0);
     cam.radius = Math.max(size.x, size.z, size.y) * 0.62 + 0.6;
@@ -1186,6 +1204,7 @@ function restore(snap) {
   }
 }
 function undo() {
+  if (vs) return false;
   if (!S || S.won || !S.history.length || S.undos <= 0) return false;
   restore(S.history.pop()); S.undos--; S.undoUsed = true;
   hide('ovLose'); beep(500, .06, 'triangle'); setTimeout(() => beep(380, .08, 'triangle'), 60);
@@ -1292,6 +1311,7 @@ function update(dt) {
   }
 
   if (S.won || S.over) return;
+  if (vs && !KoboVersus.canPlay()) return;
   const animating = S.screws.some(s => s.anim > 0 && s.anim < 1);
   const idle = !animating && S.flyers.length === 0 && S.active.every(b => !b || b.state === 'idle');
   if (liveScrews().length === 0 && idle && S.active.every(b => !b) && !S.queue.length) {
@@ -1468,6 +1488,7 @@ glCanvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist = Math.ma
 const ray = new THREE.Raycaster();
 function tap(cx, cy) {
   if (!S || S.over || S.won) return;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
   const r = glCanvas.getBoundingClientRect();
   ray.setFromCamera({ x: (cx - r.left) / r.width * 2 - 1, y: -((cy - r.top) / r.height) * 2 + 1 }, camera);
   const proxies = liveScrews().filter(s => s.anim === 0).map(s => s.proxy);
@@ -1502,9 +1523,14 @@ function tap(cx, cy) {
 function $(id) { return document.getElementById(id); }
 function show(id) { $(id).hidden = false; } function hide(id) { $(id).hidden = true; }
 function ui() {
-  $('lvLabel').textContent = daily ? daily.label : 'LEVEL ' + level;
+  $('lvLabel').textContent = vs ? 'VS ' + (vs.k + 1) : daily ? daily.label : 'LEVEL ' + level;
   $('soundBtn').style.opacity = soundOn ? 1 : .4;
   if (!S) return;
+  if (vs) { // battle: no undo / hint / extra slot
+    for (const id of ['hintBtn', 'undoBtn', 'slotBtn']) $(id).disabled = true;
+    $('hintLeft').textContent = $('undoLeft').textContent = $('slotLeft').textContent = '—';
+    return;
+  }
   $('hintLeft').textContent = T('のこり {n}', { n: S.hints }); $('hintBtn').disabled = S.hints <= 0;
   $('undoLeft').textContent = T('のこり {n}', { n: S.undos }); $('undoBtn').disabled = S.undos <= 0 || !S.history.length;
   $('slotLeft').textContent = T('のこり {n}', { n: S.slotUsed ? 0 : 1 }); $('slotBtn').disabled = S.slotUsed;
@@ -1517,6 +1543,7 @@ function toast(msg, ok) {
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1400);
 }
 function win() {
+  if (vs) return vsCleared();
   S.won = true;
   const stars = Math.max(1, 3 - (S.hintUsed ? 1 : 0) - (S.undoUsed ? 1 : 0) - (S.slotUsed ? 1 : 0));
   $('winTitle').textContent = T('{label} クリア！', { label: daily ? daily.label : 'LEVEL ' + level });
@@ -1538,9 +1565,9 @@ function win() {
   [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle'), i * 90));
   burst(); show('ovWin');
 }
-function lose() { if (!S.over) return; ui(); show('ovLose'); beep(200, .25, 'sawtooth'); buzz([60, 40, 60]); }
+function lose() { if (!S.over) return; if (vs) return vsStuck(); ui(); show('ovLose'); beep(200, .25, 'sawtooth'); buzz([60, 40, 60]); }
 function addSlot() {
-  if (!S || S.slotUsed) return;
+  if (!S || S.slotUsed || vs) return;
   S.slotUsed = true; S.buffer.push(null); ui();
   if (S.over) { S.over = false; hide('ovLose'); }
 }
@@ -1688,6 +1715,7 @@ $('loadBtn').onclick = () => {
 };
 
 $('hintBtn').onclick = () => {
+  if (vs) return;
   if (!S || S.hints <= 0 || S.over || S.won) return;
   const plan = solve(solverState(), S.buffer.length, 12000);
   if (!plan || !plan.length) { toast(T('この状態からは解けないかも。「戻す」がおすすめ')); return; }
@@ -1704,7 +1732,7 @@ function solverState() {
     act: S.active.filter(Boolean).map(b => ({ c: b.color, n: b.reserved })).concat([null, null]).slice(0, 2),
     locks: S.screws.map(s => s.lockKey ? [s.lockKey.i] : null) };
 }
-$('undoBtn').onclick = () => { if (!undo()) toast(T('これ以上戻せません')); };
+$('undoBtn').onclick = () => { if (vs) return; if (!undo()) toast(T('これ以上戻せません')); };
 // peek: the outermost layer (parts with a reachable screw that cover other screws) turns see-through
 let peeking = false;
 function setPeek(on) {
@@ -1773,8 +1801,92 @@ const boot = data => {
   if (!store.get('seenHelp', false)) show('ovHelp');
   requestAnimationFrame(frame);
 };
+/* ---------- Online battle (common/versus.js) ----------
+   Everyone gets the same seeded levels (fixed mid difficulty that rises by one each level, solver-checked as usual).
+   Score: 10 per screw pulled in the current try + 200 per clear. A stuck level restarts (that try's screws are lost; time keeps running). */
+const VS_LV0 = 4; // difficulty of the first battle level (difficulty(4) = 4 colors, 4 spare slots)
+function vsLevel() {
+  if (!vs) return;
+  const k = vs.k, seed = (Math.imul(vs.seed ^ (k + 1), 2654435761) >>> 0) % 1000000007;
+  daily = null; ui();
+  startLevel(VS_LV0 + k, { seed, model: (vs.seed + k * 3) % MODELS.length, det: true });
+}
+function vsScore() {
+  if (!vs) return 0;
+  const live = S && !S.won && S.vsK === vs.k ? S.screws.filter(s => s.removed).length * 10 : 0;
+  return vs.banked + live;
+}
+function vsCleared() {
+  if (S.won) return;
+  S.won = true;
+  const pts = S.screws.length * 10 + 200;
+  vs.banked += pts; vs.clears++;
+  toast(T('クリア！ +{n}点', { n: 200 }), true);
+  [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle'), i * 90));
+  burst();
+  const gen = vs.gen;
+  setTimeout(() => { if (vs && vs.gen === gen && KoboVersus.canPlay()) { vs.k++; vsLevel(); } }, 1100);
+}
+function vsStuck() {
+  toast(T('詰まった！ このレベルを最初から'));
+  beep(200, .25, 'sawtooth'); buzz([60, 40, 60]);
+  const gen = vs.gen;
+  setTimeout(() => { if (vs && vs.gen === gen && KoboVersus.canPlay()) vsLevel(); }, 1200);
+}
+const VS_OV = ['ovHelp', 'ovWin', 'ovLose', 'ovMenu'];
+KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じステージが同じ順番で出ます。',
+  game: 'neji', title: T('ネジほどき 3D'), duration: 240, unit: T('点'),
+  theme: { accent: '#f2b33d', accentInk: '#2b1d05', accentShadow: '#a8761c', card: '#263744', line: '#3a4f5f',
+    ink: '#eef2f4', dim: '#9fb1bd', hud: '#1d2a35', display: 'var(--font-display)' },
+  hudCover: () => document.querySelector('header'),
+  onStart({ seed }) {
+    if (!vs) {
+      // keep the single-player level (model, progress, overlays) aside untouched; the battle builds its own model
+      vs = { snap: { S, model, level, daily, cam: { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, distBase: cam.distBase, radius: cam.radius, target: cam.target.clone() },
+        open: VS_OV.filter(id => !$(id).hidden) } };
+      scene.remove(model); model = new THREE.Group(); scene.add(model);
+      S = null;
+    }
+    VS_OV.forEach(hide); setPeek(false); $('vsSlot').hidden = true;
+    vs.seed = seed >>> 0; vs.k = 0; vs.banked = 0; vs.clears = 0; vs.gen = (vs.gen || 0) + 1;
+    vsLevel();
+  },
+  onGo() { initAudio(); },
+  getScore: vsScore,
+  onExit() {
+    if (!vs) return;
+    const s = vs.snap; vs = null; buildGen++;
+    scene.remove(model); disposeModel(model);
+    model = s.model; scene.add(model);
+    S = s.S; level = s.level; daily = s.daily;
+    Object.assign(cam, s.cam); cam.target.copy(s.cam.target); cam.yawTo = null; spin = 0;
+    confetti = []; $('loading').hidden = true; $('vsSlot').hidden = false;
+    s.open.forEach(show);
+    if (!S) startLevel(level);
+    setPeek(false); fitCamera(); ui();
+  },
+});
+KoboVersus.button($('vsSlot'), { compact: true });
+KoboVersus.button($('vsSlotHelp'));
+KoboVersus.button($('vsSlotMenu'));
+// common/versus.js waits for this before loading Firebase, so it never races the account sync below
+if (!window.KoboCloud) window.KoboCloud = { ready: () => cloud.init() };
+
 // ---------- debug hook (?debug only): lets automated layout tests open every screen ----------
-if (/[?&]debug\b/.test(location.search)) window.__neji = { win, lose() { if (S) { S.over = true; lose(); } }, toast, openMenu, get ready() { return !!S; } };
+if (/[?&]debug\b/.test(location.search)) window.__neji = { win, lose() { if (S) { S.over = true; lose(); } }, toast, openMenu, get ready() { return !!S; },
+  state() { return S && { name: S.name, levelNo: S.levelNo, vsK: S.vsK, seed: S.opt && S.opt.seed, screws: S.screws.length, removed: S.screws.filter(x => x.removed).length,
+    won: S.won, over: S.over, colors: S.screws.map(x => x.color).join(''), queue: S.queue.join(''), level, score: vsScore(), busy: !$('loading').hidden }; },
+  // test helper: pull the next screw of a solver plan (only when a tap would be allowed); bad = park a non-matching screw
+  move(bad) {
+    if (!S || S.over || S.won || (vs ? !KoboVersus.canPlay() : KoboVersus.active())) return false;
+    if (S.flyers.length || S.screws.some(x => x.anim > 0 && x.anim < 1) || S.active.some(b => b && b.state !== 'idle')) return false;
+    let s = null;
+    if (bad) s = liveScrews().find(x => isExposed(x) && boxFor(x.color) < 0);
+    if (!s) { const plan = solve(solverState(), S.buffer.length, 12000); if (plan && plan.length) s = S.screws[plan[0]]; }
+    if (!s) s = liveScrews().find(isExposed);
+    if (!s) return false;
+    takeScrew(s); return true;
+  } };
 window.claude?.hot?.snapshot?.(() => ({ level }));
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();
