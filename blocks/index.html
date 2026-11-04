@@ -13,133 +13,219 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ブロックはめ">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* Look: dark walnut room, a warm hinoki-wood board, lacquered enamel tiles. Canvas draws board + tray + drag; DOM draws header, score and dialogs. */
-:root {
-  --walnut: #2a1b12;
-  --walnut-2: #3a271b;
-  --line: #5a3f2c;
-  --paper: #fbf1e3;
-  --paper-dim: #c9b29a;
-  --gold: #f4b740;
-  --gold-ink: #2d1b04;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+/* Look: a walnut room (dark) or a paper-and-pine room (light), a warm hinoki-wood board, lacquered enamel tiles.
+   Canvas draws board + tray + drag; DOM draws header, score and dialogs. The UI uses the shared --kb-* tokens,
+   re-tinted here to the walnut palette so KoboUI's menu and settings sheet match the game. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #2a1b12; --kb-surface: #3a271b; --kb-surface-2: #47301f; --kb-sunken: #22160e; --kb-line: #5a3f2c;
+  --kb-ink: #fbf1e3; --kb-dim: #c9b29a;
+  --kb-accent: #f4b740; --kb-accent-ink: #2d1b04; --kb-accent-text: #f4b740; --kb-accent-soft: rgba(244, 183, 64, .16);
+  --kb-scrim: rgba(18, 10, 6, .66); --kb-toast-bg: rgba(20, 12, 8, .94); --kb-focus: #f4b740;
+  --kb-shadow: 0 20px 50px rgba(0, 0, 0, .5);
+  --bk-bg-1: #3b281b; --bk-bg-2: #2a1b12; --bk-bg-3: #1c120c;
+  --bk-card: linear-gradient(#3d2a1d, #2e1f15); --bk-btn-shadow: #a8731a; --bk-hud: rgba(36, 23, 15, .97);
+  --bk-toast: rgba(20, 12, 8, .92); --bk-toast-ink: #fbf1e3;
   color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f6eddf; --kb-surface: #fffaf2; --kb-surface-2: #f1e4d0; --kb-sunken: #eadbc4; --kb-line: #d9c4a6;
+    --kb-ink: #2e1e13; --kb-dim: #6b5443;
+    --kb-accent: #e9a933; --kb-accent-ink: #2b1d05; --kb-accent-text: #8a5a00; --kb-accent-soft: rgba(201, 138, 16, .14);
+    --kb-scrim: rgba(60, 38, 20, .42); --kb-toast-bg: rgba(46, 30, 19, .94); --kb-focus: #9a5b00;
+    --kb-shadow: 0 16px 40px rgba(70, 45, 20, .22);
+    --bk-bg-1: #fffaf1; --bk-bg-2: #f4e8d6; --bk-bg-3: #e8d6bd;
+    --bk-card: linear-gradient(#fffaf2, #f7ecdb); --bk-btn-shadow: #b57d1c; --bk-hud: rgba(255, 249, 240, .97);
+    --bk-toast: rgba(46, 30, 19, .9); --bk-toast-ink: #fff7ea;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f6eddf; --kb-surface: #fffaf2; --kb-surface-2: #f1e4d0; --kb-sunken: #eadbc4; --kb-line: #d9c4a6;
+  --kb-ink: #2e1e13; --kb-dim: #6b5443;
+  --kb-accent: #e9a933; --kb-accent-ink: #2b1d05; --kb-accent-text: #8a5a00; --kb-accent-soft: rgba(201, 138, 16, .14);
+  --kb-scrim: rgba(60, 38, 20, .42); --kb-toast-bg: rgba(46, 30, 19, .94); --kb-focus: #9a5b00;
+  --kb-shadow: 0 16px 40px rgba(70, 45, 20, .22);
+  --bk-bg-1: #fffaf1; --bk-bg-2: #f4e8d6; --bk-bg-3: #e8d6bd;
+  --bk-card: linear-gradient(#fffaf2, #f7ecdb); --bk-btn-shadow: #b57d1c; --bk-hud: rgba(255, 249, 240, .97);
+  --bk-toast: rgba(46, 30, 19, .9); --bk-toast-ink: #fff7ea;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 [hidden] { display: none !important; }
 body {
-  margin: 0; color: var(--paper); font-family: var(--font-body);
-  background: radial-gradient(120% 80% at 50% 30%, #3b281b 0%, var(--walnut) 60%, #1c120c 100%) fixed, var(--walnut);
+  margin: 0; color: var(--kb-ink); font-family: var(--kb-font-body);
+  background: radial-gradient(120% 80% at 50% 30%, var(--bk-bg-1) 0%, var(--bk-bg-2) 60%, var(--bk-bg-3) 100%) fixed, var(--bk-bg-2);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent; overflow: hidden; overscroll-behavior: none;
 }
-#app {
-  position: fixed; inset: 0; display: flex; flex-direction: column;
-  padding: 0;
-}
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0; }
 header {
-  display: flex; align-items: center; gap: 8px; flex: none;
-  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 4px max(12px, env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: 6px; flex: none;
+  padding: max(6px, var(--kb-sat)) max(10px, var(--kb-sar)) 2px max(10px, var(--kb-sal));
 }
 .back {
-  color: var(--paper-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
-  padding: 6px 8px; margin-left: -8px; border-radius: 10px;
+  display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; flex: none;
+  color: var(--kb-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap;
+  padding: 0 8px 0 4px; margin-left: -4px; border-radius: 12px;
 }
-.back:active { background: var(--walnut-2); }
-.back:focus-visible, .icon:focus-visible, .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-h1 { margin: 0 auto; font-family: var(--font-display); font-weight: 400; font-size: 18px; letter-spacing: .06em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-h1 span { color: var(--gold); }
+.back svg { width: 22px; height: 22px; flex: none; }
+.back:active { background: var(--kb-surface); }
+.back:focus-visible, .icon:focus-visible, .btn:focus-visible, .skip:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+h1 { margin: 0 auto; font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; letter-spacing: .06em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+h1 span { color: var(--kb-accent-text); }
 .icon {
-  width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line); background: var(--walnut-2);
-  color: var(--paper); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none;
+  width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-surface);
+  color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; touch-action: manipulation;
 }
-.icon svg { width: 20px; height: 20px; }
+.icon svg { width: 22px; height: 22px; }
 .icon:active { transform: scale(.94); }
-.scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); flex: none; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.mode-bar {
+  flex: none; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 2px; max-width: calc(100% - 24px);
+  padding: 3px 12px; border-radius: 999px; background: var(--kb-accent-soft); border: 1px solid var(--kb-accent);
+  color: var(--kb-ink); font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mode-bar svg { width: 15px; height: 15px; flex: none; color: var(--kb-accent-text); }
+.mode-bar span { overflow: hidden; text-overflow: ellipsis; }
+.mode-bar b { color: var(--kb-accent-text); }
+.mode-bar.done { background: var(--kb-accent); color: var(--kb-accent-ink); }
+.mode-bar.done svg, .mode-bar.done b { color: var(--kb-accent-ink); }
+.scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; padding: 0 max(16px, var(--kb-sar)) 6px max(16px, var(--kb-sal)); flex: none; }
 .score-main { text-align: center; }
-.score-main b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 40px; line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-.label { font-size: 11px; color: var(--paper-dim); letter-spacing: .12em; font-weight: 800; }
-.score-best { text-align: right; justify-self: end; padding-bottom: 4px; }
-.score-best b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 17px; color: var(--gold); font-variant-numeric: tabular-nums; }
+.score-main b { display: block; font-family: var(--kb-font-display); font-weight: 400; font-size: 40px; line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: .02em; transform-origin: 50% 70%; }
+.score-main b.bump { animation: bump .32s cubic-bezier(.2,1.6,.4,1); }
+.label { font-size: 11px; color: var(--kb-dim); letter-spacing: .12em; font-weight: 800; }
+.score-best { text-align: right; justify-self: end; padding-bottom: 4px; min-width: 0; }
+.score-best b { display: block; font-family: var(--kb-font-display); font-weight: 400; font-size: 17px; color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
 .combo-chip {
-  justify-self: start; margin-bottom: 6px; font-size: 12px; font-weight: 800; color: var(--gold-ink); background: var(--gold);
+  justify-self: start; margin-bottom: 6px; font-size: 12px; font-weight: 800; color: var(--kb-accent-ink); background: var(--kb-accent);
   border-radius: 999px; padding: 3px 10px; white-space: nowrap; transition: opacity .2s, transform .2s;
 }
 .combo-chip.off { opacity: 0; transform: scale(.8); }
-#play { position: relative; flex: 1; min-height: 0; touch-action: none; margin: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+/* tutorial coach: takes the place of the score row */
+.coach {
+  flex: none; display: flex; align-items: center; gap: 10px; margin: 2px max(12px, var(--kb-sar)) 6px max(12px, var(--kb-sal));
+  padding: 8px 8px 8px 14px; min-height: 60px; border-radius: 16px; background: var(--kb-surface); border: 1px solid var(--kb-accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,.18); animation: rise .3s cubic-bezier(.2,1.3,.4,1);
+}
+.coach .step { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 14px var(--kb-font-display); }
+.coach p { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
+.coach p small { display: block; font-size: 11.5px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.skip {
+  flex: none; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--kb-line); background: transparent;
+  color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; touch-action: manipulation;
+}
+.skip.go { background: var(--kb-accent); border-color: var(--kb-accent); color: var(--kb-accent-ink); padding: 0 16px; font-size: 15px; box-shadow: 0 3px 0 var(--bk-btn-shadow); }
+.coach.nudge { animation: nudge .35s; }
+#play { position: relative; flex: 1; min-height: 0; touch-action: none; margin: 0 var(--kb-sar) var(--kb-sab) var(--kb-sal); }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .toast {
-  position: absolute; left: 50%; top: 8px; transform: translateX(-50%); background: rgba(20,12,8,.92); border: 1px solid var(--line);
-  color: var(--paper); font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
-  max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis;
-  transition: opacity .2s;
+  position: absolute; left: 50%; top: 8px; transform: translateX(-50%); background: var(--bk-toast); border: 1px solid var(--kb-line);
+  color: var(--bk-toast-ink); font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+  max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; transition: opacity .2s;
 }
+.toast.gold { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
 .toast.off { opacity: 0; }
 .vs-slot { display: contents; }
-#vsSlotOver .kvs-entry { margin-top: 12px; }
-@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
-@media (max-width: 370px) { header { gap: 5px !important; } .back { font-size: 12px; padding: 6px 4px; margin-left: -4px; } h1 { font-size: 15px !important; letter-spacing: .02em !important; } }
-@media (max-width: 340px) { h1 { font-size: 14px !important; letter-spacing: 0 !important; } }
+#vsSlotOver .kvs-entry { margin-top: 10px; min-height: 44px; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } .back span { display: none; } .back { padding-right: 4px; } }
+@media (max-width: 370px) { header { gap: 4px; } h1 { font-size: 15px; letter-spacing: .02em; } }
+@media (max-width: 340px) { h1 { font-size: 14px; letter-spacing: 0; } }
 .overlay {
-  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;
-  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  background: rgba(18,10,6,.66); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 30;
+  height: var(--kb-vh);
+  padding: max(12px, var(--kb-sat)) max(12px, var(--kb-sar)) max(12px, var(--kb-sab)) max(12px, var(--kb-sal));
+  background: var(--kb-scrim); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
   animation: fade .3s ease-out;
 }
 .card {
-  width: min(320px, 100%); background: linear-gradient(#3d2a1d, #2e1f15); border: 1px solid var(--line); border-radius: 22px;
-  padding: 24px 22px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  width: min(340px, 100%); background: var(--bk-card); border: 1px solid var(--kb-line); border-radius: 22px; color: var(--kb-ink);
+  padding: 22px 20px 18px; text-align: center; box-shadow: var(--kb-shadow);
   max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
   animation: rise .35s cubic-bezier(.2,1.4,.4,1);
 }
-.card h2 { overflow-wrap: anywhere; margin: 0 0 14px; font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: .05em; }
-.card .big { font-family: var(--font-display); font-size: clamp(24px, 8vw, 38px); overflow-wrap: anywhere; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.card .best { margin-top: 6px; color: var(--paper-dim); font-size: 14px; font-weight: 800; }
-.card .best b { color: var(--gold); font-variant-numeric: tabular-nums; }
-.newrec { display: inline-block; margin-top: 10px; background: var(--gold); color: var(--gold-ink); font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; }
+.card h2 { overflow-wrap: anywhere; margin: 0 0 12px; font-family: var(--kb-font-display); font-weight: 400; font-size: 25px; letter-spacing: .05em; line-height: 1.2; }
+.card .big { font-family: var(--kb-font-display); font-size: clamp(24px, 8vw, 38px); overflow-wrap: anywhere; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.card .best { margin-top: 6px; color: var(--kb-dim); font-size: 14px; font-weight: 800; }
+.card .best b { color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin-top: 10px; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; animation: glow 1.4s ease-in-out infinite; }
+.goal { display: inline-block; margin-top: 10px; font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--kb-line); color: var(--kb-dim); }
+.goal.ok { background: var(--kb-accent); border-color: var(--kb-accent); color: var(--kb-accent-ink); }
 .btn {
-  display: block; width: 100%; margin-top: 20px; border: 0; border-radius: 14px; padding: 14px; cursor: pointer;
-  font: 800 17px var(--font-body); background: var(--gold); color: var(--gold-ink); box-shadow: 0 4px 0 #a8731a;
+  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: 18px; border: 0; border-radius: 14px; padding: 10px 14px; cursor: pointer;
+  font: 800 17px var(--kb-font-body); background: var(--kb-accent); color: var(--kb-accent-ink); box-shadow: 0 4px 0 var(--bk-btn-shadow); text-decoration: none; touch-action: manipulation;
 }
-.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #a8731a; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--bk-btn-shadow); }
+.btn.sub { min-height: 46px; margin-top: 10px; font-size: 15px; background: transparent; color: var(--kb-ink); border: 1px solid var(--kb-line); box-shadow: none; }
+.btn.sub:active { transform: scale(.98); }
+.btn.link { min-height: 44px; margin-top: 6px; font-size: 14px; background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; }
+/* how to play */
+.howto h2 { margin-bottom: 8px; }
+.howto ol { list-style: none; margin: 0; padding: 0; text-align: left; display: grid; gap: 10px; }
+.howto li { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; background: var(--kb-surface); border: 1px solid var(--kb-line); }
+.howto li svg { flex: none; width: 64px; height: 48px; }
+.howto li p { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
+.howto li p small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 2px; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.16); } 100% { transform: scale(1); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
+@keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @media (prefers-reduced-motion: reduce) {
-  .overlay, .card { animation: none; }
+  .overlay, .card, .coach, .newrec, .score-main b.bump, .coach.nudge { animation: none; }
   .combo-chip, .toast { transition: none; }
 }
-@media (max-width: 340px) { h1 { font-size: 16px; letter-spacing: .02em; } header { gap: 6px; } }
 @media (max-height: 640px) {
   .score-main b { font-size: 32px; }
-  header { padding-top: 4px; }
+  header { padding-top: max(4px, var(--kb-sat)); }
+  .howto li { padding: 6px 8px; } .howto li svg { width: 52px; height: 40px; }
+  .card { padding-top: 16px; padding-bottom: 14px; } .card h2 { font-size: 22px; margin-bottom: 8px; }
 }
-/* fit the visible viewport on phones (browser bars included) */
+@media (max-height: 420px) {
+  .howto ol { grid-template-columns: 1fr 1fr 1fr; gap: 6px; } .howto li { flex-direction: column; text-align: center; gap: 4px; }
+  .card { width: min(560px, 100%); }
+}
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+    <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
     <h1 data-i18n-html>ブロック<span>はめ</span></h1>
     <span id="vsSlot" class="vs-slot"></span>
-    <button class="icon" id="restart" type="button" aria-label="最初から" data-i18n-attr="aria-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
-    </button>
     <button class="icon" id="sound" type="button" aria-label="サウンド" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
   </header>
-  <div class="scores">
+  <div class="mode-bar" id="modeBar" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    <span id="modeText"></span>
+  </div>
+  <div class="scores" id="scores">
     <div class="combo-chip off" id="comboChip" data-i18n>コンボ ×2</div>
     <div class="score-main"><span class="label" data-i18n>スコア</span><b id="score">0</b></div>
-    <div class="score-best"><span class="label" data-i18n>ベスト</span><b id="best">0</b></div>
+    <div class="score-best"><span class="label" id="bestLabel" data-i18n>ベスト</span><b id="best">0</b></div>
+  </div>
+  <div class="coach" id="coach" hidden role="status" aria-live="polite">
+    <span class="step" id="coachStep">1</span>
+    <p id="coachText"></p>
+    <button class="skip" id="coachBtn" type="button" data-i18n>スキップ</button>
   </div>
   <div id="play">
     <canvas id="cv" data-i18n-attr="aria-label" aria-label="ゲーム盤。下のブロックを盤へドラッグして置く"></canvas>
@@ -151,28 +237,77 @@ h1 span { color: var(--gold); }
     <h2 id="overTitle" data-i18n>置き場がない！</h2>
     <div class="label" data-i18n>スコア</div>
     <div class="big" id="overScore">0</div>
-    <div class="best"><span data-i18n>ベスト</span> <b id="overBest">0</b></div>
+    <div class="best"><span id="overBestLabel" data-i18n>ベスト</span> <b id="overBest">0</b></div>
     <div id="overNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+    <div id="overGoal" class="goal" hidden></div>
     <button class="btn" id="again" type="button" data-i18n>もう一度</button>
+    <button class="btn sub" id="overAlt" type="button"></button>
     <div id="vsSlotOver"></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <ol>
+      <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="30" rx="5" fill="#d9ad72"/><g fill="#3e64b8"><rect x="22" y="36" width="9" height="9" rx="2"/><rect x="32" y="36" width="9" height="9" rx="2"/></g><path d="M36 33 V14" stroke="#f4b740" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 4"/><path d="M30 18 l6 -7 l6 7" fill="none" stroke="#f4b740" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p data-i18n-html>下のブロックを、盤へ<b>ドラッグ</b>して置く<small>回したりはできません</small></p></li>
+      <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="6" width="60" height="36" rx="5" fill="#d9ad72"/><rect x="4" y="18" width="56" height="11" rx="3" fill="#fff3d6" opacity=".9"/><g fill="#e2553c"><rect x="6" y="19.5" width="8" height="8" rx="2"/><rect x="15" y="19.5" width="8" height="8" rx="2"/><rect x="24" y="19.5" width="8" height="8" rx="2"/></g><g fill="#5fa548"><rect x="33" y="19.5" width="8" height="8" rx="2"/><rect x="42" y="19.5" width="8" height="8" rx="2"/><rect x="51" y="19.5" width="8" height="8" rx="2"/></g><path d="M9 12l2 3M32 9v4M55 12l-2 3M9 37l2-3M32 39v-4M55 37l-2-3" stroke="#f4b740" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <p data-i18n-html>縦か横の列が<b>そろうと消えて</b>得点<small>続けて消すとコンボで大きく伸びる</small></p></li>
+      <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="30" rx="5" fill="#d9ad72"/><g fill="#9a6ccc"><rect x="6" y="6" width="9" height="9" rx="2"/><rect x="16" y="6" width="9" height="9" rx="2"/><rect x="36" y="6" width="9" height="9" rx="2"/><rect x="6" y="18" width="9" height="9" rx="2"/><rect x="26" y="18" width="9" height="9" rx="2"/><rect x="46" y="18" width="9" height="9" rx="2"/></g><g fill="#26a3a6" opacity=".4"><rect x="20" y="36" width="9" height="9" rx="2"/><rect x="30" y="36" width="9" height="9" rx="2"/><rect x="40" y="36" width="9" height="9" rx="2"/></g></svg>
+        <p data-i18n-html>3つとも置くと次の3つ。<b>置き場がなくなったら</b>おしまい<small>置けないブロックは薄くなる</small></p></li>
+    </ol>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+<script src="../common/game.js"></script>
 <script>
 (() => {
 'use strict';
 const T = KoboI18n.t;
 KoboI18n.add({ en: {
-  'ブロックはめ': 'Block Fit', '← ゲーム一覧': '← Games', 'ブロック<span>はめ</span>': 'Block <span>Fit</span>',
-  '最初から': 'Restart', 'コンボ ×2': 'Combo ×2', 'コンボ ×{n}': 'Combo ×{n}', 'スコア': 'SCORE', 'ベスト': 'BEST',
+  'ブロックはめ': 'Block Fit', 'ゲーム一覧': 'Games', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games',
+  'ブロック<span>はめ</span>': 'Block <span>Fit</span>', 'メニュー': 'Menu',
+  'コンボ ×2': 'Combo ×2', 'コンボ ×{n}': 'Combo ×{n}', 'スコア': 'SCORE', 'ベスト': 'BEST', '今日のベスト': 'TODAY',
   'ゲーム盤。下のブロックを盤へドラッグして置く': 'Game board. Drag the blocks below onto the board.',
   '置き場がない！': 'No room left!', 'ベスト更新！': 'New best!', 'もう一度': 'Play again',
   '全消し！': 'All clear!', '{n}ライン！': '{n} lines!', 'ダブル！': 'Double!',
   'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
-  '新しいゲーム': 'New game', 'もう一度押すと最初から': 'Tap again to restart',
-  '点': 'pts', '置き場がない！ 盤をリセット': 'No room! Board reset',
+  '新しいゲーム': 'New game', '点': 'pts', '置き場がない！ 盤をリセット': 'No room! Board reset',
+  // how to play
+  '遊び方': 'How to play', 'やってみる': 'Try it', '説明だけでOK': 'Skip the tutorial', 'とじる': 'Close', 'チュートリアルをもう一度': 'Replay the tutorial',
+  '下のブロックを、盤へ<b>ドラッグ</b>して置く<small>回したりはできません</small>': '<b>Drag</b> a block from the tray onto the board<small>Blocks can’t be rotated</small>',
+  '縦か横の列が<b>そろうと消えて</b>得点<small>続けて消すとコンボで大きく伸びる</small>': 'Fill a row or column and it <b>clears</b> for points<small>Clear on back-to-back moves for a combo</small>',
+  '3つとも置くと次の3つ。<b>置き場がなくなったら</b>おしまい<small>置けないブロックは薄くなる</small>': 'Place all three to get three more. The game ends <b>when nothing fits</b><small>Blocks that can’t fit are faded</small>',
+  // tutorial
+  'スキップ': 'Skip', 'はじめる': 'Start',
+  'ゆれているブロックを、光っている所へ運ぼう': 'Drag the bobbing block to the glowing spot',
+  '指で押さえたまま動かして、はなすと置ける': 'Hold it, move, and let go to drop it',
+  'そろった！ 次は縦の列': 'Cleared! Now a column',
+  '縦長のブロックで、縦の列をうめよう': 'Fill the column with the tall block',
+  '最後の1つを、好きな所へ': 'Put the last block anywhere you like',
+  '3つとも置くと、新しい3つが出てくる': 'Place all three and you get three new ones',
+  '準備OK！ 置き場がなくなるまで続けよう': 'Ready! Keep going until nothing fits',
+  '列を続けて消すとコンボ。スコアが大きく伸びる': 'Clear lines on back-to-back moves for big combos',
+  'ゆれているブロックを動かそう': 'Move the bobbing block',
+  'がんばって！': 'Good luck!',
+  // daily
+  '今日のチャレンジ': 'Daily challenge', '今日のチャレンジ（{d}）': 'Daily challenge ({d})', 'ふつうのゲームへ': 'Back to normal game',
+  'ふつうのゲームに戻る': 'Back to normal game', '{m}月{d}日': '{mon} {d}',
+  '目標 <b>{g}</b> 点': 'Goal <b>{g}</b> pts', '目標達成！ <b>{g}</b> 点': 'Goal reached! <b>{g}</b> pts',
+  '目標達成！': 'Goal reached!', '目標まで あと {n} 点': '{n} pts to the goal', '今日のチャレンジ 終了': 'Daily challenge over',
+  '今日のベスト {b} 点 ・ {n} 回目': 'Today’s best {b} pts · try #{n}',
+  '全員が同じ順番のブロックで遊ぶ、1日1つの問題。何度でも挑戦できます。': 'One puzzle a day: everyone gets the same blocks in the same order. Try as many times as you like.',
+  '今日のチャレンジをやめますか？': 'Leave the daily challenge?', '今の盤は保存されます。': 'Your board is saved for today.',
+  'やめる': 'Leave', 'つづける': 'Keep playing',
 } });
-const N = 8;
-const KEY_BEST = 'kusoge.blocks.best', KEY_STATE = 'kusoge.blocks.state', KEY_SOUND = 'kusoge.sound';
+const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const N = 8, GAME = 'blocks';
+const KEY_BEST = 'kusoge.blocks.best', KEY_STATE = 'kusoge.blocks.state', KEY_DAILY = 'kusoge.blocks.daily';
+const KEY_HOWTO = 'kusoge.blocks.howto', KEY_TUT = 'kusoge.blocks.tutorial';
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const G = () => window.KoboGame || null;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
@@ -180,6 +315,7 @@ const store = {
 };
 const reduceMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reduceMQ.matches;
+const fmt = n => (Number(n) || 0).toLocaleString('ja-JP');
 
 // ---------- Palette (lacquer / enamel) ----------
 const COLORS = ['#e2553c', '#3e64b8', '#5fa548', '#efb22d', '#9a6ccc', '#26a3a6', '#e8729a', '#d9822b'];
@@ -221,8 +357,10 @@ for (const [name, base, nrot, weight, color] of FAMILIES) {
       w: Math.max(...cells.map(c => c[1])) + 1, h: Math.max(...cells.map(c => c[0])) + 1 });
   }
 }
+const pidOf = (name, w, h) => PIECES.findIndex(p => p.name === name && p.w === w && p.h === h);
 const TOTAL_W = PIECES.reduce((s, p) => s + p.weight, 0);
-// online battle: every player draws pieces from the same seeded sequence (see KoboVersus below)
+// Normal play uses Math.random (with a fairness re-roll). The daily challenge and online battle draw from a seeded
+// sequence with no re-roll, so everyone gets the same pieces in the same order whatever their board looks like.
 let rnd = Math.random, vs = null; // vs = { snap } while a versus match owns the board
 function randomPiece() {
   let r = rnd() * TOTAL_W;
@@ -231,7 +369,12 @@ function randomPiece() {
 }
 
 // ---------- State ----------
-let board, tray, score, combo, best, over = false, moves = 0;
+// mode: 'normal' | 'daily' | 'tutorial' (an online match is `vs`, on top of whichever mode was showing)
+let mode = 'normal', board, tray, score, combo, best, over = false, moves = 0;
+let daily = null;          // { dateKey, seed, goal, best, tries, reached } while mode === 'daily'
+let draws = 0;             // pieces drawn from the daily sequence (saved, so a reload continues the same sequence)
+let sess = null;           // the play session reported to KoboGame (play_start → play_end)
+let bestAtStart = 0, bestToasted = false, goalToasted = false;
 best = parseInt(store.get(KEY_BEST), 10) || 0;
 
 function fits(pid, r0, c0) {
@@ -244,8 +387,9 @@ function fitsAnywhere(pid) {
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (fits(pid, r, c)) return true;
   return false;
 }
+const seeded = () => !!vs || mode === 'daily';
 function deal() {
-  if (vs) { // seeded: the same three pieces for everyone, whatever their board looks like
+  if (seeded()) { // the same three pieces for everyone, whatever their board looks like
     tray = [randomPiece(), randomPiece(), randomPiece()];
     dealAnim = reduced() ? null : { t0: performance.now() };
     return;
@@ -262,39 +406,76 @@ function deal() {
     if (smalls.length && Math.random() < 0.7) best3[Math.floor(Math.random() * 3)] = smalls[Math.floor(Math.random() * smalls.length)];
   }
   tray = best3;
-  const now = performance.now();
-  dealAnim = reduced() ? null : { t0: now };
+  dealAnim = reduced() ? null : { t0: performance.now() };
 }
-function newGame() {
+function resetRun() {
   board = new Array(N * N).fill(-1);
   score = 0; combo = 0; moves = 0; over = false;
-  effects.length = 0; popups.length = 0; placeFx = null;
+  effects.length = 0; popups.length = 0; placeFx = null; drag = null; returning = null;
+  bestAtStart = best; bestToasted = false; goalToasted = false;
+}
+function newGame() {
+  endPlay('quit');
+  resetRun();
+  if (mode === 'daily') { rnd = dailyRng(daily.seed, 0); }
   deal();
   hideOver(); updateHud(true); save(); requestDraw();
 }
 function save() {
-  if (vs) return; // online matches never touch the single-player save
-  if (over) { store.del(KEY_STATE); return; }
-  store.set(KEY_STATE, JSON.stringify({ v: 1, board, tray, score, combo, moves }));
+  if (vs || mode === 'tutorial' || !board) return; // online matches and the tutorial never touch the saves
+  const k = mode === 'daily' ? KEY_DAILY : KEY_STATE;
+  if (over) { store.del(k); return; }
+  const o = { v: 1, board, tray, score, combo, moves, b0: bestAtStart };
+  if (mode === 'daily') { o.dateKey = daily.dateKey; o.draws = draws; }
+  store.set(k, JSON.stringify(o));
+}
+// v:1 = { v, board[64], tray[3], score, combo, moves } (+ b0: best when this run started, added later; daily: dateKey, draws)
+function readSave(k) {
+  try {
+    const s = JSON.parse(store.get(k));
+    if (!s || s.v !== 1 || !Array.isArray(s.board) || s.board.length !== N * N || !Array.isArray(s.tray) || s.tray.length !== 3) return null;
+    if (!s.board.every(v => Number.isInteger(v) && v >= -1 && v < COLORS.length)) return null;
+    if (!s.tray.every(v => v === null || (Number.isInteger(v) && v >= 0 && v < PIECES.length))) return null;
+    return s;
+  } catch (e) { return null; }
+}
+function applySave(s) {
+  board = s.board; tray = s.tray; score = Math.max(0, s.score | 0); combo = Math.max(0, s.combo | 0); moves = Math.max(0, s.moves | 0);
+  over = false; effects.length = 0; popups.length = 0; placeFx = null; drag = null; returning = null;
+  bestAtStart = Number.isFinite(s.b0) ? Math.min(s.b0, best) : best;
+  bestToasted = score > bestAtStart; goalToasted = false;
 }
 function load() {
-  try {
-    const s = JSON.parse(store.get(KEY_STATE));
-    if (!s || s.v !== 1 || !Array.isArray(s.board) || s.board.length !== N * N || !Array.isArray(s.tray) || s.tray.length !== 3) return false;
-    if (!s.board.every(v => Number.isInteger(v) && v >= -1 && v < COLORS.length)) return false;
-    if (!s.tray.every(v => v === null || (Number.isInteger(v) && v >= 0 && v < PIECES.length))) return false;
-    board = s.board; tray = s.tray; score = Math.max(0, s.score | 0); combo = Math.max(0, s.combo | 0); moves = s.moves | 0;
-    over = false;
-    if (tray.every(v => v === null)) deal();
-    return true;
-  } catch (e) { return false; }
+  const s = readSave(KEY_STATE);
+  if (!s) return false;
+  applySave(s);
+  if (tray.every(v => v === null)) deal();
+  return true;
+}
+function stuck() { return !tray.some(v => v !== null && fitsAnywhere(v)); }
+
+// ---------- Play sessions (KoboGame events) ----------
+function startPlay() {
+  if (sess || vs || mode === 'tutorial') return;
+  sess = { mode, t0: performance.now(), lines: 0, maxCombo: 0, dateKey: mode === 'daily' ? daily.dateKey : undefined };
+  const g = G(); if (g) g.emit('play_start', mode === 'daily' ? { mode, dateKey: daily.dateKey, seed: daily.seed } : { mode });
+}
+function endPlay(reason) {
+  if (!sess) return;
+  const s = sess; sess = null;
+  const g = G(); if (!g) return;
+  if (s.mode === 'normal' && score > bestAtStart) g.emit('best', { score });
+  g.emit('play_end', { mode: s.mode, score, reason, dateKey: s.dateKey, durationMs: Math.round(performance.now() - s.t0),
+    stats: { moves, lines: s.lines, maxCombo: s.maxCombo } });
 }
 
 // ---------- Scoring & placement ----------
 const lineScore = n => 10 * n * (n + 1) / 2; // 1:10 2:30 3:60 4:100 ...
+let shake = null;
 function place(i, r0, c0) {
   const pid = tray[i], p = PIECES[pid];
   const now = performance.now();
+  startPlay();
   const placed = [];
   for (const [r, c] of p.cells) { board[(r0 + r) * N + c0 + c] = p.color; placed.push((r0 + r) * N + c0 + c); }
   tray[i] = null; moves++;
@@ -307,6 +488,7 @@ function place(i, r0, c0) {
   const lines = rows.length + cols.length;
   if (lines) {
     combo++;
+    if (sess) { sess.lines += lines; sess.maxCombo = Math.max(sess.maxCombo, combo); }
     const clr = new Set();
     rows.forEach(r => { for (let c = 0; c < N; c++) clr.add(r * N + c); });
     cols.forEach(c => { for (let r = 0; r < N; r++) clr.add(r * N + c); });
@@ -319,7 +501,7 @@ function place(i, r0, c0) {
       board[idx] = -1;
     }
     let pts = lineScore(lines) * combo;
-    let allClear = board.every(v => v < 0);
+    const allClear = board.every(v => v < 0);
     if (allClear) pts += 300;
     gain += pts;
     const cx = (cols.length ? cols.reduce((a, b) => a + b, 0) / cols.length : pc - .5) + .5;
@@ -331,8 +513,10 @@ function place(i, r0, c0) {
     else if (lines >= 3) label = T('{n}ライン！', { n: lines });
     else if (lines === 2) label = T('ダブル！');
     if (label) popups.push({ text: label, x: N / 2, y: N / 2 - .3, t0: now + 60, size: 1.8, banner: true });
-    sfxClear(lines, combo);
-    buzz(lines > 1 || combo > 1 ? [18, 40, 22] : 16);
+    const big = allClear || lines > 1 || combo > 1;
+    if (big && !reduced()) shake = { t0: now + 40, amp: Math.min(7, 2 + lines * 1.2 + combo * 0.8) };
+    sfxClear(lines, combo, allClear);
+    buzz(big ? [18, 40, 22] : 16);
   } else {
     combo = 0;
     sfxPlace();
@@ -341,109 +525,327 @@ function place(i, r0, c0) {
   score += gain;
   if (tray.every(v => v === null)) deal();
   updateHud();
-  if (!tray.some(v => v !== null && fitsAnywhere(v))) {
+  milestones();
+  if (mode === 'tutorial') { tutAfterPlace(lines); requestDraw(); return; }
+  if (stuck()) {
     if (vs) { setTimeout(vsStuck, reduced() ? 150 : 450); requestDraw(); return; }
-    over = true;
-    save();
-    setTimeout(gameOver, reduced() ? 250 : 750);
+    finishRun();
   } else save();
   requestDraw();
 }
+// best / goal passed during a run: a small celebration without stopping play
+function milestones() {
+  if (vs || mode === 'tutorial') return;
+  if (mode === 'normal' && !bestToasted && bestAtStart > 0 && score > bestAtStart) {
+    bestToasted = true; toast(T('ベスト更新！'), true); sfx('best');
+  }
+  if (mode === 'daily' && !goalToasted && score >= daily.goal) {
+    goalToasted = true; toast(T('目標達成！'), true); sfx('best'); renderMode();
+  }
+}
+let overInfo = null;
+function finishRun() {
+  over = true;
+  const isNew = mode === 'normal' && score > 0 && score > bestAtStart;
+  if (mode === 'normal') { if (score > best) best = score; store.set(KEY_BEST, String(best)); }
+  save(); // deletes the run's save (a tombstone in the cloud, so the finished board doesn't come back: R3)
+  const reason = mode === 'daily' && score >= daily.goal ? 'clear' : 'over';
+  endPlay(reason);
+  if (mode === 'daily') refreshDaily();
+  overInfo = { isNew, score };
+  setTimeout(gameOver, reduced() ? 250 : 750);
+}
 function gameOver() {
-  const isNew = score > 0 && score >= best && score > prevBestAtStart;
-  if (score > best) best = score;
-  store.set(KEY_BEST, String(best));
-  store.del(KEY_STATE);
-  $('overScore').textContent = score.toLocaleString('ja-JP');
-  $('overBest').textContent = best.toLocaleString('ja-JP');
-  $('overNew').hidden = !isNew;
+  if (!over || vs) return;
+  const info = overInfo || { isNew: false, score };
+  const isDaily = mode === 'daily';
+  $('overTitle').textContent = isDaily ? T('今日のチャレンジ 終了') : T('置き場がない！');
+  $('overScore').textContent = fmt(score);
+  $('overNew').hidden = !info.isNew;
+  const goal = $('overGoal');
+  if (isDaily) {
+    const d = daily;
+    $('overBestLabel').textContent = T('今日のベスト');
+    $('overBest').textContent = fmt(d.best);
+    goal.hidden = false;
+    goal.classList.toggle('ok', score >= d.goal);
+    goal.textContent = score >= d.goal ? T('目標達成！') : T('目標まで あと {n} 点', { n: fmt(d.goal - score) });
+    $('overAlt').textContent = T('ふつうのゲームへ');
+  } else {
+    $('overBestLabel').textContent = T('ベスト');
+    $('overBest').textContent = fmt(best);
+    goal.hidden = true;
+    $('overAlt').textContent = T('今日のチャレンジ');
+    $('overAlt').hidden = !dailyAvailable();
+  }
+  if (isDaily) $('overAlt').hidden = false;
   $('over').hidden = false;
-  sfxOver(); buzz([30, 60, 30]);
+  if (info.isNew) { sfx('win'); buzz([20, 50, 20, 50, 40]); } else { sfx('over'); buzz([30, 60, 30]); }
   setTimeout(() => $('again').focus({ preventScroll: true }), 50);
 }
-function hideOver() { $('over').hidden = true; prevBestAtStart = best; }
-let prevBestAtStart = best;
+function hideOver() { $('over').hidden = true; }
 
 // ---------- HUD ----------
 const $ = id => document.getElementById(id);
-let shownScore = 0, hudAnim = 0;
+let shownScore = 0, hudAnim = 0, lastScore = 0;
 function updateHud(instant) {
-  if (!vs && score > best) { best = score; store.set(KEY_BEST, String(best)); }
-  $('best').textContent = best.toLocaleString('ja-JP');
+  if (!vs && mode === 'normal' && score > best) { best = score; store.set(KEY_BEST, String(best)); }
+  const isDaily = mode === 'daily' && !vs;
+  $('bestLabel').textContent = isDaily ? T('今日のベスト') : T('ベスト');
+  $('best').textContent = fmt(isDaily ? Math.max(daily.best, score) : best);
   const chip = $('comboChip');
   if (combo >= 2) { chip.textContent = T('コンボ ×{n}', { n: combo }); chip.classList.remove('off'); } else chip.classList.add('off');
-  if (instant || reduced()) { shownScore = score; $('score').textContent = score.toLocaleString('ja-JP'); return; }
+  const el = $('score');
+  if (!instant && score > lastScore && !reduced()) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  lastScore = score;
+  if (instant || reduced()) { cancelAnimationFrame(hudAnim); shownScore = score; el.textContent = fmt(score); return; }
   cancelAnimationFrame(hudAnim);
   const from = shownScore, to = score, t0 = performance.now();
   const step = t => {
     const k = Math.min(1, (t - t0) / 380);
     shownScore = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
-    $('score').textContent = shownScore.toLocaleString('ja-JP');
+    el.textContent = fmt(shownScore);
     if (k < 1) hudAnim = requestAnimationFrame(step);
   };
   hudAnim = requestAnimationFrame(step);
 }
 let toastT = 0;
-function toast(msg) {
-  const t = $('toast'); t.textContent = msg; t.classList.remove('off');
+function toast(msg, gold) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('off'); t.classList.toggle('gold', !!gold);
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), 1800);
 }
 
-// ---------- Sound & haptics ----------
-let soundOn = store.get(KEY_SOUND) !== '0';
-let actx = null;
-function ensureAudio() {
-  if (!soundOn) return;
-  try {
-    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
-  } catch (e) { actx = null; }
-}
-function tone(freq, dur, type, vol, delay, slide) {
-  if (!soundOn || !actx) return;
-  try {
-    const t = actx.currentTime + (delay || 0);
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
-    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
-  } catch (e) {}
-}
+// ---------- Sound & haptics (KoboAudio: shared volume and mute) ----------
+const tone = (freq, dur, type, vol, delay, slide) => { if (A) A.tone(freq, dur, { type, vol, delay, slide }); };
 const sfxPick = () => tone(880, 0.05, 'sine', 0.05, 0, 1200);
 const sfxPlace = () => { tone(260, 0.09, 'triangle', 0.2, 0, 180); tone(520, 0.04, 'sine', 0.05); };
 const sfxDrop = () => tone(300, 0.08, 'sine', 0.06, 0, 200);
-function sfxClear(lines, cmb) {
+function sfxClear(lines, cmb, allClear) {
   sfxPlace();
   const base = 523.25 * Math.pow(2, Math.min(cmb - 1, 7) * 2 / 12);
   const steps = [0, 4, 7, 12, 16, 19].slice(0, Math.min(6, 2 + lines));
   steps.forEach((s, k) => tone(base * Math.pow(2, s / 12), 0.16, 'triangle', 0.1, 0.04 + k * 0.055));
+  if (allClear) [0, 7, 12, 19, 24].forEach((s, k) => tone(base * Math.pow(2, s / 12), 0.22, 'sine', 0.08, 0.36 + k * 0.07));
 }
-function sfxOver() { [392, 330, 262, 196].forEach((f, k) => tone(f, 0.22, 'triangle', 0.1, k * 0.13)); }
-function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+function sfx(name) {
+  if (!A) return;
+  if (name === 'best') { [784, 988, 1319].forEach((f, k) => tone(f, 0.14, 'triangle', 0.08, 0.1 + k * 0.07)); return; }
+  if (name === 'over') { [392, 330, 262, 196].forEach((f, k) => tone(f, 0.22, 'triangle', 0.1, k * 0.13)); return; }
+  A.sfx(name);
+}
+function buzz(p) { if (A) A.vibrate(p); }
 function renderSoundBtn() {
-  const b = $('sound');
-  b.setAttribute('aria-pressed', String(soundOn));
-  b.setAttribute('aria-label', T(soundOn ? 'サウンド オン' : 'サウンド オフ'));
-  b.innerHTML = soundOn
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  const b = $('sound'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
 }
 $('sound').addEventListener('click', () => {
-  soundOn = !soundOn; store.set(KEY_SOUND, soundOn ? '1' : '0'); renderSoundBtn();
-  if (soundOn) { ensureAudio(); tone(660, 0.08, 'sine', 0.08); }
+  if (!A) return;
+  A.toggleMute();
+  if (!A.muted) tone(660, 0.08, 'sine', 0.08);
 });
-let restartArmed = 0;
-$('restart').addEventListener('click', () => {
+if (A) A.onChange(renderSoundBtn);
+$('again').addEventListener('click', () => { newGame(); });
+$('overAlt').addEventListener('click', () => {
+  if (mode === 'daily') { hideOver(); setMode('normal'); }
+  else { hideOver(); startDaily(); }
+});
+
+// ---------- Menu (KoboUI: settings, language, theme, volume) ----------
+function openMenu() {
+  if (!UI || (vs && KoboVersus.active())) return;
+  cancelDrag();
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { m.close(); closedMenu(); showHowto(false); } }];
+  if (mode === 'daily') extra.push({ label: T('ふつうのゲームに戻る'), icon: 'home', onClick: () => { m.close(); closedMenu(); setMode('normal'); } });
+  else if (dailyAvailable() && mode !== 'tutorial') extra.push({ label: T('今日のチャレンジ'), icon: 'star', onClick: () => { m.close(); closedMenu(); startDaily(); } });
+  const m = UI.pauseMenu({
+    title: T('メニュー'),
+    onResume: closedMenu,
+    onRestart: () => { closedMenu(); if (mode === 'tutorial') startTutorial(); else { newGame(); toast(T('新しいゲーム')); } },
+    confirmRestart: moves > 0 && !over && mode !== 'tutorial',
+    extra, home: '../',
+    onOpen: () => { const g = G(); if (g) g.menuOpened(); },
+  });
+  m.open();
+}
+function closedMenu() { const g = G(); if (g) g.menuClosed(); requestDraw(); }
+$('menuBtn').addEventListener('click', openMenu);
+
+// ---------- How to play (first visit) ----------
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first;
+  cancelDrag();
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる');
+  $('howtoAlt').textContent = first ? T('説明だけでOK') : T('チュートリアルをもう一度');
+  $('howtoAlt').hidden = !first && (vs || mode === 'daily');
+  $('howto').hidden = false;
+  setTimeout(() => $('howtoGo').focus({ preventScroll: true }), 50);
+}
+function closeHowto() { $('howto').hidden = true; store.set(KEY_HOWTO, '1'); requestDraw(); }
+$('howtoGo').addEventListener('click', () => { const f = howtoFirst; closeHowto(); if (f) startTutorial(); });
+$('howtoAlt').addEventListener('click', () => {
+  const f = howtoFirst; closeHowto();
+  if (f) { store.set(KEY_TUT, 'skip'); toast(T('がんばって！')); } else startTutorial();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); }
+});
+
+// ---------- Tutorial: the first 30 seconds, one real move at a time ----------
+// step 0: drag a block onto the glowing spot (clears a row) → 1: fill a column → 2: place the last block anywhere (a new hand
+// comes) → 3: done ("start"). The board is a practice board: no saves, no best, no events. Skipping is always possible.
+const TUT_STEPS = [
+  { text: 'ゆれているブロックを、光っている所へ運ぼう', sub: '指で押さえたまま動かして、はなすと置ける' },
+  { text: '縦長のブロックで、縦の列をうめよう', sub: 'そろった！ 次は縦の列' },
+  { text: '最後の1つを、好きな所へ', sub: '3つとも置くと、新しい3つが出てくる' },
+  { text: '準備OK！ 置き場がなくなるまで続けよう', sub: '列を続けて消すとコンボ。スコアが大きく伸びる' },
+];
+let tut = null; // { step, target: { i, r, c } | null, prevMode, t0 }
+function startTutorial() {
   if (vs) return;
-  const now = Date.now();
-  if (over || moves === 0 || now - restartArmed < 2500) { restartArmed = 0; newGame(); toast(T('新しいゲーム')); }
-  else { restartArmed = now; toast(T('もう一度押すと最初から')); }
-});
-$('again').addEventListener('click', () => { ensureAudio(); newGame(); });
-window.addEventListener('pointerdown', ensureAudio, { capture: true });
+  endPlay('quit');
+  const prev = mode === 'tutorial' && tut ? tut.prevMode : mode;
+  const prevDaily = mode === 'tutorial' && tut ? tut.prevDaily : (mode === 'daily' && daily ? daily.dateKey : null);
+  if (mode !== 'tutorial') save();
+  mode = 'tutorial'; rnd = Math.random;
+  resetRun(); hideOver();
+  const I2 = pidOf('I2', 2, 1), I3v = pidOf('I3', 1, 3), dot = pidOf('dot', 1, 1);
+  // bottom row: six tiles and a two-cell gap on the right
+  for (let c = 0; c < 6; c++) board[7 * N + c] = [0, 3, 2, 4, 5, 7][c];
+  tray = [I2, I3v, dot];
+  tut = { step: 0, target: { i: 0, r: 7, c: 6 }, prevMode: prev, prevDaily, t0: performance.now() };
+  dealAnim = reduced() ? null : { t0: performance.now() };
+  renderMode(); renderCoach(); updateHud(true); layoutSoon();
+}
+function tutAfterPlace(lines) {
+  if (!tut) return;
+  if (tut.step === 0) {
+    tut.step = 1; tut.target = null;
+    // after the row clears, a column of tiles rises in column 3 with a three-cell gap at the bottom
+    setTimeout(() => {
+      if (!tut || tut.step !== 1) return;
+      const cells = [];
+      for (let r = 0; r < 5; r++) { board[r * N + 3] = [1, 6, 0, 2, 7][r]; cells.push(r * N + 3); }
+      placeFx = reduced() ? null : { cells, t0: performance.now() };
+      tut.target = { i: 1, r: 5, c: 3 };
+      renderCoach(); requestDraw();
+    }, reduced() ? 50 : 520);
+  } else if (tut.step === 1) {
+    tut.step = 2; tut.target = null;
+  } else if (tut.step === 2) {
+    tut.step = 3; tut.target = null;
+    sfx('best');
+  }
+  renderCoach();
+}
+function finishTutorial() {
+  if (!tut) return;
+  const prev = tut.prevMode, prevDaily = tut.prevDaily; tut = null;
+  store.set(KEY_TUT, '1');
+  renderCoach();
+  if (prev === 'daily' && prevDaily) { startDaily(prevDaily); return; } // came from a daily link: back to it
+  mode = 'normal'; daily = null; rnd = Math.random;
+  if (!load()) { resetRun(); deal(); save(); }
+  renderMode(); hideOver(); updateHud(true); layoutSoon();
+  toast(T('がんばって！'));
+  if (stuck()) finishRun();
+}
+function renderCoach() {
+  const on = mode === 'tutorial' && !!tut;
+  $('coach').hidden = !on; $('scores').hidden = on;
+  if (!on) return;
+  const s = TUT_STEPS[tut.step], btn = $('coachBtn');
+  $('coachStep').textContent = String(tut.step + 1);
+  $('coachText').innerHTML = '';
+  $('coachText').append(T(s.text));
+  const sm = document.createElement('small'); sm.textContent = T(s.sub); $('coachText').append(sm);
+  btn.textContent = tut.step === 3 ? T('はじめる') : T('スキップ');
+  btn.classList.toggle('go', tut.step === 3);
+  if (tut.step === 3) setTimeout(() => btn.focus({ preventScroll: true }), 50);
+}
+function nudgeCoach() {
+  const c = $('coach'); if (c.hidden) return;
+  c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge');
+  sfx('error');
+}
+$('coachBtn').addEventListener('click', finishTutorial);
+
+// ---------- Daily challenge (JST date and seed from KoboPlatform; the result is recorded by the platform) ----------
+const dailyAvailable = () => !!PF;
+function dailyRng(seed, skip) {
+  const base = PF.rng(seed);
+  for (let i = 0; i < skip; i++) base();
+  draws = skip;
+  return () => { draws++; return base(); };
+}
+// Goal for the day: picked from the seed so everyone has the same target. Calibrated with the greedy bot (__kb.step) on
+// 300 seeds (seeded hands, no re-roll): scores p25 196 / p50 309 / p75 503, so the bot reaches these goals in ~35–70% of runs.
+const GOALS = [200, 250, 300, 350, 400];
+const goalFor = seed => GOALS[(seed >>> 8) % GOALS.length];
+function refreshDaily() {
+  if (!daily) return;
+  const rec = PF.daily.get(daily.dateKey, GAME) || {};
+  daily.best = Math.max(0, Number(rec.best) || 0);
+  daily.tries = Math.max(0, Number(rec.tries) || 0);
+}
+function dateLabel(dk) {
+  const m = Math.floor(dk / 100) % 100, d = dk % 100;
+  return KoboI18n.lang === 'en' ? T('{m}月{d}日', { mon: EN_MON[m - 1], d }) : T('{m}月{d}日', { m, d });
+}
+function startDaily(dateKey) {
+  if (!PF || vs) return;
+  if (mode === 'tutorial') { tut = null; store.set(KEY_TUT, '1'); renderCoach(); }
+  const dk = PF.isDateKey(dateKey) && Number(dateKey) <= PF.jstDateKey() ? Number(dateKey) : PF.jstDateKey();
+  endPlay('quit');
+  if (mode === 'normal' && board) save();
+  mode = 'daily';
+  const seed = PF.dailySeed(GAME, dk);
+  daily = { dateKey: dk, seed, goal: goalFor(seed), best: 0, tries: 0 };
+  refreshDaily();
+  const s = readSave(KEY_DAILY);
+  if (s && s.dateKey === dk && Number.isInteger(s.draws) && s.draws >= 0 && s.draws < 100000) {
+    rnd = dailyRng(seed, s.draws);
+    applySave(s);
+    if (tray.every(v => v === null)) deal();
+  } else {
+    resetRun();
+    rnd = dailyRng(seed, 0);
+    deal();
+  }
+  hideOver(); renderMode(); updateHud(true); save(); requestDraw(); layoutSoon();
+  toast(T('今日のチャレンジ（{d}）', { d: dateLabel(dk) }), true);
+  if (stuck()) finishRun();
+}
+// back to the normal game (its board was saved when the daily run started)
+function setMode(m) {
+  if (m !== 'normal' || vs) return;
+  endPlay('quit');
+  if (mode === 'daily') save();
+  if (mode === 'tutorial') { tut = null; renderCoach(); }
+  mode = 'normal'; daily = null; rnd = Math.random;
+  if (!load()) { resetRun(); deal(); save(); }
+  hideOver(); renderMode(); updateHud(true); requestDraw(); layoutSoon();
+  if (stuck()) finishRun();
+}
+function renderMode() {
+  const bar = $('modeBar');
+  const on = mode === 'daily' && !!daily && !vs;
+  bar.hidden = !on;
+  if (on) {
+    const reached = Math.max(daily.best, score) >= daily.goal;
+    bar.classList.toggle('done', reached);
+    bar.title = T('全員が同じ順番のブロックで遊ぶ、1日1つの問題。何度でも挑戦できます。');
+    $('modeText').innerHTML = '';
+    const lbl = document.createElement('span'); lbl.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + ' ・ ';
+    const g = document.createElement('span');
+    g.innerHTML = T(reached ? '目標達成！ <b>{g}</b> 点' : '目標 <b>{g}</b> 点', { g: fmt(daily.goal) });
+    $('modeText').append(lbl, g);
+  }
+}
 
 // ---------- Canvas & layout ----------
 const cv = $('cv'), ctx = cv.getContext('2d');
@@ -454,11 +856,11 @@ function layout() {
   const play = $('play');
   rect = play.getBoundingClientRect();
   W = rect.width; H = rect.height;
-  dpr = Math.min(window.devicePixelRatio || 1, 3);
-  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr));
   const pad = 12;
   const maxBoard = Math.min(W - pad * 2, (H - 12) * 0.7, 520);
-  cell = Math.floor(maxBoard / (N + 0.5));
+  cell = Math.max(8, Math.floor(maxBoard / (N + 0.5)));
   border = Math.round(cell * 0.25);
   const bsize = cell * N + border * 2;
   slotW = (W - pad * 2) / 3;
@@ -473,6 +875,8 @@ function layout() {
   buildBoardLayer();
   requestDraw();
 }
+let layoutRaf = 0;
+function layoutSoon() { cancelAnimationFrame(layoutRaf); layoutRaf = requestAnimationFrame(layout); }
 function rr(c, x, y, w, h, r) {
   c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
   c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
@@ -503,11 +907,11 @@ function buildBoardLayer() {
   g.fillStyle = ig; rr(g, ix - 2, iy - 2, is + 4, is + 4, cell * 0.18); g.fill();
   // wood grain (deterministic)
   g.save(); rr(g, ix - 2, iy - 2, is + 4, is + 4, cell * 0.18); g.clip();
-  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  let seed = 7; const rnd2 = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   for (let k = 0; k < 34; k++) {
-    const y0 = iy + rnd() * is, amp = 2 + rnd() * 6, ph = rnd() * 6, fr = 0.008 + rnd() * 0.01;
-    g.strokeStyle = `rgba(${120 + rnd() * 40 | 0},${70 + rnd() * 20 | 0},30,${0.08 + rnd() * 0.12})`;
-    g.lineWidth = 0.6 + rnd() * 1.6;
+    const y0 = iy + rnd2() * is, amp = 2 + rnd2() * 6, ph = rnd2() * 6, fr = 0.008 + rnd2() * 0.01;
+    g.strokeStyle = `rgba(${120 + rnd2() * 40 | 0},${70 + rnd2() * 20 | 0},30,${0.08 + rnd2() * 0.12})`;
+    g.lineWidth = 0.6 + rnd2() * 1.6;
     g.beginPath();
     for (let x = ix - 4; x <= ix + is + 4; x += 6) { const y = y0 + Math.sin(x * fr + ph) * amp; x === ix - 4 ? g.moveTo(x, y) : g.lineTo(x, y); }
     g.stroke();
@@ -526,7 +930,7 @@ function tileSprite(colorIdx, size) {
   const k = colorIdx + ':' + size;
   let s = tileCache.get(k);
   if (s) return s;
-  const px = Math.ceil(size * dpr);
+  const px = Math.max(1, Math.ceil(size * dpr));
   s = document.createElement('canvas'); s.width = s.height = px;
   const g = s.getContext('2d'); g.scale(dpr, dpr);
   const base = COLORS[colorIdx], m = size * 0.05, w = size - m * 2, rad = size * 0.2;
@@ -570,19 +974,33 @@ function ghostTopLeft(px, py, p, type) {
   if (type === 'mouse') return { x: px - p.w * cell / 2, y: py - p.h * cell / 2 - lift * cell * 0.4 };
   return { x: px - p.w * cell / 2, y: py - p.h * cell - lift * cell };
 }
-function snapFor(gx, gy, pid) {
+function snapFor(gx, gy, pid, i) {
+  // tutorial: only the highlighted spot, and generously (within ~1.6 cells)
+  if (mode === 'tutorial' && tut && tut.target) {
+    const t = tut.target;
+    if (i !== t.i) return null;
+    const dx = (gx - bx) / cell - t.c, dy = (gy - by) / cell - t.r;
+    return Math.hypot(dx, dy) < 1.6 && fits(pid, t.r, t.c) ? { r: t.r, c: t.c } : null;
+  }
   const c = Math.round((gx - bx) / cell), r = Math.round((gy - by) / cell);
   return fits(pid, r, c) ? { r, c } : null;
 }
 function local(e) { return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
+function canInput() {
+  if (over || !$('howto').hidden || (UI && document.body.classList.contains('kb-lock'))) return false;
+  if (vs) return KoboVersus.canPlay();
+  if (window.KoboVersus && KoboVersus.active()) return false;
+  if (mode === 'tutorial' && tut && (tut.step === 3 || (tut.step === 1 && !tut.target))) return false;
+  return true;
+}
 cv.addEventListener('pointerdown', e => {
-  if (over || drag || !e.isPrimary) return;
-  if (vs && !KoboVersus.canPlay()) return;
+  if (drag || !e.isPrimary || !canInput()) return;
   if (!rect) layout();
   const p = local(e);
   if (p.y < trayY - cell * 0.6) return;
   const i = Math.max(0, Math.min(2, Math.floor((p.x - 12) / slotW)));
   if (tray[i] === null || tray[i] === undefined) return;
+  if (mode === 'tutorial' && tut && tut.target && tut.target.i !== i) { nudgeCoach(); toast(T('ゆれているブロックを動かそう')); return; }
   e.preventDefault();
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
   returning = null;
@@ -599,7 +1017,7 @@ cv.addEventListener('pointermove', e => {
 function updateSnap() {
   const pc = PIECES[drag.pid];
   const g = ghostTopLeft(drag.x, drag.y, pc, drag.type);
-  drag.snap = snapFor(g.x, g.y, drag.pid);
+  drag.snap = snapFor(g.x, g.y, drag.pid, drag.i);
 }
 function endDrag(e, cancel) {
   if (!drag || e.pointerId !== drag.pointerId) return;
@@ -607,12 +1025,19 @@ function endDrag(e, cancel) {
   if (!cancel) { const p = local(e); d.x = p.x; d.y = p.y; }
   const pc = PIECES[d.pid];
   const g = ghostTopLeft(d.x, d.y, pc, d.type);
-  const snap = cancel || (vs && !KoboVersus.canPlay()) ? null : snapFor(g.x, g.y, d.pid);
+  const snap = cancel || !canInput() ? null : snapFor(g.x, g.y, d.pid, d.i);
   if (snap) place(d.i, snap.r, snap.c);
   else {
     if (!reduced()) returning = { i: d.i, x: g.x, y: g.y, t0: performance.now() };
     if (g.y + pc.h * cell > by - cell) sfxDrop();
   }
+  requestDraw();
+}
+function cancelDrag() {
+  if (!drag) return;
+  const d = drag, pc = PIECES[d.pid], g = ghostTopLeft(d.x, d.y, pc, d.type);
+  drag = null;
+  if (!reduced()) returning = { i: d.i, x: g.x, y: g.y, t0: performance.now() };
   requestDraw();
 }
 cv.addEventListener('pointerup', e => endDrag(e, false));
@@ -626,9 +1051,16 @@ function requestDraw() { if (!raf) raf = requestAnimationFrame(frame); }
 const ease = k => 1 - Math.pow(1 - k, 3);
 function frame(now) {
   raf = 0;
+  if (!board) return;
   let busy = false;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
+  // a short shake on big clears
+  if (shake) {
+    const k = (now - shake.t0) / 260;
+    if (k >= 1) shake = null;
+    else { busy = true; if (k > 0) { const a = shake.amp * (1 - k); ctx.translate(Math.sin(k * 38) * a, Math.cos(k * 31) * a * 0.6); } }
+  }
   // board
   if (boardLayer) ctx.drawImage(boardLayer, bx - border, by - border, boardLayer.width / dpr, boardLayer.height / dpr);
   // preview data
@@ -646,6 +1078,19 @@ function frame(now) {
     ctx.fillStyle = 'rgba(255,248,220,.28)';
     hlRows.forEach(r => { rr(ctx, bx, by + r * cell, cell * N, cell, cell * 0.18); ctx.fill(); });
     hlCols.forEach(c => { rr(ctx, bx + c * cell, by, cell, cell * N, cell * 0.18); ctx.fill(); });
+  }
+  // tutorial: the glowing target spot
+  const tt = mode === 'tutorial' && tut && tut.target ? tut.target : null;
+  if (tt && !(drag && drag.snap)) {
+    const p = PIECES[tray[tt.i]];
+    if (p) {
+      const pulse = reduced() ? 0.5 : 0.35 + 0.3 * (0.5 + 0.5 * Math.sin(now / 180));
+      ctx.fillStyle = `rgba(255,236,170,${pulse})`;
+      for (const [r, c] of p.cells) { rr(ctx, bx + (tt.c + c) * cell + 2, by + (tt.r + r) * cell + 2, cell - 4, cell - 4, cell * 0.2); ctx.fill(); }
+      ctx.strokeStyle = `rgba(255,190,60,${0.5 + pulse * 0.5})`; ctx.lineWidth = 2.5;
+      rr(ctx, bx + tt.c * cell + 1, by + tt.r * cell + 1, p.w * cell - 2, p.h * cell - 2, cell * 0.22); ctx.stroke();
+      busy = !reduced();
+    }
   }
   // placed tiles
   let pfK = 1;
@@ -694,6 +1139,7 @@ function frame(now) {
     let ox = sc.x - p.w * tcell / 2, oy = sc.y - p.h * tcell / 2, size = tcell, alpha = 1;
     const ok = over ? false : fitsAnywhere(pid);
     if (!ok) alpha = 0.35;
+    if (tt && tt.i !== i) alpha = Math.min(alpha, 0.45);
     if (returning && returning.i === i) {
       const k = Math.min(1, (now - returning.t0) / 200), e2 = ease(k);
       if (k >= 1) returning = null; else {
@@ -706,6 +1152,11 @@ function frame(now) {
       ox += (1 - ease(k)) * (W * 0.6); alpha *= Math.min(1, k * 2);
     }
     if (alpha <= 0) continue;
+    if (tt && tt.i === i && !reduced()) { // a gentle bob on the block to move
+      const b = Math.sin(now / 220) * tcell * 0.12; oy += b;
+      ctx.fillStyle = 'rgba(255,214,110,.25)';
+      rr(ctx, ox - tcell * 0.3, oy - tcell * 0.3, p.w * tcell + tcell * 0.6, p.h * tcell + tcell * 0.6, tcell * 0.4); ctx.fill();
+    }
     for (const [r, c] of p.cells) drawTile(p.color, ox + c * size, oy + r * size, size, alpha);
   }
   if (dealAnim && now - dealAnim.t0 > 600) dealAnim = null;
@@ -745,7 +1196,7 @@ function frame(now) {
     ctx.fillStyle = pp.banner ? '#ffd45e' : '#fff7e6'; ctx.fillText(pp.text, x, y);
     ctx.globalAlpha = 1;
   }
-  if (busy) requestDraw();
+  if (busy && document.visibilityState !== 'hidden') requestDraw();
 }
 
 // ---------- Online battle (common/versus.js) ----------
@@ -754,49 +1205,105 @@ function vsStuck() {
   if (!vs || !KoboVersus.canPlay() || tray.some(v => v !== null && fitsAnywhere(v))) return;
   for (let i = 0; i < N * N; i++) if (board[i] >= 0) effects.push({ r: (i / N) | 0, c: i % N, color: board[i], t0: performance.now() });
   board.fill(-1); combo = 0;
-  toast(T('置き場がない！ 盤をリセット')); sfxOver(); buzz(40);
+  toast(T('置き場がない！ 盤をリセット')); sfx('over'); buzz(40);
   updateHud(); requestDraw();
 }
 KoboVersus.init({
   game: 'blocks', title: T('ブロックはめ'), duration: 180, unit: T('点'),
-  theme: { accent: '#f4b740', accentInk: '#2d1b04', accentShadow: '#a8731a', card: 'linear-gradient(#3d2a1d, #2e1f15)', line: '#5a3f2c',
-    ink: '#fbf1e3', dim: '#c9b29a', hud: 'rgba(36,23,15,.97)', display: 'var(--font-display)' },
+  theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--kb-accent)', accentInk: 'var(--kb-accent-ink)', accentShadow: 'var(--bk-btn-shadow)', card: 'var(--bk-card)', line: 'var(--kb-line)',
+    ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--bk-hud)', display: 'var(--kb-font-display)' },
   hudCover: () => document.querySelector('header'),
-  onStart({ seed }) {
-    if (!vs) vs = { snap: { board: board.slice(), tray: tray.slice(), score, combo, moves, over, overShown: !$('over').hidden } };
+  onOpen() { cancelDrag(); const g = G(); if (g) g.pause('versus'); },
+  onStart({ seed, practice }) {
+    if (mode === 'tutorial') { tut = null; store.set(KEY_TUT, '1'); mode = 'normal'; rnd = Math.random; if (!load()) { resetRun(); deal(); save(); } renderCoach(); }
+    if (!vs) {
+      endPlay('quit');
+      vs = { snap: { board: board.slice(), tray: tray.slice(), score, combo, moves, over, overShown: !$('over').hidden, mode, daily, draws, bestAtStart, bestToasted, goalToasted } };
+    }
+    if (vs.playing) { const g = G(); if (g) g.emit('play_end', { mode: vs.playing, score, reason: 'quit' }); }
     rnd = KoboVersus.rng(seed);
-    drag = null; returning = null; restartArmed = 0;
+    drag = null; returning = null;
     board = new Array(N * N).fill(-1); score = 0; combo = 0; moves = 0; over = false;
     effects.length = 0; popups.length = 0; placeFx = null;
-    $('over').hidden = true;
-    deal(); updateHud(true); requestDraw();
+    $('over').hidden = true; $('howto').hidden = true;
+    deal(); renderMode(); updateHud(true); requestDraw();
+    vs.playing = practice ? 'practice' : 'versus';
+    const g = G(); if (g) g.emit('play_start', { mode: vs.playing, seed });
   },
   getScore: () => score,
-  onEnd() { drag = null; returning = null; requestDraw(); },
+  onEnd() {
+    drag = null; returning = null; requestDraw();
+    if (vs && vs.playing) { const g = G(); if (g) g.emit('play_end', { mode: vs.playing, score, reason: 'over' }); vs.playing = null; }
+  },
   onExit() {
     if (!vs) return;
-    const s = vs.snap; vs = null; rnd = Math.random;
+    if (vs.playing) { const g = G(); if (g) g.emit('play_end', { mode: vs.playing, score, reason: 'quit' }); }
+    const s = vs.snap; vs = null;
     drag = null; returning = null; effects.length = 0; popups.length = 0; placeFx = null;
     board = s.board; tray = s.tray; score = s.score; combo = s.combo; moves = s.moves; over = s.over;
+    mode = s.mode; daily = s.daily; bestAtStart = s.bestAtStart; bestToasted = s.bestToasted; goalToasted = s.goalToasted;
+    rnd = mode === 'daily' && daily ? dailyRng(daily.seed, s.draws) : Math.random;
+    if (mode === 'daily') refreshDaily();
     $('over').hidden = !s.overShown;
-    updateHud(true); requestDraw();
+    renderMode(); updateHud(true); requestDraw();
   },
 });
 KoboVersus.button($('vsSlot'), { compact: true });
 KoboVersus.button($('vsSlotOver'));
 
+// ---------- KoboGame: platform hooks (turn-based: flags.pause is false, so hiding the page just saves) ----------
+// Migration: players who already have a best score or a board in progress have played before → don't show the
+// first-visit how-to and tutorial to them. Runs once (kobo.migrated), and running it again changes nothing.
+if (PF && PF.migrations) PF.migrations.add({ id: 'blocks-howto-1', v: 1, run(c) {
+  const has = c.store.raw(KEY_BEST) != null || c.store.raw(KEY_STATE) != null;
+  if (has && c.store.raw(KEY_HOWTO) == null) c.store.setRaw(KEY_HOWTO, '1');
+  if (has && c.store.raw(KEY_TUT) == null) c.store.setRaw(KEY_TUT, 'old');
+} });
+const listeners = [];
+const on = (t, ev, f, o) => { t.addEventListener(ev, f, o); listeners.push(() => t.removeEventListener(ev, f, o)); };
+let ro = null, booted = false;
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { cancelDrag(); save(); },
+  resume() { requestDraw(); },
+  save() { cancelDrag(); save(); },
+  isIdle: () => !sess && !vs && mode !== 'tutorial' && !drag,
+  dispose() { cancelAnimationFrame(raf); raf = 0; listeners.splice(0).forEach(f => f()); if (ro) ro.disconnect(); },
+  daily: { start({ dateKey }) { if (!vs && mode !== 'tutorial') { hideOver(); startDaily(dateKey); } } },
+});
+
 // ---------- Boot ----------
 renderSoundBtn();
-if (!load()) { board = new Array(N * N).fill(-1); score = 0; combo = 0; moves = 0; deal(); save(); }
+const launch = PF ? PF.launch() : { daily: null };
+if (!load()) { resetRun(); deal(); save(); }
 updateHud(true);
+renderMode();
 layout();
-if (!tray.some(v => v !== null && fitsAnywhere(v))) { over = true; setTimeout(gameOver, 300); }
-window.addEventListener('resize', layout);
-if (window.visualViewport) visualViewport.addEventListener('resize', layout);
-if (window.ResizeObserver) new ResizeObserver(() => layout()).observe($('play'));
+on(window, 'resize', layout);
+if (window.visualViewport) on(visualViewport, 'resize', layout);
+if (window.ResizeObserver) { ro = new ResizeObserver(() => layout()); ro.observe($('play')); }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestDraw);
+on(document, 'visibilitychange', () => { if (document.visibilityState === 'hidden') { cancelDrag(); save(); } else requestDraw(); });
+// ?daily=YYYYMMDD (the hub's "today's challenge"): KoboGame starts it when the registry has flags.daily; until then, here
+if (launch.daily) {
+  const def = window.KoboGame && KoboGame.info().def;
+  if (!(def && def.flags && def.flags.daily)) setTimeout(() => { if (!vs && mode !== 'tutorial') startDaily(launch.daily); }, 0);
+}
+const firstVisit = store.get(KEY_HOWTO) == null;
+if (firstVisit) showHowto(true);
+else if (!launch.daily && stuck()) { over = true; overInfo = { isNew: false, score }; setTimeout(gameOver, 300); }
+// the browser bar follows the room color (KoboUI sets the hub's color by default)
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false;
+  m.setAttribute('content', light ? '#f4e8d6' : '#2a1b12');
+}
+themeColor();
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+booted = true;
 
-// Small read-only hook for automated tests: where to press / release to drop tray piece i at (r, c).
+// ---------- Test hooks ----------
+// Small read-only hook kept for older scripts: where to press / release to drop tray piece i at (r, c).
 window.__blocksTest = {
   get state() { return { board: board.slice(), tray: tray.slice(), score, combo, over, best }; },
   pieces: PIECES,
@@ -809,6 +1316,59 @@ window.__blocksTest = {
     return { x: rect.left + px, y: rect.top + py };
   },
 };
+// greedy bot move: the placement that clears the most lines, then the one that leaves the most room
+function botMove() {
+  if (mode === 'tutorial' && tut) {
+    if (tut.target && tray[tut.target.i] != null) return { i: tut.target.i, r: tut.target.r, c: tut.target.c };
+    if (tut.step === 1 && !tut.target) return null;
+  }
+  let bestM = null, bestV = -1e9;
+  for (let i = 0; i < 3; i++) {
+    const pid = tray[i]; if (pid == null) continue;
+    const p = PIECES[pid];
+    for (let r = 0; r + p.h <= N; r++) for (let c = 0; c + p.w <= N; c++) {
+      if (!fits(pid, r, c)) continue;
+      const b = board.slice(); for (const [y, x] of p.cells) b[(r + y) * N + c + x] = 0;
+      let lines = 0; const fullR = [], fullC = [];
+      for (let y = 0; y < N; y++) { let f = true; for (let x = 0; x < N; x++) if (b[y * N + x] < 0) { f = false; break; } if (f) { lines++; fullR.push(y); } }
+      for (let x = 0; x < N; x++) { let f = true; for (let y = 0; y < N; y++) if (b[y * N + x] < 0) { f = false; break; } if (f) { lines++; fullC.push(x); } }
+      fullR.forEach(y => { for (let x = 0; x < N; x++) b[y * N + x] = -1; });
+      fullC.forEach(x => { for (let y = 0; y < N; y++) b[y * N + x] = -1; });
+      let holes = 0; for (let k = 0; k < N * N; k++) if (b[k] < 0) { const y = (k / N) | 0, x = k % N; let n = 0; if (y > 0 && b[k - N] >= 0) n++; if (y < N - 1 && b[k + N] >= 0) n++; if (x > 0 && b[k - 1] >= 0) n++; if (x < N - 1 && b[k + 1] >= 0) n++; if (n >= 3) holes++; }
+      const v = lines * 100 + p.cells.length * 2 - holes * 6 + b.filter(x => x < 0).length * 0.5;
+      if (v > bestV) { bestV = v; bestM = { i, r, c }; }
+    }
+  }
+  return bestM;
+}
+if (window.__kb) Object.assign(window.__kb, {
+  ready: () => booted && !!rect && W > 0,
+  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score, time: sess ? Math.round(performance.now() - sess.t0) : 0, over, stage: null,
+    paused: !!(window.KoboGame && KoboGame.paused()), moves, combo, best, tray: tray.slice(), board: board.slice(),
+    daily: daily ? { dateKey: daily.dateKey, goal: daily.goal, best: daily.best, tries: daily.tries, draws } : null,
+    howto: !$('howto').hidden, overShown: !$('over').hidden }),
+  // endless game: "win" ends the run now (daily: with the day's goal reached), "lose" fills the board so nothing fits
+  win() {
+    if (over || vs || mode === 'tutorial') return false;
+    startPlay();
+    if (mode === 'daily') score = Math.max(score, daily.goal);
+    updateHud(true); finishRun(); return true;
+  },
+  lose() {
+    if (over || vs || mode === 'tutorial') return false;
+    startPlay();
+    board.fill(4); updateHud(true); finishRun(); requestDraw(); return true;
+  },
+  step(n) {
+    let k = 0;
+    for (; k < (n || 1); k++) { if (over || (vs && !KoboVersus.canPlay())) break; const m = botMove(); if (!m) break; place(m.i, m.r, m.c); }
+    return k;
+  },
+  tutorial: () => ({ step: tut ? tut.step : (store.get(KEY_TUT) ? TUT_STEPS.length : 0), done: !tut && !!store.get(KEY_TUT), active: !!tut, target: tut && tut.target }),
+  tutorialStart: startTutorial, tutorialFinish: finishTutorial,
+  daily: dk => startDaily(dk), normal: () => setMode('normal'), menu: openMenu, howto: () => showHowto(false),
+  goalFor, pieces: PIECES,
+});
 })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
