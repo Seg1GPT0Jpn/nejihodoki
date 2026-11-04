@@ -13,12 +13,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="いろみず分け">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
 <script>
 KoboI18n.add({ en: {
   'いろみず分け': 'Color Water Sort',
-  '← ゲーム一覧': '← Games',
-  'あそびかた': 'How to play',
+  '← ゲーム一覧': '← Games', 'ゲーム一覧': 'Games', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games',
+  'メニュー': 'Menu', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  'あそびかた': 'How to play', '遊び方': 'How to play',
   '音': '♪', 'サウンド': 'Sound',
   'ステージをえらぶ': 'Choose a stage',
   'このままクリアしたときの星': 'Stars if you clear it now',
@@ -42,7 +45,7 @@ KoboI18n.add({ en: {
   '<b>のっぽ</b>の試験管はたくさん入ります。': '<b>Tall</b> tubes hold more.',
   '★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。': '★3: clear without hints or an extra tube. Each one you use costs one ★ (minimum ★1).',
   '<b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。': '<b>Undo</b> is free and unlimited. Hints: 3 per stage. Extra tube: once per stage. Restarting resets these counts.',
-  '言語 / Language': 'Language / 言語',
+  '言語 / Language': 'Language',
   '戻す': 'Undo', '何回でも': 'Unlimited', 'ヒント': 'Hint', 'のこり{n}': '{n} left',
   '1面1回': '1 per stage', '使用ずみ': 'Used', 'はじめから': 'Start over',
   'つくっています…': 'Building…',
@@ -54,9 +57,11 @@ KoboI18n.add({ en: {
   '{n}色': '{n} colors', '5段': '5 layers', '錠': 'Lock', 'のっぽ': 'Tall', '空き1': '1 spare',
   '錠が開いた！': 'Unlocked!',
   '空の試験管を1本追加しました（★−1）': 'Added an empty tube (★−1)',
+  '空の試験管を1本追加しました（+10手）': 'Added an empty tube (+10 moves)',
   'むずかしい形です。少し戻してみよう': 'Tricky position. Try undoing a few moves',
   'この形からは解けません。戻すかリスタートを': 'This can\'t be solved from here. Undo or restart',
   '光っている試験管から、矢印の先へ（★−1）': 'Pour from the glowing tube to where the arrow points (★−1)',
+  '光っている試験管から、矢印の先へ（+5手）': 'Pour from the glowing tube to where the arrow points (+5 moves)',
   'ヒント{n}回': '{n} hint(s)', '試験管追加': 'extra tube', '・': ', ',
   ' ・ ': ' · ', '{n}手': '{n} moves', '（戻す{n}回）': ' ({n} undos)', '{list}を使用': 'used {list}', '道具なし！': 'no tools!',
   'この試験管はあと{n}色そろえると開きます': 'Complete {n} more color(s) to open this tube',
@@ -67,110 +72,212 @@ KoboI18n.add({ en: {
   'スキップ（−{n}点）': 'Skipped (−{n} pts)',
   'そろった！ +{n}点': 'Sorted! +{n} pts',
   '手づまり… 戻すかスキップを': 'Stuck… Undo or Skip',
+  '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。': '2–4 players, {t} score battle. Everyone gets the same puzzles in the same order.',
+  // how to play
+  'やってみる': 'Try it', '説明だけでOK': 'Skip the tutorial', 'チュートリアルをもう一度': 'Replay the tutorial', 'はじめる': 'Start', 'がんばって！': 'Good luck!',
+  '試験管を<b>タップして持ち上げ</b>、別の試験管をタップして<b>注ぐ</b><small>上の同じ色がまとめて移ります</small>': 'Tap a tube to <b>lift</b> it, then tap another to <b>pour</b><small>All matching layers on top move together</small>',
+  '注げるのは<b>空の試験管</b>か、<b>いちばん上が同じ色</b>のときだけ<small>入るぶんだけ移ります</small>': 'Pour only into an <b>empty tube</b> or onto the <b>same color</b><small>As much as fits moves over</small>',
+  'どの試験管も<b>1色でいっぱい</b>か空になればクリア<small>↶ 戻すは何回でも無料</small>': 'Every tube <b>full of one color</b> or empty: stage clear<small>↶ Undo is always free</small>',
+  'しかけと星': 'Gimmicks and stars',
+  // tutorial
+  '光っている試験管をタップして、持ち上げよう': 'Tap the glowing tube to lift it',
+  'いちばん上の色が注がれます': 'Its top color is what you pour',
+  '矢印の先の試験管をタップして、注ごう': 'Tap the tube the arrow points to',
+  '空の試験管か、いちばん上が同じ色なら注げる': 'You can pour into an empty tube or onto the same color',
+  '同じ色を集めて、1本を1色でいっぱいにしよう': 'Gather one color until a tube is full of it',
+  '矢印のとおりに注いでみよう': 'Follow the arrows',
+  '↶ 戻す を押して、1手もどしてみよう': 'Press ↶ Undo to take back a move',
+  '戻すは何回でも無料': 'Undo is free, as often as you like',
+  'あとは自分で、全部そろえよう': 'Now sort the rest on your own',
+  '困ったら ？ ヒント（★が1つ減る）': 'Stuck? Use ？ Hint (costs one ★)',
+  'まずは光っている試験管から': 'Start with the glowing tube',
+  'チュートリアル完了！': 'Tutorial complete!',
+  // daily
+  '今日のチャレンジ': 'Daily challenge', '今日のチャレンジ（{d}）': 'Daily challenge ({d})', '{m}月{d}日': '{mon} {d}',
+  'ふつうのステージへ': 'Back to stages', 'ふつうのステージに戻る': 'Back to stages',
+  '第{n}問 / {t}': 'Puzzle {n} / {t}', '第{n}問 クリア！': 'Puzzle {n} cleared!', '今日のチャレンジ クリア！': 'Daily challenge cleared!',
+  'スコア': 'Score', '手数 {n}': 'Moves {n}', '時間 {t}': 'Time {t}', '+{n}手': '+{n} moves',
+  '今日のベスト {b} 点 ・ {n} 回目': 'Today’s best {b} · try #{n}', '今日のベスト更新！': 'New daily best!', 'もう一度挑戦': 'Try again',
+  '全員が同じ3問を解く、1日ごとにかわるチャレンジ。手数と時間が少ないほど高得点。': 'Everyone gets the same 3 puzzles, new every day. Fewer moves and less time score higher.',
+  'ヒントは+5手、試験管追加は+10手として数えます': 'Each hint counts as +5 moves, an extra tube as +10',
 } });
 </script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
-/* いろみず分け: night laboratory look. Header / info chips / canvas stage (tubes) / tool bar. */
-:root {
-  --bg: #0f2233;
-  --bg-2: #16334a;
-  --panel: rgba(255, 255, 255, .07);
-  --line: rgba(190, 235, 255, .2);
-  --ink: #f2fbff;
-  --dim: #a9c4d4;
-  --aqua: #5fe3e0;
-  --lemon: #ffe066;
-  --pink: #ff7ab6;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+/* いろみず分け: a night laboratory (dark) or a morning laboratory (light). Header / info chips / canvas stage (tubes) / tool bar.
+   The UI uses the shared --kb-* tokens, re-tinted to the lab palette so KoboUI's menu and settings sheet match.
+   --w-* are this game's own tokens; the canvas reads the --w-c-* ones (readPal) when the theme changes. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0f2233; --kb-surface: #16334a; --kb-surface-2: #1d3d55; --kb-sunken: #0b1a27; --kb-line: #2f5068;
+  --kb-ink: #f2fbff; --kb-dim: #a9c4d4;
+  --kb-accent: #5fe3e0; --kb-accent-ink: #062030; --kb-accent-text: #5fe3e0; --kb-accent-soft: rgba(95, 227, 224, .16);
+  --kb-scrim: rgba(6, 16, 26, .8); --kb-toast-bg: rgba(8, 20, 30, .94); --kb-focus: #ffe066;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+  --w-bg-top: #1f4a66; --w-line: rgba(190, 235, 255, .2); --w-panel: rgba(255, 255, 255, .07);
+  --w-card: linear-gradient(#1d3d55, #132b3d); --w-btn: linear-gradient(#7af0e8, #36bfc6); --w-btn-shadow: rgba(0, 0, 0, .4);
+  --w-tool: linear-gradient(rgba(255, 255, 255, .12), rgba(255, 255, 255, .03)); --w-tool-shadow: rgba(0, 0, 0, .3);
+  --w-star: #ffe066; --w-star-off: rgba(255, 255, 255, .19); --w-chip-g-bg: #ffe066; --w-chip-g-ink: #10202c;
+  --w-toast: rgba(8, 20, 30, .9); --w-title: linear-gradient(90deg, #ff7ab6, #ffe066 40%, #5fe3e0 75%, #8f9bff);
+  --w-c-glass-fill: rgba(200, 235, 255, .07); --w-c-glass: rgba(210, 240, 255, .75); --w-c-lip: rgba(225, 245, 255, .9);
+  --w-c-shine: rgba(255, 255, 255, .22); --w-c-shelf: rgba(190, 235, 255, .12); --w-c-hidden: #2c3446; --w-c-mark: rgba(169, 196, 212, .8);
+  --w-c-lock: #ffe066; --w-c-lock-ink: #10202c; --w-c-hint: #ffe066; --w-c-spark: #ffffff; --w-c-twinkle: 255, 255, 255;
   color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #e9f3f8; --kb-surface: #ffffff; --kb-surface-2: #f2f8fb; --kb-sunken: #dbeaf2; --kb-line: #bcd3df;
+    --kb-ink: #12303f; --kb-dim: #4b6676;
+    --kb-accent: #2cc0bb; --kb-accent-ink: #04262c; --kb-accent-text: #0b7672; --kb-accent-soft: rgba(20, 150, 146, .14);
+    --kb-scrim: rgba(18, 48, 63, .45); --kb-toast-bg: rgba(18, 48, 63, .94); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(18, 48, 63, .2);
+    --w-bg-top: #ffffff; --w-line: #bcd3df; --w-panel: rgba(18, 48, 63, .05);
+    --w-card: linear-gradient(#ffffff, #f1f8fb); --w-btn: linear-gradient(#5fe3dc, #2cb8b3); --w-btn-shadow: rgba(10, 90, 96, .35);
+    --w-tool: linear-gradient(#ffffff, #eef6fa); --w-tool-shadow: rgba(18, 48, 63, .14);
+    --w-star: #d99a00; --w-star-off: rgba(18, 48, 63, .16); --w-chip-g-bg: #f4c53d; --w-chip-g-ink: #2b1d05;
+    --w-toast: rgba(18, 48, 63, .92); --w-title: linear-gradient(90deg, #d93a7c, #c98a00 40%, #0d928e 75%, #5560d0);
+    --w-c-glass-fill: rgba(40, 110, 150, .07); --w-c-glass: rgba(36, 86, 112, .6); --w-c-lip: rgba(36, 86, 112, .8);
+    --w-c-shine: rgba(255, 255, 255, .6); --w-c-shelf: rgba(36, 86, 112, .2); --w-c-hidden: #56617a; --w-c-mark: rgba(60, 90, 108, .9);
+    --w-c-lock: #d99a00; --w-c-lock-ink: #ffffff; --w-c-hint: #e3a000; --w-c-spark: #2cc0bb; --w-c-twinkle: 230, 160, 0;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #e9f3f8; --kb-surface: #ffffff; --kb-surface-2: #f2f8fb; --kb-sunken: #dbeaf2; --kb-line: #bcd3df;
+  --kb-ink: #12303f; --kb-dim: #4b6676;
+  --kb-accent: #2cc0bb; --kb-accent-ink: #04262c; --kb-accent-text: #0b7672; --kb-accent-soft: rgba(20, 150, 146, .14);
+  --kb-scrim: rgba(18, 48, 63, .45); --kb-toast-bg: rgba(18, 48, 63, .94); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(18, 48, 63, .2);
+  --w-bg-top: #ffffff; --w-line: #bcd3df; --w-panel: rgba(18, 48, 63, .05);
+  --w-card: linear-gradient(#ffffff, #f1f8fb); --w-btn: linear-gradient(#5fe3dc, #2cb8b3); --w-btn-shadow: rgba(10, 90, 96, .35);
+  --w-tool: linear-gradient(#ffffff, #eef6fa); --w-tool-shadow: rgba(18, 48, 63, .14);
+  --w-star: #d99a00; --w-star-off: rgba(18, 48, 63, .16); --w-chip-g-bg: #f4c53d; --w-chip-g-ink: #2b1d05;
+  --w-toast: rgba(18, 48, 63, .92); --w-title: linear-gradient(90deg, #d93a7c, #c98a00 40%, #0d928e 75%, #5560d0);
+  --w-c-glass-fill: rgba(40, 110, 150, .07); --w-c-glass: rgba(36, 86, 112, .6); --w-c-lip: rgba(36, 86, 112, .8);
+  --w-c-shine: rgba(255, 255, 255, .6); --w-c-shelf: rgba(36, 86, 112, .2); --w-c-hidden: #56617a; --w-c-mark: rgba(60, 90, 108, .9);
+  --w-c-lock: #d99a00; --w-c-lock-ink: #ffffff; --w-c-hint: #e3a000; --w-c-spark: #2cc0bb; --w-c-twinkle: 230, 160, 0;
+  color-scheme: light;
 }
 html, body { height: 100%; margin: 0; }
 @supports (height: 100dvh) { html, body { height: 100dvh; } }
 [hidden] { display: none !important; }
 body {
   position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
-  background: radial-gradient(120% 70% at 50% 0%, #1f4a66 0%, var(--bg) 62%) var(--bg);
-  color: var(--ink); font-family: var(--font-body);
+  background: radial-gradient(120% 70% at 50% 0%, var(--w-bg-top) 0%, var(--kb-bg) 62%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
 #app {
   position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal);
 }
-header { flex: none; padding: 6px 10px 2px; max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+header { flex: none; padding: 4px 10px 2px; max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
 .hrow { display: flex; align-items: center; gap: 6px; }
-.back { color: var(--dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 8px 4px; border-radius: 8px; }
+.back {
+  display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box;
+  color: var(--kb-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 0 8px 0 4px; margin-left: -4px; border-radius: 12px;
+}
+.back svg { width: 22px; height: 22px; flex: none; }
+.back:active { background: var(--w-panel); }
 h1 {
-  flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--font-display); font-weight: 400;
+  flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400;
   font-size: 19px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  background: linear-gradient(90deg, var(--pink), var(--lemon) 40%, var(--aqua) 75%, #8f9bff);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  background: var(--w-title); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+.icon {
+  flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--w-line); background: var(--w-panel);
+  color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation;
+}
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
 .ibtn {
-  flex: none; min-width: 40px; height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 12px;
-  background: var(--panel); color: var(--ink); font: 800 13px var(--font-body); cursor: pointer;
+  flex: none; min-width: 44px; height: 44px; padding: 0 10px; border: 1px solid var(--w-line); border-radius: 12px; box-sizing: border-box;
+  background: var(--w-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); cursor: pointer; touch-action: manipulation;
 }
-.ibtn[aria-pressed="false"] { color: var(--dim); text-decoration: line-through; }
-.back:focus-visible, .ibtn:focus-visible, .tool:focus-visible, .btn:focus-visible, .lv:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
-.info { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-height: 28px; }
-#lvBtn { font-family: var(--font-display); font-weight: 400; font-size: 15px; min-width: 76px; }
+.back:focus-visible, .icon:focus-visible, .ibtn:focus-visible, .tool:focus-visible, .btn:focus-visible, .lv:focus-visible, .skip:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.info { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+#lvBtn { font-family: var(--kb-font-display); font-weight: 400; font-size: 15px; min-width: 76px; white-space: nowrap; }
 .chips { flex: 1; min-width: 0; display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
-.chip { flex: none; font-size: 11px; font-weight: 800; padding: 3px 7px; border-radius: 999px; background: var(--panel); color: var(--dim); white-space: nowrap; }
-.chip.g { color: #10202c; background: var(--lemon); }
-.mstars { flex: none; font-size: 15px; letter-spacing: 1px; color: var(--lemon); }
-.mstars i { font-style: normal; color: #ffffff30; }
+.chip { flex: none; font-size: 11px; font-weight: 800; padding: 3px 7px; border-radius: 999px; background: var(--w-panel); color: var(--kb-dim); white-space: nowrap; }
+.chip.g { color: var(--w-chip-g-ink); background: var(--w-chip-g-bg); }
+.mstars { flex: none; font-size: 15px; letter-spacing: 1px; color: var(--w-star); }
+.mstars i { font-style: normal; color: var(--w-star-off); }
+.mode-bar {
+  flex: none; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px auto 0; max-width: calc(100% - 24px); box-sizing: border-box;
+  padding: 3px 12px; border-radius: 999px; background: var(--kb-accent-soft); border: 1px solid var(--kb-accent);
+  color: var(--kb-ink); font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden;
+}
+.mode-bar svg { width: 15px; height: 15px; flex: none; color: var(--kb-accent-text); }
+.mode-bar span { overflow: hidden; text-overflow: ellipsis; }
+.mode-bar b { color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
+/* tutorial coach (above the rack) */
+.coach {
+  flex: none; display: flex; align-items: center; gap: 10px; margin: 4px auto 0; width: calc(100% - 20px); max-width: 560px; box-sizing: border-box;
+  padding: 6px 6px 6px 12px; min-height: 56px; border-radius: 16px; background: var(--kb-surface); border: 1px solid var(--kb-accent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18); animation: rise .3s cubic-bezier(.2, 1.3, .4, 1);
+}
+.coach .step { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 14px var(--kb-font-display); }
+.coach p { flex: 1; min-width: 0; margin: 0; font-size: 13.5px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.coach p small { display: block; font-size: 11.5px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.skip {
+  flex: none; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--w-line); background: transparent;
+  color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; touch-action: manipulation;
+}
+.coach.nudge { animation: nudge .35s; }
 #stage { flex: 1; min-height: 0; position: relative; }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; cursor: pointer; }
 #msg {
   position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); max-width: 92%;
-  font-size: 13px; font-weight: 800; color: var(--dim); text-align: center; pointer-events: none; line-height: 1.35;
+  font-size: 13px; font-weight: 800; color: var(--kb-dim); text-align: center; pointer-events: none; line-height: 1.35;
 }
 #toast {
   position: absolute; left: 50%; top: 8px; transform: translate(-50%, -8px); opacity: 0; transition: opacity .2s, transform .2s;
-  background: #08141ee6; border: 1px solid var(--line); color: var(--ink); padding: 8px 14px; border-radius: 14px;
+  background: var(--w-toast); border: 1px solid var(--w-line); color: #f2fbff; padding: 8px 14px; border-radius: 14px;
   font-size: 13px; font-weight: 800; pointer-events: none; z-index: 4; max-width: 88%; text-align: center; line-height: 1.4;
 }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
 #tools { flex: none; display: flex; gap: 6px; padding: 6px 10px 10px; width: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box; }
 .tool {
-  flex: 1; min-width: 0; height: 56px; border-radius: 16px; border: 1px solid var(--line); cursor: pointer; position: relative;
-  background: linear-gradient(#ffffff1f, #ffffff08); color: var(--ink); box-shadow: 0 3px 0 #0005;
-  font: 800 13px var(--font-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0 2px;
+  flex: 1; min-width: 0; height: 56px; border-radius: 16px; border: 1px solid var(--w-line); cursor: pointer; position: relative; touch-action: manipulation;
+  background: var(--w-tool); color: var(--kb-ink); box-shadow: 0 3px 0 var(--w-tool-shadow);
+  font: 800 13px var(--kb-font-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0 2px;
 }
 .tool b { font-size: 19px; line-height: 1; }
 .tool span { white-space: nowrap; font-size: 12.5px; letter-spacing: -.03em; }
-.tool small { font-size: 10px; color: var(--dim); white-space: nowrap; }
-.tool:active { transform: translateY(2px); box-shadow: 0 1px 0 #0005; }
+.tool small { font-size: 10px; color: var(--kb-dim); white-space: nowrap; }
+.tool:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--w-tool-shadow); }
 .tool:disabled { opacity: .38; cursor: default; }
+.tool.pulse { border-color: var(--kb-accent); box-shadow: 0 0 0 3px var(--kb-accent-soft), 0 3px 0 var(--w-tool-shadow); animation: glow 1.2s ease-in-out infinite; }
 .overlay {
-  position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
-  background: #06101acc; box-sizing: border-box; overscroll-behavior: contain;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh);
+  background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .25s ease-out;
+  padding: max(16px, var(--kb-sat)) max(16px, var(--kb-sar)) max(16px, var(--kb-sab)) max(16px, var(--kb-sal));
 }
 .card {
   width: 100%; max-width: 340px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column;
-  background: linear-gradient(#1d3d55, #132b3d); border: 1px solid var(--line); border-radius: 22px; padding: 18px 16px 16px; text-align: center;
-  box-shadow: 0 12px 40px #0008; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--w-card); border: 1px solid var(--w-line); border-radius: 22px; padding: 18px 16px 16px; text-align: center; color: var(--kb-ink);
+  box-shadow: var(--kb-shadow); overflow-y: auto; overscroll-behavior: contain; animation: rise .32s cubic-bezier(.2, 1.4, .4, 1);
 }
 .card > * { flex: none; }
-.card #lvGrid, .card .help-body { flex: 0 1 auto; }
-.help-body { overflow-y: auto; min-height: 0; touch-action: pan-y; overscroll-behavior: contain; }
-.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; font-weight: 800; color: var(--dim); }
-.langrow select { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 800 14px var(--font-body); padding: 4px 8px; }
-.langrow select:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
+.card #lvGrid { flex: 0 1 auto; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--w-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--w-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.langrow select:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
 /* online battle entry (common/versus.js) */
 .vs-slot { display: contents; }
-@media (max-width: 400px) { #vsSlot .kvs-entry { width: 36px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } .back span { display: none; } .back { padding-right: 4px; } }
 html[lang="en"] .back { font-size: 12.5px; }
 html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
-@media (max-width: 359px) { html[lang="en"] h1 { font-size: 14px; } .hrow { gap: 4px; } .ibtn { min-width: 36px; padding: 0 6px; } }
-@media (max-width: 340px) { .tool span { font-size: 11px; letter-spacing: -.05em; } }
+@media (max-width: 370px) { .hrow { gap: 4px; } h1 { font-size: 16px; } html[lang="en"] h1 { font-size: 14px; } }
+@media (max-width: 340px) { .tool span { font-size: 11px; letter-spacing: -.05em; } h1 { font-size: 15px; letter-spacing: 0; } html[lang="en"] h1 { font-size: 13px; } }
 @media (max-height: 560px) {
   .tool { height: 48px; }
   .card { padding: 14px 14px 12px; }
@@ -178,348 +285,244 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
   .card .big { font-size: 34px; }
   .btn { padding: 11px; margin-top: 8px; }
 }
-.card h2 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--lemon); }
-.card p { margin: 6px 0; font-size: 13px; line-height: 1.55; color: var(--dim); }
-.card .big { font-size: 40px; letter-spacing: 4px; color: var(--lemon); margin: 4px 0; }
-.card .big i { font-style: normal; color: #ffffff26; }
-.btn {
-  display: block; width: 100%; margin-top: 10px; padding: 13px; border-radius: 16px; border: 0; cursor: pointer;
-  background: linear-gradient(#7af0e8, #36bfc6); color: #062030; font: 800 16px var(--font-body); box-shadow: 0 3px 0 #0006;
+/* landscape phones: the info row goes up into the header row */
+@media (max-height: 440px) and (min-width: 560px) {
+  header { display: flex; align-items: center; gap: 8px; max-width: none; }
+  .hrow { flex: 1; min-width: 0; }
+  .info { flex: 0 1 48%; min-width: 0; margin-top: 0; }
+  #tools { padding-bottom: 6px; }
+  .coach { min-height: 48px; }
+  .back span { display: none; }
 }
-.btn.sub { background: var(--panel); color: var(--ink); box-shadow: none; border: 1px solid var(--line); font-size: 14px; padding: 10px; }
+.card h2 { margin: 0 0 6px; font-family: var(--kb-font-display); font-weight: 400; font-size: 24px; color: var(--w-star); overflow-wrap: anywhere; }
+.card p { margin: 6px 0; font-size: 13px; line-height: 1.55; color: var(--kb-dim); }
+.card .big { font-size: 40px; letter-spacing: 4px; color: var(--w-star); margin: 4px 0; font-variant-numeric: tabular-nums; }
+.card .big i { font-style: normal; color: var(--w-star-off); }
+.card .label { font-size: 11px; color: var(--kb-dim); letter-spacing: .12em; font-weight: 800; }
+.newrec { align-self: center; display: inline-block; margin-top: 6px; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 4px 12px; border-radius: 999px; animation: glow 1.4s ease-in-out infinite; }
+.btn {
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 10px; padding: 12px; border-radius: 16px; border: 0; cursor: pointer;
+  background: var(--w-btn); color: #062030; font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--w-btn-shadow); text-decoration: none; touch-action: manipulation;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--w-btn-shadow); }
+.btn.sub { background: var(--w-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--w-line); font-size: 14px; padding: 10px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 14px; min-height: 44px; margin-top: 4px; padding: 8px; }
 .row2 { display: flex; gap: 8px; } .row2 .btn { flex: 1; }
 #lvGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; overflow-y: auto; min-height: 0; margin-top: 8px; padding: 2px; overscroll-behavior: contain; touch-action: pan-y; }
 .lv {
-  aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
-  font: 800 15px var(--font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0;
+  aspect-ratio: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--w-line); background: var(--w-panel); color: var(--kb-ink);
+  font: 800 15px var(--kb-font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0;
 }
-.lv small { font-size: 9px; color: var(--lemon); letter-spacing: 0; }
-.lv.cur { border-color: var(--aqua); box-shadow: 0 0 0 2px #5fe3e055 inset; }
-.help { text-align: left; }
-.help li { margin: 4px 0; }
-.help ul { padding-left: 18px; margin: 6px 0; font-size: 13px; line-height: 1.5; color: var(--dim); }
+.lv small { font-size: 9px; color: var(--w-star); letter-spacing: 0; }
+.lv.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent-soft) inset; }
+/* how to play */
+.howto { max-width: 360px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto ol { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.howto li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 14px; background: var(--w-panel); border: 1px solid var(--w-line); }
+.howto li svg { flex: none; width: 60px; height: 46px; }
+.howto li p { margin: 0; font-size: 13.5px; font-weight: 800; line-height: 1.4; color: var(--kb-ink); overflow-wrap: anywhere; }
+.howto li p small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); margin-top: 2px; }
+.howto details { margin-top: 8px; border-radius: 14px; border: 1px solid var(--w-line); padding: 0 10px; }
+.howto summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--kb-accent-text); cursor: pointer; }
+.howto details ul { padding-left: 18px; margin: 0 0 8px; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.howto details li { display: list-item; padding: 0; background: none; border: 0; margin: 3px 0; }
+.howto .btn { text-align: center; }
+@media (max-height: 600px) {
+  .howto h2 { font-size: 21px; margin-bottom: 2px; }
+  .howto ol { gap: 6px; }
+  .howto li { padding: 5px 8px; }
+  .howto li svg { width: 48px; height: 36px; }
+  .howto li p { font-size: 12.5px; }
+}
+@media (max-height: 440px) {
+  .howto { max-width: 620px; padding: 12px 14px; }
+  .howto h2 { font-size: 20px; margin-bottom: 4px; }
+  .howto ol { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .howto li { flex-direction: column; text-align: center; gap: 4px; padding: 6px; }
+  .howto li svg { width: 48px; height: 36px; }
+  .howto li p { font-size: 12.5px; }
+  .howto details { margin-top: 6px; }
+  .howto .langrow { margin-top: 6px; padding-top: 4px; }
+  .howto-btns { display: flex; flex-direction: row-reverse; gap: 8px; }
+  .howto-btns .btn { flex: 1; margin-top: 8px; }
+}
+.tube-svg .g { fill: none; stroke: currentColor; stroke-width: 2; opacity: .7; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(20px) scale(.95); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
+@keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .card, .coach, .newrec, .coach.nudge, .tool.pulse { animation: none; }
+  #toast { transition: none; }
+}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="hrow">
-      <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
       <h1 data-i18n>いろみず分け</h1>
       <span id="vsSlot" class="vs-slot"></span>
-      <button class="ibtn" id="helpBtn" aria-label="あそびかた" data-i18n-attr="aria-label">？</button>
-      <button class="ibtn" id="sndBtn" aria-pressed="true" aria-label="音" data-i18n>音</button>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
     <div class="info">
-      <button class="ibtn" id="lvBtn" aria-label="ステージをえらぶ" data-i18n-attr="aria-label">Lv.1</button>
+      <button class="ibtn" id="lvBtn" type="button" aria-label="ステージをえらぶ" data-i18n-attr="aria-label">Lv.1</button>
       <div class="chips" id="chips"></div>
       <div class="mstars" id="mstars" aria-label="このままクリアしたときの星" data-i18n-attr="aria-label"></div>
     </div>
   </header>
+  <div class="mode-bar" id="modeBar" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    <span id="modeText"></span>
+  </div>
+  <div class="coach" id="coach" hidden role="status" aria-live="polite">
+    <span class="step" id="coachStep">1</span>
+    <p id="coachText"></p>
+    <button class="skip" id="coachBtn" type="button" data-i18n>スキップ</button>
+  </div>
   <div id="stage">
     <canvas id="cv" aria-label="試験管" data-i18n-attr="aria-label"></canvas>
-    <div id="toast"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
     <div id="msg"></div>
-    <div class="overlay" id="ovWin" hidden>
-      <div class="card">
-        <h2 data-i18n>そろった！</h2>
-        <div class="big" id="winStars"></div>
-        <p id="winText"></p>
-        <button class="btn" id="nextBtn" data-i18n>つぎのステージへ</button>
-        <button class="btn sub" id="replayBtn" data-i18n>もう一度あそぶ</button>
-      </div>
-    </div>
-    <div class="overlay" id="ovStuck" hidden>
-      <div class="card">
-        <h2 data-i18n>手づまり…</h2>
-        <p data-i18n>もう注げる試験管がありません。</p>
-        <div class="row2"><button class="btn" id="stUndo" data-i18n>↶ 戻す</button><button class="btn sub" id="stRestart" data-i18n>リスタート</button></div>
-        <button class="btn sub" id="stExtra" data-i18n>試験管を追加</button>
-        <button class="btn sub" id="stClose" data-i18n>とじる</button>
-      </div>
-    </div>
-    <div class="overlay" id="ovLevels" hidden>
-      <div class="card" style="max-width:380px">
-        <h2 data-i18n>ステージ</h2>
-        <p data-i18n>あそんだところまで、どこからでも選べます。</p>
-        <div id="lvGrid"></div>
-        <button class="btn sub" id="lvClose" data-i18n>とじる</button>
-      </div>
-    </div>
-    <div class="overlay" id="ovHelp" hidden>
-      <div class="card help">
-        <h2 style="text-align:center" data-i18n>あそびかた</h2>
-        <div class="help-body">
-        <ul>
-          <li data-i18n>試験管をタップして持ち上げ、別の試験管をタップして注ぎます。</li>
-          <li data-i18n>注げるのは「空の試験管」か「いちばん上が同じ色」の試験管だけ。上の同じ色がまとめて、入るぶんだけ移ります。</li>
-          <li data-i18n>どの試験管も「1色でいっぱい」か「空」になればクリア。</li>
-          <li data-i18n-html><b>？</b> の色は、いちばん上に出るまでわかりません。</li>
-          <li data-i18n-html><b>錠つき</b>の試験管は、指定の数だけ色をそろえると開きます。</li>
-          <li data-i18n-html><b>のっぽ</b>の試験管はたくさん入ります。</li>
-        </ul>
-        <ul>
-          <li data-i18n>★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。</li>
-          <li data-i18n-html><b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。</li>
-        </ul>
-        </div>
-        <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
-        <button class="btn" id="helpClose">OK</button>
-      </div>
-    </div>
   </div>
   <div id="tools">
-    <button class="tool" id="undoBtn"><b>↶</b><span data-i18n>戻す</span><small data-i18n>何回でも</small></button>
-    <button class="tool" id="hintBtn"><b>？</b><span data-i18n>ヒント</span><small id="hintLeft">のこり3</small></button>
-    <button class="tool" id="extraBtn"><b>＋</b><span data-i18n>試験管を追加</span><small id="extraLeft">1面1回</small></button>
-    <button class="tool" id="restartBtn"><b>⟲</b><span data-i18n>リスタート</span><small data-i18n>はじめから</small></button>
+    <button class="tool" id="undoBtn" type="button"><b>↶</b><span data-i18n>戻す</span><small data-i18n>何回でも</small></button>
+    <button class="tool" id="hintBtn" type="button"><b>？</b><span data-i18n>ヒント</span><small id="hintLeft">のこり3</small></button>
+    <button class="tool" id="extraBtn" type="button"><b>＋</b><span data-i18n>試験管を追加</span><small id="extraLeft">1面1回</small></button>
+    <button class="tool" id="restartBtn" type="button"><b>⟲</b><span data-i18n>リスタート</span><small data-i18n>はじめから</small></button>
   </div>
 </div>
+<div class="overlay" id="ovWin" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="card">
+    <h2 id="winTitle" data-i18n>そろった！</h2>
+    <div class="big" id="winStars"></div>
+    <p id="winText"></p>
+    <button class="btn" id="nextBtn" type="button" data-i18n>つぎのステージへ</button>
+    <button class="btn sub" id="replayBtn" type="button" data-i18n>もう一度あそぶ</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="ovStuck" hidden role="dialog" aria-modal="true" aria-labelledby="stuckTitle">
+  <div class="card">
+    <h2 id="stuckTitle" data-i18n>手づまり…</h2>
+    <p data-i18n>もう注げる試験管がありません。</p>
+    <div class="row2"><button class="btn" id="stUndo" type="button" data-i18n>↶ 戻す</button><button class="btn sub" id="stRestart" type="button" data-i18n>リスタート</button></div>
+    <button class="btn sub" id="stExtra" type="button" data-i18n>試験管を追加</button>
+    <button class="btn sub" id="stClose" type="button" data-i18n>とじる</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="ovDaily" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="card">
+    <h2 id="dTitle" data-i18n>今日のチャレンジ クリア！</h2>
+    <div class="label" data-i18n>スコア</div>
+    <div class="big" id="dScore">0</div>
+    <div id="dNew" class="newrec" hidden data-i18n>今日のベスト更新！</div>
+    <p id="dText"></p>
+    <p id="dBest"></p>
+    <button class="btn" id="dAgain" type="button" data-i18n>もう一度挑戦</button>
+    <button class="btn sub" id="dNormal" type="button" data-i18n>ふつうのステージへ</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="ovLevels" hidden role="dialog" aria-modal="true" aria-labelledby="lvTitle">
+  <div class="card" style="max-width:380px">
+    <h2 id="lvTitle" data-i18n>ステージ</h2>
+    <p data-i18n>あそんだところまで、どこからでも選べます。</p>
+    <button class="btn sub" id="lvDaily" type="button" data-i18n>今日のチャレンジ</button>
+    <div id="lvGrid"></div>
+    <button class="btn sub" id="lvClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <ol>
+      <li><svg class="tube-svg" viewBox="0 0 60 46" aria-hidden="true"><path class="g" d="M8 4 V36 a6 6 0 0 0 12 0 V4"/><path class="g" d="M40 10 V38 a6 6 0 0 0 12 0 V10"/><rect x="9" y="28" width="10" height="13" rx="4" fill="#53b6ff"/><rect x="9" y="18" width="10" height="10" fill="#f2475c"/><rect x="41" y="32" width="10" height="11" rx="4" fill="#f2475c"/><path d="M20 8 Q30 -2 40 6" fill="none" stroke="var(--w-c-hint)" stroke-width="2.6" stroke-linecap="round"/><path d="M40 6 l-6 -1 M40 6 l-2 -6" stroke="var(--w-c-hint)" stroke-width="2.6" stroke-linecap="round"/></svg>
+        <p data-i18n-html>試験管を<b>タップして持ち上げ</b>、別の試験管をタップして<b>注ぐ</b><small>上の同じ色がまとめて移ります</small></p></li>
+      <li><svg class="tube-svg" viewBox="0 0 60 46" aria-hidden="true"><path class="g" d="M8 4 V36 a6 6 0 0 0 12 0 V4"/><path class="g" d="M40 4 V36 a6 6 0 0 0 12 0 V4"/><rect x="9" y="28" width="10" height="13" rx="4" fill="#9be04a"/><rect x="9" y="18" width="10" height="10" fill="#ffd83a"/><rect x="41" y="28" width="10" height="13" rx="4" fill="#ffd83a"/><path d="M26 22 l4 4 l7 -9" fill="none" stroke="#30a46c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p data-i18n-html>注げるのは<b>空の試験管</b>か、<b>いちばん上が同じ色</b>のときだけ<small>入るぶんだけ移ります</small></p></li>
+      <li><svg class="tube-svg" viewBox="0 0 60 46" aria-hidden="true"><path class="g" d="M8 4 V36 a6 6 0 0 0 12 0 V4"/><path class="g" d="M24 4 V36 a6 6 0 0 0 12 0 V4"/><path class="g" d="M40 4 V36 a6 6 0 0 0 12 0 V4"/><rect x="9" y="8" width="10" height="33" rx="4" fill="#ff7ac8"/><rect x="25" y="8" width="10" height="33" rx="4" fill="#2ccac2"/><rect x="8" y="3" width="12" height="5" rx="2" fill="#c99459"/><rect x="24" y="3" width="12" height="5" rx="2" fill="#c99459"/></svg>
+        <p data-i18n-html>どの試験管も<b>1色でいっぱい</b>か空になればクリア<small>↶ 戻すは何回でも無料</small></p></li>
+    </ol>
+    <details>
+      <summary data-i18n>しかけと星</summary>
+      <ul>
+        <li data-i18n-html><b>？</b> の色は、いちばん上に出るまでわかりません。</li>
+        <li data-i18n-html><b>錠つき</b>の試験管は、指定の数だけ色をそろえると開きます。</li>
+        <li data-i18n-html><b>のっぽ</b>の試験管はたくさん入ります。</li>
+        <li data-i18n>★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。</li>
+        <li data-i18n-html><b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。</li>
+      </ul>
+    </details>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <div class="howto-btns">
+      <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+      <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+    </div>
+  </div>
+</div>
+<script src="engine.js"></script>
+<script src="../common/game.js"></script>
 <script>
+(() => {
 'use strict';
-// ENGINE-BEGIN
-const Engine = (() => {
-  'use strict';
-  function rng(seed) {
-    let a = seed >>> 0;
-    return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  }
-  // ---- level design: smooth curve, gimmicks unlock gradually ----
-  const COLOR_STEPS = [[1, 3], [3, 4], [6, 5], [10, 6], [15, 7], [21, 8], [28, 9], [37, 10], [48, 11], [62, 12]];
-  // salt (optional, 32-bit): a different puzzle family for the same level number (online battles); 0 = the normal stages
-  function spec(L, salt) {
-    const r = rng((L * 7919 + 13) ^ (salt | 0));
-    let colors = 3;
-    for (const [lv, c] of COLOR_STEPS) if (L >= lv) colors = c;
-    let cap = 4;
-    if (L >= 100) cap = 5;                                        // capacity 5 from level 100
-    if (cap === 5) colors = Math.min(colors, 9 + Math.floor((L - 100) / 20)); // ease the step to 5
-    let empties = 2;
-    if (L >= 80 && L % 4 === 3) empties = 1;                      // occasionally only one spare tube
-    const gim = { hidden: 0, lock: 0, tall: 0 };
-    if (L >= 12 && (L === 12 || r() < 0.4)) gim.hidden = L < 30 ? 0.5 : 0.55 + 0.1 * Math.floor(r() * 4);    // share of tubes with ？ layers
-    if (L >= 25 && (L === 25 || r() < 0.3)) gim.lock = L < 60 ? 1 : 1 + (r() < 0.5 ? 1 : 0);
-    if (L >= 40 && (L === 40 || r() < 0.25)) gim.tall = 1;
-    // target band for solver moves (near-minimum) — grows with colors and level
-    const units = colors * cap;
-    const lo = Math.round(units * (0.66 + 0.1 * Math.min(L, 300) / 300));
-    const band = { lo, hi: Math.round(units * 0.84 + 3) };
-    return { L, colors, cap, empties, gim, band };
-  }
-
-  // ---- solver ----
-  // state: array of tubes, each array of color ints (bottom→top)
-  // meta: caps[], locks[] (0 = none, N = opens after N colors done), K = units per color
-  function isDone(t, K) { if (t.length !== K) return false; for (let i = 1; i < K; i++) if (t[i] !== t[0]) return false; return true; }
-  function doneCount(st, K) { let n = 0; for (const t of st) if (isDone(t, K)) n++; return n; }
-  function isWin(st, K) { for (const t of st) if (t.length && !isDone(t, K)) return false; return true; }
-  function runLen(t) { const n = t.length; if (!n) return 0; const c = t[n - 1]; let k = 1; while (k < n && t[n - 1 - k] === c) k++; return k; }
-  function keyOf(st, meta) {
-    const a = new Array(st.length);
-    for (let i = 0; i < st.length; i++) a[i] = meta.tag[i] + String.fromCharCode.apply(null, st[i].map(c => 97 + c));
-    return a.sort().join(',');
-  }
-  function legal(st, meta, from, to, unlockedSet) {
-    if (from === to) return 0;
-    const a = st[from], b = st[to];
-    if (!a.length) return 0;
-    if (unlockedSet && (!unlockedSet[from] || !unlockedSet[to])) return 0;
-    const space = meta.caps[to] - b.length;
-    if (space <= 0) return 0;
-    if (b.length && b[b.length - 1] !== a[a.length - 1]) return 0;
-    return Math.min(space, runLen(a));
-  }
-  function openSet(st, meta, stickyOpen) {
-    const d = doneCount(st, meta.K), o = new Array(st.length);
-    for (let i = 0; i < st.length; i++) o[i] = !meta.locks[i] || d >= meta.locks[i] || (stickyOpen && stickyOpen[i]);
-    return o;
-  }
-  // useful moves (prunes pointless ones) for search
-  function moves(st, meta) {
-    const K = meta.K, open = openSet(st, meta), out = [];
-    for (let i = 0; i < st.length; i++) {
-      const a = st[i];
-      if (!a.length || !open[i] || isDone(a, K)) continue;
-      const rl = runLen(a), uniform = rl === a.length;
-      let emptyTried = {};
-      for (let j = 0; j < st.length; j++) {
-        if (i === j || !open[j]) continue;
-        const b = st[j];
-        const n = legal(st, meta, i, j);
-        if (!n) continue;
-        if (!b.length) {
-          if (uniform && meta.caps[j] <= meta.caps[i]) continue; // moving a pure tube into an empty one is pointless
-          if (emptyTried[meta.caps[j]]) continue;
-          emptyTried[meta.caps[j]] = 1;
-        }
-        out.push([i, j, n]);
-      }
-    }
-    return out;
-  }
-  function apply(st, m) {
-    const s = st.slice(); const a = s[m[0]].slice(), b = s[m[1]].slice();
-    for (let k = 0; k < m[2]; k++) b.push(a.pop());
-    s[m[0]] = a; s[m[1]] = b; return s;
-  }
-  function heur(st, meta) {
-    let h = 0; const bottoms = {};
-    for (const t of st) {
-      if (!t.length) continue;
-      let segs = 1; for (let i = 1; i < t.length; i++) if (t[i] !== t[i - 1]) segs++;
-      h += segs - 1;
-      bottoms[t[0]] = (bottoms[t[0]] || 0) + 1;
-    }
-    for (const c in bottoms) h += bottoms[c] - 1;
-    return h;
-  }
-  // weighted best-first search -> near-minimum solution (array of moves) or null
-  function solve(st, meta, opts) {
-    opts = opts || {};
-    const limit = opts.limit || 40000, w = opts.w || 1.6;
-    const heap = []; const push = (n) => { heap.push(n); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p].f <= n.f) break; heap[i] = heap[p]; i = p; } heap[i] = n; };
-    const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { let i = 0; for (;;) { let l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l].f < (m === i ? last.f : heap[m].f)) m = l; if (r < heap.length && heap[r].f < (m === i ? last.f : heap[m].f)) m = r; if (m === i) break; heap[i] = heap[m]; i = m; } heap[i] = last; } return top; };
-    const seen = new Map();
-    const start = { s: st, g: 0, f: w * heur(st, meta), m: null, p: null };
-    seen.set(keyOf(st, meta), 0); push(start);
-    let n = 0;
-    while (heap.length) {
-      const cur = pop();
-      if (isWin(cur.s, meta.K)) { const path = []; for (let c = cur; c.p; c = c.p) path.push(c.m); path.reverse(); return { path, nodes: n }; }
-      if (++n > limit) return { path: null, nodes: n, aborted: true };
-      for (const m of moves(cur.s, meta)) {
-        const s2 = apply(cur.s, m), k = keyOf(s2, meta), g = cur.g + 1;
-        const old = seen.get(k);
-        if (old !== undefined && old <= g) continue;
-        seen.set(k, g);
-        push({ s: s2, g, f: g + w * heur(s2, meta), m, p: cur });
-      }
-    }
-    return { path: null, nodes: n };
-  }
-  // random-player trap rate: share of random playouts that get stuck
-  function trapRate(st, meta, r, tries) {
-    let stuck = 0;
-    for (let t = 0; t < tries; t++) {
-      let s = st; const seen = new Set([keyOf(s, meta)]);
-      for (let step = 0; step < 400; step++) {
-        if (isWin(s, meta.K)) break;
-        const ms = moves(s, meta).map(m => apply(s, m)).filter(s2 => !seen.has(keyOf(s2, meta)));
-        if (!ms.length) { stuck++; break; }
-        s = ms[Math.floor(r() * ms.length)]; seen.add(keyOf(s, meta));
-      }
-    }
-    return stuck / tries;
-  }
-  function makeMeta(caps, locks, K) {
-    return { caps, locks, K, tag: caps.map((c, i) => String.fromCharCode(65 + c) + (locks[i] ? String(locks[i]) : '') + ':') };
-  }
-
-  // ---- generator ----
-  const cache = new Map();
-  function generate(L, salt) {
-    salt = salt | 0;
-    const ck = salt ? L + ':' + salt : L;
-    if (cache.has(ck)) return cache.get(ck);
-    const sp = spec(L, salt), r = rng(((L * 2654435761 + 7) >>> 0) ^ salt);
-    const K = sp.cap, C = sp.colors;
-    let best = null, bestErr = Infinity, tried = 0;
-    const MAXC = 40;
-    for (let cand = 0; cand < MAXC; cand++) {
-      tried++;
-      const units = []; for (let c = 0; c < C; c++) for (let k = 0; k < K; k++) units.push(c);
-      for (let i = units.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [units[i], units[j]] = [units[j], units[i]]; }
-      const tubes = [];
-      if (sp.empties >= 2) { for (let i = 0; i < C; i++) tubes.push(units.slice(i * K, i * K + K)); }
-      else { // one empty tube: the other spare space is scattered over C+1 partly filled tubes
-        const lens = new Array(C + 1).fill(K); let rem = K;
-        while (rem > 0) { const i = Math.floor(r() * (C + 1)); if (lens[i] > K - 2) { lens[i]--; rem--; } }
-        let p = 0; for (const n of lens) { tubes.push(units.slice(p, p + n)); p += n; }
-      }
-      // reject boring starts: a tube already 3+ same at top/bottom chunk
-      let boring = false;
-      for (const t of tubes) { if (!t.length) { boring = true; continue; } let m = 1, run = 1; for (let i = 1; i < K; i++) { run = t[i] === t[i - 1] ? run + 1 : 1; m = Math.max(m, run); } if (m >= K - 1 && C > 3) boring = true; if (m === t.length && t.length > 1) boring = true; }
-      if (boring) continue;
-      const caps = tubes.map(() => K), locks = tubes.map(() => 0);
-      for (let e = 0; e < (sp.empties >= 2 ? 2 : 1); e++) { tubes.push([]); caps.push(K); locks.push(0); }
-      if (sp.gim.tall) caps[caps.length - 1] = K + 2;
-      if (sp.gim.lock) { const li = Math.floor(r() * (tubes.length - (sp.empties >= 2 ? 2 : 1))); locks[li] = sp.gim.lock; }
-      const meta = makeMeta(caps, locks, K);
-      const res = solve(tubes, meta, { limit: C >= 10 ? 12000 : 8000 });
-      if (!res.path) continue;
-      const moves = res.path.length;
-      const err = moves < sp.band.lo ? (sp.band.lo - moves) * 3 : moves > sp.band.hi ? moves - sp.band.hi : 0;
-      const pz = { tubes, caps, locks, K, moves, sol: res.path, nodes: res.nodes };
-      if (err < bestErr) { best = pz; bestErr = err; }
-      if (err === 0 && cand >= 2) break; // take an in-band candidate after looking at a few
-    }
-    if (!best) { // fallback: always solvable (should not happen) – 2 colors swapped
-      throw new Error('no puzzle for level ' + L);
-    }
-    // hidden layers: everything below the top is ？ in chosen tubes
-    const hid = best.tubes.map(t => t.map(() => false));
-    if (sp.gim.hidden) {
-      const idx = []; best.tubes.forEach((t, i) => { if (t.length > 1) idx.push(i); });
-      const n = Math.max(1, Math.round(idx.length * sp.gim.hidden));
-      for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-      for (const i of idx.slice(0, n)) for (let k = 0; k < best.tubes[i].length - 1; k++) hid[i][k] = true;
-    }
-    const out = { L, spec: sp, K, colors: C, tubes: best.tubes, caps: best.caps, locks: best.locks, hid, moves: best.moves, sol: best.sol, tried, inBand: bestErr === 0 };
-    out.trap = trapRate(best.tubes, makeMeta(best.caps, best.locks, K), rng((L + 99) ^ salt), 24);
-    cache.set(ck, out);
-    return out;
-  }
-  return { rng, spec, generate, solve, makeMeta, moves, apply, legal, isDone, isWin, doneCount, runLen, openSet, keyOf };
-})();
-// ENGINE-END
-
-// ================= game =================
+// The rules, the stage generator and the solver live in engine.js (window.WaterEngine), shared with replay verification.
+const E = window.WaterEngine;
 const T = KoboI18n.t;
-const SAVE_KEY = 'kusoge.water.save';
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'water';
+const SAVE_KEY = 'kusoge.water.save';      // { level, best, stars:{ "<level>": 1..3 } }  synced (registry: level newest, best max, stars mapMax)
+const CUR_KEY = 'kusoge.water.cur';        // { v:1, L, log }  the stage in progress (engine log). This device only
+const DAILY_KEY = 'kusoge.water.daily';    // { v:1, dateKey, idx, logs, log, ms } | { v:1, dateKey, done:true, score, ... }. This device only
+const HOWTO_KEY = 'kusoge.water.howto';    // '1' = the how-to was shown
+const TUT_KEY = 'kusoge.water.tut';        // '1' | 'skip' | 'old'
 const COLORS = ['#f2475c', '#ff9a2e', '#ffd83a', '#9be04a', '#2aa865', '#2ccac2', '#53b6ff', '#3d55dc', '#9353e6', '#ff7ac8', '#9a6239', '#eef2f7'];
-const COLOR_NAMES = ['いちご', 'みかん', 'レモン', 'ライム', 'メロン', 'ソーダ', 'そら', 'ラムネ', 'ぶどう', 'もも', 'ココア', 'ミルク'];
-const HIDDEN_COLOR = '#2c3446';
+const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
 };
-function loadSave() {
-  let s = null;
-  try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
-  if (!s || typeof s !== 'object') s = {};
+const readJSON = k => { try { const v = JSON.parse(store.get(k) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } };
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+
+// ---------- save (progress never goes back: best = max, stars = max per stage, also against another tab or the cloud) ----------
+function readSave() {
+  const s = readJSON(SAVE_KEY) || {};
   const level = Math.max(1, parseInt(s.level, 10) || 1);
   const best = Math.max(level, parseInt(s.best, 10) || 1);
-  const stars = (s.stars && typeof s.stars === 'object') ? s.stars : {};
+  const stars = (s.stars && typeof s.stars === 'object' && !Array.isArray(s.stars)) ? s.stars : {};
   return { level, best, stars };
 }
-let save = loadSave();
-function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
-let soundOn = store.get('kusoge.sound') !== '0';
+let save = readSave();
+function writeSave() {
+  const cur = readSave();
+  save.best = Math.max(save.best, cur.best, save.level);
+  for (const k of Object.keys(cur.stars)) if ((Number(cur.stars[k]) || 0) > (Number(save.stars[k]) || 0)) save.stars[k] = cur.stars[k];
+  store.set(SAVE_KEY, JSON.stringify(save));
+}
+// players who already have progress have played before: no first-visit how-to / tutorial. Runs once; running it again changes nothing.
+function migrateHowto(raw, setRaw) {
+  if (raw(SAVE_KEY) == null) return;
+  if (raw(HOWTO_KEY) == null) setRaw(HOWTO_KEY, '1');
+  if (raw(TUT_KEY) == null) setRaw(TUT_KEY, 'old');
+}
+if (PF && PF.migrations) PF.migrations.add({ id: 'water-howto-1', v: 1, run(c) { migrateHowto(k => c.store.raw(k), (k, v) => c.store.setRaw(k, v)); } });
+else migrateHowto(k => store.get(k), (k, v) => store.set(k, v));
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
 
-// ---------- audio ----------
-let actx = null;
-function ensureAudio() {
-  if (!actx) { try { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); } catch (e) { actx = null; } }
-  if (actx && actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
-}
-function tone(freq, dur, type, vol, delay, slideTo) {
-  if (!soundOn || !actx || actx.state !== 'running') return;
-  try {
-    const t = actx.currentTime + (delay || 0);
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.type = type || 'sine';
-    o.frequency.setValueAtTime(freq, t);
-    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol || 0.1, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(actx.destination);
-    o.start(t); o.stop(t + dur + 0.02);
-  } catch (e) {}
-}
+// ---------- sound (KoboAudio: shared volume and mute) ----------
+function tone(freq, dur, type, vol, delay, slideTo) { if (A) A.tone(freq, dur, { type: type || 'sine', vol: vol || 0.1, delay: delay || 0, slide: slideTo || 0 }); }
 const sfx = {
   lift() { tone(520, 0.06, 'triangle', 0.06, 0, 700); },
   drop() { tone(420, 0.06, 'triangle', 0.05, 0, 300); },
@@ -539,41 +542,108 @@ const sfx = {
   undo() { tone(500, 0.07, 'sine', 0.06, 0, 330); },
   hint() { tone(988, 0.09, 'sine', 0.07); tone(1319, 0.14, 'sine', 0.07, 0.08); },
 };
-function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
-function renderSound() { const b = $('sndBtn'); b.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); if (KoboI18n.lang !== 'ja') b.setAttribute('aria-label', T('サウンド')); }
+function vibrate(p) { if (A) A.vibrate(reduceMotion.matches && Array.isArray(p) ? p[0] : p); }
+function renderSound() {
+  const b = $('sndBtn'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+}
+
+// ---------- canvas colors from the theme ----------
+let PAL = {};
+function readPal() {
+  let cs = null; try { cs = getComputedStyle(document.documentElement); } catch (e) {}
+  const v = (n, d) => { const x = cs ? cs.getPropertyValue(n).trim() : ''; return x || d; };
+  PAL = {
+    glassFill: v('--w-c-glass-fill', 'rgba(200,235,255,0.07)'), glass: v('--w-c-glass', 'rgba(210,240,255,0.75)'), lip: v('--w-c-lip', 'rgba(225,245,255,0.9)'),
+    shine: v('--w-c-shine', 'rgba(255,255,255,0.22)'), shelf: v('--w-c-shelf', 'rgba(190,235,255,0.12)'), hidden: v('--w-c-hidden', '#2c3446'),
+    mark: v('--w-c-mark', 'rgba(169,196,212,0.8)'), lock: v('--w-c-lock', '#ffe066'), lockInk: v('--w-c-lock-ink', '#10202c'),
+    hint: v('--w-c-hint', '#ffe066'), spark: v('--w-c-spark', '#ffffff'), twinkle: v('--w-c-twinkle', '255, 255, 255'), accent: v('--kb-accent', '#5fe3e0'),
+  };
+}
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false;
+  m.setAttribute('content', light ? '#e9f3f8' : '#0f2233');
+}
 
 // ---------- state ----------
-const HINTS_PER_LEVEL = 3;
-let G = null; // current game
+// G = engine game state (E.newGame) + { L, pz, kind: 'normal' | 'daily' | 'vs', sel, won }
+let G = null;
 let anims = [], fx = [], hintMark = null;
+let mode = 'normal';   // 'normal' | 'daily' (an online match is `vs`, on top of either)
+let daily = null;      // { dateKey, seed, idx, logs, ms, done, score, best, tries }
+let vs = null;         // { snap, salt, idx, score, skipAt, playing } while a match owns the rack
+let tut = null;        // { step } while the tutorial runs (stage 1)
+let sess = null;       // the play session KoboGame knows about (play_start sent)
+let buildToken = 0, pendingTut = false, menuOpen = false, booted = false;
+const DAILY_N = E.DAILY_LEVELS.length;
 
-function startLevel(L) {
+function newG(pz, extra) {
+  const g = Object.assign(E.newGame(pz), { L: pz.L, pz, sel: -1, won: false }, extra || {});
+  return g;
+}
+function setGame(g) {
+  G = g; anims = []; fx = []; hintMark = null;
+  hideGameOverlays();
+  refreshUI(); layout(); draw();
+}
+// a play starts with the first action (just looking at a stage is not a play)
+function begin() {
+  if (sess || vs || !G) return;
+  if (mode === 'daily' && daily) { sess = { mode: 'daily' }; emit('play_start', { mode: 'daily', dateKey: daily.dateKey, seed: daily.seed }); }
+  else { sess = { mode: 'normal', stage: G.L }; emit('play_start', { mode: 'normal', stage: G.L }); }
+}
+function endPlay(reason, extra) {
+  if (!sess) return;
+  const s = sess; sess = null;
+  emit('play_end', Object.assign({ mode: s.mode, reason, score: 0, stage: s.stage }, extra || {}));
+}
+function persist() {
+  if (vs || !G) return;
+  if (G.kind === 'normal') {
+    if (G.won || !G.log) store.del(CUR_KEY);
+    else store.set(CUR_KEY, JSON.stringify({ v: 1, L: G.L, log: G.log }));
+  } else if (G.kind === 'daily' && daily && !daily.done) {
+    store.set(DAILY_KEY, JSON.stringify({ v: 1, dateKey: daily.dateKey, idx: daily.idx, logs: daily.logs, log: G.won ? '' : G.log, ms: Math.round(dailyMs()) }));
+  }
+}
+
+function startLevel(L, opt) {
+  opt = opt || {};
   if (vs) return;
+  L = Math.max(1, L | 0);
+  endPlay('quit');
+  if (mode === 'daily') leaveDaily();
+  if (tut && L !== 1) finishTutorial('skip');
+  if (opt.fresh) store.del(CUR_KEY);
   save.level = L; if (L > save.best) save.best = L; writeSave();
   G = null; anims = []; fx = []; hintMark = null;
-  hideAll();
+  hideGameOverlays(); $('ovLevels').hidden = true;
   $('msg').textContent = T('つくっています…');
-  draw();
+  renderMode(); refreshUI(); draw();
+  const token = ++buildToken;
   setTimeout(() => {
-    if (vs) return; // a match started meanwhile (onExit rebuilds the stage)
-    const pz = Engine.generate(L);
-    G = {
-      L, pz, K: pz.K,
-      tubes: pz.tubes.map(t => t.slice()), hid: pz.hid.map(h => h.slice()),
-      caps: pz.caps.slice(), locks: pz.locks.slice(), open: pz.locks.map(n => !n),
-      done: pz.tubes.map(() => false), sel: -1, history: [],
-      hintsUsed: 0, extraUsed: 0, undos: 0, moves: 0, won: false,
-    };
-    G.done = G.tubes.map(t => Engine.isDone(t, G.K));
-    refreshUI(); layout(); draw();
+    if (vs || token !== buildToken) return; // a match or another stage started meanwhile
+    const pz = E.generate(L);
+    let g = null;
+    const cur = readJSON(CUR_KEY);
+    if (cur && cur.v === 1 && cur.L === L && typeof cur.log === 'string' && cur.log) {
+      const r = E.replay(pz, cur.log); // the stage in progress, checked move by move by the engine
+      if (r.ok && !r.won) g = Object.assign(r.g, { L, pz, sel: -1, won: false });
+    }
+    if (!g) { store.del(CUR_KEY); g = newG(pz); }
+    g.kind = 'normal';
+    setGame(g);
     introGimmick(pz);
+    if (L === 1 && (pendingTut || (store.get(TUT_KEY) == null && $('howto').hidden && !g.log))) startTutorialNow();
+    pendingTut = false;
     // prepare the next stage in the background
-    setTimeout(() => { try { Engine.generate(L + 1); } catch (e) {} }, 900);
+    setTimeout(() => { try { E.generate(L + 1); } catch (e) {} }, 900);
   }, 30);
-}
-function metaNow() {
-  // locks that were opened stay open (sticky), so the solver sees them as plain tubes
-  return Engine.makeMeta(G.caps, G.locks.map((n, i) => G.open[i] ? 0 : n), G.K);
 }
 function starsNow() { if (!G) return 3; return Math.max(1, 3 - (G.hintsUsed ? 1 : 0) - (G.extraUsed ? 1 : 0)); }
 
@@ -589,13 +659,25 @@ function introGimmick(pz) {
   else if (g.lock && pz.L === GIM_INTRO.lock[0]) t = GIM_INTRO.lock[1];
   else if (g.tall && pz.L === GIM_INTRO.tall[0]) t = GIM_INTRO.tall[1];
   else if (pz.L === 100) t = 'ここから試験管は5段！';
-  $('msg').textContent = T(t);
+  $('msg').textContent = t ? T(t) : '';
+}
+function puzzleTags(pz, first) {
+  const g = pz.spec.gim, tags = first.concat([T('{n}色', { n: pz.colors }), T('目標 {n}手', { n: pz.moves })]);
+  if (pz.K === 5) tags.push(T('5段'));
+  if (g.hidden) tags.push('？');
+  if (g.lock) tags.push(T('錠'));
+  if (g.tall) tags.push(T('のっぽ'));
+  return tags.join(T(' ・ '));
 }
 function refreshUI() {
-  $('lvBtn').textContent = 'Lv.' + (G ? G.L : save.level);
+  const lb = $('lvBtn');
+  if (vs && G) lb.textContent = T('第{n}問', { n: G.vsN || 1 });
+  else if (mode === 'daily' && daily) lb.textContent = T('第{n}問 / {t}', { n: Math.min(DAILY_N, daily.idx + 1), t: DAILY_N });
+  else lb.textContent = 'Lv.' + (G ? G.L : save.level);
   const chips = $('chips'); chips.innerHTML = '';
   if (G) {
     const add = (txt, cls) => { const s = document.createElement('span'); s.className = 'chip' + (cls ? ' ' + cls : ''); s.textContent = txt; chips.appendChild(s); };
+    if (mode === 'daily' && !vs) add(T('{n}手', { n: G.history.length }));
     add(T('{n}色', { n: G.pz.colors }));
     const g = G.pz.spec.gim;
     if (G.K === 5) add(T('5段'));
@@ -605,145 +687,354 @@ function refreshUI() {
     if (G.pz.spec.empties === 1) add(T('空き1'), 'g');
   }
   const st = starsNow();
+  $('mstars').hidden = !!vs || mode === 'daily';
   $('mstars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
   if (vs) { // a match: the hint button becomes "skip"; no extra tube, no stage list
     $('undoBtn').disabled = !G || !G.history.length || G.won;
-    $('hintBtn').disabled = !G || G.won; $('extraBtn').disabled = true; $('restartBtn').disabled = !G || G.won; $('lvBtn').disabled = true;
+    $('hintBtn').disabled = !G || G.won; $('extraBtn').disabled = true; $('restartBtn').disabled = !G || G.won; lb.disabled = true;
     return;
   }
-  $('lvBtn').disabled = false;
-  $('hintLeft').textContent = T('のこり{n}', { n: G ? HINTS_PER_LEVEL - G.hintsUsed : HINTS_PER_LEVEL });
-  $('extraLeft').textContent = T(G && G.extraUsed ? '使用ずみ' : '1面1回');
+  lb.disabled = false;
+  const left = G ? E.HINTS_PER_LEVEL - G.hintsUsed : E.HINTS_PER_LEVEL;
+  $('hintLeft').textContent = mode === 'daily' ? (left > 0 ? T('+{n}手', { n: 5 }) : T('使用ずみ')) : T('のこり{n}', { n: left });
+  $('extraLeft').textContent = G && G.extraUsed ? T('使用ずみ') : mode === 'daily' ? T('+{n}手', { n: 10 }) : T('1面1回');
   $('undoBtn').disabled = !G || !G.history.length || G.won;
-  $('hintBtn').disabled = !G || G.won || G.hintsUsed >= HINTS_PER_LEVEL;
+  $('hintBtn').disabled = !G || G.won || G.hintsUsed >= E.HINTS_PER_LEVEL;
   $('extraBtn').disabled = !G || G.won || G.extraUsed > 0;
-  $('restartBtn').disabled = !G;
+  $('restartBtn').disabled = !G || G.won;
+  $('undoBtn').classList.toggle('pulse', !!tut && tut.step === 3);
 }
 
 // ---------- moves ----------
-function topRun(i) { return Engine.runLen(G.tubes[i]); }
-function canPour(f, t) {
-  if (f === t || !G.open[f] || !G.open[t]) return 0;
-  return Engine.legal(G.tubes, { caps: G.caps }, f, t);
-}
 function finishAnims() { anims = []; }
-function doPour(f, t, fromHint) {
-  const n = canPour(f, t);
-  if (!n) return false;
+function doPour(f, t) {
+  if (!E.canPour(G, f, t) || G.done[f]) return false;
   finishAnims();
-  const src = G.tubes[f], dst = G.tubes[t];
-  const color = src[src.length - 1];
-  const before = { src: src.slice(), dst: dst.slice(), srcHid: G.hid[f].slice(), dstHid: G.hid[t].slice() };
-  for (let k = 0; k < n; k++) { dst.push(src.pop()); G.hid[f].pop(); G.hid[t].push(false); }
-  G.history.push({ f, t, n });
-  G.moves++; G.sel = -1; hintMark = null;
-  const dur = 0.24 + 0.2 + 0.11 * n + 0.22;
-  anims.push({ f, t, n, color, before, t0: performance.now(), dur, revealDone: false });
-  sfx.glug(n, before.dst.length, 0.2);
+  const r = E.pour(G, f, t);
+  if (!r) return false;
+  begin();
+  G.sel = -1; hintMark = null;
+  const dur = 0.24 + 0.2 + 0.11 * r.n + 0.22;
+  anims.push({ f, t, n: r.n, color: r.color, before: r.before, t0: performance.now(), dur });
+  sfx.glug(r.n, r.before.dst.length, 0.2);
   vibrate(8);
-  afterChange(true);
+  afterChange(r);
   return true;
 }
-function afterChange(fromPour) {
-  // completed tubes (cork), reveals and locks are judged on the new state; effects fire when the pour lands
-  const newly = [];
-  G.tubes.forEach((t, i) => { const d = Engine.isDone(t, G.K); if (d && !G.done[i]) newly.push(i); G.done[i] = d; });
-  const dc = Engine.doneCount(G.tubes, G.K);
-  const opened = [];
-  G.locks.forEach((n, i) => { if (n && !G.open[i] && dc >= n) { G.open[i] = true; opened.push(i); } });
-  const revealed = [];
-  G.tubes.forEach((t, i) => { if (t.length && G.hid[i][t.length - 1]) { G.hid[i][t.length - 1] = false; revealed.push(i); } });
-  const delay = fromPour ? 600 : 0;
+function afterChange(r) {
+  // effects fire when the pour lands
+  const delay = 600, g = G;
   setTimeout(() => {
-    newly.forEach(i => { burst(i, 18); sfx.done(); vibrate([12, 30, 12]); });
-    revealed.forEach(i => { burst(i, 6, '#ffffff'); sfx.reveal(); });
-    opened.forEach(i => { burst(i, 14, '#ffe066'); sfx.unlock(); toast(T('錠が開いた！')); });
+    if (G !== g) return;
+    r.newly.forEach(i => { burst(i, 18); sfx.done(); vibrate([12, 30, 12]); });
+    r.revealed.forEach(i => { burst(i, 6, PAL.spark); sfx.reveal(); });
+    r.opened.forEach(i => { burst(i, 14, PAL.lock); sfx.unlock(); toast(T('錠が開いた！')); });
   }, delay);
-  if (newly.length && $('msg').textContent && G.L === 1) $('msg').textContent = '';
-  refreshUI();
-  if (Engine.isWin(G.tubes, G.K)) {
-    G.won = true; refreshUI();
-    if (vs) { vsSolved(delay); return; }
-    setTimeout(win, delay + 350);
-  } else if (isStuck()) {
-    if (vs) { const g = G; setTimeout(() => { if (G === g && !G.won && isStuck()) { toast(T('手づまり… 戻すかスキップを')); sfx.bad(); vibrate(30); } }, delay + 250); return; }
-    setTimeout(() => { if (G && !G.won && isStuck()) showStuck(); }, delay + 250);
+  if (r.newly.length && $('msg').textContent && G.L === 1 && G.kind === 'normal') $('msg').textContent = '';
+  if (E.won(G)) {
+    G.won = true;
+    if (vs) { refreshUI(); vsSolved(delay); return; }
+    if (G.kind === 'daily') { dailySolved(delay); return; }
+    win(delay + 350);
+    return;
+  }
+  persist(); refreshUI();
+  if (tut) tutAfterPour(r);
+  if (E.stuck(G)) {
+    if (vs) { setTimeout(() => { if (G === g && !G.won && E.stuck(G)) { toast(T('手づまり… 戻すかスキップを')); sfx.bad(); vibrate(30); } }, delay + 250); return; }
+    setTimeout(() => { if (G === g && !G.won && E.stuck(G)) showStuck(); }, delay + 250);
   }
 }
-function isStuck() {
-  for (let i = 0; i < G.tubes.length; i++) {
-    const a = G.tubes[i];
-    if (!a.length || G.done[i]) continue;
-    for (let j = 0; j < G.tubes.length; j++) {
-      const n = canPour(i, j);
-      if (!n) continue;
-      if (!G.tubes[j].length && Engine.runLen(a) === a.length) continue; // just moving a pure tube around
-      return false;
-    }
-  }
-  return true;
-}
+const canAct = () => (vs ? KoboVersus.canPlay() : !KoboVersus.active());
 function undo() {
-  if (!G || G.won || !G.history.length) return;
-  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
+  if (!G || G.won || !G.history.length || !canAct()) return;
   finishAnims(); hintMark = null;
-  const m = G.history.pop();
-  for (let k = 0; k < m.n; k++) { G.tubes[m.f].push(G.tubes[m.t].pop()); G.hid[m.t].pop(); G.hid[m.f].push(false); }
-  G.undos++; G.sel = -1;
-  G.done = G.tubes.map(t => Engine.isDone(t, G.K));
-  sfx.undo(); hideAll(); refreshUI(); layout(); draw();
+  E.undo(G); G.sel = -1;
+  sfx.undo(); hideGameOverlays(); persist(); refreshUI(); layout(); draw();
+  if (tut) tutAfterUndo();
 }
 function addTube() {
   if (!G || G.won || G.extraUsed || vs || KoboVersus.active()) return;
   finishAnims();
-  G.extraUsed = 1; G.tubes.push([]); G.hid.push([]); G.caps.push(G.K); G.locks.push(0); G.open.push(true); G.done.push(false);
-  hideAll(); layout(); refreshUI();
-  burst(G.tubes.length - 1, 10, '#5fe3e0'); sfx.unlock(); toast(T('空の試験管を1本追加しました（★−1）'));
+  E.addTube(G); begin();
+  hideGameOverlays(); persist(); layout(); refreshUI();
+  burst(G.tubes.length - 1, 10, PAL.accent); sfx.unlock(); toast(T(mode === 'daily' ? '空の試験管を1本追加しました（+10手）' : '空の試験管を1本追加しました（★−1）'));
+  if (tut) tutGuide();
 }
 function restart() {
   if (!G) return;
-  ensureAudio();
   if (vs) { if (KoboVersus.canPlay() && !G.won) vsPuzzle(vs.idx); return; }
-  if (KoboVersus.active()) return;
-  startLevel(G.L);
+  if (KoboVersus.active() || G.won) return;
+  if (G.kind === 'daily') { // back to the start of this puzzle; hints and the extra tube stay counted
+    finishAnims(); hintMark = null;
+    while (G.history.length) E.undo(G);
+    G.sel = -1; hideGameOverlays(); persist(); refreshUI(); layout(); draw();
+    return;
+  }
+  startLevel(G.L, { fresh: true });
 }
 function hint() {
   if (vs) { vsSkip(); return; }
-  if (!G || G.won || G.hintsUsed >= HINTS_PER_LEVEL || KoboVersus.active()) return;
-  const meta = metaNow();
-  const res = Engine.solve(G.tubes.map(t => t.slice()), meta, { limit: 60000, w: 2 });
-  if (!res.path) { toast(T(res.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを')); sfx.bad(); return; }
-  if (!res.path.length) return;
-  const m = res.path[0];
-  G.hintsUsed++; G.sel = -1;
-  hintMark = { f: m[0], t: m[1], t0: performance.now() };
-  sfx.hint(); refreshUI();
-  if (G.hintsUsed === 1) toast(T('光っている試験管から、矢印の先へ（★−1）'));
+  if (!G || G.won || G.hintsUsed >= E.HINTS_PER_LEVEL || KoboVersus.active()) return;
+  const h = E.hintMove(G);
+  if (h.done) return;
+  if (!h.move) { toast(T(h.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを')); sfx.bad(); return; }
+  E.useHint(G); begin();
+  G.sel = -1;
+  hintMark = { f: h.move[0], t: h.move[1], t0: performance.now() };
+  sfx.hint(); persist(); refreshUI();
+  if (G.hintsUsed === 1) toast(T(mode === 'daily' ? '光っている試験管から、矢印の先へ（+5手）' : '光っている試験管から、矢印の先へ（★−1）'));
 }
-function win() {
-  const st = starsNow();
-  const L = G.L;
-  save.stars[L] = Math.max(save.stars[L] || 0, st);
+// a normal stage is cleared: the record is written now, the card comes after the last pour has landed
+function win(showDelay) {
+  const st = starsNow(), L = G.L, prevBest = save.best, g = G;
+  begin();
+  save.stars[L] = Math.max(Number(save.stars[L]) || 0, st);
   save.level = L + 1; save.best = Math.max(save.best, L + 1); writeSave();
-  sfx.win(); vibrate([20, 40, 20, 40, 60]);
-  for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, 12);
-  $('winStars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
-  const used = [];
-  if (G.hintsUsed) used.push(T('ヒント{n}回', { n: G.hintsUsed }));
-  if (G.extraUsed) used.push(T('試験管追加'));
-  $('winText').textContent = 'Lv.' + L + T(' ・ ') + T('{n}手', { n: G.moves }) + (G.undos ? T('（戻す{n}回）', { n: G.undos }) : '') + T(' ・ ') + (used.length ? T('{list}を使用', { list: used.join(T('・')) }) : T('道具なし！'));
-  setTimeout(() => { $('ovWin').hidden = false; }, 500);
+  store.del(CUR_KEY);
+  emit('stage_clear', { stage: L, stars: st, moves: G.moves });
+  if (save.best > prevBest) emit('best', { score: save.best - 1 });
+  endPlay('clear', { score: L, stage: L, stats: { moves: G.moves, stars: st, hints: G.hintsUsed, extra: G.extraUsed, undos: G.undos } });
+  const tutDone = !!tut;
+  if (tut) finishTutorial('done');
+  refreshUI();
+  setTimeout(() => {
+    if (G !== g || vs) return;
+    sfx.win(); vibrate([20, 40, 20, 40, 60]);
+    for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 4 : 12);
+    $('winStars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
+    const used = [];
+    if (G.hintsUsed) used.push(T('ヒント{n}回', { n: G.hintsUsed }));
+    if (G.extraUsed) used.push(T('試験管追加'));
+    $('winText').textContent = 'Lv.' + L + T(' ・ ') + T('{n}手', { n: G.moves }) + (G.undos ? T('（戻す{n}回）', { n: G.undos }) : '') + T(' ・ ') + (used.length ? T('{list}を使用', { list: used.join(T('・')) }) : T('道具なし！'));
+    $('winTitle').textContent = T(tutDone ? 'チュートリアル完了！' : 'そろった！');
+    setTimeout(() => { if (G === g && !vs) { $('ovWin').hidden = false; focusSoon('nextBtn'); } }, reduceMotion.matches ? 150 : 500);
+  }, showDelay || 0);
 }
 function showStuck() {
   $('stExtra').hidden = !!G.extraUsed;
   $('ovStuck').hidden = false;
   sfx.bad(); vibrate(30);
+  focusSoon('stUndo');
 }
-function hideAll() { ['ovWin', 'ovStuck', 'ovLevels', 'ovHelp'].forEach(id => { $(id).hidden = true; }); }
+function hideGameOverlays() { ['ovWin', 'ovStuck', 'ovDaily'].forEach(id => { $(id).hidden = true; }); }
+function focusSoon(id) { setTimeout(() => { const b = $(id); if (b && b.offsetParent) try { b.focus({ preventScroll: true }); } catch (e) {} }, 60); }
 
 // ---------- toast ----------
 let toastTimer = 0;
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 2200); }
+
+// ---------- tutorial: stage 1, one real action at a time ----------
+// 0: lift the glowing tube → 1: pour where the arrow points → 2: fill one tube with one color (arrows) →
+// 3: press Undo → 4: sort the rest alone → done when the stage is cleared. Skipping is always possible.
+const TUT_STEPS = [
+  { text: '光っている試験管をタップして、持ち上げよう', sub: 'いちばん上の色が注がれます' },
+  { text: '矢印の先の試験管をタップして、注ごう', sub: '空の試験管か、いちばん上が同じ色なら注げる' },
+  { text: '同じ色を集めて、1本を1色でいっぱいにしよう', sub: '矢印のとおりに注いでみよう' },
+  { text: '↶ 戻す を押して、1手もどしてみよう', sub: '戻すは何回でも無料' },
+  { text: 'あとは自分で、全部そろえよう', sub: '困ったら ？ ヒント（★が1つ減る）' },
+];
+function startTutorial() {
+  if (vs) return;
+  if (mode !== 'normal' || !G || G.L !== 1 || G.log) { pendingTut = true; startLevel(1, { fresh: true }); return; }
+  startTutorialNow();
+}
+function startTutorialNow() {
+  tut = { step: 0 };
+  $('msg').textContent = '';
+  renderCoach(); tutGuide(); refreshUI();
+}
+function finishTutorial(why) {
+  if (!tut) return;
+  tut = null; pendingTut = false;
+  store.set(TUT_KEY, why === 'done' ? '1' : 'skip');
+  if (hintMark && hintMark.tut) hintMark = null;
+  renderCoach(); refreshUI();
+}
+function tutGuide() {
+  if (!tut || !G || G.won) return;
+  if (tut.step > 2) { if (hintMark && hintMark.tut) hintMark = null; return; }
+  const h = E.hintMove(G, { limit: 20000 });
+  hintMark = h.move ? { f: h.move[0], t: h.move[1], t0: performance.now(), tut: true, only: tut.step === 0 ? 'f' : null } : null;
+}
+function setTutStep(n) { if (!tut || tut.step === n) return; tut.step = n; renderCoach(); tutGuide(); refreshUI(); }
+function tutOnLift(i) {
+  if (!tut) return;
+  if (tut.step === 0) {
+    if (hintMark && hintMark.f === i) { setTutStep(1); if (hintMark) hintMark.only = null; }
+    else { G.sel = -1; nudgeCoach(); toast(T('まずは光っている試験管から')); }
+  }
+}
+function tutAfterPour(r) {
+  if (!tut) return;
+  if (tut.step <= 1) setTutStep(2);
+  else if (tut.step === 2 && r.newly.length) setTutStep(3);
+  else tutGuide();
+}
+function tutAfterUndo() { if (tut && tut.step === 3) setTutStep(4); else tutGuide(); }
+function renderCoach() {
+  const c = $('coach'), on = !!tut && !vs;
+  if (c.hidden === on) { c.hidden = !on; layoutSoon(); }
+  if (!on) return;
+  const s = TUT_STEPS[tut.step];
+  $('coachStep').textContent = String(tut.step + 1);
+  const p = $('coachText'); p.textContent = T(s.text);
+  const sm = document.createElement('small'); sm.textContent = T(s.sub); p.append(sm);
+}
+function nudgeCoach() { const c = $('coach'); if (c.hidden) return; c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge'); sfx.bad(); }
+$('coachBtn').addEventListener('click', () => { finishTutorial('skip'); toast(T('がんばって！')); });
+
+// ---------- how to play (first visit) ----------
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first;
+  if (G) G.sel = -1;
+  const dailyLaunch = mode === 'daily';
+  $('howtoGo').textContent = T(first ? (dailyLaunch ? 'はじめる' : 'やってみる') : 'とじる');
+  $('howtoAlt').textContent = T(first ? '説明だけでOK' : 'チュートリアルをもう一度');
+  $('howtoAlt').hidden = first ? dailyLaunch : (!!vs || mode === 'daily');
+  $('howto').hidden = false;
+  clockStop();
+  focusSoon('howtoGo');
+}
+function closeHowto() { $('howto').hidden = true; store.set(HOWTO_KEY, '1'); clockStart(); }
+$('howtoGo').addEventListener('click', () => { const f = howtoFirst; closeHowto(); if (f && mode === 'normal' && !vs) startTutorial(); });
+$('howtoAlt').addEventListener('click', () => {
+  const f = howtoFirst; closeHowto();
+  if (f) { if (store.get(TUT_KEY) == null) store.set(TUT_KEY, 'skip'); toast(T('がんばって！')); } else startTutorial();
+});
+
+// ---------- daily challenge: the same three puzzles for everyone today (JST date and seed from KoboPlatform) ----------
+// score = 100000 − (moves + hints×5 + extra tube×10)×100 − seconds (engine.dailyScore). The platform records the day's best.
+let clockAt = 0;
+function dailyMs() { return daily ? daily.ms + (clockAt ? performance.now() - clockAt : 0) : 0; }
+function clockStart() {
+  if (clockAt || vs || menuOpen || mode !== 'daily' || !daily || daily.done || !G || G.kind !== 'daily' || G.won) return;
+  if (document.visibilityState === 'hidden' || !$('howto').hidden) return;
+  clockAt = performance.now();
+}
+function clockStop() { if (clockAt && daily) { daily.ms += performance.now() - clockAt; } clockAt = 0; }
+function dateLabel(dk) {
+  const m = Math.floor(dk / 100) % 100, d = dk % 100;
+  return KoboI18n.lang === 'en' ? T('{m}月{d}日', { mon: EN_MON[m - 1], d }) : T('{m}月{d}日', { m, d });
+}
+function fmtTime(ms) { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function refreshDailyRec() {
+  if (!daily || !PF) return;
+  const rec = PF.daily.get(daily.dateKey, GAME) || {};
+  daily.best = Math.max(0, Number(rec.best) || 0); daily.tries = Math.max(0, Number(rec.tries) || 0);
+}
+function startDaily(dateKey, opt) {
+  opt = opt || {};
+  if (!PF || vs) return;
+  const today = PF.jstDateKey();
+  const dk = PF.isDateKey(dateKey) && Number(dateKey) <= today ? Number(dateKey) : today;
+  endPlay('quit');
+  if (tut) finishTutorial('skip');
+  if (mode === 'daily') { clockStop(); persist(); }
+  mode = 'daily';
+  const seed = PF.dailySeed(GAME, dk);
+  daily = { dateKey: dk, seed, idx: 0, logs: [], ms: 0, done: false, score: 0, best: 0, tries: 0 };
+  let log = '';
+  const s = readJSON(DAILY_KEY);
+  if (opt.fresh) store.del(DAILY_KEY);
+  else if (s && s.v === 1 && s.dateKey === dk) {
+    if (s.done) { daily.done = true; daily.score = Number(s.score) || 0; daily.last = s; }
+    else if (Array.isArray(s.logs) && s.logs.length < DAILY_N && s.logs.every(x => typeof x === 'string')) {
+      daily.idx = s.logs.length; daily.logs = s.logs.slice(); daily.ms = Math.max(0, Number(s.ms) || 0); log = typeof s.log === 'string' ? s.log : '';
+    }
+  }
+  refreshDailyRec();
+  $('ovLevels').hidden = true;
+  renderMode();
+  if (daily.done) { G = null; hideGameOverlays(); refreshUI(); draw(); $('msg').textContent = ''; showDailyResult(false); return; }
+  dailyPuzzle(daily.idx, log);
+  toast(T('今日のチャレンジ（{d}）', { d: dateLabel(dk) }));
+}
+function dailyPuzzle(i, log) {
+  G = null; anims = []; fx = []; hintMark = null; hideGameOverlays();
+  $('msg').textContent = T('つくっています…');
+  refreshUI(); draw();
+  const token = ++buildToken, d = daily;
+  setTimeout(() => {
+    if (vs || token !== buildToken || daily !== d) return;
+    const pz = E.dailyPuzzles(d.seed)[i];
+    let g = null;
+    if (log) { const r = E.replay(pz, log); if (r.ok && !r.won) g = Object.assign(r.g, { L: pz.L, pz, sel: -1, won: false }); }
+    if (!g) g = newG(pz);
+    g.kind = 'daily'; g.dIdx = i;
+    setGame(g);
+    $('msg').textContent = puzzleTags(pz, [T('第{n}問 / {t}', { n: i + 1, t: DAILY_N })]);
+    renderMode(); clockStart();
+    if (i + 1 < DAILY_N) setTimeout(() => { try { E.dailyPuzzles(d.seed); } catch (e) {} }, 500);
+  }, 30);
+}
+function dailySolved(delay) {
+  const g = G, d = daily;
+  begin();
+  d.logs.push(G.log); d.idx = d.logs.length;
+  refreshUI();
+  if (d.idx < DAILY_N) {
+    persist();
+    setTimeout(() => {
+      if (G !== g || daily !== d || vs) return;
+      sfx.win(); vibrate([20, 40, 20]); toast(T('第{n}問 クリア！', { n: d.idx }));
+      for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 3 : 10);
+    }, delay + 200);
+    setTimeout(() => { if (G === g && daily === d && !vs) dailyPuzzle(d.idx, ''); }, delay + 1300);
+    return;
+  }
+  // all done: score from the replay (the same computation other devices use to verify it)
+  clockStop();
+  const rep = E.encodeReplay({ seed: d.seed, ms: d.ms, logs: d.logs });
+  const v = E.verify(rep);
+  const score = v.ok ? v.score : 0;
+  const prevBest = d.best;
+  endPlay('clear', { score, dateKey: d.dateKey, durationMs: Math.round(d.ms), replay: rep, stats: { moves: v.pours, hints: v.hints, extra: v.extra } });
+  d.done = true; d.score = score; d.last = { pours: v.pours, hints: v.hints, extra: v.extra, ms: Math.round(d.ms) };
+  store.set(DAILY_KEY, JSON.stringify(Object.assign({ v: 1, dateKey: d.dateKey, done: true, score }, d.last)));
+  refreshDailyRec(); renderMode();
+  setTimeout(() => {
+    if (daily !== d || vs) return;
+    sfx.win(); vibrate([20, 40, 20, 40, 60]);
+    if (G) for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 4 : 12);
+    setTimeout(() => { if (daily === d && !vs) showDailyResult(score > prevBest); }, reduceMotion.matches ? 150 : 600);
+  }, delay);
+}
+function showDailyResult(isNew) {
+  const d = daily; if (!d) return;
+  const l = d.last || {};
+  $('dScore').textContent = String(d.score);
+  $('dNew').hidden = !isNew;
+  const parts = [T('手数 {n}', { n: l.pours || 0 }), T('時間 {t}', { t: fmtTime(l.ms || 0) })];
+  if (l.hints) parts.push(T('ヒント{n}回', { n: l.hints }));
+  if (l.extra) parts.push(T('試験管追加'));
+  $('dText').textContent = parts.join(T(' ・ '));
+  $('dBest').textContent = T('今日のベスト {b} 点 ・ {n} 回目', { b: Math.max(d.best, d.score), n: Math.max(1, d.tries) });
+  $('ovDaily').hidden = false;
+  focusSoon('dAgain');
+}
+function leaveDaily() { clockStop(); persist(); mode = 'normal'; daily = null; renderMode(); }
+function setNormal() {
+  if (vs) return;
+  if (mode !== 'daily') return;
+  endPlay('quit');
+  leaveDaily();
+  startLevel(save.level);
+}
+function renderMode() {
+  const bar = $('modeBar'), on = mode === 'daily' && !!daily && !vs;
+  if (bar.hidden === on) { bar.hidden = !on; layoutSoon(); }
+  if (!on) return;
+  bar.title = T('全員が同じ3問を解く、1日ごとにかわるチャレンジ。手数と時間が少ないほど高得点。');
+  const t = $('modeText'); t.innerHTML = '';
+  const a = document.createElement('span'); a.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + T(' ・ ');
+  const b = document.createElement('b'); b.textContent = daily.done ? String(daily.score) + ' ' + T('点') : T('第{n}問 / {t}', { n: Math.min(DAILY_N, daily.idx + 1), t: DAILY_N }) + T(' ・ ') + fmtTime(dailyMs());
+  t.append(a, b);
+}
+setInterval(() => { if (mode === 'daily' && daily && !daily.done && clockAt) renderMode(); }, 1000);
+$('dAgain').addEventListener('click', () => { if (daily) startDaily(daily.dateKey, { fresh: true }); });
+$('dNormal').addEventListener('click', () => { $('ovDaily').hidden = true; setNormal(); });
 
 // ---------- geometry ----------
 // a tube in local coords: origin = mouth centre, +y goes down the tube. Inner width w, layer height lh.
@@ -759,7 +1050,7 @@ function tubeGeom(cap) {
 function layout() {
   const rect = stage.getBoundingClientRect();
   W = Math.max(1, rect.width); H = Math.max(1, rect.height);
-  DPR = Math.min(3, window.devicePixelRatio || 1);
+  DPR = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   if (!G) { LY = null; return; }
   const n = G.tubes.length, maxCap = Math.max(...G.caps);
@@ -775,7 +1066,7 @@ function layout() {
     lh = Math.min(lh, tw * 0.9, 44);
     if (!best || lh > best.lh + 0.5) best = { rows, per, slotW, tw, lh, topPad, botPad, rowH };
   }
-  LY = best; LY.hs = LY.lh * 0.5; LY.lift = LY.lh * 1.1;
+  LY = best; LY.lh = Math.max(4, LY.lh); LY.hs = LY.lh * 0.5; LY.lift = LY.lh * 1.1;
   const geoms = {};
   LY.slots = [];
   const rows = LY.rows, firstRow = Math.ceil(n / rows);
@@ -793,6 +1084,8 @@ function layout() {
     LY.slots.push({ cx, my: bottom - g.depth, bottom, g, row });
   }
 }
+let layoutRaf = 0;
+function layoutSoon() { cancelAnimationFrame(layoutRaf); layoutRaf = requestAnimationFrame(() => { layout(); draw(); }); }
 
 // polygon helpers (world coords)
 function xform(pts, ox, oy, a) { const c = Math.cos(a), s = Math.sin(a); return pts.map(([x, y]) => [ox + x * c - y * s, oy + x * s + y * c]); }
@@ -879,15 +1172,15 @@ function drawTube(i, now, view) {
   let xmin = Infinity, xmax = -Infinity; for (const p of poly) { xmin = Math.min(xmin, p[0]); xmax = Math.max(xmax, p[0]); }
   const locked = !G.open[i];
   // hint glow
-  if (hintMark && (hintMark.f === i || hintMark.t === i) && !v.ang) {
+  if (hintMark && (hintMark.f === i || (hintMark.t === i && hintMark.only !== 'f')) && !v.ang) {
     const pulse = 0.5 + 0.5 * Math.sin((now - hintMark.t0) / 160);
-    ctx.save(); ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 14 + pulse * 10; ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(255,224,102,' + (0.5 + 0.5 * pulse) + ')'; tubePath(g, v.ox, v.oy, 0, 5); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.shadowColor = PAL.hint; ctx.shadowBlur = 14 + pulse * 10; ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.5 + 0.5 * pulse; ctx.strokeStyle = PAL.hint; tubePath(g, v.ox, v.oy, 0, 5); ctx.stroke(); ctx.restore();
   }
   // glass back
   ctx.save();
   tubePath(g, v.ox, v.oy, v.ang, 0);
-  ctx.fillStyle = 'rgba(200,235,255,0.07)'; ctx.fill();
+  ctx.fillStyle = PAL.glassFill; ctx.fill();
   ctx.clip();
   // liquid: horizontal bands, levels found from the volume (works for tilted tubes too)
   const list = [];
@@ -899,15 +1192,13 @@ function drawTube(i, now, view) {
     cum += list[k].v;
     const y = levelFor(poly, cum * g.unit, ymin, ymax);
     const u = list[k];
-    const col = u.h ? HIDDEN_COLOR : COLORS[u.c];
-    ctx.fillStyle = col;
+    ctx.fillStyle = u.h ? PAL.hidden : COLORS[u.c];
     ctx.fillRect(xmin - 2, y, xmax - xmin + 4, prevY - y + 0.6);
     bandsY.push([y, prevY]);
     prevY = y;
   }
   if (list.length) {
     // gloss + surface line
-    const topC = list[list.length - 1];
     ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(xmin - 2, prevY, xmax - xmin + 4, Math.max(1.5, g.lh * 0.07));
     if (!v.ang) {
       const gr = ctx.createLinearGradient(v.ox - g.r, 0, v.ox + g.r, 0);
@@ -922,22 +1213,21 @@ function drawTube(i, now, view) {
         ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(v.ox - g.r, a, g.w, 1);
       }
     }
-    void topC;
   }
   ctx.restore();
   // glass outline + highlight
   ctx.save();
   tubePath(g, v.ox, v.oy, v.ang, 1.5);
-  ctx.lineWidth = 2.2; ctx.strokeStyle = locked ? 'rgba(255,224,102,0.55)' : 'rgba(210,240,255,0.75)'; ctx.stroke();
+  ctx.lineWidth = 2.2; ctx.strokeStyle = locked ? PAL.lock : PAL.glass; if (locked) ctx.globalAlpha = 0.6; ctx.stroke(); ctx.globalAlpha = 1;
   const c = Math.cos(v.ang), sn = Math.sin(v.ang);
   const P = (x, y) => [v.ox + x * c - y * sn, v.oy + x * sn + y * c];
   // lip
   const l1 = P(-g.r - 4, 0), l2 = P(g.r + 4, 0);
-  ctx.lineCap = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = locked ? 'rgba(255,224,102,0.7)' : 'rgba(225,245,255,0.9)';
-  ctx.beginPath(); ctx.moveTo(l1[0], l1[1]); ctx.lineTo(l2[0], l2[1]); ctx.stroke();
+  ctx.lineCap = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = locked ? PAL.lock : PAL.lip; if (locked) ctx.globalAlpha = 0.75;
+  ctx.beginPath(); ctx.moveTo(l1[0], l1[1]); ctx.lineTo(l2[0], l2[1]); ctx.stroke(); ctx.globalAlpha = 1;
   // shine
   const h1 = P(-g.r * 0.55, g.lh * 0.35), h2 = P(-g.r * 0.55, g.straight - g.lh * 0.2);
-  ctx.lineWidth = Math.max(2, g.w * 0.09); ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = Math.max(2, g.w * 0.09); ctx.strokeStyle = PAL.shine;
   ctx.beginPath(); ctx.moveTo(h1[0], h1[1]); ctx.lineTo(h2[0], h2[1]); ctx.stroke();
   ctx.restore();
   // cork on a finished tube
@@ -950,27 +1240,28 @@ function drawTube(i, now, view) {
     ctx.fillStyle = 'rgba(80,45,15,0.35)';
     for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(v.ox - cw * 0.25 + k * cw * 0.25, v.oy - ch * 0.25 + (k % 2) * 3, 1.3, 0, 7); ctx.fill(); }
     // twinkle
-    const tw = 0.5 + 0.5 * Math.sin(now / 300 + i * 1.7);
-    star(v.ox + g.r + 3, v.oy + g.lh * 0.4, 3 + tw * 3, 'rgba(255,255,255,' + (0.35 + tw * 0.5) + ')');
+    const tw = reduceMotion.matches ? 0.6 : 0.5 + 0.5 * Math.sin(now / 300 + i * 1.7);
+    star(v.ox + g.r + 3, v.oy + g.lh * 0.4, 3 + tw * 3, 'rgba(' + PAL.twinkle + ',' + (0.35 + tw * 0.5) + ')');
     ctx.restore();
   }
   // lock
   if (locked) {
-    const need = G.locks[i] - Engine.doneCount(G.tubes, G.K);
+    const need = G.locks[i] - E.doneCount(G.tubes, G.K);
     const y = v.oy + g.depth * 0.45;
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,224,102,0.8)'; ctx.lineWidth = 2;
+    ctx.strokeStyle = PAL.lock; ctx.globalAlpha = 0.8; ctx.lineWidth = 2;
     for (let k = -1; k <= 1; k += 2) { ctx.beginPath(); ctx.moveTo(v.ox - g.r - 3, y + k * g.lh * 0.9); ctx.lineTo(v.ox + g.r + 3, y + k * g.lh * 0.9 + g.lh * 0.4); ctx.stroke(); }
+    ctx.globalAlpha = 1;
     const bw = Math.max(g.w * 0.9, 24), bh = bw * 0.8;
-    ctx.lineWidth = 3; ctx.strokeStyle = '#ffe066'; ctx.beginPath(); ctx.arc(v.ox, y - bh * 0.35, bw * 0.28, Math.PI, 0); ctx.stroke();
-    ctx.fillStyle = '#ffe066'; roundRect(v.ox - bw / 2, y - bh * 0.35, bw, bh, 5); ctx.fill();
-    ctx.fillStyle = '#10202c'; ctx.font = '800 ' + Math.round(bh * 0.62) + 'px ' + FONT;
+    ctx.lineWidth = 3; ctx.strokeStyle = PAL.lock; ctx.beginPath(); ctx.arc(v.ox, y - bh * 0.35, bw * 0.28, Math.PI, 0); ctx.stroke();
+    ctx.fillStyle = PAL.lock; roundRect(v.ox - bw / 2, y - bh * 0.35, bw, bh, 5); ctx.fill();
+    ctx.fillStyle = PAL.lockInk; ctx.font = '800 ' + Math.round(bh * 0.62) + 'px ' + FONT;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(Math.max(0, need)), v.ox, y + bh * 0.17);
     ctx.restore();
   }
   // tall mark
   if (G.caps[i] > G.K && !v.ang) {
-    ctx.save(); ctx.fillStyle = 'rgba(169,196,212,0.8)'; ctx.font = '800 10px ' + FONT;
+    ctx.save(); ctx.fillStyle = PAL.mark; ctx.font = '800 10px ' + FONT;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(T('のっぽ'), v.ox, s.bottom + 7); ctx.restore();
   }
 }
@@ -982,7 +1273,7 @@ function star(x, y, r, col) {
 function drawStream(st, now) {
   const ds = LY.slots[st.to], g = ds.g;
   const a = anims.find(x => x.t === st.to);
-  let n = a ? a.before.dst.length : 0;
+  const n = a ? a.before.dst.length : 0;
   const p = a ? Math.min(1, Math.max(0, ((now - a.t0) / 1000 - 0.24) / (0.2 + 0.11 * a.n))) : 0;
   const filled = n + (a ? a.n * p : 0);
   const poly = xform(g.pts, ds.cx, ds.my, 0), [y0, y1] = yRange(poly);
@@ -998,11 +1289,12 @@ function drawStream(st, now) {
   ctx.restore();
 }
 function burst(i, count, color) {
-  if (!LY || !LY.slots[i]) return;
+  if (!LY || !LY.slots[i] || !G) return;
+  if (reduceMotion.matches) count = Math.ceil(count / 3);
   const s = LY.slots[i];
   for (let k = 0; k < count; k++) {
     const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 110;
-    fx.push({ x: s.cx, y: s.my, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0.7 + Math.random() * 0.5, age: 0, col: color || (G.tubes[i].length ? COLORS[G.tubes[i][0]] : '#fff'), r: 2 + Math.random() * 3 });
+    fx.push({ x: s.cx, y: s.my, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0.7 + Math.random() * 0.5, age: 0, col: color || (G.tubes[i].length ? COLORS[G.tubes[i][0]] : PAL.spark), r: 2 + Math.random() * 3 });
   }
 }
 let lastT = 0, FONT = '"M PLUS Rounded 1c", sans-serif';
@@ -1012,10 +1304,10 @@ function draw() {
   const dt = Math.min(0.05, (now - (lastT || now)) / 1000); lastT = now;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  if (!G || !LY) return;
+  if (!G || !LY || LY.slots.length !== G.tubes.length) return;
   anims = anims.filter(a => (now - a.t0) / 1000 < a.dur);
   // shelf lines
-  ctx.save(); ctx.strokeStyle = 'rgba(190,235,255,0.12)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.save(); ctx.strokeStyle = PAL.shelf; ctx.lineWidth = 3; ctx.lineCap = 'round';
   const rowsSeen = {};
   for (const s of LY.slots) { if (rowsSeen[s.row]) continue; rowsSeen[s.row] = 1; ctx.beginPath(); const xs = LY.slots.filter(t => t.row === s.row).map(t => t.cx); ctx.moveTo(Math.min(...xs) - LY.slotW / 2 + 4, s.bottom + 3); ctx.lineTo(Math.max(...xs) + LY.slotW / 2 - 4, s.bottom + 3); ctx.stroke(); }
   ctx.restore();
@@ -1024,11 +1316,11 @@ function draw() {
   for (let i = 0; i < G.tubes.length; i++) if (!pouring.has(i)) drawTube(i, now);
   for (const i of pouring) { const v = tubeView(i, now); if (v.stream) drawStream(v.stream, now); drawTube(i, now, v); }
   // hint arrow
-  if (hintMark && LY.slots[hintMark.f] && LY.slots[hintMark.t]) {
+  if (hintMark && hintMark.only !== 'f' && LY.slots[hintMark.f] && LY.slots[hintMark.t]) {
     const a = LY.slots[hintMark.f], b = LY.slots[hintMark.t];
-    const y = Math.min(a.my, b.my) - LY.lift * 0.9 - (a.row !== b.row ? 0 : 0);
-    const bob = Math.sin(now / 200) * 3;
-    ctx.save(); ctx.strokeStyle = '#ffe066'; ctx.fillStyle = '#ffe066'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    const y = Math.min(a.my, b.my) - LY.lift * 0.9;
+    const bob = reduceMotion.matches ? 0 : Math.sin(now / 200) * 3;
+    ctx.save(); ctx.strokeStyle = PAL.hint; ctx.fillStyle = PAL.hint; ctx.lineWidth = 3; ctx.lineCap = 'round';
     const x1 = a.cx, y1 = a.my - 8 + bob, x2 = b.cx, y2 = b.my - 8 + bob, mx = (x1 + x2) / 2, my = y - 18 + bob;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2); ctx.stroke();
     const ang = Math.atan2(y2 - my, x2 - mx);
@@ -1039,7 +1331,8 @@ function draw() {
   fx = fx.filter(p => (p.age += dt) < p.life);
   for (const p of fx) { p.vy += 260 * dt; p.x += p.vx * dt; p.y += p.vy * dt; const k = 1 - p.age / p.life; star(p.x, p.y, p.r * k + 0.5, p.col); }
 }
-function loop() { draw(); requestAnimationFrame(loop); }
+let raf = 0;
+function loop() { draw(); raf = requestAnimationFrame(loop); }
 
 // ---------- input ----------
 function hitTube(x, y) {
@@ -1051,66 +1344,108 @@ function hitTube(x, y) {
   return -1;
 }
 function tap(i) {
-  if (!G || G.won || i < 0) return;
-  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
+  if (!G || G.won || i < 0 || !canAct()) return;
   if (G.sel < 0) {
-    if (!G.open[i]) { sfx.bad(); toast(T('この試験管はあと{n}色そろえると開きます', { n: G.locks[i] - Engine.doneCount(G.tubes, G.K) })); return; }
-    if (!G.tubes[i].length || G.done[i]) { sfx.bad(); return; }
-    G.sel = i; sfx.lift(); return;
+    if (!G.open[i]) { sfx.bad(); toast(T('この試験管はあと{n}色そろえると開きます', { n: G.locks[i] - E.doneCount(G.tubes, G.K) })); return; }
+    if (!G.tubes[i].length || G.done[i]) { sfx.bad(); if (tut) nudgeCoach(); return; }
+    G.sel = i; sfx.lift();
+    if (tut) tutOnLift(i);
+    return;
   }
   if (G.sel === i) { G.sel = -1; sfx.drop(); return; }
   const f = G.sel;
   if (doPour(f, i)) return;
   // not possible: pick the tapped tube instead (if it can pour), else shake
-  if (G.open[i] && G.tubes[i].length && !G.done[i]) { G.sel = i; sfx.lift(); }
+  if (G.open[i] && G.tubes[i].length && !G.done[i]) { G.sel = i; sfx.lift(); if (tut) tutOnLift(i); }
   else { G.sel = -1; sfx.bad(); vibrate(20); if (!G.open[i]) toast(T('錠がかかっています')); }
 }
 cv.addEventListener('pointerdown', e => {
-  ensureAudio();
   const r = cv.getBoundingClientRect();
   tap(hitTube(e.clientX - r.left, e.clientY - r.top));
 });
 
-$('undoBtn').addEventListener('click', () => { ensureAudio(); undo(); });
-$('hintBtn').addEventListener('click', () => { ensureAudio(); hint(); });
-$('extraBtn').addEventListener('click', () => { ensureAudio(); addTube(); });
+$('undoBtn').addEventListener('click', undo);
+$('hintBtn').addEventListener('click', hint);
+$('extraBtn').addEventListener('click', addTube);
 $('restartBtn').addEventListener('click', restart);
-$('nextBtn').addEventListener('click', () => { ensureAudio(); startLevel(G.L + 1); });
-$('replayBtn').addEventListener('click', () => { ensureAudio(); startLevel(G.L); });
-$('stUndo').addEventListener('click', () => { undo(); });
+$('nextBtn').addEventListener('click', () => { startLevel(G ? G.L + 1 : save.level); });
+$('replayBtn').addEventListener('click', () => { startLevel(G ? G.L : save.level, { fresh: true }); });
+$('stUndo').addEventListener('click', undo);
 $('stRestart').addEventListener('click', restart);
-$('stExtra').addEventListener('click', () => { addTube(); });
+$('stExtra').addEventListener('click', addTube);
 $('stClose').addEventListener('click', () => { $('ovStuck').hidden = true; });
-$('helpBtn').addEventListener('click', () => { if (KoboVersus.active() && !vs) return; ensureAudio(); $('ovHelp').hidden = false; });
-$('helpClose').addEventListener('click', () => { $('ovHelp').hidden = true; });
-$('lvBtn').addEventListener('click', () => { if (vs || KoboVersus.active()) return; ensureAudio(); openLevels(); });
+$('lvBtn').addEventListener('click', () => { if (vs || KoboVersus.active()) return; openLevels(); });
 $('lvClose').addEventListener('click', () => { $('ovLevels').hidden = true; });
-$('sndBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('kusoge.sound', soundOn ? '1' : '0'); ensureAudio(); renderSound(); if (soundOn) sfx.done(); });
+$('lvDaily').addEventListener('click', () => { $('ovLevels').hidden = true; if (mode === 'daily') setNormal(); else startDaily(); });
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx.done(); });
+if (A) A.onChange(renderSound);
 function openLevels() {
   const grid = $('lvGrid'); grid.innerHTML = '';
   for (let L = 1; L <= save.best; L++) {
-    const b = document.createElement('button'); b.className = 'lv' + (G && G.L === L ? ' cur' : '');
-    const st = save.stars[L] || 0;
-    b.innerHTML = L + '<small>' + (st ? '★'.repeat(st) : (KoboI18n.lang === 'ja' ? '・' : '·')) + '</small>';
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lv' + (G && G.kind === 'normal' && G.L === L ? ' cur' : '');
+    const st = Number(save.stars[L]) || 0;
+    b.innerHTML = L + '<small>' + (st ? '★'.repeat(Math.min(3, st)) : (KoboI18n.lang === 'ja' ? '・' : '·')) + '</small>';
     b.addEventListener('click', () => startLevel(L));
     grid.appendChild(b);
   }
+  const d = $('lvDaily');
+  d.hidden = !PF;
+  d.textContent = T(mode === 'daily' ? 'ふつうのステージに戻る' : '今日のチャレンジ');
   $('ovLevels').hidden = false;
   const cur = grid.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
 }
+
+// ---------- menu (KoboUI: settings, language, theme, volume) ----------
+function openMenu() {
+  if (!UI || KoboVersus.active()) return;
+  if (G) G.sel = -1;
+  const extra = [
+    { label: T('遊び方'), icon: 'help', onClick: () => { m.close(); closedMenu(); showHowto(false); } },
+    { label: T('ステージをえらぶ'), icon: 'star', onClick: () => { m.close(); closedMenu(); openLevels(); } },
+  ];
+  if (mode === 'daily') extra.push({ label: T('ふつうのステージに戻る'), icon: 'back', onClick: () => { m.close(); closedMenu(); setNormal(); } });
+  else if (PF) extra.push({ label: T('今日のチャレンジ'), icon: 'trophy', onClick: () => { m.close(); closedMenu(); startDaily(); } });
+  const m = UI.pauseMenu({
+    title: T('メニュー'),
+    onResume: closedMenu,
+    onRestart: (G && !G.won) ? () => { closedMenu(); restart(); } : undefined,
+    confirmRestart: !!(G && G.history.length),
+    extra, home: '../',
+    onOpen: () => { menuOpen = true; clockStop(); const g = KG(); if (g) g.menuOpened(); },
+  });
+  m.open();
+}
+function closedMenu() { menuOpen = false; const g = KG(); if (g) g.menuClosed(); clockStart(); }
+$('menuBtn').addEventListener('click', openMenu);
+
 document.addEventListener('keydown', e => {
   if (KoboVersus.active() && !vs) return; // e.g. typing the nickname
+  const tg = e.target && e.target.tagName;
+  if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer')) return;
+  if (e.key === 'Escape') {
+    if (!$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); }
+    else if (!$('ovLevels').hidden) $('ovLevels').hidden = true;
+    else if (!$('ovStuck').hidden) $('ovStuck').hidden = true;
+    return;
+  }
+  if (!$('howto').hidden) return;
   if (e.key === 'z' || e.key === 'Backspace') undo();
 });
-window.addEventListener('resize', () => { layout(); });
-if (window.visualViewport) visualViewport.addEventListener('resize', () => { layout(); });
-try { new ResizeObserver(() => layout()).observe(stage); } catch (e) {}
+const listeners = [];
+const on = (t, ev, f, o) => { t.addEventListener(ev, f, o); listeners.push(() => t.removeEventListener(ev, f, o)); };
+on(window, 'resize', layoutSoon);
+if (window.visualViewport) on(visualViewport, 'resize', layoutSoon);
+let ro = null;
+try { ro = new ResizeObserver(() => layout()); ro.observe(stage); } catch (e) {}
 { const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
-window.addEventListener('storage', e => { if (e.key === SAVE_KEY) save = loadSave(); });
+on(window, 'storage', e => { if (e.key === SAVE_KEY) save = readSave(); });
+// turn-based: hiding the page saves and stops the daily clock; coming back starts the clock again
+on(document, 'visibilitychange', () => { if (document.visibilityState === 'hidden') { clockStop(); persist(); } else clockStart(); });
+on(window, 'pagehide', () => { clockStop(); persist(); });
 
 // test hook (harmless in production)
 window.__water = {
-  get G() { return G; }, Engine, tap,
+  get G() { return G; }, Engine: E, tap,
   tubeXY(i) { const r = cv.getBoundingClientRect(), s = LY.slots[i]; return [r.left + s.cx, r.top + s.my + s.g.depth * 0.5]; },
   busy() { return anims.length > 0; },
 };
@@ -1118,30 +1453,18 @@ window.__water = {
 // ---------- online battle (common/versus.js) ----------
 // Everyone gets the same seeded run of puzzles (the stage generator with a salt), getting harder one by one.
 // Score: 100 per sorted puzzle + up to 50 for few moves (par = the solver's near-minimum); skipping costs 50.
+// During a match nothing is saved and no best is updated (versus.js rule).
 const VS_SKIP = 50, VS_BONUS = 50;
-let vs = null; // { snap, salt, idx, score, skipAt } while a match owns the rack
 const vsLevel = i => Math.min(80, 8 + 3 * i);
 function vsPuzzle(i) {
   vs.idx = i; vs.skipAt = 0;
   finishAnims(); fx = []; hintMark = null;
-  hideAll();
-  const pz = Engine.generate(vsLevel(i), vs.salt);
-  G = {
-    L: pz.L, pz, K: pz.K, vsN: i + 1,
-    tubes: pz.tubes.map(t => t.slice()), hid: pz.hid.map(h => h.slice()),
-    caps: pz.caps.slice(), locks: pz.locks.slice(), open: pz.locks.map(n => !n),
-    done: [], sel: -1, history: [], hintsUsed: 0, extraUsed: 0, undos: 0, moves: 0, won: false,
-  };
-  G.done = G.tubes.map(t => Engine.isDone(t, G.K));
-  const g = pz.spec.gim, tags = [T('第{n}問', { n: i + 1 }), T('{n}色', { n: pz.colors }), T('目標 {n}手', { n: pz.moves })];
-  if (pz.K === 5) tags.push(T('5段'));
-  if (g.hidden) tags.push('？');
-  if (g.lock) tags.push(T('錠'));
-  if (g.tall) tags.push(T('のっぽ'));
-  $('msg').textContent = tags.join(T(' ・ '));
-  refreshUI(); layout(); draw();
+  hideGameOverlays();
+  const pz = E.generate(vsLevel(i), vs.salt);
+  setGame(newG(pz, { kind: 'vs', vsN: i + 1 }));
+  $('msg').textContent = puzzleTags(pz, [T('第{n}問', { n: i + 1 })]);
   const salt = vs.salt; // build the next one while this one is played
-  setTimeout(() => { try { Engine.generate(vsLevel(i + 1), salt); } catch (e) {} }, 700);
+  setTimeout(() => { try { E.generate(vsLevel(i + 1), salt); } catch (e) {} }, 700);
 }
 function vsSolved(delay) {
   const gain = 100 + Math.max(0, VS_BONUS - 5 * Math.max(0, G.moves - G.pz.moves));
@@ -1168,35 +1491,115 @@ function vsTools(on) {
 }
 KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。',
   game: 'water', title: T('いろみず分け'), duration: 240, unit: T('点'),
-  theme: { accent: '#5fe3e0', accentBg: 'linear-gradient(#7af0e8, #36bfc6)', accentInk: '#062030', accentShadow: '#1d7f86', card: 'linear-gradient(#1d3d55, #132b3d)',
-    line: 'rgba(190, 235, 255, .2)', ink: '#f2fbff', dim: '#a9c4d4', hud: '#0f2233', display: 'var(--font-display)' },
+  theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--w-btn)', accentInk: '#062030', accentShadow: 'var(--w-btn-shadow)', card: 'var(--w-card)',
+    line: 'var(--w-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
   hudCover: () => document.querySelector('header'),
-  onOpen() { ['ovHelp', 'ovLevels'].forEach(id => { $(id).hidden = true; }); },
-  onStart({ seed }) {
-    if (!vs) vs = { snap: { G, msg: $('msg').textContent, ov: ['ovWin', 'ovStuck'].filter(id => !$(id).hidden) } };
+  onOpen() {
+    if (G) G.sel = -1;
+    ['howto', 'ovLevels'].forEach(id => { $(id).hidden = true; });
+    clockStop(); persist();
+    const g = KG(); if (g) g.pause('versus');
+  },
+  onStart({ seed, practice }) {
+    if (!vs) {
+      endPlay('quit');
+      if (tut) finishTutorial('skip');
+      clockStop(); persist();
+      buildToken++; // a stage that was still being built is dropped (onExit rebuilds the rack)
+      vs = { snap: { G, msg: $('msg').textContent, ov: ['ovWin', 'ovStuck', 'ovDaily'].filter(id => !$(id).hidden), mode, daily } };
+    }
+    if (vs.playing) emit('play_end', { mode: vs.playing, score: vs.score || 0, reason: 'quit' });
     vs.salt = (seed | 0) || 1; vs.score = 0;
-    vsTools(true);
+    vsTools(true); renderMode(); renderCoach();
     vsPuzzle(0);
+    vs.playing = practice ? 'practice' : 'versus';
+    emit('play_start', { mode: vs.playing, seed });
   },
   getScore: () => (vs ? vs.score : 0),
-  onEnd() { if (G) G.sel = -1; hintMark = null; },
+  onEnd() {
+    if (G) G.sel = -1; hintMark = null;
+    if (vs && vs.playing) { emit('play_end', { mode: vs.playing, score: vs.score, reason: 'over' }); vs.playing = null; }
+  },
   onExit() {
     if (!vs) return;
+    if (vs.playing) emit('play_end', { mode: vs.playing, score: vs.score, reason: 'quit' });
     const s = vs.snap; vs = null;
-    finishAnims(); fx = []; hintMark = null; hideAll();
+    finishAnims(); fx = []; hintMark = null; hideGameOverlays();
     vsTools(false);
-    if (!s.G) { startLevel(save.level); return; }
+    mode = s.mode; daily = s.daily;
+    renderMode();
+    if (!s.G) { if (mode === 'daily' && daily) startDaily(daily.dateKey); else startLevel(save.level); return; }
     G = s.G; G.sel = -1;
     $('msg').textContent = s.msg;
     s.ov.forEach(id => { $(id).hidden = false; });
-    refreshUI(); layout(); draw();
+    refreshUI(); layout(); draw(); clockStart();
   },
 });
 KoboVersus.button($('vsSlot'), { compact: true });
 
-renderSound();
-startLevel(save.level);
+// ---------- KoboGame: platform hooks (turn-based: flags.pause is false, so hiding the page just saves) ----------
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { clockStop(); persist(); },
+  resume() { clockStart(); },
+  save() { clockStop(); persist(); },
+  isIdle: () => !sess && !vs && !tut && !anims.length,
+  dispose() { cancelAnimationFrame(raf); raf = 0; listeners.splice(0).forEach(f => f()); if (ro) ro.disconnect(); },
+  daily: { start({ dateKey }) { if (!vs) startDaily(dateKey); } },
+});
+
+// ---------- boot ----------
+readPal(); themeColor(); renderSound();
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(() => { readPal(); themeColor(); draw(); }, 0));
+const launch = PF ? PF.launch() : { daily: null, stage: null };
+const firstVisit = store.get(HOWTO_KEY) == null;
+if (launch.daily && PF) {
+  mode = 'daily'; // KoboGame starts it when the registry has flags.daily; until then, here
+  const def = window.KoboGame && KoboGame.info().def;
+  if (!(def && def.flags && def.flags.daily)) setTimeout(() => { if (!vs) startDaily(launch.daily); }, 0);
+} else {
+  const st = Number(launch.stage);
+  startLevel(Number.isInteger(st) && st >= 1 && st <= save.best ? st : save.level);
+}
+if (firstVisit) showHowto(true);
 requestAnimationFrame(loop);
+booted = true;
+
+// ---------- test hooks (?debug: window.__kb from KoboGame) ----------
+function solveNow(n) {
+  if (!G || G.won || !canAct()) return 0;
+  if (tut && tut.step === 3) { undo(); return 1; }
+  const h = E.hintMove(G);
+  if (!h.path) return 0;
+  let k = 0;
+  for (const m of h.path) { if (k >= n || !G || G.won) break; if (G.sel >= 0) G.sel = -1; if (tut && tut.step === 0) tap(m[0]); if (!doPour(m[0], m[1])) break; finishAnims(); k++; }
+  return k;
+}
+if (window.__kb) Object.assign(window.__kb, {
+  ready: () => booted && (!!(G && LY) || !!(daily && daily.done)),
+  state: () => ({
+    mode: vs ? (vs.playing || 'versus') : mode,
+    score: vs ? vs.score : mode === 'daily' ? (daily && daily.done ? daily.score : 0) : save.best - 1,
+    time: mode === 'daily' ? Math.round(dailyMs()) : 0,
+    over: !!(G && G.won) || !!(daily && daily.done), stage: G ? G.L : null,
+    paused: !!(window.KoboGame && KoboGame.paused()) || menuOpen,
+    moves: G ? G.moves : 0, net: G ? G.history.length : 0, hints: G ? G.hintsUsed : 0, extra: G ? G.extraUsed : 0, log: G ? G.log : '',
+    level: save.level, best: save.best, stars: Object.assign({}, save.stars), kind: G ? G.kind : null,
+    howto: !$('howto').hidden, winShown: !$('ovWin').hidden, stuckShown: !$('ovStuck').hidden, dailyShown: !$('ovDaily').hidden,
+    daily: daily ? { dateKey: daily.dateKey, seed: daily.seed, idx: daily.idx, done: daily.done, score: daily.score, best: daily.best, tries: daily.tries, ms: Math.round(dailyMs()) } : null,
+    tubes: G ? G.tubes.map(t => t.slice()) : null, busy: anims.length > 0,
+  }),
+  // a stage game: "win" solves the current puzzle now (solver moves), "lose" shows the stuck card (from there: restart, undo or home)
+  win() { if (!G || G.won || vs) return false; for (let k = 0; k < 20 && G && !G.won; k++) if (!solveNow(1e9)) break; return !!(G && G.won); },
+  lose() { if (!G || G.won || vs) return false; showStuck(); return true; },
+  step: n => solveNow(n || 1),
+  tutorial: () => ({ step: tut ? tut.step : (store.get(TUT_KEY) ? TUT_STEPS.length : 0), done: !tut && !!store.get(TUT_KEY), active: !!tut, hint: hintMark && hintMark.tut ? { f: hintMark.f, t: hintMark.t, only: hintMark.only } : null }),
+  tutorialStart: startTutorial, tutorialFinish: () => finishTutorial('skip'),
+  daily: dk => startDaily(dk), dailyFresh: dk => startDaily(dk, { fresh: true }), normal: setNormal, level: (L, fresh) => startLevel(L, { fresh: !!fresh }),
+  menu: openMenu, howto: () => showHowto(false), tap, engine: E,
+  tubeXY(i) { const r = cv.getBoundingClientRect(), s = LY.slots[i]; return [r.left + s.cx, r.top + s.my + s.g.depth * 0.5]; },
+});
+})();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 <script src="../firebase-config.js"></script>
