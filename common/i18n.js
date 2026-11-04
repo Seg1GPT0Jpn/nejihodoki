@@ -60,7 +60,9 @@
     const root = document.documentElement;
     const st = document.createElement('style');
     st.textContent = 'html,body{height:var(--kobo-h,100%)!important;min-height:0!important;max-height:var(--kobo-h,100%)!important;overflow:hidden!important}' +
-      'body{top:0!important;bottom:auto!important}';
+      'body{top:0!important;bottom:auto!important}' +
+      // inner one-screen containers that size themselves to the viewport (100vh/100dvh) follow too
+      'body>#app,body>#game,body>#wrap,body>#root{height:var(--kobo-h,100%)!important;max-height:var(--kobo-h,100%)!important}';
     (document.head || root).appendChild(st);
     let last = 0;
     function measure() {
