@@ -176,7 +176,7 @@
       rankSource: { key: 'kusoge.gates.save', paths: ['best', 'bestStage'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.gates.save', paths: ['best', 'bestStage', 'stage'], agg: 'or', min: 1, tpl: { ja: 'ステージ {n} まで到達', en: 'Reached stage {n}' } },
       keys: {
-        'kusoge.gates.save': '{ v:2, best, stage, coins, mat, exp, bld:{…}, heroes:{ id:{ lv, star, cards } }, sel:[…], runs }（旧2D版は gates の migrate() が読む）',
+        'kusoge.gates.save': '{ v:2, best, stage, coins, mat, exp, bld:{…}, heroes:{ id:{ lv, star, cards } }, sel:[…], runs, tut, seen }（tut・seen はチュートリアル・遊び方を見たかの 0/1。旧2D版は gates の migrate() が読む）',
       },
       // R4：コイン・素材・経験値・カード（使うと減るもの）と選択は newest、最高ステージ・建物・ヒーローのレベルと星は max
       sync: {
@@ -186,7 +186,7 @@
             v: 'max', best: 'max', stage: 'newest', coins: 'newest', mat: 'newest', exp: 'newest', runs: 'max',
             bld: { each: 'max' },
             heroes: { each: { fields: { lv: 'max', star: 'max', cards: 'newest' } } },
-            sel: 'newest', migrated: 'max',
+            sel: 'newest', migrated: 'max', tut: 'max', seen: 'max',
           },
         },
       },

@@ -12,54 +12,87 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ゲートランナー">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
 <script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
 <script src="../common/versus.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
+/* UI chrome (header, menus, cards, buttons) follows the shared theme tokens (common/theme.css, light + dark).
+   The 3D street and the in-run HUD chips keep their own palette (they sit on the 3D scene). */
 :root {
-  --ink: #16202e;
-  --ink-2: #223047;
-  --line: #3a4d68;
-  --chalk: #f3f6fa;
-  --dim: #a9b8cc;
+  --ink: #16202e;            /* outline / dark ink used on the 3D scene and the HUD */
+  --ink-2: var(--kb-surface);
+  --line: var(--kb-line);
+  --chalk: var(--kb-ink);
+  --dim: var(--kb-dim);
   --sun: #ffcf33;
   --sun-ink: #2d2100;
+  --sun-text: #ffcf33;
   --good: #2fcf6f;
+  --good-text: #5fe08a;
   --bad: #ff4d4d;
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
-  color-scheme: dark;
+  --bad-text: #ff8a7a;
+  --scr: rgba(14,20,32,.66);
+  --card: rgba(34,48,71,.93);
+  --card-line: #3a4d68;
+  --ts: 0 2px 0 #0008;
+  --ts-big: 0 4px 0 #0009;
+  --sub-bg: #e9eef5; --sub-ink: #1d2a3a; --sub-sh: #8796a8;
+  --font-display: var(--kb-font-display);
+  --font-body: var(--kb-font-body);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --scr: rgba(244,241,234,.84); --card: rgba(255,255,255,.95); --card-line: var(--kb-line);
+    --ts: none; --ts-big: 0 3px 0 #0002; --sun-text: var(--kb-accent-text); --good-text: var(--kb-ok); --bad-text: var(--kb-danger);
+    --sub-bg: var(--kb-surface-2); --sub-ink: var(--kb-ink); --sub-sh: #b9b09f;
+  }
+}
+:root[data-kb-theme="light"] {
+  --scr: rgba(244,241,234,.84); --card: rgba(255,255,255,.95); --card-line: var(--kb-line);
+  --ts: none; --ts-big: 0 3px 0 #0002; --sun-text: var(--kb-accent-text); --good-text: var(--kb-ok); --bad-text: var(--kb-danger);
+  --sub-bg: var(--kb-surface-2); --sub-ink: var(--kb-ink); --sub-sh: #b9b09f;
 }
 html, body { height: 100%; }
 [hidden] { display: none !important; }
 body {
-  margin: 0; background: var(--ink); color: var(--chalk); font-family: var(--font-body);
+  margin: 0; background: var(--kb-bg); color: var(--chalk); font-family: var(--font-body);
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
   overflow: hidden; touch-action: none; overscroll-behavior: none;
 }
 #app {
-  height: 100%; height: 100dvh; display: flex; flex-direction: column; box-sizing: border-box; max-width: 560px; margin: 0 auto;
-  padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+  height: 100%; height: var(--kb-vh); display: flex; flex-direction: column; box-sizing: border-box; max-width: 560px; margin: 0 auto;
+  padding: max(4px, var(--kb-sat)) max(10px, var(--kb-sar)) max(8px, var(--kb-sab)) max(10px, var(--kb-sal));
   gap: 6px;
 }
-header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px; }
-.back { color: var(--dim); text-decoration: none; font-weight: 800; font-size: 13px; white-space: nowrap; padding: 6px 2px; }
-.logo { font-family: var(--font-display); font-size: 19px; line-height: 1; white-space: nowrap; margin: 0 auto; letter-spacing: .02em; }
-.logo span { color: var(--sun); }
+header { display: flex; align-items: center; gap: 4px; flex: none; height: 44px; min-width: 0; }
+.back { color: var(--dim); text-decoration: none; font-weight: 800; font-size: 13px; white-space: nowrap; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; padding: 0 4px; box-sizing: border-box; flex: none; border-radius: 10px; }
+.back span { margin-left: 4px; }
+.back:focus-visible { outline: 2px solid var(--kb-focus); }
+@media (max-width: 345px) { .back span { display: none; } .back { justify-content: center; font-size: 18px; } }
+.logo { font-family: var(--font-display); font-size: clamp(15px, 4.9vw, 19px); line-height: 1; white-space: nowrap; margin: 0 auto; letter-spacing: .02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.logo span { color: var(--sun-text); }
 .icon-btn {
-  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--ink-2);
-  color: var(--chalk); font: 800 15px var(--font-body); cursor: pointer; display: grid; place-items: center; padding: 0; flex: none;
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--ink-2);
+  color: var(--chalk); font: 800 16px var(--font-body); cursor: pointer; display: grid; place-items: center; padding: 0; flex: none;
 }
-.icon-btn.off { color: var(--dim); text-decoration: line-through; }
+.icon-btn svg { width: 22px; height: 22px; }
+.icon-btn:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.icon-btn:disabled { opacity: .4; cursor: default; }
 #stage { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden; background: #8fcff5; touch-action: none; }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #hud { position: absolute; inset: 0; pointer-events: none; }
 .hrow { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; align-items: center; gap: 6px; }
-.hrow .icon-btn { pointer-events: auto; margin-left: auto; background: rgba(22,32,46,.75); }
+.hrow .icon-btn { pointer-events: auto; margin-left: auto; background: rgba(22,32,46,.75); color: #f3f6fa; border-color: #3a4d68; }
 .chip {
-  font-family: var(--font-display); font-size: 13px; background: rgba(22,32,46,.75); border-radius: 999px;
+  color: #f3f6fa; font-family: var(--font-display); font-size: 13px; background: rgba(22,32,46,.75); border-radius: 999px;
   padding: 7px 11px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; display: flex; align-items: center; gap: 6px;
 }
 .chip.w { color: #ffe27a; }
@@ -93,22 +126,26 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
 #banner { position: absolute; left: 0; right: 0; top: 34%; text-align: center; font-family: var(--font-display); font-size: 40px; pointer-events: none;
   text-shadow: -3px -3px 0 #14202e, 3px -3px 0 #14202e, -3px 3px 0 #14202e, 3px 3px 0 #14202e, 0 5px 0 #0009; }
 #banner small { display: block; font-size: 15px; margin-top: 6px; color: #fff; }
-#hint { position: absolute; left: 0; right: 0; bottom: 92px; text-align: center; font-weight: 800; font-size: 14px; pointer-events: none; text-shadow: 0 2px 0 #000a; }
-#nogl { position: absolute; left: 12px; right: 12px; top: 40%; text-align: center; font-weight: 800; color: #fff; }
+#hint { position: absolute; left: 0; right: 0; bottom: 92px; color: #fff; text-align: center; font-weight: 800; font-size: 14px; pointer-events: none; text-shadow: 0 2px 0 #000a; }
+#nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; background: var(--kb-bg); color: var(--chalk); z-index: 5; }
+#nogl > div { max-width: 310px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+#nogl b { font-family: var(--font-display); font-weight: 400; font-size: 19px; }
+#nogl p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--dim); }
+#nogl .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
 .screen {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-  background: rgba(14,20,32,.66); padding: 14px; box-sizing: border-box; text-align: center; gap: 10px; overflow-y: auto; touch-action: pan-y;
+  background: var(--scr); color: var(--chalk); padding: 14px; box-sizing: border-box; text-align: center; gap: 10px; overflow-y: auto; touch-action: pan-y;
 }
 .screen > :first-child { margin-top: auto; }
 #vsSlotTitle { width: 100%; max-width: 360px; }
-#vsSlotTitle .kvs-entry { margin-top: 0; background: rgba(22,32,46,.92); }
+#vsSlotTitle .kvs-entry { margin-top: 0; background: var(--card); min-height: 44px; box-sizing: border-box; }
 .screen > :last-child { margin-bottom: auto; }
-.screen h2 { font-family: var(--font-display); font-weight: 400; margin: 0; font-size: 28px; line-height: 1.15; text-shadow: 0 3px 0 #0008; }
-.screen h2 em { font-style: normal; color: var(--sun); }
-.big-logo { font-family: var(--font-display); font-size: 44px; line-height: 1.05; text-shadow: 0 4px 0 #0009; }
-.big-logo span { color: var(--sun); display: block; }
-.tagline { font-weight: 800; font-size: 14px; color: #fff; text-shadow: 0 2px 0 #0008; margin: 0; }
-.card { background: rgba(22,32,46,.92); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; width: 100%; max-width: 360px; box-sizing: border-box; }
+.screen h2 { font-family: var(--font-display); font-weight: 400; margin: 0; font-size: 28px; line-height: 1.15; text-shadow: var(--ts); }
+.screen h2 em { font-style: normal; color: var(--sun-text); }
+.big-logo { font-family: var(--font-display); font-size: 44px; line-height: 1.05; text-shadow: var(--ts-big); }
+.big-logo span { color: var(--sun-text); display: block; }
+.tagline { font-weight: 800; font-size: 14px; color: var(--chalk); text-shadow: var(--ts); margin: 0; }
+.card { background: var(--card); border: 1px solid var(--card-line); border-radius: 16px; padding: 10px 12px; width: 100%; max-width: 360px; box-sizing: border-box; }
 .stats { display: flex; justify-content: space-around; gap: 8px; }
 .stats div { font-size: 11px; color: var(--dim); font-weight: 800; }
 .stats b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 19px; color: var(--chalk); margin-top: 2px; }
@@ -117,17 +154,17 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
   background: var(--sun); color: var(--sun-ink); width: 100%; max-width: 360px; box-shadow: 0 4px 0 #a07a00; min-height: 48px;
 }
 .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #a07a00; }
-.btn.sub { background: #e9eef5; color: #1d2a3a; box-shadow: 0 4px 0 #8796a8; }
-.btn.sub:active { box-shadow: 0 2px 0 #8796a8; }
-.btn:disabled { background: #4a5870; color: #a9b8cc; box-shadow: none; cursor: default; }
-.btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.howto { font-size: 12px; line-height: 1.65; color: #e6edf6; margin: 0; text-shadow: 0 1px 0 #000a; }
-.uprow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #ffffff14; text-align: left; }
+.btn.sub { background: var(--sub-bg); color: var(--sub-ink); box-shadow: 0 4px 0 var(--sub-sh); }
+.btn.sub:active { box-shadow: 0 2px 0 var(--sub-sh); }
+.btn:disabled { background: var(--kb-surface-2); color: var(--dim); box-shadow: none; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.howto { font-size: 12px; line-height: 1.65; color: var(--chalk); margin: 0; text-shadow: var(--ts); }
+.uprow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--kb-line); text-align: left; }
 .uprow:last-child { border-bottom: 0; }
 .uprow .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-family: var(--font-display); font-size: 17px; flex: none; color: #16202e; }
 .uprow .nm { font-weight: 800; font-size: 15px; }
 .uprow .ds { font-size: 11px; color: var(--dim); line-height: 1.4; }
-.uprow .lv { font-family: var(--font-display); font-size: 12px; color: var(--sun); margin-left: 6px; }
+.uprow .lv { font-family: var(--font-display); font-size: 12px; color: var(--sun-text); margin-left: 6px; }
 .uprow .buy { margin-left: auto; width: auto; min-width: 92px; padding: 6px 8px; font-size: 13px; display: flex; flex-direction: column; gap: 1px; align-items: center; justify-content: center; box-shadow: 0 3px 0 #a07a00; min-height: 46px; flex: none; }
 .cost { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
 .coin-ico { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3a8, #ffc21a 55%, #c98a00); box-shadow: inset 0 0 0 1.5px #a86f00; display: inline-block; flex: none; }
@@ -136,29 +173,29 @@ header { display: flex; align-items: center; gap: 8px; flex: none; height: 36px;
 .res { display: flex; gap: 14px; justify-content: center; font-family: var(--font-display); font-size: 16px; }
 .res span { display: flex; align-items: center; gap: 5px; }
 .rew { display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; padding: 3px 0; gap: 10px; }
-.rew.tot { border-top: 1px solid #ffffff22; margin-top: 4px; padding-top: 8px; font-size: 16px; color: var(--sun); }
+.rew.tot { border-top: 1px solid var(--kb-line); margin-top: 4px; padding-top: 8px; font-size: 16px; color: var(--sun-text); }
 .rew.note { color: var(--dim); font-size: 12px; font-weight: 500; justify-content: center; }
 .row2 { display: flex; gap: 10px; width: 100%; max-width: 360px; }
 .row2 .btn { flex: 1; padding: 12px 8px; }
 /* short phones: the bottom button row stays on screen while the list above scrolls */
-.screen > .row2:last-child { position: sticky; bottom: -14px; z-index: 2; padding: 8px 0 14px; margin-bottom: -14px; background: linear-gradient(rgba(14,20,32,0), rgba(14,20,32,.92) 30%); }
+.screen > .row2:last-child { position: sticky; bottom: -14px; z-index: 2; padding: 8px 0 14px; margin-bottom: -14px; background: linear-gradient(transparent, var(--card) 30%); }
 .slots { display: flex; gap: 8px; justify-content: center; }
-.slot { width: 92px; height: 70px; border-radius: 12px; border: 2px dashed #ffffff44; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--dim); background: #0003; cursor: pointer; }
-.slot.on { border-style: solid; color: #fff; }
+.slot { width: 92px; height: 70px; border-radius: 12px; border: 2px dashed var(--kb-line); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--dim); background: var(--kb-sunken); cursor: pointer; }
+.slot.on { border-style: solid; color: var(--chalk); }
 .slot b { font-family: var(--font-display); font-weight: 400; font-size: 15px; }
 .roster { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.hc { border-radius: 10px; padding: 6px 2px; background: #ffffff10; border: 2px solid transparent; cursor: pointer; font-size: 10px; line-height: 1.35; position: relative; }
+.hc { border-radius: 10px; padding: 6px 2px; background: var(--kb-sunken); min-height: 44px; box-sizing: border-box; border: 2px solid transparent; cursor: pointer; font-size: 10px; line-height: 1.35; position: relative; }
 .hc b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 14px; }
-.hc.sel { border-color: var(--sun); }
+.hc.sel { border-color: var(--kb-accent); }
 .hc.inteam::after { content: "編成中"; position: absolute; top: -6px; right: -4px; background: var(--good); color: #062; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; }
 .hc.lock { opacity: .45; }
 html[lang="en"] .hc.inteam::after { content: "Team"; }
 .langrow { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; color: var(--dim); font-weight: 800; }
-.langrow select { font: 800 13px var(--font-body); color: var(--chalk); background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
-.stars { color: var(--sun); letter-spacing: -1px; }
+.langrow select { font: 800 13px var(--font-body); color: var(--chalk); background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; min-height: 44px; }
+.stars { color: var(--sun-text); letter-spacing: -1px; }
 .hd { text-align: left; font-size: 12px; line-height: 1.55; }
 .hd .t { font-family: var(--font-display); font-size: 18px; }
-.hd .k { color: var(--sun); font-weight: 800; }
+.hd .k { color: var(--sun-text); font-weight: 800; }
 .hbtns { display: flex; gap: 6px; margin-top: 8px; }
 .hbtns .btn { padding: 8px 4px; font-size: 13px; min-height: 44px; box-shadow: 0 3px 0 #a07a00; }
 .hbtns .btn.sub { box-shadow: 0 3px 0 #8796a8; }
@@ -168,9 +205,50 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
 .pw { display: flex; justify-content: space-around; }
 .pw div { font-size: 11px; color: var(--dim); font-weight: 800; }
 .pw b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--chalk); }
-.pw b.ok { color: var(--good); } .pw b.ng { color: var(--bad); }
-.foes { font-size: 12px; color: #dfe8f3; line-height: 1.6; text-align: left; }
-.warn { color: #ff9a8a; font-weight: 800; font-size: 13px; }
+.pw b.ok { color: var(--good-text); } .pw b.ng { color: var(--bad-text); }
+.foes { font-size: 12px; color: var(--chalk); line-height: 1.6; text-align: left; }
+.warn { color: var(--bad-text); font-weight: 800; font-size: 13px; }
+/* how to play (first visit, and the ? button) */
+#ovHow { z-index: 6; background: var(--kb-bg); gap: 8px; }
+#ovHow .card { padding: 8px 10px; }
+#ovHow #howGo { position: sticky; bottom: 0; z-index: 2; flex: none; }
+.hw p { margin: 0; }
+#ovHow .card { text-align: left; }
+.hw { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.hw li { display: flex; gap: 10px; align-items: center; font-size: 13px; line-height: 1.4; }
+.hw svg { width: 52px; height: 40px; flex: none; border-radius: 8px; }
+.hw b { color: var(--sun-text); }
+.hw small { display: block; color: var(--dim); font-size: 11.5px; line-height: 1.35; }
+@media (max-height: 640px) { .hw svg { width: 44px; height: 34px; } .hw li { font-size: 12.5px; } .hw small { font-size: 11px; } .hw { gap: 6px; } }
+/* tutorial coach (stage 1, first time): sits above the road, only its buttons take taps */
+#coach { position: absolute; left: 10px; right: 10px; top: 70px; pointer-events: none; display: flex; justify-content: center; }
+#coach > div { pointer-events: auto; background: rgba(22,32,46,.9); color: #f3f6fa; border: 2px solid var(--sun); border-radius: 14px; padding: 8px 8px 8px 12px;
+  display: flex; align-items: center; gap: 8px; max-width: 380px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 0 #0005; }
+#coach .cs { font-family: var(--font-display); font-size: 12px; color: var(--sun); flex: none; }
+#coach p { margin: 0; font-weight: 800; font-size: 13.5px; line-height: 1.4; flex: 1; }
+#coach button { flex: none; min-height: 44px; min-width: 44px; border-radius: 10px; border: 1px solid #3a4d68; background: #223047; color: #a9b8cc; font: 800 12px var(--font-body); padding: 0 10px; cursor: pointer; }
+#coachHand { position: absolute; left: 50%; bottom: 130px; width: 56px; height: 56px; margin-left: -28px; pointer-events: none; animation: hand 1.6s ease-in-out infinite; }
+@keyframes hand { 0%, 100% { transform: translateX(-70px); } 50% { transform: translateX(70px); } }
+/* boss warning vignette */
+#vign { position: absolute; inset: 0; pointer-events: none; opacity: 0; box-shadow: inset 0 0 70px 18px rgba(255,40,30,.75); }
+#vign.on { animation: vign 1.3s ease-out; }
+@keyframes vign { 0%, 40% { opacity: 1; } 20%, 60% { opacity: .35; } 100% { opacity: 0; } }
+/* clear screen */
+.newbest { display: inline-block; font-family: var(--font-display); font-size: 13px; background: var(--kb-accent); color: var(--kb-accent-ink); border-radius: 999px; padding: 4px 12px; }
+#scrClear h2 { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+#scrClear .stars3 { font-size: 30px; letter-spacing: 4px; color: var(--sun-text); line-height: 1; }
+#scrClear .stars3 i { font-style: normal; display: inline-block; animation: pop .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+#scrClear .stars3 i:nth-child(2) { animation-delay: .15s; } #scrClear .stars3 i:nth-child(3) { animation-delay: .3s; }
+#scrClear .stars3 i.off { opacity: .25; }
+#cList .rew { animation: rin .35s ease-out both; }
+#cList .rew:nth-child(2) { animation-delay: .06s; } #cList .rew:nth-child(3) { animation-delay: .12s; } #cList .rew:nth-child(4) { animation-delay: .18s; }
+#cList .rew:nth-child(5) { animation-delay: .24s; } #cList .rew:nth-child(6) { animation-delay: .3s; } #cList .rew:nth-child(7) { animation-delay: .36s; }
+@keyframes pop { 0% { transform: scale(.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes rin { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  #coachHand, #vign.on, #scrClear h2, #scrClear .stars3 i, #cList .rew, .sk.fire { animation: none; }
+}
+:root[data-kb-motion="reduce"] #coachHand, :root[data-kb-motion="reduce"] #vign.on, :root[data-kb-motion="reduce"] #scrClear h2 { animation: none; }
 @media (max-height: 720px) {
   .screen { padding: 10px 12px; gap: 7px; }
   .screen h2 { font-size: 22px; }
@@ -193,7 +271,7 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
   .howto { font-size: 11px; }
   .tagline { font-size: 13px; }
   .hbtns { margin-top: 5px; }
-  .hbtns .btn { min-height: 40px; }
+  .hbtns .btn { min-height: 44px; }
   .slot { height: 52px; }
 }
 </style>
@@ -201,23 +279,26 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
 <body>
 <div id="app">
   <header>
-    <a class="back" href="../" data-i18n>← ゲーム一覧</a>
+    <a class="back" href="../" aria-label="ゲーム一覧に戻る" data-i18n-attr="aria-label">←<span data-i18n>ゲーム一覧</span></a>
     <div class="logo" data-i18n-html>ゲート<span>ランナー</span></div>
-    <button id="sndBtn" class="icon-btn" aria-label="サウンド切り替え" data-i18n-attr="aria-label">♪</button>
+    <button id="helpBtn" class="icon-btn" type="button" aria-label="遊び方" data-i18n-attr="aria-label"></button>
+    <button id="setBtn" class="icon-btn" type="button" aria-label="設定" data-i18n-attr="aria-label"></button>
   </header>
   <main id="stage">
     <canvas id="cv"></canvas>
-    <div id="nogl" hidden data-i18n-html>3D表示を開始できませんでした。<br>通信状態を確認して再読み込みしてください。</div>
     <div id="squadTag" hidden>0</div>
     <div id="floats"></div>
     <div id="hud" hidden>
       <div class="hrow">
         <div class="chip" id="hudStage">STAGE 1</div>
         <div class="chip w" id="hudWeapon"></div>
-        <button class="icon-btn" id="pauseBtn" aria-label="一時停止" data-i18n-attr="aria-label">Ⅱ</button>
+        <button class="icon-btn" id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label">Ⅱ</button>
       </div>
       <div id="pbar"><i id="pfill"></i><span id="ptext"></span></div>
+      <div id="vign"></div>
       <div id="banner" hidden></div>
+      <div id="coach" hidden><div role="status" aria-live="polite"><span class="cs" id="coachStep">1/5</span><p id="coachText"></p><button type="button" id="coachSkip" data-i18n>スキップ</button></div></div>
+      <svg id="coachHand" hidden viewBox="0 0 56 56" aria-hidden="true"><path d="M8 28h40M8 28l8-7M8 28l8 7M48 28l-8-7M48 28l-8 7" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28" cy="28" r="9" fill="#ffcf33" stroke="#16202e" stroke-width="3"/></svg>
       <div id="hint" hidden></div>
       <div id="hudBot">
         <div class="sk" id="sk0"><div class="cd"></div><b></b><small></small></div>
@@ -245,8 +326,8 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
         <button class="btn sub" id="btnHeroes" data-i18n>英雄</button>
       </div>
       <div id="vsSlotTitle"></div>
+      <button class="btn sub" id="btnHow" type="button" data-i18n>遊び方</button>
       <div class="langrow"><span data-i18n>言語</span><span id="langPickT"></span></div>
-      <p class="howto" data-i18n-html>左右にドラッグで移動（PCは ← → / A D、Esc で一時停止）<br>部隊は自動で撃つ。▲のゲートは撃つと数字が上がり、▼は下がる！<br>赤く光る地面はボスの攻撃。よけろ！</p>
     </section>
 
     <section class="screen" id="scrBase" hidden>
@@ -291,15 +372,11 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
       </div>
     </section>
 
-    <section class="screen" id="scrPause" hidden>
-      <h2 data-i18n>一時停止</h2>
-      <button class="btn" id="btnResume" data-i18n>つづける</button>
-      <button class="btn sub" id="btnQuit" data-i18n>撤退する（トラックの中身だけ持ち帰る）</button>
-      <div class="langrow"><span data-i18n>言語</span><span id="langPickP"></span></div>
-    </section>
 
     <section class="screen" id="scrClear" hidden>
       <h2><em id="cStage">STAGE 1</em><br><span data-i18n>クリア！</span></h2>
+      <div class="stars3" id="cStars" aria-hidden="true"></div>
+      <div class="newbest" id="cNew" hidden data-i18n>最高記録を更新！</div>
       <div class="card" id="cList"></div>
       <button class="btn" id="btnNext" data-i18n>次のステージへ</button>
       <div class="row2">
@@ -317,9 +394,31 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
         <button class="btn sub" id="btnFailHero" data-i18n>英雄</button>
       </div>
     </section>
+    <section class="screen" id="ovHow" data-kb-howto hidden role="dialog" aria-modal="true" aria-labelledby="howTtl">
+      <h2 id="howTtl" data-i18n>遊び方</h2>
+      <div class="card">
+        <ul class="hw">
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#5c6670"/><path d="M8 20h36M8 20l6-5M8 20l6 5M44 20l-6-5M44 20l-6 5" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><g fill="#3e8ef7"><circle cx="22" cy="31" r="3"/><circle cx="28" cy="31" r="3"/><circle cx="25" cy="26" r="3"/></g></svg>
+            <p data-i18n-html><b>左右にドラッグ</b>して部隊を動かす<small>PC は ← → / A D、Esc で一時停止。部隊は自動で撃つ</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#5c6670"/><rect x="3" y="6" width="21" height="16" rx="3" fill="#30a46c"/><text x="13.5" y="18" font-size="10" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">×2</text><rect x="28" y="6" width="21" height="16" rx="3" fill="#e5484d"/><text x="38.5" y="18" font-size="10" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">−5</text><g fill="#3e8ef7"><circle cx="11" cy="32" r="3"/><circle cx="17" cy="32" r="3"/></g></svg>
+            <p data-i18n-html><b>緑のゲート</b>をくぐって仲間を増やす<small>赤いゲートは仲間が減る</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#5c6670"/><rect x="14" y="5" width="24" height="18" rx="3" fill="#e5484d"/><text x="26" y="15" font-size="9" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">−6</text><text x="26" y="21.5" font-size="6" font-weight="900" text-anchor="middle" fill="#9dffb8" font-family="sans-serif">▲</text><path d="M26 36V26" stroke="#ffe27a" stroke-width="2.5" stroke-dasharray="2 3"/></svg>
+            <p data-i18n-html><b>▲のゲート</b>は撃つと数字が上がる<small>▼は撃つと下がる。正面に立って撃とう</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#5c6670"/><rect x="16" y="9" width="20" height="17" rx="2" fill="#3d7bd9"/><rect x="16" y="15.5" width="20" height="3" fill="#ffd23d"/><path d="M26 37V29" stroke="#ffe27a" stroke-width="2.5" stroke-dasharray="2 3"/></svg>
+            <p data-i18n-html><b>箱</b>を撃ち壊すと武器や仲間が手に入る<small>「？？？」の箱は罠のこともある</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#5c6670"/><circle cx="26" cy="22" r="13" fill="#ff2a2a" opacity=".45"/><circle cx="26" cy="22" r="13" fill="none" stroke="#ff2a2a" stroke-width="2"/><path d="M40 22h8M44 18l4 4-4 4" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+            <p data-i18n-html><b>赤く光る地面</b>はボスの攻撃。よけろ！<small>ボスを倒すとステージクリア</small></p></li>
+          <li><svg viewBox="0 0 52 40"><rect width="52" height="40" fill="#3a4a2a"/><rect x="8" y="16" width="14" height="16" fill="#ffcf33"/><rect x="26" y="10" width="18" height="22" fill="#8fc8ff"/><circle cx="35" cy="6" r="3" fill="#ffc21a"/></svg>
+            <p data-i18n-html>集めたコインで<b>基地と英雄</b>を強化<small>強くなるほど先のステージへ進める</small></p></li>
+        </ul>
+      </div>
+      <button class="btn" id="howGo" type="button" data-i18n>はじめる</button>
+      <button class="btn sub" id="howTut" type="button" data-i18n>チュートリアルをもう一度</button>
+    </section>
   </main>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../common/game.js"></script>
 <script>
 KoboI18n.add({ en: {
   'ゲートランナー': 'Gate Runner', '← ゲーム一覧': '← Games', 'ゲート<span>ランナー</span>': 'Gate <span>Runner</span>',
@@ -366,17 +465,48 @@ KoboI18n.add({ en: {
   '出現する敵': 'Enemies', '・': ', ', 'ボス': 'Boss', '体力 {n}・叩きつけ': 'HP {n} · slam', '・突進・呼び寄せ': ' · charge · summon',
   '次のステージには司令部Lv{n}が必要': 'Next stage needs HQ Lv{n}', '戦力不足！ 基地と英雄を強化しよう': 'Too weak! Upgrade your base and heroes',
   '点': 'pts', '全滅！ {n}秒後に再出撃': 'Wiped out! Back in {n}s', '再出撃！': 'Back in action!',
-  '2〜4人で {t} のスコア勝負。全員に同じ順番で同じピースが出ます。': '2–4 players, {t} score battle. Same course and same standard team for everyone.',
+  '2〜4人で {t} のスコア勝負。全員が同じコースを走ります。': '2–4 players, {t} score battle. Same course and same standard team for everyone.',
+  'ゲーム一覧に戻る': 'Back to games', 'ゲーム一覧': 'Games', '遊び方': 'How to play', '設定': 'Settings', 'スキップ': 'Skip',
+  '最高記録を更新！': 'New record!', 'はじめる': 'Let\'s go', 'チュートリアルをもう一度': 'Replay the tutorial',
+  '<b>左右にドラッグ</b>して部隊を動かす<small>PC は ← → / A D、Esc で一時停止。部隊は自動で撃つ</small>': '<b>Drag left/right</b> to move your squad<small>PC: ← → / A D, Esc to pause. Your squad fires on its own</small>',
+  '<b>緑のゲート</b>をくぐって仲間を増やす<small>赤いゲートは仲間が減る</small>': 'Run through <b>green gates</b> to grow your squad<small>Red gates take soldiers away</small>',
+  '<b>▲のゲート</b>は撃つと数字が上がる<small>▼は撃つと下がる。正面に立って撃とう</small>': '<b>Shooting a ▲ gate</b> raises its number<small>▼ goes down when shot. Stand in front of it to shoot</small>',
+  '<b>箱</b>を撃ち壊すと武器や仲間が手に入る<small>「？？？」の箱は罠のこともある</small>': 'Shoot open <b>crates</b> for weapons and soldiers<small>A "???" crate can be a trap</small>',
+  '<b>赤く光る地面</b>はボスの攻撃。よけろ！<small>ボスを倒すとステージクリア</small>': '<b>Glowing red ground</b> is a boss attack. Dodge it!<small>Beat the boss to clear the stage</small>',
+  '集めたコインで<b>基地と英雄</b>を強化<small>強くなるほど先のステージへ進める</small>': 'Spend coins on your <b>base and heroes</b><small>The stronger you are, the further you can go</small>',
+  '3D を表示できません': 'Can\'t show 3D graphics',
+  '3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。': 'The 3D engine could not be loaded. Check your connection and open the page again.',
+  'この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。': 'This game needs 3D graphics (WebGL), which this device or browser can\'t provide.',
+  'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on "hardware acceleration" in your browser settings.',
+  '画面が一時的に止まりました。少し待つと元に戻ります。': 'The screen paused for a moment. It will come back shortly.',
+  'チュートリアル': 'Tutorial',
+  '画面を左右にドラッグして、部隊を動かそう': 'Drag left and right to move your squad',
+  'そのまま反対側へも動かしてみよう': 'Now move to the other side',
+  '緑のゲートをくぐると仲間が増える。赤は減る！': 'Green gates add soldiers. Red ones take them away!',
+  '▲のゲートは撃つほど数字が上がる。正面に立って撃とう': 'Shooting a ▲ gate raises its number. Stand in front of it',
+  '箱を撃ち壊すと武器が強くなる': 'Shoot the crate open to upgrade your weapon',
+  'ゾンビの群れ！ 部隊は自動で撃つ。ぶつかると仲間が減る': 'A zombie horde! Your squad fires on its own. Contact costs soldiers',
+  'その調子！ ボスまで走り抜けよう': 'Nice! Now run on to the boss',
+  'ひとやすみ中': 'Paused', 'ステージをやり直す': 'Restart stage',
+  '仲間 {n}人': 'Squad {n}', 'クラウドの記録を読み込みました': 'Loaded your progress from the cloud',
 } });
 </script>
 <script>
 (() => {
 'use strict';
-const SAVE_KEY = 'kusoge.gates.save', SND_KEY = 'kusoge.sound';
+const SAVE_KEY = 'kusoge.gates.save';
 const DEBUG = /[?&]debug(?:[=&]|$)/.test(location.search);
 const $ = id => document.getElementById(id);
 const T = KoboI18n.t;
-KoboI18n.apply(); KoboI18n.picker($('langPickT')); KoboI18n.picker($('langPickP'));
+const P = window.KoboPlatform || null, A = window.KoboAudio || null, G = window.KoboGame || null, UI = window.KoboUI || null;
+KoboI18n.apply(); KoboI18n.picker($('langPickT'));
+let rmCache = null;
+const reduced = () => {
+  if (rmCache == null) { try { rmCache = !!((P ? P.fx.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches) || document.documentElement.getAttribute('data-kb-motion') === 'reduce'); } catch (e) { rmCache = false; } }
+  return rmCache;
+};
+try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => { rmCache = null; }); } catch (e) {}
+if (UI) { $('helpBtn').appendChild(UI.icon('help')); $('setBtn').appendChild(UI.icon('settings')); } else { $('helpBtn').textContent = '?'; $('setBtn').textContent = '⚙'; }
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const frnd = Math.random; // visual-only randomness
 let seed = (Date.now() ^ 0x5bd1e995) >>> 0;
@@ -449,6 +579,8 @@ function migrate(s) {
     if (s.bld) for (const b of BLD) d.bld[b.id] = clamp(s.bld[b.id] | 0 || 1, 1, b.id === 'hq' ? HQ_MAX : HQ_MAX * 2);
     if (s.heroes) for (const h of HEROES) { const x = s.heroes[h.id]; if (x) d.heroes[h.id] = { lv: clamp(x.lv | 0 || 1, 1, 99), star: clamp(x.star | 0, 0, 5), cards: Math.max(0, x.cards | 0) }; }
     if (Array.isArray(s.sel)) { const sel = s.sel.filter(id => HMAP[id]).slice(0, 3); d.sel = sel.filter((v, i) => sel.indexOf(v) === i); }
+    if (s.tut) d.tut = 1;
+    if (s.seen) d.seen = 1;
     return d;
   }
   if (s && typeof s === 'object') { // old 2D save {stage, coins, best, up}
@@ -463,13 +595,26 @@ function migrate(s) {
   }
   return d;
 }
+// kusoge.gates.save is merged field by field across devices (common/games.js sync: best / buildings / hero lv+star = max,
+// coins / mat / exp / cards / sel / stage = newest). Every change is applied to the copy in storage right before writing
+// (mutate), so a merge that cloud.js wrote while this page was open is never overwritten by a stale copy in memory.
+// tut (tutorial done) and seen (how-to seen) are 0/1 flags that only ever go up.
 function loadSave() {
   try { const raw = localStorage.getItem(SAVE_KEY); save = migrate(raw ? JSON.parse(raw) : null); } catch (e) { save = defSave(); }
 }
 function writeSave() { if (vs) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+function mutate(fn) {
+  if (vs) return false; // online battles never touch the save (versus.js rule)
+  loadSave();
+  const r = fn(save);
+  writeSave();
+  return r;
+}
 let vs = null; // online battle: { snap, seed, leg, dist, bosses, minis } while a match owns the run (see KoboVersus below)
 loadSave();
 if (save.migrated) { delete save.migrated; writeSave(); }
+// the save is also re-read when another tab or cloud.js changes it while this page is idle
+addEventListener('storage', e => { if (e.key === SAVE_KEY && !vs && mode !== 'run' && mode !== 'paused') { loadSave(); refreshScreen(); } });
 
 /* ======================= derived stats & formulas ======================= */
 const hpZ = s => 3 * Math.pow(1.38, s - 1);
@@ -510,48 +655,33 @@ function calcPower() {
 }
 const recPower = s => Math.round(150 * Math.pow(1.22, s - 1));
 
-/* =============================== sound =============================== */
-let soundOn = true;
-try { soundOn = localStorage.getItem(SND_KEY) !== '0'; } catch (e) {}
-let actx = null, noiseBuf = null, master = null;
-function ensureAudio() {
-  if (!soundOn) return;
+/* =============================== sound (common/audio.js: shared volume and mute) =============================== */
+// the game's own synth voices, played on KoboAudio's effects bus (so the shared master / effects volume and mute apply)
+let noiseBuf = null, simming = false;
+function actx() { return A && A.canPlay() ? A.ctx() : null; }
+function tone(f, dur, type, vol, f2, delay) {
+  if (simming || !A) return;
+  A.tone(f, dur, { type: type || 'square', vol, slide: f2 || 0, delay: delay || 0, attack: 0.004 });
+}
+function noise(dur, vol, freq) {
+  if (simming) return;
+  const ac = actx(); if (!ac || !A.se) return;
   try {
-    if (!actx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      actx = new AC();
-      master = actx.createGain(); master.gain.value = 0.5; master.connect(actx.destination);
-      noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.5, actx.sampleRate);
+    if (!noiseBuf || noiseBuf.sampleRate !== ac.sampleRate) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = frnd() * 2 - 1;
     }
-    if (actx.state === 'suspended') actx.resume();
-  } catch (e) {}
-}
-function tone(f, dur, type, vol, f2, delay) {
-  if (!soundOn || !actx || actx.state !== 'running' || simming) return;
-  try {
-    const t = actx.currentTime + (delay || 0);
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.type = type || 'square'; o.frequency.setValueAtTime(f, t);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    const t = ac.currentTime;
+    const src = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter();
+    src.buffer = noiseBuf; f.type = 'lowpass'; f.frequency.value = freq || 900;
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
-  } catch (e) {}
-}
-function noise(dur, vol, freq) {
-  if (!soundOn || !actx || actx.state !== 'running' || simming) return;
-  try {
-    const t = actx.currentTime;
-    const s = actx.createBufferSource(), g = actx.createGain(), f = actx.createBiquadFilter();
-    s.buffer = noiseBuf; f.type = 'lowpass'; f.frequency.value = freq || 900;
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur);
+    src.connect(f); f.connect(g); g.connect(A.se); src.start(t); src.stop(t + dur);
+    src.onended = () => { try { src.disconnect(); f.disconnect(); g.disconnect(); } catch (e) {} };
   } catch (e) {}
 }
 const sndT = { shot: 0, hit: 0, boom: 0, lose: 0 };
-let lastVib = 0, simming = false;
+let lastVib = 0;
 function thr(k, ms) { const n = performance.now(); if (n - sndT[k] < ms) return false; sndT[k] = n; return true; }
 const sfx = {
   shot() { if (thr('shot', 85)) tone(900 + frnd() * 200, 0.04, 'square', 0.022, 500); },
@@ -562,26 +692,21 @@ const sfx = {
   power() { tone(520, 0.08, 'square', 0.07); tone(780, 0.08, 'square', 0.07, 0, 0.07); tone(1040, 0.2, 'triangle', 0.08, 0, 0.14); },
   lose() { if (thr('lose', 90)) tone(180, 0.1, 'square', 0.05, 90); },
   clear() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, 'square', 0.07, 0, i * 0.12)); },
+  win() { if (!simming && A) A.sfx('win'); },
   fail() { [392, 330, 262, 196].forEach((f, i) => tone(f, 0.25, 'triangle', 0.09, 0, i * 0.16)); },
   boss() { tone(90, 0.6, 'sawtooth', 0.12, 60); noise(0.5, 0.15, 300); },
   warn() { tone(440, 0.12, 'square', 0.05); tone(440, 0.12, 'square', 0.05, 0, 0.18); },
   skill() { tone(700, 0.07, 'triangle', 0.08); tone(1050, 0.12, 'triangle', 0.08, 0, 0.06); },
-  click() { tone(700, 0.05, 'square', 0.05); },
+  click() { if (!simming && A) A.sfx('tap'); },
+  coin() { if (!simming && A) A.sfx('coin'); },
 };
 function vibrate(ms) {
-  if (simming) return;
+  if (simming || reduced()) return;
   const n = performance.now(); if (n - lastVib < 180) return; lastVib = n;
-  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  if (A) A.vibrate(ms); else { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 }
-function syncSndBtn() { const b = $('sndBtn'); b.classList.toggle('off', !soundOn); b.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); }
-$('sndBtn').addEventListener('click', () => {
-  soundOn = !soundOn;
-  try { localStorage.setItem(SND_KEY, soundOn ? '1' : '0'); } catch (e) {}
-  syncSndBtn(); if (soundOn) { ensureAudio(); sfx.click(); }
-});
-syncSndBtn();
-addEventListener('pointerdown', ensureAudio, { passive: true });
-addEventListener('keydown', ensureAudio);
+$('setBtn').addEventListener('click', () => { sfx.click(); openSettings(); });
+$('helpBtn').addEventListener('click', () => { sfx.click(); openHow(false); });
 
 /* =============================== world / pools =============================== */
 const FAR = 96, NEAR = -6, BS = 55;
@@ -617,6 +742,7 @@ const PX = new Float32Array(PN), PZ = new Float32Array(PN), PY = new Float32Arra
 let pCur = 0;
 function burst(x, z, y, cnt, col, spd, size) {
   if (simming) return;
+  cnt = Math.max(1, Math.round(cnt * Q().pk));
   for (let c = 0; c < cnt; c++) {
     let i = -1;
     for (let k = 0; k < PN; k++) { const j = (pCur + k) % PN; if (!PON[j]) { i = j; break; } }
@@ -690,7 +816,7 @@ function stepGate(e, dir) {
 }
 
 /* =============================== stage generation =============================== */
-function G(op, val, sh) { return { op, val, sh: sh || 0 }; }
+function G2(op, val, sh) { return { op, val, sh: sh || 0 }; }
 const P_GROW = [0, 1, 4, 5, 0, 1], P_TRAP = [2, 6], P_BAD = [3, 7, 8];
 let lastRole = 0;
 function gatePair(s, est, ev, z, j) {
@@ -715,15 +841,15 @@ function gateVals(ev, n) {
   const r = (a, c, q) => Math.max(1, Math.round(b * (a + (q === 2 ? ev.r2 : ev.r1) * (c - a))));
   let A, B;
   switch (ev.p) {
-    case 0: A = G('+', r(0.45, 1.05)); B = G('x', 2); break;
-    case 1: A = G('+', -(r(0.25, 0.45) + 3), 1); B = G('+', r(0.12, 0.3, 2) + 1); break;
-    case 2: A = G('+', r(1.0, 1.3) + 2, -1); B = G('+', r(0.35, 0.6, 2)); break;
-    case 3: A = G('+', -r(0.25, 0.55)); B = G('/', 2); break;
-    case 4: A = G('x', 3); B = G('+', r(0.5, 0.9)); break;
-    case 5: A = G('x', 1, 1); B = G('+', r(0.3, 0.6)); break;
-    case 6: A = G('x', 3, -1); B = G('+', r(0.4, 0.8)); break;
-    case 7: A = G('/', 3, 1); B = G('+', -r(0.2, 0.4)); break;
-    default: A = G('+', r(0.3, 0.5)); B = G('+', -r(0.3, 0.5, 2)); break;
+    case 0: A = G2('+', r(0.45, 1.05)); B = G2('x', 2); break;
+    case 1: A = G2('+', -(r(0.25, 0.45) + 3), 1); B = G2('+', r(0.12, 0.3, 2) + 1); break;
+    case 2: A = G2('+', r(1.0, 1.3) + 2, -1); B = G2('+', r(0.35, 0.6, 2)); break;
+    case 3: A = G2('+', -r(0.25, 0.55)); B = G2('/', 2); break;
+    case 4: A = G2('x', 3); B = G2('+', r(0.5, 0.9)); break;
+    case 5: A = G2('x', 1, 1); B = G2('+', r(0.3, 0.6)); break;
+    case 6: A = G2('x', 3, -1); B = G2('+', r(0.4, 0.8)); break;
+    case 7: A = G2('/', 3, 1); B = G2('+', -r(0.2, 0.4)); break;
+    default: A = G2('+', r(0.3, 0.5)); B = G2('+', -r(0.3, 0.5, 2)); break;
   }
   return ev.swap ? [B, A] : [A, B];
 }
@@ -810,8 +936,9 @@ function clearPools() {
   for (const f of flashes) f.on = false;
   for (const b of beams) b.on = false;
 }
-function startRun(st) {
+function startRun(st, opt) {
   clearPools();
+  opt = opt || {};
   const s = st || save.stage;
   const o = loadout(save);
   R.stage = s; R.n = o.n; R.startN = o.n; R.peak = R.n; R.tier = o.tier; R.sp = '';
@@ -823,15 +950,95 @@ function startRun(st) {
   R.px = R.tpx = 0; R.dist = 0; R.speed = 0; R.phase = 'road'; R.t = 0; R.fireAcc = 0; R.heroAcc = 0; R.kills = 0; R.coinsRaw = 0; R.truck = 0; R.mats = 0;
   R.boss = null; R.mini = null; R.miniDone = false; R.endT = 0; R.shot = 0; R.stompT = 0; R.shake = 0; R.bump = 0; R.lost = 0; R.healLost = 0;
   R.rapid = 0; R.shieldT = 0; R.noSpawn = false; R.noBoss = false; R.gatesTaken = 0; R.cratesOpened = 0; R.log = [];
-  R.bannerT = 0; R.hintT = 0;
+  R.bannerT = 0; R.hintT = 0; R.slowT = 0;
   buildStage(s);
   updRad();
   mode = 'run'; show(null); $('hud').hidden = false;
   $('hudStage').textContent = 'STAGE ' + s;
-  setBanner('STAGE ' + s, s >= 4 ? T('中ボスとボスが待ち構える') : T('ボスを倒せ！'), 1.6);
   hudCache.reset();
   buildSkillHud();
+  // stage 1 is the tutorial the first time (and when replayed from the how-to screen); online battles never get it
+  R.tutorial = !vs && s === 1 && (opt.tutorial || (!save.tut && save.best === 0));
+  if (R.tutorial) tutBegin();
+  else setBanner('STAGE ' + s, s >= 4 ? T('中ボスとボスが待ち構える') : T('ボスを倒せ！'), 1.6);
+  dirty = true;
+  if (!vs) emit('play_start', { mode: 'normal', stage: s, tutorial: R.tutorial || undefined });
 }
+/* =============================== tutorial (stage 1, first time) ===============================
+   Each step makes the player do the move once: steer both ways, take a green gate, shoot a ▲ gate up, break a crate,
+   survive a small horde. Nothing else spawns until it is done (or skipped); then the normal stage 1 course follows. */
+const TUT = [
+  { id: 'steer', text: '画面を左右にドラッグして、部隊を動かそう' },
+  { id: 'gate', text: '緑のゲートをくぐると仲間が増える。赤は減る！' },
+  { id: 'shoot', text: '▲のゲートは撃つほど数字が上がる。正面に立って撃とう' },
+  { id: 'crate', text: '箱を撃ち壊すと武器が強くなる' },
+  { id: 'horde', text: 'ゾンビの群れ！ 部隊は自動で撃つ。ぶつかると仲間が減る' },
+];
+const tut = { step: 0, sub: 0, spawned: false, minX: 0, maxX: 0, ents: [], doneT: 0, done: false, skipped: false };
+function tutBegin() {
+  Object.assign(tut, { step: 0, sub: 0, spawned: false, minX: 0, maxX: 0, ents: [], doneT: 0, done: false, skipped: false });
+  R.noSpawn = true; R.noBoss = true;
+  setBanner(T('チュートリアル'), 'STAGE 1', 1.4);
+  showCoach();
+}
+function tutSpawn() {
+  const st = TUT[tut.step].id, sd = R.px >= 0 ? -1 : 1; // the useful thing goes on the other side, so the player has to move
+  tut.spawned = true; tut.ents = [];
+  if (st === 'gate') {
+    const good = mkGate(sd * 2.5, R.dist + 40, G2('x', 2), 1, R.n), bad = mkGate(-sd * 2.5, R.dist + 40, G2('+', -4), 1, R.n);
+    if (good && bad) { good.mate = bad; bad.mate = good; tut.ents.push(good, bad); }
+  } else if (st === 'shoot') {
+    const up = mkGate(sd * 2.5, R.dist + 56, G2('+', -6, 1), 1, R.n), bad = mkGate(-sd * 2.5, R.dist + 56, G2('+', -3), 1, R.n);
+    if (up && bad) { up.mate = bad; bad.mate = up; tut.ents.push(up, bad); }
+  } else if (st === 'crate') {
+    const e = newEnt(T_CRATE);
+    if (e) { e.x = sd * 2.2; e.z = R.dist + 42; e.w = 0.75; e.hp = e.max = Math.round(hpZ(1) * 6); e.ck = 'up'; tut.ents.push(e); }
+  } else if (st === 'horde') {
+    for (let k = 0; k < 10; k++) { const z = mkZombie(-3.6 + (k % 5) * 1.8, R.dist + 40 + (k / 5 | 0) * 3, ZN, 0.8); if (z) tut.ents.push(z); }
+  }
+}
+function tutNext() {
+  tut.step++; tut.sub = 0; tut.spawned = false;
+  if (!simming) sfx.coin();
+  if (tut.step >= TUT.length) { tutFinish(false); return; }
+  showCoach();
+}
+function tutFinish(skipped) {
+  if (tut.done) return;
+  tut.done = true; tut.skipped = !!skipped; tut.step = TUT.length;
+  hideCoach();
+  mutate(sv => { sv.tut = 1; });
+  // the normal stage 1 course starts from here
+  const off = R.dist;
+  for (const ev of R.ev) ev.z += off;
+  R.L += off; R.evI = 0; R.noSpawn = false; R.noBoss = false;
+  setBanner(skipped ? 'STAGE 1' : T('その調子！ ボスまで走り抜けよう'), skipped ? T('ボスを倒せ！') : '', 2);
+  logEv('tutorial ' + (skipped ? 'skipped' : 'done'));
+}
+function tutUpdate() {
+  if (!R.tutorial || tut.done || R.phase !== 'road') return;
+  const st = TUT[tut.step].id;
+  if (st === 'steer') {
+    tut.minX = Math.min(tut.minX, R.px); tut.maxX = Math.max(tut.maxX, R.px);
+    if (tut.sub === 0 && (tut.minX < -1.3 || tut.maxX > 1.3)) { tut.sub = 1; showCoach(); }
+    if (tut.minX < -1.3 && tut.maxX > 1.3) tutNext();
+    return;
+  }
+  if (!tut.spawned) { tutSpawn(); return; }
+  if (!tut.ents.some(e => e.on)) tutNext();
+}
+function showCoach() {
+  if (!R.tutorial || tut.done) { hideCoach(); return; }
+  const st = TUT[tut.step];
+  $('coach').hidden = false;
+  $('coachStep').textContent = (tut.step + 1) + '/' + TUT.length;
+  $('coachText').textContent = st.id === 'steer' && tut.sub ? T('そのまま反対側へも動かしてみよう') : T(st.text);
+  $('coachHand').hidden = st.id !== 'steer';
+}
+function hideCoach() { $('coach').hidden = true; $('coachHand').hidden = true; }
+$('coachSkip').addEventListener('click', e => { e.stopPropagation(); sfx.click(); if (mode === 'run' && R.tutorial) tutFinish(true); });
+$('coachSkip').addEventListener('pointerdown', e => e.stopPropagation());
+function vignette() { if (simming || reduced()) return; const v = $('vign'); v.classList.remove('on'); void v.offsetWidth; v.classList.add('on'); }
 function setBanner(t, sub, d) { R.banner = t; R.bannerSub = sub || ''; R.bannerT = d || 1.5; hudCache.banner = ''; }
 function setHint(t, d) { R.hint = t; R.hintT = d || 2; }
 function updRad() { R.rad = squadRad(R.n); R.front = R.rad * COMP + 0.35; }
@@ -841,7 +1048,7 @@ function startBoss() {
   const s = R.stage;
   e.kind = 0; e.x = 0; e.z = R.dist + 42; e.w = 1.9; e.hp = e.max = Math.round(bossHP(s)); e.vz = 1.05 + Math.min(s, 15) * 0.03; e.atkT = 3; e.sz = 1;
   R.boss = e; R.stompT = 0;
-  sfx.boss(); setBanner('BOSS!', T('赤い地面から逃げろ'), 1.6);
+  sfx.boss(); setBanner('BOSS!', T('赤い地面から逃げろ'), 1.6); vignette(); vibrate([60, 60, 60]);
   logEv('boss');
 }
 function startMini() {
@@ -850,7 +1057,7 @@ function startMini() {
   const s = R.stage;
   e.kind = 1; e.x = 0; e.z = R.dist + 34; e.w = 1.3; e.hp = e.max = Math.round(bossHP(s) * 0.28); e.vz = 1.5; e.atkT = 2.5; e.sz = 0.65;
   R.mini = e;
-  sfx.boss(); setBanner(T('中ボス出現'), T('倒さないと進めない'), 1.4);
+  sfx.boss(); setBanner(T('中ボス出現'), T('倒さないと進めない'), 1.4); vignette();
   logEv('mini');
 }
 function loseMen(k, why) {
@@ -876,7 +1083,13 @@ function win() {
   R.phase = 'won'; R.endT = 1.6; R.shake = 0.8;
   if (vs) vs.bosses++;
   const b = R.boss;
-  if (b) { burst(b.x, b.z, 2, 60, 0xffcf33, 9, 0.3); burst(b.x, b.z, 2, 40, 0x9aa3ad, 7, 0.25); flash(b.x, b.z, 5, 0xffb030); b.on = false; }
+  if (b) {
+    burst(b.x, b.z, 2, 60, 0xffcf33, 9, 0.3); burst(b.x, b.z, 2, 40, 0x9aa3ad, 7, 0.25); flash(b.x, b.z, 5, 0xffb030); b.on = false;
+    // confetti + a short slow motion on the final blow (not in battles, not with reduced motion)
+    for (const c of [0xff5f8f, 0x4fc3ff, 0x5fe08a, 0xffe066, 0xb98aff]) burst(b.x, b.z - 1, 3, 14, c, 8, 0.16);
+    if (!vs && !reduced()) R.slowT = 0.8;
+  }
+  vibrate([40, 50, 90]);
   for (let i = 0; i < ENT_N; i++) { const e = ents[i]; if (e.on && e.t === T_Z) { burst(e.x, e.z, 0.6, 5, 0x7cd65c, 4, 0.14); e.on = false; } }
   for (const t of tele) t.on = false;
   sfx.boom(); sfx.clear(); setBanner(T('撃破！'), '', 1.5);
@@ -884,25 +1097,36 @@ function win() {
 let lastResult = null;
 function endRun(won) {
   R.phase = 'over';
-  $('hud').hidden = true;
+  $('hud').hidden = true; hideCoach();
   const s = R.stage, truck = Math.floor(R.truck);
-  const res = { won, stage: s, truck, bonus: 0, mats: R.mats, exp: 0, cards: [], n: R.n, peak: R.peak, kills: R.kills, raw: Math.floor(R.coinsRaw) };
-  if (won) {
-    res.bonus = 30 + 15 * s; res.mats += 3 + s; res.exp = 30 + 15 * s;
-    const pool = HEROES.filter(heroUnlocked);
-    const nc = 2 + Math.floor(s / 3);
-    for (let i = 0; i < nc; i++) {
-      const h = rnd() < 0.6 && save.sel.length ? HMAP[save.sel[rnd() * save.sel.length | 0]] : pool[rnd() * pool.length | 0];
-      if (h && heroUnlocked(h)) { save.heroes[h.id].cards++; res.cards.push(h.name); }
+  const res = { won, stage: s, truck, bonus: 0, mats: R.mats, exp: 0, cards: [], n: R.n, peak: R.peak, kills: R.kills, raw: Math.floor(R.coinsRaw), newBest: false };
+  if (won) { res.bonus = 30 + 15 * s; res.mats += 3 + s; res.exp = 30 + 15 * s; } else res.exp = 6 + 3 * s;
+  mutate(sv => {
+    if (won) {
+      const pool = HEROES.filter(heroUnlocked);
+      const nc = 2 + Math.floor(s / 3);
+      for (let i = 0; i < nc; i++) {
+        const h = rnd() < 0.6 && sv.sel.length ? HMAP[sv.sel[rnd() * sv.sel.length | 0]] : pool[rnd() * pool.length | 0];
+        if (h && heroUnlocked(h)) { sv.heroes[h.id].cards++; res.cards.push(h.name); }
+      }
+      res.newBest = s > sv.best;
+      sv.best = Math.max(sv.best, s);
+      sv.stage = Math.min(s + 1, maxStage());
     }
-    save.best = Math.max(save.best, s);
-    save.stage = Math.min(s + 1, maxStage());
-  } else res.exp = 6 + 3 * s;
-  save.coins += truck + res.bonus; save.mat += res.mats; save.exp += res.exp; save.runs++;
-  writeSave();
+    sv.coins += truck + res.bonus; sv.mat += res.mats; sv.exp += res.exp; sv.runs++;
+    if (R.tutorial) sv.tut = 1;
+  });
   lastResult = res;
   if (won) {
+    emit('stage_clear', { mode: 'normal', stage: s, kills: R.kills });
+    if (res.newBest) emit('best', { mode: 'normal', score: s, stage: s });
+  }
+  emit('play_end', { mode: 'normal', score: won ? s : 0, stage: s, reason: won ? 'clear' : 'over', kills: R.kills, durationMs: Math.round(R.t * 1000) });
+  if (won) {
     $('cStage').textContent = 'STAGE ' + s;
+    const stars = R.n >= R.peak * 0.6 ? 3 : R.n >= R.peak * 0.3 ? 2 : 1;
+    $('cStars').innerHTML = [0, 1, 2].map(i => '<i' + (i < stars ? '' : ' class="off"') + '>★</i>').join('');
+    $('cNew').hidden = !res.newBest;
     const cc = {}; res.cards.forEach(n => cc[n] = (cc[n] || 0) + 1);
     $('cList').innerHTML =
       rew(T('補給トラック（{p}%回収）', { p: Math.round(R.truckPct * 100) }), '<span class="cost"><i class="coin-ico"></i>' + truck + (truck >= R.truckCap ? ' ' + T('満載') : '') + '</span>') +
@@ -911,18 +1135,28 @@ function endRun(won) {
       rew(T('経験値'), '<span class="cost"><i class="exp-ico"></i>' + res.exp + '</span>') +
       rew(T('英雄カード'), Object.keys(cc).map(k => k + '×' + cc[k]).join(' ') || '-') +
       rew(T('生き残り / 最大'), T('{a} / {b}人', { a: R.n, b: R.peak })) +
-      '<div class="rew tot"><span>' + T('コイン合計') + '</span><span class="cost"><i class="coin-ico"></i>' + (truck + res.bonus) + '</span></div>';
+      '<div class="rew tot"><span>' + T('コイン合計') + '</span><span class="cost"><i class="coin-ico"></i><b id="cTot">' + (truck + res.bonus) + '</b></span></div>';
+    countUp($('cTot'), truck + res.bonus);
     $('btnNext').textContent = save.stage > s ? T('STAGE {n} へ', { n: save.stage }) : T('基地を強化して先へ');
-    mode = 'clear'; show('scrClear');
+    mode = 'clear'; show('scrClear'); sfx.win(); vibrate([30, 40, 70]);
   } else {
     const pw = calcPower(), rc = recPower(s);
     $('fInfo').innerHTML = rew(T('ステージ'), s) + rew(T('最大人数'), T('{n}人', { n: R.peak })) + rew(T('倒した敵'), R.kills) +
       rew(T('トラック回収'), '<span class="cost"><i class="coin-ico"></i>' + truck + '</span>') + rew(T('資材 / 経験値'), res.mats + ' / ' + res.exp) +
-      rew(T('戦力 / 推奨'), '<span style="color:' + (pw >= rc ? 'var(--good)' : 'var(--bad)') + '">' + pw + '</span> / ' + rc) +
+      rew(T('戦力 / 推奨'), '<span style="color:' + (pw >= rc ? 'var(--good-text)' : 'var(--bad-text)') + '">' + pw + '</span> / ' + rc) +
       '<div class="rew note">' + (pw < rc ? T('基地と英雄を強化して戦力を上げよう') : T('ゲートの選び方と回避を見直そう')) + '</div>';
     mode = 'fail'; show('scrFail'); sfx.fail();
   }
+  dirty = true;
 }
+function countUp(el, to) {
+  if (!el || reduced() || to < 10) return;
+  const t0 = performance.now(), dur = 700;
+  const step = now => { const k = Math.min(1, (now - t0) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
+  el.textContent = '0'; requestAnimationFrame(step);
+}
+// events for common/game.js → platform.js (history, stats). Online battles report mode 'versus' / 'practice'.
+function emit(type, p) { if (!G) return; try { G.emit(type, p); } catch (e) {} }
 function rew(a, b) { return '<div class="rew"><span>' + a + '</span><span>' + b + '</span></div>'; }
 
 /* =============================== combat =============================== */
@@ -1338,11 +1572,12 @@ function update(dt) {
   const lim = Math.max(0.6, 4.8 - R.rad * 0.55);
   R.tpx = clamp(R.tpx, -lim, lim);
   R.px += (R.tpx - R.px) * Math.min(1, dt * 14);
-  const spd = 10 + Math.min(R.stage, 12) * 0.1;
-  if (R.phase === 'road') R.speed = Math.min(spd, R.speed + dt * 10);
+  const spd = R.tutorial && !tut.done ? 8 : 10 + Math.min(R.stage, 12) * 0.1;
+  if (R.phase === 'road') R.speed = R.speed > spd ? Math.max(spd, R.speed - dt * 10) : Math.min(spd, R.speed + dt * 10);
   else R.speed = Math.max(0, R.speed - dt * 16);
   R.dist += R.speed * dt;
   if (R.phase === 'road') {
+    if (R.tutorial && !tut.done) tutUpdate();
     while (!R.noSpawn && R.evI < R.ev.length && R.ev[R.evI].z - R.dist < FAR) spawnEvent(R.ev[R.evI++]);
     if (R.stage >= 4 && !R.miniDone && !R.noBoss && R.dist >= R.L * 0.5) startMini();
     else if (!R.noBoss && R.dist >= R.L) startBoss();
@@ -1411,13 +1646,57 @@ function instanced(geo, mat, max, colors) {
   gfx.scene.add(m);
   return m;
 }
+function glAvailable() {
+  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; }
+}
+// a clear notice instead of a crash when 3D can't start (AUDIT: the old page threw in updParticles without WebGL)
+function showNoGL(why) {
+  const box = document.createElement('div'); box.id = 'nogl'; box.setAttribute('role', 'alert');
+  box.innerHTML = '<div><b></b><p></p><p></p><a class="btn" href="../"></a></div>';
+  box.querySelector('b').textContent = T('3D を表示できません');
+  const ps = box.querySelectorAll('p');
+  ps[0].textContent = why === 'three' ? T('3D の部品を読み込めませんでした。通信状態を確かめて、もう一度開いてください。') : T('この端末かブラウザでは 3D（WebGL）が使えないため、このゲームを表示できません。');
+  ps[1].textContent = why === 'three' ? '' : T('ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。');
+  box.querySelector('a').textContent = T('ゲーム一覧に戻る');
+  for (const id of SCREENS) $(id).hidden = true;
+  $('hud').hidden = true;
+  $('stage').appendChild(box);
+  $('helpBtn').disabled = true;
+}
+/* adaptive quality: pixel ratio and how many soldiers / particles are drawn (gameplay never depends on it).
+   Starts lower on modest devices, then follows the measured frame rate during runs. */
+const LOWEND = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 2;
+const QUAL = [ // 0 = lowest
+  { dpr: 0.75, sol: 110, par: 220, pk: 0.4 },
+  { dpr: 1, sol: 170, par: 380, pk: 0.6 },
+  { dpr: 1.25, sol: 240, par: 560, pk: 0.85 },
+  { dpr: 1.5, sol: 300, par: 700, pk: 1 },
+];
+let qLv = LOWEND ? 1 : 3, qMax = qLv;
+const Q = () => QUAL[qLv];
+const fpsMon = { t: 0, n: 0, slow: 0, fast: 0 };
+function setQuality(lv) {
+  lv = clamp(lv, 0, QUAL.length - 1);
+  if (lv === qLv) return;
+  qLv = lv; logEv('quality ' + lv); resize(); dirty = true;
+}
+function watchFps(dt) {
+  if (mode !== 'run' || !gfx || simming || dt <= 0) { fpsMon.t = fpsMon.n = 0; return; }
+  fpsMon.t += dt; fpsMon.n++;
+  if (fpsMon.t < 2) return;
+  const fps = fpsMon.n / fpsMon.t; fpsMon.t = fpsMon.n = 0; fpsMon.last = Math.round(fps);
+  if (fps < 40) { fpsMon.fast = 0; if (++fpsMon.slow >= 1) { fpsMon.slow = 0; setQuality(qLv - 1); } }
+  else if (fps > 57) { fpsMon.slow = 0; if (++fpsMon.fast >= 5 && qLv < qMax) { fpsMon.fast = 0; setQuality(qLv + 1); } }
+  else fpsMon.slow = fpsMon.fast = 0;
+}
 function initGfx() {
-  if (!window.THREE) { $('nogl').hidden = false; return; }
+  if (!window.THREE) { showNoGL('three'); return; }
   const T = THREE;
+  if (!glAvailable()) { showNoGL('webgl'); return; }
   try {
-    const renderer = new T.WebGLRenderer({ canvas: cv, antialias: (window.devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
+    const renderer = new T.WebGLRenderer({ canvas: cv, antialias: !LOWEND && (window.devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
     gfx = { renderer };
-  } catch (e) { $('nogl').hidden = false; gfx = null; return; }
+  } catch (e) { gfx = null; showNoGL('webgl'); return; }
   const g = gfx;
   g.scene = new T.Scene();
   const sky = 0xa8dcff;
@@ -1609,17 +1888,19 @@ function initGfx() {
   const armL = mkArm(-1), armR = mkArm(1);
   bg.visible = false; g.scene.add(bg);
   g.boss = { grp: bg, mat: bmat, legL, legR, armL, armR, head, torso };
-  // floating DOM texts
-  const fw = $('floats');
-  for (let i = 0; i < FL_N; i++) { const el = document.createElement('div'); el.className = 'fl'; el.style.display = 'none'; fw.appendChild(el); floaters.push({ on: false, el, text: '', x: 0, z: 0, y: 0, col: '#fff', size: 30, life: 0, dirty: false }); }
   resize();
 }
-if (!window.THREE) { for (let i = 0; i < FL_N; i++) floaters.push({ on: false, el: null, life: 0 }); }
+// floating DOM texts (made even without WebGL, so the simulation never meets an empty pool)
+{
+  const fw = $('floats');
+  for (let i = 0; i < FL_N; i++) { const el = document.createElement('div'); el.className = 'fl'; el.style.display = 'none'; fw.appendChild(el); floaters.push({ on: false, el, text: '', x: 0, z: 0, y: 0, col: '#fff', size: 30, life: 0, dirty: false }); }
+}
 
 function resize() {
   const r = $('stage').getBoundingClientRect();
   W = Math.max(200, r.width); H = Math.max(300, r.height);
-  DPR = Math.min(2, window.devicePixelRatio || 1);
+  DPR = Math.min(Q().dpr, window.devicePixelRatio || 1);
+  dirty = true;
   if (!gfx) return;
   gfx.renderer.setPixelRatio(DPR);
   gfx.renderer.setSize(W, H, false);
@@ -1698,12 +1979,12 @@ function render(dt) {
   const cx = R.px * 0.45;
   const camY = bossy ? 11.5 : 10, camZ = bossy ? 12.5 : 11.5;
   let sx = 0, sy = 0;
-  if (R.shake > 0 && !simming) { sx = (frnd() - 0.5) * R.shake * 0.8; sy = (frnd() - 0.5) * R.shake * 0.8; }
+  if (R.shake > 0 && !simming && !reduced()) { sx = (frnd() - 0.5) * R.shake * 0.8; sy = (frnd() - 0.5) * R.shake * 0.8; }
   cam.position.set(cx + sx, camY + sy, camZ);
   cam.lookAt(cx * 0.8, 0, bossy ? -14 : -13);
   // squad
   const n = mode === 'run' || inRun ? R.n : R.n;
-  const drawn = Math.min(Math.max(0, n), MAXDRAW), bump = 1 + R.bump * 0.15, run = R.speed > 0.5;
+  const drawn = Math.min(Math.max(0, n), MAXDRAW, Q().sol), bump = 1 + R.bump * 0.15, run = R.speed > 0.5;
   for (let i = 0; i < drawn; i++) {
     const bob = run ? Math.abs(Math.sin(t * 13 + i * 1.7)) * 0.07 : 0;
     d.position.set(R.px + OX[i] * bump, bob, -OZ[i] * bump);
@@ -1819,7 +2100,8 @@ function render(dt) {
   g.bul.count = nb; g.bul.instanceMatrix.needsUpdate = true; if (g.bul.instanceColor) g.bul.instanceColor.needsUpdate = true;
   // particles
   let np = 0;
-  for (let i = 0; i < PN; i++) {
+  const pmax = Q().par;
+  for (let i = 0; i < PN && np < pmax; i++) {
     if (!PON[i]) continue;
     const s = PS[i] * Math.min(1, PL[i] * 2.5);
     d.position.set(PX[i], PY[i], rz(PZ[i])); d.rotation.set(PL[i] * 5, PL[i] * 4, 0); d.scale.setScalar(s); d.updateMatrix();
@@ -1929,9 +2211,13 @@ function syncHud(dt) {
 }
 
 /* =============================== screens =============================== */
-const SCREENS = ['scrTitle', 'scrBase', 'scrHeroes', 'scrSelect', 'scrPause', 'scrClear', 'scrFail'];
-function show(id) { for (const s of SCREENS) $(s).hidden = s !== id; }
-function toDemo() { clearPools(); R.phase = 'demo'; R.boss = null; R.mini = null; R.shake = 0; R.bump = 0; $('hud').hidden = true; R.heroes = []; R.shieldT = 0; }
+const SCREENS = ['scrTitle', 'scrBase', 'scrHeroes', 'scrSelect', 'scrClear', 'scrFail'];
+function show(id) { for (const s of SCREENS) $(s).hidden = s !== id; dirty = true; }
+// re-draw the menu on screen after the save changed underneath (another tab, or a cloud merge while idle)
+function refreshScreen() {
+  if (mode === 'title') toTitle(); else if (mode === 'base') renderBase(); else if (mode === 'heroes') renderHeroes(); else if (mode === 'select') renderSelect();
+}
+function toDemo() { clearPools(); hideCoach(); R.tutorial = false; R.slowT = 0; R.phase = 'demo'; R.boss = null; R.mini = null; R.shake = 0; R.bump = 0; $('hud').hidden = true; R.heroes = []; R.shieldT = 0; }
 function toTitle() {
   toDemo(); mode = 'title';
   $('tBest').textContent = save.best; $('tCoins').textContent = save.coins; $('tPower').textContent = calcPower();
@@ -1968,10 +2254,14 @@ function renderBase() {
 $('bRows').addEventListener('click', ev => {
   const btn = ev.target.closest('[data-b]'); if (!btn || btn.disabled) return;
   const b = BLD.find(x => x.id === btn.dataset.b); if (!b) return;
-  const lv = save.bld[b.id], cost = bldCost(b, lv);
-  if (lv >= bldMax(b) || save.coins < cost.c || save.mat < cost.m) return;
-  if (b.id === 'hq' && save.best < hqReq(lv)) return;
-  save.coins -= cost.c; save.mat -= cost.m; save.bld[b.id]++; writeSave(); sfx.power(); renderBase();
+  const ok = mutate(sv => {
+    const lv = sv.bld[b.id], cost = bldCost(b, lv);
+    if (lv >= bldMax(b) || sv.coins < cost.c || sv.mat < cost.m) return false;
+    if (b.id === 'hq' && sv.best < hqReq(lv)) return false;
+    sv.coins -= cost.c; sv.mat -= cost.m; sv.bld[b.id]++;
+    return true;
+  });
+  if (ok) sfx.power(); renderBase();
 });
 let heroFocus = 'ren';
 function toHeroes() { toDemo(); mode = 'heroes'; if (!HMAP[heroFocus]) heroFocus = 'ren'; renderHeroes(); show('scrHeroes'); }
@@ -2006,23 +2296,25 @@ function renderHeroes() {
 $('hSlots').addEventListener('click', ev => {
   const sl = ev.target.closest('[data-slot]'); if (!sl) return;
   const i = +sl.dataset.slot;
-  if (save.sel[i]) { heroFocus = save.sel[i]; if (save.sel.length > 1) { save.sel.splice(i, 1); writeSave(); } }
+  if (save.sel[i]) { heroFocus = save.sel[i]; mutate(sv => { if (sv.sel.length > 1 && sv.sel[i] === heroFocus) sv.sel.splice(i, 1); }); }
   sfx.click(); renderHeroes();
 });
 $('hRoster').addEventListener('click', ev => { const c = ev.target.closest('[data-h]'); if (!c) return; heroFocus = c.dataset.h; sfx.click(); renderHeroes(); });
 $('hDetail').addEventListener('click', ev => {
-  const id = heroFocus, x = save.heroes[id];
+  const id = heroFocus;
   if (ev.target.closest('#hTeam')) {
-    const i = save.sel.indexOf(id);
-    if (i >= 0) { if (save.sel.length > 1) save.sel.splice(i, 1); }
-    else { if (save.sel.length >= 3) save.sel.shift(); save.sel.push(id); }
-    writeSave(); sfx.click(); renderHeroes();
+    mutate(sv => {
+      const i = sv.sel.indexOf(id);
+      if (i >= 0) { if (sv.sel.length > 1) sv.sel.splice(i, 1); }
+      else { if (sv.sel.length >= 3) sv.sel.shift(); sv.sel.push(id); }
+    });
+    sfx.click(); renderHeroes();
   } else if (ev.target.closest('#hLv')) {
-    const c = expCost(x.lv);
-    if (x.lv < heroMaxLv(id) && save.exp >= c) { save.exp -= c; x.lv++; writeSave(); sfx.power(); renderHeroes(); }
+    const ok = mutate(sv => { const x = sv.heroes[id], c = expCost(x.lv); if (x.lv < heroMaxLv(id) && sv.exp >= c) { sv.exp -= c; x.lv++; return true; } return false; });
+    if (ok) sfx.power(); renderHeroes();
   } else if (ev.target.closest('#hStar')) {
-    const c = STAR_COST[x.star];
-    if (c && x.cards >= c) { x.cards -= c; x.star++; writeSave(); sfx.power(); renderHeroes(); }
+    const ok = mutate(sv => { const x = sv.heroes[id], c = STAR_COST[x.star]; if (c && x.cards >= c) { x.cards -= c; x.star++; return true; } return false; });
+    if (ok) sfx.power(); renderHeroes();
   }
 });
 let selStage = 1;
@@ -2042,9 +2334,61 @@ function renderSelect() {
 }
 $('stPrev').addEventListener('click', () => { if (selStage > 1) { selStage--; sfx.click(); renderSelect(); } });
 $('stNext').addEventListener('click', () => { if (selStage < maxStage()) { selStage++; sfx.click(); renderSelect(); } });
-$('btnStart').addEventListener('click', () => { sfx.click(); save.stage = selStage; writeSave(); startRun(selStage); });
-function pause() { if (mode !== 'run' || vs) return; mode = 'paused'; keyL = keyR = false; dragging = false; show('scrPause'); }
-function resume() { if (mode !== 'paused') return; mode = 'run'; show(null); }
+$('btnStart').addEventListener('click', () => { sfx.click(); mutate(sv => { sv.stage = selStage; }); startRun(selStage); });
+// pause: the shared pause menu (common/ui.js). common/game.js pauses on hide / pagehide / context lost; it stays paused until つづける
+const retreatBtn = UI ? UI.button({ label: T('撤退する（トラックの中身だけ持ち帰る）'), variant: 'ghost', block: true, onClick: () => { if (pm) pm.close(); retreat(); } }) : null;
+const pm = UI ? UI.pauseMenu({
+  title: T('一時停止'), home: '../', extra: retreatBtn ? [retreatBtn] : [],
+  onResume() { resume(); },
+  onRestart() { restartStage(); },
+  onOpen() { if (G) G.menuOpened(); },
+}) : null;
+function pause() {
+  if (mode !== 'run' || vs) return;
+  mode = 'paused'; keyL = keyR = false; dragging = false; dirty = true;
+  $('banner').hidden = true; hudCache.banner = '-';
+  if (pm) pm.open();
+}
+function resume() {
+  if (mode !== 'paused') return;
+  mode = 'run'; show(null); last = 0;
+  if (G) G.resume('api');
+}
+function retreat() {
+  if (mode !== 'paused' && mode !== 'run') return;
+  const t = Math.floor(R.truck), m = R.mats;
+  mutate(sv => { sv.coins += t; sv.mat += m; });
+  R.truck = 0; R.mats = 0;
+  emit('play_end', { mode: 'normal', score: 0, stage: R.stage, reason: 'quit', kills: R.kills, durationMs: Math.round(R.t * 1000) });
+  if (G) G.resume('api');
+  toTitle();
+}
+function restartStage() {
+  emit('play_end', { mode: 'normal', score: 0, stage: R.stage, reason: 'quit', kills: R.kills, durationMs: Math.round(R.t * 1000) });
+  if (G) G.resume('api');
+  startRun(R.stage, { tutorial: R.tutorial && !tut.done });
+}
+function openSettings() {
+  if (mode === 'run' && !vs) { pause(); return; } // the pause menu has 設定
+  if (UI) UI.openSettings();
+}
+// how to play: first visit (save.seen) and the ? button
+let howFirst = false;
+function openHow(first) {
+  if (mode === 'run' && !vs) pause();
+  if (KoboVersus.active() && !vs) return;
+  howFirst = !!first;
+  $('howTut').hidden = !!first || mode === 'run' || mode === 'paused' || !!vs;
+  $('ovHow').hidden = false; dirty = true;
+  setTimeout(() => { try { $('howGo').focus({ preventScroll: true }); } catch (e) {} }, 30);
+}
+function closeHow() {
+  $('ovHow').hidden = true; dirty = true;
+  if (!save.seen) mutate(sv => { sv.seen = 1; });
+}
+$('howGo').addEventListener('click', () => { sfx.click(); const f = howFirst; closeHow(); if (f && mode === 'title' && !vs && !KoboVersus.active()) startRun(save.best === 0 ? 1 : clamp(save.stage, 1, maxStage())); });
+$('howTut').addEventListener('click', () => { sfx.click(); closeHow(); if (mode !== 'run' && mode !== 'paused' && !vs) startRun(1, { tutorial: true }); });
+$('btnHow').addEventListener('click', () => { sfx.click(); openHow(false); });
 $('btnGo').addEventListener('click', () => { sfx.click(); toSelect(); });
 $('btnBase').addEventListener('click', () => { sfx.click(); toBase(); });
 $('btnHeroes').addEventListener('click', () => { sfx.click(); toHeroes(); });
@@ -2055,15 +2399,13 @@ $('btnHeroGo').addEventListener('click', () => { sfx.click(); toSelect(); });
 $('btnSelBack').addEventListener('click', () => { sfx.click(); toTitle(); });
 $('btnSelHero').addEventListener('click', () => { sfx.click(); toHeroes(); });
 $('pauseBtn').addEventListener('click', () => { sfx.click(); pause(); });
-$('btnResume').addEventListener('click', () => { sfx.click(); resume(); });
-$('btnQuit').addEventListener('click', () => { sfx.click(); const t = Math.floor(R.truck); save.coins += t; save.mat += R.mats; R.truck = 0; R.mats = 0; writeSave(); toTitle(); });
 $('btnNext').addEventListener('click', () => { sfx.click(); toSelect(); });
 $('btnClearBase').addEventListener('click', () => { sfx.click(); toBase(); });
 $('btnClearHero').addEventListener('click', () => { sfx.click(); toHeroes(); });
 $('btnRetry').addEventListener('click', () => { sfx.click(); startRun(R.stage); });
 $('btnFailBase').addEventListener('click', () => { sfx.click(); toBase(); });
 $('btnFailHero').addEventListener('click', () => { sfx.click(); toHeroes(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+if (!G) document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 addEventListener('blur', () => { keyL = keyR = false; });
 
 /* =============================== input =============================== */
@@ -2090,7 +2432,7 @@ addEventListener('keydown', e => {
   const k = e.key;
   if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keyL = true; e.preventDefault(); }
   else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keyR = true; e.preventDefault(); }
-  else if (k === 'Escape' || k === 'p' || k === 'P') { if (mode === 'run') pause(); else if (mode === 'paused') resume(); }
+  else if (k === 'Escape' || k === 'p' || k === 'P') { if (mode === 'run') pause(); else if (k === 'Escape' && !$('ovHow').hidden) closeHow(); }
 });
 addEventListener('keyup', e => {
   const k = e.key;
@@ -2098,21 +2440,36 @@ addEventListener('keyup', e => {
   else if (k === 'ArrowRight' || k === 'd' || k === 'D') keyR = false;
 });
 
-/* =============================== loop =============================== */
-let last = 0, simLock = false;
+/* =============================== loop ===============================
+   Runs draw every frame. Menus animate the street at 30 fps for a while after the last input, then the picture stops
+   (render only when something changed: dirty). Paused / result screens draw once. */
+let last = 0, simLock = false, dirty = true, glLost = false, menuAcc = 0, lastInput = performance.now();
+const MENU_ANIM_MS = 20000;
+addEventListener('pointerdown', () => { lastInput = performance.now(); }, { passive: true, capture: true });
+addEventListener('keydown', () => { lastInput = performance.now(); }, { capture: true });
 function frame(ts) {
   requestAnimationFrame(frame);
-  let dt = (ts - last) / 1000; last = ts;
+  let dt = last ? (ts - last) / 1000 : 0; last = ts;
   if (!(dt > 0)) dt = 0;
   dt = Math.min(dt, 0.05);
-  if (simLock) return;
-  if (mode === 'paused') { render(0); return; }
+  if (simLock || !gfx || glLost) return;
+  if (mode === 'paused') { if (dirty) { dirty = false; render(0); } return; }
   if (mode === 'run' && vs && !KoboVersus.canPlay()) { render(0); syncHud(dt); return; } // battle: frozen before the start and after time-up
   if (mode === 'run') {
-    let rem = dt * timeScale;
+    let k = timeScale;
+    if (R.slowT > 0) { R.slowT -= dt; k *= 0.3; }
+    let rem = dt * k;
     while (rem > 1e-6 && mode === 'run') { const st = Math.min(rem, 0.02); update(st); rem -= st; }
-  } else if (mode === 'title' || mode === 'base' || mode === 'heroes' || mode === 'select') demoUpdate(dt);
-  else updParticles(dt);
+    watchFps(dt);
+  } else if (mode === 'title' || mode === 'base' || mode === 'heroes' || mode === 'select') {
+    const anim = !reduced() && ts - lastInput < MENU_ANIM_MS && $('ovHow').hidden;
+    if (anim) { menuAcc += dt; if (menuAcc < 1 / 30) return; demoUpdate(menuAcc); menuAcc = 0; }
+    else if (!dirty) return;
+  } else {
+    // clear / fail: let the last particles settle, then stop
+    if (PON.some(v => v)) updParticles(dt); else if (!dirty) return;
+  }
+  dirty = false;
   render(dt);
   syncHud(dt);
 }
@@ -2121,8 +2478,11 @@ addEventListener('resize', resize);
 if (window.visualViewport) visualViewport.addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe($('stage'));
 resize();
-toTitle();
-requestAnimationFrame(frame);
+if (gfx) {
+  toTitle();
+  requestAnimationFrame(frame);
+  if (!save.seen) openHow(true);
+}
 
 /* =============================== online battle (common/versus.js) ===============================
    3-minute endless run: everyone gets the same seeded course (stage 1, 2, 3… one after another) and the same standard team,
@@ -2157,33 +2517,70 @@ function vsRespawn() {
   updRad();
   setBanner(T('再出撃！'), '', 1.2); sfx.power();
 }
+function vsEnd(reason) {
+  if (!vs || !vs.playing) return;
+  vs.playing = false;
+  emit('play_end', { mode: vs.practice ? 'practice' : 'versus', score: vsScore(), reason, durationMs: Date.now() - vs.t0 });
+}
 function vsScore() { return vs ? R.kills * 10 + Math.floor(vs.dist + R.dist) + vs.bosses * 500 + vs.minis * 200 : 0; }
 KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員が同じコースを走ります。',
   game: 'gates', title: T('ゲートランナー'), duration: 180, unit: T('点'),
   theme: { accent: '#ffcf33', accentInk: '#2d2100', accentShadow: '#b38a12', card: '#223047', line: '#3a4d68',
     ink: '#f3f6fa', dim: '#a9b8cc', hud: '#16202e', display: 'var(--font-display)' },
   hudCover: () => document.querySelector('header'),
-  onOpen() { keyL = keyR = false; dragging = false; },
-  onStart({ seed: sd }) {
-    if (!vs) vs = { snap: { save } };
+  onOpen() { keyL = keyR = false; dragging = false; if (mode === 'run') pause(); if (G) G.pause('versus'); },
+  onStart({ seed: sd, practice }) {
+    if (!vs) {
+      if (mode === 'run' || mode === 'paused') emit('play_end', { mode: 'normal', score: 0, stage: R.stage, reason: 'quit', kills: R.kills });
+      if (pm && pm.isOpen) pm.close();
+      $('ovHow').hidden = true;
+      vs = { snap: { save } };
+    }
+    vsEnd('quit'); // a rematch started before the previous one ended
     save = vsTeam();
     vs.seed = sd >>> 0; vs.leg = 0; vs.dist = 0; vs.bosses = 0; vs.minis = 0; vs.back = 'road';
+    vs.practice = !!practice; vs.playing = true; vs.t0 = Date.now();
     keyL = keyR = false; dragging = false; timeScale = 1;
     startRun(1);           // the standard team on stage 1 (startRun builds a random course…
     clearPools(); vsBuildLeg(); // …which is replaced by the seeded one)
+    setBanner('STAGE 1', T('ボスを倒せ！'), 1.6);
     $('pauseBtn').hidden = true;
+    emit('play_start', { mode: vs.practice ? 'practice' : 'versus', seed: vs.seed });
   },
   getScore: vsScore,
-  onEnd() { keyL = keyR = false; dragging = false; },
+  onEnd() { keyL = keyR = false; dragging = false; vsEnd('over'); },
   onExit() {
     if (!vs) return;
+    vsEnd('quit');
     save = vs.snap.save; vs = null;
+    loadSave(); // whatever changed in storage meanwhile (the battle itself never writes)
+    if (G) G.resume('api');
     keyL = keyR = false; dragging = false;
     $('pauseBtn').hidden = false;
     toTitle();
   },
 });
 KoboVersus.button($('vsSlotTitle'));
+
+/* =============================== platform contract (common/game.js) ===============================
+   real-time game (flags.pause): hidden / pagehide / context lost → the pause menu, and it stays paused until つづける. */
+if (G) {
+  G.register({
+    id: 'gates',
+    pause() { pause(); },
+    resume() { /* stays paused until the player presses つづける */ },
+    isIdle() { return mode !== 'run' && mode !== 'paused' && !vs && !KoboVersus.active(); },
+    restore() { glLost = false; last = 0; resize(); dirty = true; },
+    dispose() {
+      try { if (gfx) { gfx.renderer.dispose(); gfx.renderer.forceContextLoss && gfx.renderer.forceContextLoss(); } } catch (e) {}
+      gfx = null;
+    },
+  });
+  G.watchGL(cv, {
+    onLost() { glLost = true; if (UI) UI.toast(T('画面が一時的に止まりました。少し待つと元に戻ります。')); },
+    onRestored() { glLost = false; last = 0; resize(); dirty = true; },
+  });
+}
 
 /* =============================== debug hooks (?debug) =============================== */
 if (DEBUG) {
@@ -2218,7 +2615,7 @@ if (DEBUG) {
     freeze() { for (const e of ents) e.on = false; for (const t of tele) t.on = false; R.noSpawn = true; R.noBoss = true; R.boss = null; R.mini = null; if (R.phase !== 'road') R.phase = 'road'; },
     unfreeze() { R.noSpawn = false; R.noBoss = false; },
     setN(n) { R.n = n; R.peak = Math.max(R.peak, n); updRad(); },
-    spawnGate(l, r, dz) { const a = mkGate(-2.5, R.dist + dz, G(l[0], l[1], l[2]), R.stage), b = mkGate(2.5, R.dist + dz, G(r[0], r[1], r[2]), R.stage); if (a && b) { a.mate = b; b.mate = a; } return [a.ser, b.ser]; },
+    spawnGate(l, r, dz) { const a = mkGate(-2.5, R.dist + dz, G2(l[0], l[1], l[2]), R.stage), b = mkGate(2.5, R.dist + dz, G2(r[0], r[1], r[2]), R.stage); if (a && b) { a.mate = b; b.mate = a; } return [a.ser, b.ser]; },
     spawnZ(kind, x, dz) { return mkZombie(x, R.dist + dz, kind); },
     spawnCrate(kind, x, dz, hp) { const e = newEnt(T_CRATE); e.x = x; e.z = R.dist + dz; e.w = 0.75; e.hp = e.max = hp || 1; e.ck = kind; return e; },
     spawnBarrel(x, dz) { const e = newEnt(T_BAR); e.x = x; e.z = R.dist + dz; e.w = 0.45; e.hp = e.max = 1; return e; },
@@ -2228,14 +2625,58 @@ if (DEBUG) {
     bossAttack(kind) { const b = R.boss && R.boss.on ? R.boss : R.mini; if (!b) return; if (kind === 0) addTele(0, R.px, R.dist, 1.95, 1.2, 0.42, 2, b.x, b.z, 0); else addTele(1, clamp(R.px, -3.2, 3.2), R.dist, 1.8, 1.3, 0.55, 3, b.x, b.z, 0); b.atkT = 99; },
     heroCd(i, v) { if (R.heroes[i]) R.heroes[i].cd = v; },
     render() { render(0.016); },
-    gfxInfo() { return gfx ? { calls: gfx.renderer.info.render.calls, tris: gfx.renderer.info.render.triangles, geos: gfx.renderer.info.memory.geometries, tex: gfx.renderer.info.memory.textures } : null; },
+    gfxInfo() { return gfx ? { calls: gfx.renderer.info.render.calls, tris: gfx.renderer.info.render.triangles, geos: gfx.renderer.info.memory.geometries, tex: gfx.renderer.info.memory.textures, frame: gfx.renderer.info.render.frame } : null; },
+    quality() { return { lv: qLv, max: qMax, dpr: DPR, fps: fpsMon.last || null, ...Q() }; },
+    setQuality,
   };
+  // a simple steering bot for step(n): stand in front of the best gate in view, dodge red ground, else stay centred
+  function botSteer() {
+    let tx = 0, best = -1e9;
+    for (const e of ents) {
+      if (!e.on || e.t !== T_GATE) continue;
+      const dz = e.z - R.dist; if (dz < 0 || dz > 45) continue;
+      const v = applyOp(Math.max(1, R.n), e.op, e.val) + (e.sh > 0 ? R.n * 0.6 : 0);
+      if (v > best) { best = v; tx = e.x; }
+    }
+    for (const t of tele) if (t.on && Math.abs(t.x - tx) < t.r + R.rad) tx = t.x > 0 ? t.x - t.r - R.rad - 0.4 : t.x + t.r + R.rad + 0.4;
+    R.tpx = clamp(tx, -4.2, 4.2);
+  }
+  window.__kb = Object.assign(window.__kb || {}, {
+    ready: () => !!gfx && (mode === 'title' || mode === 'run' || mode === 'select' || mode === 'base' || mode === 'heroes' || mode === 'clear' || mode === 'fail' || mode === 'paused'),
+    state: () => ({
+      mode: vs ? (vs.practice ? 'practice' : 'versus') : 'normal', screen: mode, phase: R.phase,
+      score: vs ? vsScore() : (mode === 'clear' ? R.stage : 0), time: R.t, over: mode === 'clear' || mode === 'fail' || R.phase === 'over',
+      won: mode === 'clear', stage: R.stage, paused: mode === 'paused', n: R.n, best: save.best, coins: save.coins,
+      tutorial: R.tutorial ? { step: tut.step, done: tut.done } : null, quality: qLv, frames: gfx ? gfx.renderer.info.render.frame : 0, howto: !$('ovHow').hidden,
+    }),
+    win() { if (mode === 'run' && R.phase !== 'over') { const was = R.god; R.god = true; if (R.tutorial && !tut.done) tutFinish(true); win(); R.god = was; return true; } return false; },
+    lose() { if (mode === 'run' && R.phase !== 'over' && !vs) { R.god = false; R.n = 1; loseMen(1, 'debug'); return true; } return false; },
+    // advance the run by n seconds of game time with the steering bot (deterministic for a given seed)
+    step(n) {
+      if (mode !== 'run') return window.__kb.state();
+      simLock = true; simming = true;
+      try { for (let t = 0; t < (n || 1) && mode === 'run'; t += 0.02) { botSteer(); update(0.02); } }
+      finally { simLock = false; simming = false; dirty = true; }
+      return window.__kb.state();
+    },
+    tutorial: () => ({ step: tut.step, done: R.tutorial ? tut.done : !!save.tut, id: R.tutorial && !tut.done ? TUT[tut.step].id : null, total: TUT.length, active: !!R.tutorial && !tut.done, sub: tut.sub }),
+    skipTutorial() { if (R.tutorial && !tut.done) tutFinish(true); },
+    start(stage, opt) { startRun(stage || 1, opt); },
+    pause, resume, openHow, closeHow,
+  });
 }
 })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 <script src="../firebase-config.js"></script>
 <script src="../common/cloud.js"></script>
-<script>KoboCloud.sync({ 'kusoge.gates.save': 'newest' }, { reloadOnNewer: true });</script>
+<script>
+// per-field merge from the registry (common/games.js: R4); 'newest' when the registry is missing (cloud.js then loads it itself)
+(function () {
+  var P = window.KoboPlatform, map = null;
+  try { map = P && P.syncMap ? P.syncMap({ games: ['gates'], platform: false, shared: false }) : null; } catch (e) { map = null; }
+  KoboCloud.sync(map && map['kusoge.gates.save'] ? map : { 'kusoge.gates.save': 'newest' }, { reloadOnNewer: true });
+})();
+</script>
 </body>
 </html>
