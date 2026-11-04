@@ -20,7 +20,7 @@
 | `n59049/` | 59049 | Three.js r128 |
 | `water/` | いろみず分け | Canvas 2D |
 | `parking/` | くるま出し | Three.js r128 |
-| `hole/` | あなぼこシティ | Three.js r128。街のデータは `hole/cities.js`（10都市）。オンライン対戦は Firebase Realtime Database（`hole/queue`・`hole/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__hole` |
+| `hole/` | あなぼこシティ | Three.js r128。街は14都市。どれも OpenStreetMap と国土地理院のデータから作る（`tools/osm-city.js` → `hole/cities/*.json`、組み立ては `hole/realcity.js`、説明は `hole/cities/README.md`）。オンライン対戦は Firebase Realtime Database（`hole/queue`・`hole/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__hole` |
 | `hitsumabushi/` | ひつまぶし工房 | Canvas 2D。保存は `kusoge.hitsumabushi.save`（ランキングは `best`＝1日の最高点）。`?debug` で `window.__hitsu`。通しプレイ：`node tools/tests/hitsumabushi-play.js` |
 | `planet/` | わくせいシミュレーター | Three.js r128。気候（緯度帯のエネルギー収支）・炭素と酸素の箱モデル・プレート・生命・文明は同じファイルの `PSim`。保存は `kusoge.planet.save`（ランキングは `total`＝8シナリオのベストの合計）と自由モードの星 `kusoge.planet.world`。対戦なし。`?debug` で `window.__planet`。通しプレイ：`node tools/tests/planet-play.js` |
 | `ranking/` | ランキング（ゲーム別・総合） | |
@@ -51,6 +51,6 @@
 ## あなぼこシティの既知の課題
 
 - テスト環境（ソフトウェア描画）では 18〜20fps でした。重いときは自動で画質（pixel ratio）を 0.75 まで下げます。
-- 元の汎用の街は削除済み。CPU対戦・ソロは10都市からランダム（タイトルの「街」で選べる）。
+- CPU対戦・ソロは14都市からランダム（タイトルの「街」で選べる）。「街を ながめる」で上から自由に見られる。
 - オンライン対戦は最大4人、15秒で足りない席はCPU。匿名ログイン（Googleログイン中ならそのアカウント）。
 - 全員が同時に切断すると部屋のデータが少し残る（クライアントは部屋の一覧を読めないため）。

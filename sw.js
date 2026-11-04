@@ -4,7 +4,7 @@
 // ゲームを足すときは games.js に足すだけでよい（ここは直さない）。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 29;
+const BUILD = 30;
 const VERSION = 'kobo-v' + BUILD + '.' + REG.version;
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png',
@@ -13,7 +13,8 @@ const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanif
   './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
 // ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
 const ENGINES = ['./parking/engine.js', './water/engine.js', './hole/cities.js', './hole/realcity.js',
-  './hole/cities/fujisawa.json', './hole/cities/shonandai.json', './hole/cities/kamiooka.json', './hole/cities/shonanhs.json'];
+  './hole/cities/fujisawa.json', './hole/cities/shonandai.json', './hole/cities/kamiooka.json', './hole/cities/shonanhs.json',
+  './hole/cities/shibuya.json', './hole/cities/asakusa.json', './hole/cities/shinjuku.json', './hole/cities/yokohama.json', './hole/cities/dotonbori.json', './hole/cities/osakajo.json', './hole/cities/kyoto.json', './hole/cities/nagoya.json', './hole/cities/sapporo.json', './hole/cities/fukuoka.json'];
 const PAGES = REG.games.map(g => './' + g.path).concat(['./ranking/', './about/', './profile/']);
 const IMAGES = [].concat(...REG.games.map(g => [g.thumb, g.thumb2x, g.icon].filter(Boolean).map(p => './' + p)));
 const LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];

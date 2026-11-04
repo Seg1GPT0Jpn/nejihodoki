@@ -30,6 +30,27 @@ const CITIES = {
   kamiooka: { name: '上大岡', c: [35.40880, 139.59630], R: 1200, fix: [{ at: [8, 76], h: 120, kind: 4 }] },
   // the school and the commuting route to 藤沢本町駅 (box: west/east/north/south metres from the centre)
   shonanhs: { name: '湘南高校付近', c: [35.34610, 139.47470], box: [-650, -700, 650, 600] },
+  // ---- the 10 tour cities (v2 data: dense centres, smaller fetch tiles; tile: [lon, lat] degrees, simp: building outline tolerance m)
+  // 渋谷: the scramble crossing and the statue at the station plaza in the middle
+  shibuya: { name: '渋谷', c: [35.65930, 139.70060], R: 900, tile: [0.004, 0.003], simp: 0.6, minA: 12, lite: 1 },
+  // 浅草: between 雷門 / 浅草寺 (west) and the tall tower (east), 吾妻橋 over the 隅田川 in the middle
+  asakusa: { name: '浅草', c: [35.71100, 139.80250], box: [-1000, -800, 1000, 800], tile: [0.005, 0.004], simp: 0.6, minA: 12, lite: 1 },
+  // 新宿: the station in the middle, 都庁 and the skyscrapers west, 歌舞伎町 north-east
+  shinjuku: { name: '新宿', c: [35.69050, 139.69780], R: 950, tile: [0.004, 0.003], simp: 0.6, minA: 12, lite: 1 },
+  // 横浜みなとみらい: the tall tower, the wheel, the red brick warehouses, the harbour (sea from the coastline)
+  yokohama: { name: '横浜みなとみらい', c: [35.45420, 139.63700], R: 1000, tile: [0.005, 0.004], simp: 0.5, minA: 10, lite: 1 },
+  // 道頓堀: 戎橋 over the canal in the middle, the shopping arcades north and south
+  dotonbori: { name: '大阪・道頓堀', c: [34.66870, 135.50130], R: 850, tile: [0.004, 0.003], simp: 0.6, minA: 12, lite: 1 },
+  // 大阪城: the keep on its stone walls, the moats, the park and the business district over the river (north-east)
+  osakajo: { name: '大阪城', c: [34.68730, 135.52800], R: 1000, tile: [0.005, 0.004], simp: 0.6, minA: 12, lite: 1 },
+  // 京都 東山: 八坂の塔, 清水寺 up on the hill (south-east), 八坂神社 and 祇園 (north), 鴨川 (west)
+  kyoto: { name: '京都', c: [34.99900, 135.77850], R: 950, tile: [0.005, 0.004], simp: 0.6, minA: 12, lite: 1 },
+  // 名古屋: from the castle (north-west) down the long park with the TV tower to 栄 (south-east)
+  nagoya: { name: '名古屋', c: [35.17900, 136.90380], box: [-750, -950, 800, 1000], tile: [0.005, 0.004], simp: 0.6, minA: 12, lite: 1 },
+  // 札幌: 大通公園 and the TV tower, the clock tower, the red brick government office, the station (north)
+  sapporo: { name: '札幌', c: [43.06400, 141.35200], R: 1000, tile: [0.005, 0.004], simp: 0.6, minA: 12, lite: 1 },
+  // 福岡 百道浜: the seaside tower, the dome stadium, the beach (the sea north from the coastline)
+  fukuoka: { name: '福岡', c: [33.59450, 130.35700], R: 1000, tile: [0.005, 0.004], simp: 0.6, minA: 12, lite: 1 },
 };
 const Q = 0.5; // metres per unit in the output
 
@@ -51,18 +72,52 @@ function get(url, bin) {
   });
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function cached(file, url) {
+async function cached(file, url, split) {
   if (!REFETCH && fs.existsSync(file)) return fs.readFileSync(file);
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < 6; k++) {
     try {
       const r = await get(url);
       if (r.status === 200) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, r.body); return r.body; }
       if (r.status === 404) return null;
+      if (r.status === 400 && split) return 'split'; // OSM API: too many nodes in the box
       console.warn('  http', r.status, url);
     } catch (e) { console.warn('  ' + e.message, url); }
-    await sleep(2000 * (k + 1));
+    await sleep(3000 * (k + 1));
   }
   throw new Error('fetch failed: ' + url);
+}
+// one OSM API /map box (lon0, lat0, lon1, lat1); a box with too many nodes is fetched as 4 smaller ones
+async function osmBox(t, D, depth) {
+  const f = path.join(CACHE, 'osm', t.map(v => +v.toFixed(5)).join('_') + '.xml');
+  const xml = await cached(f, 'https://api.openstreetmap.org/api/0.6/map?bbox=' + t.map(v => +v.toFixed(5)).join(','), depth < 4);
+  if (xml === 'split') {
+    const mx = (t[0] + t[2]) / 2, my = (t[1] + t[3]) / 2;
+    for (const q of [[t[0], t[1], mx, my], [mx, t[1], t[2], my], [t[0], my, mx, t[3]], [mx, my, t[2], t[3]]]) await osmBox(q, D, depth + 1);
+    return;
+  }
+  if (xml) parseOsm(xml, D);
+}
+// members of multipolygons that reach outside the fetched boxes: fetch the missing ways and their nodes (cached per request)
+async function completeRels(D, want) {
+  const miss = new Set();
+  for (const [, r] of D.rels) if (r.tags.type === 'multipolygon' && want(r.tags)) for (const m of r.mem) if (m.type === 'way' && !D.ways.has(m.ref)) miss.add(m.ref);
+  if (!miss.size) return;
+  if (miss.size > 6000) { console.warn('  too many missing members', miss.size); return; }
+  const ids = [...miss].sort();
+  for (let i = 0; i < ids.length; i += 400) {
+    const part = ids.slice(i, i + 400), key = require('crypto').createHash('md5').update(part.join(',')).digest('hex').slice(0, 16);
+    const xml = await cached(path.join(CACHE, 'osm', 'ways-' + key + '.xml'), 'https://api.openstreetmap.org/api/0.6/ways?ways=' + part.join(','));
+    if (xml) parseOsm(xml, D);
+  }
+  const nmiss = new Set();
+  for (const id of ids) { const w = D.ways.get(id); if (w) for (const n of w.nd) if (!D.nodes.has(n)) nmiss.add(n); }
+  const nids = [...nmiss].sort();
+  for (let i = 0; i < nids.length; i += 600) {
+    const part = nids.slice(i, i + 600), key = require('crypto').createHash('md5').update(part.join(',')).digest('hex').slice(0, 16);
+    const xml = await cached(path.join(CACHE, 'osm', 'nodes-' + key + '.xml'), 'https://api.openstreetmap.org/api/0.6/nodes?nodes=' + part.join(','));
+    if (xml) parseOsm(xml, D);
+  }
+  console.log('  completed multipolygons: ' + ids.length + ' ways, ' + nids.length + ' nodes');
 }
 
 // ---------------------------------------------------------------- tiny OSM XML parser
@@ -240,6 +295,65 @@ function areaClass(t) {
   return 0;
 }
 
+// railway operator ids (the page picks the train model per id): 1 JR, 2 Odakyu, 3 Enoden, 4 Keikyu, 5 Sotetsu, 6 Yokohama subway,
+// 7 Tokyu, 8 Keio, 9 Tokyo Metro, 10 Toei, 11 Tobu, 12 Seibu, 13 Hankyu, 14 Hanshin, 15 Nankai, 16 Kintetsu, 17 Keihan, 18 Meitetsu,
+// 19 Nishitetsu, 20 Osaka Metro, 21 Nagoya subway, 22 Sapporo subway, 23 Fukuoka subway, 24 Minatomirai line, 25 streetcar (路面電車), 26 Keisei
+function opOf(nm, t) {
+  if (t.railway === 'tram') return 25;
+  // the city subways and the private lines first (their line names overlap the JR ones: 中央線, 南北線, 東西線 …)
+  const L = [[/小田急/, 2], [/江ノ島電鉄|江ノ電/, 3], [/京急|京浜急行/, 4], [/相鉄|相模鉄道/, 5], [/ブルーライン|グリーンライン|横浜市交通局|横浜市営/, 6], [/東急|東京急行/, 7], [/京王/, 8],
+    [/大阪市高速|大阪メトロ|Osaka Metro|大阪市交通局|御堂筋線|堺筋線|千日前線|長堀鶴見緑地線|谷町線|四つ橋線/, 20], [/名古屋市交通局|名古屋市営|東山線|名城線|桜通線|鶴舞線/, 21],
+    [/札幌市交通局|札幌市営|東豊線/, 22], [/福岡市交通局|福岡市営|空港線|箱崎線|七隈線/, 23], [/みなとみらい|横浜高速/, 24],
+    [/都営|東京都交通局/, 10], [/東京メトロ|東京地下鉄|銀座線|丸ノ内線|日比谷線|東西線|千代田線|有楽町線|半蔵門線|南北線|副都心線/, 9], [/東武/, 11], [/西武/, 12], [/阪急/, 13], [/阪神/, 14],
+    [/南海/, 15], [/近鉄|近畿日本/, 16], [/京阪/, 17], [/名鉄|名古屋鉄道/, 18], [/西鉄|西日本鉄道/, 19], [/京成/, 26]];
+  for (const [re, k] of L) if (re.test(nm)) return k;
+  if (/東海道|東日本旅客|旅客鉄道|^JR|ＪＲ|山手線|中央線|埼京線|湘南新宿|総武|京浜東北|根岸線|大阪環状|函館本線|千歳線|鹿児島本線/.test(nm)) return 1;
+  return 0;
+}
+
+// sea polygons from the coastline ways (land on the left, water on the right) clipped to the box [x0, z0, x1, z1]:
+// returns { sea: [rings], land: [rings] } (land = islands fully inside the box, drawn over the sea)
+function coastSea(chains, x0, z0, x1, z1) {
+  const W = x1 - x0, H = z1 - z0, PER = 2 * (W + H);
+  const per = p => { // position along the box outline, clockwise on the map (x east, z south): top, right, bottom, left
+    const e = 0.01;
+    if (Math.abs(p[1] - z0) < e) return p[0] - x0;
+    if (Math.abs(p[0] - x1) < e) return W + p[1] - z0;
+    if (Math.abs(p[1] - z1) < e) return W + H + x1 - p[0];
+    return 2 * W + H + z1 - p[1];
+  };
+  const corner = k => [[x1, z0], [x1, z1], [x0, z1], [x0, z0]][k]; // the corner at the end of side k
+  const runs = [], land = [];
+  for (const ch of chains) {
+    const closed = ch.closed, pts = ch.pts;
+    const inside = pts.every(p => p[0] > x0 && p[0] < x1 && p[1] > z0 && p[1] < z1);
+    if (closed && inside) { land.push(pts.slice(0, -1)); continue; }
+    for (const r of clipLine(pts, x0, z0, x1, z1)) {
+      const a = r[0], b = r[r.length - 1], onB = p => Math.abs(p[0] - x0) < 0.01 || Math.abs(p[0] - x1) < 0.01 || Math.abs(p[1] - z0) < 0.01 || Math.abs(p[1] - z1) < 0.01;
+      if (!onB(a) || !onB(b)) continue; // an unfinished piece (missing data): skipped
+      runs.push({ pts: r, sin: per(a), sout: per(b), used: false });
+    }
+  }
+  const sea = [];
+  for (const r0 of runs) {
+    if (r0.used) continue;
+    const ring = []; let r = r0;
+    for (let guard = 0; guard < 400 && r && !r.used; guard++) {
+      r.used = true; ring.push(...r.pts);
+      // walk clockwise along the outline from the exit to the nearest entry (the water stays on the right)
+      let best = null, bd = 1e18;
+      for (const q of runs) { const d = ((q.sin - r.sout) % PER + PER) % PER; if (d < bd && (!q.used || q === r0)) { bd = d; best = q; } }
+      if (!best) break;
+      let sp = r.sout, rem = bd;
+      for (let g2 = 0; g2 < 5; g2++) { const k = sideOf(sp), toEnd = [W, W + H, 2 * W + H, PER][k] - sp; if (toEnd >= rem - 1e-6) break; ring.push(corner(k)); sp = (sp + toEnd) % PER; rem -= toEnd; }
+      r = best === r0 ? null : best;
+    }
+    if (ring.length >= 3) sea.push(ring);
+  }
+  function sideOf(s) { return s < W ? 0 : s < W + H ? 1 : s < 2 * W + H ? 2 : 3; }
+  return { sea, land };
+}
+
 // ---------------------------------------------------------------- one city
 async function build(id) {
   const C = CITIES[id];
@@ -248,15 +362,12 @@ async function build(id) {
   const M = 60; // fetch margin (m)
   const la1 = lat0 - (box[1] - M) / KZ, la0 = lat0 - (box[3] + M) / KZ, lo0 = lon0 + (box[0] - M) / KX, lo1 = lon0 + (box[2] + M) / KX;
   const D = { nodes: new Map(), ways: new Map(), rels: new Map() };
-  const TW = 0.01, TH = 0.008;
+  const [TW, TH] = C.tile || [0.01, 0.008];
   const tiles = [];
   for (let la = Math.floor(la0 / TH) * TH; la < la1; la += TH) for (let lo = Math.floor(lo0 / TW) * TW; lo < lo1; lo += TW) tiles.push([+lo.toFixed(4), +la.toFixed(4), +(lo + TW).toFixed(4), +(la + TH).toFixed(4)]);
   console.log(id + ': ' + tiles.length + ' OSM tiles');
-  for (const t of tiles) {
-    const f = path.join(CACHE, 'osm', t.join('_') + '.xml');
-    const xml = await cached(f, 'https://api.openstreetmap.org/api/0.6/map?bbox=' + t.join(','));
-    parseOsm(xml, D);
-  }
+  for (const t of tiles) await osmBox(t, D, 0);
+  if (C.lite) await completeRels(D, t => !!(areaClass(t) || t.building));
   const P = n => [(n.lon - lon0) * KX, (lat0 - n.lat) * KZ];
   const wayPts = w => { const out = []; for (const r of w.nd) { const n = D.nodes.get(r); if (n) out.push(P(n)); } return out; };
   const [X0, Z0, X1, Z1] = box;
@@ -296,9 +407,9 @@ async function build(id) {
     if (t.building === 'no' || t['building:part'] === 'no') continue;
     if (t.location === 'underground' || t['building:part'] === 'roof' && false) continue;
     const c = centroid(a.pts); if (!inBox(c[0], c[1])) continue;
-    let pts = simplifyRing(dedupe(a.pts), 0.35);
+    let pts = simplifyRing(dedupe(a.pts), C.simp || 0.35);
     if (pts.length < 3) continue;
-    let A = area(pts); if (Math.abs(A) < 6) continue;
+    let A = area(pts); if (Math.abs(A) < (C.minA || 6)) continue;
     if (A < 0) pts = pts.slice().reverse(); // counter-clockwise in x/z (z = south)
     A = Math.abs(A);
     const kind = bkind(t);
@@ -349,7 +460,7 @@ async function build(id) {
       const cls = { rail: 1, light_rail: 1, narrow_gauge: 1, tram: 2, subway: 3, monorail: 4 }[t.railway];
       const layer = t.tunnel && t.tunnel !== 'no' || parseLen(t.layer) < 0 && t.railway === 'subway' ? -1 : (t.bridge && t.bridge !== 'no') || +t.layer >= 1 ? 1 : 0;
       const sv = t.service ? 1 : 0, nm = (t.name || '') + (t.operator || '');
-      const op = /東海道|東日本旅客/.test(nm) ? 1 : /小田急/.test(nm) ? 2 : /江ノ島電鉄|江ノ電/.test(nm) ? 3 : /京急|京浜急行/.test(nm) ? 4 : /相鉄|相模鉄道/.test(nm) ? 5 : /横浜市|ブルーライン/.test(nm) ? 6 : 0;
+      const op = opOf(nm, t);
       for (const run of clipLine(simplify(dedupe(wayPts(w)), 0.4), X0, Z0, X1, Z1)) { rl.push([cls + sv * 10, layer, op, ...enc(run)]); stats.rl++; }
     } else if (t.waterway && /^(river|stream|canal|drain|ditch)$/.test(t.waterway) && t.tunnel !== 'culvert' && t.tunnel !== 'yes') {
       const wdt = parseLen(t.width) || { river: 12, canal: 8, stream: 3, drain: 2, ditch: 1.5 }[t.waterway];
@@ -369,6 +480,27 @@ async function build(id) {
     if (cls === AREA.platform && t.covered === 'yes') layer = 2; // platform with a roof
     ar.push([cls + layer * 100, ...enc(area(pts) < 0 ? pts.slice().reverse() : pts)]); stats.ar++;
   }
+  // the sea: coastline ways stitched end to start (they keep their direction: water on the right), then clipped to the box
+  {
+    const cw = [...D.ways.values()].filter(w => w.tags.natural === 'coastline' && w.nd.length >= 2).map(w => w.nd.slice());
+    const byStart = new Map(); cw.forEach((l, i) => byStart.set(l[0], i));
+    const used = new Set(), chains = [];
+    cw.forEach((l, i) => {
+      if (used.has(i)) return;
+      // go back to the start of this chain
+      let st = i; for (let g = 0; g < 2000; g++) { const prev = cw.findIndex((m, j) => !used.has(j) && j !== st && m[m.length - 1] === cw[st][0]); if (prev < 0 || prev === i) break; st = prev; }
+      let nd = []; let k = st;
+      for (let g = 0; g < 5000 && k != null && !used.has(k); g++) { used.add(k); nd = nd.length ? nd.concat(cw[k].slice(1)) : cw[k].slice(); const nx = byStart.get(nd[nd.length - 1]); k = nx != null && !used.has(nx) ? nx : null; }
+      const pts = nd.map(r => D.nodes.get(r)).filter(Boolean).map(P);
+      if (pts.length >= 2) chains.push({ pts, closed: nd[0] === nd[nd.length - 1] });
+    });
+    if (chains.length) {
+      const m = 40, cs = coastSea(chains, X0 - m, Z0 - m, X1 + m, Z1 + m);
+      for (const ring of cs.sea) { const pts = simplifyRing(dedupe(ring), 0.9); if (pts.length >= 3) { ar.push([AREA.water, ...enc(area(pts) < 0 ? pts.slice().reverse() : pts)]); stats.ar++; } }
+      for (const ring of cs.land) { const pts = clipPoly(simplifyRing(dedupe(ring), 0.9), X0, Z0, X1, Z1); if (pts.length >= 3 && Math.abs(area(pts)) > 20) { ar.push([19, ...enc(area(pts) < 0 ? pts.slice().reverse() : pts)]); stats.ar++; } }
+      console.log('  coastline: ' + chains.length + ' chains → ' + cs.sea.length + ' sea, ' + cs.land.length + ' islands');
+    }
+  }
   // big areas first (drawn under the small ones)
   ar.sort((a, b) => Math.abs(dArea(b)) - Math.abs(dArea(a)));
   function dArea(rec) { const pts = []; let x = 0, z = 0; for (let i = 2; i < rec.length; i += 2) { x += rec[i]; z += rec[i + 1]; pts.push([x, z]); } return area(pts); }
@@ -385,7 +517,9 @@ async function build(id) {
   const hwOf = new Map(); // node id -> a highway way through it (for the direction of crossings)
   for (const [wid, w] of D.ways) if (w.tags.highway && ROAD[w.tags.highway] && ROAD[w.tags.highway][0] <= 6) for (let i = 0; i < w.nd.length; i++) if (!hwOf.has(w.nd[i])) hwOf.set(w.nd[i], [w, i]);
   const dirAt = nid => { const e = hwOf.get(nid); if (!e) return null; const [w, i] = e; const a = D.nodes.get(w.nd[Math.max(0, i - 1)]), b = D.nodes.get(w.nd[Math.min(w.nd.length - 1, i + 1)]); if (!a || !b || a === b) return null; const pa = P(a), pb = P(b); return [Math.atan2(pb[1] - pa[1], pb[0] - pa[0]), ROAD[w.tags.highway][1], w.tags]; };
-  const addL = (name, x, z, kind) => { if (!name || !inBox(x, z) || seenL.has(name + kind)) return; seenL.add(name + kind); lb.push([name, Math.round(x), Math.round(z), kind]); };
+  // (lite: Japanese names only; a station building only when its name is the station's; no names with a brand in them)
+  const BRANDY = /カップヌードル|ライオンヘルス|エキミセ|ミュージアムパーク/;
+  const addL = (name, x, z, kind) => { if (!name || !inBox(x, z) || seenL.has(name + kind) || C.lite && (!/[぀-ヿ一-鿿]/.test(name) || BRANDY.test(name) || kind === 'stationb' && !/駅/.test(name))) return; seenL.add(name + kind); lb.push([name, Math.round(x), Math.round(z), kind]); };
   for (const [nid, n] of D.nodes) {
     const t = n.tags, [x, z] = P(n);
     if (t.railway === 'station' && t.name) addL(t.name.replace(/駅$/, '') + '駅', x, z, 'station');
@@ -400,13 +534,15 @@ async function build(id) {
     if (!t.name) continue;
     if (t.amenity === 'school' || t.amenity === 'university') addL(t.name, c[0], c[1], 'school');
     else if (t.leisure === 'park') addL(t.name, c[0], c[1], 'park');
-    else if (t.amenity === 'townhall' || t.amenity === 'community_centre' || t.amenity === 'arts_centre' || t.amenity === 'library' || t.building === 'civic' || t.building === 'public' || t.amenity === 'hospital') addL(t.name, c[0], c[1], 'public');
-    else if (t.amenity === 'place_of_worship') addL(t.name, c[0], c[1], 'shrine');
+    else if (C.lite ? (t.amenity === 'townhall' || t.amenity === 'library' || t.building === 'government' || t.office === 'government') && /[぀-ヿ一-鿿]/.test(t.name) && !t.brand && !t['brand:wikidata']
+      : (t.amenity === 'townhall' || t.amenity === 'community_centre' || t.amenity === 'arts_centre' || t.amenity === 'library' || t.building === 'civic' || t.building === 'public' || t.amenity === 'hospital')) addL(t.name, c[0], c[1], 'public');
+    else if (t.amenity === 'place_of_worship') { if (!C.lite || Math.abs(area(a.pts)) > 2500) addL(t.name, c[0], c[1], 'shrine'); }
     else if (t.building === 'train_station' || t.railway === 'station') addL(t.name, c[0], c[1], 'stationb');
   }
   for (const [wid, w] of D.ways) {
     const t = w.tags; if (!t.name) continue;
     if (t.waterway === 'river' || t.waterway === 'canal') { const p = wayPts(w); const m = p[p.length >> 1]; if (m) addL(t.name, m[0], m[1], 'river'); }
+    if (C.lite && t.highway && ROAD[t.highway] && ROAD[t.highway][0] <= 3 && t.bridge && t.bridge !== 'no' && /橋$/.test(t.name) && !/歩道橋|跨線橋|高架橋/.test(t.name)) { const p = wayPts(w); const m = p[p.length >> 1]; let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (m && L > 35) addL(t.name, m[0], m[1], 'bridge'); }
   }
   // ---- elevation (GSI): dem5a z15, falling back to dem z14
   const S = 20, hx0 = Math.floor(X0 / S) * S - S, hz0 = Math.floor(Z0 / S) * S - S, nx = Math.ceil((X1 - hx0) / S) + 2, nz = Math.ceil((Z1 - hz0) / S) + 2;
@@ -443,6 +579,14 @@ async function build(id) {
   const base = Math.min(...hv.map(v => v == null ? 1e9 : v));
   const hd = []; for (let j = 0; j < nz; j++) { let p = 0; for (let i = 0; i < nx; i++) { const v = Math.round(((hv[j * nx + i] == null ? base : hv[j * nx + i]) - base) * 10); hd.push(v - p); p = v; } }
 
+  if (argv.includes('--dump')) { // named things with their position (for placing the hand-made landmarks): <cache>/<id>-names.json
+    const nm = [];
+    for (const a of areas) if (a.tags.name) { const c = centroid(a.pts), bb = a.pts.reduce((o, p) => [Math.min(o[0], p[0]), Math.min(o[1], p[1]), Math.max(o[2], p[0]), Math.max(o[3], p[1])], [1e9, 1e9, -1e9, -1e9]);
+      if (inBox(c[0], c[1], 200)) nm.push({ n: a.tags.name, id: a.id, c: c.map(Math.round), bb: bb.map(Math.round), A: Math.round(Math.abs(area(a.pts))), t: a.tags }); }
+    for (const [nid, n] of D.nodes) if (n.tags.name) { const [x, z] = P(n); if (inBox(x, z, 200)) nm.push({ n: n.tags.name, id: 'n' + nid, c: [Math.round(x), Math.round(z)], t: n.tags }); }
+    for (const [wid, w] of D.ways) if (w.tags.name && !(w.nd[0] === w.nd[w.nd.length - 1])) { const p = wayPts(w), m = p[p.length >> 1]; if (m && inBox(m[0], m[1], 200)) nm.push({ n: w.tags.name, id: 'w' + wid, c: m.map(Math.round), line: p.map(q => q.map(Math.round)), t: w.tags }); }
+    fs.writeFileSync(path.join(CACHE, id + '-names.json'), JSON.stringify(nm));
+  }
   const out = { v: 1, id, name: C.name, src: '© OpenStreetMap contributors (ODbL), 国土地理院 標高タイル', c: C.c, q: Q, r: box,
     hg: { x0: hx0, z0: hz0, s: S, nx, nz, base: Math.round(base * 10) / 10, d: hd }, b: bOut, rd, rl, ar, wl, tr, lb, en };
   fs.mkdirSync(OUT, { recursive: true });

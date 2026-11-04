@@ -37,6 +37,9 @@ window.HoleRealFactory = function (E) {
     const g = j.hg, H = new Float32Array(g.nx * g.nz);
     for (let jz = 0; jz < g.nz; jz++) { let v = 0; for (let i = 0; i < g.nx; i++) { v += g.d[jz * g.nx + i]; H[jz * g.nx + i] = v / 10; } }
     D.H = H;
+    // islands (class 19, from the coastline) are holes in the sea around them
+    const isl = D.ar.filter(a => a.c === 19);
+    if (isl.length) for (const a of D.ar) if (a.c === 5) a.holes = isl.filter(b => pointIn(a.p, b.p[0][0], b.p[0][1])).map(b => b.p);
     return D;
   }
   // bilinear ground height
@@ -59,11 +62,16 @@ window.HoleRealFactory = function (E) {
     const m = new THREE.MeshLambertMaterial(Object.assign({ vertexColors: true }, o.stencil ? E.STENCIL_TEST : {}, o.mat || {}));
     const U = { uShade: { value: 1 } }; m.userData.U = U;
     m.onBeforeCompile = sh => {
-      sh.uniforms.uShade = U.uShade;
+      sh.uniforms.uShade = U.uShade; sh.uniforms.uNight = E.NIGHT || { value: 0 };
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 wv;\nvarying vec3 vWv;')
         .replace('#include <color_vertex>', '#include <color_vertex>\nvWv = wv;');
-      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uShade;\nvarying vec3 vWv;')
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uShade;\nuniform float uNight;\nvarying vec3 vWv;')
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+  // night: some of the windows are lit
+  if (uNight > 0.01 && cWin > 0.5) { float lit = step(0.42, fract(sin(dot(floor(vec2(vWv.x / 2.6, vWv.y / 3.2)), vec2(12.9898, 78.233))) * 43758.5453));
+    totalEmissiveRadiance += vec3(1.0, 0.82, 0.52) * lit * uNight * 0.75; }`)
         .replace('#include <color_fragment>', `#include <color_fragment>
+  float cWin = 0.0;
   {
     float t = vWv.z, u = vWv.x, y = vWv.y, k = 1.0;
     if (t > 0.5) {
@@ -81,6 +89,7 @@ window.HoleRealFactory = function (E) {
         if (y > 1.2 && fract(y / 4.5) > 0.25 && fract(u / 3.0) > 0.06) k = 0.66;
       }
     }
+    if (k < 0.7) cWin = 1.0;
     diffuseColor.rgb *= k * uShade;
   }`);
     };
@@ -88,6 +97,7 @@ window.HoleRealFactory = function (E) {
     return m;
   }
   const bMat = cityMat();                                  // buildings, decks, viaducts
+  const bMatFar = new THREE.MeshLambertMaterial({ vertexColors: true }); // the far versions of the building chunks (no window pattern)
   const gMat = cityMat({ stencil: true, mat: { side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2.5, polygonOffsetUnits: -6 } }); // roads, water, markings
 
   // ---------------------------------------------------------------- geometry buffers
@@ -170,9 +180,10 @@ window.HoleRealFactory = function (E) {
     const N = r > 3 ? 10 : 7;
     for (let i = 0; i < N; i++) { const a0 = i / N * 6.2832, a1 = (i + 1) / N * 6.2832; tri(B, [x, y, z], [x + Math.cos(a1) * r, y, z + Math.sin(a1) * r], [x + Math.cos(a0) * r, y, z + Math.sin(a0) * r], col, 0, 1, 0); }
   }
-  function polyFill(B, p, y, col, flip) {
-    const v = p.map(q => new THREE.Vector2(q[0], q[1]));
-    let f; try { f = THREE.ShapeUtils.triangulateShape(v, []); } catch (e) { return; }
+  function polyFill(B, p, y, col, flip, holes) {
+    const v = p.map(q => new THREE.Vector2(q[0], q[1])), hv = (holes || []).map(h => h.map(q => new THREE.Vector2(q[0], q[1])));
+    let f; try { f = THREE.ShapeUtils.triangulateShape(v, hv); } catch (e) { return; }
+    if (holes && holes.length) p = p.concat(...holes);
     for (const t of f) { const a = p[t[0]], b = p[t[1]], c = p[t[2]]; const yy = typeof y === 'function' ? y : () => y;
       if (flip) tri(B, [a[0], yy(a), a[1]], [b[0], yy(b), b[1]], [c[0], yy(c), c[1]], col, 0, -1, 0);
       else tri(B, [a[0], yy(a), a[1]], [c[0], yy(c), c[1]], [b[0], yy(b), b[1]], col, 0, 1, 0); }
@@ -205,29 +216,35 @@ window.HoleRealFactory = function (E) {
     }
     return best;
   }
+  function polyArea2(p) { let s = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++) s += (p[j][0] + p[i][0]) * (p[j][1] - p[i][1]); return s / 2; }
   function polyArea(p) { let s = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++) s += (p[j][0] + p[i][0]) * (p[j][1] - p[i][1]); return Math.abs(s / 2); }
   // emit one building into B; returns [x, z, base y, radius, height] (centroid)
-  function emitBuilding(B, b, idx) {
-    const p = b.p, n = p.length, r = hsh(idx), r2 = hsh(idx + 7777);
+  // lite: the far version (distance LOD): a plain prism (the outline squared to its box when it is nearly a rectangle),
+  // flat roof at the middle of the pitched one, no roof equipment
+  function emitBuilding(B, b, idx, lite) {
+    let p = b.p, n = p.length; const r = hsh(idx), r2 = hsh(idx + 7777);
     let cx = 0, cz = 0, ymin = 1e9, ysum = 0;
     for (const q of p) { cx += q[0]; cz += q[1]; const y = gy(q[0], q[1]); ymin = Math.min(ymin, y); ysum += y; }
     cx /= n; cz /= n;
     const A = polyArea(p), ob = obb(p), rect = ob && A / ob.A > 0.82;
+    if (lite && rect && n > 4) { const { ux, uz, u0, u1, v0, v1 } = ob; p = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(([u, v]) => [u * ux - v * uz, u * uz + v * ux]); if (polyArea2(p) < 0) p.reverse(); n = 4; }
     let kind = b.kind;
     const hy = b.h;
     if (kind === 0) kind = hy < 8.5 && A < 260 ? 1 : hy < 13 ? (r2 < 0.5 ? 2 : 3) : hy < 30 ? (r2 < 0.4 ? 2 : r2 < 0.75 ? 3 : 4) : 4;
-    const pal = PAL[kind] || PAL[3], wall = C3(pickH(pal.w, r)), roofC = C3(pickH(pal.r, r2));
+    const pal = PAL[kind] || PAL[3], pnt = cur.paint && cur.paint.get(b); let wall = C3(pnt && pnt[0] || pickH(pal.w, r)), roofC = C3(pnt && pnt[1] || pickH(pal.r, r2));
+    if (cur.D.pal && cur.D.pal.snow) roofC = mixc(roofC, [0.95, 0.97, 1], 0.82); // snow on the roofs
     const base = ymin - 0.25, y0 = base + b.mh, top = ysum / n + b.h;
     const win = WIN[kind] != null ? WIN[kind] : 0;
     if (b.fl & 8) { globe(B, cx, cz, Math.sqrt(A / Math.PI), base, b.h); return [cx, cz, base, Math.sqrt(A / Math.PI), b.h]; }
+    if ((b.fl & 1) && lite) return [cx, cz, base, Math.sqrt(A) / 2, b.h];
     if (b.fl & 1) { // canopy roof on posts
       slab(B, p, top - 0.5, top, mixc(wall, [0.5, 0.52, 0.55], 0.25), roofC);
       for (let i = 0; i < n; i += Math.max(1, Math.floor(n / 6))) box(B, p[i][0], base, p[i][1], 0.35, top - 0.5 - base, 0.35, C3('#8a929a'));
       return [cx, cz, base, Math.sqrt(A) / 2, b.h];
     }
-    const pitched = (kind === 1 || kind === 9) && rect && A < 400 && b.mh === 0;
-    const rh = pitched ? Math.min(3.2, Math.max(1.4, (ob.v1 - ob.v0) * 0.3)) : 0;
-    const eave = top - rh;
+    const pitched0 = (kind === 1 || kind === 9) && rect && A < 400 && b.mh === 0, pitched = pitched0 && !lite;
+    const rh = pitched0 ? Math.min(3.2, Math.max(1.4, (ob.v1 - ob.v0) * 0.3)) : 0;
+    const eave = top - (pitched ? rh : rh * 0.5);
     // walls
     let u = 0;
     for (let i = 0; i < n; i++) {
@@ -255,9 +272,9 @@ window.HoleRealFactory = function (E) {
       // eave underside
       quad(B, c0, c1, c2, c3, mixc(wall, [0, 0, 0], 0.3));
     } else {
-      polyFill(B, p, top, roofC);
+      polyFill(B, p, eave, roofC);
       if (b.mh > 0) polyFill(B, p, y0, mixc(wall, [0, 0, 0], 0.25), true);
-      if (b.h > 9 && A > 120 && r2 < 0.6) { // roof equipment
+      if (b.h > 9 && A > 120 && r2 < 0.6 && !lite) { // roof equipment
         const s = Math.min(6, Math.sqrt(A) * 0.25);
         box(B, cx + (r - 0.5) * s, top, cz + (r2 - 0.5) * s, s, 1.2 + r * 1.6, s * 0.8, C3('#d0d2d4'));
       }
@@ -287,8 +304,8 @@ window.HoleRealFactory = function (E) {
     11: '#c4ccb4', 12: '#c9d79e', 13: '#d9d2c8', 14: '#d6d0c2', 15: '#cdc8be', 16: '#d4c6a8', 17: '#eadbb0', 18: '#80868e' };
   function paintGround(D, tb, N) {
     const c = document.createElement('canvas'); c.width = c.height = N;
-    const g = c.getContext('2d'), k = N / (tb[2] - tb[0]);
-    g.setTransform(k, 0, 0, k, -tb[0] * k, -tb[1] * k);
+    const g = c.getContext('2d'), k = N / (tb[2] - tb[0]), kz = N / (tb[3] - tb[1]); // (a box that is not square: other scale along z)
+    g.setTransform(k, 0, 0, kz, -tb[0] * k, -tb[1] * kz);
     g.fillStyle = D.pal.ground || '#d8d2c4'; g.fillRect(tb[0], tb[1], tb[2] - tb[0], tb[3] - tb[1]);
     const path = (p, close) => { g.beginPath(); g.moveTo(p[0][0], p[0][1]); for (let i = 1; i < p.length; i++) g.lineTo(p[i][0], p[i][1]); if (close) g.closePath(); };
     // soft speckle so big plain areas do not look flat
@@ -296,13 +313,14 @@ window.HoleRealFactory = function (E) {
     for (let i = 0; i < 9000; i++) { g.fillStyle = rr() < 0.5 ? 'rgba(0,0,0,0.035)' : 'rgba(255,255,255,0.05)'; const x = tb[0] + rr() * (tb[2] - tb[0]), z = tb[1] + rr() * (tb[3] - tb[1]); g.fillRect(x, z, 1.5 + rr() * 3, 1.5 + rr() * 3); }
     for (const a of D.ar) {
       if (a.l === 1) continue; // decks are geometry
-      const col = AREA_COL[a.c]; if (!col) continue;
+      let col = a.c === 19 ? D.pal.ground || '#d8d2c4' : a.c === 5 && D.pal.water ? D.pal.water : AREA_COL[a.c]; if (!col) continue;
+      if (D.pal.snow && a.c !== 5) col = '#' + new THREE.Color(col).lerp(new THREE.Color('#f4f7fb'), 0.72).getHexString(); // under the snow
       g.fillStyle = col; path(a.p, true); g.fill();
       if (a.c === 6 || a.c === 1) { g.strokeStyle = a.c === 6 ? '#a6c088' : '#8fbf72'; g.lineWidth = 1.6; g.stroke(); }
       if (a.c === 7) { g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 0.18; g.save(); path(a.p, true); g.clip(); const bb = bbox(a.p); for (let x = bb[0]; x < bb[2]; x += 2.5) { g.beginPath(); g.moveTo(x, bb[1]); g.lineTo(x, bb[3]); g.stroke(); } g.restore(); }
     }
     g.lineCap = 'round'; g.lineJoin = 'round';
-    for (const w of D.wl) { g.strokeStyle = '#6fb2dc'; g.lineWidth = w.w; path(w.p); g.stroke(); }
+    for (const w of D.wl) { g.strokeStyle = D.pal.water || '#6fb2dc'; g.lineWidth = w.w; path(w.p); g.stroke(); }
     // rail beds at ground level (the rails are geometry)
     for (const r of D.rl) { if (r.l !== 0) continue; g.strokeStyle = '#a49a8a'; g.lineWidth = 4.2; path(r.p); g.stroke(); }
     // roads (also drawn as geometry; the paint keeps the far distance clean)
@@ -323,24 +341,45 @@ window.HoleRealFactory = function (E) {
     const D = C.D; D.pal = C.pal;
     cur = { C, D, area, meshes: [], fp: [], fall: [], labels: [] };
     const box0 = D.box, M = 40, tb = [box0[0] - M, box0[1] - M, box0[2] + M, box0[3] + M];
-    // ---- terrain mesh + painted texture
+    // ---- terrain mesh + painted texture: one texture, the grid cut into pieces of 16 x 16 cells (culled per piece)
     {
-      const g = D.hg, geo = new THREE.BufferGeometry(), nx = g.nx, nz = g.nz, P = new Float32Array(nx * nz * 3), UV = new Float32Array(nx * nz * 2), I = [];
+      const g = D.hg, nx = g.nx, nz = g.nz, full = new THREE.BufferGeometry(), P = new Float32Array(nx * nz * 3), I = [];
       for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
-        const k = j * nx + i, x = g.x0 + i * g.s, z = g.z0 + j * g.s;
-        P[k * 3] = x; P[k * 3 + 1] = D.H[k]; P[k * 3 + 2] = z; UV[k * 2] = (x - tb[0]) / (tb[2] - tb[0]); UV[k * 2 + 1] = 1 - (z - tb[1]) / (tb[3] - tb[1]);
+        const k = j * nx + i; P[k * 3] = g.x0 + i * g.s; P[k * 3 + 1] = D.H[k]; P[k * 3 + 2] = g.z0 + j * g.s;
         if (i < nx - 1 && j < nz - 1) I.push(k, k + nx, k + 1, k + 1, k + nx, k + nx + 1);
       }
-      geo.setAttribute('position', new THREE.BufferAttribute(P, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(UV, 2)); geo.setIndex(I); geo.computeVertexNormals();
+      full.setAttribute('position', new THREE.BufferAttribute(P, 3)); full.setIndex(I); full.computeVertexNormals();
+      const N = full.attributes.normal.array;
       const cv = paintGround(D, tb, opt.groundN || 2048), tex = new THREE.CanvasTexture(cv);
-      tex.anisotropy = Math.min(4, E.renderer.capabilities.getMaxAnisotropy());
-      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(Object.assign({ map: tex, color: 0xd8d8d8 }, E.STENCIL_TEST)));
-      m.renderOrder = -6; add(m);
+      tex.anisotropy = Math.min(opt.view ? 4 : 2, E.renderer.capabilities.getMaxAnisotropy()); // (sampling cost: the play camera looks down steeply)
+      const mat = new THREE.MeshLambertMaterial(Object.assign({ map: tex, color: 0xd8d8d8 }, E.STENCIL_TEST));
+      const S = 16;
+      for (let j0 = 0; j0 < nz - 1; j0 += S) for (let i0 = 0; i0 < nx - 1; i0 += S) {
+        const i1 = Math.min(nx - 1, i0 + S), j1 = Math.min(nz - 1, j0 + S), w = i1 - i0 + 1, h = j1 - j0 + 1;
+        const pp = new Float32Array(w * h * 3), nn = new Float32Array(w * h * 3), uv = new Float32Array(w * h * 2), ix = [];
+        for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+          const k = (j0 + j) * nx + i0 + i, q = j * w + i;
+          for (let c = 0; c < 3; c++) { pp[q * 3 + c] = P[k * 3 + c]; nn[q * 3 + c] = N[k * 3 + c]; }
+          uv[q * 2] = (pp[q * 3] - tb[0]) / (tb[2] - tb[0]); uv[q * 2 + 1] = 1 - (pp[q * 3 + 2] - tb[1]) / (tb[3] - tb[1]);
+          if (i < w - 1 && j < h - 1) ix.push(q, q + w, q + 1, q + 1, q + w, q + w + 1);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(pp, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nn, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+        geo.setIndex(ix); geo.computeBoundingSphere();
+        const m = new THREE.Mesh(geo, mat); m.renderOrder = -6; add(m);
+      }
+      full.dispose();
+      cur.terrainMat = mat;
       let mn = 1e9; for (let i = 0; i < D.H.length; i++) mn = Math.min(mn, D.H[i]);
       cur.outerY = mn - 0.8; // the far ground stays under the whole terrain
     }
+    // real.paint: [[x, z, wall, roof]] colours of the map buildings at those points (red brick, vermilion temple halls, …)
+    cur.paint = new Map();
+    for (const q of C.real && C.real.paint || []) for (const b of D.b) if (pointIn(b.p, q[0], q[1])) cur.paint.set(b, [q[2], q[3] || null]);
+    // real.bridges: [[x, z, colour, r]] railings of the raised roads near there (a red bridge)
+    const brCol = (p) => { for (const q of C.real && C.real.bridges || []) if (p.some(m => Math.hypot(m[0] - q[0], m[1] - q[1]) < (q[3] || 60))) return C3(q[2]); return null; };
     // ---- roads, rails, water, decks: ground layer (stencil) and raised layer (lit, no stencil)
-    const GL = Chunks(), BL = Chunks();
+    const GL = Chunks(), BL = Chunks(), BLF = Chunks(); // BLF: the far version of the raised layer (plain decks, no railings / posts)
     const mid = p => p[Math.floor(p.length / 2)];
     for (const r of D.rd) {
       const m = mid(r.p), col = C3(ROADC[r.c] || '#7a7f86');
@@ -348,8 +387,10 @@ window.HoleRealFactory = function (E) {
         const Bf = BL.get(m[0], m[1]), y = Math.max(gy(r.p[0][0], r.p[0][1]), gy(r.p[r.p.length - 1][0], r.p[r.p.length - 1][1]));
         const deck = r.c >= 6 || r.c === 8 ? 6.2 : 0.4;
         const isFoot = r.c >= 6;
-        ribbon(Bf, r.p, Math.max(isFoot ? 3.4 : r.w, r.w), isFoot ? C3('#bfb9ae') : col, 0, { fixed: y + (isFoot ? deck : 0.4), side: isFoot ? 0 : 0.9, sideCol: C3('#b8b4ac'), under: 0.6, underCol: C3('#b2aca2'), step: 12 });
+        const bc = brCol(r.p);
+        ribbon(Bf, r.p, Math.max(isFoot ? 3.4 : r.w, r.w), isFoot ? C3('#bfb9ae') : col, 0, { fixed: y + (isFoot ? deck : 0.4), side: isFoot ? 0 : bc ? 1.3 : 0.9, sideCol: bc || C3('#b8b4ac'), under: 0.6, underCol: bc ? mixc(bc, [0.4, 0.4, 0.4], 0.5) : C3('#b2aca2'), step: 12 });
         const q = subdiv(r.p, 14); if (isFoot) for (let i = 1; i < q.length - 1; i += 1) box(Bf, q[i][0], gy(q[i][0], q[i][1]), q[i][1], 0.7, y + deck - 0.6 - gy(q[i][0], q[i][1]), 0.7, C3('#b8b2a6'));
+        ribbon(BLF.get(m[0], m[1]), r.p, Math.max(isFoot ? 3.4 : r.w, r.w), isFoot ? C3('#bfb9ae') : col, 0, { fixed: y + (isFoot ? deck : 0.4), step: 24 });
         continue;
       }
       const Bf = GL.get(m[0], m[1]);
@@ -369,6 +410,7 @@ window.HoleRealFactory = function (E) {
         ribbon(Bf, r.p, 5.2, C3('#a49c90'), 0, { fixed: y, side: 1.0, sideCol: C3('#c2bcb2'), under: 1.2, underCol: C3('#aaa49a'), step: 8 });
         for (const s of [-0.72, 0.72]) ribbon(Bf, E.offsetPts(r.p, s), 0.14, C3('#d8dce2'), 0.18, { fixed: y });
         const q = subdiv(r.p, 18); for (let i = 0; i < q.length; i++) { const g0 = gy(q[i][0], q[i][1]); box(Bf, q[i][0], g0, q[i][1], 1.6, y - 1.2 - g0, 1.6, C3('#b4aea4')); }
+        ribbon(BLF.get(m[0], m[1]), r.p, 5.2, C3('#a49c90'), 0, { fixed: y, under: 1.2, underCol: C3('#aaa49a'), step: 16 });
         void yy;
         continue;
       }
@@ -377,19 +419,19 @@ window.HoleRealFactory = function (E) {
       ribbon(Bf, r.p, 2.5, C3('#6f5d4a'), 0.11, { dash: true, step: 0.6 });
       for (const s of [-0.72, 0.72]) ribbon(Bf, E.offsetPts(r.p, s), 0.12, C3('#dfe3e8'), 0.15);
     }
-    for (const w of D.wl) { const m = mid(w.p); ribbon(GL.get(m[0], m[1]), w.p, w.w, C3('#5ea6d4'), 0.05); }
+    for (const w of D.wl) { const m = mid(w.p); ribbon(GL.get(m[0], m[1]), w.p, w.w, C3(D.pal.water || '#5ea6d4'), 0.05); }
     for (const a of D.ar) {
       const c = centroid(a.p);
-      if (a.c === 5) { polyFill(GL.get(c[0], c[1]), a.p, q => gy(q[0], q[1]) + 0.04, C3('#5ea6d4')); continue; }
+      if (a.c === 5) { polyFill(GL.get(c[0], c[1]), a.p, q => gy(q[0], q[1]) + 0.04, C3(D.pal.water || '#5ea6d4'), false, a.holes); continue; }
       if (a.c === 10) { // platform: a raised slab (+ roof when covered); next to a viaduct it is up on the viaduct
         const Bf = BL.get(c[0], c[1]), up = nearRail(c, 1) < nearRail(c, 0) && nearRail(c, 1) < 9, y = up ? viaY(c) + 0.1 : minY(a.p);
-        slab(Bf, a.p, y - 0.2, y + 1.1, C3('#aea79b'), C3('#c2bcb0'));
+        slab(Bf, a.p, y - 0.2, y + 1.1, C3('#aea79b'), C3('#c2bcb0')); polyFill(BLF.get(c[0], c[1]), a.p, a.l === 2 ? y + 4.5 : y + 1.1, a.l === 2 ? C3('#b4bec6') : C3('#c2bcb0'));
         if (a.l === 2) { slab(Bf, inset(a.p, 0.3), y + 4.2, y + 4.5, C3('#9aa4ae'), C3('#b4bec6')); const q = spine(a.p); for (const s of q) box(Bf, s[0], y + 1.1, s[1], 0.3, 3.1, 0.3, C3('#8a929a')); }
         continue;
       }
       if (a.l === 1 && (a.c === 9 || a.c === 18)) { // deck plaza
         const Bf = BL.get(c[0], c[1]), y = minY(a.p) + 6.2;
-        slab(Bf, a.p, y - 0.6, y, C3('#aaa49a'), C3('#bdb7ac'));
+        slab(Bf, a.p, y - 0.6, y, C3('#aaa49a'), C3('#bdb7ac')); polyFill(BLF.get(c[0], c[1]), a.p, y, C3('#bdb7ac'));
         for (let i = 0; i < a.p.length; i++) { const p0 = a.p[i], p1 = a.p[(i + 1) % a.p.length], A0 = [p0[0], y, p0[1]], A1 = [p0[0], y + 1.1, p0[1]], B1 = [p1[0], y + 1.1, p1[1]], B0 = [p1[0], y, p1[1]], c = C3('#9fb0bf'); quad(Bf, A0, A1, B1, B0, c); quad(Bf, B0, B1, A1, A0, c); }
         for (const s of spine(a.p)) box(Bf, s[0], gy(s[0], s[1]), s[1], 0.8, y - 0.6 - gy(s[0], s[1]), 0.8, C3('#b8b2a6'));
       }
@@ -404,19 +446,43 @@ window.HoleRealFactory = function (E) {
         tri(Bf, [px - hx - wx, y, pz - hz - wz], [px + hx + wx, y, pz + hz + wz], [px - hx + wx, y, pz - hz + wz], col, 0, 1, 0);
       }
     }
-    for (const [k, b] of GL.all) if (b.p.length) { const m = new THREE.Mesh(toGeo(b), gMat); m.renderOrder = -5; add(m); }
-    for (const [k, b] of BL.all) if (b.p.length) add(new THREE.Mesh(toGeo(b), bMat));
+    // the city's own ground / raised decorations (crossings, railings, …)
+    if (C.real && C.real.deco) C.real.deco({ gy, D, C3, ribbon, box, quad, tri, slab, polyFill, disc, offset: E.offsetPts, GL: (x, z) => GL.get(x, z), BL: (x, z) => BL.get(x, z),
+      zebra(x, z, ang, len, w, col) { // stripes across a road: len along the walking direction, w = crossing length
+        const Bf = GL.get(x, z), ux = Math.cos(ang), uz = Math.sin(ang), y = gy(x, z) + 0.15, cc = C3(col || '#f2f0ea');
+        for (let s = -w / 2 + 0.3; s < w / 2; s += 0.9) {
+          const px = x + ux * s, pz = z + uz * s, hx = -uz * len / 2, hz = ux * len / 2, wx = ux * 0.22, wz = uz * 0.22;
+          tri(Bf, [px - hx - wx, y, pz - hz - wz], [px + hx - wx, y, pz + hz - wz], [px + hx + wx, y, pz + hz + wz], cc, 0, 1, 0);
+          tri(Bf, [px - hx - wx, y, pz - hz - wz], [px + hx + wx, y, pz + hz + wz], [px - hx + wx, y, pz - hz + wz], cc, 0, 1, 0);
+        }
+      } });
+    cur.gl = [];
+    for (const [k, b] of GL.all) if (b.p.length) { const m = new THREE.Mesh(toGeo(b), gMat); m.renderOrder = -5; add(m); const [i, j] = k.split(',').map(Number); cur.gl.push({ m, x: (i + 0.5) * CH, z: (j + 0.5) * CH }); }
+    cur.bl = [];
+    for (const [k, b] of BL.all) if (b.p.length) {
+      const m = add(new THREE.Mesh(toGeo(b), bMat)), fb = BLF.all.get(k), [i, j] = k.split(',').map(Number);
+      const mf = fb && fb.p.length ? add(new THREE.Mesh(toGeo(fb), bMatFar)) : null; if (mf) mf.visible = false;
+      cur.bl.push({ m, mf, x: (i + 0.5) * CH, z: (j + 0.5) * CH, far: false });
+    }
     // ---- buildings: edible ones (inside the play area) get their own vertex range in the chunk
     const BC = new Map(), list = [];
     const inA = (x, z) => area && x >= area[0] && x <= area[2] && z >= area[1] && z <= area[3];
+    // (real.drop: points inside the buildings that the city replaces with its own hand-made models)
+    const drop = C.real && C.real.drop || [];
     D.b.forEach((b, i) => {
+      if (drop.length && drop.some(q => pointIn(b.p, q[0], q[1]))) return;
       const c = centroid(b.p), k = Math.floor(c[0] / CH) + ',' + Math.floor(c[1] / CH);
-      let ch = BC.get(k); if (!ch) { ch = { B: Buf(), list: [] }; BC.set(k, ch); }
-      const start = ch.B.p.length / 3, info = emitBuilding(ch.B, b, i), count = ch.B.p.length / 3 - start;
-      if (!opt.view && inA(info[0], info[1]) && !(b.fl & 1)) { const e = { b, i, ch, start, count, info }; ch.list.push(e); list.push(e); }
+      // three versions per chunk (distance LOD): 0 full, 1 plain prisms, 2 prisms of the bigger buildings only
+      let ch = BC.get(k); if (!ch) { const [ci, cj] = k.split(',').map(Number); ch = { bufs: [Buf(), Buf(), Buf()], list: [], x: (ci + 0.5) * CH, z: (cj + 0.5) * CH, lv: 0 }; BC.set(k, ch); }
+      const r = [], at = j => ch.bufs[j].p.length / 3;
+      let s0 = at(0); const info = emitBuilding(ch.bufs[0], b, i); r.push([s0, at(0) - s0]);
+      s0 = at(1); emitBuilding(ch.bufs[1], b, i, true); r.push([s0, at(1) - s0]);
+      s0 = at(2); if (b.h >= 9 || polyArea(b.p) >= 220) emitBuilding(ch.bufs[2], b, i, true); r.push([s0, at(2) - s0]);
+      if (!opt.view && inA(info[0], info[1]) && !(b.fl & 1)) { const e = { b, i, ch, start: r[0][0], count: r[0][1], r, info }; ch.list.push(e); list.push(e); }
     });
     for (const [k, ch] of BC) {
-      const geo = toGeo(ch.B), m = new THREE.Mesh(geo, bMat); add(m); ch.mesh = m; ch.orig = geo.attributes.position.array.slice(); ch.lo = 1e12; ch.hi = -1;
+      ch.L = ch.bufs.map((B, j) => { if (!B.p.length) tri(B, [ch.x, -500, ch.z], [ch.x, -500, ch.z], [ch.x, -500, ch.z], [0, 0, 0], 0, 1, 0); const geo = toGeo(B), m = new THREE.Mesh(geo, j ? (D.pal.night ? bMat : bMatFar) : bMat); m.visible = !j; add(m); return { m, orig: geo.attributes.position.array.slice(), lo: 1e12, hi: -1, dirty: false }; });
+      ch.mesh = ch.L[0].m; ch.orig = ch.L[0].orig; ch.bufs = null;
     }
     cur.chunks = BC;
     // landmark names for edible buildings (the city lists them: [x, z, name])
@@ -454,7 +520,7 @@ window.HoleRealFactory = function (E) {
 
   // ---------------------------------------------------------------- props (people, cars, trains, trees, lamps, …)
   function props(C, D, A, opt) {
-    const rnd = E.rnd, pick = E.pick, R = C.real || {}, dens = opt.dens || 1;
+    const rnd = E.rnd, pick = E.pick, R = C.real || {}, dens = (opt.dens || 1) * (R.dens || 1); // (real.dens: more things along the streets)
     const [ax0, az0, ax1, az1] = A;
     const inA = (x, z, m) => x >= ax0 + (m || 0) && x <= ax1 - (m || 0) && z >= az0 + (m || 0) && z <= az1 - (m || 0);
     // occupancy: building footprints on a 2 m grid (props stay off the buildings)
@@ -501,7 +567,7 @@ window.HoleRealFactory = function (E) {
       const bb = bbox(a.p); if (bb[2] < ax0 || bb[0] > ax1 || bb[3] < az0 || bb[1] > az1 || a.l) continue;
       const inside = (x, z) => pointIn(a.p, x, z);
       const scatter = (step, f) => { for (let z = bb[1] + step / 2; z < bb[3]; z += step) for (let x = bb[0] + step / 2; x < bb[2]; x += step) { const px = x + (rnd() - 0.5) * step * 0.7, pz = z + (rnd() - 0.5) * step * 0.7; if (inside(px, pz)) f(px, pz); } };
-      if (a.c === 1 || a.c === 4) scatter(a.c === 4 ? 6 : 8, (x, z) => { const r = rnd(); if (r < 0.55 * dens) put(a.c === 4 ? pick(['tree', 'kusu', 'tree']) : pick(['tree', 'sakura', 'tree', 'kusu']), x, z, rnd() * 6); else if (r < 0.58) put('bench', x, z, rnd() * 6); else if (r < 0.6) put('playSlide', x, z, rnd() * 6); });
+      if (a.c === 1 || a.c === 4) scatter(a.c === 4 ? R.forest || 6 : 8, (x, z) => { const r = rnd(); if (r < 0.55 * dens) put(a.c === 4 ? pick(['tree', 'kusu', 'tree']) : pick(['tree', 'sakura', 'tree', 'kusu']), x, z, rnd() * 6); else if (r < 0.58) put('bench', x, z, rnd() * 6); else if (r < 0.6) put('playSlide', x, z, rnd() * 6); });
       else if (a.c === 3) scatter(12, (x, z) => { if (rnd() < 0.3 * dens) put('tree', x, z, rnd() * 6); });
       else if (a.c === 7) { const ob = obb(a.p); if (ob) for (let v = ob.v0 + 2.5; v < ob.v1 - 1.5; v += 5.5) for (let u = ob.u0 + 1.5; u < ob.u1 - 1; u += 2.6) { if (rnd() > 0.32 * dens) continue; const x = u * ob.ux - v * ob.uz, z = u * ob.uz + v * ob.ux; if (inside(x, z)) put(pick(['carJ', 'carJ', 'carJ', 'truck']), x, z, Math.atan2(ob.ux, -ob.uz)); } }
       else if (a.c === 9 && polyArea(a.p) > 60 && !opt.view) { const n = Math.min(60, Math.floor(polyArea(a.p) / 40 * dens)); for (let i = 0; i < n; i++) { const x = bb[0] + rnd() * (bb[2] - bb[0]), z = bb[1] + rnd() * (bb[3] - bb[1]); if (inside(x, z) && free(x, z)) E.addObj(pick(R.people || ['person', 'personW']), x, z, rnd() * 6, { k: 'wrect', x0: Math.max(bb[0], x - 8), z0: Math.max(bb[1], z - 8), x1: Math.min(bb[2], x + 8), z1: Math.min(bb[3], z + 8), tx: x, tz: z, spd: 0.9 + rnd() * 0.5 }); } }
@@ -529,7 +595,7 @@ window.HoleRealFactory = function (E) {
     }
     // trains (stitched tracks per operator)
     const trainT = R.trains || {};
-    const byOp = new Map(); for (const r of D.rl) { if (r.l < 0 || r.sv || r.c === 3) continue; if (!byOp.has(r.op)) byOp.set(r.op, []); byOp.get(r.op).push(r); }
+    const byOp = new Map(); for (const r of D.rl) { if (r.l < 0 || r.sv || (r.c === 3 && !trainT[r.op])) continue; if (!byOp.has(r.op)) byOp.set(r.op, []); byOp.get(r.op).push(r); }
     for (const [op, rs] of byOp) {
       const tt = trainT[op] || trainT[0]; if (!tt) continue;
       const lines = stitch(rs.map(r => ({ p: r.p, l: r.l }))).filter(s => plen(s.p) > 120).sort((a, b) => plen(b.p) - plen(a.p)).slice(0, tt.n || 2);
@@ -539,7 +605,30 @@ window.HoleRealFactory = function (E) {
       });
     }
     // the city's own extras (hand-made landmarks, crowds)
-    if (R.extra) R.extra(E.B, { gy, inA, put, free, D, along, rnd, pick });
+    // lmk(type, [x, z], o): a hand-made landmark on the footprint of the map building at [x, z] (real.drop removes that one):
+    // its centre, turned along the footprint (o.rot adds to that, o.yaw replaces it). Inside the play area it can be
+    // swallowed; outside it is only scenery (it must not count in the city total).
+    const lmk = (tn, at, o) => {
+      o = o || {};
+      const f = fpAt(at[0], at[1]);
+      const x = o.x != null ? o.x : f ? f.c[0] : at[0], z = o.z != null ? o.z : f ? f.c[1] : at[1];
+      const yaw = o.yaw != null ? o.yaw : (f ? f.yaw : 0) + (o.rot || 0);
+      if (!E.TYPES[tn]) return null;
+      if (inA(x, z) && !o.still) return E.B.o(tn, x, z, yaw);
+      const m = E.staticObj(tn, x, gy(x, z) + (o.y || 0), z, yaw); if (m) cur.meshes.push(m);
+      return null;
+    };
+    if (R.extra) R.extra(E.B, { gy, inA, put, free, D, along, rnd, pick, lmk, fpAt });
+  }
+  // the map building (also a dropped one) whose outline holds [x, z]: centre, long-axis yaw, size
+  function fpAt(x, z) {
+    let best = null;
+    for (const b of cur.D.b) { if (!pointIn(b.p, x, z)) continue; const A = polyArea(b.p); if (!best || A < best.A) best = { b, A }; }
+    if (!best) return null;
+    const ob = obb(best.b.p), c = centroid(best.b.p);
+    const along = ob.u1 - ob.u0 >= ob.v1 - ob.v0, ux = along ? ob.ux : -ob.uz, uz = along ? ob.uz : ob.ux;
+    const cu = (ob.u0 + ob.u1) / 2, cv = (ob.v0 + ob.v1) / 2;
+    return { c: [cu * ob.ux - cv * ob.uz, cu * ob.uz + cv * ob.ux], cen: c, yaw: Math.atan2(-uz, ux), L: Math.max(ob.u1 - ob.u0, ob.v1 - ob.v0), W: Math.min(ob.u1 - ob.u0, ob.v1 - ob.v0), A: best.A, h: best.b.h };
   }
   function plen(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
   // join polylines that share end points into longer ones (straightest continuation)
@@ -568,16 +657,20 @@ window.HoleRealFactory = function (E) {
   // ---------------------------------------------------------------- swallowing a building
   const fallMats = [];
   function fpWrite(o) {
-    const e = o.T.e, ch = e.ch, pos = ch.mesh.geometry.attributes.position;
+    const e = o.T.e, ch = e.ch;
     const hide = o.st !== 0;
     if (hide !== !!e.hidden) {
       e.hidden = hide;
-      const a = pos.array, s = e.start * 3, n = e.count * 3;
-      if (hide) { for (let i = 0; i < n; i += 3) { a[s + i] = e.info[0]; a[s + i + 1] = -500; a[s + i + 2] = e.info[1]; } }
-      else for (let i = 0; i < n; i++) a[s + i] = ch.orig[s + i];
-      ch.lo = Math.min(ch.lo, s); ch.hi = Math.max(ch.hi, s + n); ch.dirty = true;
+      // every distance version of the chunk
+      ch.L.forEach((L, j) => {
+        const a = L.m.geometry.attributes.position.array, s = e.r[j][0] * 3, n = e.r[j][1] * 3; if (!n) return;
+        if (hide) { for (let i = 0; i < n; i += 3) { a[s + i] = e.info[0]; a[s + i + 1] = -500; a[s + i + 2] = e.info[1]; } }
+        else for (let i = 0; i < n; i++) a[s + i] = L.orig[s + i];
+        L.lo = Math.min(L.lo, s); L.hi = Math.max(L.hi, s + n); L.dirty = true;
+      });
     }
     if (o.st === 1) {
+      if (!e.fm && cur.fall.length >= 12) return; // many at once (a huge hole): the rest just drop out of sight
       if (!e.fm) {
         const g = new THREE.BufferGeometry(), src = ch.mesh.geometry.attributes, cx = e.info[0], cz = e.info[1], by = o.fpBase;
         const P = ch.orig.slice(e.start * 3, (e.start + e.count) * 3); for (let i = 0; i < P.length; i += 3) { P[i] -= cx; P[i + 1] -= by; P[i + 2] -= cz; }
@@ -594,26 +687,44 @@ window.HoleRealFactory = function (E) {
   function fpShade(o, v) { const e = o.T.e; if (e.fm) e.fm.material.userData.U.uShade.value = v; }
   function flush() {
     if (!cur || !cur.chunks) return;
-    for (const [k, ch] of cur.chunks) if (ch.dirty) {
-      const at = ch.mesh.geometry.attributes.position; at.updateRange.offset = ch.lo; at.updateRange.count = ch.hi - ch.lo; at.needsUpdate = true;
-      ch.dirty = false; ch.lo = 1e12; ch.hi = -1;
+    for (const [k, ch] of cur.chunks) {
+      for (const L of ch.L) if (L.dirty) { const at = L.m.geometry.attributes.position; at.updateRange.offset = L.lo; at.updateRange.count = L.hi - L.lo; at.needsUpdate = true; L.dirty = false; L.lo = 1e12; L.hi = -1; }
     }
   }
   function reset() { if (!cur) return; for (const e of cur.fall.slice()) dropFaller(e); }
   function clear() {
     if (!cur) return;
     reset();
-    for (const m of cur.meshes) { scene.remove(m); m.geometry.dispose(); if (m.material !== bMat && m.material !== gMat) { if (m.material.map) m.material.map.dispose(); m.material.dispose(); } }
+    for (const m of cur.meshes) { scene.remove(m); m.geometry.dispose(); if (m.material !== bMat && m.material !== bMatFar && m.material !== gMat && m.material !== cur.terrainMat && !m.userData.keepMat) { if (m.material.map) m.material.map.dispose(); m.material.dispose(); } }
+    if (cur.terrainMat) { cur.terrainMat.map.dispose(); cur.terrainMat.dispose(); }
     for (const s of cur.labels) { scene.remove(s); s.material.map.dispose(); s.material.dispose(); }
     cur = null;
+  }
+  // distance LOD: the road / rail / marking geometry of the ground layer is drawn only near the view centre (the painted
+  // ground texture shows the same roads further away)
+  // ground (cx, cz) = the hole (play) or the view centre; dist = the camera distance. The buildings of the chunks further
+  // than that are drawn as plain prisms (the far version of the chunk, made with the chunk).
+  function lod(cx, cz, dist) {
+    if (!cur || !cur.gl) return;
+    const r = Math.max(240, dist * 1.3) + CH * 0.71, r2 = r * r;
+    for (const c of cur.gl) { const dx = c.x - cx, dz = c.z - cz, v = dx * dx + dz * dz < r2; if (c.m.visible !== v) c.m.visible = v; }
+    const r1 = Math.max(200, dist * 0.35) + CH * 0.71, r2b = Math.max(450, dist * 0.8) + CH * 0.71;
+    for (const [, ch] of cur.chunks) {
+      const d = Math.hypot(ch.x - cx, ch.z - cz), lv = d > r2b ? 2 : d > r1 ? 1 : 0;
+      if (lv !== ch.lv) { ch.lv = lv; ch.L.forEach((L, j) => { L.m.visible = j === lv; }); }
+    }
+    for (const c of cur.bl) { const far = Math.hypot(c.x - cx, c.z - cz) > r1; if (far !== c.far) { c.far = far; c.m.visible = !far; if (c.mf) c.mf.visible = far; } }
   }
   // name labels (view mode): stations, schools, rivers, public places
   function labels(on) {
     if (!cur) return;
     if (on && !cur.labels.length) {
-      const want = { station: '#ffe27a', school: '#bfe8ff', river: '#bfe8ff', public: '#ffffff', park: '#c8f0b0', stationb: '#ffe27a', shrine: '#ffd0c0' };
-      for (const L of cur.D.lb.concat(cur.C.real && cur.C.real.labels || [])) {
+      const want = { station: '#ffe27a', school: '#bfe8ff', river: '#bfe8ff', public: '#ffffff', park: '#c8f0b0', stationb: '#ffe27a', shrine: '#ffd0c0', bridge: '#e8e0ff', place: '#ffffff' };
+      const seen = [];
+      for (const L of (cur.C.real && cur.C.real.labels || []).concat(cur.D.lb)) {
         const col = want[L[3]]; if (!col) continue;
+        if (seen.some(q => q[0] === L[0] && Math.hypot(q[1] - L[1], q[2] - L[2]) < 250)) continue; // the same name twice (map + city list)
+        seen.push(L);
         const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: E.labelTex(E.T(L[0]), col), depthTest: false, depthWrite: false, transparent: true }));
         s.position.set(L[1], gy(L[1], L[2]) + (L[3] === 'station' ? 30 : 18), L[2]); s.renderOrder = 19; s.userData.k = L[3]; scene.add(s); cur.labels.push(s);
       }
@@ -623,13 +734,14 @@ window.HoleRealFactory = function (E) {
   function scaleLabels(dist) { if (cur) for (const s of cur.labels) if (s.visible) { const k = s.userData.k === 'station' ? 1.25 : s.userData.k === 'park' ? 0.8 : 1; s.scale.set(dist * 0.16 * k, dist * 0.04 * k, 1); } }
 
   // the nearest point that is not inside a building (start positions)
-  function freeSpot(x, z) {
+  // (wet(x, z): water, where a hole cannot stand)
+  function freeSpot(x, z, wet) {
     if (!cur) return [x, z];
     const near = cur.D.b.filter(b => { const bb = bbox(b.p); return bb[0] < x + 80 && bb[2] > x - 80 && bb[1] < z + 80 && bb[3] > z - 80; });
-    const ok = (px, pz) => !near.some(b => pointIn(b.p, px, pz) || pointIn(b.p, px + 2, pz) || pointIn(b.p, px - 2, pz) || pointIn(b.p, px, pz + 2) || pointIn(b.p, px, pz - 2));
-    for (let r = 0; r < 70; r += 3) for (let k = 0; k < Math.max(1, r * 2); k++) { const a = k / Math.max(1, r * 2) * 6.2832, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (ok(px, pz)) return [px, pz]; }
+    const ok = (px, pz) => !(wet && [[0, 0], [3, 0], [-3, 0], [0, 3], [0, -3]].some(d => wet(px + d[0], pz + d[1]))) && !near.some(b => pointIn(b.p, px, pz) || pointIn(b.p, px + 2, pz) || pointIn(b.p, px - 2, pz) || pointIn(b.p, px, pz + 2) || pointIn(b.p, px, pz - 2));
+    for (let r = 0; r < 120; r += 3) for (let k = 0; k < Math.max(1, r * 2); k++) { const a = k / Math.max(1, r * 2) * 6.2832, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (ok(px, pz)) return [px, pz]; }
     return [x, z];
   }
-  return { load, build, gy, freeSpot, fpWrite, fpShade, flush, reset, clear, labels, scaleLabels, get cur() { return cur; }, mats: [bMat, gMat] };
+  return { load, build, gy, freeSpot, fpWrite, fpShade, flush, reset, clear, labels, scaleLabels, lod, get cur() { return cur; }, mats: [bMat, gMat] };
 };
 })();

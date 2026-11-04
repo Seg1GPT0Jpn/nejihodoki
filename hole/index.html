@@ -399,7 +399,7 @@ h1 {
     <div class="overlay" id="ovCamp" hidden>
       <div class="card camp">
         <h2 class="ttl" data-i18n>まちめぐり</h2>
-        <p class="note" data-i18n>まちめぐりの10都市はデフォルメ。神奈川の4つの街は 地図データどおりの実寸です</p>
+        <p class="note" data-i18n>どの街も 地図データどおりの実寸です（© OpenStreetMap contributors）</p>
         <div class="clist" id="campList"></div>
         <button class="btn sub" id="btnCampBack" type="button" data-i18n>もどる</button>
       </div>
@@ -507,7 +507,7 @@ KoboI18n.add({ en: {
   'ふつう': 'Classic', 'さくら': 'Sakura', 'ミント': 'Mint', 'レモン': 'Lemon', 'そらしま': 'Sky', 'みずたま': 'Polka', 'ネオン': 'Neon', 'にじいろ': 'Rainbow',
   'まちめぐり（10の街）': 'City Tour (10 cities)', 'まちめぐり': 'City Tour', 'まちめぐりへ': 'To City Tour',
   '実在の街をモチーフにしたデフォルメです': 'Stylized after real places — not to scale',
-  'まちめぐりの10都市はデフォルメ。神奈川の4つの街は 地図データどおりの実寸です': 'The 10 tour cities are stylized. The 4 Kanagawa cities are life-size, made from map data',
+  'どの街も 地図データどおりの実寸です（© OpenStreetMap contributors）': 'Every city is life-size, made from map data (© OpenStreetMap contributors)',
   '地図データ：© OpenStreetMap contributors（ODbL）・国土地理院の標高': 'Map data: © OpenStreetMap contributors (ODbL), elevation: GSI Japan',
   '街を ながめる': 'View a city', 'この街を ながめる': 'View this city', '時間も あなもなし。上から 自由に 見てまわれます': 'No timer, no hole: look around the city freely from above',
   'ドラッグで移動・ピンチでズーム・2本指で回転': 'Drag to move, pinch to zoom, two fingers to rotate',
@@ -781,19 +781,21 @@ try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !LOWEND && DPR
 catch (e) { showNoGL('webgl'); return; }
 renderer.setPixelRatio(PR);
 const fpsMon = { t: 0, n: 0, slow: 0, fast: 0, last: 0 };
+// (level -1 = pixel ratio 0.6: only in the real-scale maps, where a huge hole sees the whole city; back to 0 elsewhere)
 function setQuality(lv) {
-  lv = Math.max(0, Math.min(qMax, lv));
+  lv = Math.max(W.real ? -1 : 0, Math.min(qMax, lv));
   if (lv === qLv) return;
-  qLv = lv; PR = QUAL[lv]; renderer.setPixelRatio(PR); resize();
+  qLv = lv; PR = lv < 0 ? 0.6 : QUAL[lv]; renderer.setPixelRatio(PR); resize();
 }
 function watchFps(dt) {
   if (dt <= 0) return;
   fpsMon.t += dt; fpsMon.n++;
   if (fpsMon.t < 2) return;
   const fps = fpsMon.n / fpsMon.t; fpsMon.t = fpsMon.n = 0; fpsMon.last = Math.round(fps);
-  if (fps < 38) { fpsMon.fast = 0; setQuality(qLv - 1); }
+  if (fps < 38) { fpsMon.fast = 0; if (qLv > 0) setQuality(qLv - 1); else if (fps < 17 && ++fpsMon.slow >= 2) { fpsMon.slow = 0; setQuality(-1); } }
   else if (fps > 57) { if (++fpsMon.fast >= 5) { fpsMon.fast = 0; setQuality(qLv + 1); } }
   else fpsMon.fast = 0;
+  if (fps >= 17) fpsMon.slow = 0;
 }
 const SKY = new THREE.Color('#a9dcff');
 const scene = new THREE.Scene();
@@ -1253,6 +1255,8 @@ function buildWorld(si, sd, area) {
   for (const T of TLIST) T.list.length = 0;
   objs.length = 0; seed = sd ? 1 + (sd % 2147483640) : 20240607;
   W.real = !!C.data; W.big = W.real; THc = W.big ? TH_BIG : TH; RADc = W.big ? RADII_BIG : RADII; W.area = area;
+  if (!W.real && qLv < 0) setQuality(0);
+  W.boost = C.real && C.real.boost || 1; // points per swallowed thing × boost: cities of big blocks (few middle-sized things) grow faster
   if (W.real) buildRealCity(C, area);
   else { if (RC) RC.clear(); buildCity(C); }
   W.si = si;
@@ -1272,7 +1276,7 @@ function buildRealCity(C, area) {
       for (const w of D.wl) if (w.w >= 6) B.line(w.p, w.w, null, 'w');
       for (const r of D.rd) if (r.c <= 7 && r.l <= 1) B.line(r.p, Math.max(2, r.w), null, 'r');
       info = RC.build(C, A, { dens: area === 'view' ? 0.45 : 1, view: area === 'view' });
-      if (area !== 'view') W.start = RC.freeSpot(W.start[0], W.start[1]);
+      if (area !== 'view') W.start = RC.freeSpot(W.start[0], W.start[1], B.isWater);
     } });
   buildCity(C2);
   if (info) { if (outerMesh) outerMesh.position.y = info.outerY; }
@@ -1288,7 +1292,19 @@ function objQuat(o, q) {
   if (o.tilt) { _ax.set(o.tdz, 0, -o.tdx).normalize(); _qt.setFromAxisAngle(_ax, o.tilt); q.premultiply(_qt); }
   return q;
 }
-const RCE = { THREE, scene, renderer, STENCIL_TEST, rnd, pick, TYPES, addObj, addFp, offsetPts, labelTex: (t, c) => labelTex(t, c), T, objQuat, B: null };
+// a type drawn once as scenery (a landmark outside the play area): its own one-instance mesh, not an object
+function staticObj(tn, x, y, z, yaw) {
+  const T = TYPES[tn]; if (!T) return null;
+  if (!T.base) T.base = mergeParts(T.parts);
+  const geo = new THREE.BufferGeometry();
+  for (const k of ['position', 'normal', 'color', 'tint', 'glow']) geo.setAttribute(k, T.base.attributes[k]);
+  geo.setAttribute('ishade', new THREE.InstancedBufferAttribute(new Float32Array([1]), 1));
+  const m = new THREE.InstancedMesh(geo, objMat, 1);
+  _q.setFromAxisAngle(UP, yaw || 0); _m.compose(_p.set(x, y, z), _q, _s.set(1, 1, 1)); m.setMatrixAt(0, _m); m.setColorAt(0, _c.set(T.pal[0]));
+  m.frustumCulled = false; m.userData.keepMat = true; m.matrixAutoUpdate = false; scene.add(m);
+  return m;
+}
+const RCE = { THREE, scene, renderer, STENCIL_TEST, rnd, pick, TYPES, addObj, addFp, offsetPts, labelTex: (t, c) => labelTex(t, c), T, objQuat, staticObj, NIGHT, B: null };
 const RC = window.HoleRealFactory ? window.HoleRealFactory(RCE) : null;
 const GY = (x, z) => (W.real ? RC.gy(x, z) : 0);
 // load a real-map city's data (resolves at once for the other cities)
@@ -1418,7 +1434,8 @@ function setHoleColor(h, color, skin) {
 }
 function setHoleSize(h, R) {
   h.flat.scale.set(R, 1, R);
-  const depth = Math.max(4, R * 3.2);
+  // (a huge hole of the real-scale maps: a shallower well, the same look from above, far less to draw)
+  const depth = R <= 15 ? Math.max(4, R * 3.2) : Math.max(48, R * 1.4 + 27);
   h.well.scale.set(R, depth, R); h.bot.scale.set(R, 1, R); h.bot.position.y = -depth;
 }
 function holeSpeed(h) {
@@ -1448,8 +1465,10 @@ function spawnPoint(h) {
   }
   return best;
 }
+// h.st0: the smallest stage of that hole (the real-scale maps start every hole a little bigger, without points)
+const stOf = h => Math.max(stageOf(h.pts), h.st0 || 0);
 function setStage(h, instant) {
-  const s = stageOf(h.pts);
+  const s = stOf(h);
   if (s !== h.stage || instant) {
     const grew = s > h.stage;
     h.stage = s; h.Rf = h.R; h.Rt = RADc[Math.min(s, RADc.length - 1)];
@@ -1501,9 +1520,9 @@ function startRound(mode, si, net, opt) {
   const nR = online ? seats.length - 1 : mode === 'match' ? Math.min(5, 3 + Math.floor(SV.wins / 2)) : mode === 'camp' ? C.rivals : 0;
   G.rivN = nR;
   for (const h of holes) { h.alive = false; h.grp.visible = false; h.label.visible = false; }
-  const startPts = Math.max(SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0, W.big ? TH[2] : 0); // real-scale maps: start a little bigger
+  const startPts = SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0;
   const setup = (h, x, z, pts) => {
-    h.x = x; h.z = z; h.vx = h.vz = 0; h.pts = pts; h.stage = -1; h.alive = true; h.dying = 0; h.deadT = 0; h.inv = 1.5; h.eaten = 0; h.kills = 0;
+    h.x = x; h.z = z; h.vx = h.vz = 0; h.pts = pts; h.stage = -1; h.st0 = W.big ? 3 : 0; h.alive = true; h.dying = 0; h.deadT = 0; h.inv = 1.5; h.eaten = 0; h.kills = 0; // (st0: real-scale maps start every hole a little bigger)
     h.grp.visible = true; h.label.visible = nR > 0; setStage(h, true); h.maxR = h.R; h.gy = GY(x, z); h.grp.position.set(x, h.gy, z); h.grp.scale.set(1, 1, 1);
   };
   const corners = W.rstarts;
@@ -1691,7 +1710,7 @@ function updateFalling(o, dt) {
     o.st = 2; o.tilt = 0; o.y = 0; setShade(o, 1);
     if (G.mode === 'match' && T.rs) o.rsT = 18 + Math.random() * 12;
     if (G.mode !== 'online' && (h.alive || h.dying)) {
-      addPts(h, T.val);
+      addPts(h, Math.round(T.val * (W.boost || 1)));
       if (h.isPlayer) {
         h.eaten++; G.eatVal += T.val; sfx.pop(T.s);
         if (T.s >= 1.8) vibrate(Math.min(70, 12 + T.s * 6));
@@ -1714,7 +1733,7 @@ function killHole(v, killer) {
   addPts(killer, Math.floor(v.pts * 0.4) + 10); killer.kills++;
   if (v.isPlayer) { sfx.eaten(); vibrate(120); showMsg(T('{name}に のまれた！', { name: killer.name }), 3); }
   else if (killer.isPlayer) { sfx.gulp(); vibrate(60); toast(T('{name}を のみこんだ！', { name: v.name })); }
-  v.pts = Math.floor(v.pts * 0.5); v.stage = stageOf(v.pts);
+  v.pts = Math.floor(v.pts * 0.5); v.stage = stOf(v);
 }
 function respawnHole(h) {
   const p = spawnPoint(h);
@@ -2515,12 +2534,17 @@ function netLeave() {
 //                           m[1] = 'v' + one digit per city: the data version of each city (0 = hand-made, 1 = real map data). Pages from
 //                           before the real-map Kanagawa cities write only 'c14' (their cities 10..13 are the old hand-made ones), so a
 //                           new page writes m[0] = 'c10': old pages then only pick the 10 cities both sides build the same way.
+//                           Since the 10 tour cities are map data too (their digit went 0 → 1), a page from before that shares only
+//                           the Kanagawa cities with this one, and a page from before the marker shares none: such pages are not
+//                           grouped with this one (netQueueEval), and a room one of them made is not joined (netJoin).
 const CITY_SIG = 'v' + CITIES.map(C => C.v || 0).join('');
 function queueEntry() {
   if (DEBUG && /[?&]oldq\b/.test(location.search)) { // test hooks: act like a page from before the marker (oldq) / before the real maps (oldq=14)
     const o = /[?&]oldq=(\d+)/.exec(location.search);
     return o ? { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c' + o[1]] } : { n: NET.nick, s: SV.skins.sel, t: NET.TS };
   }
+  const ov = DEBUG && /[?&]oldv=(\d{1,64})/.exec(location.search); // test hook: a page with these city data versions
+  if (ov) return { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c10', 'v' + ov[1]] };
   return { n: NET.nick, s: SV.skins.sel, t: NET.TS, m: ['c10', CITY_SIG] };
 }
 // which cities a waiting player's page builds exactly like this page (old pages: the hand-made ones they know)
@@ -2545,15 +2569,20 @@ async function netQueue(gen) {
   netTimer(netQueueEval, 400);
   netSweep().catch(() => {});
 }
+// pages that share no city with this one (an older page after the tour cities became map data) are not grouped with it:
+// the cities each waiting page can build are remembered (a room creator's entry loses them when it lists the members)
+const shares = (a, b) => a.some((v, i) => v && b[i]);
 function netQueueEval() {
   if (NET.phase !== 'queue' || !NET.q) return;
-  const q = NET.q, now = sNow(), me = NET.uid;
+  const q = NET.q, now = sNow(), me = NET.uid, mine = cityCompat(queueEntry());
+  NET.marks = NET.marks || {};
+  for (const id in q) { const e = q[id]; if (e && !e.r) NET.marks[id] = cityCompat(e); }
   // someone formed a room with me in it (rooms that turned out to be gone or already started are skipped)
   for (const id in q) {
     const e = q[id];
-    if (e && e.r && !NET.bad.has(e.r) && Array.isArray(e.m) && e.m.indexOf(me) >= 0 && id !== me && now - (e.t || 0) < 90000) return netJoin(e.r, false);
+    if (e && e.r && !NET.bad.has(e.r) && Array.isArray(e.m) && e.m.indexOf(me) >= 0 && id !== me && now - (e.t || 0) < 90000 && (!NET.marks[id] || shares(NET.marks[id], mine))) return netJoin(e.r, false);
   }
-  const open = Object.keys(q).filter(id => { const e = q[id]; return e && !e.r && typeof e.t === 'number' && now - e.t < 120000; })
+  const open = Object.keys(q).filter(id => { const e = q[id]; return e && !e.r && typeof e.t === 'number' && now - e.t < 120000 && (id === me || shares(cityCompat(e), mine)); })
     .sort((a, b) => q[a].t - q[b].t || (a < b ? -1 : 1));
   const my = open.indexOf(me);
   if (my < 0) return;
@@ -2600,7 +2629,8 @@ async function netJoin(rid, creator) {
     const meta = (await NET.rref.once('value')).val();
     if (gen !== NET.gen) return;
     // room gone, already started, or a city this page does not know (made by a newer page): look for another match
-    if (!meta || meta.c == null || meta.g || !CITIES[meta.c]) { NET.bad.add(rid); NET.rref = null; return onlineOpenRetry(); }
+    const mk = NET.marks && NET.marks[meta && meta.h];
+    if (!meta || meta.c == null || meta.g || !CITIES[meta.c] || (mk && meta.h !== NET.uid && !mk[meta.c])) { NET.bad.add(rid); NET.rref = null; return onlineOpenRetry(); }
     NET.meta = meta; NET.host = meta.h === NET.uid;
     loadCity(meta.c).catch(() => {}); // a real-map city: fetch its data while waiting for the start
     roomRemember(rid);
@@ -2763,7 +2793,7 @@ function netClaim(o, h) {
   }, (err, ok) => {
     if (err || !ok || rref !== NET.rref || NET.phase !== 'play') return;
     const hh = holeById(id); if (!hh || hh.remote) return;
-    addPts(hh, o.T.val);
+    addPts(hh, Math.round(o.T.val * (W.boost || 1)));
     if (hh === player) { player.eaten++; G.eatVal += o.T.val; sfx.pop(o.T.s); if (o.T.s >= 1.8) vibrate(Math.min(70, 12 + o.T.s * 6)); }
   }, false);
 }
@@ -2797,7 +2827,7 @@ function netKill(V, A) {
   if (NET.rref && !NET.gone) quietly(NET.rref.child('k').push({ v: V.nid, b: A.nid, p: bonus }));
   V.alive = false; V.dying = 0.45; V.killer = A; V.deadT = 3;
   if (V === player) { sfx.eaten(); vibrate(120); showMsg(T('{name}に のまれた！', { name: A.name })); }
-  V.pts = Math.floor(V.pts * 0.5); V.stage = stageOf(V.pts);
+  V.pts = Math.floor(V.pts * 0.5); V.stage = stOf(V);
   netSend(true);
 }
 function netKillSeen(key, ev) {
@@ -2841,14 +2871,26 @@ function netEnd() {
 // ---------------------------------------------------------------- camera + render loop
 // real-map cities: things far from the camera are not drawn. The instances in view are packed at the front of each type's
 // instanced mesh and the mesh draws only those (the GPU would still transform the hidden ones otherwise).
+// While playing, the things outside the view (the camera frustum, widened by a margin for the 0.3 s between two passes) are
+// not drawn either: the instanced meshes are not culled by three.js, and a big hole sees only a small part of the map.
 let cullT = 0;
-function cullProps(dt, cx, cz, r) {
+const _fr = new THREE.Frustum(), _fm = new THREE.Matrix4(), _fs = new THREE.Sphere();
+function cullProps(dt, cx, cz, r, play) {
   if (!W.real || (cullT -= dt) > 0) return;
   cullT = 0.3; let any = false;
+  if (play) { camera.updateMatrixWorld(); _fm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _fr.setFromProjectionMatrix(_fm); }
+  const marg = play ? 6 + play * 0.18 : 0, foc = play ? renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) : 0, cp = camera.position;
   for (const T of ACTIVE) {
     let changed = false, nv = 0; const rr = Math.min(T.s < 1.2 ? r * 0.6 : T.s < 3 ? r * 0.8 : r, 40 + T.s * 160), r2 = rr * rr; // small things: only near the middle
+    const sr = T.s * 1.6 + (T.h || 2) * 0.5 + marg;
     for (const o of T.list) {
-      const dx = o.x - cx, dz = o.z - cz, c = o.st === 2 || (o.st === 0 && dx * dx + dz * dz > r2);
+      const dx = o.x - cx, dz = o.z - cz;
+      let c = o.st === 2 || (o.st === 0 && dx * dx + dz * dz > r2);
+      if (!c && play && o.st === 0) {
+        _fs.center.set(o.x, GY(o.x, o.z) + (T.h || 2) * 0.5, o.z); _fs.radius = sr; c = !_fr.intersectsSphere(_fs);
+        // smaller than about 5 pixels on the screen: not drawn
+        if (!c) c = Math.max(T.s * 2, T.h || 1) * foc < 5 * _fs.center.distanceTo(cp);
+      }
       if (c !== o.cull) { o.cull = c; changed = true; }
       if (!c) nv++;
     }
@@ -2883,7 +2925,7 @@ function viewCamera(dt) {
   scene.fog.near = VW.d * 2.2; scene.fog.far = VW.d * 6 + 600;
   setClip(Math.max(0.5, VW.d * 0.01), Math.max(1500, VW.d * 8));
   cullProps(dt || 0.3, VW.x, VW.z, Math.min(700, VW.d * 1.3));
-  if (W.real) RC.scaleLabels(VW.d);
+  if (W.real) { RC.scaleLabels(VW.d); RC.lod(VW.x, VW.z, VW.d); }
   // far away the small things are not drawn (cheaper)
   for (const T of ACTIVE) T.mesh.visible = T.s >= 1.5 || VW.d < 700;
 }
@@ -2911,7 +2953,7 @@ function updateCamera(dt) {
   camera.lookAt(_v.set(camX + sx * 0.5, camY, camZ - R * 0.4));
   if (G.camOv) { const c = G.camOv, y = GY(c.x, c.z); camera.position.set(c.x, c.h + y, c.z + c.h * 0.75); camera.lookAt(_v.set(c.x, y, c.z)); }
   const dist = Math.hypot(camH, camD);
-  if (W.real) { scene.fog.near = dist * 1.5; scene.fog.far = dist * (dist > 150 ? 2.8 : 4.6) + 120; setClip(Math.max(0.5, dist * 0.01), scene.fog.far * 1.05); cullProps(dt, camX, camZ - camD * 0.6, scene.fog.far * 0.8); }
+  if (W.real) { scene.fog.near = dist * 1.5; scene.fog.far = dist * (dist > 150 ? 2.8 : 4.6) + 120; setClip(Math.max(0.5, dist * 0.01), scene.fog.far * 1.05); cullProps(dt, camX, camZ - camD * 0.6, scene.fog.far * 0.8, G.playing && !G.camOv ? dist : 0); if (RC) RC.lod(camX, camZ, dist); }
   else { scene.fog.near = dist * 1.6; scene.fog.far = dist * 4.2 + 40; setClip(0.5, 700); }
   if (G.camOv) { scene.fog.near = G.camOv.h * 3; scene.fog.far = G.camOv.h * 8; if (W.real) setClip(Math.max(0.5, G.camOv.h * 0.01), G.camOv.h * 10); }
   if (W.real) RC.scaleLabels(dist);
@@ -2961,7 +3003,7 @@ function frame(now) {
     if (T.dirty) { T.mesh.instanceMatrix.needsUpdate = true; T.dirty = false; }
     if (T.shDirty) { T.shade.needsUpdate = true; T.shDirty = false; }
   }
-  if (shDirty) { shMesh.instanceMatrix.needsUpdate = true; shDirty = false; }
+  if (shDirty && shMesh) { shMesh.instanceMatrix.needsUpdate = true; shDirty = false; }
   if (W.real) RC.flush();
   { const a = !!W.real && (G.playing || G.mode === 'view' || !$('ovStage').hidden); if ($('attr').hidden === a) $('attr').hidden = !a; }
   G.hudT -= dt; if (G.hudT <= 0 && (G.playing || G.resultShown)) { G.hudT = 0.2; updateHud(); }
@@ -2970,7 +3012,18 @@ function frame(now) {
   if (DEBUG) { const t2 = performance.now(); G.tUpd = (G.tUpd || 0) * 0.95 + (t1 - t0) * 0.05; G.tRen = (G.tRen || 0) * 0.95 + (t2 - t1) * 0.05; }
 }
 resize();
-{ const nd = CITIES.map((C, i) => i).filter(i => !CITIES[i].data); buildWorld(nd[(Math.random() * nd.length) | 0] || 0); }
+// the city behind the title: every city is a map data file now, so it is built once its file is loaded (the first city when
+// the tutorial is still to come: it starts there). __kb.ready() waits for it.
+let bootLoad = null;
+{
+  const nd = CITIES.map((C, i) => i).filter(i => !CITIES[i].data);
+  if (nd.length) buildWorld(nd[(Math.random() * nd.length) | 0]);
+  else if (CITIES.length) {
+    const si = SV.tut ? (Math.random() * CITIES.length) | 0 : 0;
+    bootLoad = loadCity(si).then(() => { if (!G.playing && G.mode === 'title' && !W.key && !G.loadTok) { buildWorld(si); player.x = W.start[0]; player.z = W.start[1]; player.gy = GY(player.x, player.z); player.grp.position.set(player.x, player.gy, player.z); camSnap = true; dirty = true; } }, () => {})
+      .then(() => { bootLoad = null; dirty = true; });
+  }
+}
 player.x = 0; player.z = 0; player.grp.position.set(0, 0, 0); setStage(player, true);
 for (const r of rivals) { r.grp.visible = false; r.alive = false; r.label.visible = false; }
 player.label.visible = false;
@@ -3042,7 +3095,7 @@ if (DEBUG) {
     return kbState();
   };
   window.__kb = Object.assign(window.__kb || {}, {
-    ready: () => !!renderer && frames > 0,
+    ready: () => !!renderer && frames > 0 && !bootLoad,
     state: kbState,
     win() {
       if (!G.playing || G.mode === 'online') return false;
