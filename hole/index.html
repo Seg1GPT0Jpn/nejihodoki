@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>あなぼこシティ</title>
 <meta name="theme-color" content="#16202f">
-<meta name="description" content="街にあいた ふしぎな あな。小さいものから のみこんで どんどん大きくなろう。ライバルのあなと 2分間の のみこみ勝負！">
+<meta name="description" content="街にあいた ふしぎな あな。小さいものから のみこんで どんどん大きくなろう。日本の10の街で、CPUや オンラインの ライバルと 2分間の のみこみ勝負！">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="icon" href="../favicon-32.png">
@@ -171,6 +171,24 @@ h1 {
 @media (max-height: 600px) { #stIcon { height: 64px; width: 128px; } #ovStage .rule { display: none; }
   #ovResult .big { font-size: 34px; margin: 0; } #ovResult .stars { font-size: 24px; } #ovResult .res { margin: 4px 0; } #ovResult .res b { font-size: 16px; }
   #ovResult .btn { margin-top: 8px; padding: 10px 12px; } #ovResult .ttl { font-size: 21px; margin-bottom: 2px; } }
+/* online battle */
+.btn.sky { background: linear-gradient(#a6dcff, #5cb8f5); color: #00263f; box-shadow: 0 4px 0 #2a7fb8; }
+.nickin { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line);
+  background: #0003; color: var(--ink); font: 800 16px var(--font-body); text-align: center; -webkit-user-select: text; user-select: text; }
+.onlist { list-style: none; padding: 0; margin: 6px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 13px; font-weight: 800; }
+.onlist li { background: var(--panel); border-radius: 8px; padding: 5px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.olist { list-style: none; padding: 0; margin: 6px 0; text-align: left; font-size: 12.5px; font-weight: 800; }
+.olist li { display: flex; align-items: center; gap: 6px; background: var(--panel); border-radius: 8px; padding: 3px 8px; margin-bottom: 3px; }
+.olist li.me { color: var(--sun); }
+.olist i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.olist span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.olist em { font-style: normal; color: var(--dim); font-variant-numeric: tabular-nums; flex: none; }
+.langrow { flex-wrap: wrap; row-gap: 4px; }
+.langrow select { max-width: 9.5em; }
+@media (max-height: 700px) { #ovTitle .how { display: none; } #ovTitle .btn { padding: 10px 12px; margin-top: 8px; } }
+@media (max-height: 600px) { #ovTitle .btn { padding: 8px 12px; margin-top: 7px; font-size: 15px; } #ovTitle .rule { margin: 3px 0; font-size: 12px; } #ovTitle .langrow { margin-top: 6px; }
+  #ovTitle .logo { margin-bottom: 2px; } #ovTitle .logo small { display: none; } #ovTitle .recs { margin-top: 6px; }
+  #ovResult .olist { font-size: 11.5px; margin: 4px 0; } #ovResult .olist li { padding: 1px 8px; margin-bottom: 2px; } #ovResult .card { padding: 12px 14px; } }
 @keyframes pulse { 50% { opacity: .5; } }
 @media (max-height: 640px) { .how { display: none; } .stat b { font-size: 14px; } .logo { font-size: 28px; } }
 @media (prefers-reduced-motion: reduce) { #toast.show { animation-duration: .01s; } .stat b.warn { animation: none; } }
@@ -210,7 +228,8 @@ h1 {
           <li data-i18n-html>PCは <b>WASD・矢印</b></li>
         </ul>
         <button class="btn coral" id="btnCamp" type="button"><span data-i18n>まちめぐり（10の街）</span> <span class="cstar">★ <span id="tCampStars">0/30</span></span></button>
-        <button class="btn" id="btnMatch" type="button" data-i18n>たいせん（2分）</button>
+        <button class="btn" id="btnMatch" type="button" data-i18n>CPUと たいせん（2分）</button>
+        <button class="btn sky" id="btnOnline" type="button" data-i18n>オンライン対戦（4人まで）</button>
         <button class="btn mint" id="btnSolo" type="button" data-i18n>ひとりで のみこみチャレンジ</button>
         <button class="btn sub" id="btnShop" type="button"><span data-i18n>ショップ</span>　<span class="coins">● <span id="tCoins">0</span></span></button>
         <div class="recs">
@@ -219,7 +238,36 @@ h1 {
           <div><span data-i18n>最大サイズ</span> <b id="rSize">-</b></div>
           <div><span data-i18n>ライバル</span> <b id="rLv">Lv1</b></div>
         </div>
-        <div class="langrow"><span data-i18n>言語</span> <span id="langPickT"></span></div>
+        <div class="langrow"><label for="citySel" data-i18n>街</label> <select id="citySel" title="たいせん・ひとりで遊ぶ街" data-i18n-attr="title"></select> <span data-i18n>言語</span> <span id="langPickT"></span></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="ovOnline" hidden>
+      <div class="card">
+        <h2 class="ttl" data-i18n>オンライン対戦</h2>
+        <p class="small" id="onRec"></p>
+        <form id="onNickForm">
+          <div id="onNick">
+            <label class="rule" for="onNickIn" data-i18n>ニックネーム（1〜12文字）</label>
+            <input id="onNickIn" class="nickin" maxlength="12" autocomplete="nickname">
+            <p class="note" id="onNickNote"></p>
+            <button class="btn sky" type="submit" data-i18n>けってい</button>
+            <button class="btn sub" id="onNickBack" type="button" data-i18n>もどる</button>
+          </div>
+        </form>
+        <div id="onWait" hidden>
+          <p class="goal" id="onStat"></p>
+          <ul class="onlist" id="onList"></ul>
+          <p class="small" id="onSub"></p>
+          <p class="note" data-i18n>ほかの人と 同じ街で 2分間の のみこみ勝負。足りない席は CPU が入ります。</p>
+          <button class="btn sub" id="onCancel" type="button" data-i18n>やめる</button>
+        </div>
+        <div id="onErr" hidden>
+          <p class="goal" data-i18n>オンライン対戦は準備中です</p>
+          <p class="note" id="onErrD"></p>
+          <p class="rule" data-i18n>オフラインのモードは そのまま遊べます。</p>
+          <button class="btn sub" id="onErrBack" type="button" data-i18n>タイトルへ</button>
+        </div>
       </div>
     </div>
 
@@ -262,10 +310,12 @@ h1 {
     <div class="overlay" id="ovResult" hidden>
       <div class="card">
         <h2 class="ttl" id="resTtl">けっか</h2>
+        <div class="small" id="resCity"></div>
         <div class="big" id="resBig">1位</div>
         <div class="stars" id="resStars" hidden></div>
         <div id="resNew" hidden><span class="newrec" data-i18n>ベスト更新！</span></div>
         <div class="small" id="resGoal" hidden></div>
+        <ol class="olist" id="resList" hidden></ol>
         <div class="res">
           <div><span data-i18n>のみこんだ数</span><b id="resEat">0</b></div>
           <div><span data-i18n>最大サイズ</span><b id="resSize">0m</b></div>
@@ -281,6 +331,7 @@ h1 {
     <div class="overlay" id="ovPause" hidden>
       <div class="card">
         <h2 class="ttl" data-i18n>ひとやすみ</h2>
+        <p class="note" id="pauseNote" data-i18n hidden>オンライン対戦中は 止まりません</p>
         <button class="btn" id="btnResume" type="button" data-i18n>つづける</button>
         <button class="btn sub" id="btnQuit" type="button" data-i18n>やめてタイトルへ</button>
         <div class="langrow"><span data-i18n>言語</span> <span id="langPick"></span></div>
@@ -308,7 +359,14 @@ KoboI18n.add({ en: {
   '<b>じぶんより小さい</b>ものだけ おちる': 'Only things <b>smaller than you</b> fall in',
   '大きいあなは <b>小さいあな</b>も のむ': 'Big holes eat <b>small holes</b> too',
   'PCは <b>WASD・矢印</b>': 'PC: <b>WASD / arrows</b>',
-  'たいせん（2分）': 'Battle (2 min)',
+  'CPUと たいせん（2分）': 'Battle vs CPU (2 min)', 'オンライン対戦（4人まで）': 'Online battle (up to 4)', 'オンライン対戦': 'Online battle',
+  '街': 'City', 'ランダム': 'Random', 'たいせん・ひとりで遊ぶ街': 'City for battle and solo', '{city}で スタート！': 'Start in {city}!', '街：{city}': 'City: {city}',
+  'ニックネーム（1〜12文字）': 'Nickname (1–12 characters)', 'けってい': 'OK', 'ニックネームを1文字以上入れてください': 'Please enter at least one character.',
+  'つないでいます…': 'Connecting…', '対戦相手を さがしています…': 'Looking for opponents…', 'あと {n}秒で スタート（足りない席は CPU）': 'Starting in {n}s (empty seats go to CPU)',
+  '対戦相手が 見つかりました！': 'Opponents found!', 'まもなく スタート…': 'Starting soon…', 'やめる': 'Cancel',
+  'ほかの人と 同じ街で 2分間の のみこみ勝負。足りない席は CPU が入ります。': 'A 2-minute swallow battle with other players in the same city. CPU holes fill empty seats.',
+  'オンライン対戦は準備中です': 'Online battle is not available yet', 'オフラインのモードは そのまま遊べます。': 'The offline modes still work as usual.',
+  'オンライン {w}勝 / {p}戦': 'Online: {w} wins / {p} games', 'けっかを 集計中…': 'Counting the results…', 'オンライン対戦中は 止まりません': 'An online battle keeps running',
   'ひとりで のみこみチャレンジ': 'Solo Swallow Challenge',
   'ショップ': 'Shop', 'コイン': 'coins',
   'ベスト順位': 'Best rank', 'ベスト のみこみ率': 'Best eaten %', '最大サイズ': 'Max size', 'ライバル': 'Rivals',
@@ -397,7 +455,11 @@ function loadSave() {
   const cp = d.camp && typeof d.camp === 'object' ? d.camp : {};
   const arr = a => Array.from({ length: 10 }, (_, i) => Array.isArray(a) && Number(a[i]) > 0 ? Number(a[i]) : 0);
   const camp = { open: Math.max(1, Math.min(10, cp.open | 0)), stars: arr(cp.stars).map(v => Math.min(3, v | 0)), best: arr(cp.best).map(v => Math.min(100, +v.toFixed(1))) };
-  return { best, coins: Math.max(0, d.coins | 0), skins, perks: { size: Math.max(0, pk.size | 0), speed: Math.max(0, pk.speed | 0) }, wins: Math.max(0, d.wins | 0), camp };
+  // online: plays / wins / best rank of online battles. city: -1 = random city for battle & solo, else a city index
+  const on = d.online && typeof d.online === 'object' ? d.online : {};
+  const online = { plays: Math.max(0, on.plays | 0), wins: Math.max(0, on.wins | 0), best: Math.max(0, on.best | 0) };
+  const city = Number.isInteger(d.city) && d.city >= 0 && d.city < 10 ? d.city : -1;
+  return { best, coins: Math.max(0, d.coins | 0), skins, perks: { size: Math.max(0, pk.size | 0), speed: Math.max(0, pk.speed | 0) }, wins: Math.max(0, d.wins | 0), camp, online, city };
 }
 let SV = loadSave();
 function save() { store.set(SAVE_KEY, JSON.stringify(SV)); }
@@ -407,16 +469,6 @@ const RADII = [1.0, 1.25, 1.55, 1.9, 2.3, 2.8, 3.4, 4.1, 4.9, 5.8, 6.9, 8.2, 9.7
 const TH = [6, 16, 32, 56, 90, 140, 210, 300, 420, 580, 800, 1100, 1500, 2000, 2700];
 const stageOf = p => { let s = 0; while (s < TH.length && p >= TH[s]) s++; return s; };
 const ROUND = 120;
-const ROADS = [-60, -30, 0, 30, 60];
-const BLK = [-45, -15, 15, 45];
-const KINDS = [
-  ['house', 'park', 'lot', 'biz'],
-  ['biz', 'tower', 'plaza', 'house'],
-  ['house', 'plaza', 'tower', 'park'],
-  ['lot', 'house', 'biz', 'house'],
-];
-const LIM = 63;
-const DX = [1, 0, -1, 0], DZ = [0, 1, 0, -1];
 const SKINS = [
   { id: 'kuro', name: 'ふつう', price: 0, c1: '#f4f6fa', c2: '#f4f6fa' },
   { id: 'sakura', name: 'さくら', price: 60, c1: '#ff8fb8', c2: '#ffd6e6' },
@@ -540,54 +592,6 @@ function setGround(c, gx0, gz0, gw, gh, outerCol) {
   outerMesh = new THREE.Mesh(og, new THREE.MeshBasicMaterial(Object.assign({ color: outerCol }, STENCIL_TEST)));
   outerMesh.position.y = -0.12; outerMesh.renderOrder = -5; scene.add(outerMesh);
 }
-function paintClassicGround() {
-  const N = GROUND_N, k = N / GW, c = document.createElement('canvas'); c.width = c.height = N;
-  const g = c.getContext('2d');
-  const X = v => (v + GW / 2) * k;
-  g.fillStyle = '#93cf6e'; g.fillRect(0, 0, N, N);
-  for (let i = 0; i < 900; i++) { g.fillStyle = i % 2 ? '#88c564' : '#9dd679'; g.fillRect(Math.random() * N, Math.random() * N, 6, 6); }
-  g.fillStyle = '#5c6472'; g.fillRect(X(-64), X(-64), 128 * k, 128 * k);
-  g.strokeStyle = '#f2efe4'; g.lineWidth = 0.25 * k; g.setLineDash([2.2 * k, 2.2 * k]);
-  for (const L of ROADS) {
-    g.beginPath(); g.moveTo(X(L), X(-64)); g.lineTo(X(L), X(64)); g.stroke();
-    g.beginPath(); g.moveTo(X(-64), X(L)); g.lineTo(X(64), X(L)); g.stroke();
-  }
-  g.setLineDash([]);
-  g.fillStyle = '#5c6472';
-  for (const a of ROADS) for (const b of ROADS) g.fillRect(X(a - 4), X(b - 4), 8 * k, 8 * k);
-  g.fillStyle = '#f2efe4';
-  for (const a of ROADS) for (const b of ROADS) {
-    for (let s = -3; s <= 3; s += 1.2) {
-      if (b > -60) g.fillRect(X(a + s - 0.3), X(b - 5.6), 0.6 * k, 1.4 * k);
-      if (b < 60) g.fillRect(X(a + s - 0.3), X(b + 4.2), 0.6 * k, 1.4 * k);
-      if (a > -60) g.fillRect(X(a - 5.6), X(b + s - 0.3), 1.4 * k, 0.6 * k);
-      if (a < 60) g.fillRect(X(a + 4.2), X(b + s - 0.3), 1.4 * k, 0.6 * k);
-    }
-  }
-  KINDS.forEach((row, j) => row.forEach((kind, i) => {
-    const cx = BLK[i], cz = BLK[j];
-    g.fillStyle = '#b9b2a4'; g.fillRect(X(cx - 11), X(cz - 11), 22 * k, 22 * k);
-    g.fillStyle = '#e9dfcb'; g.fillRect(X(cx - 10.8), X(cz - 10.8), 21.6 * k, 21.6 * k);
-    g.strokeStyle = '#d8ccb4'; g.lineWidth = 1;
-    for (let t = -10.8; t < 10.8; t += 1.5) { g.beginPath(); g.moveTo(X(cx + t), X(cz - 10.8)); g.lineTo(X(cx + t), X(cz - 9)); g.moveTo(X(cx + t), X(cz + 9)); g.lineTo(X(cx + t), X(cz + 10.8)); g.moveTo(X(cx - 10.8), X(cz + t)); g.lineTo(X(cx - 9), X(cz + t)); g.moveTo(X(cx + 9), X(cz + t)); g.lineTo(X(cx + 10.8), X(cz + t)); g.stroke(); }
-    const fill = { house: '#a7dc7c', park: '#8fd468', biz: '#d3d7de', tower: '#c9cfd8', plaza: '#efe5cf', lot: '#666e7c' }[kind];
-    g.fillStyle = fill; g.fillRect(X(cx - 9), X(cz - 9), 18 * k, 18 * k);
-    if (kind === 'park') {
-      g.fillStyle = '#e6d6b0'; g.beginPath(); g.arc(X(cx), X(cz), 4.6 * k, 0, 7); g.fill();
-      g.fillRect(X(cx - 0.9), X(cz - 9), 1.8 * k, 18 * k); g.fillRect(X(cx - 9), X(cz - 0.9), 18 * k, 1.8 * k);
-    } else if (kind === 'plaza') {
-      g.strokeStyle = '#ddd0b4'; g.lineWidth = 2;
-      for (let t = -9; t <= 9; t += 1.5) { g.beginPath(); g.moveTo(X(cx + t), X(cz - 9)); g.lineTo(X(cx + t), X(cz + 9)); g.moveTo(X(cx - 9), X(cz + t)); g.lineTo(X(cx + 9), X(cz + t)); g.stroke(); }
-    } else if (kind === 'lot') {
-      g.strokeStyle = '#eef0f4'; g.lineWidth = 0.18 * k;
-      for (let t = -7.5; t <= 7.5; t += 3) { g.beginPath(); g.moveTo(X(cx + t), X(cz - 8.5)); g.lineTo(X(cx + t), X(cz - 2.5)); g.moveTo(X(cx + t), X(cz + 2.5)); g.lineTo(X(cx + t), X(cz + 8.5)); g.stroke(); }
-    } else if (kind === 'house') {
-      g.fillStyle = '#d9cfbd'; g.fillRect(X(cx - 0.8), X(cz - 9), 1.6 * k, 18 * k);
-    }
-  }));
-  return c;
-}
-
 // ---------------------------------------------------------------- object types (merged primitive models)
 const BG = {
   box: new THREE.BoxGeometry(1, 1, 1),
@@ -695,40 +699,17 @@ defType('kiosk', { s: 1.8, h: 3.1, val: 12, rs: 0, sh: [3.6, 3.2], pal: ['#e94b4
   ['box', '#ffd84d', 0, 0, 2.8, 0, 2.0, 0.55, 0.22], ['box', '#cfefff', 0, 0, 1.5, 1.11, 2.2, 0.8, 0.02]] });
 defType('fountain', { s: 2.4, h: 2.0, val: 18, rs: 0, sh: [5.4, 5.4], pal: ['#ffffff'], parts: [
   ['cyl12', '#cfd6de', 0, 0, 0.3, 0, 4.8, 0.6, 4.8], ['cyl12', '#6cc6ff', 0, 0, 0.56, 0, 4.2, 0.1, 4.2], ['cyl', '#cfd6de', 0, 0, 1.0, 0, 0.6, 1.6, 0.6], ['cyl12', '#cfd6de', 0, 0, 1.75, 0, 1.6, 0.18, 1.6], ['sph', '#a8e2ff', 0, 0, 2.0, 0, 0.7, 0.6, 0.7]] });
-defType('car', { s: 2.05, h: 1.5, val: 15, rs: 1, sh: [4.6, 2.3], pal: ['#ff5d5d', '#4d9bff', '#ffd84d', '#f4f4f4', '#3fc28a', '#ff9f43', '#9a7bff', '#555c66'], parts: [
-  ['box', '#ffffff', 1, 0, 0.62, 0, 4.0, 0.72, 1.8], ['box', '#d8f0ff', 0, -0.25, 1.22, 0, 2.2, 0.6, 1.62], ['box', '#ffffff', 1, -0.25, 1.55, 0, 2.0, 0.08, 1.5],
-  ['cyl', '#222222', 0, 1.25, 0.36, 0, 0.72, 1.9, 0.72, R90], ['cyl', '#222222', 0, -1.25, 0.36, 0, 0.72, 1.9, 0.72, R90], ['box', '#fff6c8', 0, 2.0, 0.7, 0, 0.04, 0.22, 1.4]] });
-defType('bus', { s: 4.8, h: 3.4, val: 45, rs: 1, sh: [10.8, 3], pal: ['#ffb340', '#3fc28a', '#4d9bff', '#ff6b6b'], parts: [
-  ['box', '#ffffff', 1, 0, 1.75, 0, 10, 2.8, 2.5], ['box', '#2f3d52', 0, 0.2, 2.3, 0, 9.4, 0.85, 2.54], ['box', '#f2f2f2', 0, 0, 3.2, 0, 9.2, 0.14, 2.2],
-  ['cyl', '#222222', 0, 3.3, 0.45, 0, 0.9, 2.6, 0.9, R90], ['cyl', '#222222', 0, -3.3, 0.45, 0, 0.9, 2.6, 0.9, R90], ['box', '#2f3d52', 0, 5.01, 2.0, 0, 0.04, 1.4, 2.2]] });
-defType('house', { s: 3.7, h: 6.2, val: 40, rs: 0, sh: [7.5, 7.0], pal: ['#d9573f', '#3f6fd9', '#3fa36a', '#8a5ad9', '#e0952f'], parts: [
-  ['box', '#fbf3e4', 0, 0, 1.6, 0, 6, 3.2, 5.5], ['pyr', '#ffffff', 1, 0, 4.4, 0, 7.2, 2.4, 6.6], ['box', '#7a4c2e', 0, 0, 0.95, 2.76, 1.0, 1.9, 0.06],
-  ['box', '#bfe3ff', 0, -1.8, 2.0, 2.76, 1.1, 0.9, 0.06], ['box', '#bfe3ff', 0, 1.8, 2.0, 2.76, 1.1, 0.9, 0.06], ['box', '#bfe3ff', 0, 3.01, 2.0, 0, 0.06, 0.9, 1.4], ['box', '#bfe3ff', 0, -3.01, 2.0, 0, 0.06, 0.9, 1.4], ['box', '#8a8f99', 0, 1.8, 5.0, -1, 0.6, 1.4, 0.6]] });
-function bldParts(w, h, d, bandEvery, crown) {
-  const p = [['box', '#ffffff', 1, 0, h / 2, 0, w, h, d]];
-  for (let y = bandEvery * 0.8; y < h - 1.5; y += bandEvery) p.push(['box', '#34465e', 0, 0, y, 0, w + 0.08, bandEvery * 0.42, d + 0.08]);
-  p.push(['box', '#9aa3ad', 0, 0, h + 0.3, 0, w * 0.7, 0.6, d * 0.7]);
-  p.push(['box', '#d6d9de', 0, w * 0.18, h + 0.9, d * 0.18, w * 0.2, 1.0, d * 0.2]);
-  p.push(['box', '#3a3f48', 0, 0, 1.3, d / 2 + 0.03, w * 0.3, 2.6, 0.08]);
-  if (crown) { p.push(['box', '#ffffff', 1, 0, h + 1.2, 0, w * 0.5, 2.4, d * 0.5]); p.push(['cyl', '#c9ced6', 0, 0, h + 5, 0, 0.3, 6, 0.3]); p.push(['sph', '#ff5d5d', 0, 0, h + 8, 0, 0.6, 0.6, 0.6]); }
-  return p;
-}
-defType('midB', { s: 5.2, h: 18, val: 90, rs: 0, sh: [10, 10], pal: ['#f0c9a6', '#a9c7e8', '#e8e2d2', '#c4e0b8', '#e6b8c8'], parts: bldParts(8, 18, 8, 3.5) });
-defType('bigB', { s: 7.2, h: 28, val: 160, rs: 0, sh: [13.5, 13.5], pal: ['#dfe6ee', '#f1d7b0', '#b9d3f0'], parts: bldParts(11, 28, 11, 3.4) });
-defType('tower', { s: 9.4, h: 44, val: 280, rs: 0, sh: [17, 17], pal: ['#cfe0f2', '#e8e8f0'], parts: bldParts(14, 44, 14, 4, true) });
 // campaign city types and maps (hole/cities.js)
 const HC = window.HOLE_CITIES || { types: {}, cities: [] };
 for (const n in HC.types) defType(n, HC.types[n]);
 const CITIES = HC.cities || [];
 
-// ---------------------------------------------------------------- world (rebuilt per map: classic town or a campaign city)
+// ---------------------------------------------------------------- world (rebuilt per map: one of the campaign cities)
 const objs = [];
 let TOTAL_VAL = 0, ACTIVE = [], shMesh = null, shDirty = true;
-const SPAWNS0 = []; for (const a of ROADS) for (const b of ROADS) SPAWNS0.push([a, b]);
-const CORNERS0 = [[-30, -30], [30, 30], [30, -30], [-30, 30], [0, -60]];
 // grid cell bits: 1 water (holes cannot stand on it), 2 reserved (road / plaza / park: no auto buildings)
-const W = { key: null, classic: true, x0: -LIM, x1: LIM, z0: -LIM, z1: LIM, cx: 0, cz: 0, grid: null, gx0: 0, gz0: 0, gw: 0, gh: 0,
-  spawns: SPAWNS0, start: [-4.5, 4.5], rstarts: CORNERS0, city: null, lmTop: null };
+const W = { key: null, x0: -60, x1: 60, z0: -60, z1: 60, cx: 0, cz: 0, grid: null, gx0: 0, gz0: 0, gw: 0, gh: 0,
+  spawns: [[0, 0]], start: [0, 0], rstarts: [], city: null, lmTop: null };
 function cellAt(x, z) {
   if (!W.grid) return 0;
   const ix = Math.floor(x - W.gx0), iz = Math.floor(z - W.gz0);
@@ -759,70 +740,6 @@ function addObj(tn, x, z, yaw, mv) {
   T.list.push(o); objs.push(o); return o;
 }
 const S4 = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // outward normals of block sides
-function buildClassic() {
-  Object.assign(W, { classic: true, wet: false, x0: -LIM, x1: LIM, z0: -LIM, z1: LIM, cx: 0, cz: 0, grid: null, spawns: SPAWNS0, start: [-4.5, 4.5], rstarts: CORNERS0, city: null });
-  setGround(paintClassicGround(), -GW / 2, -GW / 2, GW, GW, 0x8cc96a);
-  setPalette({ sky: '#a9dcff', hemi: ['#ffffff', '#8796a8', 0.62], sun: ['#fff1dc', 0.5, -0.5, 1, 0.35], night: 0 });
-  KINDS.forEach((row, j) => row.forEach((kind, i) => {
-    const cx = BLK[i], cz = BLK[j];
-    const side = (k, a, d) => [cx + S4[k][0] * d + (-S4[k][1]) * a, cz + S4[k][1] * d + S4[k][0] * a];
-    const sideYaw = k => Math.atan2(-S4[k][1], S4[k][0]);
-    for (let k = 0; k < 4; k++) {
-      for (const a of [-6.5, 6.5]) { const p = side(k, a, 10.3); addObj('lamp', p[0], p[1], sideYaw(k) + Math.PI); }
-      if (k % 2 === 0) { const p = side(k, 3, 10.2); addObj('trash', p[0], p[1], 0); }
-      if (k === 1) { const p = side(k, -2.5, 9.6); addObj('vend', p[0], p[1], sideYaw(k) + R90); }
-      if (k === 3) { const p = side(k, 0, 9.7); addObj('bench', p[0], p[1], sideYaw(k) + R90); }
-      if (k === 0 && rnd() < 0.8) { const p = side(k, -3, 9.6); addObj('bike', p[0], p[1], 0); }
-      if (k === 2) { const p = side(k, -3.2, 10.2); addObj('post', p[0], p[1], 0); }
-    }
-    for (let c = 0; c < 2; c++) { const p = side((rnd() * 4) | 0, (rnd() - 0.5) * 14, 10.4); addObj('cone', p[0], p[1], rnd() * 6); }
-    for (let n = 0; n < 5; n++) addObj('person', cx, cz, 0, { k: 'loop', cx, cz, p: rnd() * 80, dir: rnd() < 0.5 ? 1 : -1, spd: 1.1 + rnd() * 0.6 });
-    const Q = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
-    if (kind === 'house') {
-      Q.forEach(q => addObj('house', cx + q[0] * 4.4, cz + q[1] * 4.6, q[1] < 0 ? Math.PI : 0));
-      addObj('tree', cx, cz - 0.2, 0); addObj('bike', cx + 0.2, cz + 4.6, R90); addObj('trash', cx - 0.3, cz - 7.8, 0); addObj('post', cx + 0.3, cz + 8, 0);
-    } else if (kind === 'park') {
-      addObj('fountain', cx, cz, 0);
-      for (let a = 0; a < 8; a++) { const t = (a + 0.5) * Math.PI / 4; addObj(a % 2 ? 'tree' : 'pine', cx + Math.cos(t) * 6.6, cz + Math.sin(t) * 6.6, rnd() * 6); }
-      for (let a = 0; a < 4; a++) { const t = a * R90; addObj('bench', cx + Math.cos(t) * 3.6, cz + Math.sin(t) * 3.6, -t - R90 + Math.PI); }
-      addObj('kiosk', cx + 6.2, cz + 2.6, -R90); addObj('trash', cx + 2.2, cz + 2.2, 0); addObj('trash', cx - 2.2, cz - 2.2, 0);
-      addObj('lamp', cx - 2.4, cz + 2.4, 0); addObj('lamp', cx + 2.4, cz - 2.4, Math.PI);
-      for (let n = 0; n < 4; n++) addObj('person', cx, cz, 0, { k: 'wander', cx, cz, tx: cx, tz: cz, spd: 0.9 + rnd() * 0.5, r: 7.5 });
-    } else if (kind === 'biz') {
-      Q.forEach(q => addObj('midB', cx + q[0] * 4.5, cz + q[1] * 4.5, (rnd() * 4 | 0) * R90));
-      addObj('vend', cx, cz + 0.2, 0);
-    } else if (kind === 'tower') {
-      addObj('tower', cx, cz, 0);
-      Q.forEach(q => addObj(rnd() < 0.5 ? 'tree' : 'vend', cx + q[0] * 8.1, cz + q[1] * 8.1, 0));
-    } else if (kind === 'plaza') {
-      addObj('bigB', cx - 3, cz - 3, 0);
-      addObj('kiosk', cx + 5.3, cz + 5.6, Math.PI);
-      addObj('bench', cx + 6, cz - 3.5, -R90); addObj('bench', cx - 3.5, cz + 6, 0);
-      addObj('tree', cx + 6.6, cz - 7.2, 0); addObj('tree', cx - 7.2, cz + 6.6, 0); addObj('tree', cx + 1.5, cz + 7.6, 0);
-      addObj('cone', cx + 4, cz + 1.2, 0); addObj('cone', cx + 2.5, cz + 1.2, 0); addObj('trash', cx + 7.5, cz + 0.6, 0);
-      for (let n = 0; n < 3; n++) addObj('person', cx, cz, 0, { k: 'wander', cx: cx + 4.5, cz: cz + 2.5, tx: cx + 4, tz: cz + 3, spd: 0.9 + rnd() * 0.4, r: 3.6 });
-    } else if (kind === 'lot') {
-      for (let t = -6; t <= 6; t += 3) {
-        if (rnd() < 0.8) addObj('car', cx + t, cz - 5.5, R90 * (rnd() < 0.5 ? 1 : -1));
-        if (rnd() < 0.8) addObj('car', cx + t, cz + 5.5, R90 * (rnd() < 0.5 ? 1 : -1));
-      }
-      addObj('cone', cx - 8, cz, 0); addObj('cone', cx + 8, cz, 0); addObj('cone', cx, cz, 0);
-    }
-  }));
-  for (let t = -64; t <= 64; t += 10) {
-    addObj(rnd() < 0.5 ? 'pine' : 'tree', t + 2, -68, 0); addObj(rnd() < 0.5 ? 'pine' : 'tree', t - 2, 68, 0);
-    addObj(rnd() < 0.5 ? 'pine' : 'tree', -68, t + 3, 0); addObj(rnd() < 0.5 ? 'pine' : 'tree', 68, t - 3, 0);
-  }
-  for (let n = 0; n < 24; n++) {
-    const bus = n < 4;
-    const horiz = n % 2 === 0;
-    const lane = 1 + (n >> 1) % 3, seg = (n * 7) % 4;
-    const nx = horiz ? seg : lane, nz = horiz ? lane : seg;
-    const d = horiz ? (n % 4 === 0 ? 0 : 2) : (n % 4 === 1 ? 1 : 3);
-    addObj(bus ? 'bus' : 'car', 0, 0, 0, { k: 'car', nx, nz, d, prog: (n * 13) % 26 + 2, spd: bus ? 5 : 6.5 + (n % 4) * 0.5, ox: 0, oz: 0 });
-  }
-}
-
 // ---- campaign city builder: the city script paints the ground (and a 1px/m mask) and places objects through B
 function mkPath(pts, closed) {
   const q = closed ? pts.concat([pts[0]]) : pts;
@@ -849,7 +766,7 @@ function buildCity(C) {
   g.setTransform(kx, 0, 0, kz, -gx0 * kx, -gz0 * kz);
   const mc = document.createElement('canvas'); mc.width = gw; mc.height = gh;
   const mg = mc.getContext('2d'); mg.setTransform(1, 0, 0, 1, -gx0, -gz0); mg.fillStyle = '#000'; mg.fillRect(gx0, gz0, gw, gh);
-  Object.assign(W, { classic: false, x0, x1, z0, z1, cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, gx0, gz0, gw, gh, grid: new Uint8Array(gw * gh), city: C, spawns: [], start: C.start || [0, 0], rstarts: null });
+  Object.assign(W, { x0, x1, z0, z1, cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, gx0, gz0, gw, gh, grid: new Uint8Array(gw * gh), city: C, spawns: [], start: C.start || [0, 0], rstarts: null });
   const occ = new Uint8Array(gw * gh);
   let maskDirty = true;
   function readMask() {
@@ -996,7 +913,7 @@ function buildCity(C) {
     },
     cars(pts, n, o) {
       o = o || {}; readMask();
-      const P = mkPath(pts, o.close), types = o.types || ['car', 'car', 'car', 'taxi'], two = o.two !== false, mode = o.close ? 'loop' : 'wrap';
+      const P = mkPath(pts, o.close), types = o.types || ['carJ', 'carJ', 'carJ', 'taxi'], two = o.two !== false, mode = o.close ? 'loop' : 'wrap';
       const cnt = two ? Math.ceil(n / 2) : n;
       for (let i = 0; i < n; i++) {
         const dir = two && i % 2 ? -1 : 1, k = two ? i >> 1 : i;
@@ -1068,11 +985,13 @@ function finalizeWorld() {
     T.dirty = true; T.shDirty = false; scene.add(T.mesh); ACTIVE.push(T);
   }
 }
-function buildWorld(key) {
+// si = city index; sd = layout seed (online rooms share one so every client builds the same city, object ids = order)
+function buildWorld(si, sd) {
+  const key = si + ':' + (sd || 0);
   if (W.key === key) return;
   for (const T of TLIST) T.list.length = 0;
-  objs.length = 0; seed = 20240607;
-  if (key === 'classic') buildClassic(); else buildCity(CITIES[key]);
+  objs.length = 0; seed = sd ? 1 + (sd % 2147483640) : 20240607;
+  buildCity(CITIES[si]); W.si = si;
   finalizeWorld(); W.key = key; resetWorld();
 }
 // instanced meshes
@@ -1099,18 +1018,12 @@ function writeObj(o) {
 function setShade(o, v) { if (o.T.shade.array[o.i] !== v) { o.T.shade.array[o.i] = v; o.T.shDirty = true; } }
 
 // ---------------------------------------------------------------- movers
-const opts = [];
+// per-object random stream: walkers pick the same targets on every client of an online match
+function orng(o) { o.rs = (o.rs * 16807) % 2147483647; return (o.rs - 1) / 2147483646; }
 function lerpAngle(a, b, t) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * t; }
 function moveObj(o, dt) {
   const m = o.mv;
-  if (m.k === 'loop') {
-    m.p = (m.p + m.dir * m.spd * dt + 80) % 80;
-    const sd = (m.p / 20) | 0, t = m.p % 20 - 10;
-    let x, z, fx, fz;
-    if (sd === 0) { x = t; z = -10; fx = 1; fz = 0; } else if (sd === 1) { x = 10; z = t; fx = 0; fz = 1; } else if (sd === 2) { x = -t; z = 10; fx = -1; fz = 0; } else { x = -10; z = -t; fx = 0; fz = -1; }
-    o.x = m.cx + x; o.z = m.cz + z;
-    o.yaw = lerpAngle(o.yaw, Math.atan2(-fz * m.dir, fx * m.dir), Math.min(1, dt * 8));
-  } else if (m.k === 'path') {
+  if (m.k === 'path') {
     const P = m.P; let p = m.p + m.spd * dt * m.dir;
     if (m.mode === 'pong') { if (p > P.len) { p = 2 * P.len - p; m.dir = -1; } else if (p < 0) { p = -p; m.dir = 1; } }
     else { p %= P.len; if (p < 0) p += P.len; }
@@ -1126,45 +1039,16 @@ function moveObj(o, dt) {
   } else if (m.k === 'wrect') {
     const dx = m.tx - o.x, dz = m.tz - o.z, d = Math.hypot(dx, dz);
     if (d < 0.3) {
-      for (let k = 0; k < 4; k++) { m.tx = m.x0 + Math.random() * (m.x1 - m.x0); m.tz = m.z0 + Math.random() * (m.z1 - m.z0); if (!isWater(m.tx, m.tz)) break; }
+      for (let k = 0; k < 4; k++) { m.tx = m.x0 + orng(o) * (m.x1 - m.x0); m.tz = m.z0 + orng(o) * (m.z1 - m.z0); if (!isWater(m.tx, m.tz)) break; }
       if (isWater(m.tx, m.tz)) { m.tx = o.x; m.tz = o.z; }
     } else { o.x += dx / d * m.spd * dt; o.z += dz / d * m.spd * dt; o.yaw = lerpAngle(o.yaw, Math.atan2(-dz, dx), Math.min(1, dt * 6)); }
-  } else if (m.k === 'wander') {
-    const dx = m.tx - o.x, dz = m.tz - o.z, d = Math.hypot(dx, dz);
-    if (d < 0.3) { const a = Math.random() * 6.283, r = Math.random() * m.r; m.tx = m.cx + Math.cos(a) * r; m.tz = m.cz + Math.sin(a) * r; }
-    else { o.x += dx / d * m.spd * dt; o.z += dz / d * m.spd * dt; o.yaw = lerpAngle(o.yaw, Math.atan2(-dz, dx), Math.min(1, dt * 6)); }
-  } else if (m.k === 'car') {
-    m.prog += m.spd * dt;
-    if (m.prog >= 30) {
-      m.prog -= 30; m.nx += DX[m.d]; m.nz += DZ[m.d];
-      opts.length = 0;
-      for (let d = 0; d < 4; d++) {
-        if (d === (m.d + 2) % 4) continue;
-        const ax = m.nx + DX[d], az = m.nz + DZ[d];
-        if (ax < 0 || ax > 4 || az < 0 || az > 4) continue;
-        opts.push(d); if (d === m.d) { opts.push(d); opts.push(d); }
-      }
-      m.d = opts.length ? opts[(Math.random() * opts.length) | 0] : (m.d + 2) % 4;
-    }
-    const lx = DZ[m.d] * 2, lz = -DX[m.d] * 2, f = Math.min(1, dt * 5);
-    m.ox += (lx - m.ox) * f; m.oz += (lz - m.oz) * f;
-    o.x = ROADS[m.nx] + DX[m.d] * m.prog + m.ox; o.z = ROADS[m.nz] + DZ[m.d] * m.prog + m.oz;
-    o.yaw = lerpAngle(o.yaw, Math.atan2(-DZ[m.d], DX[m.d]), Math.min(1, dt * 7));
-    return;
   }
   o.y = Math.abs(Math.sin(o.ph += dt * 9)) * 0.09;
 }
-function placeCar(o) {
-  const m = o.mv; m.ox = DZ[m.d] * 2; m.oz = -DX[m.d] * 2;
-  // a car must start on a valid segment
-  if (m.nx + DX[m.d] > 4 || m.nz + DZ[m.d] > 4) m.d = (m.d + 2) % 4;
-  if (m.nx + DX[m.d] < 0 || m.nz + DZ[m.d] < 0) m.d = (m.d + 2) % 4;
-  o.x = ROADS[m.nx] + DX[m.d] * m.prog + m.ox; o.z = ROADS[m.nz] + DZ[m.d] * m.prog + m.oz; o.yaw = Math.atan2(-DZ[m.d], DX[m.d]);
-}
 function resetWorld() {
   for (const o of objs) {
-    o.x = o.hx; o.z = o.hz; o.yaw = o.hyaw; o.y = 0; o.tilt = 0; o.sc = 1; o.st = 0; o.fall = null; o.wob = 0; o.rsT = 0; o.pop = 0;
-    if (o.mv) { Object.assign(o.mv, o.mv0); if (o.mv.k === 'car') placeCar(o); else moveObj(o, 0); }
+    o.x = o.hx; o.z = o.hz; o.yaw = o.hyaw; o.y = 0; o.rs = 1 + o.gi * 7919 % 2147483000; o.tilt = 0; o.sc = 1; o.st = 0; o.fall = null; o.wob = 0; o.rsT = 0; o.pop = 0;
+    if (o.mv) { Object.assign(o.mv, o.mv0); moveObj(o, 0); }
     setShade(o, 1); writeObj(o);
   }
 }
@@ -1216,6 +1100,9 @@ function makeHole(name, color, isPlayer) {
   setHoleColor(h, color);
   holes.push(h); return h;
 }
+function relabel(h, name, color) {
+  h.name = name; const m = h.label.material; if (m.map) m.map.dispose(); m.map = labelTex(name, color); m.needsUpdate = true;
+}
 function setHoleColor(h, color, skin) {
   if (h.rimMat.map) { h.rimMat.map.dispose(); h.rimMat.map = null; }
   if (skin && skin.pat) { h.rimMat.map = new THREE.CanvasTexture(rimTexture(skin)); h.rimMat.color.set(0xffffff); }
@@ -1244,7 +1131,6 @@ function applySkin() {
 }
 applySkin();
 
-const SPAWNS = SPAWNS0;
 function spawnPoint(h) {
   let best = W.spawns[0], bd = -1;
   for (const s of W.spawns) {
@@ -1267,14 +1153,31 @@ function setStage(h, instant) {
 }
 function addPts(h, v) { h.pts += v; setStage(h, false); }
 
-function startRound(mode, si) {
+// battle / solo: the chosen city (if unlocked) or a random one of the 10
+function pickCity() {
+  if (SV.city >= 0 && SV.city < Math.min(CITIES.length, SV.camp.open)) return SV.city;
+  return (Math.random() * CITIES.length) | 0;
+}
+// solo stars per city: the campaign goals, scaled to the 2-minute round
+const soloStars = C => C.stars.map(v => Math.max(3, Math.round(v * ROUND / C.time)));
+function resetNetHoles() {
+  for (let n = 0; n < rivals.length; n++) {
+    const r = rivals[n];
+    if (r.netName) { relabel(r, T(RIVALS[n].name), RIVALS[n].color); setHoleColor(r, RIVALS[n].color); r.skin = null; r.netName = false; }
+  }
+  for (const h of holes) { h.nid = null; h.remote = false; h.isBot = false; h.inMatch = false; h.left = false; h.buf = null; h.net = null; }
+}
+function startRound(mode, si, net) {
   ensureAudio();
-  const C = mode === 'camp' ? CITIES[si] : null;
-  buildWorld(C ? si : 'classic');
-  G.mode = mode; G.stage = C ? si : -1; G.playing = true; G.paused = false; G.t = C ? C.time : ROUND; G.time = 0; G.eatVal = 0; G.resultShown = false; G.lastSec = 99; G.climax = 0;
-  G.diff = C ? C.diff : Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160));
+  if (mode !== 'camp' && mode !== 'online') si = pickCity();
+  const C = CITIES[si], online = mode === 'online';
+  buildWorld(si, online ? net.sd : 0);
+  G.mode = mode; G.stage = mode === 'camp' ? si : -1; G.city = si; G.playing = true; G.paused = false; G.t = mode === 'camp' ? C.time : online ? NET.len || ROUND : ROUND; G.time = 0; G.eatVal = 0; G.resultShown = false; G.lastSec = 99; G.climax = 0;
+  G.diff = mode === 'camp' ? C.diff : online ? 0.5 : Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160));
   resetWorld();
-  const nR = mode === 'match' ? Math.min(5, 3 + Math.floor(SV.wins / 2)) : C ? C.rivals : 0;
+  resetNetHoles();
+  const seats = online ? net.seats : null;
+  const nR = online ? seats.length - 1 : mode === 'match' ? Math.min(5, 3 + Math.floor(SV.wins / 2)) : mode === 'camp' ? C.rivals : 0;
   G.rivN = nR;
   for (const h of holes) { h.alive = false; h.grp.visible = false; h.label.visible = false; }
   const startPts = SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0;
@@ -1282,19 +1185,37 @@ function startRound(mode, si) {
     h.x = x; h.z = z; h.vx = h.vz = 0; h.pts = pts; h.stage = -1; h.alive = true; h.dying = 0; h.deadT = 0; h.inv = 1.5; h.eaten = 0; h.kills = 0;
     h.grp.visible = true; h.label.visible = nR > 0; setStage(h, true); h.maxR = h.R; h.grp.position.set(x, 0, z); h.grp.scale.set(1, 1, 1);
   };
-  setup(player, W.start[0], W.start[1], startPts);
   const corners = W.rstarts;
-  for (let n = 0; n < nR; n++) {
-    const r = rivals[n]; setup(r, corners[n][0], corners[n][1], Math.round(G.diff * TH[1] * (0.5 + n * 0.25)));
-    r.ai.diff = Math.max(0.1, Math.min(1, G.diff + (n - 1) * 0.06)); r.ai.think = 0; r.ai.tobj = null; r.ai.prey = null;
+  if (online) {
+    // seat 0 starts at the city's start, the others at the far spawn points; every client uses the same seats
+    let k = 0;
+    seats.forEach((st, i) => {
+      const sp = i === 0 ? W.start : corners[(i - 1) % corners.length];
+      const h = st.id === NET.uid ? player : rivals[k++];
+      setup(h, sp[0], sp[1], st.id === NET.uid ? startPts : 0);
+      h.nid = st.id; h.inMatch = true; h.isBot = !!st.bot; h.remote = st.id !== NET.uid && !(st.bot && NET.host); h.nick = st.n;
+      if (h !== player) {
+        const col = RIVALS[i % RIVALS.length].color, sk = SKINS.find(x => x.id === st.s);
+        relabel(h, st.n, col); h.netName = true; h.color = col;
+        setHoleColor(h, col, sk && sk.id !== 'kuro' ? sk : null); h.skin = sk && sk.pat ? sk : null;
+        h.buf = []; h.ai.diff = 0.55 + i * 0.05; h.ai.think = 0; h.ai.tobj = null; h.ai.prey = null;
+      }
+    });
+  } else {
+    setup(player, W.start[0], W.start[1], startPts);
+    for (let n = 0; n < nR; n++) {
+      const r = rivals[n]; setup(r, corners[n][0], corners[n][1], Math.round(G.diff * TH[1] * (0.5 + n * 0.25)));
+      r.ai.diff = Math.max(0.1, Math.min(1, G.diff + (n - 1) * 0.06)); r.ai.think = 0; r.ai.tobj = null; r.ai.prey = null;
+    }
   }
   camSnap = true;
   $('rank').hidden = nR === 0;
-  $('hRankL').textContent = mode === 'match' ? T('じゅんい') : T('のみこみ率');
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage'].forEach(id => $(id).hidden = true);
+  $('hRankL').textContent = mode === 'match' || online ? T('じゅんい') : T('のみこみ率');
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline'].forEach(id => $(id).hidden = true);
   $('msg').hidden = true;
   buildRankRows();
-  sfx.start(); toast(mode === 'match' ? T('スタート！') : C ? T(C.name) : T('のみこめ！'));
+  if (!online) { sfx.start(); toast(mode === 'match' ? T('{city}で スタート！', { city: T(C.name) }) : T(C.name)); }
+  else toast(T(C.name));
   updateHud(true);
 }
 
@@ -1355,7 +1276,7 @@ function aiThink(h) {
     if (sc > bs && clearPath(h.x, h.z, o.x, o.z, R * 0.8)) { bs = sc; best = o; }
   }
   if (best) { ai.mode = 'eat'; ai.tobj = best; }
-  else { ai.mode = 'wander'; let p = W.classic ? [(Math.random() - 0.5) * 110, (Math.random() - 0.5) * 110] : randLand();
+  else { ai.mode = 'wander'; let p = randLand();
     for (let k = 0; k < 8 && !clearPath(h.x, h.z, p[0], p[1], 0); k++) p = randLand();
     ai.wx = p[0]; ai.wz = p[1]; }
 }
@@ -1399,7 +1320,7 @@ function swallowCheck(h) {
     if (dx > reach || dx < -reach || dz > reach || dz < -reach) continue;
     const d2 = dx * dx + dz * dz;
     if (s < lim) {
-      if (d2 < R2) { o.st = 1; o.fall = h; o.fx = dx; o.fz = dz; o.vy = 0; o.ft = 0; o.wob = 0; o.tdx = -dx || 0.01; o.tdz = -dz; if (o.T.lm) landmarkFall(o, h); }
+      if (d2 < R2) { o.st = 1; o.fall = h; o.fx = dx; o.fz = dz; o.vy = 0; o.ft = 0; o.wob = 0; o.tdx = -dx || 0.01; o.tdz = -dz; if (o.T.lm) landmarkFall(o, h); if (G.mode === 'online') netClaim(o, h); }
     } else if (d2 < (R + s * 0.35) * (R + s * 0.35) && !o.mv) {
       if (o.wob <= 0) { o.wob = 0.45; o.tdx = -dx || 0.01; o.tdz = -dz; }
     }
@@ -1428,7 +1349,7 @@ function updateFalling(o, dt) {
   if (o.y < -depth || o.ft > 2.6) {
     o.st = 2; o.tilt = 0; o.y = 0; setShade(o, 1);
     if (G.mode === 'match' && T.rs) o.rsT = 18 + Math.random() * 12;
-    if (h.alive || h.dying) {
+    if (G.mode !== 'online' && (h.alive || h.dying)) {
       addPts(h, T.val);
       if (h.isPlayer) {
         h.eaten++; G.eatVal += T.val; sfx.pop(T.s);
@@ -1440,11 +1361,10 @@ function updateFalling(o, dt) {
 }
 function respawnObj(o) {
   for (const h of holes) if (h.alive && Math.hypot(h.x - o.hx, h.z - o.hz) < h.R + o.T.s + 6) { o.rsT = 3; return; }
-  o.st = 0; o.x = o.hx; o.z = o.hz; o.yaw = o.hyaw; o.y = 0; o.tilt = 0; o.sc = 0.01; o.pop = 0.0001;
+  o.st = 0; o.x = o.hx; o.z = o.hz; o.yaw = o.hyaw; o.y = 0; o.rs = 1 + o.gi * 7919 % 2147483000; o.tilt = 0; o.sc = 0.01; o.pop = 0.0001;
   if (o.mv) {
     Object.assign(o.mv, o.mv0);
-    if (o.mv.k === 'car') { const s = SPAWNS[(Math.random() * SPAWNS.length) | 0]; o.mv.nx = ROADS.indexOf(s[0]); o.mv.nz = ROADS.indexOf(s[1]); o.mv.d = (Math.random() * 4) | 0; o.mv.prog = 2; placeCar(o); }
-    else moveObj(o, 0);
+    moveObj(o, 0);
   }
   writeObj(o);
 }
@@ -1467,7 +1387,17 @@ let camSnap = true, camH = 14, camD = 10, camX = 0, camZ = 0, camShake = 0;
 function update(dt) {
   G.time += dt;
   const live = G.playing && !G.paused;
-  if (live) {
+  const online = G.mode === 'online';
+  if (live && online) {
+    // the round runs on the server clock: every client ends at the same moment
+    const left = NET.st0 - sNow();
+    if (left > 0) { const n = Math.ceil(left / 1000); if (n !== G.cd) { G.cd = n; toast(String(n)); sfx.tick(); } return; }
+    if (G.cd) { G.cd = 0; sfx.start(); toast(T('スタート！')); }
+    G.t = NET.len - (sNow() - NET.st0) / 1000;
+    const sec = Math.ceil(G.t);
+    if (sec <= 10 && sec !== G.lastSec && sec > 0) sfx.tick();
+    G.lastSec = sec;
+  } else if (live) {
     G.t -= dt;
     const sec = Math.ceil(G.t);
     if (sec <= 10 && sec !== G.lastSec && sec > 0) sfx.tick();
@@ -1482,6 +1412,7 @@ function update(dt) {
       if (o.wob > 0) { o.wob -= dt; o.tilt = o.wob > 0 ? Math.sin(G.time * 28 + o.ph) * 0.07 * Math.min(1, o.wob * 3) : 0; writeObj(o); }
     } else if (o.st === 1) updateFalling(o, dt);
     else if (o.rsT > 0 && live) { o.rsT -= dt; if (o.rsT <= 0) respawnObj(o); }
+    else if (o.rsAt && live && sNow() >= o.rsAt) { o.rsAt = 0; respawnObj(o); }
   }
   if (!live) return;
   // player input
@@ -1495,7 +1426,8 @@ function update(dt) {
     const sp = holeSpeed(player);
     steer(player, ix * sp, iz * sp, dt);
   }
-  for (const r of rivals) if (r.alive && !G.aiOff) aiMove(r, dt);
+  for (const r of rivals) if (r.alive && !G.aiOff && !r.remote && (!online || r.isBot)) aiMove(r, dt);
+  if (online) for (const h of holes) if (h.remote && h.inMatch) netInterp(h);
   // holes: growth anim, death, respawn
   for (const h of holes) {
     if (!h.grp.visible && h.deadT <= 0) continue;
@@ -1510,15 +1442,16 @@ function update(dt) {
       h.x += (k.x - h.x) * f; h.z += (k.z - h.z) * f; h.grp.position.set(h.x, -0.01, h.z);
       const s = Math.max(0.001, h.dying / 0.45); h.grp.scale.set(s, 1, s);
       if (h.dying <= 0) { h.grp.visible = false; h.label.visible = false; }
-    } else if (h.deadT > 0) {
+    } else if (h.deadT > 0 && !h.remote) {
       h.deadT -= dt;
       if (h.isPlayer) $('msgN').textContent = Math.max(1, Math.ceil(h.deadT));
       if (h.deadT <= 0) respawnHole(h);
     }
     if (h.skin && h.skin.pat) h.rim.rotation.y += dt * 0.6;
   }
-  // hole vs hole
-  for (let a = 0; a < holes.length; a++) {
+  // hole vs hole (online: each client only checks the holes it owns as victims)
+  if (online) netVictims();
+  else for (let a = 0; a < holes.length; a++) {
     const A = holes[a]; if (!A.alive) continue;
     for (let b = 0; b < holes.length; b++) {
       const B = holes[b];
@@ -1527,7 +1460,7 @@ function update(dt) {
       if (d + B.R * 0.9 < A.R) killHole(B, A);
     }
   }
-  for (const h of holes) if (h.alive) swallowCheck(h);
+  for (const h of holes) if (h.alive && !h.remote) swallowCheck(h);
   if (G.t <= 0) endRound();
 }
 function easeBack(t) { const c = 1.70158, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; }
@@ -1537,7 +1470,7 @@ let rankRows = [];
 function buildRankRows() {
   const el = $('rank'); el.textContent = ''; rankRows = [];
   for (const h of holes) {
-    if (!h.grp.visible && !h.alive) continue;
+    if (G.mode === 'online' ? !h.inMatch || h.left : !h.grp.visible && !h.alive) continue;
     const r = document.createElement('div'); r.className = 'r' + (h.isPlayer ? ' me' : '');
     const i = document.createElement('i'); i.style.background = h.isPlayer ? (h.skin && h.skin.c1 || '#fff') : h.color;
     const s = document.createElement('span'); s.textContent = h.name;
@@ -1547,7 +1480,7 @@ function buildRankRows() {
 }
 const sortBuf = [];
 function rankOf(h) {
-  sortBuf.length = 0; for (const o of holes) if (o.alive || o.dying > 0 || o.deadT > 0) sortBuf.push(o);
+  sortBuf.length = 0; for (const o of holes) if (o.alive || o.dying > 0 || o.deadT > 0 || (o.inMatch && !o.left)) sortBuf.push(o);
   sortBuf.sort((a, b) => b.pts - a.pts); return sortBuf.indexOf(h) + 1;
 }
 const hud = { t: '', s: '', e: '', r: '' };
@@ -1558,7 +1491,7 @@ function updateHud(force) {
   $('hTime').classList.toggle('warn', G.playing && t <= 10);
   setText('hSize', 's', (player.R * 2).toFixed(1) + 'm');
   setText('hEat', 'e', String(player.eaten));
-  if (G.mode === 'match') {
+  if (G.mode === 'match' || G.mode === 'online') {
     setText('hRank', 'r', T('{n}位', { n: rankOf(player) }));
     rankOf(player);
     for (let k = 0; k < sortBuf.length; k++) {
@@ -1579,7 +1512,6 @@ function updateHud(force) {
   }
 }
 function soloPct() { return G.eatVal / TOTAL_VAL * 100; }
-const SOLO_STARS = [15, 30, 50];
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 function showMsg(t) { const el = $('msg'); el.innerHTML = ''; el.append(t); const b = document.createElement('b'); b.id = 'msgN'; b.textContent = '3'; el.appendChild(b); el.hidden = false; }
 
@@ -1588,10 +1520,15 @@ function endRound() {
   if (!G.playing) return;
   G.playing = false; G.t = 0; joy.on = false; $('joy').hidden = true; $('msg').hidden = true;
   sfx.end();
+  if (G.mode === 'online') return netEnd();
+  showResult();
+}
+function showResult(online) {
   const maxSize = +(player.maxR * 2).toFixed(1);
   let coins = 0, isNew = false;
   const resStars = $('resStars');
-  $('btnNext').hidden = true;
+  $('btnNext').hidden = true; $('resList').hidden = true;
+  $('resCity').textContent = G.mode === 'camp' ? '' : T('街：{city}', { city: T(CITIES[G.city].name) });
   $('btnToTitle').textContent = G.mode === 'camp' ? T('まちめぐりへ') : T('タイトルへ');
   if (G.mode === 'camp') {
     const si = G.stage, C = CITIES[si], pct = soloPct(), stars = C.stars.filter(v => pct >= v).length;
@@ -1609,6 +1546,25 @@ function endRound() {
     $('resGoal').textContent = stars > 0 ? (si + 1 < CITIES.length ? (firstClear ? T('つぎの街が ひらいた！') : '') : T('ぜんぶの街を めぐった！')) : T('★1は {p}% いじょう', { p: C.stars[0] });
     if (!$('resGoal').textContent) $('resGoal').hidden = true;
     $('btnNext').hidden = !(stars > 0 && si + 1 < CITIES.length);
+  } else if (G.mode === 'online') {
+    // online ranking: everyone still in the room + the CPU seats, by points
+    const list = holes.filter(h => h.inMatch && !h.left).sort((a, b) => b.pts - a.pts);
+    const rank = list.indexOf(player) + 1;
+    coins = [50, 32, 22, 14][rank - 1] + Math.floor(player.pts / 25);
+    SV.online.plays++; if (rank === 1) SV.online.wins++;
+    if (!SV.online.best || rank < SV.online.best) { SV.online.best = rank; isNew = true; }
+    $('resGoal').hidden = false; $('resGoal').textContent = T('オンライン {w}勝 / {p}戦', { w: SV.online.wins, p: SV.online.plays });
+    $('resTtl').textContent = rank === 1 ? T('まちいちばんの あな！') : T('けっか');
+    $('resBig').textContent = T('{n}位', { n: rank });
+    resStars.hidden = true;
+    const ol = $('resList'); ol.textContent = ''; ol.hidden = false;
+    list.forEach((h, i) => {
+      const li = document.createElement('li'); if (h === player) li.className = 'me';
+      const dot = document.createElement('i'); dot.style.background = h === player ? (h.skin && h.skin.c1 || '#fff') : h.color;
+      const nm = document.createElement('span'); nm.textContent = (i + 1) + '. ' + (h === player ? (NET.nick || T('あなた')) + ' (' + T('あなた') + ')' : h.nick + (h.isBot ? ' (CPU)' : ''));
+      const pt = document.createElement('em'); pt.textContent = h.pts + 'pt · ' + (h.R * 2).toFixed(1) + 'm';
+      li.append(dot, nm, pt); ol.appendChild(li);
+    });
   } else if (G.mode === 'match') {
     $('resGoal').hidden = true;
     const rank = rankOf(player);
@@ -1620,7 +1576,8 @@ function endRound() {
     resStars.hidden = true;
   } else {
     $('resGoal').hidden = true;
-    const pct = soloPct(); const stars = SOLO_STARS.filter(v => pct >= v).length;
+    const pct = soloPct(), goal = soloStars(CITIES[G.city]), stars = goal.filter(v => pct >= v).length;
+    $('resGoal').hidden = false; $('resGoal').textContent = '★ ' + goal[0] + '%　★★ ' + goal[1] + '%　★★★ ' + goal[2] + '%';
     coins = stars * 25 + Math.floor(pct / 2) + 5;
     if (pct > SV.best.soloPct) { isNew = true; SV.best.soloPct = +pct.toFixed(1); }
     SV.best.soloStars = Math.max(SV.best.soloStars, stars);
@@ -1640,12 +1597,12 @@ function endRound() {
 }
 function showTitle() {
   G.playing = false; G.mode = 'title'; G.paused = false;
-  ['ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage'].forEach(id => $(id).hidden = true);
+  ['ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline'].forEach(id => $(id).hidden = true);
   $('ovTitle').hidden = false; $('msg').hidden = true; $('rank').hidden = true;
   renderTitle();
 }
 function renderTitle() {
-  $('tCoins').textContent = SV.coins;
+  $('tCoins').textContent = SV.coins; renderCitySel();
   $('btnCamp').hidden = !CITIES.length;
   $('tCampStars').textContent = SV.camp.stars.reduce((a, b) => a + (b || 0), 0) + '/' + CITIES.length * 3;
   $('rRank').textContent = SV.best.matchRank ? T('{n}位', { n: SV.best.matchRank }) : '-';
@@ -1653,10 +1610,16 @@ function renderTitle() {
   $('rSize').textContent = SV.best.maxSize ? SV.best.maxSize + 'm' : '-';
   $('rLv').textContent = 'Lv' + (1 + Math.min(9, Math.floor((Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160)) - 0.22) / 0.078)));
 }
-function pauseGame() { if (!G.playing || G.paused) return; G.paused = true; joy.on = false; $('joy').hidden = true; $('ovPause').hidden = false; }
+function pauseGame() {
+  if (!G.playing || G.paused) return;
+  joy.on = false; $('joy').hidden = true; $('ovPause').hidden = false;
+  // an online match cannot be paused: the menu opens but the round keeps running
+  $('pauseNote').hidden = G.mode !== 'online';
+  if (G.mode !== 'online') G.paused = true;
+}
 function resume() { G.paused = false; $('ovPause').hidden = true; last = performance.now(); }
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { pauseGame(); if (AC && AC.state === 'running') AC.suspend().catch(() => {}); }
+  if (document.hidden) { if (G.mode !== 'online') pauseGame(); if (AC && AC.state === 'running') AC.suspend().catch(() => {}); }
   else if (AC && soundOn) AC.resume().catch(() => {});
 });
 
@@ -1759,14 +1722,401 @@ function renderSound() { $('sndBtn').setAttribute('aria-pressed', soundOn ? 'tru
 $('sndBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('kusoge.sound', soundOn ? '1' : '0'); ensureAudio(); renderSound(); if (soundOn) sfx.pop(0.5); });
 $('pauseBtn').addEventListener('click', () => { if (G.playing) G.paused ? resume() : pauseGame(); });
 $('btnMatch').addEventListener('click', () => startRound('match'));
+$('btnOnline').addEventListener('click', () => onlineOpen());
 $('btnSolo').addEventListener('click', () => startRound('solo'));
 $('btnShop').addEventListener('click', () => { ensureAudio(); $('ovTitle').hidden = true; $('ovShop').hidden = false; renderShop(); });
 $('btnShopBack').addEventListener('click', () => { $('ovShop').hidden = true; $('ovTitle').hidden = false; renderTitle(); });
-$('btnAgain').addEventListener('click', () => startRound(G.mode === 'title' ? 'match' : G.mode, G.stage));
+$('btnAgain').addEventListener('click', () => (G.mode === 'online' ? onlineOpen() : startRound(G.mode === 'title' ? 'match' : G.mode, G.stage)));
 $('btnToTitle').addEventListener('click', () => (G.mode === 'camp' ? openCamp() : showTitle()));
-$('btnResume').addEventListener('click', resume);
-$('btnQuit').addEventListener('click', () => (G.mode === 'camp' ? openCamp() : showTitle()));
+// city choice for battle / solo: random, or one of the unlocked campaign cities
+function renderCitySel() {
+  const sel = $('citySel'); sel.textContent = '';
+  const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+  add(-1, T('ランダム'));
+  CITIES.forEach((C, i) => { if (i < SV.camp.open) add(i, T(C.name)); });
+  sel.value = SV.city >= 0 && SV.city < SV.camp.open ? SV.city : -1;
+}
+$('citySel').addEventListener('change', e => { SV.city = +e.target.value; save(); });
+$('btnResume').addEventListener('click', () => (G.paused ? resume() : ($('ovPause').hidden = true)));
+$('btnQuit').addEventListener('click', () => { if (G.mode === 'online') netLeave(); G.mode === 'camp' ? openCamp() : showTitle(); });
 renderSound();
+
+// ---------------------------------------------------------------- online battle (Firebase Realtime Database)
+// hole/queue/{uid}        = { n: nick, s: skin, t: server ms }  (+ r: room id, m: [uids] once that player formed a room)
+// hole/rooms/{room}       = { at, c: city, sd: seed, h: creator uid, inv: { uid: 1 },
+//                             m: { uid: { n, s, j } }        members (each removes itself on disconnect)
+//                             g: { pl: [uids], b: bots, st } the start signal: seats + start time (server ms)
+//                             p: { id: { x, z, p, a, v, k, e, t, i } }  hole states, ~10/s (bots b1.. written by the host)
+//                             o: { objIndex: { u, t } }      who swallowed which object (transaction: first claim wins)
+//                             k: { push: { v, b, p } }       hole v was swallowed by hole b (reported by v's owner) }
+const FB_SDK = 'https://cdn.jsdelivr.net/npm/firebase@10.12.2/';
+const ON_MAX = 4, ON_WAIT = 15000, CLAIM_WIN = 15000, INTERP = 110;
+const NET = { db: null, uid: null, TS: null, off: 0, gen: 0, phase: 'off', nick: '', q: null, rid: null, rref: null, meta: null, members: {}, host: false,
+  st0: 0, pl: [], timers: [], offs: [], sendT: 0, lastSent: '', lastSentAt: 0, lat: 0, latN: 0, latMax: 0, seenK: {}, connected: false };
+const sNow = () => Date.now() + NET.off;
+const r1 = v => Math.round(v * 10) / 10;
+const cleanNick = n => String(n || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
+const netErr = c => Object.assign(new Error(c), { code: c });
+function loadJs(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(netErr('sdk-load')); document.head.appendChild(s); });
+}
+const authReady = au => new Promise(res => { const un = au.onAuthStateChanged(() => { un(); res(); }); });
+async function netInit() {
+  if (NET.db) return;
+  if (DEBUG && window.__holeFakeNet) { const f = await window.__holeFakeNet(); NET.db = f.db; NET.uid = f.uid; NET.TS = f.TIMESTAMP; return; }
+  const cfg = window.NEJI_FIREBASE;
+  if (!cfg || !cfg.databaseURL) throw netErr('no-config');
+  // common/cloud.js may be loading the same SDK right now (https only): wait for it first
+  if (window.KoboCloud && KoboCloud.ready) { try { await KoboCloud.ready(); } catch (e) {} }
+  if (!window.firebase || !firebase.apps) await loadJs(FB_SDK + 'firebase-app-compat.js');
+  if (!firebase.auth) await loadJs(FB_SDK + 'firebase-auth-compat.js');
+  if (!firebase.database) await loadJs(FB_SDK + 'firebase-database-compat.js');
+  if (!firebase.apps.length) firebase.initializeApp(cfg);
+  let app = firebase.app();
+  await authReady(app.auth());
+  let u = app.auth().currentUser;
+  if (!u || u.isAnonymous) {
+    // not logged in with Google: sign in anonymously on a separate app, so the hub's login state is not touched
+    app = firebase.apps.find(a => a.name === 'hole-online') || firebase.initializeApp(cfg, 'hole-online');
+    await authReady(app.auth());
+    u = app.auth().currentUser || (await app.auth().signInAnonymously()).user;
+  }
+  NET.uid = u.uid; NET.db = app.database(); NET.TS = firebase.database.ServerValue.TIMESTAMP;
+}
+function netConnect() {
+  return new Promise((res, rej) => {
+    const ref = NET.db.ref('.info/connected');
+    const to = setTimeout(() => rej(netErr('timeout')), 10000);
+    if (NET.connListening) { if (NET.connected) { clearTimeout(to); res(); } else NET.onConn = () => { clearTimeout(to); res(); }; return; }
+    NET.connListening = true;
+    ref.on('value', s => {
+      const was = NET.connected; NET.connected = s.val() === true;
+      if (NET.connected) { if (NET.onConn) { const f = NET.onConn; NET.onConn = null; f(); } if (!was) netReconnected(); }
+    });
+    NET.onConn = () => { clearTimeout(to); res(); };
+    NET.db.ref('.info/serverTimeOffset').on('value', s => { NET.off = s.val() || 0; });
+  });
+}
+// after a network drop the server may have run our onDisconnect handlers: put our entries back
+function netReconnected() {
+  if (NET.phase === 'queue' && NET.qref) { NET.qref.onDisconnect().remove(); NET.qref.update({ n: NET.nick, s: SV.skins.sel }); }
+  if ((NET.phase === 'room' || NET.phase === 'play') && NET.rref) {
+    const m = NET.rref.child('m/' + NET.uid);
+    m.onDisconnect().remove(); NET.rref.child('p/' + NET.uid).onDisconnect().remove();
+    m.update({ n: NET.nick, s: SV.skins.sel });
+  }
+}
+function holeById(id) { for (const h of holes) if (h.inMatch && h.nid === id) return h; return null; }
+
+// ---- screens
+function onlineShow(state, o) {
+  o = o || {};
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage'].forEach(id => $(id).hidden = true);
+  $('ovOnline').hidden = false;
+  $('onNick').hidden = state !== 'nick'; $('onWait').hidden = state !== 'wait'; $('onErr').hidden = state !== 'err';
+  $('onRec').textContent = T('オンライン {w}勝 / {p}戦', { w: SV.online.wins, p: SV.online.plays });
+  if (state === 'err') { $('onErrD').textContent = o.detail ? '(' + o.detail + ')' : ''; }
+  if (state === 'nick') { $('onNickIn').value = cleanNick(store.get('kobo.nick')); $('onNickNote').textContent = ''; }
+}
+function onlineStatus(t, names, sub) {
+  $('onStat').textContent = t; $('onSub').textContent = sub || '';
+  const ul = $('onList'); ul.textContent = '';
+  (names || []).forEach(n => { const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
+}
+async function onlineOpen() {
+  ensureAudio();
+  netLeave();
+  G.playing = false; G.mode = 'title'; $('rank').hidden = true; $('msg').hidden = true;
+  const nick = cleanNick(store.get('kobo.nick'));
+  if (!nick) return onlineShow('nick');
+  NET.nick = nick;
+  const gen = ++NET.gen;
+  onlineShow('wait'); onlineStatus(T('つないでいます…'));
+  try { await netInit(); await netConnect(); } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  if (gen !== NET.gen) return;
+  netQueue(gen);
+}
+function onlineFail(e) {
+  console.warn('hole online', e);
+  const gen = NET.gen; netLeave(); NET.gen = gen;
+  onlineShow('err', { detail: (e && (e.code || e.message)) || 'error' });
+}
+$('onNickForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const n = cleanNick($('onNickIn').value);
+  if (!n) { $('onNickNote').textContent = T('ニックネームを1文字以上入れてください'); return; }
+  store.set('kobo.nick', n);
+  if (window.KoboCloud && KoboCloud.setNickname) KoboCloud.setNickname(n).catch(() => {});
+  onlineOpen();
+});
+$('onCancel').addEventListener('click', () => { netLeave(); showTitle(); });
+$('onNickBack').addEventListener('click', showTitle);
+$('onErrBack').addEventListener('click', showTitle);
+
+// ---- listeners / timers that belong to the current online session
+function netOn(ref, ev, f) { ref.on(ev, f, e => { if (NET.phase !== 'off') onlineFail(e); }); NET.offs.push(() => ref.off(ev, f)); }
+function netTimer(f, ms) { const id = setInterval(f, ms); NET.timers.push(id); return id; }
+function netLeave() {
+  NET.gen++;
+  NET.offs.forEach(f => { try { f(); } catch (e) {} }); NET.offs = [];
+  NET.timers.forEach(clearInterval); NET.timers = [];
+  if (NET.qref) { try { NET.qref.onDisconnect().cancel(); NET.qref.remove(); } catch (e) {} NET.qref = null; }
+  if (NET.rref && NET.phase !== 'done') {
+    try {
+      const m = NET.rref.child('m/' + NET.uid), p = NET.rref.child('p/' + NET.uid);
+      m.onDisconnect().cancel(); p.onDisconnect().cancel(); m.remove(); p.remove();
+    } catch (e) {}
+  }
+  NET.rref = null; NET.rid = null; NET.phase = 'off'; NET.host = false; NET.q = null;
+}
+
+// ---- matchmaking through hole/queue
+async function netQueue(gen) {
+  NET.phase = 'queue';
+  NET.qref = NET.db.ref('hole/queue/' + NET.uid);
+  try {
+    await NET.qref.onDisconnect().remove();
+    await NET.qref.set({ n: NET.nick, s: SV.skins.sel, t: NET.TS });
+  } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  if (gen !== NET.gen) return;
+  onlineStatus(T('対戦相手を さがしています…'), [NET.nick]);
+  netOn(NET.db.ref('hole/queue'), 'value', s => { NET.q = s.val() || {}; netQueueEval(); });
+  netTimer(netQueueEval, 400);
+}
+function netQueueEval() {
+  if (NET.phase !== 'queue' || !NET.q) return;
+  const q = NET.q, now = sNow(), me = NET.uid;
+  // someone formed a room with me in it
+  for (const id in q) {
+    const e = q[id];
+    if (e && e.r && Array.isArray(e.m) && e.m.indexOf(me) >= 0 && id !== me && now - (e.t || 0) < 90000) return netJoin(e.r, false);
+  }
+  const open = Object.keys(q).filter(id => { const e = q[id]; return e && !e.r && typeof e.t === 'number' && now - e.t < 120000; })
+    .sort((a, b) => q[a].t - q[b].t || (a < b ? -1 : 1));
+  const my = open.indexOf(me);
+  if (my < 0) return;
+  const g0 = my - my % ON_MAX, grp = open.slice(g0, g0 + ON_MAX);
+  const left = Math.max(0, Math.ceil((q[grp[0]].t + ON_WAIT - now) / 1000));
+  onlineStatus(T('対戦相手を さがしています…'), grp.map(id => cleanNick(q[id].n) + (id === me ? ' (' + T('あなた') + ')' : '')),
+    T('あと {n}秒で スタート（足りない席は CPU）', { n: left }));
+  // the oldest player of each group of 4 forms the room (everyone agrees on the order, so only one does it)
+  if (grp[0] === me && (grp.length >= ON_MAX || now - q[me].t >= ON_WAIT)) netCreate(grp);
+}
+async function netCreate(grp) {
+  NET.phase = 'creating';
+  const gen = NET.gen;
+  const ref = NET.db.ref('hole/rooms').push(), inv = {};
+  grp.forEach(id => inv[id] = 1);
+  try {
+    await ref.set({ at: NET.TS, c: (Math.random() * CITIES.length) | 0, sd: 1 + Math.floor(Math.random() * 2e9), h: NET.uid, inv });
+    if (gen !== NET.gen) { ref.remove(); return; }
+    await NET.qref.update({ r: ref.key, m: grp });
+  } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  if (gen !== NET.gen) return;
+  netJoin(ref.key, true);
+}
+async function netJoin(rid, creator) {
+  const gen = NET.gen;
+  NET.offs.forEach(f => f()); NET.offs = []; NET.timers.forEach(clearInterval); NET.timers = [];
+  NET.phase = 'room'; NET.rid = rid; NET.rref = NET.db.ref('hole/rooms/' + rid); NET.seenK = {};
+  const qref = NET.qref; NET.qref = null;
+  if (qref) { if (creator) setTimeout(() => { qref.onDisconnect().cancel(); qref.remove(); }, 5000); else { qref.onDisconnect().cancel(); qref.remove(); } }
+  try {
+    const meta = (await NET.rref.once('value')).val();
+    if (gen !== NET.gen) return;
+    if (!meta || meta.c == null || meta.g) { NET.rref = null; return onlineOpenRetry(); } // room gone or already started
+    NET.meta = meta; NET.host = meta.h === NET.uid;
+    const m = NET.rref.child('m/' + NET.uid);
+    await m.onDisconnect().remove(); await NET.rref.child('p/' + NET.uid).onDisconnect().remove();
+    await m.set({ n: NET.nick, s: SV.skins.sel, j: NET.TS });
+  } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  if (gen !== NET.gen) return;
+  onlineStatus(T('対戦相手が 見つかりました！'), [], T('まもなく スタート…'));
+  netOn(NET.rref.child('m'), 'value', s => netMembers(s.val() || {}));
+  netOn(NET.rref.child('g'), 'value', s => { const g = s.val(); if (g && NET.phase === 'room') netGo(g); });
+  if (NET.host) netTimer(netHostWait, 250);
+}
+function onlineOpenRetry() { NET.phase = 'off'; setTimeout(() => { if (!$('ovOnline').hidden) onlineOpen(); }, 300); }
+function netHostWait() {
+  if (NET.phase !== 'room' || !NET.host || NET.goSent) return;
+  const m = NET.members, at = NET.meta.at || sNow(), inv = Object.keys(NET.meta.inv || {});
+  const all = inv.every(id => m[id]);
+  if (!(all || sNow() >= at + 4000) || !m[NET.uid]) return;
+  NET.goSent = true;
+  const pl = Object.keys(m).sort((a, b) => (a === NET.uid ? -1 : b === NET.uid ? 1 : (m[a].j || 0) - (m[b].j || 0) || (a < b ? -1 : 1))).slice(0, ON_MAX);
+  const ol = DEBUG && /[?&]olen=(\d+)/.exec(location.search); // test hook: shorter rounds
+  NET.rref.child('g').set({ pl, b: ON_MAX - pl.length, st: Math.round(sNow() + 3500), len: ol ? +ol[1] : ROUND }).catch(onlineFail);
+}
+function netMembers(m) {
+  NET.members = m;
+  if (NET.phase === 'room') {
+    onlineStatus(T('対戦相手が 見つかりました！'), Object.keys(m).map(id => cleanNick(m[id].n) + (id === NET.uid ? ' (' + T('あなた') + ')' : '')), T('まもなく スタート…'));
+    return;
+  }
+  if (NET.phase !== 'play') return;
+  // players who left: their hole disappears; the first remaining seat runs the CPU holes
+  for (const id of NET.pl) {
+    if (m[id] || id === NET.uid) continue;
+    const h = holeById(id);
+    if (h && !h.left) { h.left = true; h.alive = false; h.dying = 0; h.grp.visible = false; h.label.visible = false; buildRankRows(); }
+  }
+  const host = NET.pl.find(id => m[id]);
+  if (host === NET.uid && !NET.host) netBecomeHost();
+}
+function netBecomeHost() {
+  NET.host = true;
+  for (const h of holes) if (h.inMatch && h.isBot) {
+    h.remote = false; h.buf = null; h.ai.think = 0; h.ai.tobj = null; h.ai.prey = null; h.vx = h.vz = 0;
+    if (!h.alive && h.dying <= 0) { h.deadT = 1; h.grp.visible = false; }
+  }
+}
+function netGo(g) {
+  const m = NET.members;
+  if (!Array.isArray(g.pl) || g.pl.indexOf(NET.uid) < 0) { onlineFail(netErr('late')); return; }
+  NET.phase = 'play'; NET.pl = g.pl.slice(); NET.st0 = g.st; NET.len = Math.max(10, Math.min(300, +g.len || ROUND)); NET.lastSent = ''; NET.lastSentAt = 0; NET.lat = 0; NET.latN = 0; NET.latMax = 0; G.cd = 0;
+  const seats = g.pl.map(id => ({ id, n: id === NET.uid ? NET.nick : cleanNick(m[id] && m[id].n) || '?', s: m[id] && m[id].s }));
+  for (let i = 1; i <= (g.b | 0); i++) seats.push({ id: 'b' + i, n: T(RIVALS[(i + 1) % RIVALS.length].name), bot: true });
+  startRound('online', NET.meta.c, { sd: NET.meta.sd, seats });
+  netOn(NET.rref.child('p'), 'child_added', s => netState(s.key, s.val()));
+  netOn(NET.rref.child('p'), 'child_changed', s => netState(s.key, s.val()));
+  netOn(NET.rref.child('p'), 'child_removed', s => { const h = holeById(s.key); if (h && h.remote && !h.isBot && !h.left) { h.left = true; h.alive = false; h.grp.visible = false; h.label.visible = false; buildRankRows(); } });
+  netOn(NET.rref.child('o'), 'child_added', s => netClaimSeen(s.key, s.val()));
+  netOn(NET.rref.child('o'), 'child_changed', s => netClaimSeen(s.key, s.val()));
+  netOn(NET.rref.child('k'), 'child_added', s => netKillSeen(s.key, s.val()));
+  netTimer(netTick, 100);
+  netMembers(m);
+}
+
+// ---- hole states
+function holeState(h) { return { x: r1(h.x), z: r1(h.z), p: h.pts, a: h.alive ? 1 : 0, v: h.inv > 0 ? 1 : 0, k: h.kills, e: h.eaten, i: document.hidden ? 1 : 0 }; }
+function netSend(force) {
+  if (!NET.rref) return;
+  const up = {}; up[NET.uid] = holeState(player);
+  if (NET.host) for (const h of holes) if (h.inMatch && h.isBot) up[h.nid] = holeState(h);
+  const key = JSON.stringify(up), now = performance.now();
+  // send only when something changed (rounded), plus a heartbeat every second
+  if (!force && key === NET.lastSent && now - NET.lastSentAt < 1000) return;
+  NET.lastSent = key; NET.lastSentAt = now;
+  const t = Math.round(sNow());
+  for (const id in up) up[id].t = t;
+  NET.rref.child('p').update(up).catch(() => {});
+}
+function netTick() {
+  if (NET.phase !== 'play') return;
+  const now = performance.now();
+  // a hidden tab gets no animation frames: keep the simulation (and the CPU holes) running here, at a low rate
+  if (document.hidden && G.playing) {
+    let dt = Math.min(3, (now - last) / 1000); last = now;
+    const steps = Math.ceil(dt / 0.05); for (let i = 0; i < steps; i++) update(dt / steps);
+  }
+  if (!G.playing || sNow() < NET.st0) return;
+  if (now - NET.sendT < (document.hidden ? 900 : 95)) return;
+  NET.sendT = now; netSend(false);
+}
+function netState(id, v) {
+  if (!v || id === NET.uid || NET.phase !== 'play') return;
+  const h = holeById(id); if (!h || !h.remote || h.left) return;
+  const t = +v.t || sNow();
+  if (h.net && t <= h.net.t) return;
+  const lat = sNow() - t;
+  if (lat > -500 && lat < 10000) { NET.lat += lat; NET.latN++; NET.latMax = Math.max(NET.latMax, lat); }
+  h.net = { t, x: +v.x || 0, z: +v.z || 0, p: Math.max(0, v.p | 0), a: !!v.a, v: !!v.v, i: !!v.i, rt: performance.now() };
+  h.kills = v.k | 0; h.eaten = v.e | 0; h.inv = v.v ? 0.3 : 0;
+  if (h.net.a && !h.alive && h.dying <= 0) { // respawned
+    h.alive = true; h.grp.visible = true; h.label.visible = true; h.grp.scale.set(1, 1, 1);
+    h.x = h.net.x; h.z = h.net.z; h.buf.length = 0; h.pts = h.net.p; h.stage = -1; setStage(h, true);
+  } else if (!h.net.a && h.alive) { h.alive = false; h.dying = 0.45; h.killer = h.killer && h.killer.alive ? h.killer : h; }
+  if (h.pts !== h.net.p) { h.pts = h.net.p; setStage(h, false); }
+  h.buf.push({ t, x: h.net.x, z: h.net.z }); if (h.buf.length > 20) h.buf.shift();
+}
+// draw remote holes a little in the past, between two received states (extrapolate a moment when one is late)
+function netInterp(h) {
+  const b = h.buf; if (!b || !b.length || !h.alive) return;
+  const rt = sNow() - INTERP;
+  let x, z, i = b.length - 1;
+  while (i > 0 && b[i].t > rt) i--;
+  const a = b[i], c = b[i + 1];
+  if (c) { const k = (rt - a.t) / Math.max(1, c.t - a.t); x = a.x + (c.x - a.x) * k; z = a.z + (c.z - a.z) * k; }
+  else if (i > 0 && rt > a.t) { const p = b[i - 1], k = Math.min(250, rt - a.t) / Math.max(1, a.t - p.t); x = a.x + (a.x - p.x) * k; z = a.z + (a.z - p.z) * k; }
+  else { x = a.x; z = a.z; }
+  h.x = x; h.z = z;
+}
+
+// ---- swallowed objects: first claim wins (transaction), everyone removes the object
+function netClaim(o, h) {
+  const rref = NET.rref, id = h.nid, now = Math.round(sNow());
+  if (!rref || !id) return;
+  rref.child('o/' + o.gi).transaction(cur => {
+    if (cur && typeof cur.t === 'number' && now - cur.t < CLAIM_WIN) return; // already taken: abort
+    return { u: id, t: now };
+  }, (err, ok) => {
+    if (err || !ok || rref !== NET.rref || NET.phase !== 'play') return;
+    const hh = holeById(id); if (!hh || hh.remote) return;
+    addPts(hh, o.T.val);
+    if (hh === player) { player.eaten++; G.eatVal += o.T.val; sfx.pop(o.T.s); if (o.T.s >= 1.8) vibrate(Math.min(70, 12 + o.T.s * 6)); }
+  }, false);
+}
+function netClaimSeen(key, v) {
+  const o = objs[+key]; if (!o || !v || NET.phase !== 'play') return;
+  // small things come back 18-30 s after they were swallowed (same moment on every client)
+  if (o.T.rs) o.rsAt = v.t + 18000 + ((o.gi * 7919 + v.t) % 12000);
+  const h = holeById(v.u);
+  if (h && !h.remote) return; // our own swallow, already falling
+  if (o.st === 0) {
+    if (h && h.alive && h.grp.visible) {
+      let dx = o.x - h.x, dz = o.z - h.z; const d = Math.hypot(dx, dz), mx = h.R * 0.8;
+      if (d > mx) { dx *= mx / d; dz *= mx / d; }
+      o.st = 1; o.fall = h; o.fx = dx; o.fz = dz; o.vy = 0; o.ft = 0; o.wob = 0; o.tdx = -dx || 0.01; o.tdz = -dz;
+    } else { o.st = 2; o.y = 0; o.tilt = 0; setShade(o, 1); writeObj(o); }
+  } else if (o.st === 1 && o.fall && !o.fall.remote && h) o.fall = h; // lost the race: it falls into the winner's hole
+}
+
+// ---- hole vs hole: the victim's owner decides and reports
+function netVictims() {
+  for (const V of holes) {
+    if (!V.inMatch || V.remote || !V.alive || V.inv > 0) continue;
+    for (const A of holes) {
+      if (A === V || !A.inMatch || A.left || !A.alive || !A.grp.visible || A.R <= V.R * 1.1) continue;
+      if (Math.hypot(A.x - V.x, A.z - V.z) + V.R * 0.9 < A.R) { netKill(V, A); break; }
+    }
+  }
+}
+function netKill(V, A) {
+  const bonus = Math.floor(V.pts * 0.4) + 10;
+  if (NET.rref) NET.rref.child('k').push({ v: V.nid, b: A.nid, p: bonus }).catch(() => {});
+  V.alive = false; V.dying = 0.45; V.killer = A; V.deadT = 3;
+  if (V === player) { sfx.eaten(); vibrate(120); showMsg(T('{name}に のまれた！', { name: A.name })); }
+  V.pts = Math.floor(V.pts * 0.5); V.stage = stageOf(V.pts);
+  netSend(true);
+}
+function netKillSeen(key, ev) {
+  if (!ev || NET.seenK[key] || NET.phase !== 'play') return; NET.seenK[key] = 1;
+  const B = holeById(ev.b), V = holeById(ev.v);
+  if (B && !B.remote) {
+    addPts(B, Math.max(0, ev.p | 0)); B.kills++;
+    if (B === player) { sfx.gulp(); vibrate(60); toast(T('{name}を のみこんだ！', { name: V ? V.name : '?' })); }
+  }
+  if (V && V.remote && V.alive) { V.alive = false; V.dying = 0.45; V.killer = B || V; }
+}
+
+// ---- end of the round: final states, a short wait for everyone's last update, then the ranking
+function netEnd() {
+  netSend(true);
+  const rref = NET.rref, gen = NET.gen;
+  showMsg(T('けっかを 集計中…')); $('msgN').textContent = '';
+  setTimeout(() => { if (gen === NET.gen) netSend(true); }, 800); // points from late swallow confirmations
+  setTimeout(() => {
+    if (gen !== NET.gen) return;
+    $('msg').hidden = true; showResult(true);
+    NET.phase = 'done';
+    NET.offs.forEach(f => { try { f(); } catch (e) {} }); NET.offs = []; NET.timers.forEach(clearInterval); NET.timers = [];
+    // leave the room; the seat running the CPU holes deletes the room a little later
+    const host = NET.host;
+    try { const m = rref.child('m/' + NET.uid), p = rref.child('p/' + NET.uid); m.onDisconnect().cancel(); p.onDisconnect().cancel(); if (!host) { m.remove(); p.remove(); } } catch (e) {}
+    if (host) setTimeout(() => rref.remove().catch(() => {}), 6000);
+    NET.rref = null; NET.rid = null; NET.host = false;
+  }, 1800);
+}
 
 // ---------------------------------------------------------------- camera + render loop
 function updateCamera(dt) {
@@ -1776,7 +2126,7 @@ function updateCamera(dt) {
   camH += (th - camH) * f; camD += (td - camD) * f;
   camX += (player.x - camX) * fp; camZ += (player.z - camZ) * fp;
   if (G.mode === 'title') {
-    const big = W.classic ? 1 : 1.35;
+    const big = 1.35;
     camX = W.cx + Math.sin(G.time * 0.08) * 12 * big; camZ = W.cz + Math.cos(G.time * 0.08) * 12 * big; camH = 34 * big; camD = 26 * big;
   }
   camSnap = false;
@@ -1826,7 +2176,7 @@ function frame(now) {
   if (DEBUG) { const t2 = performance.now(); G.tUpd = (G.tUpd || 0) * 0.95 + (t1 - t0) * 0.05; G.tRen = (G.tRen || 0) * 0.95 + (t2 - t1) * 0.05; }
 }
 resize();
-buildWorld('classic');
+buildWorld((Math.random() * CITIES.length) | 0);
 player.x = 0; player.z = 0; player.grp.position.set(0, 0, 0); setStage(player, true);
 for (const r of rivals) { r.grp.visible = false; r.alive = false; r.label.visible = false; }
 player.label.visible = false;
@@ -1837,12 +2187,13 @@ if (DEBUG) {
   window.__hole = {
     G, holes, objs, TYPES, scene, renderer, get shMesh() { return shMesh; }, RADII, TH, get TOTAL_VAL() { return TOTAL_VAL; }, W, CITIES, buildWorld, openCamp, openStage,
     camp(i) { startRound('camp', i); }, active: () => ACTIVE.length, calls: () => renderer.info.render.calls, isWater, get player() { return player; }, get rivals() { return rivals; }, get SV() { return SV; },
-    setTimeScale(v) { G.ts = v; }, start: startRound, endRound, stageOf, fps: () => fpsLog.slice(), pr: () => PR,
+    setTimeScale(v) { G.ts = v; }, start: startRound, endRound, showResult, stageOf, fps: () => fpsLog.slice(), pr: () => PR,
     frames: () => frames,
     teleport(h, x, z) { h.x = x; h.z = z; h.vx = h.vz = 0; h.grp.position.set(x, 0, z); },
     setPts(h, p) { h.pts = p; setStage(h, false); },
     aiOff(b) { G.aiOff = b; },
     aerial(x, z, h) { G.camOv = h ? { x, z, h } : null; },
+    net: NET, sNow,
     bot(b) { G.bot = b; player.ai = { think: 0, mode: 'eat', diff: 1 }; },
   };
 }

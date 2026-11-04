@@ -20,7 +20,7 @@
 | `n59049/` | 59049 | Three.js r128 |
 | `water/` | いろみず分け | Canvas 2D |
 | `parking/` | くるま出し | Three.js r128 |
-| `hole/` | あなぼこシティ | Three.js r128。`?debug` で `window.__hole`（時間の倍率・移動・自動操縦） |
+| `hole/` | あなぼこシティ | Three.js r128。街のデータは `hole/cities.js`（10都市）。オンライン対戦は Firebase Realtime Database（`hole/queue`・`hole/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__hole` |
 | `ranking/` | ランキング（ゲーム別・総合） | |
 | `common/cloud.js` | Googleログインと Firestore 同期・ランキング送信 | `KoboCloud.sync({ key: 'max' or 'newest' })` |
 | `common/i18n.js` | 日本語 / 英語の切り替え | `KoboI18n.add({ en: { '日本語': 'English' } })`、`KoboI18n.t('日本語')` |
@@ -49,5 +49,6 @@
 ## あなぼこシティの既知の課題
 
 - テスト環境（ソフトウェア描画）では 18〜20fps でした。重いときは自動で画質（pixel ratio）を 0.75 まで下げます。
-- 対戦モードは2分。AIのライバル3〜5体。強さは勝った回数で上がります。
-- ソロは2分で街を何％吸い込めるかで、星は 15 / 30 / 50%。
+- 元の汎用の街は削除済み。CPU対戦・ソロは10都市からランダム（タイトルの「街」で選べる）。
+- オンライン対戦は最大4人、15秒で足りない席はCPU。匿名ログイン（Googleログイン中ならそのアカウント）。
+- 全員が同時に切断すると部屋のデータが少し残る（クライアントは部屋の一覧を読めないため）。

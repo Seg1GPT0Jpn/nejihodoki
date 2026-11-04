@@ -156,7 +156,7 @@
     n59049:  () => num(ls.get('kusoge.n59049.best')),
     water:   () => Math.max(0, pick(ls.get('kusoge.water.save'), ['best', 'level']) - 1),
     parking: () => Math.max(0, pick(ls.get('kusoge.parking.save'), ['best', 'level']) - 1),
-    hole:    () => { const v = pick(ls.get('kusoge.hole.save'), ['best']); return v; },
+    hole:    () => { try { const o = JSON.parse(ls.get('kusoge.hole.save') || '{}'); return Number((o.best && o.best.matchPts) || 0) || 0; } catch (e) { return 0; } },
   };
   function num(v) { try { const n = Number(JSON.parse(v)); return isFinite(n) ? n : 0; } catch (e) { const n = Number(v); return isFinite(n) ? n : 0; } }
   function pick(raw, fields) {
