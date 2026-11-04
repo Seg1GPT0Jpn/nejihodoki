@@ -103,7 +103,7 @@ test('flags reflect what the pages have today', () => {
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking', 'games with a daily today');
   eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole', 'realtime games (AUDIT 3)');
-  ok(R.games.every(g => !g.flags.achievements), 'no achievements yet (P3-3)');
+  ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
 test('every localStorage key the pages use is listed in the registry', () => {

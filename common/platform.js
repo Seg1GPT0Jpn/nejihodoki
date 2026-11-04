@@ -8,7 +8,8 @@
 //        JSON つきの localStorage。使えないとき（プライベートモード・容量の上限）は、このページの間だけメモリに置く
 //   KoboPlatform.on(type, f) → off()   / once(type, f) / off(type, f) / emit(type, payload)
 //        イベント：play_start, play_end, best, stage_clear, progress（ゲームから。KoboGame.emit 経由）
-//                  achievement（プラットフォームが出す。P3-1）, played（play_end を記録し終えた）, fav, '*'（全部）
+//                  achievement（achievements.js が出す。P3-3）, xp（XP が増えた・レベルが上がった。P3-1）,
+//                  played（play_end を記録し終えた。{ …, xp: 内訳, event: play_end の中身 }）, fav, '*'（全部）
 //   KoboPlatform.jstDateKey(ms?) → 20261104（日本時間の日付。端末のタイムゾーンと夏時間に左右されない）
 //   KoboPlatform.jstWeekKey(ms?) → 日本時間の月曜0時に切り替わる週の通し番号 / jstParts(ms?) / jstDayStart(key) / addDays(key, n)
 //   KoboPlatform.hash32(str) → 32bit の整数（xmur3） / rng(seed) → 0〜1 の関数（mulberry32。versus.js と同じ列）
@@ -18,6 +19,8 @@
 //   KoboPlatform.stats.get(id) / all() / record(id, delta)       kobo.stats（端末ごと → 合計して返す）
 //   KoboPlatform.plays.today() / pending() / markSent(dateKey, id) / week(key?)   kobo.plays（匿名の回数だけ。端末だけ）
 //   KoboPlatform.daily.get(dateKey?, id?) / record(id, dateKey, { score, cleared })   kobo.daily
+//   KoboPlatform.xp.info() → { total, week, today, lv, into, need, next, rank } / levelInfo(total) / rankFor(lv) / totals(ms?)
+//        forPlay(…)（play_end の中で呼ぶ）/ grantAchievement(id, xp, { retro, t }) / archive() / CFG / RANKS   kobo.xp（P3-1）
 //   KoboPlatform.migrations.add({ id, v, run }) / run() / done(id) / version() / list
 //   KoboPlatform.merge.make(rule) / value(rule, a, b, ctx) / history / fav / daily   マージ関数（cloud.js 用）
 //   KoboPlatform.syncMap({ legacy }) → KoboCloud.sync に渡す { key: 'max' | 'newest' | { merge } }
@@ -306,8 +309,22 @@
   merge.stats = makeMerge({ each: { each: { each: 'max' } } });
   // 取った実績は和集合、時刻は早い方
   merge.ach = makeMerge({ each: 'minPos' });
-  // XP（4.4）：(日, 端末, キー) ごとに大きい方、arch は大きい方。35日より古い分を arch にまとめるのは P3-1
-  merge.xp = makeMerge({ fields: { v: 'max', d: { each: { each: { each: 'max' } } }, arch: 'max' } });
+  // XP（4.4。P3-1）：(日, 端末, キー) ごとに大きい方。ar（端末ごとのまとめ）は to の新しい方。
+  // a / r（実績の XP / さかのぼりの印）はキーごとに大きい方。arch（古い形の数値）は大きい方。
+  // そのあと、ar[端末].to より古い日のその端末の行を消す（まとめに入っているので、二重に数えない）
+  merge.xp = makeMerge({ fields: {
+    v: 'max', d: { each: { each: { each: 'max' } } }, arch: 'max',
+    ar: { each: { groups: [{ keys: ['to', 'xp'], cmp: ['max', 'max'] }] } }, a: { each: 'max' }, r: { each: 'max' },
+  } }, function (v) { return isObj(v) ? xpPruneArchived(v) : v; });
+  function xpPruneArchived(o) {
+    if (!isObj(o.ar) || !isObj(o.d)) return o;
+    Object.keys(o.d).forEach(function (day) {
+      var slots = o.d[day]; if (!isObj(slots)) { delete o.d[day]; return; }
+      Object.keys(o.ar).forEach(function (dv) { if (isObj(o.ar[dv]) && Number(day) < finite(o.ar[dv].to, 0)) delete slots[dv]; });
+      if (!Object.keys(slots).length) delete o.d[day];
+    });
+    return o;
+  }
   merge.profile = makeMerge({ fields: { v: 'max', created: 'minPos' }, rest: 'newest' });
 
   // プラットフォームのキーの同期（SYSTEM_ARCHITECTURE.md 9章）。kobo.dev・kobo.plays などは端末だけ
@@ -512,6 +529,225 @@
     seed: dailySeed,
   };
 
+  // ------------------------------------------------------------------ XP / rank (P3-1, SYSTEM_ARCHITECTURE.md 4章)
+  // kobo.xp = { v:1,
+  //   d:  { YYYYMMDD: { <devId>: { <game>: XP, 'n:<game>': XP のついたプレイの数, 's:<game>': 1（短いプレイが続いた印）,
+  //                                'd:<game>': 50（デイリーを初めてクリア。その挑戦の日付の行に置く） } } },   35日ぶん
+  //   ar: { <devId>: { to: YYYYMMDD, xp } }   その端末が自分の行をまとめた分（to より前の日。端末ごとなので、まとめても二重にならない）
+  //   a:  { <実績の id>: XP }                   取った実績の XP（取った日は kobo.ach の時刻。和集合なので、2台で取っても1回）
+  //   r:  { <実績の id>: 1 }                    さかのぼりで取った実績（通算には入れ、今週の XP には入れない）
+  //   arch: 数値（古い形。読むだけ） }
+  // 1日の XP = Σ_ゲーム min(200, Σ_端末 <game>) を 800 で頭打ち ＋ Σ_ゲーム（どれかの端末に d:<game> があれば 50）
+  // 通算 = Σ ar.xp ＋ Σ 1日の XP ＋ arch ＋ Σ 実績の XP。今週 = 今週の日の XP ＋ 今週取った実績（さかのぼりを除く）
+  var XP = {
+    played: 5, minMs: 20000, perMin: 3, timeMax: 15, clear: 10, clearMax: 3, best: 20, daily: 50,
+    gameCap: 200, dayCap: 800, keepDays: 35, weekCap: 12000, maxLevel: 999,
+    shortWindow: 10, shortLimit: 8,
+    // 同じゲームのその日の何回目か（XP のついたプレイ）で倍率を下げる
+    diminish: [{ upTo: 5, f: 1 }, { upTo: 10, f: 0.5 }, { upTo: Infinity, f: 0.25 }],
+    tierXp: { 1: 10, 2: 25, 3: 50, 4: 100 },
+  };
+  // ランクの名前（Lv の下限）
+  var RANKS = [
+    { lv: 1, ja: '見習い', en: 'Apprentice' }, { lv: 5, ja: '常連', en: 'Regular' }, { lv: 10, ja: '腕きき', en: 'Skilled' },
+    { lv: 20, ja: '職人', en: 'Artisan' }, { lv: 30, ja: '名人', en: 'Expert' }, { lv: 50, ja: '匠', en: 'Master' },
+    { lv: 80, ja: 'ひまつぶしの達人', en: 'Pastime Grandmaster' },
+  ];
+  // レベル L になるのに必要な累計：25L² + 25L − 50（Lv1 = 0、Lv10 = 2,700、Lv30 = 23,200。4.3 の累計に合わせる）。
+  // L → L+1 に必要なのは 50(L + 1)
+  function xpForLevel(L) { L = Math.max(1, Math.floor(L)); return 25 * L * L + 25 * L - 50; }
+  function levelInfo(total) {
+    total = Math.max(0, Math.floor(finite(total, 0)));
+    var L = Math.floor((-1 + Math.sqrt(1 + 4 * (total + 50) / 25)) / 2);
+    L = Math.max(1, Math.min(XP.maxLevel, L));
+    while (L < XP.maxLevel && xpForLevel(L + 1) <= total) L++;
+    while (L > 1 && xpForLevel(L) > total) L--;
+    var base = xpForLevel(L), next = L >= XP.maxLevel ? null : xpForLevel(L + 1);
+    return { lv: L, total: total, into: total - base, need: next == null ? 0 : next - base, next: next };
+  }
+  function rankFor(lv) {
+    var r = RANKS[0];
+    for (var i = 0; i < RANKS.length; i++) if (finite(lv, 1) >= RANKS[i].lv) r = RANKS[i];
+    return { id: 'lv:' + r.lv, lv: r.lv, ja: r.ja, en: r.en };
+  }
+  function xpRaw() {
+    var o = getObj(KEYS.xp);
+    return { v: 1, d: isObj(o.d) ? o.d : {}, ar: isObj(o.ar) ? o.ar : {}, a: isObj(o.a) ? o.a : {}, r: isObj(o.r) ? o.r : {}, arch: finite(o.arch, 0) };
+  }
+  function xpSave(o) {
+    var out = { v: 1, d: o.d, ar: o.ar, a: o.a, r: o.r };
+    if (o.arch) out.arch = o.arch;
+    store.set(KEYS.xp, out);
+  }
+  function slotsOf(o, day) { var s = o.d[String(day)]; return isObj(s) ? s : {}; }
+  // 1日の合計（全端末、上限つき）。parts: { play, daily, byGame }
+  function dayParts(slots) {
+    var byGame = {}, daily = {}, legacy = 0;
+    Object.keys(slots).forEach(function (dv) {
+      var s = slots[dv]; if (!isObj(s)) return;
+      Object.keys(s).forEach(function (k) {
+        var v = Math.max(0, finite(s[k], 0));
+        if (k.indexOf('d:') === 0) daily[k] = Math.max(daily[k] || 0, v);
+        else if (k === '_d' || k === '_a') legacy += v;
+        else if (k.indexOf(':') < 0 && k.charAt(0) !== '_') byGame[k] = (byGame[k] || 0) + v;
+      });
+    });
+    var play = 0;
+    Object.keys(byGame).forEach(function (g) { byGame[g] = Math.min(XP.gameCap, byGame[g]); play += byGame[g]; });
+    play = Math.min(XP.dayCap, play);
+    var dsum = 0; Object.keys(daily).forEach(function (k) { dsum += Math.min(XP.daily, daily[k]); });
+    return { play: play, daily: dsum + legacy, byGame: byGame, total: play + dsum + legacy };
+  }
+  function dayTotal(o, day) { return dayParts(slotsOf(o, day)).total; }
+  function achXpOf(o, id) {
+    var v = finite(o.a[id], 0); if (v > 0) return v;
+    var f = xp.achXp;
+    return typeof f === 'function' ? Math.max(0, finite(f(id), 0)) : 0;
+  }
+  function achTimes() { return getObj(KEYS.ach); }
+  function xpTotals(o, ms) {
+    o = o || xpRaw(); ms = ms == null ? now() : ms;
+    var week = jstWeekKey(ms), today = jstDateKey(ms), total = o.arch, wk = 0, td = { play: 0, daily: 0, ach: 0 };
+    Object.keys(o.ar).forEach(function (dv) { if (isObj(o.ar[dv])) total += Math.max(0, finite(o.ar[dv].xp, 0)); });
+    Object.keys(o.d).forEach(function (day) {
+      if (!isDateKey(day)) return;
+      var p = dayParts(slotsOf(o, day));
+      total += p.total;
+      if (jstWeekKey(jstDayStart(day)) === week) wk += p.total;
+      if (Number(day) === today) { td.play = p.play; td.daily = p.daily; }
+    });
+    var ach = achTimes();
+    Object.keys(ach).forEach(function (id) {
+      var t = finite(ach[id], 0); if (!(t > 0)) return;
+      var x = achXpOf(o, id); total += x;
+      if (!o.r[id] && jstWeekKey(t) === week) wk += x;
+      if (jstDateKey(t) === today) td.ach += x;
+    });
+    return { total: Math.floor(total), week: Math.max(0, Math.min(XP.weekCap, Math.floor(wk))), today: td };
+  }
+  // 35日より古い「自分の端末の行」を ar[自分] にまとめる。
+  // 自分の分 = min(自分だけの合計, その日の合計 − ほかの端末だけの合計の和)。ほかの端末があとで同じ計算をしても、
+  // 合わせてその日の合計を超えない（先にまとめた端末の行は消えるので、あとの端末は自分の分をそのまま取る）
+  function xpArchive(o, ms) {
+    var me = devId(), cut = addDays(jstDateKey(ms == null ? now() : ms), -XP.keepDays), add = 0, changed = false;
+    Object.keys(o.d).forEach(function (day) {
+      if (!(Number(day) < cut)) return;
+      var slots = slotsOf(o, day);
+      if (!isObj(slots[me])) return;
+      var T = dayParts(slots).total, others = 0;
+      Object.keys(slots).forEach(function (dv) { if (dv !== me) { var x = {}; x[dv] = slots[dv]; others += dayParts(x).total; } });
+      var mine = {}; mine[me] = slots[me];
+      add += Math.max(0, Math.min(dayParts(mine).total, T - others));
+      delete slots[me]; changed = true;
+      if (!Object.keys(slots).length) delete o.d[day];
+    });
+    var cur = isObj(o.ar[me]) ? o.ar[me] : { to: 0, xp: 0 };
+    if (changed || finite(cur.to, 0) < cut) {
+      o.ar[me] = { to: Math.max(finite(cur.to, 0), cut), xp: Math.max(0, finite(cur.xp, 0)) + add };
+      changed = true;
+    }
+    xpPruneArchived(o);
+    return changed;
+  }
+  function diminish(n) { for (var i = 0; i < XP.diminish.length; i++) if (n < XP.diminish[i].upTo) return XP.diminish[i].f; return 0; }
+  // 直近 shortWindow 回（そのゲーム）のうち shortLimit 回以上が20秒未満
+  function shortStreak(id) {
+    var a = history.list().filter(function (e) { return e.g === id; }).slice(0, XP.shortWindow);
+    if (a.length < XP.shortLimit) return false;
+    return a.filter(function (e) { return finite(e.d, 0) < XP.minMs; }).length >= XP.shortLimit;
+  }
+  // 1回のプレイの XP の内訳（上限をかける前）。純粋な計算（テスト用に公開）
+  function playParts(inp) {
+    var mode = inp.mode, dur = Math.max(0, finite(inp.durationMs, 0)), clears = Math.max(0, Math.floor(finite(inp.clears, 0)));
+    var out = { played: 0, time: 0, clear: 0, best: 0 };
+    if (mode === 'practice') return out;
+    if (dur >= XP.minMs || clears > 0) out.played = inp.short ? 0 : XP.played;
+    out.time = Math.min(XP.timeMax, Math.floor(dur / 60000) * XP.perMin);
+    if (mode !== 'versus') out.clear = Math.min(XP.clearMax, clears) * XP.clear;
+    if (mode === 'normal' && inp.best) out.best = XP.best;
+    return out;
+  }
+  function xpChanged(info) { emit('xp', info); }
+  // プレイの終わりに呼ぶ（play_end の処理の中）。戻り値 { gained, base, factor, parts, daily, day, capped }
+  function xpForPlay(inp) {
+    var t = finite(inp.t, now()), day = jstDateKey(t), id = inp.game, me = devId();
+    var o = xpRaw(); xpArchive(o, t);
+    var before = xpTotals(o, t);
+    var slots = slotsOf(o, day), mine = isObj(slots[me]) ? slots[me] : {};
+    var res = { game: id, day: day, gained: 0, base: 0, factor: 1, parts: null, daily: 0, capped: false };
+    // 短いプレイが続いた（その日はそのゲームの「遊んだ」を0に）
+    var short = false;
+    Object.keys(slots).forEach(function (dv) { if (isObj(slots[dv]) && slots[dv]['s:' + id]) short = true; });
+    if (!short && inp.mode !== 'practice' && shortStreak(id)) { short = true; mine['s:' + id] = 1; }
+    var parts = playParts({ mode: inp.mode, durationMs: inp.durationMs, clears: inp.clears, best: inp.best, short: short });
+    var base = parts.played + parts.time + parts.clear + parts.best;
+    var n = 0; Object.keys(slots).forEach(function (dv) { if (isObj(slots[dv])) n += Math.max(0, finite(slots[dv]['n:' + id], 0)); });
+    var f = diminish(n), raw = Math.round(base * f);
+    var dp = dayParts(slots), gameUsed = 0;
+    Object.keys(slots).forEach(function (dv) { if (isObj(slots[dv])) gameUsed += Math.max(0, finite(slots[dv][id], 0)); });
+    var room = Math.max(0, Math.min(XP.gameCap - gameUsed, XP.dayCap - dp.play));
+    var gained = Math.max(0, Math.min(raw, room));
+    res.parts = parts; res.base = base; res.factor = f; res.short = short; res.capped = gained < raw;
+    if (base > 0) mine['n:' + id] = Math.max(0, finite(mine['n:' + id], 0)) + 1;
+    if (gained > 0) mine[id] = Math.max(0, finite(mine[id], 0)) + gained;
+    if (base > 0 || short) { slots[me] = mine; o.d[String(day)] = slots; }
+    // デイリーを初めてクリア（1ゲーム1日1回。挑戦の日付が今日か昨日のときだけ。全端末で1回）
+    if (inp.dailyFirst && isDateKey(inp.dateKey)) {
+      var dk = Number(inp.dateKey);
+      if (dk === day || dk === addDays(day, -1)) {
+        var ds = slotsOf(o, dk), seen = false;
+        Object.keys(ds).forEach(function (dv) { if (isObj(ds[dv]) && finite(ds[dv]['d:' + id], 0) > 0) seen = true; });
+        if (!seen) {
+          var m2 = isObj(ds[me]) ? ds[me] : {}; m2['d:' + id] = XP.daily; ds[me] = m2; o.d[String(dk)] = ds;
+          res.daily = XP.daily;
+        }
+      }
+    }
+    res.gained = gained + res.daily;
+    xpSave(o);
+    var after = xpTotals(o, t);
+    finishXp(res, before, after, 'play');
+    return res;
+  }
+  function finishXp(res, before, after, source) {
+    var lb = levelInfo(before.total).lv, la = levelInfo(after.total).lv;
+    res.total = after.total; res.week = after.week; res.lv = la; res.prevLv = lb; res.levelUp = la > lb;
+    res.rank = rankFor(la); res.rankUp = rankFor(la).lv !== rankFor(lb).lv;
+    if (res.gained > 0 || res.levelUp) xpChanged({ source: source, game: res.game || null, id: res.id || null, gained: res.gained,
+      total: res.total, week: res.week, lv: la, prevLv: lb, levelUp: res.levelUp, rank: res.rank, rankUp: res.rankUp });
+  }
+  // 実績の XP を記録する（achievements.js から）。kobo.ach への記録も一緒に行う（すでにあれば何もしない）
+  function grantAchievement(id, xp, opt) {
+    opt = opt || {};
+    if (typeof id !== 'string' || !id) return null;
+    var ach = achTimes();
+    if (finite(ach[id], 0) > 0) return null;
+    var t = Math.round(finite(opt.t, now()));
+    var o = xpRaw(), before = xpTotals(o, t);
+    ach[id] = t; store.set(KEYS.ach, ach);
+    o.a[id] = Math.max(finite(o.a[id], 0), Math.max(0, Math.round(finite(xp, 0))));
+    if (opt.retro) o.r[id] = 1;
+    xpSave(o);
+    var res = { id: id, gained: o.a[id], retro: !!opt.retro, t: t };
+    finishXp(res, before, xpTotals(o, t), 'ach');
+    return res;
+  }
+  var xp = {
+    CFG: XP, RANKS: RANKS,
+    raw: xpRaw, total: function (ms) { return xpTotals(null, ms).total; }, week: function (ms) { return xpTotals(null, ms).week; },
+    totals: function (ms) { return xpTotals(null, ms); },
+    levelInfo: levelInfo, xpForLevel: xpForLevel, rankFor: rankFor, playParts: playParts, dayParts: dayParts,
+    // { total, week, today, lv, into, need, next, rank }
+    info: function (ms) {
+      var t = xpTotals(null, ms), L = levelInfo(t.total);
+      return { total: t.total, week: t.week, today: t.today, lv: L.lv, into: L.into, need: L.need, next: L.next, rank: rankFor(L.lv) };
+    },
+    rankTitle: function (lv, lang) { var r = rankFor(lv); return lang === 'en' ? r.en : r.ja; },
+    forPlay: xpForPlay, grantAchievement: grantAchievement,
+    archive: function (ms) { var o = xpRaw(); if (xpArchive(o, ms)) xpSave(o); return o; },
+    achXp: null, // achievements.js が入れる：id → XP（a に値がないとき）
+  };
+
   // ------------------------------------------------------------------ migrations
   // MIGRATIONS = [{ id, v, run(ctx) }]。終わったものは kobo.migrated = { id: 時刻 } に記録し、1回だけ実行する。
   // run は何度動いても結果が同じになるように書く（途中で止まっても、次に最初からやり直せるように）。古いキーは消さない。
@@ -598,7 +834,7 @@
   };
 
   // ------------------------------------------------------------------ event processing
-  // ゲームのイベントから、履歴・統計・プレイ回数・デイリーを更新する。XP と実績は P3-1、ランキングの送信は rank.js。
+  // ゲームのイベントから、履歴・統計・プレイ回数・デイリー・XP を更新する。実績は achievements.js、ランキングの送信は rank.js。
   // mode: 'versus' は履歴と統計だけ（ランキングとデイリーには入れない）。'practice' は何も記録しない。
   var sessions = {};
   function clampDur(v) { return Math.max(0, Math.min(DAY, Math.round(finite(v, 0)))); }
@@ -628,13 +864,24 @@
     var entry = history.add({ g: p.game, t: start, d: dur, s: score, m: mode, st: p.stage });
     var clearsHere = s ? s.clears : 0;
     stats.record(p.game, { plays: 1, ms: dur, clears: (p.reason === 'clear' && !clearsHere) ? 1 : 0 });
-    var dailyRec = null;
+    var dailyRec = null, dk = null, dailyFirst = false;
     if (mode === 'daily') {
-      var dk = isDateKey(p.dateKey) ? Number(p.dateKey) : (s && s.dateKey) || jstDateKey(start);
+      dk = isDateKey(p.dateKey) ? Number(p.dateKey) : (s && s.dateKey) || jstDateKey(start);
+      var prevDaily = daily.get(dk, p.game), wasCleared = !!(prevDaily && finite(prevDaily.clearedAt, 0) > 0);
       // 'quit' はやめただけ（挑戦の回数には数え、記録には入れない）。'over' と 'clear' は最後まで遊んだ
       dailyRec = daily.record(p.game, dk, { score: score, cleared: p.reason !== 'quit', at: t });
+      dailyFirst = !wasCleared && !!(dailyRec && finite(dailyRec.clearedAt, 0) > 0);
     }
-    emit('played', { game: p.game, mode: mode, entry: entry, daily: dailyRec, best: !!(s && s.best), rankable: rankable(mode) });
+    // XP（P3-1）：遊んだ時間は、ゲームの言う時間と実時間（wallMs）の短い方。ステージのクリアは、このプレイの stage_clear の数
+    var xpRes = null;
+    try {
+      var xdur = dur; if (p.wallMs != null && finite(p.wallMs, -1) >= 0) xdur = Math.min(xdur, clampDur(p.wallMs));
+      var xclears = clearsHere || ((p.reason === 'clear' && mode !== 'versus') ? 1 : 0);
+      if (s && s.mode === 'practice') xclears = 0;
+      xpRes = xpForPlay({ game: p.game, mode: mode, durationMs: xdur, clears: xclears, best: !!(s && s.best) && mode === 'normal',
+        dailyFirst: dailyFirst, dateKey: dk, t: t });
+    } catch (e) { if (root.console) console.warn('KoboPlatform xp', e); }
+    emit('played', { game: p.game, mode: mode, entry: entry, daily: dailyRec, best: !!(s && s.best), rankable: rankable(mode), xp: xpRes, event: p });
   });
 
   // ------------------------------------------------------------------ export
@@ -646,7 +893,7 @@
     daysBetween: daysBetween, isDateKey: isDateKey,
     hash32: hash32, xmur3: xmur3, rng: rng, dailySeed: dailySeed,
     devId: devId,
-    history: history, fav: fav, stats: stats, plays: plays, daily: daily, migrations: migrations,
+    history: history, fav: fav, stats: stats, plays: plays, daily: daily, migrations: migrations, xp: xp,
     merge: merge, syncMap: syncMap, PLATFORM_SYNC: PLATFORM_SYNC,
     rankValue: rankValue, recordValue: recordValue, recordText: recordText,
     game: game, games: games, genres: genres, launch: launch, rankable: rankable, fx: fx, theme: theme,
@@ -657,4 +904,16 @@
 
   // <head> で読まれたとき、画面がちらつかないうちにテーマを当てる
   theme.apply();
+
+  // 実績（common/achievements.js）を、このファイルと同じフォルダから読み込む（ページがまだ読み込んでいないとき）。
+  // window.KOBO_NO_ACH = true のときは読まない。読めなくても（オフラインなど）ほかは今までどおり動く
+  try {
+    var doc = root.document, cur = doc && doc.currentScript;
+    if (doc && !root.KoboAchievements && !root.KOBO_NO_ACH && cur && cur.src && /platform\.js(\?|#|$)/.test(cur.src)) {
+      var sc = doc.createElement('script');
+      sc.src = cur.src.replace(/platform\.js(?=\?|#|$)/, 'achievements.js');
+      sc.async = false;
+      (doc.head || doc.documentElement).appendChild(sc);
+    }
+  } catch (e) {}
 })(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this);

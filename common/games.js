@@ -15,13 +15,15 @@
 //   icon / iconSvg / iconBg          アイコンのファイル（P1-7 で作る）・今のハブのアイコン（SVG そのまま）・その背景色
 //   thumb / thumb2x                  カードのサムネイル（tools/tests/shots.js で作る。P1-7 まではファイルがない）
 //   tech                             '2d' | '3d'（3D は低画質モードの対象）
-//   flags                            ranking / achievements / daily / versus / pause / stages（今そのページにあるものだけ true）
+//   flags                            ranking / achievements / daily / versus / pause / stages（今そのページにあるものだけ true。
+//                                    achievements は platform.js と achievements.js がイベントと保存から判定するので、全ゲーム true）
 //   versus                           'common'（common/versus.js）| 'own'（独自の RTDB 対戦）| null
 //   score                            { unit, fmt, order, cap, maxRate } ランキングの表示と上限
 //   rankSource                       ランキングに送る値の出どころ（KoboPlatform.rankValue が計算する）
 //   record                           ハブのカードに出す自分の記録（KoboPlatform.recordValue / recordText）
 //   keys                             そのゲームが使う localStorage のキーの全部と、その中身の説明
 //   sync                             同期するキーと、マージのしかた（下の「同期のしかた」）
+//   achievements                     ゲームごとの実績の定義（下の ACHIEVEMENTS。P3-3。判定は common/achievements.js）
 //
 // 値の出どころ（rankSource と record）：
 //   { key, paths, agg, offset, min }
@@ -68,7 +70,7 @@
       icon: 'img/icons/neji.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2b3d4b"/><circle cx="37" cy="39" r="21" fill="#00000055"/><circle cx="36" cy="36" r="21" fill="#f2b33d"/><circle cx="36" cy="36" r="21" fill="none" stroke="#7a520f" stroke-width="2"/><g transform="rotate(-20 36 36)" fill="#4a3108"><rect x="22" y="33" width="28" height="6" rx="3"/><rect x="33" y="22" width="6" height="28" rx="3"/></g></svg>', iconBg: '#2b3d4b',
       thumb: 'img/thumbs/neji.webp', thumb2x: 'img/thumbs/neji@2x.webp',
       tech: '3d',
-      flags: { ranking: true, achievements: false, daily: true, versus: true, pause: false, stages: true },
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: true },
       versus: 'common',
       score: { unit: { ja: 'レベル', en: 'levels' }, fmt: { ja: 'LEVEL {n} クリア', en: 'LEVEL {n} cleared' }, order: 'desc', cap: 100000, maxRate: null },
       rankSource: { key: 'nejihodoki3d.maxLevel', paths: null, offset: -1 },
@@ -97,7 +99,7 @@
       icon: 'img/icons/blocks.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b2a1e"/><g stroke="#00000033" stroke-width="1.5"><rect x="10" y="10" width="16" height="16" rx="3" fill="#e5484d"/><rect x="28" y="10" width="16" height="16" rx="3" fill="#e5484d"/><rect x="28" y="28" width="16" height="16" rx="3" fill="#f5c518"/><rect x="46" y="28" width="16" height="16" rx="3" fill="#f5c518"/><rect x="10" y="46" width="16" height="16" rx="3" fill="#3e8ef7"/><rect x="28" y="46" width="16" height="16" rx="3" fill="#3e8ef7"/><rect x="46" y="46" width="16" height="16" rx="3" fill="#3e8ef7"/></g></svg>', iconBg: '#3b2a1e',
       thumb: 'img/thumbs/blocks.webp', thumb2x: 'img/thumbs/blocks@2x.webp',
       tech: '2d',
-      flags: { ranking: true, achievements: false, daily: true, versus: true, pause: false, stages: false },
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
       versus: 'common',
       score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 100000000, maxRate: null },
       rankSource: { key: 'kusoge.blocks.best', paths: null, offset: 0 },
@@ -122,7 +124,7 @@
       icon: 'img/icons/drop.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2a2140"/><g stroke="#ffffff55" stroke-width="1.5"><rect x="12" y="50" width="12" height="12" rx="4" fill="#ff7eb6"/><rect x="24" y="50" width="12" height="12" rx="4" fill="#ff7eb6"/><rect x="36" y="50" width="12" height="12" rx="4" fill="#7ee0ff"/><rect x="48" y="50" width="12" height="12" rx="4" fill="#7ee0ff"/><rect x="24" y="38" width="12" height="12" rx="4" fill="#ffd36e"/><rect x="48" y="38" width="12" height="12" rx="4" fill="#7ee0ff"/><rect x="30" y="10" width="12" height="12" rx="4" fill="#a98bff"/><rect x="30" y="22" width="12" height="12" rx="4" fill="#a98bff"/><rect x="42" y="22" width="12" height="12" rx="4" fill="#a98bff"/></g></svg>', iconBg: '#2a2140',
       thumb: 'img/thumbs/drop.webp', thumb2x: 'img/thumbs/drop@2x.webp',
       tech: '2d',
-      flags: { ranking: true, achievements: false, daily: true, versus: true, pause: true, stages: false },
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: true, stages: false },
       versus: 'common',
       score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 100000000, maxRate: null },
       rankSource: { key: 'kusoge.drop.best', paths: null, offset: 0 },
@@ -146,7 +148,7 @@
       icon: 'img/icons/raft.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#127a86"/><path d="M0 52 q9 -6 18 0 t18 0 t18 0 t18 0 V72 H0z" fill="#0d5f69"/><g fill="#c98b4f" stroke="#7a4f2a" stroke-width="1.5"><rect x="16" y="34" width="40" height="7" rx="2"/><rect x="16" y="42" width="40" height="7" rx="2"/></g><rect x="34" y="12" width="3" height="23" fill="#7a4f2a"/><path d="M37 13 L54 30 H37z" fill="#f4f2ec"/><circle cx="60" cy="14" r="5" fill="#f5c518"/></svg>', iconBg: '#127a86',
       thumb: 'img/thumbs/raft.webp', thumb2x: 'img/thumbs/raft@2x.webp',
       tech: '3d',
-      flags: { ranking: true, achievements: false, daily: false, versus: true, pause: true, stages: false },
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: true, stages: false },
       versus: 'common',
       score: { unit: { ja: '日生存', en: 'days' }, fmt: null, order: 'desc', cap: 100000, maxRate: null },
       rankSource: { key: 'kusoge.raft.best', paths: null, offset: 0 },
@@ -171,7 +173,7 @@
       icon: 'img/icons/gates.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3a4a2a"/><path d="M26 0 H46 L66 72 H6z" fill="#5c6670"/><rect x="10" y="20" width="24" height="16" rx="3" fill="#30a46c"/><text x="22" y="32" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">×2</text><rect x="38" y="20" width="24" height="16" rx="3" fill="#e5484d"/><text x="50" y="32" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">−5</text><g fill="#3e8ef7"><circle cx="30" cy="56" r="4"/><circle cx="38" cy="56" r="4"/><circle cx="34" cy="49" r="4"/><circle cx="42" cy="49" r="4"/><circle cx="26" cy="49" r="4"/></g></svg>', iconBg: '#3a4a2a',
       thumb: 'img/thumbs/gates.webp', thumb2x: 'img/thumbs/gates@2x.webp',
       tech: '3d',
-      flags: { ranking: true, achievements: false, daily: false, versus: true, pause: true, stages: true },
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: true, stages: true },
       versus: 'common',
       score: { unit: { ja: 'ステージ', en: 'stage' }, fmt: { ja: 'STAGE {n}', en: 'STAGE {n}' }, order: 'desc', cap: 100000, maxRate: null },
       rankSource: { key: 'kusoge.gates.save', paths: ['best', 'bestStage'], agg: 'first', offset: 0 },
@@ -203,7 +205,7 @@
       icon: 'img/icons/n59049.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2d2a45"/><g stroke="#ffffff44" stroke-width="1.5"><path d="M36 12 L58 24 L36 36 L14 24z" fill="#8e7cf0"/><path d="M14 24 L36 36 V60 L14 48z" fill="#5b4bc4"/><path d="M58 24 L36 36 V60 L58 48z" fill="#463aa0"/></g><text x="36" y="28" font-size="10" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">243</text><text x="25" y="47" font-size="9" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">27</text><text x="47" y="47" font-size="9" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">9</text></svg>', iconBg: '#2d2a45',
       thumb: 'img/thumbs/n59049.webp', thumb2x: 'img/thumbs/n59049@2x.webp',
       tech: '3d',
-      flags: { ranking: true, achievements: false, daily: true, versus: true, pause: false, stages: false },
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
       versus: 'common',
       score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 1000000000, maxRate: null },
       rankSource: { key: 'kusoge.n59049.best', paths: null, offset: 0 },
@@ -230,7 +232,7 @@
       icon: 'img/icons/water.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#1f3340"/><g stroke="#cfe8f5" stroke-width="2" fill="none"><path d="M14 12 V54 a6 6 0 0 0 12 0 V12"/><path d="M30 12 V54 a6 6 0 0 0 12 0 V12"/><path d="M46 12 V54 a6 6 0 0 0 12 0 V12"/></g><rect x="15" y="40" width="10" height="20" rx="4" fill="#e93d82"/><rect x="15" y="30" width="10" height="10" fill="#30a46c"/><rect x="31" y="44" width="10" height="16" rx="4" fill="#30a46c"/><rect x="47" y="36" width="10" height="24" rx="4" fill="#3e8ef7"/><rect x="47" y="28" width="10" height="8" fill="#e93d82"/></svg>', iconBg: '#1f3340',
       thumb: 'img/thumbs/water.webp', thumb2x: 'img/thumbs/water@2x.webp',
       tech: '2d',
-      flags: { ranking: true, achievements: false, daily: true, versus: true, pause: false, stages: true },
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: true },
       versus: 'common',
       score: { unit: { ja: 'ステージ', en: 'stages' }, fmt: { ja: '{n} ステージ', en: '{n} stages' }, order: 'desc', cap: 100000, maxRate: null },
       rankSource: { key: 'kusoge.water.save', paths: ['best', 'level'], agg: 'first', offset: -1 },
@@ -255,7 +257,7 @@
       icon: 'img/icons/parking.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b4148"/><g stroke="#f4f2ec" stroke-width="1.5" stroke-dasharray="3 3"><path d="M24 8 V64"/><path d="M48 8 V64"/></g><rect x="8" y="12" width="12" height="22" rx="3" fill="#e5484d"/><rect x="28" y="30" width="16" height="12" rx="3" fill="#f5c518"/><rect x="52" y="16" width="12" height="30" rx="3" fill="#3e8ef7"/><rect x="8" y="42" width="34" height="12" rx="3" fill="#30a46c"/><path d="M60 54 l4 6 l-8 0z" fill="#f76b15"/></svg>', iconBg: '#3b4148',
       thumb: 'img/thumbs/parking.webp', thumb2x: 'img/thumbs/parking@2x.webp',
       tech: '3d',
-      flags: { ranking: true, achievements: false, daily: true, versus: true, pause: false, stages: true },
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: true },
       versus: 'common',
       score: { unit: { ja: 'ステージ', en: 'stages' }, fmt: { ja: '{n} ステージ', en: '{n} stages' }, order: 'desc', cap: 100000, maxRate: null },
       rankSource: { key: 'kusoge.parking.save', paths: ['best', 'level'], agg: 'first', offset: -1 },
@@ -280,7 +282,7 @@
       icon: 'img/icons/hole.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#6fae5a"/><rect x="0" y="40" width="72" height="12" fill="#5c6670"/><rect x="8" y="10" width="12" height="18" fill="#e8e2d6"/><rect x="50" y="8" width="14" height="22" fill="#c9a46a"/><circle cx="62" cy="48" r="4" fill="#e5484d"/><ellipse cx="34" cy="50" rx="18" ry="9" fill="#111"/><ellipse cx="34" cy="50" rx="18" ry="9" fill="none" stroke="#f2b33d" stroke-width="2"/><rect x="28" y="38" width="8" height="8" fill="#3e8ef7" transform="rotate(25 32 42)"/></svg>', iconBg: '#6fae5a',
       thumb: 'img/thumbs/hole.webp', thumb2x: 'img/thumbs/hole@2x.webp',
       tech: '3d',
-      flags: { ranking: true, achievements: false, daily: false, versus: true, pause: true, stages: true },
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: true, stages: true },
       versus: 'own',
       score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 1000000, maxRate: null },
       // R10：matchPts は「最高順位を取ったときの点数」で、最高点ではない。最高点は best.maxPts（P2-hole が足す）。
@@ -312,6 +314,98 @@
       },
     },
   ];
+
+  // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
+  // 条件は、そのゲームが今保存している記録（rec）と、今出しているイベント（ev）だけを使う（さかのぼって判定できるように、なるべく rec）。
+  var SCORE_MODES = ['normal', 'daily'];
+  function best(key, gte) { return { any: [{ rec: { key: key }, gte: gte }, { ev: 'play_end', field: 'score', gte: gte, modes: SCORE_MODES }] }; }
+  var STAGES = function (key) { return { key: key, paths: ['best', 'level'], agg: 'first', offset: -1 }; };
+  var ACHIEVEMENTS = {
+    neji: [
+      { id: 'neji.lv10', tier: 1, icon: 'check', title: { ja: 'ネジまわし', en: 'Screwdriver' }, desc: { ja: 'LEVEL 10 をクリア', en: 'Clear LEVEL 10' }, when: { rec: { key: 'nejihodoki3d.maxLevel', offset: -1 }, gte: 10 } },
+      { id: 'neji.lv30', tier: 2, icon: 'check', title: { ja: 'ほどき上手', en: 'Unscrew Pro' }, desc: { ja: 'LEVEL 30 をクリア', en: 'Clear LEVEL 30' }, when: { rec: { key: 'nejihodoki3d.maxLevel', offset: -1 }, gte: 30 } },
+      { id: 'neji.lv50', tier: 3, icon: 'trophy', title: { ja: 'LEVEL 50', en: 'LEVEL 50' }, desc: { ja: 'LEVEL 50 をクリア', en: 'Clear LEVEL 50' }, when: { rec: { key: 'nejihodoki3d.maxLevel', offset: -1 }, gte: 50 } },
+      { id: 'neji.lv100', tier: 4, icon: 'trophy', title: { ja: 'ネジの名人', en: 'Screw Master' }, desc: { ja: 'LEVEL 100 をクリア', en: 'Clear LEVEL 100' }, when: { rec: { key: 'nejihodoki3d.maxLevel', offset: -1 }, gte: 100 }, grantsTitle: { ja: 'ネジの名人', en: 'Screw Master' } },
+      { id: 'neji.stars50', tier: 2, icon: 'star', title: { ja: '星あつめ', en: 'Star Gatherer' }, desc: { ja: '星を合わせて50個', en: 'Earn 50 stars in total' }, when: { rec: { key: 'nejihodoki3d.stars', measure: 'sum' }, gte: 50 } },
+      { id: 'neji.perfect20', tier: 3, icon: 'star', title: { ja: '完ぺきな手順', en: 'Flawless Order' }, desc: { ja: '★3 のレベルを20個', en: 'Get ★3 on 20 levels' }, when: { rec: { key: 'nejihodoki3d.stars', measure: 'countGte', min: 3 }, gte: 20 } },
+      { id: 'neji.daily7', tier: 2, icon: 'star', title: { ja: '毎日ネジ', en: 'Daily Screws' }, desc: { ja: 'ネジほどきのデイリーを7回クリア', en: 'Clear 7 Unscrew 3D dailies' }, when: { any: [{ rec: { key: 'nejihodoki3d.daily', measure: 'countGte', min: 1 }, gte: 7 }, { stat: 'gameDaily', gte: 7 }] } },
+    ],
+    blocks: [
+      { id: 'blocks.s1k', tier: 1, icon: 'star', title: { ja: '千点はめ', en: '1k Fitter' }, desc: { ja: '1回で1,000点', en: 'Score 1,000 in one game' }, when: best('kusoge.blocks.best', 1000) },
+      { id: 'blocks.s10k', tier: 2, icon: 'star', title: { ja: '一万点はめ', en: '10k Fitter' }, desc: { ja: '1回で10,000点', en: 'Score 10,000 in one game' }, when: best('kusoge.blocks.best', 10000) },
+      { id: 'blocks.s50k', tier: 3, icon: 'trophy', title: { ja: '五万点はめ', en: '50k Fitter' }, desc: { ja: '1回で50,000点', en: 'Score 50,000 in one game' }, when: best('kusoge.blocks.best', 50000) },
+      { id: 'blocks.s100k', tier: 4, icon: 'trophy', title: { ja: 'ブロック職人', en: 'Block Artisan' }, desc: { ja: '1回で100,000点', en: 'Score 100,000 in one game' }, when: best('kusoge.blocks.best', 100000), grantsTitle: { ja: 'ブロック職人', en: 'Block Artisan' } },
+      { id: 'blocks.combo5', tier: 2, icon: 'star', title: { ja: '連続消し', en: 'Combo x5' }, desc: { ja: '1回で5連続コンボ', en: 'Reach a 5x combo in one game' }, when: { ev: 'play_end', field: 'stats.maxCombo', gte: 5, modes: SCORE_MODES } },
+      { id: 'blocks.lines50', tier: 2, icon: 'check', title: { ja: '50列そうじ', en: '50 Lines' }, desc: { ja: '1回で50列を消す', en: 'Clear 50 lines in one game' }, when: { ev: 'play_end', field: 'stats.lines', gte: 50, modes: SCORE_MODES } },
+      { id: 'blocks.daily1', tier: 1, icon: 'star', title: { ja: '今日のはめ', en: 'Daily Fit' }, desc: { ja: 'ブロックはめのデイリーをクリア', en: 'Clear a Block Fit daily' }, when: { stat: 'gameDaily', gte: 1 } },
+    ],
+    drop: [
+      { id: 'drop.s5k', tier: 1, icon: 'star', title: { ja: '五千点タワー', en: '5k Tower' }, desc: { ja: '1回で5,000点', en: 'Score 5,000 in one game' }, when: best('kusoge.drop.best', 5000) },
+      { id: 'drop.s30k', tier: 2, icon: 'star', title: { ja: '三万点タワー', en: '30k Tower' }, desc: { ja: '1回で30,000点', en: 'Score 30,000 in one game' }, when: best('kusoge.drop.best', 30000) },
+      { id: 'drop.s100k', tier: 3, icon: 'trophy', title: { ja: '十万点タワー', en: '100k Tower' }, desc: { ja: '1回で100,000点', en: 'Score 100,000 in one game' }, when: best('kusoge.drop.best', 100000), grantsTitle: { ja: '塔の主', en: 'Tower Lord' } },
+      { id: 'drop.lines40', tier: 2, icon: 'check', title: { ja: '40列けし', en: '40 Lines' }, desc: { ja: '1回で40列を消す', en: 'Clear 40 lines in one game' }, when: { ev: 'play_end', field: 'stats.lines', gte: 40, modes: SCORE_MODES } },
+      { id: 'drop.lv10', tier: 2, icon: 'restart', title: { ja: 'スピード10', en: 'Speed 10' }, desc: { ja: '1回でレベル10まで', en: 'Reach level 10 in one game' }, when: { ev: 'play_end', field: 'stats.level', gte: 10, modes: SCORE_MODES } },
+      { id: 'drop.soroi1', tier: 1, icon: 'star', title: { ja: 'いっしょく', en: 'One Color' }, desc: { ja: '1色でそろえた列を消す', en: 'Clear a single-color row' }, when: { ev: 'play_end', field: 'stats.soroi', gte: 1, modes: SCORE_MODES } },
+      { id: 'drop.soroi5', tier: 3, icon: 'trophy', hidden: true, title: { ja: '色の魔術師', en: 'Color Wizard' }, desc: { ja: '1回で1色の列を5回消す', en: 'Clear 5 single-color rows in one game' }, when: { ev: 'play_end', field: 'stats.soroi', gte: 5, modes: SCORE_MODES } },
+      { id: 'drop.daily1', tier: 1, icon: 'star', title: { ja: '今日のタワー', en: 'Daily Tower' }, desc: { ja: 'おちものタワーのデイリーをクリア', en: 'Clear a Drop Tower daily' }, when: { stat: 'gameDaily', gte: 1 } },
+    ],
+    raft: [
+      { id: 'raft.d5', tier: 1, icon: 'check', title: { ja: '5日生きのびる', en: 'Five Days Afloat' }, desc: { ja: '5日生きのびる', en: 'Survive 5 days' }, when: best('kusoge.raft.best', 5) },
+      { id: 'raft.d15', tier: 2, icon: 'check', title: { ja: '漂流の15日', en: 'Fifteen Days Adrift' }, desc: { ja: '15日生きのびる', en: 'Survive 15 days' }, when: best('kusoge.raft.best', 15) },
+      { id: 'raft.d30', tier: 3, icon: 'trophy', title: { ja: '海の暮らし', en: 'Sea Life' }, desc: { ja: '30日生きのびる', en: 'Survive 30 days' }, when: best('kusoge.raft.best', 30) },
+      { id: 'raft.d60', tier: 4, icon: 'trophy', title: { ja: 'いかだの主', en: 'Raft Lord' }, desc: { ja: '60日生きのびる', en: 'Survive 60 days' }, when: best('kusoge.raft.best', 60), grantsTitle: { ja: 'いかだの主', en: 'Raft Lord' } },
+      { id: 'raft.catch50', tier: 1, icon: 'star', title: { ja: '拾いもの名人', en: 'Beachcomber' }, desc: { ja: '1回の航海で漂流物を50個拾う', en: 'Grab 50 pieces of debris in one voyage' }, when: { ev: 'play_end', field: 'stats.caught', gte: 50, modes: ['normal'] } },
+      { id: 'raft.raid3', tier: 2, icon: 'trophy', title: { ja: '海賊よけ', en: 'Pirate Repeller' }, desc: { ja: '1回の航海で海賊を3回撃退', en: 'Repel pirates 3 times in one voyage' }, when: { ev: 'play_end', field: 'stats.raidsWon', gte: 3, modes: ['normal'] } },
+      { id: 'raft.crew5', tier: 2, icon: 'play', title: { ja: 'にぎやかないかだ', en: 'Full Crew' }, desc: { ja: '仲間を5人にする', en: 'Have 5 crew members' }, when: { ev: 'play_end', field: 'stats.crew', gte: 5, modes: ['normal'] } },
+    ],
+    gates: [
+      { id: 'gates.st5', tier: 1, icon: 'check', title: { ja: 'ゲート突破', en: 'Gate Breaker' }, desc: { ja: 'ステージ5をクリア', en: 'Clear stage 5' }, when: { rec: { key: 'kusoge.gates.save', path: 'best' }, gte: 5 } },
+      { id: 'gates.st15', tier: 2, icon: 'check', title: { ja: '前線の兵', en: 'Frontliner' }, desc: { ja: 'ステージ15をクリア', en: 'Clear stage 15' }, when: { rec: { key: 'kusoge.gates.save', path: 'best' }, gte: 15 } },
+      { id: 'gates.st30', tier: 3, icon: 'trophy', title: { ja: '歴戦の隊長', en: 'Veteran Captain' }, desc: { ja: 'ステージ30をクリア', en: 'Clear stage 30' }, when: { rec: { key: 'kusoge.gates.save', path: 'best' }, gte: 30 }, grantsTitle: { ja: '歴戦の隊長', en: 'Veteran Captain' } },
+      { id: 'gates.hq5', tier: 2, icon: 'settings', title: { ja: '司令部をきたえる', en: 'HQ Level 5' }, desc: { ja: '司令部をレベル5にする', en: 'Upgrade the HQ to level 5' }, when: { rec: { key: 'kusoge.gates.save', path: 'bld.hq' }, gte: 5 } },
+      { id: 'gates.hero10', tier: 2, icon: 'star', title: { ja: '頼れるヒーロー', en: 'Trusted Hero' }, desc: { ja: 'ヒーローをレベル10にする', en: 'Raise a hero to level 10' }, when: { rec: { key: 'kusoge.gates.save', path: 'heroes', each: 'lv', measure: 'max' }, gte: 10 } },
+      { id: 'gates.star1', tier: 2, icon: 'star', title: { ja: '星の昇格', en: 'Star Promotion' }, desc: { ja: 'ヒーローの星を上げる', en: 'Promote a hero to 1 star' }, when: { rec: { key: 'kusoge.gates.save', path: 'heroes', each: 'star', measure: 'max' }, gte: 1 } },
+      { id: 'gates.runs50', tier: 1, icon: 'play', title: { ja: '出撃50回', en: '50 Sorties' }, desc: { ja: '50回出撃する', en: 'Go on 50 runs' }, when: { rec: { key: 'kusoge.gates.save', path: 'runs' }, gte: 50 } },
+    ],
+    n59049: [
+      { id: 'n59049.s10k', tier: 1, icon: 'star', title: { ja: '一万点の立体', en: '10k Cube' }, desc: { ja: '1回で10,000点', en: 'Score 10,000 in one game' }, when: best('kusoge.n59049.best', 10000) },
+      { id: 'n59049.s100k', tier: 2, icon: 'star', title: { ja: '十万点の立体', en: '100k Cube' }, desc: { ja: '1回で100,000点', en: 'Score 100,000 in one game' }, when: best('kusoge.n59049.best', 100000) },
+      { id: 'n59049.s1m', tier: 3, icon: 'trophy', title: { ja: '百万点の立体', en: 'Million Cube' }, desc: { ja: '1回で1,000,000点', en: 'Score 1,000,000 in one game' }, when: best('kusoge.n59049.best', 1000000) },
+      { id: 'n59049.t243', tier: 1, icon: 'check', title: { ja: '243', en: '243' }, desc: { ja: '243 を作る', en: 'Make a 243' }, when: { rec: { key: 'kusoge.n59049.bestTile' }, gte: 243 } },
+      { id: 'n59049.t2187', tier: 2, icon: 'check', title: { ja: '2187', en: '2187' }, desc: { ja: '2187 を作る', en: 'Make a 2187' }, when: { rec: { key: 'kusoge.n59049.bestTile' }, gte: 2187 } },
+      { id: 'n59049.t6561', tier: 3, icon: 'trophy', title: { ja: '6561', en: '6561' }, desc: { ja: '6561 を作る', en: 'Make a 6561' }, when: { rec: { key: 'kusoge.n59049.bestTile' }, gte: 6561 } },
+      { id: 'n59049.t59049', tier: 4, icon: 'trophy', title: { ja: '59049', en: '59049' }, desc: { ja: '59049 を作る', en: 'Make a 59049' }, when: { any: [{ rec: { key: 'kusoge.n59049.bestTile' }, gte: 59049 }, { ev: 'progress', key: 'tile59049', gte: 1 }] }, grantsTitle: { ja: '三の十乗', en: 'Three to the Tenth' } },
+    ],
+    water: [
+      { id: 'water.st10', tier: 1, icon: 'check', title: { ja: '色水みならい', en: 'Pourer' }, desc: { ja: '10ステージをクリア', en: 'Clear 10 stages' }, when: { rec: STAGES('kusoge.water.save'), gte: 10 } },
+      { id: 'water.st50', tier: 2, icon: 'check', title: { ja: '注ぎ上手', en: 'Steady Hand' }, desc: { ja: '50ステージをクリア', en: 'Clear 50 stages' }, when: { rec: STAGES('kusoge.water.save'), gte: 50 } },
+      { id: 'water.st100', tier: 3, icon: 'trophy', title: { ja: '百の試験管', en: 'Hundred Tubes' }, desc: { ja: '100ステージをクリア', en: 'Clear 100 stages' }, when: { rec: STAGES('kusoge.water.save'), gte: 100 } },
+      { id: 'water.st200', tier: 4, icon: 'trophy', title: { ja: '色水の名人', en: 'Sort Master' }, desc: { ja: '200ステージをクリア', en: 'Clear 200 stages' }, when: { rec: STAGES('kusoge.water.save'), gte: 200 }, grantsTitle: { ja: '色水の名人', en: 'Sort Master' } },
+      { id: 'water.star3', tier: 1, icon: 'star', title: { ja: 'むだなし', en: 'No Waste' }, desc: { ja: '★3 でクリア', en: 'Clear a stage with ★3' }, when: { any: [{ ev: 'stage_clear', field: 'stars', gte: 3, modes: SCORE_MODES }, { rec: { key: 'kusoge.water.save', path: 'stars', measure: 'countGte', min: 3 }, gte: 1 }] } },
+      { id: 'water.stars20', tier: 2, icon: 'star', title: { ja: '星の試験管', en: 'Starry Tubes' }, desc: { ja: '★3 のステージを20個', en: 'Get ★3 on 20 stages' }, when: { rec: { key: 'kusoge.water.save', path: 'stars', measure: 'countGte', min: 3 }, gte: 20 } },
+      { id: 'water.daily3', tier: 2, icon: 'star', title: { ja: '今日の色水', en: 'Daily Sorter' }, desc: { ja: 'いろみず分けのデイリーを3回クリア', en: 'Clear 3 Color Water Sort dailies' }, when: { stat: 'gameDaily', gte: 3 } },
+    ],
+    parking: [
+      { id: 'parking.st10', tier: 1, icon: 'check', title: { ja: '出庫係', en: 'Valet' }, desc: { ja: '10ステージをクリア', en: 'Clear 10 stages' }, when: { rec: STAGES('kusoge.parking.save'), gte: 10 } },
+      { id: 'parking.st50', tier: 2, icon: 'check', title: { ja: '駐車場の整理係', en: 'Lot Manager' }, desc: { ja: '50ステージをクリア', en: 'Clear 50 stages' }, when: { rec: STAGES('kusoge.parking.save'), gte: 50 } },
+      { id: 'parking.st100', tier: 3, icon: 'trophy', title: { ja: '渋滞知らず', en: 'Jam Breaker' }, desc: { ja: '100ステージをクリア', en: 'Clear 100 stages' }, when: { rec: STAGES('kusoge.parking.save'), gte: 100 } },
+      { id: 'parking.st200', tier: 4, icon: 'trophy', title: { ja: '出庫の名人', en: 'Car Out Master' }, desc: { ja: '200ステージをクリア', en: 'Clear 200 stages' }, when: { rec: STAGES('kusoge.parking.save'), gte: 200 }, grantsTitle: { ja: '出庫の名人', en: 'Car Out Master' } },
+      { id: 'parking.star3', tier: 1, icon: 'star', title: { ja: '最短ルート', en: 'Shortest Route' }, desc: { ja: '★3 でクリア', en: 'Clear a stage with ★3' }, when: { any: [{ ev: 'stage_clear', field: 'stars', gte: 3, modes: SCORE_MODES }, { rec: { key: 'kusoge.parking.save', path: 'stars', measure: 'countGte', min: 3 }, gte: 1 }] } },
+      { id: 'parking.stars20', tier: 2, icon: 'star', title: { ja: '星の駐車場', en: 'Starry Lot' }, desc: { ja: '★3 のステージを20個', en: 'Get ★3 on 20 stages' }, when: { rec: { key: 'kusoge.parking.save', path: 'stars', measure: 'countGte', min: 3 }, gte: 20 } },
+      { id: 'parking.daily3', tier: 2, icon: 'star', title: { ja: '今日の出庫', en: 'Daily Valet' }, desc: { ja: 'くるま出しのデイリーを3回クリア', en: 'Clear 3 Car Out dailies' }, when: { stat: 'gameDaily', gte: 3 } },
+    ],
+    hole: [
+      { id: 'hole.win1', tier: 1, icon: 'trophy', title: { ja: 'いちばんの穴', en: 'Top Hole' }, desc: { ja: 'CPU 戦で1位になる', en: 'Finish 1st in a CPU battle' }, when: { rec: { key: 'kusoge.hole.save', path: 'wins' }, gte: 1 } },
+      { id: 'hole.win10', tier: 2, icon: 'trophy', title: { ja: '街のぬし', en: 'City Boss' }, desc: { ja: 'CPU 戦で10回1位になる', en: 'Finish 1st in 10 CPU battles' }, when: { rec: { key: 'kusoge.hole.save', path: 'wins' }, gte: 10 } },
+      { id: 'hole.pts1k', tier: 2, icon: 'star', title: { ja: '千点のみこみ', en: '1,000 Swallowed' }, desc: { ja: '1回で1,000点', en: 'Score 1,000 in one battle' }, when: { rec: { key: 'kusoge.hole.save', paths: ['best.maxPts', 'best.matchPts'], agg: 'max' }, gte: 1000 } },
+      { id: 'hole.size12', tier: 2, icon: 'star', title: { ja: '大あな', en: 'Huge Hole' }, desc: { ja: '穴の大きさを12にする', en: 'Grow your hole to size 12' }, when: { rec: { key: 'kusoge.hole.save', path: 'best.maxSize' }, gte: 12 } },
+      { id: 'hole.camp10', tier: 3, icon: 'globe', title: { ja: 'まちめぐり', en: 'City Tour' }, desc: { ja: 'まちめぐりで10都市すべてをクリア', en: 'Clear all 10 cities in City Tour' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'countGte', min: 1 }, gte: 10 } },
+      { id: 'hole.camp30', tier: 4, icon: 'trophy', title: { ja: 'あなぼこ市長', en: 'Hole Mayor' }, desc: { ja: 'まちめぐりの星を30個そろえる', en: 'Collect all 30 City Tour stars' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'sum' }, gte: 30 }, grantsTitle: { ja: 'あなぼこ市長', en: 'Hole Mayor' } },
+      { id: 'hole.skins4', tier: 2, icon: 'theme', title: { ja: 'おしゃれな穴', en: 'Stylish Hole' }, desc: { ja: 'スキンを4つ持つ', en: 'Own 4 skins' }, when: { rec: { key: 'kusoge.hole.save', path: 'skins.owned', measure: 'count' }, gte: 4 } },
+      { id: 'hole.online1', tier: 2, icon: 'globe', title: { ja: 'ネットの大穴', en: 'Online Champion' }, desc: { ja: 'オンライン対戦で1位になる', en: 'Finish 1st in an online battle' }, when: { rec: { key: 'kusoge.hole.save', path: 'online.wins' }, gte: 1 } },
+    ],
+  };
+  for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
 
   // どのゲームにも属さない、ゲームのページが使う共有のキー
   var SHARED_SYNC = {

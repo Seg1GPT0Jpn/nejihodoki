@@ -4,11 +4,11 @@
 // ゲームを足すときは games.js に足すだけでよい（ここは直さない）。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 23;
+const BUILD = 24;
 const VERSION = 'kobo-v' + BUILD + '.' + REG.version;
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png',
-  './common/cloud.js', './common/i18n.js', './common/versus.js', './common/games.js', './common/platform.js', './common/rank.js',
+  './common/cloud.js', './common/i18n.js', './common/versus.js', './common/games.js', './common/platform.js', './common/achievements.js', './common/rank.js',
   './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css'];
 // ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
 const ENGINES = ['./parking/engine.js', './water/engine.js', './hole/cities.js'];
