@@ -7,7 +7,7 @@ const { ROOT } = require('./server');
 
 const FALLBACK_GAMES = [
   { id: 'neji', three: true }, { id: 'blocks' }, { id: 'drop' }, { id: 'raft', three: true }, { id: 'gates', three: true },
-  { id: 'n59049', three: true }, { id: 'water' }, { id: 'parking', three: true }, { id: 'hole', three: true },
+  { id: 'n59049', three: true }, { id: 'water' }, { id: 'parking', three: true }, { id: 'hole', three: true }, { id: 'hitsumabushi' },
 ];
 
 function fromRegistry() {
@@ -19,12 +19,12 @@ function fromRegistry() {
     sandbox.window.window = win;
     vm.createContext(sandbox);
     vm.runInContext(fs.readFileSync(f, 'utf8'), sandbox, { timeout: 1000 });
-    const reg = win.KoboGames || sandbox.KoboGames;
+    const reg = win.KoboGames || sandbox.KoboGames || win.KOBO_REGISTRY;
     let list = reg && (Array.isArray(reg) ? reg : (reg.list ? (typeof reg.list === 'function' ? reg.list() : reg.list) : reg.games || (reg.all && reg.all())));
     if (!Array.isArray(list) || !list.length) return null;
     list = list.filter(g => g && typeof g.id === 'string');
     const ids = list.map(g => g.id);
-    // レジストリが今の9本を全部含んでいないなら、まだ作りかけとみなして使わない
+    // レジストリが今のゲームを全部含んでいないなら、まだ作りかけとみなして使わない
     if (!FALLBACK_GAMES.every(g => ids.includes(g.id))) return null;
     return list.map(g => {
       const fb = FALLBACK_GAMES.find(x => x.id === g.id) || {};

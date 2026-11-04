@@ -21,6 +21,7 @@
 | `water/` | いろみず分け | Canvas 2D |
 | `parking/` | くるま出し | Three.js r128 |
 | `hole/` | あなぼこシティ | Three.js r128。街のデータは `hole/cities.js`（10都市）。オンライン対戦は Firebase Realtime Database（`hole/queue`・`hole/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__hole` |
+| `hitsumabushi/` | ひつまぶし工房 | Canvas 2D。保存は `kusoge.hitsumabushi.save`（ランキングは `best`＝1日の最高点）。`?debug` で `window.__hitsu`。通しプレイ：`node tools/tests/hitsumabushi-play.js` |
 | `ranking/` | ランキング（ゲーム別・総合） | |
 | `common/cloud.js` | Googleログインと Firestore 同期・ランキング送信 | `KoboCloud.sync({ key: 'max' or 'newest' })` |
 | `common/i18n.js` | 日本語 / 英語の切り替え | `KoboI18n.add({ en: { '日本語': 'English' } })`、`KoboI18n.t('日本語')` |

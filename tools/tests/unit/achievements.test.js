@@ -90,9 +90,10 @@ const FIX = {
   'water-level-only.json': { has: ['water.first'], not: ['water.st10'] },
   'parking-save.json': { has: ['parking.first', 'parking.star3'], not: ['parking.st10', 'parking.stars20'] },
   'hole-no-camp.json': { has: ['hole.first', 'hole.win1'], not: ['hole.win10', 'hole.camp10', 'hole.skins4', 'hole.pts1k'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first'], not: ['water.st10', 'hole.win1'] },
+  'hitsumabushi-save.json': { has: ['hitsumabushi.first', 'hitsumabushi.day1', 'hitsumabushi.s300', 'hitsumabushi.perfect', 'hitsumabushi.rank2'], not: ['hitsumabushi.s1k', 'hitsumabushi.dish100', 'hitsumabushi.usual3', 'hitsumabushi.rank4'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first'], not: ['water.st10', 'hole.win1'] },
 };
-test('retroactive: fixture saves for all 9 games unlock exactly what the records show, once, marked as retroactive', () => {
+test('retroactive: fixture saves for all 10 games unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();
   for (const [file, exp] of Object.entries(FIX)) {
     const fx = fixture('saves/' + file);
@@ -114,7 +115,7 @@ test('retroactive: fixture saves for all 9 games unlock exactly what the records
     eq(JSON.stringify([P.store.get('kobo.ach'), P.store.get('kobo.xp')]), before, file + ' idempotent');
     ok(P.migrations.done('ach-retro-1'));
   }
-  eq(games.size, 9, 'all 9 games covered: ' + [...games].join());
+  eq(games.size, require(path.join(COMMON, 'games.js')).ids().length, 'all games covered: ' + [...games].join());
 });
 
 test('retroactive: richer saves (stars, camp, heroes, daily streak, vs stats, history)', () => {
@@ -172,7 +173,7 @@ test('live: daily streak across JST days, all-dailies-in-one-day, level and meta
   for (let i = 0; i < 3; i++) { const dk = P.jstDateKey(t); play(P, 'blocks', { t, dur: MIN, mode: 'daily', dateKey: dk, score: 5 }); t += DAY; }
   ok(A.has('all.daily1')); ok(A.has('all.streak3')); ok(!A.has('all.streak7'));
   const dk = P.jstDateKey(t);
-  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
+  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
   ok(A.has('all.dailyAll'));
   ok(A.has('all.ach10'), 'meta achievement after 10 unlocks');
   ok(P.xp.info(t).lv >= 2);
@@ -223,7 +224,7 @@ test('titles: rank names by level plus grantsTitle from achievements; setTitle o
 test('progress(): value and goal for the profile page', () => {
   const { A } = load({ 'kusoge.raft.best': '23' });
   deep(A.progress('raft.d30'), { value: 23, goal: 30, done: false });
-  const p = A.progress('all.varietyAll'); eq(p.goal, 9); eq(p.value, 1);
+  const p = A.progress('all.varietyAll'); eq(p.goal, 10); eq(p.value, 1);
   eq(A.summary().total, A.all().length);
 });
 

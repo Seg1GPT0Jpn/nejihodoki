@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -42,7 +42,7 @@ function hubRecords(storage) {
   return new Function('localStorage', 'document', 'T', 'const out = arguments[3];' + code)(storage, document, T, out);
 }
 
-test('9 games, same ids and order as the hub', () => {
+test('10 games, same ids and order as the hub', () => {
   const { games: R } = fresh();
   deep(R.ids(), IDS);
   // the hub now renders its cards from the registry itself (P1-7); the old hard-coded card list is gone
@@ -101,8 +101,8 @@ test('flags reflect what the pages have today', () => {
     eq(g.flags.versus, true, g.id + ' versus');
     eq(g.versus, /KoboVersus\.init/.test(page) ? 'common' : 'own', g.id + ' versus impl');
   }
-  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi', 'games with a daily today');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi', 'realtime games (AUDIT 3)');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -145,7 +145,7 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
     const { platform: P } = fresh({ storage: st });
     const old = cloudRankSources(st);
     for (const id of IDS) {
-      if (id === 'hole') continue;
+      if (id === 'hole' || !old[id]) continue; // games added after P1-2 (hitsumabushi) have no legacy RANK_SOURCES entry: registry only
       const expect = Math.max(0, Math.floor(old[id]()));
       eq(P.rankValue(id), expect, id + ' ' + JSON.stringify(c));
     }
@@ -156,6 +156,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('hole', k => '{"best":{"matchRank":2,"matchPts":300}}'), 300, 'hole: old save falls back to matchPts');
   eq(P.rankValue('hole', k => '{"best":{"matchRank":1,"matchPts":700,"maxPts":650}}'), 700, 'hole: never lower than a real match score');
   eq(P.rankValue('nope'), 0);
+  eq(P.rankValue('hitsumabushi', k => '{"v":1,"day":4,"best":815}'), 815, 'hitsumabushi: best day score');
+  eq(P.rankValue('hitsumabushi', k => null), 0, 'hitsumabushi: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {
@@ -207,7 +209,7 @@ test('registry is plain data: no functions, JSON round-trips (safe for the SW im
   const vm = require('vm');
   const ctx = { self: {} }; ctx.self = ctx; vm.createContext(ctx);
   vm.runInContext(readText('common/games.js'), ctx);
-  eq(ctx.KOBO_GAMES.length, 9, 'worker global');
+  eq(ctx.KOBO_GAMES.length, IDS.length, 'worker global');
 });
 
 run('registry');

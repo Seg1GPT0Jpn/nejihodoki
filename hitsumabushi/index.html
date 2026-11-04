@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ひつまぶし工房</title>
+<meta name="theme-color" content="#1c120d">
+<meta name="description" content="炭火でうなぎを焼き、タレを塗り、刻んで盛る。お客さんの注文と食べ方どおりに、ひつまぶしを作るお店のゲーム。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ひつまぶし工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'ひつまぶし工房': 'Hitsumabushi Workshop', 'うなぎ処 ひつまぶし工房': 'Hitsumabushi Workshop',
+  'ゲーム一覧': 'Games', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'メニュー': 'Menu',
+  'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '遊び方': 'How to play', 'スキップ': 'Skip',
+  'うなぎの焼き台とカウンター': 'Eel grill and counter', '言語 / Language': 'Language',
+  // HUD and tools
+  '{n}日目': 'Day {n}', '{n}点': '{n} pts', 'うなぎ {n}': 'Eel {n}', '点': 'pts', '対戦': 'VS', '練習': 'Practice',
+  'やさしい': 'Gentle', 'こだわり': 'Picky', '本気': 'Strict',
+  '盛り場へ': 'Plating', '焼き場へ': 'Grill', 'うなぎ': 'Eel', '返す': 'Turn', 'あげる': 'Take off', '作り直す': 'Remake', 'お出しする': 'Serve',
+  'のこり{n}': '{n} left',
+  // order slip
+  'のれんを出す前です': 'The shop is not open yet', '本日の営業は終了しました': 'Closed for today',
+  '席をタップして、お出しするお客さんをえらぶ': 'Tap a seat to choose who you are cooking for', 'お客さんを待っています…': 'Waiting for customers…',
+  'いつもの': 'The usual', '聞く': 'Ask', '食べ方：{s}': 'Eats it: {s}',
+  // menu, orders
+  'ひつまぶし': 'Hitsumabushi', 'うな丼': 'Unadon', '白焼き': 'Shirayaki', '肝吸い': 'Liver soup', 'う巻き': 'Umaki omelet',
+  'おひつ': 'Ohitsu tub', '丼': 'Bowl', '皿': 'Plate',
+  '茶碗': 'Rice bowl', 'ねぎ': 'Scallion', 'わさび': 'Wasabi', 'のり': 'Nori', 'だし': 'Dashi', '山椒': 'Sansho',
+  'タレ多め': 'Extra tare', 'タレ少なめ': 'Light tare', 'よく焼き': 'Well done', 'わさび抜き': 'No wasabi', '山椒抜き': 'No sansho', '大盛り': 'Large', '急いで': 'Hurry',
+  'そのまま': 'As it is', '薬味で': 'With condiments', 'お茶漬けまで': 'Up to chazuke', '4通りぜんぶ': 'All four ways',
+  '茶碗だけ': 'Rice bowl only', '茶碗＋薬味（ねぎ・わさび・のり）': 'Rice bowl + condiments (scallion, wasabi, nori)', '茶碗＋薬味＋だし': 'Rice bowl + condiments + dashi', '茶碗＋薬味＋だし・見た目にもこだわる': 'Rice bowl + condiments + dashi; cares about looks',
+  '屋台': 'Street stall', '小料理屋': 'Little eatery', '町の人気店': 'Town favorite', '名店': 'Famous shop', '老舗': 'Long-established shop',
+  'やさしいお客さん': 'gentle customers', 'こだわりのお客さんも': 'some picky customers', '本気のお客さんばかり': 'strict customers only',
+  '鯱見町（しゃちみちょう）のたまり横丁。祖父の店ののれんを受け継いだあなたは、小さな屋台からはじめます。めざすは、町いちばんの老舗。': 'Tamari Alley in the town of Shachimi. You inherited your grandfather\'s noren and start with a tiny street stall. Your goal: the oldest, most loved shop in town.',
+  '屋台に行列ができはじめました。小さな店をかまえて「小料理屋」に！': 'A line is forming at your stall. You open a small shop: a Little eatery!',
+  '口コミが広がって「町の人気店」に。こだわりのお客さんも来るようになりました。失敗すると作り直しを頼まれることも。': 'Word spreads and you become the Town favorite. Picky customers come too, and they may send a bad dish back.',
+  '「名店」と呼ばれるようになりました。もう焦げは出せません。待たせすぎると、お客さんは怒って帰ってしまいます。': 'People call you a Famous shop now. No more burnt eel, and customers kept waiting too long leave angry.',
+  'ついに「鯱見町の老舗」。祖父の焼き台の前で、今日も炭が赤く光ります。': 'At last, the long-established shop of Shachimi. In front of your grandfather\'s grill, the charcoal glows red again today.',
+  // shop
+  '焼き台': 'Grill', '同時に焼けるうなぎが1本ふえる': 'Grill one more eel at the same time', '客席': 'Seats', '座れるお客さんが1人ふえる': 'One more customer can sit',
+  '備長炭': 'Binchotan charcoal', '火加減が安定し、タレの炎が上がりにくい': 'Steadier heat, fewer flare-ups from tare',
+  'お店の見た目': 'Shop interior', 'のれん': 'Noren curtain', '一枚板のカウンター': 'Solid wood counter', '坪庭の灯り': 'Lit courtyard garden', 'お客さんが待ってくれる時間とチップがふえる': 'Customers wait longer and tip more',
+  '丼に3切れ。山椒をそえる': 'Three pieces in a bowl, with sansho', 'そえものの吸いもの。線まで注ぐ': 'A side soup: pour up to the line',
+  'タレを塗らずに焼く。わさびをそえる': 'Grilled without tare, served with wasabi', 'そえものの卵焼き。焼けたら巻く': 'A side omelet: roll it when it sets',
+  'おひつに刻みうなぎ。4通りの食べ方': 'Chopped eel in an ohitsu tub, eaten four ways', '看板': 'Signature', '開発ずみ': 'Ready', '最大': 'Max',
+  '「{r}」になると開発できる': 'Unlocks at: {r}',
+  '仕入れ': 'Stock', '改装': 'Renovate', 'メニュー': 'Menu', '常連帳': 'Regulars',
+  '1日に使ううなぎの目安：お客さんの数ぶん（焦がすと1匹むだに）。': 'You need about one eel per customer (a burnt one is wasted).',
+  'うなぎ ×{n}': 'Eel ×{n}', '1匹 {p}': '{p} each',
+  '常連さんは3回目から「いつもの」としか言いません。好みを覚えておくと大よろこび（聞くとボーナスなし）。': 'From their 3rd visit, regulars just say "the usual". Remember what they like and they are delighted (asking gives no bonus).',
+  '{n}日目ごろから来るかも': 'May come from about day {n}', '{n}回': '{n}×',
+  '松じい': 'Old Matsu', 'ハナさん': 'Hana', 'ケンタ': 'Kenta', '千代先生': 'Ms. Chiyo', '源さん': 'Gen',
+  'ご隠居の松じい': 'Old Matsu, retired', '八百屋のハナさん': 'Hana from the greengrocer', '学生のケンタ': 'Kenta the student', 'お茶の千代先生': 'Ms. Chiyo, tea ceremony teacher', 'タクシーの源さん': 'Gen the taxi driver',
+  '評判 {r}': 'Reputation {r}', '評判 {r} / {n}': 'Reputation {r} / {n}', '所持金 {m} ・ うなぎ {n}匹': 'Money {m} · Eels {n}', 'お客さん：{s}': 'Customers: {s}',
+  '{n}日目を開店する': 'Open for day {n}', '開店する': 'Open the shop', '今日のチャレンジ': 'Daily challenge',
+  'うなぎがありません。仕入れよう': 'No eels. Buy some stock', '問屋さんが、うなぎを3匹おまけしてくれた': 'The wholesaler gave you 3 eels for free',
+  // results
+  '本日の点数': 'Today\'s score', 'ベスト更新！': 'New best!', '閉店後の仕込みへ': 'After hours: prepare', 'もう一度挑戦': 'Try again', 'ふつうの営業へ': 'Back to the shop',
+  '{n}日目の営業、おしまい': 'Day {n} is over', '今日のチャレンジ 結果': 'Daily challenge result',
+  'お出しした皿': 'Dishes served', '極上': 'Exquisite', '売上': 'Sales', 'チップ': 'Tips', '評判': 'Reputation', '怒って帰った': 'Left angry', '作り直し': 'Sent back',
+  '「いつもの」を覚えていた': 'Remembered "the usual"', '入れずに帰った': 'Could not get in', '{n}皿': '{n}', '{n}人': '{n}',
+  '今日のベスト {b}点 ・ {n}回目': 'Today\'s best {b} pts · try #{n}', 'ベスト {b}点': 'Best {b} pts', '店の格が上がった！「{r}」': 'Your shop moved up: {r}!',
+  // messages
+  '{n}日目、開店です！': 'Day {n}: open for business!', '今日のチャレンジ、開店です！': 'Daily challenge: open for business!', '開店！': 'Open!',
+  '{n}が来た。「いつもの」だって': '{n} is here and wants "the usual"', '常連の{n}が来ました': 'Your regular {n} is here', 'お客さん': 'A customer',
+  '{n}が怒って帰ってしまった…': '{n} left angry…', 'もう帰る！': 'I\'m leaving!', 'まだかな…': 'Is it ready yet…', 'また来るね': 'See you again',
+  '焼き台がいっぱいです': 'The grill is full', 'うなぎがありません（閉店後に仕入れを）': 'No eels left (buy stock after closing)',
+  '焼いているうなぎがありません': 'No eel on the grill', 'まな板が空いていません。先に盛りつけを': 'The board is busy. Plate that one first',
+  '焦げています…（「作り直す」で捨てられます）': 'It is burnt… (Remake throws it away)', '器を変えるときは「作り直す」': 'Use Remake to change the vessel',
+  '先に器をえらぼう': 'Choose a vessel first', 'うなぎの上にご飯はのせません': 'Rice does not go on top of the eel', '先にうなぎを刻もう': 'Chop the eel first',
+  'もう用意しました': 'Already made', 'もう一度押すと、まな板と器を空にします': 'Tap again to clear the board and the vessel', '作り直します': 'Starting over',
+  '器をえらび、盛りつけてからお出しします': 'Choose a vessel and plate the dish first', 'うなぎをのせてからお出しします': 'Put the eel on first',
+  'お出しするお客さんをえらんでね（上の席をタップ）': 'Choose who to serve (tap a seat above)', '焦げたうなぎはお出しできません。作り直しましょう': 'You can\'t serve burnt eel. Make it again',
+  '作り直して！': 'Make it again!', '作り直しを頼まれた…（{why}）': 'Sent back… ({why})', '見た目': 'looks',
+  '{r}　{p}点': '{r}  {p} pts', '・': ', ', 'がない': ' missing', '覚えててくれた！': 'You remembered!',
+  '残念…': 'Too bad…', 'いまいち': 'Meh', 'まずまず': 'Not bad', '上': 'Good', '極上！': 'Exquisite!',
+  'こぼれた！': 'Spilled!', '焼きすぎ！': 'Overcooked!', 'よし！': 'Nice!', 'まあまあ': 'OK', '失敗…': 'Failed…',
+  '焦げている': 'burnt', '生焼け': 'undercooked', 'もっとよく焼いて': 'grill it longer', '焼き色が見事': 'beautiful browning',
+  '白焼きにタレ': 'tare on shirayaki', 'タレにムラ': 'uneven tare', 'タレが多すぎ': 'too much tare', 'タレが足りない': 'not enough tare', 'タレのツヤが見事': 'glossy tare',
+  '切り方がふぞろい': 'uneven cuts', '大盛りにして': 'wanted large', 'ご飯が少ない': 'not enough rice', 'ご飯が多すぎ': 'too much rice', '白焼きにご飯': 'rice with shirayaki',
+  '盛りつけが雑': 'messy plating', '器がちがう': 'wrong vessel', 'わさび抜きなのに': 'asked for no wasabi', '山椒抜きなのに': 'asked for no sansho',
+  'だしがない': 'no dashi', '薬味がたりない': 'missing condiments', '早い！': 'fast!', '待たされた': 'waited too long',
+  // canvas
+  '外で{n}人待ち': '{n} waiting outside', '待ち': 'Queue', '表': 'Up', '裏': 'Down', '＋ タップでうなぎをのせる': '+ Tap to put an eel on',
+  '焦げる！返して': 'Burning! Turn it', '返しどき！': 'Turn now!', 'いい焼き色': 'Nicely browned',
+  'まな板': 'Cutting board', '焼けたら「あげる」': 'Take off a grilled eel', '器へドラッグ →': 'Drag to the vessel →', 'タップで包丁スタート': 'Tap to start the knife',
+  '器をえらぶ': 'Choose a vessel', 'うなぎを直接のせる': 'Put the eel straight on', '← ご飯をドラッグ': '← Drag rice in',
+  '押しているあいだ注ぐ。線で離す': 'Hold to pour, let go at the line', '卵がかたまったら（緑）タップで巻く ×3': 'Tap to roll when the egg sets (green) ×3',
+  // tutorial
+  '「＋うなぎ」を押して、焼き台にのせよう': 'Press "+ Eel" to put one on the grill', '炭火の上で、下の面（裏）から焼けていきます': 'The side on the charcoal (Down) cooks first',
+  'メーター「裏」が緑になったら、うなぎを上か下へはじいて返そう': 'When the "Down" meter turns green, flick the eel up or down to turn it', 'さっとフリック。「返す」ボタンでも返せます': 'A quick flick. The Turn button works too',
+  '焼きながら、うなぎを指で左右になぞってタレを塗ろう': 'While it grills, trace left and right over the eel to brush on tare', 'ムラなく、まんべんなく。塗りすぎると炎が上がって焦げやすい': 'Evenly, all over. Too much makes flames and burns it',
+  '表も裏も緑になったら「あげる」': 'When both Up and Down are green, Take off', 'よく焼き・タレ多めなどの注文があれば合わせる': 'Match requests like Well done or Extra tare',
+  'まな板をタップで包丁スタート。▼の目印でリズムよくタップ': 'Tap the board to start the knife, then tap on each ▼ mark in rhythm', '同じ幅に刻むほど高得点': 'Even pieces score higher',
+  '器をえらぼう。ひつまぶしは「おひつ」': 'Choose a vessel: hitsumabushi goes in the ohitsu tub', '丼はうな丼、皿は白焼き': 'The bowl is for unadon, the plate for shirayaki',
+  'ご飯を、おひつへドラッグ（3回）': 'Drag rice into the ohitsu (3 times)', '左・まん中・右に散らすと平らに盛れる': 'Spread it left, middle and right to keep it flat',
+  '刻んだうなぎを、ご飯のまん中へドラッグ': 'Drag the chopped eel onto the middle of the rice', 'まん中にのせるほどきれい': 'The closer to the middle, the neater',
+  '食べ方は「薬味で」。茶碗・ねぎ・わさび・のりをそろえよう': 'They eat it "with condiments": add rice bowl, scallion, wasabi and nori', 'お茶漬けまでなら、だしも。上の札が注文です': 'For chazuke add dashi too. The slip above is the order',
+  '「お出しする」を押そう': 'Press Serve', '焼き・タレ・刻み・盛り・注文どおりか・早さで点数とチップが決まる': 'Grilling, tare, cuts, plating, the order and speed decide points and tips',
+  'チュートリアル完了！ ここから営業スタート': 'Tutorial done! Now the shop is open', 'ここから営業スタート！': 'The shop is open!',
+  // pause
+  'ひとやすみ': 'Break', '{d} ・ {c} ・ {s}点': '{d} · {c} · {s} pts',
+  // how to play
+  'やってみる': 'Let\'s cook', '説明だけでOK': 'Skip the tutorial',
+  '<b>焼く</b>：焼き色を見て、うなぎを上下に<b>はじいて返す</b><small>メーターの緑が食べごろ。焦がさない</small>': '<b>Grill</b>: watch the browning and <b>flick to turn</b> the eel<small>Green on the meter is just right. Don\'t burn it</small>',
+  '<b>タレ</b>：うなぎを指で<b>なぞって塗る</b><small>ムラなく。塗りすぎると炎が上がる</small>': '<b>Tare</b>: <b>trace over</b> the eel to brush it on<small>Evenly. Too much makes flames</small>',
+  '<b>刻む</b>：▼の目印で<b>リズムよくタップ</b><small>そろった幅ほど高得点</small>': '<b>Chop</b>: <b>tap in rhythm</b> on the ▼ marks<small>Even pieces score higher</small>',
+  '<b>盛る</b>：器をえらび、ご飯→うなぎの順に<b>ドラッグ</b><small>薬味・だしは注文と食べ方に合わせる</small>': '<b>Plate</b>: choose a vessel, then <b>drag</b> rice, then eel<small>Condiments and dashi follow the order and how they eat it</small>',
+  'ひつまぶしの4通りの食べ方': 'The four ways to eat hitsumabushi',
+  'そのまま：まずはうなぎとご飯だけ（茶碗）': 'As it is: just eel and rice (rice bowl)',
+  '薬味で：ねぎ・わさび・のりをのせて': 'With condiments: topped with scallion, wasabi and nori',
+  'お茶漬けまで：薬味をのせて、だしをかけてお茶漬けに': 'Up to chazuke: condiments, then dashi poured over',
+  '4通りぜんぶ：そのまま→薬味→だし茶漬け→最後はお好みで。見た目にもこだわるお客さん': 'All four ways: as it is → condiments → dashi chazuke → your favourite. These customers care about looks',
+  '注文の「わさび抜き」「山椒抜き」は、そえてはいけません': '"No wasabi" and "No sansho" mean leave them off',
+  'お店と、お客さんの厳しさ': 'The shop and how strict customers are',
+  '点数：焼き・タレ・刻み・盛りつけ・注文どおりか、と早さ。点数が高いほどチップが増えます': 'Points: grilling, tare, cuts, plating, the order, and speed. Higher points mean bigger tips',
+  'はじめは失敗しても出せますが、点数が下がります': 'At first you can serve mistakes, but they score lower',
+  '店の格が上がると、金の札のこだわり客が作り直しを頼むようになります': 'As your shop grows, picky customers (gold slips) send bad dishes back',
+  '「名店」からは焦げたうなぎは出せず、待たせすぎると怒って帰ります': 'From Famous shop on, burnt eel can\'t be served and customers kept waiting leave angry',
+  '閉店後は仕入れ・改装・メニュー開発。常連さんの「いつもの」は常連帳で覚えておこう': 'After closing: stock, renovation and new menus. Learn your regulars\' "usual" from the notebook',
+  '2〜4人で {t} のスコア勝負。全員に同じ注文が同じ順番で来ます。': '2–4 players, {t} score battle. Everyone gets the same orders in the same order.',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<script src="../common/versus.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ひつまぶし工房: an eel shop at night (dark) or at lunchtime (light). Header / order slip / canvas (counter + grill or worktop) / tool bar.
+   The UI uses the shared --kb-* tokens re-tinted to lacquer and amber, so KoboUI's menu and the versus cards match.
+   --h-* are this game's tokens; the canvas reads the --h-c-* ones (readPal) when the theme changes. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1c120d; --kb-surface: #2a1c14; --kb-surface-2: #33231a; --kb-sunken: #140d09; --kb-line: #4a3326;
+  --kb-ink: #fff3e0; --kb-dim: #d6bc9c;
+  --kb-accent: #f0a43a; --kb-accent-ink: #2a1606; --kb-accent-text: #f6b453; --kb-accent-soft: rgba(240, 164, 58, .16);
+  --kb-scrim: rgba(12, 6, 3, .78); --kb-toast-bg: rgba(20, 10, 5, .94); --kb-focus: #ffd36b;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --h-panel: rgba(255, 240, 220, .07); --h-line: rgba(255, 220, 180, .18);
+  --h-card: linear-gradient(#33231a, #22160f); --h-btn: linear-gradient(#ffc463, #e8892a); --h-btn-shadow: #8a4a12;
+  --h-tool: linear-gradient(rgba(255, 240, 220, .12), rgba(255, 240, 220, .03)); --h-tool-shadow: rgba(0, 0, 0, .35);
+  --h-title: linear-gradient(90deg, #ffd38a, #f0a43a 50%, #e0673a);
+  --h-tag: rgba(255, 240, 220, .1); --h-tag-req: #f0a43a; --h-tag-req-ink: #2a1606; --h-tag-hurry: #e5533d; --h-tag-strict: #c9a227;
+  --h-c-wall: #2a1a12; --h-c-wall2: #33211a; --h-c-noren: #1f3550; --h-c-counter: #b07a45; --h-c-counter2: #7a4e2a;
+  --h-c-work: #20150f; --h-c-tile: #2c1f17; --h-c-ink: #fff3e0; --h-c-dim: #d9bfa0;
+  --h-c-chip: rgba(255, 240, 220, .1); --h-c-chip-on: #f0a43a; --h-c-chip-ink: #2a1606; --h-c-sel: #ffd36b;
+  --h-c-ok: #6fd08c; --h-c-warn: #ffc247; --h-c-bad: #ff6a4d; --h-c-paper: #fbf3e4; --h-c-paper-ink: #3a2413;
+  --h-c-lamp: 255, 186, 100; --h-c-shade: rgba(10, 5, 2, .45);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f3e8d6; --kb-surface: #fffaf1; --kb-surface-2: #f6ecdc; --kb-sunken: #eadcc5; --kb-line: #d8c3a4;
+    --kb-ink: #2a1a10; --kb-dim: #6b5240;
+    --kb-accent: #e08a1e; --kb-accent-ink: #2a1606; --kb-accent-text: #9a560a; --kb-accent-soft: rgba(224, 138, 30, .14);
+    --kb-scrim: rgba(42, 26, 16, .45); --kb-toast-bg: rgba(42, 26, 16, .94); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(42, 26, 16, .2);
+    --h-panel: rgba(60, 30, 10, .05); --h-line: #d8c3a4;
+    --h-card: linear-gradient(#fffaf1, #f6ecdc); --h-btn: linear-gradient(#ffc463, #ec8f2c); --h-btn-shadow: #b56a1c;
+    --h-tool: linear-gradient(#fffaf1, #f3e6d1); --h-tool-shadow: rgba(60, 30, 10, .16);
+    --h-title: linear-gradient(90deg, #b5651d, #d9822b 50%, #b43c1c);
+    --h-tag: rgba(60, 30, 10, .07); --h-tag-req: #e08a1e; --h-tag-req-ink: #2a1606; --h-tag-hurry: #d6452b; --h-tag-strict: #b08a14;
+    --h-c-wall: #eedfc6; --h-c-wall2: #e4d1b2; --h-c-noren: #22466e; --h-c-counter: #c99560; --h-c-counter2: #9a6a3a;
+    --h-c-work: #e9dcc6; --h-c-tile: #dccbb0; --h-c-ink: #2a1a10; --h-c-dim: #6b5240;
+    --h-c-chip: rgba(60, 30, 10, .08); --h-c-chip-on: #e08a1e; --h-c-chip-ink: #2a1606; --h-c-sel: #d9822b;
+    --h-c-ok: #2f9e5b; --h-c-warn: #c98a00; --h-c-bad: #d6452b; --h-c-paper: #fffdf6; --h-c-paper-ink: #3a2413;
+    --h-c-lamp: 255, 230, 180; --h-c-shade: rgba(60, 30, 10, .25);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f3e8d6; --kb-surface: #fffaf1; --kb-surface-2: #f6ecdc; --kb-sunken: #eadcc5; --kb-line: #d8c3a4;
+  --kb-ink: #2a1a10; --kb-dim: #6b5240;
+  --kb-accent: #e08a1e; --kb-accent-ink: #2a1606; --kb-accent-text: #9a560a; --kb-accent-soft: rgba(224, 138, 30, .14);
+  --kb-scrim: rgba(42, 26, 16, .45); --kb-toast-bg: rgba(42, 26, 16, .94); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(42, 26, 16, .2);
+  --h-panel: rgba(60, 30, 10, .05); --h-line: #d8c3a4;
+  --h-card: linear-gradient(#fffaf1, #f6ecdc); --h-btn: linear-gradient(#ffc463, #ec8f2c); --h-btn-shadow: #b56a1c;
+  --h-tool: linear-gradient(#fffaf1, #f3e6d1); --h-tool-shadow: rgba(60, 30, 10, .16);
+  --h-title: linear-gradient(90deg, #b5651d, #d9822b 50%, #b43c1c);
+  --h-tag: rgba(60, 30, 10, .07); --h-tag-req: #e08a1e; --h-tag-req-ink: #2a1606; --h-tag-hurry: #d6452b; --h-tag-strict: #b08a14;
+  --h-c-wall: #eedfc6; --h-c-wall2: #e4d1b2; --h-c-noren: #22466e; --h-c-counter: #c99560; --h-c-counter2: #9a6a3a;
+  --h-c-work: #e9dcc6; --h-c-tile: #dccbb0; --h-c-ink: #2a1a10; --h-c-dim: #6b5240;
+  --h-c-chip: rgba(60, 30, 10, .08); --h-c-chip-on: #e08a1e; --h-c-chip-ink: #2a1606; --h-c-sel: #d9822b;
+  --h-c-ok: #2f9e5b; --h-c-warn: #c98a00; --h-c-bad: #d6452b; --h-c-paper: #fffdf6; --h-c-paper-ink: #3a2413;
+  --h-c-lamp: 255, 230, 180; --h-c-shade: rgba(60, 30, 10, .25);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body.thumb header, body.thumb .ticket, body.thumb #tools, body.thumb .coach, body.thumb #toast, body.thumb .kb-layer { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 62%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 8px 0; max-width: 760px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 6px; }
+.back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box; color: var(--kb-dim); text-decoration: none; font-size: 13px; font-weight: 800; white-space: nowrap; padding: 0 8px 0 4px; margin-left: -4px; border-radius: 12px; }
+.back svg { width: 22px; height: 22px; flex: none; }
+h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400; font-size: 19px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--h-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--h-line); background: var(--h-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.icon:disabled { opacity: .4; }
+.back:focus-visible, .icon:focus-visible, .tool:focus-visible, .btn:focus-visible, .buy:focus-visible, .tabs button:focus-visible, .ask:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.vs-slot { display: contents; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.info { display: flex; align-items: center; gap: 4px; margin: 1px 0 2px; overflow: hidden; }
+.chip { flex: none; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--h-panel); color: var(--kb-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip.day { color: var(--kb-ink); }
+.chip.score { color: var(--kb-accent-text); background: var(--kb-accent-soft); }
+.chip.strict { margin-left: auto; }
+.chip.strict.sC { color: var(--h-tag-strict); }
+.chip.strict.sA { color: #fff; background: var(--h-tag-hurry); }
+.clock { flex: 1 1 60px; min-width: 52px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+.clock .bar { height: 3px; border-radius: 2px; background: var(--h-panel); overflow: hidden; }
+.clock .bar i { display: block; height: 100%; background: var(--kb-accent); transform-origin: left; }
+/* the order slip of the selected customer */
+.ticket { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 3px 4px; min-height: 40px; box-sizing: border-box; padding: 3px 10px; margin: 0 auto; width: 100%; max-width: 760px; font-size: 12.5px; font-weight: 800; overflow: hidden; max-height: 64px; }
+.ticket .tk-idle { color: var(--kb-dim); font-weight: 500; }
+.ticket .tk-seat { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 11.5px; }
+.ticket .tk-name { color: var(--kb-accent-text); }
+.tag { flex: none; padding: 2px 7px; border-radius: 7px; background: var(--h-tag); white-space: nowrap; line-height: 1.35; }
+.tag.dish { background: var(--kb-surface-2); border: 1px solid var(--h-line); }
+.tag.req { background: var(--h-tag-req); color: var(--h-tag-req-ink); }
+.tag.hurry { background: var(--h-tag-hurry); color: #fff; }
+.tag.side { background: #7a1e1e; color: #fff; }
+.tag.strict { border: 1.5px solid var(--h-tag-strict); color: var(--h-tag-strict); background: transparent; }
+.tag.usual { background: var(--kb-ink); color: var(--kb-bg); }
+.tag.style { background: #2f4a7a; color: #fff; }
+.ask { min-height: 32px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--h-line); background: var(--h-panel); color: var(--kb-ink); font: 800 12px var(--kb-font-body); cursor: pointer; }
+/* tutorial coach */
+.coach { flex: none; display: flex; align-items: center; gap: 8px; margin: 2px auto 2px; width: calc(100% - 16px); max-width: 640px; box-sizing: border-box; padding: 5px 5px 5px 10px; min-height: 50px; border-radius: 14px; background: var(--kb-surface); border: 1px solid var(--kb-accent); box-shadow: 0 6px 18px rgba(0, 0, 0, .2); animation: rise .3s cubic-bezier(.2, 1.3, .4, 1); }
+.coach .step { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 13px var(--kb-font-display); }
+.coach p { flex: 1; min-width: 0; margin: 0; font-size: 13px; font-weight: 800; line-height: 1.32; overflow-wrap: anywhere; }
+.coach p small { display: block; font-size: 11px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.skip { flex: none; min-height: 44px; min-width: 44px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--h-line); background: transparent; color: var(--kb-dim); font: 800 12.5px var(--kb-font-body); cursor: pointer; }
+#stage { flex: 1; min-height: 0; position: relative; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
+#toast { position: absolute; left: 50%; bottom: 8px; transform: translate(-50%, 8px); opacity: 0; transition: opacity .2s, transform .2s; background: var(--kb-toast-bg); border: 1px solid var(--h-line); color: #fff3e0; padding: 7px 13px; border-radius: 14px; font-size: 12.5px; font-weight: 800; pointer-events: none; z-index: 4; max-width: 90%; text-align: center; line-height: 1.4; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+#tools { flex: none; display: flex; gap: 6px; padding: 5px 8px 8px; width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box; }
+.tool { flex: 1; min-width: 0; height: 54px; border-radius: 15px; border: 1px solid var(--h-line); cursor: pointer; position: relative; touch-action: manipulation; background: var(--h-tool); color: var(--kb-ink); box-shadow: 0 3px 0 var(--h-tool-shadow); font: 800 12.5px var(--kb-font-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0 2px; }
+.tool b { font-size: 16px; line-height: 1; height: 18px; display: grid; place-items: center; }
+.tool b svg { width: 20px; height: 20px; }
+.tool span { white-space: nowrap; font-size: 12.5px; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tool small { font-size: 9.5px; color: var(--kb-dim); white-space: nowrap; }
+.tool:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--h-tool-shadow); }
+.tool:disabled { opacity: .38; cursor: default; }
+.tool.go { flex: 1.6; background: var(--h-btn); color: #2a1606; border-color: transparent; box-shadow: 0 3px 0 var(--h-btn-shadow); }
+.tool.go:disabled { background: var(--h-tool); color: var(--kb-ink); box-shadow: 0 3px 0 var(--h-tool-shadow); }
+.tool.view { flex: 1.15; }
+.tool.alert { border-color: #2f9e5b; box-shadow: 0 0 0 3px rgba(80, 200, 110, .35), 0 3px 0 var(--h-tool-shadow); animation: glow 1s ease-in-out infinite; }
+.tool.burn { border-color: #e5533d; box-shadow: 0 0 0 3px rgba(229, 83, 61, .45), 0 3px 0 var(--h-tool-shadow); animation: glow .5s ease-in-out infinite; }
+.tool.pulse { border-color: var(--kb-accent); box-shadow: 0 0 0 3px var(--kb-accent-soft), 0 3px 0 var(--h-tool-shadow); animation: glow 1.2s ease-in-out infinite; }
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .25s ease-out; padding: max(12px, var(--kb-sat)) max(12px, var(--kb-sar)) max(12px, var(--kb-sab)) max(12px, var(--kb-sal)); }
+.card { width: 100%; max-width: 380px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--h-card); border: 1px solid var(--h-line); border-radius: 22px; padding: 16px 14px 12px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); overflow: hidden; animation: rise .32s cubic-bezier(.2, 1.4, .4, 1); }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 4px; font-family: var(--kb-font-display); font-weight: 400; font-size: 21px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card p { margin: 5px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--h-btn); color: #2a1606; font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--h-btn-shadow); text-decoration: none; touch-action: manipulation; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--h-btn-shadow); }
+.btn.sub { background: var(--h-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--h-line); font-size: 13.5px; padding: 8px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; padding: 6px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn, .row2 > .kvs-entry { flex: 1; }
+.row2 .kvs-entry { margin-top: 8px; min-height: 44px; }
+.big { font-family: var(--kb-font-display); font-size: 36px; color: var(--kb-accent-text); margin: 2px 0; font-variant-numeric: tabular-nums; }
+.label { font-size: 11px; color: var(--kb-dim); letter-spacing: .12em; font-weight: 800; }
+.newrec { align-self: center; display: inline-block; margin-top: 4px; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 3px 12px; border-radius: 999px; animation: glow 1.4s ease-in-out infinite; }
+.drows { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin: 8px 0 4px; text-align: left; }
+.drows div { display: flex; justify-content: space-between; gap: 6px; font-size: 12.5px; padding: 4px 8px; border-radius: 9px; background: var(--h-panel); }
+.drows span { color: var(--kb-dim); overflow-wrap: anywhere; } .drows b { white-space: nowrap; }
+.dstory { margin-top: 8px; padding: 9px 11px; border-radius: 14px; border: 1px solid var(--kb-accent); background: var(--kb-accent-soft); text-align: left; font-size: 12.5px; line-height: 1.55; }
+.dstory b { display: block; color: var(--kb-accent-text); margin-bottom: 2px; }
+/* the shop between days */
+.shop { max-width: 420px; text-align: left; }
+.shop h2 { text-align: center; margin-bottom: 2px; }
+.srank { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 12.5px; font-weight: 800; }
+.srank #shopRank { color: var(--kb-accent-text); }
+.repbar { height: 5px; border-radius: 3px; background: var(--h-panel); overflow: hidden; margin: 5px 0 2px; }
+.repbar i { display: block; height: 100%; background: var(--kb-accent); transform-origin: left; }
+.story { font-size: 12px !important; margin: 4px 0 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.wallet { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; font-size: 12.5px; font-weight: 800; margin: 2px 0 4px; }
+.wallet #shopStrict { color: var(--kb-dim); font-weight: 500; }
+.tabs { display: flex; gap: 4px; margin-top: 2px; }
+.tabs button { flex: 1; min-width: 0; min-height: 40px; border-radius: 11px; border: 1px solid var(--h-line); background: var(--h-panel); color: var(--kb-dim); font: 800 12.5px var(--kb-font-body); cursor: pointer; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabs button[aria-selected="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.sbody { margin-top: 6px; padding-right: 2px; }
+.srow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; background: var(--h-panel); margin-bottom: 5px; }
+.srow .st { flex: 1; min-width: 0; }
+.srow b { display: block; font-size: 13.5px; overflow-wrap: anywhere; }
+.srow small { display: block; font-size: 11px; color: var(--kb-dim); line-height: 1.35; overflow-wrap: anywhere; }
+.buy { flex: none; min-width: 76px; min-height: 44px; border-radius: 12px; border: 1px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 0 8px; font-variant-numeric: tabular-nums; }
+.buy:disabled { opacity: .4; border-color: var(--h-line); cursor: default; }
+.sstate { flex: none; font-size: 12px; font-weight: 800; color: var(--kb-dim); padding: 0 6px; }
+.snote { font-size: 11.5px !important; margin: 2px 0 6px !important; }
+.sfoot .row2 .btn { margin-top: 6px; } .sfoot .row2 .btn.link { margin-top: 0; }
+/* how to play */
+.howto { max-width: 400px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto ol { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 6px; }
+.howto li { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 14px; background: var(--h-panel); border: 1px solid var(--h-line); }
+.howto li svg { flex: none; width: 54px; height: 40px; }
+.howto li p { margin: 0; font-size: 13px; font-weight: 800; line-height: 1.38; color: var(--kb-ink); overflow-wrap: anywhere; }
+.howto li p small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); margin-top: 1px; }
+.howto details { margin-top: 6px; border-radius: 14px; border: 1px solid var(--h-line); padding: 0 10px; }
+.howto summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--kb-accent-text); cursor: pointer; }
+.howto details ul { padding-left: 18px; margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--kb-dim); }
+.howto details li { display: list-item; padding: 0; background: none; border: 0; margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--h-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--h-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.pinfo { margin: 0 0 6px; text-align: center; font-weight: 800; }
+html[lang="en"] .back { font-size: 12.5px; }
+html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
+html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } .back span { display: none; } .back { padding-right: 4px; } }
+@media (max-width: 370px) { .hrow { gap: 4px; } h1 { font-size: 16px; } html[lang="en"] h1 { font-size: 14px; } .chip { padding: 3px 6px; font-size: 11px; } .tool span { font-size: 11.5px; } }
+@media (max-width: 340px) { h1 { font-size: 15px; letter-spacing: 0; } html[lang="en"] h1 { font-size: 13px; } #tools { gap: 4px; padding-left: 6px; padding-right: 6px; } .tool span { font-size: 10.5px; } html[lang="en"] .tool span { font-size: 10px; } .chip.strict { display: none; } }
+@media (max-height: 600px) {
+  .tool { height: 48px; }
+  .ticket { min-height: 36px; padding-top: 2px; padding-bottom: 2px; }
+  .card { padding: 12px 12px 10px; }
+  .card h2 { font-size: 19px; }
+  .big { font-size: 30px; }
+  .btn { min-height: 46px; margin-top: 6px; padding: 8px; }
+  .story { -webkit-line-clamp: 2; }
+  .howto li svg { width: 44px; height: 32px; }
+  .howto li { padding: 4px 8px; }
+  .howto li p { font-size: 12.5px; }
+}
+/* landscape phones: the info row goes up into the header row */
+@media (max-height: 440px) and (min-width: 560px) {
+  header { display: flex; align-items: center; gap: 8px; max-width: none; }
+  .hrow { flex: 0 1 auto; min-width: 0; }
+  h1 { max-width: 200px; }
+  .info { flex: 1 1 auto; min-width: 0; margin: 0; }
+  .ticket { min-height: 32px; max-height: 40px; max-width: none; }
+  #tools { padding-bottom: 5px; max-width: none; }
+  .tool { height: 44px; flex-direction: row; gap: 5px; }
+  .tool small { display: none; }
+  .coach { min-height: 44px; }
+  .back span { display: none; }
+  .card { max-width: 640px; }
+  .shop .shead { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; align-items: start; }
+  .shop .shead h2, .shop .shead .tabs { grid-column: 1 / -1; }
+  .story { -webkit-line-clamp: 2; }
+  .howto ol { grid-template-columns: 1fr 1fr; }
+  .howto-btns { display: flex; flex-direction: row-reverse; gap: 8px; } .howto-btns .btn { flex: 1; }
+  .sfoot { display: flex; gap: 8px; align-items: center; } .sfoot > .btn { flex: 1.3; } .sfoot .row2 { flex: 2; } .sfoot .btn.link { flex: none; width: auto; }
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(20px) scale(.95); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .overlay, .card, .coach, .newrec, .tool.pulse, .tool.alert, .tool.burn { animation: none; } #toast { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
+      <h1 data-i18n>ひつまぶし工房</h1>
+      <span id="vsSlot" class="vs-slot"></span>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="info">
+      <span class="chip day" id="iDay">1日目</span>
+      <span class="clock"><span id="iClock">11:00</span><span class="bar"><i id="iBar"></i></span></span>
+      <span class="chip score" id="iScore">0点</span>
+      <span class="chip" id="iMoney">¥0</span>
+      <span class="chip" id="iStock">うなぎ 0</span>
+      <span class="chip strict" id="iStrict">やさしい</span>
+    </div>
+  </header>
+  <div class="ticket" id="ticket" role="status" aria-live="polite"></div>
+  <div class="coach" id="coach" hidden role="status" aria-live="polite">
+    <span class="step" id="coachStep">1</span>
+    <p id="coachText"></p>
+    <button class="skip" id="coachBtn" type="button" data-i18n>スキップ</button>
+  </div>
+  <div id="stage">
+    <canvas id="cv" aria-label="うなぎの焼き台とカウンター" data-i18n-attr="aria-label"></canvas>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <div id="tools">
+    <button class="tool view" id="viewBtn" type="button"><b>▶</b><span>盛り場へ</span></button>
+    <button class="tool" id="addBtn" type="button"><b>＋</b><span data-i18n>うなぎ</span><small id="stockLeft"></small></button>
+    <button class="tool" id="flipBtn" type="button"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg></b><span data-i18n>返す</span></button>
+    <button class="tool" id="upBtn" type="button"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6"/><path d="M4 21h16"/></svg></b><span data-i18n>あげる</span></button>
+    <button class="tool" id="trashBtn" type="button" hidden><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/></svg></b><span data-i18n>作り直す</span></button>
+    <button class="tool go" id="serveBtn" type="button" hidden><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15h18M5 15a7 7 0 0 1 14 0M12 6v2M2 19h20"/></svg></b><span data-i18n>お出しする</span></button>
+  </div>
+</div>
+
+<div class="overlay" id="ovShop" hidden role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+  <div class="card shop">
+    <div class="shead">
+      <h2 id="shopTitle" data-i18n>うなぎ処 ひつまぶし工房</h2>
+      <div>
+        <div class="srank"><span id="shopRank"></span><span id="shopDay"></span><span id="shopRep"></span></div>
+        <div class="repbar"><i id="shopRepBar"></i></div>
+        <div class="wallet"><span id="shopWallet"></span><span id="shopStrict"></span></div>
+      </div>
+      <p class="story" id="shopStory"></p>
+      <div class="tabs" id="shopTabs" role="tablist">
+        <button class="sub" type="button" role="tab" data-tab="stock" data-i18n>仕入れ</button>
+        <button class="sub" type="button" role="tab" data-tab="up" data-i18n>改装</button>
+        <button class="sub" type="button" role="tab" data-tab="menu" data-i18n>メニュー</button>
+        <button class="sub" type="button" role="tab" data-tab="regs" data-i18n>常連帳</button>
+      </div>
+    </div>
+    <div class="sbody scroll" id="shopBody"></div>
+    <div class="sfoot">
+      <button class="btn" id="openBtn" type="button"></button>
+      <div class="row2"><button class="btn sub" id="shopDaily" type="button" data-i18n>今日のチャレンジ</button><span id="shopVs" class="vs-slot"></span></div>
+      <div class="row2"><button class="btn link" id="shopHow" type="button" data-i18n>遊び方</button><a class="btn link" href="../" data-i18n>ゲーム一覧へ</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovDay" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="card">
+    <h2 id="dTitle"></h2>
+    <div class="scroll">
+      <div class="label" data-i18n>本日の点数</div>
+      <div class="big" id="dScore">0</div>
+      <div id="dNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+      <div class="drows" id="dRows"></div>
+      <p id="dNote"></p>
+      <div class="dstory" id="dStory" hidden></div>
+    </div>
+    <button class="btn" id="dNext" type="button" data-i18n>閉店後の仕込みへ</button>
+    <button class="btn" id="dAgain" type="button" data-i18n>もう一度挑戦</button>
+    <button class="btn sub" id="dNormal" type="button" data-i18n>ふつうの営業へ</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll">
+      <ol>
+        <li><svg viewBox="0 0 54 40" aria-hidden="true"><rect x="2" y="24" width="50" height="14" rx="3" fill="#2e2926"/><g fill="#ff8a2a"><circle cx="12" cy="31" r="4"/><circle cx="24" cy="32" r="4"/><circle cx="36" cy="31" r="4"/><circle cx="46" cy="32" r="3"/></g><rect x="6" y="12" width="42" height="10" rx="4" fill="#c46f2a"/><g fill="#5a2a0c"><rect x="14" y="12" width="2" height="10"/><rect x="26" y="12" width="2" height="10"/><rect x="38" y="12" width="2" height="10"/></g><path d="M27 1 v8 M23 5 l4 -4 l4 4" stroke="#f6b453" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p data-i18n-html><b>焼く</b>：焼き色を見て、うなぎを上下に<b>はじいて返す</b><small>メーターの緑が食べごろ。焦がさない</small></p></li>
+        <li><svg viewBox="0 0 54 40" aria-hidden="true"><rect x="4" y="20" width="46" height="12" rx="5" fill="#b4642a"/><rect x="4" y="20" width="30" height="12" rx="5" fill="#6e2e0c" opacity=".7"/><rect x="8" y="22" width="24" height="2" fill="#fff" opacity=".55"/><path d="M34 6 l10 12" stroke="#e9d2a8" stroke-width="4" stroke-linecap="round"/><path d="M32 16 l6 5" stroke="#3b1a08" stroke-width="6" stroke-linecap="round"/></svg>
+          <p data-i18n-html><b>タレ</b>：うなぎを指で<b>なぞって塗る</b><small>ムラなく。塗りすぎると炎が上がる</small></p></li>
+        <li><svg viewBox="0 0 54 40" aria-hidden="true"><rect x="2" y="26" width="50" height="12" rx="3" fill="#ecd3a2"/><g fill="#b4642a"><rect x="6" y="20" width="9" height="7" rx="2"/><rect x="17" y="20" width="9" height="7" rx="2"/><rect x="28" y="20" width="9" height="7" rx="2"/></g><path d="M41 2 l8 0 l0 22 l-8 -3z" fill="#d9dde2"/><g fill="#d6452b"><path d="M14 13 l4 0 l-2 4z"/><path d="M25 13 l4 0 l-2 4z"/><path d="M36 13 l4 0 l-2 4z"/></g></svg>
+          <p data-i18n-html><b>刻む</b>：▼の目印で<b>リズムよくタップ</b><small>そろった幅ほど高得点</small></p></li>
+        <li><svg viewBox="0 0 54 40" aria-hidden="true"><ellipse cx="27" cy="26" rx="22" ry="11" fill="#93602f"/><ellipse cx="27" cy="22" rx="22" ry="10" fill="#c99359"/><ellipse cx="27" cy="22" rx="18" ry="7.5" fill="#fbf8f0"/><g fill="#b4642a"><rect x="14" y="17" width="7" height="4" rx="1.5"/><rect x="22" y="17" width="7" height="4" rx="1.5"/><rect x="30" y="17" width="7" height="4" rx="1.5"/><rect x="18" y="22" width="7" height="4" rx="1.5"/><rect x="26" y="22" width="7" height="4" rx="1.5"/><rect x="34" y="22" width="5" height="4" rx="1.5"/></g><circle cx="48" cy="8" r="4" fill="#8fbf5a"/><circle cx="40" cy="5" r="3" fill="#7cc36a"/></svg>
+          <p data-i18n-html><b>盛る</b>：器をえらび、ご飯→うなぎの順に<b>ドラッグ</b><small>薬味・だしは注文と食べ方に合わせる</small></p></li>
+      </ol>
+      <details>
+        <summary data-i18n>ひつまぶしの4通りの食べ方</summary>
+        <ul>
+          <li data-i18n>そのまま：まずはうなぎとご飯だけ（茶碗）</li>
+          <li data-i18n>薬味で：ねぎ・わさび・のりをのせて</li>
+          <li data-i18n>お茶漬けまで：薬味をのせて、だしをかけてお茶漬けに</li>
+          <li data-i18n>4通りぜんぶ：そのまま→薬味→だし茶漬け→最後はお好みで。見た目にもこだわるお客さん</li>
+          <li data-i18n>注文の「わさび抜き」「山椒抜き」は、そえてはいけません</li>
+        </ul>
+      </details>
+      <details>
+        <summary data-i18n>お店と、お客さんの厳しさ</summary>
+        <ul>
+          <li data-i18n>点数：焼き・タレ・刻み・盛りつけ・注文どおりか、と早さ。点数が高いほどチップが増えます</li>
+          <li data-i18n>はじめは失敗しても出せますが、点数が下がります</li>
+          <li data-i18n>店の格が上がると、金の札のこだわり客が作り直しを頼むようになります</li>
+          <li data-i18n>「名店」からは焦げたうなぎは出せず、待たせすぎると怒って帰ります</li>
+          <li data-i18n>閉店後は仕入れ・改装・メニュー開発。常連さんの「いつもの」は常連帳で覚えておこう</li>
+        </ul>
+      </details>
+    </div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <div class="howto-btns">
+      <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+      <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+    </div>
+  </div>
+</div>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ひつまぶし工房 — one business day = 3 to 5 minutes at the counter of a little eel shop in the (fictional) town of 鯱見町.
+// grill (watch the browning, flick to turn) → tare (trace with a finger) → chop (tap on the beat) → plate (drag rice, then the eel)
+// → condiments / dashi / vessel for the order and its eating style → serve. Between days: stock, renovation, new menus, the regulars' notebook.
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null, VS = window.KoboVersus || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'hitsumabushi';
+const SAVE_KEY = 'kusoge.hitsumabushi.save';   // progress (registry: per-field merge)
+const HOWTO_KEY = 'kusoge.hitsumabushi.howto'; // '1' = the how-to was shown
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const avg = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return a.length ? s / a.length : 0; };
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const yen = n => '¥' + fmtN(n);
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+// the shared seeded random (mulberry32: KoboPlatform.rng, same sequence as versus.js)
+function mkRng(seed) {
+  if (PF && PF.rng) return PF.rng(seed >>> 0);
+  if (VS && VS.rng) return VS.rng(seed >>> 0);
+  let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+// ---------- the menu, the order rules, the shop ----------
+const DISHES = {
+  hitsu: { ja: 'ひつまぶし', price: 3400, vessel: 'ohitsu', cuts: 7, rice: 3, tare: true },
+  don: { ja: 'うな丼', price: 2600, vessel: 'don', cuts: 2, rice: 2, tare: true },
+  shira: { ja: '白焼き', price: 2900, vessel: 'sara', cuts: 2, rice: 0, tare: false },
+};
+const SIDES = { kimo: { ja: '肝吸い', price: 400 }, umaki: { ja: 'う巻き', price: 900 } };
+const VESSELS = { ohitsu: 'おひつ', don: '丼', sara: '皿' };
+const ACCS = ['chawan', 'negi', 'wasabi', 'nori', 'dashi', 'sansho'];
+const ACC_JA = { chawan: '茶碗', negi: 'ねぎ', wasabi: 'わさび', nori: 'のり', dashi: 'だし', sansho: '山椒' };
+const REQS = { tareMore: 'タレ多め', tareLess: 'タレ少なめ', well: 'よく焼き', noWasabi: 'わさび抜き', noSansho: '山椒抜き', large: '大盛り', hurry: '急いで' };
+// the real way to eat ひつまぶし: as it is → with condiments → as dashi chazuke → your favourite of the three
+const STYLES = ['そのまま', '薬味で', 'お茶漬けまで', '4通りぜんぶ'];
+const STYLE_HINT = ['茶碗だけ', '茶碗＋薬味（ねぎ・わさび・のり）', '茶碗＋薬味＋だし', '茶碗＋薬味＋だし・見た目にもこだわる'];
+const RANKS = ['屋台', '小料理屋', '町の人気店', '名店', '老舗'];
+const RANK_REP = [0, 25, 70, 140, 240];
+const STRICT_NAME = { B: 'やさしいお客さん', C: 'こだわりのお客さんも', A: '本気のお客さんばかり' };
+const STORY = [
+  '鯱見町（しゃちみちょう）のたまり横丁。祖父の店ののれんを受け継いだあなたは、小さな屋台からはじめます。めざすは、町いちばんの老舗。',
+  '屋台に行列ができはじめました。小さな店をかまえて「小料理屋」に！',
+  '口コミが広がって「町の人気店」に。こだわりのお客さんも来るようになりました。失敗すると作り直しを頼まれることも。',
+  '「名店」と呼ばれるようになりました。もう焦げは出せません。待たせすぎると、お客さんは怒って帰ってしまいます。',
+  'ついに「鯱見町の老舗」。祖父の焼き台の前で、今日も炭が赤く光ります。',
+];
+const UPS = {
+  grills: { ja: '焼き台', max: 2, cost: [15000, 40000], desc: '同時に焼けるうなぎが1本ふえる' },
+  seats: { ja: '客席', max: 4, cost: [6000, 12000, 22000, 36000], desc: '座れるお客さんが1人ふえる' },
+  coal: { ja: '備長炭', max: 1, cost: [10000], desc: '火加減が安定し、タレの炎が上がりにくい' },
+  look: { ja: 'お店の見た目', max: 3, cost: [8000, 25000, 50000], names: ['のれん', '一枚板のカウンター', '坪庭の灯り'], desc: 'お客さんが待ってくれる時間とチップがふえる' },
+};
+const MENUS = {
+  don: { cost: 5000, rank: 0, desc: '丼に3切れ。山椒をそえる' },
+  kimo: { cost: 4000, rank: 0, desc: 'そえものの吸いもの。線まで注ぐ' },
+  shira: { cost: 12000, rank: 1, desc: 'タレを塗らずに焼く。わさびをそえる' },
+  umaki: { cost: 15000, rank: 2, desc: 'そえものの卵焼き。焼けたら巻く' },
+};
+const MENU_NAME = { hitsu: 'ひつまぶし', don: 'うな丼', shira: '白焼き', kimo: '肝吸い', umaki: 'う巻き' };
+const EEL_COST = 1000;
+// the regulars of たまり横丁 (invented people). From the 3rd visit they just say 「いつもの」
+const REGS = [
+  { id: 'matsu', name: '松じい', title: 'ご隠居の松じい', from: 2, dish: 'hitsu', style: 0, req: ['well'], side: null, look: { skin: '#e8c4a0', hair: '#d8d8d8', hs: 2, cloth: '#4b5d3a', acc: 'glasses' } },
+  { id: 'hana', name: 'ハナさん', title: '八百屋のハナさん', from: 3, dish: 'hitsu', style: 1, req: ['noWasabi', 'tareMore'], side: null, look: { skin: '#f0cfae', hair: '#5a3a24', hs: 1, cloth: '#c0533c', acc: 'band' } },
+  { id: 'kenta', name: 'ケンタ', title: '学生のケンタ', from: 4, dish: 'don', style: 0, req: ['large', 'hurry'], side: null, look: { skin: '#eac19a', hair: '#1d1b1a', hs: 0, cloth: '#2f5d8c', acc: 'cap' } },
+  { id: 'chiyo', name: '千代先生', title: 'お茶の千代先生', from: 5, dish: 'hitsu', style: 3, req: ['tareLess'], side: 'kimo', strict: true, look: { skin: '#f3d6bd', hair: '#2b2220', hs: 1, cloth: '#6b4a7a', acc: 'kanzashi' } },
+  { id: 'gen', name: '源さん', title: 'タクシーの源さん', from: 6, dish: 'don', style: 0, req: ['noSansho', 'tareMore'], side: 'umaki', look: { skin: '#d9a77c', hair: '#3a3a3a', hs: 3, cloth: '#3f4a52', acc: 'band' } },
+];
+const REG_BY = Object.fromEntries(REGS.map(r => [r.id, r]));
+const STAT_KEYS = ['served', 'perfect', 'remembered', 'days', 'angry', 'score'];
+const TC = 14; // tare cells along a fillet
+const FIXED = { grills: 2, seats: 4, coal: 1, look: 1, menu: ['hitsu', 'don', 'shira', 'kimo', 'umaki'], rank: 2, strict: 'C', dur: 180 };
+const strictOf = rank => (rank >= 3 ? 'A' : rank >= 2 ? 'C' : 'B');
+function rankFor(rep, look) { let r = 0; for (let i = 0; i < RANK_REP.length; i++) if (rep >= RANK_REP[i]) r = i; if (r >= 4 && look < 2) r = 3; return r; }
+
+// ---------- save ----------
+function defSave() {
+  return { v: 1, day: 1, best: 0, money: 6000, stock: 5, rep: 0, rank: 0, up: { grills: 0, seats: 0, coal: 0, look: 0 }, menu: ['hitsu'], regs: {},
+    stats: { served: 0, perfect: 0, remembered: 0, days: 0, angry: 0, score: 0 }, story: 0, tut: 0 };
+}
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const d = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
+  const n = (v, def, lo, hi) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : def; };
+  const o = { v: 1, day: n(s.day, 1, 1, 99999), best: n(s.best, 0, 0, 1e8), money: n(s.money, d.money, 0, 1e10), stock: n(s.stock, d.stock, 0, 999),
+    rep: n(s.rep, 0, -9999, 1e6), rank: n(s.rank, 0, 0, 4), story: n(s.story, 0, 0, 4), tut: n(s.tut, 0, 0, 1) };
+  o.up = {}; for (const k of Object.keys(UPS)) o.up[k] = n(s.up && s.up[k], 0, 0, UPS[k].max);
+  o.menu = ['hitsu']; if (Array.isArray(s.menu)) for (const m of s.menu) if (MENUS[m] && !o.menu.includes(m)) o.menu.push(m);
+  o.regs = {};
+  if (s.regs && typeof s.regs === 'object') for (const r of REGS) { const x = s.regs[r.id]; if (x && typeof x === 'object') o.regs[r.id] = { visits: n(x.visits, 0, 0, 1e6), known: !!x.known }; }
+  o.stats = {}; for (const k of STAT_KEYS) o.stats[k] = n(s.stats && s.stats[k], 0, 0, 1e10);
+  o.rank = Math.max(o.rank, rankFor(o.rep, o.up.look)); // never below what the reputation already earned
+  return o;
+}
+let save = readSave();
+function writeSave() {
+  const cur = readSave();
+  save.best = Math.max(save.best, cur.best);
+  for (const k of STAT_KEYS) save.stats[k] = Math.max(save.stats[k], cur.stats[k]);
+  store.set(SAVE_KEY, JSON.stringify(save));
+}
+function saveSetup() {
+  return { grills: 1 + save.up.grills, seats: 2 + save.up.seats, coal: save.up.coal, look: save.up.look, menu: save.menu.slice(), rank: save.rank,
+    strict: strictOf(save.rank), dur: 180 + 15 * Math.min(save.rank, 4) };
+}
+
+// ---------- sound (KoboAudio: shared volume and mute; SE only) ----------
+function tone(freq, dur, type, vol, delay, slide) { if (A) A.tone(freq, dur, { type: type || 'sine', vol: vol || 0.08, delay: delay || 0, slide: slide || 0 }); }
+let sizzleNode = null;
+function sizzle(level) { // a soft hiss while eels are on the charcoal
+  if (!A || !A.ctx || !A.se) return;
+  try {
+    const ac = A.ctx(); if (!ac) return;
+    if (!sizzleNode) {
+      const len = ac.sampleRate * 1.5, buf = ac.createBuffer(1, len, ac.sampleRate), ch = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (Math.random() < 0.02 ? 1 : 0.35);
+      const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
+      const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2600;
+      const g = ac.createGain(); g.gain.value = 0;
+      src.connect(hp); hp.connect(g); g.connect(A.se); src.start();
+      sizzleNode = { src, g };
+    }
+    const v = A.muted ? 0 : clamp(level, 0, 1) * 0.05;
+    sizzleNode.g.gain.setTargetAtTime(v, ac.currentTime, 0.15);
+  } catch (e) { sizzleNode = null; }
+}
+const sfx = {
+  tap() { tone(700, 0.04, 'triangle', 0.05); },
+  place() { tone(260, 0.08, 'triangle', 0.08, 0, 200); tone(900, 0.04, 'sine', 0.03, 0.03); },
+  flip() { tone(330, 0.07, 'triangle', 0.08, 0, 520); tone(180, 0.1, 'sine', 0.05, 0.05); },
+  brush() { tone(1800 + Math.random() * 600, 0.03, 'sine', 0.012); },
+  up() { tone(520, 0.08, 'triangle', 0.07, 0, 780); },
+  tick(accent) { tone(accent ? 1320 : 990, 0.03, 'square', accent ? 0.03 : 0.018); },
+  chop() { tone(140, 0.06, 'triangle', 0.12, 0, 90); tone(2400, 0.02, 'square', 0.02); },
+  rice() { tone(420, 0.05, 'sine', 0.06, 0, 300); },
+  toggle(on) { tone(on ? 880 : 560, 0.05, 'triangle', 0.05); },
+  pour() { tone(500 + Math.random() * 300, 0.06, 'sine', 0.02, 0, 700); },
+  roll() { tone(300, 0.08, 'triangle', 0.07, 0, 420); },
+  serve() { [660, 880, 1100].forEach((f, i) => tone(f, 0.16, 'triangle', 0.07, i * 0.06)); },
+  great() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.22, 'sine', 0.08, i * 0.07)); },
+  bad() { tone(200, 0.14, 'square', 0.04, 0, 140); },
+  angry() { tone(240, 0.18, 'sawtooth', 0.04, 0, 120); tone(180, 0.22, 'sawtooth', 0.04, 0.12, 100); },
+  bell() { tone(1568, 0.5, 'sine', 0.05); tone(2093, 0.4, 'sine', 0.03, 0.02); },
+  day() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, 'triangle', 0.08, i * 0.1)); },
+  coin() { tone(1319, 0.06, 'square', 0.03); tone(1760, 0.12, 'square', 0.03, 0.05); },
+  warn() { tone(880, 0.05, 'square', 0.03); tone(880, 0.05, 'square', 0.03, 0.12); },
+};
+function vibrate(p) { if (A && A.vibrate) A.vibrate(reduceMotion.matches && Array.isArray(p) ? p[0] : p); }
+
+// ---------- state ----------
+// D = one business day: { mode, seed, setup, t, dur, sched, cust, seats, queue, grills, board, plate, ... }
+let D = null;
+let view = 'grill';     // 'grill' | 'plate'
+let mini = null;        // the side dish mini game in the plate view
+let drag = null;        // { kind: 'rice' | 'eel', x, y }
+let paused = false, menuOpen = false;
+let vs = null;          // { snap, playing, score } while an online match owns the counter
+let tut = null;         // { step } while the guided first dish runs
+let selLane = 0;
+let fx = [];            // particles
+let floaters = [];      // floating texts on the canvas
+let toastT = 0;
+let uid = 1;
+const nowSec = () => performance.now() / 1000;
+
+function mkFillet() {
+  return { id: uid++, side: [0, 0], down: 1, tare: new Array(TC).fill(0), glaze: 0, flips: 0, flipT: 0, flare: 0, t: 0, seed: (Math.random() * 1e9) | 0, warned: 0 };
+}
+const isBurnt = f => Math.max(f.side[0], f.side[1]) > 1.2;
+const isRaw = f => Math.min(f.side[0], f.side[1]) < 0.45;
+
+// ---------- the orders of a day (made in advance from the seed: everyone in a match gets the same queue) ----------
+function pick(rnd, list) { return list[Math.floor(rnd() * list.length) % list.length]; }
+function wpick(rnd, w) { const ks = Object.keys(w); let s = 0; for (const k of ks) s += w[k]; let r = rnd() * s; for (const k of ks) { r -= w[k]; if (r <= 0) return k; } return ks[ks.length - 1]; }
+const SKINS = ['#f3d2b3', '#e8c09a', '#d9a77c', '#c68a5e', '#f6dcc4'];
+const HAIRS = ['#1d1b1a', '#3a2a20', '#5a3a24', '#7a5a3a', '#b9b2a8', '#2b2b38'];
+const CLOTHS = ['#3d5a80', '#9c3d36', '#56724a', '#7a5c3e', '#6b4a7a', '#2f4f5f', '#a0743c', '#44506b'];
+function makeLook(rnd) { return { skin: pick(rnd, SKINS), hair: pick(rnd, HAIRS), hs: Math.floor(rnd() * 4), cloth: pick(rnd, CLOTHS), acc: rnd() < 0.15 ? 'glasses' : rnd() < 0.1 ? 'cap' : null }; }
+function makeOrder(setup, rnd, at, regIds) {
+  const menu = setup.menu;
+  const dishW = { hitsu: 5 }; if (menu.includes('don')) dishW.don = 3; if (menu.includes('shira')) dishW.shira = 2;
+  const c = { id: uid++, at, dish: wpick(rnd, dishW), req: [], style: 0, side: null, strict: false, reg: null, usual: false, asked: false,
+    look: makeLook(rnd), wait: 0, qwait: 0, state: 'new', seat: -1, late: false, leaveAt: 0, result: null, enter: 0 };
+  if (c.dish === 'hitsu') c.style = Math.floor(rnd() * 4);
+  // requests: a few at first, more as the shop grows
+  const nReq = setup.rank === 0 ? (rnd() < 0.45 ? 1 : 0) : setup.rank === 1 ? Math.floor(rnd() * 3) : 1 + Math.floor(rnd() * (setup.strict === 'A' ? 3 : 2));
+  const pool = ['tare', 'well', 'large', 'hurry'];
+  if (c.dish === 'hitsu' && c.style >= 1) pool.push('noWasabi');
+  if (c.dish === 'don') pool.push('noSansho');
+  if (c.dish === 'shira') { pool.splice(pool.indexOf('tare'), 1); pool.splice(pool.indexOf('large'), 1); pool.push('noWasabi'); }
+  for (let i = 0; i < nReq && pool.length; i++) {
+    const k = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
+    c.req.push(k === 'tare' ? (rnd() < 0.6 ? 'tareMore' : 'tareLess') : k);
+  }
+  const sides = []; if (menu.includes('kimo')) sides.push('kimo'); if (menu.includes('umaki')) sides.push('umaki');
+  if (sides.length && rnd() < 0.3) c.side = pick(rnd, sides);
+  if (setup.strict !== 'B') c.strict = rnd() < (setup.strict === 'A' ? 0.4 : 0.3);
+  // a regular instead (only in the normal shop: matches and dailies are the same for everyone)
+  if (regIds && regIds.length && rnd() < 0.3) {
+    const r = REG_BY[regIds.splice(Math.floor(rnd() * regIds.length), 1)[0]];
+    Object.assign(c, { reg: r.id, dish: r.dish, style: r.style, req: r.req.slice(), side: r.side && menu.includes(r.side) ? r.side : null, strict: !!r.strict && setup.strict !== 'B', look: Object.assign({}, r.look) });
+    const rec = save.regs[r.id];
+    c.usual = !!(rec && rec.visits >= 2);
+  }
+  const look = setup.look || 0;
+  c.pat = (c.req.includes('hurry') ? 55 : c.strict ? 80 : 95) + look * 8 - (setup.strict === 'A' ? 8 : 0);
+  return c;
+}
+function genSchedule(setup, rnd, from, regIds) {
+  const list = [];
+  const thr = Math.min(setup.grills / 36, 1 / 17); // dishes per second a good cook can make
+  const interval = (1 / (thr * 0.92)) * (1 - 0.035 * Math.min(setup.rank, 4));
+  let t = from + 2 + rnd() * 3;
+  while (t < setup.dur - 28) { list.push(makeOrder(setup, rnd, t, regIds)); t += interval * (0.65 + rnd() * 0.7); }
+  return list;
+}
+function required(c) {
+  const r = new Set();
+  if (c.dish === 'hitsu') { r.add('chawan'); if (c.style >= 1) { r.add('negi'); r.add('wasabi'); r.add('nori'); } if (c.style >= 2) r.add('dashi'); }
+  else if (c.dish === 'don') r.add('sansho');
+  else if (c.dish === 'shira') r.add('wasabi');
+  if (c.req.includes('noWasabi')) r.delete('wasabi');
+  if (c.req.includes('noSansho')) r.delete('sansho');
+  return r;
+}
+
+// ---------- judging a dish (pure: the plate and the order → points) ----------
+function sideFit(x, lo, hi) {
+  if (x > 1.2) return 0;
+  if (x < lo) return clamp(1 - (lo - x) / 0.35, 0, 1);
+  if (x > hi) return clamp(1 - (x - hi) / 0.25, 0, 1);
+  return 1;
+}
+function riceShape(drops) { // 7 bins across the vessel; each scoop is a soft mound where it was dropped
+  const bins = new Array(7).fill(0);
+  for (const x of drops) for (let i = 0; i < 7; i++) { const bx = -1 + (i + 0.5) * (2 / 7); bins[i] += Math.exp(-((bx - x) ** 2) / 0.32); }
+  return bins;
+}
+function judge(c, p, setup) {
+  const d = DISHES[c.dish], f = p.eel.f, notes = [];
+  const well = c.req.includes('well');
+  const lo = well ? 0.88 : 0.7, hi = well ? 1.06 : 0.95;
+  // 焼き 30
+  const fs = [sideFit(f.side[0], lo, hi), sideFit(f.side[1], lo, hi)];
+  let cook = 30 * (fs[0] + fs[1]) / 2;
+  const burnt = isBurnt(f), raw = isRaw(f);
+  if (burnt) notes.push('焦げている');
+  else if (raw) notes.push('生焼け');
+  else if (well && Math.min(f.side[0], f.side[1]) < 0.85) notes.push('もっとよく焼いて');
+  else if (fs[0] + fs[1] > 1.9) notes.push('焼き色が見事');
+  // タレ 15
+  const ta = avg(f.tare);
+  let tare;
+  if (!d.tare) { tare = ta < 0.15 ? 15 : 15 * clamp(1 - ta * 1.5, 0, 1); if (ta >= 0.15) notes.push('白焼きにタレ'); }
+  else {
+    const tg = c.req.includes('tareMore') ? 1.55 : c.req.includes('tareLess') ? 0.65 : 1.05;
+    let g = 0, thin = 0; for (const v of f.tare) { g += clamp(1 - Math.max(0, Math.abs(v - tg) - 0.3) / 0.7, 0, 1); if (v < 0.35) thin++; }
+    tare = 15 * g / TC;
+    if (thin >= 4) notes.push('タレにムラ');
+    else if (ta > tg + 0.6) notes.push('タレが多すぎ');
+    else if (ta < tg - 0.45) notes.push('タレが足りない');
+    else if (tare > 13) notes.push('タレのツヤが見事');
+  }
+  // 刻み 10
+  const N = d.cuts, cuts = p.eel.cuts.slice().sort((a, b) => a - b), edges = [0].concat(cuts, [1]);
+  const ideal = 1 / (N + 1); let err = 0;
+  const widths = []; for (let i = 1; i < edges.length; i++) widths.push(edges[i] - edges[i - 1]);
+  // compare with N+1 equal pieces (a missing or extra cut shows up as an uneven piece)
+  const want = N + 1;
+  for (let i = 0; i < Math.max(want, widths.length); i++) err += Math.abs((widths[i] || 0) - ideal);
+  err = err / (2 * (1 - ideal) || 1);
+  const chop = 10 * clamp(1 - err * 1.25, 0, 1);
+  if (chop < 5) notes.push('切り方がふぞろい');
+  // 盛り 15
+  let rice = 7;
+  const target = d.rice + (c.req.includes('large') && d.rice ? 1 : 0);
+  if (d.rice) {
+    const k = p.rice.length;
+    const cf = k === target ? 1 : Math.abs(k - target) === 1 ? 0.55 : 0.12;
+    let flat = 0;
+    if (k) { const b = riceShape(p.rice), m = avg(b); let v = 0; for (const x of b) v += (x - m) ** 2; flat = clamp(1 - Math.sqrt(v / b.length) / (m || 1) * 1.6, 0, 1); }
+    rice = 7 * cf * (0.35 + 0.65 * flat);
+    if (k < target) notes.push(c.req.includes('large') ? '大盛りにして' : 'ご飯が少ない');
+    else if (k > target) notes.push('ご飯が多すぎ');
+  } else if (p.rice.length) { rice = 1; notes.push('白焼きにご飯'); }
+  const dd = Math.hypot(p.eel.dx, p.eel.dy);
+  const place = 8 * clamp(1 - Math.max(0, dd - 0.06) * 1.7, 0, 1);
+  if (place < 4) notes.push('盛りつけが雑');
+  let look = rice + place;
+  if (c.dish === 'hitsu' && c.style === 3) look = 15 * Math.pow(look / 15, 1.6); // the connoisseur of the four ways looks closely
+  // 注文 30：vessel 10 + accessories 15 + side 5
+  const vesselOk = p.vessel === d.vessel;
+  if (!vesselOk) notes.push('器がちがう');
+  const need = required(c); let acc = 15, missing = 0;
+  for (const k of need) if (!p.acc[k]) { acc -= 5; missing++; }
+  for (const k of ACCS) if (p.acc[k] && !need.has(k)) {
+    if ((k === 'wasabi' && c.req.includes('noWasabi')) || (k === 'sansho' && c.req.includes('noSansho'))) { acc -= 10; notes.push(k === 'wasabi' ? 'わさび抜きなのに' : '山椒抜きなのに'); }
+    else acc -= 2;
+  }
+  if (missing) notes.push(c.dish === 'hitsu' && need.has('dashi') && !p.acc.dashi ? 'だしがない' : '薬味がたりない');
+  acc = Math.max(0, acc);
+  let side = 5;
+  if (c.side) { const q = p.side[c.side]; side = q == null ? 0 : 5 * q; if (q == null) notes.push(T(SIDES[c.side].ja) + T('がない')); }
+  const order = (vesselOk ? 10 : 0) + acc + side;
+  const raw0 = cook + tare + chop + look + order;
+  // the clock: waiting is part of the taste (急いで counts double)
+  const ratio = c.wait / c.pat, hurry = c.req.includes('hurry');
+  const sf = hurry ? clamp(1 - 0.55 * ratio, 0.45, 1) : clamp(1 - 0.3 * ratio, 0.6, 1);
+  if (hurry && ratio < 0.5) notes.push('早い！');
+  else if (ratio > 1) notes.push('待たされた');
+  const remembered = !!(c.usual && !c.asked && missing === 0 && vesselOk && reqKept(c, p));
+  let pts = Math.round(raw0 * sf) + (remembered ? 10 : 0);
+  pts = clamp(pts, 0, 120);
+  const rating = pts >= 90 ? 4 : pts >= 75 ? 3 : pts >= 55 ? 2 : pts >= 35 ? 1 : 0;
+  const price = d.price + (c.side && p.side[c.side] != null ? SIDES[c.side].price : 0);
+  const tip = Math.round(price * Math.max(0, pts - 55) / 100 * (1 + 0.12 * (setup.look || 0)) / 10) * 10;
+  return { pts, raw: raw0, sf, rating, price, tip, burnt, raw0: raw, vesselOk, remembered, notes: notes.slice(0, 3),
+    parts: { cook: Math.round(cook), tare: Math.round(tare), chop: Math.round(chop), look: Math.round(look), order: Math.round(order) } };
+}
+function reqKept(c, p) { // the hidden "usual" requests (for the remembered bonus)
+  const f = p.eel.f, ta = avg(f.tare);
+  for (const r of c.req) {
+    if (r === 'well' && Math.min(f.side[0], f.side[1]) < 0.85) return false;
+    if (r === 'tareMore' && ta < 1.2) return false;
+    if (r === 'tareLess' && ta > 0.95) return false;
+    if (r === 'large' && p.rice.length < DISHES[c.dish].rice + 1) return false;
+    if (r === 'noWasabi' && p.acc.wasabi) return false;
+    if (r === 'noSansho' && p.acc.sansho) return false;
+  }
+  return true;
+}
+const RATING = ['残念…', 'いまいち', 'まずまず', '上', '極上！'];
+
+// ---------- a business day ----------
+function newDay(mode, opt) {
+  opt = opt || {};
+  const setup = mode === 'normal' || mode === 'tutorial' ? saveSetup() : Object.assign({}, FIXED, { menu: FIXED.menu.slice() });
+  const seed = (opt.seed != null ? opt.seed : (Math.random() * 4294967296)) >>> 0;
+  const rnd = mkRng(seed);
+  const own = mode === 'normal' || mode === 'tutorial';
+  const regIds = mode === 'normal' ? REGS.filter(r => save.day >= r.from && (r.dish === 'hitsu' || setup.menu.includes(r.dish))).map(r => r.id) : null;
+  const d = {
+    mode, seed, setup, rnd, t: 0, dur: setup.dur, over: false, started: false,
+    sched: [], cust: [], seats: new Array(setup.seats).fill(null), queue: [],
+    grills: new Array(setup.grills).fill(null), board: null, plate: newPlate(), sel: null,
+    score: 0, money: own ? save.money : 0, tips: 0, sales: 0, stock: own ? save.stock : 999, used: 0,
+    rep: 0, served: [], refused: 0, angry: 0, lost: 0, perfect: 0, remembered: 0, day: own ? save.day : 1,
+    wallStart: Date.now(), regIds,
+  };
+  if (mode === 'tutorial') {
+    d.mode = 'normal'; d.tutorial = true;
+    const c = makeOrder(setup, rnd, 0, null);
+    Object.assign(c, { dish: 'hitsu', style: 1, req: [], side: null, strict: false, pat: 1e9 });
+    d.sched = [c];
+  } else d.sched = genSchedule(setup, rnd, 0, regIds);
+  return d;
+}
+function newPlate() { return { vessel: null, rice: [], eel: null, acc: {}, side: {} }; }
+function curSetup() { return D ? D.setup : saveSetup(); }
+
+function startDay(mode, opt) {
+  opt = opt || {};
+  if (D && D.started && !D.over) endPlay('quit');
+  hideOverlays();
+  mini = null; drag = null; fx = []; floaters = []; paused = false;
+  const tutorial = mode === 'normal' && !save.tut && !opt.noTutorial;
+  D = newDay(tutorial ? 'tutorial' : mode, opt);
+  D.dateKey = opt.dateKey || null;
+  view = 'grill'; selLane = 0;
+  tut = tutorial ? { step: 0 } : null;
+  layout();
+  D.started = true;
+  const pm = D.mode;
+  emit('play_start', pm === 'daily' ? { mode: 'daily', dateKey: D.dateKey, seed: D.seed } : { mode: pm, stage: D.day, seed: pm === 'normal' ? undefined : D.seed });
+  sfx.bell();
+  if (tut) renderCoach();
+  else toast(D.mode === 'normal' ? T('{n}日目、開店です！', { n: D.day }) : D.mode === 'daily' ? T('今日のチャレンジ、開店です！') : T('開店！'));
+  refreshAll();
+}
+function endPlay(reason) {
+  if (!D || !D.started || D.ended) return;
+  D.ended = true;
+  emit('play_end', { mode: D.mode, score: D.score, reason, stage: D.day, stats: dayStats() });
+}
+function dayStats() { return { served: D.served.length, perfect: D.perfect, remembered: D.remembered, angry: D.angry, refused: D.refused, sales: D.sales, tips: D.tips, day: D.day }; }
+
+function arrive(c) {
+  c.state = 'queue';
+  const i = D.seats.indexOf(null);
+  if (i >= 0) seat(c, i);
+  else if (D.queue.length < 3) D.queue.push(c);
+  else { D.lost++; return; }
+}
+function seat(c, i) {
+  c.state = 'seat'; c.seat = i; c.enter = D.t; c.enterReal = nowSec(); D.seats[i] = c; D.cust.push(c);
+  if (!selCust()) D.sel = c.id;
+  if (c.reg) {
+    const r = save.regs[c.reg] || { visits: 0, known: false };
+    if (D.mode === 'normal') { r.known = true; save.regs[c.reg] = r; }
+    toast(c.usual ? T('{n}が来た。「いつもの」だって', { n: T(REG_BY[c.reg].name) }) : T('常連の{n}が来ました', { n: T(REG_BY[c.reg].name) }));
+  }
+  sfx.bell();
+}
+const selCust = () => (D ? D.cust.find(c => c.id === D.sel && c.state === 'seat') || null : null);
+function autoSelect() {
+  if (selCust()) return;
+  const w = D.cust.filter(c => c.state === 'seat').sort((a, b) => a.enter - b.enter)[0];
+  D.sel = w ? w.id : null;
+}
+function selectCustomer(c) { if (!c || c.state !== 'seat') return; D.sel = c.id; sfx.tap(); refreshAll(); }
+const targetDish = () => { const c = selCust(); return c ? c.dish : 'hitsu'; };
+
+// ---------- actions (the canvas gestures and the tool bar call these; the test hooks too) ----------
+function canAct() { return !!(D && D.started && !D.over && !paused && (vs ? VS.canPlay() : !(VS && VS.active()))); }
+function addEel(lane) {
+  if (!canAct()) return false;
+  if (lane == null) lane = D.grills.indexOf(null);
+  if (lane < 0 || lane >= D.grills.length) { toast(T('焼き台がいっぱいです')); sfx.bad(); return false; }
+  if (D.grills[lane]) { selLane = lane; return false; }
+  if (D.stock <= 0) { toast(T('うなぎがありません（閉店後に仕入れを）')); sfx.bad(); return false; }
+  D.stock--; D.used++;
+  D.grills[lane] = mkFillet(); selLane = lane;
+  sfx.place(); refreshAll();
+  return true;
+}
+function flip(lane) {
+  if (!canAct()) return false;
+  const f = D.grills[lane == null ? selLane : lane];
+  if (!f || f.flipT > 0) return false;
+  f.flipT = 0.0001; selLane = D.grills.indexOf(f);
+  sfx.flip(); vibrate(8);
+  return true;
+}
+function brushAt(lane, x0, y0, x1, y1) {
+  const f = D.grills[lane], L = LY && LY.lanes[lane];
+  if (!f || !L || (f.flipT > 0 && f.flipT < 1)) return 0;
+  const r = filRect(L), len = Math.hypot(x1 - x0, y1 - y0), steps = Math.max(1, Math.ceil(len / 3)), cw = r.w / TC;
+  let added = 0;
+  for (let i = 1; i <= steps; i++) {
+    const x = lerp(x0, x1, i / steps), y = lerp(y0, y1, i / steps);
+    if (y < r.y - 10 || y > r.y + r.h + 10) continue;
+    const u = (x - r.x) / r.w; if (u < 0 || u >= 1) continue;
+    const k = Math.floor(u * TC), a = 0.36 * (len / steps) / cw;
+    f.tare[k] = Math.min(3, f.tare[k] + a); added += a;
+  }
+  if (added > 0) {
+    if (Math.random() < 0.25) sfx.brush();
+    if (Math.random() < 0.5) spark(x1, y1, 'drop');
+  }
+  return added;
+}
+function brushFill(lane, amount) { // the test hooks: an even coat
+  const f = D.grills[lane]; if (!f) return false;
+  for (let k = 0; k < TC; k++) f.tare[k] = Math.min(3, f.tare[k] + amount);
+  return true;
+}
+function takeOff(lane) {
+  if (!canAct()) return false;
+  if (lane == null) lane = selLane;
+  let f = D.grills[lane];
+  if (!f) { lane = D.grills.findIndex(x => !!x); f = lane >= 0 ? D.grills[lane] : null; }
+  if (!f) { toast(T('焼いているうなぎがありません')); return false; }
+  if (D.board) { toast(T('まな板が空いていません。先に盛りつけを')); sfx.bad(); setView('plate'); return false; }
+  if (f.flipT > 0) f.flipT = 0;
+  D.grills[lane] = null;
+  D.board = { f, cuts: [], knife: null, t: 0, n: 0, beat: 0.42, done: false, lastBeat: -9, anim: 0 };
+  sfx.up(); setView('plate');
+  if (isBurnt(f)) toast(T('焦げています…（「作り直す」で捨てられます）'));
+  refreshAll();
+  return true;
+}
+function chopTap() {
+  if (!canAct()) return false;
+  const b = D.board; if (!b || b.done) return false;
+  if (b.knife == null) {
+    b.n = DISHES[targetDish()].cuts; b.t = -b.beat; b.knife = 0; b.cuts = []; b.lastBeat = -2;
+    sfx.tick(true); return true;
+  }
+  const x = clamp(b.t / ((b.n + 1) * b.beat), 0, 1);
+  if (b.t < 0 || x <= 0.02 || x >= 0.985 || b.cuts.length >= 14) return false;
+  b.cuts.push(x); b.anim = 1; sfx.chop(); vibrate(6);
+  return true;
+}
+function chopNow(cuts) { // test hook: finish the chop with these cut positions
+  const b = D.board; if (!b) return false;
+  b.n = b.n || DISHES[targetDish()].cuts; b.knife = 1; b.cuts = cuts.slice(); b.done = true; return true;
+}
+function chooseVessel(v) {
+  if (!canAct()) return false;
+  const p = D.plate;
+  if (p.vessel === v) return true;
+  if (p.rice.length || p.eel) { toast(T('器を変えるときは「作り直す」')); sfx.bad(); return false; }
+  p.vessel = v; sfx.place(); refreshAll(); return true;
+}
+function dropRice(xn) {
+  if (!canAct()) return false;
+  const p = D.plate;
+  if (!p.vessel) { toast(T('先に器をえらぼう')); sfx.bad(); return false; }
+  if (p.eel) { toast(T('うなぎの上にご飯はのせません')); sfx.bad(); return false; }
+  if (p.rice.length >= 6) return false;
+  p.rice.push(clamp(xn, -1, 1)); sfx.rice(); steamPuff();
+  refreshAll(); return true;
+}
+function dropEel(dx, dy) {
+  if (!canAct()) return false;
+  const p = D.plate, b = D.board;
+  if (!b || !b.done) { toast(T('先にうなぎを刻もう')); return false; }
+  if (!p.vessel) { toast(T('先に器をえらぼう')); sfx.bad(); return false; }
+  if (p.eel) return false;
+  p.eel = { f: b.f, cuts: b.cuts.slice().sort((a, c) => a - c), n: b.n, dx: clamp(dx, -1.5, 1.5), dy: clamp(dy, -1.5, 1.5) };
+  D.board = null; sfx.place(); steamPuff();
+  refreshAll(); return true;
+}
+function toggleAcc(k) {
+  if (!canAct() || !ACCS.includes(k)) return false;
+  D.plate.acc[k] = !D.plate.acc[k]; sfx.toggle(D.plate.acc[k]); refreshAll(); return true;
+}
+function openMini(kind) {
+  if (!canAct() || !SIDES[kind]) return false;
+  if (!D.setup.menu.includes(kind)) return false;
+  if (D.plate.side[kind] != null) { toast(T('もう用意しました')); return false; }
+  mini = kind === 'kimo' ? { kind, level: 0, pouring: false, done: 0 } : { kind, set: 0, rolls: [], done: 0, anim: 0 };
+  sfx.tap(); return true;
+}
+function miniDown() {
+  if (!mini || mini.done) return;
+  if (mini.kind === 'kimo') mini.pouring = true;
+  else { // う巻き: roll when the egg is just set
+    const q = mini.set >= 0.55 && mini.set <= 0.85 ? 1 : clamp(1 - Math.min(Math.abs(mini.set - 0.55), Math.abs(mini.set - 0.85)) / 0.4, 0, 1);
+    mini.rolls.push(q); mini.set = 0; mini.anim = 1; sfx.roll();
+    if (mini.rolls.length >= 3) finishMini(avg(mini.rolls));
+  }
+}
+function miniUp() {
+  if (!mini || mini.done || mini.kind !== 'kimo' || !mini.pouring) return;
+  mini.pouring = false;
+  if (mini.level > 0.05) finishMini(clamp(1 - Math.abs(mini.level - 0.78) / 0.3, 0, 1));
+}
+function finishMini(q) {
+  if (!mini || mini.done) return;
+  mini.done = nowSec(); mini.q = q;
+  if (D) D.plate.side[mini.kind] = Math.round(q * 100) / 100;
+  (q > 0.7 ? sfx.serve : q > 0.3 ? sfx.toggle : sfx.bad)(true);
+  refreshAll();
+}
+let trashArm = 0;
+function trash(force) {
+  if (!canAct()) return false;
+  const p = D.plate;
+  if (!D.board && !p.vessel && !p.eel) return false;
+  if (!force && Date.now() - trashArm > 2200) { trashArm = Date.now(); toast(T('もう一度押すと、まな板と器を空にします')); return false; }
+  trashArm = 0;
+  D.board = null; D.plate = newPlate(); mini = null;
+  sfx.bad(); toast(T('作り直します')); refreshAll(); return true;
+}
+function serve() {
+  if (!canAct()) return null;
+  const p = D.plate;
+  if (!p.vessel || !p.eel) { toast(!p.vessel ? T('器をえらび、盛りつけてからお出しします') : T('うなぎをのせてからお出しします')); sfx.bad(); return null; }
+  const c = selCust();
+  if (!c) { toast(T('お出しするお客さんをえらんでね（上の席をタップ）')); sfx.bad(); return null; }
+  const burnt = isBurnt(p.eel.f);
+  if (D.setup.strict === 'A' && burnt) { toast(T('焦げたうなぎはお出しできません。作り直しましょう')); sfx.bad(); vibrate([20, 40, 20]); return { blocked: true }; }
+  const r = judge(c, p, D.setup);
+  const picky = c.strict && D.setup.strict !== 'B';
+  D.plate = newPlate(); mini = null;
+  if (picky && (burnt || !r.vesselOk || r.pts < 50)) {
+    // a picky customer sends it back: the eel is lost and they keep waiting
+    D.refused++; c.wait += 12; D.rep -= 1;
+    say(c, T('作り直して！'), 'bad'); sfx.angry(); vibrate([30, 30, 30]);
+    toast(T('作り直しを頼まれた…（{why}）', { why: T(r.notes[0] || '見た目') }));
+    refreshAll();
+    return { refused: true, result: r };
+  }
+  c.state = 'eating'; c.result = r; c.leaveAt = D.t + 4.5;
+  D.seats[c.seat] = c; D.score += r.pts; D.sales += r.price; D.tips += r.tip; D.money += r.price + r.tip;
+  D.served.push({ dish: c.dish, pts: r.pts, rating: r.rating, reg: c.reg, notes: r.notes });
+  if (r.rating >= 4) D.perfect++;
+  if (r.remembered) D.remembered++;
+  D.rep += r.pts >= 85 ? 3 : r.pts >= 70 ? 2 : r.pts >= 50 ? 1 : r.pts < 35 ? -1 : 0;
+  if (vs && r.pts >= 60) vs.score += r.pts;
+  if (c.reg && D.mode === 'normal') { const rec = save.regs[c.reg] || { visits: 0, known: true }; rec.visits++; rec.known = true; save.regs[c.reg] = rec; }
+  say(c, T(RATING[r.rating]) + (r.remembered ? ' ' + T('覚えててくれた！') : ''), r.rating >= 3 ? 'good' : r.rating >= 2 ? 'ok' : 'bad');
+  (r.rating >= 4 ? sfx.great : r.rating >= 2 ? sfx.serve : sfx.bad)();
+  if (r.tip) setTimeout(() => sfx.coin(), 250);
+  const sr = seatRect(c.seat);
+  if (sr) floater(sr.x + sr.w / 2, sr.y + sr.h * 0.3, '+' + r.pts + (r.tip ? '  ' + yen(r.tip) : ''), r.rating >= 3 ? 'good' : 'ok');
+  toast(T('{r}　{p}点', { r: T(RATING[r.rating]), p: r.pts }) + (r.notes.length ? '　' + r.notes.map(n => T(n)).join(T('・')) : ''));
+  D.sel = null; autoSelect();
+  if (tut && tut.step === 9) tutStep(10);
+  refreshAll();
+  return { result: r };
+}
+function askUsual() {
+  const c = selCust(); if (!c || !c.usual || c.asked) return;
+  c.asked = true; sfx.tap(); refreshAll();
+}
+function say(c, text, kind) { c.bubble = { text, kind, t: nowSec() }; }
+
+// ---------- time ----------
+function laneHeat(i, t) {
+  const amp = D.setup.coal ? 0.04 : 0.13;
+  return 1 + amp * (0.6 * Math.sin(t * 0.37 + i * 1.7) + 0.4 * Math.sin(t * 1.13 + i * 2.9));
+}
+function update(dt) {
+  if (!D || !D.started || D.over || paused) return;
+  if (vs && !VS.canPlay()) return;
+  if (!vs && VS && VS.active()) return;
+  const frozen = !!(tut && tut.step < 10);
+  if (!frozen) D.t += dt;
+  // arrivals and the queue outside
+  while (D.sched.length && D.sched[0].at <= D.t) arrive(D.sched.shift());
+  for (let i = 0; i < D.seats.length; i++) if (!D.seats[i] && D.queue.length) seat(D.queue.shift(), i);
+  for (const c of D.queue) { c.qwait += dt; if (c.qwait > 45) { c.state = 'gone'; D.lost++; } }
+  D.queue = D.queue.filter(c => c.state !== 'gone');
+  // customers at the counter
+  for (const c of D.cust) {
+    if (c.state === 'seat') {
+      if (!frozen) c.wait += dt;
+      if (c.wait > c.pat && !c.late) {
+        c.late = true;
+        const leaves = D.setup.strict === 'A' || (D.setup.strict === 'C' && c.strict);
+        if (leaves) {
+          c.state = 'angry'; c.leaveAt = D.t + 1.8; D.angry++; D.rep -= D.setup.strict === 'A' ? 3 : 2;
+          say(c, T('もう帰る！'), 'bad'); sfx.angry();
+          toast(T('{n}が怒って帰ってしまった…', { n: c.reg ? T(REG_BY[c.reg].name) : T('お客さん') }));
+        } else say(c, T('まだかな…'), 'bad');
+      }
+    } else if ((c.state === 'eating' || c.state === 'angry') && D.t >= c.leaveAt) {
+      c.state = 'gone'; if (D.seats[c.seat] === c) D.seats[c.seat] = null;
+    }
+  }
+  D.cust = D.cust.filter(c => c.state !== 'gone');
+  autoSelect();
+  // the grills
+  let hiss = 0;
+  for (let i = 0; i < D.grills.length; i++) {
+    const f = D.grills[i]; if (!f) continue;
+    f.t += dt; hiss += 0.35 + f.flare;
+    if (f.flipT > 0) { f.flipT += dt / 0.34; if (f.flipT >= 0.5 && !f.flipped) { f.down = 1 - f.down; f.flips++; f.flipped = true; } if (f.flipT >= 1) { f.flipT = 0; f.flipped = false; } }
+    const rate = 0.056 * laneHeat(i, D.t) * (1 + 0.9 * f.flare) * (f.flipT > 0 ? 0.3 : 1);
+    f.side[f.down] += dt * rate;
+    f.side[1 - f.down] += dt * rate * 0.04;
+    const ta = avg(f.tare);
+    if (ta > 0.05) f.glaze = Math.min(1, f.glaze + dt * 0.1);
+    let over = 0; for (let k = 0; k < TC; k++) if (f.tare[k] > 2.0) { over++; f.tare[k] -= dt * 0.12 * (f.tare[k] - 2); }
+    if (over) { f.flare = Math.min(1, f.flare + dt * (D.setup.coal ? 0.25 : 0.6) * over / 3); if (Math.random() < dt * 6) dripAt(i); }
+    else f.flare = Math.max(0, f.flare - dt * 0.6);
+    // warnings: ready to turn / burning
+    const dn = f.side[f.down];
+    if (dn > 0.9 && f.warned < 1) { f.warned = 1; }
+    if (dn > 1.05 && f.warned < 2) { f.warned = 2; sfx.warn(); }
+    if (f.flipped === undefined) f.flipped = false;
+  }
+  sizzle(document.hidden ? 0 : Math.min(1, hiss / 2));
+  // the knife on the board
+  const b = D.board;
+  if (b && b.knife != null && !b.done) {
+    b.t += dt;
+    const beat = Math.floor(b.t / b.beat);
+    if (beat !== b.lastBeat) { b.lastBeat = beat; if (beat >= -1 && beat <= b.n) sfx.tick(beat < 0); }
+    b.knife = clamp(b.t / ((b.n + 1) * b.beat), 0, 1);
+    if (b.knife >= 1) { b.done = true; b.cuts.sort((a, c) => a - c); sfx.toggle(true); refreshAll(); }
+  }
+  if (b && b.anim > 0) b.anim = Math.max(0, b.anim - dt * 6);
+  // the side dish
+  if (mini && !mini.done) {
+    if (mini.kind === 'kimo' && mini.pouring) { mini.level += dt * 0.5; if (Math.random() < dt * 8) sfx.pour(); if (mini.level > 1.05) { mini.pouring = false; finishMini(0); toast(T('こぼれた！')); } }
+    if (mini.kind === 'umaki') { mini.set += dt * 0.75; if (mini.set > 1.25) { mini.rolls.push(0); mini.set = 0; mini.anim = 1; toast(T('焼きすぎ！')); if (mini.rolls.length >= 3) finishMini(avg(mini.rolls)); } }
+  }
+  if (mini && mini.anim > 0) mini.anim = Math.max(0, mini.anim - dt * 3);
+  if (mini && mini.done && nowSec() - mini.done > 0.7) mini = null;
+  if (tut) tutCheck();
+  if (!frozen && D.t >= D.dur && !vs) closeShop();
+}
+function closeShop() {
+  if (!D || D.over) return;
+  D.over = true; mini = null; drag = null; ptr = null;
+  sizzle(0);
+  for (const c of D.cust) if (c.state === 'seat') say(c, T('また来るね'), 'ok');
+  sfx.day();
+  finishDay();
+}
+
+// ---------- canvas: layout ----------
+const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
+let W = 1, H = 1, DPR = 1, LY = null, statics = null;
+function layout() {
+  const r = stage.getBoundingClientRect();
+  W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  const setup = curSetup();
+  const land = W >= 520 && W > H * 1.4;
+  const L = { land };
+  if (land) { const sw = Math.round(clamp(W * 0.27, 160, 230)); L.strip = { x: 0, y: 0, w: sw, h: H }; L.work = { x: sw, y: 0, w: W - sw, h: H }; }
+  else { const sh = Math.round(clamp(H * 0.24, 66, 98)); L.strip = { x: 0, y: 0, w: W, h: sh }; L.work = { x: 0, y: sh, w: W, h: H - sh }; }
+  const n = setup.seats; L.seats = [];
+  if (land) {
+    const cols = 2, rows = Math.ceil(n / 2), qh = 24, cw = (L.strip.w - 10) / cols, ch = Math.min(110, (H - qh - 10) / rows);
+    for (let i = 0; i < n; i++) L.seats.push({ x: 5 + (i % cols) * cw, y: 4 + Math.floor(i / cols) * ch, w: cw, h: ch });
+    L.queue = { x: 6, y: H - qh - 4, w: L.strip.w - 12, h: qh };
+  } else {
+    const qw = 34, cw = (W - qw - 6) / n;
+    for (let i = 0; i < n; i++) L.seats.push({ x: 3 + i * cw, y: 0, w: cw, h: L.strip.h });
+    L.queue = { x: W - qw - 2, y: 6, w: qw, h: L.strip.h - 12 };
+  }
+  // grill view: the konro (charcoal box) with one lane per grill
+  const wk = L.work, pad = 8;
+  L.konro = { x: wk.x + pad, y: wk.y + pad, w: wk.w - pad * 2, h: wk.h - pad * 2 };
+  const g = setup.grills, laneH = Math.min(L.konro.h / g, 138), top = L.konro.y + (L.konro.h - laneH * g) / 2;
+  const gw = Math.round(clamp(L.konro.w * 0.11, 30, 46));
+  L.lanes = [];
+  for (let i = 0; i < g; i++) {
+    const y = top + i * laneH;
+    const fx0 = L.konro.x + Math.max(12, L.konro.w * 0.05), fw = L.konro.w - gw - (fx0 - L.konro.x) - 18;
+    const fh = Math.min(laneH * 0.46, fw * 0.19);
+    L.lanes.push({ x: L.konro.x, y, w: L.konro.w, h: laneH, fil: { x: fx0, y: y + (laneH - fh) / 2, w: fw, h: fh },
+      gauge: { x: L.konro.x + L.konro.w - gw - 6, y: y + laneH * 0.1, w: gw, h: laneH * 0.8 } });
+  }
+  // plate view
+  const hasSide = setup.menu.includes('kimo') || setup.menu.includes('umaki');
+  if (!land) {
+    const topH = Math.round(wk.h * 0.42);
+    L.board = { x: wk.x + 8, y: wk.y + 6, w: Math.round(wk.w * 0.62) - 12, h: topH - 10 };
+    const tx = L.board.x + L.board.w + 8, tw = wk.x + wk.w - 8 - tx;
+    L.tub = { x: tx, y: wk.y + 6, w: tw, h: hasSide ? Math.round((topH - 10) * 0.6) : topH - 10 };
+    L.sideBtns = hasSide ? { x: tx, y: L.tub.y + L.tub.h + 4, w: tw, h: topH - 10 - L.tub.h - 4 } : null;
+    const by = wk.y + topH + 2;
+    L.vessel = { x: wk.x + 8, y: by, w: Math.round(wk.w * 0.53) - 8, h: wk.y + wk.h - 8 - by };
+    L.chips = { x: L.vessel.x + L.vessel.w + 8, y: by, w: wk.x + wk.w - 8 - (L.vessel.x + L.vessel.w + 8), h: L.vessel.h };
+  } else {
+    const cw = Math.round(wk.w * 0.38);
+    L.board = { x: wk.x + 6, y: wk.y + 6, w: cw - 8, h: Math.round(wk.h * 0.55) - 8 };
+    L.tub = { x: wk.x + 6, y: L.board.y + L.board.h + 6, w: hasSide ? Math.round((cw - 8) * 0.55) : cw - 8, h: wk.y + wk.h - 6 - (L.board.y + L.board.h + 6) };
+    L.sideBtns = hasSide ? { x: L.tub.x + L.tub.w + 4, y: L.tub.y, w: cw - 8 - L.tub.w - 4, h: L.tub.h } : null;
+    const vx = wk.x + cw + 4, vw = Math.round(wk.w * 0.34);
+    L.vessel = { x: vx, y: wk.y + 6, w: vw, h: wk.h - 12 };
+    L.chips = { x: vx + vw + 6, y: wk.y + 6, w: wk.x + wk.w - 6 - (vx + vw + 6), h: wk.h - 12 };
+  }
+  // accessory chips: 2 columns × 3 rows
+  L.chipCells = [];
+  const cc = L.chips, gap = 5, cw2 = (cc.w - gap) / 2, ch2 = Math.min(52, (cc.h - gap * 2) / 3);
+  const cy0 = cc.y + Math.max(0, (cc.h - (ch2 * 3 + gap * 2)) / 2);
+  ACCS.forEach((k, i) => L.chipCells.push({ k, x: cc.x + (i % 2) * (cw2 + gap), y: cy0 + Math.floor(i / 2) * (ch2 + gap), w: cw2, h: ch2 }));
+  L.sideCells = [];
+  if (L.sideBtns) {
+    const sb = L.sideBtns, list = ['kimo', 'umaki'].filter(k => setup.menu.includes(k)), sw = (sb.w - 4 * (list.length - 1)) / list.length;
+    list.forEach((k, i) => L.sideCells.push({ k, x: sb.x + i * (sw + 4), y: sb.y, w: sw, h: sb.h }));
+  }
+  // vessel tiles (choose おひつ / 丼 / 皿)
+  const vs3 = ['ohitsu', 'don'].concat(setup.menu.includes('shira') ? ['sara'] : []), vr = L.vessel, tw3 = (vr.w - 8 * (vs3.length - 1)) / vs3.length;
+  const th3 = Math.min(vr.h * 0.62, tw3 * 1.15);
+  L.vtiles = vs3.map((k, i) => ({ k, x: vr.x + i * (tw3 + 8), y: vr.y + (vr.h - th3) / 2, w: tw3, h: th3 }));
+  L.vCenter = { x: vr.x + vr.w / 2, y: vr.y + vr.h * 0.42, rx: Math.min(vr.w * 0.45, vr.h * 0.7), ry: Math.min(vr.h * 0.3, vr.w * 0.3) };
+  LY = L;
+  buildStatics();
+  draw();
+}
+let layoutQueued = false;
+function layoutSoon() { if (layoutQueued) return; layoutQueued = true; requestAnimationFrame(() => { layoutQueued = false; layout(); }); }
+const filRect = L => L.fil;
+function seatRect(i) { return LY && LY.seats[i] ? LY.seats[i] : null; }
+
+// ---------- canvas: colours from the theme ----------
+let PAL = {};
+function readPal() {
+  let cs = null; try { cs = getComputedStyle(document.documentElement); } catch (e) {}
+  const v = (n, d) => { const x = cs ? cs.getPropertyValue(n).trim() : ''; return x || d; };
+  PAL = {
+    wall: v('--h-c-wall', '#2a1a12'), wall2: v('--h-c-wall2', '#3b2618'), noren: v('--h-c-noren', '#1f3550'), counter: v('--h-c-counter', '#b07a45'),
+    counter2: v('--h-c-counter2', '#8a5a30'), work: v('--h-c-work', '#2b1d16'), tile: v('--h-c-tile', '#33251c'), ink: v('--h-c-ink', '#fff3e0'),
+    dim: v('--h-c-dim', '#d9bfa0'), chip: v('--h-c-chip', 'rgba(255,240,220,.1)'), chipOn: v('--h-c-chip-on', '#f0a43a'), chipInk: v('--h-c-chip-ink', '#2a1606'),
+    sel: v('--h-c-sel', '#ffd36b'), ok: v('--h-c-ok', '#6fd08c'), warn: v('--h-c-warn', '#ffc247'), bad: v('--h-c-bad', '#ff6a4d'),
+    paper: v('--h-c-paper', '#fbf3e4'), paperInk: v('--h-c-paper-ink', '#3a2413'), lamp: v('--h-c-lamp', '255, 190, 110'), shade: v('--h-c-shade', 'rgba(0,0,0,.35)'),
+  };
+}
+const FONT = '"M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif';
+const font = (px, w) => (w || 800) + ' ' + px + 'px ' + FONT;
+function fitFont(c, text, px, maxW, w) { let f = px; c.font = font(f, w); while (f > 7 && c.measureText(text).width > maxW) { f -= 0.5; c.font = font(f, w); } return f; }
+
+// ---------- drawing helpers ----------
+function rr(c, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function hex(c) { c = c.replace('#', ''); if (c.length === 3) c = c.split('').map(x => x + x).join(''); const n = parseInt(c, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+const rgb = (a, al) => al == null ? `rgb(${a[0] | 0},${a[1] | 0},${a[2] | 0})` : `rgba(${a[0] | 0},${a[1] | 0},${a[2] | 0},${al})`;
+const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+function ramp(stops, x) { if (x <= stops[0][0]) return stops[0][1]; for (let i = 1; i < stops.length; i++) if (x <= stops[i][0]) { const a = stops[i - 1], b = stops[i]; return mix(a[1], b[1], (x - a[0]) / (b[0] - a[0])); } return stops[stops.length - 1][1]; }
+// browning ramps: raw → pale gold → golden amber → deep amber → dark → charred
+const FLESH = [[0, [242, 228, 214]], [0.3, [240, 204, 150]], [0.6, [228, 152, 62]], [0.85, [196, 102, 28]], [1.05, [136, 58, 16]], [1.25, [58, 30, 14]], [1.5, [24, 14, 9]]];
+const SKIN = [[0, [104, 108, 116]], [0.4, [112, 92, 72]], [0.75, [104, 66, 34]], [1.0, [76, 42, 18]], [1.25, [40, 22, 11]], [1.5, [18, 11, 8]]];
+const TARE = [140, 56, 12];
+function vrng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+// ---------- static layers (rebuilt on resize / theme change) ----------
+function offscreen(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * DPR)); c.height = Math.max(1, Math.round(h * DPR)); const x = c.getContext('2d'); x.setTransform(DPR, 0, 0, DPR, 0, 0); return [c, x]; }
+function woodGrain(c, x, y, w, h, base, dark, seed, vertical) {
+  const r = vrng(seed);
+  c.save(); rr(c, x, y, w, h, 6); c.clip();
+  const g = c.createLinearGradient(x, y, vertical ? x + w : x, vertical ? y : y + h);
+  g.addColorStop(0, rgb(mix(hex(base), [255, 255, 255], 0.08))); g.addColorStop(1, rgb(mix(hex(base), [0, 0, 0], 0.08)));
+  c.fillStyle = g; c.fillRect(x, y, w, h);
+  c.strokeStyle = rgb(hex(dark), 0.35); c.lineWidth = 1;
+  const n = Math.round((vertical ? w : h) / 5);
+  for (let i = 0; i < n; i++) {
+    const o = (i + r()) * ((vertical ? w : h) / n), amp = 1 + r() * 3, ph = r() * 6, fq = 0.01 + r() * 0.03;
+    c.globalAlpha = 0.25 + r() * 0.5; c.beginPath();
+    const len = vertical ? h : w;
+    for (let s = 0; s <= len; s += 6) {
+      const d = o + Math.sin(s * fq + ph) * amp;
+      if (vertical) { if (s === 0) c.moveTo(x + d, y + s); else c.lineTo(x + d, y + s); } else { if (s === 0) c.moveTo(x + s, y + d); else c.lineTo(x + s, y + d); }
+    }
+    c.stroke();
+  }
+  c.globalAlpha = 1; c.restore();
+}
+function buildStatics() {
+  const L = LY; if (!L) return;
+  const [bg, b] = offscreen(W, H);
+  // the work area: dark tiles behind the counter
+  b.fillStyle = PAL.work; b.fillRect(0, 0, W, H);
+  b.strokeStyle = PAL.tile; b.lineWidth = 1;
+  for (let y = L.work.y; y < H; y += 22) { b.beginPath(); b.moveTo(L.work.x, y); b.lineTo(W, y); b.stroke(); }
+  for (let y = L.work.y, row = 0; y < H; y += 22, row++) for (let x = L.work.x + (row % 2) * 22; x < W; x += 44) { b.beginPath(); b.moveTo(x, y); b.lineTo(x, y + 22); b.stroke(); }
+  // the customer side: plaster wall, a noren strip, the counter
+  const s = L.strip;
+  b.fillStyle = PAL.wall; b.fillRect(s.x, s.y, s.w, s.h);
+  b.fillStyle = PAL.wall2;
+  if (!L.land) { for (let x = 0; x < W; x += 16) b.fillRect(x, 0, 2, s.h * 0.55); }
+  else for (let y = 0; y < H; y += 16) b.fillRect(0, y, s.w, 2);
+  if (!L.land) {
+    // indigo noren across the top with slits
+    const nh = Math.max(10, s.h * 0.16);
+    b.fillStyle = PAL.noren; b.fillRect(0, 0, W, nh);
+    b.fillStyle = 'rgba(255,255,255,.08)'; for (let x = 0; x < W; x += W / 6) b.fillRect(x, 0, 1.5, nh);
+    // counter top
+    const cy = s.h - Math.max(10, s.h * 0.16);
+    woodGrain(b, -6, cy, W + 12, s.h - cy + 4, PAL.counter, PAL.counter2, 11, false);
+    b.fillStyle = 'rgba(0,0,0,.25)'; b.fillRect(0, s.h - 2, W, 2);
+  } else {
+    woodGrain(b, s.w - 10, 0, 12, H, PAL.counter, PAL.counter2, 11, true);
+  }
+  // the konro: a long box lined with clay, filled with charcoal
+  const k = L.konro;
+  const [kc, kx] = offscreen(W, H);
+  kx.fillStyle = 'rgba(0,0,0,.35)'; rr(kx, k.x + 2, k.y + 4, k.w, k.h, 10); kx.fill();
+  const kg = kx.createLinearGradient(0, k.y, 0, k.y + k.h); kg.addColorStop(0, '#59524c'); kg.addColorStop(1, '#2e2926');
+  kx.fillStyle = kg; rr(kx, k.x, k.y, k.w, k.h, 10); kx.fill();
+  kx.strokeStyle = 'rgba(255,255,255,.12)'; kx.lineWidth = 1.5; rr(kx, k.x + 1, k.y + 1, k.w - 2, k.h - 2, 9); kx.stroke();
+  const coals = [];
+  L.lanes.forEach((ln, li) => {
+    const ix = ln.x + 6, iy = ln.y + 6, iw = ln.w - 12, ih = ln.h - 12;
+    kx.fillStyle = '#120c09'; rr(kx, ix, iy, iw, ih, 6); kx.fill();
+    // charcoal lumps
+    const r = vrng(97 + li * 31), lumps = [];
+    const sz = clamp(ih * 0.2, 6, 14);
+    for (let y = iy + sz * 0.7; y < iy + ih - sz * 0.3; y += sz * 1.1) for (let x = ix + sz * 0.6; x < ix + iw - sz * 0.3; x += sz * (1.05 + r() * 0.4)) {
+      const cx = x + (r() - 0.5) * sz * 0.5, cy = y + (r() - 0.5) * sz * 0.5, rad = sz * (0.55 + r() * 0.35), pts = [];
+      const nv = 6 + Math.floor(r() * 3);
+      for (let j = 0; j < nv; j++) { const a = j / nv * Math.PI * 2 + r() * 0.4; pts.push([cx + Math.cos(a) * rad * (0.75 + r() * 0.3), cy + Math.sin(a) * rad * (0.7 + r() * 0.3)]); }
+      lumps.push({ cx, cy, rad, pts, ph: r() * 6.28, sp: 0.6 + r() * 1.6, hot: 0.55 + r() * 0.45 });
+    }
+    for (const lp of lumps) {
+      kx.beginPath(); lp.pts.forEach((p, j) => (j ? kx.lineTo(p[0], p[1]) : kx.moveTo(p[0], p[1]))); kx.closePath();
+      kx.fillStyle = '#16110e'; kx.fill(); kx.strokeStyle = 'rgba(255,200,160,.05)'; kx.lineWidth = 1; kx.stroke();
+    }
+    coals.push({ lumps, ix, iy, iw, ih });
+    // the grate: iron rods across
+    const fr = ln.fil, rods = [];
+    const nR = Math.max(5, Math.round(fr.w / 30));
+    for (let j = 0; j < nR; j++) rods.push(fr.x + fr.w * (j + 0.5) / nR);
+    ln.rods = rods;
+  });
+  // glow sprite (one radial gradient drawn many times)
+  const [gs, gx] = offscreen(64, 64);
+  const rg = gx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, 'rgba(255,200,90,1)'); rg.addColorStop(0.35, 'rgba(255,110,30,.65)'); rg.addColorStop(1, 'rgba(255,60,0,0)');
+  gx.fillStyle = rg; gx.fillRect(0, 0, 64, 64);
+  const [ss, sx] = offscreen(64, 64);
+  const sg = sx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  sg.addColorStop(0, 'rgba(255,255,255,.9)'); sg.addColorStop(0.5, 'rgba(255,255,255,.35)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+  sx.fillStyle = sg; sx.fillRect(0, 0, 64, 64);
+  // the plate view: a wooden worktop
+  const [pc, px] = offscreen(W, H);
+  const wk = L.work;
+  woodGrain(px, wk.x + 2, wk.y + 2, wk.w - 4, wk.h - 4, '#6e4a2e', '#3d2716', 5, false);
+  px.fillStyle = 'rgba(0,0,0,.18)'; px.fillRect(wk.x, wk.y, wk.w, wk.h);
+  // the cutting board (hinoki)
+  const bd = L.board;
+  px.fillStyle = 'rgba(0,0,0,.3)'; rr(px, bd.x + 3, bd.y + 4, bd.w, bd.h, 8); px.fill();
+  woodGrain(px, bd.x, bd.y, bd.w, bd.h, '#ecd3a2', '#c49a62', 3, false);
+  px.strokeStyle = 'rgba(120,80,40,.5)'; px.lineWidth = 1.5; rr(px, bd.x + 0.5, bd.y + 0.5, bd.w - 1, bd.h - 1, 6); px.stroke();
+  // rice tub (飯台): copper bands
+  drawTub(px, L.tub);
+  statics = { bg, kc, coals, gs, pc, ss };
+}
+function drawTub(c, r) {
+  const cx = r.x + r.w / 2, cy = r.y + r.h * 0.55, rx = r.w * 0.44, ry = Math.min(r.h * 0.36, rx * 0.55);
+  c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(cx + 2, cy + ry * 0.5 + 3, rx, ry * 1.1, 0, 0, Math.PI * 2); c.fill();
+  // outer wall
+  c.fillStyle = '#b5824b'; c.beginPath(); c.ellipse(cx, cy + ry * 0.35, rx, ry * 1.05, 0, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = '#c9893a'; c.lineWidth = 3; c.beginPath(); c.ellipse(cx, cy + ry * 0.45, rx * 0.99, ry, 0, 0.1, Math.PI - 0.1); c.stroke();
+  // rim and rice
+  c.fillStyle = '#d6a466'; c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#fbf8f0'; c.beginPath(); c.ellipse(cx, cy, rx * 0.86, ry * 0.78, 0, 0, Math.PI * 2); c.fill();
+  riceGrains(c, cx, cy, rx * 0.84, ry * 0.76, 120, 7);
+  c.fillStyle = 'rgba(255,255,255,.5)'; c.beginPath(); c.ellipse(cx - rx * 0.25, cy - ry * 0.25, rx * 0.3, ry * 0.18, -0.2, 0, Math.PI * 2); c.fill();
+  // しゃもじ
+  c.save(); c.translate(cx + rx * 0.45, cy - ry * 0.2); c.rotate(-0.7);
+  c.fillStyle = '#e9d2a8'; rr(c, -3, -ry * 1.6, 6, ry * 1.4, 3); c.fill();
+  c.beginPath(); c.ellipse(0, 0, ry * 0.42, ry * 0.55, 0, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = 'rgba(120,80,40,.5)'; c.lineWidth = 1; c.stroke();
+  c.restore();
+}
+function riceGrains(c, cx, cy, rx, ry, n, seed) {
+  const r = vrng(seed);
+  for (let i = 0; i < n; i++) {
+    const a = r() * Math.PI * 2, d = Math.sqrt(r());
+    const x = cx + Math.cos(a) * rx * d, y = cy + Math.sin(a) * ry * d;
+    c.fillStyle = r() < 0.5 ? 'rgba(220,214,200,.9)' : 'rgba(255,255,255,.95)';
+    c.beginPath(); c.ellipse(x, y, 2.2, 1.2, r() * 3.14, 0, Math.PI * 2); c.fill();
+  }
+}
+
+// ---------- particles ----------
+function spark(x, y, kind) { if (fx.length < 260) fx.push({ x, y, kind, t: 0, vx: (Math.random() - 0.5) * 30, vy: kind === 'ember' ? -40 - Math.random() * 50 : kind === 'steam' ? -18 - Math.random() * 14 : 40, life: kind === 'steam' ? 1.8 + Math.random() : kind === 'ember' ? 0.9 + Math.random() * 0.8 : 0.5, r: kind === 'steam' ? 6 + Math.random() * 8 : 1.5 }); }
+function dripAt(lane) { const L = LY && LY.lanes[lane]; if (!L) return; const r = L.fil; spark(r.x + Math.random() * r.w, r.y + r.h, 'drip'); }
+function steamPuff() { if (!LY) return; const c = LY.vCenter; for (let i = 0; i < 4; i++) spark(c.x + (Math.random() - 0.5) * c.rx, c.y - c.ry * 0.3, 'steam'); }
+function floater(x, y, text, kind) { floaters.push({ x, y, text, kind, t: 0 }); }
+
+// ---------- drawing: people at the counter ----------
+function drawPerson(c, x, y, s, cust, mood) {
+  const lk = cust.look;
+  c.save();
+  // body
+  c.fillStyle = lk.cloth;
+  c.beginPath(); c.moveTo(x - s * 1.55, y + s * 2.6); c.quadraticCurveTo(x - s * 1.5, y + s * 1.05, x, y + s * 0.95); c.quadraticCurveTo(x + s * 1.5, y + s * 1.05, x + s * 1.55, y + s * 2.6); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.moveTo(x - s * 0.45, y + s * 0.95); c.lineTo(x, y + s * 1.7); c.lineTo(x + s * 0.45, y + s * 0.95); c.lineTo(x + s * 0.2, y + s * 0.95); c.lineTo(x, y + s * 1.3); c.lineTo(x - s * 0.2, y + s * 0.95); c.closePath(); c.fill();
+  // head
+  c.fillStyle = lk.skin; c.beginPath(); c.arc(x, y, s, 0, Math.PI * 2); c.fill();
+  // hair
+  c.fillStyle = lk.hair;
+  if (lk.hs === 0) { c.beginPath(); c.arc(x, y - s * 0.1, s * 1.02, Math.PI * 1.05, Math.PI * 1.95); c.quadraticCurveTo(x, y - s * 0.45, x - s * 1.0, y - s * 0.15); c.fill(); }
+  else if (lk.hs === 1) { c.beginPath(); c.arc(x, y - s * 0.05, s * 1.05, Math.PI * 0.95, Math.PI * 2.05); c.quadraticCurveTo(x + s * 0.3, y - s * 0.55, x - s * 1.05, y); c.fill(); c.beginPath(); c.arc(x + s * 0.2, y - s * 1.1, s * 0.45, 0, Math.PI * 2); c.fill(); }
+  else if (lk.hs === 2) { c.beginPath(); c.ellipse(x - s * 0.85, y - s * 0.1, s * 0.3, s * 0.45, 0.3, 0, Math.PI * 2); c.ellipse(x + s * 0.85, y - s * 0.1, s * 0.3, s * 0.45, -0.3, 0, Math.PI * 2); c.fill(); }
+  else { c.beginPath(); c.arc(x, y - s * 0.1, s * 1.06, Math.PI * 0.85, Math.PI * 2.15); c.lineTo(x + s * 1.05, y + s * 0.7); c.lineTo(x + s * 0.75, y + s * 0.7); c.quadraticCurveTo(x, y - s * 0.6, x - s * 0.75, y + s * 0.7); c.lineTo(x - s * 1.05, y + s * 0.7); c.fill(); }
+  // face
+  const ey = y + s * 0.08, ink = '#2a1a12';
+  c.fillStyle = ink;
+  if (mood === 'happy') { c.lineWidth = Math.max(1.2, s * 0.13); c.strokeStyle = ink; c.beginPath(); c.arc(x - s * 0.36, ey + s * 0.05, s * 0.16, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); c.beginPath(); c.arc(x + s * 0.36, ey + s * 0.05, s * 0.16, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
+  else { c.beginPath(); c.arc(x - s * 0.36, ey, s * 0.11, 0, Math.PI * 2); c.arc(x + s * 0.36, ey, s * 0.11, 0, Math.PI * 2); c.fill(); }
+  c.strokeStyle = ink; c.lineWidth = Math.max(1.2, s * 0.12); c.beginPath();
+  if (mood === 'happy') c.arc(x, y + s * 0.35, s * 0.3, 0.15 * Math.PI, 0.85 * Math.PI);
+  else if (mood === 'angry') { c.arc(x, y + s * 0.72, s * 0.28, 1.2 * Math.PI, 1.8 * Math.PI); }
+  else if (mood === 'wait') { c.moveTo(x - s * 0.2, y + s * 0.5); c.lineTo(x + s * 0.2, y + s * 0.5); }
+  else c.arc(x, y + s * 0.3, s * 0.22, 0.2 * Math.PI, 0.8 * Math.PI);
+  c.stroke();
+  if (mood === 'angry') { c.beginPath(); c.moveTo(x - s * 0.6, ey - s * 0.32); c.lineTo(x - s * 0.18, ey - s * 0.16); c.moveTo(x + s * 0.6, ey - s * 0.32); c.lineTo(x + s * 0.18, ey - s * 0.16); c.stroke(); }
+  if (mood === 'happy') { c.fillStyle = 'rgba(255,110,110,.35)'; c.beginPath(); c.arc(x - s * 0.62, y + s * 0.3, s * 0.18, 0, 7); c.arc(x + s * 0.62, y + s * 0.3, s * 0.18, 0, 7); c.fill(); }
+  // accessories
+  if (lk.acc === 'glasses') { c.strokeStyle = '#222'; c.lineWidth = Math.max(1, s * 0.08); c.beginPath(); c.arc(x - s * 0.36, ey, s * 0.24, 0, 7); c.moveTo(x + s * 0.6, ey); c.arc(x + s * 0.36, ey, s * 0.24, 0, 7); c.moveTo(x - s * 0.12, ey); c.lineTo(x + s * 0.12, ey); c.stroke(); }
+  else if (lk.acc === 'band') { c.fillStyle = '#f4f1ea'; c.fillRect(x - s, y - s * 0.62, s * 2, s * 0.26); c.fillStyle = '#c0392b'; c.beginPath(); c.arc(x, y - s * 0.49, s * 0.1, 0, 7); c.fill(); }
+  else if (lk.acc === 'cap') { c.fillStyle = '#2c3e50'; c.beginPath(); c.arc(x, y - s * 0.2, s * 1.02, Math.PI, 0); c.fill(); c.fillRect(x - s * 0.2, y - s * 0.3, s * 1.4, s * 0.18); }
+  else if (lk.acc === 'kanzashi') { c.strokeStyle = '#c9a227'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - s * 0.3, y - s * 1.4); c.lineTo(x + s * 0.8, y - s * 0.8); c.stroke(); c.fillStyle = '#e26d8a'; c.beginPath(); c.arc(x + s * 0.8, y - s * 0.8, s * 0.15, 0, 7); c.fill(); }
+  c.restore();
+}
+function dishIcon(c, kind, x, y, s) {
+  c.save();
+  if (kind === 'hitsu' || kind === 'ohitsu') {
+    c.fillStyle = '#9a6a3a'; c.beginPath(); c.ellipse(x, y + s * 0.15, s, s * 0.62, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#c38a4e'; c.beginPath(); c.ellipse(x, y, s, s * 0.5, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#a2541f'; c.beginPath(); c.ellipse(x, y, s * 0.75, s * 0.33, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(60,24,6,.6)'; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(x + i * s * 0.25, y - s * 0.28); c.lineTo(x + i * s * 0.25, y + s * 0.28); c.stroke(); }
+  } else if (kind === 'don') {
+    c.fillStyle = '#2f4a7a'; c.beginPath(); c.moveTo(x - s, y - s * 0.1); c.quadraticCurveTo(x, y + s * 1.25, x + s, y - s * 0.1); c.closePath(); c.fill();
+    c.fillStyle = '#f2ede2'; c.beginPath(); c.ellipse(x, y - s * 0.1, s, s * 0.35, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#a2541f'; rr(c, x - s * 0.7, y - s * 0.3, s * 1.4, s * 0.38, 3); c.fill();
+  } else if (kind === 'shira' || kind === 'sara') {
+    c.fillStyle = '#e9e4da'; rr(c, x - s * 1.05, y - s * 0.4, s * 2.1, s * 0.9, 4); c.fill();
+    c.fillStyle = '#e8c9a0'; rr(c, x - s * 0.75, y - s * 0.2, s * 1.5, s * 0.42, 3); c.fill();
+    c.fillStyle = '#7fb069'; c.beginPath(); c.arc(x + s * 0.75, y + s * 0.25, s * 0.16, 0, 7); c.fill();
+  } else if (kind === 'kimo') {
+    c.fillStyle = '#7a1e1e'; c.beginPath(); c.moveTo(x - s * 0.8, y - s * 0.2); c.quadraticCurveTo(x, y + s, x + s * 0.8, y - s * 0.2); c.closePath(); c.fill();
+    c.fillStyle = '#d9b76a'; c.beginPath(); c.ellipse(x, y - s * 0.2, s * 0.8, s * 0.25, 0, 0, Math.PI * 2); c.fill();
+  } else if (kind === 'umaki') {
+    c.fillStyle = '#f2c94c'; rr(c, x - s * 0.9, y - s * 0.45, s * 1.8, s * 0.9, s * 0.3); c.fill();
+    c.strokeStyle = '#d4a12a'; c.lineWidth = 1; c.beginPath(); c.arc(x, y, s * 0.3, 0, 7); c.stroke();
+    c.fillStyle = '#8a4a1c'; c.beginPath(); c.arc(x, y, s * 0.16, 0, 7); c.fill();
+  }
+  c.restore();
+}
+function drawStrip(t) {
+  const L = LY;
+  for (let i = 0; i < L.seats.length; i++) {
+    const r = L.seats[i], cust = D ? D.seats[i] : null;
+    const portrait = !L.land;
+    // the stool
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; rr(ctx, r.x + r.w * 0.18, r.y + r.h - (portrait ? r.h * 0.12 : 8), r.w * 0.64, 4, 2); ctx.fill();
+    if (!cust) continue;
+    const sel = D.sel === cust.id && cust.state === 'seat';
+    const s = Math.min(r.w * 0.17, r.h * 0.17);
+    const hx = r.x + r.w * (portrait ? 0.34 : 0.32), hy = r.y + r.h * 0.48;
+    const k = clamp((nowSec() - (cust.enterReal || 0)) * 3, 0, 1);
+    ctx.save(); ctx.globalAlpha = cust.state === 'angry' ? clamp((cust.leaveAt - D.t) / 1.8, 0, 1) : cust.state === 'eating' ? clamp((cust.leaveAt - D.t) / 1, 0, 1) : k;
+    if (sel) { ctx.fillStyle = 'rgba(' + PAL.lamp + ',.22)'; rr(ctx, r.x + 2, r.y + 2, r.w - 4, r.h - 4, 10); ctx.fill(); ctx.strokeStyle = PAL.sel; ctx.lineWidth = 2; rr(ctx, r.x + 2, r.y + 2, r.w - 4, r.h - 4, 10); ctx.stroke(); }
+    const ratio = cust.wait / cust.pat;
+    const mood = cust.state === 'angry' ? 'angry' : cust.state === 'eating' ? (cust.result && cust.result.rating >= 2 ? 'happy' : 'wait') : ratio > 0.85 ? 'angry' : ratio > 0.55 ? 'wait' : 'calm';
+    drawPerson(ctx, hx, hy, s, cust, mood);
+    // patience ring
+    if (cust.state === 'seat' && cust.pat < 1e8) {
+      const left = clamp(1 - ratio, 0, 1);
+      ctx.lineWidth = Math.max(2.5, s * 0.22); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(hx, hy, s * 1.32, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = left > 0.5 ? PAL.ok : left > 0.2 ? PAL.warn : PAL.bad;
+      ctx.beginPath(); ctx.arc(hx, hy, s * 1.32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.stroke();
+    }
+    // the order slip
+    const tw = r.w * (portrait ? 0.4 : 0.42), th = Math.min(r.h * 0.5, tw * 1.25), tx = r.x + r.w * (portrait ? 0.57 : 0.56), ty = r.y + r.h * (portrait ? 0.2 : 0.18);
+    if (cust.state === 'seat') {
+      ctx.save(); ctx.translate(tx + tw / 2, ty + th / 2); ctx.rotate(0.05 * Math.sin(i * 7));
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; rr(ctx, -tw / 2 + 1.5, -th / 2 + 2, tw, th, 3); ctx.fill();
+      ctx.fillStyle = PAL.paper; rr(ctx, -tw / 2, -th / 2, tw, th, 3); ctx.fill();
+      dishIcon(ctx, cust.dish, 0, -th * 0.12, Math.min(tw, th) * 0.3);
+      // dots: requests (orange), a side dish (red), a picky customer (gold border)
+      const dots = (cust.usual && !cust.asked) ? 0 : cust.req.length;
+      for (let j = 0; j < dots; j++) { ctx.fillStyle = '#e0702a'; ctx.beginPath(); ctx.arc(-tw * 0.3 + j * tw * 0.2, th * 0.3, Math.max(1.8, tw * 0.07), 0, 7); ctx.fill(); }
+      if (cust.side) dishIcon(ctx, cust.side, tw * 0.28, th * 0.28, tw * 0.12);
+      if (cust.usual && !cust.asked) { ctx.fillStyle = PAL.paperInk; ctx.font = font(Math.max(8, tw * 0.2)); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('？', 0, th * 0.3); }
+      if (cust.strict) { ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 2; rr(ctx, -tw / 2, -th / 2, tw, th, 3); ctx.stroke(); }
+      ctx.restore();
+    } else if (cust.state === 'eating' && cust.result) {
+      dishIcon(ctx, cust.dish, tx + tw / 2, r.y + r.h * 0.82, Math.min(tw, r.h * 0.3) * 0.45);
+    }
+    // a word balloon
+    if (cust.bubble && nowSec() - cust.bubble.t < 2.6) {
+      const b = cust.bubble, a = clamp((2.6 - (nowSec() - b.t)) * 2, 0, 1);
+      ctx.globalAlpha *= a;
+      ctx.font = font(clamp(r.w * 0.16, 9, 12)); const w = Math.min(r.w * 1.6, ctx.measureText(b.text).width + 12), bh = 18;
+      let bx = r.x + r.w / 2 - w / 2; bx = clamp(bx, 2, W - w - 2); const by = r.y + 3;
+      ctx.fillStyle = b.kind === 'bad' ? '#ffe2da' : b.kind === 'good' ? '#fff4c4' : '#ffffff';
+      rr(ctx, bx, by, w, bh, 9); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = b.kind === 'bad' ? '#a3261b' : '#3a2413'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.text, bx + w / 2, by + bh / 2 + 0.5);
+    }
+    ctx.restore();
+  }
+  // the queue outside
+  if (D && D.queue.length) {
+    const q = L.queue;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(ctx, q.x, q.y, q.w, q.h, 8); ctx.fill();
+    ctx.fillStyle = PAL.ink; ctx.font = font(11); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (L.land) ctx.fillText(T('外で{n}人待ち', { n: D.queue.length }), q.x + q.w / 2, q.y + q.h / 2);
+    else { ctx.fillText(T('待ち'), q.x + q.w / 2, q.y + q.h * 0.35); ctx.font = font(15); ctx.fillText(String(D.queue.length), q.x + q.w / 2, q.y + q.h * 0.65); }
+  }
+}
+
+// ---------- drawing: an eel fillet ----------
+function filletPath(c, x, y, w, h, seed) {
+  const r = vrng(seed), n = 10, top = [], bot = [];
+  for (let i = 0; i <= n; i++) { const u = i / n; top.push([x + u * w, y + (r() - 0.5) * h * 0.08 + Math.sin(u * 9) * h * 0.02]); bot.push([x + u * w, y + h + (r() - 0.5) * h * 0.08]); }
+  c.beginPath();
+  c.moveTo(x + h * 0.25, y + h * 0.08);
+  for (let i = 1; i < n; i++) c.lineTo(top[i][0], top[i][1]);
+  c.quadraticCurveTo(x + w + h * 0.05, y, x + w, y + h * 0.5);
+  c.quadraticCurveTo(x + w + h * 0.05, y + h, top[n - 1][0], bot[n - 1][1]);
+  for (let i = n - 2; i >= 1; i--) c.lineTo(bot[i][0], bot[i][1]);
+  c.quadraticCurveTo(x - h * 0.05, y + h * 0.95, x, y + h * 0.5);
+  c.quadraticCurveTo(x - h * 0.02, y + h * 0.05, x + h * 0.25, y + h * 0.08);
+  c.closePath();
+}
+// face: 0 = flesh side (身), 1 = skin side (皮). b = that side's browning. tare = cells, glaze 0..1
+function drawFilletFace(c, x, y, w, h, f, face, t, opt) {
+  opt = opt || {};
+  const b = f.side[face];
+  c.save();
+  filletPath(c, x, y, w, h, f.seed);
+  c.save(); c.clip();
+  const r = vrng(f.seed + face * 7);
+  const RAMP = face === 0 ? FLESH : SKIN;
+  // base colour per cell: the edges and the thin tail cook a little faster
+  const cells = 24;
+  for (let i = 0; i < cells; i++) {
+    const u = i / cells, edge = Math.min(u, 1 - u);
+    const bb = b * (1 + (edge < 0.12 ? (0.12 - edge) * 1.3 : 0)) + (r() - 0.5) * 0.06 * Math.min(1, b * 2);
+    let col = ramp(RAMP, bb);
+    const ta = f.tare[Math.min(TC - 1, Math.floor(u * TC))] || 0;
+    if (ta > 0) col = mix(col, TARE, clamp(ta * 0.3, 0, 0.55)); if (ta > 0 && bb > 0.5) col = mix(col, [176, 82, 22], clamp(ta * 0.12, 0, 0.18));
+    c.fillStyle = rgb(col); c.fillRect(x + u * w - 0.5, y - 2, w / cells + 1, h + 4);
+  }
+  // thickness: lighter ridge, darker edges
+  const g = c.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, 'rgba(0,0,0,.28)'); g.addColorStop(0.3, 'rgba(255,240,220,.10)'); g.addColorStop(0.55, 'rgba(255,240,220,.05)'); g.addColorStop(1, 'rgba(0,0,0,.34)');
+  c.fillStyle = g; c.fillRect(x - 2, y - 2, w + 4, h + 4);
+  // texture: the flesh's muscle lines / the skin's fine speckles
+  if (face === 0) {
+    c.strokeStyle = b < 0.5 ? 'rgba(200,170,150,.45)' : 'rgba(90,40,10,.22)'; c.lineWidth = 1;
+    for (let i = 1; i < 16; i++) { const xx = x + w * i / 16; c.beginPath(); c.moveTo(xx - h * 0.12, y + h * 0.1); c.quadraticCurveTo(xx + h * 0.18, y + h * 0.5, xx - h * 0.12, y + h * 0.9); c.stroke(); }
+    c.strokeStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.moveTo(x + w * 0.05, y + h * 0.5); c.lineTo(x + w * 0.95, y + h * 0.48); c.stroke();
+  } else {
+    for (let i = 0; i < 40; i++) { c.fillStyle = b < 0.4 ? 'rgba(200,220,235,.25)' : 'rgba(30,15,5,.25)'; c.beginPath(); c.arc(x + r() * w, y + r() * h, 0.6 + r() * 1.1, 0, 7); c.fill(); }
+  }
+  // grill marks (from the rods when this side was down)
+  const ma = clamp((b - 0.22) * 0.95, 0, 0.78);
+  if (ma > 0 && opt.rods) {
+    for (const rx of opt.rods) {
+      const mx = rx;
+      c.fillStyle = `rgba(50,18,4,${ma * 0.55})`; c.fillRect(mx - h * 0.1, y - 2, h * 0.2, h + 4);
+      c.fillStyle = `rgba(28,10,2,${ma})`; c.fillRect(mx - h * 0.04, y - 2, h * 0.08, h + 4);
+    }
+  } else if (ma > 0) { // off the grill: marks at even spacing
+    const nR = Math.max(4, Math.round(w / 30));
+    for (let j = 0; j < nR; j++) { const mx = x + w * (j + 0.5) / nR; c.fillStyle = `rgba(24,10,2,${ma * 0.8})`; c.fillRect(mx - h * 0.04, y - 2, h * 0.08, h + 4); }
+  }
+  // charring
+  if (b > 1.0) {
+    const n = Math.round((b - 1.0) * 60);
+    for (let i = 0; i < n; i++) { c.fillStyle = `rgba(10,6,4,${0.35 + r() * 0.45})`; c.beginPath(); c.ellipse(x + r() * w, y + r() * h, 1.5 + r() * h * 0.12, 1 + r() * h * 0.08, r() * 3, 0, 7); c.fill(); }
+  }
+  // tare gloss: a warm lacquer and a soft moving highlight along the ridge where it is brushed
+  const gl1 = c.createLinearGradient(x, 0, x + w, 0), gl2 = c.createLinearGradient(x, 0, x + w, 0);
+  let any = false;
+  for (let k = 0; k <= TC; k++) {
+    const ta = f.tare[Math.min(TC - 1, k)] || 0, u = k / TC; if (ta > 0.08) any = true;
+    const gl = clamp(ta, 0, 1.6) * (0.55 + 0.45 * f.glaze), sh = 0.6 + 0.4 * Math.sin(t * 1.4 - k * 0.55);
+    gl1.addColorStop(u, `rgba(255,214,150,${(0.3 * gl * sh).toFixed(3)})`);
+    gl2.addColorStop(u, `rgba(255,252,240,${(0.7 * gl * sh * sh).toFixed(3)})`);
+  }
+  if (any) {
+    c.fillStyle = gl1; c.beginPath(); c.ellipse(x + w / 2, y + h * 0.3, w * 0.48, h * 0.13, 0, 0, 7); c.fill();
+    c.fillStyle = gl2; c.beginPath(); c.ellipse(x + w / 2, y + h * 0.27, w * 0.44, h * 0.05, 0, 0, 7); c.fill();
+    c.fillStyle = gl1; c.beginPath(); c.ellipse(x + w / 2, y + h * 0.72, w * 0.46, h * 0.06, 0, 0, 7); c.fill();
+    // little sparkles where the glaze catches the light
+    const sr = vrng(f.seed + 11);
+    for (let i = 0; i < 18; i++) { const k = Math.floor(sr() * TC), ta = f.tare[k]; if (ta < 0.5) continue; const tw = 0.5 + 0.5 * Math.sin(t * 2.2 + i * 1.7); c.fillStyle = `rgba(255,255,245,${(0.5 * tw * Math.min(1, ta) * (0.5 + 0.5 * f.glaze)).toFixed(3)})`; c.beginPath(); c.arc(x + w * (k + sr()) / TC, y + h * (0.2 + sr() * 0.6), 0.8 + sr() * 1.2, 0, 7); c.fill(); }
+    for (let k = 0; k < TC; k++) { const ta = f.tare[k]; if (ta > 1.9) { const xx = x + w * (k + 0.5) / TC; c.fillStyle = 'rgba(70,24,4,.55)'; c.beginPath(); c.ellipse(xx, y + h - 1, w / TC * 0.25, h * 0.08, 0, 0, 7); c.fill(); } }
+  }
+  c.restore();
+  // outline
+  c.strokeStyle = b > 1 ? 'rgba(20,8,2,.7)' : 'rgba(70,30,10,.45)'; c.lineWidth = 1.2; c.stroke();
+  c.restore();
+}
+function drawSkewers(c, x, y, w, h) {
+  c.save(); c.strokeStyle = '#d9c29a'; c.lineCap = 'round';
+  for (const u of [0.12, 0.5, 0.88]) {
+    const xx = x + w * u;
+    c.lineWidth = Math.max(2, h * 0.07); c.strokeStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.moveTo(xx + 2, y - h * 0.32 + 2); c.lineTo(xx + 2, y + h * 1.32 + 2); c.stroke();
+    c.strokeStyle = '#e3cda4'; c.beginPath(); c.moveTo(xx, y - h * 0.32); c.lineTo(xx, y + h * 1.32); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1; c.beginPath(); c.moveTo(xx - 0.6, y - h * 0.3); c.lineTo(xx - 0.6, y + h * 1.3); c.stroke();
+  }
+  c.restore();
+}
+function drawGauge(c, g, f, req) {
+  // two thermometers: 表 (the side facing up) and 裏 (on the coals), with the sweet spot in green
+  const bw = (g.w - 6) / 2;
+  const lo = req.well ? 0.88 : 0.7, hi = req.well ? 1.06 : 0.95, max = 1.35;
+  const yOf = v => g.y + g.h - 12 - (g.h - 16) * clamp(v / max, 0, 1);
+  [1 - f.down, f.down].forEach((face, i) => {
+    const x = g.x + i * (bw + 6);
+    c.fillStyle = 'rgba(0,0,0,.45)'; rr(c, x, g.y, bw, g.h - 10, 4); c.fill();
+    c.fillStyle = 'rgba(80,200,110,.35)'; c.fillRect(x + 1, yOf(hi), bw - 2, yOf(lo) - yOf(hi));
+    c.fillStyle = 'rgba(255,80,60,.35)'; c.fillRect(x + 1, yOf(max), bw - 2, yOf(1.2) - yOf(max));
+    const v = f.side[face], col = v > 1.2 ? '#ff5a3c' : v >= lo && v <= hi ? '#6fe08a' : v > hi ? '#ffb13b' : '#f5e6c8';
+    c.fillStyle = col; c.fillRect(x + 2, yOf(v), bw - 4, g.y + g.h - 12 - yOf(v));
+    c.fillStyle = '#fff'; c.font = font(9); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    c.fillText(T(i === 0 ? '表' : '裏'), x + bw / 2, g.y + g.h);
+  });
+}
+function laneReq(i) { // the selected order decides which sweet spot the gauge shows
+  const c = selCust(); return { well: !!(c && c.req.includes('well')) };
+}
+function drawGrill(t) {
+  const L = LY;
+  ctx.drawImage(statics.kc, 0, 0, W, H);
+  // live coals: flickering glow
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  statics.coals.forEach((cl, li) => {
+    const f = D && D.grills[li], heat = D ? laneHeat(li, D.t) : 1, flare = f ? f.flare : 0;
+    for (const lp of cl.lumps) {
+      const fl = 0.55 + 0.45 * Math.sin(t * lp.sp + lp.ph) * Math.sin(t * lp.sp * 0.37 + lp.ph * 2);
+      const a = clamp(lp.hot * fl * (0.7 + (heat - 1) * 2.5) + flare * 0.3, 0.05, 1);
+      ctx.globalAlpha = a * 0.42;
+      const s = lp.rad * 3.2; ctx.drawImage(statics.gs, lp.cx - s / 2, lp.cy - s / 2, s, s);
+      ctx.globalAlpha = a * 0.68; ctx.fillStyle = `rgb(${(200 + 55 * fl) | 0},${(60 + 70 * fl) | 0},${(10 + 20 * fl) | 0})`;
+      ctx.beginPath(); lp.pts.forEach((p, j) => { const px = lerp(lp.cx, p[0], 0.38 + 0.12 * fl), py = lerp(lp.cy, p[1], 0.38 + 0.12 * fl); j ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.closePath(); ctx.fill();
+    }
+    // a wide warm glow over the lane
+    ctx.globalAlpha = 0.26 + 0.06 * Math.sin(t * 1.3 + li); const s = cl.iw;
+    ctx.drawImage(statics.gs, cl.ix, cl.iy - cl.ih * 0.4, s, cl.ih * 1.8);
+  });
+  ctx.restore();
+  // embers
+  if (D && !paused && Math.random() < 0.4) { const li = Math.floor(Math.random() * L.lanes.length), ln = L.lanes[li]; spark(ln.x + 10 + Math.random() * (ln.w - 20), ln.y + ln.h * 0.8, 'ember'); }
+  L.lanes.forEach((ln, li) => {
+    // the grate
+    ctx.strokeStyle = '#171312'; ctx.lineWidth = 3;
+    for (const rx of ln.rods) { ctx.beginPath(); ctx.moveTo(rx, ln.y + 5); ctx.lineTo(rx, ln.y + ln.h - 5); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(255,140,60,.35)'; ctx.lineWidth = 1;
+    for (const rx of ln.rods) { ctx.beginPath(); ctx.moveTo(rx - 1, ln.y + 5); ctx.lineTo(rx - 1, ln.y + ln.h - 5); ctx.stroke(); }
+    const f = D && D.grills[li], r = ln.fil;
+    if (!f) {
+      ctx.fillStyle = 'rgba(255,240,220,.55)'; ctx.font = font(Math.min(15, ln.h * 0.2)); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(T('＋ タップでうなぎをのせる'), r.x + r.w / 2, ln.y + ln.h / 2);
+      return;
+    }
+    // flames from dripping tare
+    if (f.flare > 0.05) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (let k = 0; k < 7; k++) {
+        const fxp = r.x + r.w * ((k + 0.5) / 7 + 0.04 * Math.sin(t * 3 + k)), fh = r.h * (0.6 + 0.8 * f.flare) * (0.6 + 0.4 * Math.sin(t * 9 + k * 2));
+        const gr = ctx.createLinearGradient(0, r.y + r.h + 6, 0, r.y + r.h - fh);
+        gr.addColorStop(0, `rgba(255,120,20,${0.6 * f.flare})`); gr.addColorStop(1, 'rgba(255,220,80,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(fxp - 8, r.y + r.h + 6); ctx.quadraticCurveTo(fxp - 2, r.y + r.h - fh * 0.5, fxp, r.y + r.h - fh); ctx.quadraticCurveTo(fxp + 2, r.y + r.h - fh * 0.5, fxp + 8, r.y + r.h + 6); ctx.fill();
+      }
+      ctx.restore();
+    }
+    // shadow + the fillet (squashed while turning)
+    const sc = f.flipT > 0 ? Math.abs(Math.cos(Math.PI * f.flipT)) : 1, lift = f.flipT > 0 ? Math.sin(Math.PI * f.flipT) * r.h * 0.5 : 0;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(r.x + r.w / 2 + 3, r.y + r.h * 0.6 + 4, r.w / 2, r.h * 0.5, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(0, r.y + r.h / 2 - lift); ctx.scale(1, Math.max(0.06, sc)); ctx.translate(0, -(r.y + r.h / 2));
+    const face = f.flipT >= 0.5 && f.flipT > 0 ? f.down : 1 - f.down;
+    drawFilletFace(ctx, r.x, r.y, r.w, r.h, f, face, t, { rods: ln.rods });
+    drawSkewers(ctx, r.x, r.y, r.w, r.h);
+    ctx.restore();
+    // steam from the hot fillet
+    if (!paused && Math.random() < 0.03 + Math.min(0.1, f.side[f.down] * 0.08)) spark(r.x + Math.random() * r.w, r.y, 'steam');
+    // selection, warnings
+    const dn = f.side[f.down];
+    if (li === selLane && D.grills.filter(Boolean).length > 1) { ctx.strokeStyle = PAL.sel; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); rr(ctx, r.x - 6, r.y - 8, r.w + 12, r.h + 16, 10); ctx.stroke(); ctx.setLineDash([]); }
+    const lo = laneReq(li).well ? 0.88 : 0.7;
+    if (dn > 1.05 || dn >= lo) {
+      const burning = dn > 1.05, a = 0.6 + 0.4 * Math.sin(t * (burning ? 12 : 6));
+      ctx.font = font(Math.min(13, ln.h * 0.17)); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      const txt = burning ? T('焦げる！返して') : f.flips === 0 ? T('返しどき！') : T('いい焼き色');
+      const tw = ctx.measureText(txt).width + 12;
+      ctx.globalAlpha = a; ctx.fillStyle = burning ? '#d8381c' : '#2d7a45'; rr(ctx, r.x, ln.y + 4, tw, 18, 9); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(txt, r.x + 6, ln.y + 6.5); ctx.globalAlpha = 1;
+    }
+    drawGauge(ctx, ln.gauge, f, laneReq(li));
+  });
+}
+
+// ---------- drawing: the plate view ----------
+function piecesOf(cuts) { const e = [0].concat(cuts.slice().sort((a, b) => a - b), [1]); const out = []; for (let i = 1; i < e.length; i++) if (e[i] - e[i - 1] > 0.004) out.push([e[i - 1], e[i]]); return out; }
+function drawBoard(t) {
+  const L = LY, bd = L.board, b = D && D.board;
+  if (!b) {
+    ctx.fillStyle = 'rgba(80,50,20,.55)'; ctx.font = font(Math.min(13, bd.h * 0.13)); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(T('まな板'), bd.x + bd.w / 2, bd.y + bd.h / 2 - 8);
+    ctx.font = font(Math.min(11, bd.h * 0.11), 500); ctx.fillText(T('焼けたら「あげる」'), bd.x + bd.w / 2, bd.y + bd.h / 2 + 10);
+    return;
+  }
+  const f = b.f, fw = bd.w * 0.86, fh = Math.min(bd.h * 0.36, fw * 0.24), fx0 = bd.x + (bd.w - fw) / 2, fy = bd.y + bd.h * 0.52 - fh / 2;
+  const face = 1 - f.down;
+  if (!b.done && !b.cuts.length) drawFilletFace(ctx, fx0, fy, fw, fh, f, face, t);
+  else {
+    // pieces with a small gap where it was cut
+    const ps = piecesOf(b.cuts);
+    ps.forEach((p, i) => {
+      ctx.save(); ctx.beginPath(); const gx = fx0 + p[0] * fw + (i ? 1.5 : 0), gw = (p[1] - p[0]) * fw - (i ? 1.5 : 0) - (i < ps.length - 1 ? 1.5 : 0); ctx.rect(gx, fy - fh, gw, fh * 3); ctx.clip();
+      ctx.translate((i - (ps.length - 1) / 2) * (b.done ? 2.5 : 1), 0);
+      drawFilletFace(ctx, fx0, fy, fw, fh, f, face, t); ctx.restore();
+    });
+  }
+  if (b.done) {
+    ctx.fillStyle = 'rgba(60,30,10,.75)'; ctx.font = font(Math.min(12, bd.h * 0.12)); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(T('器へドラッグ →'), bd.x + bd.w / 2, fy + fh + 6);
+    return;
+  }
+  // cut guides on the beat
+  const N = b.knife == null ? DISHES[targetDish()].cuts : b.n;
+  for (let i = 1; i <= N; i++) {
+    const gx = fx0 + fw * i / (N + 1), passed = b.knife != null && b.knife * (N + 1) > i;
+    ctx.fillStyle = passed ? 'rgba(80,50,20,.25)' : 'rgba(200,60,30,.8)';
+    ctx.beginPath(); ctx.moveTo(gx - 4, fy - 9); ctx.lineTo(gx + 4, fy - 9); ctx.lineTo(gx, fy - 3); ctx.closePath(); ctx.fill();
+  }
+  if (b.knife == null) {
+    ctx.fillStyle = 'rgba(60,30,10,.8)'; ctx.font = font(Math.min(12, bd.h * 0.12)); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(T('タップで包丁スタート'), bd.x + bd.w / 2, fy + fh + 6);
+    return;
+  }
+  // the knife sweeping across, cutting on each tap
+  const kx = fx0 + fw * b.knife, down = b.anim;
+  const beatPh = ((b.t / b.beat) % 1 + 1) % 1;
+  ctx.save(); ctx.translate(kx, fy - fh * 0.2 + down * fh * 0.5);
+  ctx.fillStyle = '#d9dde2'; ctx.beginPath(); ctx.moveTo(-1, -fh * 1.2); ctx.lineTo(fh * 0.5, -fh * 1.25); ctx.lineTo(fh * 0.5, fh * 0.6); ctx.lineTo(0, fh * 0.85); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(-0.5, -fh * 1.2, 2, fh * 2);
+  ctx.fillStyle = '#5b3a22'; rr(ctx, fh * 0.1, -fh * 2.3, fh * 0.32, fh * 1.1, 3); ctx.fill();
+  ctx.restore();
+  // metronome
+  const mx = bd.x + 16, my = bd.y + 16, pulse = 1 - beatPh;
+  ctx.fillStyle = `rgba(200,60,30,${0.3 + 0.6 * pulse * pulse})`; ctx.beginPath(); ctx.arc(mx, my, 6 + 4 * pulse * pulse, 0, 7); ctx.fill();
+}
+function vesselShape(c, kind, cx, cy, rx, ry) {
+  if (kind === 'ohitsu') {
+    c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(cx + 3, cy + ry * 0.55, rx * 1.04, ry * 1.15, 0, 0, 7); c.fill();
+    c.fillStyle = '#93602f'; c.beginPath(); c.ellipse(cx, cy + ry * 0.4, rx, ry * 1.08, 0, 0, 7); c.fill();
+    // staves and the copper hoops
+    c.strokeStyle = 'rgba(60,30,10,.35)'; c.lineWidth = 1;
+    for (let i = -6; i <= 6; i++) { const xx = cx + rx * i / 6.5; c.beginPath(); c.moveTo(xx, cy + ry * 0.1); c.lineTo(xx, cy + ry * 1.3 * Math.sqrt(Math.max(0, 1 - (i / 6.5) ** 2))); c.stroke(); }
+    c.strokeStyle = '#c47a3a'; c.lineWidth = 3; c.beginPath(); c.ellipse(cx, cy + ry * 0.55, rx * 0.995, ry * 0.95, 0, 0.15, Math.PI - 0.15); c.stroke();
+    c.fillStyle = '#c99359'; c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, 7); c.fill();
+    c.fillStyle = '#7a4a22'; c.beginPath(); c.ellipse(cx, cy, rx * 0.9, ry * 0.86, 0, 0, 7); c.fill();
+  } else if (kind === 'don') {
+    c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(cx + 3, cy + ry * 1.25, rx * 0.6, ry * 0.4, 0, 0, 7); c.fill();
+    const g = c.createLinearGradient(cx - rx, 0, cx + rx, 0); g.addColorStop(0, '#1f3157'); g.addColorStop(0.5, '#3a5a92'); g.addColorStop(1, '#1b2b4d');
+    c.fillStyle = g; c.beginPath(); c.moveTo(cx - rx, cy); c.bezierCurveTo(cx - rx, cy + ry * 2.1, cx + rx, cy + ry * 2.1, cx + rx, cy); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5;
+    for (let i = 0; i < 5; i++) { const a = cx - rx * 0.7 + i * rx * 0.35; c.beginPath(); c.arc(a, cy + ry * 0.9, ry * 0.18, 0, Math.PI); c.stroke(); }
+    c.fillStyle = '#efe9dc'; c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, 7); c.fill();
+    c.fillStyle = '#d9d0bf'; c.beginPath(); c.ellipse(cx, cy, rx * 0.9, ry * 0.84, 0, 0, 7); c.fill();
+  } else {
+    c.fillStyle = 'rgba(0,0,0,.3)'; rr(c, cx - rx + 3, cy - ry * 0.85 + 5, rx * 2, ry * 1.8, 10); c.fill();
+    c.fillStyle = '#ece6da'; rr(c, cx - rx, cy - ry * 0.85, rx * 2, ry * 1.8, 10); c.fill();
+    c.strokeStyle = '#2f4a7a'; c.lineWidth = 2; rr(c, cx - rx + 5, cy - ry * 0.85 + 5, rx * 2 - 10, ry * 1.8 - 10, 7); c.stroke();
+  }
+}
+function drawRiceIn(c, kind, cx, cy, rx, ry, drops) {
+  if (!drops.length) return;
+  const k = drops.length, fill = clamp(k / 3, 0, 1.4);
+  const irx = rx * (kind === 'don' ? 0.88 : 0.88) * Math.min(1, 0.55 + 0.15 * k), iry = ry * 0.82 * Math.min(1, 0.55 + 0.15 * k);
+  const bins = riceShape(drops);
+  c.save();
+  c.beginPath(); c.ellipse(cx, cy, rx * 0.89, ry * 0.85, 0, 0, 7); c.clip();
+  // mounds where the scoops landed
+  for (let i = 0; i < bins.length; i++) {
+    const bx = cx + (-1 + (i + 0.5) * (2 / 7)) * rx * 0.85, h = bins[i];
+    c.fillStyle = 'rgba(255,255,255,.98)'; c.beginPath(); c.ellipse(bx, cy + ry * 0.05 - h * ry * 0.08, rx * 0.2 * Math.min(1.4, 0.5 + h * 0.6), iry * Math.min(1, 0.35 + h * 0.45), 0, 0, 7); c.fill();
+  }
+  c.fillStyle = 'rgba(250,248,240,.95)'; c.beginPath(); c.ellipse(cx, cy, irx, iry, 0, 0, 7); c.fill();
+  riceGrains(c, cx, cy, irx, iry, Math.round(60 * fill) + 20, 13 + k);
+  c.fillStyle = 'rgba(0,0,0,.06)'; c.beginPath(); c.ellipse(cx, cy + iry * 0.55, irx, iry * 0.5, 0, 0, Math.PI); c.fill();
+  c.restore();
+}
+function drawEelOn(c, kind, cx, cy, rx, ry, e, t) {
+  const f = e.f, face = 1 - f.down, ps = piecesOf(e.cuts);
+  const ox = cx + e.dx * rx * 0.7, oy = cy + e.dy * ry * 0.7;
+  const total = rx * (kind === 'ohitsu' ? 1.5 : 1.45);
+  const ph = ry * (kind === 'ohitsu' ? 0.5 : 0.6);
+  const r = vrng(f.seed + 3);
+  // ひつまぶし: the strips laid in two neat rows; 丼 / 皿: the pieces side by side. Uneven cuts stay uneven
+  const rows = kind === 'ohitsu' && ps.length > 4 ? 2 : 1;
+  const perRow = Math.ceil(ps.length / rows), rowLen = rx * (kind === 'ohitsu' ? 1.42 : 1.3);
+  for (let row = 0; row < rows; row++) {
+    const list = ps.slice(row * perRow, (row + 1) * perRow);
+    const sum = list.reduce((a, p) => a + (p[1] - p[0]), 0) || 1;
+    let cx0 = ox - rowLen / 2 + (row ? rowLen * 0.04 : 0);
+    const py = oy + (row - (rows - 1) / 2) * ph * 1.02 - ph / 2;
+    list.forEach(p => {
+      const slot = (p[1] - p[0]) / sum * rowLen, pw = slot * 1.06;
+      const px = cx0 + (r() - 0.5) * 1.5, yy = py + (r() - 0.5) * 2;
+      cx0 += slot;
+      c.save(); c.translate(px + pw / 2, yy + ph / 2); c.rotate((r() - 0.5) * 0.08); c.translate(-(px + pw / 2), -(yy + ph / 2));
+      c.fillStyle = 'rgba(0,0,0,.28)'; rr(c, px + 1.5, yy + 2.5, pw, ph, ph * 0.2); c.fill();
+      c.beginPath(); rr(c, px, yy, pw, ph, ph * 0.2); c.clip();
+      const fullW = pw / Math.max(0.02, p[1] - p[0]);
+      drawFilletFace(c, px - p[0] * fullW, yy, fullW, ph, f, face, t);
+      c.fillStyle = 'rgba(255,240,210,.18)'; c.fillRect(px, yy + ph * 0.12, pw, ph * 0.1);
+      c.restore();
+    });
+  }
+}
+function accIcon(c, k, x, y, s, on) {
+  c.save(); c.globalAlpha = on ? 1 : 0.55;
+  if (k === 'chawan') { c.fillStyle = '#efe7d8'; c.beginPath(); c.moveTo(x - s, y - s * 0.2); c.quadraticCurveTo(x, y + s * 1.1, x + s, y - s * 0.2); c.closePath(); c.fill(); c.fillStyle = '#c9b8a0'; c.beginPath(); c.ellipse(x, y - s * 0.2, s, s * 0.3, 0, 0, 7); c.fill(); c.strokeStyle = '#3b5f8f'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x - s * 0.7, y + s * 0.2); c.quadraticCurveTo(x, y + s * 0.55, x + s * 0.7, y + s * 0.2); c.stroke(); }
+  else if (k === 'negi') { for (let i = 0; i < 6; i++) { const a = i * 1.1, d = s * 0.45 * (i % 3) / 2; c.strokeStyle = i % 2 ? '#7cc36a' : '#a9dd8a'; c.lineWidth = 1.6; c.beginPath(); c.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6, s * 0.26, 0, 7); c.stroke(); } }
+  else if (k === 'wasabi') { c.fillStyle = '#8fbf5a'; c.beginPath(); c.moveTo(x - s * 0.7, y + s * 0.4); c.quadraticCurveTo(x - s * 0.3, y - s * 0.7, x, y - s * 0.5); c.quadraticCurveTo(x + s * 0.4, y - s * 0.7, x + s * 0.7, y + s * 0.4); c.closePath(); c.fill(); c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.arc(x - s * 0.15, y - s * 0.2, s * 0.15, 0, 7); c.fill(); }
+  else if (k === 'nori') { c.fillStyle = '#1d2a1f'; for (let i = 0; i < 5; i++) { c.save(); c.translate(x + (i - 2) * s * 0.28, y); c.rotate(0.3 * (i % 2 ? 1 : -1)); c.fillRect(-s * 0.08, -s * 0.6, s * 0.16, s * 1.2); c.restore(); } }
+  else if (k === 'dashi') { c.fillStyle = '#5a4535'; c.beginPath(); c.arc(x, y + s * 0.1, s * 0.75, 0, 7); c.fill(); c.fillStyle = '#6e5642'; c.beginPath(); c.ellipse(x, y - s * 0.55, s * 0.4, s * 0.12, 0, 0, 7); c.fill(); c.strokeStyle = '#5a4535'; c.lineWidth = s * 0.22; c.beginPath(); c.moveTo(x + s * 0.65, y); c.lineTo(x + s * 1.15, y - s * 0.4); c.stroke(); c.strokeStyle = '#2b2b2b'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y - s * 0.3, s * 0.85, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
+  else if (k === 'sansho') { c.fillStyle = '#7a5a3a'; rr(c, x - s * 0.35, y - s * 0.7, s * 0.7, s * 1.4, s * 0.25); c.fill(); c.fillStyle = '#c9a227'; rr(c, x - s * 0.38, y - s * 0.85, s * 0.76, s * 0.3, 2); c.fill(); c.fillStyle = '#f4ecd8'; c.fillRect(x - s * 0.25, y - s * 0.2, s * 0.5, s * 0.5); }
+  c.restore();
+}
+function drawPlate(t) {
+  const L = LY;
+  ctx.drawImage(statics.pc, 0, 0, W, H);
+  drawBoard(t);
+  const p = D ? D.plate : newPlate();
+  // vessel
+  const v = L.vessel, vc = L.vCenter;
+  if (!p.vessel) {
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(ctx, v.x, v.y, v.w, v.h, 12); ctx.fill();
+    ctx.fillStyle = '#fff3e0'; ctx.font = font(Math.min(12, v.w * 0.07)); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(T('器をえらぶ'), v.x + v.w / 2, v.y + 6);
+    for (const tl of L.vtiles) {
+      ctx.fillStyle = 'rgba(255,240,220,.1)'; rr(ctx, tl.x, tl.y, tl.w, tl.h, 10); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,240,220,.3)'; ctx.lineWidth = 1; ctx.stroke();
+      dishIcon(ctx, tl.k, tl.x + tl.w / 2, tl.y + tl.h * 0.42, Math.min(tl.w * 0.34, tl.h * 0.3));
+      ctx.fillStyle = '#fff3e0'; fitFont(ctx, T(VESSELS[tl.k]), 12, tl.w - 6); ctx.textBaseline = 'bottom'; ctx.fillText(T(VESSELS[tl.k]), tl.x + tl.w / 2, tl.y + tl.h - 4);
+    }
+  } else {
+    vesselShape(ctx, p.vessel, vc.x, vc.y, vc.rx, vc.ry);
+    if (p.vessel !== 'sara') drawRiceIn(ctx, p.vessel, vc.x, vc.y, vc.rx, vc.ry, p.rice);
+    else if (p.rice.length) { ctx.fillStyle = '#fbf8f0'; ctx.beginPath(); ctx.ellipse(vc.x, vc.y, vc.rx * 0.5, vc.ry * 0.4, 0, 0, 7); ctx.fill(); }
+    if (p.eel) drawEelOn(ctx, p.vessel, vc.x, vc.y, vc.rx, vc.ry, p.eel, t);
+    // what is on the tray next to it
+    let ax = v.x + 14; const ay = v.y + v.h - 14, as = Math.min(11, v.w * 0.06);
+    for (const k of ACCS) if (p.acc[k]) { accIcon(ctx, k, ax, ay, as, true); ax += as * 2.4; }
+    for (const k of Object.keys(p.side)) if (p.side[k] != null) { dishIcon(ctx, k, ax + 4, ay, as); ax += as * 2.6; }
+    if (!p.rice.length && !p.eel) {
+      ctx.fillStyle = '#fff3e0'; ctx.font = font(Math.min(11, v.w * 0.065), 500); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(p.vessel === 'sara' ? T('うなぎを直接のせる') : T('← ご飯をドラッグ'), vc.x, v.y + 4);
+    }
+    if (!reduceMotion.matches && Math.random() < 0.12 && (p.rice.length || p.eel)) spark(vc.x + (Math.random() - 0.5) * vc.rx, vc.y - vc.ry * 0.4, 'steam');
+  }
+  // accessory chips
+  for (const cc of L.chipCells) {
+    const on = !!p.acc[cc.k];
+    ctx.fillStyle = on ? PAL.chipOn : 'rgba(255,240,220,.12)'; rr(ctx, cc.x, cc.y, cc.w, cc.h, 10); ctx.fill();
+    ctx.strokeStyle = on ? 'rgba(255,255,255,.6)' : 'rgba(255,240,220,.25)'; ctx.lineWidth = 1; ctx.stroke();
+    const s = Math.min(cc.h * 0.28, 12);
+    accIcon(ctx, cc.k, cc.x + s * 1.6, cc.y + cc.h / 2, s, true);
+    ctx.fillStyle = on ? PAL.chipInk : '#fff3e0'; fitFont(ctx, T(ACC_JA[cc.k]), Math.min(13, cc.h * 0.34), cc.w - s * 3.1 - 6); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(T(ACC_JA[cc.k]), cc.x + s * 3.1, cc.y + cc.h / 2 + 0.5);
+    if (on) { ctx.fillStyle = PAL.chipInk; ctx.font = font(10); ctx.textAlign = 'right'; ctx.fillText('✓', cc.x + cc.w - 5, cc.y + 9); }
+  }
+  for (const sc of L.sideCells) {
+    const done = p.side[sc.k] != null;
+    ctx.fillStyle = done ? PAL.chipOn : 'rgba(255,240,220,.12)'; rr(ctx, sc.x, sc.y, sc.w, sc.h, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,240,220,.25)'; ctx.lineWidth = 1; ctx.stroke();
+    dishIcon(ctx, sc.k, sc.x + sc.w / 2, sc.y + sc.h * 0.38, Math.min(sc.w * 0.2, sc.h * 0.22));
+    ctx.fillStyle = done ? PAL.chipInk : '#fff3e0'; fitFont(ctx, T(SIDES[sc.k].ja), Math.min(11, sc.h * 0.3), sc.w - 6); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(T(SIDES[sc.k].ja), sc.x + sc.w / 2, sc.y + sc.h - 3);
+  }
+  if (mini) drawMini(t);
+}
+function miniRect() { const L = LY; return L.land ? { x: L.vessel.x, y: L.vessel.y, w: L.chips.x + L.chips.w - L.vessel.x, h: L.vessel.h } : { x: L.vessel.x, y: L.vessel.y, w: L.chips.x + L.chips.w - L.vessel.x, h: L.vessel.h }; }
+function drawMini(t) {
+  const r = miniRect();
+  ctx.fillStyle = 'rgba(20,10,5,.82)'; rr(ctx, r.x, r.y, r.w, r.h, 14); ctx.fill();
+  ctx.strokeStyle = PAL.chipOn; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#fff3e0'; ctx.font = font(Math.min(13, r.w * 0.05)); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(T(SIDES[mini.kind].ja), r.x + 10, r.y + 8);
+  ctx.font = font(Math.min(11, r.w * 0.045), 500); ctx.fillStyle = '#e8d2b4';
+  ctx.fillText(mini.kind === 'kimo' ? T('押しているあいだ注ぐ。線で離す') : T('卵がかたまったら（緑）タップで巻く ×3'), r.x + 10, r.y + 26);
+  // close ×
+  ctx.fillStyle = 'rgba(255,255,255,.14)'; rr(ctx, r.x + r.w - 40, r.y + 4, 36, 30, 8); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = font(16); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('×', r.x + r.w - 22, r.y + 19);
+  const cx = r.x + r.w / 2, cy = r.y + r.h * 0.62, s = Math.min(r.w * 0.22, r.h * 0.28);
+  if (mini.kind === 'kimo') {
+    // a lacquer bowl filling with clear soup
+    ctx.fillStyle = '#1a0d0d'; ctx.beginPath(); ctx.moveTo(cx - s * 1.3, cy - s * 0.4); ctx.bezierCurveTo(cx - s * 1.3, cy + s * 1.2, cx + s * 1.3, cy + s * 1.2, cx + s * 1.3, cy - s * 0.4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#8a1c1c'; ctx.beginPath(); ctx.ellipse(cx, cy - s * 0.4, s * 1.3, s * 0.42, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#2a1010'; ctx.beginPath(); ctx.ellipse(cx, cy - s * 0.4, s * 1.18, s * 0.36, 0, 0, 7); ctx.fill();
+    const lv = clamp(mini.level, 0, 1.05), ly = cy + s * 0.45 - lv * s * 0.85;
+    const lw = s * 1.18 * Math.sqrt(clamp(0.35 + lv * 0.65, 0, 1));
+    ctx.fillStyle = 'rgba(222,186,110,.9)'; ctx.beginPath(); ctx.ellipse(cx, ly, lw, s * 0.3 * Math.min(1, 0.3 + lv), 0, 0, 7); ctx.fill();
+    if (lv > 0.2) { ctx.fillStyle = '#5b3a24'; ctx.beginPath(); ctx.ellipse(cx - s * 0.2, ly, s * 0.18, s * 0.08, 0.3, 0, 7); ctx.fill(); ctx.fillStyle = '#7cc36a'; ctx.fillRect(cx + s * 0.2, ly - 2, s * 0.35, 3); }
+    // the target line
+    const ty = cy + s * 0.45 - 0.78 * s * 0.85;
+    ctx.strokeStyle = '#6fe08a'; ctx.setLineDash([5, 4]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - s * 1.4, ty); ctx.lineTo(cx + s * 1.4, ty); ctx.stroke(); ctx.setLineDash([]);
+    if (mini.pouring) { ctx.strokeStyle = 'rgba(222,186,110,.9)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx + s * 0.3, r.y + 44); ctx.quadraticCurveTo(cx + s * 0.2, ly - s * 0.5, cx + s * 0.1, ly); ctx.stroke(); }
+  } else {
+    // a square pan with egg setting around the eel
+    ctx.fillStyle = '#2b2b2b'; rr(ctx, cx - s * 1.3, cy - s * 0.9, s * 2.6, s * 1.6, 6); ctx.fill();
+    ctx.fillStyle = '#4a3a2a'; ctx.fillRect(cx + s * 1.3, cy - s * 0.25, s * 0.9, s * 0.3);
+    const st = clamp(mini.set, 0, 1.25);
+    const col = mix([250, 220, 120], st > 1 ? [150, 90, 30] : [240, 190, 70], clamp(st, 0, 1));
+    ctx.fillStyle = rgb(col); rr(ctx, cx - s * 1.2, cy - s * 0.8, s * 2.4, s * 1.4, 4); ctx.fill();
+    const rolled = mini.rolls.length;
+    ctx.fillStyle = '#e8b43c'; rr(ctx, cx - s * 1.2, cy - s * 0.8, s * (0.35 + rolled * 0.25), s * 1.4, s * 0.2); ctx.fill();
+    ctx.fillStyle = '#8a4a1c'; ctx.fillRect(cx - s * 1.1, cy - s * 0.15, s * 0.2 + rolled * s * 0.1, s * 0.2);
+    // the set meter
+    const mx = r.x + 16, mw = r.w - 32, my = r.y + r.h - 22;
+    ctx.fillStyle = 'rgba(255,255,255,.15)'; rr(ctx, mx, my, mw, 10, 5); ctx.fill();
+    ctx.fillStyle = 'rgba(111,224,138,.6)'; ctx.fillRect(mx + mw * 0.55 / 1.25, my, mw * 0.3 / 1.25, 10);
+    ctx.fillStyle = '#fff'; ctx.fillRect(mx + mw * st / 1.25 - 1.5, my - 3, 3, 16);
+    ctx.fillStyle = '#fff3e0'; ctx.font = font(12); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(rolled + ' / 3', cx, my - 4);
+  }
+  if (mini.done) { ctx.fillStyle = mini.q > 0.7 ? '#6fe08a' : mini.q > 0.3 ? '#ffc247' : '#ff6a4d'; ctx.font = font(20); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(T(mini.q > 0.7 ? 'よし！' : mini.q > 0.3 ? 'まあまあ' : '失敗…'), cx, r.y + r.h * 0.3); }
+}
+function drawDrag() {
+  if (!drag) return;
+  if (drag.kind === 'rice') {
+    ctx.fillStyle = '#e9d2a8'; ctx.beginPath(); ctx.ellipse(drag.x, drag.y + 8, 14, 18, 0.3, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fbf8f0'; ctx.beginPath(); ctx.ellipse(drag.x, drag.y, 14, 9, 0, 0, 7); ctx.fill(); riceGrains(ctx, drag.x, drag.y, 12, 7, 14, 5);
+  } else if (drag.kind === 'eel' && D && D.board) {
+    const f = D.board.f, w = Math.min(LY.vCenter.rx * 1.3, 150), h = w * 0.24;
+    ctx.save(); ctx.globalAlpha = 0.92; ctx.translate(drag.x - w / 2, drag.y - h / 2);
+    piecesOf(D.board.cuts).forEach((p, i) => { ctx.save(); ctx.beginPath(); ctx.rect(p[0] * w + 1, -h, (p[1] - p[0]) * w - 2, h * 3); ctx.clip(); drawFilletFace(ctx, 0, 0, w, h, f, 1 - f.down, nowSec()); ctx.restore(); });
+    ctx.restore();
+  }
+}
+function drawFx(dt) {
+  for (const p of fx) {
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const a = clamp(1 - p.t / p.life, 0, 1);
+    if (p.kind === 'steam') { p.vx += (Math.sin(p.t * 3 + p.y * 0.05) * 10) * dt; p.r += dt * 8; ctx.globalAlpha = 0.16 * a * Math.min(1, p.t * 3); ctx.drawImage(statics.ss, p.x - p.r * 1.6, p.y - p.r * 1.6, p.r * 3.2, p.r * 3.2); ctx.globalAlpha = 1; }
+    else if (p.kind === 'ember') { ctx.fillStyle = `rgba(255,${150 + 80 * a | 0},60,${a})`; ctx.fillRect(p.x, p.y, 2, 2); }
+    else if (p.kind === 'drip' || p.kind === 'drop') { p.vy += 300 * dt; ctx.fillStyle = `rgba(110,45,10,${a})`; ctx.beginPath(); ctx.arc(p.x, p.y, 1.8, 0, 7); ctx.fill(); }
+  }
+  fx = fx.filter(p => p.t < p.life);
+  for (const f of floaters) {
+    f.t += dt; const a = clamp(1.6 - f.t, 0, 1);
+    ctx.globalAlpha = a; ctx.font = font(15); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeText(f.text, f.x, f.y - f.t * 22);
+    ctx.fillStyle = f.kind === 'good' ? '#ffe066' : '#fff'; ctx.fillText(f.text, f.x, f.y - f.t * 22); ctx.globalAlpha = 1;
+  }
+  floaters = floaters.filter(f => f.t < 1.6);
+}
+let lastT = 0, needDraw = true;
+function draw(dt) {
+  if (!LY || !statics) return;
+  const t = nowSec();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.drawImage(statics.bg, 0, 0, W, H);
+  // warm lamp light from above
+  const lg = ctx.createRadialGradient(W * 0.5, -H * 0.1, 0, W * 0.5, -H * 0.1, Math.max(W, H) * 0.9);
+  lg.addColorStop(0, 'rgba(' + PAL.lamp + ',.16)'); lg.addColorStop(1, 'rgba(' + PAL.lamp + ',0)');
+  if (view === 'grill') drawGrill(t); else drawPlate(t);
+  ctx.fillStyle = lg; ctx.fillRect(LY.strip.x, LY.strip.y, LY.strip.w, LY.strip.h);
+  // the counter side last, so the slips and balloons stay on top
+  drawStrip(t);
+  drawFx(dt || 0);
+  drawDrag();
+  if (D && D.over) { ctx.fillStyle = PAL.shade; ctx.fillRect(0, 0, W, H); }
+}
+
+// ---------- input on the canvas: tap / flick to turn / trace to brush tare / drag rice and eel ----------
+let ptr = null;
+function cpos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+const inR = (x, y, r, pad) => !!r && x >= r.x - (pad || 0) && x <= r.x + r.w + (pad || 0) && y >= r.y - (pad || 0) && y <= r.y + r.h + (pad || 0);
+cv.addEventListener('pointerdown', e => {
+  if (!LY || !canAct()) return;
+  const [x, y] = cpos(e);
+  try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+  ptr = { id: e.pointerId, x0: x, y0: y, x, y, t0: performance.now(), kind: null };
+  for (let i = 0; i < LY.seats.length; i++) if (inR(x, y, LY.seats[i]) && D.seats[i]) { selectCustomer(D.seats[i]); ptr.kind = 'seat'; return; }
+  if (inR(x, y, LY.strip)) return;
+  if (view === 'grill') {
+    for (let i = 0; i < LY.lanes.length; i++) {
+      const ln = LY.lanes[i];
+      if (D.grills[i] && inR(x, y, ln.fil, 16)) { ptr.kind = 'fil'; ptr.lane = i; selLane = i; return; }
+      if (!D.grills[i] && inR(x, y, ln)) { addEel(i); ptr.kind = 'tap'; return; }
+    }
+    return;
+  }
+  if (mini) {
+    const r = miniRect();
+    if (inR(x, y, { x: r.x + r.w - 44, y: r.y, w: 44, h: 38 })) { mini = null; sfx.tap(); return; }
+    if (inR(x, y, r)) { miniDown(); ptr.kind = 'mini'; return; }
+  }
+  if (inR(x, y, LY.board)) {
+    const b = D.board;
+    if (b && b.done) { drag = { kind: 'eel', x, y }; ptr.kind = 'drag'; }
+    else if (b) { chopTap(); ptr.kind = 'chop'; }
+    return;
+  }
+  if (inR(x, y, LY.tub)) { drag = { kind: 'rice', x, y }; ptr.kind = 'drag'; return; }
+  for (const sc of LY.sideCells) if (inR(x, y, sc)) { openMini(sc.k); return; }
+  if (!D.plate.vessel) { for (const tl of LY.vtiles) if (inR(x, y, tl)) { chooseVessel(tl.k); return; } }
+  for (const cc of LY.chipCells) if (inR(x, y, cc)) { toggleAcc(cc.k); return; }
+});
+cv.addEventListener('pointermove', e => {
+  if (!ptr || e.pointerId !== ptr.id) return;
+  const [x, y] = cpos(e);
+  if (ptr.kind === 'fil' && canAct()) {
+    const dx = x - ptr.x0, dy = y - ptr.y0;
+    if (!ptr.mode && Math.hypot(dx, dy) > 9) ptr.mode = Math.abs(dy) > Math.abs(dx) * 1.2 ? 'flick' : 'brush';
+    if (ptr.mode === 'flick' && !ptr.flicked && Math.abs(dy) > 20) ptr.flicked = flip(ptr.lane);
+    if (ptr.mode === 'brush') brushAt(ptr.lane, ptr.x, ptr.y, x, y);
+  } else if (ptr.kind === 'drag' && drag) { drag.x = x; drag.y = y; }
+  ptr.x = x; ptr.y = y;
+});
+function endPtr(e, cancel) {
+  if (!ptr || (e && e.pointerId !== ptr.id)) return;
+  const [x, y] = e ? cpos(e) : [ptr.x, ptr.y];
+  if (ptr.kind === 'drag' && drag && !cancel && D) {
+    const vc = LY.vCenter, inV = inR(x, y, LY.vessel);
+    if (inV && drag.kind === 'rice') dropRice((x - vc.x) / (vc.rx * 0.85));
+    else if (inV && drag.kind === 'eel') dropEel((x - vc.x) / vc.rx, (y - vc.y) / vc.ry);
+  }
+  if (ptr.kind === 'mini') miniUp();
+  drag = null; ptr = null;
+}
+cv.addEventListener('pointerup', e => endPtr(e, false));
+cv.addEventListener('pointercancel', e => endPtr(e, true));
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---------- HUD, the order slip, the tool bar ----------
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function clockText() {
+  const m = 11 * 60 + Math.floor((D ? clamp(D.t / D.dur, 0, 1) : 0) * 180);
+  return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+}
+function setText(id, s) { const el = $(id); if (el && el.textContent !== s) el.textContent = s; }
+function renderHud() {
+  const normal = !D || D.mode === 'normal';
+  setText('iDay', !D ? T('{n}日目', { n: save.day }) : D.mode === 'daily' ? T('今日のチャレンジ') : D.mode === 'versus' ? T('対戦') : D.mode === 'practice' ? T('練習') : T('{n}日目', { n: D.day }));
+  setText('iClock', clockText());
+  $('iBar').style.transform = 'scaleX(' + (D ? clamp(1 - D.t / D.dur, 0, 1) : 1).toFixed(3) + ')';
+  setText('iScore', T('{n}点', { n: fmtN(vs ? vs.score : D ? D.score : 0) }));
+  $('iMoney').hidden = !normal; setText('iMoney', yen(D && D.mode === 'normal' ? D.money : save.money));
+  $('iStock').hidden = !normal; setText('iStock', T('うなぎ {n}', { n: D && D.mode === 'normal' ? D.stock : save.stock }));
+  const st = D ? D.setup.strict : strictOf(save.rank);
+  const sb = $('iStrict'); sb.className = 'chip strict s' + st; setText('iStrict', T(st === 'B' ? 'やさしい' : st === 'C' ? 'こだわり' : '本気'));
+}
+function chip(text, cls) { return '<span class="tag' + (cls ? ' ' + cls : '') + '">' + esc(text) + '</span>'; }
+function renderTicket() {
+  const el = $('ticket');
+  let html = '';
+  const c = selCust();
+  if (!D || !D.started) html = '<span class="tk-idle">' + esc(T('のれんを出す前です')) + '</span>';
+  else if (D.over) html = '<span class="tk-idle">' + esc(T('本日の営業は終了しました')) + '</span>';
+  else if (!c) html = '<span class="tk-idle">' + esc(D.cust.length || D.queue.length ? T('席をタップして、お出しするお客さんをえらぶ') : T('お客さんを待っています…')) + '</span>';
+  else {
+    const hide = c.usual && !c.asked;
+    html += '<span class="tk-seat">' + (c.seat + 1) + '</span>';
+    if (c.reg) html += '<span class="tk-name">' + esc(T(REG_BY[c.reg].name)) + '</span>';
+    html += chip(T(DISHES[c.dish].ja), 'dish');
+    if (hide) html += chip(T('いつもの'), 'usual') + '<button class="ask sub" id="askBtn" type="button">' + esc(T('聞く')) + '</button>';
+    else {
+      if (c.dish === 'hitsu') html += chip(T('食べ方：{s}', { s: T(STYLES[c.style]) }), 'style');
+      for (const r of c.req) html += chip(T(REQS[r]), r === 'hurry' ? 'hurry' : 'req');
+      if (c.side) html += chip('＋' + T(SIDES[c.side].ja), 'side');
+    }
+    if (c.strict) html += chip(T('こだわり'), 'strict');
+  }
+  if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; const b = $('askBtn'); if (b) b.addEventListener('click', askUsual); }
+  // the eating style hint (what to prepare) for ひつまぶし
+  const hint = c && c.dish === 'hitsu' && !(c.usual && !c.asked) ? T(STYLE_HINT[c.style]) : '';
+  el.title = hint;
+}
+function attention() { // the grill needs you (shown on the view button while plating)
+  if (!D) return 0;
+  let a = 0;
+  for (const f of D.grills) if (f) { const d = f.side[f.down]; if (d > 1.05) a = 2; else if (d >= 0.85 && a < 1) a = 1; }
+  return a;
+}
+function renderTools() {
+  const g = view === 'grill', act = canAct();
+  const vb = $('viewBtn');
+  vb.querySelector('span').textContent = T(g ? '盛り場へ' : '焼き場へ');
+  vb.querySelector('b').textContent = g ? '▶' : '◀';
+  const at = g ? 0 : attention();
+  vb.classList.toggle('alert', at === 1); vb.classList.toggle('burn', at === 2);
+  const pulse = tut && !tut.done ? TUT[tut.step] && TUT[tut.step].pulse : null;
+  for (const id of ['addBtn', 'flipBtn', 'upBtn']) $(id).hidden = !g;
+  for (const id of ['trashBtn', 'serveBtn']) $(id).hidden = g;
+  const anyF = D && D.grills.some(Boolean), free = D && D.grills.includes(null);
+  $('addBtn').disabled = !act || !free;
+  setText('stockLeft', !D || D.mode === 'normal' ? T('のこり{n}', { n: D ? D.stock : save.stock }) : '∞');
+  $('flipBtn').disabled = !act || !anyF;
+  $('upBtn').disabled = !act || !anyF;
+  $('trashBtn').disabled = !act || !(D && (D.board || D.plate.vessel || D.plate.eel));
+  $('serveBtn').disabled = !act || !(D && D.plate.vessel && D.plate.eel);
+  vb.disabled = !D || !D.started || D.over;
+  for (const id of ['addBtn', 'flipBtn', 'upBtn', 'trashBtn', 'serveBtn', 'viewBtn']) $(id).classList.toggle('pulse', pulse === id);
+  $('menuBtn').disabled = !!vs;
+}
+function refreshAll() { renderHud(); renderTicket(); renderTools(); needDraw = true; }
+function setView(v) { if (view === v) return; view = v; ptr = null; drag = null; needDraw = true; renderTools(); }
+let toastTimer = 0;
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 2400);
+}
+
+// ---------- the guided first dish ----------
+const TUT = [
+  { t: '「＋うなぎ」を押して、焼き台にのせよう', s: '炭火の上で、下の面（裏）から焼けていきます', pulse: 'addBtn' },
+  { t: 'メーター「裏」が緑になったら、うなぎを上か下へはじいて返そう', s: 'さっとフリック。「返す」ボタンでも返せます', pulse: null },
+  { t: '焼きながら、うなぎを指で左右になぞってタレを塗ろう', s: 'ムラなく、まんべんなく。塗りすぎると炎が上がって焦げやすい', pulse: null },
+  { t: '表も裏も緑になったら「あげる」', s: 'よく焼き・タレ多めなどの注文があれば合わせる', pulse: 'upBtn' },
+  { t: 'まな板をタップで包丁スタート。▼の目印でリズムよくタップ', s: '同じ幅に刻むほど高得点', pulse: null },
+  { t: '器をえらぼう。ひつまぶしは「おひつ」', s: '丼はうな丼、皿は白焼き', pulse: null },
+  { t: 'ご飯を、おひつへドラッグ（3回）', s: '左・まん中・右に散らすと平らに盛れる', pulse: null },
+  { t: '刻んだうなぎを、ご飯のまん中へドラッグ', s: 'まん中にのせるほどきれい', pulse: null },
+  { t: '食べ方は「薬味で」。茶碗・ねぎ・わさび・のりをそろえよう', s: 'お茶漬けまでなら、だしも。上の札が注文です', pulse: null },
+  { t: '「お出しする」を押そう', s: '焼き・タレ・刻み・盛り・注文どおりか・早さで点数とチップが決まる', pulse: 'serveBtn' },
+];
+function renderCoach() {
+  const el = $('coach');
+  if (!tut || tut.step >= TUT.length) { el.hidden = true; layoutSoon(); return; }
+  const s = TUT[tut.step];
+  $('coachStep').textContent = String(tut.step + 1);
+  $('coachText').innerHTML = esc(T(s.t)) + '<small>' + esc(T(s.s)) + '</small>';
+  if (el.hidden) { el.hidden = false; layoutSoon(); }
+  renderTools();
+}
+function tutStep(n) {
+  if (!tut || n <= tut.step) return;
+  tut.step = n;
+  if (n >= TUT.length) { finishTutorial(false); return; }
+  sfx.toggle(true); renderCoach();
+}
+function tutCheck() {
+  const s = tut.step, f = D.grills.find(Boolean);
+  if (s === 0 && f) tutStep(1);
+  else if (s === 1 && f && f.flips >= 1) tutStep(2);
+  else if (s === 2 && f && avg(f.tare) >= 0.7) tutStep(3);
+  else if (s <= 3 && D.board) tutStep(4);
+  else if (s === 4 && D.board && D.board.done) tutStep(5);
+  else if (s === 5 && D.plate.vessel) tutStep(6);
+  else if (s === 6 && D.plate.rice.length >= 3) tutStep(7);
+  else if (s === 7 && D.plate.eel) tutStep(8);
+  else if (s === 8 && ['chawan', 'negi', 'wasabi', 'nori'].every(k => D.plate.acc[k])) tutStep(9);
+}
+function finishTutorial(skipped) {
+  if (!tut) return;
+  tut = null;
+  if (!save.tut) { save.tut = 1; writeSave(); }
+  if (D && D.tutorial && !D.over) {
+    D.sched = D.sched.concat(genSchedule(D.setup, D.rnd, D.t, D.regIds)).sort((a, b) => a.at - b.at);
+    for (const c of D.cust) if (c.pat > 1e8) { c.pat = 90; }
+    toast(T(skipped ? 'ここから営業スタート！' : 'チュートリアル完了！ ここから営業スタート'));
+  }
+  renderCoach(); refreshAll();
+}
+$('coachBtn').addEventListener('click', () => finishTutorial(true));
+
+// ---------- tool bar ----------
+$('viewBtn').addEventListener('click', () => { setView(view === 'grill' ? 'plate' : 'grill'); sfx.tap(); });
+$('addBtn').addEventListener('click', () => addEel());
+$('flipBtn').addEventListener('click', () => flip());
+$('upBtn').addEventListener('click', () => takeOff());
+$('trashBtn').addEventListener('click', () => trash());
+$('serveBtn').addEventListener('click', () => serve());
+
+// ---------- overlays ----------
+const OVERLAYS = ['howto', 'ovShop', 'ovDay'];
+function hideOverlays() { for (const id of OVERLAYS) $(id).hidden = true; }
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden);
+let howFirst = false;
+function showHowto(first) { howFirst = !!first; $('howto').hidden = false; if (D && D.started && !D.over) paused = true; try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {} }
+function closeHowto(go) {
+  $('howto').hidden = true; store.set(HOWTO_KEY, '1');
+  if (D && D.started && !D.over) { resumePlay(); return; }
+  if (howFirst && go && !save.tut) { howFirst = false; startDay('normal'); return; }
+  howFirst = false;
+  if (!anyOverlay()) showShop();
+}
+$('howtoGo').addEventListener('click', () => closeHowto(true));
+$('howtoAlt').addEventListener('click', () => { if (howFirst && !save.tut) { save.tut = 1; writeSave(); } closeHowto(false); });
+
+// the shop between days
+let shopTab = 'stock';
+function rankLine() {
+  const r = save.rank, next = RANK_REP[r + 1];
+  return { name: T(RANKS[r]), rep: save.rep, next, pct: next == null ? 1 : clamp((save.rep - RANK_REP[r]) / (next - RANK_REP[r]), 0, 1) };
+}
+function showShop() {
+  if (vs) return;
+  hideOverlays();
+  // the wholesaler helps a shop that cannot buy a single eel
+  if (save.stock === 0 && save.money < EEL_COST) { save.stock = 3; writeSave(); toast(T('問屋さんが、うなぎを3匹おまけしてくれた')); }
+  renderShop();
+  $('ovShop').hidden = false;
+  refreshAll();
+}
+function buy(kind, key) {
+  if (kind === 'eel') { const n = key; if (save.money < EEL_COST * n) return false; save.money -= EEL_COST * n; save.stock += n; }
+  else if (kind === 'up') { const u = UPS[key], lv = save.up[key]; if (lv >= u.max || save.money < u.cost[lv]) return false; save.money -= u.cost[lv]; save.up[key]++; }
+  else if (kind === 'menu') { const m = MENUS[key]; if (save.menu.includes(key) || save.rank < m.rank || save.money < m.cost) return false; save.money -= m.cost; save.menu.push(key); }
+  else return false;
+  save.rank = Math.max(save.rank, rankFor(save.rep, save.up.look));
+  writeSave(); sfx.coin(); renderShop(); refreshAll(); layout();
+  return true;
+}
+function shopRow(name, desc, price, can, attrs, state) {
+  return '<div class="srow"><div class="st"><b>' + esc(name) + '</b><small>' + esc(desc) + '</small></div>' +
+    (state ? '<span class="sstate">' + esc(state) + '</span>' : '<button class="buy sub" type="button" ' + attrs + (can ? '' : ' disabled') + '>' + esc(price) + '</button>') + '</div>';
+}
+function renderShop() {
+  const rl = rankLine();
+  $('shopRank').textContent = rl.name;
+  $('shopDay').textContent = T('{n}日目', { n: save.day });
+  $('shopRep').textContent = rl.next == null ? T('評判 {r}', { r: fmtN(rl.rep) }) : T('評判 {r} / {n}', { r: fmtN(rl.rep), n: fmtN(rl.next) });
+  $('shopRepBar').style.transform = 'scaleX(' + rl.pct.toFixed(3) + ')';
+  $('shopWallet').textContent = T('所持金 {m} ・ うなぎ {n}匹', { m: yen(save.money), n: save.stock });
+  $('shopStory').textContent = T(STORY[save.rank]);
+  $('shopStrict').textContent = T('お客さん：{s}', { s: T(STRICT_NAME[strictOf(save.rank)]) });
+  $('openBtn').textContent = T('{n}日目を開店する', { n: save.day });
+  for (const b of document.querySelectorAll('#shopTabs button')) b.setAttribute('aria-selected', String(b.dataset.tab === shopTab));
+  let h = '';
+  if (shopTab === 'stock') {
+    h += '<p class="snote">' + esc(T('1日に使ううなぎの目安：お客さんの数ぶん（焦がすと1匹むだに）。')) + '</p>';
+    for (const n of [1, 3, 5]) h += shopRow(T('うなぎ ×{n}', { n }), T('1匹 {p}', { p: yen(EEL_COST) }), yen(EEL_COST * n), save.money >= EEL_COST * n, 'data-buy="eel" data-k="' + n + '"');
+  } else if (shopTab === 'up') {
+    for (const k of Object.keys(UPS)) {
+      const u = UPS[k], lv = save.up[k], done = lv >= u.max;
+      const nm = k === 'look' ? T(u.ja) + (lv < u.max ? '：' + T(u.names[lv]) : '') : T(u.ja) + (k === 'grills' ? ' ' + (1 + lv) + '→' + (2 + lv) : k === 'seats' ? ' ' + (2 + lv) + '→' + (3 + lv) : '');
+      h += shopRow(done ? T(u.ja) : nm, T(u.desc), done ? '' : yen(u.cost[lv]), !done && save.money >= u.cost[lv], 'data-buy="up" data-k="' + k + '"', done ? T('最大') : '');
+    }
+  } else if (shopTab === 'menu') {
+    h += shopRow(T('ひつまぶし'), T('おひつに刻みうなぎ。4通りの食べ方'), '', false, '', T('看板'));
+    for (const k of Object.keys(MENUS)) {
+      const m = MENUS[k], has = save.menu.includes(k), lock = save.rank < m.rank;
+      h += shopRow(T(MENU_NAME[k]), lock ? T('「{r}」になると開発できる', { r: T(RANKS[m.rank]) }) : T(m.desc), yen(m.cost), !has && !lock && save.money >= m.cost, 'data-buy="menu" data-k="' + k + '"', has ? T('開発ずみ') : '');
+    }
+  } else {
+    h += '<p class="snote">' + esc(T('常連さんは3回目から「いつもの」としか言いません。好みを覚えておくと大よろこび（聞くとボーナスなし）。')) + '</p>';
+    for (const r of REGS) {
+      const rec = save.regs[r.id];
+      if (!rec || !rec.known) { h += shopRow('？？？', T('{n}日目ごろから来るかも', { n: r.from }), '', false, '', '　'); continue; }
+      const prefs = [T(DISHES[r.dish].ja)].concat(r.dish === 'hitsu' ? [T('食べ方：{s}', { s: T(STYLES[r.style]) })] : [], r.req.map(q => T(REQS[q])), r.side ? ['＋' + T(SIDES[r.side].ja)] : []);
+      h += shopRow(T(r.title), prefs.join(T('・')), '', false, '', T('{n}回', { n: rec.visits }));
+    }
+  }
+  const body = $('shopBody'); body.innerHTML = h;
+  for (const b of body.querySelectorAll('button[data-buy]')) b.addEventListener('click', () => buy(b.dataset.buy, b.dataset.buy === 'eel' ? Number(b.dataset.k) : b.dataset.k));
+}
+for (const b of document.querySelectorAll('#shopTabs button')) b.addEventListener('click', () => { shopTab = b.dataset.tab; sfx.tap(); renderShop(); });
+$('openBtn').addEventListener('click', () => {
+  if (save.stock <= 0) { toast(T('うなぎがありません。仕入れよう')); shopTab = 'stock'; renderShop(); sfx.bad(); return; }
+  startDay('normal');
+});
+$('shopDaily').addEventListener('click', () => startDaily());
+$('shopHow').addEventListener('click', () => { $('ovShop').hidden = true; showHowto(false); });
+
+// the result of a day
+function finishDay() {
+  const normal = D.mode === 'normal';
+  let newBest = false, rankUp = null;
+  const gotRep = D.rep;
+  if (normal) {
+    save = Object.assign(readSave(), { regs: save.regs }); // pick up the latest (another tab / the cloud), keep this day's visits
+    save.money = D.money; save.stock = D.stock; save.rep += D.rep;
+    const nr = rankFor(save.rep, save.up.look);
+    if (nr > save.rank) { rankUp = nr; save.rank = nr; }
+    if (D.score > save.best) { newBest = save.best > 0; save.best = D.score; }
+    save.day = D.day + 1;
+    const st = save.stats; st.served += D.served.length; st.perfect += D.perfect; st.remembered += D.remembered; st.days++; st.angry += D.angry; st.score += D.score;
+    if (!save.tut) save.tut = 1;
+    writeSave();
+    if (newBest || (D.score > 0 && save.stats.days === 1)) emit('best', { score: D.score });
+    emit('stage_clear', { stage: D.day });
+  }
+  endPlay('over');
+  if (D.mode === 'versus' || D.mode === 'practice') return;
+  showDayResult({ newBest, rankUp, gotRep });
+}
+function showDayResult(o) {
+  const daily = D.mode === 'daily';
+  $('dTitle').textContent = daily ? T('今日のチャレンジ 結果') : T('{n}日目の営業、おしまい', { n: D.day });
+  $('dScore').textContent = T('{n}点', { n: fmtN(D.score) });
+  $('dNew').hidden = !o.newBest;
+  const rows = [
+    [T('お出しした皿'), T('{n}皿', { n: D.served.length })], [T('極上'), T('{n}皿', { n: D.perfect })],
+    [T('売上'), yen(D.sales)], [T('チップ'), yen(D.tips)],
+  ];
+  if (!daily) rows.push([T('評判'), (o.gotRep >= 0 ? '+' : '') + o.gotRep]);
+  if (D.angry) rows.push([T('怒って帰った'), T('{n}人', { n: D.angry })]);
+  if (D.refused) rows.push([T('作り直し'), T('{n}回', { n: D.refused })]);
+  if (D.remembered) rows.push([T('「いつもの」を覚えていた'), T('{n}回', { n: D.remembered })]);
+  if (D.lost) rows.push([T('入れずに帰った'), T('{n}人', { n: D.lost })]);
+  $('dRows').innerHTML = rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('');
+  let note = '';
+  if (daily && PF) { const rec = PF.daily.get(D.dateKey, GAME); if (rec) note = T('今日のベスト {b}点 ・ {n}回目', { b: fmtN(rec.best || 0), n: rec.tries || 1 }); }
+  else if (!daily) note = T('ベスト {b}点', { b: fmtN(save.best) });
+  $('dNote').textContent = note;
+  const story = $('dStory');
+  story.hidden = o.rankUp == null;
+  if (o.rankUp != null) story.innerHTML = '<b>' + esc(T('店の格が上がった！「{r}」', { r: T(RANKS[o.rankUp]) })) + '</b>' + esc(T(STORY[o.rankUp]));
+  $('dNext').hidden = daily; $('dAgain').hidden = !daily; $('dNormal').hidden = !daily;
+  $('ovDay').hidden = false;
+  refreshAll();
+}
+$('dNext').addEventListener('click', () => showShop());
+$('dAgain').addEventListener('click', () => startDaily(D && D.dateKey));
+$('dNormal').addEventListener('click', () => { D = null; showShop(); layout(); });
+function startDaily(dateKey) {
+  if (!PF || vs) return;
+  const dk = dateKey && PF.isDateKey(dateKey) ? Number(dateKey) : PF.jstDateKey();
+  startDay('daily', { seed: PF.dailySeed(GAME, dk), dateKey: dk, noTutorial: true });
+}
+
+// ---------- sound button, theme ----------
+function renderSound() {
+  const b = $('sndBtn'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+}
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx.bell(); else sizzle(0); });
+if (A) A.onChange(renderSound);
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false;
+  m.setAttribute('content', light ? '#f3e8d6' : '#1c120d');
+}
+
+// ---------- pause and the menu (KoboUI) ----------
+const pinfo = document.createElement('p'); pinfo.className = 'pinfo';
+function doPause(reason) {
+  if (!D || !D.started || D.over || vs || (VS && VS.active())) return;
+  paused = true; sizzle(0); ptr = null; drag = null; if (mini && mini.kind === 'kimo') mini.pouring = false;
+  if (!UI || (pm && pm.isOpen) || !$('howto').hidden) return;
+  pinfo.textContent = T('{d} ・ {c} ・ {s}点', { d: $('iDay').textContent, c: clockText(), s: fmtN(D.score) });
+  pm = UI.pauseMenu({
+    title: T('ひとやすみ'), home: '../', extra: [pinfo,
+      { label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }],
+    onResume: resumePlay,
+    onRestart: D.mode === 'daily' ? () => { paused = false; startDaily(D.dateKey); } : D.tutorial ? undefined : () => { paused = false; restartDay(); },
+    onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); },
+  });
+  pm.open();
+}
+let pm = null;
+function resumePlay() { menuOpen = false; paused = false; last = 0; const g = KG(); if (g) { g.menuClosed(); g.resume('api'); } }
+function restartDay() { // the stock used today comes back (nothing was saved yet)
+  endPlay('quit'); D = null; startDay('normal', { noTutorial: true });
+}
+function openMenu() {
+  if (vs || (VS && VS.active())) return;
+  if (D && D.started && !D.over) { doPause('menu'); return; }
+  if (!UI) return;
+  const m = UI.pauseMenu({ title: T('メニュー'), home: '../', extra: [{ label: T('遊び方'), icon: 'help', onClick: () => { m.close(); hideOverlays(); showHowto(false); } }], onResume: () => {} });
+  m.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+document.addEventListener('keydown', e => {
+  if (VS && VS.active() && !vs) return;
+  const tg = e.target && e.target.tagName;
+  if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer')) return;
+  if (e.key === 'Escape') { if (!$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); } else if (D && D.started && !D.over) openMenu(); return; }
+  if (!canAct() || anyOverlay()) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ' || k === 'enter') { if (view === 'plate' && D.board && !D.board.done) { e.preventDefault(); chopTap(); } else if (k === 'enter' && view === 'plate') serve(); }
+  else if (k === 'f') flip();
+  else if (k === 'u') takeOff();
+  else if (k === 'a') addEel();
+  else if (k === 'tab') { e.preventDefault(); setView(view === 'grill' ? 'plate' : 'grill'); }
+  else if (/^[1-3]$/.test(k) && D.grills[+k - 1]) selLane = +k - 1;
+});
+
+// ---------- online battle (common/versus.js): the same order queue for everyone, who serves more dishes well ----------
+if (VS) {
+  KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ注文が同じ順番で来ます。',
+    game: GAME, title: T('ひつまぶし工房'), duration: 180, unit: T('点'),
+    theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--h-btn)', accentInk: '#2a1606', accentShadow: 'var(--h-btn-shadow)', card: 'var(--h-card)',
+      line: 'var(--kb-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
+    hudCover: () => document.querySelector('header'),
+    onOpen() {
+      if (pm && pm.isOpen) pm.close();
+      if (D && D.started && !D.over && !vs) { paused = true; sizzle(0); }
+      $('howto').hidden = true;
+    },
+    onStart({ seed, practice }) {
+      if (!vs) vs = { snap: { D, view, tut, ov: OVERLAYS.filter(id => !$(id).hidden) } };
+      else if (vs.playing) emit('play_end', { mode: vs.playing, score: vs.score, reason: 'quit' });
+      hideOverlays(); tut = null; mini = null; drag = null; ptr = null; fx = []; floaters = [];
+      D = newDay('versus', { seed: seed >>> 0 }); D.mode = practice ? 'practice' : 'versus'; D.started = true; D.ended = true; // play_start/end are sent here
+      view = 'grill'; selLane = 0; paused = false;
+      vs.score = 0; vs.playing = D.mode;
+      $('coach').hidden = true; layout();
+      emit('play_start', { mode: vs.playing, seed });
+      refreshAll();
+    },
+    getScore: () => (vs ? vs.score : 0),
+    onEnd() {
+      if (!vs || !D) return;
+      D.over = true; mini = null; drag = null; ptr = null; sizzle(0);
+      if (vs.playing) { emit('play_end', { mode: vs.playing, score: vs.score, reason: 'over', stats: dayStats() }); vs.playing = null; }
+      refreshAll();
+    },
+    onExit() {
+      if (!vs) return;
+      if (vs.playing) emit('play_end', { mode: vs.playing, score: vs.score, reason: 'quit' });
+      const s = vs.snap; vs = null;
+      D = s.D; view = s.view; tut = s.tut; mini = null; drag = null; ptr = null; fx = []; floaters = [];
+      renderCoach(); layout();
+      s.ov.forEach(id => { $(id).hidden = false; });
+      if (D && D.started && !D.over) { emit('play_start', { mode: D.mode, stage: D.day, resumed: true }); doPause('versus'); }
+      else if (!anyOverlay()) showShop();
+      refreshAll();
+    },
+  });
+  VS.button($('vsSlot'), { compact: true });
+  VS.button($('shopVs'));
+}
+
+// ---------- KoboGame: platform hooks (realtime: hiding the page pauses) ----------
+let raf = 0;
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause(reason) { doPause(reason); },
+  resume() { /* stays paused until the player presses つづける */ },
+  save() {},
+  isIdle: () => !(D && D.started && !D.over) && !vs,
+  dispose() { cancelAnimationFrame(raf); raf = 0; sizzle(0); },
+  daily: { start({ dateKey }) { if (!vs) startDaily(dateKey); } },
+});
+
+// ---------- the loop ----------
+let last = 0, hudT = 0, frameN = 0, booted = false;
+function loop(ts) {
+  raf = requestAnimationFrame(loop);
+  const t = ts / 1000; let dt = last ? t - last : 0; last = t; dt = clamp(dt, 0, 0.05);
+  if (document.hidden) return;
+  update(dt);
+  const active = !!(D && D.started && !D.over && !paused);
+  frameN++;
+  if (active || needDraw || frameN % 3 === 0) { draw(active ? dt : dt * 3); needDraw = false; }
+  hudT += dt; if (hudT > 0.2 || !active) { hudT = 0; renderHud(); renderTools(); if (active) renderTicket(); }
+}
+const listen = (t, ev, f) => t.addEventListener(ev, f);
+listen(window, 'resize', layoutSoon);
+if (window.visualViewport) listen(visualViewport, 'resize', layoutSoon);
+try { new ResizeObserver(() => layoutSoon()).observe(stage); } catch (e) {}
+listen(window, 'storage', e => { if (e.key === SAVE_KEY && !(D && D.started && !D.over)) { save = readSave(); if (!$('ovShop').hidden) renderShop(); refreshAll(); } });
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+
+readPal(); themeColor(); renderSound();
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(() => { readPal(); themeColor(); buildStatics(); needDraw = true; }, 0));
+layout();
+const launch = PF ? PF.launch() : { daily: null };
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut;
+if (launch.daily && PF) {
+  const def = window.KoboGame && KoboGame.info().def;
+  if (!(def && def.flags && def.flags.daily)) setTimeout(() => { if (!vs) startDaily(launch.daily); }, 0);
+} else if (firstVisit) showHowto(true);
+else showShop();
+refreshAll();
+raf = requestAnimationFrame(loop);
+booted = true;
+
+// ---------- test hooks (?debug) ----------
+function bot(c) { // cook one good dish for the selected customer, straight through the same actions a player uses
+  c = c || selCust(); if (!c || !canAct()) return null;
+  const d = DISHES[c.dish], well = c.req.includes('well');
+  const tg = c.req.includes('tareMore') ? 1.55 : c.req.includes('tareLess') ? 0.65 : 1.05;
+  if (D.board || D.plate.vessel) trash(true);
+  let lane = D.grills.indexOf(null); if (lane < 0) { D.grills[0] = null; lane = 0; }
+  if (!addEel(lane)) return null;
+  const f = D.grills[lane];
+  f.side = well ? [0.95, 0.95] : [0.82, 0.82]; f.flips = 2;
+  if (d.tare) for (let k = 0; k < TC; k++) f.tare[k] = tg;
+  D.sel = c.id; selLane = lane;
+  takeOff(lane);
+  chopNow(Array.from({ length: d.cuts }, (_, i) => (i + 1) / (d.cuts + 1)));
+  chooseVessel(d.vessel);
+  const n = d.rice + (c.req.includes('large') && d.rice ? 1 : 0);
+  const pos = n === 2 ? [-0.5, 0.5] : n === 3 ? [-0.66, 0, 0.66] : n === 4 ? [-0.75, -0.25, 0.25, 0.75] : [];
+  for (const x of pos) dropRice(x);
+  dropEel(0, 0);
+  for (const k of required(c)) D.plate.acc[k] = true;
+  if (c.side) D.plate.side[c.side] = 1;
+  return serve();
+}
+if (DEBUG) {
+  const api = {
+    ready: () => booted && !!LY,
+    state: () => ({
+      mode: vs ? (vs.playing || D.mode) : D ? D.mode : 'shop', score: vs ? vs.score : D ? D.score : 0, time: D ? Math.round(D.t * 1000) : 0,
+      over: !!(D && D.over), paused, view, day: D ? D.day : save.day, dur: D ? D.dur : 0, strict: D ? D.setup.strict : strictOf(save.rank),
+      money: D && D.mode === 'normal' ? D.money : save.money, stock: D && D.mode === 'normal' ? D.stock : save.stock,
+      grills: D ? D.grills.map(f => f && { side: f.side.slice(), down: f.down, tare: Math.round(avg(f.tare) * 100) / 100, flips: f.flips, flare: f.flare }) : [],
+      board: D && D.board ? { done: D.board.done, cuts: D.board.cuts.slice(), knife: D.board.knife, n: D.board.n } : null,
+      plate: D ? { vessel: D.plate.vessel, rice: D.plate.rice.slice(), eel: !!D.plate.eel, acc: Object.keys(D.plate.acc).filter(k => D.plate.acc[k]), side: Object.assign({}, D.plate.side) } : null,
+      cust: D ? D.cust.map(c => ({ id: c.id, dish: c.dish, req: c.req.slice(), style: c.style, side: c.side, state: c.state, wait: c.wait, pat: c.pat, strict: c.strict, reg: c.reg, usual: c.usual, seat: c.seat })) : [],
+      queue: D ? D.queue.length : 0, sched: D ? D.sched.length : 0, sel: D ? D.sel : null, served: D ? D.served.slice() : [], refused: D ? D.refused : 0, angry: D ? D.angry : 0,
+      save: JSON.parse(JSON.stringify(save)), tutorial: tut ? tut.step : null, mini: mini ? { kind: mini.kind, done: !!mini.done } : null,
+      howto: !$('howto').hidden, shop: !$('ovShop').hidden, result: !$('ovDay').hidden,
+    }),
+    // a day game: "win" closes the shop now (the day's result), "lose" does the same
+    win() { if (!D || D.over || vs) return false; closeShop(); return true; },
+    lose() { if (!D || D.over || vs) return false; closeShop(); return true; },
+    step(n) { const out = []; for (let i = 0; i < (n || 1); i++) { autoSelect(); const r = bot(); if (!r) break; out.push(r); } return out.map(r => r.result ? r.result.pts : r); },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__hitsu = {
+    api, get D() { return D; }, get save() { return save; }, judge, required, readSave, layout,
+    startDay: (mode, o) => (mode === 'daily' ? startDaily(o && o.dateKey) : startDay(mode || 'normal', o)),
+    finishTutorial: () => finishTutorial(true), shop: showShop, howto: () => showHowto(false), buy,
+    addEel, flip, takeOff, chopTap, chopNow, chooseVessel, dropRice, dropEel, toggleAcc, openMini, miniDown, miniUp, serve, trash, askUsual, setView, bot,
+    brush: (lane, amount) => brushFill(lane == null ? selLane : lane, amount),
+    brushAt, cook(lane, s0, s1) { const f = D && D.grills[lane == null ? selLane : lane]; if (!f) return false; f.side = [s0, s1]; return true; },
+    select(id) { const c = D && D.cust.find(x => x.id === id); if (c) selectCustomer(c); return !!c; },
+    advance(sec) { const n = Math.round(sec / 0.05); for (let i = 0; i < n; i++) update(0.05); refreshAll(); draw(0.05); return D ? D.t : 0; },
+    setup(o) { if (D) Object.assign(D.setup, o); layout(); refreshAll(); },
+    setSave(o) { save = Object.assign(readSave(), o); writeSave(); save = readSave(); refreshAll(); if (!$('ovShop').hidden) renderShop(); },
+    lanePoint(i, u, v) { const r = cv.getBoundingClientRect(), f = LY.lanes[i].fil; return [r.left + f.x + f.w * u, r.top + f.y + f.h * v]; },
+    rect(name) { const r = cv.getBoundingClientRect(), x = name === 'vCenter' ? { x: LY.vCenter.x - 1, y: LY.vCenter.y - 1, w: 2, h: 2 } : LY[name]; return x && { x: r.left + x.x, y: r.top + x.y, w: x.w, h: x.h }; },
+    chipPoint(k) { const r = cv.getBoundingClientRect(), c = LY.chipCells.find(x => x.k === k) || LY.vtiles.find(x => x.k === k) || LY.sideCells.find(x => x.k === k); return c && [r.left + c.x + c.w / 2, r.top + c.y + c.h / 2]; },
+    seatPoint(i) { const r = cv.getBoundingClientRect(), s = LY.seats[i]; return [r.left + s.x + s.w / 2, r.top + s.y + s.h / 2]; },
+    thumbScene() { // a busy, appetising moment at the grill for the hub thumbnail
+      hideOverlays(); store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb');
+      D = newDay('daily', { seed: 1234 }); D.started = true; D.ended = true; D.t = 64; tut = null;
+      D.setup.grills = 3; D.grills = [null, null, null]; D.setup.seats = 4; D.seats = new Array(4).fill(null);
+      layout();
+      for (let i = 0; i < 4; i++) { const c = makeOrder(D.setup, D.rnd, 0, null); arrive(c); c.wait = 10 + i * 12; c.enter = -5; }
+      const specs = [[0.86, 0.9, 1.1, 1], [0.7, 0.8, 0.8, 0.7], [0.32, 0.55, 0, 0]];
+      for (let i = 0; i < D.grills.length; i++) { const f = mkFillet(); const s = specs[i]; f.side = [s[0], s[1]]; f.down = 1; f.flips = 2; f.glaze = s[3]; for (let k = 0; k < TC; k++) f.tare[k] = s[2] * (0.9 + 0.2 * Math.sin(k)); f.seed = 77 + i * 13; D.grills[i] = f; }
+      paused = true; view = 'grill'; selLane = -1; D.sel = null; refreshAll(); draw(0.016);
+      return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.hitsumabushi.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

@@ -17,6 +17,8 @@ const RECIPES = {
   neji: ['#helpClose'],
   drop: ['#ovStart'],
   raft: ['#ovGo'],
+  // { query, eval }: open the page with this query and run this (the ?debug hook draws a busy grill without the UI chrome)
+  hitsumabushi: [{ query: '?debug', eval: 'window.__hitsu && __hitsu.thumbScene()' }],
 };
 const VP = { name: 'thumb', width: 480, height: 320, dpr: 1.5, safe: {} };
 
@@ -43,10 +45,13 @@ async function main() {
   const list = pagesLib.filter(pagesLib.games(), o.game);
   let bad = 0;
   for (const g of list) {
-    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true } });
+    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1' } });
     try {
-      await s.goto(g.path);
-      for (const sel of RECIPES[g.id] || []) {
+      const steps = RECIPES[g.id] || [];
+      const q = steps.find(x => x && typeof x === 'object' && x.query);
+      await s.goto(g.path + (q ? q.query : ''));
+      for (const sel of steps) {
+        if (sel && typeof sel === 'object') { if (sel.eval) { await s.page.evaluate(sel.eval); await browserLib.settle(s.page); } continue; }
         const el = s.page.locator(sel).first();
         if (await el.isVisible().catch(() => false)) { await el.click({ timeout: 3000 }).catch(() => {}); await browserLib.settle(s.page); }
       }

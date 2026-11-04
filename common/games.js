@@ -56,6 +56,7 @@
     { id: 'falling', ja: '落ちもの', en: 'Falling blocks' },
     { id: 'survival', ja: 'サバイバル', en: 'Survival' },
     { id: 'action', ja: 'アクション', en: 'Action' },
+    { id: 'cooking', ja: '料理・お店', en: 'Cooking & shop' },
   ];
 
   var GAMES = [
@@ -316,6 +317,39 @@
         },
       },
     },
+    {
+      id: 'hitsumabushi', order: 10, path: 'hitsumabushi/', added: '2026-11-04',
+      title: { ja: 'ひつまぶし工房', en: 'Hitsumabushi Workshop' },
+      short: { ja: 'ひつまぶし工房', en: 'Hitsumabushi' },
+      desc: { ja: '炭火でうなぎを焼き、タレを塗り、刻んで盛る。注文と食べ方どおりに出して、町いちばんの老舗をめざす。', en: 'Grill eel over charcoal, brush on the tare, chop and plate it. Serve every order the way the customer eats it, and grow a street stall into the oldest shop in town.' },
+      label: { ja: '料理のお店', en: 'Cooking shop' },
+      genres: ['cooking'], tags: ['2d', 'realtime', 'shop', 'versus', 'daily'],
+      keywords: { ja: ['ひつまぶし', 'うなぎ', '鰻', 'うな丼', '料理', 'お店', '経営'], en: ['hitsumabushi', 'eel', 'unagi', 'cooking', 'restaurant', 'shop', 'grill'] },
+      icon: 'img/icons/hitsumabushi.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2a1a12"/><rect x="6" y="50" width="60" height="16" rx="3" fill="#2e2926"/><g fill="#ff8a2a"><circle cx="16" cy="58" r="4"/><circle cx="29" cy="59" r="4"/><circle cx="42" cy="58" r="4"/><circle cx="55" cy="59" r="4"/></g><ellipse cx="36" cy="38" rx="27" ry="13" fill="#93602f"/><ellipse cx="36" cy="33" rx="27" ry="12" fill="#c99359"/><ellipse cx="36" cy="33" rx="22" ry="9" fill="#fbf8f0"/><g fill="#a8541c" stroke="#5a2a0c" stroke-width=".8"><rect x="19" y="26" width="10" height="6" rx="2"/><rect x="30" y="26" width="10" height="6" rx="2"/><rect x="41" y="26" width="9" height="6" rx="2"/><rect x="23" y="33" width="10" height="6" rx="2"/><rect x="34" y="33" width="10" height="6" rx="2"/><rect x="45" y="33" width="6" height="6" rx="2"/></g><g fill="#fff" opacity=".55"><rect x="20" y="27" width="7" height="1.2"/><rect x="31" y="27" width="7" height="1.2"/><rect x="42" y="27" width="6" height="1.2"/></g><path d="M22 18 q-4 -6 1 -11 M36 16 q-4 -6 1 -11 M50 18 q-4 -6 1 -11" stroke="#fff" stroke-width="2" fill="none" opacity=".45" stroke-linecap="round"/></svg>', iconBg: '#2a1a12',
+      thumb: 'img/thumbs/hitsumabushi.webp', thumb2x: 'img/thumbs/hitsumabushi@2x.webp',
+      tech: '2d',
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: true, stages: false },
+      versus: 'common',
+      score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 100000, maxRate: null },
+      // the best score of one business day (normal shop days only; dailies and matches never touch it)
+      rankSource: { key: 'kusoge.hitsumabushi.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.hitsumabushi.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: '1日のベスト {n} 点', en: 'Best day: {n} pts' } },
+      keys: {
+        'kusoge.hitsumabushi.save': '{ v:1, day（次に開く日）, best（1日の最高点）, money, stock（うなぎ）, rep（評判）, rank（0〜4 屋台→老舗）, up:{ grills, seats, coal, look }, menu:[…], regs:{ <id>:{ visits, known } }, stats:{ served, perfect, remembered, days, angry, score }, story, tut }。営業中の日は保存しない（閉店で書く）',
+        'kusoge.hitsumabushi.howto': '遊び方を見た（\'1\'）',
+      },
+      // お金・在庫・評判は使うと減るので newest。日・ベスト・格・改装・統計は大きい方、メニューは和集合、常連は回数の大きい方
+      sync: {
+        'kusoge.hitsumabushi.save': {
+          fields: {
+            day: 'max', best: 'max', money: 'newest', stock: 'newest', rep: 'newest', rank: 'max',
+            up: { each: 'max' }, menu: 'union', regs: { each: { fields: { visits: 'max', known: 'or' } } }, stats: { each: 'max' },
+            story: 'max', tut: 'max',
+          },
+          rest: 'newest',
+        },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -406,6 +440,17 @@
       { id: 'hole.camp30', tier: 4, icon: 'trophy', title: { ja: 'あなぼこ市長', en: 'Hole Mayor' }, desc: { ja: 'まちめぐりの星を30個あつめる', en: 'Collect 30 City Tour stars' }, when: { rec: { key: 'kusoge.hole.save', path: 'camp.stars', measure: 'sum' }, gte: 30 }, grantsTitle: { ja: 'あなぼこ市長', en: 'Hole Mayor' } },
       { id: 'hole.skins4', tier: 2, icon: 'theme', title: { ja: 'おしゃれな穴', en: 'Stylish Hole' }, desc: { ja: 'スキンを4つ持つ', en: 'Own 4 skins' }, when: { rec: { key: 'kusoge.hole.save', path: 'skins.owned', measure: 'count' }, gte: 4 } },
       { id: 'hole.online1', tier: 2, icon: 'globe', title: { ja: 'ネットの大穴', en: 'Online Champion' }, desc: { ja: 'オンライン対戦で1位になる', en: 'Finish 1st in an online battle' }, when: { rec: { key: 'kusoge.hole.save', path: 'online.wins' }, gte: 1 } },
+    ],
+    hitsumabushi: [
+      { id: 'hitsumabushi.day1', tier: 1, icon: 'check', title: { ja: '初日の営業', en: 'Opening Day' }, desc: { ja: '1日の営業を終える', en: 'Finish a business day' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'stats.days' }, gte: 1 } },
+      { id: 'hitsumabushi.s300', tier: 1, icon: 'star', title: { ja: '繁盛のきざし', en: 'Busy Counter' }, desc: { ja: '1日で300点', en: 'Score 300 in one day' }, when: { any: [{ rec: { key: 'kusoge.hitsumabushi.save', path: 'best' }, gte: 300 }, { ev: 'play_end', field: 'score', gte: 300, modes: SCORE_MODES }] } },
+      { id: 'hitsumabushi.s1k', tier: 2, icon: 'star', title: { ja: '千点の厨房', en: '1,000-Point Kitchen' }, desc: { ja: '1日で1,000点', en: 'Score 1,000 in one day' }, when: { any: [{ rec: { key: 'kusoge.hitsumabushi.save', path: 'best' }, gte: 1000 }, { ev: 'play_end', field: 'score', gte: 1000, modes: SCORE_MODES }] } },
+      { id: 'hitsumabushi.perfect', tier: 1, icon: 'star', title: { ja: '極上の一膳', en: 'Exquisite Bowl' }, desc: { ja: '「極上」の皿をお出しする', en: 'Serve an exquisite dish' }, when: { any: [{ rec: { key: 'kusoge.hitsumabushi.save', path: 'stats.perfect' }, gte: 1 }, { ev: 'play_end', field: 'stats.perfect', gte: 1, modes: SCORE_MODES }] } },
+      { id: 'hitsumabushi.dish100', tier: 2, icon: 'check', title: { ja: '百膳', en: 'Hundred Bowls' }, desc: { ja: '合わせて100皿お出しする', en: 'Serve 100 dishes in total' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'stats.served' }, gte: 100 } },
+      { id: 'hitsumabushi.usual3', tier: 2, icon: 'star', title: { ja: 'いつもの、ですね', en: 'The Usual' }, desc: { ja: '常連さんの「いつもの」を聞かずに3回当てる', en: 'Get a regular\'s usual right 3 times without asking' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'stats.remembered' }, gte: 3 } },
+      { id: 'hitsumabushi.rank2', tier: 2, icon: 'trophy', title: { ja: '町の人気店', en: 'Town Favorite' }, desc: { ja: '店の格を「町の人気店」にする', en: 'Grow your shop into the town favorite' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'rank' }, gte: 2 } },
+      { id: 'hitsumabushi.rank4', tier: 4, icon: 'trophy', title: { ja: '鯱見町の老舗', en: 'Oldest Shop in Town' }, desc: { ja: '店の格を「老舗」にする', en: 'Make your shop a long-established one' }, when: { rec: { key: 'kusoge.hitsumabushi.save', path: 'rank' }, gte: 4 }, grantsTitle: { ja: '老舗の主人', en: 'Old Shop Master' } },
+      { id: 'hitsumabushi.daily1', tier: 1, icon: 'star', title: { ja: '今日の一膳', en: 'Daily Bowl' }, desc: { ja: 'ひつまぶし工房のデイリーをクリア', en: 'Clear a Hitsumabushi Workshop daily' }, when: { stat: 'gameDaily', gte: 1 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
