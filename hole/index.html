@@ -2170,15 +2170,15 @@ async function netInit() {
   if (!firebase.auth) await loadJs(FB_SDK + 'firebase-auth-compat.js');
   if (!firebase.database) await loadJs(FB_SDK + 'firebase-database-compat.js');
   if (!firebase.apps.length) firebase.initializeApp(cfg);
-  let app = firebase.app();
+  const app = firebase.app();
   await authReady(app.auth());
+  // P3-7: one account for everything — Google if signed in, otherwise the shared guest account (KoboCloud.ensureGuest)
   let u = app.auth().currentUser;
-  if (!u || u.isAnonymous) {
-    // not logged in with Google: sign in anonymously on a separate app, so the hub's login state is not touched
-    app = firebase.apps.find(a => a.name === 'hole-online') || firebase.initializeApp(cfg, 'hole-online');
-    await authReady(app.auth());
-    u = app.auth().currentUser || (await app.auth().signInAnonymously()).user;
+  if (!u && window.KoboCloud && KoboCloud.ensureGuest) {
+    try { await KoboCloud.ensureGuest(); } catch (e) {}
+    u = app.auth().currentUser;
   }
+  if (!u) u = (await app.auth().signInAnonymously()).user;
   NET.uid = u.uid; NET.db = app.database(); NET.TS = firebase.database.ServerValue.TIMESTAMP;
 }
 function netConnect() {

@@ -4,15 +4,16 @@
 // ゲームを足すときは games.js に足すだけでよい（ここは直さない）。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 25;
+const BUILD = 26;
 const VERSION = 'kobo-v' + BUILD + '.' + REG.version;
 const CORE = ['./', './index.html', './firebase-config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png',
   './common/cloud.js', './common/i18n.js', './common/versus.js', './common/games.js', './common/platform.js', './common/achievements.js', './common/rank.js',
-  './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css'];
+  './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css',
+  './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
 // ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
 const ENGINES = ['./parking/engine.js', './water/engine.js', './hole/cities.js'];
-const PAGES = REG.games.map(g => './' + g.path).concat(['./ranking/', './about/']);
+const PAGES = REG.games.map(g => './' + g.path).concat(['./ranking/', './about/', './profile/']);
 const IMAGES = [].concat(...REG.games.map(g => [g.thumb, g.thumb2x, g.icon].filter(Boolean).map(p => './' + p)));
 const LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 const CACHE_FIRST_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];

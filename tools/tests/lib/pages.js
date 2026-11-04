@@ -40,7 +40,7 @@ function games() {
   return list.map(g => ({ id: g.id, path: '/' + g.id + '/', kind: 'game', three: !!g.three, source: reg ? 'registry' : 'fallback' }));
 }
 function pages() {
-  return [{ id: 'hub', path: '/', kind: 'hub' }, { id: 'ranking', path: '/ranking/', kind: 'ranking' }, ...games()];
+  return [{ id: 'hub', path: '/', kind: 'hub' }, { id: 'ranking', path: '/ranking/', kind: 'ranking' }, { id: 'profile', path: '/profile/', kind: 'profile' }, ...games()];
 }
 function filter(list, spec) {
   if (!spec) return list;

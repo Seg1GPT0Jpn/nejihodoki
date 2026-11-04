@@ -55,6 +55,7 @@ KoboI18n.add({ en: {
   '広告なし・課金なし・分析の送信なし': 'No ads · no purchases · no analytics',
   'Googleログインとニックネーム': 'Google sign-in and nickname', '開く': 'Open', 'ログインはこの環境では使えません': 'Sign-in is not available here',
   '利用規約とプライバシー': 'Terms and privacy', '保存するデータと消し方': 'What we store and how to delete it',
+  'お知らせ': 'News', 'お知らせはまだありません。': 'No news yet.', 'くわしく': 'Details', '未読': 'New', 'プロフィール': 'Profile', 'レベル・実績・フレンド・データの削除': 'Level, achievements, friends, deleting your data',
   'ネジほどき 3D': 'Unscrew 3D', 'パズル': 'Puzzle', '落ちもの': 'Falling blocks', 'サバイバル': 'Survival', 'アクション': 'Action',
 } });
 </script>
@@ -91,6 +92,23 @@ h1 span { color: var(--kb-accent-text); }
 .hbtn .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hbtn .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; line-height: 1; }
 .hbtn:active { transform: scale(.96); }
+/* notices row (P3-6): one line under the search; the dot means unread */
+.newsrow { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--kb-line); border-radius: 12px; background: var(--kb-surface); color: var(--kb-ink); font: 500 13px var(--kb-font-body); cursor: pointer; text-align: left; }
+.newsrow svg { width: 20px; height: 20px; flex: none; color: var(--kb-accent-text); }
+.newsrow b { flex: none; font-weight: 800; }
+.newsrow span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--kb-dim); }
+.newsrow .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--kb-danger); }
+.newsrow.unread { border-color: var(--kb-accent); }
+.newsrow .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; flex: none; }
+/* notices (P3-6) */
+.news { display: flex; flex-direction: column; gap: 12px; }
+.news article { border: 1px solid var(--kb-line); border-radius: 14px; padding: 10px 12px; background: var(--kb-surface); }
+.news article.unread { border-color: var(--kb-accent); }
+.news h3 { margin: 0; font-size: 15px; line-height: 1.4; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.news time { display: block; font-size: 11px; color: var(--kb-dim); margin-top: 2px; }
+.news p { margin: 6px 0 0; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.news a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 800; color: var(--kb-accent-text); }
+.news .new { font-size: 10px; font-weight: 800; color: var(--kb-accent-ink); background: var(--kb-accent); border-radius: 999px; padding: 1px 7px; }
 .search { position: relative; display: flex; align-items: center; }
 .search svg { position: absolute; left: 12px; width: 20px; height: 20px; color: var(--kb-dim); pointer-events: none; }
 .search input { width: 100%; min-height: 46px; border: 1px solid var(--kb-line); border-radius: 999px; background: var(--kb-surface); color: var(--kb-ink); font: 800 15px var(--kb-font-body); padding: 0 48px 0 40px; -webkit-appearance: none; appearance: none; }
@@ -212,7 +230,7 @@ footer nav a:hover { color: var(--kb-accent-text); }
       <a class="logo" href="./"><img src="icon-192.png" alt="" width="44" height="44"><div>
         <h1 data-i18n-html>ひまつぶし<span>工房</span></h1>
         <p class="sub" data-i18n>広告なし・課金なし。ネットで話題のあの遊び方を、自前で作りました。</p></div></a>
-      <button class="hbtn" id="profBtn" type="button" aria-label="プロフィールとログイン" data-i18n-attr="aria-label"><span class="av" id="profAv" aria-hidden="true"></span><span class="nm" id="profName"></span></button>
+      <a class="hbtn" id="profBtn" href="profile/" aria-label="プロフィールとログイン" data-i18n-attr="aria-label"><span class="av" id="profAv" aria-hidden="true"></span><span class="nm" id="profName"></span></a>
       <button class="hbtn" id="setBtn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n>設定</span></button>
     </div>
     <div class="search" role="search">
@@ -221,6 +239,7 @@ footer nav a:hover { color: var(--kb-accent-text); }
       <button id="qClear" type="button" hidden aria-label="検索をやめる" data-i18n-attr="aria-label">×</button>
     </div>
     <p class="found" id="found" role="status" aria-live="polite" hidden></p>
+    <button class="newsrow home-sec" id="newsBtn" type="button" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><b data-i18n>お知らせ</b><span id="newsTitle"></span><i class="dot" id="newsDot" hidden></i><span class="sr" id="newsSr"></span></button>
   </header>
 
   <section class="sec home-sec" id="secHero" aria-labelledby="heroKick" hidden></section>
@@ -266,6 +285,7 @@ footer nav a:hover { color: var(--kb-accent-text); }
 <script src="firebase-config.js"></script>
 <script src="common/cloud.js"></script>
 <script src="common/rank.js"></script>
+<script src="common/news.js"></script>
 <script>
 (() => {
   'use strict';
@@ -531,7 +551,39 @@ footer nav a:hover { color: var(--kb-accent-text); }
     if (ac.hidden) return;
     const f = ac.querySelector('button:not([hidden]), input'); if (f) setTimeout(() => f.focus({ preventScroll: true }), 350);
   }
-  $('profBtn').onclick = goAccount;
+  // the header button opens the profile page (P3-2); the account section stays on this page too
+
+  // ---------- notices (P3-6): common/news.json, unread dot (kobo.news.read). No push notifications ----------
+  const N = window.KoboNews;
+  let news = [];
+  function renderNewsDot() {
+    const b = $('newsBtn'), un = N ? N.unread(news) : [];
+    b.hidden = !N || !news.length;
+    if (!news.length) return;
+    $('newsTitle').textContent = N.text((un[0] || news[0]).title);
+    $('newsDot').hidden = !un.length; b.classList.toggle('unread', un.length > 0);
+    $('newsSr').textContent = un.length ? T('未読') + ' ' + un.length : '';
+  }
+  function openNews() {
+    if (!UI || !N) return;
+    const unread = new Set(N.unread(news).map(e => e.id));
+    const body = el('div', { class: 'news' });
+    if (!news.length) body.append(el('p', { class: 'sec-note', text: T('お知らせはまだありません。') }));
+    news.forEach(e => {
+      const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.date || '');
+      body.append(el('article', { class: unread.has(e.id) ? 'unread' : null }, [
+        el('h3', null, [unread.has(e.id) ? el('span', { class: 'new', text: T('未読') }) : null, N.text(e.title)]),
+        d ? el('time', { datetime: e.date, text: lang === 'en' ? (+d[2]) + '/' + (+d[3]) + '/' + d[1] : d[1] + '年' + (+d[2]) + '月' + (+d[3]) + '日' }) : null,
+        N.text(e.body) ? el('p', { text: N.text(e.body) }) : null,
+        e.link ? el('a', { href: e.link, target: /^https:/.test(e.link) ? '_blank' : null, rel: /^https:/.test(e.link) ? 'noopener' : null, text: T('くわしく') }) : null,
+      ]));
+    });
+    UI.sheet({ title: T('お知らせ'), body }).open();
+    N.markRead(news); renderNewsDot();
+  }
+  $('newsBtn').onclick = openNews;
+  if (N) N.load('').then(l => { news = l; renderNewsDot(); });
+  addEventListener('storage', e => { if (e.key === 'kobo.news.read') renderNewsDot(); });
 
   // ---------- settings (language, theme, volume via KoboUI + links) ----------
   $('setBtn').onclick = () => {
@@ -542,6 +594,7 @@ footer nav a:hover { color: var(--kb-accent-text); }
     try {
       extra.push(UI.list([
         link(T('アカウント'), T(acctOk ? 'Googleログインとニックネーム' : 'ログインはこの環境では使えません'), acctOk ? '#secAcct' : null, acctOk ? e => { e && e.preventDefault && e.preventDefault(); s && s.close && s.close('acct'); setTimeout(goAccount, 50); } : null),
+        link(T('プロフィール'), T('レベル・実績・フレンド・データの削除'), 'profile/'),
         link(T('利用規約とプライバシー'), T('保存するデータと消し方'), 'about/'),
       ]));
     } catch (e) {}

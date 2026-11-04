@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>プロフィール</title>
+<meta name="theme-color" content="#1d2a35" data-kb-theme-color>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<!-- achievements.js はこのページが読み込む（platform.js の自動の読み込みと二重にならないように） -->
+<script>window.KOBO_NO_ACH = true;</script>
+<script src="../common/platform.js"></script>
+<script src="../common/achievements.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'プロフィール': 'Profile', 'ゲーム一覧': 'Games', '設定': 'Settings',
+  'ゲスト': 'Guest', 'ニックネーム未登録': 'No nickname yet',
+  'Lv{lv}': 'Lv{lv}', '次のレベルまで {n} XP': '{n} XP to the next level', '最高レベル': 'Max level',
+  '今週の XP': 'XP this week', '通算 XP': 'Total XP', '今日の XP': 'XP today',
+  '日本時間の月曜0時に、今週の XP は0に戻ります。総合ランキングは今週の XP の順位です。': 'XP this week resets every Monday at 0:00 Japan time. The overall ranking uses XP this week.',
+  'ニックネームとアイコン': 'Nickname and icon', 'ニックネーム（ランキングに表示）': 'Nickname (shown in the rankings)', '1〜12文字': '1–12 characters',
+  '登録': 'Save', '「{n}」で登録しました。': 'Saved as "{n}".', 'ニックネームを1文字以上入れてください。': 'Please enter at least 1 character.',
+  'この端末に保存しました（クラウドへの送信はあとで行います）。': 'Saved on this device (it will be sent to the cloud later).',
+  'アイコン': 'Icon', 'アイコンを選ぶ': 'Choose an icon', '頭文字': 'Initial', '称号': 'Title', '表示する称号を選ぶ': 'Choose the title to show',
+  '称号は、レベルと一部の実績で手に入ります。': 'Titles come from your level and some achievements.',
+  '記録': 'Records', '遊んだ回数': 'Plays', '遊んだ時間': 'Time played', '遊んだゲーム': 'Games played',
+  '{n} 回': '{n}', '{h} 時間 {m} 分': '{h} h {m} min', '{m} 分': '{m} min', '{n} / {t} 本': '{n} / {t}',
+  'まだ遊んでいません': 'Not played yet', '実績 {n}/{t}': 'Achievements {n}/{t}',
+  '実績': 'Achievements', '{n} / {t} 個（{xp} XP）': '{n} / {t} unlocked ({xp} XP)', '全体': 'General',
+  '獲得 {d}': 'Unlocked {d}', '{v} / {g}': '{v} / {g}', '+{xp} XP': '+{xp} XP', '称号「{t}」': 'Title: {t}',
+  'フレンド': 'Friends', 'あなたのフレンドコード': 'Your friend code', 'コードを作る': 'Create my code', 'コピー': 'Copy',
+  'コピーしました': 'Copied', 'コピーできませんでした': 'Could not copy',
+  'コードを相手に教えると、相手のフレンドにあなたが入ります（一方向。見えるのは公開プロフィールとランキングの記録だけ）。': 'Give your code to someone so they can add you (one-way: they only see your public profile and ranking records).',
+  'フレンドを追加': 'Add a friend', '相手のフレンドコード（8文字）': 'Their friend code (8 characters)', '追加': 'Add',
+  '「{n}」さんを追加しました。': 'Added {n}.', 'フレンドを追加しました。': 'Friend added.',
+  'コードは8文字です（0・1・I・O は使いません）。': 'Codes have 8 characters (0, 1, I and O are not used).',
+  'このコードは見つかりませんでした。': 'No one has this code.', '自分のコードです。': 'That is your own code.',
+  'もうフレンドです。': 'Already your friend.', 'フレンドは30人までです。': 'You can have up to 30 friends.',
+  '今は使えません。通信状態を確かめてください。': 'Not available right now. Please check your connection.',
+  'コードを作れませんでした。通信状態を確かめてください。': 'Could not create a code. Please check your connection.',
+  'フレンドはまだいません。': 'No friends yet.', '外す': 'Remove', '「{n}」さんをフレンドから外しますか？': 'Remove {n} from your friends?',
+  '今週 {n} XP': '{n} XP this week', 'プロフィール未公開': 'Profile not public yet', '名無し': 'Anonymous',
+  'フレンドのランキング': 'Friends ranking', '読み込み中…': 'Loading…',
+  'この環境ではフレンドは使えません（https で開いてください）。': 'Friends are not available here (open the site over https).',
+  'アカウント': 'Account', 'Googleでログイン中：{name}': 'Signed in with Google: {name}',
+  'ゲスト（匿名のアカウント）で記録しています。Google につなぐと、ほかの端末でも続きから遊べます（ゲストの記録は引き継がれます）。': 'Playing as a guest (anonymous account). Link Google to continue on other devices (your guest records are kept).',
+  'ログインしていません。記録はこの端末だけに保存されています。': 'Not signed in. Your records are saved on this device only.',
+  'Googleでログイン': 'Sign in with Google', 'Googleにつなぐ': 'Link Google', 'ログアウト': 'Sign out',
+  'ログインはこの環境では使えません（https で開いてください）。': 'Sign-in is not available here (open the site over https).',
+  'あなたの ID（uid）': 'Your ID (uid)', 'お問い合わせのときに、この ID を伝えてください。': 'Include this ID when you contact us.',
+  'データ': 'Data', 'データを書き出す': 'Export my data', 'データを削除': 'Delete my data',
+  'この端末の記録（全ゲーム）を JSON のファイルに保存します。': 'Saves the records of all games on this device as a JSON file.',
+  '書き出しました': 'Exported',
+  'この端末の記録と、クラウドのあなたのデータ（同期の記録・公開プロフィール・ランキングの記録・フレンドコード）を消し、アカウントも削除します。元に戻せません。': 'Deletes the records on this device and your data in the cloud (synced records, public profile, ranking records, friend code), and deletes your account. This cannot be undone.',
+  'この端末の記録を消します。元に戻せません。': 'Deletes the records on this device. This cannot be undone.',
+  'データを削除しますか？': 'Delete your data?', '削除する': 'Delete', 'やめる': 'Cancel',
+  '削除しています…': 'Deleting…', '削除しました。': 'Deleted.',
+  'アカウントの削除には、もう一度ログインが必要でした。データは消し、ログアウトしました。アカウントも消したいときは、もう一度ログインしてすぐに削除してください。': 'Deleting the account needed a fresh sign-in. Your data was deleted and you were signed out. To delete the account too, sign in again and delete right away.',
+  'クラウドのデータを消せませんでした（{n}）。この端末の記録はそのままです。通信状態を確かめて、もう一度ためしてください。': 'Could not delete your cloud data ({n}). The records on this device were kept. Check your connection and try again.',
+  '過去の週間・日間ランキングの記録は探せないため残ることがあります。消したいときは、GitHub Issues でこの ID を伝えてください。': 'Records in past weekly/daily rankings cannot be looked up and may remain. To have them removed, send this ID via GitHub Issues.',
+  'お問い合わせ（GitHub Issues）': 'Contact (GitHub Issues)', '利用規約・プライバシー': 'Terms & Privacy',
+} });
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* プロフィール：上のバー → レベルのカード → ニックネーム・アイコン・称号 → 記録 → 実績 → フレンド → アカウント → データ。
+   スクロールするページ（ハブ・ランキングと同じ）。色はすべて theme.css のトークン（ライト / ダーク） */
+[hidden] { display: none !important; }
+html { height: 100%; -webkit-text-size-adjust: 100%; background: var(--kb-bg); }
+body { margin: 0; min-height: 100%; box-sizing: border-box; overflow-x: hidden; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  padding-top: var(--kb-sat); padding-bottom: var(--kb-sab); -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after { box-sizing: border-box; }
+.kb-bar { max-width: 640px; margin: 0 auto; border-bottom: 0; }
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding: 6px max(16px, var(--kb-sar)) 32px max(16px, var(--kb-sal)); }
+.wrap > * { min-width: 0; }
+h2 { margin: 6px 0 0; font-family: var(--kb-font-display); font-weight: 400; font-size: 17px; letter-spacing: .04em; }
+.note { margin: 0; font-size: var(--kb-fs-xs); color: var(--kb-dim); line-height: 1.6; }
+.msg { margin: 0; font-size: 12.5px; color: var(--kb-accent-text); min-height: 1.2em; line-height: 1.5; }
+.msg.bad { color: var(--kb-danger); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row > input, .row > select { flex: 1 1 140px; min-width: 0; }
+input, select { min-height: 44px; background: var(--kb-bg); color: var(--kb-ink); border: 1px solid var(--kb-line); border-radius: 10px; padding: 8px 10px; font: 800 15px var(--kb-font-body); }
+label.lab { display: block; font-size: 11px; letter-spacing: .06em; color: var(--kb-dim); font-weight: 800; margin-bottom: 4px; }
+
+/* level card */
+.me { display: flex; flex-direction: column; gap: 10px; }
+.who { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.av { flex: none; width: 60px; height: 60px; border-radius: 18px; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink);
+  font: 400 28px/1 var(--kb-font-display); border: 0; cursor: pointer; padding: 0; }
+.av.sm { width: 40px; height: 40px; border-radius: 12px; font-size: 19px; cursor: default; }
+.who .nm { font-weight: 800; font-size: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who .ttl { font-size: 12.5px; color: var(--kb-accent-text); font-weight: 800; overflow-wrap: anywhere; }
+.who > div { min-width: 0; flex: 1; }
+.lvrow { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lvrow b { font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; }
+.lvrow span { font-size: 12.5px; color: var(--kb-dim); }
+.bar { height: 10px; border-radius: 999px; background: var(--kb-surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--kb-accent); border-radius: inherit; transition: width var(--kb-dur-med, .3s); }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kpi { background: var(--kb-surface-2); border-radius: 12px; padding: 8px 10px; min-width: 0; }
+.kpi small { display: block; font-size: 10.5px; color: var(--kb-dim); font-weight: 800; overflow-wrap: anywhere; }
+.kpi b { display: block; font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* icon picker */
+.icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; }
+.icons button { min-height: 48px; border: 1px solid var(--kb-line); border-radius: 12px; background: var(--kb-surface); color: var(--kb-ink); font-size: 24px; line-height: 1; cursor: pointer; padding: 0; }
+.icons button[aria-pressed="true"] { border-color: var(--kb-accent); background: var(--kb-accent-soft); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.icons .ini { font: 400 20px var(--kb-font-display); }
+
+/* records */
+.glist { display: flex; flex-direction: column; gap: 6px; }
+.grow { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 12px; padding: 6px 10px 6px 6px; text-decoration: none; color: inherit; min-height: 52px; }
+.grow .ic { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; }
+.grow .ic svg, .grow .ic img { width: 100%; height: 100%; display: block; }
+.grow b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grow small { display: block; font-size: 11.5px; color: var(--kb-dim); overflow-wrap: anywhere; }
+.grow .rc { font-size: 12px; font-weight: 800; color: var(--kb-accent-text); text-align: right; font-variant-numeric: tabular-nums; max-width: 9.5em; overflow-wrap: anywhere; }
+
+/* achievements */
+details.grp { background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 14px; }
+details.grp > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; font-weight: 800; font-size: 14px; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary span:first-child { flex: 1; min-width: 0; }
+details.grp > summary span:last-child { color: var(--kb-dim); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+details.grp > summary::after { content: '▾'; color: var(--kb-dim); margin-left: 4px; }
+details.grp[open] > summary::after { content: '▴'; }
+.ach { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 6px; padding: 0 8px 10px; }
+.a { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: var(--kb-surface-2); min-width: 0; }
+.a .ai { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--kb-bg); color: var(--kb-dim); }
+.a .ai svg { width: 20px; height: 20px; }
+.a.got .ai { background: var(--kb-accent); color: var(--kb-accent-ink); }
+.a b { display: block; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.a small { display: block; font-size: 11px; color: var(--kb-dim); line-height: 1.45; overflow-wrap: anywhere; }
+.a .pb { height: 5px; margin-top: 4px; border-radius: 999px; background: var(--kb-bg); overflow: hidden; }
+.a .pb i { display: block; height: 100%; background: var(--kb-accent); }
+.a:not(.got) b { color: var(--kb-dim); }
+
+/* friends */
+.code { font: 400 22px/1 var(--kb-font-display); letter-spacing: .12em; font-variant-numeric: tabular-nums; padding: 8px 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.flist { display: flex; flex-direction: column; gap: 6px; }
+.frow { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 12px; padding: 6px 6px 6px 8px; min-height: 52px; }
+.frow b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frow small { display: block; font-size: 11.5px; color: var(--kb-dim); overflow-wrap: anywhere; }
+.uid { font: 600 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; word-break: break-all; flex: 1 1 160px; min-width: 0; background: var(--kb-surface-2); border-radius: 8px; padding: 8px 10px; }
+.card { display: flex; flex-direction: column; gap: 10px; }
+.links { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
+.links a { color: var(--kb-ink); font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; }
+</style>
+</head>
+<body>
+<header class="kb-bar kb-ui">
+  <a class="kb-back" href="../"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span data-i18n>ゲーム一覧</span></a>
+  <h1 class="kb-bar__title" data-i18n>プロフィール</h1>
+  <div class="kb-bar__actions" id="actions"></div>
+</header>
+<main class="wrap kb-ui">
+  <section class="kb-card me" aria-labelledby="nm">
+    <div class="who">
+      <button class="av" id="avBtn" type="button" aria-label="アイコンを選ぶ" data-i18n-attr="aria-label"></button>
+      <div><div class="nm" id="nm"></div><div class="ttl" id="ttl"></div></div>
+    </div>
+    <div class="lvrow"><b id="lv"></b><span id="rank"></span><span id="toNext"></span></div>
+    <div class="bar" role="progressbar" id="bar" aria-valuemin="0"><i id="barFill"></i></div>
+    <div class="kpis">
+      <div class="kpi"><small data-i18n>今週の XP</small><b id="xpw"></b></div>
+      <div class="kpi"><small data-i18n>通算 XP</small><b id="xpt"></b></div>
+      <div class="kpi"><small data-i18n>今日の XP</small><b id="xpd"></b></div>
+    </div>
+    <p class="note" data-i18n>日本時間の月曜0時に、今週の XP は0に戻ります。総合ランキングは今週の XP の順位です。</p>
+  </section>
+
+  <h2 data-i18n>ニックネームとアイコン</h2>
+  <section class="kb-card card">
+    <form id="nickForm">
+      <label class="lab" for="nickIn" data-i18n>ニックネーム（ランキングに表示）</label>
+      <div class="row"><input id="nickIn" maxlength="12" autocomplete="nickname" placeholder="1〜12文字" data-i18n-attr="placeholder"><button class="kb-btn kb-btn--primary" type="submit" data-i18n>登録</button></div>
+      <p class="msg" id="nickMsg" role="status"></p>
+    </form>
+    <div>
+      <label class="lab" id="icoLab" data-i18n>アイコン</label>
+      <div class="icons" id="icons" role="group" aria-labelledby="icoLab"></div>
+    </div>
+    <div>
+      <label class="lab" for="titleSel" data-i18n>称号</label>
+      <div class="row"><select id="titleSel" aria-label="表示する称号を選ぶ" data-i18n-attr="aria-label"></select></div>
+      <p class="note" style="margin-top:4px" data-i18n>称号は、レベルと一部の実績で手に入ります。</p>
+    </div>
+  </section>
+
+  <h2 data-i18n>記録</h2>
+  <div class="kpis">
+    <div class="kpi"><small data-i18n>遊んだ回数</small><b id="stPlays"></b></div>
+    <div class="kpi"><small data-i18n>遊んだ時間</small><b id="stTime"></b></div>
+    <div class="kpi"><small data-i18n>遊んだゲーム</small><b id="stGames"></b></div>
+  </div>
+  <div class="glist" id="glist"></div>
+
+  <h2 data-i18n>実績</h2>
+  <p class="note" id="achSum"></p>
+  <div id="achBox" style="display:flex;flex-direction:column;gap:8px"></div>
+
+  <h2 id="friends" data-i18n>フレンド</h2>
+  <section class="kb-card card" id="frCard">
+    <p class="note" id="frOff" hidden data-i18n>この環境ではフレンドは使えません（https で開いてください）。</p>
+    <div id="frOn">
+      <label class="lab" data-i18n>あなたのフレンドコード</label>
+      <div class="row"><span class="code" id="myCode">—</span><button class="kb-btn kb-btn--ghost" id="codeCopy" type="button" hidden data-i18n>コピー</button><button class="kb-btn kb-btn--primary" id="codeMake" type="button" data-i18n>コードを作る</button></div>
+      <p class="msg" id="codeMsg" role="status"></p>
+      <p class="note" data-i18n>コードを相手に教えると、相手のフレンドにあなたが入ります（一方向。見えるのは公開プロフィールとランキングの記録だけ）。</p>
+      <form id="addForm" style="margin-top:10px">
+        <label class="lab" for="addIn" data-i18n>フレンドを追加</label>
+        <div class="row"><input id="addIn" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="相手のフレンドコード（8文字）" data-i18n-attr="placeholder"><button class="kb-btn kb-btn--primary" type="submit" data-i18n>追加</button></div>
+        <p class="msg" id="addMsg" role="status"></p>
+      </form>
+    </div>
+    <div class="flist" id="flist"></div>
+    <a class="kb-btn kb-btn--ghost" id="frRank" href="../ranking/#week/xp/friends" data-i18n>フレンドのランキング</a>
+  </section>
+
+  <h2 data-i18n>アカウント</h2>
+  <section class="kb-card card">
+    <p class="note" id="acMsg" style="font-size:13px"></p>
+    <div class="row" id="acBtns"></div>
+    <div id="uidBox" hidden>
+      <label class="lab" data-i18n>あなたの ID（uid）</label>
+      <div class="row"><code class="uid" id="uid"></code><button class="kb-btn kb-btn--ghost" id="uidCopy" type="button" data-i18n>コピー</button></div>
+      <p class="note" style="margin-top:4px" data-i18n>お問い合わせのときに、この ID を伝えてください。</p>
+    </div>
+  </section>
+
+  <h2 data-i18n>データ</h2>
+  <section class="kb-card card">
+    <p class="note" data-i18n>この端末の記録（全ゲーム）を JSON のファイルに保存します。</p>
+    <div class="row"><button class="kb-btn kb-btn--ghost" id="exportBtn" type="button" data-i18n>データを書き出す</button></div>
+    <p class="note" id="delNote"></p>
+    <div class="row"><button class="kb-btn kb-btn--danger" id="delBtn" type="button" data-i18n>データを削除</button></div>
+    <p class="msg" id="delMsg" role="status"></p>
+    <nav class="links"><a href="../about/#delete" data-i18n>利用規約・プライバシー</a><a href="https://github.com/Seg1GPT0Jpn/nejihodoki/issues" target="_blank" rel="noopener" data-i18n>お問い合わせ（GitHub Issues）</a></nav>
+  </section>
+</main>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script src="../common/rank.js"></script>
+<script src="../common/friends.js"></script>
+<script src="../common/account.js"></script>
+<script>
+(() => {
+  'use strict';
+  const I = KoboI18n, T = I.t, P = window.KoboPlatform, A = window.KoboAchievements, UI = window.KoboUI;
+  const C = window.KoboCloud, F = window.KoboFriends, ACC = window.KoboAccount, R = window.KOBO_REGISTRY;
+  const lang = I.lang === 'en' ? 'en' : 'ja';
+  const L = o => (o && typeof o === 'object' ? (o[lang] || o.ja || '') : String(o == null ? '' : o));
+  const $ = id => document.getElementById(id);
+  const el = (UI && UI.el) || ((t, a, k) => { const e = document.createElement(t); if (a && a.text) e.textContent = a.text; if (a && a.class) e.className = a.class; [].concat(k || []).forEach(c => c && e.append(c)); return e; });
+  const num = n => Number(n || 0).toLocaleString(lang === 'en' ? 'en-US' : 'ja-JP');
+  const GAMES = (R ? R.games.slice() : []).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const toast = (m, type) => { try { UI && UI.toast(m, { type: type || 'ok' }); } catch (e) {} };
+  // プリセットのアイコン（kbProfiles.icon に id を入れる。16文字まで）
+  const ICONS = window.KoboFriends && KoboFriends.ICONS ? KoboFriends.ICONS : [];
+  const iconChar = id => { const x = ICONS.find(i => i.id === id); return x ? x.ch : ''; };
+  const nick = () => (C && C.nickname ? C.nickname() : (P.store.raw('kobo.nick') || ''));
+  const prof = () => { const o = P.store.get('kobo.profile', {}); return o && typeof o === 'object' ? o : {}; };
+  function avatar(box, icon, name) {
+    const ch = iconChar(icon);
+    box.textContent = ch || (name ? Array.from(name)[0].toUpperCase() : '?');
+  }
+
+  // ---------- level card ----------
+  function renderMe() {
+    const info = P.xp.info(), n = nick(), t = A ? A.title() : null;
+    $('nm').textContent = n || T('ニックネーム未登録');
+    $('ttl').textContent = t ? (t[lang] || t.ja) : '';
+    avatar($('avBtn'), prof().icon, n);
+    $('lv').textContent = T('Lv{lv}', { lv: info.lv });
+    $('rank').textContent = info.rank ? (info.rank[lang] || info.rank.ja) : '';
+    $('toNext').textContent = info.need ? T('次のレベルまで {n} XP', { n: num(info.need - info.into) }) : T('最高レベル');
+    const pct = info.need ? Math.max(0, Math.min(100, info.into / info.need * 100)) : 100;
+    $('barFill').style.width = pct.toFixed(1) + '%';
+    $('bar').setAttribute('aria-valuemax', String(info.need || 1)); $('bar').setAttribute('aria-valuenow', String(info.need ? info.into : 1));
+    $('xpw').textContent = num(info.week); $('xpt').textContent = num(info.total); const td = info.today && typeof info.today === 'object' ? (+info.today.play || 0) + (+info.today.daily || 0) + (+info.today.ach || 0) : (+info.today || 0);
+    $('xpd').textContent = num(td);
+  }
+
+  // ---------- nickname, icon, title ----------
+  $('nickIn').value = nick();
+  $('nickForm').onsubmit = async ev => {
+    ev.preventDefault();
+    const m = $('nickMsg'); m.classList.remove('bad');
+    const v = String($('nickIn').value || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
+    if (!v) { m.textContent = T('ニックネームを1文字以上入れてください。'); m.classList.add('bad'); return; }
+    try {
+      if (C && C.setNickname) await C.setNickname(v); else P.store.setRaw('kobo.nick', v);
+      m.textContent = T('「{n}」で登録しました。', { n: v });
+    } catch (e) {
+      if (e && e.message === 'empty') { m.textContent = T('ニックネームを1文字以上入れてください。'); m.classList.add('bad'); return; }
+      m.textContent = T('この端末に保存しました（クラウドへの送信はあとで行います）。');
+    }
+    try { A && A.profile.schedule(); } catch (e) {}
+    $('nickIn').value = nick(); renderMe(); renderAccount();
+  };
+  function renderIcons() {
+    const box = $('icons'), cur = prof().icon || '';
+    box.textContent = '';
+    const n = nick();
+    const opts = [{ id: '', ch: n ? Array.from(n)[0].toUpperCase() : '?', label: T('頭文字'), ini: true }].concat(ICONS.map(i => ({ id: i.id, ch: i.ch, label: i.id })));
+    for (const o of opts) {
+      const b = el('button', { type: 'button', class: o.ini ? 'ini' : null, 'aria-pressed': String(o.id === cur), 'aria-label': o.label, text: o.ch });
+      b.onclick = () => {
+        const p = prof(); p.v = p.v || 1; if (!p.created) p.created = Date.now();
+        if (o.id) p.icon = o.id; else delete p.icon;
+        P.store.set('kobo.profile', p);
+        try { A && A.profile.schedule(); } catch (e) {}
+        renderIcons(); renderMe();
+      };
+      box.append(b);
+    }
+  }
+  $('avBtn').onclick = () => { const f = $('icons').querySelector('[aria-pressed="true"]') || $('icons').firstChild; if (f) { f.scrollIntoView({ block: 'center', behavior: P.fx && P.fx.reducedMotion && P.fx.reducedMotion() ? 'auto' : 'smooth' }); f.focus({ preventScroll: true }); } };
+  function renderTitles() {
+    const sel = $('titleSel'); sel.textContent = '';
+    if (!A) { sel.disabled = true; return; }
+    const own = A.titles(), cur = A.title();
+    for (const t of own) { const o = document.createElement('option'); o.value = t.id; o.textContent = t[lang] || t.ja; if (cur && cur.id === t.id) o.selected = true; sel.append(o); }
+    sel.onchange = () => { A.setTitle(sel.value); renderMe(); };
+  }
+
+  // ---------- records ----------
+  function dur(ms) { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? T('{h} 時間 {m} 分', { h, m: m % 60 }) : T('{m} 分', { m }); }
+  function renderRecords() {
+    const all = P.stats.all(), sum = A ? A.summary() : null;
+    let plays = 0, ms = 0, played = 0;
+    const box = $('glist'); box.textContent = '';
+    for (const g of GAMES) {
+      const s = all[g.id] || {}; plays += s.plays || 0; ms += s.ms || 0; if (s.plays > 0) played++;
+      const ic = el('span', { class: 'ic', style: 'background:' + (g.iconBg || '') }); ic.innerHTML = g.iconSvg || '';
+      const bits = [s.plays > 0 ? T('遊んだ回数') + ' ' + T('{n} 回', { n: num(s.plays) }) + ' · ' + dur(s.ms || 0) : T('まだ遊んでいません')];
+      const bg = sum && sum.byGame[g.id]; if (bg) bits.push(T('実績 {n}/{t}', { n: bg.got, t: bg.total }));
+      box.append(el('a', { class: 'grow', href: '../' + g.path }, [ic, el('span', { style: 'min-width:0' }, [el('b', { text: L(g.title) }), el('small', { text: bits.join(' · ') })]),
+        el('span', { class: 'rc', text: P.recordText(g.id) || '' })]));
+    }
+    $('stPlays').textContent = T('{n} 回', { n: num(plays) }); $('stTime').textContent = dur(ms); $('stGames').textContent = T('{n} / {t} 本', { n: played, t: GAMES.length });
+  }
+
+  // ---------- achievements ----------
+  function renderAch() {
+    const box = $('achBox'); box.textContent = '';
+    if (!A) return;
+    const sum = A.summary(), got = A.unlocked();
+    $('achSum').textContent = T('{n} / {t} 個（{xp} XP）', { n: sum.count, t: sum.total, xp: num(sum.xp) });
+    const groups = [{ id: 'all', name: T('全体') }].concat(GAMES.map(g => ({ id: g.id, name: L(g.short || g.title) })));
+    groups.forEach((gr, gi) => {
+      const defs = A.all().filter(d => (d.game || 'all') === gr.id);
+      if (!defs.length) return;
+      const s = sum.byGame[gr.id] || { got: 0, total: defs.length };
+      const det = el('details', { class: 'grp' }); if (gi === 0) det.open = true;
+      det.append(el('summary', null, [el('span', { text: gr.name }), el('span', { text: s.got + ' / ' + s.total })]));
+      const grid = el('div', { class: 'ach' });
+      // 取ったものを先に、それ以外は定義の順
+      defs.slice().sort((a, b) => (got[b.id] > 0) - (got[a.id] > 0)).forEach(d => {
+        const has = got[d.id] > 0, secret = d.hidden && !has;
+        const ai = el('span', { class: 'ai', 'aria-hidden': 'true' }); if (UI) ai.append(UI.icon(secret ? 'help' : (d.icon || 'star')));
+        const body = el('span', { style: 'min-width:0' }, [el('b', { text: A.name(d) }), el('small', { text: A.desc(d) })]);
+        const meta = [];
+        if (has) { const dt = new Date(got[d.id]); meta.push(T('獲得 {d}', { d: dt.toLocaleDateString(lang === 'en' ? 'en-US' : 'ja-JP') })); }
+        if (!secret) meta.push(T('+{xp} XP', { xp: d.xp }));
+        if (d.grantsTitle && !secret) meta.push(T('称号「{t}」', { t: L(d.grantsTitle) }));
+        body.append(el('small', { text: meta.join(' · ') }));
+        if (!has && !secret) {
+          let pr = null; try { pr = A.progress(d.id); } catch (e) {}
+          if (pr && pr.goal > 1 && isFinite(pr.value)) {
+            const pct = Math.max(0, Math.min(100, pr.value / pr.goal * 100));
+            const pb = el('span', { class: 'pb', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(pr.goal), 'aria-valuenow': String(Math.min(pr.value, pr.goal)), 'aria-label': A.name(d) });
+            const fill = el('i'); fill.style.width = pct.toFixed(1) + '%'; pb.append(fill); body.append(pb);
+            const w = d.when || {}, isMs = /(^|\.)(totalMs|ms)$/.test(w.stat || '') || /durationMs$/.test(w.field || '');
+            const f = v => (isMs ? dur(v) : num(v));
+            body.append(el('small', { text: T('{v} / {g}', { v: f(Math.min(pr.value, pr.goal)), g: f(pr.goal) }) }));
+          }
+        }
+        grid.append(el('div', { class: 'a' + (has ? ' got' : '') }, [ai, body]));
+      });
+      det.append(grid); box.append(det);
+    });
+  }
+
+  // ---------- friends ----------
+  let cloudOk = null;
+  const reasonText = r => T({ 'bad-code': 'コードは8文字です（0・1・I・O は使いません）。', notfound: 'このコードは見つかりませんでした。', self: '自分のコードです。',
+    exists: 'もうフレンドです。', full: 'フレンドは30人までです。' }[r] || '今は使えません。通信状態を確かめてください。');
+  function renderCode() {
+    const c = F ? F.myCode() : null;
+    $('myCode').textContent = c ? c.slice(0, 4) + ' ' + c.slice(4) : '—';
+    $('codeCopy').hidden = !c; $('codeMake').hidden = !!c;
+  }
+  async function copy(text) {
+    let ok = false;
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (e) {}
+    if (!ok) { try { const t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;opacity:0'; document.body.append(t); t.select(); ok = document.execCommand('copy'); t.remove(); } catch (e) {} }
+    toast(T(ok ? 'コピーしました' : 'コピーできませんでした'), ok ? 'ok' : 'danger');
+  }
+  $('codeCopy').onclick = () => { const c = F && F.myCode(); if (c) copy(c); };
+  $('codeMake').onclick = async () => {
+    const b = $('codeMake'); b.disabled = true; $('codeMsg').textContent = T('読み込み中…');
+    const r = await F.ensureCode();
+    b.disabled = false; $('codeMsg').textContent = r.ok ? '' : T('コードを作れませんでした。通信状態を確かめてください。');
+    renderCode(); renderAccount();
+  };
+  $('addForm').onsubmit = async ev => {
+    ev.preventDefault();
+    const m = $('addMsg'); m.classList.remove('bad'); m.textContent = T('読み込み中…');
+    const r = await F.add($('addIn').value);
+    if (r.ok) { m.textContent = r.friend.n ? T('「{n}」さんを追加しました。', { n: r.friend.n }) : T('フレンドを追加しました。'); $('addIn').value = ''; renderFriends(); }
+    else { m.textContent = reasonText(r.reason); m.classList.add('bad'); }
+  };
+  async function renderFriends() {
+    const box = $('flist'); box.textContent = '';
+    const list = F ? F.list() : [];
+    $('frRank').hidden = !list.length;
+    if (!list.length) { box.append(el('p', { class: 'note', text: T('フレンドはまだいません。') })); return; }
+    const draw = (rows) => {
+      box.textContent = '';
+      const by = {}; (rows || []).forEach(r => { by[r.uid] = r; });
+      for (const f of list) {
+        const p = by[f.uid], name = (p && p.n) || f.n || T('名無し');
+        const av = el('span', { class: 'av sm', 'aria-hidden': 'true' }); avatar(av, p && p.icon, name);
+        const sub = !p ? (cloudOk ? T('読み込み中…') : f.code) : p.missing ? T('プロフィール未公開')
+          : [T('Lv{lv}', { lv: p.lv }), p.title && A ? A.titleText(p.title) : '', T('今週 {n} XP', { n: num(p.xpw) })].filter(Boolean).join(' · ');
+        const rm = el('button', { type: 'button', class: 'kb-btn kb-btn--ghost', text: T('外す') });
+        rm.onclick = async () => {
+          const yes = UI ? await UI.confirm({ title: T('「{n}」さんをフレンドから外しますか？', { n: name }), ok: T('外す'), cancel: T('やめる'), danger: true }) : true;
+          if (yes) { F.remove(f.uid); renderFriends(); }
+        };
+        box.append(el('div', { class: 'frow' }, [av, el('span', { style: 'min-width:0' }, [el('b', { text: name }), el('small', { text: sub })]), rm]));
+      }
+    };
+    draw(null);
+    if (cloudOk) { const r = await F.profiles(); if (F.list().length === list.length) draw(r.rows); }
+  }
+
+  // ---------- account ----------
+  function renderAccount() {
+    const u = C && C.user ? C.user() : null, box = $('acBtns');
+    box.textContent = '';
+    if (!C || cloudOk === false) $('acMsg').textContent = T('ログインはこの環境では使えません（https で開いてください）。');
+    else if (u && !u.isAnonymous) $('acMsg').textContent = T('Googleでログイン中：{name}', { name: u.name || nick() || '' });
+    else if (u) $('acMsg').textContent = T('ゲスト（匿名のアカウント）で記録しています。Google につなぐと、ほかの端末でも続きから遊べます（ゲストの記録は引き継がれます）。');
+    else $('acMsg').textContent = T('ログインしていません。記録はこの端末だけに保存されています。');
+    if (C && cloudOk) {
+      if (!u || u.isAnonymous) box.append(el('button', { type: 'button', class: 'kb-btn kb-btn--primary', text: T(u ? 'Googleにつなぐ' : 'Googleでログイン'), onclick: () => (u ? C.linkGoogle() : C.login()) }));
+      if (u) box.append(el('button', { type: 'button', class: 'kb-btn kb-btn--ghost', text: T('ログアウト'), onclick: () => C.logout() }));
+    }
+    box.hidden = !box.children.length;
+    $('uidBox').hidden = !(u && u.uid); $('uid').textContent = u && u.uid ? u.uid : '';
+    $('delNote').textContent = T(u ? 'この端末の記録と、クラウドのあなたのデータ（同期の記録・公開プロフィール・ランキングの記録・フレンドコード）を消し、アカウントも削除します。元に戻せません。' : 'この端末の記録を消します。元に戻せません。');
+  }
+  $('uidCopy').onclick = () => { const u = C && C.user && C.user(); if (u && u.uid) copy(u.uid); };
+
+  // ---------- data ----------
+  $('exportBtn').onclick = () => { if (ACC && ACC.download()) toast(T('書き出しました')); };
+  $('delBtn').onclick = async () => {
+    if (!ACC) return;
+    const u = C && C.user ? C.user() : null;
+    const yes = UI ? await UI.confirm({ title: T('データを削除しますか？'), message: $('delNote').textContent, ok: T('削除する'), cancel: T('やめる'), danger: true }) : window.confirm(T('データを削除しますか？'));
+    if (!yes) return;
+    const b = $('delBtn'), m = $('delMsg'); b.disabled = true; m.classList.remove('bad'); m.textContent = T('削除しています…');
+    const r = await ACC.erase({ cloud: !!u });
+    b.disabled = false;
+    if (!r.ok) { m.classList.add('bad'); m.textContent = T('クラウドのデータを消せませんでした（{n}）。この端末の記録はそのままです。通信状態を確かめて、もう一度ためしてください。', { n: (r.failed[0] && r.failed[0].code) || 'error' }); return; }
+    const parts = [T('削除しました。')];
+    if (r.account === 'signedOut') parts.push(T('アカウントの削除には、もう一度ログインが必要でした。データは消し、ログアウトしました。アカウントも消したいときは、もう一度ログインしてすぐに削除してください。'));
+    if (u) parts.push(T('過去の週間・日間ランキングの記録は探せないため残ることがあります。消したいときは、GitHub Issues でこの ID を伝えてください。') + ' ' + u.uid);
+    m.textContent = parts.join(' ');
+    const go = () => { location.href = '../'; };
+    if (UI) UI.modal({ title: T('削除しました。'), body: parts.slice(1).join('\n\n') || T('削除しました。'), actions: [{ label: 'OK', variant: 'primary', onClick: go }], onClose: go }).open();
+    else setTimeout(go, 1500);
+  };
+
+  // ---------- settings ----------
+  if (UI) $('actions').appendChild(UI.iconButton({ icon: 'settings', label: T('設定'), onClick: () => UI.openSettings({ audio: true }) }));
+
+  // ---------- go ----------
+  function renderAll() { renderMe(); renderIcons(); renderTitles(); renderRecords(); renderAch(); renderCode(); renderAccount(); }
+  renderAll(); renderFriends();
+  if (C) {
+    let map = null; try { map = P.syncMap(); } catch (e) {}
+    C.sync(map || {});
+    C.onChange(s => { renderAccount(); renderCode(); if (s.synced) { $('nickIn').value = nick(); renderAll(); renderFriends(); } });
+    Promise.resolve(C.ready()).then(ok => { cloudOk = !!ok; $('frOff').hidden = cloudOk; $('frOn').hidden = !cloudOk; renderAccount(); renderFriends(); });
+  } else { cloudOk = false; $('frOff').hidden = false; $('frOn').hidden = true; renderAccount(); }
+  if (A && A.on) A.on(() => { renderMe(); renderAch(); renderTitles(); });
+  P.on && P.on('xp', renderMe);
+  addEventListener('storage', e => { if (!e.key || /^kobo\.(xp|ach|profile|nick|friends|stats)/.test(e.key)) { renderAll(); if (e.key === 'kobo.friends') renderFriends(); } });
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

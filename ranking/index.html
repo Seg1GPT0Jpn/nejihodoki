@@ -49,6 +49,11 @@ KoboI18n.add({ en: {
   '日本時間の0時に切り替わります（{d}）。': 'Resets at 0:00 Japan time ({d}).',
   'これまでのいちばん良い記録です。': 'The best record of all time.',
   '総合は、今週ためた XP の順位です。': 'Overall ranks the XP earned this week.',
+  'みんな': 'Everyone', 'フレンド': 'Friends', '表示する人': 'Whose records',
+  'フレンドはまだいません。プロフィールでフレンドコードを交換すると、ここにフレンドと自分の記録が並びます。': 'No friends yet. Swap friend codes on your profile to see your friends\' and your own records here.',
+  'フレンドと自分の記録です（{n} 人）。': 'Records of your friends and you ({n} people).',
+  'プロフィールへ': 'Go to profile',
+  'Lv{lv}': 'Lv{lv}',
   '旧ランキングは、前の仕組みで集めた記録です。{d} まで表示します。新しい記録は、通算・週間・日間に入ります。': 'The legacy rankings hold records collected by the previous system. They are shown until {d}. New records go to All-time, Weekly and Daily.',
   '旧総合は、ゲームごとの順位を点数にして合計したものです（各ゲームで1位＝100点、参加人数に応じて下がる）。': 'Old overall adds up points from your rank in each game (1st place = 100 points, fewer the more players there are).',
   '上位30人を表示します。表示は5分ごとに新しくなります。灰色の行は、ありえない値のため順位から外しています。ランキングに載るには、トップページでニックネームを登録してください。': 'Shows the top 30. The list refreshes every 5 minutes. Grey rows have impossible values and are left out of the ranks. To appear in the rankings, set a nickname on the top page.',
@@ -69,7 +74,9 @@ body { margin: 0; min-height: 100%; box-sizing: border-box; overflow-x: hidden; 
   padding: 10px max(16px, var(--kb-sar)) 28px max(16px, var(--kb-sal)); }
 .wrap > * { min-width: 0; }
 .kb-bar { max-width: 560px; margin: 0 auto; border-bottom: 0; }
-.periods .kb-tab { flex: 1 0 auto; }
+.periods .kb-tab, .scope .kb-tab { flex: 1 0 auto; }
+.scope .kb-tab:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.empty a { color: var(--kb-accent-text); font-weight: 800; display: flex; justify-content: center; min-height: 44px; align-items: center; }
 .chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button { flex: none; min-height: 44px; border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink); border-radius: var(--kb-r-pill);
@@ -104,6 +111,7 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
 <main class="wrap kb-ui">
   <div class="kb-tabs periods" role="tablist" id="periods" aria-label="期間を選ぶ" data-i18n-attr="aria-label"></div>
   <div class="chips" role="tablist" id="tabs" aria-label="ゲームを選ぶ" data-i18n-attr="aria-label"></div>
+  <div class="kb-tabs scope" role="tablist" id="scope" aria-label="表示する人" data-i18n-attr="aria-label" hidden></div>
   <div class="kb-card notice" id="notice" role="status" hidden></div>
   <div class="kb-card me" id="me" hidden></div>
   <div class="head"><h2 id="title"></h2><p id="sub"></p></div>
@@ -116,15 +124,23 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
 <script src="../firebase-config.js"></script>
 <script src="../common/cloud.js"></script>
 <script src="../common/rank.js"></script>
+<script src="../common/friends.js"></script>
 <script>
 (() => {
-  const T = KoboI18n.t, R = window.KoboRank, UI = window.KoboUI;
+  const T = KoboI18n.t, R = window.KoboRank, UI = window.KoboUI, F = window.KoboFriends;
   const lang = KoboI18n.lang === 'en' ? 'en' : 'ja';
   const $ = id => document.getElementById(id);
   const GAMES = R.rankGames();
   const PERIODS = [{ id: 'week', name: '週間' }, { id: 'day', name: '日間' }, { id: 'all', name: '通算' }, { id: 'old', name: '旧ランキング' }];
   const OUT = { cap: '上限を超えた値', rate: 'ありえない速さ', median: 'ほかと桁違いの値', value: '正しくない値' };
-  let period = 'week', cur = GAMES.length ? GAMES[0].id : '', lastGame = cur, fallback = false, hasXp = false, token = 0;
+  let period = 'week', cur = GAMES.length ? GAMES[0].id : '', lastGame = cur, fallback = false, token = 0, scope = 'all';
+  const friendsOn = () => !!F && period !== 'old';
+  // 称号の id（'lv:10' や実績の id）→ 名前（achievements.js は platform.js があとから読み込む）
+  function titleOf(id) {
+    const A = window.KoboAchievements;
+    if (A && A.titleText) return A.titleText(id) || '';
+    const m = /^lv:(\d+)$/.exec(id || ''); return m && KoboPlatform.xp ? KoboPlatform.xp.rankTitle(+m[1], lang) : '';
+  }
   const isGame = id => GAMES.some(g => g.id === id);
 
   const legacyShown = () => fallback || R.legacy.open();
@@ -146,7 +162,7 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
   function chipsFor() {
     const list = GAMES.map(g => ({ id: g.id, name: tx(g.short) || tx(g.title) }));
     if (period === 'old') list.unshift({ id: 'total', name: T('旧総合') });
-    if (period === 'week' && hasXp) list.unshift({ id: 'xp', name: T('総合') });
+    if (period === 'week') list.unshift({ id: 'xp', name: T('総合') });
     return list;
   }
   function drawTabs() {
@@ -170,10 +186,19 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
       b.onclick = () => pick(null, c.id);
       $('tabs').appendChild(b);
     }
+    const sc = $('scope'); sc.innerHTML = ''; sc.hidden = !friendsOn();
+    if (!friendsOn()) scope = 'all';
+    for (const o of [{ id: 'all', name: 'みんな' }, { id: 'friends', name: 'フレンド' }]) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'kb-tab'; b.setAttribute('role', 'tab'); b.dataset.id = o.id; b.textContent = T(o.name);
+      b.setAttribute('aria-selected', String(o.id === scope)); b.tabIndex = o.id === scope ? 0 : -1;
+      b.onclick = () => { scope = o.id; pick(null, null); };
+      sc.appendChild(b);
+    }
     const sel = $('tabs').querySelector('[aria-selected="true"]');
     if (sel && sel.scrollIntoView) try { sel.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
   }
-  for (const id of ['periods', 'tabs']) {
+  for (const id of ['periods', 'tabs', 'scope']) {
     $(id).addEventListener('keydown', e => {
       const bs = [...$(id).querySelectorAll('button')], i = bs.indexOf(document.activeElement);
       const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -189,7 +214,7 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
     }
     if (g) cur = g;
     if (isGame(cur)) lastGame = cur;
-    try { history.replaceState(null, '', '#' + period + '/' + cur); } catch (e) {}
+    try { history.replaceState(null, '', '#' + period + '/' + cur + (scope === 'friends' ? '/friends' : '')); } catch (e) {}
     show();
   }
 
@@ -202,10 +227,13 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
       const li = document.createElement('li');
       li.className = [r.uid === me ? 'mine' : '', r.out ? 'out' : '', r.rank && r.rank <= 3 ? 'r' + r.rank : ''].filter(Boolean).join(' ');
       const rk = document.createElement('div'); rk.className = 'rk'; rk.textContent = r.out ? '—' : r.rank;
-      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = r.n || T('名無し');
+      const nm = document.createElement('div'); nm.className = 'nm';
+      const ic = r.icon && F && F.iconChar ? F.iconChar(r.icon) : '';
+      nm.textContent = (ic ? ic + ' ' : '') + (r.n || T('名無し'));
       let sub = '';
       if (r.out) sub = T('参考外') + ' · ' + T(OUT[r.out] || OUT.value);
       else if (id === 'total') sub = T('{n} 本のゲームに記録', { n: r.games });
+      else if (id === 'xp') sub = [r.lv ? T('Lv{lv}', { lv: r.lv }) : '', r.title ? titleOf(r.title) : ''].filter(Boolean).join(' · ');
       if (sub) { const sm = document.createElement('small'); sm.textContent = sub; nm.appendChild(sm); }
       const sc = document.createElement('div'); sc.className = 'sc'; sc.textContent = fmt(id, r.s);
       li.append(rk, nm, sc); ol.appendChild(li);
@@ -250,7 +278,15 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
     $('sub').textContent = '';
     setEmpty(T('読み込み中…'));
     let r;
+    const friends = scope === 'friends' && friendsOn();
+    if (friends && !F.count()) {
+      lastRows = []; lastBoard = null; $('me').hidden = true;
+      setEmpty(''); $('empty').hidden = false; $('empty').textContent = T('フレンドはまだいません。プロフィールでフレンドコードを交換すると、ここにフレンドと自分の記録が並びます。');
+      const a = document.createElement('a'); a.href = '../profile/#friends'; a.textContent = T('プロフィールへ'); $('empty').append(document.createElement('br'), a);
+      return;
+    }
     if (period === 'old') r = cur === 'total' ? await R.legacy.overall() : await R.legacy.game(cur);
+    else if (friends) r = cur === 'xp' ? await F.overall() : await F.board(cur, period);
     else if (cur === 'xp') r = await R.overall();
     else r = await R.top(cur, period);
     if (my !== token) return;
@@ -271,9 +307,8 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
     const total = r.total != null ? r.total : r.rows.length;
     $('sub').textContent = [total ? T('{n} 人', { n: total }) : '', r.at ? T('{t} 時点', { t: hhmm(r.at) }) : ''].filter(Boolean).join(' · ');
     drawRows(cur === 'total' ? r.rows.slice(0, R.TOP) : r.rows, cur);
-    drawMe(r.rows, cur, lastBoard);
-    // 週間のときだけ、総合（今週の XP）があるかを1件だけ読んで確かめる
-    if (period === 'week' && !hasXp && !fallback) R.hasOverall().then(v => { if (v && !hasXp) { hasXp = true; drawTabs(); } });
+    if (friends) { $('me').hidden = false; $('me').textContent = T('フレンドと自分の記録です（{n} 人）。', { n: F.count() + 1 }); }
+    else drawMe(r.rows, cur, lastBoard);
   }
 
   // ---- 設定（言語とテーマ）
@@ -282,7 +317,8 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
   // ---- はじめの表示：#week/blocks（古いリンクの #blocks と #total も読む）
   function fromHash() {
     try {
-      const h = decodeURIComponent(location.hash.slice(1)), [a, b] = h.split('/');
+      const h = decodeURIComponent(location.hash.slice(1)), [a, b, c] = h.split('/');
+      scope = c === 'friends' && F ? 'friends' : 'all';
       if (b !== undefined) { if (PERIODS.some(p => p.id === a)) period = a; cur = b; }
       else if (a === 'total') { period = 'old'; cur = 'total'; }
       else if (isGame(a)) { period = 'all'; cur = a; }
@@ -298,7 +334,7 @@ li.r1 .rk { color: #e0a12c; } li.r2 .rk { color: #9aa7b0; } li.r3 .rk { color: #
   let lastUid = null;
   KoboCloud.onChange(s => {
     const uid = KoboCloud.me();
-    if (uid !== lastUid) { lastUid = uid; if (lastRows.length || lastBoard) { drawRows(lastRows, cur); drawMe(lastRows, cur, lastBoard); } }
+    if (uid !== lastUid) { lastUid = uid; if (lastRows.length || lastBoard) { drawRows(lastRows, cur); if (scope !== 'friends') drawMe(lastRows, cur, lastBoard); } }
   });
   KoboCloud.sync({});
   show();

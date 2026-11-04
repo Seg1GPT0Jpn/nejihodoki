@@ -26,9 +26,14 @@ async function smokeOne(env, t, p) {
       const want = games().length;
       t.check('main-elements', n === want, `hub has ${n} game cards, registry has ${want}`);
       t.check('ranking-link', await page.locator('a[href="ranking/"]').count() > 0, 'no link to ranking/');
+      t.check('profile-link', await page.locator('a[href="profile/"]').count() > 0, 'no link to profile/');
     } else if (p.kind === 'ranking') {
       const ok = await page.evaluate(() => !!document.getElementById('list') && !!document.getElementById('tabs') && !!document.querySelector('h1'));
       t.check('main-elements', ok, 'missing #list / #tabs / h1');
+    } else if (p.kind === 'profile') {
+      const info = await page.evaluate(() => ({ lv: (document.getElementById('lv') || {}).textContent || '', ach: document.querySelectorAll('#achBox .a').length,
+        games: document.querySelectorAll('#glist .grow').length, del: !!document.getElementById('delBtn'), h1: !!document.querySelector('h1') }));
+      t.check('main-elements', info.h1 && /\d/.test(info.lv) && info.ach >= 15 && info.games === games().length && info.del, info);
     } else {
       const info = await page.evaluate(() => ({ canvas: document.querySelectorAll('canvas').length, home: !!document.querySelector('a[href="../"]') }));
       t.check('main-elements', info.canvas > 0 && info.home, info);

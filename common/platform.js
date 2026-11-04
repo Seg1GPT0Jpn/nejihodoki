@@ -326,12 +326,51 @@
     return o;
   }
   merge.profile = makeMerge({ fields: { v: 'max', created: 'minPos' }, rest: 'newest' });
+  // kobo.friends（P3-5。common/friends.js）：{ uid: { n, code, at, rm? } }。rm は外した時刻（トゥームストーン）。
+  // uid ごとに「最後の出来事」（max(at, rm)）が新しい方を取る。同じ時刻なら外した方。登録中は新しい順に最大30人。
+  // 180日より古いトゥームストーンは消す（そのころには、どの端末も外したことを知っている）
+  var FRIENDS_MAX = 30, FRIEND_TOMB_DAYS = 180;
+  function friendEv(e) { return Math.max(finite(e && e.at, 0), finite(e && e.rm, 0)); }
+  function friendOn(e) { return isObj(e) && !(finite(e.rm, 0) >= finite(e.at, 0) && finite(e.rm, 0) > 0); }
+  function mergeFriendsValue(a, b, ctx) {
+    a = isObj(a) ? a : {}; b = isObj(b) ? b : {};
+    var t = ctx && ctx.now != null ? finite(ctx.now, now()) : now(), o = {};
+    keysUnion(a, b, 'a').forEach(function (k) {
+      if (!/^[A-Za-z0-9_-]{1,128}$/.test(k)) return;
+      var x = isObj(a[k]) ? a[k] : null, y = isObj(b[k]) ? b[k] : null, w;
+      if (!x || !y) w = x || y;
+      else {
+        var ex = friendEv(x), ey = friendEv(y);
+        if (ex !== ey) w = ex > ey ? x : y;
+        else if (friendOn(x) !== friendOn(y)) w = friendOn(x) ? y : x; // same moment: removing wins
+        else w = JSON.stringify(x) >= JSON.stringify(y) ? x : y;
+      }
+      if (!w) return;
+      if (!friendOn(w) && t - finite(w.rm, 0) > FRIEND_TOMB_DAYS * DAY) return;
+      o[k] = clone(w);
+    });
+    var on = Object.keys(o).filter(function (k) { return friendOn(o[k]); });
+    if (on.length > FRIENDS_MAX) {
+      on.sort(function (p, q) { return finite(o[q].at, 0) - finite(o[p].at, 0) || (p < q ? -1 : 1); });
+      on.slice(FRIENDS_MAX).forEach(function (k) { delete o[k]; });
+    }
+    return o;
+  }
+  merge.friends = function (l, r, ctx) {
+    var a = parse(l), b = parse(r);
+    if (a === undefined && b === undefined) return l != null ? l : r;
+    return JSON.stringify(mergeFriendsValue(a, b, ctx));
+  };
+  merge.friendsValue = mergeFriendsValue;
+  merge.friendOn = friendOn;
+  merge.FRIENDS_MAX = FRIENDS_MAX;
 
   // プラットフォームのキーの同期（SYSTEM_ARCHITECTURE.md 9章）。kobo.dev・kobo.plays などは端末だけ
+  // kobo.news.read（P3-6。common/news.js）：読んだお知らせの最大の id（数値）。大きい方
   var PLATFORM_SYNC = {
     'kobo.nick': 'newest', 'kobo.profile': merge.profile, 'kobo.history': merge.history, 'kobo.fav': merge.fav,
     'kobo.stats': merge.stats, 'kobo.xp': merge.xp, 'kobo.ach': merge.ach, 'kobo.daily': merge.daily,
-    'kobo.audio': 'newest', 'kobo.theme': 'newest',
+    'kobo.audio': 'newest', 'kobo.theme': 'newest', 'kobo.friends': merge.friends, 'kobo.news.read': 'max',
   };
   var NATIVE = { max: 1, newest: 1 };
   function toCloud(rule, legacy) {

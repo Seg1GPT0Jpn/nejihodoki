@@ -27,7 +27,8 @@
 // 読む：KoboRank.top(game, period) → { rows, board, at, cached, reads, error }
 //   - orderBy('s','desc').limit(30)。結果は kobo.rankCache に5分（1回の表示で読むのは最大31件）。
 //   - rows[i] = { uid, n, s, t, dur, rank, out }。out は外れ値の理由（灰色にして順位から外す）。同点は同じ順位。
-//   KoboRank.overall() → 今週の XP（kbProfiles.xpw）の上位30件（P3-1 が書くまでは空）。hasOverall() は1件だけ読んで確かめる。
+//   KoboRank.overall() → 今週の XP（kbProfiles.xpw）の上位30件。行には lv・title（称号の id。KoboAchievements.titleText で名前に）・icon も入る。
+//     hasOverall() は1件だけ読んで確かめる。
 //   KoboRank.legacy.game(id) / legacy.overall()：旧ランキング kusogeRanks（ゲーム別は30件、総合は最大1000件を1日キャッシュ）。
 //   error.code === 'permission-denied' のとき、新しいルールがまだ公開されていない（10分は読みに行かない）。
 //
@@ -203,8 +204,9 @@
     Object.keys(c).forEach(function (k) { if (now() - c[k].at > LEGACY_ALL_MS) delete c[k]; });
     setJSON(KEYS.cache, c);
   }
-  function packRow(r) { return [r.uid, r.n, r.s, r.t || 0, r.dur || 0]; }
-  function unpackRow(a) { return { uid: a[0], n: a[1], s: a[2], t: a[3], dur: a[4] }; }
+  // 総合（kbProfiles）の行は lv・title（称号の id）・icon も持つ（P3-4）。ゲームのボードの行は5つだけ
+  function packRow(r) { var a = [r.uid, r.n, r.s, r.t || 0, r.dur || 0]; if (r.lv || r.title || r.icon) a.push(r.lv || 0, r.title || '', r.icon || ''); return a; }
+  function unpackRow(a) { var r = { uid: a[0], n: a[1], s: a[2], t: a[3], dur: a[4] }; if (a.length > 5) { r.lv = a[5] || 0; r.title = a[6] || ''; r.icon = a[7] || ''; } return r; }
   // 自分が送った値を、キャッシュした一覧に入れる（読み直さなくても、自分の行が見える）
   function cacheMine(b, uid, nick, v) {
     var c = getJSON(KEYS.cache, {}); var e = isObj(c) ? c['b:' + b] : null; if (!e) return;
@@ -395,7 +397,11 @@
     return readOk('p:w' + wk, CACHE_MS, function (db) {
       return Promise.resolve(db.collection('kbProfiles').orderBy('xpw', 'desc').limit(TOP).get()).then(function (snap) {
         var reads = countSnap(snap), rows = [];
-        snap.docs.forEach(function (d) { var x = d.data() || {}; if (x.wk === wk && x.xpw > 0) rows.push({ uid: d.id, n: String(x.n || ''), s: Number(x.xpw), t: 0, dur: 0 }); });
+        snap.docs.forEach(function (d) {
+          var x = d.data() || {};
+          if (x.wk === wk && x.xpw > 0) rows.push({ uid: d.id, n: String(x.n || ''), s: Number(x.xpw), t: 0, dur: 0,
+            lv: Math.max(1, Math.floor(Number(x.lv) || 1)), title: typeof x.title === 'string' ? x.title.slice(0, 24) : '', icon: typeof x.icon === 'string' ? x.icon.slice(0, 16) : '' });
+        });
         return { rows: rows, reads: reads };
       });
     }, opt).then(function (r) {

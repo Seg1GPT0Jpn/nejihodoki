@@ -213,15 +213,17 @@
     if (!firebase.auth) await loadJs(SDK + 'firebase-auth-compat.js');
     if (!firebase.database) await loadJs(SDK + 'firebase-database-compat.js');
     if (!firebase.apps.length) firebase.initializeApp(cfg);
-    let app = firebase.app();
+    // P3-7: one account for everything. Google if signed in, otherwise the same anonymous (guest) account that the
+    // rankings and play counts use (KoboCloud.ensureGuest, default app). The old separate 'kobo-vs' app is no longer
+    // used; queue entries / rooms it left under an old uid expire by themselves (onDisconnect, the 30-min room cleanup).
+    const app = firebase.app();
     await authReady(app.auth());
     let u = app.auth().currentUser;
-    if (!u || u.isAnonymous) {
-      // not signed in with Google: anonymous sign-in on a separate app, so the hub's login state is not touched
-      app = firebase.apps.find(a => a.name === 'kobo-vs') || firebase.initializeApp(cfg, 'kobo-vs');
-      await authReady(app.auth());
-      u = app.auth().currentUser || (await app.auth().signInAnonymously()).user;
+    if (!u && window.KoboCloud && KoboCloud.ensureGuest) {
+      try { await KoboCloud.ensureGuest(); } catch (e) {}
+      u = app.auth().currentUser;
     }
+    if (!u) u = (await app.auth().signInAnonymously()).user; // no cloud.js on this page (or http): same default app
     S.uid = u.uid; S.db = app.database(); S.TS = firebase.database.ServerValue.TIMESTAMP;
   }
   function netConnect() {

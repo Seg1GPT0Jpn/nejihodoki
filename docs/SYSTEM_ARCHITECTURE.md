@@ -392,7 +392,7 @@ service cloud.firestore {
 | `kobo.friends` | `{ uid: { n, code, at } }`、最大30人 | 和集合（解除はトゥームストーン） |
 | `kobo.audio` | 11章 | newest |
 | `kobo.theme` | `'system' | 'light' | 'dark'` | newest |
-| `kobo.newsSeen` | 最後に読んだお知らせの ID | max |
+| `kobo.news.read` | 最後に読んだお知らせの ID | max |
 | `kobo.dev`・`kobo.rankSent`・`kobo.rankCache`・`kobo.mtime`・`kobo.syncedUid` | 端末だけのもの | 同期しない |
 
 **cloud.js の拡張**（後方互換のまま）：
@@ -455,6 +455,6 @@ KoboAudio.onChange(f)           // 設定が変わったとき（ほかのタブ
 - GitHub Pages：`gh-pages` への push を GitHub Actions で自動にします（R25。workflow に job を足す）。
 
 ## 14. お知らせ・フレンド・ステージの共有（Phase 3〜4）
-- **お知らせ**：`common/news.json` は `[{ id, date, title:{ja,en}, body:{ja,en}, link? }]`。ハブで未読のバッジを出し、`kobo.newsSeen` で既読を管理します。プッシュ通知はしません。
+- **お知らせ**：`common/news.json` は `[{ id, date, title:{ja,en}, body:{ja,en}, link? }]`。ハブで未読のバッジを出し、`kobo.news.read` で既読を管理します。プッシュ通知はしません。
 - **フレンド**：Google ログインのユーザーは、プロフィールを作ったときに `kbCodes/{8文字}` を作ります。相手のコードを入れると、`get` で uid を調べ、`kobo.friends` に足します（一方向）。フレンドのランキングは `kbBoards/{board}/e` を `where('u', 'in', [最大30人])` で読みます（読み取りは人数ぶん）。
 - **ステージの共有コード**：ステージの JSON → deflate（`CompressionStream`）→ base64url → 先頭に `game:v1:`、末尾にチェックサム。URL では `?code=` で受け渡します。解けるかどうかは、受け取った側でゲームのソルバーを使って確かめてから遊ばせます。サーバーには置きません。
