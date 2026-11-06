@@ -97,7 +97,8 @@ const FIX = {
   'escape-save.json': { has: ['escape.first', 'escape.r1', 'escape.nohint', 'escape.rankS'], not: ['escape.r3', 'escape.all', 'escape.fast3', 'escape.t4k'] },
   'td-save.json': { has: ['td.first', 'td.m1'], not: ['td.m4', 'td.all', 'td.stars24', 'td.boss', 'td.w30', 'td.k1000', 'td.s10k'] },
   'physics-save.json': { has: ['physics.first', 'physics.l1', 'physics.w1'], not: ['physics.all', 'physics.stars144', 'physics.gears50', 'physics.par20'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1'], not: ['water.st10', 'hole.win1', 'physics.w1'] },
+  'minigolf-save.json': { has: ['minigolf.first', 'minigolf.h1', 'minigolf.r1', 'minigolf.ace', 'minigolf.under1'], not: ['minigolf.all', 'minigolf.ace10', 'minigolf.under15', 'minigolf.daily3'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
 };
 test('retroactive: fixture saves for every game unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();
@@ -179,7 +180,7 @@ test('live: daily streak across JST days, all-dailies-in-one-day, level and meta
   for (let i = 0; i < 3; i++) { const dk = P.jstDateKey(t); play(P, 'blocks', { t, dur: MIN, mode: 'daily', dateKey: dk, score: 5 }); t += DAY; }
   ok(A.has('all.daily1')); ok(A.has('all.streak3')); ok(!A.has('all.streak7'));
   const dk = P.jstDateKey(t);
-  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
+  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
   ok(A.has('all.dailyAll'));
   ok(A.has('all.ach10'), 'meta achievement after 10 unlocks');
   ok(P.xp.info(t).lv >= 2);

@@ -25,6 +25,7 @@ const RECIPES = {
   escape: [{ query: '?debug', eval: 'window.__escape && __escape.thumbScene()' }],
   td: [{ query: '?debug', eval: 'window.__td && __td.thumbScene()' }],
   physics: [{ query: '?debug', eval: 'window.__physics && __physics.thumbScene()' }],
+  minigolf: [{ query: '?debug', eval: 'window.__minigolf && __minigolf.thumbScene()' }],
 };
 const VP = { name: 'thumb', width: 480, height: 320, dpr: 1.5, safe: {} };
 
@@ -51,7 +52,7 @@ async function main() {
   const list = pagesLib.filter(pagesLib.games(), o.game);
   let bad = 0;
   for (const g of list) {
-    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1', 'kusoge.planet.howto': '1', 'kusoge.hitblow.howto': '1', 'kusoge.shogi.howto': '1', 'kusoge.escape.howto': '1', 'kusoge.td.howto': '1', 'kusoge.physics.howto': '1' } });
+    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1', 'kusoge.planet.howto': '1', 'kusoge.hitblow.howto': '1', 'kusoge.shogi.howto': '1', 'kusoge.escape.howto': '1', 'kusoge.td.howto': '1', 'kusoge.physics.howto': '1', 'kusoge.minigolf.howto': '1' } });
     try {
       const steps = RECIPES[g.id] || [];
       const q = steps.find(x => x && typeof x === 'object' && x.query);

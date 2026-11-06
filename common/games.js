@@ -544,6 +544,35 @@
         'kusoge.physics.save': { fields: { lv: { each: { fields: { c: 'max', g: 'max', p: 'max', b: 'minPos', t: 'minPos' } } }, stars: 'max', done: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'minigolf', order: 17, path: 'minigolf/', added: '2026-11-06',
+      title: { ja: 'ころがし工房ゴルフ', en: 'Workshop Mini Golf' },
+      short: { ja: 'ころがし工房ゴルフ', en: 'Workshop Mini Golf' },
+      desc: { ja: '作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規の坂、回る歯車、ばね、パイプ、インクだまり。3つのコースに27ホール、練習と今日のホール。', en: 'Mini golf on the workbench. Pull back, let go, sink it. Ruler slopes, spinning gears, springs, pipes and ink puddles. 27 holes on 3 courses, plus practice and a daily hole.' },
+      label: { ja: 'ミニゴルフ', en: 'Mini golf' },
+      genres: ['action'], tags: ['2d', 'physics', 'sports', 'stages', 'daily'],
+      keywords: { ja: ['ゴルフ', 'ミニゴルフ', 'パターゴルフ', 'パター', 'ボール', '物理', 'ホールインワン', '工房', '歯車'], en: ['golf', 'mini golf', 'minigolf', 'putt', 'putting', 'crazy golf', 'ball', 'physics', 'hole in one'] },
+      icon: 'img/icons/minigolf.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#c99a5c"/><path d="M0 14h72M0 30h72M0 47h72M0 63h72" stroke="#b8874a" stroke-width="1.2"/><rect x="8" y="7" width="56" height="58" rx="3" fill="#3f9a52" stroke="#e8c58c" stroke-width="5"/><path d="M14 4.5v4M20 4.5v2.5M26 4.5v4M32 4.5v2.5M38 4.5v4M44 4.5v2.5M50 4.5v4M56 4.5v2.5" stroke="#6a4a22" stroke-width="1.2"/><ellipse cx="20" cy="50" rx="8" ry="5.5" fill="#1c2350"/><path d="M15 48q3-2 6-1" stroke="#7a8ad8" stroke-width="1.4" fill="none" stroke-linecap="round"/><g transform="translate(51 26)"><circle r="8" fill="#8a5e14"/><circle r="6" fill="#d8a23a"/><path d="M-11 0H11M0-11V11" stroke="#8a5e14" stroke-width="3.4" stroke-linecap="round"/><path d="M-10 0H10M0-10V10" stroke="#d8a23a" stroke-width="2" stroke-linecap="round"/><circle r="2.2" fill="#8a5e14"/></g><circle cx="25" cy="24" r="4.6" fill="#d9e8d2"/><circle cx="25" cy="24" r="3.6" fill="#0c140c"/><path d="M25 24V8" stroke="#e8b420" stroke-width="2.4" stroke-linecap="round"/><path d="M25.5 8.5l12 3.5-12 4z" fill="#e04848"/><path d="M42 53q-8-10-14-24" stroke="#fff" stroke-width="2" stroke-dasharray="2 3.2" fill="none" stroke-linecap="round"/><circle cx="45" cy="56" r="4.8" fill="#fff" stroke="#8a948a" stroke-width="1"/></svg>', iconBg: '#c99a5c',
+      thumb: 'img/thumbs/minigolf.webp', thumb2x: 'img/thumbs/minigolf@2x.webp',
+      tech: '2d',
+      // no online battle: a round is 9 quiet holes against par; today's hole is the shared contest
+      // pause: true — the ball and the gears move in real time and stop while hidden or paused
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // strokes under par: for each course, par minus the best 9-hole round (never below 0), added up (3 courses today: at most 53). The cap leaves room for more courses
+      score: { unit: { ja: 'アンダー', en: 'under par' }, fmt: { ja: '{n} アンダー', en: '{n} under par' }, order: 'desc', cap: 1000, maxRate: null },
+      rankSource: { key: 'kusoge.minigolf.save', paths: ['under'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.minigolf.save', paths: ['under'], agg: 'first', min: 1, num: true, tpl: { ja: '{n} アンダー', en: '{n} under par' } },
+      keys: {
+        'kusoge.minigolf.save': '{ v:1, c:{ c1〜c3:{ b（9ホールの最少打数）, r（回った回数）, h:{ "1"〜"9": ホールごとの最少打数 } } }（回ったコースだけ）, under（コースごとの「パー − b」（0未満は0）の合計＝ランキング）, done（回ったコースの数）, stats:{ rounds, holes, strokes, aces, birdies, ink, daily }, tut }',
+        'kusoge.minigolf.run': 'とちゅうのラウンドか今日のホール（1打ごとに自動保存）{ v:1, mode（course / daily）, ci, hi, card[], dk, seed, snap:{ tick, x, y, strokes, pen, lx, ly }, pend（転がっている1打 [角度, 強さ]）, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.minigolf.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow (rounds and counts: max; fewest strokes: minPos); the round in progress is not synced
+      sync: {
+        'kusoge.minigolf.save': { fields: { c: { each: { fields: { b: 'minPos', r: 'max', h: { each: 'minPos' } } } }, under: 'max', done: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -703,6 +732,16 @@
       { id: 'physics.stars144', tier: 4, icon: 'star', title: { ja: '親方の太鼓判', en: "The Master's Stamp" }, desc: { ja: '星を144個すべて集める', en: 'Collect all 144 stars' }, when: { rec: { key: 'kusoge.physics.save', path: 'stars' }, gte: 144 } },
       { id: 'physics.gears50', tier: 2, icon: 'star', title: { ja: '歯車あつめ', en: 'Gear Collector' }, desc: { ja: '歯車を合わせて50個集める', en: 'Collect 50 gears in total' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.gears' }, gte: 50 } },
       { id: 'physics.par20', tier: 3, icon: 'star', title: { ja: '少ない部品で', en: 'Less Is More' }, desc: { ja: '部品を目標の数以内で20回クリア', en: 'Clear within the target parts 20 times' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.par' }, gte: 20 } },
+    ],
+    minigolf: [
+      { id: 'minigolf.h1', tier: 1, icon: 'check', title: { ja: 'カップイン', en: 'In the Cup' }, desc: { ja: 'はじめてカップに入れる', en: 'Sink your first putt' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'stats.holes' }, gte: 1 } },
+      { id: 'minigolf.r1', tier: 1, icon: 'check', title: { ja: '作業台を一周', en: 'Round the Bench' }, desc: { ja: '「定規の作業台」を9ホール回る', en: 'Finish a round on Ruler Bench' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'c.c1.r' }, gte: 1 } },
+      { id: 'minigolf.all', tier: 3, icon: 'trophy', title: { ja: '工房のゴルファー', en: 'Workshop Golfer' }, desc: { ja: '3つのコースをすべて回る', en: 'Finish a round on all 3 courses' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'done' }, gte: 3 }, grantsTitle: { ja: '工房のゴルファー', en: 'Workshop Golfer' } },
+      { id: 'minigolf.ace', tier: 2, icon: 'star', title: { ja: 'ホールインワン', en: 'Hole in One' }, desc: { ja: '1打でカップに入れる（練習はのぞく）', en: 'Make a hole in one (not in practice)' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'stats.aces' }, gte: 1 } },
+      { id: 'minigolf.ace10', tier: 3, icon: 'star', title: { ja: '一打の名人', en: 'Ace Maker' }, desc: { ja: 'ホールインワンを合わせて10回', en: 'Make 10 holes in one in total' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'stats.aces' }, gte: 10 } },
+      { id: 'minigolf.under1', tier: 2, icon: 'star', title: { ja: 'パーより少なく', en: 'Under Par' }, desc: { ja: '9ホールをパーより少ない打数で回る', en: 'Finish a 9-hole round under par' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'under' }, gte: 1 } },
+      { id: 'minigolf.under15', tier: 4, icon: 'trophy', title: { ja: '親方の腕前', en: "The Master's Touch" }, desc: { ja: '3つのコースのアンダーを合わせて15にする', en: 'Reach 15 under par across the courses' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'under' }, gte: 15 } },
+      { id: 'minigolf.daily3', tier: 2, icon: 'star', title: { ja: '今日のひと打ち', en: 'Daily Putter' }, desc: { ja: '今日のホールを3回遊ぶ', en: 'Play 3 daily holes' }, when: { any: [{ rec: { key: 'kusoge.minigolf.save', path: 'stats.daily' }, gte: 3 }, { stat: 'gameDaily', gte: 3 }] } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
