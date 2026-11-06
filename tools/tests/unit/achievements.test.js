@@ -96,7 +96,7 @@ const FIX = {
   'shogi-save.json': { has: ['shogi.first', 'shogi.win1', 'shogi.lv3', 'shogi.top1', 'shogi.on1', 'shogi.mate1'], not: ['shogi.lv4', 'shogi.on10', 'shogi.mate8'] },
   'escape-save.json': { has: ['escape.first', 'escape.r1', 'escape.nohint', 'escape.rankS'], not: ['escape.r3', 'escape.all', 'escape.fast3', 'escape.t4k'] },
   'td-save.json': { has: ['td.first', 'td.m1'], not: ['td.m4', 'td.all', 'td.stars24', 'td.boss', 'td.w30', 'td.k1000', 'td.s10k'] },
-  'physics-save.json': { has: ['physics.first', 'physics.l1', 'physics.w1'], not: ['physics.all', 'physics.stars144', 'physics.gears50', 'physics.par20'] },
+  'physics-save.json': { has: ['physics.first', 'physics.l1', 'physics.w1'], not: ['physics.all', 'physics.stars144', 'physics.gears50', 'physics.par20', 'physics.make1', 'physics.share1'] },
   'minigolf-save.json': { has: ['minigolf.first', 'minigolf.h1', 'minigolf.r1', 'minigolf.ace', 'minigolf.under1'], not: ['minigolf.all', 'minigolf.ace10', 'minigolf.under15', 'minigolf.daily3'] },
   'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
 };
@@ -123,6 +123,20 @@ test('retroactive: fixture saves for every game unlock exactly what the records 
     ok(P.migrations.done('ach-retro-1'));
   }
   eq(games.size, require(path.join(COMMON, 'games.js')).ids().length, 'all games covered: ' + [...games].join());
+});
+
+test('physics editor: a made and verified level (stats.made) and a shared one (stats.shared) unlock their achievements', () => {
+  const sv = st => ({ 'kusoge.physics.save': { v: 1, lv: {}, stars: 0, done: 0, stats: st, tut: 1 } });
+  let { A } = load(sv({ made: 1 }));
+  fixedNow(T0); A.retro();
+  let u = A.unlocked();
+  ok(u['physics.make1'] > 0, 'make1'); ok(!u['physics.share1'], 'not share1 yet');
+  ({ A } = load(sv({ made: 2, shared: 1 })));
+  fixedNow(T0); A.retro(); u = A.unlocked();
+  ok(u['physics.make1'] > 0 && u['physics.share1'] > 0, 'both');
+  ({ A } = load(sv({ runs: 9 })));
+  fixedNow(T0); A.retro(); u = A.unlocked();
+  ok(!u['physics.make1'] && !u['physics.share1'], 'neither without the editor');
 });
 
 test('retroactive: richer saves (stars, camp, heroes, daily streak, vs stats, history)', () => {
