@@ -4,8 +4,9 @@
 //   node tools/tests/pwa-offline.js --base /nejihodoki   片方だけ（'' か '/nejihodoki'）   --game blocks,hole   ゲームを選ぶ   --headed
 //
 // 手順（それぞれの置き場所で）：
-//   1. 通信ありでハブを開く → sw.js が入り、登録簿の全ページ・ENGINES（エンジン・街のデータ）・画像・three.js を保存したことを確かめる
-//   2. 通信を切る（context.setOffline）→ 登録簿の全ゲームを開き直す：pageerror・console.error・同じサイトの失敗した通信が0件、
+//   1. 通信ありでハブを開く → sw.js が入り、保存したのはハブとその部品（CORE）だけ。はじめての転送量（gzip）を測る
+//   2. 通信を切って、開いたことのないゲームを開く → offline.html。通信を戻して全ゲームを1回ずつ開く → そのゲームの ENGINES
+//      （hole は全部の街）が保存される。また通信を切り、全ゲームを開き直す：pageerror・console.error・同じサイトの失敗した通信が0件、
 //      主な要素（canvas か #app など）があること。ハブ・ランキング・プロフィールも同じ
 //   3. 保存していないページはオフラインのページ（日本語／英語）。リンクはそのサイトの一番上（scope）を指す
 //   4. マニフェスト：Chrome 自身のインストールの判定（CDP Page.getInstallabilityErrors。Lighthouse の installable と同じ中身）と、
@@ -31,6 +32,7 @@ const ONLY = val('--game') ? val('--game').split(',') : null;
 const GAMES = REG.games.filter(g => !ONLY || ONLY.includes(g.id));
 const THREE = path.join(__dirname, '.cache', 'three-r128.min.js');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const firstVisit = {};
 
 // ---------------------------------------------------------------- results
 const rows = [];
@@ -61,11 +63,11 @@ function startServer(base) {
   return new Promise(r => srv.listen(0, '127.0.0.1', () => r({ state, port: srv.address().port, origin: `http://localhost:${srv.address().port}`, close: () => new Promise(c => srv.close(() => c())) })));
 }
 
-// sw.js の保存する一覧（CORE・PAGES・ENGINES・IMAGES）を、sw.js そのものから読む
+// sw.js の保存する一覧（CORE・PAGES・ENGINES）を、sw.js そのものから読む
 function swLists() {
   const ctx = { self: { KOBO_REGISTRY: REG, registration: { scope: 'http://x/' }, addEventListener() {} }, importScripts() {}, location: { origin: 'http://x' }, URL, Request: function () {}, Response: function () {}, caches: {}, fetch() {} };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8') + '\n;this.__l = { CORE, PAGES, ENGINES, IMAGES, LIBS, BUILD, VERSION };', ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8') + '\n;this.__l = { CORE, PAGES, ENGINES, BUILD, VERSION };', ctx);
   return ctx.__l;
 }
 
@@ -190,47 +192,89 @@ async function runBase(browser, base) {
     check(G, 'navigation preload enabled', reg.preload && reg.preload.enabled === true, JSON.stringify(reg.preload));
     await page.reload({ waitUntil: 'load' });
     check(G, 'the hub is controlled by the worker after a reload', await page.evaluate(() => !!navigator.serviceWorker.controller));
-    const keys = await page.evaluate(async v => { const c = await caches.open(v); return (await c.keys()).map(r => r.url); }, L.VERSION);
-    const want = [].concat(L.CORE, L.PAGES, L.ENGINES, L.IMAGES).map(u => new URL(u, site).href);
-    const missing = want.filter(u => !keys.includes(u));
-    check(G, `saved on first visit: ${want.length} files (pages, ENGINES, images)`, !missing.length, missing.join(' '));
-    check(G, 'three.js r128 saved (3D games offline)', keys.some(u => /three\.min\.js/.test(u)));
-    check(G, 'no file of the site was saved under a ?query key twice', new Set(keys.map(u => u.split('?')[0])).size === keys.length || keys.every(u => !u.includes('?')), keys.filter(u => u.includes('?')).join(' '));
+    const cacheKeys = () => page.evaluate(async v => { const c = await caches.open(v); return (await c.keys()).map(r => r.url); }, L.VERSION);
+    let keys = await cacheKeys();
+    const core = L.CORE.map(u => new URL(u, site).href);
+    const missing = core.filter(u => !keys.includes(u));
+    check(G, `first visit saves the hub shell and common/ (${core.length} files)`, !missing.length, missing.join(' '));
+    const early = keys.filter(u => L.ENGINES.concat(GAMES.map(g => './' + g.path)).some(x => new URL(x, site).href === u));
+    check(G, 'first visit does not save game pages or ENGINES', !early.length, early.join(' '));
+    // bytes a new visitor downloads (as Firebase Hosting sends them: text gzip-compressed, images as they are)
+    {
+      const seen = [...new Set(env.state.requests.map(u => u.split('?')[0]))];
+      let raw = 0, gz = 0;
+      for (const u of seen) {
+        const f = resolveFile(base ? u.slice(base.length) : u); if (!f) continue;
+        const b = fs.readFileSync(f); raw += b.length; gz += /\.(png|webp|jpg)$/.test(f) ? b.length : require('zlib').gzipSync(b).length;
+      }
+      firstVisit[base || '/'] = { files: seen.length, raw, gzip: gz };
+      console.log(`    first visit: ${seen.length} files, ${(raw / 1e6).toFixed(2)} MB raw, ${(gz / 1e6).toFixed(2)} MB gzip`);
+      check(G, 'first visit downloads under 1 MB (gzip)', gz < 1e6, gz);
+    }
+    check(G, 'no file of the site was saved under a ?query key', keys.filter(u => u.startsWith(site)).every(u => !u.includes('?')), keys.filter(u => u.startsWith(site) && u.includes('?')).join(' '));
     check(G, 'hub online: no errors', !hubLog.errors.length && !hubLog.failed.length, hubLog.errors.concat(hubLog.failed).join(' | '));
     await manifestChecks(page, env, base);
 
-    // ---- offline: every game page (never opened online in this context), plus hub / ranking / profile
-    await ctx.setOffline(true);
-    const pages = [{ id: 'hub', path: '' }, { id: 'ranking', path: 'ranking/' }, { id: 'profile', path: 'profile/' }].concat(GAMES.map(g => ({ id: g.id, path: g.path, three: g.tech === '3d' })));
-    for (const p of pages) {
+    const openOffline = async (p, label, wantFallback) => {
       const pg = await ctx.newPage();
       const log = watch(pg, env);
       let status = 0;
       try {
-        const r = await pg.goto(site + p.path, { waitUntil: 'load', timeout: 20000 });
+        const r = await pg.goto(site + p.path, { waitUntil: 'load', timeout: 30000 });
         status = r ? r.status() : 0;
-        await settle(pg, p.three ? 2500 : 1200);
-        // reload once more while offline (what the player does on the train)
-        await pg.reload({ waitUntil: 'load', timeout: 20000 });
-        await settle(pg, p.three ? 2000 : 800);
+        await settle(pg, p.three ? 3000 : 1500);
+        if (!wantFallback) { await pg.reload({ waitUntil: 'load', timeout: 30000 }); await settle(pg, p.three ? 2500 : 1000); } // offline again, as on a train
       } catch (e) { log.errors.push('navigation: ' + e.message.split('\n')[0]); }
-      const dom = await pg.evaluate(() => ({ title: document.title, offlinePage: !!document.querySelector('#retry') && /offline|オフライン/i.test(document.title), canvas: document.querySelectorAll('canvas').length, cards: document.querySelectorAll('#games .game, #games a').length, body: (document.body && document.body.innerText || '').length })).catch(() => ({}));
-      const okDom = p.id === 'hub' ? dom.cards >= REG.games.length : p.id === 'ranking' || p.id === 'profile' ? dom.body > 20 : dom.canvas > 0 || dom.body > 50;
-      check(G, `offline: ${p.id} loads (status ${status}, no errors, ${p.id === 'hub' ? 'all cards' : 'page content'})`, status === 200 && !dom.offlinePage && okDom && !log.errors.length && !log.failed.length,
-        [JSON.stringify(dom)].concat(log.errors, log.failed).join(' | '));
+      const dom = await pg.evaluate(() => ({ title: document.title, offlinePage: !!document.querySelector('#retry') && /offline|オフライン/i.test(document.title), home: document.getElementById('home') && document.getElementById('home').href, canvas: document.querySelectorAll('canvas').length, cards: document.querySelectorAll('#games .game, #games a').length, body: (document.body && document.body.innerText || '').length })).catch(() => ({}));
+      if (wantFallback) check(G, label, status === 200 && dom.offlinePage && dom.home === site, JSON.stringify(dom));
+      else {
+        const okDom = p.id === 'hub' ? dom.cards >= REG.games.length : p.id === 'ranking' || p.id === 'profile' ? dom.body > 20 : dom.canvas > 0 || dom.body > 50;
+        check(G, label, status === 200 && !dom.offlinePage && okDom && !log.errors.length && !log.failed.length, [JSON.stringify(dom)].concat(log.errors, log.failed).join(' | '));
+      }
+      await pg.close();
+    };
+    const pages = [{ id: 'hub', path: '' }, { id: 'ranking', path: 'ranking/' }, { id: 'profile', path: 'profile/' }].concat(GAMES.map(g => ({ id: g.id, path: g.path, three: g.tech === '3d' })));
+    // ---- offline before any game was opened: a game shows the offline page
+    await ctx.setOffline(true);
+    if (GAMES[0]) await openOffline({ id: GAMES[0].id, path: GAMES[0].path }, `offline: ${GAMES[0].id} never opened → offline.html (link to the top)`, true);
+    await ctx.setOffline(false);
+    // ---- online: open every game (and ranking / profile) once
+    for (const p of pages.slice(1)) {
+      const pg = await ctx.newPage();
+      await pg.goto(site + p.path, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
+      await settle(pg, p.three ? 2500 : 1200);
       await pg.close();
     }
+    await sleep(5000); // the worker saves each game's ENGINES a few seconds after its page opened
+    keys = await cacheKeys();
+    for (const g of GAMES) {
+      const want = [g.path].concat(L.ENGINES.filter(u => u.startsWith('./' + g.path)).map(u => u.slice(2))).map(u => new URL(u, site).href);
+      const miss = want.filter(u => !keys.includes(u));
+      check(G, `${g.id} opened once → its page and ENGINES (${want.length - 1}) saved`, !miss.length, miss.join(' '));
+    }
+    if (GAMES.some(g => g.tech === '3d')) check(G, 'three.js r128 saved on first use (3D games offline)', keys.some(u => /three\.min\.js/.test(u)));
+    // ---- offline: every page opened before
+    await ctx.setOffline(true);
+    for (const p of pages) await openOffline(p, `offline: ${p.id} loads after one visit (no errors, ${p.id === 'hub' ? 'all cards' : 'page content'})`, false);
     // ---- a page that was never saved: the offline page (ja, then en), linking to the top of the site
     {
       const pg = await ctx.newPage();
       const r = await pg.goto(site + 'no-such-page/?x=1', { waitUntil: 'load' }).catch(e => null);
+      await pg.waitForLoadState('load').catch(() => {});
       const d = await pg.evaluate(() => ({ h: document.querySelector('h1') && document.querySelector('h1').textContent, home: document.getElementById('home') && document.getElementById('home').href, lang: document.documentElement.lang })).catch(() => ({}));
       check(G, 'unsaved page offline → offline page in Japanese, link to the top of the site', r && r.status() === 200 && d.h === 'オフラインです' && d.home === site && d.lang === 'ja', JSON.stringify(d));
-      await pg.evaluate(() => localStorage.setItem('kobo.lang', 'en'));
+      for (let i = 0; i < 4; i++) { await pg.waitForLoadState('load').catch(() => {}); if (await pg.evaluate(() => { localStorage.setItem('kobo.lang', 'en'); return true; }).catch(() => false)) break; await sleep(500); }
       await pg.goto(site + 'no-such-page/', { waitUntil: 'load' }).catch(e => console.log('    (goto: ' + e.message.split('\n')[0] + ')'));
-      const e = await pg.evaluate(() => ({ h: document.querySelector('h1') && document.querySelector('h1').textContent, lang: document.documentElement.lang })).catch(x => ({ err: x.message.split('\n')[0] }));
+      // (a late navigation can replace the page while it is read: read again after it settles)
+      let e = {};
+      for (let i = 0; i < 4; i++) {
+        await pg.waitForLoadState('load').catch(() => {});
+        e = await pg.evaluate(() => ({ h: document.querySelector('h1') && document.querySelector('h1').textContent, lang: document.documentElement.lang })).catch(x => ({ err: x.message.split('\n')[0] }));
+        if (!e.err && e.h) break;
+        await sleep(500);
+      }
       check(G, 'offline page in English (kobo.lang = en)', e.h === 'You are offline' && e.lang === 'en', JSON.stringify(e));
-      await pg.evaluate(() => localStorage.removeItem('kobo.lang'));
+      await pg.evaluate(() => localStorage.removeItem('kobo.lang')).catch(() => {});
       await pg.close();
     }
     // ---- API calls are never cached or answered by the worker
@@ -259,7 +303,13 @@ async function runBase(browser, base) {
     // a game in play: the toast waits until the game is idle (KoboGame.isIdle)
     {
       const g2 = await ctx.newPage();
-      await g2.addInitScript(() => { window.__busy = true; Object.defineProperty(window, 'KoboGame', { configurable: true, set(v) { if (v) v.isIdle = () => !window.__busy; this.__kg = v; }, get() { return this.__kg; } }); });
+      // in play from the start: both idle checks (KoboCloud.isIdle → KoboGame.isIdle) say busy, whatever order the page registers in
+      await g2.addInitScript(() => {
+        window.__busy = true;
+        for (const name of ['KoboGame', 'KoboCloud']) {
+          let cur; Object.defineProperty(window, name, { configurable: true, set(v) { if (v) v.isIdle = () => !window.__busy; cur = v; }, get() { return cur; } });
+        }
+      });
       await g2.goto(site + 'blocks/', { waitUntil: 'load' });
       await sleep(5000);
       const shownBusy = await g2.$('.kb-toast--update');
@@ -298,7 +348,7 @@ async function runBase(browser, base) {
   finally { await browser.close(); }
   const fail = rows.filter(r => !r.pass);
   fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
-  fs.writeFileSync(path.join(__dirname, 'out', 'pwa-offline.json'), JSON.stringify({ at: new Date().toISOString(), rows }, null, 1));
+  fs.writeFileSync(path.join(__dirname, 'out', 'pwa-offline.json'), JSON.stringify({ at: new Date().toISOString(), firstVisit, rows }, null, 1));
   console.log(`\npwa-offline: ${rows.length - fail.length} passed, ${fail.length} failed`);
   process.exit(fail.length ? 1 : 0);
 })();

@@ -32,7 +32,7 @@
 | `ranking/` | ランキング（ゲーム別・総合） | |
 | `common/cloud.js` | Googleログインと Firestore 同期・ランキング送信 | `KoboCloud.sync({ key: 'max' or 'newest' })` |
 | `common/i18n.js` | 日本語 / 英語の切り替え | `KoboI18n.add({ en: { '日本語': 'English' } })`、`KoboI18n.t('日本語')` |
-| `sw.js` | オフライン用 Service Worker | ページを変えたら `BUILD` を1上げる。新しい版は待機になり、ページの「新しいバージョンがあります — 更新」（`common/ui.js` の `watchUpdates`）を押したときだけ入れ替わる。保存のないページはオフラインでは `offline.html`。通しは `node tools/tests/pwa-offline.js` |
+| `sw.js` | オフライン用 Service Worker | ページを変えたら `BUILD` を1上げる。新しい版は待機になり、ページの「新しいバージョンがあります — 更新」（`common/ui.js` の `watchUpdates`）を押したときだけ入れ替わる。はじめに保存するのはハブと `common/` だけ。ゲームは開いたときに、そのページと ENGINES（hole は全部の街）を保存する。開いたことのないページはオフラインでは `offline.html`。通しは `node tools/tests/pwa-offline.js` |
 | `tools/tests/load/` | 負荷テスト（エミュレーターだけ） | `node tools/tests/load/run.js`。結果と無料枠の見積もりは `docs/LOAD_TEST.md`。RTDB の接続は対戦していない状態が20秒続くと閉じる（versus.js・hole・shogi） |
 
 ## 決まりごと

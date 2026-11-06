@@ -1,25 +1,17 @@
 // ひまつぶし工房：オフラインでも遊べるようにするための Service Worker（全ゲーム共通）
-// 保存する一覧は、ゲームの登録簿（common/games.js）から作る：各ゲームのページ・サムネイル・アイコン。
-// ゲームを足すときは games.js に足すだけでよい（ここは直さない）。ページの中身を変えたら BUILD を上げる。
-//
-// 配りかた：
-//   ページ（navigate）  通信優先。ナビゲーションのプリロードを使い、4秒待っても返らず保存分があれば保存分を出す（裏で更新は続ける）。
-//                       通信できず保存分もなければ offline.html（日本語／英語）。?code= などの検索部分は保存のキーに入れない。
-//   同じサイトのファイル 通信優先（HTTP キャッシュは「確かめてから使う」）。だめなら保存分。
-//   ライブラリとフォント 保存分優先（版の決まった URL なので変わらない）。
-//   Firebase などの API、/__/（Firebase Hosting の予約 URL）、ほかのサイト：さわらない（保存しない）。
-// 更新：初めての登録はすぐ有効にする。新しい版は「待機」にして、ページの「新しいバージョンがあります — 更新」
-//   （common/ui.js）が押されたときだけ入れ替える（遊んでいる途中で勝手に読み込み直さない）。
-// 片付け：有効になったら、自分の名前（kobo-v）で始まる古い保存だけを消す（github.io は同じ origin にほかのサイトもある）。
+// はじめに保存するのはハブとその部品（CORE：ハブ・common/・アイコン・offline.html）だけ（Firebase Hosting の転送は1日360MB）。
+// ゲームのページ・エンジン・データ（ENGINES。hole の街のデータも）・画像・three.js は、はじめて使ったときに保存する
+// （ゲームのページを開いたら、そのゲームの ENGINES を裏でまとめて保存する）。一度開いたゲームは、通信なしでも遊べる。
+// 開いたことのないゲームは、オフラインでは offline.html。ゲームを足すときは games.js に足すだけでよい。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 40;
+const BUILD = 41;
 const PREFIX = 'kobo-v';
 const VERSION = PREFIX + BUILD + '.' + REG.version;
 const OFFLINE = './offline.html';
 const NAV_TIMEOUT = 4000;
 const CORE = ['./', './index.html', OFFLINE, './firebase-config.js', './manifest.webmanifest',
-  './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png',
+  './apple-touch-icon.png', './favicon-32.png', // (the manifest icons are fetched by the browser itself when it installs; not needed offline)
   './common/cloud.js', './common/i18n.js', './common/versus.js', './common/games.js', './common/platform.js', './common/achievements.js', './common/rank.js',
   './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css',
   './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
@@ -27,10 +19,8 @@ const CORE = ['./', './index.html', OFFLINE, './firebase-config.js', './manifest
 const ENGINES = ['./parking/engine.js', './water/engine.js', './shogi/engine.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js',
   './hole/cities/fujisawa.json', './hole/cities/shonandai.json', './hole/cities/kamiooka.json', './hole/cities/shonanhs.json',
   './hole/cities/shibuya.json', './hole/cities/asakusa.json', './hole/cities/shinjuku.json', './hole/cities/yokohama.json', './hole/cities/dotonbori.json', './hole/cities/osakajo.json', './hole/cities/kyoto.json', './hole/cities/nagoya.json', './hole/cities/sapporo.json', './hole/cities/fukuoka.json'];
+// ページ（オフラインで開けるのは、一度開いたものだけ）
 const PAGES = REG.games.map(g => './' + g.path).concat(['./ranking/', './about/', './profile/']);
-const IMAGES = [].concat(...REG.games.map(g => [g.thumb, g.thumb2x, g.icon].filter(Boolean).map(p => './' + p)))
-  .concat(['./img/icons/neji-96.png', './img/icons/blocks-96.png', './img/icons/hole-96.png', './img/icons/shogi-96.png']);
-const LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 const CACHE_FIRST_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 const SCOPE = self.registration.scope;
 
@@ -43,19 +33,15 @@ async function clean(r) {
   return new Response(await r.blob(), { status: r.status, statusText: r.statusText, headers: r.headers });
 }
 
+// ゲームのフォルダ（'hole/' など）→ そのゲームが使う ENGINES
+const GAME_DIRS = REG.games.map(g => g.path);
+const enginesOf = dir => ENGINES.filter(u => u.startsWith('./' + dir));
+const sameSite = u => u.startsWith(SCOPE);
+
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
     await c.addAll(CORE.map(fresh));
-    // each page / file separately, so one missing file never blocks the install
-    await Promise.all(PAGES.concat(ENGINES, IMAGES).map(u => c.add(fresh(u)).catch(() => {})));
-    // versioned libraries: reuse the copy of the previous version instead of downloading it again
-    await Promise.all(LIBS.map(async u => {
-      const old = await caches.match(u).catch(() => null);
-      if (old) return c.put(u, old);
-      const r = await fetch(u, { mode: 'cors' }).catch(() => null);
-      if (r && r.ok) await c.put(u, r);
-    }));
     // the first install takes over right away. An update waits until a page asks for it (the update toast)
     if (!self.registration.active) await self.skipWaiting();
   })());
@@ -63,10 +49,30 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     if (self.registration.navigationPreload) { try { await self.registration.navigationPreload.enable(); } catch (err) {} }
-    for (const k of await caches.keys()) if (k.startsWith(PREFIX) && k !== VERSION) await caches.delete(k);
+    const c = await caches.open(VERSION);
+    const old = (await caches.keys()).filter(k => k.startsWith(PREFIX) && k !== VERSION);
+    // what was saved on first use (games already opened) moves to the new version: this site's files are checked again
+    // ('no-cache': 304 when unchanged), versioned libraries and fonts are copied. Offline: the old copy is kept
+    for (const k of old) {
+      const oc = await caches.open(k);
+      for (const req of await oc.keys()) {
+        if (await c.match(req)) continue;
+        let r = null;
+        if (sameSite(req.url)) r = await fetch(fresh(req.url)).then(x => (x.ok ? clean(x) : null), () => null);
+        if (!r) r = await oc.match(req);
+        if (r) await c.put(req, r).catch(() => {});
+      }
+      await caches.delete(k);
+    }
     await self.clients.claim();
   })());
 });
+// the first time a game page opens: save all of that game's ENGINES (hole: every city, so any room works offline)
+async function warmGame(dir) {
+  await new Promise(r => setTimeout(r, 3000)); // after the page's own requests (no file is downloaded twice)
+  const c = await caches.open(VERSION);
+  await Promise.all(enginesOf(dir).map(async u => { if (!(await c.match(u))) await c.add(fresh(u)).catch(() => {}); }));
+}
 self.addEventListener('message', e => {
   const d = e.data || {};
   if (d.type === 'SKIP_WAITING') self.skipWaiting();
@@ -83,10 +89,14 @@ async function offlinePage(c) {
 async function navigate(e, url) {
   const c = await caches.open(VERSION);
   const key = pageKey(url);
+  const dir = GAME_DIRS.find(d => key === SCOPE + d || key === SCOPE + d + 'index.html');
   const net = (async () => {
     const pre = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null;
     const r = pre || await fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' });
-    if (r.ok) { const k = await clean(r.clone()); await c.put(key, k); }
+    if (r.ok) {
+      const k = await clean(r.clone()); await c.put(key, k);
+      if (dir && enginesOf(dir).length) e.waitUntil(warmGame(dir));
+    }
     return r;
   })();
   e.waitUntil(net.catch(() => {}));
@@ -107,7 +117,11 @@ async function sameOrigin(req) {
     if (r.ok) c.put(req, r.clone());
     return r;
   } catch (err) {
-    return (await c.match(req, { ignoreSearch: true })) || Response.error();
+    const hit = await c.match(req, { ignoreSearch: true });
+    if (hit) return hit;
+    // offline, an image never shown online (a thumbnail further down the hub): an empty picture instead of a broken one
+    if (req.destination === 'image') return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>', { headers: { 'Content-Type': 'image/svg+xml' } });
+    return Response.error();
   }
 }
 async function cacheFirst(req) {

@@ -120,26 +120,34 @@ function summarizeRtdb(r, metrics) {
   };
 }
 
-// ---------------------------------------------------------------- Hosting（sw.js がはじめに保存するファイルの大きさ）
+// ---------------------------------------------------------------- Hosting（はじめての人が落とすもの）
+// sw.js がはじめに保存するのはハブとその部品（CORE）だけ。ゲームは開いたときに、そのページと ENGINES を保存する。
+// 本当にはじめて来たときに落とした量は pwa-offline.js が測る（tools/tests/out/pwa-offline.json の firstVisit：ハブの画像も入る）。
 function precache() {
   const src = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
   const reg = require(path.join(ROOT, 'common/games.js'));
   const self = { KOBO_REGISTRY: reg, registration: { scope: 'https://x/' }, addEventListener() {} };
   const ctx = { self, importScripts() {}, location: { origin: 'https://x' }, URL, Request: function () {}, Response: function () {}, caches: {}, fetch() {} };
   vm.createContext(ctx);
-  vm.runInContext(src + '\n;this.__lists = { CORE, ENGINES, PAGES, IMAGES };', ctx);
+  vm.runInContext(src + '\n;this.__lists = { CORE, ENGINES, BUILD };', ctx);
   const L = ctx.__lists;
-  let raw = 0, gz = 0, files = 0;
-  const all = [...new Set([].concat(L.CORE, L.PAGES, L.ENGINES, L.IMAGES))];
-  for (const u of all) {
-    let f = path.join(ROOT, u.replace(/^\.\//, ''));
-    if (u === './' || u.endsWith('/')) f = path.join(f, 'index.html');
-    if (!fs.existsSync(f)) continue;
-    const b = fs.readFileSync(f); files++; raw += b.length;
-    gz += /\.(png|webp|jpg)$/.test(f) ? b.length : zlib.gzipSync(b, { level: 6 }).length;
-  }
-  const three = path.join(__dirname, '..', '.cache', 'three-r128.min.js');
-  return { files, raw, gzip: gz, threeFromCdn: fs.existsSync(three) ? fs.statSync(three).size : 0 };
+  const size = list => {
+    let raw = 0, gz = 0, files = 0;
+    for (const u of [...new Set(list)]) {
+      let f = path.join(ROOT, u.replace(/^\.\//, ''));
+      if (u === './' || u.endsWith('/')) f = path.join(f, 'index.html');
+      if (!fs.existsSync(f)) continue;
+      const b = fs.readFileSync(f); files++; raw += b.length;
+      gz += /\.(png|webp|jpg)$/.test(f) ? b.length : zlib.gzipSync(b, { level: 6 }).length;
+    }
+    return { files, raw, gzip: gz };
+  };
+  const core = size(L.CORE);
+  const games = {};
+  for (const g of reg.games) games[g.id] = size(['./' + g.path].concat(L.ENGINES.filter(u => u.startsWith('./' + g.path)))).gzip;
+  let measured = null;
+  try { const j = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'out', 'pwa-offline.json'), 'utf8')); measured = j.firstVisit && (j.firstVisit['/'] || Object.values(j.firstVisit)[0]); } catch (e) {}
+  return { build: L.BUILD, core, firstVisit: measured, gameFirstUseGzip: games, gzip: measured ? measured.gzip : core.gzip };
 }
 
 // ---------------------------------------------------------------- 無料枠の見積もり
@@ -202,7 +210,12 @@ function estimate(F, R, H) {
   }
   if (H) {
     // Firebase Hosting (Spark): 360 MB/day. A new visitor downloads the precache (gzip; images as they are); an update only re-checks (304)
-    out.hosting = { precacheGzipMB: +(H.gzip / 1e6).toFixed(2), newVisitorsPerDayOnWebApp: Math.floor(360e6 / H.gzip), note: 'GitHub Pages (seg1gpt0jpn.github.io) has no daily cap' };
+    // a new visitor: the hub (first visit) and, on a typical day, two games opened once (their page and ENGINES)
+    const gs = Object.values(H.gameFirstUseGzip || {}), avgGame = gs.length ? gs.reduce((a, b) => a + b, 0) / gs.length : 0;
+    const newVisitor = H.gzip + 2 * avgGame;
+    out.hosting = { firstVisitGzipMB: +(H.gzip / 1e6).toFixed(2), avgGameFirstUseGzipMB: +(avgGame / 1e6).toFixed(2), holeFirstUseGzipMB: +((H.gameFirstUseGzip || {}).hole / 1e6 || 0).toFixed(2),
+      newVisitorGzipMB: +(newVisitor / 1e6).toFixed(2), newVisitorsPerDayOnWebApp: Math.floor(360e6 / newVisitor), hubOnlyVisitorsPerDay: Math.floor(360e6 / H.gzip),
+      note: 'GitHub Pages (seg1gpt0jpn.github.io) has no daily cap' };
   }
   const caps = [out.firestore && out.firestore.dau, out.rtdb && out.rtdb.dauByConnections, out.rtdb && out.rtdb.dauByTransfer].filter(x => x > 0);
   out.dau = caps.length ? Math.min(...caps) : null;
