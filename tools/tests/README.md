@@ -18,6 +18,8 @@ node tools/tests/shogi-play.js                 # 将棋の通し（CPU に詰み
 node tools/tests/escape-play.js                # からくり工房からの脱出の通し（5部屋を正解の手順で本物のクリック・日本語と英語・ヒント・自動保存と再開・採点・全画面サイズ）
 node tools/tests/td-play.js                    # 工房まもりの通し（チュートリアル・本物のタップで建てる／強化／売る・勝ち・負け・エンドレス・デイリー・保存と再開・一時停止・英語・全画面サイズ・200体の性能）
 node tools/tests/td-balance.js                 # 工房まもりのバランス（自動プレイで全マップに勝てる・1種類だけの台では★3にならず、マップ4から負ける）
+node tools/tests/physics-levels.js             # ころころ工房の全48レベルを保存した答えで解く（ゴール・星3つ・2回流して同じ結果・何もしないと解けない）
+node tools/tests/physics-play.js               # ころころ工房の通し（チュートリアル・本物のドラッグで置く／まわす／動かす・2本指・答えで解く・星・保存と再開・一時停止・英語・全画面サイズ・性能）
 node tools/tests/shots.js                       # サムネイルを tools/tests/out/thumbs/ に試し撮り
 node tools/tests/shots.js --write               # サムネイルを img/thumbs/ に書く（<id>.webp 360×240、<id>@2x.webp 720×480）
 ```

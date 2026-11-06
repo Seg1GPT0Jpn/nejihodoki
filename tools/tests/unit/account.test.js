@@ -53,9 +53,9 @@ test('cloudTargets: own code, sent boards + every game\'s all/this week/today/to
   ok(t.includes('kbBoards/blocks~all/e/me') && t.includes('kbBoards/drop~w' + wk + '/e/me') && t.includes('kbBoards/water~d20261104/e/me') && t.includes('kbBoards/neji~c20261104/e/me'));
   ok(t.includes('kbProfiles/me') && t.includes('kusogeRanks/me'));
   ok(t.every(p => !/you/.test(p)), 'only the own uid');
-  // all / this week / today per game, today's challenge per daily game, plus a few own docs: grows with the registry, never unbounded
+  // all / this week / today / today's challenge per ranked game, plus a few own docs: grows with the registry, never unbounded
   const REG = require(path.join(COMMON, 'games.js'));
-  ok(t.length <= 3 * REG.games.length + REG.games.filter(g => g.flags.daily).length + 10, 'bounded number of deletes: ' + t.length);
+  ok(t.length <= 4 * REG.games.length + 10, 'bounded number of deletes: ' + t.length);
 });
 
 test('erase: deletes the own cloud docs the rules allow, deletes the account, wipes local keys (keeps language + theme and other sites\' keys)', async () => {

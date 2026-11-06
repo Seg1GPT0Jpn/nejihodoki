@@ -96,7 +96,8 @@ const FIX = {
   'shogi-save.json': { has: ['shogi.first', 'shogi.win1', 'shogi.lv3', 'shogi.top1', 'shogi.on1', 'shogi.mate1'], not: ['shogi.lv4', 'shogi.on10', 'shogi.mate8'] },
   'escape-save.json': { has: ['escape.first', 'escape.r1', 'escape.nohint', 'escape.rankS'], not: ['escape.r3', 'escape.all', 'escape.fast3', 'escape.t4k'] },
   'td-save.json': { has: ['td.first', 'td.m1'], not: ['td.m4', 'td.all', 'td.stars24', 'td.boss', 'td.w30', 'td.k1000', 'td.s10k'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1'], not: ['water.st10', 'hole.win1'] },
+  'physics-save.json': { has: ['physics.first', 'physics.l1', 'physics.w1'], not: ['physics.all', 'physics.stars144', 'physics.gears50', 'physics.par20'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1'], not: ['water.st10', 'hole.win1', 'physics.w1'] },
 };
 test('retroactive: fixture saves for every game unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();

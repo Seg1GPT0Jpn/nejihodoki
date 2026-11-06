@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -103,8 +103,8 @@ test('flags reflect what the pages have today', () => {
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td', 'games without a match');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -168,6 +168,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('escape', k => null), 0, 'escape: nothing saved');
   eq(P.rankValue('td', k => '{"v":1,"maps":{"m1":{"st":3,"c":1,"ew":14,"es":1850}},"best":1850,"stars":3}'), 1850, 'td: best endless run');
   eq(P.rankValue('td', k => null), 0, 'td: nothing saved');
+  eq(P.rankValue('physics', k => '{"v":1,"lv":{"1-1":{"c":2,"g":1,"p":1,"b":1,"t":3200}},"stars":3,"done":1}'), 3, 'physics: total stars');
+  eq(P.rankValue('physics', k => null), 0, 'physics: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

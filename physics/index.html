@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ころころ工房</title>
+<meta name="theme-color" content="#2a2018">
+<meta name="description" content="板・ばね・送風機・ドミノ・シーソー・磁石をならべて「スタート」。毛糸玉を、ねこのかごへ届ける物理パズル。4つの工房に48のレベル。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ころころ工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'ころころ工房': 'Marble Workshop', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '遊び方': 'How to play', '言語 / Language': 'Language', 'とじる': 'Close', 'もどる': 'Back', 'メニュー': 'Menu', '一時停止': 'Pause',
+  'スタート': 'Start', 'とめる': 'Stop', '元に戻す': 'Undo', '全部どける': 'Clear all', 'グリッド': 'Grid', '早送り': 'Fast-forward', '左にまわす': 'Rotate left', '右にまわす': 'Rotate right', 'どける': 'Remove',
+  '部品': 'Parts', '歯車': 'Gears', '残り {n}': '{n} left', '部品 {n}': '{n} parts', '目標 {n} 個': 'Target {n}', '歯車 {n}/{m}': 'Gears {n}/{m}', 'レベル {id}': 'Level {id}',
+  '板': 'Board', '短い板': 'Short board', 'ばね台': 'Spring', '送風機': 'Fan', 'ベルト': 'Conveyor', 'ドミノ': 'Domino', 'シーソー': 'Seesaw', '風船': 'Balloon', 'おもり': 'Weight', '磁石': 'Magnet',
+  'ここには置けない': "Can't go there", 'ガラスの上には置けない': "Nothing can go on the glass", 'はみ出している': 'Off the board', 'ほかの物と重なっている': 'Overlapping something',
+  'もう残っていない': 'None left', 'うまくいかなかった…': "That didn't work…", '部品を動かして、もう一度スタート': 'Move the parts and start again', '時間切れ': 'Out of time', '毛糸玉が止まった': 'The ball stopped', '玉が落ちてしまった': 'The ball fell off',
+  // title
+  '板・ばね・送風機をならべて「スタート」。毛糸玉を、ねこのかごへ届けよう。': 'Place boards, springs and fans, then press "Start". Deliver the yarn ball to the cat\'s basket.',
+  '星 {n} / {m}': '{n} / {m} stars', 'つづきから': 'Continue', 'レベルをえらぶ': 'Choose a level', '前のレベルをクリアすると開きます': 'Clear an earlier level to open it',
+  'この工房は、前の工房のレベルをクリアすると開きます': 'Clear levels in the previous workshop to open this one',
+  // result
+  'ねこがよろこんだ！': 'The cat is happy!', 'ゴール': 'Goal', '歯車ぜんぶ': 'All gears', '部品 {n} 個以内': '{n} parts or fewer', '次のレベルへ': 'Next level', 'もう一度': 'Try again',
+  'ベスト更新！': 'New best!', 'ぜんぶのレベルをクリアした！': 'You cleared every level!', '部品はそのまま。別の解き方もさがしてみよう': 'Your parts stay put. Try finding another way too',
+  '★ ゴール ／ ★ 歯車をぜんぶ集める ／ ★ 部品を目標の数以内で': '★ reach the goal / ★ collect every gear / ★ use no more than the target parts',
+  '前の答えを置く': 'Load my solution', '{t} 秒': '{t} s',
+  // tutorial
+  'チュートリアル': 'Tutorial', '下の「板」を、光っている場所までドラッグしよう': 'Drag the Board from the tray to the glowing spot',
+  '板をタップして選び、まわすボタンか持ち手で傾けよう': 'Tap the board to select it, then tilt it with the rotate buttons or the handle',
+  '「スタート」を押して、毛糸玉を転がそう': 'Press "Start" and let the yarn ball roll', 'うまくいかなかったら「とめる」で戻して、板を動かそう': "If it misses, press Stop, move the board and try again",
+  // how to play
+  'ねこが毛糸玉を待っています。部品をならべて、毛糸玉がかごに入る道をつくろう。': 'The cat is waiting for its yarn ball. Arrange parts so the ball rolls into the basket.',
+  '下の部品を、盤までドラッグして置く（タップでも置ける）。置いた部品はドラッグで動かせる': 'Drag a part from the tray onto the board (or tap it). Drag placed parts to move them',
+  '部品をタップして選ぶ → ⟲ ⟳ か持ち手でまわす。2本の指でもまわせる。🗑 でどける': 'Tap a part to select it → turn it with ⟲ ⟳ or its handle (or two fingers). 🗑 removes it',
+  '「スタート」で動き出す。「とめる」で置いたところに戻る。⏩ で早送り': '"Start" sets everything moving. "Stop" puts things back. ⏩ speeds it up',
+  '星は3つ：ゴール・歯車をぜんぶ集める・部品を目標の数以内で使う。解き方はひとつではない': 'Three stars: reach the goal, collect every gear, use no more than the target number of parts. There is more than one way',
+  'ばね台は上へはじき、送風機は風の向きに押し、磁石は鈴の玉と鉄のおもりを引きよせる': 'Springs bounce things up, fans push along the wind, magnets pull bell balls and iron weights',
+  'ガラスの上には部品を置けない。グリッドを切ると、細かく置ける': 'Nothing can go on glass. Turn the grid off to place parts freely',
+  '置いた部品は自動で保存。とちゅうで閉じても、つづきから': 'Your parts are saved automatically. Close any time and continue later',
+  'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks',
+  // menu
+  'レベル選びへ': 'Level select', 'このレベルを最初から': 'Restart this level', '部品をぜんぶどけますか？': 'Remove all the parts?', 'どける': 'Remove', 'やめる': 'Cancel',
+  '自動保存しました': 'Autosaved',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ころころ工房: warm wood and brass chrome around a canvas board. --kb-* are the shared tokens re-tinted; --ph-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #211912; --kb-surface: #2d231a; --kb-surface-2: #382b20; --kb-sunken: #160f0a; --kb-line: #4d3c2c;
+  --kb-ink: #f6ecdf; --kb-dim: #c9b6a0;
+  --kb-accent: #e8a93a; --kb-accent-ink: #2b1d05; --kb-accent-text: #f4c260; --kb-accent-soft: rgba(232, 169, 58, .15);
+  --kb-scrim: rgba(12, 9, 6, .76); --kb-focus: #ffe08a;
+  --ph-panel: rgba(255, 236, 214, .07); --ph-line: rgba(255, 226, 196, .17); --ph-card: linear-gradient(#32281e, #241c15);
+  --ph-go: linear-gradient(#8fd06a, #4f9a3a); --ph-go-shadow: #2f5f22; --ph-go-ink: #10240a; --ph-stop: linear-gradient(#f08a6a, #c8503a); --ph-stop-shadow: #7a2a1a;
+  --ph-btn: linear-gradient(#f8c45c, #e3962c); --ph-btn-shadow: #8a5313; --ph-bad: #ff8a72; --ph-good: #94d98a; --ph-gear: #f0b84a;
+  --ph-title: linear-gradient(90deg, #ffd38a, #e8a93a 50%, #e86a8a);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f4ebdd; --kb-surface: #fffaf3; --kb-surface-2: #f8efe2; --kb-sunken: #e6d8c4; --kb-line: #d8c5ab;
+    --kb-ink: #3a2b1f; --kb-dim: #6d5643;
+    --kb-accent: #c46e16; --kb-accent-ink: #ffffff; --kb-accent-text: #9a520f; --kb-accent-soft: rgba(196, 110, 22, .12);
+    --kb-scrim: rgba(58, 43, 31, .45); --kb-focus: #1f6fbf;
+    --ph-panel: rgba(58, 43, 31, .05); --ph-line: #dccab3; --ph-card: linear-gradient(#fffaf3, #f6ecde);
+    --ph-go: linear-gradient(#7cc458, #3f8a2c); --ph-go-shadow: #2a5a1c; --ph-go-ink: #ffffff; --ph-stop: linear-gradient(#ec7a5a, #c0442e); --ph-stop-shadow: #6a2414;
+    --ph-btn: linear-gradient(#e78f2f, #c46e16); --ph-btn-shadow: #7f430c; --ph-bad: #c2412a; --ph-good: #2f8a3a; --ph-gear: #a8700c;
+    --ph-title: linear-gradient(90deg, #a5520f, #c46e16 50%, #c0405a);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f4ebdd; --kb-surface: #fffaf3; --kb-surface-2: #f8efe2; --kb-sunken: #e6d8c4; --kb-line: #d8c5ab;
+  --kb-ink: #3a2b1f; --kb-dim: #6d5643;
+  --kb-accent: #c46e16; --kb-accent-ink: #ffffff; --kb-accent-text: #9a520f; --kb-accent-soft: rgba(196, 110, 22, .12);
+  --kb-scrim: rgba(58, 43, 31, .45); --kb-focus: #1f6fbf;
+  --ph-panel: rgba(58, 43, 31, .05); --ph-line: #dccab3; --ph-card: linear-gradient(#fffaf3, #f6ecde);
+  --ph-go: linear-gradient(#7cc458, #3f8a2c); --ph-go-shadow: #2a5a1c; --ph-go-ink: #ffffff; --ph-stop: linear-gradient(#ec7a5a, #c0442e); --ph-stop-shadow: #6a2414;
+  --ph-btn: linear-gradient(#e78f2f, #c46e16); --ph-btn-shadow: #7f430c; --ph-bad: #c2412a; --ph-good: #2f8a3a; --ph-gear: #a8700c;
+  --ph-title: linear-gradient(90deg, #a5520f, #c46e16 50%, #c0405a);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 65%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 800; padding: 4px 8px; border-radius: 999px; background: var(--ph-panel); border: 1px solid var(--ph-line); color: var(--kb-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip svg { width: 15px; height: 15px; flex: none; }
+#lvChip { flex: 1 1 auto; min-width: 0; overflow: hidden; display: flex; gap: 4px; color: var(--kb-dim); background: transparent; border: 0; padding-left: 2px; font-size: 12.5px; }
+#lvChip b { flex: none; color: var(--kb-ink); }
+#lvChip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#gearChip svg { color: var(--ph-gear); }
+#gearChip.got { animation: gain .45s ease-out; }
+#partChip.over { color: var(--ph-bad); }
+.icon { position: relative; flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--ph-line); background: var(--ph-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; font: 800 15px var(--kb-font-body); }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.icon:disabled { opacity: .4; cursor: default; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; padding: 4px 6px 6px; gap: 6px; }
+#stageWrap { flex: 1 1 auto; min-height: 120px; position: relative; overflow: hidden; }
+#board { position: absolute; left: 0; top: 0; display: block; touch-action: none; border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, .3), 0 0 0 1px var(--ph-line); }
+#side { flex: none; display: flex; flex-direction: column; gap: 6px; }
+#tray { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; touch-action: pan-x; padding: 1px; scrollbar-width: none; }
+#tray::-webkit-scrollbar { display: none; }
+.tp { position: relative; flex: none; width: 58px; height: 56px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--ph-line); background: var(--kb-surface); color: var(--kb-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 0 0; cursor: grab; touch-action: none; font: 800 11px var(--kb-font-body); box-shadow: 0 3px 0 var(--kb-sunken); }
+.tp img { width: 36px; height: 36px; pointer-events: none; }
+.tp b { position: absolute; right: 3px; top: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 11.5px; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+.tp span { font-size: 10px; line-height: 1.1; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--kb-dim); }
+.tp:disabled { opacity: .38; cursor: default; box-shadow: none; }
+.tp:disabled b { background: var(--kb-line); color: var(--kb-dim); }
+.tp.hint { border-color: var(--kb-accent); animation: hint 1s ease-in-out infinite; }
+@keyframes hint { 50% { box-shadow: 0 0 0 5px var(--kb-accent-soft), 0 3px 0 var(--kb-sunken); } }
+#ctrl { display: flex; gap: 6px; align-items: stretch; }
+.ctl { flex: none; min-width: 48px; min-height: 48px; border-radius: 14px; border: 1px solid var(--ph-line); background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 3px 0 var(--kb-sunken); display: grid; place-items: center; cursor: pointer; padding: 0 6px; font: 800 13px var(--kb-font-body); touch-action: manipulation; font-variant-numeric: tabular-nums; }
+.ctl svg { width: 22px; height: 22px; }
+.ctl:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
+.ctl:disabled { opacity: .4; cursor: default; transform: none; }
+.ctl.on { background: var(--kb-accent-soft); border-color: var(--kb-accent); color: var(--kb-accent-text); }
+#goBtn { flex: 1 1 auto; min-width: 110px; background: var(--ph-go); color: var(--ph-go-ink); border: 0; box-shadow: 0 3px 0 var(--ph-go-shadow); font-size: 17px; display: flex; gap: 6px; justify-content: center; align-items: center; }
+#goBtn.stop { background: var(--ph-stop); box-shadow: 0 3px 0 var(--ph-stop-shadow); color: #fff; }
+#goBtn.pulse { animation: pulse 1.2s ease-in-out infinite; }
+#goBtn svg { width: 20px; height: 20px; }
+
+/* the floating tools of a selected part */
+#ptools { position: absolute; z-index: 5; display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: rgba(34, 26, 20, .92); border: 1px solid rgba(255, 226, 196, .25); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+#ptools button { width: 44px; height: 44px; border-radius: 11px; border: 0; background: rgba(255, 255, 255, .08); color: #fff3e0; display: grid; place-items: center; cursor: pointer; padding: 0; touch-action: manipulation; }
+#ptools button svg { width: 22px; height: 22px; }
+#ptools button.del { color: #ffb0a0; }
+#ptools button:active { transform: scale(.94); }
+#ptools button.hint { box-shadow: 0 0 0 3px #ffd36b; animation: hint 1s ease-in-out infinite; }
+#tip { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 6; padding: 6px 10px; border-radius: 12px; background: rgba(28, 21, 16, .92); color: #fff3e0; border: 1px solid rgba(255, 226, 196, .25); font-size: 12.5px; font-weight: 800; line-height: 1.4; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); pointer-events: none; }
+#tip.coach { border-color: #f2b33d; background: rgba(60, 40, 12, .95); }
+#tip.bad { border-color: #ff8a72; }
+#tip .tag { display: inline-block; font-size: 10.5px; padding: 1px 7px; margin-right: 6px; border-radius: 999px; background: #f2b33d; color: #2b1d05; }
+#tip small { display: block; font-weight: 500; opacity: .85; }
+#tip.bottom { top: auto; bottom: 8px; }
+#dragGhost { position: fixed; z-index: 40; width: 52px; height: 52px; margin: -26px 0 0 -26px; pointer-events: none; opacity: .85; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .4)); }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .22s ease-out; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.card { width: 100%; max-width: 440px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--ph-card); border: 1px solid var(--ph-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); overflow: hidden; animation: rise .3s cubic-bezier(.2, 1.4, .4, 1); }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--ph-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 28px; line-height: 1.2; }
+.card p { margin: 4px 0; font-size: 12.5px; line-height: 1.55; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 6px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--ph-btn); color: #2a1606; font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--ph-btn-shadow); text-decoration: none; touch-action: manipulation; line-height: 1.2; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ph-btn-shadow); }
+.btn.sub { background: var(--ph-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--ph-line); font-size: 13.5px; min-height: 44px; }
+.btn small { font-size: 11px; font-weight: 500; opacity: .85; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn .stk { display: flex; flex-direction: column; align-items: center; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.worlds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.wt { min-width: 0; min-height: 52px; border-radius: 14px; border: 1px solid var(--ph-line); background: var(--ph-panel); color: var(--kb-ink); cursor: pointer; font: 800 11.5px var(--kb-font-body); padding: 4px 2px; line-height: 1.2; touch-action: manipulation; }
+.wt small { display: block; font-size: 10.5px; font-weight: 500; color: var(--kb-dim); }
+.wt.sel { border-color: var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-accent-text); }
+.wt:disabled { opacity: .45; cursor: default; }
+.wdesc { margin: 6px 0 0; font-size: 12px; color: var(--kb-dim); }
+.levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.lv { position: relative; min-width: 0; min-height: 56px; border-radius: 14px; border: 1px solid var(--ph-line); background: var(--kb-surface); color: var(--kb-ink); cursor: pointer; font: 800 15px var(--kb-font-body); padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; box-shadow: 0 2px 0 var(--kb-sunken); touch-action: manipulation; }
+.lv .st { font-size: 12px; letter-spacing: -1px; color: var(--kb-accent-text); }
+.lv .st i { font-style: normal; opacity: .28; }
+.lv small { font-size: 9.5px; font-weight: 500; color: var(--kb-dim); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; box-sizing: border-box; }
+.lv.cur { border-color: var(--kb-accent); }
+.lv:disabled { opacity: .45; cursor: default; box-shadow: none; }
+.lv .lock { width: 18px; height: 18px; color: var(--kb-dim); }
+.stars { font-size: 40px; letter-spacing: 4px; line-height: 1.1; margin: 4px 0; }
+.stars i { font-style: normal; color: rgba(128, 112, 96, .4); display: inline-block; }
+.stars i.on { color: #ffcf4a; text-shadow: 0 2px 0 #9a5e0c; animation: star .5s cubic-bezier(.2, 1.8, .4, 1) backwards; }
+.res { display: grid; grid-template-columns: 1fr; gap: 4px; margin: 6px 0 2px; text-align: left; }
+.res div { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: var(--ph-panel); border: 1px solid var(--ph-line); font-size: 12.5px; font-weight: 800; }
+.res div b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.res div .ok { color: var(--ph-good); } .res div .no { color: var(--kb-dim); opacity: .7; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.howto { max-width: 460px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); }
+.howto li { margin: 4px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--ph-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--ph-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+body.thumb header, body.thumb #side, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip, body.thumb #ptools { display: none !important; }
+body.thumb #main { padding: 0; max-width: none; }
+body.thumb #board { border-radius: 0; box-shadow: none; }
+
+@keyframes rise { from { transform: translateY(12px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes star { from { transform: scale(0) rotate(-40deg); } }
+@keyframes gain { 0% { transform: scale(1.18); } }
+@keyframes pulse { 50% { box-shadow: 0 3px 0 var(--ph-go-shadow), 0 0 0 5px rgba(143, 208, 106, .35); } }
+@media (prefers-reduced-motion: reduce) { .card, .overlay, .stars i.on, #goBtn.pulse, #gearChip.got, .tp.hint, #ptools button.hint { animation: none; } }
+@media (max-width: 359px) { .chip { padding: 4px 6px; font-size: 12px; } .tp { width: 52px; } .ctl { min-width: 46px; } #goBtn { min-width: 92px; font-size: 15px; } }
+@media (max-height: 600px) { .card { padding: 12px 12px 8px; } .btn { min-height: 46px; margin-top: 6px; } .card h2.logo { font-size: 24px; } }
+/* landscape phones: the board on the left, the tray and controls in a column on the right */
+@media (orientation: landscape) and (max-height: 560px) {
+  header { padding-top: 0; max-width: none; }
+  #main { flex-direction: row; max-width: none; padding-top: 2px; }
+  #side { width: min(300px, 46vw); justify-content: space-between; }
+  #tray { flex-wrap: wrap; overflow: auto; touch-action: pan-y; align-content: flex-start; }
+  #ctrl { flex-wrap: wrap; }
+  .card { max-width: 660px; }
+  .howto { max-width: 680px; }
+  .levels { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .stars { font-size: 30px; }
+  .card h2.logo { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <span class="chip" id="lvChip" data-i18n>ころころ工房</span>
+      <span class="chip" id="gearChip" aria-label="歯車" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10.6 2h2.8l.5 2.6 2 .8 2.2-1.5 2 2-1.5 2.2.8 2 2.6.5v2.8l-2.6.5-.8 2 1.5 2.2-2 2-2.2-1.5-2 .8-.5 2.6h-2.8l-.5-2.6-2-.8-2.2 1.5-2-2 1.5-2.2-.8-2L2 13.4v-2.8l2.6-.5.8-2-1.5-2.2 2-2 2.2 1.5 2-.8z"/><circle cx="12" cy="12" r="3.4" fill="#2a1d14"/></svg><span id="gearN">0/0</span></span>
+      <span class="chip" id="partChip" aria-label="部品" data-i18n-attr="aria-label">0</span>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド オン" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
+    </div>
+  </header>
+  <div id="main">
+    <div id="stageWrap">
+      <canvas id="board" width="360" height="360" role="img" aria-label="ころころ工房" data-i18n-attr="aria-label"></canvas>
+      <div id="ptools" hidden>
+        <button type="button" id="rotL" aria-label="左にまわす" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4v5h5"/></svg></button>
+        <button type="button" id="rotR" aria-label="右にまわす" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 4v5h-5"/></svg></button>
+        <button type="button" id="delBtn" class="del" aria-label="どける" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>
+      </div>
+      <div id="tip" hidden role="status" aria-live="polite"></div>
+    </div>
+    <div id="side">
+      <div id="tray" role="toolbar" aria-label="部品" data-i18n-attr="aria-label"></div>
+      <div id="ctrl">
+        <button class="ctl" id="undoBtn" type="button" aria-label="元に戻す" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button class="ctl" id="clearBtn" type="button" aria-label="全部どける" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/><path d="M10 11l4 5M14 11l-4 5"/></svg></button>
+        <button class="ctl on" id="gridBtn" type="button" aria-label="グリッド" aria-pressed="true" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg></button>
+        <button class="ctl" id="ffBtn" type="button" aria-label="早送り" aria-pressed="false" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6l9 6-9 6zM12 6l9 6-9 6z"/></svg></button>
+        <button class="ctl" id="goBtn" type="button"></button>
+      </div>
+    </div>
+  </div>
+</div>
+<img id="dragGhost" alt="" hidden>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
+  <div class="card">
+    <h2 class="logo" id="tLogo" data-i18n>ころころ工房</h2>
+    <div class="scroll">
+      <p data-i18n>板・ばね・送風機をならべて「スタート」。毛糸玉を、ねこのかごへ届けよう。</p>
+      <p id="tStars"></p>
+      <div class="worlds" id="tWorlds"></div>
+      <p class="wdesc" id="tWDesc"></p>
+      <div class="levels" id="tLevels"></div>
+    </div>
+    <button class="btn" id="tContinue" type="button" hidden></button>
+    <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <div class="stars" id="rStars"></div>
+      <div id="rNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+      <div class="res" id="rRows"></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rNext" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rAgain" type="button" data-i18n>もう一度</button><button class="btn sub" id="rLevels" type="button" data-i18n>レベルをえらぶ</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+<script src="engine.js"></script>
+<script src="levels.js"></script>
+<script src="art.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ころころ工房 — an original contraption puzzle. physics/engine.js is the deterministic physics and the puzzle rules
+// (also run headless by tools/tests/physics-levels.js), physics/levels.js the 48 levels, physics/art.js the drawing,
+// and this file the chrome: the tray, dragging and rotating parts, start / stop, stars, saving and the platform events.
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const PE = window.PhysicsEngine, ART = window.PhysicsArt, LV = window.PhysicsLevels, WORLDS = window.PhysicsWorlds;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'physics';
+const SAVE_KEY = 'kusoge.physics.save';  // records per level (registry: per-field merge)
+const RUN_KEY = 'kusoge.physics.run';    // the parts on the board of each level being worked on (this device only)
+const SOLS_KEY = 'kusoge.physics.sols';  // the best solution of each cleared level (this device only)
+const HOWTO_KEY = 'kusoge.physics.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const L2 = a => (a ? (EN ? a[1] : a[0]) : '');
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const now = () => performance.now();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+const lastSfx = {};
+function sfx(name, gap, a) { if (!AU) return; const t = now(); if (gap && lastSfx[name] && t - lastSfx[name] < gap) return; lastSfx[name] = t; AU.sfx(name, a); }
+function tone(f, d, o, key, gap) { if (!AU) return; const t = now(); if (key && lastSfx[key] && t - lastSfx[key] < gap) return; if (key) lastSfx[key] = t; AU.tone(f, d, o); }
+function vibrate(p) { if (AU && AU.vibrate) AU.vibrate(p); }
+const PART_NAME = { plank: '板', short: '短い板', spring: 'ばね台', fan: '送風機', belt: 'ベルト', domino: 'ドミノ', seesaw: 'シーソー', balloon: '風船', weight: 'おもり', magnet: '磁石' };
+const TOTAL = LV.length * 3;
+
+// ---------- save ----------
+function defSave() { return { v: 1, lv: {}, stars: 0, done: 0, stats: { runs: 0, wins: 0, gears: 0, par: 0, perfect: 0 }, tut: 0 }; }
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const d = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
+  const out = Object.assign(d, s);
+  out.lv = s.lv && typeof s.lv === 'object' && !Array.isArray(s.lv) ? s.lv : {};
+  out.stats = Object.assign(defSave().stats, s.stats && typeof s.stats === 'object' ? s.stats : {});
+  recount(out);
+  return out;
+}
+const starsOf = r => (r ? (r.c > 0 ? 1 : 0) + (r.c > 0 && r.g ? 1 : 0) + (r.c > 0 && r.p ? 1 : 0) : 0);
+function recount(s) {
+  let st = 0, dn = 0;
+  for (const L of LV) { const r = s.lv[L.id]; if (!r) continue; st += starsOf(r); if (r.c > 0) dn++; }
+  s.stars = Math.max(s.stars | 0, st); s.done = Math.max(s.done | 0, dn);
+}
+let save = readSave();
+function writeSave() { recount(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+const cleared = i => !!(LV[i] && save.lv[LV[i].id] && save.lv[LV[i].id].c > 0);
+// a level opens when one of the two before it is cleared (so one hard level never blocks the way)
+const unlocked = i => i === 0 || cleared(i - 1) || (i >= 2 && cleared(i - 2)) || cleared(i);
+function readJSON(k) { try { const v = JSON.parse(store.get(k) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } }
+let runSave = (() => { const r = readJSON(RUN_KEY); return r && r.v === 1 ? Object.assign({ drafts: {} }, r) : { v: 1, cur: null, grid: 1, drafts: {} }; })();
+if (!runSave.drafts || typeof runSave.drafts !== 'object') runSave.drafts = {};
+let sols = readJSON(SOLS_KEY) || {};
+const pack = ps => ps.map(p => [p.t, p.x, p.y, p.a]);
+const unpack = a => (Array.isArray(a) ? a.filter(q => Array.isArray(q) && PE.PARTS[q[0]]).map(q => ({ t: q[0], x: +q[1] || 0, y: +q[2] || 0, a: +q[3] || 0 })) : []);
+function persist() {
+  if (DEBUG_NOSAVE) return;
+  if (cur >= 0) { runSave.cur = LV[cur].id; runSave.drafts[LV[cur].id] = pack(placed); if (!placed.length) delete runSave.drafts[LV[cur].id]; }
+  runSave.grid = grid ? 1 : 0; runSave.at = Date.now();
+  store.set(RUN_KEY, JSON.stringify(runSave));
+}
+let persistT = 0;
+function persistSoon() { clearTimeout(persistT); persistT = setTimeout(persist, 250); }
+let DEBUG_NOSAVE = false;
+
+// ---------- state ----------
+let cur = -1;            // the level index
+let placed = [];         // the player's parts [{ t, x, y, a }]
+let undo = [];           // earlier versions of placed (JSON)
+let mode = 'title';      // 'edit' | 'run' | 'title'
+let S = null;            // the built puzzle (a preview while editing, the simulation while running)
+let sel = -1;            // the selected part
+let bad = -1;            // a part drawn red (invalid spot while dragging)
+let grid = runSave.grid !== 0;
+let speed = 1, paused = false, menuOpen = false;
+let acc = 0, lastT = now(), raf = 0, evRead = 0;
+let runInfo = null;      // { t0, startedAt } the current run
+let play = null;         // { id, started, wall } the level being played (for play_start / play_end)
+let tut = null;          // tutorial step on level 1-1 (null when off)
+let fx = [], squash = {};
+let needDraw = true, lastResult = null;
+const level = () => LV[cur];
+
+// ---------- canvas & view ----------
+const cv = $('board'), ctx = cv.getContext('2d');
+const wrap = $('stageWrap');
+const view = { W: 360, H: 360, dpr: 1, s: 30, ox: 0, oy: 0, left: 0, top: 0 };
+function layout() {
+  const r = wrap.getBoundingClientRect();
+  const size = Math.max(100, Math.floor(Math.min(r.width, r.height)));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const left = Math.floor((r.width - size) / 2), top = Math.floor((r.height - size) / 2);
+  const changed = size !== view.W || dpr !== view.dpr;
+  Object.assign(view, { W: size, H: size, dpr, s: size / PE.BW, ox: 0, oy: 0, left, top });
+  cv.style.left = left + 'px'; cv.style.top = top + 'px';
+  if (changed || cv.width !== Math.round(size * dpr)) {
+    cv.width = Math.round(size * dpr); cv.height = Math.round(size * dpr);
+    cv.style.width = size + 'px'; cv.style.height = size + 'px';
+    ART.resize({ W: size, H: size, dpr, s: size / PE.BW, ox: 0, oy: 0 });
+  }
+  placeTools(); needDraw = true;
+}
+// world ↔ CSS px on the canvas
+const wx = x => x * view.s, wy = y => (PE.BH - y) * view.s;
+const toWorld = (px, py) => ({ x: px / view.s, y: PE.BH - py / view.s });
+function evWorld(e) { const r = cv.getBoundingClientRect(); return toWorld(e.clientX - r.left, e.clientY - r.top); }
+
+function rebuild() { if (cur >= 0) { S = PE.build(level(), placed); if (DEBUG) window.__lastBuild = S; } needDraw = true; refreshHud(); }
+function draw(t) {
+  if (!S) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); return; }
+  ART.frame(ctx, { S, t, running: mode === 'run', done: S.done, sel: mode === 'edit' ? sel : -1, bad, grid: grid && mode === 'edit', ghost: tutGhost(), squash, fx });
+  if (mode === 'edit' && sel >= 0 && placed[sel] && PE.PARTS[placed[sel].t].rot) drawHandle();
+}
+function handlePos(i) { // the rotate handle: beyond the right end of the part, along its axis
+  const p = placed[i], D = PE.PARTS[p.t], a = p.a * Math.PI / 180;
+  const d = (D.w / 2) + 0.75;
+  return { x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d };
+}
+function drawHandle() {
+  const p = placed[sel], h = handlePos(sel);
+  ctx.save();
+  ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(wx(p.x), wy(p.y)); ctx.lineTo(wx(h.x), wy(h.y)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#ffd36b'; ctx.strokeStyle = '#5a3a0c';
+  ctx.beginPath(); ctx.arc(wx(h.x), wy(h.y), Math.max(10, view.s * 0.32), 0, 6.283); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#5a3a0c'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(wx(h.x), wy(h.y), Math.max(5, view.s * 0.16), -2.4, 1.2); ctx.stroke();
+  ctx.restore();
+}
+
+// ---------- the loop ----------
+function loop(t) {
+  raf = requestAnimationFrame(loop);
+  const dt = Math.min(0.1, Math.max(0, (t - lastT) / 1000)); lastT = t;
+  let stepped = false;
+  if (mode === 'run' && S && !S.done && !paused && !menuOpen && !anyOverlay()) {
+    acc += dt * speed;
+    let n = 0;
+    while (acc >= PE.DT && n < 6 * speed) { S.step(); acc -= PE.DT; n++; if (S.done) break; }
+    if (n >= 6 * speed) acc = 0;
+    stepped = n > 0;
+    if (stepped) pumpEvents();
+  }
+  if (mode === 'run' && S && S.done && runInfo && !runInfo.ended) onRunEnd();
+  const anim = fx.length || Object.keys(squash).length || tut != null || (mode === 'run') || (S && S.done === 1);
+  if (stepped || needDraw || anim || drag) { draw(t / 1000); needDraw = false; }
+  if (fx.length) fx = fx.filter(f => t / 1000 - f.t0 < f.d);
+  for (const k in squash) { squash[k] -= dt * 4; if (squash[k] <= 0) delete squash[k]; }
+}
+
+// ---------- engine events → effects and sounds ----------
+function pumpEvents() {
+  const evs = S.events;
+  const first = S.evN - evs.length;
+  if (evRead < first) evRead = first;
+  const t = now() / 1000;
+  for (; evRead < S.evN; evRead++) {
+    const e = evs[evRead - first];
+    if (e.k === 'gear') { sfx('coin'); vibrate(8); const G = S.gears[e.a]; fx.push({ k: 'puff', x: G.x, y: G.y, t0: t, d: 0.5, c: '#ffd36b' }); flash('gearChip', 'got'); refreshHud(); }
+    else if (e.k === 'launch') { tone(330, 0.12, { type: 'triangle', vol: 0.09, slide: 880 }, 'boing', 120); squash[e.a] = 1; }
+    else if (e.k === 'hit') sfx('hit', 90);
+    else if (e.k === 'home') { tone(880, 0.1, { type: 'triangle', vol: 0.08 }); }
+    else if (e.k === 'out') sfx('fail', 200);
+  }
+}
+function flash(id, cls) { const el = $(id); el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+// ---------- HUD, tray, controls ----------
+const H = {};
+function setHTML(id, s) { if (H[id] !== s) { H[id] = s; $(id).innerHTML = s; } }
+function counts() { const c = {}; for (const p of placed) c[p.t] = (c[p.t] || 0) + 1; return c; }
+function refreshHud() {
+  if (cur < 0) return;
+  const L = level();
+  const got = S && mode === 'run' ? S.gears.filter(g => g.got).length : 0;
+  setHTML('gearN', got + '/' + (L.gears || []).length);
+  const n = placed.length;
+  setHTML('partChip', esc(T('部品 {n}', { n })) + ' <span style="opacity:.7">/ ' + L.par + '</span>');
+  $('partChip').classList.toggle('over', n > L.par);
+  $('partChip').setAttribute('aria-label', T('部品 {n}', { n }) + ' ' + T('目標 {n} 個', { n: L.par }));
+  renderTray(); renderCtrl(); placeTools();
+}
+function renderTray() {
+  const L = level(), box = $('tray'), c = counts();
+  const ids = PE.PART_IDS.filter(t => (L.parts || {})[t]);
+  const key = ids.join() + '|' + ids.map(t => (L.parts[t] - (c[t] || 0))).join() + '|' + mode + '|' + EN + '|' + (tut === 0);
+  if (H.tray === key) return;
+  H.tray = key;
+  box.innerHTML = '';
+  for (const t of ids) {
+    const left = L.parts[t] - (c[t] || 0);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tp'; b.dataset.part = t;
+    b.innerHTML = '<img alt="" src="' + ART.partIcon(t, 48) + '"><b>' + left + '</b><span>' + esc(T(PART_NAME[t])) + '</span>';
+    b.setAttribute('aria-label', T(PART_NAME[t]) + ' ' + T('残り {n}', { n: left }));
+    b.disabled = left <= 0 || mode !== 'edit';
+    if (tut === 0 && t === 'plank') b.classList.add('hint');
+    b.addEventListener('pointerdown', e => trayDown(e, t, b));
+    box.appendChild(b);
+  }
+}
+const PLAY_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';
+const STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+function renderCtrl() {
+  const run = mode === 'run';
+  const k = mode + ':' + undo.length + ':' + placed.length + ':' + speed + ':' + grid + ':' + (tut === 2) + EN;
+  if (H.ctrl === k) return; H.ctrl = k;
+  const go = $('goBtn');
+  go.innerHTML = run ? STOP_SVG + '<span>' + esc(T('とめる')) + '</span>' : PLAY_SVG + '<span>' + esc(T('スタート')) + '</span>';
+  go.classList.toggle('stop', run); go.classList.toggle('pulse', tut === 2 && !run);
+  go.setAttribute('aria-label', T(run ? 'とめる' : 'スタート'));
+  $('undoBtn').disabled = run || !undo.length;
+  $('clearBtn').disabled = run || !placed.length;
+  $('gridBtn').disabled = run;
+  $('gridBtn').classList.toggle('on', grid); $('gridBtn').setAttribute('aria-pressed', grid ? 'true' : 'false');
+  $('ffBtn').classList.toggle('on', speed > 1); $('ffBtn').setAttribute('aria-pressed', speed > 1 ? 'true' : 'false');
+  $('ffBtn').innerHTML = speed > 1 ? '<b style="font-size:15px">' + speed + '×</b>' : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6l9 6-9 6zM12 6l9 6-9 6z"/></svg>';
+}
+
+// ---------- editing ----------
+function snapshot() { undo.push(JSON.stringify(placed)); if (undo.length > 60) undo.shift(); }
+function q(v, s) { return Math.round(v / s) * s; }
+const round2 = v => Math.round(v * 100) / 100;
+function snapPos(p) { const s = grid ? 0.25 : 0.05; p.x = round2(q(p.x, s)); p.y = round2(q(p.y, s)); return p; }
+function snapAng(a) { a = ((Math.round(a) % 360) + 540) % 360 - 180; return grid ? Math.round(a / 15) * 15 : a; }
+function problem(i, p) { return PE.placeProblem(level(), placed, i, p); }
+function problemText(why, p) {
+  if (why === 'edge') return T('はみ出している');
+  // is it the glass?
+  const L = level();
+  if ((L.glass || []).some(z => p.x > z[0] - 0.3 && p.x < z[0] + z[2] + 0.3 && p.y > z[1] - 0.3 && p.y < z[1] + z[3] + 0.3)) return T('ガラスの上には置けない');
+  return T('ほかの物と重なっている');
+}
+// a free spot near (x, y) for a part (tapping a tray button, or nudging a drop that just misses)
+function freeSpot(t, x, y, a, maxR) {
+  for (let r = 0; r <= (maxR || 6); r += 0.25) {
+    const n = r === 0 ? 1 : Math.max(8, Math.round(r * 8));
+    for (let k = 0; k < n; k++) {
+      const ang = k / n * Math.PI * 2;
+      const p = snapPos({ t, x: x + Math.cos(ang) * r, y: y + Math.sin(ang) * r, a });
+      if (!problem(-1, p)) return p;
+    }
+  }
+  return null;
+}
+function addPart(p) {
+  snapshot(); placed.push(p); sel = placed.length - 1;
+  sfx('drop'); vibrate(10);
+  changed(); tutEvent('place', p);
+}
+function changed() { rebuild(); persistSoon(); }
+function removePart(i) { if (i < 0 || !placed[i]) return; snapshot(); placed.splice(i, 1); sel = -1; sfx('pop'); changed(); }
+function rotateSel(d) {
+  if (sel < 0 || mode !== 'edit') return;
+  const p = placed[sel]; if (!PE.PARTS[p.t].rot) return;
+  const np = Object.assign({}, p, { a: snapAng(p.a + d) });
+  if (!grid) np.a = snapAng(p.a + d);
+  const why = problem(sel, np);
+  if (why) { sfx('error'); showTip({ text: T('ここには置けない'), sub: problemText(why, np), bad: true }, 1400); return; }
+  snapshot(); placed[sel] = np; sfx('tap'); changed(); tutEvent('rotate', np);
+}
+$('rotL').addEventListener('click', () => rotateSel(15));
+$('rotR').addEventListener('click', () => rotateSel(-15));
+$('delBtn').addEventListener('click', () => removePart(sel));
+$('undoBtn').addEventListener('click', () => { if (mode !== 'edit' || !undo.length) return; placed = JSON.parse(undo.pop()); sel = -1; sfx('tap'); changed(); });
+$('clearBtn').addEventListener('click', async () => {
+  if (mode !== 'edit' || !placed.length) return;
+  if (UI && UI.confirm && placed.length > 1) { const ok = await UI.confirm({ title: T('部品をぜんぶどけますか？'), ok: T('どける'), cancel: T('やめる'), danger: true }); if (!ok) return; }
+  snapshot(); placed = []; sel = -1; sfx('pop'); changed();
+});
+$('gridBtn').addEventListener('click', () => { grid = !grid; sfx('tap'); ART.invalidate(); needDraw = true; H.ctrl = ''; renderCtrl(); persistSoon(); });
+$('ffBtn').addEventListener('click', () => { speed = speed >= 3 ? 1 : speed + 1; sfx('tap'); H.ctrl = ''; renderCtrl(); });
+$('goBtn').addEventListener('click', () => { if (AU) AU.ctx(); if (mode === 'run') stopRun(); else startRun(); });
+
+// the floating tools of the selected part (kept away from the part, inside the board)
+function placeTools() {
+  const pt = $('ptools');
+  if (mode !== 'edit' || sel < 0 || !placed[sel] || drag) { pt.hidden = true; return; }
+  pt.hidden = false;
+  const p = placed[sel], rot = PE.PARTS[p.t].rot;
+  $('rotL').hidden = !rot; $('rotR').hidden = !rot;
+  const w = pt.offsetWidth || 150, h = pt.offsetHeight || 50;
+  const px = view.left + wx(p.x), py = view.top + wy(p.y);
+  const ext = (PE.PARTS[p.t].w || 1) / 2 * view.s * Math.abs(Math.sin(p.a * Math.PI / 180)) + (PE.PARTS[p.t].h || 0.5) * view.s + 16;
+  let y = py - ext - h; if (y < view.top + 4) y = py + ext;
+  let x = px - w / 2; x = Math.max(view.left + 4, Math.min(view.left + view.W - w - 4, x));
+  y = Math.max(view.top + 4, Math.min(view.top + view.H - h - 4, y));
+  pt.style.left = Math.round(x) + 'px'; pt.style.top = Math.round(y) + 'px';
+  $('rotL').classList.toggle('hint', tut === 1); $('rotR').classList.toggle('hint', tut === 1);
+}
+
+// ---------- pointer input ----------
+let drag = null;      // { kind: 'new' | 'move' | 'rot' | 'pinch', ... }
+const pointers = new Map();
+const TOUCH_LIFT = 0.9; // a part dragged with a finger floats this many units above it
+function trayDown(e, t, btn) {
+  if (mode !== 'edit' || btn.disabled) return;
+  if (AU) AU.ctx();
+  e.preventDefault();
+  try { btn.setPointerCapture(e.pointerId); } catch (x) {}
+  drag = { kind: 'new', t, id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false, btn, touch: e.pointerType === 'touch', p: null };
+  const g = $('dragGhost'); g.src = ART.partIcon(t, 48); g.hidden = true;
+  sel = -1; placeTools();
+}
+function trayMove(e) {
+  if (!drag || drag.kind !== 'new' || e.pointerId !== drag.id) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) return;
+  drag.moved = true;
+  const r = cv.getBoundingClientRect();
+  const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top - 10 && e.clientY <= r.bottom + (drag.touch ? 40 : 0);
+  const g = $('dragGhost');
+  if (!inside) { drag.p = null; g.hidden = false; g.style.left = e.clientX + 'px'; g.style.top = e.clientY + 'px'; bad = -1; needDraw = true; previewNew(null); return; }
+  g.hidden = true;
+  const w = evWorld(e);
+  const p = snapPos({ t: drag.t, x: w.x, y: w.y + (drag.touch ? TOUCH_LIFT : 0), a: 0 });
+  drag.p = p; previewNew(p);
+}
+// while dragging a new part over the board, show it in the preview build
+function previewNew(p) {
+  if (p) { S = PE.build(level(), placed.concat([p])); bad = problem(-1, p) ? placed.length : -1; }
+  else { S = PE.build(level(), placed); bad = -1; }
+  needDraw = true;
+}
+function trayUp(e) {
+  if (!drag || drag.kind !== 'new' || e.pointerId !== drag.id) return;
+  const d = drag; drag = null; $('dragGhost').hidden = true; bad = -1;
+  if (!d.moved) { // a tap: put it somewhere free near the middle
+    const p = freeSpot(d.t, 6, 6.5, 0, 6);
+    if (p) addPart(p); else { sfx('error'); rebuild(); }
+    return;
+  }
+  if (!d.p) { rebuild(); return; }
+  let p = d.p;
+  const why = problem(-1, p);
+  if (why) {
+    const near = freeSpot(p.t, p.x, p.y, p.a, 0.5);
+    if (near) p = near;
+    else { sfx('error'); showTip({ text: T('ここには置けない'), sub: problemText(why, p), bad: true }, 1600); rebuild(); return; }
+  }
+  addPart(tutSnap(p));
+}
+cv.addEventListener('pointerdown', e => {
+  if (mode !== 'edit') return;
+  if (AU) AU.ctx();
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+  const w = evWorld(e);
+  if (pointers.size === 2 && sel >= 0 && PE.PARTS[placed[sel].t].rot) { // two fingers turn the selected part
+    const ps = [...pointers.values()];
+    drag = { kind: 'pinch', ang0: Math.atan2(ps[1].y - ps[0].y, ps[1].x - ps[0].x), a0: placed[sel].a, orig: Object.assign({}, placed[sel]), snap: JSON.stringify(placed) };
+    return;
+  }
+  if (pointers.size > 1) return;
+  // the rotate handle
+  if (sel >= 0 && placed[sel] && PE.PARTS[placed[sel].t].rot) {
+    const h = handlePos(sel);
+    if (Math.hypot(w.x - h.x, w.y - h.y) < Math.max(0.55, 22 / view.s)) { drag = { kind: 'rot', i: sel, orig: Object.assign({}, placed[sel]), snap: JSON.stringify(placed), id: e.pointerId }; placeTools(); return; }
+  }
+  const i = hitPart(w.x, w.y);
+  if (i >= 0) {
+    drag = { kind: 'move', i, id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: placed[i].x - w.x, dy: placed[i].y - w.y, orig: Object.assign({}, placed[i]), snap: JSON.stringify(placed), moved: false, wasSel: sel === i };
+    sel = i; sfx('tap'); tutEvent('select'); needDraw = true; placeTools();
+  } else { drag = { kind: 'none', id: e.pointerId }; }
+});
+cv.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (!drag) return;
+  if (drag.kind === 'pinch' && pointers.size >= 2) {
+    const ps = [...pointers.values()];
+    const ang = Math.atan2(ps[1].y - ps[0].y, ps[1].x - ps[0].x);
+    const np = Object.assign({}, placed[sel], { a: snapAng(drag.a0 - (ang - drag.ang0) * 180 / Math.PI) });
+    placed[sel] = np; bad = problem(sel, np) ? sel : -1; S = PE.build(level(), placed); needDraw = true;
+    return;
+  }
+  if (e.pointerId !== drag.id) return;
+  const w = evWorld(e);
+  if (drag.kind === 'rot') {
+    const p = placed[drag.i];
+    let a = Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI;
+    a = snapAng(a);
+    if (tut === 1 && Math.abs(a - level().tut[0].a) <= 8) a = level().tut[0].a;
+    const np = Object.assign({}, p, { a });
+    placed[drag.i] = np; bad = problem(drag.i, np) ? drag.i : -1; S = PE.build(level(), placed); needDraw = true;
+  } else if (drag.kind === 'move') {
+    if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+    drag.moved = true; placeTools();
+    const lift = e.pointerType === 'touch' ? 0.35 : 0;
+    const np = snapPos(Object.assign({}, placed[drag.i], { x: w.x + drag.dx, y: w.y + drag.dy + lift }));
+    placed[drag.i] = np; bad = problem(drag.i, np) ? drag.i : -1; S = PE.build(level(), placed); needDraw = true;
+  }
+});
+function endCanvasDrag(e, cancel) {
+  pointers.delete(e.pointerId);
+  if (!drag) return;
+  if (drag.kind === 'pinch') { if (pointers.size > 0 && !cancel) return; finishEdit(sel, drag); drag = null; return; }
+  if (e.pointerId !== drag.id) return;
+  const d = drag; drag = null;
+  if (d.kind === 'none') { if (sel >= 0) { sel = -1; needDraw = true; placeTools(); } return; }
+  if (d.kind === 'move' && !d.moved) { placeTools(); return; }
+  finishEdit(d.i, d, cancel);
+}
+function finishEdit(i, d, cancel) {
+  bad = -1;
+  const p = placed[i];
+  const why = cancel ? 'cancel' : problem(i, p);
+  if (why) {
+    placed[i] = d.orig;
+    if (!cancel) { sfx('error'); showTip({ text: T('ここには置けない'), sub: problemText(why, p), bad: true }, 1500); }
+    rebuild(); placeTools(); return;
+  }
+  if (JSON.stringify(placed) !== d.snap) {
+    undo.push(d.snap); if (undo.length > 60) undo.shift();
+    if (d.kind === 'move') { sfx('drop'); tutEvent('move'); placed[i] = tutSnap(placed[i]); }
+    else { sfx('tap'); tutEvent('rotate', p); }
+  }
+  changed(); placeTools();
+}
+cv.addEventListener('pointerup', e => endCanvasDrag(e));
+cv.addEventListener('pointercancel', e => endCanvasDrag(e, true));
+window.addEventListener('pointermove', trayMove);
+window.addEventListener('pointerup', trayUp);
+window.addEventListener('pointercancel', e => { if (drag && drag.kind === 'new' && e.pointerId === drag.id) { drag = null; $('dragGhost').hidden = true; bad = -1; rebuild(); } });
+function hitPart(x, y) {
+  // the topmost (last placed) part whose shape is within 0.25 of the point
+  const probe = new PE.Body({ x, y, r: 0.25 }, -1);
+  for (let i = placed.length - 1; i >= 0; i--) {
+    const bodies = PE.partShapes(placed[i].t, placed[i].x, placed[i].y, placed[i].a).map(o => new PE.Body(o, -1));
+    for (const b of bodies) if (PE.overlaps(probe, b, -0.001)) return i;
+  }
+  return -1;
+}
+window.addEventListener('keydown', e => {
+  if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (anyOverlay()) return;
+  if (e.key === ' ' || e.key === 'Enter') { if (cur >= 0 && e.target === document.body) { e.preventDefault(); $('goBtn').click(); } }
+  else if (mode === 'edit' && sel >= 0 && (e.key === 'q' || e.key === 'Q')) rotateSel(15);
+  else if (mode === 'edit' && sel >= 0 && (e.key === 'e' || e.key === 'E')) rotateSel(-15);
+  else if (mode === 'edit' && sel >= 0 && (e.key === 'Delete' || e.key === 'Backspace')) removePart(sel);
+  else if (mode === 'edit' && (e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) $('undoBtn').click();
+  else if (e.key === 'Escape') { if (sel >= 0) { sel = -1; needDraw = true; placeTools(); } else openMenu(); }
+});
+
+// ---------- tip bubble (also the tutorial coach) ----------
+let tipT = 0;
+function showTip(o, ms) {
+  const el = $('tip'); clearTimeout(tipT);
+  if (!o) { if (tut != null) return coachTip(); el.hidden = true; return; }
+  el.className = o.coach ? 'coach' : o.bad ? 'bad' : '';
+  el.innerHTML = (o.coach ? '<span class="tag">' + esc(T('チュートリアル')) + '</span>' : '') + esc(o.text) + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '');
+  el.hidden = false;
+  tipPos();
+  if (ms) tipT = setTimeout(() => showTip(null), ms);
+}
+function tipPos() { // keep the bubble away from the part being worked on
+  const el = $('tip');
+  let low = false;
+  if (sel >= 0 && placed[sel]) low = placed[sel].y > 8;
+  else if (tut === 0 && level().tut) low = level().tut[0].y > 8;
+  el.classList.toggle('bottom', low);
+}
+
+// ---------- tutorial (level 1-1, first time) ----------
+// 0 drag the board onto the ghost → 1 select and tilt it → 2 press Start → 3 (running; a miss brings back step 2)
+const COACH = ['下の「板」を、光っている場所までドラッグしよう', '板をタップして選び、まわすボタンか持ち手で傾けよう', '「スタート」を押して、毛糸玉を転がそう', 'うまくいかなかったら「とめる」で戻して、板を動かそう'];
+function coachTip() { if (tut == null) return; const el = $('tip'); el.className = 'coach'; el.innerHTML = '<span class="tag">' + esc(T('チュートリアル')) + '</span>' + esc(T(COACH[tut])); el.hidden = false; tipPos(); }
+function tutGhost() { if (tut == null || cur < 0 || !level().tut || mode !== 'edit') return null; if (tut === 0) return level().tut.map(g => Object.assign({}, g, { a: 0 })); if (tut === 1) return level().tut; return null; }
+function tutSnap(p) { // a drop close to the ghost lands right on it (the angle stays: tilting is the next step)
+  if (tut !== 0 || !level().tut) return p;
+  const g = level().tut[0];
+  if (p.t === g.t && Math.hypot(p.x - g.x, p.y - g.y) < 0.9) { const np = Object.assign({}, p, { x: g.x, y: g.y }); if (!problem(placed.indexOf(p), np)) return np; }
+  return p;
+}
+function tutEvent(ev) {
+  if (tut == null) return;
+  if (tut === 0 && (ev === 'place' || ev === 'move') && placed.length) { const g = level().tut[0], p = placed[placed.length - 1]; if (Math.hypot(p.x - g.x, p.y - g.y) < 1.2 || ev === 'place') setTut(1); }
+  else if (tut === 1 && ev === 'rotate' && placed.some(p => p.a !== 0)) setTut(2);
+  else if (tut === 2 && ev === 'start') setTut(3);
+  else if (tut === 3 && ev === 'stop') setTut(placed.some(p => p.a !== 0) ? 2 : 1);
+}
+function setTut(n) { tut = n; sfx('ok'); coachTip(); needDraw = true; H.tray = ''; H.ctrl = ''; refreshHud(); }
+function endTut() { tut = null; save.tut = 1; writeSave(); $('tip').hidden = true; needDraw = true; H.tray = ''; refreshHud(); }
+
+// ---------- levels ----------
+function openLevel(i, o) {
+  o = o || {};
+  if (i < 0 || i >= LV.length) return;
+  endPlay('quit');
+  hideOverlays();
+  cur = i; mode = 'edit'; sel = -1; bad = -1; drag = null; undo = []; speed = 1; fx = []; squash = {};
+  const L = level();
+  placed = o.parts ? o.parts.map(p => Object.assign({}, p)) : unpack(runSave.drafts[L.id]);
+  if (PE.validate(L, placed)) placed = []; // an old draft that no longer fits
+  tut = L.id === '1-1' && !save.tut && o.tut !== false ? (placed.length ? (placed.some(p => p.a !== 0) ? 2 : 1) : 0) : null;
+  Object.keys(H).forEach(k => delete H[k]);
+  $('lvChip').innerHTML = '<b>' + esc(L.id) + '</b><span>' + esc(L2(L.n)) + '</span>';
+  cv.setAttribute('aria-label', T('レベル {id}', { id: L.id }) + ' ' + L2(L.n));
+  ART.invalidate();
+  rebuild(); layout();
+  play = { id: L.id, started: true, wall: Date.now() };
+  emit('play_start', { mode: 'normal', stage: i + 1 });
+  if (tut != null) coachTip(); else if (L.tip) showTip({ text: L2(L.tip) }, 4000); else $('tip').hidden = true;
+  persist();
+}
+function endPlay(reason) {
+  if (!play || !play.started) return;
+  emit('play_end', { mode: 'normal', score: 0, durationMs: Date.now() - play.wall, reason: reason || 'quit', stage: cur + 1 });
+  play.started = false;
+}
+function startRun() {
+  if (mode !== 'edit' || cur < 0) return;
+  sel = -1; bad = -1; drag = null; placeTools();
+  mode = 'run'; acc = 0; lastT = now();
+  S = PE.build(level(), placed); evRead = 0; fx = []; squash = {};
+  runInfo = { t0: now(), ended: false };
+  save.stats.runs = (save.stats.runs | 0) + 1;
+  if (!play || !play.started) { play = { id: level().id, started: true, wall: Date.now() }; emit('play_start', { mode: 'normal', stage: cur + 1 }); }
+  sfx('select'); tutEvent('start');
+  if (tut == null) $('tip').hidden = true;
+  H.ctrl = ''; H.tray = ''; refreshHud(); needDraw = true;
+}
+function stopRun(keepTip) {
+  if (mode !== 'run') return;
+  mode = 'edit'; runInfo = null; paused = false;
+  rebuild(); sfx('tap'); tutEvent('stop');
+  if (tut == null && !keepTip) showTip(null);
+  H.ctrl = ''; H.tray = ''; refreshHud();
+}
+let failT = 0;
+function onRunEnd() {
+  runInfo.ended = true;
+  if (S.done === 1) { win(); return; }
+  // a miss: say why, then put the parts back
+  const why = S.events.length ? S.events[S.events.length - 1].a : 0;
+  sfx('fail'); vibrate(30);
+  showTip({ text: T('うまくいかなかった…'), sub: (why === 1 ? T('玉が落ちてしまった') : why === 3 ? T('時間切れ') : T('毛糸玉が止まった')) + ' — ' + T('部品を動かして、もう一度スタート'), bad: true }, 3600);
+  clearTimeout(failT);
+  failT = setTimeout(() => { if (mode === 'run' && S && S.done === -1) stopRun(true); }, reduceMotion.matches ? 600 : 1400);
+}
+function win() {
+  const L = level(), r = PE.result(S);
+  const rec = save.lv[L.id] || { c: 0, g: 0, p: 0, b: 0, t: 0 };
+  const before = starsOf(save.lv[L.id]), beforeTotal = save.stars;
+  rec.c = (rec.c | 0) + 1;
+  if (r.stars[1]) rec.g = 1;
+  if (r.stars[2]) rec.p = 1;
+  rec.b = rec.b > 0 ? Math.min(rec.b, r.parts) : r.parts;
+  const ms = Math.round(r.t * 1000); rec.t = rec.t > 0 ? Math.min(rec.t, ms) : ms;
+  save.lv[L.id] = rec;
+  const st = save.stats;
+  st.wins = (st.wins | 0) + 1; st.gears = (st.gears | 0) + r.gears;
+  if (r.stars[2]) st.par = (st.par | 0) + 1;
+  if (r.n === 3) st.perfect = (st.perfect | 0) + 1;
+  // the best solution of this level on this device (more stars, then fewer parts)
+  const old = sols[L.id];
+  const oldN = old ? old.n : -1, oldP = old ? old.parts : 99;
+  if (r.n > oldN || (r.n === oldN && r.parts < oldP)) { sols[L.id] = { n: r.n, parts: r.parts, p: pack(placed) }; if (!DEBUG_NOSAVE) store.set(SOLS_KEY, JSON.stringify(sols)); }
+  if (tut != null) endTut();
+  writeSave();
+  emit('stage_clear', { stage: cur + 1, stars: r.n, timeMs: ms, mode: 'normal' });
+  if (save.stars > beforeTotal) emit('progress', { key: 'stars', value: save.stars });
+  endPlay('clear');
+  lastResult = { i: cur, r, newBest: starsOf(rec) > before, stars: starsOf(rec) };
+  sfx('win'); vibrate([30, 40, 60]);
+  const t = now() / 1000;
+  fx.push({ k: 'confetti', x: L.goal.x, y: L.goal.y + 1, t0: t, d: 1.6, seed: cur * 7 + 1 });
+  setTimeout(showResult, reduceMotion.matches ? 400 : 1300);
+}
+function showResult() {
+  const R = lastResult; if (!R) return;
+  const L = LV[R.i], r = R.r;
+  hideOverlays();
+  $('rTitle').textContent = T('ねこがよろこんだ！');
+  $('rStars').innerHTML = r.stars.map((on, k) => '<i class="' + (on ? 'on' : '') + '" style="animation-delay:' + (k * 160 + 120) + 'ms">★</i>').join('');
+  if (r.n) setTimeout(() => { for (let i = 1; i <= r.n; i++) setTimeout(() => sfx('combo', 0, i + 2), i * 160); }, 0);
+  const row = (ok, label, val) => '<div><span class="' + (ok ? 'ok' : 'no') + '">' + (ok ? '★' : '☆') + '</span>' + esc(label) + '<b>' + esc(val) + '</b></div>';
+  $('rRows').innerHTML = row(r.stars[0], T('ゴール'), T('{t} 秒', { t: r.t.toFixed(1) })) + row(r.stars[1], T('歯車ぜんぶ'), r.gears + ' / ' + r.gearsAll) + row(r.stars[2], T('部品 {n} 個以内', { n: L.par }), String(r.parts));
+  $('rNew').hidden = !R.newBest;
+  const last = R.i === LV.length - 1;
+  $('rNote').textContent = last ? T('ぜんぶのレベルをクリアした！') : r.n < 3 ? T('部品はそのまま。別の解き方もさがしてみよう') : '';
+  $('rNext').textContent = last ? T('レベルをえらぶ') : T('次のレベルへ');
+  $('rNext').dataset.act = last ? 'levels' : 'next';
+  $('ovResult').hidden = false;
+  try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
+}
+$('rNext').addEventListener('click', () => { const R = lastResult; if (!R) return; if ($('rNext').dataset.act === 'levels') { showTitle(); return; } stopToEdit(); openLevel(R.i + 1); });
+$('rAgain').addEventListener('click', () => { hideOverlays(); stopToEdit(); play = { id: level().id, started: true, wall: Date.now() }; emit('play_start', { mode: 'normal', stage: cur + 1 }); });
+$('rLevels').addEventListener('click', () => { stopToEdit(); showTitle(); });
+function stopToEdit() { if (mode === 'run') { mode = 'edit'; runInfo = null; rebuild(); } H.ctrl = ''; H.tray = ''; refreshHud(); }
+
+// ---------- overlays ----------
+const OVERLAYS = ['ovTitle', 'ovResult', 'howto'];
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden])');
+function hideOverlays() { OVERLAYS.forEach(id => { $(id).hidden = true; }); }
+let worldSel = 0;
+function worldOpen(w) { return unlocked(w * 12); }
+function showTitle(w) {
+  if (mode === 'run') stopRun();
+  persist();
+  hideOverlays();
+  sel = -1; placeTools();
+  const ts = save.stars;
+  $('tStars').textContent = ts > 0 ? '★ ' + T('星 {n} / {m}', { n: ts, m: TOTAL }) : '';
+  if (w == null) { const ci = cur >= 0 ? cur : (LV.findIndex(L => L.id === runSave.cur)); worldSel = ci >= 0 ? LV[ci].world : Math.max(0, ...[0, 1, 2, 3].filter(worldOpen)); }
+  else worldSel = w;
+  const wb = $('tWorlds'); wb.innerHTML = '';
+  WORLDS.forEach((W, k) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'wt' + (k === worldSel ? ' sel' : ''); b.dataset.world = k;
+    let st = 0; for (let j = 0; j < 12; j++) { const L = LV[k * 12 + j]; if (L) st += starsOf(save.lv[L.id]); }
+    b.innerHTML = esc(L2(W.n)) + '<small>★ ' + st + '/36</small>';
+    b.disabled = !worldOpen(k);
+    b.setAttribute('aria-pressed', k === worldSel ? 'true' : 'false');
+    b.addEventListener('click', () => { sfx('tap'); showTitle(k); });
+    wb.appendChild(b);
+  });
+  $('tWDesc').textContent = worldOpen(worldSel) ? L2(WORLDS[worldSel].d) : T('この工房は、前の工房のレベルをクリアすると開きます');
+  const box = $('tLevels'); box.innerHTML = '';
+  for (let j = 0; j < 12; j++) {
+    const i = worldSel * 12 + j, L = LV[i]; if (!L) continue;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lv' + (i === cur ? ' cur' : ''); b.dataset.level = L.id;
+    const ok = unlocked(i), n = starsOf(save.lv[L.id]);
+    if (ok) b.innerHTML = '<span>' + esc(L.id) + '</span><span class="st">' + '★'.repeat(n) + '<i>' + '★'.repeat(3 - n) + '</i></span><small>' + esc(L2(L.n)) + '</small>';
+    else { b.innerHTML = '<svg class="lock" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1v11H6V10zm2 0h6V8a3 3 0 0 0-6 0z"/></svg><small>' + esc(L.id) + '</small>'; b.disabled = true; b.setAttribute('aria-label', L.id + ' ' + T('前のレベルをクリアすると開きます')); }
+    b.addEventListener('click', () => { if (AU) AU.ctx(); sfx('ok'); openLevel(i); });
+    box.appendChild(b);
+  }
+  const ci = cur >= 0 ? cur : LV.findIndex(L => L.id === runSave.cur);
+  const cont = $('tContinue');
+  cont.hidden = !(ci >= 0 && unlocked(ci));
+  if (!cont.hidden) cont.innerHTML = '<span class="stk"><span>' + esc(T('つづきから')) + '</span><small>' + esc(LV[ci].id + ' ' + L2(LV[ci].n)) + '</small></span>';
+  cont.dataset.level = ci;
+  $('ovTitle').hidden = false;
+  try { (cont.hidden ? box.querySelector('.lv:not(:disabled)') : cont).focus({ preventScroll: true }); } catch (e) {}
+}
+$('tContinue').addEventListener('click', () => {
+  const i = +$('tContinue').dataset.level;
+  if (i === cur && mode !== 'title') { hideOverlays(); lastT = now(); needDraw = true; return; }
+  if (AU) AU.ctx(); sfx('ok'); openLevel(i);
+});
+$('tHow').addEventListener('click', () => showHowto(false));
+
+// how to play
+function renderHowto() {
+  const li = a => '<ul>' + a.map(s => '<li>' + esc(T(s)) + '</li>').join('') + '</ul>';
+  $('howBody').innerHTML = '<p class="lead">' + esc(T('ねこが毛糸玉を待っています。部品をならべて、毛糸玉がかごに入る道をつくろう。')) + '</p>' + li([
+    '下の部品を、盤までドラッグして置く（タップでも置ける）。置いた部品はドラッグで動かせる',
+    '部品をタップして選ぶ → ⟲ ⟳ か持ち手でまわす。2本の指でもまわせる。🗑 でどける',
+    '「スタート」で動き出す。「とめる」で置いたところに戻る。⏩ で早送り',
+    '星は3つ：ゴール・歯車をぜんぶ集める・部品を目標の数以内で使う。解き方はひとつではない',
+    'ばね台は上へはじき、送風機は風の向きに押し、磁石は鈴の玉と鉄のおもりを引きよせる',
+    'ガラスの上には部品を置けない。グリッドを切ると、細かく置ける',
+    '置いた部品は自動で保存。とちゅうで閉じても、つづきから']);
+}
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first; renderHowto();
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる');
+  $('howtoAlt').hidden = !first;
+  hideOverlays(); $('howto').hidden = false;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1'); $('howto').hidden = true;
+  if (howtoFirst) { if (AU) AU.ctx(); openLevel(0); return; }
+  if (cur < 0 || mode === 'title') showTitle(); else { lastT = now(); needDraw = true; }
+});
+$('howtoAlt').addEventListener('click', () => { store.set(HOWTO_KEY, '1'); if (howtoFirst) { save.tut = 1; writeSave(); } showTitle(); });
+{ const s2 = KoboI18n.picker($('langPick')); if (s2) s2.id = 'langSel'; }
+
+// ---------- sound, theme, menu ----------
+function renderSound() {
+  const b = $('sndBtn'), on = !(AU && AU.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!AU) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!AU) return; AU.toggleMute(); if (!AU.muted) sfx('ok'); });
+if (AU) AU.onChange(renderSound);
+function isLight() { return UI && UI.theme ? UI.theme.resolved() === 'light' : !(matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]');
+  const light = isLight();
+  if (m) m.setAttribute('content', light ? '#f4ebdd' : '#211912');
+  ART.setTheme(!light); H.tray = ''; if (cur >= 0) renderTray(); needDraw = true;
+}
+let pm = null;
+$('menuBtn').addEventListener('click', () => openMenu());
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  sel = -1; placeTools();
+  const running = mode === 'run';
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  extra.push({ label: T('レベル選びへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  const best = cur >= 0 && sols[level().id];
+  if (best && mode === 'edit') extra.push({ label: T('前の答えを置く'), icon: 'star', onClick: () => { pm.close(); const ps = unpack(best.p); if (!PE.validate(level(), ps)) { snapshot(); placed = ps; sel = -1; changed(); sfx('ok'); } } });
+  pm = UI.pauseMenu({
+    title: T(running ? '一時停止' : 'メニュー'), home: '../', extra,
+    onResume: () => { menuOpen = false; lastT = now(); acc = 0; const g = KG(); if (g) g.menuClosed(); },
+    onRestart: cur >= 0 ? () => { menuOpen = false; if (mode === 'run') stopRun(); } : undefined,
+    onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); persist(); },
+  });
+  pm.open();
+}
+
+// ---------- KoboGame: the simulation runs in real time (stops while hidden; waits for "Resume") ----------
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { paused = true; persist(); },
+  resume() { if (!paused) return; if (mode === 'run' && S && !S.done && !anyOverlay()) openMenu(); paused = false; lastT = now(); acc = 0; },
+  save() { persist(); },
+  isIdle: () => mode !== 'run',
+  dispose() { cancelAnimationFrame(raf); },
+});
+window.addEventListener('pagehide', () => persist());
+document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); lastT = now(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) { save = readSave(); if (!$('ovTitle').hidden) showTitle(worldSel); } });
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+else { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeColor); } catch (e) {} }
+window.addEventListener('resize', () => layout());
+try { new ResizeObserver(() => layout()).observe(wrap); } catch (e) {}
+
+// ---------- boot ----------
+let booted = false;
+ART.init({ PE, T, reduced: () => reduceMotion.matches });
+renderSound(); themeColor();
+layout();
+// the first level behind the title
+cur = Math.max(0, LV.findIndex(L => L.id === runSave.cur));
+placed = unpack(runSave.drafts[LV[cur].id]); if (PE.validate(LV[cur], placed)) placed = [];
+mode = 'title'; rebuild();
+$('lvChip').innerHTML = '<b>' + esc(LV[cur].id) + '</b><span>' + esc(L2(LV[cur].n)) + '</span>';
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut && !save.done;
+if (firstVisit) showHowto(true); else showTitle();
+raf = requestAnimationFrame(loop);
+booted = true;
+// when the title is closed without choosing (Escape), keep editing the shown level
+const _hide = hideOverlays;
+void _hide;
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const api = {
+    ready: () => booted,
+    state: () => ({
+      mode, level: cur >= 0 ? LV[cur].id : null, stage: cur + 1, parts: placed.map(p => Object.assign({}, p)), sel, undo: undo.length, grid, speed, paused, menuOpen,
+      time: S ? Math.round(S.t * 1000) : 0, t: S ? S.t : 0, over: !!(S && S.done), won: !!(S && S.done === 1), done: S ? S.done : 0,
+      gears: S ? S.gears.filter(g => g.got).length : 0, score: save.stars, stars: save.stars, tut, ptools: !$('ptools').hidden,
+      title: !$('ovTitle').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, tip: $('tip').hidden ? '' : $('tip').textContent,
+      save: JSON.parse(JSON.stringify(save)), last: lastResult ? { i: lastResult.i, r: lastResult.r, stars: lastResult.stars } : null, sols: JSON.parse(JSON.stringify(sols)),
+    }),
+    win() { if (cur < 0) return false; if (mode !== 'run') startRun(); S.done = 1; S.balls.forEach(b => { b.home = true; }); for (const g of S.gears) g.got = true; return true; },
+    lose() { if (cur < 0) return false; if (mode !== 'run') startRun(); S.done = -1; S.evN++; S.events.push({ k: 'fail', a: 2, b: 0, t: S.t }); return true; },
+    step(n) { if (mode !== 'run' || !S) return 0; for (let i = 0; i < (n || 1) && !S.done; i++) S.step(); pumpEvents(); if (S.done && !runInfo.ended) onRunEnd(); needDraw = true; return S.steps; },
+    tutorial: () => ({ step: tut, done: !!save.tut }),
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  const page = (x, y) => { const r = cv.getBoundingClientRect(); return { x: r.left + wx(x), y: r.top + wy(y) }; };
+  window.__physics = {
+    api, PE, LV, get S() { return S; }, get save() { return save; }, view,
+    open: (id, parts) => { const i = typeof id === 'number' ? id : LV.findIndex(L => L.id === id); openLevel(i, parts ? { parts, tut: false } : {}); return api.state(); },
+    load: parts => { if (mode === 'run') stopRun(); snapshot(); placed = parts.map(p => Object.assign({}, p)); sel = -1; changed(); return PE.validate(level(), placed); },
+    run: () => { startRun(); return api.state(); },
+    finish: () => { if (mode !== 'run') startRun(); while (!S.done && S.steps < 60 * 40) S.step(); pumpEvents(); if (!runInfo.ended) onRunEnd(); return api.state(); },
+    headless: (id, parts) => PE.run(LV.find(L => L.id === id), parts),
+    boardPoint: (x, y) => page(x, y),
+    partPoint: i => page(placed[i].x, placed[i].y),
+    handlePoint: i => { const h = handlePos(i == null ? sel : i); return page(h.x, h.y); },
+    trayPoint: t => { const b = document.querySelector('.tp[data-part="' + t + '"]'); if (!b) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
+    unlockAll: () => { for (const L of LV) if (!save.lv[L.id]) save.lv[L.id] = { c: 1, g: 0, p: 0, b: 0, t: 0 }; writeSave(); },
+    fps(ms) { return new Promise(res => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(Math.round(f * 1000 / (performance.now() - t0))); }; requestAnimationFrame(tick); }); },
+    persist, title: showTitle, howto: () => showHowto(false), menu: openMenu, setSpeed: s => { speed = s; },
+    thumbScene(id, parts, secs) { // a level mid-run for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); DEBUG_NOSAVE = true;
+      openLevel(LV.findIndex(L => L.id === (id || '2-12')), { parts: parts || [{ t: 'spring', x: 3.75, y: 2.25, a: 15 }, { t: 'fan', x: 2.5, y: 7.5, a: 30 }, { t: 'short', x: 10.5, y: 7.75, a: -75 }], tut: false });
+      layout(); startRun();
+      const n = Math.round((secs || 2.2) / PE.DT);
+      for (let k = 0; k < n && !S.done; k++) S.step();
+      pumpEvents(); paused = true; needDraw = true; draw(now() / 1000);
+      return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.physics.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

@@ -22,7 +22,7 @@ function checkSpec() {
   if (cm) for (const m of cm[1].matchAll(/'([^']+)':\s*(\d+)/g)) ruleCaps[m[1]] = +m[2];
   add('firestore.rules caps() == registry score.cap', JSON.stringify(ruleCaps) === JSON.stringify(Object.fromEntries(Object.keys(ruleCaps).map(k => [k, CAPS[k]]))) && Object.keys(ruleCaps).length === Object.keys(CAPS).length, JSON.stringify(ruleCaps));
   for (const id of Object.keys(CAPS)) {
-    add(`firestore.rules okLegacyScores() checks ${id}`, new RegExp(`okScore\\(s\\.get\\('${id}', 0\\), '${id}'\\)`).test(fsr));
+    add(`firestore.rules okLegacyScores() checks ${id}`, new RegExp(`okCap\\(s\\.get\\('${id}', 0\\), c\\['${id}'\\]\\)`).test(fsr));
     add(`firestore.rules plus1('${id}')`, fsr.includes(`plus1('${id}')`));
   }
   let db = null;

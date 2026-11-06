@@ -514,6 +514,36 @@
         'kusoge.td.save': { fields: { maps: { each: { fields: { st: 'max', c: 'max', ew: 'max', es: 'max' } } }, best: 'max', stars: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'physics', order: 16, path: 'physics/', added: '2026-11-06',
+      title: { ja: 'ころころ工房', en: 'Marble Workshop' },
+      short: { ja: 'ころころ工房', en: 'Marble Workshop' },
+      desc: { ja: '板・ばね・送風機・ドミノ・シーソー・磁石をならべて「スタート」。毛糸玉を、ねこのかごへ届ける物理パズル。4つの工房に48のレベル、歯車と部品の数で星3つ。', en: 'Place boards, springs, fans, dominoes, seesaws and magnets, then press Start. A physics puzzle: deliver the yarn ball to the cat\'s basket. 48 levels in 4 workshops, three stars for gears and few parts.' },
+      label: { ja: '物理パズル', en: 'Physics puzzle' },
+      genres: ['puzzle'], tags: ['2d', 'physics', 'stages', 'creative'],
+      keywords: { ja: ['物理', '物理パズル', 'パズル', 'からくり', 'ころころ', 'ビー玉', '毛糸玉', 'ねこ', 'ドミノ', 'シーソー'], en: ['physics', 'physics puzzle', 'puzzle', 'contraption', 'marble', 'rube goldberg', 'cat', 'dominoes', 'seesaw', 'gadgets'] },
+      icon: 'img/icons/physics.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#e6cfa6"/><g fill="#c9ad80"><circle cx="9" cy="9" r="2"/><circle cx="27" cy="9" r="2"/><circle cx="45" cy="9" r="2"/><circle cx="63" cy="9" r="2"/><circle cx="9" cy="27" r="2"/><circle cx="63" cy="27" r="2"/><circle cx="9" cy="45" r="2"/><circle cx="27" cy="45" r="2"/></g><rect x="0" y="62" width="72" height="10" fill="#7a5230"/><g transform="rotate(-22 30 30)"><rect x="8" y="27" width="40" height="7" rx="2" fill="#e3b475" stroke="#3a210c" stroke-width="1.6"/></g><path d="M46 48h20l-2 14H48z" fill="#b8783e" stroke="#4a2a0c" stroke-width="1.8"/><path d="M50 46l3-6 4 5 4-5 2 6z" fill="#f0a050"/><path d="M52 47q2 1.6 4 0M57 47q2 1.6 4 0" stroke="#3a2210" stroke-width="1.1" fill="none"/><circle cx="20" cy="17" r="8" fill="#e86a8a" stroke="#7a2038" stroke-width="1.6"/><path d="M14 14q6 4 12-1M14 20q6-3 12 1" stroke="#b8385a" stroke-width="1.3" fill="none"/><g transform="translate(57 20)"><circle r="7" fill="#e0a834" stroke="#6a440c" stroke-width="1.5"/><circle r="2.4" fill="#6a440c"/></g><path d="M28 24q10 6 14 20" stroke="#fff3c0" stroke-width="2" stroke-dasharray="2 4" fill="none" stroke-linecap="round"/></svg>', iconBg: '#e6cfa6',
+      thumb: 'img/thumbs/physics.webp', thumb2x: 'img/thumbs/physics@2x.webp',
+      tech: '2d',
+      // no online battle: every level is a quiet puzzle with the same parts for everyone (planet and escape are the precedent)
+      // pause: true — the simulation runs in real time after "Start" and stops while hidden or paused
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      // the total of stars (3 per level: goal, all gears, at most the target number of parts; 48 levels = 144). The cap leaves room for more levels
+      score: { unit: { ja: '星', en: 'stars' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 1000, maxRate: null },
+      rankSource: { key: 'kusoge.physics.save', paths: ['stars'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.physics.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '星 {n} / 144', en: '{n} / 144 stars' } },
+      keys: {
+        'kusoge.physics.save': '{ v:1, lv:{ "1-1"〜"4-12":{ c（クリア回数）, g（歯車ぜんぶ 0/1）, p（部品が目標以内 0/1）, b（最少の部品数）, t（最速 ms） } }（クリアしたレベルだけ）, stars（星の合計＝ランキング）, done（クリアしたレベルの数）, stats:{ runs, wins, gears, par, perfect }, tut }',
+        'kusoge.physics.run': 'レベルごとに置いた部品（自動保存）{ v:1, cur（今のレベル）, grid（0/1）, drafts:{ レベル: [[部品, x, y, 角度]] }, at }。この端末だけ（同期しない）',
+        'kusoge.physics.sols': 'レベルごとの、この端末でのいちばん良い答え { レベル: { n（星）, parts, p:[[部品, x, y, 角度]] } }（同期しない）',
+        'kusoge.physics.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow (max; fastest and fewest = minPos); the parts on the board are not synced
+      sync: {
+        'kusoge.physics.save': { fields: { lv: { each: { fields: { c: 'max', g: 'max', p: 'max', b: 'minPos', t: 'minPos' } } }, stars: 'max', done: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -665,6 +695,14 @@
       { id: 'td.w30', tier: 3, icon: 'star', title: { ja: '終わらない夜', en: 'The Endless Night' }, desc: { ja: 'エンドレスで30の波を生き残る', en: 'Survive 30 waves in endless' }, when: { rec: { key: 'kusoge.td.save', path: 'stats.endW' }, gte: 30 } },
       { id: 'td.k1000', tier: 2, icon: 'star', title: { ja: 'おもちゃ千体', en: 'A Thousand Toys' }, desc: { ja: 'おもちゃを合わせて1,000体止める', en: 'Stop 1,000 toys in total' }, when: { rec: { key: 'kusoge.td.save', path: 'stats.kills' }, gte: 1000 } },
       { id: 'td.s10k', tier: 3, icon: 'trophy', title: { ja: '一万点の守り', en: '10k Defense' }, desc: { ja: 'エンドレスで10,000点', en: 'Score 10,000 in endless' }, when: { rec: { key: 'kusoge.td.save', path: 'best' }, gte: 10000 } },
+    ],
+    physics: [
+      { id: 'physics.l1', tier: 1, icon: 'check', title: { ja: 'ねこに届けた', en: 'Special Delivery' }, desc: { ja: 'レベル1-1をクリア', en: 'Clear level 1-1' }, when: { rec: { key: 'kusoge.physics.save', path: 'lv.1-1.c' }, gte: 1 } },
+      { id: 'physics.w1', tier: 2, icon: 'check', title: { ja: '作業台の見習い', en: 'Bench Apprentice' }, desc: { ja: '12のレベルをクリア', en: 'Clear 12 levels' }, when: { rec: { key: 'kusoge.physics.save', path: 'done' }, gte: 12 } },
+      { id: 'physics.all', tier: 3, icon: 'trophy', title: { ja: 'からくり名人', en: 'Contraption Master' }, desc: { ja: '48のレベルをすべてクリア', en: 'Clear all 48 levels' }, when: { rec: { key: 'kusoge.physics.save', path: 'done' }, gte: 48 }, grantsTitle: { ja: 'からくり名人', en: 'Contraption Master' } },
+      { id: 'physics.stars144', tier: 4, icon: 'star', title: { ja: '親方の太鼓判', en: "The Master's Stamp" }, desc: { ja: '星を144個すべて集める', en: 'Collect all 144 stars' }, when: { rec: { key: 'kusoge.physics.save', path: 'stars' }, gte: 144 } },
+      { id: 'physics.gears50', tier: 2, icon: 'star', title: { ja: '歯車あつめ', en: 'Gear Collector' }, desc: { ja: '歯車を合わせて50個集める', en: 'Collect 50 gears in total' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.gears' }, gte: 50 } },
+      { id: 'physics.par20', tier: 3, icon: 'star', title: { ja: '少ない部品で', en: 'Less Is More' }, desc: { ja: '部品を目標の数以内で20回クリア', en: 'Clear within the target parts 20 times' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.par' }, gte: 20 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
