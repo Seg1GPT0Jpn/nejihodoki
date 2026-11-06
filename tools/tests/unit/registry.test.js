@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -103,8 +103,8 @@ test('flags reflect what the pages have today', () => {
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet', 'games without a match');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -147,7 +147,7 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
     const { platform: P } = fresh({ storage: st });
     const old = cloudRankSources(st);
     for (const id of IDS) {
-      if (id === 'hole' || !old[id]) continue; // games added after P1-2 (hitsumabushi, planet, hitblow) have no legacy RANK_SOURCES entry: registry only
+      if (id === 'hole' || !old[id]) continue; // games added after P1-2 (hitsumabushi, planet, hitblow, escape) have no legacy RANK_SOURCES entry: registry only
       const expect = Math.max(0, Math.floor(old[id]()));
       eq(P.rankValue(id), expect, id + ' ' + JSON.stringify(c));
     }
@@ -164,6 +164,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('planet', k => null), 0, 'planet: nothing saved');
   eq(P.rankValue('hitblow', k => '{"v":1,"best":2140,"bests":{"n4":{"s":2140,"g":5,"t":61000}}}'), 2140, 'hitblow: best puzzle score');
   eq(P.rankValue('hitblow', k => null), 0, 'hitblow: nothing saved');
+  eq(P.rankValue('escape', k => '{"v":1,"rooms":{"r1":{"s":960,"t":250000,"r":4,"nh":1,"c":2}},"total":960}'), 960, 'escape: total of the best room scores');
+  eq(P.rankValue('escape', k => null), 0, 'escape: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

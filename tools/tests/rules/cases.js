@@ -51,6 +51,10 @@ async function runCases(T, opt = {}) {
     await check(g, 'known key entry without t', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~drop~best': { v: '5' } } }, A, { merge: true }));
     await check(g, 'entry v over 300,000 chars', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~raft~save': { v: 'x'.repeat(300001), t: now } } }, A, { merge: true }));
     await check(g, 'entry v 200,000 chars (big raft save)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~raft~save': { v: 'x'.repeat(200000), t: now } } }, A, { merge: true }));
+    // からくり工房からの脱出（escape）：記録 kusoge.escape.save だけを同期する（とちゅうの部屋 kusoge.escape.run は端末だけ）
+    await check(g, 'own push escape save (records per room)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~escape~save': { v: JSON.stringify({ v: 1, rooms: { r1: { s: 960, t: 250000, r: 4, nh: 1, c: 1 } }, total: 960 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'escape save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~escape~save': { v: 960, t: now } } }, A, { merge: true }));
+    await check(g, 'escape save entry with an extra field', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~escape~save': { v: '{}', t: now, a: 1, b: 2, c: 3 } } }, A, { merge: true }));
     const many = {}; for (let i = 0; i < 301; i++) many['kobo~k' + i] = { v: '1', t: now };
     await check(g, 'games map with 301 keys', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: many }, A, { merge: true }));
     await check(g, 'level not a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { level: 'x' }, A, { merge: true }));
@@ -155,6 +159,8 @@ async function runCases(T, opt = {}) {
       await check(g3, 'create this week +1', 'allow', () => fsSet(T, `kbPlays/${wk}`, { blocks: 1 }, A));
       await check(g3, 'update +1 one game', 'allow', () => fsSet(T, `kbPlays/${wk}`, { blocks: 2 }, B, { merge: true }));
     }
+    if (!live) await check(g3, 'escape +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { escape: 1 }, A, { merge: true }));
+    await check(g3, 'escape +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { escape: 9 }, A, { merge: true }));
     await check(g3, 'update +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { blocks: 999999 }, B, { merge: true }));
     await check(g3, 'two games at once', 'deny', () => fsSet(T, `kbPlays/w${weekNo()}`, { drop: 1, raft: 1 }, B, { merge: true }));
     await check(g3, 'wrong week', 'deny', () => fsSet(T, `kbPlays/w${weekNo() - 1}`, { drop: 1 }, B));

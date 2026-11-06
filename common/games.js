@@ -456,6 +456,35 @@
         'kusoge.shogi.game': 'newest',
       },
     },
+    {
+      id: 'escape', order: 14, path: 'escape/', added: '2026-11-06',
+      title: { ja: 'からくり工房からの脱出', en: 'Escape the Gadget Workshop' },
+      short: { ja: '脱出', en: 'Escape' },
+      desc: { ja: '旅に出た親方が残した、5つのからくり部屋。歯車・時計・光と色・はかり・星の手がかりを集めて、屋根裏まで抜け出す脱出ゲーム。ヒントは3段階。', en: 'The Master left on a journey and locked five rooms with gadgets. Gather clues — gears, clocks, light and color, scales, stars — and escape up to the attic. Hints come in 3 steps.' },
+      label: { ja: '脱出ゲーム', en: 'Escape game' },
+      genres: ['puzzle'], tags: ['2d', 'escape', 'story', 'stages', 'hints'],
+      keywords: { ja: ['脱出', '脱出ゲーム', 'からくり', '謎解き', 'なぞとき', 'パズル', '工房', 'ヒント'], en: ['escape', 'escape room', 'room escape', 'puzzle', 'point and click', 'mystery', 'workshop', 'gadgets'] },
+      icon: 'img/icons/escape.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2a1d14"/><g fill="#3a2a1e"><rect x="4" y="0" width="8" height="72"/><rect x="20" y="0" width="8" height="72"/><rect x="44" y="0" width="8" height="72"/><rect x="60" y="0" width="8" height="72"/></g><rect x="0" y="58" width="72" height="14" fill="#5a3a22"/><path d="M20 62V22a16 16 0 0 1 32 0v40z" fill="#ffd98a"/><path d="M20 62V22a16 16 0 0 1 32 0v40z" fill="none" stroke="#1a0f08" stroke-width="2.5"/><path d="M27 62V24c0-4 4-6 9-6s9 2 9 6v38z" fill="#9a5e32" stroke="#1a0f08" stroke-width="2" transform="skewY(-8) translate(0 5)"/><circle cx="41" cy="44" r="2.6" fill="#ffd36b"/><g transform="translate(50 50) rotate(-30)"><circle r="6.5" fill="#f0b84a" stroke="#5a3a0c" stroke-width="1.8"/><circle r="2.4" fill="#2a1d14"/><path d="M6 -2h14v4h-3v4h-3v-4h-2v3h-3v-3H6z" fill="#f0b84a" stroke="#5a3a0c" stroke-width="1.5"/></g><g transform="translate(14 14)" fill="#c8962e" stroke="#5a3a0c" stroke-width="1.2"><path d="M-1.6-8h3.2l.7 2.6 2.5-1.4 2.2 2.2-1.4 2.5 2.6.7v3.2l-2.6.7 1.4 2.5-2.2 2.2-2.5-1.4-.7 2.6h-3.2l-.7-2.6-2.5 1.4-2.2-2.2 1.4-2.5-2.6-.7v-3.2l2.6-.7-1.4-2.5 2.2-2.2 2.5 1.4z"/><circle r="2" fill="#2a1d14"/></g></svg>', iconBg: '#2a1d14',
+      thumb: 'img/thumbs/escape.webp', thumb2x: 'img/thumbs/escape@2x.webp',
+      tech: '2d',
+      // no online battle: a room takes 10–20 minutes of quiet thinking, and every player gets the same rooms (planet is the precedent)
+      // pause: true — the clear time runs while a room is on screen and stops while hidden or paused
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      // the sum of the best score of each of the 5 rooms (200 + hints up to 400 + time up to 400 = at most 1,000 each). The cap leaves room for more rooms
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n} 点', en: '{n} pts' }, order: 'desc', cap: 10000, maxRate: null },
+      rankSource: { key: 'kusoge.escape.save', paths: ['total'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.escape.save', paths: ['total'], agg: 'first', min: 1, num: true, tpl: { ja: '5部屋の合計 {n} 点', en: '5-room total: {n} pts' } },
+      keys: {
+        'kusoge.escape.save': '{ v:1, rooms:{ r1〜r5:{ s（最高点）, t（最速 ms）, r（最高ランク 1〜4＝C〜S）, nh（ヒントなしでクリア 0/1）, c（クリア回数） } }（クリアした部屋だけ）, total（s の合計＝ランキング）, stats:{ clears, nh, sRank, fast（目安より早い）, hints, done（クリアした部屋の数） }, tut }',
+        'kusoge.escape.run': 'とちゅうの部屋（自動保存）{ v:1, ri, S（部屋の状態）, inv[], sel, view, back[], ms, hints:{ なぞの id: 見た数 }, tut, at }。この端末だけ（同期しない）。クリアすると消す',
+        'kusoge.escape.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow (max; fastest = minPos); the room in progress is not synced
+      sync: {
+        'kusoge.escape.save': { fields: { rooms: { each: { fields: { s: 'max', t: 'minPos', r: 'max', nh: 'max', c: 'max' } } }, total: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -588,6 +617,15 @@
       { id: 'shogi.on10', tier: 3, icon: 'globe', title: { ja: '十番勝負', en: 'Ten Online Wins' }, desc: { ja: 'オンライン対局で10勝', en: 'Win 10 online matches' }, when: { rec: { key: 'kusoge.shogi.save', path: 'on.w' }, gte: 10 } },
       { id: 'shogi.mate1', tier: 1, icon: 'star', title: { ja: '詰みを見つけた', en: 'Found the Mate' }, desc: { ja: '詰将棋を1問解く', en: 'Solve a tsume puzzle' }, when: { rec: { key: 'kusoge.shogi.save', path: 'mate.s', measure: 'count' }, gte: 1 } },
       { id: 'shogi.mate8', tier: 3, icon: 'trophy', title: { ja: '詰将棋の達人', en: 'Tsume Master' }, desc: { ja: '詰将棋を8問ぜんぶ解く', en: 'Solve all 8 tsume puzzles' }, when: { rec: { key: 'kusoge.shogi.save', path: 'mate.s', measure: 'count' }, gte: 8 } },
+    ],
+    escape: [
+      { id: 'escape.r1', tier: 1, icon: 'check', title: { ja: '作業場を出た', en: 'Out of the Workroom' }, desc: { ja: '部屋1「作業場」から脱出', en: 'Escape room 1, the Workbench Room' }, when: { rec: { key: 'kusoge.escape.save', path: 'rooms.r1.c' }, gte: 1 } },
+      { id: 'escape.r3', tier: 2, icon: 'star', title: { ja: '灯りをともして', en: 'Let There Be Light' }, desc: { ja: '部屋3「灯りの部屋」から脱出', en: 'Escape room 3, the Lantern Room' }, when: { rec: { key: 'kusoge.escape.save', path: 'rooms.r3.c' }, gte: 1 } },
+      { id: 'escape.all', tier: 3, icon: 'trophy', title: { ja: '一人前の職人', en: 'True Craftsperson' }, desc: { ja: '5つの部屋すべてから脱出', en: 'Escape all five rooms' }, when: { rec: { key: 'kusoge.escape.save', path: 'rooms', measure: 'count' }, gte: 5 }, grantsTitle: { ja: '一人前の職人', en: 'True Craftsperson' } },
+      { id: 'escape.nohint', tier: 2, icon: 'star', title: { ja: '自分の力で', en: 'All on My Own' }, desc: { ja: 'ヒントを見ずに部屋から脱出', en: 'Escape a room without any hints' }, when: { rec: { key: 'kusoge.escape.save', path: 'stats.nh' }, gte: 1 } },
+      { id: 'escape.rankS', tier: 2, icon: 'trophy', title: { ja: 'Sランクの手さばき', en: 'S-Rank Hands' }, desc: { ja: 'ランクSで部屋から脱出', en: 'Escape a room with rank S' }, when: { rec: { key: 'kusoge.escape.save', path: 'stats.sRank' }, gte: 1 } },
+      { id: 'escape.fast3', tier: 3, icon: 'star', title: { ja: '早足の見習い', en: 'Quick Apprentice' }, desc: { ja: '目安の時間より早く3回脱出', en: 'Beat the par time 3 times' }, when: { rec: { key: 'kusoge.escape.save', path: 'stats.fast' }, gte: 3 } },
+      { id: 'escape.t4k', tier: 3, icon: 'trophy', title: { ja: '親方の太鼓判', en: "The Master's Seal" }, desc: { ja: '5部屋の合計4,000点', en: 'Reach a 5-room total of 4,000' }, when: { rec: { key: 'kusoge.escape.save', path: 'total' }, gte: 4000 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

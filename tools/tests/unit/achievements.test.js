@@ -94,7 +94,8 @@ const FIX = {
   'planet-save.json': { has: ['planet.first', 'planet.life', 'planet.goe', 'planet.sc1'], not: ['planet.civ', 'planet.space', 'planet.sc8', 'planet.pts5k', 'planet.thaw'] },
   'hitblow-save.json': { has: ['hitblow.first', 'hitblow.win1', 'hitblow.fast4', 'hitblow.cpu3', 'hitblow.streak3'], not: ['hitblow.win5', 'hitblow.dup', 'hitblow.lucky', 'hitblow.wins30', 'hitblow.s3k'] },
   'shogi-save.json': { has: ['shogi.first', 'shogi.win1', 'shogi.lv3', 'shogi.top1', 'shogi.on1', 'shogi.mate1'], not: ['shogi.lv4', 'shogi.on10', 'shogi.mate8'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first'], not: ['water.st10', 'hole.win1'] },
+  'escape-save.json': { has: ['escape.first', 'escape.r1', 'escape.nohint', 'escape.rankS'], not: ['escape.r3', 'escape.all', 'escape.fast3', 'escape.t4k'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first'], not: ['water.st10', 'hole.win1'] },
 };
 test('retroactive: fixture saves for every game unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();

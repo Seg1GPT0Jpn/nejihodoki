@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>からくり工房からの脱出</title>
+<meta name="theme-color" content="#1d1612">
+<meta name="description" content="親方が残したからくりの部屋を、手がかりを集めて解き明かす脱出ゲーム。5つの部屋、3段階のヒント、部屋ごとの自動保存。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="からくり工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'からくり工房からの脱出': 'Escape the Gadget Workshop', 'からくり工房': 'Gadget Workshop', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games',
+  'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '遊び方': 'How to play', '言語 / Language': 'Language',
+  'ヒント': 'Hints', 'ヒント（{n}回使用）': 'Hints ({n} used)', '左を向く': 'Turn left', '右を向く': 'Turn right', 'もどる': 'Back', '持ち物': 'Items',
+  '部屋 {n}': 'Room {n}', '部屋{n}：{name}': 'Room {n}: {name}', '経過時間': 'Time', 'まだ何も持っていない': 'Your bag is empty',
+  // title
+  '親方が残した5つのからくり部屋。手がかりを集めて、屋根裏まで抜け出そう。': 'The Master left five rooms full of gadgets. Gather clues and make your way up to the attic.',
+  '5部屋の合計': 'Total of 5 rooms', '{n} 点': '{n} pts', 'つづきから': 'Continue', '部屋{n}・{t}': 'Room {n} · {t}', 'まだ遊べません': 'Locked',
+  '前の部屋を出ると開きます': 'Clear the previous room to open it', 'はじめる': 'Start', 'もう一度': 'Play again', 'ベスト {s} 点・{r}・{t}': 'Best {s} pts · {r} · {t}',
+  'ヒントなし': 'no hints', '未クリア': 'not cleared', '新しく始めますか？': 'Start this room over?', '今の部屋の進み具合は消えます。': 'Your progress in the current room will be lost.',
+  'はじめから': 'Start over', 'やめる': 'Cancel', 'タイトルへ': 'Title',
+  // result
+  '脱出成功！': 'Escaped!', 'タイム': 'Time', 'ランク': 'Rank', '点数': 'Score', 'ヒントを見た数': 'Hints seen', '{n}回': '{n}',
+  'ベスト更新！': 'New best!', '次の部屋へ': 'Next room', 'エンディングを見る': 'See the ending', 'この部屋をもう一度': 'Play this room again',
+  'ランクと点数は、タイムとヒントを見た数で決まります': 'Rank and score come from your time and how many hints you saw',
+  '合計 {n} 点（ランキング）': 'Total {n} pts (ranking)', '目安 {m}分': 'Par {m} min',
+  // hints
+  'ヒントは1つのなぞに3段階。見ても進み方は変わりません（クリアのランクと点数だけ少し下がります）。': 'Each puzzle has 3 hints, from gentle to the answer. They never change the game — only your rank and score at the end go down a little.',
+  'いま取り組めるなぞ': 'Puzzles you can work on now', 'ヒント{n}を見る': 'Show hint {n}', 'とじる': 'Close', 'いま見られるヒントはありません': 'No hints right now',
+  '解いた': 'Solved',
+  // messages
+  '「{name}」を手に入れた': 'You got: {name}', '「{name}」を選んだ。もう一度タップで調べる': '{name} selected. Tap it again to look closer',
+  'ここでは使えないようだ': "It doesn't work here", '組み合わせられないようだ': "These don't go together", '「{name}」ができた！': 'You made: {name}!',
+  '持ち物を調べている': 'Looking closely at an item',
+  // tutorial coach
+  '◀ ▶ で部屋を見回そう': 'Use ◀ ▶ to look around the room', '気になる物をタップして調べよう（ドアの横のエプロン）': 'Tap things that catch your eye (the apron by the door)',
+  '持ち物を選んでから、使いたい場所をタップしよう': 'Select an item, then tap where you want to use it', '選んだ持ち物をもう一度タップすると、くわしく調べられる': 'Tap a selected item again to look at it closely',
+  '持ち物を選んで、別の持ち物をタップすると組み合わせられる': 'Select an item, then tap another item to combine them',
+  'わからなくなったら、右上の電球でヒント（3段階）': 'Stuck? The light bulb at the top right gives hints (3 steps)', 'チュートリアル': 'Tutorial',
+  // how to play
+  '遊び方': 'How to play', 'からくり工房の5つの部屋から、手がかりを集めて抜け出す脱出ゲームです。': 'An escape game: gather clues and get out of the five rooms of the gadget workshop.',
+  '◀ ▶ で4つの壁を見回す。▼ で近づいた所から戻る': '◀ ▶ turn to look at the four walls. ▼ steps back from a close-up',
+  '気になる所をタップすると、近づいたり、調べたり、拾ったりできる': 'Tap anything interesting to look closer, examine it or pick it up',
+  '拾った物は下の持ち物に入る。選んでから、使いたい場所をタップ': 'Items go to your bag below. Select one, then tap where to use it',
+  '選んだ物をもう一度タップすると、くわしく調べられる。別の持ち物をタップすると組み合わせる': 'Tap a selected item again to examine it. Tap another item to combine the two',
+  '手がかりは全部、部屋の中にある（数字・形・色・絵）。言葉のしゃれは使わない': 'Every clue is inside the room (numbers, shapes, colors, pictures). No wordplay',
+  'ヒント（電球）は1つのなぞに3段階。見るとランクと点数が少し下がるだけ': 'Hints (light bulb) come in 3 steps per puzzle. They only lower your rank and score a little',
+  '部屋ごとに自動で保存。とちゅうで閉じても、つづきから遊べる': 'Each room saves automatically. Close the page and continue later',
+  'クリアのタイムとヒントの数で点数（1部屋最高1,000点）。5部屋のベストの合計がランキングに載る': 'Your time and hints make the score (up to 1,000 per room). The total of your best in the 5 rooms goes on the ranking',
+  'キーボード：← → で見回す、↓ か Esc で戻る、H でヒント': 'Keyboard: ← → to look around, ↓ or Esc to go back, H for hints',
+  'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks',
+  // menu
+  'ひとやすみ': 'Paused', 'この部屋を最初から': 'Restart this room', 'この部屋をやめてタイトルへ': 'Leave this room (title)',
+  // ending
+  'エンディング': 'Ending', '一人前の職人': 'Master Craftsperson', 'おわり': 'The end', '合計': 'Total',
+  '{t}（目安 {p}）': '{t} (par {p})',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* からくり工房からの脱出: warm workshop chrome around a canvas scene. --kb-* are the shared tokens re-tinted to wood and amber; --es-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1d1612; --kb-surface: #2a201a; --kb-surface-2: #352820; --kb-sunken: #150f0c; --kb-line: #4a3a2e;
+  --kb-ink: #f6ead8; --kb-dim: #c9b49c;
+  --kb-accent: #f0a84a; --kb-accent-ink: #2a1606; --kb-accent-text: #f6bb6a; --kb-accent-soft: rgba(240, 168, 74, .15);
+  --kb-scrim: rgba(12, 8, 5, .78); --kb-toast-bg: rgba(24, 16, 10, .95); --kb-focus: #ffe08a;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --es-panel: rgba(255, 230, 200, .06); --es-line: rgba(255, 220, 180, .16); --es-slot: #2f241d; --es-slot-sel: #4a3420;
+  --es-go: linear-gradient(#f7bd63, #e0902f); --es-go-shadow: #8a5113; --es-card: linear-gradient(#30251d, #221a14);
+  --es-title: linear-gradient(90deg, #ffd38a, #f0a84a 55%, #e0795a); --es-stage: #120d0a; --es-bad: #ff8a6a; --es-good: #8fd68a;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f4ece0; --kb-surface: #fffaf2; --kb-surface-2: #f8efe2; --kb-sunken: #e8dccb; --kb-line: #d8c6ae;
+    --kb-ink: #3a2a1e; --kb-dim: #6e5643;
+    --kb-accent: #c06a1a; --kb-accent-ink: #ffffff; --kb-accent-text: #9a520f; --kb-accent-soft: rgba(192, 106, 26, .12);
+    --kb-scrim: rgba(58, 42, 30, .45); --kb-toast-bg: rgba(58, 42, 30, .95); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(58, 42, 30, .2);
+    --es-panel: rgba(58, 42, 30, .05); --es-line: #dccbb4; --es-slot: #fffaf2; --es-slot-sel: #f6deb8;
+    --es-go: linear-gradient(#e0892e, #c06a1a); --es-go-shadow: #7f430c; --es-card: linear-gradient(#fffaf2, #f6ecdd);
+    --es-title: linear-gradient(90deg, #a5520f, #c06a1a 55%, #a8402a); --es-stage: #2a1d14; --es-bad: #c2412a; --es-good: #2f8a3a;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f4ece0; --kb-surface: #fffaf2; --kb-surface-2: #f8efe2; --kb-sunken: #e8dccb; --kb-line: #d8c6ae;
+  --kb-ink: #3a2a1e; --kb-dim: #6e5643;
+  --kb-accent: #c06a1a; --kb-accent-ink: #ffffff; --kb-accent-text: #9a520f; --kb-accent-soft: rgba(192, 106, 26, .12);
+  --kb-scrim: rgba(58, 42, 30, .45); --kb-toast-bg: rgba(58, 42, 30, .95); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(58, 42, 30, .2);
+  --es-panel: rgba(58, 42, 30, .05); --es-line: #dccbb4; --es-slot: #fffaf2; --es-slot-sel: #f6deb8;
+  --es-go: linear-gradient(#e0892e, #c06a1a); --es-go-shadow: #7f430c; --es-card: linear-gradient(#fffaf2, #f6ecdd);
+  --es-title: linear-gradient(90deg, #a5520f, #c06a1a 55%, #a8402a); --es-stage: #2a1d14; --es-bad: #c2412a; --es-good: #2f8a3a;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 65%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+.chip { flex: none; font-size: 12px; font-weight: 800; padding: 4px 9px; border-radius: 999px; background: var(--es-panel); border: 1px solid var(--es-line); color: var(--kb-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+#roomChip { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--kb-ink); background: transparent; border: 0; padding-left: 2px; font-size: 13.5px; }
+.icon { position: relative; flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--es-line); background: var(--es-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.icon:disabled { opacity: .4; cursor: default; }
+#hintBtn { color: var(--kb-accent-text); border-color: var(--kb-accent); }
+#hintBtn .badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; padding: 0 3px; box-sizing: border-box; }
+.back:focus-visible, .icon:focus-visible, .nav:focus-visible, .slot:focus-visible, .btn:focus-visible, .room:focus-visible, #scene:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box; padding: 4px 6px 6px; gap: 6px; }
+#stageWrap { flex: 1 1 auto; min-height: 120px; position: relative; display: grid; place-items: end center; }
+#scene { display: block; border-radius: 14px; background: var(--es-stage); box-shadow: 0 6px 24px rgba(0, 0, 0, .35), 0 0 0 1px var(--es-line); touch-action: manipulation; cursor: default; }
+#scene.hot { cursor: pointer; }
+#side { flex: none; display: flex; flex-direction: column; gap: 6px; }
+#msg { margin: 0; min-height: 38px; box-sizing: border-box; padding: 4px 10px; border-radius: 12px; background: var(--es-panel); border: 1px solid var(--es-line); font-size: 12.5px; font-weight: 800; line-height: 1.4; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+#msg span { flex: 1; min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#msg.coach { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+#msg .tag { flex: none; font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); display: -webkit-box; }
+#msg.flash { animation: flash .5s ease-out; }
+#navRow { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 6px; }
+.nav { min-height: 46px; border-radius: 14px; border: 1px solid var(--es-line); background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 3px 0 var(--kb-sunken); display: grid; place-items: center; cursor: pointer; padding: 0; touch-action: manipulation; }
+.nav svg { width: 26px; height: 26px; }
+.nav:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
+.nav:disabled { opacity: .3; cursor: default; box-shadow: none; transform: none; }
+#inv { display: flex; gap: 5px; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; touch-action: pan-x; padding: 2px; min-height: 52px; border-radius: 14px; background: var(--es-panel); border: 1px solid var(--es-line); scrollbar-width: none; }
+#inv::-webkit-scrollbar { display: none; }
+#inv .empty { align-self: center; padding: 0 10px; font-size: 12px; color: var(--kb-dim); }
+.slot { flex: none; width: 48px; height: 48px; box-sizing: border-box; border-radius: 11px; border: 1.5px solid var(--es-line); background: var(--es-slot); padding: 0; cursor: pointer; display: grid; place-items: center; position: relative; touch-action: manipulation; }
+.slot canvas { width: 40px; height: 40px; pointer-events: none; }
+.slot[aria-pressed="true"] { border-color: var(--kb-accent); background: var(--es-slot-sel); box-shadow: 0 0 0 2px var(--kb-accent); }
+.slot.new { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .22s ease-out; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.card { width: 100%; max-width: 420px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--es-card); border: 1px solid var(--es-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); overflow: hidden; animation: rise .3s cubic-bezier(.2, 1.4, .4, 1); }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--es-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 24px; line-height: 1.25; }
+.card p { margin: 4px 0; font-size: 12.5px; line-height: 1.55; color: var(--kb-dim); }
+.card p.story { color: var(--kb-ink); font-size: 13px; text-align: left; white-space: pre-line; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--es-go); color: #2a1606; font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--es-go-shadow); text-decoration: none; touch-action: manipulation; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--es-go-shadow); }
+.btn.sub { background: var(--es-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--es-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.btn small { font-size: 11px; font-weight: 500; opacity: .85; }
+.btn:disabled { opacity: .45; cursor: default; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.total { margin: 6px 0 2px; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
+.rooms { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; text-align: left; }
+.room { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; box-sizing: border-box; padding: 6px 10px; border-radius: 14px; border: 1px solid var(--es-line); background: var(--es-panel); color: var(--kb-ink); cursor: pointer; font: 800 14px var(--kb-font-body); text-align: left; touch-action: manipulation; }
+.room canvas { flex: none; width: 56px; height: 42px; border-radius: 8px; }
+.room span { flex: 1; min-width: 0; }
+.room small { display: block; font-size: 11px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.room b.rk { flex: none; min-width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--kb-font-display); font-weight: 400; font-size: 16px; background: var(--kb-accent-soft); color: var(--kb-accent-text); }
+.room:disabled { opacity: .5; cursor: default; }
+.room:disabled canvas { filter: grayscale(1) brightness(.6); }
+.res { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 2px; }
+.res div { padding: 6px 4px; border-radius: 12px; background: var(--es-panel); border: 1px solid var(--es-line); font-size: 11px; color: var(--kb-dim); font-weight: 800; }
+.res b { display: block; font-size: 17px; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.bigrank { font-family: var(--kb-font-display); font-size: 54px; line-height: 1.05; background: var(--es-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.hint { text-align: left; margin-top: 8px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--es-line); background: var(--es-panel); }
+.hint h3 { margin: 0 0 4px; font-size: 13.5px; }
+.hint ol { margin: 0 0 4px; padding-left: 20px; font-size: 12.5px; line-height: 1.5; }
+.hint li { margin: 2px 0; }
+.hint .btn { margin-top: 4px; min-height: 44px; font-size: 13px; }
+.howto { max-width: 440px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); }
+.howto li { margin: 4px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--es-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--es-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+body.thumb header, body.thumb #side, body.thumb .kb-layer, body.thumb .kb-toasts { display: none !important; }
+body.thumb #stageWrap { place-items: center; }
+body.thumb #scene { border-radius: 0; box-shadow: none; }
+body.thumb { background: #1d1612; }
+
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
+@keyframes flash { from { background: var(--kb-accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .card, .overlay, .slot.new, #msg.flash { animation: none; } }
+@media (max-height: 600px) {
+  .card { padding: 12px 12px 8px; } .btn { min-height: 46px; margin-top: 6px; }
+  .room { min-height: 50px; } .room canvas { width: 48px; height: 36px; }
+  #msg { min-height: 36px; padding-top: 2px; padding-bottom: 2px; }
+}
+@media (max-width: 359px) { .chip { padding: 4px 6px; } }
+/* landscape phones: the scene on the left, the message, arrows and bag on the right */
+@media (orientation: landscape) and (max-height: 560px) {
+  header { padding-top: 0; }
+  #main { flex-direction: row; gap: 8px; padding-top: 2px; }
+  #stageWrap { place-items: center; }
+  #side { width: clamp(170px, 32%, 260px); justify-content: flex-end; }
+  #msg { flex: 1 1 auto; min-height: 44px; align-items: flex-start; }
+  #msg span { -webkit-line-clamp: 5; }
+  #inv { flex-wrap: wrap; overflow-x: hidden; overflow-y: auto; touch-action: pan-y; max-height: 108px; align-content: flex-start; }
+  .card { max-width: 640px; }
+  .howto { max-width: 680px; }
+  .rooms { display: grid; grid-template-columns: 1fr 1fr; }
+  .card h2.logo { font-size: 20px; }
+  .res { grid-template-columns: repeat(4, 1fr); }
+  .bigrank { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <span class="chip" id="roomChip" data-i18n>からくり工房からの脱出</span>
+      <span class="chip" id="timeChip" aria-label="経過時間" data-i18n-attr="aria-label">0:00</span>
+      <button class="icon" id="hintBtn" type="button" aria-label="ヒント" data-i18n-attr="aria-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.8.6 1.1 1.4 1.1 2.2h5c0-.8.3-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="currentColor" fill-opacity=".18"/></svg>
+        <span class="badge" id="hintN" hidden>0</span>
+      </button>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+  <div id="main">
+    <div id="stageWrap"><canvas id="scene" width="400" height="300" tabindex="0" role="img" aria-label="からくり工房" data-i18n-attr="aria-label"></canvas></div>
+    <div id="side">
+      <p id="msg" role="status" aria-live="polite"><span id="msgText"></span></p>
+      <div id="navRow">
+        <button class="nav" id="navL" type="button" aria-label="左を向く" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="nav" id="navBack" type="button" aria-label="もどる" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></button>
+        <button class="nav" id="navR" type="button" aria-label="右を向く" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div id="inv" role="group" aria-label="持ち物" data-i18n-attr="aria-label"></div>
+    </div>
+  </div>
+</div>
+<p class="sr" id="live" aria-live="polite"></p>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
+  <div class="card">
+    <h2 class="logo" id="tLogo" data-i18n>からくり工房からの脱出</h2>
+    <div class="scroll">
+      <p data-i18n>親方が残した5つのからくり部屋。手がかりを集めて、屋根裏まで抜け出そう。</p>
+      <div class="total" id="tTotal"></div>
+      <div class="rooms" id="tRooms"></div>
+    </div>
+    <button class="btn" id="tContinue" type="button" hidden></button>
+    <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovStory" hidden role="dialog" aria-modal="true" aria-labelledby="sTitle">
+  <div class="card">
+    <h2 id="sTitle"></h2>
+    <div class="scroll"><p class="story" id="sText"></p><p id="sPar"></p></div>
+    <button class="btn" id="sGo" type="button" data-i18n>はじめる</button>
+    <button class="btn link" id="sBack" type="button" data-i18n>タイトルへ</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <p class="story" id="rStory"></p>
+      <div class="bigrank" id="rRank"></div>
+      <div id="rNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+      <div class="res" id="rRows"></div>
+      <p id="rNote" data-i18n>ランクと点数は、タイムとヒントを見た数で決まります</p>
+    </div>
+    <button class="btn" id="rNext" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rAgain" type="button" data-i18n>この部屋をもう一度</button><button class="btn sub" id="rTitleBtn" type="button" data-i18n>タイトルへ</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovHint" hidden role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="card">
+    <h2 id="hTitle" data-i18n>ヒント</h2>
+    <p data-i18n>ヒントは1つのなぞに3段階。見ても進み方は変わりません（クリアのランクと点数だけ少し下がります）。</p>
+    <div class="scroll" id="hList"></div>
+    <button class="btn" id="hClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+<script src="art.js"></script>
+<script src="room1.js"></script>
+<script src="room2.js"></script>
+<script src="room3.js"></script>
+<script src="room4.js"></script>
+<script src="room5.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// からくり工房からの脱出 — an original point-and-click escape game in five rooms of a gadget workshop.
+// The engine (this file) handles the views, the bag, hints, saving, timing and scoring; the rooms, their art
+// and their puzzles live in rooms.js (EscapeRooms.build(kit)). Every clue is a number, shape, colour or picture,
+// so the puzzles play the same in Japanese and English.
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'escape';
+const SAVE_KEY = 'kusoge.escape.save'; // records per room (registry: per-field merge)
+const RUN_KEY = 'kusoge.escape.run';   // the room in progress on this device (autosave; not synced)
+const HOWTO_KEY = 'kusoge.escape.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const LW = 400, LH = 300; // the scene's logical size
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const fmtTime = ms => { const s = Math.floor((ms || 0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const now = () => performance.now();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name, a) { if (AU) AU.sfx(name, a); }
+function tone(f, d, o) { if (AU) AU.tone(f, d, o); }
+function noise(d, o) { if (AU) AU.noise(d, o); }
+
+// ---------- scoring ----------
+const RANKS = ['C', 'B', 'A', 'S'];
+function scoreOf(par, ms, hints) {
+  const hp = Math.max(0, 400 - 40 * hints);
+  const tp = Math.round(400 * clamp((3 * par - ms) / (2 * par), 0, 1));
+  return 200 + hp + tp;
+}
+const rankOf = s => (s >= 900 ? 4 : s >= 750 ? 3 : s >= 550 ? 2 : 1); // 4 = S
+
+// ---------- the kit the rooms use ----------
+let run = null;        // { ri, room, S, inv, sel, view, back:[], ms, hints:{}, tut, over, at }
+let tr = {};           // transient per-room state (animations); never saved
+let animUntil = 0;
+const K = {
+  T, get S() { return run ? run.S : {}; }, get tr() { return tr; }, get lang() { return EN ? 'en' : 'ja'; },
+  time: now,
+  say(s, v) { say(T(s, v)); },
+  sayRaw(s) { say(s); },
+  go(v) { goView(v); },
+  give(id) { give(id); },
+  take(id) { take(id); },
+  has: id => !!run && run.inv.includes(id),
+  sel: () => (run ? run.sel : null),
+  ok() { sfx('ok'); vibrate(15); },
+  bad() { sfx('error'); },
+  sfx, tone, noise,
+  anim(ms) { animUntil = Math.max(animUntil, now() + (reduceMotion.matches ? Math.min(ms, 250) : ms)); redraw(); },
+  redraw() { redraw(); },
+  exit() { roomClear(); },
+  coach(ev) { coachEvent(ev); },
+  persist() { persistSoon(); },
+  reduced: () => reduceMotion.matches,
+};
+const ROOMS = window.EscapeRooms.build(K);
+const itemName = id => T(run.room.items[id].name);
+
+// ---------- save ----------
+function defSave() { return { v: 1, rooms: {}, total: 0, stats: { clears: 0, nh: 0, sRank: 0, fast: 0, hints: 0, done: 0 }, tut: 0 }; }
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const d = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
+  const out = Object.assign(d, s);
+  out.rooms = s.rooms && typeof s.rooms === 'object' && !Array.isArray(s.rooms) ? s.rooms : {};
+  out.stats = Object.assign(defSave().stats, s.stats && typeof s.stats === 'object' ? s.stats : {});
+  out.total = recount(out);
+  return out;
+}
+function recount(s) { let t = 0; for (const r of ROOMS) { const b = s.rooms[r.id]; if (b && b.s > 0) t += Math.min(1000, Math.floor(b.s)); } return t; }
+let save = readSave();
+function writeSave() { save.total = recount(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+const unlocked = i => i === 0 || !!(save.rooms[ROOMS[i - 1].id] && save.rooms[ROOMS[i - 1].id].c > 0);
+
+function readRun() {
+  let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) { r = null; }
+  if (!r || r.v !== 1 || !(r.ri >= 0 && r.ri < ROOMS.length) || !r.S || typeof r.S !== 'object' || !Array.isArray(r.inv)) return null;
+  return r;
+}
+function persist() {
+  clearTimeout(persistT); persistT = 0;
+  if (!run || run.over || DEBUG_NOSAVE) return;
+  store.set(RUN_KEY, JSON.stringify({ v: 1, ri: run.ri, S: run.S, inv: run.inv, sel: run.sel, view: run.view, back: run.back, ms: Math.round(run.ms), hints: run.hints, tut: run.tut, at: Date.now() }));
+}
+let persistT = 0, DEBUG_NOSAVE = false;
+function persistSoon() { if (!persistT) persistT = setTimeout(persist, 250); }
+function clearRun() { store.del(RUN_KEY); }
+
+// ---------- canvas ----------
+const cv = $('scene'), ctx = cv.getContext('2d');
+let scale = 1, dpr = 1, raf = 0;
+function layout() {
+  const w = $('stageWrap'), aw = w.clientWidth, ah = w.clientHeight;
+  if (!aw || !ah) return;
+  const k = Math.min(aw / LW, ah / LH);
+  const cw = Math.max(100, Math.floor(LW * k)), ch = Math.max(75, Math.floor(LH * k));
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  const bw = Math.round(cw * dpr), bh = Math.round(ch * dpr);
+  if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+  scale = cw / LW;
+  redraw();
+}
+function redraw() { if (!raf) raf = requestAnimationFrame(render); }
+let ripples = [], idleS = null;
+function render() {
+  raf = 0;
+  const t = now();
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  ctx.clearRect(0, 0, LW, LH);
+  const def = viewDef();
+  ctx.save();
+  try { if (def) def.draw(ctx, run ? run.S : (idleS || (idleS = ROOMS[0].init())), t); } catch (e) { if (DEBUG) console.error(e); }
+  ctx.restore();
+  ripples = ripples.filter(r => t - r.t < 380);
+  for (const r of ripples) {
+    const k = (t - r.t) / 380;
+    ctx.beginPath(); ctx.arc(r.x, r.y, 6 + 18 * k, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,240,200,' + (0.7 * (1 - k)) + ')'; ctx.lineWidth = 2.5; ctx.stroke();
+  }
+  if (t < animUntil || ripples.length) raf = requestAnimationFrame(render);
+}
+new ResizeObserver(layout).observe($('stageWrap'));
+window.addEventListener('resize', layout);
+
+// ---------- views ----------
+const WALLS = ['w0', 'w1', 'w2', 'w3'];
+const isWall = v => WALLS.includes(v);
+function viewDef() {
+  if (!run) return ROOMS[0].views.w0;
+  if (run.view.startsWith('i:')) return inspectDef(run.view.slice(2));
+  return run.room.views[run.view] || run.room.views.w0;
+}
+function inspectDef(id) {
+  const it = run.room.items[id];
+  return {
+    draw(c, S, t) { window.EscapeRooms.art.inspectBg(c); if (it.big) it.big(c, S, t); else { c.save(); c.translate(130, 80); it.icon(c, 140, S); c.restore(); } window.EscapeRooms.art.caption(c, T(it.name)); },
+    spots: it.spots || (() => []),
+  };
+}
+function curSpots() {
+  const d = viewDef(); if (!d || !d.spots || !run) return [];
+  try { return d.spots(run.S) || []; } catch (e) { if (DEBUG) console.error(e); return []; }
+}
+function hit(sp, x, y) {
+  if (sp.r != null) return (x - sp.cx) ** 2 + (y - sp.cy) ** 2 <= sp.r * sp.r;
+  return x >= sp.x && x <= sp.x + sp.w && y >= sp.y && y <= sp.y + sp.h;
+}
+function spotAt(x, y) { const l = curSpots(); for (let i = l.length - 1; i >= 0; i--) if (hit(l[i], x, y)) return l[i]; return null; }
+function goView(v) {
+  if (!run) return;
+  if (v === run.view) { redraw(); return; }
+  if (!isWall(v) && !v.startsWith('i:')) run.back.push(run.view);
+  else if (v.startsWith('i:')) run.back.push(run.view);
+  else run.back = [];
+  run.view = v;
+  if (isWall(v)) run.wall = WALLS.indexOf(v);
+  sfx('move');
+  renderNav(); redraw(); persistSoon();
+}
+function goBack() {
+  if (!run || isWall(run.view)) return;
+  const def = viewDef();
+  let to = run.back.pop();
+  if (!to) to = (def && def.back) || WALLS[run.wall || 0];
+  run.view = to; if (isWall(to)) { run.wall = WALLS.indexOf(to); run.back = []; }
+  sfx('move'); renderNav(); redraw(); persistSoon();
+}
+function turn(d) {
+  if (!run || run.over) return;
+  if (!isWall(run.view)) return;
+  const i = (WALLS.indexOf(run.view) + d + 4) % 4;
+  run.view = WALLS[i]; run.wall = i; run.back = [];
+  sfx('move'); renderNav(); redraw(); persistSoon(); coachEvent('rotate');
+}
+
+// ---------- input ----------
+function toLogical(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * LW, y: (e.clientY - r.top) / r.height * LH }; }
+cv.addEventListener('click', e => { const p = toLogical(e); tapAt(p.x, p.y); });
+cv.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; const p = toLogical(e); cv.classList.toggle('hot', !!spotAt(p.x, p.y)); });
+function tapAt(x, y) {
+  if (!run || run.over || paused) return;
+  if (AU) AU.ctx();
+  ripples.push({ x, y, t: now() }); redraw();
+  const sp = spotAt(x, y);
+  if (!sp) { if (run.sel) { /* keep the selection */ } return; }
+  const sel = run.sel;
+  if (sel && sp.use) {
+    let r = false;
+    try { r = sp.use(sel); } catch (e) { if (DEBUG) console.error(e); }
+    if (r) { run.sel = null; coachEvent('use'); afterAction(); return; }
+    if (!sp.tap || sp.useOnly) { say(T('ここでは使えないようだ')); sfx('fail'); afterAction(); return; }
+  }
+  if (sp.go && !sp.tap) { goView(sp.go); afterAction(); return; }
+  if (sp.tap) { try { sp.tap(); } catch (e) { if (DEBUG) console.error(e); } if (sp.go) goView(sp.go); else sfx('tap'); afterAction(); return; }
+  if (sp.say) { say(T(sp.say)); sfx('tap'); afterAction(); }
+}
+function afterAction() { renderInv(); renderNav(); renderHintBadge(); redraw(); persistSoon(); }
+$('navL').addEventListener('click', () => turn(-1));
+$('navR').addEventListener('click', () => turn(1));
+$('navBack').addEventListener('click', goBack);
+document.addEventListener('keydown', e => {
+  if (!run || run.over || paused || anyOverlay()) return;
+  if (e.key === 'ArrowLeft') { turn(-1); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { turn(1); e.preventDefault(); }
+  else if (e.key === 'ArrowDown' || e.key === 'Escape' || e.key === 'Backspace') { goBack(); e.preventDefault(); }
+  else if (e.key === 'h' || e.key === 'H') openHints();
+});
+
+// ---------- bag ----------
+const iconCache = new Map();
+function give(id) {
+  if (!run || run.inv.includes(id)) return;
+  run.inv.push(id); run.S.got = run.S.got || {}; run.S.got[id] = 1;
+  newSlot = id; sfx('pop'); vibrate(20);
+  say(T('「{name}」を手に入れた', { name: itemName(id) }));
+  coachEvent('pickup');
+}
+function take(id) { if (!run) return; run.inv = run.inv.filter(x => x !== id); if (run.sel === id) run.sel = null; if (run.view === 'i:' + id) goBack(); }
+let newSlot = null;
+function renderInv() {
+  const box = $('inv');
+  if (!run || !run.inv.length) { box.innerHTML = '<span class="empty">' + esc(T('まだ何も持っていない')) + '</span>'; return; }
+  box.innerHTML = '';
+  for (const id of run.inv) {
+    const it = run.room.items[id];
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'slot' + (id === newSlot ? ' new' : ''); b.dataset.item = id;
+    b.setAttribute('aria-pressed', run.sel === id ? 'true' : 'false');
+    b.setAttribute('aria-label', T(it.name));
+    const c = document.createElement('canvas'); c.width = 80; c.height = 80;
+    const g = c.getContext('2d'); g.scale(2, 2);
+    try { it.icon(g, 40, run.S); } catch (e) { if (DEBUG) console.error(e); }
+    b.appendChild(c);
+    b.addEventListener('click', () => slotTap(id));
+    box.appendChild(b);
+  }
+  newSlot = null;
+}
+function slotTap(id) {
+  if (!run || run.over || paused) return;
+  if (AU) AU.ctx();
+  const sel = run.sel;
+  if (sel === id) { // the second tap: look closer
+    goView('i:' + id); say(T(run.room.items[id].desc || run.room.items[id].name)); coachEvent('inspect'); afterAction(); return;
+  }
+  if (sel && sel !== id) {
+    const rc = (run.room.combos || []).find(c => (c.a === sel && c.b === id) || (c.a === id && c.b === sel));
+    if (rc) {
+      run.inv = run.inv.filter(x => x !== rc.a && x !== rc.b); run.sel = null; if (rc.run) rc.run();
+      run.inv.push(rc.out); run.S.got = run.S.got || {}; run.S.got[rc.out] = 1; newSlot = rc.out; run.sel = rc.out;
+      if (run.view.startsWith('i:')) { run.view = 'i:' + rc.out; }
+      sfx('clear'); vibrate(30);
+      say(T('「{name}」ができた！', { name: itemName(rc.out) }));
+      coachEvent('combine'); afterAction(); return;
+    }
+    if (run.view === 'i:' + sel) { say(T('組み合わせられないようだ')); sfx('fail'); afterAction(); return; }
+  }
+  run.sel = id; sfx('select');
+  if (run.view.startsWith('i:')) { run.view = 'i:' + id; }
+  say(T('「{name}」を選んだ。もう一度タップで調べる', { name: itemName(id) }));
+  afterAction();
+}
+
+// ---------- messages, tutorial coach ----------
+let coachOn = false;
+function say(s) {
+  const m = $('msg'); $('msgText').textContent = s; $('live').textContent = s;
+  m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash');
+  coachShown = false; m.classList.remove('coach'); const tg = m.querySelector('.tag'); if (tg) tg.remove();
+  clearTimeout(coachT); if (coachOn) coachT = setTimeout(showCoach, 2600);
+}
+let coachShown = false, coachT = 0;
+const COACH = [
+  ['rotate', '◀ ▶ で部屋を見回そう'],
+  ['pickup', '気になる物をタップして調べよう（ドアの横のエプロン）'],
+  ['use', '持ち物を選んでから、使いたい場所をタップしよう'],
+  ['inspect', '選んだ持ち物をもう一度タップすると、くわしく調べられる'],
+  ['combine', '持ち物を選んで、別の持ち物をタップすると組み合わせられる'],
+  ['hint', 'わからなくなったら、右上の電球でヒント（3段階）'],
+];
+function coachStep() { return run && run.tut != null ? run.tut : -1; }
+function showCoach() {
+  if (!coachOn || !run || run.tut == null || run.tut >= COACH.length) return;
+  const m = $('msg'); m.classList.add('coach');
+  $('msgText').textContent = T(COACH[run.tut][1]);
+  if (!m.querySelector('.tag')) { const tg = document.createElement('b'); tg.className = 'tag'; tg.textContent = T('チュートリアル'); m.insertBefore(tg, m.firstChild); }
+  coachShown = true;
+}
+function coachEvent(ev) {
+  if (!run || run.tut == null) return;
+  if (run.tut < COACH.length && COACH[run.tut][0] === ev) {
+    run.tut++;
+    if (run.tut === COACH.length - 1) { /* the last card (hints) stays until the room is left or hints are opened */ }
+    if (run.tut >= COACH.length) endCoach();
+    else { clearTimeout(coachT); coachT = setTimeout(showCoach, ev === 'rotate' ? 300 : 1800); }
+  }
+}
+function endCoach() { if (!run) return; run.tut = null; coachOn = false; save.tut = 1; writeSave(); const m = $('msg'); m.classList.remove('coach'); const tg = m.querySelector('.tag'); if (tg) tg.remove(); }
+
+// ---------- timer ----------
+let paused = false, lastTick = 0;
+function playing() { return !!run && !run.over && run.started; }
+function tick() {
+  const t = now();
+  if (playing() && !paused && !document.hidden && !menuOpen) { run.ms += Math.min(1000, t - lastTick); }
+  lastTick = t;
+  if (run) $('timeChip').textContent = fmtTime(run.ms);
+}
+setInterval(tick, 250);
+
+// ---------- rooms ----------
+function roomTitle(i) { return T('部屋{n}：{name}', { n: i + 1, name: T(ROOMS[i].name) }); }
+function startRoom(ri, resume) {
+  const room = ROOMS[ri];
+  if (run && run.started && !run.over) endPlay('quit');
+  tr = {}; animUntil = 0;
+  const r = resume || null;
+  run = {
+    ri, room, S: r ? r.S : room.init(), inv: r ? r.inv.filter(id => room.items[id]) : [], sel: r && room.items[r.sel] ? r.sel : null,
+    view: r && (room.views[r.view] || (r.view && r.view.startsWith('i:') && room.items[r.view.slice(2)])) ? r.view : 'w0',
+    back: r && Array.isArray(r.back) ? r.back.filter(v => room.views[v]) : [], ms: r ? Math.max(0, +r.ms || 0) : 0, hints: r && r.hints ? r.hints : {},
+    tut: r ? (r.tut == null ? null : r.tut) : (ri === 0 && !save.tut ? 0 : null), over: false, started: true, wall: 0,
+  };
+  if (!run.S.got) run.S.got = {};
+  run.wall = isWall(run.view) ? WALLS.indexOf(run.view) : 0;
+  routeAt = 0;
+  coachOn = run.tut != null;
+  hideOverlays();
+  $('roomChip').textContent = roomTitle(ri);
+  cv.setAttribute('aria-label', roomTitle(ri));
+  lastTick = now();
+  emit('play_start', { mode: 'normal', stage: ri + 1, resumed: !!resume });
+  if (room.onStart) room.onStart(run.S);
+  renderAll();
+  if (coachOn) showCoach(); else say(T(room.enterMsg || room.name));
+  persist();
+}
+function endPlay(reason) {
+  if (!run || !run.started || run.over) return;
+  emit('play_end', { mode: 'normal', score: 0, durationMs: Math.round(run.ms), reason, stage: run.ri + 1 });
+}
+let lastResult = null;
+function roomClear() {
+  if (!run || run.over) return;
+  run.over = true; tick();
+  const room = run.room, hints = totalHints(), ms = Math.round(run.ms);
+  const s = scoreOf(room.par, ms, hints), rk = rankOf(s);
+  const b = save.rooms[room.id] || { s: 0, t: 0, r: 0, nh: 0, c: 0 };
+  const newBest = s > (b.s || 0);
+  b.s = Math.max(b.s || 0, s); b.t = b.t > 0 ? Math.min(b.t, ms) : ms; b.r = Math.max(b.r || 0, rk); b.c = (b.c || 0) + 1; if (!hints) b.nh = 1;
+  save.rooms[room.id] = b;
+  const st = save.stats;
+  st.clears++; if (!hints) st.nh++; if (rk === 4) st.sRank++; if (ms <= room.par) st.fast++; st.hints += hints;
+  st.done = Math.max(st.done || 0, ROOMS.filter(r => save.rooms[r.id] && save.rooms[r.id].c > 0).length);
+  if (run.tut != null) endCoach();
+  const before = save.total;
+  writeSave();
+  clearRun();
+  emit('stage_clear', { stage: run.ri + 1, score: s, mode: 'normal' });
+  if (save.total > before) emit('best', { score: save.total });
+  emit('play_end', { mode: 'normal', score: s, durationMs: ms, reason: 'clear', stage: run.ri + 1, stats: { room: run.ri + 1, hints, rank: rk } });
+  lastResult = { ri: run.ri, s, rk, ms, hints, newBest };
+  sfx(run.ri === ROOMS.length - 1 ? 'win' : 'clear'); vibrate([30, 40, 60]);
+  burst();
+  renderAll();
+  setTimeout(() => showResult(), 1100);
+}
+function totalHints() { let n = 0; if (run) for (const k in run.hints) n += run.hints[k] | 0; return n; }
+
+// ---------- rendering of the chrome ----------
+function renderNav() {
+  const wall = run && isWall(run.view);
+  $('navL').disabled = !run || !wall || run.over; $('navR').disabled = !run || !wall || run.over;
+  $('navBack').disabled = !run || wall || run.over;
+  if (run) cv.setAttribute('aria-label', roomTitle(run.ri) + (wall ? '' : ' — ' + T('持ち物を調べている')));
+}
+function renderHintBadge() {
+  const n = totalHints(), b = $('hintN');
+  b.hidden = !n; b.textContent = n;
+  $('hintBtn').setAttribute('aria-label', n ? T('ヒント（{n}回使用）', { n }) : T('ヒント'));
+  $('hintBtn').disabled = !run || run.over;
+}
+function renderAll() { renderInv(); renderNav(); renderHintBadge(); tick(); layout(); redraw(); }
+
+// ---------- overlays ----------
+const OVERLAYS = ['ovTitle', 'ovStory', 'ovResult', 'ovHint', 'howto'];
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden])');
+function hideOverlays() { OVERLAYS.forEach(id => { $(id).hidden = true; }); }
+function thumbFor(c, i) {
+  const g = c.getContext('2d'); c.width = 112; c.height = 84; g.scale(112 / LW, 84 / LH);
+  try { ROOMS[i].views.w0.draw(g, ROOMS[i].init(), 0); } catch (e) {}
+}
+function showTitle() {
+  if (run && run.started && !run.over) { persist(); }
+  hideOverlays();
+  $('tTotal').textContent = save.total > 0 ? T('5部屋の合計') + '：' + T('{n} 点', { n: fmtN(save.total) }) : '';
+  const box = $('tRooms'); box.innerHTML = '';
+  ROOMS.forEach((r, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'room'; b.dataset.room = i;
+    const ok = unlocked(i), rec = save.rooms[r.id];
+    const c = document.createElement('canvas'); thumbFor(c, i);
+    const sp = document.createElement('span');
+    sp.innerHTML = esc(roomTitle(i)) + '<small>' + esc(!ok ? T('前の部屋を出ると開きます') : rec && rec.c ? T('ベスト {s} 点・{r}・{t}', { s: fmtN(rec.s), r: RANKS[(rec.r || 1) - 1], t: fmtTime(rec.t) }) + (rec.nh ? '・' + T('ヒントなし') : '') : T('目安 {m}分', { m: Math.round(r.par / 60000) })) + '</small>';
+    b.append(c, sp);
+    if (rec && rec.c) { const k = document.createElement('b'); k.className = 'rk'; k.textContent = RANKS[(rec.r || 1) - 1]; b.appendChild(k); }
+    b.disabled = !ok;
+    b.addEventListener('click', () => pickRoom(i));
+    box.appendChild(b);
+  });
+  const rr = run && !run.over && run.started ? { ri: run.ri, ms: run.ms } : readRun();
+  const cont = $('tContinue');
+  cont.hidden = !rr;
+  if (rr) cont.innerHTML = esc(T('つづきから')) + ' <small>' + esc(T('部屋{n}・{t}', { n: rr.ri + 1, t: fmtTime(rr.ms) })) + '</small>';
+  $('ovTitle').hidden = false;
+  try { (rr ? cont : box.querySelector('.room:not(:disabled)')).focus({ preventScroll: true }); } catch (e) {}
+}
+$('tContinue').addEventListener('click', () => {
+  if (run && run.started && !run.over) { hideOverlays(); renderAll(); return; }
+  const r = readRun(); if (r) startRoom(r.ri, r);
+});
+async function pickRoom(i) {
+  if (!unlocked(i)) return;
+  const live = run && run.started && !run.over ? run : null, saved = live ? null : readRun();
+  if ((live || saved) && UI && UI.confirm) {
+    const ok = await UI.confirm({ title: T('新しく始めますか？'), message: T('今の部屋の進み具合は消えます。'), ok: T('はじめから'), cancel: T('やめる') });
+    if (!ok) return;
+  }
+  if (live) { endPlay('quit'); run.over = true; }
+  clearRun();
+  showStory(i);
+}
+let storyRoom = 0;
+function showStory(i) {
+  storyRoom = i; hideOverlays();
+  $('sTitle').textContent = roomTitle(i);
+  $('sText').textContent = T(ROOMS[i].intro);
+  $('sPar').textContent = T('目安 {m}分', { m: Math.round(ROOMS[i].par / 60000) });
+  $('ovStory').hidden = false;
+  try { $('sGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('sGo').addEventListener('click', () => { if (AU) AU.ctx(); sfx('ok'); startRoom(storyRoom); });
+$('sBack').addEventListener('click', showTitle);
+function showResult() {
+  const R = lastResult; if (!R) return;
+  hideOverlays();
+  const last = R.ri === ROOMS.length - 1, room = ROOMS[R.ri];
+  $('rTitle').textContent = last ? T('エンディング') : T('脱出成功！');
+  $('rStory').textContent = T(room.outro);
+  $('rRank').textContent = RANKS[R.rk - 1];
+  $('rNew').hidden = !R.newBest;
+  $('rRows').innerHTML = [[T('タイム'), T('{t}（目安 {p}）', { t: fmtTime(R.ms), p: fmtTime(room.par) })], [T('ヒントを見た数'), T('{n}回', { n: R.hints })], [T('点数'), T('{n} 点', { n: fmtN(R.s) })], [T('合計'), T('{n} 点', { n: fmtN(save.total) })]]
+    .map(([a, b]) => '<div>' + esc(a) + '<b>' + esc(b) + '</b></div>').join('');
+  $('rNext').textContent = last ? T('タイトルへ') : T('次の部屋へ');
+  $('rTitleBtn').parentElement.hidden = false;
+  $('rTitleBtn').hidden = last;
+  $('ovResult').hidden = false;
+  try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
+}
+$('rNext').addEventListener('click', () => { const R = lastResult; if (!R || R.ri === ROOMS.length - 1) { showTitle(); return; } showStory(R.ri + 1); });
+$('rAgain').addEventListener('click', () => { const R = lastResult; if (R) showStory(R.ri); });
+$('rTitleBtn').addEventListener('click', showTitle);
+
+// hints
+function openHints() {
+  if (!run || run.over) return;
+  if (AU) AU.ctx();
+  if (run.tut != null && COACH[run.tut] && COACH[run.tut][0] === 'hint') coachEvent('hint');
+  renderHints();
+  $('ovHint').hidden = false; sfx('select');
+  try { $('hClose').focus({ preventScroll: true }); } catch (e) {}
+}
+function openPuzzles() {
+  const S = run.S;
+  return run.room.puzzles.filter(p => { try { return !p.done(S) && (!p.avail || p.avail(S)); } catch (e) { return false; } });
+}
+function renderHints() {
+  const list = openPuzzles(), box = $('hList');
+  if (!list.length) { box.innerHTML = '<p>' + esc(T('いま見られるヒントはありません')) + '</p>'; return; }
+  box.innerHTML = '<p><b>' + esc(T('いま取り組めるなぞ')) + '</b></p>' + list.map(p => {
+    const n = run.hints[p.id] | 0;
+    const shown = p.hints.slice(0, n).map(h => '<li>' + esc(T(h)) + '</li>').join('');
+    return '<div class="hint" data-p="' + p.id + '"><h3>' + esc(T(p.name)) + '</h3>' + (shown ? '<ol>' + shown + '</ol>' : '') +
+      (n < 3 ? '<button class="btn sub" type="button" data-hint="' + p.id + '">' + esc(T('ヒント{n}を見る', { n: n + 1 })) + '</button>' : '') + '</div>';
+  }).join('');
+}
+$('hList').addEventListener('click', e => {
+  const b = e.target.closest('[data-hint]'); if (!b || !run) return;
+  const id = b.dataset.hint; run.hints[id] = Math.min(3, (run.hints[id] | 0) + 1);
+  sfx('tap'); renderHints(); renderHintBadge(); persist();
+  const nb = $('hList').querySelector('[data-p="' + id + '"] [data-hint]') || $('hList').querySelector('[data-p="' + id + '"]');
+  try { if (nb && nb.focus) nb.focus({ preventScroll: false }); } catch (err) {}
+});
+$('hintBtn').addEventListener('click', openHints);
+$('hClose').addEventListener('click', () => { $('ovHint').hidden = true; });
+
+// how to play
+function renderHowto() {
+  const li = a => '<ul>' + a.map(s => '<li>' + esc(T(s)) + '</li>').join('') + '</ul>';
+  $('howBody').innerHTML = '<p class="lead">' + esc(T('からくり工房の5つの部屋から、手がかりを集めて抜け出す脱出ゲームです。')) + '</p>' + li([
+    '◀ ▶ で4つの壁を見回す。▼ で近づいた所から戻る', '気になる所をタップすると、近づいたり、調べたり、拾ったりできる',
+    '拾った物は下の持ち物に入る。選んでから、使いたい場所をタップ', '選んだ物をもう一度タップすると、くわしく調べられる。別の持ち物をタップすると組み合わせる',
+    '手がかりは全部、部屋の中にある（数字・形・色・絵）。言葉のしゃれは使わない', 'ヒント（電球）は1つのなぞに3段階。見るとランクと点数が少し下がるだけ',
+    '部屋ごとに自動で保存。とちゅうで閉じても、つづきから遊べる', 'クリアのタイムとヒントの数で点数（1部屋最高1,000点）。5部屋のベストの合計がランキングに載る',
+    'キーボード：← → で見回す、↓ か Esc で戻る、H でヒント']);
+}
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first; renderHowto();
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる');
+  $('howtoAlt').hidden = !first;
+  hideOverlays(); $('howto').hidden = false;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1'); $('howto').hidden = true;
+  if (howtoFirst) { showStory(0); return; }
+  if (!playing()) showTitle(); else renderAll();
+});
+$('howtoAlt').addEventListener('click', () => { store.set(HOWTO_KEY, '1'); if (howtoFirst) { save.tut = 1; writeSave(); } showTitle(); });
+$('tHow').addEventListener('click', () => showHowto(false));
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+
+// ---------- sound, theme, menu ----------
+function vibrate(p) { if (AU && AU.vibrate) AU.vibrate(p); }
+function renderSound() {
+  const b = $('sndBtn'), on = !(AU && AU.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!AU) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!AU) return; AU.toggleMute(); if (!AU.muted) sfx('ok'); });
+if (AU) AU.onChange(renderSound);
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false;
+  m.setAttribute('content', light ? '#f4ece0' : '#1d1612');
+}
+let pm = null, menuOpen = false;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = playing();
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (on) extra.push({ label: T('この部屋をやめてタイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  else extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra,
+    onResume: () => { menuOpen = false; lastTick = now(); const g = KG(); if (g) g.menuClosed(); renderAll(); },
+    onRestart: on ? () => { menuOpen = false; const ri = run.ri; endPlay('quit'); run.over = true; clearRun(); startRoom(ri); } : undefined,
+    onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); persist(); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+
+// ---------- confetti on a clear ----------
+const fx = $('fx'), fctx = fx.getContext('2d');
+let parts = [], fxRaf = 0;
+function burst() {
+  if (reduceMotion.matches) return;
+  const d = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  fx.width = Math.round(W * d); fx.height = Math.round(H * d); fctx.setTransform(d, 0, 0, d, 0, 0);
+  const cols = ['#f0a84a', '#ffd36b', '#8fd68a', '#7fc8f8', '#e0795a'];
+  for (let i = 0; i < 80; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 80, y: H * 0.38, vx: (Math.random() - 0.5) * 9, vy: -4 - Math.random() * 8, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4, c: cols[i % cols.length], s: 5 + Math.random() * 5, t: 0 });
+  if (!fxRaf) fxRaf = requestAnimationFrame(fxLoop);
+}
+function fxLoop() {
+  fctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => (p.t += 1) < 110);
+  for (const p of parts) {
+    p.vy += 0.28; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    fctx.save(); fctx.globalAlpha = Math.min(1, (110 - p.t) / 30); fctx.translate(p.x, p.y); fctx.rotate(p.r); fctx.fillStyle = p.c; fctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); fctx.restore();
+  }
+  fxRaf = parts.length ? requestAnimationFrame(fxLoop) : 0;
+  if (!fxRaf) fctx.clearRect(0, 0, innerWidth, innerHeight);
+}
+
+// ---------- KoboGame: real time (the clock stops while hidden or paused; it waits for "Resume") ----------
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { paused = true; persist(); },
+  resume() { if (!paused) return; if (playing() && !anyOverlay()) { openMenu(); } paused = false; lastTick = now(); },
+  save() { persist(); },
+  isIdle: () => !playing(),
+  dispose() { cancelAnimationFrame(raf); cancelAnimationFrame(fxRaf); },
+});
+window.addEventListener('pagehide', persist);
+document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); lastTick = now(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) { save = readSave(); if (!$('ovTitle').hidden) showTitle(); } });
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+
+// ---------- boot ----------
+let booted = false;
+renderSound(); themeColor(); renderAll(); say(T('からくり工房からの脱出'));
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut && !readRun();
+if (firstVisit) showHowto(true); else showTitle();
+booted = true;
+
+// ---------- test hooks (?debug) ----------
+// The intended solution of each room is rooms.js's room.route: a list of actions a player would do —
+// 'L' / 'R' (turn), 'B' (back), 'w:<n>' (turn to wall n), 's:<spot>' (tap a spot in the current view),
+// 'i:<item>' (tap an item in the bag), 'slide' (finish the sliding puzzle with the fewest moves).
+// tools/tests/escape-play.js performs the same actions with real clicks.
+let routeAt = 0;
+function doAction(a) {
+  if (!run || run.over) return false;
+  if (a === 'L') { turn(-1); return true; }
+  if (a === 'R') { turn(1); return true; }
+  if (a === 'B') { goBack(); return true; }
+  if (a.startsWith('w:')) { const n = +a.slice(2); while (!isWall(run.view)) goBack(); let g = 0; while (run.wall !== n && g++ < 4) turn(1); return run.wall === n; }
+  if (a.startsWith('i:')) { if (!run.inv.includes(a.slice(2))) return false; slotTap(a.slice(2)); return true; }
+  if (a.startsWith('s:')) { const p = where(a.slice(2), true); if (!p) return false; tapAt(p.x, p.y); return true; }
+  if (a === 'slide') { const ms = run.room.slideMoves ? run.room.slideMoves(run.S) : []; for (const k of ms) { const p = where('tile' + k, true); if (!p) return false; tapAt(p.x, p.y); } return true; }
+  return false;
+}
+// a point inside the spot that no later spot covers (logical, or page coordinates for real clicks)
+function where(id, logical) {
+  const l = curSpots(), i = l.findIndex(s => s.id === id); if (i < 0) return null;
+  const sp = l[i];
+  const cands = [];
+  if (sp.r != null) { cands.push([sp.cx, sp.cy]); for (let a = 0; a < 8; a++) cands.push([sp.cx + Math.cos(a) * sp.r * 0.6, sp.cy + Math.sin(a) * sp.r * 0.6]); }
+  else for (const fy of [0.5, 0.3, 0.7, 0.15, 0.85]) for (const fx of [0.5, 0.3, 0.7, 0.15, 0.85]) cands.push([sp.x + sp.w * fx, sp.y + sp.h * fy]);
+  const pt = cands.find(([x, y]) => { const s = spotAt(x, y); return s && s.id === id; });
+  if (!pt) return null;
+  if (logical) return { x: pt[0], y: pt[1] };
+  const r = cv.getBoundingClientRect();
+  return { x: r.left + pt[0] / LW * r.width, y: r.top + pt[1] / LH * r.height };
+}
+if (DEBUG) {
+  const api = {
+    ready: () => booted,
+    state: () => ({
+      mode: run ? 'normal' : 'title', room: run ? run.ri : -1, view: run ? run.view : null, wall: run ? run.wall : null, inv: run ? run.inv.slice() : [], sel: run ? run.sel : null,
+      S: run ? JSON.parse(JSON.stringify(run.S)) : null, ms: run ? Math.round(run.ms) : 0, time: run ? Math.round(run.ms) : 0, hints: run ? Object.assign({}, run.hints) : {}, hintTotal: totalHints(),
+      score: lastResult ? lastResult.s : 0, over: !!(run && run.over), stage: run ? run.ri + 1 : 0, paused, menuOpen, tut: run ? run.tut : null,
+      open: run ? openPuzzles().map(p => p.id) : [], solved: run ? run.room.puzzles.filter(p => p.done(run.S)).map(p => p.id) : [],
+      title: !$('ovTitle').hidden, story: !$('ovStory').hidden, result: !$('ovResult').hidden, hint: !$('ovHint').hidden, howto: !$('howto').hidden,
+      msg: $('msgText').textContent, save: JSON.parse(JSON.stringify(save)), last: lastResult,
+    }),
+    win() { if (!run || run.over) return false; roomClear(); return true; },
+    lose() { return false; },
+    step(n) { const out = []; for (let i = 0; i < (n || 1); i++) { const a = run && run.room.route[routeAt]; if (!a) break; out.push(a); doAction(a); routeAt++; } return out; },
+    tutorial: () => ({ step: run ? run.tut : null, done: !!save.tut }),
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__escape = {
+    api, rooms: ROOMS, get run() { return run; }, get save() { return save; }, scoreOf, rankOf,
+    route: i => ROOMS[i].route.slice(),
+    spots: () => curSpots().map(s => s.id),
+    where: id => where(id, false),
+    slideMoves: () => (run && run.room.slideMoves ? run.room.slideMoves(run.S) : []),
+    solveStep: () => api.step(1),
+    solveRoom() { let g = 0; while (run && !run.over && g++ < 400) { if (!api.step(1).length) break; } return api.state(); },
+    jump(i) { hideOverlays(); clearRun(); startRoom(i); return api.state(); },
+    start: i => { hideOverlays(); startRoom(i); return api.state(); },
+    act: a => doAction(a),
+    title: showTitle, howto: () => showHowto(false), openHints,
+    addMs(ms) { if (run) { run.ms += ms; tick(); } },
+    persist,
+    thumbScene() { // the clock room, lamp lit, for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb');
+      hideOverlays(); startRoom(1); run.view = 'w0'; run.inv = ['gearS', 'gearL', 'photo'].filter(id => run.room.items[id]); run.S.got = {};
+      DEBUG_NOSAVE = true; run.started = false;
+      say(T('部屋{n}：{name}', { n: 2, name: T(ROOMS[1].name) }));
+      renderAll(); return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.escape.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>
