@@ -534,10 +534,11 @@
       rankSource: { key: 'kusoge.physics.save', paths: ['stars'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.physics.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '星 {n} / 144', en: '{n} / 144 stars' } },
       keys: {
-        'kusoge.physics.save': '{ v:1, lv:{ "1-1"〜"4-12":{ c（クリア回数）, g（歯車ぜんぶ 0/1）, p（部品が目標以内 0/1）, b（最少の部品数）, t（最速 ms） } }（クリアしたレベルだけ）, stars（星の合計＝ランキング）, done（クリアしたレベルの数）, stats:{ runs, wins, gears, par, perfect }, tut }',
+        'kusoge.physics.save': '{ v:1, lv:{ "1-1"〜"4-12":{ c（クリア回数）, g（歯車ぜんぶ 0/1）, p（部品が目標以内 0/1）, b（最少の部品数）, t（最速 ms） } }（クリアしたレベルだけ）, stars（星の合計＝ランキング）, done（クリアしたレベルの数）, stats:{ runs, wins, gears, par, perfect, made（作ってクリアを確かめたレベルの数）, shared（共有したレベルの数） }, tut }',
         'kusoge.physics.run': 'レベルごとに置いた部品（自動保存）{ v:1, cur（今のレベル）, grid（0/1）, drafts:{ レベル: [[部品, x, y, 角度]] }, at }。この端末だけ（同期しない）',
         'kusoge.physics.sols': 'レベルごとの、この端末でのいちばん良い答え { レベル: { n（星）, parts, p:[[部品, x, y, 角度]] } }（同期しない）',
         'kusoge.physics.howto': '遊び方を見た（\'1\'）',
+        'kusoge.physics.mine': '「つくる」で作った自分のレベル（最大30）{ v:1, nick（共有するときの名前）, list:[{ id, at, def（physics/codec.js の形）, proof（クリアした部品 [{ t, x, y, a }]）, vf（クリアしたときのレベルの指紋）, tp（ためしたときの部品）, sh（共有した 0/1） }] }。この端末だけ（同期しない）',
       },
       // records only grow (max; fastest and fewest = minPos); the parts on the board are not synced
       sync: {
@@ -732,6 +733,8 @@
       { id: 'physics.stars144', tier: 4, icon: 'star', title: { ja: '親方の太鼓判', en: "The Master's Stamp" }, desc: { ja: '星を144個すべて集める', en: 'Collect all 144 stars' }, when: { rec: { key: 'kusoge.physics.save', path: 'stars' }, gte: 144 } },
       { id: 'physics.gears50', tier: 2, icon: 'star', title: { ja: '歯車あつめ', en: 'Gear Collector' }, desc: { ja: '歯車を合わせて50個集める', en: 'Collect 50 gears in total' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.gears' }, gte: 50 } },
       { id: 'physics.par20', tier: 3, icon: 'star', title: { ja: '少ない部品で', en: 'Less Is More' }, desc: { ja: '部品を目標の数以内で20回クリア', en: 'Clear within the target parts 20 times' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.par' }, gte: 20 } },
+      { id: 'physics.make1', tier: 2, icon: 'check', title: { ja: '工房デビュー', en: 'Workshop Debut' }, desc: { ja: '「つくる」で作ったレベルを、自分でクリアして確かめる', en: 'Make a level with "Create" and clear it yourself' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.made' }, gte: 1 } },
+      { id: 'physics.share1', tier: 2, icon: 'globe', title: { ja: 'おすそわけ', en: 'Sharing Is Caring' }, desc: { ja: 'クリアを確かめたレベルを、コードかURLで共有する', en: 'Share a verified level with a code or URL' }, when: { rec: { key: 'kusoge.physics.save', path: 'stats.shared' }, gte: 1 } },
     ],
     minigolf: [
       { id: 'minigolf.h1', tier: 1, icon: 'check', title: { ja: 'カップイン', en: 'In the Cup' }, desc: { ja: 'はじめてカップに入れる', en: 'Sink your first putt' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'stats.holes' }, gte: 1 } },

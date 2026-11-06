@@ -51,6 +51,27 @@ KoboI18n.add({ en: {
   // menu
   'レベル選びへ': 'Level select', 'このレベルを最初から': 'Restart this level', '部品をぜんぶどけますか？': 'Remove all the parts?', 'どける': 'Remove', 'やめる': 'Cancel',
   '自動保存しました': 'Autosaved',
+  // the editor (つくる) and share codes
+  'つくる': 'Create', '玉': 'Ball', 'かご': 'Basket', '壁': 'Wall', '氷': 'Ice', 'ゴム': 'Rubber', 'ガラス': 'Glass', 'ロープ': 'Rope', '羽根車': 'Paddle wheel', '木箱': 'Crate',
+  '毛糸': 'Yarn', '鈴': 'Bell', '玉の種類': 'Ball type', '回る向き': 'Spin direction', '短くする': 'Shorter', '長くする': 'Longer', '薄くする': 'Thinner', '厚くする': 'Thicker', 'コピー': 'Copy',
+  'レベルの設定': 'Level settings', 'ためす': 'Test', 'レベルの名前': 'Level name', '名前なし': 'Untitled', 'とく人が使える部品': 'Parts for the solver', '目標の部品の数（★）': 'Target parts (★)',
+  '部品 {n} 個（最大 {m} 個）': '{n} parts (up to {m})', 'OK': 'OK',
+  'とく人が使える部品をえらんでね': 'Choose the parts the solver gets', '⚙ で部品の数を決める': 'Set them with ⚙',
+  '部品なしでもゴールしてしまう': 'The ball reaches the basket without any parts', '玉の道をふさいで、部品が必要なレベルにしよう': 'Block the way so the solver needs parts',
+  'ためしにクリアしてみよう': 'Clear it yourself first', 'クリアできたら、コードで共有できる': 'Once you clear it, you can share it with a code', '作：{n}': 'by {n}',
+  'クリアを確認できた！': 'Verified!', 'このレベルは共有できる': 'This level can be shared now', '共有する': 'Share', 'エディタにもどる': 'Back to the editor',
+  '自分でレベルを作って、クリアできたらコードで共有しよう。': 'Make your own level. Once you clear it yourself, share it with a code.', 'あたらしく作る': 'New level', 'まだレベルがありません': 'No levels yet',
+  'クリア確認ずみ': 'Verified', 'まだクリアしていない': 'Not cleared yet', '編集': 'Edit', '複製': 'Duplicate', '削除': 'Delete', 'このレベルを削除しますか？': 'Delete this level?',
+  '自分のレベル {n} / {m}': 'My levels {n} / {m}', 'コードであそぶ': 'Play a code', 'コードかURLをはりつけ': 'Paste a code or URL', 'あそぶ': 'Play',
+  'もういっぱいです（{m} 個まで）': 'The list is full ({m} levels)', '共有するには、先にクリアしてね': 'Clear it yourself before sharing',
+  '作った人の名前（12文字まで）': 'Creator name (up to 12 characters)', 'コード': 'Code', 'URL': 'URL', 'コードをコピー': 'Copy code', 'URLをコピー': 'Copy URL', '共有…': 'Share…',
+  'コピーしました': 'Copied', 'コピーできませんでした。選んでコピーしてね': "Couldn't copy. Select it and copy", '{n} 文字': '{n} characters',
+  'コードかURLを送ると、だれでもこのレベルであそべる': 'Anyone with the code or URL can play this level',
+  '✓ 作った人がクリアを確かめたレベル': '✓ Verified: the creator cleared it', '⚠ クリアできるか確かめられなかった': "⚠ Couldn't verify that it can be cleared",
+  'コードが読めない': "Can't read the code", 'コードが空です': 'The code is empty', 'コードが大きすぎる': 'The code is too big', 'コードが壊れているか、書きかえられている': 'The code is broken or was changed',
+  '新しい版のコードです。ページを再読み込みしてね': 'This code is from a newer version. Reload the page', 'コードの形がおかしい': "That doesn't look like a level code",
+  '部品：{p}': 'Parts: {p}', '歯車 {n} 個': '{n} gears', '{t} のコピー': 'Copy of {t}',
+  'タイトルの「つくる」で自分のレベルを作れる。自分でクリアできたら、コードやURLで共有できる': '"Create" on the title screen: make your own levels and, once you clear them yourself, share them with a code or URL',
 } });
 </script>
 <script src="../common/games.js"></script>
@@ -145,10 +166,22 @@ header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 760px; margin: 
 .ctl:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
 .ctl:disabled { opacity: .4; cursor: default; transform: none; }
 .ctl.on { background: var(--kb-accent-soft); border-color: var(--kb-accent); color: var(--kb-accent-text); }
-#goBtn { flex: 1 1 auto; min-width: 110px; background: var(--ph-go); color: var(--ph-go-ink); border: 0; box-shadow: 0 3px 0 var(--ph-go-shadow); font-size: 17px; display: flex; gap: 6px; justify-content: center; align-items: center; }
+#goBtn, #mTest { flex: 1 1 auto; min-width: 110px; background: var(--ph-go); color: var(--ph-go-ink); border: 0; box-shadow: 0 3px 0 var(--ph-go-shadow); font-size: 17px; display: flex; gap: 6px; justify-content: center; align-items: center; }
 #goBtn.stop { background: var(--ph-stop); box-shadow: 0 3px 0 var(--ph-stop-shadow); color: #fff; }
 #goBtn.pulse { animation: pulse 1.2s ease-in-out infinite; }
-#goBtn svg { width: 20px; height: 20px; }
+#goBtn svg, #mTest svg { width: 20px; height: 20px; }
+/* the editor (body.making): its palette, controls and floating tools replace the game's */
+#mtray, #mctrl, body.making #tray, body.making #ctrl, body.making #gearChip, body.making #partChip { display: none; }
+body.making #mtray { display: flex; } body.making #mctrl { display: flex; }
+#mtray { gap: 6px; overflow-x: auto; overflow-y: hidden; touch-action: pan-x; padding: 1px; scrollbar-width: none; }
+#mtray::-webkit-scrollbar { display: none; }
+#mctrl { gap: 6px; align-items: stretch; }
+#mtools { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; justify-content: center; max-width: 248px; gap: 4px; padding: 3px; border-radius: 14px; background: rgba(34, 26, 20, .92); border: 1px solid rgba(255, 226, 196, .25); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+#mtools button { width: 44px; height: 44px; border-radius: 11px; border: 0; background: rgba(255, 255, 255, .08); color: #fff3e0; display: grid; place-items: center; cursor: pointer; padding: 0; touch-action: manipulation; font: 800 13px var(--kb-font-body); }
+#mtools button svg { width: 22px; height: 22px; }
+#mtools button.del { color: #ffb0a0; }
+#mtools button:disabled { opacity: .4; }
+#mtools button:active { transform: scale(.94); }
 
 /* the floating tools of a selected part */
 #ptools { position: absolute; z-index: 5; display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: rgba(34, 26, 20, .92); border: 1px solid rgba(255, 226, 196, .25); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
@@ -209,6 +242,36 @@ header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 760px; margin: 
 .howto li { margin: 4px 0; }
 .langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--ph-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
 .langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--ph-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.mine { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; text-align: left; }
+.mi { padding: 8px; border-radius: 14px; border: 1px solid var(--ph-line); background: var(--ph-panel); }
+.mi .mt { display: flex; flex-direction: column; min-width: 0; }
+.mi .mt b { font-size: 14px; overflow-wrap: anywhere; }
+.mi .mt small { font-size: 11.5px; color: var(--kb-dim); }
+.mi .mt small.ok { color: var(--ph-good); }
+.mi .mb { display: flex; gap: 6px; margin-top: 6px; }
+.mi .mb button { flex: 1 1 0; min-width: 0; min-height: 44px; border-radius: 12px; border: 1px solid var(--ph-line); background: var(--kb-surface); color: var(--kb-ink); font: 800 12.5px var(--kb-font-body); cursor: pointer; padding: 2px 4px; touch-action: manipulation; }
+.mi .mb button.del { flex: 0 0 48px; color: var(--ph-bad); }
+.mi .mb button:disabled { opacity: .4; cursor: default; }
+.mempty { text-align: center; }
+.fld { display: block; margin: 8px 0 2px; font-size: 12.5px; font-weight: 800; color: var(--kb-dim); text-align: left; }
+.fin { box-sizing: border-box; width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--ph-line); background: var(--kb-bg); color: var(--kb-ink); font: 500 16px var(--kb-font-body); padding: 6px 10px; -webkit-user-select: text; user-select: text; }
+textarea.fin { font: 500 13px ui-monospace, Menlo, Consolas, monospace; resize: none; word-break: break-all; line-height: 1.35; }
+.prow { display: flex; gap: 6px; } .prow .fin { flex: 1 1 auto; min-width: 0; } .prow .btn { flex: none; width: auto; margin-top: 0; padding: 6px 16px; }
+.err { color: var(--ph-bad) !important; font-weight: 800; }
+.badge { display: inline-block; margin: 4px 0; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.badge.ok { background: rgba(80, 180, 90, .16); color: var(--ph-good); } .badge.no { background: rgba(230, 110, 80, .16); color: var(--ph-bad); }
+#ccThumb { display: block; width: 168px; height: 168px; margin: 6px auto; border-radius: 10px; box-shadow: 0 0 0 1px var(--ph-line); }
+.msRow { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 12px; border: 1px solid transparent; }
+.msRow.on { border-color: var(--ph-line); background: var(--ph-panel); }
+.msRow img { width: 32px; height: 32px; flex: none; }
+.msName { flex: 1 1 auto; min-width: 0; text-align: left; font-size: 13px; font-weight: 800; }
+.msBtn { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--ph-line); background: var(--kb-surface); color: var(--kb-ink); font: 800 20px var(--kb-font-body); cursor: pointer; padding: 0; touch-action: manipulation; }
+.msBtn:disabled { opacity: .35; cursor: default; }
+.msNum { flex: none; min-width: 22px; text-align: center; font-size: 16px; font-variant-numeric: tabular-nums; }
+.msParts { display: grid; grid-template-columns: 1fr; gap: 2px; }
+.msHead { margin: 10px 0 2px !important; text-align: left; font-weight: 800; color: var(--kb-ink) !important; }
+.msPar { margin-top: 8px; border-color: var(--kb-accent); }
+.msNote { text-align: right; }
 body.thumb header, body.thumb #side, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip, body.thumb #ptools { display: none !important; }
 body.thumb #main { padding: 0; max-width: none; }
 body.thumb #board { border-radius: 0; box-shadow: none; }
@@ -219,7 +282,7 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
 @keyframes gain { 0% { transform: scale(1.18); } }
 @keyframes pulse { 50% { box-shadow: 0 3px 0 var(--ph-go-shadow), 0 0 0 5px rgba(143, 208, 106, .35); } }
 @media (prefers-reduced-motion: reduce) { .card, .overlay, .stars i.on, #goBtn.pulse, #gearChip.got, .tp.hint, #ptools button.hint { animation: none; } }
-@media (max-width: 359px) { .chip { padding: 4px 6px; font-size: 12px; } .tp { width: 52px; } .ctl { min-width: 46px; } #goBtn { min-width: 92px; font-size: 15px; } }
+@media (max-width: 359px) { .chip { padding: 4px 6px; font-size: 12px; } .tp { width: 52px; } .ctl { min-width: 46px; } #goBtn, #mTest { min-width: 92px; font-size: 15px; } }
 @media (max-height: 600px) { .card { padding: 12px 12px 8px; } .btn { min-height: 46px; margin-top: 6px; } .card h2.logo { font-size: 24px; } }
 /* landscape phones: the board on the left, the tray and controls in a column on the right */
 @media (orientation: landscape) and (max-height: 560px) {
@@ -229,8 +292,9 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
   #lvChip { flex: 1 1 auto; } #lvChip span { display: none; }
   #main { flex-direction: row; max-width: none; padding-top: 4px; }
   #side { width: min(270px, 42vw); justify-content: space-between; padding-top: 48px; }
-  #tray { flex-wrap: wrap; overflow: auto; touch-action: pan-y; align-content: flex-start; }
-  #ctrl { flex-wrap: wrap; }
+  #tray, #mtray { flex-wrap: wrap; overflow: auto; touch-action: pan-y; align-content: flex-start; }
+  #ctrl, #mctrl { flex-wrap: wrap; }
+  .msParts { grid-template-columns: 1fr 1fr; }
   .card { max-width: 660px; }
   .howto { max-width: 680px; }
   .levels { grid-template-columns: repeat(6, minmax(0, 1fr)); }
@@ -259,6 +323,17 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
         <button type="button" id="rotR" aria-label="右にまわす" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 4v5h-5"/></svg></button>
         <button type="button" id="delBtn" class="del" aria-label="どける" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>
       </div>
+      <div id="mtools" hidden>
+        <button type="button" id="mRotL" aria-label="左にまわす" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4v5h5"/></svg></button>
+        <button type="button" id="mRotR" aria-label="右にまわす" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 4v5h-5"/></svg></button>
+        <button type="button" id="mWm" aria-label="短くする" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h6M15 12h6M6 9l3 3-3 3M18 9l-3 3 3 3"/></svg></button>
+        <button type="button" id="mWp" aria-label="長くする" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></button>
+        <button type="button" id="mHm" aria-label="薄くする" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v6M12 15v6M9 6l3 3 3-3M9 18l3-3 3 3"/></svg></button>
+        <button type="button" id="mHp" aria-label="厚くする" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg></button>
+        <button type="button" id="mKind" aria-label="玉の種類" data-i18n-attr="aria-label"></button>
+        <button type="button" id="mDup" aria-label="コピー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
+        <button type="button" id="mDel" class="del" aria-label="どける" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>
+      </div>
       <div id="tip" hidden role="status" aria-live="polite"></div>
     </div>
     <div id="side">
@@ -269,6 +344,13 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
         <button class="ctl on" id="gridBtn" type="button" aria-label="グリッド" aria-pressed="true" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg></button>
         <button class="ctl" id="ffBtn" type="button" aria-label="早送り" aria-pressed="false" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6l9 6-9 6zM12 6l9 6-9 6z"/></svg></button>
         <button class="ctl" id="goBtn" type="button"></button>
+      </div>
+      <div id="mtray" role="toolbar" aria-label="つくる" data-i18n-attr="aria-label"></div>
+      <div id="mctrl">
+        <button class="ctl" id="mUndo" type="button" aria-label="元に戻す" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button class="ctl on" id="mGrid" type="button" aria-label="グリッド" aria-pressed="true" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg></button>
+        <button class="ctl" id="mSet" type="button" aria-label="レベルの設定" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+        <button class="ctl" id="mTest" type="button"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span data-i18n>ためす</span></button>
       </div>
     </div>
   </div>
@@ -286,7 +368,64 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
       <div class="levels" id="tLevels"></div>
     </div>
     <button class="btn" id="tContinue" type="button" hidden></button>
-    <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
+    <div class="row2"><button class="btn sub" id="tMake" type="button" data-i18n>つくる</button><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovMine" hidden role="dialog" aria-modal="true" aria-labelledby="mineTitle">
+  <div class="card">
+    <h2 id="mineTitle" data-i18n>つくる</h2>
+    <div class="scroll">
+      <p data-i18n>自分でレベルを作って、クリアできたらコードで共有しよう。</p>
+      <p id="mineCount"></p>
+      <div class="mine" id="mineList"></div>
+      <label class="fld" for="codeIn" data-i18n>コードであそぶ</label>
+      <div class="prow"><input class="fin" id="codeIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="コードかURLをはりつけ" data-i18n-attr="placeholder"><button class="btn" id="codeGo" type="button" data-i18n>あそぶ</button></div>
+    </div>
+    <button class="btn" id="mineNew" type="button" data-i18n>あたらしく作る</button>
+    <button class="btn sub" id="mineBack" type="button" data-i18n>レベルをえらぶ</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovMakeSet" hidden role="dialog" aria-modal="true" aria-labelledby="msHeadTitle">
+  <div class="card">
+    <h2 id="msHeadTitle" data-i18n>レベルの設定</h2>
+    <div class="scroll" id="msBody"></div>
+    <button class="btn" id="msOk" type="button" data-i18n>OK</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovShare" hidden role="dialog" aria-modal="true" aria-labelledby="shHead">
+  <div class="card">
+    <h2 id="shHead" data-i18n>共有する</h2>
+    <div class="scroll">
+      <p id="shTitle"></p>
+      <p data-i18n>コードかURLを送ると、だれでもこのレベルであそべる</p>
+      <label class="fld" for="shNick" data-i18n>作った人の名前（12文字まで）</label>
+      <input class="fin" id="shNick" type="text" maxlength="12" autocomplete="nickname" enterkeyhint="done">
+      <label class="fld" for="shCode" data-i18n>コード</label>
+      <textarea class="fin" id="shCode" rows="3" readonly></textarea>
+      <p id="shInfo"></p>
+      <label class="fld" for="shUrl" data-i18n>URL</label>
+      <input class="fin" id="shUrl" type="text" readonly>
+      <div class="row2"><button class="btn sub" id="shCopy" type="button" data-i18n>コードをコピー</button><button class="btn sub" id="shCopyUrl" type="button" data-i18n>URLをコピー</button></div>
+    </div>
+    <button class="btn" id="shShare" type="button" hidden data-i18n>共有…</button>
+    <button class="btn sub" id="shClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovCode" hidden role="dialog" aria-modal="true" aria-labelledby="ccTitle">
+  <div class="card">
+    <h2 id="ccTitle"></h2>
+    <div class="scroll">
+      <p id="ccBy"></p>
+      <span class="badge" id="ccBadge"></span>
+      <canvas id="ccThumb" width="336" height="336"></canvas>
+      <p id="ccInfo"></p>
+    </div>
+    <button class="btn" id="ccPlay" type="button" data-i18n>あそぶ</button>
+    <div class="row2"><button class="btn sub" id="ccMine" type="button" data-i18n>つくる</button><button class="btn sub" id="ccBack" type="button" data-i18n>レベルをえらぶ</button></div>
   </div>
 </div>
 
@@ -316,6 +455,8 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
 <script src="engine.js"></script>
 <script src="levels.js"></script>
 <script src="art.js"></script>
+<script src="codec.js"></script>
+<script src="editor.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -326,6 +467,7 @@ body.thumb #board { border-radius: 0; box-shadow: none; }
 const T = KoboI18n.t;
 const EN = KoboI18n.lang === 'en';
 const PE = window.PhysicsEngine, ART = window.PhysicsArt, LV = window.PhysicsLevels, WORLDS = window.PhysicsWorlds;
+const CODEC = window.PhysicsCodec, PED = window.PhysicsEditor; // made levels and share codes (codec.js), the editor (editor.js)
 const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'physics';
@@ -333,6 +475,7 @@ const SAVE_KEY = 'kusoge.physics.save';  // records per level (registry: per-fie
 const RUN_KEY = 'kusoge.physics.run';    // the parts on the board of each level being worked on (this device only)
 const SOLS_KEY = 'kusoge.physics.sols';  // the best solution of each cleared level (this device only)
 const HOWTO_KEY = 'kusoge.physics.howto';
+const MINE_KEY = 'kusoge.physics.mine';  // my levels from the editor (this device only, not synced)
 const DEBUG = /[?&]debug\b/.test(location.search);
 const $ = id => document.getElementById(id);
 const store = {
@@ -383,7 +526,7 @@ const pack = ps => ps.map(p => [p.t, p.x, p.y, p.a]);
 const unpack = a => (Array.isArray(a) ? a.filter(q => Array.isArray(q) && PE.PARTS[q[0]]).map(q => ({ t: q[0], x: +q[1] || 0, y: +q[2] || 0, a: +q[3] || 0 })) : []);
 function persist() {
   if (DEBUG_NOSAVE) return;
-  if (cur >= 0) { runSave.cur = LV[cur].id; runSave.drafts[LV[cur].id] = pack(placed); if (!placed.length) delete runSave.drafts[LV[cur].id]; }
+  if (cur >= 0 && !cl && mode !== 'make') { runSave.cur = LV[cur].id; runSave.drafts[LV[cur].id] = pack(placed); if (!placed.length) delete runSave.drafts[LV[cur].id]; }
   runSave.grid = grid ? 1 : 0; runSave.at = Date.now();
   store.set(RUN_KEY, JSON.stringify(runSave));
 }
@@ -407,7 +550,11 @@ let play = null;         // { id, started, wall } the level being played (for pl
 let tut = null;          // tutorial step on level 1-1 (null when off)
 let fx = [], squash = {};
 let needDraw = true, lastResult = null;
-const level = () => LV[cur];
+let cl = null;           // a made level being played: { kind: 'test' (the creator checks it) | 'play' (from a code), def, level, entry, nick, verified }
+let making = null;       // the entry of my levels open in the editor (mode 'make') or being tested
+let ED = null;           // the editor (editor.js)
+const level = () => (cl ? cl.level : LV[cur]);
+const hasLevel = () => !!cl || cur >= 0;
 
 // ---------- canvas & view ----------
 const cv = $('board'), ctx = cv.getContext('2d');
@@ -426,18 +573,20 @@ function layout() {
     cv.style.width = size + 'px'; cv.style.height = size + 'px';
     ART.resize({ W: size, H: size, dpr, s: size / PE.BW, ox: 0, oy: 0 });
   }
-  placeTools(); needDraw = true;
+  placeTools(); if (ED) ED.placeTools(); needDraw = true;
 }
 // world ↔ CSS px on the canvas
 const wx = x => x * view.s, wy = y => (PE.BH - y) * view.s;
 const toWorld = (px, py) => ({ x: px / view.s, y: PE.BH - py / view.s });
 function evWorld(e) { const r = cv.getBoundingClientRect(); return toWorld(e.clientX - r.left, e.clientY - r.top); }
 
-function rebuild() { if (cur >= 0) { S = PE.build(level(), placed); if (DEBUG) window.__lastBuild = S; } needDraw = true; refreshHud(); }
+function rebuild() { if (mode === 'make') { needDraw = true; return; } if (hasLevel()) { S = PE.build(level(), placed); if (DEBUG) window.__lastBuild = S; } needDraw = true; refreshHud(); }
 function draw(t) {
   if (!S) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); return; }
-  ART.frame(ctx, { S, t, running: mode === 'run', done: S.done, sel: mode === 'edit' ? sel : -1, bad, grid: grid && mode === 'edit', ghost: tutGhost(), squash, fx });
-  if (mode === 'edit' && sel >= 0 && placed[sel] && PE.PARTS[placed[sel].t].rot) drawHandle();
+  const mk = mode === 'make';
+  ART.frame(ctx, { S, t, running: mode === 'run', done: S.done, sel: mode === 'edit' ? sel : -1, bad: mk ? -1 : bad, grid: grid && (mode === 'edit' || mk), ghost: tutGhost(), squash, fx });
+  if (mk) ED.draw(ctx);
+  else if (mode === 'edit' && sel >= 0 && placed[sel] && PE.PARTS[placed[sel].t].rot) drawHandle();
 }
 function handlePos(i) { // the rotate handle: beyond the right end of the part, along its axis
   const p = placed[i], D = PE.PARTS[p.t], a = p.a * Math.PI / 180;
@@ -498,7 +647,7 @@ const H = {};
 function setHTML(id, s) { if (H[id] !== s) { H[id] = s; $(id).innerHTML = s; } }
 function counts() { const c = {}; for (const p of placed) c[p.t] = (c[p.t] || 0) + 1; return c; }
 function refreshHud() {
-  if (cur < 0) return;
+  if (!hasLevel() || mode === 'make') return;
   const L = level();
   const got = S && mode === 'run' ? S.gears.filter(g => g.got).length : 0;
   setHTML('gearN', got + '/' + (L.gears || []).length);
@@ -760,7 +909,8 @@ function hitPart(x, y) {
 window.addEventListener('keydown', e => {
   if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
   if (anyOverlay()) return;
-  if (e.key === ' ' || e.key === 'Enter') { if (cur >= 0 && e.target === document.body) { e.preventDefault(); $('goBtn').click(); } }
+  if (mode === 'make') { if (ED.key(e)) e.preventDefault(); else if (e.key === 'Escape') openMenu(); return; }
+  if (e.key === ' ' || e.key === 'Enter') { if (hasLevel() && e.target === document.body) { e.preventDefault(); $('goBtn').click(); } }
   else if (mode === 'edit' && sel >= 0 && (e.key === 'q' || e.key === 'Q')) rotateSel(15);
   else if (mode === 'edit' && sel >= 0 && (e.key === 'e' || e.key === 'E')) rotateSel(-15);
   else if (mode === 'edit' && sel >= 0 && (e.key === 'Delete' || e.key === 'Backspace')) removePart(sel);
@@ -812,6 +962,7 @@ function endTut() { tut = null; save.tut = 1; writeSave(); $('tip').hidden = tru
 function openLevel(i, o) {
   o = o || {};
   if (i < 0 || i >= LV.length) return;
+  if (cl || mode === 'make') dropCustom();
   endPlay('quit');
   hideOverlays();
   cur = i; mode = 'edit'; sel = -1; bad = -1; drag = null; undo = []; speed = 1; fx = []; squash = {};
@@ -831,17 +982,18 @@ function openLevel(i, o) {
 }
 function endPlay(reason) {
   if (!play || !play.started) return;
-  emit('play_end', { mode: 'normal', score: 0, durationMs: Date.now() - play.wall, reason: reason || 'quit', stage: cur + 1 });
+  if (play.custom) emit('play_end', { mode: 'practice', score: 0, durationMs: Date.now() - play.wall, reason: reason || 'quit' });
+  else emit('play_end', { mode: 'normal', score: 0, durationMs: Date.now() - play.wall, reason: reason || 'quit', stage: cur + 1 });
   play.started = false;
 }
 function startRun() {
-  if (mode !== 'edit' || cur < 0) return;
+  if (mode !== 'edit' || !hasLevel()) return;
   sel = -1; bad = -1; drag = null; placeTools();
   mode = 'run'; acc = 0; lastT = now();
   S = PE.build(level(), placed); evRead = 0; fx = []; squash = {};
   runInfo = { t0: now(), ended: false };
   save.stats.runs = (save.stats.runs | 0) + 1;
-  if (!play || !play.started) { play = { id: level().id, started: true, wall: Date.now() }; emit('play_start', { mode: 'normal', stage: cur + 1 }); }
+  if (!play || !play.started) startPlay();
   sfx('select'); tutEvent('start');
   if (tut == null) $('tip').hidden = true;
   H.ctrl = ''; H.tray = ''; refreshHud(); needDraw = true;
@@ -864,7 +1016,13 @@ function onRunEnd() {
   clearTimeout(failT);
   failT = setTimeout(() => { if (mode === 'run' && S && S.done === -1) stopRun(true); }, reduceMotion.matches ? 600 : 1400);
 }
+// play_start for the level on the board (a made level is 'practice': no stage, no stage_clear)
+function startPlay() {
+  if (cl) { play = { id: 'custom', custom: true, started: true, wall: Date.now() }; emit('play_start', { mode: 'practice' }); }
+  else { play = { id: level().id, started: true, wall: Date.now() }; emit('play_start', { mode: 'normal', stage: cur + 1 }); }
+}
 function win() {
+  if (cl) { customWin(); return; }
   const L = level(), r = PE.result(S);
   const rec = save.lv[L.id] || { c: 0, g: 0, p: 0, b: 0, t: 0 };
   const before = starsOf(save.lv[L.id]), beforeTotal = save.stars;
@@ -895,8 +1053,10 @@ function win() {
 }
 function showResult() {
   const R = lastResult; if (!R) return;
+  if (R.custom) { showCustomResult(R); return; }
   const L = LV[R.i], r = R.r;
   hideOverlays();
+  $('rLevels').textContent = T('レベルをえらぶ'); $('rLevels').dataset.act = 'levels';
   $('rTitle').textContent = T('ねこがよろこんだ！');
   $('rStars').innerHTML = r.stars.map((on, k) => '<i class="' + (on ? 'on' : '') + '" style="animation-delay:' + (k * 160 + 120) + 'ms">★</i>').join('');
   if (r.n) setTimeout(() => { for (let i = 1; i <= r.n; i++) setTimeout(() => sfx('combo', 0, i + 2), i * 160); }, 0);
@@ -910,13 +1070,24 @@ function showResult() {
   $('ovResult').hidden = false;
   try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
 }
-$('rNext').addEventListener('click', () => { const R = lastResult; if (!R) return; if ($('rNext').dataset.act === 'levels') { showTitle(); return; } stopToEdit(); openLevel(R.i + 1); });
-$('rAgain').addEventListener('click', () => { hideOverlays(); stopToEdit(); play = { id: level().id, started: true, wall: Date.now() }; emit('play_start', { mode: 'normal', stage: cur + 1 }); });
-$('rLevels').addEventListener('click', () => { stopToEdit(); showTitle(); });
+$('rNext').addEventListener('click', () => {
+  const R = lastResult; if (!R) return;
+  const act = $('rNext').dataset.act;
+  if (act === 'levels') { showTitle(); return; }
+  if (act === 'share') { const e = cl && cl.entry; stopToEdit(); if (e) openShare(e); return; }
+  stopToEdit(); openLevel(R.i + 1);
+});
+$('rAgain').addEventListener('click', () => { hideOverlays(); stopToEdit(); startPlay(); });
+$('rLevels').addEventListener('click', () => {
+  const act = $('rLevels').dataset.act;
+  if (act === 'editor' && cl && cl.entry) { openMake(cl.entry); return; }
+  if (act === 'mine') { showMine(); return; }
+  stopToEdit(); showTitle();
+});
 function stopToEdit() { if (mode === 'run') { mode = 'edit'; runInfo = null; rebuild(); } H.ctrl = ''; H.tray = ''; refreshHud(); }
 
 // ---------- overlays ----------
-const OVERLAYS = ['ovTitle', 'ovResult', 'howto'];
+const OVERLAYS = ['ovTitle', 'ovResult', 'howto', 'ovMine', 'ovMakeSet', 'ovShare', 'ovCode'];
 const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden])');
 function hideOverlays() { OVERLAYS.forEach(id => { $(id).hidden = true; }); }
 let worldSel = 0;
@@ -924,6 +1095,7 @@ function worldOpen(w) { return unlocked(w * 12); }
 function showTitle(w) {
   if (mode === 'run') stopRun();
   persist();
+  dropCustom();
   hideOverlays();
   sel = -1; placeTools();
   const ts = save.stars;
@@ -976,7 +1148,8 @@ function renderHowto() {
     '星は3つ：ゴール・歯車をぜんぶ集める・部品を目標の数以内で使う。解き方はひとつではない',
     'ばね台は上へはじき、送風機は風の向きに押し、磁石は鈴の玉と鉄のおもりを引きよせる',
     'ガラスの上には部品を置けない。グリッドを切ると、細かく置ける',
-    '置いた部品は自動で保存。とちゅうで閉じても、つづきから']);
+    '置いた部品は自動で保存。とちゅうで閉じても、つづきから',
+    'タイトルの「つくる」で自分のレベルを作れる。自分でクリアできたら、コードやURLで共有できる']);
 }
 let howtoFirst = false;
 function showHowto(first) {
@@ -1011,7 +1184,7 @@ function themeColor() {
   const m = document.querySelector('meta[name="theme-color"]');
   const light = isLight();
   if (m) m.setAttribute('content', light ? '#f4ebdd' : '#211912');
-  ART.setTheme(!light); H.tray = ''; if (cur >= 0) renderTray(); needDraw = true;
+  ART.setTheme(!light); H.tray = ''; if (cur >= 0) renderTray(); if (ED) ED.renderPalette(); needDraw = true;
 }
 let pm = null;
 $('menuBtn').addEventListener('click', () => openMenu());
@@ -1021,17 +1194,305 @@ function openMenu() {
   sel = -1; placeTools();
   const running = mode === 'run';
   const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (cl && cl.kind === 'test' && cl.entry) { const e = cl.entry; extra.push({ label: T('エディタにもどる'), icon: 'back', onClick: () => { pm.close(); openMake(e); } }); }
   extra.push({ label: T('レベル選びへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
-  const best = cur >= 0 && sols[level().id];
+  extra.push({ label: T('つくる'), icon: 'settings', onClick: () => { pm.close(); showMine(); } });
+  const best = cur >= 0 && !cl && mode === 'edit' && sols[level().id];
   if (best && mode === 'edit') extra.push({ label: T('前の答えを置く'), icon: 'star', onClick: () => { pm.close(); const ps = unpack(best.p); if (!PE.validate(level(), ps)) { snapshot(); placed = ps; sel = -1; changed(); sfx('ok'); } } });
   pm = UI.pauseMenu({
     title: T(running ? '一時停止' : 'メニュー'), home: '../', extra,
     onResume: () => { menuOpen = false; lastT = now(); acc = 0; const g = KG(); if (g) g.menuClosed(); },
-    onRestart: cur >= 0 ? () => { menuOpen = false; if (mode === 'run') stopRun(); } : undefined,
+    onRestart: hasLevel() && mode !== 'make' ? () => { menuOpen = false; if (mode === 'run') stopRun(); } : undefined,
     onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); persist(); },
   });
   pm.open();
 }
+
+// ---------- つくる: my levels, the editor, test-play and share codes ----------
+// A made level lives in my levels (MINE_KEY, this device only) as { id, at, def (codec.js), proof (the creator's parts that cleared it),
+// vf (the fingerprint of the def when it was cleared), tp (the parts left on the board in test-play), sh (shared once) }.
+// It can be shared only while vf matches the def: the code carries the def and the proof, and every device that opens it
+// replays the proof with the same deterministic engine to show "verified". Text from a code is only shown with textContent.
+const MINE_MAX = 30;
+let saveMineT = 0, clSeq = 0, pending = null, shareFor = null, shareSeq = 0, shareCode = null;
+const newId = () => (Date.now().toString(36) + Math.floor(Math.random() * 46656).toString(36)).slice(-14);
+function readMine() {
+  const r = readJSON(MINE_KEY), out = { v: 1, nick: '', list: [] };
+  if (!r || r.v !== 1) return out;
+  out.nick = CODEC.cleanText(r.nick, CODEC.LIMITS.nick);
+  const ids = new Set();
+  for (const e of (Array.isArray(r.list) ? r.list : []).slice(0, MINE_MAX)) {
+    if (!e || typeof e !== 'object') continue;
+    let def; try { def = CODEC.normalize(e.def); } catch (x) { continue; }
+    let id = typeof e.id === 'string' && /^[a-z0-9]{1,16}$/.test(e.id) ? e.id : newId();
+    while (ids.has(id)) id = newId();
+    ids.add(id);
+    out.list.push({ id, at: +e.at || 0, def, proof: CODEC.normProof(e.proof), vf: typeof e.vf === 'string' ? e.vf.slice(0, 8000) : '', tp: CODEC.normProof(e.tp), sh: e.sh ? 1 : 0 });
+  }
+  return out;
+}
+let mine = readMine();
+function saveMine() { clearTimeout(saveMineT); if (!DEBUG_NOSAVE) store.set(MINE_KEY, JSON.stringify(mine)); }
+function saveMineSoon() { clearTimeout(saveMineT); saveMineT = setTimeout(saveMine, 300); }
+const verified = e => !!(e && e.proof.length && e.vf && e.vf === CODEC.fingerprint(e.def));
+const partsOf = d => PE.PART_IDS.filter(t => d.parts[t]).map(t => T(PART_NAME[t]) + '×' + d.parts[t]).join('  ');
+const clonePs = ps => ps.map(p => ({ t: p.t, x: p.x, y: p.y, a: p.a }));
+function setChip(a, b) { const c = $('lvChip'); c.textContent = ''; const x = document.createElement('b'); x.textContent = a; const y = document.createElement('span'); y.textContent = b; c.append(x, y); }
+function bump(k) { save.stats[k] = (save.stats[k] | 0) + 1; writeSave(); emit('progress', { key: k, value: save.stats[k] }); }
+function mkEl(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+// leave the editor or a made level: back to the official level behind the title
+function dropCustom() {
+  if (!cl && mode !== 'make') return;
+  if (mode === 'run') { mode = 'edit'; runInfo = null; paused = false; }
+  if (cl && cl.kind === 'test' && cl.entry) cl.entry.tp = clonePs(placed);
+  endPlay('quit');
+  if (ED) ED.close();
+  document.body.classList.remove('making');
+  cl = null; making = null; saveMine();
+  if (cur < 0) cur = 0;
+  placed = unpack(runSave.drafts[LV[cur].id]); if (PE.validate(LV[cur], placed)) placed = [];
+  undo = []; sel = -1; bad = -1; drag = null; mode = 'title';
+  Object.keys(H).forEach(k => delete H[k]);
+  $('lvChip').innerHTML = '<b>' + esc(LV[cur].id) + '</b><span>' + esc(L2(LV[cur].n)) + '</span>';
+  ART.invalidate(); rebuild();
+}
+function openMake(entry) {
+  if (!entry) return;
+  if (mode === 'run') { mode = 'edit'; runInfo = null; paused = false; }
+  if (cl && cl.kind === 'test' && cl.entry) cl.entry.tp = clonePs(placed);
+  endPlay('quit'); hideOverlays();
+  cl = null; making = entry; mode = 'make'; sel = -1; bad = -1; drag = null; fx = []; squash = {}; tut = null; placeTools();
+  document.body.classList.add('making');
+  Object.keys(H).forEach(k => delete H[k]);
+  $('tip').hidden = true;
+  cv.setAttribute('aria-label', T('つくる'));
+  ED.open(entry.def);
+  refreshMake(); layout(); saveMine();
+}
+function refreshMake() {
+  if (mode !== 'make' || !making) return;
+  setChip(T('つくる'), making.def.title || T('名前なし'));
+  $('mUndo').disabled = !ED.canUndo();
+  $('mGrid').classList.toggle('on', grid); $('mGrid').setAttribute('aria-pressed', grid ? 'true' : 'false');
+}
+$('mUndo').addEventListener('click', () => { if (mode === 'make') ED.undo(); });
+$('mGrid').addEventListener('click', () => { grid = !grid; sfx('tap'); ART.invalidate(); needDraw = true; refreshMake(); persistSoon(); });
+$('mSet').addEventListener('click', () => { if (mode === 'make') { sfx('tap'); ED.openSettings(); try { $('msOk').focus({ preventScroll: true }); } catch (e) {} } });
+$('msOk').addEventListener('click', () => { sfx('tap'); ED.closeSettings(); });
+$('mTest').addEventListener('click', () => { if (AU) AU.ctx(); testMade(); });
+function testMade() {
+  if (mode !== 'make' || !making) return;
+  const def = ED.def(); making.def = def;
+  if (!CODEC.partTotal(def)) { sfx('error'); showTip({ text: T('とく人が使える部品をえらんでね'), sub: T('⚙ で部品の数を決める'), bad: true }, 2600); return; }
+  if (PE.run(CODEC.compile(def, 'check'), []).win) { sfx('error'); showTip({ text: T('部品なしでもゴールしてしまう'), sub: T('玉の道をふさいで、部品が必要なレベルにしよう'), bad: true }, 3200); return; }
+  saveMine();
+  openCustom({ kind: 'test', def, entry: making, parts: making.tp });
+}
+// play a made level with the game's own board, tray and controls
+function openCustom(o) {
+  endPlay('quit'); hideOverlays();
+  if (ED) ED.close();
+  document.body.classList.remove('making');
+  cl = { kind: o.kind, def: o.def, level: CODEC.compile(o.def, 'custom' + (++clSeq)), entry: o.entry || null, nick: o.nick || '', verified: !!o.verified };
+  making = o.kind === 'test' ? o.entry : null;
+  mode = 'edit'; sel = -1; bad = -1; drag = null; undo = []; speed = 1; fx = []; squash = {}; tut = null; paused = false;
+  placed = (o.parts || []).map(p => Object.assign({}, p));
+  if (PE.validate(level(), placed)) placed = [];
+  Object.keys(H).forEach(k => delete H[k]);
+  setChip(o.kind === 'test' ? T('ためす') : '★', o.def.title || T('名前なし'));
+  cv.setAttribute('aria-label', (o.def.title || T('名前なし')) + (cl.nick ? ' ' + T('作：{n}', { n: cl.nick }) : ''));
+  ART.invalidate(); rebuild(); layout();
+  startPlay();
+  if (o.kind === 'test') showTip({ text: T('ためしにクリアしてみよう'), sub: T('クリアできたら、コードで共有できる') }, 4000);
+  else showTip({ text: o.def.title || T('名前なし'), sub: cl.nick ? T('作：{n}', { n: cl.nick }) : '' }, 3000);
+}
+function customWin() {
+  const r = PE.result(S);
+  let ok = true;
+  if (cl.kind === 'test' && cl.entry) {
+    const e = cl.entry, proof = clonePs(placed), fp = CODEC.fingerprint(cl.def);
+    ok = CODEC.verify(cl.def, proof).ok; // what every other device will replay
+    if (ok) {
+      const fresh = !verified(e) || e.vf !== fp;
+      e.def = cl.def; e.vf = fp; e.proof = proof; e.tp = clonePs(proof); e.at = Date.now();
+      saveMine();
+      if (fresh) bump('made');
+    }
+  }
+  endPlay('clear');
+  lastResult = { i: -1, r, custom: cl.kind, ok };
+  sfx('win'); vibrate([30, 40, 60]);
+  fx.push({ k: 'confetti', x: level().goal.x, y: level().goal.y + 1, t0: now() / 1000, d: 1.6, seed: clSeq * 7 + 1 });
+  setTimeout(showResult, reduceMotion.matches ? 400 : 1300);
+}
+function showCustomResult(R) {
+  const r = R.r, L = level(), test = R.custom === 'test' && R.ok;
+  hideOverlays();
+  $('rTitle').textContent = test ? T('クリアを確認できた！') : T('ねこがよろこんだ！');
+  $('rStars').innerHTML = r.stars.map((on, k) => '<i class="' + (on ? 'on' : '') + '" style="animation-delay:' + (k * 160 + 120) + 'ms">★</i>').join('');
+  const row = (ok, label, val) => '<div><span class="' + (ok ? 'ok' : 'no') + '">' + (ok ? '★' : '☆') + '</span>' + esc(label) + '<b>' + esc(val) + '</b></div>';
+  $('rRows').innerHTML = row(r.stars[0], T('ゴール'), T('{t} 秒', { t: r.t.toFixed(1) })) + row(r.stars[1], T('歯車ぜんぶ'), r.gears + ' / ' + r.gearsAll) + row(r.stars[2], T('部品 {n} 個以内', { n: L.par }), String(r.parts));
+  $('rNew').hidden = true;
+  $('rNote').textContent = test ? T('このレベルは共有できる') : (cl && cl.nick ? T('作：{n}', { n: cl.nick }) : '');
+  const editing = R.custom === 'test';
+  $('rNext').textContent = test ? T('共有する') : T('レベルをえらぶ'); $('rNext').dataset.act = test ? 'share' : 'levels';
+  $('rLevels').textContent = editing ? T('エディタにもどる') : T('つくる'); $('rLevels').dataset.act = editing ? 'editor' : 'mine';
+  $('ovResult').hidden = false;
+  try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
+}
+
+// my levels
+function showMine() {
+  if (mode === 'run') stopRun();
+  persist(); dropCustom(); hideOverlays();
+  sel = -1; placeTools();
+  renderMine(); $('codeIn').value = '';
+  $('ovMine').hidden = false;
+  try { $('mineNew').focus({ preventScroll: true }); } catch (e) {}
+}
+const TRASH_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
+function renderMine() {
+  const box = $('mineList'); box.textContent = '';
+  $('mineCount').textContent = T('自分のレベル {n} / {m}', { n: mine.list.length, m: MINE_MAX });
+  if (!mine.list.length) box.appendChild(mkEl('p', 'mempty', T('まだレベルがありません')));
+  for (const e of mine.list) {
+    const v = verified(e), row = mkEl('div', 'mi'), tt = mkEl('div', 'mt'), bb = mkEl('div', 'mb');
+    row.dataset.id = e.id;
+    tt.appendChild(mkEl('b', '', e.def.title || T('名前なし')));
+    tt.appendChild(mkEl('small', v ? 'ok' : '', (v ? '✓ ' + T('クリア確認ずみ') : T('まだクリアしていない')) + ' · ' + T('部品 {n}', { n: CODEC.partTotal(e.def) })));
+    const btn = (act, label, cls, dis) => { const b = mkEl('button', cls || '', label); b.type = 'button'; b.dataset.act = act; b.disabled = !!dis; b.addEventListener('click', () => mineAct(act, e)); bb.appendChild(b); return b; };
+    btn('edit', T('編集')); btn('dup', T('複製'), '', mine.list.length >= MINE_MAX); btn('share', T('共有する'), '', !v);
+    const del = btn('del', null, 'del'); del.setAttribute('aria-label', T('削除')); del.innerHTML = TRASH_SVG;
+    row.append(tt, bb); box.appendChild(row);
+  }
+  $('mineNew').disabled = mine.list.length >= MINE_MAX;
+}
+async function mineAct(act, e) {
+  if (AU) AU.ctx();
+  sfx('tap');
+  const i = mine.list.indexOf(e); if (i < 0) return;
+  if (act === 'edit') openMake(e);
+  else if (act === 'dup') {
+    if (mine.list.length >= MINE_MAX) { if (UI) UI.toast(T('もういっぱいです（{m} 個まで）', { m: MINE_MAX })); return; }
+    const c = JSON.parse(JSON.stringify(e));
+    c.id = newId(); c.at = Date.now(); c.sh = 0;
+    c.def.title = CODEC.cleanText(T('{t} のコピー', { t: e.def.title || T('名前なし') }), CODEC.LIMITS.title);
+    mine.list.splice(i + 1, 0, c); saveMine(); renderMine();
+  } else if (act === 'share') openShare(e);
+  else if (act === 'del') {
+    if (UI && UI.confirm) { const ok = await UI.confirm({ title: T('このレベルを削除しますか？'), message: e.def.title || T('名前なし'), ok: T('削除'), cancel: T('やめる'), danger: true }); if (!ok) return; }
+    const j = mine.list.indexOf(e); if (j >= 0) mine.list.splice(j, 1);
+    saveMine(); renderMine(); sfx('pop');
+  }
+}
+$('tMake').addEventListener('click', () => { if (AU) AU.ctx(); sfx('ok'); showMine(); });
+$('mineBack').addEventListener('click', () => showTitle());
+$('mineNew').addEventListener('click', () => {
+  if (mine.list.length >= MINE_MAX) { if (UI) UI.toast(T('もういっぱいです（{m} 個まで）', { m: MINE_MAX })); return; }
+  if (AU) AU.ctx(); sfx('ok');
+  const e = { id: newId(), at: Date.now(), def: CODEC.normalize(PED.TEMPLATE), proof: [], vf: '', tp: [], sh: 0 };
+  mine.list.unshift(e); saveMine(); openMake(e);
+});
+$('codeGo').addEventListener('click', () => { if (AU) AU.ctx(); openCode($('codeIn').value); });
+$('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('codeGo').click(); } });
+
+// share: the code (and a URL with it) is the whole level plus the creator's parts
+const shareUrl = code => location.origin + location.pathname.replace(/index\.html$/, '') + '?code=' + code;
+function openShare(e) {
+  if (!verified(e)) { sfx('error'); if (UI) UI.toast(T('共有するには、先にクリアしてね')); return; }
+  if (mode === 'run') stopRun();
+  hideOverlays();
+  shareFor = e; shareCode = null;
+  $('shTitle').textContent = e.def.title || T('名前なし');
+  $('shNick').value = mine.nick || CODEC.cleanText(store.get('kobo.nick'), CODEC.LIMITS.nick);
+  $('shShare').hidden = !navigator.share;
+  $('ovShare').hidden = false;
+  makeCode();
+}
+async function makeCode() {
+  const e = shareFor; if (!e) return;
+  const nick = CODEC.cleanText($('shNick').value, CODEC.LIMITS.nick), my = ++shareSeq;
+  let code = '';
+  try { code = await CODEC.encode(e.def, e.proof, nick); } catch (x) { code = CODEC.encodeSync(e.def, e.proof, nick); }
+  if (my !== shareSeq) return;
+  shareCode = { code, url: shareUrl(code), nick };
+  $('shCode').value = code; $('shUrl').value = shareCode.url;
+  $('shInfo').textContent = T('{n} 文字', { n: code.length });
+}
+let nickT = 0;
+$('shNick').addEventListener('input', () => {
+  mine.nick = CODEC.cleanText($('shNick').value, CODEC.LIMITS.nick); saveMineSoon();
+  clearTimeout(nickT); nickT = setTimeout(makeCode, 200);
+});
+function markShared() { const e = shareFor; if (e && !e.sh) { e.sh = 1; saveMine(); bump('shared'); } }
+async function copyText(s, field) {
+  let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(s); ok = true; } } catch (e) {}
+  if (!ok) { try { field.focus(); field.select(); ok = document.execCommand('copy'); } catch (e) {} }
+  if (UI) UI.toast(ok ? T('コピーしました') : T('コピーできませんでした。選んでコピーしてね'), { type: ok ? 'ok' : 'danger' });
+  if (!ok) { try { field.focus(); field.select(); } catch (e) {} }
+  return ok;
+}
+async function shareCopy(kind) { if (!shareCode) await makeCode(); if (!shareCode) return; sfx('ok'); markShared(); await copyText(kind === 'url' ? shareCode.url : shareCode.code, kind === 'url' ? $('shUrl') : $('shCode')); }
+$('shCopy').addEventListener('click', () => shareCopy('code'));
+$('shCopyUrl').addEventListener('click', () => shareCopy('url'));
+$('shShare').addEventListener('click', async () => {
+  if (!shareCode) await makeCode(); if (!shareCode || !navigator.share) return;
+  try { await navigator.share({ title: T('ころころ工房'), text: (shareFor.def.title || T('名前なし')), url: shareCode.url }); markShared(); } catch (e) {}
+});
+$('shClose').addEventListener('click', () => showMine());
+['shCode', 'shUrl'].forEach(id => $(id).addEventListener('focus', () => { try { $(id).select(); } catch (e) {} }));
+
+// opening a code (pasted, or ?code= in the URL)
+const CODE_ERR = { empty: 'コードが空です', toolong: 'コードが大きすぎる', size: 'コードが大きすぎる', checksum: 'コードが壊れているか、書きかえられている', version: '新しい版のコードです。ページを再読み込みしてね' };
+function openCode(text) {
+  if (mode === 'run') stopRun();
+  persist(); dropCustom(); hideOverlays(); sel = -1; placeTools();
+  let d = null, why = '';
+  try { d = CODEC.decode(text); } catch (e) { why = (e && e.code) || 'format'; }
+  pending = null;
+  const th = $('ccThumb'), badge = $('ccBadge');
+  if (!d) {
+    $('ccTitle').textContent = T('コードが読めない');
+    $('ccBy').className = 'err'; $('ccBy').textContent = T(CODE_ERR[why] || 'コードの形がおかしい');
+    badge.hidden = true; th.hidden = true; $('ccInfo').textContent = ''; $('ccPlay').hidden = true;
+    sfx('error');
+  } else {
+    const v = CODEC.verify(d.def, d.proof);
+    pending = { def: d.def, nick: d.nick, verified: v.ok };
+    $('ccTitle').textContent = d.def.title || T('名前なし');
+    $('ccBy').className = ''; $('ccBy').textContent = d.nick ? T('作：{n}', { n: d.nick }) : '';
+    badge.hidden = false; badge.className = 'badge ' + (v.ok ? 'ok' : 'no');
+    badge.textContent = v.ok ? T('✓ 作った人がクリアを確かめたレベル') : T('⚠ クリアできるか確かめられなかった');
+    const gears = d.def.items.filter(it => it.k === 'gear').length;
+    $('ccInfo').textContent = T('部品：{p}', { p: partsOf(d.def) }) + ' · ' + T('目標 {n} 個', { n: d.def.par }) + (gears ? ' · ' + T('歯車 {n} 個', { n: gears }) : '');
+    th.hidden = false;
+    try { ART.levelThumb(th, PE.build(CODEC.compile(d.def, 'thumb' + (++clSeq)), [])); } catch (e) {}
+    $('ccPlay').hidden = false;
+  }
+  $('ovCode').hidden = false;
+  try { (d ? $('ccPlay') : $('ccMine')).focus({ preventScroll: true }); } catch (e) {}
+  return !!d;
+}
+$('ccPlay').addEventListener('click', () => { if (!pending) return; if (AU) AU.ctx(); sfx('ok'); openCustom({ kind: 'play', def: pending.def, nick: pending.nick, verified: pending.verified }); });
+$('ccMine').addEventListener('click', () => showMine());
+$('ccBack').addEventListener('click', () => showTitle());
+// the ← in the header: from the editor to my levels, from a test back to the editor
+document.querySelector('header .back').addEventListener('click', e => {
+  if (mode === 'make') { e.preventDefault(); showMine(); }
+  else if (cl) { e.preventDefault(); if (cl.kind === 'test' && cl.entry) openMake(cl.entry); else showTitle(); }
+});
+
+ED = PED.create({
+  PE, ART, C: CODEC, T, $, cv, view, toWorld, wx, wy,
+  grid: () => grid, dark: () => !isLight(), lang: () => KoboI18n.lang, partName: t => PART_NAME[t],
+  sfx, vibrate, ctx: () => { if (AU) AU.ctx(); },
+  setScene: s => { S = s; }, redraw: () => { needDraw = true; },
+  ghost: (src, x, y) => { const g = $('dragGhost'); if (!src) { g.hidden = true; return; } if (g.getAttribute('src') !== src) g.src = src; g.hidden = false; g.style.left = x + 'px'; g.style.top = y + 'px'; },
+  onChange: def => { if (making) { making.def = def; making.at = Date.now(); saveMineSoon(); } refreshMake(); },
+  showOverlay: id => { $(id).hidden = false; }, hideOverlay: id => { $(id).hidden = true; },
+});
 
 // ---------- KoboGame: the simulation runs in real time (stops while hidden; waits for "Resume") ----------
 if (window.KoboGame) KoboGame.register({
@@ -1061,7 +1522,9 @@ placed = unpack(runSave.drafts[LV[cur].id]); if (PE.validate(LV[cur], placed)) p
 mode = 'title'; rebuild();
 $('lvChip').innerHTML = '<b>' + esc(LV[cur].id) + '</b><span>' + esc(L2(LV[cur].n)) + '</span>';
 const firstVisit = store.get(HOWTO_KEY) == null && !save.tut && !save.done;
-if (firstVisit) showHowto(true); else showTitle();
+const qCode = (() => { try { return new URLSearchParams(location.search).get('code'); } catch (e) { return null; } })();
+if (qCode != null) openCode(qCode);   // a shared level: its card first (no how-to: it can be opened from there)
+else if (firstVisit) showHowto(true); else showTitle();
 raf = requestAnimationFrame(loop);
 booted = true;
 // when the title is closed without choosing (Escape), keep editing the shown level
@@ -1073,7 +1536,10 @@ if (DEBUG) {
   const api = {
     ready: () => booted,
     state: () => ({
-      mode, level: cur >= 0 ? LV[cur].id : null, stage: cur + 1, parts: placed.map(p => Object.assign({}, p)), sel, undo: undo.length, grid, speed, paused, menuOpen,
+      mode, level: cl ? 'custom' : cur >= 0 ? LV[cur].id : null, custom: cl ? { kind: cl.kind, verified: cl.verified, nick: cl.nick, title: cl.def.title } : null,
+      making: mode === 'make', editor: ED ? ED.state() : null, mine: JSON.parse(JSON.stringify(mine)), share: shareCode ? Object.assign({}, shareCode) : null,
+      code: !$('ovCode').hidden ? { title: $('ccTitle').textContent, by: $('ccBy').textContent, badge: $('ccBadge').hidden ? '' : $('ccBadge').textContent, ok: !!pending, verified: !!(pending && pending.verified) } : null,
+      overlays: OVERLAYS.filter(id => !$(id).hidden), stage: cur + 1, parts: placed.map(p => Object.assign({}, p)), sel, undo: undo.length, grid, speed, paused, menuOpen,
       time: S ? Math.round(S.t * 1000) : 0, t: S ? S.t : 0, over: !!(S && S.done), won: !!(S && S.done === 1), done: S ? S.done : 0,
       gears: S ? S.gears.filter(g => g.got).length : 0, score: save.stars, stars: save.stars, tut, ptools: !$('ptools').hidden,
       title: !$('ovTitle').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, tip: $('tip').hidden ? '' : $('tip').textContent,
@@ -1100,6 +1566,8 @@ if (DEBUG) {
     unlockAll: () => { for (const L of LV) if (!save.lv[L.id]) save.lv[L.id] = { c: 1, g: 0, p: 0, b: 0, t: 0 }; writeSave(); },
     fps(ms) { return new Promise(res => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(Math.round(f * 1000 / (performance.now() - t0))); }; requestAnimationFrame(tick); }); },
     persist, title: showTitle, howto: () => showHowto(false), menu: openMenu, setSpeed: s => { speed = s; },
+    ED, CODEC, mine: showMine, openCode, make: e => openMake(e), test: testMade,
+    palettePoint: id => ED.palettePoint(id), itemPoint: i => ED.itemPoint(i), edHandlePoint: i => ED.handlePoint(i), find: k => ED.find(k),
     thumbScene(id, parts, secs) { // a level mid-run for the hub thumbnail
       store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); DEBUG_NOSAVE = true;
       openLevel(LV.findIndex(L => L.id === (id || '2-12')), { parts: parts || [{ t: 'spring', x: 3.75, y: 2.25, a: 15 }, { t: 'fan', x: 2.5, y: 7.5, a: 30 }, { t: 'short', x: 10.5, y: 7.75, a: -75 }], tut: false });
