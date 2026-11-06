@@ -675,9 +675,15 @@ function askPromo(pro, non) {
     const c2 = $(id), g2 = c2.getContext('2d'); g2.clearRect(0, 0, c2.width, c2.height); drawPiece(g2, 52, 56, 100, tt, up, {});
   }
   promoCb = ok => { $('ovPromo').hidden = true; promoCb = null; humanMove(ok ? pro : non); };
+  promoSwallow = true; // the tap that opened the dialog must not also press it
   $('ovPromo').hidden = false;
 }
-let promoCb = null;
+// The dialog opens on pointerdown; on touch screens the same tap then fires a click on whatever is under the
+// finger (the backdrop or a button), which used to close the dialog at once — so a bishop/rook/pawn could
+// never move into the promotion zone by tapping. Swallow that one click; any new pointerdown is a real press.
+let promoCb = null, promoSwallow = false;
+document.addEventListener('pointerdown', () => { promoSwallow = false; }, true);
+document.addEventListener('click', e => { if (promoSwallow) { promoSwallow = false; if ($('ovPromo').contains(e.target)) { e.stopPropagation(); e.preventDefault(); } } }, true);
 $('prYes').addEventListener('click', () => promoCb && promoCb(true));
 $('prNo').addEventListener('click', () => promoCb && promoCb(false));
 $('ovPromo').addEventListener('click', e => { if (e.target.id === 'ovPromo') { $('ovPromo').hidden = true; promoCb = null; clearSel(); } });
