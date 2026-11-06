@@ -7,7 +7,7 @@ const { ROOT } = require('./server');
 
 const FALLBACK_GAMES = [
   { id: 'neji', three: true }, { id: 'blocks' }, { id: 'drop' }, { id: 'raft', three: true }, { id: 'gates', three: true },
-  { id: 'n59049', three: true }, { id: 'water' }, { id: 'parking', three: true }, { id: 'hole', three: true }, { id: 'hitsumabushi' }, { id: 'planet', three: true }, { id: 'hitblow' }, { id: 'shogi' }, { id: 'escape' },
+  { id: 'n59049', three: true }, { id: 'water' }, { id: 'parking', three: true }, { id: 'hole', three: true }, { id: 'hitsumabushi' }, { id: 'planet', three: true }, { id: 'hitblow' }, { id: 'shogi' }, { id: 'escape' }, { id: 'td' },
 ];
 
 function fromRegistry() {

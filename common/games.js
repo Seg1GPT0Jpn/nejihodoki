@@ -485,6 +485,35 @@
         'kusoge.escape.save': { fields: { rooms: { each: { fields: { s: 'max', t: 'minPos', r: 'max', nh: 'max', c: 'max' } } }, total: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'td', order: 15, path: 'td/', added: '2026-11-06',
+      title: { ja: '工房まもり', en: 'Workshop Guard' },
+      short: { ja: '工房まもり', en: 'Workshop Guard' },
+      desc: { ja: '夜ごとに工房へ忍び込む、いたずらなぜんまいおもちゃ。くぎ打ち・ばね砲・のり吹き・竹とんぼ台など6種類のからくり台を並べて、作業台を守るタワーディフェンス。8つのマップ、エンドレス、今日のチャレンジ。', en: 'Every night, mischievous windup toys sneak into the workshop. Line up six kinds of handmade towers — nailers, spring mortars, glue sprayers, copter pads and more — and guard the workbench. 8 maps, endless mode and a daily challenge.' },
+      label: { ja: 'タワーディフェンス', en: 'Tower defense' },
+      genres: ['action'], tags: ['2d', 'realtime', 'strategy', 'stages', 'endless', 'daily'],
+      keywords: { ja: ['タワーディフェンス', 'タワー', 'ディフェンス', '防衛', 'ぜんまい', 'おもちゃ', '工房', '戦略'], en: ['tower defense', 'td', 'defense', 'towers', 'strategy', 'windup', 'toys', 'workshop'] },
+      icon: 'img/icons/td.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#4f6a3a"/><path d="M-4 18H22V54H76" fill="none" stroke="#5a4028" stroke-width="17" stroke-linejoin="round"/><path d="M-4 18H22V54H76" fill="none" stroke="#e2cca4" stroke-width="13" stroke-linejoin="round"/><path d="M-4 18H22V54H76" fill="none" stroke="#8a6040" stroke-width="1.2" stroke-dasharray="3 2.5"/><circle cx="47" cy="28" r="13" fill="#c8962e" stroke="#2a1a0a" stroke-width="2"/><circle cx="47" cy="28" r="9" fill="#c9a36a"/><g transform="rotate(130 47 28)"><rect x="44" y="23.5" width="18" height="9" rx="2.5" fill="#9aa3ad" stroke="#2a2f36" stroke-width="1.6"/></g><circle cx="47" cy="28" r="5" fill="#5a6470" stroke="#1a1f26" stroke-width="1.4"/><circle cx="47" cy="28" r="2" fill="#ffd24a"/><g transform="translate(22 50)"><rect x="-6" y="-3" width="12" height="9" rx="3" fill="#d9483b" stroke="#5a1410" stroke-width="1.2"/><circle cy="-7" r="5" fill="#f6d6ae" stroke="#6a4020" stroke-width="1"/><rect x="-4.5" y="-15" width="9" height="6" rx="1" fill="#262634"/><circle cx="-1.8" cy="-7" r=".9" fill="#2a1a10"/><circle cx="1.8" cy="-7" r=".9" fill="#2a1a10"/><path d="M6 0h4M10-3v6" stroke="#e8c25a" stroke-width="2.2" stroke-linecap="round"/></g><path d="M30 46l4-4M31 50l5 0" stroke="#fff3c0" stroke-width="2" stroke-linecap="round"/></svg>', iconBg: '#4f6a3a',
+      thumb: 'img/thumbs/td.webp', thumb2x: 'img/thumbs/td@2x.webp',
+      tech: '2d',
+      // no online battle: a map is a 10-minute plan against the same waves for everyone; the daily challenge is the shared contest
+      // pause: true — waves move in real time and stop while hidden or paused (the menu waits for "Resume")
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // one endless or daily run: 10 × wave number × the map's multiplier for every wave survived (campaign games send 0)
+      score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 1000000, maxRate: null },
+      rankSource: { key: 'kusoge.td.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.td.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '星 {n} / 24', en: '{n} / 24 stars' } },
+      keys: {
+        'kusoge.td.save': '{ v:1, maps:{ m1〜m8:{ st（最高の星 0〜3）, c（クリア回数）, ew（エンドレスで生き残った最高の波）, es（エンドレスの最高点） } }（遊んだマップだけ）, best（es の最大＝ランキング）, stars（st の合計）, stats:{ kills, wins, perfect（★3）, boss, built, early（早く呼んだ波）, endW, daily }, tut }',
+        'kusoge.td.run': 'とちゅうのゲーム（波と波のあいだで自動保存）{ v:1, snap:{ v:1, map, mode, mods, gold, lives, wave, cleared, score, rng, t, towers:[[type, slot, lv, br, aim, inv, kills, built]], stats }, mode, dk, tut, speed, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.td.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow; the game in progress is not synced
+      sync: {
+        'kusoge.td.save': { fields: { maps: { each: { fields: { st: 'max', c: 'max', ew: 'max', es: 'max' } } }, best: 'max', stars: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -626,6 +655,16 @@
       { id: 'escape.rankS', tier: 2, icon: 'trophy', title: { ja: 'Sランクの手さばき', en: 'S-Rank Hands' }, desc: { ja: 'ランクSで部屋から脱出', en: 'Escape a room with rank S' }, when: { rec: { key: 'kusoge.escape.save', path: 'stats.sRank' }, gte: 1 } },
       { id: 'escape.fast3', tier: 3, icon: 'star', title: { ja: '早足の見習い', en: 'Quick Apprentice' }, desc: { ja: '目安の時間より早く3回脱出', en: 'Beat the par time 3 times' }, when: { rec: { key: 'kusoge.escape.save', path: 'stats.fast' }, gte: 3 } },
       { id: 'escape.t4k', tier: 3, icon: 'trophy', title: { ja: '親方の太鼓判', en: "The Master's Seal" }, desc: { ja: '5部屋の合計4,000点', en: 'Reach a 5-room total of 4,000' }, when: { rec: { key: 'kusoge.escape.save', path: 'total' }, gte: 4000 } },
+    ],
+    td: [
+      { id: 'td.m1', tier: 1, icon: 'check', title: { ja: '工房の見張り番', en: 'On Watch' }, desc: { ja: 'マップ1「土間の通り道」を守る', en: 'Defend map 1, The Earthen Floor' }, when: { rec: { key: 'kusoge.td.save', path: 'maps.m1.c' }, gte: 1 } },
+      { id: 'td.m4', tier: 2, icon: 'check', title: { ja: '分かれ道の守り', en: 'Fork Keeper' }, desc: { ja: 'マップ4「ふたまた廊下」を守る', en: 'Defend map 4, the Forked Hallway' }, when: { rec: { key: 'kusoge.td.save', path: 'maps.m4.c' }, gte: 1 } },
+      { id: 'td.all', tier: 3, icon: 'trophy', title: { ja: '工房の守り神', en: 'Guardian of the Workshop' }, desc: { ja: '8つのマップをすべて守る', en: 'Defend all 8 maps' }, when: { rec: { key: 'kusoge.td.save', path: 'maps', measure: 'countGte', each: 'c', min: 1 }, gte: 8 }, grantsTitle: { ja: '工房の守り神', en: 'Workshop Guardian' } },
+      { id: 'td.stars24', tier: 4, icon: 'star', title: { ja: '部品ひとつ盗ませない', en: 'Not a Single Screw' }, desc: { ja: '全マップで★3（星24個）', en: '★3 on every map (24 stars)' }, when: { rec: { key: 'kusoge.td.save', path: 'stars' }, gte: 24 } },
+      { id: 'td.boss', tier: 2, icon: 'trophy', title: { ja: '大王たおし', en: 'King Toppler' }, desc: { ja: 'ぜんまい大王を倒す', en: 'Defeat the Clockwork King' }, when: { rec: { key: 'kusoge.td.save', path: 'stats.boss' }, gte: 1 } },
+      { id: 'td.w30', tier: 3, icon: 'star', title: { ja: '終わらない夜', en: 'The Endless Night' }, desc: { ja: 'エンドレスで30の波を生き残る', en: 'Survive 30 waves in endless' }, when: { rec: { key: 'kusoge.td.save', path: 'stats.endW' }, gte: 30 } },
+      { id: 'td.k1000', tier: 2, icon: 'star', title: { ja: 'おもちゃ千体', en: 'A Thousand Toys' }, desc: { ja: 'おもちゃを合わせて1,000体止める', en: 'Stop 1,000 toys in total' }, when: { rec: { key: 'kusoge.td.save', path: 'stats.kills' }, gte: 1000 } },
+      { id: 'td.s10k', tier: 3, icon: 'trophy', title: { ja: '一万点の守り', en: '10k Defense' }, desc: { ja: 'エンドレスで10,000点', en: 'Score 10,000 in endless' }, when: { rec: { key: 'kusoge.td.save', path: 'best' }, gte: 10000 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

@@ -16,6 +16,8 @@ node tools/tests/hitblow-play.js               # ヒットアンドブローの�
 node tools/tests/planet-play.js                # わくせいシミュレーターの通し（気候の物理・全球凍結と脱出・暴走温室・風化・シナリオの勝ち負け・保存・英語）
 node tools/tests/shogi-play.js                 # 将棋の通し（CPU に詰みまで・待った・成り・打つ・棋譜・ふたりで・続きから・詰将棋・英語・オンライン（エミュレーター）。--no-online で省く）
 node tools/tests/escape-play.js                # からくり工房からの脱出の通し（5部屋を正解の手順で本物のクリック・日本語と英語・ヒント・自動保存と再開・採点・全画面サイズ）
+node tools/tests/td-play.js                    # 工房まもりの通し（チュートリアル・本物のタップで建てる／強化／売る・勝ち・負け・エンドレス・デイリー・保存と再開・一時停止・英語・全画面サイズ・200体の性能）
+node tools/tests/td-balance.js                 # 工房まもりのバランス（自動プレイで全マップに勝てる・1種類だけの台では★3にならず、マップ4から負ける）
 node tools/tests/shots.js                       # サムネイルを tools/tests/out/thumbs/ に試し撮り
 node tools/tests/shots.js --write               # サムネイルを img/thumbs/ に書く（<id>.webp 360×240、<id>@2x.webp 720×480）
 ```

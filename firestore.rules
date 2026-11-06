@@ -13,10 +13,10 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
 
     // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
-    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape']; }
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td']; }
     function caps() {
       return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
-               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000 };
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000 };
     }
 
     // ===== 日本時間の日付と週 =====
@@ -64,6 +64,7 @@ service cloud.firestore {
         && okEntAt(g, 'kusoge~hitblow~save')
         && okEntAt(g, 'kusoge~shogi~save') && okEntAt(g, 'kusoge~shogi~game')
         && okEntAt(g, 'kusoge~escape~save')
+        && okEntAt(g, 'kusoge~td~save')
         && okEntAt(g, 'kusoge~vs~stats');
     }
     function okNejiUser(d) {
@@ -92,7 +93,7 @@ service cloud.firestore {
         && okScore(s.get('water', 0), 'water') && okScore(s.get('parking', 0), 'parking') && okScore(s.get('hole', 0), 'hole')
         && okScore(s.get('hitsumabushi', 0), 'hitsumabushi') && okScore(s.get('planet', 0), 'planet')
         && okScore(s.get('hitblow', 0), 'hitblow') && okScore(s.get('shogi', 0), 'shogi')
-        && okScore(s.get('escape', 0), 'escape');
+        && okScore(s.get('escape', 0), 'escape') && okScore(s.get('td', 0), 'td');
     }
     // 端末の時計のずれを30分まで許す
     function okUpdatedAt(t) {
@@ -189,7 +190,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(games())
         && request.resource.data.diff(prevPlays()).affectedKeys().size() == 1
         && plus1('neji') && plus1('blocks') && plus1('drop') && plus1('raft') && plus1('gates')
-        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape');
+        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape') && plus1('td');
     }
 
     // それ以外はすべて拒否（ルールに書いていないパスは、読むことも書くこともできない）

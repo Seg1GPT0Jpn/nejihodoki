@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -102,9 +102,9 @@ test('flags reflect what the pages have today', () => {
     if (g.flags.versus) eq(g.versus, /KoboVersus\.init/.test(page) ? 'common' : 'own', g.id + ' versus impl');
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
-  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape', 'games without a match');
+  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td', 'games with a daily today');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -166,6 +166,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('hitblow', k => null), 0, 'hitblow: nothing saved');
   eq(P.rankValue('escape', k => '{"v":1,"rooms":{"r1":{"s":960,"t":250000,"r":4,"nh":1,"c":2}},"total":960}'), 960, 'escape: total of the best room scores');
   eq(P.rankValue('escape', k => null), 0, 'escape: nothing saved');
+  eq(P.rankValue('td', k => '{"v":1,"maps":{"m1":{"st":3,"c":1,"ew":14,"es":1850}},"best":1850,"stars":3}'), 1850, 'td: best endless run');
+  eq(P.rankValue('td', k => null), 0, 'td: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

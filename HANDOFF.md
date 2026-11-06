@@ -26,6 +26,7 @@
 | `hitblow/` | ヒットアンドブロー | DOM（紙吹雪だけ Canvas）。保存は `kusoge.hitblow.save`（ランキングは `best`＝ひとりで遊んだ1問の最高点）と途中のゲーム `kusoge.hitblow.state`（同期しない）。デイリー・CPU対戦・オンライン対戦（`vs/queue/hitblow`）。`?debug` で `window.__hitblow`。通しプレイ：`node tools/tests/hitblow-play.js` |
 | `shogi/` | 将棋 | Canvas 2D。ルールと CPU は `shogi/engine.js`（`ShogiEngine`。Web Worker でも同じファイル。perft は `tools/tests/unit/shogi-engine.test.js`）。保存は `kusoge.shogi.save`（ランキングは `top`＝最強CPUに平手・待ったなしで勝った数）と続きの対局 `kusoge.shogi.game`。オンライン対局は RTDB（`shogi/queue`・`shogi/codes`・`shogi/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__shogi`。通しプレイ：`node tools/tests/shogi-play.js` |
 | `escape/` | からくり工房からの脱出 | Canvas 2D の脱出ゲーム（5部屋）。部屋の画面・持ち物・ヒント・保存・点数は `escape/index.html`、絵の道具は `escape/art.js`、部屋ごとの絵となぞと正解の手順（`route`）は `escape/room1.js`〜`room5.js`。保存は `kusoge.escape.save`（ランキングは `total`＝5部屋のベストの合計）と、とちゅうの部屋 `kusoge.escape.run`（同期しない）。対戦なし。`?debug` で `window.__escape`。通しプレイ：`node tools/tests/escape-play.js` |
+| `td/` | 工房まもり | Canvas 2D のタワーディフェンス（8マップ・6種類の台・9種類の敵・エンドレス・今日のチャレンジ）。決まった時間刻みのシミュレーションと自動プレイ（`TD.bot`）は `td/engine.js`（node でも動く）、絵は `td/art.js`、画面は `td/index.html`。保存は `kusoge.td.save`（ランキングは `best`＝エンドレスの1回の最高点。ハブのカードは星の数）と、波と波のあいだの自動保存 `kusoge.td.run`（同期しない）。対戦なし。`?debug` で `window.__td`。通しプレイ：`node tools/tests/td-play.js`、バランス：`node tools/tests/td-balance.js` |
 | `ranking/` | ランキング（ゲーム別・総合） | |
 | `common/cloud.js` | Googleログインと Firestore 同期・ランキング送信 | `KoboCloud.sync({ key: 'max' or 'newest' })` |
 | `common/i18n.js` | 日本語 / 英語の切り替え | `KoboI18n.add({ en: { '日本語': 'English' } })`、`KoboI18n.t('日本語')` |
