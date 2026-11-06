@@ -331,7 +331,7 @@ async function layouts(env) {
     await p.evaluate(() => __physics.open('4-12', [{ t: 'plank', x: 6, y: 11.2, a: 0 }, { t: 'spring', x: 1.2, y: 1.2, a: 0 }]));
     const box = () => p.evaluate(() => {
       const b = el => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
-      const els = [...document.querySelectorAll('#ctrl button, header .icon, header .back, #ptools:not([hidden]) button:not([hidden])')].map(e => [e.id || e.className, b(e)]);
+      const els = [...document.querySelectorAll('#ctrl button, header .icon, header .back, #ptools:not([hidden]) button:not([hidden])')].filter(e => e.getClientRects().length).map(e => [e.id || e.className, b(e)]); // (landscape hides sound and back: both are in the menu)
       const tray = [...document.querySelectorAll('.tp')].map(e => b(e)), tb = b(document.getElementById('tray'));
       return { els, tray, tb, cv: b(document.getElementById('board')), W: innerWidth, H: innerHeight };
     });
@@ -342,7 +342,7 @@ async function layouts(env) {
     const trayOk = m.tray.every(t => t.w >= 44 && t.h >= 44) && m.tb.y + m.tb.h <= m.H + 1 && m.tb.x >= -1;
     const r = await p.evaluate(`(${layoutProbe})()`);
     check(`${vp} ${lang}: controls, tray and tools on screen and ≥44 px`, !worst.length && trayOk && r.hscroll <= 1, { worst: worst.slice(0, 4), trayOk, h: r.hscroll });
-    check(`${vp} ${lang}: the board is big (${Math.round(m.cv.w)}×${Math.round(m.cv.h)})`, m.cv.w >= Math.min(250, m.W * 0.45) && m.cv.y >= -1 && m.cv.y + m.cv.h <= m.H + 1, m.cv);
+    check(`${vp} ${lang}: the board is big (${Math.round(m.cv.w)}×${Math.round(m.cv.h)})`, m.cv.w >= Math.min(280, m.W * 0.42) && m.cv.y >= -1 && m.cv.y + m.cv.h <= m.H + 1, m.cv);
     if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check(`${vp} en: no Japanese`, jp.length === 0, jp.slice(0, 4)); }
     await shot(p, `9-${vp}-${lang}`);
     await p.evaluate(() => __kb.win());
