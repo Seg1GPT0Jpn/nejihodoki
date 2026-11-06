@@ -195,10 +195,10 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isMe(uid) { return signedIn() && request.auth.uid == uid; }
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
-    function games() { return ['neji','blocks','drop','raft','gates','n59049','water','parking','hole','hitsumabushi','planet']; }
+    function games() { return ['neji','blocks','drop','raft','gates','n59049','water','parking','hole','hitsumabushi','planet','hitblow','shogi']; }
     // 仮の上限（P1-4 で決める）。ゲームを足すときはここにも足す
     function caps() { return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000,
-      'gates': 100000, 'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000 }; }
+      'gates': 100000, 'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000 }; }
     function jst(t) { return t + duration.value(9, 'h'); }
     function dayKey(t) { return jst(t).year() * 10000 + jst(t).month() * 100 + jst(t).day(); }
     function weekKey(t) { return math.floor((t.toMillis() + 32400000 + 259200000) / 604800000); }

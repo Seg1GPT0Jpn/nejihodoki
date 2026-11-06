@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ヒットアンドブロー</title>
+<meta name="theme-color" content="#14182b">
+<meta name="description" content="かくれた数字や色の並びを、ヒットとブローのヒントから推理して当てる、昔ながらの推理パズル。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ヒットアンドブロー">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'ヒットアンドブロー': 'Hit & Blow', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'メニュー': 'Menu', 'サウンド': 'Sound',
+  'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '遊び方': 'How to play', '言語 / Language': 'Language', 'ノート': 'Notebook',
+  // modes and settings
+  'かんたん': 'Easy', 'ふつう': 'Normal', 'むずかしい': 'Hard', 'よわい': 'Weak', 'つよい': 'Strong',
+  '数字': 'Digits', 'いろ': 'Colors', '{n}桁': '{n} long', '重複あり': 'repeats', '8色・形つき': '8 colors + shapes', '{n}つ・{m}回まで': '{n} long · {m} tries',
+  'つかう記号': 'Symbols', 'むずかしさ': 'Difficulty', '同じ記号もありにする（上級）': 'Allow repeated symbols (expert)',
+  '答えに同じ記号が何度も出ることがある。点数1.5倍': 'The answer may use a symbol more than once. Score ×1.5',
+  'CPUの強さ（CPUと対戦）': 'CPU strength (vs CPU)', 'この設定のベスト：{s}点（最少{g}回・最速{t}）': 'Best with these settings: {s} pts (fewest {g} tries, fastest {t})',
+  'この設定の記録はまだありません': 'No record with these settings yet', 'つづきから': 'Continue', 'ひとりで あそぶ': 'Play solo', '済': 'done',
+  '今のゲームをやめて、新しく始める': 'Quit this game and start a new one', 'CPUと対戦': 'vs CPU', '今日のチャレンジ': "Today's challenge", '練習': 'Practice',
+  // colors (each also has its own shape and letter)
+  'あか': 'Red', 'だいだい': 'Orange', 'きいろ': 'Yellow', 'みどり': 'Green', 'みずいろ': 'Sky blue', 'あお': 'Blue', 'むらさき': 'Purple', 'しろ': 'White',
+  // HUD, notebook, input
+  '{n}/{m}回': '{n}/{m} tries', '問題 {n}': 'Puzzle {n}', '{n}点': '{n} pts', '点': 'pts', 'CPU：{l}': 'CPU: {l}', 'ベスト {n}': 'Best {n}', 'ベスト —': 'Best —',
+  '推理': 'Guesses', 'CPUの推理': 'CPU', 'メモ': 'Memo', '{i}回目': 'Try {i}', 'ヒット{h}・ブロー{b}': 'hit {h}, blow {b}',
+  'まず、CPUに当てさせる「あなたの答え」を決めます': 'First, choose your secret answer for the CPU to find',
+  'まだ推理がありません。下のキーで並びを作って「決定」': 'No guesses yet. Build a row with the keys below and press "OK"',
+  'CPUはまだ推理していません': 'The CPU has not guessed yet', '{i}つ目：{s}（タップで消す）': 'Slot {i}: {s} (tap to remove)', '{i}つ目：空き': 'Slot {i}: empty',
+  'いまの推理': 'Current guess', '1字消す': 'Delete one', 'クリア': 'Clear', 'これにする': 'Use this', 'おまかせ': 'Random',
+  'CPUに当てさせる「あなたの答え」を入力': 'Enter your secret answer for the CPU to find', '同じ記号を使ってもOK': 'Repeated symbols are OK', '同じ記号は使えません': 'No repeated symbols',
+  'あなたの答え': 'Your answer', 'CPUが考え中…': 'CPU is thinking…', 'あなたが先攻': 'You go first',
+  '記号：なし→✕（ない）→○（ある）。マス：その場所に ✕（ちがう）／●（ここ）': 'Symbol: none → ✕ (not in it) → ○ (in it). Cell: ✕ (not here) / ● (here)',
+  'メモを消す': 'Clear memo', 'これまでのヒントに合う答え：{n}通り': 'Answers that fit every clue so far: {n}', '{n}番目': '#{n}',
+  'メモなし': 'no mark', 'ない': 'not in it', 'ある': 'in it', '{s}が{n}番目：{m}': '{s} at #{n}: {m}', 'ちがう': 'not here', 'ここ': 'here',
+  'もう{n}つ並んでいます。「決定」か ⌫': 'Already {n} symbols. Press "OK" or ⌫', '同じ記号は1回しか使えません': 'Each symbol can be used only once',
+  '{n}つ えらんでください': 'Choose {n} symbols', 'その並びは もう試しました': 'You already tried that row',
+  // result
+  'もう一度': 'Play again', 'あなたの勝ち！': 'You win!', 'CPUの勝ち': 'The CPU wins', '引き分け': 'Draw', 'CPU（{l}）との対戦': 'Battle with the CPU ({l})',
+  'もう一度 対戦': 'Battle again', '一発で正解！': 'First try!', '正解！': 'Solved!', 'ざんねん…': 'Not this time…',
+  '{n}回で当てました': 'Solved in {n} tries', '{n}回では当てられませんでした': 'Not solved in {n} tries', 'タイトルへ': 'Title',
+  '今日のチャレンジは1日1回。明日はまた新しい答えです（日本時間の0時に変わります）': "Today's challenge is once a day. A new answer comes tomorrow (it changes at midnight Japan time)",
+  '練習なので記録は残りません': 'Practice: nothing is recorded', 'CPUの答え': "CPU's answer", '答え': 'Answer', '手数': 'Tries', 'タイム': 'Time',
+  'CPUに勝った': 'CPU wins', '連続': 'Streak', '{n}日': '{n} days', 'この設定のベスト': 'Best here', 'ベスト更新！': 'New best!', '結果をコピー': 'Copy result',
+  'コピーしました': 'Copied', '今日のチャレンジは終わりました': "Today's challenge is done", '明日はまた新しい答えです（日本時間の0時に変わります）': 'A new answer comes tomorrow (it changes at midnight Japan time)',
+  // how to play
+  'かくれた答え（ちがう記号の並び）を、ヒントをたよりに当てる推理パズルです。': 'Find the hidden answer (a row of different symbols) from the clues.',
+  'ヒント': 'Clue', 'H＝ヒット': 'H = Hit', '記号も場所も合っている数（例の 4）': 'right symbol in the right place (the 4 above)',
+  'B＝ブロー': 'B = Blow', '記号は答えにあるが、場所がちがう数（例の 1）': 'the symbol is in the answer, but in another place (the 1 above)',
+  '下のキーで並びを作り、「決定」': 'Build a row with the keys and press "OK"', 'まちがえたら ⌫ で1字消す。並びのマスをタップしても消せます': 'Made a mistake? ⌫ deletes one, or tap a slot to remove it',
+  'H と B から答えをしぼって、次の推理': 'Narrow the answer down from H and B, then guess again',
+  '「メモ」で、ない記号に✕、ある記号に○、場所ごとに ✕／● をつけられる': 'In "Memo", mark symbols ✕ (out) or ○ (in), and each place ✕ / ●',
+  '全部ヒットで正解。回数の上限まで当てられないと負け': 'All hits and you solved it. Run out of tries and you lose', 'モードと点数': 'Modes and score',
+  'むずかしさ：かんたん 3つ（8回まで）、ふつう 4つ（10回まで）、むずかしい 5つ（12回まで）': 'Difficulty: Easy 3 long (8 tries), Normal 4 long (10 tries), Hard 5 long (12 tries)',
+  'いろ：8色。色だけでなく、形と文字でも見分けられます': 'Colors: 8 colors, each with its own shape and letter too',
+  '同じ記号もあり（上級）：答えに同じ記号が何度も出ることがある。点数1.5倍': 'Repeats (expert): the answer may use a symbol more than once. Score ×1.5',
+  '点数：（のこりの回数＋1）×100 ＋ 時間ボーナス（4分まで）に、むずかしさの倍率（×1／×2／×3）': 'Score: (tries left + 1) × 100 + a time bonus (up to 4 min), times the difficulty (×1 / ×2 / ×3)',
+  '今日のチャレンジ：全員に同じ答え（数字4つ）。1日1回、日本時間の0時に変わります': "Today's challenge: the same answer for everyone (4 digits). Once a day; it changes at midnight Japan time",
+  'CPUと対戦：おたがいの答えを交互に当て合う。あなたが先攻で、CPUにも同じ回数の番があります': 'vs CPU: take turns guessing each other\'s answer. You go first, and the CPU always gets the same number of turns',
+  'オンライン対戦：2〜4人で4分間。全員に同じ答えが同じ順番で出て、少ない回数で当てるほど高得点': 'Online battle: 2–4 players for 4 minutes. Everyone gets the same answers in the same order; fewer tries score more',
+  'キーボード：数字キー（いろは 1〜8 か R O Y G S B P W）、Enter で決定、Backspace で消す、M でメモ': 'Keyboard: digit keys (colors: 1–8 or R O Y G S B P W), Enter to guess, Backspace to delete, M for the memo',
+  'やってみる': "Let's try", 'とじる': 'Close', '説明だけでOK': 'Just the rules, thanks',
+  // tutorial
+  '下のキーで、ちがう数字を3つえらぼう': 'Pick 3 different digits with the keys below', 'まちがえたら ⌫ で1字消せます': 'Made a mistake? ⌫ deletes one',
+  '「決定」で推理を出そう': 'Press "OK" to make your guess', '答えは3つの、ちがう数字の並びです': 'The answer is a row of 3 different digits',
+  'H＝数字も場所も合っている数、B＝数字は合っているが場所がちがう数': 'H = right digit, right place. B = right digit, wrong place',
+  'H と B から、答えをしぼっていこう': 'Use H and B to narrow it down', 'つぎへ': 'Next',
+  '「メモ」タブで、ない数字に✕、ある数字に○をつけられる': 'In the "Memo" tab you can mark digits ✕ (out) or ○ (in)',
+  'メモはキーにも出ます。タブを押してみよう': 'Marks also show on the keys. Try the tab', 'あとは、全部 H になるまで推理しよう': 'Now keep guessing until every symbol is a hit',
+  '8回以内に当てれば勝ち': 'Solve it within 8 tries to win',
+  // CPU battle and online battle
+  'あなたの答えを決めました。先攻はあなたです': 'Your answer is set. You go first', '正解！ +{n}点': 'Solved! +{n} pts', '答えは {a}。次の問題へ': 'The answer was {a}. Next puzzle',
+  '2〜4人で {t} のスコア勝負。全員に同じ答えが同じ順番で出ます。': '2–4 players, {t} score battle. Everyone gets the same answers in the same order.',
+  '対戦をやめる（負け）': 'Quit the battle (lose)', 'あきらめて答えを見る': 'Give up and see the answer', 'ひとやすみ': 'Paused',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<script src="../common/versus.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ヒットアンドブロー: a detective's notebook at night (dark) or on paper (light).
+   Hit = a filled mint badge with "H", Blow = an amber ring with "B" (shape + letter, not color alone).
+   --kb-* are the shared tokens re-tinted to ink blue; --hb-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #14182b; --kb-surface: #1d2340; --kb-surface-2: #262d52; --kb-sunken: #0f1222; --kb-line: #353e6b;
+  --kb-ink: #eef0ff; --kb-dim: #a9afd8;
+  --kb-accent: #46d6b4; --kb-accent-ink: #06241d; --kb-accent-text: #62e2c4; --kb-accent-soft: rgba(70, 214, 180, .15);
+  --kb-scrim: rgba(6, 8, 18, .78); --kb-toast-bg: rgba(10, 12, 26, .95); --kb-focus: #ffd36b;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --hb-hit: #46d6b4; --hb-hit-ink: #06241d; --hb-blow: #ffb547; --hb-blow-soft: rgba(255, 181, 71, .14);
+  --hb-panel: rgba(220, 225, 255, .06); --hb-line: rgba(200, 210, 255, .16); --hb-tile: #262d52; --hb-tile-ink: #f4f5ff;
+  --hb-key: linear-gradient(#2c3460, #232a4d); --hb-key-shadow: #0b0e1d; --hb-go: linear-gradient(#6ae8cb, #2fbf9c); --hb-go-shadow: #137a62;
+  --hb-card: linear-gradient(#232a4d, #191e38); --hb-rule: rgba(160, 175, 255, .10);
+  --hb-title: linear-gradient(90deg, #7af0d4, #b7c4ff 55%, #ffc56b);
+  --hb-bad: #ff7a66; --hb-sym-stroke: rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #eef0f6; --kb-surface: #ffffff; --kb-surface-2: #f4f6fb; --kb-sunken: #e2e6f1; --kb-line: #c9cfe3;
+    --kb-ink: #1b2142; --kb-dim: #4f5880;
+    --kb-accent: #0e9c7f; --kb-accent-ink: #ffffff; --kb-accent-text: #087560; --kb-accent-soft: rgba(14, 156, 127, .12);
+    --kb-scrim: rgba(27, 33, 66, .45); --kb-toast-bg: rgba(27, 33, 66, .95); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(27, 33, 66, .18);
+    --hb-hit: #0e9c7f; --hb-hit-ink: #ffffff; --hb-blow: #b56a00; --hb-blow-soft: rgba(181, 106, 0, .10);
+    --hb-panel: rgba(27, 33, 66, .04); --hb-line: #d3d8ea; --hb-tile: #ffffff; --hb-tile-ink: #1b2142;
+    --hb-key: linear-gradient(#ffffff, #eef1f8); --hb-key-shadow: #c3c9de; --hb-go: linear-gradient(#22b896, #0e9c7f); --hb-go-shadow: #0a6b57;
+    --hb-card: linear-gradient(#ffffff, #f4f6fb); --hb-rule: rgba(60, 80, 160, .08);
+    --hb-title: linear-gradient(90deg, #0e8f75, #3b4fb8 55%, #b56a00);
+    --hb-bad: #d1452f; --hb-sym-stroke: rgba(0, 0, 0, .55);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #eef0f6; --kb-surface: #ffffff; --kb-surface-2: #f4f6fb; --kb-sunken: #e2e6f1; --kb-line: #c9cfe3;
+  --kb-ink: #1b2142; --kb-dim: #4f5880;
+  --kb-accent: #0e9c7f; --kb-accent-ink: #ffffff; --kb-accent-text: #087560; --kb-accent-soft: rgba(14, 156, 127, .12);
+  --kb-scrim: rgba(27, 33, 66, .45); --kb-toast-bg: rgba(27, 33, 66, .95); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(27, 33, 66, .18);
+  --hb-hit: #0e9c7f; --hb-hit-ink: #ffffff; --hb-blow: #b56a00; --hb-blow-soft: rgba(181, 106, 0, .10);
+  --hb-panel: rgba(27, 33, 66, .04); --hb-line: #d3d8ea; --hb-tile: #ffffff; --hb-tile-ink: #1b2142;
+  --hb-key: linear-gradient(#ffffff, #eef1f8); --hb-key-shadow: #c3c9de; --hb-go: linear-gradient(#22b896, #0e9c7f); --hb-go-shadow: #0a6b57;
+  --hb-card: linear-gradient(#ffffff, #f4f6fb); --hb-rule: rgba(60, 80, 160, .08);
+  --hb-title: linear-gradient(90deg, #0e8f75, #3b4fb8 55%, #b56a00);
+  --hb-bad: #d1452f; --hb-sym-stroke: rgba(0, 0, 0, .55);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: repeating-linear-gradient(0deg, transparent 0 27px, var(--hb-rule) 27px 28px), radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 60%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 8px 0; max-width: 900px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400; font-size: clamp(15px, 4.7vw, 20px); letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--hb-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--hb-line); background: var(--hb-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.vs-slot { display: contents; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.back:focus-visible, .icon:focus-visible, .key:focus-visible, .btn:focus-visible, .tab:focus-visible, .opt:focus-visible, .ms:focus-visible, .mp:focus-visible, .slot:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.info { display: flex; align-items: center; gap: 4px; margin: 2px 0 3px; overflow: hidden; }
+.chip { flex: none; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--hb-panel); border: 1px solid var(--hb-line); color: var(--kb-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip.mode { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.acc { margin-left: auto; color: var(--kb-accent-text); background: var(--kb-accent-soft); border-color: transparent; }
+.chip.low { color: var(--hb-bad); }
+
+#body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box; padding: 0 8px 6px; gap: 6px; }
+#left { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+#right { flex: none; display: flex; flex-direction: column; gap: 6px; }
+
+/* tutorial coach and the CPU strip */
+.coach { flex: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box; padding: 5px 5px 5px 10px; min-height: 48px; border-radius: 14px; background: var(--kb-surface); border: 1.5px solid var(--kb-accent); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); animation: rise .3s cubic-bezier(.2, 1.3, .4, 1); }
+.coach .step { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font: 400 13px var(--kb-font-display); }
+.coach p { flex: 1; min-width: 0; margin: 0; font-size: 12.5px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.coach p small { display: block; font-size: 11px; font-weight: 500; color: var(--kb-dim); margin-top: 1px; }
+.coach .cbtn { flex: none; min-height: 44px; min-width: 64px; border-radius: 12px; border: 0; background: var(--kb-accent); color: var(--kb-accent-ink); font: 800 13px var(--kb-font-body); padding: 0 10px; cursor: pointer; }
+.cpubar { flex: none; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; box-sizing: border-box; padding: 4px 8px; min-height: 36px; border-radius: 12px; background: var(--hb-panel); border: 1px solid var(--hb-line); font-size: 12px; font-weight: 800; }
+.cpubar .lbl { color: var(--kb-dim); }
+.cpubar .code { display: inline-flex; gap: 2px; }
+.cpubar .code .sym { width: 22px; height: 22px; font-size: 13px; border-radius: 6px; }
+.cpubar .think { color: var(--kb-accent-text); }
+.cpubar .sep { flex: 1; }
+
+/* tabs and the notebook */
+.tabs { flex: none; display: flex; gap: 4px; padding: 2px; border-radius: 14px; background: var(--hb-panel); border: 1px solid var(--hb-line); }
+.tab { flex: 1; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; position: relative; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab[aria-selected="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .18); }
+.tab .dot { position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--hb-blow); }
+#main { flex: 1 1 auto; min-height: 60px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; border-radius: 14px; background: var(--hb-panel); border: 1px solid var(--hb-line); }
+.hist { list-style: none; margin: 0; padding: 4px 6px; display: flex; flex-direction: column; gap: 3px; }
+.hist .empty { color: var(--kb-dim); font-size: 12.5px; text-align: center; padding: 14px 8px; line-height: 1.5; }
+.row { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 2px 6px; border-radius: 10px; border-bottom: 1px dashed var(--hb-line); }
+.row.new { animation: rowIn .28s ease-out; }
+.row:last-child { border-bottom: 0; }
+.row .no { flex: none; width: 22px; text-align: right; font-size: 11px; font-weight: 800; color: var(--kb-dim); font-variant-numeric: tabular-nums; }
+.row .code { flex: 1; min-width: 0; display: flex; gap: 4px; }
+.row .hbs { flex: none; display: flex; gap: 5px; }
+.row.win { background: var(--kb-accent-soft); }
+.row.miss .code { opacity: .9; }
+.hb { display: inline-flex; align-items: center; justify-content: center; gap: 1px; min-width: 38px; height: 28px; line-height: 28px; box-sizing: border-box; padding: 0 7px; border-radius: 999px; font: 800 15px var(--kb-font-body); font-variant-numeric: tabular-nums; }
+.hb small { font-size: 11px; }
+.hb.h { background: var(--hb-hit); color: var(--hb-hit-ink); }
+.hb.b { background: var(--hb-blow-soft); color: var(--hb-blow); border: 2px solid var(--hb-blow); line-height: 24px; }
+.hb.zero { opacity: .38; }
+.hb.big { min-width: 54px; height: 36px; line-height: 36px; font-size: 20px; }
+.hb.big.b { line-height: 32px; }
+
+/* symbols: digits are tiles, colors are a shape + a letter (never color alone) */
+.sym { flex: none; display: inline-grid; place-items: center; position: relative; width: 30px; height: 30px; box-sizing: border-box; border-radius: 8px; background: var(--hb-tile); color: var(--hb-tile-ink); border: 1px solid var(--hb-line); font: 800 18px var(--kb-font-body); font-variant-numeric: tabular-nums; line-height: 1; }
+.sym.col svg { width: 78%; height: 78%; }
+.sym.col svg * { fill: var(--c); stroke: var(--hb-sym-stroke); stroke-width: 1.2; stroke-linejoin: round; }
+.sym.col b { position: absolute; right: 1px; bottom: 0; font-size: 9px; font-weight: 800; color: var(--hb-tile-ink); background: var(--hb-tile); border-radius: 4px; padding: 0 2px; line-height: 1.1; }
+.sym.q { color: var(--kb-dim); }
+
+/* the guess being written */
+.slots { display: flex; justify-content: center; gap: 6px; }
+.slot { width: 46px; height: 46px; box-sizing: border-box; border-radius: 12px; border: 2px dashed var(--hb-line); background: var(--hb-panel); display: grid; place-items: center; padding: 0; cursor: pointer; color: inherit; }
+.slot.next { border-color: var(--kb-accent); border-style: solid; }
+.slot.fill { border-style: solid; border-color: var(--hb-line); background: transparent; }
+.slot .sym { width: 42px; height: 42px; font-size: 24px; border-radius: 10px; }
+.slot .sym.col b { font-size: 11px; }
+.slots.shake { animation: shake .3s; }
+
+/* keypad */
+.pad { display: grid; gap: 6px; }
+.pad.p5 { grid-template-columns: repeat(5, 1fr); }
+.pad.p4 { grid-template-columns: repeat(4, 1fr); }
+.acts { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 6px; }
+.key { position: relative; min-height: 46px; box-sizing: border-box; border-radius: 13px; border: 1px solid var(--hb-line); background: var(--hb-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--hb-key-shadow); font: 800 15px var(--kb-font-body); cursor: pointer; display: grid; place-items: center; padding: 0; touch-action: manipulation; }
+.key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--hb-key-shadow); }
+.key .sym { border: 0; background: transparent; width: 34px; height: 34px; font-size: 22px; }
+.key .sym.col b { background: transparent; }
+.key.used { opacity: .45; }
+.key .mk { position: absolute; top: 2px; right: 3px; font-style: normal; font-size: 12px; font-weight: 800; line-height: 1; }
+.key[data-m="1"] .sym { opacity: .35; }
+.key[data-m="1"]::after { content: ""; position: absolute; left: 20%; right: 20%; top: 50%; height: 2px; background: var(--hb-bad); transform: rotate(-35deg); border-radius: 2px; }
+.key[data-m="1"] .mk { color: var(--hb-bad); }
+.key[data-m="2"] { border-color: var(--hb-hit); box-shadow: 0 3px 0 var(--hb-key-shadow), inset 0 0 0 2px var(--hb-hit); }
+.key[data-m="2"] .mk { color: var(--hb-hit); }
+.key.act { font-size: 13px; gap: 2px; }
+.key.act svg { width: 20px; height: 20px; }
+.key.go { background: var(--hb-go); color: var(--hb-hit-ink); border-color: transparent; box-shadow: 0 3px 0 var(--hb-go-shadow); font-size: 16px; }
+.key:disabled { opacity: .45; cursor: default; }
+.setbar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 10px; border-radius: 14px; background: var(--kb-surface); border: 1.5px solid var(--hb-blow); }
+.setbar p { flex: 1; min-width: 0; margin: 0; font-size: 12.5px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.setbar p small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.setbar button { flex: none; min-height: 44px; border-radius: 12px; border: 1px solid var(--hb-line); background: var(--hb-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); padding: 0 12px; cursor: pointer; }
+
+/* memo */
+.memo { padding: 6px 8px 10px; }
+.memo .mhead { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.memo .mhead p { flex: 1; margin: 0; font-size: 11.5px; color: var(--kb-dim); line-height: 1.4; }
+.memo .mclr { flex: none; min-height: 44px; border-radius: 12px; border: 1px solid var(--hb-line); background: var(--hb-panel); color: var(--kb-ink); font: 800 12.5px var(--kb-font-body); padding: 0 10px; cursor: pointer; }
+.memo .cands { margin: 0 0 6px; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
+.mgrid { display: grid; gap: 3px; align-items: center; }
+.mgrid .mh { font-size: 11px; font-weight: 800; color: var(--kb-dim); text-align: center; }
+.ms, .mp { min-height: 44px; border-radius: 10px; border: 1px solid var(--hb-line); background: var(--kb-surface); color: var(--kb-ink); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; font: 800 16px var(--kb-font-body); }
+.ms .st { font-size: 14px; width: 14px; }
+.ms[data-m="1"] { background: transparent; } .ms[data-m="1"] .sym { opacity: .35; } .ms[data-m="1"] .st { color: var(--hb-bad); }
+.ms[data-m="2"] { border-color: var(--hb-hit); box-shadow: inset 0 0 0 2px var(--hb-hit); } .ms[data-m="2"] .st { color: var(--hb-hit); }
+.mp[data-m="1"] { color: var(--hb-bad); background: transparent; }
+.mp[data-m="2"] { color: var(--hb-hit-ink); background: var(--hb-hit); border-color: transparent; }
+.mp .sym { width: 24px; height: 24px; font-size: 14px; }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .22s ease-out; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.card { width: 100%; max-width: 400px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--hb-card); border: 1px solid var(--hb-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); overflow: hidden; animation: rise .3s cubic-bezier(.2, 1.4, .4, 1); }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--hb-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 25px; }
+.card p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--hb-go); color: var(--hb-hit-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--hb-go-shadow); text-decoration: none; touch-action: manipulation; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--hb-go-shadow); }
+.btn.sub { background: var(--hb-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--hb-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.btn small { font-size: 11px; font-weight: 500; opacity: .85; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn, .row2 > .kvs-entry, .row2 > .vs-wrap { flex: 1; min-width: 0; }
+.row2 > .vs-wrap { display: flex; } .row2 > .vs-wrap > .kvs-entry { margin-top: 8px; min-height: 44px; }
+.row2 .btn.link { margin-top: 8px; }
+.opts { text-align: left; }
+.og { margin: 8px 0 0; }
+.og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--hb-panel); border: 1px solid var(--hb-line); }
+.opt { flex: 1; min-width: 0; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; line-height: 1.2; }
+.opt small { display: block; font-size: 10.5px; font-weight: 500; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.tog { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 8px; padding: 4px 10px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--hb-line); background: var(--hb-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); text-align: left; cursor: pointer; }
+.tog span { flex: 1; } .tog small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.tog i { flex: none; width: 40px; height: 24px; border-radius: 12px; background: var(--kb-line); position: relative; transition: background .15s; }
+.tog i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tog[aria-checked="true"] i { background: var(--kb-accent); } .tog[aria-checked="true"] i::after { transform: translateX(16px); }
+.bestline { margin: 8px 0 0; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
+.sample { display: flex; justify-content: center; gap: 4px; margin: 6px 0 2px; }
+.sample .sym { width: 34px; height: 34px; font-size: 20px; }
+.foot { padding-top: 2px; }
+/* result */
+.ans { display: flex; justify-content: center; gap: 5px; margin: 6px 0; }
+.ans .sym { width: 40px; height: 40px; font-size: 24px; border-radius: 10px; }
+.ans .sym.col b { font-size: 11px; }
+.anslbl { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin-top: 6px; }
+.big { font-family: var(--kb-font-display); font-size: 40px; line-height: 1.1; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--hb-blow); color: #241300; font-size: 12px; font-weight: 800; }
+.rrows { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0 2px; }
+.rrows div { padding: 6px 4px; border-radius: 12px; background: var(--hb-panel); border: 1px solid var(--hb-line); font-size: 11px; color: var(--kb-dim); font-weight: 800; }
+.rrows b { display: block; font-size: 16px; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+/* how to play */
+.howto { max-width: 420px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.exbox { margin: 6px 0; padding: 8px 10px; border-radius: 14px; background: var(--hb-panel); border: 1px solid var(--hb-line); }
+.exline { display: flex; align-items: center; gap: 6px; margin: 3px 0; font-size: 11.5px; font-weight: 800; color: var(--kb-dim); }
+.exline .lbl { flex: none; width: 4.6em; }
+.exline .code { display: flex; gap: 3px; }
+.exline .sym.hit { box-shadow: inset 0 0 0 2px var(--hb-hit); } .exline .sym.blow { box-shadow: inset 0 0 0 2px var(--hb-blow); border-style: dashed; }
+.howto ul, .howto ol { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); }
+.howto li { margin: 3px 0; }
+.howto li small { color: var(--kb-dim); }
+.howto details { margin-top: 6px; border-radius: 14px; border: 1px solid var(--hb-line); padding: 0 10px; }
+.howto summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--kb-accent-text); cursor: pointer; }
+.howto details ul { color: var(--kb-dim); font-size: 12px; margin-bottom: 8px; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hb-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--hb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+body.thumb .icon, body.thumb #vsSlot, body.thumb .back, body.thumb .kb-layer, body.thumb .kb-toasts { display: none !important; }
+
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rowIn { from { transform: translateX(-8px); opacity: 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .row, .card, .overlay, .coach { animation: none; } .slots.shake { animation: none; } }
+
+/* small phones: tighten */
+@media (max-height: 600px) {
+  .slot { width: 44px; height: 44px; } .slot .sym { width: 40px; height: 40px; font-size: 22px; }
+  .key { min-height: 44px; }
+  .row { min-height: 36px; }
+  .card { padding: 12px 12px 8px; }
+  .card h2.logo { font-size: 22px; }
+  .og { margin-top: 6px; }
+  .btn { min-height: 46px; margin-top: 6px; }
+  .coach { min-height: 44px; padding-top: 3px; padding-bottom: 3px; }
+}
+@media (max-width: 379px) { h1 { visibility: hidden; } }
+@media (max-width: 340px) { .slot { width: 44px; height: 44px; } .slot .sym { width: 40px; height: 40px; font-size: 22px; } .slots { gap: 5px; } }
+/* landscape phones: notebook on the left, input on the right */
+@media (orientation: landscape) and (max-height: 520px) {
+  header { padding-top: 0; }
+  .info { margin: 0 0 2px; }
+  #body { flex-direction: row; max-width: 900px; gap: 10px; }
+  #right { width: min(46%, 380px); justify-content: flex-end; }
+  .card { max-width: 640px; }
+  .howto { max-width: 680px; }
+  .opts .og2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opts .og2 .og { margin-top: 4px; }
+  .card h2.logo { font-size: 20px; }
+  #tSample { display: none; }
+  .foot .row3 { display: flex; gap: 8px; } .foot .row3 > * { flex: 1; min-width: 0; }
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .key { min-height: 54px; } .slot { width: 54px; height: 54px; } .slot .sym { width: 50px; height: 50px; font-size: 28px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <h1 data-i18n>ヒットアンドブロー</h1>
+      <span id="vsSlot" class="vs-slot"></span>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="info">
+      <span class="chip mode" id="iMode"></span>
+      <span class="chip" id="iTurn"></span>
+      <span class="chip" id="iTime"></span>
+      <span class="chip acc" id="iBest"></span>
+    </div>
+  </header>
+  <div id="body">
+    <div id="left">
+      <div class="coach" id="coach" hidden role="status" aria-live="polite">
+        <span class="step" id="coachStep">1</span>
+        <p id="coachText"></p>
+        <button class="cbtn" id="coachBtn" type="button" hidden></button>
+      </div>
+      <div class="cpubar" id="cpuBar" hidden aria-live="polite"></div>
+      <div class="tabs" role="tablist" aria-label="ノート" data-i18n-attr="aria-label">
+        <button class="tab" id="tabHist" type="button" role="tab" data-tab="hist" aria-controls="hist" aria-selected="true"><span data-i18n>推理</span></button>
+        <button class="tab" id="tabCpu" type="button" role="tab" data-tab="cpu" aria-controls="cpuHist" aria-selected="false" hidden><span data-i18n>CPUの推理</span></button>
+        <button class="tab" id="tabMemo" type="button" role="tab" data-tab="memo" aria-controls="memo" aria-selected="false"><span data-i18n>メモ</span></button>
+      </div>
+      <div id="main">
+        <ol class="hist" id="hist" role="tabpanel" aria-labelledby="tabHist"></ol>
+        <ol class="hist" id="cpuHist" role="tabpanel" aria-labelledby="tabCpu" hidden></ol>
+        <div class="memo" id="memo" role="tabpanel" aria-labelledby="tabMemo" hidden></div>
+      </div>
+    </div>
+    <div id="right">
+      <div class="setbar" id="setBar" hidden>
+        <p id="setText"></p>
+        <button id="setRand" type="button" data-i18n>おまかせ</button>
+      </div>
+      <div class="slots" id="slots" aria-label="いまの推理" data-i18n-attr="aria-label"></div>
+      <div class="pad p5" id="pad"></div>
+      <div class="acts">
+        <button class="key act" id="delBtn" type="button" aria-label="1字消す" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M12 9l6 6M18 9l-6 6"/></svg></button>
+        <button class="key act" id="clrBtn" type="button" data-i18n>クリア</button>
+        <button class="key go" id="goBtn" type="button" data-i18n>決定</button>
+      </div>
+    </div>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="card">
+    <h2 class="logo" id="tTitle" data-i18n>ヒットアンドブロー</h2>
+    <div class="sample" id="tSample" aria-hidden="true"></div>
+    <div class="scroll opts">
+      <div class="og2">
+        <div class="og"><div class="ol" data-i18n>つかう記号</div><div class="seg" id="optSym"></div></div>
+        <div class="og"><div class="ol" data-i18n>むずかしさ</div><div class="seg" id="optDiff"></div></div>
+      </div>
+      <button class="tog sub" id="optDup" type="button" role="switch" aria-checked="false"><span><span data-i18n>同じ記号もありにする（上級）</span><small data-i18n>答えに同じ記号が何度も出ることがある。点数1.5倍</small></span><i></i></button>
+      <div class="og"><div class="ol" data-i18n>CPUの強さ（CPUと対戦）</div><div class="seg" id="optCpu"></div></div>
+      <p class="bestline" id="tBest"></p>
+      <button class="btn sub" id="tNew" type="button" hidden data-i18n>今のゲームをやめて、新しく始める</button>
+    </div>
+    <div class="foot">
+      <button class="btn" id="tPlay" type="button"></button>
+      <div class="row3">
+        <div class="row2"><button class="btn sub" id="tDaily" type="button"></button><button class="btn sub" id="tCpu" type="button" data-i18n>CPUと対戦</button></div>
+        <div class="row2"><span class="vs-wrap" id="tVs"></span><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button></div>
+      </div>
+      <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <p id="rSub"></p>
+      <div id="rAns"></div>
+      <div class="big" id="rScore"></div>
+      <div id="rNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+      <div class="rrows" id="rRows"></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rAgain" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rShare" type="button" data-i18n>結果をコピー</button><button class="btn sub" id="rTitleBtn" type="button" data-i18n>タイトルへ</button></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ヒットアンドブロー — the classic public-domain code-breaking game (also known as Bulls and Cows).
+// Guess a hidden row of different symbols; each guess is answered with H (right symbol, right place) and B (right symbol, wrong place).
+// Modes: solo (3 difficulties × digits / colors × repeats allowed or not), today's challenge (the same answer for everyone per JST day),
+// CPU battle (guess each other's secret in turns; 3 CPU strengths) and the online battle (common/versus.js: the same answers in the same order).
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null, VS = window.KoboVersus || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'hitblow';
+const SAVE_KEY = 'kusoge.hitblow.save';   // records, settings, daily streak (registry: per-field merge)
+const STATE_KEY = 'kusoge.hitblow.state'; // the unfinished solo / daily game on this device (not synced)
+const HOWTO_KEY = 'kusoge.hitblow.howto'; // '1' = the how-to was shown
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const fmtTime = ms => { const s = Math.floor((ms || 0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name, a) { if (A) A.sfx(name, a); }
+function mkRng(seed) {
+  if (PF && PF.rng) return PF.rng(seed >>> 0);
+  if (VS && VS.rng) return VS.rng(seed >>> 0);
+  let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const launch = PF ? PF.launch() : { daily: null };
+const launchDaily = launch.daily || null;
+const todayKey = () => (PF ? PF.jstDateKey() : Number(new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10).replace(/-/g, '')));
+const prevDay = dk => (PF ? PF.addDays(dk, -1) : 0);
+
+// ---------- the rules ----------
+const DIFFS = {
+  e: { len: 3, max: 8, mult: 1, ja: 'かんたん' },
+  n: { len: 4, max: 10, mult: 2, ja: 'ふつう' },
+  h: { len: 5, max: 12, mult: 3, ja: 'むずかしい' },
+};
+const CPU_NAMES = { 1: 'よわい', 2: 'ふつう', 3: 'つよい' };
+// colorblind-safe palette (Okabe–Ito + white); every color also has its own shape and letter
+const SHAPES = {
+  circle: '<circle cx="12" cy="12" r="8.6"/>',
+  tri: '<path d="M12 3.2L21.4 19.6H2.6z"/>',
+  star: '<path d="M12 2.6l2.8 6.1 6.6.7-5 4.5 1.4 6.5L12 17.1l-5.8 3.3 1.4-6.5-5-4.5 6.6-.7z"/>',
+  square: '<rect x="4" y="4" width="16" height="16" rx="2.5"/>',
+  diamond: '<path d="M12 2.2L21.8 12 12 21.8 2.2 12z"/>',
+  hex: '<path d="M7.2 3.4h9.6l4.8 8.6-4.8 8.6H7.2L2.4 12z"/>',
+  heart: '<path d="M12 20.6S3.4 15.2 3.4 9.3A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8.6 2.3c0 5.9-8.6 11.3-8.6 11.3z"/>',
+  plus: '<path d="M9 3.2h6v5.8h5.8v6H15v5.8H9V15H3.2V9H9z"/>',
+};
+const COLORS = [
+  { c: '#d55e00', l: 'R', ja: 'あか', shape: 'circle' },
+  { c: '#e69f00', l: 'O', ja: 'だいだい', shape: 'tri' },
+  { c: '#f0e442', l: 'Y', ja: 'きいろ', shape: 'star' },
+  { c: '#009e73', l: 'G', ja: 'みどり', shape: 'square' },
+  { c: '#56b4e9', l: 'S', ja: 'みずいろ', shape: 'diamond' },
+  { c: '#0072b2', l: 'B', ja: 'あお', shape: 'hex' },
+  { c: '#cc79a7', l: 'P', ja: 'むらさき', shape: 'heart' },
+  { c: '#f4f4f4', l: 'W', ja: 'しろ', shape: 'plus' },
+];
+function mkCfg(sym, d, dup) {
+  const dd = DIFFS[d] ? d : 'n', D = DIFFS[dd], col = sym === 'col';
+  return { sym: col ? 'col' : 'num', d: dd, dup: !!dup, len: D.len, max: D.max, mult: D.mult, n: col ? 8 : 10 };
+}
+const DAILY_CFG = () => mkCfg('num', 'n', false);
+const cfgKey = c => (c.sym === 'col' ? 'c' : 'n') + c.len + (c.dup ? 'x' : '');
+const SEP = EN ? ' · ' : '・';
+const cfgName = c => T(c.sym === 'col' ? 'いろ' : '数字') + SEP + T('{n}桁', { n: c.len }) + (c.dup ? SEP + T('重複あり') : '');
+const chOf = i => String.fromCharCode(48 + i);
+const idxOf = ch => ch.charCodeAt(0) - 48;
+
+// H*10+B with reusable counters (fast enough for the CPU's search)
+const CA = new Int8Array(10), CB = new Int8Array(10);
+function hb(a, b) {
+  let h = 0; CA.fill(0); CB.fill(0);
+  for (let i = 0; i < a.length; i++) { const x = a.charCodeAt(i) - 48, y = b.charCodeAt(i) - 48; if (x === y) h++; else { CA[x]++; CB[y]++; } }
+  let bl = 0; for (let k = 0; k < 10; k++) bl += CA[k] < CB[k] ? CA[k] : CB[k];
+  return h * 10 + bl;
+}
+function judge(secret, guess) { const v = hb(secret, guess); return { h: Math.floor(v / 10), b: v % 10 }; }
+const codeCache = {};
+function allCodes(cfg) {
+  const k = cfg.n + ':' + cfg.len + ':' + (cfg.dup ? 1 : 0);
+  if (codeCache[k]) return codeCache[k];
+  const out = [], buf = [];
+  (function rec(depth, used) {
+    if (depth === cfg.len) { out.push(buf.join('')); return; }
+    for (let i = 0; i < cfg.n; i++) {
+      if (!cfg.dup && (used & (1 << i))) continue;
+      buf[depth] = chOf(i); rec(depth + 1, used | (1 << i));
+    }
+  })(0, 0);
+  return (codeCache[k] = out);
+}
+function makeSecret(cfg, rnd) {
+  let s = '';
+  const pool = Array.from({ length: cfg.n }, (_, i) => i);
+  for (let i = 0; i < cfg.len; i++) {
+    if (cfg.dup) s += chOf(Math.floor(rnd() * cfg.n));
+    else { const j = Math.floor(rnd() * pool.length); s += chOf(pool[j]); pool.splice(j, 1); }
+  }
+  return s;
+}
+function validCode(cfg, s) {
+  if (typeof s !== 'string' || s.length !== cfg.len) return false;
+  for (let i = 0; i < s.length; i++) { const x = idxOf(s[i]); if (!(x >= 0 && x < cfg.n)) return false; if (!cfg.dup && s.indexOf(s[i]) !== i) return false; }
+  return true;
+}
+const filterBy = (list, rows) => list.filter(c => rows.every(r => hb(c, r.g) === r.h * 10 + r.b));
+// score: fewer guesses and less time are better; the difficulty multiplies it
+function scoreOf(cfg, n, ms) {
+  const base = 100 * (cfg.max - n + 1), tb = Math.max(0, 240 - Math.floor((ms || 0) / 1000));
+  return Math.round((base + tb) * cfg.mult * (cfg.dup ? 1.5 : 1));
+}
+
+// ---------- symbols on screen ----------
+function symHTML(cfg, ch) {
+  const i = idxOf(ch);
+  if (cfg.sym === 'num') return '<span class="sym num">' + i + '</span>';
+  const c = COLORS[i];
+  return '<span class="sym col" style="--c:' + c.c + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + SHAPES[c.shape] + '</svg><b>' + c.l + '</b></span>';
+}
+const symName = (cfg, ch) => (cfg.sym === 'num' ? String(idxOf(ch)) : T(COLORS[idxOf(ch)].ja));
+const codeHTML = (cfg, code) => Array.from(code, ch => symHTML(cfg, ch)).join('');
+const codeText = (cfg, code) => Array.from(code, ch => symName(cfg, ch)).join(cfg.sym === 'num' ? '' : SEP);
+const hbHTML = (h, b, big) => '<span class="hb h' + (h ? '' : ' zero') + (big ? ' big' : '') + '">' + h + '<small>H</small></span><span class="hb b' + (b ? '' : ' zero') + (big ? ' big' : '') + '">' + b + '<small>B</small></span>';
+const hbText = (h, b) => T('ヒット{h}・ブロー{b}', { h, b });
+
+// ---------- save ----------
+const STAT_KEYS = ['plays', 'wins', 'losses', 'lucky', 'fast4', 'win5', 'winDup', 'cpuPlays', 'cpu1', 'cpu2', 'cpu3', 'vsSolved'];
+function defSave() {
+  const stats = {}; for (const k of STAT_KEYS) stats[k] = 0;
+  return { v: 1, best: 0, bests: {}, stats, daily: { last: 0, win: 0, streak: 0, max: 0, res: null }, set: { sym: 'num', d: 'n', dup: false, cpu: 2 }, tut: 0 };
+}
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const d = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
+  const n = (v, def, lo, hi) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : def; };
+  const o = { v: 1, best: n(s.best, 0, 0, 1e7), bests: {}, stats: {}, tut: n(s.tut, 0, 0, 1) };
+  if (s.bests && typeof s.bests === 'object') for (const k of Object.keys(s.bests)) {
+    const b = s.bests[k];
+    if (/^[nc][345]x?$/.test(k) && b && typeof b === 'object') o.bests[k] = { s: n(b.s, 0, 0, 1e7), g: n(b.g, 0, 0, 99), t: n(b.t, 0, 0, 1e9) };
+  }
+  for (const k of STAT_KEYS) o.stats[k] = n(s.stats && s.stats[k], 0, 0, 1e9);
+  const dl = s.daily && typeof s.daily === 'object' ? s.daily : {};
+  o.daily = { last: n(dl.last, 0, 0, 99999999), win: n(dl.win, 0, 0, 99999999), streak: n(dl.streak, 0, 0, 1e6), max: n(dl.max, 0, 0, 1e6), res: null };
+  if (dl.res && typeof dl.res === 'object' && Array.isArray(dl.res.rows)) {
+    o.daily.res = { dk: n(dl.res.dk, 0, 0, 99999999), won: !!dl.res.won, g: n(dl.res.g, 0, 0, 99), s: n(dl.res.s, 0, 0, 1e7), ms: n(dl.res.ms, 0, 0, 1e9),
+      a: typeof dl.res.a === 'string' ? dl.res.a.slice(0, 5) : '', rows: dl.res.rows.slice(0, 12).map(r => [n(r && r[0], 0, 0, 5), n(r && r[1], 0, 0, 5)]) };
+  }
+  o.daily.max = Math.max(o.daily.max, o.daily.streak);
+  const st = s.set && typeof s.set === 'object' ? s.set : {};
+  o.set = { sym: st.sym === 'col' ? 'col' : 'num', d: DIFFS[st.d] ? st.d : 'n', dup: !!st.dup, cpu: n(st.cpu, 2, 1, 3) };
+  for (const k of Object.keys(o.bests)) o.best = Math.max(o.best, o.bests[k].s); // the rank value never trails a per-setting best
+  return o;
+}
+let save = readSave();
+function writeSave() {
+  // never go below what another tab (or a sync) already stored
+  const cur = readSave();
+  save.best = Math.max(save.best, cur.best);
+  for (const k of STAT_KEYS) save.stats[k] = Math.max(save.stats[k], cur.stats[k]);
+  for (const k of Object.keys(cur.bests)) {
+    const a = save.bests[k], b = cur.bests[k];
+    if (!a) save.bests[k] = b;
+    else { a.s = Math.max(a.s, b.s); if (b.g && (!a.g || b.g < a.g)) a.g = b.g; if (b.t && (!a.t || b.t < a.t)) a.t = b.t; }
+  }
+  save.daily.max = Math.max(save.daily.max, cur.daily.max, save.daily.streak);
+  save.tut = Math.max(save.tut, cur.tut);
+  store.set(SAVE_KEY, JSON.stringify(save));
+}
+
+// ---------- the game state ----------
+// G.kind: 'solo' | 'daily' | 'practice'（today's answer again, no records） | 'cpu' | 'vs'
+let G = null, menuOpen = false, pm = null, tab = 'hist', seedNext = null, cpuDelay = 750, cpuTimer = 0, vsSnap = null, booted = false;
+const modeOf = g => (g.kind === 'daily' ? 'daily' : g.kind === 'practice' ? 'practice' : g.kind === 'cpu' || g.kind === 'vs' ? (g.kind === 'vs' && g.vs.practice ? 'practice' : 'versus') : 'normal');
+function freshMemo(cfg) { return { s: new Array(cfg.n).fill(0), p: new Array(cfg.n * cfg.len).fill(0) }; }
+function newG(kind, cfg, secret, o) {
+  return Object.assign({ kind, cfg, secret, rows: [], cur: '', ms: 0, sessMs: 0, started: false, over: false, won: false, score: 0, dk: null, tut: false, memo: freshMemo(cfg), at: Date.now() }, o || {});
+}
+function rnd() { if (seedNext != null) { const r = mkRng(seedNext); seedNext = null; return r; } return Math.random; }
+const playing = () => !!(G && G.started && !G.over);
+
+// the unfinished solo / daily game survives a reload (turn-based: nothing is lost by closing the tab)
+function persist() {
+  if (!G || G.over || !G.started || !['solo', 'daily', 'practice'].includes(G.kind)) return;
+  store.set(STATE_KEY, JSON.stringify({ v: 1, kind: G.kind, cfg: { sym: G.cfg.sym, d: G.cfg.d, dup: G.cfg.dup }, secret: G.secret, rows: G.rows.map(r => [r.g, r.h, r.b]),
+    cur: G.cur, ms: Math.round(G.ms), dk: G.dk, memo: G.memo, tut: G.tut ? 1 : 0 }));
+}
+function clearState() { store.del(STATE_KEY); }
+function readState() {
+  let s = null; try { s = JSON.parse(store.get(STATE_KEY) || 'null'); } catch (e) { s = null; }
+  if (!s || typeof s !== 'object' || !['solo', 'daily', 'practice'].includes(s.kind) || !s.cfg) return null;
+  const cfg = s.kind === 'solo' ? mkCfg(s.cfg.sym, s.cfg.d, s.cfg.dup) : DAILY_CFG();
+  if (!validCode(cfg, s.secret) || !Array.isArray(s.rows)) return null;
+  if (s.kind !== 'solo' && Number(s.dk) !== todayKey() && !(launchDaily && Number(s.dk) === launchDaily)) return null; // yesterday's daily is gone
+  const g = newG(s.kind, cfg, s.secret, { dk: s.kind === 'solo' ? null : Number(s.dk), ms: clamp(Number(s.ms) || 0, 0, 1e9), tut: !!s.tut });
+  for (const r of s.rows) { if (!Array.isArray(r) || !validCode(cfg, r[0])) return null; const j = judge(g.secret, r[0]); g.rows.push({ g: r[0], h: j.h, b: j.b }); }
+  if (g.rows.length >= cfg.max || g.rows.some(r => r.h === cfg.len)) return null;
+  if (typeof s.cur === 'string' && s.cur.length < cfg.len && /^[0-9]*$/.test(s.cur)) g.cur = Array.from(s.cur).filter((ch, i, a) => idxOf(ch) < cfg.n && (cfg.dup || a.indexOf(ch) === i)).join('');
+  if (s.memo && Array.isArray(s.memo.s) && s.memo.s.length === cfg.n && Array.isArray(s.memo.p) && s.memo.p.length === cfg.n * cfg.len)
+    g.memo = { s: s.memo.s.map(v => clamp(v | 0, 0, 2)), p: s.memo.p.map(v => clamp(v | 0, 0, 2)) };
+  return g;
+}
+
+// ---------- sound and theme ----------
+function renderSound() {
+  const b = $('sndBtn'), on = !(A && A.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!A) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false;
+  m.setAttribute('content', light ? '#eef0f6' : '#14182b');
+}
+function toast(msg, type) { if (UI) UI.toast(msg, { type: type || null, ms: 1800 }); $('live').textContent = msg; }
+function say(msg) { $('live').textContent = msg; }
+
+// ---------- rendering ----------
+const OVERLAYS = ['ovTitle', 'ovResult', 'howto'];
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden])');
+function hideOverlays() { OVERLAYS.forEach(id => { $(id).hidden = true; }); }
+let padKey = '';
+function curCfg() { return G ? G.cfg : mkCfg(save.set.sym, save.set.d, save.set.dup); }
+function buildPad() {
+  const cfg = curCfg(), key = cfg.sym + cfg.n;
+  if (padKey === key) return;
+  padKey = key;
+  const order = cfg.sym === 'num' ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const pad = $('pad');
+  pad.className = 'pad ' + (cfg.sym === 'num' ? 'p5' : 'p4');
+  pad.innerHTML = order.map(i => '<button type="button" class="key sk" data-i="' + i + '" aria-label="' + esc(symName(cfg, chOf(i))) + '">' + symHTML(cfg, chOf(i)) + '<i class="mk" aria-hidden="true"></i></button>').join('');
+}
+function cpuPhase() { return G && G.kind === 'cpu' ? G.cpu.phase : null; }
+function renderInfo() {
+  const cfg = curCfg();
+  const iMode = $('iMode'), iTurn = $('iTurn'), iTime = $('iTime'), iBest = $('iBest');
+  iTurn.classList.remove('low');
+  if (!G) { iMode.textContent = cfgName(cfg); iTurn.textContent = T('{n}/{m}回', { n: 0, m: cfg.max }); iTime.textContent = fmtTime(0); iBest.textContent = bestText(cfg); return; }
+  const used = G.kind === 'cpu' && G.cpu.phase === 'secret' ? 0 : G.rows.length;
+  iTurn.textContent = T('{n}/{m}回', { n: used, m: G.cfg.max });
+  if (!G.over && G.cfg.max - used <= 2 && used > 0) iTurn.classList.add('low');
+  iTime.textContent = fmtTime(G.ms);
+  if (G.kind === 'vs') { iMode.textContent = T('問題 {n}', { n: G.vs.idx }) + SEP + cfgName(G.cfg); iBest.textContent = T('{n}点', { n: fmtN(G.vs.score) }); return; }
+  iMode.textContent = (G.kind === 'daily' ? T('今日のチャレンジ') + SEP : G.kind === 'practice' ? T('練習') + SEP : '') + cfgName(G.cfg);
+  if (G.kind === 'cpu') iBest.textContent = T('CPU：{l}', { l: T(CPU_NAMES[G.cpu.level]) });
+  else if (G.kind === 'daily' || G.kind === 'practice') iBest.textContent = dkText(G.dk);
+  else iBest.textContent = bestText(G.cfg);
+}
+function dkText(dk) { const s = String(dk || ''); return s.length === 8 ? s.slice(4, 6).replace(/^0/, '') + '/' + s.slice(6).replace(/^0/, '') : ''; }
+function bestText(cfg) { const b = save.bests[cfgKey(cfg)]; return b && b.s ? T('ベスト {n}', { n: fmtN(b.s) }) : T('ベスト —'); }
+function rowHTML(cfg, r, i, win) {
+  return '<li class="row' + (win ? ' win' : '') + (r.t && Date.now() - r.t < 400 ? ' new' : '') + '" aria-label="' + esc(T('{i}回目', { i: i + 1 }) + ' ' + codeText(cfg, r.g) + ' ' + hbText(r.h, r.b)) + '"><span class="no">' + (i + 1) + '</span><span class="code">' + codeHTML(cfg, r.g) + '</span><span class="hbs">' + hbHTML(r.h, r.b) + '</span></li>';
+}
+function renderHist() {
+  const el = $('hist');
+  if (!G || !G.rows.length) {
+    const msg = !G ? '' : G.kind === 'cpu' && G.cpu.phase === 'secret' ? T('まず、CPUに当てさせる「あなたの答え」を決めます') : T('まだ推理がありません。下のキーで並びを作って「決定」');
+    el.innerHTML = msg ? '<li class="empty">' + esc(msg) + '</li>' : '';
+  } else el.innerHTML = G.rows.map((r, i) => rowHTML(G.cfg, r, i, r.h === G.cfg.len)).join('');
+  if (tab === 'hist') { const m = $('main'); m.scrollTop = m.scrollHeight; }
+  const c = $('cpuHist');
+  if (G && G.kind === 'cpu') {
+    c.innerHTML = G.cpu.rows.length ? G.cpu.rows.map((r, i) => rowHTML(G.cfg, r, i, r.h === G.cfg.len)).join('') : '<li class="empty">' + esc(T('CPUはまだ推理していません')) + '</li>';
+    if (tab === 'cpu') { const m = $('main'); m.scrollTop = m.scrollHeight; }
+  }
+}
+function renderEntry() {
+  buildPad();
+  const cfg = curCfg(), cur = G ? G.cur : '';
+  let h = '';
+  for (let i = 0; i < cfg.len; i++) {
+    const ch = cur[i];
+    h += '<button type="button" class="slot' + (ch ? ' fill' : i === cur.length ? ' next' : '') + '" data-k="' + i + '" aria-label="' + esc(ch ? T('{i}つ目：{s}（タップで消す）', { i: i + 1, s: symName(cfg, ch) }) : T('{i}つ目：空き', { i: i + 1 })) + '">' + (ch ? symHTML(cfg, ch) : '') + '</button>';
+  }
+  $('slots').innerHTML = h;
+  const memo = G ? G.memo : null;
+  $('pad').querySelectorAll('.sk').forEach(b => {
+    const i = +b.dataset.i, m = memo ? memo.s[i] : 0;
+    b.dataset.m = m;
+    b.querySelector('.mk').textContent = m === 1 ? '✕' : m === 2 ? '○' : '';
+    b.classList.toggle('used', !cfg.dup && cur.indexOf(chOf(i)) >= 0);
+  });
+  const can = canInput();
+  $('goBtn').disabled = !can || cur.length !== cfg.len;
+  $('delBtn').disabled = !can || !cur.length;
+  $('clrBtn').disabled = !can || !cur.length;
+  $('goBtn').textContent = cpuPhase() === 'secret' ? T('これにする') : T('決定');
+}
+function renderCpuBar() {
+  const bar = $('cpuBar'), sb = $('setBar');
+  const on = !!(G && G.kind === 'cpu');
+  $('tabCpu').hidden = !on;
+  if (!on) { bar.hidden = true; sb.hidden = true; if (tab === 'cpu') setTab('hist'); return; }
+  const c = G.cpu, cfg = G.cfg;
+  sb.hidden = c.phase !== 'secret';
+  $('setText').innerHTML = esc(T('CPUに当てさせる「あなたの答え」を入力')) + '<small>' + esc(cfg.dup ? T('同じ記号を使ってもOK') : T('同じ記号は使えません')) + '</small>';
+  if (c.phase === 'secret') { bar.hidden = true; return; }
+  bar.hidden = false;
+  const last = c.rows[c.rows.length - 1];
+  let h = '<span class="lbl">' + esc(T('あなたの答え')) + '</span><span class="code">' + codeHTML(cfg, c.mine) + '</span><span class="sep"></span>';
+  if (c.thinking) h += '<span class="think">' + esc(T('CPUが考え中…')) + '</span>';
+  else if (last) h += '<span class="lbl">' + esc(T('CPU')) + '</span><span class="code">' + codeHTML(cfg, last.g) + '</span>' + hbHTML(last.h, last.b);
+  else h += '<span class="lbl">' + esc(T('あなたが先攻')) + '</span>';
+  bar.innerHTML = h;
+}
+function setTab(t) {
+  if (t === 'cpu' && !(G && G.kind === 'cpu')) t = 'hist';
+  tab = t;
+  for (const [id, name, panel] of [['tabHist', 'hist', 'hist'], ['tabCpu', 'cpu', 'cpuHist'], ['tabMemo', 'memo', 'memo']]) {
+    $(id).setAttribute('aria-selected', String(name === t)); $(panel).hidden = name !== t;
+  }
+  const dot = $('tabCpu').querySelector('.dot'); if (t === 'cpu' && dot) dot.remove();
+  if (t === 'memo') renderMemo();
+  const m = $('main'); m.scrollTop = t === 'memo' ? 0 : m.scrollHeight;
+  if (G && G.tut && G.tutStep === 3 && t === 'memo') setTimeout(() => tutNext(4), 0);
+}
+document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) { setTab(b.dataset.tab); sfx('tap'); } });
+let candCache = { k: '', n: 0 };
+function candCount() {
+  const k = G.secret + ':' + G.rows.length + ':' + cfgKey(G.cfg);
+  if (candCache.k !== k) candCache = { k, n: filterBy(allCodes(G.cfg), G.rows).length };
+  return candCache.n;
+}
+function renderMemo() {
+  const el = $('memo');
+  if (!G) { el.innerHTML = ''; return; }
+  const cfg = G.cfg, m = G.memo;
+  let h = '<div class="mhead"><p>' + esc(T('記号：なし→✕（ない）→○（ある）。マス：その場所に ✕（ちがう）／●（ここ）')) + '</p><button type="button" class="mclr" id="memoClr">' + esc(T('メモを消す')) + '</button></div>';
+  if (G.rows.length && G.kind !== 'vs') h += '<p class="cands">' + esc(T('これまでのヒントに合う答え：{n}通り', { n: fmtN(candCount()) })) + '</p>';
+  h += '<div class="mgrid" style="grid-template-columns:minmax(64px,1.3fr) repeat(' + cfg.len + ',1fr)"><span></span>';
+  for (let p = 0; p < cfg.len; p++) h += '<span class="mh">' + esc(T('{n}番目', { n: p + 1 })) + '</span>';
+  const order = cfg.sym === 'num' ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7];
+  for (const i of order) {
+    const s = m.s[i], nm = symName(cfg, chOf(i));
+    h += '<button type="button" class="ms" data-s="' + i + '" data-m="' + s + '" aria-label="' + esc(nm + (EN ? ': ' : '：') + T(['メモなし', 'ない', 'ある'][s])) + '">' + symHTML(cfg, chOf(i)) + '<span class="st">' + (s === 1 ? '✕' : s === 2 ? '○' : '') + '</span></button>';
+    for (let p = 0; p < cfg.len; p++) {
+      const v = m.p[i * cfg.len + p];
+      h += '<button type="button" class="mp" data-s="' + i + '" data-p="' + p + '" data-m="' + v + '" aria-label="' + esc(T('{s}が{n}番目：{m}', { s: nm, n: p + 1, m: T(['メモなし', 'ちがう', 'ここ'][v]) })) + '">' + (v === 1 ? '✕' : v === 2 ? '●' : '') + '</button>';
+    }
+  }
+  el.innerHTML = h + '</div>';
+}
+$('memo').addEventListener('click', e => {
+  if (!G) return;
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'memoClr') { G.memo = freshMemo(G.cfg); sfx('move'); }
+  else if (b.classList.contains('ms')) { const i = +b.dataset.s; G.memo.s[i] = (G.memo.s[i] + 1) % 3; sfx('tap'); }
+  else if (b.classList.contains('mp')) { const k = +b.dataset.s * G.cfg.len + +b.dataset.p; G.memo.p[k] = (G.memo.p[k] + 1) % 3; sfx('tap'); }
+  else return;
+  const sc = $('main').scrollTop; renderMemo(); $('main').scrollTop = sc; renderEntry(); persist();
+});
+function renderAll() { buildPad(); renderInfo(); renderHist(); renderCpuBar(); renderEntry(); if (tab === 'memo') renderMemo(); renderCoach(); }
+
+// ---------- input ----------
+function canInput() {
+  if (!G || !G.started || G.over || menuOpen || anyOverlay()) return false;
+  if (G.kind === 'vs') return !!(VS && VS.canPlay()) && !G.vs.wait;
+  if (G.kind === 'cpu' && G.cpu.thinking) return false;
+  if (VS && VS.active()) return false;
+  return true;
+}
+function press(i) {
+  if (!canInput()) return;
+  const cfg = G.cfg, ch = chOf(i);
+  if (i < 0 || i >= cfg.n) return;
+  if (G.cur.length >= cfg.len) { shake(); sfx('error'); toast(T('もう{n}つ並んでいます。「決定」か ⌫', { n: cfg.len })); return; }
+  if (!cfg.dup && G.cur.indexOf(ch) >= 0) { shake(); sfx('error'); toast(T('同じ記号は1回しか使えません')); return; }
+  G.cur += ch; sfx('tap');
+  renderEntry(); persist();
+  if (G.tut && G.tutStep === 0 && G.cur.length === cfg.len) tutNext(1);
+}
+function delOne() { if (!canInput() || !G.cur) return; G.cur = G.cur.slice(0, -1); sfx('move'); renderEntry(); persist(); }
+function clearCur() { if (!canInput() || !G.cur) return; G.cur = ''; sfx('move'); renderEntry(); persist(); }
+function removeAt(k) { if (!canInput() || k >= G.cur.length) return; G.cur = G.cur.slice(0, k) + G.cur.slice(k + 1); sfx('move'); renderEntry(); persist(); }
+function shake() { const s = $('slots'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); }
+$('pad').addEventListener('click', e => { const b = e.target.closest('.sk'); if (b) press(+b.dataset.i); });
+$('slots').addEventListener('click', e => { const b = e.target.closest('.slot'); if (b) removeAt(+b.dataset.k); });
+$('delBtn').addEventListener('click', delOne);
+$('clrBtn').addEventListener('click', clearCur);
+$('goBtn').addEventListener('click', () => submit());
+$('setRand').addEventListener('click', () => { if (!G || cpuPhase() !== 'secret' || !canInput()) return; G.cur = makeSecret(G.cfg, Math.random); sfx('select'); renderEntry(); });
+
+function submit() {
+  if (!canInput()) return null;
+  const cfg = G.cfg, g = G.cur;
+  if (g.length !== cfg.len) { shake(); sfx('error'); toast(T('{n}つ えらんでください', { n: cfg.len })); return null; }
+  if (!validCode(cfg, g)) { shake(); sfx('error'); toast(T('同じ記号は1回しか使えません')); return null; }
+  if (G.kind === 'cpu' && G.cpu.phase === 'secret') { cpuSetSecret(g); return { secret: g }; }
+  if (G.rows.some(r => r.g === g)) { shake(); sfx('error'); toast(T('その並びは もう試しました')); return null; }
+  const r = judge(G.secret, g), row = { g, h: r.h, b: r.b, t: Date.now() };
+  G.rows.push(row); G.cur = '';
+  const solved = r.h === cfg.len;
+  say(T('{i}回目', { i: G.rows.length }) + ' ' + codeText(cfg, g) + ' ' + hbText(r.h, r.b));
+  if (solved) sfx('clear'); else if (r.h) sfx('ok'); else if (r.b) sfx('pop'); else sfx('drop');
+  if (G.tut && G.tutStep <= 1) tutNext(2);
+  if (tab !== 'hist' && tab !== 'memo') setTab('hist');
+  if (G.kind === 'vs') { vsAfter(solved); renderAll(); return row; }
+  if (G.kind === 'cpu') { renderAll(); cpuSchedule(); return row; }
+  if (solved) finish(true);
+  else if (G.rows.length >= cfg.max) finish(false);
+  else persist();
+  renderAll();
+  return row;
+}
+
+document.addEventListener('keydown', e => {
+  const tg = e.target && e.target.tagName;
+  if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer:not([hidden])')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Escape') {
+    if (!$('howto').hidden) { e.preventDefault(); $('howtoAlt').click(); }
+    else if (!anyOverlay() && !(VS && VS.active())) { e.preventDefault(); openMenu(); }
+    return;
+  }
+  if (!G || anyOverlay()) return;
+  if (VS && VS.active() && !(G.kind === 'vs')) return;
+  const k = e.key, cfg = G.cfg;
+  let i = -1;
+  if (cfg.sym === 'num' && /^[0-9]$/.test(k)) i = +k;
+  else if (cfg.sym === 'col') { if (/^[1-8]$/.test(k)) i = +k - 1; else { const j = COLORS.findIndex(c => c.l === k.toUpperCase()); if (j >= 0 && k.length === 1) i = j; } }
+  if (i >= 0) { e.preventDefault(); press(i); return; }
+  if (k === 'Backspace') { e.preventDefault(); delOne(); }
+  else if (k === 'Delete') { e.preventDefault(); clearCur(); }
+  else if (k === 'Enter') { if (e.target && e.target.closest && e.target.closest('button') && e.target.closest('#app') && !e.target.closest('#right')) return; e.preventDefault(); submit(); }
+  else if (k === 'm' || k === 'M') { if (cfg.sym === 'num') { e.preventDefault(); setTab(tab === 'memo' ? 'hist' : 'memo'); } }
+});
+
+// ---------- timer (only while the game is on screen) ----------
+let lastTick = 0;
+function timerOn() { return playing() && !menuOpen && !anyOverlay() && !document.hidden && !(G.kind === 'cpu' && G.cpu.phase === 'secret') && (G.kind !== 'vs' || (VS && VS.canPlay())); }
+setInterval(() => {
+  const now = performance.now(), dt = lastTick ? Math.min(1000, now - lastTick) : 0; lastTick = now;
+  if (!timerOn()) return;
+  const before = Math.floor(G.ms / 1000);
+  G.ms += dt; G.sessMs += dt;
+  if (Math.floor(G.ms / 1000) !== before) $('iTime').textContent = fmtTime(G.ms);
+}, 250);
+
+// ---------- start, finish ----------
+function quitCurrent() {
+  if (G && G.started && !G.over && G.kind !== 'vs' && !(G.kind === 'cpu' && G.cpu.phase === 'secret')) emit('play_end', { mode: modeOf(G), score: 0, durationMs: Math.round(G.sessMs), reason: 'quit', dateKey: G.dk || undefined });
+  clearTimeout(cpuTimer);
+}
+function begin(g) {
+  quitCurrent();
+  G = g; G.started = true; G.sessMs = 0; menuOpen = false;
+  hideOverlays();
+  setTab('hist'); renderAll(); persist();
+  const mode = modeOf(G);
+  if (!(G.kind === 'cpu' && G.cpu.phase === 'secret')) emit('play_start', { mode, dateKey: G.dk || undefined, seed: G.seed });
+}
+function startSolo(o) {
+  o = o || {};
+  const cfg = o.cfg || mkCfg(save.set.sym, save.set.d, save.set.dup);
+  clearState();
+  const g = newG('solo', cfg, makeSecret(cfg, rnd()), { tut: !!o.tut });
+  if (g.tut) g.tutStep = 0;
+  begin(g);
+}
+function dailyDone(dk) {
+  if (save.daily.last === dk && save.daily.res && save.daily.res.dk === dk) return true;
+  const r = PF && PF.daily ? PF.daily.get(dk, GAME) : null;
+  return !!(r && Number(r.clearedAt) > 0);
+}
+function dailySecret(dk) { const seed = PF ? PF.dailySeed(GAME, dk) : (dk * 2654435761) >>> 0; return { seed, secret: makeSecret(DAILY_CFG(), mkRng(seed)) }; }
+function startDaily(dk, practice) {
+  dk = Number(dk) || todayKey();
+  if (vsSnap) return;
+  const st = readState();
+  if (st && st.kind === (practice ? 'practice' : 'daily') && st.dk === dk) { resumeGame(st); return; }
+  if (!practice && dailyDone(dk)) { showDailyDone(dk); return; }
+  clearState();
+  const d = dailySecret(dk);
+  begin(newG(practice ? 'practice' : 'daily', DAILY_CFG(), d.secret, { dk, seed: d.seed }));
+}
+function resumeGame(g) {
+  quitCurrent();
+  G = g; G.started = true; G.sessMs = 0; hideOverlays(); setTab('hist'); renderAll();
+  emit('play_start', { mode: modeOf(G), dateKey: G.dk || undefined, resumed: true });
+}
+function finish(won, gaveUp) {
+  if (!G || G.over) return;
+  G.over = true; G.won = won;
+  const cfg = G.cfg, n = G.rows.length, mode = modeOf(G);
+  G.score = won ? scoreOf(cfg, n, G.ms) : 0;
+  let newBest = false, newCfg = false;
+  if (mode !== 'practice') {
+    const cur = readSave(); save = Object.assign(cur, { set: save.set, tut: Math.max(cur.tut, save.tut) });
+    const s = save.stats;
+    s.plays++;
+    if (won) {
+      s.wins++;
+      if (n === 1) s.lucky++;
+      if (cfg.len === 4 && n <= 4) s.fast4++;
+      if (cfg.len === 5) s.win5++;
+      if (cfg.dup) s.winDup++;
+    } else s.losses++;
+    if (mode === 'normal' && won) {
+      const k = cfgKey(cfg), b = save.bests[k] || { s: 0, g: 0, t: 0 };
+      if (G.score > b.s) { b.s = G.score; newCfg = true; }
+      if (!b.g || n < b.g) b.g = n;
+      if (!b.t || G.ms < b.t) b.t = Math.round(G.ms);
+      save.bests[k] = b;
+      if (G.score > save.best) { save.best = G.score; newBest = true; }
+    }
+    if (mode === 'daily') {
+      const d = save.daily, dk = G.dk;
+      if (won) { d.streak = d.win === prevDay(dk) || d.win === dk ? (d.win === dk ? d.streak : d.streak + 1) : 1; d.win = dk; d.max = Math.max(d.max, d.streak); }
+      else if (d.win !== dk) d.streak = 0;
+      d.last = Math.max(d.last, dk);
+      d.res = { dk, won, g: n, s: G.score, ms: Math.round(G.ms), a: G.secret, rows: G.rows.map(r => [r.h, r.b]) };
+    }
+    writeSave();
+  }
+  clearState();
+  if (newBest) emit('best', { score: G.score });
+  emit('play_end', { mode, score: G.score, durationMs: Math.round(G.sessMs), reason: won ? 'clear' : 'over', dateKey: G.dk || undefined,
+    stats: { guesses: n, len: cfg.len, colors: cfg.sym === 'col' ? 1 : 0, dup: cfg.dup ? 1 : 0, won: won ? 1 : 0, gaveUp: gaveUp ? 1 : 0 } });
+  if (G.tut) { save.tut = 1; writeSave(); G.tutStep = 9; }
+  G.newBest = newCfg;
+  if (won) { sfx('win'); burst(); } else sfx('over');
+  renderAll();
+  const g = G;
+  setTimeout(() => { if (G === g) showResult(); }, won ? 900 : 500);
+}
+function giveUp() {
+  if (!playing() || G.kind === 'vs') return;
+  if (G.kind === 'cpu') { cpuEnd('lose', true); return; }
+  finish(false, true);
+}
+
+// ---------- the result card ----------
+function showResult() {
+  if (!G || !G.over) return;
+  const cfg = G.cfg, o = $('ovResult');
+  let title, sub = '', note = '', again = T('もう一度'), share = false;
+  if (G.kind === 'cpu') {
+    const r = G.cpu.result;
+    title = r === 'win' ? T('あなたの勝ち！') : r === 'lose' ? T('CPUの勝ち') : T('引き分け');
+    sub = T('CPU（{l}）との対戦', { l: T(CPU_NAMES[G.cpu.level]) });
+    again = T('もう一度 対戦');
+  } else {
+    title = G.won ? (G.rows.length === 1 ? T('一発で正解！') : T('正解！')) : T('ざんねん…');
+    sub = G.won ? T('{n}回で当てました', { n: G.rows.length }) : T('{n}回では当てられませんでした', { n: G.cfg.max });
+    if (G.kind === 'daily') { again = T('タイトルへ'); share = true; note = T('今日のチャレンジは1日1回。明日はまた新しい答えです（日本時間の0時に変わります）'); }
+    if (G.kind === 'practice') { again = T('タイトルへ'); note = T('練習なので記録は残りません'); }
+  }
+  $('rTitle').textContent = title;
+  $('rSub').textContent = sub + (EN ? ' · ' : '　') + cfgName(cfg);
+  let ans = '<div class="anslbl">' + esc(G.kind === 'cpu' ? T('CPUの答え') : T('答え')) + '</div><div class="ans">' + codeHTML(cfg, G.secret) + '</div>';
+  if (G.kind === 'cpu') ans += '<div class="anslbl">' + esc(T('あなたの答え')) + '</div><div class="ans">' + codeHTML(cfg, G.cpu.mine) + '</div>';
+  $('rAns').innerHTML = ans;
+  const showScore = G.kind !== 'cpu' && G.kind !== 'practice';
+  $('rScore').hidden = !showScore;
+  $('rScore').textContent = T('{n}点', { n: fmtN(G.score) });
+  $('rNew').hidden = !(G.newBest && G.kind === 'solo');
+  let rows = '<div>' + esc(T('手数')) + '<b>' + (G.kind === 'cpu' ? G.rows.length + ' : ' + G.cpu.rows.length : G.rows.length + '/' + cfg.max) + '</b></div>';
+  rows += '<div>' + esc(T('タイム')) + '<b>' + fmtTime(G.ms) + '</b></div>';
+  if (G.kind === 'cpu') rows += '<div>' + esc(T('CPUに勝った')) + '<b>' + fmtN(save.stats['cpu' + G.cpu.level]) + '</b></div>';
+  else if (G.kind === 'daily') rows += '<div>' + esc(T('連続')) + '<b>' + T('{n}日', { n: save.daily.streak }) + '</b></div>';
+  else { const b = save.bests[cfgKey(cfg)]; rows += '<div>' + esc(T('この設定のベスト')) + '<b>' + (b && b.s ? fmtN(b.s) : '—') + '</b></div>'; }
+  $('rRows').innerHTML = rows;
+  $('rNote').textContent = note;
+  $('rAgain').textContent = again;
+  $('rShare').hidden = !share;
+  $('rTitleBtn').hidden = again === T('タイトルへ');
+  hideOverlays(); o.hidden = false;
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+$('rAgain').addEventListener('click', () => {
+  if (!G) { showTitle(); return; }
+  if (G.kind === 'solo') startSolo({ cfg: G.cfg });
+  else if (G.kind === 'cpu') startCpu();
+  else showTitle();
+});
+$('rTitleBtn').addEventListener('click', () => showTitle());
+$('rShare').addEventListener('click', () => {
+  const r = save.daily.res; if (!r) return;
+  const text = shareText(r);
+  const done = () => toast(T('コピーしました'), 'ok');
+  try { navigator.clipboard.writeText(text).then(done, () => toast(text)); } catch (e) { toast(text); }
+});
+function shareText(r) {
+  const s = String(r.dk);
+  return T('ヒットアンドブロー') + ' ' + s.slice(0, 4) + '/' + s.slice(4, 6) + '/' + s.slice(6) + ' ' + (r.won ? r.g : 'X') + '/' + DAILY_CFG().max + '\n' +
+    r.rows.map(x => '●'.repeat(x[0]) + '○'.repeat(x[1]) + '·'.repeat(Math.max(0, 4 - x[0] - x[1]))).join('\n');
+}
+function showDailyDone(dk) {
+  // today's answer is already played: show how it went (one try per day; the same answer again would be no puzzle)
+  const r = save.daily.res && save.daily.res.dk === dk ? save.daily.res : null;
+  quitCurrent();
+  const cfg = DAILY_CFG();
+  G = newG('daily', cfg, r && validCode(cfg, r.a) ? r.a : dailySecret(dk).secret, { dk, over: true, won: r ? r.won : true, score: r ? r.s : 0, ms: r ? r.ms : 0 });
+  if (r) G.rows = r.rows.map(x => ({ g: '', h: x[0], b: x[1] }));
+  $('rTitle').textContent = T('今日のチャレンジは終わりました');
+  $('rSub').textContent = r ? (r.won ? T('{n}回で当てました', { n: r.g }) : T('{n}回では当てられませんでした', { n: cfg.max })) : '';
+  $('rAns').innerHTML = '<div class="anslbl">' + esc(T('答え')) + '</div><div class="ans">' + codeHTML(cfg, G.secret) + '</div>';
+  $('rScore').hidden = !r; $('rScore').textContent = T('{n}点', { n: fmtN(r ? r.s : 0) });
+  $('rNew').hidden = true;
+  $('rRows').innerHTML = '<div>' + esc(T('手数')) + '<b>' + (r ? (r.won ? r.g : 'X') + '/' + cfg.max : '—') + '</b></div><div>' + esc(T('タイム')) + '<b>' + fmtTime(r ? r.ms : 0) + '</b></div><div>' + esc(T('連続')) + '<b>' + T('{n}日', { n: save.daily.streak }) + '</b></div>';
+  $('rNote').textContent = T('明日はまた新しい答えです（日本時間の0時に変わります）');
+  $('rAgain').textContent = T('タイトルへ'); $('rTitleBtn').hidden = true; $('rShare').hidden = !r;
+  G.started = false; G = null;
+  renderAll();
+  hideOverlays(); $('ovResult').hidden = false;
+}
+
+// ---------- title ----------
+function seg(el, items, val, onPick) {
+  el.innerHTML = items.map(x => '<button type="button" class="opt sub" data-v="' + x.v + '" aria-pressed="' + (String(x.v) === String(val)) + '">' + esc(x.label) + (x.small ? '<small>' + esc(x.small) + '</small>' : '') + '</button>').join('');
+  el.onclick = e => { const b = e.target.closest('.opt'); if (b) { onPick(b.dataset.v); sfx('tap'); } };
+}
+function setOpt(k, v) { save.set[k] = v; writeSave(); renderTitle(); if (!G || !G.started || G.over) { padKey = ''; G = null; renderAll(); } }
+function renderTitle() {
+  const st = save.set, cfg = mkCfg(st.sym, st.d, st.dup);
+  seg($('optSym'), [{ v: 'num', label: T('数字'), small: EN ? '0–9' : '0〜9' }, { v: 'col', label: T('いろ'), small: T('8色・形つき') }], st.sym, v => setOpt('sym', v));
+  seg($('optDiff'), Object.keys(DIFFS).map(k => ({ v: k, label: T(DIFFS[k].ja), small: T('{n}つ・{m}回まで', { n: DIFFS[k].len, m: DIFFS[k].max }) })), st.d, v => setOpt('d', v));
+  seg($('optCpu'), [1, 2, 3].map(l => ({ v: l, label: T(CPU_NAMES[l]) })), st.cpu, v => setOpt('cpu', +v));
+  $('optDup').setAttribute('aria-checked', String(!!st.dup));
+  const b = save.bests[cfgKey(cfg)];
+  $('tBest').textContent = b && b.s ? T('この設定のベスト：{s}点（最少{g}回・最速{t}）', { s: fmtN(b.s), g: b.g, t: fmtTime(b.t) }) : T('この設定の記録はまだありません');
+  const sample = cfg.sym === 'num' ? '????' : '0257';
+  $('tSample').innerHTML = cfg.sym === 'num' ? Array.from({ length: cfg.len }, () => '<span class="sym q">?</span>').join('') : codeHTML(cfg, sample.slice(0, cfg.len).padEnd(cfg.len, '4'));
+  const st2 = resumable();
+  $('tPlay').innerHTML = st2 ? esc(T('つづきから')) + ' <small>' + esc((st2.kind === 'daily' ? T('今日のチャレンジ') : cfgName(st2.cfg)) + SEP + T('{n}/{m}回', { n: st2.rows.length, m: st2.cfg.max })) + '</small>' : esc(T('ひとりで あそぶ'));
+  const dk = todayKey();
+  $('tNew').hidden = !st2;
+  $('tDaily').innerHTML = esc(T('今日のチャレンジ')) + (dailyDone(dk) ? ' <small>' + esc(T('済')) + '</small>' : '');
+}
+$('optDup').addEventListener('click', () => { setOpt('dup', !save.set.dup); });
+function resumable() {
+  if (G && G.started && !G.over && ['solo', 'daily', 'practice'].includes(G.kind)) return G;
+  return readState();
+}
+function showTitle() {
+  if (G && G.kind === 'cpu' && !G.over) { quitCurrent(); G = null; }
+  if (G && G.over) G = null;
+  if (G && G.started && !G.over) persist();
+  menuOpen = false;
+  hideOverlays(); renderTitle(); renderAll();
+  $('ovTitle').hidden = false;
+  try { $('tPlay').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tPlay').addEventListener('click', () => {
+  const r = resumable();
+  if (r) { if (r === G) { hideOverlays(); renderAll(); } else resumeGame(r); return; }
+  startSolo();
+});
+$('tNew').addEventListener('click', () => {
+  const r = resumable();
+  if (r && r.kind === 'daily') { // giving up today's answer counts as today's try (no fresh restart of a half-solved daily)
+    if (r !== G) { G = r; G.started = true; G.sessMs = 0; emit('play_start', { mode: 'daily', dateKey: G.dk, resumed: true }); }
+    finish(false, true);
+  } else if (G && G.started && !G.over) { G.over = true; emit('play_end', { mode: modeOf(G), score: 0, durationMs: Math.round(G.sessMs), reason: 'quit', dateKey: G.dk || undefined }); }
+  G = null; clearState(); startSolo();
+});
+$('tDaily').addEventListener('click', () => startDaily(todayKey()));
+$('tCpu').addEventListener('click', () => startCpu());
+$('tHow').addEventListener('click', () => showHowto(false));
+
+// ---------- how to play and the tutorial ----------
+function renderHowto() {
+  const cfg = mkCfg('num', 'n', false);
+  const ex = (lbl, code, cls) => '<div class="exline"><span class="lbl">' + esc(lbl) + '</span><span class="code">' + Array.from(code, (ch, i) => symHTML(cfg, ch).replace('class="sym num"', 'class="sym num' + (cls && cls[i] ? ' ' + cls[i] : '') + '"')).join('') + '</span></div>';
+  $('howBody').innerHTML =
+    '<p class="lead">' + esc(T('かくれた答え（ちがう記号の並び）を、ヒントをたよりに当てる推理パズルです。')) + '</p>' +
+    '<div class="exbox">' + ex(T('答え'), '4719') + ex(T('推理'), '4123', ['hit', 'blow', '', '']) +
+    '<div class="exline"><span class="lbl">' + esc(T('ヒント')) + '</span>' + hbHTML(1, 1) + '</div></div>' +
+    '<ul><li><b>' + esc(T('H＝ヒット')) + '</b>' + (EN ? ': ' : '：') + esc(T('記号も場所も合っている数（例の 4）')) + '</li>' +
+    '<li><b>' + esc(T('B＝ブロー')) + '</b>' + (EN ? ': ' : '：') + esc(T('記号は答えにあるが、場所がちがう数（例の 1）')) + '</li></ul>' +
+    '<ol><li>' + esc(T('下のキーで並びを作り、「決定」')) + '<br><small>' + esc(T('まちがえたら ⌫ で1字消す。並びのマスをタップしても消せます')) + '</small></li>' +
+    '<li>' + esc(T('H と B から答えをしぼって、次の推理')) + '</li>' +
+    '<li>' + esc(T('「メモ」で、ない記号に✕、ある記号に○、場所ごとに ✕／● をつけられる')) + '</li>' +
+    '<li>' + esc(T('全部ヒットで正解。回数の上限まで当てられないと負け')) + '</li></ol>' +
+    '<details><summary>' + esc(T('モードと点数')) + '</summary><ul>' +
+    '<li>' + esc(T('むずかしさ：かんたん 3つ（8回まで）、ふつう 4つ（10回まで）、むずかしい 5つ（12回まで）')) + '</li>' +
+    '<li>' + esc(T('いろ：8色。色だけでなく、形と文字でも見分けられます')) + '</li>' +
+    '<li>' + esc(T('同じ記号もあり（上級）：答えに同じ記号が何度も出ることがある。点数1.5倍')) + '</li>' +
+    '<li>' + esc(T('点数：（のこりの回数＋1）×100 ＋ 時間ボーナス（4分まで）に、むずかしさの倍率（×1／×2／×3）')) + '</li>' +
+    '<li>' + esc(T('今日のチャレンジ：全員に同じ答え（数字4つ）。1日1回、日本時間の0時に変わります')) + '</li>' +
+    '<li>' + esc(T('CPUと対戦：おたがいの答えを交互に当て合う。あなたが先攻で、CPUにも同じ回数の番があります')) + '</li>' +
+    '<li>' + esc(T('オンライン対戦：2〜4人で4分間。全員に同じ答えが同じ順番で出て、少ない回数で当てるほど高得点')) + '</li>' +
+    '<li>' + esc(T('キーボード：数字キー（いろは 1〜8 か R O Y G S B P W）、Enter で決定、Backspace で消す、M でメモ')) + '</li>' +
+    '</ul></details>';
+}
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first; renderHowto();
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる');
+  $('howtoAlt').hidden = !first;
+  hideOverlays(); $('howto').hidden = false;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1');
+  $('howto').hidden = true;
+  if (howtoFirst && !save.tut) { startSolo({ cfg: mkCfg('num', 'e', false), tut: true }); return; }
+  if (!playing()) showTitle(); else renderAll();
+});
+$('howtoAlt').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1');
+  if (howtoFirst) { save.tut = 1; writeSave(); }
+  $('howto').hidden = true;
+  if (!playing()) showTitle(); else renderAll();
+});
+const TUT = [
+  ['下のキーで、ちがう数字を3つえらぼう', 'まちがえたら ⌫ で1字消せます', null],
+  ['「決定」で推理を出そう', '答えは3つの、ちがう数字の並びです', null],
+  ['H＝数字も場所も合っている数、B＝数字は合っているが場所がちがう数', 'H と B から、答えをしぼっていこう', 'つぎへ'],
+  ['「メモ」タブで、ない数字に✕、ある数字に○をつけられる', 'メモはキーにも出ます。タブを押してみよう', 'OK'],
+  ['あとは、全部 H になるまで推理しよう', '8回以内に当てれば勝ち', 'OK'],
+];
+function tutNext(step) {
+  if (!G || !G.tut) return;
+  G.tutStep = step;
+  if (step >= TUT.length) { G.tut = false; save.tut = 1; writeSave(); }
+  renderCoach();
+}
+function renderCoach() {
+  const c = $('coach');
+  if (!G || !G.tut || G.over || G.tutStep >= TUT.length || !G.started) { c.hidden = true; return; }
+  const [t, s, btn] = TUT[G.tutStep];
+  c.hidden = false;
+  $('coachStep').textContent = G.tutStep + 1;
+  $('coachText').innerHTML = esc(T(t)) + '<small>' + esc(T(s)) + '</small>';
+  $('coachBtn').hidden = !btn; if (btn) $('coachBtn').textContent = T(btn);
+}
+$('coachBtn').addEventListener('click', () => { if (G && G.tut) { sfx('tap'); tutNext(G.tutStep + 1); } });
+
+// ---------- CPU battle ----------
+// You and the CPU each hide an answer and take turns guessing. You go first; the CPU always gets the same number of turns.
+function startCpu(o) {
+  o = o || {};
+  const cfg = o.cfg || mkCfg(save.set.sym, save.set.d, save.set.dup);
+  const level = clamp(o.level || save.set.cpu || 2, 1, 3);
+  const r = rnd();
+  const g = newG('cpu', cfg, makeSecret(cfg, r), { cpu: { level, phase: 'secret', mine: '', rows: [], cands: null, thinking: false, result: null, rnd: r } });
+  begin(g);
+}
+function cpuSetSecret(code) {
+  const c = G.cpu;
+  c.mine = code; c.phase = 'play'; G.cur = '';
+  c.cands = allCodes(G.cfg).slice();
+  sfx('select'); toast(T('あなたの答えを決めました。先攻はあなたです'));
+  emit('play_start', { mode: 'versus', cpu: c.level });
+  renderAll();
+}
+function cpuSchedule() {
+  const c = G.cpu; c.thinking = true; renderAll();
+  const g = G;
+  const go = () => { if (G === g && !G.over) cpuTurn(); };
+  if (cpuDelay <= 0) go(); else cpuTimer = setTimeout(go, cpuDelay + Math.random() * 300);
+}
+function pick(arr, r) { return arr[Math.floor(r() * arr.length)]; }
+function sample(arr, n, r) { if (arr.length <= n) return arr.slice(); const out = new Set(); while (out.size < n) out.add(arr[Math.floor(r() * arr.length)]); return [...out]; }
+function cpuChoose(c, cfg) {
+  const r = c.rnd, all = allCodes(cfg), tried = new Set(c.rows.map(x => x.g));
+  if (!c.rows.length) return pick(all, r);
+  if (c.level === 1 && c.rows.length >= 2 && r() < 0.5) {
+    // the weak CPU forgets one of its clues now and then
+    const skip = Math.floor(r() * c.rows.length);
+    const pool = filterBy(all, c.rows.filter((_, i) => i !== skip)).filter(x => !tried.has(x));
+    if (pool.length) return pick(pool, r);
+  }
+  const cand = c.cands.filter(x => !tried.has(x));
+  if (!cand.length) return pick(all.filter(x => !tried.has(x)), r);
+  if (c.level <= 2 || cand.length <= 2) return pick(cand, r);
+  // the strong CPU: the guess whose worst answer leaves the fewest possibilities (minimax over a sample)
+  const pool = cand.length > 1500 ? sample(cand, 1500, r) : cand;
+  const guesses = sample(cand, 140, r).concat(cand.length > 3 ? sample(all, 40, r).filter(x => !tried.has(x)) : []);
+  let best = null, bestW = Infinity, bestIn = false;
+  const cnt = new Int32Array(60), candSet = cand.length < 5000 ? new Set(cand) : null;
+  for (const g of guesses) {
+    cnt.fill(0); let w = 0;
+    for (const s of pool) { const v = hb(s, g); if (++cnt[v] > w) w = cnt[v]; }
+    const inC = candSet ? candSet.has(g) : true;
+    if (w < bestW || (w === bestW && inC && !bestIn)) { best = g; bestW = w; bestIn = inC; }
+  }
+  return best || pick(cand, r);
+}
+function cpuTurn() {
+  const c = G.cpu, cfg = G.cfg;
+  const g = cpuChoose(c, cfg), j = judge(c.mine, g), row = { g, h: j.h, b: j.b, t: Date.now() };
+  c.rows.push(row); c.cands = filterBy(c.cands, [row]); c.thinking = false;
+  sfx(j.h === cfg.len ? 'fail' : 'select');
+  say(T('CPU') + ' ' + codeText(cfg, g) + ' ' + hbText(j.h, j.b));
+  if (tab !== 'cpu') { const t = $('tabCpu'); if (!t.querySelector('.dot')) t.insertAdjacentHTML('beforeend', '<span class="dot" aria-hidden="true"></span>'); }
+  const you = G.rows.length && G.rows[G.rows.length - 1].h === cfg.len, cpu = j.h === cfg.len;
+  if (you && cpu) cpuEnd('draw');
+  else if (you) cpuEnd('win');
+  else if (cpu) cpuEnd('lose');
+  else if (c.rows.length >= cfg.max) cpuEnd('draw');
+  renderAll();
+}
+function cpuEnd(result, gaveUp) {
+  if (!G || G.over) return;
+  clearTimeout(cpuTimer);
+  const c = G.cpu, cfg = G.cfg;
+  G.over = true; G.won = result === 'win'; c.result = result; c.thinking = false;
+  G.score = G.won ? scoreOf(cfg, G.rows.length, G.ms) : 0;
+  const cur = readSave(); save = Object.assign(cur, { set: save.set });
+  save.stats.cpuPlays++;
+  if (G.won) save.stats['cpu' + c.level]++;
+  writeSave();
+  emit('play_end', { mode: 'versus', score: G.score, durationMs: Math.round(G.sessMs), reason: G.won ? 'clear' : 'over', stats: { cpu: c.level, result, guesses: G.rows.length, gaveUp: gaveUp ? 1 : 0 } });
+  if (G.won) { sfx('win'); burst(); } else sfx(result === 'draw' ? 'ok' : 'over');
+  renderAll();
+  const g = G;
+  setTimeout(() => { if (G === g) showResult(); }, G.won ? 900 : 600);
+}
+
+// ---------- online battle (common/versus.js): everyone gets the same answers in the same order ----------
+const VS_CFG = () => mkCfg('num', 'n', false);
+function vsNext() {
+  const v = G.vs;
+  G.secret = makeSecret(G.cfg, v.rnd); G.rows = []; G.cur = ''; G.memo = freshMemo(G.cfg); v.wait = false;
+}
+function vsAfter(solved) {
+  const v = G.vs, cfg = G.cfg;
+  if (solved || G.rows.length >= cfg.max) {
+    const pts = solved ? 100 * (cfg.max - G.rows.length + 1) : 0;
+    v.score += pts; if (solved) v.solved++;
+    if (VS) VS.reportScore(v.score);
+    toast(solved ? T('正解！ +{n}点', { n: pts }) : T('答えは {a}。次の問題へ', { a: codeText(cfg, G.secret) }), solved ? 'ok' : null);
+    v.wait = true;
+    const g = G;
+    setTimeout(() => { if (G !== g || G.over) return; v.idx++; vsNext(); renderAll(); }, solved ? 700 : 1400);
+  }
+}
+if (VS) {
+  KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ答えが同じ順番で出ます。',
+    game: GAME, title: T('ヒットアンドブロー'), duration: 240, unit: T('点'),
+    theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--hb-go)', accentInk: 'var(--hb-hit-ink)', accentShadow: 'var(--hb-go-shadow)', card: 'var(--hb-card)',
+      line: 'var(--kb-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
+    hudCover: () => document.querySelector('header'),
+    onOpen() { if (pm && pm.isOpen) pm.close(); $('howto').hidden = true; },
+    onStart({ seed, practice }) {
+      if (!vsSnap) { clearTimeout(cpuTimer); vsSnap = { G, tab, ov: OVERLAYS.filter(id => !$(id).hidden) }; if (G && G.started && !G.over) persist(); }
+      else if (G && G.kind === 'vs' && G.vs.playing) emit('play_end', { mode: G.vs.playing, score: G.vs.score, reason: 'quit' });
+      hideOverlays();
+      const cfg = VS_CFG();
+      G = newG('vs', cfg, '', { vs: { rnd: mkRng(seed >>> 0), idx: 1, score: 0, solved: 0, practice: !!practice, playing: null, wait: false }, seed: seed >>> 0 });
+      vsNext(); G.started = true; G.vs.playing = practice ? 'practice' : 'versus';
+      setTab('hist'); renderAll();
+      emit('play_start', { mode: G.vs.playing, seed });
+    },
+    onGo() { renderAll(); },
+    getScore: () => (G && G.kind === 'vs' ? G.vs.score : 0),
+    onEnd() {
+      if (!G || G.kind !== 'vs') return;
+      G.over = true;
+      if (G.vs.playing) {
+        if (G.vs.playing === 'versus') { save = readSave(); save.stats.vsSolved += G.vs.solved; writeSave(); }
+        emit('play_end', { mode: G.vs.playing, score: G.vs.score, reason: 'over', stats: { solved: G.vs.solved } }); G.vs.playing = null;
+      }
+      renderAll();
+    },
+    onExit() {
+      if (!vsSnap) return;
+      if (G && G.kind === 'vs' && G.vs.playing) emit('play_end', { mode: G.vs.playing, score: G.vs.score, reason: 'quit' });
+      const s = vsSnap; vsSnap = null;
+      G = s.G; padKey = '';
+      setTab(s.tab); renderAll();
+      s.ov.forEach(id => { $(id).hidden = false; });
+      if (G && G.started && !G.over) {
+        G.sessMs = 0; emit('play_start', { mode: modeOf(G), dateKey: G.dk || undefined, resumed: true });
+        if (G.kind === 'cpu' && G.cpu.thinking) cpuSchedule();
+      } else if (!anyOverlay()) showTitle();
+    },
+  });
+  VS.button($('vsSlot'), { compact: true });
+  VS.button($('tVs'));
+}
+
+// ---------- menu ----------
+function openMenu() {
+  if (VS && VS.active()) return;
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = playing();
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (on) extra.push({ label: G.kind === 'cpu' ? T('対戦をやめる（負け）') : T('あきらめて答えを見る'), icon: 'close', onClick: () => { pm.close(); giveUp(); } });
+  extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra,
+    onResume: () => { menuOpen = false; const g = KG(); if (g) g.menuClosed(); renderAll(); },
+    onRestart: on && G.kind === 'solo' && !G.tut ? () => { menuOpen = false; startSolo({ cfg: G.cfg }); } : undefined,
+    onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); persist(); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+
+// ---------- confetti on a win (a canvas over everything; idle otherwise) ----------
+const fx = $('fx'), fctx = fx.getContext('2d');
+let parts = [], fxRaf = 0;
+function burst() {
+  if (reduceMotion.matches) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr); fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(document.documentElement);
+  const cols = [cs.getPropertyValue('--hb-hit').trim(), cs.getPropertyValue('--hb-blow').trim(), '#56b4e9', '#cc79a7', '#f0e442'];
+  for (let i = 0; i < 90; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 80, y: H * 0.35, vx: (Math.random() - 0.5) * 9, vy: -4 - Math.random() * 8, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4, c: cols[i % cols.length], s: 5 + Math.random() * 5, t: 0 });
+  if (!fxRaf) fxRaf = requestAnimationFrame(fxLoop);
+}
+function fxLoop() {
+  fctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => (p.t += 1) < 110);
+  for (const p of parts) {
+    p.vy += 0.28; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    fctx.save(); fctx.globalAlpha = Math.min(1, (110 - p.t) / 30); fctx.translate(p.x, p.y); fctx.rotate(p.r); fctx.fillStyle = p.c; fctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); fctx.restore();
+  }
+  fxRaf = parts.length ? requestAnimationFrame(fxLoop) : 0;
+  if (!fxRaf) fctx.clearRect(0, 0, innerWidth, innerHeight);
+}
+
+// ---------- KoboGame: turn-based (hiding the page saves the unfinished game; the clock stops while hidden) ----------
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { persist(); },
+  isIdle: () => !playing() && !vsSnap,
+  dispose() { clearTimeout(cpuTimer); cancelAnimationFrame(fxRaf); },
+  daily: { start({ dateKey }) { if (!vsSnap) startDaily(dateKey); } },
+});
+window.addEventListener('pagehide', persist);
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY && !playing()) { save = readSave(); if (!$('ovTitle').hidden) renderTitle(); renderInfo(); } });
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+
+// ---------- boot ----------
+renderSound(); themeColor(); renderTitle(); renderAll();
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut;
+if (launchDaily) {
+  const def = window.KoboGame && KoboGame.info().def;
+  if (!(def && def.flags && def.flags.daily)) setTimeout(() => { if (!vsSnap) startDaily(launchDaily); }, 0);
+} else if (firstVisit) showHowto(true);
+else showTitle();
+booted = true;
+
+// ---------- test hooks (?debug) ----------
+function botStep() { // one sensible guess: the first answer that fits every clue so far
+  if (!canInput()) return null;
+  if (G.kind === 'cpu' && G.cpu.phase === 'secret') { G.cur = makeSecret(G.cfg, Math.random); return submit(); }
+  const tried = new Set(G.rows.map(r => r.g));
+  const c = filterBy(allCodes(G.cfg), G.rows).find(x => !tried.has(x));
+  G.cur = c; return submit();
+}
+if (DEBUG) {
+  const api = {
+    ready: () => booted,
+    state: () => ({
+      kind: G ? G.kind : null, mode: G ? modeOf(G) : 'title', started: !!(G && G.started), over: !!(G && G.over), won: !!(G && G.won), score: G ? (G.kind === 'vs' ? G.vs.score : G.score) : 0,
+      cfg: G ? { sym: G.cfg.sym, len: G.cfg.len, dup: G.cfg.dup, max: G.cfg.max } : null, rows: G ? G.rows.map(r => [r.g, r.h, r.b]) : [], cur: G ? G.cur : '', ms: G ? Math.round(G.ms) : 0, dk: G ? G.dk : null,
+      cpu: G && G.cpu ? { level: G.cpu.level, phase: G.cpu.phase, mine: G.cpu.mine, rows: G.cpu.rows.map(r => [r.g, r.h, r.b]), thinking: G.cpu.thinking, result: G.cpu.result } : null,
+      vs: G && G.vs ? { idx: G.vs.idx, score: G.vs.score, solved: G.vs.solved } : null,
+      tut: G && G.tut ? G.tutStep : null, tab, memo: G ? JSON.parse(JSON.stringify(G.memo)) : null,
+      title: !$('ovTitle').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, save: JSON.parse(JSON.stringify(save)),
+    }),
+    win() { if (!canInput() || G.kind === 'cpu') return false; G.cur = G.secret; submit(); return true; },
+    lose() { if (!canInput() || G.kind === 'cpu') return false; giveUp(); return true; },
+    step(n) { const out = []; for (let i = 0; i < (n || 1); i++) { const r = botStep(); if (!r) break; out.push(r); } return out; },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__hitblow = {
+    api, get G() { return G; }, get save() { return save; }, judge, allCodes, scoreOf, readSave, readState, mkCfg, dailySecret, shareText,
+    answer: () => (G ? G.secret : null),
+    setSeed(n) { seedNext = n >>> 0; return seedNext; },
+    setCpuDelay(ms) { cpuDelay = ms; },
+    start(kind, o) {
+      o = o || {};
+      const cfg = o.sym || o.d || o.dup != null ? mkCfg(o.sym || 'num', o.d || 'n', !!o.dup) : undefined;
+      if (o.seed != null) seedNext = o.seed >>> 0;
+      if (kind === 'daily') startDaily(o.dateKey || todayKey(), !!o.practice);
+      else if (kind === 'cpu') startCpu({ cfg, level: o.level });
+      else startSolo({ cfg, tut: !!o.tut });
+      return api.state();
+    },
+    type(s) { for (const ch of String(s)) press(idxOf(ch)); return G ? G.cur : ''; },
+    guess(s) { if (!G) return null; G.cur = ''; for (const ch of String(s)) press(idxOf(ch)); return submit(); },
+    submit, press, delOne, clearCur, botStep, solve() { let g = 0; while (canInput() && g++ < 40) botStep(); return api.state(); },
+    cpuNow() { if (G && G.cpu && G.cpu.thinking && !G.over) { clearTimeout(cpuTimer); cpuTurn(); } return api.state(); },
+    addMs(ms) { if (G) { G.ms += ms; G.sessMs += ms; renderInfo(); } },
+    title: showTitle, howto: () => showHowto(false), setTab, showResult,
+    thumbScene() { // a game halfway through, colors mode, for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb');
+      quitCurrent(); hideOverlays();
+      const cfg = mkCfg('col', 'n', false);
+      G = newG('solo', cfg, '2516', { started: true, ms: 83000 });
+      for (const g of ['0123', '4567', '2541', '2153']) { const j = judge(G.secret, g); G.rows.push({ g, h: j.h, b: j.b }); }
+      G.cur = '25'; G.memo.s[0] = 1; G.memo.s[3] = 1; G.memo.s[2] = 2; G.memo.s[5] = 2;
+      padKey = ''; menuOpen = false; setTab('hist'); renderAll();
+      return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.hitblow.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

@@ -31,6 +31,20 @@
 - **Realtime Database は貼り直し不要**です（わくせいシミュレーターには対戦がないので、`database.rules.json` は変えていません）。
 - 貼る前でもゲームは遊べます。ランキングへの送信と、別の端末への同期だけが、貼るまで失敗します（端末の保存は残ります）。
 
+## 新作「ヒットアンドブロー」（hitblow）を足したとき
+- **Firestore と Realtime Database の両方**を貼り直してください（上の 1 と 2 と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'hitblow': 10000`＝1問の最高点は6,480点）、旧ランキングの点の確認、プレイ回数の `plus1('hitblow')`、同期する保存のキー `kusoge~hitblow~save` の形の確認です。
+- Realtime Database で変わったのは、対戦のゲームの一覧（3か所の `…|hitsumabushi|hitblow`）だけです。ヒットアンドブローのオンライン対戦は `vs/queue/hitblow` を使います。
+- 貼る前でもゲームは遊べます（CPU対戦・デイリーも）。ランキングへの送信、別の端末への同期、オンライン対戦だけが、貼るまで失敗します（端末の保存は残ります）。
+
+## 新作「将棋」（shogi）を足したとき
+- **Firestore と Realtime Database の両方**を貼り直してください（上の 1 と 2 と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。
+  - Firestore：ゲームの一覧 `games()` と上限 `caps()`（`'shogi': 100000`＝最強CPUに勝った数）、ランキングの点の確認、プレイ回数の `plus1('shogi')`、
+    同期する保存のキー `kusoge~shogi~save`（記録）と `kusoge~shogi~game`（続きの対局）の形の確認。
+  - Realtime Database：`"shogi"` の下を丸ごと追加（`queue`＝ランダム対戦の待ち行列、`codes`＝友だちと遊ぶ6けたのコード、`rooms`＝対局の部屋）。
+    指し手は部屋の2人だけが、自分の番にだけ、番号の順に足せます（消す・書き換えるはできない）。時刻はサーバーの時刻だけ。結果は1回だけ書けます。
+- 貼る前でも、CPU・ふたりで・詰将棋は遊べます。オンライン対局と、ランキング・別の端末への同期だけが、貼るまで失敗します（端末の保存は残ります）。
+
 ## 3. 貼り付けたら
 作業者（Claude）に「貼り付けた」と伝えてください。本番でテスト（`node tools/tests/rules/run.js --live`）を流して、
 許可と拒否が正しいか、対戦（あなぼこシティとほかのゲーム）が2人で最後まで動くかを確かめます。

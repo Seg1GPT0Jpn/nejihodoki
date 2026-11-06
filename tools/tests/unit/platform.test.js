@@ -270,7 +270,7 @@ test('stats are per device and summed across devices', () => {
   P.stats.record('blocks', { plays: 2, ms: 500 });
   deep(P.stats.get('blocks'), { plays: 5, ms: 3500, clears: 1 });
   deep(JSON.parse(st.getItem('kobo.stats')).devaaaaaaa.blocks, { plays: 2, ms: 500, clears: 0 });
-  eq(Object.keys(P.stats.all()).length, 11);
+  eq(Object.keys(P.stats.all()).length, P.games().length, 'one stats row per registered game');
 });
 
 test('popularity counter: per JST day, anonymous, pending/markSent, 35-day pruning', () => {
@@ -481,7 +481,7 @@ test('launch(): ?daily, ?stage, ?code parsing; future daily → today', () => {
 
 test('game/games/genres/rankable/theme', () => {
   const st = new FakeStorage(); const { platform: P } = fresh({ storage: st });
-  eq(P.game('hole').title.en, 'Hole City'); eq(P.game('x'), null); eq(P.games().length, 11); eq(P.genres().length, 6);
+  eq(P.game('hole').title.en, 'Hole City'); eq(P.game('x'), null); eq(P.games().length, globalThis.KOBO_REGISTRY.ids().length); eq(P.genres().length, globalThis.KOBO_REGISTRY.genres.length);
   ok(P.rankable('normal') && P.rankable('daily') && !P.rankable('versus') && !P.rankable('practice'));
   eq(P.theme.get(), 'system'); eq(P.theme.apply(), null, 'no document in node');
   const attrs = {}; const meta = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k] == null ? null : this.attrs[k]; } };

@@ -290,6 +290,89 @@ async function runCases(T, opt = {}) {
     await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `hole/queue/${A.uid}`, undefined, A));
   }
 
+  // ================================================================ RTDB: shogi（shogi/index.html）
+  {
+    const g = 'rtdb:shogi';
+    const room = rid('-rulestest'), code = String(100000 + Math.floor(Math.random() * 900000));
+    cleanup.push(() => rtdb(T, 'DELETE', `shogi/queue/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `shogi/rooms/${room}`, undefined, A), () => rtdb(T, 'DELETE', `shogi/codes/${code}`, undefined, A));
+    await check(g, 'queue: own set { n, t, c, e }', 'allow', () => rtdb(T, 'PUT', `shogi/queue/${A.uid}`, { n: 'Aoi', t: TS, c: 1, e: 1500 }, A));
+    await check(g, 'queue: creator marks room { r, m }', 'allow', () => rtdb(T, 'PATCH', `shogi/queue/${A.uid}`, { r: room, m: [A.uid, B.uid] }, A));
+    await check(g, 'queue: read', 'allow', () => rtdb(T, 'GET', `shogi/queue`, undefined, C));
+    await check(g, 'queue: someone else\'s entry', 'deny', () => rtdb(T, 'PATCH', `shogi/queue/${A.uid}`, { n: 'evil' }, B));
+    await check(g, 'queue: unknown time control', 'deny', () => rtdb(T, 'PATCH', `shogi/queue/${A.uid}`, { c: 7 }, A));
+    await check(g, 'queue: extra field', 'deny', () => rtdb(T, 'PATCH', `shogi/queue/${A.uid}`, { x: 1 }, A));
+    // friend codes
+    await check(g, 'code: create as someone else', 'deny', () => rtdb(T, 'PUT', `shogi/codes/${code}`, { h: A.uid, t: TS, c: 0 }, B));
+    await check(g, 'code: not 6 digits', 'deny', () => rtdb(T, 'PUT', `shogi/codes/12ab56`, { h: A.uid, t: TS, c: 0 }, A));
+    await check(g, 'code: create (host)', 'allow', () => rtdb(T, 'PUT', `shogi/codes/${code}`, { h: A.uid, t: TS, c: 0 }, A));
+    await check(g, 'code: overwrite an existing code', 'deny', () => rtdb(T, 'PUT', `shogi/codes/${code}`, { h: C.uid, t: TS, c: 0 }, C));
+    await check(g, 'code: read one code', 'allow', () => rtdb(T, 'GET', `shogi/codes/${code}`, undefined, B));
+    await check(g, 'code: list all codes', 'deny', () => rtdb(T, 'GET', `shogi/codes`, undefined, B));
+    await check(g, 'code: guest writes g in someone else\'s name', 'deny', () => rtdb(T, 'PUT', `shogi/codes/${code}/g`, C.uid, B));
+    await check(g, 'code: guest joins (g = me)', 'allow', () => rtdb(T, 'PUT', `shogi/codes/${code}/g`, B.uid, B));
+    await check(g, 'code: a second guest', 'deny', () => rtdb(T, 'PUT', `shogi/codes/${code}/g`, C.uid, C));
+    await check(g, 'code: guest writes the room id', 'deny', () => rtdb(T, 'PUT', `shogi/codes/${code}/r`, room, B));
+    await check(g, 'code: host writes the room id', 'allow', () => rtdb(T, 'PUT', `shogi/codes/${code}/r`, room, A));
+    await check(g, 'code: outsider removes it', 'deny', () => rtdb(T, 'DELETE', `shogi/codes/${code}`, undefined, C));
+    await check(g, 'code: guest removes it', 'allow', () => rtdb(T, 'DELETE', `shogi/codes/${code}`, undefined, B));
+    // the room
+    const meta = { at: TS, h: A.uid, inv: { [A.uid]: 1, [B.uid]: 1 }, b: A.uid, w: B.uid, c: 1, tm: 0, by: 30 };
+    await check(g, 'room: create as someone else', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, meta, C));
+    await check(g, 'room: black is not invited', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, Object.assign({}, meta, { b: C.uid }), A));
+    await check(g, 'room: black == white', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, Object.assign({}, meta, { w: A.uid }), A));
+    await check(g, 'room: create with moves pre-filled', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, Object.assign({}, meta, { n: 1, mv: { 0: { m: '7g7f', t: TS, i: 0 } } }), A));
+    await check(g, 'room: byoyomi over 60 s', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, Object.assign({}, meta, { by: 600 }), A));
+    await check(g, 'room: create (netCreate)', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, meta, A));
+    await check(g, 'room: overwrite whole existing room', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}`, meta, A));
+    await check(g, 'room: change colours after creation', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/b`, B.uid, A));
+    await check(g, 'room: unknown child', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/x`, 1, A));
+    await check(g, 'room: list all rooms', 'deny', () => rtdb(T, 'GET', `shogi/rooms`, undefined, B));
+    await check(g, 'member: creator joins { n, j, e }', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}/m/${A.uid}`, { n: 'Aoi', j: TS, e: 1500 }, A));
+    await check(g, 'member: invited joins', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}/m/${B.uid}`, { n: 'Ben', j: TS, e: 1480 }, B));
+    await check(g, 'member: not invited', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/m/${C.uid}`, { n: 'C', j: TS }, C));
+    const mv = (i, m) => ({ [`mv/${i}`]: { m, t: TS, i }, n: i + 1 });
+    await check(g, 'move: before the start', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(0, '7g7f'), A));
+    await check(g, 'st: outsider starts the clock', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/st`, TS, C));
+    await check(g, 'st: client clock instead of server time', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/st`, Date.now(), A));
+    await check(g, 'st: member starts the clock (server time)', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}/st`, TS, A));
+    await check(g, 'st: second time', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/st`, TS, A));
+    await check(g, 'move: white moves first', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(0, '3c3d'), B));
+    await check(g, 'move: outsider', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(0, '7g7f'), C));
+    await check(g, 'move: without the counter', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/mv/0`, { m: '7g7f', t: TS, i: 0 }, A));
+    await check(g, 'move: counter without the move', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/n`, 1, A));
+    await check(g, 'move: wrong index (skips 0)', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, { 'mv/1': { m: '7g7f', t: TS, i: 1 }, n: 2 }, A));
+    await check(g, 'move: client clock', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, { 'mv/0': { m: '7g7f', t: Date.now(), i: 0 }, n: 1 }, A));
+    await check(g, 'move: not a move string', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(0, 'hello'), A));
+    await check(g, 'move: black plays move 0', 'allow', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(0, '7g7f'), A));
+    await check(g, 'move: black again (not its turn)', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(1, '2g2f'), A));
+    await check(g, 'move: rewrite move 0', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, { 'mv/0': { m: '2g2f', t: TS, i: 0 }, n: 1 }, A));
+    await check(g, 'move: third user plays for white', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(1, '3c3d'), C));
+    await check(g, 'move: white plays move 1', 'allow', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(1, '3c3d'), B));
+    await check(g, 'move: delete a move', 'deny', () => rtdb(T, 'DELETE', `shogi/rooms/${room}/mv/1`, undefined, B));
+    await check(g, 'move: counter back to 0', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/n`, 0, A));
+    await check(g, 'rm: own rematch wish', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}/rm/${A.uid}`, 1, A));
+    await check(g, 'rm: in someone else\'s name', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/rm/${B.uid}`, 1, A));
+    const end = by => ({ r: 'resign', w: 'b', by: by.uid, t: TS, n: 2 });
+    await check(g, 'end: outsider', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/end`, end(C), C));
+    await check(g, 'end: in someone else\'s name', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/end`, end(A), B));
+    await check(g, 'end: unknown reason', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/end`, Object.assign(end(B), { r: 'cheat' }), B));
+    await check(g, 'end: member (white resigns)', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}/end`, end(B), B));
+    await check(g, 'end: overwrite', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/end`, Object.assign(end(A), { w: 'w' }), A));
+    await check(g, 'move: after the end', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(2, '2g2f'), A));
+    await check(g, 'nx: outsider', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/nx`, '-next', C));
+    await check(g, 'nx: member points to the rematch room', 'allow', () => rtdb(T, 'PUT', `shogi/rooms/${room}/nx`, '-next', A));
+    await check(g, 'nx: second time', 'deny', () => rtdb(T, 'PUT', `shogi/rooms/${room}/nx`, '-other', B));
+    await check(g, 'member: own leave', 'allow', () => rtdb(T, 'DELETE', `shogi/rooms/${room}/m/${B.uid}`, undefined, B));
+    await check(g, 'room: delete by outsider', 'deny', () => rtdb(T, 'DELETE', `shogi/rooms/${room}`, undefined, C));
+    await check(g, 'room: delete by a player after the game', 'allow', () => rtdb(T, 'DELETE', `shogi/rooms/${room}`, undefined, A));
+    await check(g, 'move: into a deleted room', 'deny', () => rtdb(T, 'PATCH', `shogi/rooms/${room}`, mv(0, '7g7f'), A));
+    const room3 = rid('-rulesold');
+    cleanup.push(() => rtdb(T, 'DELETE', `shogi/rooms/${room3}`, undefined, A));
+    await rtdb(T, 'PUT', `shogi/rooms/${room3}`, Object.assign({}, meta, { at: Date.now() - 4 * 3600e3 }), A);
+    await check(g, 'room: anyone removes a room older than 3 h', 'allow', () => rtdb(T, 'DELETE', `shogi/rooms/${room3}`, undefined, C));
+    await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `shogi/queue/${A.uid}`, undefined, A));
+  }
+
   // ================================================================ RTDB: その他
   {
     const g = 'rtdb:other';

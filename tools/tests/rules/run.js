@@ -47,7 +47,7 @@ function log(row) {
       for (const r of await runCases(T, { log, verbose })) rows.push(r);
     }
     if (only.includes('clients')) {
-      console.log(`clients: 2-player runs of common/versus.js (blocks) and hole online (${T.name})`);
+      console.log(`clients: 2-player runs of common/versus.js (blocks), hole online and shogi online (${T.name})`);
       const { runClients } = require('./clients');
       if (emu) await emu.clearData();
       const runs = await runClients(T, { log });

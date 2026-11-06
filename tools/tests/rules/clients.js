@@ -1,4 +1,4 @@
-// 本物のクライアント（common/versus.js と hole/index.html）を2人で動かし、RTDB への書き込みを全部記録する。
+// 本物のクライアント（common/versus.js と hole/index.html と shogi/index.html）を2人で動かし、RTDB への書き込みを全部記録する。
 // 本番（--live）でも、エミュレーター（新しいルール）でも同じ手順で動かす。
 //   エミュレーター：firebase-config.js の databaseURL をエミュレーターに差し替え、Auth の通信をエミュレーターへ回す。
 // 記録：firebase-database-compat.js の後ろに、Reference の set / update / push / remove / transaction / onDisconnect を
@@ -197,8 +197,97 @@ async function runHole(browser, env, T, opt = {}) {
   return { client: 'hole', info, ops: normalize(logs, info.uids, 'hole/rooms/') };
 }
 
+// ---------------------------------------------------------------- shogi：2人でランダム対戦 → 6手（画面のマスを押して指す）→ 投了 → もう一局 → 途中で退出
+async function runShogi(browser, env, T, opt = {}) {
+  const url = `${env.url}/shogi/index.html?debug`;
+  const P = [await newPage(browser, env, T, 'Aoi'), await newPage(browser, env, T, 'Ben')];
+  for (const p of P) await p.goto(url);
+  await sleep(1000);
+  const info = { steps: [] };
+  const st = p => p.evaluate(() => __shogi.state());
+  // through the title and the online menu, as a player would (30 秒秒読み)
+  for (const p of P) {
+    await p.click('#tOnline'); await p.click('#onTc button:nth-child(2)'); await p.click('#onRandom');
+    await p.waitForFunction(() => __shogi.net.phase === 'queue' || __shogi.net.phase === 'room' || __shogi.net.phase === 'play', null, { timeout: 30000 });
+    await sleep(600);
+  }
+  for (const p of P) await p.waitForFunction(() => __shogi.net.phase === 'play', null, { timeout: 60000 });
+  let s = await Promise.all(P.map(st));
+  info.uids = s.map(x => x.net.uid); info.room = s[0].net.rid;
+  info.steps.push(['same room', s[0].net.rid && s[0].net.rid === s[1].net.rid]);
+  info.steps.push(['one black, one white', s[0].net.side !== s[1].net.side]);
+  info.steps.push(['connected to ' + T.name, await connectedTo(P[0], '[DEFAULT]', T)]);
+  const B = s[0].net.side === 0 ? 0 : 1, W = 1 - B;
+  // a third user (signed in, not in the room) tries to play black's first move: refused by the rules
+  const C = await newPage(browser, env, T, 'Cy');
+  await C.goto(url); await sleep(800);
+  await C.evaluate(() => __shogi.netInit());
+  const third = await C.evaluate(async rid => {
+    try { await firebase.database().ref('shogi/rooms/' + rid).update({ 'mv/0': { m: '7g7f', t: firebase.database.ServerValue.TIMESTAMP, i: 0 }, n: 1 }); return false; }
+    catch (e) { return /permission/i.test(String(e && (e.code || e.message))); }
+  }, info.room);
+  info.steps.push(['probe: a third user cannot write a move', third]);
+  const thirdEnd = await C.evaluate(async (rid) => {
+    try { await firebase.database().ref('shogi/rooms/' + rid + '/end').set({ r: 'resign', w: 'w', by: firebase.auth().currentUser.uid, t: firebase.database.ServerValue.TIMESTAMP, n: 0 }); return false; }
+    catch (e) { return /permission/i.test(String(e && (e.code || e.message))); }
+  }, info.room);
+  info.steps.push(['probe: a third user cannot end the game', thirdEnd]);
+  await C.ctx.close();
+  // six moves by tapping the squares of the real board
+  const tapMove = async (p, usi) => {
+    for (const sq of [usi.slice(0, 2), usi.slice(2, 4)]) {
+      const xy = await p.evaluate(s => __shogi.squarePoint(__shogi.usiSquare(s)), sq);
+      await p.mouse.click(xy[0], xy[1]);
+      await sleep(120);
+    }
+  };
+  const line = ['7g7f', '3c3d', '2g2f', '8c8d', '2f2e', '8d8e'];
+  for (let i = 0; i < line.length; i++) {
+    const p = P[i % 2 === 0 ? B : W];
+    await p.waitForFunction(n => __shogi.state().moves.length === n && __shogi.state().canAct, i, { timeout: 15000 });
+    await tapMove(p, line[i]);
+    await P[0].waitForFunction(n => __shogi.state().moves.length > n, i, { timeout: 15000 });
+    await P[1].waitForFunction(n => __shogi.state().moves.length > n, i, { timeout: 15000 });
+  }
+  s = await Promise.all(P.map(st));
+  info.steps.push(['both pages have the same 6 moves', s.every(x => x.moves.join() === line.join())]);
+  // white resigns through the button and the confirm dialog
+  await P[W].click('#bResign'); await sleep(300);
+  await P[W].click('.kb-layer .kb-btn--danger');
+  for (const p of P) await p.waitForFunction(() => !document.getElementById('ovResult').hidden, null, { timeout: 15000 });
+  const big = await Promise.all(P.map(p => p.evaluate(() => document.getElementById('resBig').textContent)));
+  info.steps.push(['black sees a win, white a loss', big[B] === 'あなたの勝ち' && big[W] === 'あなたの負け']);
+  s = await Promise.all(P.map(st));
+  info.steps.push(['end recorded as resign by white', s.every(x => x.net.end && x.net.end.r === 'resign' && x.net.end.w === 'b')]);
+  // rematch: both press もう一局 → a new room with the colours swapped
+  for (const p of P) { await p.click('#resAgain'); await sleep(400); }
+  for (const p of P) await p.waitForFunction(old => __shogi.net.phase === 'play' && __shogi.net.rid !== old, info.room, { timeout: 30000 });
+  const s2 = await Promise.all(P.map(st));
+  info.steps.push(['rematch: same new room, colours swapped', s2[0].net.rid === s2[1].net.rid && s2[B].net.side === 1 && s2[W].net.side === 0]);
+  await tapMove(P[W], '7g7f');
+  await P[B].waitForFunction(() => __shogi.state().moves.length === 1, null, { timeout: 15000 });
+  // the new black leaves through the menu (resigns), the other goes back to the title
+  await P[W].click('#menuBtn'); await P[W].click('#mTitle'); await sleep(300); await P[W].click('.kb-layer .kb-btn--danger');
+  await P[B].waitForFunction(() => !document.getElementById('ovResult').hidden, null, { timeout: 15000 });
+  await sleep(800);
+  await P[B].click('#resTitle');
+  await sleep(1500);
+  // B waits alone in the queue and cancels
+  await P[B].click('#tOnline'); await P[B].click('#onRandom');
+  await P[B].waitForFunction(() => __shogi.net.phase === 'queue', null, { timeout: 30000 }).catch(() => {});
+  await sleep(1200);
+  await P[B].click('#onBack');
+  await sleep(1500);
+  const left = await P[0].evaluate(async rid => (await firebase.database().ref('shogi/rooms/' + rid).once('value')).exists(), s2[0].net.rid).catch(() => 'error');
+  info.steps.push(['the finished rematch room was removed', left === false]);
+  const logs = await Promise.all(P.map(getLog));
+  info.errors = P.flatMap((p, i) => p.errs.map(e => 'P' + i + ' ' + e));
+  for (const p of P) await p.ctx.close();
+  return { client: 'shogi', info, ops: normalize(logs, info.uids, 'shogi/rooms/', true) };
+}
+
 // パスの uid を A/B、部屋の ID を $room、物の番号を $gi、push の ID を $kid に置き換える
-function normalize(logs, uids, roomPrefix) {
+function normalize(logs, uids, roomPrefix, oneRoom) {
   const role = u => { const i = uids.indexOf(u); return i < 0 ? (u ? 'other' : '?') : 'AB'[i]; };
   const rooms = new Map();
   const out = [];
@@ -207,7 +296,7 @@ function normalize(logs, uids, roomPrefix) {
     uids.forEach((u, i) => { if (u) p = p.split(u).join('{' + 'AB'[i] + '}'); });
     if (p.startsWith(roomPrefix)) {
       const id = p.slice(roomPrefix.length).split('/')[0];
-      if (!rooms.has(id)) rooms.set(id, '$room' + (rooms.size ? rooms.size + 1 : ''));
+      if (!rooms.has(id)) rooms.set(id, '$room' + (rooms.size && !oneRoom ? rooms.size + 1 : ''));
       p = roomPrefix + rooms.get(id) + p.slice(roomPrefix.length + id.length);
     }
     p = p.replace(/\/o\/\d+$/, '/o/$gi').replace(/\/k\/-[A-Za-z0-9_-]+$/, '/k/$kid');
@@ -245,6 +334,13 @@ const REQUIRED = {
     'set hole/rooms/$room/g', 'update hole/rooms/$room/p', 'transaction hole/rooms/$room/o/$gi', 'push hole/rooms/$room/k/$kid',
     'remove hole/rooms/$room/m/{me}', 'remove hole/rooms/$room/p/{me}', 'remove hole/rooms/$room',
   ],
+  // both games of the shogi run (the first room and the rematch room) count as $room
+  shogi: [
+    'onDisconnect.remove shogi/queue/{me}', 'set shogi/queue/{me}', 'update shogi/queue/{me}', 'remove shogi/queue/{me}',
+    'set shogi/rooms/$room', 'onDisconnect.remove shogi/rooms/$room/m/{me}', 'set shogi/rooms/$room/m/{me}', 'set shogi/rooms/$room/st',
+    'update shogi/rooms/$room', 'transaction shogi/rooms/$room/end', 'set shogi/rooms/$room/rm/{me}', 'set shogi/rooms/$room/nx',
+    'remove shogi/rooms/$room/m/{me}', 'remove shogi/rooms/$room',
+  ],
 };
 
 function judge(run) {
@@ -278,10 +374,10 @@ async function runClients(T, opt = {}) {
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const out = [];
   try {
-    for (const which of opt.only || ['versus', 'hole']) {
+    for (const which of opt.only || ['versus', 'hole', 'shogi']) {
       if (opt.log) opt.log({ group: 'client', name: 'running ' + which + ' (2 players, ' + T.name + ')…' });
       let run;
-      try { run = which === 'versus' ? await runVersus(browser, env, T, opt) : await runHole(browser, env, T, opt); }
+      try { run = which === 'versus' ? await runVersus(browser, env, T, opt) : which === 'shogi' ? await runShogi(browser, env, T, opt) : await runHole(browser, env, T, opt); }
       catch (e) { out.push({ client: which, error: String(e && e.stack || e), rows: [{ group: 'client:' + which, name: 'run finished', expect: 'true', got: 'false', pass: false, detail: String(e && e.message || e).slice(0, 300) }] }); continue; }
       const j = judge(run);
       out.push(Object.assign(run, j));
@@ -290,4 +386,4 @@ async function runClients(T, opt = {}) {
   return out;
 }
 
-module.exports = { runClients, inventory, REQUIRED };
+module.exports = { runClients, inventory, REQUIRED, newPage };

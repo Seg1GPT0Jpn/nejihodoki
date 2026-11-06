@@ -58,6 +58,7 @@
     { id: 'action', ja: 'アクション', en: 'Action' },
     { id: 'cooking', ja: '料理・お店', en: 'Cooking & shop' },
     { id: 'simulation', ja: 'シミュレーション', en: 'Simulation' },
+    { id: 'board', ja: 'ボード・テーブル', en: 'Board & table' },
   ];
 
   var GAMES = [
@@ -380,6 +381,81 @@
         'kusoge.planet.world': 'newest',
       },
     },
+    {
+      id: 'hitblow', order: 12, path: 'hitblow/', added: '2026-11-06',
+      title: { ja: 'ヒットアンドブロー', en: 'Hit & Blow' },
+      short: { ja: 'ヒット&ブロー', en: 'Hit & Blow' },
+      desc: { ja: 'かくれた数字や色の並びを、ヒットとブローのヒントから推理して当てる。今日のチャレンジ、CPUとの当て合い、オンライン対戦も。', en: 'Deduce a hidden row of digits or colors from Hit and Blow clues. Daily challenge, a guessing duel with the CPU, and online battles.' },
+      label: { ja: '推理パズル', en: 'Logic puzzle' },
+      genres: ['puzzle'], tags: ['2d', 'logic', 'turn', 'daily', 'versus'],
+      keywords: { ja: ['ヒットアンドブロー', 'ヒット', 'ブロー', '数当て', '推理', 'パズル', '数字', '色'], en: ['hit and blow', 'bulls and cows', 'code breaking', 'logic', 'deduction', 'puzzle', 'digits', 'colors'] },
+      icon: 'img/icons/hitblow.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#14182b"/><g stroke="#262f57" stroke-width="1.2"><path d="M0 14h72M0 28h72M0 42h72M0 56h72"/></g><g fill="#262d52" stroke="#4a5590" stroke-width="1.5"><rect x="7" y="11" width="13" height="15" rx="3.5"/><rect x="22.5" y="11" width="13" height="15" rx="3.5"/><rect x="38" y="11" width="13" height="15" rx="3.5"/><rect x="53.5" y="11" width="13" height="15" rx="3.5"/></g><g fill="#eef0ff" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="12" text-anchor="middle"><text x="13.5" y="23">4</text><text x="29" y="23">1</text><text x="44.5" y="23">2</text><text x="60" y="23">3</text></g><circle cx="22" cy="48" r="13" fill="#46d6b4"/><text x="22" y="53" fill="#06241d" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="14" text-anchor="middle">1H</text><circle cx="50" cy="48" r="11.5" fill="none" stroke="#ffb547" stroke-width="3"/><text x="50" y="53" fill="#ffb547" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="14" text-anchor="middle">2B</text></svg>', iconBg: '#14182b',
+      thumb: 'img/thumbs/hitblow.webp', thumb2x: 'img/thumbs/hitblow@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (the clock only runs while it is on screen)
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
+      versus: 'common',
+      // one solved puzzle: (tries left + 1) × 100 + time bonus, × difficulty (1–3) × 1.5 with repeats → at most 6,480
+      score: { unit: { ja: '点', en: 'pts' }, fmt: null, order: 'desc', cap: 10000, maxRate: null },
+      rankSource: { key: 'kusoge.hitblow.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.hitblow.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best: {n} pts' } },
+      keys: {
+        'kusoge.hitblow.save': '{ v:1, best（1問の最高点＝ランキング。ひとりで遊んだときだけ）, bests:{ <n|c><3|4|5>[x]:{ s（点）, g（最少の回数）, t（最速 ms） } }, stats:{ plays, wins, losses, lucky（1回目で正解）, fast4（4つを4回以内）, win5, winDup, cpuPlays, cpu1, cpu2, cpu3（CPU の強さごとの勝ち）, vsSolved }, daily:{ last, win（最後に当てた日）, streak, max, res:{ dk, won, g, s, ms, a, rows } }, set:{ sym, d, dup, cpu }, tut }',
+        'kusoge.hitblow.state': '途中のゲーム（ひとり・デイリー）{ v:1, kind, cfg, secret, rows:[[推理, H, B]], cur, ms, dk, memo:{ s[], p[] }, tut }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.hitblow.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow (max; fewest tries / fastest = minPos); settings and the last daily result are whole values (newest)
+      sync: {
+        'kusoge.hitblow.save': {
+          fields: {
+            best: 'max', bests: { each: { fields: { s: 'max', g: 'minPos', t: 'minPos' } } }, stats: { each: 'max' },
+            daily: { fields: { last: 'max', win: 'max', max: 'max' }, rest: 'newest' }, set: 'newest', tut: 'max',
+          },
+          rest: 'newest',
+        },
+      },
+    },
+    {
+      id: 'shogi', order: 13, path: 'shogi/', added: '2026-11-06',
+      title: { ja: '将棋', en: 'Shogi' },
+      short: { ja: '将棋', en: 'Shogi' },
+      desc: { ja: '9×9の盤で指す本将棋。5段階の CPU、ふたりで、オンライン対局（持ち時間つき）、詰将棋。駒の動きの説明つき。', en: 'Full Japanese chess on a 9×9 board: a 5-level CPU, two players on one device, timed online matches and tsume puzzles, with a guide to how every piece moves.' },
+      label: { ja: 'ボードゲーム', en: 'Board game' },
+      genres: ['board'], tags: ['2d', 'turn', 'versus', 'online', 'puzzle'],
+      keywords: { ja: ['将棋', 'しょうぎ', '詰将棋', '対局', 'ボードゲーム', '盤', '駒'], en: ['shogi', 'japanese chess', 'chess', 'tsume', 'board game'] },
+      icon: 'img/icons/shogi.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2a2118"/><rect x="6" y="6" width="60" height="60" rx="3" fill="#dcae62"/><g stroke="#5a3a14" stroke-width="1"><path d="M6 21h60M6 36h60M6 51h60M21 6v60M36 6v60M51 6v60"/></g><path d="M36 13l14 6 4 34H18l4-34z" fill="#f6e2b0" stroke="#7a5524" stroke-width="2"/><text x="36" y="45" font-family="serif" font-weight="700" font-size="24" text-anchor="middle" fill="#1b1209">王</text></svg>', iconBg: '#2a2118',
+      thumb: 'img/thumbs/shogi.webp', thumb2x: 'img/thumbs/shogi@2x.webp',
+      tech: '2d',
+      // turn-based (hiding the page only saves the CPU game); online matches run on RTDB shogi/* (database.rules.json)
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // wins against the strongest CPU (even games, no take-backs): each one needs a real win, so it is not farmable by short plays
+      score: { unit: { ja: '勝', en: 'wins' }, fmt: { ja: '{n} 勝', en: '{n} wins' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.shogi.save', paths: ['top'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.shogi.save', paths: ['top'], agg: 'first', min: 1, num: true, tpl: { ja: '最強CPUに {n}勝', en: '{n} wins vs the strongest CPU' } },
+      keys: {
+        'kusoge.shogi.save': '{ v:1, cpu:{ l1〜l5:{ w, l, d } }（CPU の強さごとの勝ち負け）, top（最強に平手・待ったなしで勝った数＝ランキング）, on:{ r（レーティング）, w, l, d, best }, mate:{ s:[解いた詰将棋の id] }, stats:{ games, wins, moves }, tut }',
+        'kusoge.shogi.game': '続きから遊べる対局（CPU・ふたりで）{ v:1, mode, lv, human, hc（駒落ち）, moves:[USI], undo, at }。終わると消す',
+        'kusoge.shogi.howto': '遊び方を見た（\'1\'）',
+        'kusoge.shogi.cpuPick': 'CPU 戦の設定 { lv, side, hc }（同期しない）',
+        'kusoge.shogi.tc': 'オンラインの持ち時間の選択 0〜2（同期しない）',
+        'kusoge.shogi.guide': '動きのガイド（\'1\' / \'0\'。同期しない）',
+        'kusoge.shogi.rooms': 'この端末で最近入ったオンライン部屋（最大8件の { r, t }。同期しない）',
+      },
+      // records only grow (max, per level and field); the rating goes up and down (newest); solved puzzles: union.
+      // The unfinished game is one whole state: newest wins
+      sync: {
+        'kusoge.shogi.save': {
+          fields: {
+            cpu: { each: { fields: { w: 'max', l: 'max', d: 'max' } } }, top: 'max',
+            on: { fields: { r: 'newest', w: 'max', l: 'max', d: 'max', best: 'max' } },
+            mate: { fields: { s: 'union' } }, stats: { each: 'max' }, tut: 'max',
+          },
+          rest: 'newest',
+        },
+        'kusoge.shogi.game': 'newest',
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -491,6 +567,27 @@
       { id: 'planet.sc1', tier: 1, icon: 'check', title: { ja: 'はじめてのお題', en: 'First Scenario' }, desc: { ja: 'シナリオを1つクリア', en: 'Clear a scenario' }, when: { rec: { key: 'kusoge.planet.save', path: 'sc', measure: 'count' }, gte: 1 } },
       { id: 'planet.sc8', tier: 3, icon: 'trophy', title: { ja: '星の設計者', en: 'Planet Architect' }, desc: { ja: '8つのシナリオをすべてクリア', en: 'Clear all 8 scenarios' }, when: { rec: { key: 'kusoge.planet.save', path: 'sc', measure: 'count' }, gte: 8 }, grantsTitle: { ja: '星の設計者', en: 'Planet Architect' } },
       { id: 'planet.pts5k', tier: 2, icon: 'star', title: { ja: '五千点の宇宙', en: '5,000-Point Cosmos' }, desc: { ja: 'シナリオ合計5,000点', en: 'Reach a scenario total of 5,000' }, when: { rec: { key: 'kusoge.planet.save', path: 'total' }, gte: 5000 } },
+    ],
+    hitblow: [
+      { id: 'hitblow.win1', tier: 1, icon: 'check', title: { ja: 'はじめての正解', en: 'First Solve' }, desc: { ja: 'ヒットアンドブローで答えを当てる', en: 'Solve a Hit & Blow puzzle' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.wins' }, gte: 1 } },
+      { id: 'hitblow.fast4', tier: 2, icon: 'star', title: { ja: '4手の名探偵', en: 'Four-Move Detective' }, desc: { ja: '4つの答えを4回以内で当てる', en: 'Solve a 4-long answer in 4 tries or fewer' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.fast4' }, gte: 1 } },
+      { id: 'hitblow.win5', tier: 2, icon: 'trophy', title: { ja: '5けた破り', en: 'Five-Lock Breaker' }, desc: { ja: '「むずかしい」（5つ）を当てる', en: 'Solve a Hard (5-long) answer' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.win5' }, gte: 1 } },
+      { id: 'hitblow.dup', tier: 3, icon: 'star', title: { ja: '重なりを見抜く', en: 'Seeing Double' }, desc: { ja: '同じ記号ありの答えを当てる', en: 'Solve an answer with repeated symbols allowed' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.winDup' }, gte: 1 } },
+      { id: 'hitblow.lucky', tier: 3, icon: 'star', hidden: true, title: { ja: 'ひと目で正解', en: 'Lucky Hunch' }, desc: { ja: '1回目の推理で当てる', en: 'Solve it with your very first guess' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.lucky' }, gte: 1 } },
+      { id: 'hitblow.cpu3', tier: 3, icon: 'trophy', title: { ja: '機械に勝つ', en: 'Beat the Machine' }, desc: { ja: '「つよい」CPU に勝つ', en: 'Beat the Strong CPU' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.cpu3' }, gte: 1 } },
+      { id: 'hitblow.streak3', tier: 2, icon: 'star', title: { ja: '3日つづけて推理', en: 'Three-Day Sleuth' }, desc: { ja: '今日のチャレンジを3日つづけて当てる', en: "Solve today's challenge 3 days in a row" }, when: { rec: { key: 'kusoge.hitblow.save', path: 'daily.max' }, gte: 3 } },
+      { id: 'hitblow.wins30', tier: 3, icon: 'trophy', title: { ja: '名推理30', en: 'Thirty Deductions' }, desc: { ja: '合わせて30回当てる', en: 'Solve 30 puzzles in total' }, when: { rec: { key: 'kusoge.hitblow.save', path: 'stats.wins' }, gte: 30 }, grantsTitle: { ja: '名探偵', en: 'Master Detective' } },
+      { id: 'hitblow.s3k', tier: 2, icon: 'star', title: { ja: '三千点の推理', en: '3,000-Point Logic' }, desc: { ja: '1問で3,000点', en: 'Score 3,000 on one puzzle' }, when: { any: [{ rec: { key: 'kusoge.hitblow.save', path: 'best' }, gte: 3000 }, { ev: 'play_end', field: 'score', gte: 3000, modes: SCORE_MODES }] } },
+    ],
+    shogi: [
+      { id: 'shogi.win1', tier: 1, icon: 'check', title: { ja: '初勝利', en: 'First Win' }, desc: { ja: 'CPU に勝つ', en: 'Beat the CPU' }, when: { rec: { key: 'kusoge.shogi.save', paths: ['cpu.l1.w', 'cpu.l2.w', 'cpu.l3.w', 'cpu.l4.w', 'cpu.l5.w'], agg: 'max' }, gte: 1 } },
+      { id: 'shogi.lv3', tier: 2, icon: 'star', title: { ja: '中級突破', en: 'Medium Cleared' }, desc: { ja: '「中級」の CPU に勝つ', en: 'Beat the Medium CPU' }, when: { rec: { key: 'kusoge.shogi.save', path: 'cpu.l3.w' }, gte: 1 } },
+      { id: 'shogi.lv4', tier: 3, icon: 'trophy', title: { ja: '上級者', en: 'Strong Player' }, desc: { ja: '「上級」の CPU に勝つ', en: 'Beat the Hard CPU' }, when: { rec: { key: 'kusoge.shogi.save', path: 'cpu.l4.w' }, gte: 1 } },
+      { id: 'shogi.top1', tier: 4, icon: 'trophy', title: { ja: '最強を倒す', en: 'Giant Slayer' }, desc: { ja: '最強の CPU に平手・待ったなしで勝つ', en: 'Beat the strongest CPU in an even game without take-backs' }, when: { rec: { key: 'kusoge.shogi.save', path: 'top' }, gte: 1 }, grantsTitle: { ja: '名人', en: 'Meijin' } },
+      { id: 'shogi.on1', tier: 2, icon: 'globe', title: { ja: 'ネット将棋', en: 'Online Victory' }, desc: { ja: 'オンライン対局で勝つ', en: 'Win an online match' }, when: { rec: { key: 'kusoge.shogi.save', path: 'on.w' }, gte: 1 } },
+      { id: 'shogi.on10', tier: 3, icon: 'globe', title: { ja: '十番勝負', en: 'Ten Online Wins' }, desc: { ja: 'オンライン対局で10勝', en: 'Win 10 online matches' }, when: { rec: { key: 'kusoge.shogi.save', path: 'on.w' }, gte: 10 } },
+      { id: 'shogi.mate1', tier: 1, icon: 'star', title: { ja: '詰みを見つけた', en: 'Found the Mate' }, desc: { ja: '詰将棋を1問解く', en: 'Solve a tsume puzzle' }, when: { rec: { key: 'kusoge.shogi.save', path: 'mate.s', measure: 'count' }, gte: 1 } },
+      { id: 'shogi.mate8', tier: 3, icon: 'trophy', title: { ja: '詰将棋の達人', en: 'Tsume Master' }, desc: { ja: '詰将棋を8問ぜんぶ解く', en: 'Solve all 8 tsume puzzles' }, when: { rec: { key: 'kusoge.shogi.save', path: 'mate.s', measure: 'count' }, gte: 8 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

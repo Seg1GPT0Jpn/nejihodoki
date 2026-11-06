@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>将棋</title>
+<meta name="theme-color" content="#2a2118">
+<meta name="description" content="9×9の盤で指す本将棋。CPU（5段階）、ふたりで、オンライン対局、詰将棋。駒の動きの説明つき。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="将棋">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  '将棋': 'Shogi', '将棋盤': 'Shogi board', 'ホーム': 'Home', 'メニュー': 'Menu', 'ゲーム一覧へ': 'Back to games',
+  // title
+  '9×9の盤で指す、日本の将棋': 'Japanese chess on a 9×9 board', '続きから': 'Continue', 'CPUと対局': 'Play the CPU', 'ふたりで対局': 'Two players (one device)',
+  'オンライン対局': 'Online match', '詰将棋': 'Tsume puzzles', '遊び方・駒の動き': 'How to play / piece moves', '設定': 'Settings',
+  'CPU {lv}・{n}手目': 'CPU {lv}, move {n}', 'ふたりで・{n}手目': 'Two players, move {n}',
+  '最強CPUに {n}勝': '{n} wins vs the strongest CPU', 'オンライン R{r}（{w}勝{l}敗）': 'Online R{r} ({w}W {l}L)',
+  // levels / setup
+  '入門': 'Beginner', '初級': 'Easy', '中級': 'Medium', '上級': 'Hard', '最強': 'Strongest',
+  'CPUの強さ': 'CPU strength', 'あなたの手番': 'You play', '先手（▲）': 'Black (☗, first)', '後手（△）': 'White (☖, second)', 'おまかせ': 'Random',
+  '駒落ち（CPUが駒を落とす）': 'Handicap (the CPU removes pieces)', '平手': 'Even', '香落ち': 'Lance', '角落ち': 'Bishop', '飛車落ち': 'Rook', '二枚落ち': 'Rook + bishop',
+  '駒落ちでは、CPU（上手）が先に指します。': 'In a handicap game the CPU (the stronger side) moves first.',
+  '対局開始': 'Start', '戻る': 'Back', '待ったをすると、その対局は最強CPUの勝ち数に数えません。': 'Games where you take back a move do not count toward your wins against the strongest CPU.',
+  '勝{w} 負{l} 分{d}': 'W{w} L{l} D{d}',
+  // game screen
+  '待った': 'Undo', '反転': 'Flip', '棋譜': 'Moves', '投了': 'Resign', 'あなた': 'You', 'CPU（{lv}）': 'CPU ({lv})', '先手': 'Black', '後手': 'White', '相手': 'Opponent',
+  '下手': 'Black (handicap taker)', '上手': 'White (handicap giver)', '攻め方': 'Attacker', '玉方': 'Defender',
+  'あなたの番です': 'Your move', 'CPUが考えています…': 'The CPU is thinking…', '相手の番です': 'Opponent\'s move', '▲先手の番': '☗ Black to move', '△後手の番': '☖ White to move',
+  '王手！': 'Check!', 'まだ指していません': 'No moves yet', '持ち駒': 'In hand',
+  '成りますか？': 'Promote?', '成る': 'Promote', '成らない': 'Don\'t promote',
+  '投了しますか？': 'Resign this game?', '投了する': 'Resign', 'やめる': 'Cancel',
+  '対局を終えてタイトルに戻りますか？': 'Leave this game and go back to the title?', '戻る（投了）': 'Leave (resign)', 'タイトルへ': 'Title',
+  'つづける': 'Resume', '入玉宣言': 'Declare (entering king)', '動きのガイド': 'Move guide', 'オン': 'On', 'オフ': 'Off', '新しい対局': 'New game',
+  '入玉宣言の条件を満たしていません（駒{p}枚・{pt}点 / {need}点）': 'You cannot declare yet ({p} pieces, {pt} of {need} points)',
+  // results
+  'あなたの勝ち': 'You win', 'あなたの負け': 'You lose', '引き分け': 'Draw', '先手の勝ち': 'Black wins', '後手の勝ち': 'White wins',
+  '詰み': 'Checkmate', '投了': 'Resign', '時間切れ': 'Time out', '千日手': 'Repetition (sennichite)', '連続王手の千日手（反則）': 'Perpetual check (foul)',
+  '入玉宣言': 'Entering-king declaration', '接続切れ': 'Disconnected', '{n}手で{why}': '{why} after {n} moves',
+  'もう一局': 'Play again', '棋譜を見る': 'View moves', 'レーティング {a} → {b}': 'Rating {a} → {b}',
+  // kifu
+  '棋譜（KIF）をコピー': 'Copy the record (KIF)', 'コピーしました': 'Copied', 'コピーできませんでした。下の文字を選んでコピーしてください': 'Could not copy. Select the text below and copy it.',
+  'とじる': 'Close', '手': 'moves',
+  // online
+  'ニックネーム': 'Nickname', 'オンラインで表示する名前（12文字まで）': 'Your name online (up to 12 characters)', '決める': 'OK',
+  'ニックネームを1文字以上入れてください': 'Please enter at least one character',
+  '持ち時間': 'Time control', '10分切れ負け': '10 min, no byoyomi', '30秒秒読み': '30 s per move', '10分＋秒読み30秒': '10 min + 30 s byoyomi',
+  'ランダム対戦': 'Random opponent', '友だちと対局': 'Play a friend', '部屋を作る': 'Create a room', 'コードで入る': 'Join with a code', '部屋のコード（6けた）': 'Room code (6 digits)',
+  'つないでいます…': 'Connecting…', '対戦相手をさがしています…': 'Looking for an opponent…', '友だちにこのコードを伝えてください': 'Give this code to your friend',
+  '友だちが入るのを待っています…': 'Waiting for your friend…', '対戦相手が見つかりました！': 'Opponent found!', 'まもなく開始…': 'Starting soon…',
+  'その部屋は見つかりませんでした': 'That room was not found', 'つながりませんでした': 'Could not connect', 'もう一度': 'Try again',
+  '相手の接続が切れました。{n}秒で、あなたの勝ちになります': 'Your opponent disconnected. You win in {n} s unless they return',
+  '相手がもう一局を待っています': 'Your opponent wants a rematch', 'もう一局を申し込みました…': 'Rematch requested…', '相手は部屋を出ました': 'Your opponent left',
+  '秒読み {s}': 'Byoyomi {s}', '{n}人が待っています': '{n} waiting',
+  // tsume
+  '{n}手詰': 'Mate in {n}', '問題 {i}': 'Problem {i}', '正解！': 'Solved!', 'ちがいます。もう一度': 'Not that one. Try again', '王手をかけてください': 'Every move must give check',
+  '詰将棋：王手の連続で、{n}手以内に玉を詰ませる。玉方は残りの駒をすべて持っています。': 'Tsume: checkmate the king within {n} moves, giving check every move. The defender holds all remaining pieces.',
+  'はじめから': 'Restart', '次の問題': 'Next problem', 'ひとりで解く詰将棋（{s}/{n} 解いた）': 'Solo checkmate puzzles ({s}/{n} solved)',
+  // howto
+  'はじめる': 'Start', 'ルール': 'Rules', '駒の動き': 'How pieces move', '成ると': 'Promoted',
+  '相手の玉（王）を逃げられなくすれば勝ち（詰み）。': 'Win by trapping the opponent\'s king so it cannot escape (checkmate).',
+  '自分の駒をタップしてから、光ったマスをタップすると動かせます。ドラッグでも動かせます。': 'Tap one of your pieces, then a highlighted square. You can also drag.',
+  '取った駒は「持ち駒」になり、自分の番に空いたマスへ打てます。': 'Captured pieces go to your hand; on your turn you can drop them on an empty square.',
+  '相手の陣地（奥の3段）に入るか、そこから出るときに「成る」ことができます。動けなくなる場所では必ず成ります。': 'Moving into, within or out of the far three ranks lets a piece promote. It must promote where it could never move again.',
+  '反則：二歩（同じ筋に歩を2枚）、打ち歩詰め（歩を打って詰ませる）、行き所のない駒、王手を放っておくこと。': 'Fouls: two pawns on one file, checkmating with a pawn drop, a piece that could never move, leaving your king in check.',
+  '同じ局面が4回で千日手（引き分け）。王手を続けての千日手は、王手をかけた側の負け。': 'The same position four times is a draw (sennichite); if one side gave check every move, that side loses.',
+  '入玉宣言（27点法）：玉が敵陣にあり、王手されておらず、敵陣の駒10枚以上・点数（大駒5点・小駒1点、持ち駒も）が先手28点・後手27点以上なら、メニューから宣言して勝ち。': 'Entering-king rule (27 points): with your king in the enemy camp, not in check, 10+ of your pieces there and enough points (rook/bishop 5, others 1, hand included: Black 28, White 27), declare from the menu to win.',
+  '「動きのガイド」をオンにすると、駒に動ける向きの点が付きます。': 'Turn on the “move guide” to show small dots for the directions each piece can move.',
+  '歩兵': 'Pawn', '香車': 'Lance', '桂馬': 'Knight', '銀将': 'Silver', '金将': 'Gold', '角行': 'Bishop', '飛車': 'Rook', '玉将': 'King',
+  'と金': 'Tokin', '成香': 'Promoted lance', '成桂': 'Promoted knight', '成銀': 'Promoted silver', '竜馬': 'Horse', '竜王': 'Dragon',
+  '前に1マス': 'One step forward', '前にまっすぐ何マスでも': 'Any distance straight forward', '前に2、横に1の所へ跳ぶ（間の駒を越える）': 'Jumps two forward and one sideways (over pieces)',
+  '前と斜め、斜め後ろ': 'Forward, the forward diagonals and the back diagonals', '前・斜め前・横・後ろ（斜め後ろ以外）': 'Every direction except the back diagonals',
+  '斜めに何マスでも': 'Any distance diagonally', '縦横に何マスでも': 'Any distance vertically or horizontally', 'まわり8マス': 'One step in any direction',
+  '金と同じ動き': 'Moves like a gold', '角＋まわり1マス': 'Bishop + one step in any direction', '飛車＋まわり1マス': 'Rook + one step in any direction',
+  '盤とマス': 'Board and squares', '9×9の盤。マスは「筋（1〜9、右から）」と「段（一〜九、上から）」で「7六」のように呼びます。': 'A 9×9 board. Squares are named by file (1–9 from the right) and rank (a–i from the top), like 7f.',
+  // records/achievements
+  '記録': 'Records', 'オンライン': 'Online',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Noto+Serif+JP:wght@700&display=swap">
+<style>
+/* 将棋: a wooden board on a dark tatami room (dark) or a bright washitsu (light). UI uses the shared --kb-* tokens. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1f1a14; --kb-surface: #2b241b; --kb-surface-2: #352c21; --kb-sunken: #17130e; --kb-line: #4b3e2c;
+  --kb-ink: #f6eedf; --kb-dim: #c9b89a; --kb-accent: #e7a93f; --kb-accent-ink: #2a1a04; --kb-accent-text: #f0b552; --kb-accent-soft: rgba(231, 169, 63, .16);
+  --s-board: #d9ae63; --s-board2: #c99a4f; --s-line: #4a3112; --s-piece: #f3dca6; --s-piece2: #dfbd78; --s-pedge: #7a5524; --s-ink: #1b1209; --s-red: #b3151a;
+  --s-sel: rgba(255, 214, 90, .55); --s-dot: rgba(40, 90, 200, .55); --s-last: rgba(255, 160, 40, .32); --s-check: rgba(230, 40, 40, .55); --s-stand: #3a2f22; --s-stand-ink: #f6eedf;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f3ece0; --kb-surface: #fffaf2; --kb-surface-2: #f5ecdc; --kb-sunken: #e9dfcd; --kb-line: #d6c6aa;
+    --kb-ink: #2b2014; --kb-dim: #6b5a43; --kb-accent: #d8902a; --kb-accent-ink: #2a1a04; --kb-accent-text: #8a5508; --kb-accent-soft: rgba(216, 144, 42, .14);
+    --s-board: #e8c27c; --s-board2: #ddb06a; --s-stand: #e3d4b8; --s-stand-ink: #2b2014;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f3ece0; --kb-surface: #fffaf2; --kb-surface-2: #f5ecdc; --kb-sunken: #e9dfcd; --kb-line: #d6c6aa;
+  --kb-ink: #2b2014; --kb-dim: #6b5a43; --kb-accent: #d8902a; --kb-accent-ink: #2a1a04; --kb-accent-text: #8a5508; --kb-accent-soft: rgba(216, 144, 42, .14);
+  --s-board: #e8c27c; --s-board2: #ddb06a; --s-stand: #e3d4b8; --s-stand-ink: #2b2014;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body); -webkit-tap-highlight-color: transparent; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; height: var(--kobo-h, 100%); }
+header.bar { flex: none; display: flex; align-items: center; gap: 6px; padding: var(--kb-sat) max(6px, var(--kb-sar)) 0 max(6px, var(--kb-sal)); min-height: calc(48px + var(--kb-sat)); border-bottom: 1px solid var(--kb-line); }
+header.bar h1 { flex: 1; margin: 0; font: 800 17px var(--kb-font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+header.bar h1 small { font-size: 12px; color: var(--kb-dim); margin-left: 6px; }
+.home { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding: 0 8px; color: var(--kb-dim); text-decoration: none; font-weight: 800; font-size: 14px; border-radius: 10px; }
+.ibtn { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--kb-ink); border-radius: 10px; font-size: 22px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ibtn svg { width: 24px; height: 24px; }
+#stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px max(4px, var(--kb-sar)) max(4px, var(--kb-sab)) max(4px, var(--kb-sal)); gap: 4px; }
+#cv { display: block; touch-action: none; flex: none; }
+#panel { display: contents; }
+.pbar { order: 0; width: 100%; max-width: 560px; display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0 6px; font-size: 13px; font-weight: 800; }
+.pbar .pname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .pclock { font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 8px; background: var(--kb-sunken); min-width: 56px; text-align: center; }
+.pbar .pclock:empty { display: none; }
+.pbar.turn .pname::before { content: '● '; color: var(--kb-accent-text); }
+.pclock.low { background: #b3151a; color: #fff; }
+#pTop { order: 0; } #cv { order: 1; } #pBot { order: 2; } #status { order: 3; } #ctrl { order: 4; }
+#status { width: 100%; max-width: 560px; display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 4px; font-size: 13px; }
+#stText { flex: none; font-weight: 800; color: var(--kb-accent-text); white-space: nowrap; }
+#mlist { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; color: var(--kb-dim); font-variant-numeric: tabular-nums; cursor: pointer; padding: 6px 0; }
+#mlist::-webkit-scrollbar { display: none; }
+#mlist span { margin-right: 10px; } #mlist span:last-child { color: var(--kb-ink); font-weight: 800; }
+#ctrl { width: 100%; max-width: 560px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+#ctrl button { min-height: 44px; padding: 0 4px; font-size: 14px; }
+/* landscape: board on the left, panel on the right */
+#stage.land { flex-direction: row; align-items: center; justify-content: center; }
+#stage.land #panel { order: 2; display: flex; flex-direction: column; gap: 6px; width: 200px; flex: none; align-self: stretch; justify-content: center; }
+#stage.land #status { flex-direction: column; align-items: stretch; }
+#stage.land #mlist { white-space: normal; max-height: 30vh; overflow-y: auto; }
+#stage.land #ctrl { grid-template-columns: 1fr 1fr; }
+/* overlays */
+.ovl { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: var(--kb-scrim, rgba(0,0,0,.6));
+  padding: calc(8px + var(--kb-sat)) max(8px, var(--kb-sar)) calc(8px + var(--kb-sab)) max(8px, var(--kb-sal)); }
+.ovl[hidden] { display: none; }
+.card { width: min(440px, 100%); max-height: 100%; display: flex; flex-direction: column; background: var(--kb-surface); border: 1px solid var(--kb-line); border-radius: 18px; box-shadow: var(--kb-shadow); overflow: hidden; }
+.card .body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; }
+.card .foot { flex: none; display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--kb-line); }
+.card .foot .kb-btn { flex: 1; }
+.card h2 { margin: 0 0 8px; font: 800 20px var(--kb-font-body); }
+.card p { margin: 6px 0; font-size: 14px; line-height: 1.5; }
+.dim { color: var(--kb-dim); font-size: 12.5px; }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.stack .kb-btn { width: 100%; }
+.logo { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.logo .k { width: 54px; height: 60px; flex: none; }
+.logo h2 { margin: 0; font-size: 26px; }
+.seg { display: grid; gap: 4px; grid-auto-flow: column; grid-auto-columns: 1fr; margin: 4px 0 10px; }
+.seg button { min-height: 44px; padding: 0 2px; border: 1px solid var(--kb-line); background: var(--kb-surface-2); color: var(--kb-ink); border-radius: 10px; font: 800 13px var(--kb-font-body); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.seg.wrap { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+label.lbl { display: block; font-weight: 800; font-size: 13px; margin-top: 4px; }
+input.txt { width: 100%; min-height: 44px; font: 800 18px var(--kb-font-body); padding: 0 12px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-sunken); color: var(--kb-ink); }
+.code { font: 800 40px var(--kb-font-body); letter-spacing: .15em; text-align: center; margin: 8px 0; color: var(--kb-accent-text); }
+.big { font: 800 30px var(--kb-font-body); text-align: center; margin: 4px 0; }
+.err { color: #e5533d; font-weight: 800; }
+.plist { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.plist .kb-btn { width: 100%; }
+#ovPromo .card { width: min(320px, 100%); }
+.promo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.promo button { min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.promo canvas { width: 52px; height: 56px; }
+#kifText { width: 100%; height: 140px; font: 12px/1.4 monospace; background: var(--kb-sunken); color: var(--kb-ink); border: 1px solid var(--kb-line); border-radius: 8px; padding: 8px; resize: none; }
+#kifList { margin: 0 0 8px; padding-left: 0; list-style: none; columns: 2; font-size: 13px; font-variant-numeric: tabular-nums; }
+.pieces { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 8px 0; }
+.pc { display: flex; gap: 8px; align-items: center; background: var(--kb-surface-2); border-radius: 12px; padding: 6px; }
+.pc .grid { display: grid; grid-template-columns: repeat(5, 11px); grid-template-rows: repeat(5, 11px); gap: 1px; flex: none; }
+.pc .grid i { background: var(--kb-sunken); display: block; border-radius: 2px; }
+.pc .grid i.me { background: var(--kb-accent); }
+.pc .grid i.go { background: #3d8be0; } .pc .grid i.sl { background: #3d8be0; opacity: .55; }
+.pc .grid i.jp { background: #2fae63; }
+.pc b { font: 700 22px 'Noto Serif JP', serif; }
+.pc .nm { font-size: 12px; line-height: 1.35; }
+.howto h3 { margin: 12px 0 4px; font-size: 15px; }
+.howto ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; }
+.recs { font-size: 12.5px; color: var(--kb-dim); margin-top: 8px; line-height: 1.6; }
+body.thumb header.bar, body.thumb #panel { display: none !important; }
+@media (max-height: 480px) { .card .body { padding: 10px 14px; } .card .foot { padding: 8px 14px; } header.bar { min-height: calc(42px + var(--kb-sat)); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="bar">
+    <a class="home" href="../" aria-label="ゲーム一覧へ" data-i18n-attr="aria-label">← <span data-i18n>ホーム</span></a>
+    <h1 id="title"><span data-i18n>将棋</span><small id="modeTag"></small></h1>
+    <button class="ibtn" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label">☰</button>
+  </header>
+  <main id="stage">
+    <canvas id="cv" aria-label="将棋盤" data-i18n-attr="aria-label"></canvas>
+    <div id="panel">
+      <div class="pbar" id="pTop"><span class="pname" id="nTop"></span><span class="pclock" id="cTop"></span></div>
+      <div id="status"><span id="stText"></span><div id="mlist" aria-label="棋譜" data-i18n-attr="aria-label"></div></div>
+      <div class="pbar" id="pBot"><span class="pname" id="nBot"></span><span class="pclock" id="cBot"></span></div>
+      <div id="ctrl">
+        <button class="kb-btn" id="bUndo" type="button" data-i18n>待った</button>
+        <button class="kb-btn" id="bFlip" type="button" data-i18n>反転</button>
+        <button class="kb-btn" id="bKif" type="button" data-i18n>棋譜</button>
+        <button class="kb-btn" id="bResign" type="button" data-i18n>投了</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- title -->
+<div class="ovl" id="ovTitle" hidden>
+  <div class="card"><div class="body">
+    <div class="logo"><canvas class="k" id="logoPiece" width="108" height="120"></canvas><div><h2 data-i18n>将棋</h2><div class="dim" data-i18n>9×9の盤で指す、日本の将棋</div></div></div>
+    <div class="stack">
+      <button class="kb-btn kb-btn--primary" id="tResume" type="button" hidden><span data-i18n>続きから</span>&nbsp;<small id="tResumeSub"></small></button>
+      <button class="kb-btn kb-btn--primary" id="tCpu" type="button" data-i18n>CPUと対局</button>
+      <button class="kb-btn" id="tOnline" type="button" data-i18n>オンライン対局</button>
+      <button class="kb-btn" id="t2p" type="button" data-i18n>ふたりで対局</button>
+      <button class="kb-btn" id="tTsume" type="button" data-i18n>詰将棋</button>
+      <button class="kb-btn kb-btn--ghost sub" id="tHowto" type="button" data-i18n>遊び方・駒の動き</button>
+      <button class="kb-btn kb-btn--ghost sub" id="tSettings" type="button" data-i18n>設定</button>
+    </div>
+    <div class="recs" id="tRecs"></div>
+  </div></div>
+</div>
+
+<!-- CPU setup -->
+<div class="ovl" id="ovCpu" hidden>
+  <div class="card"><div class="body">
+    <h2 data-i18n>CPUと対局</h2>
+    <label class="lbl" data-i18n>CPUの強さ</label>
+    <div class="seg wrap" id="cpuLv"></div>
+    <div class="dim" id="cpuLvRec"></div>
+    <label class="lbl" data-i18n>あなたの手番</label>
+    <div class="seg" id="cpuSide"></div>
+    <label class="lbl" data-i18n>駒落ち（CPUが駒を落とす）</label>
+    <div class="seg wrap" id="cpuHc"></div>
+    <p class="dim" id="cpuNote"></p>
+  </div><div class="foot">
+    <button class="kb-btn kb-btn--ghost sub" id="cpuBack" type="button" data-i18n>戻る</button>
+    <button class="kb-btn kb-btn--primary" id="cpuGo" type="button" data-i18n>対局開始</button>
+  </div></div>
+</div>
+
+<!-- online -->
+<div class="ovl" id="ovOnline" hidden>
+  <div class="card"><div class="body">
+    <h2 data-i18n>オンライン対局</h2>
+    <div id="onNick" hidden>
+      <form id="onNickForm"><label class="lbl" for="onNickIn" data-i18n>オンラインで表示する名前（12文字まで）</label>
+      <input class="txt" id="onNickIn" maxlength="12" autocomplete="nickname"><p class="err" id="onNickNote"></p>
+      <button class="kb-btn kb-btn--primary" id="onNickOk" type="submit" style="width:100%" data-i18n>決める</button></form>
+    </div>
+    <div id="onMenu" hidden>
+      <div class="dim" id="onRec"></div>
+      <label class="lbl" data-i18n>持ち時間</label>
+      <div class="seg wrap" id="onTc"></div>
+      <div class="stack">
+        <button class="kb-btn kb-btn--primary" id="onRandom" type="button" data-i18n>ランダム対戦</button>
+        <label class="lbl" data-i18n>友だちと対局</label>
+        <button class="kb-btn" id="onHost" type="button" data-i18n>部屋を作る</button>
+        <div style="display:flex;gap:8px"><input class="txt" id="onCode" inputmode="numeric" maxlength="6" placeholder="部屋のコード（6けた）" data-i18n-attr="placeholder" aria-label="部屋のコード（6けた）"><button class="kb-btn" id="onJoin" type="button" data-i18n>コードで入る</button></div>
+        <p class="err" id="onMenuErr"></p>
+      </div>
+    </div>
+    <div id="onWait" hidden>
+      <p class="big" id="onStat"></p>
+      <div class="code" id="onCodeShow" hidden></div>
+      <p class="dim" id="onSub" style="text-align:center"></p>
+    </div>
+    <div id="onErr" hidden><p class="err" data-i18n>つながりませんでした</p><p class="dim" id="onErrD"></p>
+      <button class="kb-btn kb-btn--primary" id="onRetry" type="button" style="width:100%" data-i18n>もう一度</button></div>
+  </div><div class="foot">
+    <button class="kb-btn kb-btn--ghost sub" id="onBack" type="button" data-i18n>戻る</button>
+  </div></div>
+</div>
+
+<!-- tsume list -->
+<div class="ovl" id="ovTsume" hidden>
+  <div class="card"><div class="body">
+    <h2 data-i18n>詰将棋</h2>
+    <p class="dim" id="tsumeNote"></p>
+    <div class="plist" id="tsumeList"></div>
+  </div><div class="foot"><button class="kb-btn kb-btn--ghost sub" id="tsumeBack" type="button" data-i18n>戻る</button></div></div>
+</div>
+
+<!-- promotion -->
+<div class="ovl" id="ovPromo" hidden>
+  <div class="card" role="dialog" aria-modal="true"><div class="body">
+    <h2 data-i18n>成りますか？</h2>
+    <div class="promo"><button class="kb-btn kb-btn--primary" id="prYes" type="button"><canvas id="prYesC" width="104" height="112"></canvas><span data-i18n>成る</span></button>
+    <button class="kb-btn" id="prNo" type="button"><canvas id="prNoC" width="104" height="112"></canvas><span data-i18n>成らない</span></button></div>
+  </div></div>
+</div>
+
+<!-- result -->
+<div class="ovl" id="ovResult" hidden>
+  <div class="card"><div class="body">
+    <p class="big" id="resBig"></p>
+    <p style="text-align:center" id="resWhy"></p>
+    <p class="dim" style="text-align:center" id="resSub"></p>
+  </div><div class="foot" style="flex-wrap:wrap">
+    <button class="kb-btn kb-btn--primary" id="resAgain" type="button" data-i18n>もう一局</button>
+    <button class="kb-btn kb-btn--ghost sub" id="resKif" type="button" data-i18n>棋譜を見る</button>
+    <button class="kb-btn kb-btn--ghost sub" id="resTitle" type="button" data-i18n>タイトルへ</button>
+  </div></div>
+</div>
+
+<!-- kifu -->
+<div class="ovl" id="ovKifu" hidden>
+  <div class="card"><div class="body">
+    <h2 data-i18n>棋譜</h2>
+    <ol id="kifList"></ol>
+    <textarea id="kifText" readonly aria-label="KIF" data-kbt-allow-ja></textarea>
+  </div><div class="foot">
+    <button class="kb-btn kb-btn--primary" id="kifCopy" type="button" data-i18n>棋譜（KIF）をコピー</button>
+    <button class="kb-btn kb-btn--ghost sub" id="kifClose" type="button" data-i18n>とじる</button>
+  </div></div>
+</div>
+
+<!-- in-game menu -->
+<div class="ovl" id="ovMenu" hidden>
+  <div class="card"><div class="body">
+    <h2 data-i18n>メニュー</h2>
+    <div class="stack">
+      <button class="kb-btn kb-btn--primary" id="mResume" type="button" data-i18n>つづける</button>
+      <button class="kb-btn" id="mDeclare" type="button" data-i18n>入玉宣言</button>
+      <button class="kb-btn" id="mGuide" type="button"></button>
+      <button class="kb-btn" id="mHowto" type="button" data-i18n>遊び方・駒の動き</button>
+      <button class="kb-btn" id="mSettings" type="button" data-i18n>設定</button>
+      <button class="kb-btn" id="mTitle" type="button" data-i18n>タイトルへ</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- how to play -->
+<div class="ovl" id="ovHowto" hidden>
+  <div class="card"><div class="body howto" id="howtoBody"></div>
+  <div class="foot"><button class="kb-btn kb-btn--primary" id="howtoOk" type="button" data-i18n>とじる</button></div></div>
+</div>
+
+<script src="engine.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(function () {
+'use strict';
+const E = window.ShogiEngine;
+const I = window.KoboI18n, T = (s, v) => I.t(s, v), EN = I.lang === 'en';
+const PF = window.KoboPlatform || null, UI = window.KoboUI || null, AU = window.KoboAudio || null;
+const GAME = 'shogi';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const SAVE_KEY = 'kusoge.shogi.save', GAME_KEY = 'kusoge.shogi.game', HOWTO_KEY = 'kusoge.shogi.howto', ROOMS_KEY = 'kusoge.shogi.rooms', GUIDE_KEY = 'kusoge.shogi.guide';
+const LV_NAMES = ['', '入門', '初級', '中級', '上級', '最強'];
+const HC = [['hirate', '平手'], ['kyo', '香落ち'], ['kaku', '角落ち'], ['hisha', '飛車落ち'], ['nimai', '二枚落ち']];
+const TCS = [{ tm: 600, by: 0, l: '10分切れ負け' }, { tm: 0, by: 30, l: '30秒秒読み' }, { tm: 600, by: 30, l: '10分＋秒読み30秒' }];
+// original problems, found and checked with the engine's mate solver (tools/tests/unit/shogi-engine.test.js re-checks them)
+const PROBLEMS = [
+  { id: 't1', n: 1, sfen: '3k5/9/3G5/9/9/9/9/9/9 b S2r2b3g3s4n4l18p 1', first: 'S*6b' },
+  { id: 't2', n: 1, sfen: '6lpk/9/5P2P/9/9/9/9/9/9 b G2r2b3g4s4n3l15p 1', first: 'G*1b' },
+  { id: 't3', n: 3, sfen: '6B2/8k/9/9/9/9/9/9/9 b 2G2rb2g4s4n4l18p 1', first: 'G*1c' },
+  { id: 't4', n: 3, sfen: 'k8/9/P8/9/9/9/9/9/9 b RSr2b4g3s4n4l17p 1', first: 'R*9b' },
+  { id: 't5', n: 3, sfen: 'k8/2lS5/G1s6/9/9/9/9/9/9 b N2r2b3g2s3n3l18p 1', first: 'N*8c' },
+  { id: 't6', n: 5, sfen: 'p1k6/9/1R7/9/9/9/9/9/9 b Gr2b3g4s4n4l17p 1', first: '8c7c+' },
+  { id: 't7', n: 5, sfen: '9/6nkB/8r/8n/9/5NG2/9/9/9 b RGb2g4sn4l18p 1', first: 'R*2a' },
+  { id: 't8', n: 5, sfen: '1k7/9/4R4/9/2P1R4/9/9/9/9 b SG2b3g3s4n4l17p 1', first: '5c8c+' },
+];
+
+// ---------------------------------------------------------------- save
+function readSave() {
+  let s = null;
+  try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  s = s && typeof s === 'object' ? s : {};
+  const n = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);
+  const out = { v: 1, cpu: {}, top: Math.max(0, n(s.top, 0) | 0), on: {}, mate: { s: [] }, stats: {}, tut: n(s.tut, 0) };
+  for (let lv = 1; lv <= 5; lv++) { const r = (s.cpu && s.cpu['l' + lv]) || {}; out.cpu['l' + lv] = { w: n(r.w, 0), l: n(r.l, 0), d: n(r.d, 0) }; }
+  const o = s.on || {};
+  out.on = { r: n(o.r, 1500), w: n(o.w, 0), l: n(o.l, 0), d: n(o.d, 0), best: n(o.best, 1500) };
+  out.mate.s = Array.isArray(s.mate && s.mate.s) ? s.mate.s.filter(x => typeof x === 'string').slice(0, 50) : [];
+  const st = s.stats || {};
+  out.stats = { games: n(st.games, 0), wins: n(st.wins, 0), moves: n(st.moves, 0) };
+  return out;
+}
+let save = readSave();
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
+
+// ---------------------------------------------------------------- state
+let game = null;          // ShogiEngine.Game
+let cfg = { mode: 'none' };
+let flipped = false;      // true: gote at the bottom
+let sel = null;           // { kind: 'b', sq } | { kind: 'h', t }
+let targets = [];         // legal moves (ints) of the selection
+let thinking = false, cpuToken = 0, worker = null;
+let anim = null, dirty = true, guide = store.get(GUIDE_KEY) === '1';
+let ended = false, startedAt = 0;
+let tsume = null;         // { pr, idx, wrong }
+const cv = $('cv'), ctx = cv.getContext('2d');
+let LY = null;
+
+// ---------------------------------------------------------------- audio
+function sClick() { if (!AU) return; try { AU.noise(0.035, { vol: 0.22, freq: 2400 }); AU.tone(180, 0.05, { type: 'sine', vol: 0.12 }); } catch (e) {} }
+function sfx(n) { if (AU) { try { AU.sfx(n); } catch (e) {} } }
+
+// ---------------------------------------------------------------- layout
+function layout() {
+  const st = $('stage');
+  const W = st.clientWidth, H = st.clientHeight;
+  if (!W || !H) return;
+  const land = W > H * 1.2 && H < 600;
+  st.classList.toggle('land', land);
+  let c, cw, ch;
+  if (land) {
+    const panel = document.body.classList.contains('thumb') ? 0 : 200 + 12;
+    c = Math.min((H - 8) / 9.5, (W - panel - 8) / 12.3);
+    c = Math.floor(Math.max(18, c));
+    cw = Math.round(c * 12.3); ch = Math.round(c * 9.5);
+    const hw = c * 1.25;
+    LY = { land, c, W: cw, H: ch, bx: hw + c * 0.15, by: c * 0.42, hands: [] };
+    // gote / top hand: left column from the top; bottom hand: right column from the bottom
+    LY.topHand = { x: 0, y: LY.by, w: hw, h: 9 * c, dir: 'down' };
+    LY.botHand = { x: LY.bx + 9 * c + c * 0.5, y: LY.by, w: hw, h: 9 * c, dir: 'up' };
+  } else {
+    const fixed = $('pTop').offsetHeight + $('pBot').offsetHeight + $('status').offsetHeight + $('ctrl').offsetHeight + 4 * 4 + 8;
+    const avail = H - fixed;
+    c = Math.min((W - 8) / 9.5, avail / 11.85);
+    c = Math.floor(Math.max(16, c));
+    cw = Math.round(c * 9.5); ch = Math.round(c * 11.85);
+    const hh = c * 1.12;
+    LY = { land, c, W: cw, H: ch, bx: c * 0.08, by: hh + c * 0.12 + c * 0.42, hands: [] };
+    LY.topHand = { x: LY.bx, y: 0, w: 9 * c, h: hh, dir: 'left' };
+    LY.botHand = { x: LY.bx, y: LY.by + 9 * c + c * 0.18, w: 9 * c, h: hh, dir: 'right' };
+  }
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+  cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  dirty = true;
+}
+let layoutT = 0;
+function layoutSoon() { clearTimeout(layoutT); layoutT = setTimeout(() => { layout(); draw(); }, 30); }
+
+// view helpers: screen col/row of a square
+const bottomSide = () => (flipped ? 1 : 0);
+function sqXY(sq) {
+  let col = sq % 9, row = (sq / 9) | 0;
+  if (flipped) { col = 8 - col; row = 8 - row; }
+  return [LY.bx + col * LY.c, LY.by + row * LY.c];
+}
+function xyToSq(x, y) {
+  let col = Math.floor((x - LY.bx) / LY.c), row = Math.floor((y - LY.by) / LY.c);
+  if (col < 0 || col > 8 || row < 0 || row > 8) return -1;
+  if (flipped) { col = 8 - col; row = 8 - row; }
+  return row * 9 + col;
+}
+
+// ---------------------------------------------------------------- drawing
+const CHAR = ['', '歩', '香', '桂', '銀', '金', '角', '飛', '玉', 'と', '杏', '圭', '全', '', '馬', '龍'];
+let PAL = {};
+function readPal() {
+  const cs = getComputedStyle(document.documentElement), g = k => cs.getPropertyValue(k).trim();
+  PAL = { board: g('--s-board') || '#d9ae63', board2: g('--s-board2') || '#c99a4f', line: g('--s-line') || '#4a3112', piece: g('--s-piece') || '#f3dca6', piece2: g('--s-piece2') || '#dfbd78',
+    pedge: g('--s-pedge') || '#7a5524', ink: g('--s-ink') || '#1b1209', red: g('--s-red') || '#b3151a', sel: g('--s-sel'), dot: g('--s-dot'), last: g('--s-last'), check: g('--s-check'),
+    stand: g('--s-stand') || '#3a2f22', standInk: g('--s-stand-ink') || '#fff', accent: g('--kb-accent') || '#e7a93f' };
+}
+const FONT = "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif";
+function drawPiece(g, cx, cy, size, t, upside, o) {
+  o = o || {};
+  const w = size * 0.84, h = size * 0.92, s = t > 8 ? 1 : 0.97;
+  g.save(); g.translate(cx, cy); if (upside) g.rotate(Math.PI);
+  g.scale(s, s);
+  g.beginPath();
+  g.moveTo(0, -h / 2); g.lineTo(w * 0.40, -h * 0.30); g.lineTo(w / 2, h / 2); g.lineTo(-w / 2, h / 2); g.lineTo(-w * 0.40, -h * 0.30); g.closePath();
+  const gr = g.createLinearGradient(0, -h / 2, 0, h / 2); gr.addColorStop(0, PAL.piece); gr.addColorStop(1, PAL.piece2);
+  g.fillStyle = gr; g.globalAlpha = o.alpha == null ? 1 : o.alpha; g.fill();
+  g.lineWidth = Math.max(1, size * 0.03); g.strokeStyle = PAL.pedge; g.stroke();
+  const ch = t === 8 && o.king ? o.king : CHAR[t];
+  g.fillStyle = t > 8 ? PAL.red : PAL.ink;
+  g.font = '700 ' + Math.round(size * 0.52) + 'px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(ch, 0, h * 0.08);
+  if (o.guide) {
+    // small dots for each direction it can step; bars for directions it slides
+    const st = E.STEP0[t], sl = E.SLIDE0[t], BW = E.BW;
+    g.fillStyle = 'rgba(40, 90, 200, .9)';
+    const put = (d, long) => {
+      let dy = Math.round(d / BW), dx = d - dy * BW; if (dx > 1) { dx -= BW; dy++; } if (dx < -1) { dx += BW; dy--; }
+      const r = Math.max(1.6, size * 0.055), px = dx * w * 0.42, py = dy * h * 0.42 + (dy === -2 ? h * 0.18 : 0);
+      if (long) { g.fillRect(px - r * (dx ? 1.6 : 0.8), py - r * (dy ? 1.6 : 0.8), r * (dx ? 3.2 : 1.6), r * (dy ? 3.2 : 1.6)); }
+      else { g.beginPath(); g.arc(dy === -2 ? dx * w * 0.32 : px, dy === -2 ? -h * 0.5 : py, r, 0, Math.PI * 2); g.fill(); }
+    };
+    for (const d of st) put(d, false);
+    for (const d of sl) put(d, true);
+  }
+  g.restore();
+}
+function kingChar(owner) { return owner === 1 ? '王' : '玉'; }
+function handSlots(rect, side) {
+  const types = [7, 6, 5, 4, 3, 2, 1].filter(t => game && game.pos.handOf(side, t) > 0);
+  const c = LY.c, out = [];
+  if (LY.land) {
+    const sh = Math.min(c * 1.05, rect.h / 7), n = types.length;
+    types.forEach((t, i) => {
+      const y = rect.dir === 'down' ? rect.y + i * sh : rect.y + rect.h - (n - i) * sh;
+      out.push({ side, t, x: rect.x, y, w: rect.w, h: sh });
+    });
+  } else {
+    const sw = Math.min(c * 1.2, rect.w / 7), n = types.length;
+    types.forEach((t, i) => {
+      const x = rect.dir === 'left' ? rect.x + rect.w - (n - i) * sw : rect.x + i * sw;
+      out.push({ side, t, x, y: rect.y, w: sw, h: rect.h });
+    });
+  }
+  return out;
+}
+function draw() {
+  if (!LY) return;
+  dirty = false;
+  const g = ctx, c = LY.c;
+  g.clearRect(0, 0, LY.W, LY.H);
+  // stands
+  for (const r of [LY.topHand, LY.botHand]) {
+    g.fillStyle = PAL.stand; roundRect(g, r.x, r.y, r.w, r.h, c * 0.18); g.fill();
+  }
+  // board
+  const bx = LY.bx, by = LY.by, bs = 9 * c;
+  const gr = g.createLinearGradient(bx, by, bx + bs, by + bs); gr.addColorStop(0, PAL.board); gr.addColorStop(1, PAL.board2);
+  g.fillStyle = gr; g.fillRect(bx, by, bs, bs);
+  // coordinates
+  g.fillStyle = PAL.standInk === '#fff' ? '#ddd' : getComputedStyle(document.body).color;
+  g.font = '700 ' + Math.round(c * 0.3) + 'px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (let i = 0; i < 9; i++) {
+    const f = flipped ? i + 1 : 9 - i, r = flipped ? 9 - i : i + 1;
+    g.fillText(String(f), bx + (i + 0.5) * c, by - c * 0.22);
+    g.fillText(EN ? 'abcdefghi'[r - 1] : '一二三四五六七八九'[r - 1], bx + bs + c * 0.24, by + (i + 0.5) * c);
+  }
+  // highlights
+  if (game) {
+    const lm = game.moves[game.moves.length - 1];
+    if (lm) {
+      const inf = E.info(lm);
+      g.fillStyle = PAL.last;
+      for (const s of [inf.to, inf.from]) if (s >= 0) { const [x, y] = sqXY(s); g.fillRect(x, y, c, c); }
+    }
+    if (sel && sel.kind === 'b') { const [x, y] = sqXY(sel.sq); g.fillStyle = PAL.sel; g.fillRect(x, y, c, c); }
+    const pos = game.pos;
+    for (const sd of [0, 1]) {
+      if (pos.inCheck(sd)) { const k = E.unpad(pos.king[sd]); if (k >= 0) { const [x, y] = sqXY(k); g.fillStyle = PAL.check; g.fillRect(x, y, c, c); } }
+    }
+  }
+  // grid
+  g.strokeStyle = PAL.line; g.lineWidth = 1;
+  g.beginPath();
+  for (let i = 0; i <= 9; i++) { g.moveTo(bx + i * c + 0.5, by); g.lineTo(bx + i * c + 0.5, by + bs); g.moveTo(bx, by + i * c + 0.5); g.lineTo(bx + bs, by + i * c + 0.5); }
+  g.stroke();
+  g.lineWidth = 2; g.strokeRect(bx, by, bs, bs);
+  g.fillStyle = PAL.line;
+  for (const [i, j] of [[3, 3], [6, 3], [3, 6], [6, 6]]) { g.beginPath(); g.arc(bx + i * c, by + j * c, Math.max(2, c * 0.07), 0, Math.PI * 2); g.fill(); }
+  if (!game) return;
+  const pos = game.pos;
+  // pieces
+  for (let sq = 0; sq < 81; sq++) {
+    const p = pos.at(sq);
+    if (!p) continue;
+    if (anim && anim.to === sq) continue;
+    if (drag && drag.on && sel && sel.kind === 'b' && sel.sq === sq) continue;
+    const [x, y] = sqXY(sq), owner = p > 0 ? 0 : 1;
+    drawPiece(g, x + c / 2, y + c / 2 + c * 0.02, c, Math.abs(p), owner !== bottomSide(), { king: kingChar(owner), guide });
+  }
+  // targets
+  for (const m of targets) {
+    const inf = E.info(m);
+    if (inf.promote && targets.some(x => x !== m && E.info(x).to === inf.to)) continue;
+    const [x, y] = sqXY(inf.to);
+    g.fillStyle = PAL.dot;
+    g.beginPath();
+    if (pos.at(inf.to)) { g.lineWidth = Math.max(2, c * 0.08); g.strokeStyle = PAL.dot; g.arc(x + c / 2, y + c / 2, c * 0.44, 0, Math.PI * 2); g.stroke(); }
+    else { g.arc(x + c / 2, y + c / 2, c * 0.16, 0, Math.PI * 2); g.fill(); }
+  }
+  // hands
+  LY.hands = [];
+  for (const [rect, side] of [[LY.topHand, bottomSide() ^ 1], [LY.botHand, bottomSide()]]) {
+    for (const s of handSlots(rect, side)) {
+      LY.hands.push(s);
+      const cnt = pos.handOf(side, s.t), on = sel && sel.kind === 'h' && sel.t === s.t && pos.side === side;
+      if (on) { g.fillStyle = PAL.sel; roundRect(g, s.x + 2, s.y + 2, s.w - 4, s.h - 4, c * 0.12); g.fill(); }
+      const size = Math.min(s.w, s.h) * 0.92;
+      drawPiece(g, s.x + s.w / 2, s.y + s.h / 2, size, s.t, side !== bottomSide(), { guide });
+      if (cnt > 1) {
+        const r = c * 0.2, px = s.x + s.w - r - 1, py = s.y + r + 1;
+        g.fillStyle = PAL.accent; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#1b1209'; g.font = '800 ' + Math.round(c * 0.28) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(String(cnt), px, py + 1);
+      }
+    }
+  }
+  // moving piece (animation / drag)
+  if (anim) {
+    const k = Math.min(1, (performance.now() - anim.t0) / anim.dur), e = 1 - Math.pow(1 - k, 3);
+    const x = anim.x0 + (anim.x1 - anim.x0) * e, y = anim.y0 + (anim.y1 - anim.y0) * e;
+    const p = pos.at(anim.to), owner = p > 0 ? 0 : 1;
+    if (p) drawPiece(g, x + c / 2, y + c / 2, c * (1 + 0.12 * Math.sin(Math.PI * k)), Math.abs(p), owner !== bottomSide(), { king: kingChar(owner), guide });
+    if (k >= 1) anim = null;
+    dirty = true;
+  }
+  if (drag && drag.on && sel) {
+    const t = sel.kind === 'b' ? Math.abs(pos.at(sel.sq)) : sel.t;
+    drawPiece(g, drag.x, drag.y - c * 0.4, c * 1.15, t, pos.side !== bottomSide(), { king: kingChar(pos.side), alpha: 0.9 });
+  }
+}
+function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function loop() { requestAnimationFrame(loop); if (dirty || anim) draw(); }
+
+// ---------------------------------------------------------------- input
+let drag = null;
+function canAct() {
+  if (!game || ended || thinking || anim) return false;
+  const sd = game.pos.side;
+  if (cfg.mode === 'cpu') return sd === cfg.human;
+  if (cfg.mode === '2p') return true;
+  if (cfg.mode === 'online') return NET.phase === 'play' && sd === NET.side;
+  if (cfg.mode === 'tsume') return sd === 0 && !tsume.busy;
+  return false;
+}
+function selectAt(kind, v) {
+  const pos = game.pos;
+  sel = kind === 'b' ? { kind: 'b', sq: v } : { kind: 'h', t: v };
+  const all = pos.legalMoves();
+  targets = all.filter(m => { const inf = E.info(m); return kind === 'b' ? inf.from === v : inf.drop === v; });
+  sfx('tap'); dirty = true;
+}
+function clearSel() { sel = null; targets = []; dirty = true; }
+function tapSquare(sq) {
+  if (!canAct() || sq < 0) return false;
+  const pos = game.pos, p = pos.at(sq), mine = p && (p > 0 ? 0 : 1) === pos.side;
+  if (sel) {
+    const hits = targets.filter(m => E.info(m).to === sq);
+    if (hits.length) { chooseMove(hits); return true; }
+  }
+  if (mine) { if (sel && sel.kind === 'b' && sel.sq === sq) clearSel(); else selectAt('b', sq); return true; }
+  clearSel();
+  return false;
+}
+function tapHand(side, t) {
+  if (!canAct() || side !== game.pos.side || !game.pos.handOf(side, t)) return false;
+  if (sel && sel.kind === 'h' && sel.t === t) clearSel(); else selectAt('h', t);
+  return true;
+}
+function chooseMove(hits) {
+  if (hits.length === 1) { humanMove(hits[0]); return; }
+  // promotion choice
+  const pro = hits.find(m => E.info(m).promote), non = hits.find(m => !E.info(m).promote);
+  askPromo(pro, non);
+}
+function askPromo(pro, non) {
+  const inf = E.info(pro), t = Math.abs(game.pos.at(inf.from)), up = game.pos.side !== bottomSide();
+  for (const [id, tt] of [['prYesC', t + 8], ['prNoC', t]]) {
+    const c2 = $(id), g2 = c2.getContext('2d'); g2.clearRect(0, 0, c2.width, c2.height); drawPiece(g2, 52, 56, 100, tt, up, {});
+  }
+  promoCb = ok => { $('ovPromo').hidden = true; promoCb = null; humanMove(ok ? pro : non); };
+  $('ovPromo').hidden = false;
+}
+let promoCb = null;
+$('prYes').addEventListener('click', () => promoCb && promoCb(true));
+$('prNo').addEventListener('click', () => promoCb && promoCb(false));
+$('ovPromo').addEventListener('click', e => { if (e.target.id === 'ovPromo') { $('ovPromo').hidden = true; promoCb = null; clearSel(); } });
+
+function evPoint(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function hitHand(x, y) { return LY.hands.find(h => x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) || null; }
+cv.addEventListener('pointerdown', e => {
+  if (!LY || !game) return;
+  const [x, y] = evPoint(e);
+  const h = hitHand(x, y);
+  ensureAudio();
+  if (h) { if (tapHand(h.side, h.t)) drag = { x, y, x0: x, y0: y, on: false, id: e.pointerId }; return; }
+  const sq = xyToSq(x, y);
+  const wasSel = sel && sel.kind === 'b' ? sel.sq : -1;
+  if (tapSquare(sq) && sel && sel.kind === 'b' && sel.sq === sq) drag = { x, y, x0: x, y0: y, on: false, id: e.pointerId, re: wasSel === sq };
+  else drag = null;
+  if (drag) { try { cv.setPointerCapture(e.pointerId); } catch (err) {} }
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const [x, y] = evPoint(e);
+  drag.x = x; drag.y = y;
+  if (!drag.on && Math.hypot(x - drag.x0, y - drag.y0) > 8) drag.on = true;
+  if (drag.on) dirty = true;
+});
+cv.addEventListener('pointerup', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag; drag = null;
+  if (!d.on) { dirty = true; return; }
+  const [x, y] = evPoint(e);
+  const sq = xyToSq(x, y - LY.c * 0.4);
+  const hits = targets.filter(m => E.info(m).to === sq);
+  if (hits.length) chooseMove(hits); else { dirty = true; }
+});
+cv.addEventListener('pointercancel', () => { drag = null; dirty = true; });
+
+let audioOn = false;
+function ensureAudio() { if (audioOn || !AU) return; audioOn = true; try { AU.ctx && AU.ctx(); } catch (e) {} }
+
+// ---------------------------------------------------------------- game flow
+function newGame(c) {
+  cfg = c;
+  game = E.Game.fromMoves(c.sfen || E.START, []);
+  for (const u of c.moves || []) if (!game.play(u)) break;
+  ended = !!game.result; thinking = false; cpuToken++; sel = null; targets = []; anim = null;
+  flipped = c.mode === 'cpu' ? c.human === 1 : c.mode === 'online' ? NET.side === 1 : false;
+  startedAt = Date.now();
+  hideAll();
+  layout(); renderAll();
+  if (PF || window.KoboGame) {
+    const mode = c.mode === 'cpu' || c.mode === 'tsume' ? 'normal' : c.mode === 'online' ? 'versus' : 'practice';
+    try { window.KoboGame && KoboGame.emit('play_start', { mode, stage: c.mode === 'tsume' ? c.pr.id : undefined }); } catch (e) {}
+  }
+  if (c.mode === 'cpu') { saveGame(); maybeCpu(); }
+}
+function sideName(sd) {
+  const hc = cfg.mode === 'cpu' && cfg.hc && cfg.hc !== 'hirate';
+  if (cfg.mode === 'cpu') return sd === cfg.human ? T('あなた') : T('CPU（{lv}）', { lv: T(LV_NAMES[cfg.lv]) });
+  if (cfg.mode === 'online') return sd === NET.side ? NET.nick + ' (' + T('あなた') + ')' : (NET.oppNick || T('相手')) + (NET.oppR ? ' R' + NET.oppR : '');
+  if (cfg.mode === 'tsume') return sd === 0 ? T('攻め方') : T('玉方');
+  return hc ? T(sd ? '上手' : '下手') : T(sd ? '後手' : '先手');
+}
+function renderAll() {
+  const bs = bottomSide();
+  $('nTop').textContent = (bs ? '☗ ' : '☖ ') + sideName(bs ^ 1);
+  $('nBot').textContent = (bs ? '☖ ' : '☗ ') + sideName(bs);
+  const sd = game ? game.pos.side : 0;
+  $('pTop').classList.toggle('turn', !!game && !ended && sd !== bs);
+  $('pBot').classList.toggle('turn', !!game && !ended && sd === bs);
+  let tag = '';
+  if (cfg.mode === 'cpu') tag = T(LV_NAMES[cfg.lv]) + (cfg.hc && cfg.hc !== 'hirate' ? '・' + T(HC.find(h => h[0] === cfg.hc)[1]) : '');
+  else if (cfg.mode === '2p') tag = T('ふたりで対局');
+  else if (cfg.mode === 'online') tag = T('オンライン');
+  else if (cfg.mode === 'tsume') tag = T('{n}手詰', { n: cfg.pr.n });
+  $('modeTag').textContent = tag;
+  renderStatus(); renderMoves(); renderButtons(); renderClocks();
+  dirty = true;
+}
+function renderStatus() {
+  let s = '';
+  if (!game) s = '';
+  else if (ended && game.result) s = resultText(game.result).big;
+  else if (thinking) s = T('CPUが考えています…');
+  else if (cfg.mode === 'tsume') s = tsume && tsume.msg ? tsume.msg : T('{n}手詰', { n: cfg.pr.n });
+  else if (cfg.mode === '2p') s = T(game.pos.side ? '△後手の番' : '▲先手の番');
+  else if (cfg.mode === 'online' && NET.discMsg) s = NET.discMsg;
+  else s = canAct() || (cfg.mode === 'cpu' && game.pos.side === cfg.human) || (cfg.mode === 'online' && game.pos.side === NET.side) ? T('あなたの番です') : T('相手の番です');
+  if (game && !ended && game.pos.inCheck()) s = T('王手！') + ' ' + s;
+  $('stText').textContent = s;
+}
+function moveText(i) { return game.notation(i, EN ? 'en' : 'ja'); }
+let mlCache = [];
+function renderMoves() {
+  const box = $('mlist');
+  if (!game || !game.moves.length) { box.textContent = T('まだ指していません'); mlCache = []; return; }
+  if (mlCache.length > game.moves.length) mlCache.length = game.moves.length;
+  for (let i = mlCache.length; i < game.moves.length; i++) mlCache.push(moveText(i));
+  box.textContent = '';
+  const from = Math.max(0, game.moves.length - 40);
+  for (let i = from; i < game.moves.length; i++) { const s = document.createElement('span'); s.textContent = (i + 1) + ' ' + mlCache[i]; box.appendChild(s); }
+  box.scrollLeft = box.scrollWidth; box.scrollTop = box.scrollHeight;
+}
+function renderButtons() {
+  const m = cfg.mode;
+  $('bUndo').disabled = !game || ended || !(m === 'cpu' || m === '2p' || m === 'tsume') || !game.moves.length || thinking;
+  $('bResign').disabled = !game || ended || m === 'tsume' || (m === 'online' && NET.phase !== 'play');
+  $('bUndo').textContent = m === 'tsume' ? T('はじめから') : T('待った');
+}
+
+// a move by the person at the screen
+function humanMove(m) {
+  if (!canAct()) return false;
+  clearSel();
+  const r = applyMove(m, true);
+  if (!r) return false;
+  if (cfg.mode === 'online') netSendMove(r.usi);
+  if (cfg.mode === 'tsume') tsumeAfter();
+  else maybeCpu();
+  return true;
+}
+function applyMove(m, local) {
+  if (!game || ended) return null;
+  const inf = typeof m === 'number' ? E.info(m) : null;
+  const pos = game.pos;
+  let x0 = 0, y0 = 0;
+  const mm = typeof m === 'number' ? m : pos.parse(m);
+  if (!mm) return null;
+  const i2 = E.info(mm);
+  if (i2.from >= 0) [x0, y0] = sqXY(i2.from);
+  else { const h = LY.hands.find(h => h.side === pos.side && h.t === i2.drop); if (h) { x0 = h.x + h.w / 2 - LY.c / 2; y0 = h.y + h.h / 2 - LY.c / 2; } else { [x0, y0] = sqXY(i2.to); } }
+  const r = game.play(mm);
+  if (!r) return null;
+  void inf; void local;
+  const [x1, y1] = sqXY(i2.to);
+  anim = { to: i2.to, x0, y0, x1, y1, t0: performance.now(), dur: 160 };
+  setTimeout(sClick, 140);
+  if (r.check) setTimeout(() => sfx('hit'), 180);
+  save.stats.moves++;
+  if (cfg.mode === 'cpu' || cfg.mode === '2p') saveGame();
+  renderAll();
+  if (game.result) finish(game.result);
+  return r;
+}
+function maybeCpu() {
+  if (cfg.mode !== 'cpu' || ended || !game || game.pos.side === cfg.human) return;
+  thinking = true; renderStatus(); renderButtons();
+  const tok = ++cpuToken, t0 = Date.now();
+  const msg = { id: tok, sfen: game.start, moves: game.usi.slice(), level: cfg.lv, timeMs: DEBUG && cfg.cpuMs ? cfg.cpuMs : undefined };
+  const done = r => {
+    if (tok !== cpuToken || !game) return;
+    // a short pause so the CPU never answers instantly
+    const wait = Math.max(0, 350 - (Date.now() - t0));
+    setTimeout(() => {
+      if (tok !== cpuToken) return;
+      thinking = false;
+      if (r && r.usi && applyMove(r.usi)) return;
+      renderAll();
+    }, wait);
+  };
+  if (!worker && typeof Worker === 'function') {
+    try {
+      worker = new Worker('engine.js');
+      worker.onmessage = e => { const f = pending.get(e.data.id); if (f) { pending.delete(e.data.id); f(e.data); } };
+      worker.onerror = () => { worker = 'none'; for (const [id, f] of pending) { pending.delete(id); f(null); } };
+    } catch (e) { worker = 'none'; }
+  }
+  if (worker && worker !== 'none') { pending.set(tok, r => (r && !r.error ? done(r) : localThink(msg, done))); worker.postMessage(msg); }
+  else localThink(msg, done);
+}
+const pending = new Map();
+function localThink(msg, done) {
+  setTimeout(() => {
+    const g = E.Game.fromMoves(msg.sfen, msg.moves);
+    const r = E.search(g.pos, { level: msg.level, timeMs: msg.timeMs, history: g.keys.slice(0, -1) });
+    done(r);
+  }, 30);
+}
+function undo() {
+  if (!game || ended) return;
+  if (cfg.mode === 'tsume') { startTsume(cfg.idx); return; }
+  if (cfg.mode === 'cpu') {
+    cpuToken++; thinking = false;
+    let n = game.pos.side === cfg.human ? 2 : 1;
+    if (game.moves.length < n) n = game.moves.length;
+    // in a handicap game the CPU moved first: keep its first move
+    game.undo(n);
+    if (game.pos.side !== cfg.human) { maybeCpu(); }
+    cfg.undo = true;
+  } else if (cfg.mode === '2p') game.undo(1);
+  mlCache = []; clearSel(); saveGame(); renderAll();
+}
+// ---------------------------------------------------------------- results
+const WHY = { mate: '詰み', resign: '投了', time: '時間切れ', sennichite: '千日手', perpetual: '連続王手の千日手（反則）', declare: '入玉宣言', disc: '接続切れ' };
+function mySideNow() { return cfg.mode === 'cpu' ? cfg.human : cfg.mode === 'online' ? NET.side : cfg.mode === 'tsume' ? 0 : -1; }
+function resultText(res) {
+  const me = mySideNow();
+  let big;
+  if (res.winner < 0) big = T('引き分け');
+  else if (me >= 0) big = res.winner === me ? T('あなたの勝ち') : T('あなたの負け');
+  else big = T(res.winner === 0 ? '先手の勝ち' : '後手の勝ち');
+  return { big, why: T('{n}手で{why}', { n: game.moves.length, why: T(WHY[res.reason] || res.reason) }) };
+}
+function finish(res) {
+  if (ended) return;
+  ended = true; thinking = false; cpuToken++; clearSel();
+  const me = mySideNow();
+  const won = me >= 0 && res.winner === me, lost = me >= 0 && res.winner >= 0 && res.winner !== me;
+  let sub = '';
+  save = readSave();
+  if (cfg.mode === 'cpu') {
+    const r = save.cpu['l' + cfg.lv];
+    if (won) r.w++; else if (lost) r.l++; else r.d++;
+    if (won && cfg.lv === 5 && !cfg.undo && (!cfg.hc || cfg.hc === 'hirate')) save.top++;
+    store.del(GAME_KEY);
+  } else if (cfg.mode === 'online') {
+    const o = save.on, ro = NET.oppR || 1500, ex = 1 / (1 + Math.pow(10, (ro - o.r) / 400)), sc = won ? 1 : lost ? 0 : 0.5;
+    const before = o.r;
+    o.r = Math.max(100, Math.round(o.r + 32 * (sc - ex)));
+    if (won) o.w++; else if (lost) o.l++; else o.d++;
+    o.best = Math.max(o.best, o.r);
+    sub = T('レーティング {a} → {b}', { a: before, b: o.r });
+  } else if (cfg.mode === '2p') store.del(GAME_KEY);
+  if (cfg.mode !== 'tsume') { save.stats.games++; if (won) save.stats.wins++; }
+  writeSave();
+  try {
+    if (window.KoboGame && cfg.mode !== 'tsume') KoboGame.emit('play_end', { score: won ? 1 : 0, reason: won ? 'clear' : 'over', stats: { moves: game.moves.length, level: cfg.lv || 0 } });
+  } catch (e) {}
+  sfx(won ? 'win' : lost ? 'fail' : 'ok');
+  renderAll();
+  const t = resultText(res);
+  $('resBig').textContent = t.big; $('resWhy').textContent = t.why; $('resSub').textContent = sub;
+  $('resAgain').hidden = false; $('resAgain').disabled = false;
+  if (cfg.mode === 'cpu' && won && cfg.lv === 5 && cfg.undo) $('resSub').textContent = T('待ったをすると、その対局は最強CPUの勝ち数に数えません。');
+  setTimeout(() => { if (ended) { $('ovResult').hidden = false; } }, 700);
+}
+function saveGame() {
+  if (!game || ended || !(cfg.mode === 'cpu' || cfg.mode === '2p')) return;
+  store.set(GAME_KEY, JSON.stringify({ v: 1, mode: cfg.mode, lv: cfg.lv || 0, human: cfg.human || 0, hc: cfg.hc || 'hirate', moves: game.usi.slice(), undo: !!cfg.undo, at: Date.now() }));
+}
+function loadGame() {
+  try {
+    const g = JSON.parse(store.get(GAME_KEY) || 'null');
+    if (!g || (g.mode !== 'cpu' && g.mode !== '2p') || !Array.isArray(g.moves)) return null;
+    if (g.mode === 'cpu' && !(g.lv >= 1 && g.lv <= 5)) return null;
+    if (!E.HANDICAPS[g.hc]) g.hc = 'hirate';
+    return g;
+  } catch (e) { return null; }
+}
+function resumeGame() {
+  const g = loadGame(); if (!g) return;
+  newGame({ mode: g.mode, lv: g.lv, human: g.human ? 1 : 0, hc: g.hc, sfen: E.HANDICAPS[g.hc], moves: g.moves.filter(u => typeof u === 'string').slice(0, 1000), undo: !!g.undo });
+}
+function resign() {
+  if (!game || ended) return;
+  const sd = cfg.mode === 'cpu' ? cfg.human : cfg.mode === 'online' ? NET.side : game.pos.side;
+  if (cfg.mode === 'online') { netEnd('resign', sd ^ 1); }
+  finish(game.resign(sd));
+}
+
+// ---------------------------------------------------------------- clocks (online)
+function fmtClock(ms) { ms = Math.max(0, ms); const s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function renderClocks() {
+  if (cfg.mode !== 'online' || !game || !NET.st) { $('cTop').textContent = ''; $('cBot').textContent = ''; return; }
+  const cl = clocks(), bs = bottomSide();
+  for (const [id, sd] of [['cTop', bs ^ 1], ['cBot', bs]]) {
+    const c = cl[sd], el = $(id);
+    el.textContent = c.main > 0 || !NET.by ? fmtClock(c.main) : T('秒読み {s}', { s: Math.ceil(Math.max(0, c.byo) / 1000) });
+    el.classList.toggle('low', sd === game.pos.side && !ended && (c.main > 0 ? c.main < 30000 && !NET.by : c.byo < 10000));
+  }
+}
+// remaining time for both sides from the server times of the moves (same on both pages)
+function clocks() {
+  const out = [{ main: NET.tm * 1000, byo: NET.by * 1000, flag: false }, { main: NET.tm * 1000, byo: NET.by * 1000, flag: false }];
+  let prev = NET.st;
+  const s0 = 0;
+  for (let i = 0; i < game.moves.length; i++) {
+    const t = NET.mt[i];
+    const sd = (s0 + i) & 1;
+    if (t == null) { prev = null; break; }
+    use(out[sd], t - prev);
+    prev = t;
+  }
+  if (!ended) {
+    const sd = game.pos.side, now = sNow();
+    const base = prev == null ? NET.localT : prev;
+    const c = Object.assign({}, out[sd]);
+    use(c, now - base);
+    out[sd] = c;
+  }
+  return out;
+  function use(c, u) {
+    if (u <= c.main) { c.main -= u; c.byo = NET.by * 1000; return; }
+    const over = u - c.main; c.main = 0; c.byo = NET.by * 1000 - over;
+    if (c.byo < 0) c.flag = true;
+  }
+}
+
+// ---------------------------------------------------------------- overlays
+const OVS = ['ovTitle', 'ovCpu', 'ovOnline', 'ovTsume', 'ovPromo', 'ovResult', 'ovKifu', 'ovMenu', 'ovHowto'];
+function hideAll(except) { for (const id of OVS) if (id !== except) $(id).hidden = true; }
+function show(id) { hideAll(id); $(id).hidden = false; const b = $(id).querySelector('.kb-btn--primary:not([hidden])'); if (b) try { b.focus({ preventScroll: true }); } catch (e) {} }
+function drawLogo() { const c = $('logoPiece'), g = c.getContext('2d'); g.clearRect(0, 0, 108, 120); drawPiece(g, 54, 60, 112, 8, false, { king: '玉' }); }
+function showTitle() {
+  if (cfg.mode === 'online') netLeave();
+  save = readSave();
+  const g = loadGame();
+  $('tResume').hidden = !g;
+  if (g) $('tResumeSub').textContent = g.mode === 'cpu' ? T('CPU {lv}・{n}手目', { lv: T(LV_NAMES[g.lv]), n: g.moves.length + 1 }) : T('ふたりで・{n}手目', { n: g.moves.length + 1 });
+  $('tCpu').classList.toggle('kb-btn--primary', !g);
+  const recs = [];
+  if (save.top) recs.push(T('最強CPUに {n}勝', { n: save.top }));
+  if (save.on.w + save.on.l + save.on.d) recs.push(T('オンライン R{r}（{w}勝{l}敗）', { r: save.on.r, w: save.on.w, l: save.on.l }));
+  $('tRecs').textContent = recs.join(' / ');
+  drawLogo();
+  show('ovTitle');
+}
+$('tResume').addEventListener('click', () => { ensureAudio(); resumeGame(); });
+$('tCpu').addEventListener('click', () => { ensureAudio(); showCpu(); });
+$('t2p').addEventListener('click', () => { ensureAudio(); newGame({ mode: '2p', sfen: E.START }); });
+$('tOnline').addEventListener('click', () => { ensureAudio(); onlineMenu(); });
+$('tTsume').addEventListener('click', () => { ensureAudio(); showTsume(); });
+$('tHowto').addEventListener('click', () => showHowto('ovTitle'));
+$('tSettings').addEventListener('click', () => { if (UI) UI.openSettings(); });
+
+// CPU setup
+const cpuSel = { lv: 2, side: 0, hc: 'hirate' };
+function segButtons(box, items, cur, onPick) {
+  box.textContent = '';
+  for (const [v, label] of items) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.setAttribute('aria-pressed', String(v === cur));
+    b.addEventListener('click', () => { onPick(v); });
+    box.appendChild(b);
+  }
+}
+function showCpu() {
+  try { const p = JSON.parse(store.get('kusoge.shogi.cpuPick') || 'null'); if (p) Object.assign(cpuSel, p); } catch (e) {}
+  renderCpu(); show('ovCpu');
+}
+function renderCpu() {
+  save = readSave();
+  segButtons($('cpuLv'), [1, 2, 3, 4, 5].map(l => [l, T(LV_NAMES[l])]), cpuSel.lv, v => { cpuSel.lv = v; renderCpu(); });
+  const r = save.cpu['l' + cpuSel.lv];
+  $('cpuLvRec').textContent = T('勝{w} 負{l} 分{d}', r);
+  const hc = cpuSel.hc !== 'hirate';
+  segButtons($('cpuSide'), [[0, T('先手（▲）')], [1, T('後手（△）')], [2, T('おまかせ')]], hc ? 0 : cpuSel.side, v => { if (!hc) { cpuSel.side = v; renderCpu(); } });
+  segButtons($('cpuHc'), HC.map(h => [h[0], T(h[1])]), cpuSel.hc, v => { cpuSel.hc = v; renderCpu(); });
+  $('cpuNote').textContent = (hc ? T('駒落ちでは、CPU（上手）が先に指します。') + ' ' : '') + T('待ったをすると、その対局は最強CPUの勝ち数に数えません。');
+}
+$('cpuBack').addEventListener('click', showTitle);
+$('cpuGo').addEventListener('click', () => {
+  store.set('kusoge.shogi.cpuPick', JSON.stringify(cpuSel));
+  const hc = cpuSel.hc;
+  const human = hc !== 'hirate' ? 0 : cpuSel.side === 2 ? (Math.random() < 0.5 ? 0 : 1) : cpuSel.side;
+  newGame({ mode: 'cpu', lv: cpuSel.lv, human, hc, sfen: E.HANDICAPS[hc], undo: false });
+});
+
+// game buttons
+$('bUndo').addEventListener('click', undo);
+$('bFlip').addEventListener('click', () => { flipped = !flipped; clearSel(); renderAll(); });
+$('bKif').addEventListener('click', () => openKifu());
+$('mlist').addEventListener('click', () => openKifu());
+$('mlist').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openKifu(); });
+$('bResign').addEventListener('click', async () => {
+  if (!game || ended) return;
+  const ok = UI ? await UI.confirm({ title: T('投了しますか？'), ok: T('投了する'), cancel: T('やめる'), danger: true }) : confirm(T('投了しますか？'));
+  if (ok) resign();
+});
+$('menuBtn').addEventListener('click', () => { if (!game) { showTitle(); return; } openMenu(); });
+function openMenu() {
+  const d = game && !ended ? game.declareInfo() : null;
+  $('mDeclare').hidden = !game || ended || cfg.mode === 'tsume';
+  $('mDeclare').dataset.ok = d && d.ok ? '1' : '';
+  $('mGuide').textContent = T('動きのガイド') + (EN ? ': ' : '：') + T(guide ? 'オン' : 'オフ');
+  show('ovMenu');
+}
+$('mResume').addEventListener('click', () => hideAll());
+$('mGuide').addEventListener('click', () => { guide = !guide; store.set(GUIDE_KEY, guide ? '1' : '0'); $('mGuide').textContent = T('動きのガイド') + (EN ? ': ' : '：') + T(guide ? 'オン' : 'オフ'); dirty = true; });
+$('mHowto').addEventListener('click', () => showHowto('ovMenu'));
+$('mSettings').addEventListener('click', () => { if (UI) UI.openSettings(); });
+$('mDeclare').addEventListener('click', () => {
+  if (!game || ended) return;
+  const me = mySideNow();
+  const d = game.declareInfo();
+  if (!d.ok || (me >= 0 && game.pos.side !== me) || !canAct()) { UI && UI.toast(T('入玉宣言の条件を満たしていません（駒{p}枚・{pt}点 / {need}点）', { p: d.pieces, pt: d.points, need: d.need })); return; }
+  hideAll();
+  const r = game.declare();
+  if (cfg.mode === 'online') netEnd('declare', r.winner);
+  finish(r);
+});
+$('mTitle').addEventListener('click', async () => {
+  if (game && !ended && cfg.mode === 'online') {
+    const ok = UI ? await UI.confirm({ title: T('対局を終えてタイトルに戻りますか？'), ok: T('戻る（投了）'), cancel: T('やめる'), danger: true }) : true;
+    if (!ok) return;
+    resign();
+  }
+  showTitle();
+});
+$('resAgain').addEventListener('click', () => {
+  if (cfg.mode === 'cpu') { const c = Object.assign({}, cfg, { moves: [], undo: false }); if (!c.hc || c.hc === 'hirate') c.human = cfg.human; newGame(c); }
+  else if (cfg.mode === '2p') newGame({ mode: '2p', sfen: E.START });
+  else if (cfg.mode === 'tsume') startTsume(Math.min(PROBLEMS.length - 1, cfg.idx + (tsume && tsume.solved ? 1 : 0)));
+  else if (cfg.mode === 'online') netRematch();
+});
+$('resKif').addEventListener('click', () => openKifu());
+$('resTitle').addEventListener('click', showTitle);
+
+// kifu
+function kifText() {
+  const hcName = cfg.mode === 'cpu' && cfg.hc && cfg.hc !== 'hirate' ? HC.find(h => h[0] === cfg.hc)[1] : null;
+  const d = new Date(startedAt || Date.now());
+  const date = d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  const nm = sd => (cfg.mode === 'cpu' ? (sd === cfg.human ? 'あなた' : 'CPU（' + LV_NAMES[cfg.lv] + '）') : cfg.mode === 'online' ? (sd === NET.side ? NET.nick : NET.oppNick || '相手') : sd ? '後手' : '先手');
+  let times = null;
+  if (cfg.mode === 'online' && NET.st) { times = []; let p = NET.st; for (let i = 0; i < game.moves.length; i++) { const t = NET.mt[i]; times.push(t && p ? Math.round((t - p) / 1000) : 0); p = t; } }
+  return E.kif(game, { date, handicap: hcName, black: nm(0), white: nm(1), times });
+}
+let kifReturn = null;
+function openKifu() {
+  if (!game) return;
+  kifReturn = OVS.find(id => !$(id).hidden && id !== 'ovKifu') || null;
+  const ol = $('kifList'); ol.textContent = '';
+  for (let i = 0; i < game.moves.length; i++) { const li = document.createElement('li'); li.textContent = (i + 1) + ' ' + (mlCache[i] || moveText(i)); ol.appendChild(li); }
+  $('kifText').value = kifText();
+  show('ovKifu');
+}
+$('kifClose').addEventListener('click', () => { if (kifReturn) show(kifReturn); else hideAll(); });
+$('kifCopy').addEventListener('click', async () => {
+  const txt = $('kifText').value;
+  let ok = false;
+  try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {
+    try { $('kifText').select(); ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+  }
+  if (UI) UI.toast(ok ? T('コピーしました') : T('コピーできませんでした。下の文字を選んでコピーしてください'));
+});
+
+// ---------------------------------------------------------------- how to play
+const PIECE_HELP = [
+  [1, '歩兵', '前に1マス', 9, 'と金'], [2, '香車', '前にまっすぐ何マスでも', 10, '成香'], [3, '桂馬', '前に2、横に1の所へ跳ぶ（間の駒を越える）', 11, '成桂'],
+  [4, '銀将', '前と斜め、斜め後ろ', 12, '成銀'], [5, '金将', '前・斜め前・横・後ろ（斜め後ろ以外）', 0, ''], [6, '角行', '斜めに何マスでも', 14, '竜馬'],
+  [7, '飛車', '縦横に何マスでも', 15, '竜王'], [8, '玉将', 'まわり8マス', 0, ''],
+];
+function moveGrid(t) {
+  const g = document.createElement('div'); g.className = 'grid'; g.setAttribute('aria-hidden', 'true');
+  const cells = [];
+  for (let i = 0; i < 25; i++) { const c = document.createElement('i'); cells.push(c); g.appendChild(c); }
+  cells[12].className = 'me';
+  const BW = E.BW;
+  const at = (dx, dy) => (Math.abs(dx) <= 2 && Math.abs(dy) <= 2 ? cells[(dy + 2) * 5 + dx + 2] : null);
+  const dec = d => { let dy = Math.round(d / BW), dx = d - dy * BW; if (dx > 1) { dx -= BW; dy++; } if (dx < -1) { dx += BW; dy--; } return [dx, dy]; };
+  for (const d of E.STEP0[t]) { const [dx, dy] = dec(d); const c = at(dx, dy); if (c) c.className = Math.abs(dy) === 2 ? 'jp' : 'go'; }
+  for (const d of E.SLIDE0[t]) { const [dx, dy] = dec(d); for (let k = 1; k <= 2; k++) { const c = at(dx * k, dy * k); if (c) c.className = k === 1 ? 'go' : 'sl'; } }
+  return g;
+}
+function buildHowto() {
+  const b = $('howtoBody'); b.textContent = '';
+  const h = (tag, txt) => { const e = document.createElement(tag); e.textContent = txt; b.appendChild(e); return e; };
+  h('h2', T('遊び方・駒の動き'));
+  h('h3', T('ルール'));
+  const ul = document.createElement('ul');
+  for (const s of ['相手の玉（王）を逃げられなくすれば勝ち（詰み）。', '自分の駒をタップしてから、光ったマスをタップすると動かせます。ドラッグでも動かせます。',
+    '取った駒は「持ち駒」になり、自分の番に空いたマスへ打てます。', '相手の陣地（奥の3段）に入るか、そこから出るときに「成る」ことができます。動けなくなる場所では必ず成ります。',
+    '反則：二歩（同じ筋に歩を2枚）、打ち歩詰め（歩を打って詰ませる）、行き所のない駒、王手を放っておくこと。', '同じ局面が4回で千日手（引き分け）。王手を続けての千日手は、王手をかけた側の負け。',
+    '入玉宣言（27点法）：玉が敵陣にあり、王手されておらず、敵陣の駒10枚以上・点数（大駒5点・小駒1点、持ち駒も）が先手28点・後手27点以上なら、メニューから宣言して勝ち。',
+    '「動きのガイド」をオンにすると、駒に動ける向きの点が付きます。']) { const li = document.createElement('li'); li.textContent = T(s); ul.appendChild(li); }
+  b.appendChild(ul);
+  h('h3', T('盤とマス'));
+  h('p', T('9×9の盤。マスは「筋（1〜9、右から）」と「段（一〜九、上から）」で「7六」のように呼びます。'));
+  h('h3', T('駒の動き'));
+  const box = document.createElement('div'); box.className = 'pieces';
+  for (const [t, name, how, pt, pname] of PIECE_HELP) {
+    for (const [tt, nm, hw] of [[t, name, how]].concat(pt ? [[pt, pname, pt === 14 ? '角＋まわり1マス' : pt === 15 ? '飛車＋まわり1マス' : '金と同じ動き']] : [])) {
+      const c = document.createElement('div'); c.className = 'pc';
+      const k = document.createElement('b'); k.lang = 'ja'; k.textContent = tt === 8 ? '玉' : CHAR[tt]; if (tt > 8) k.style.color = '#c0201f';
+      const n = document.createElement('div'); n.className = 'nm';
+      const n1 = document.createElement('strong'); n1.textContent = T(nm); const n2 = document.createElement('div'); n2.className = 'dim'; n2.textContent = T(hw);
+      n.append(n1, n2); c.append(moveGrid(tt), k, n); box.appendChild(c);
+    }
+  }
+  b.appendChild(box);
+}
+let howtoReturn = null;
+function showHowto(from) { howtoReturn = from || null; buildHowto(); show('ovHowto'); $('howtoBody').scrollTop = 0; }
+$('howtoOk').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1');
+  if (!save.tut) { save = readSave(); save.tut = 1; writeSave(); }
+  if (howtoReturn) show(howtoReturn); else if (game) hideAll(); else showTitle();
+});
+
+// ---------------------------------------------------------------- 詰将棋
+function showTsume() {
+  save = readSave();
+  $('tsumeNote').textContent = T('ひとりで解く詰将棋（{s}/{n} 解いた）', { s: PROBLEMS.filter(p => save.mate.s.includes(p.id)).length, n: PROBLEMS.length });
+  const box = $('tsumeList'); box.textContent = '';
+  PROBLEMS.forEach((p, i) => {
+    const b = document.createElement('button'); b.type = 'button';
+    const done = save.mate.s.includes(p.id);
+    b.className = 'kb-btn' + (i === 0 ? ' kb-btn--primary' : '');
+    b.textContent = (done ? '✓ ' : '') + T('問題 {i}', { i: i + 1 }) + '・' + T('{n}手詰', { n: p.n });
+    b.addEventListener('click', () => startTsume(i));
+    box.appendChild(b);
+  });
+  show('ovTsume');
+}
+$('tsumeBack').addEventListener('click', showTitle);
+function startTsume(i) {
+  const pr = PROBLEMS[i];
+  tsume = { pr, busy: false, msg: '', solved: false };
+  newGame({ mode: 'tsume', pr, idx: i, sfen: pr.sfen });
+  tsume.msg = T('詰将棋：王手の連続で、{n}手以内に玉を詰ませる。玉方は残りの駒をすべて持っています。', { n: pr.n });
+  if (UI) UI.toast(tsume.msg);
+  tsume.msg = '';
+  renderAll();
+}
+// after the solver's move: is it check, and does a mate remain within the budget? then the defender answers with its longest line
+function tsumeAfter() {
+  const pr = cfg.pr, used = game.moves.length;
+  if (ended) { // mated
+    if (game.result && game.result.winner === 0) tsumeSolved();
+    return;
+  }
+  const pos = game.pos;
+  const fail = msg => {
+    tsume.busy = true; tsume.msg = msg; renderStatus(); sfx('fail');
+    setTimeout(() => { if (cfg.mode === 'tsume' && cfg.pr === pr) { game.undo(1); mlCache = []; tsume.busy = false; tsume.msg = ''; renderAll(); } }, 900);
+  };
+  if (!pos.inCheck()) return fail(T('王手をかけてください'));
+  const left = pr.n - used;
+  // the defender's best reply: the one that keeps the attacker's mate longest (escape → wrong move)
+  let best = null, bestLen = -1;
+  for (const m of pos.legalMoves()) {
+    pos.make(m);
+    const r = left - 1 >= 1 ? E.solveMate(pos, left - 1) : null;
+    pos.unmake();
+    if (!r) { best = null; bestLen = Infinity; break; }
+    const v = r.mate - (E.info(m).drop ? 0.5 : 0);
+    if (v > bestLen) { bestLen = v; best = m; }
+  }
+  if (!best) return fail(T('ちがいます。もう一度'));
+  tsume.busy = true;
+  setTimeout(() => { if (cfg.mode !== 'tsume' || cfg.pr !== pr) return; tsume.busy = false; applyMove(best); }, 450);
+}
+function tsumeSolved() {
+  tsume.solved = true;
+  save = readSave();
+  if (!save.mate.s.includes(cfg.pr.id)) save.mate.s.push(cfg.pr.id);
+  writeSave();
+  try { window.KoboGame && KoboGame.emit('stage_clear', { stage: cfg.idx + 1 }); window.KoboGame && KoboGame.emit('play_end', { score: 1, reason: 'clear', stage: cfg.idx + 1 }); } catch (e) {}
+  $('resBig').textContent = T('正解！'); $('resWhy').textContent = T('{n}手詰', { n: cfg.pr.n }); $('resSub').textContent = '';
+  $('resAgain').textContent = T(cfg.idx < PROBLEMS.length - 1 ? '次の問題' : 'はじめから');
+  setTimeout(() => { $('ovResult').hidden = false; }, 600);
+}
+// the generic finish() for tsume: mate by the solver is the solved state
+const finishBase = finish;
+finish = function (res) {
+  if (cfg.mode === 'tsume') {
+    if (ended) return;
+    ended = true; renderAll(); sfx(res.winner === 0 ? 'win' : 'fail');
+    if (res.winner === 0) tsumeSolved();
+    return;
+  }
+  $('resAgain').textContent = T('もう一局');
+  finishBase(res);
+};
+
+// ---------------------------------------------------------------- online (Firebase Realtime Database)
+// shogi/queue/{uid}          = { n: nick, t: server ms, c: time control 0..2, e: rating }   (+ r: room id, m: [uids] once that player made a room)
+// shogi/codes/{code}         = { h: host uid, t, c }   (+ g: guest uid, written once by the friend; r: room id, written by the host)
+// shogi/rooms/{room}         = { at, h: creator, inv: { uid: 1 } (2 players), b / w: uids of black / white, c, tm, by: time control (s),
+//                                m: { uid: { n, j, e } }   members (each removes itself on disconnect)
+//                                st: server time of the start (written once, by the creator, when both are in)
+//                                n: number of moves; mv: { "0": { m: usi, t: server time, i: 0 }, … } (append-only, by the side to move)
+//                                end: { r: reason, w: 'b' | 'w' | 'd', by: uid, t, n }  (written once)
+//                                rm: { uid: 1 } rematch wishes; nx: the next room (written once by the creator) }
+// The clocks come from the server times of the moves, so both pages see the same time. database.rules.json checks all of it.
+const FB_SDK = 'https://cdn.jsdelivr.net/npm/firebase@10.12.2/';
+const DISC_MS = DEBUG && /[?&]disc=(\d+)/.test(location.search) ? +/[?&]disc=(\d+)/.exec(location.search)[1] * 1000 : 60000;
+const NET = { db: null, uid: null, TS: null, off: 0, gen: 0, phase: 'off', nick: '', qref: null, q: null, rid: null, rref: null, meta: null, members: {}, timers: [], offs: [],
+  connected: false, bad: new Set(), side: 0, tc: 1, code: null, cref: null, mt: [], st: 0, tm: 0, by: 30, end: null, rm: {}, oppGoneAt: 0, oppNick: '', oppR: 0, discMsg: '', localT: 0 };
+const sNow = () => Date.now() + NET.off;
+const cleanNick = n => String(n || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
+const netErr = c => Object.assign(new Error(c), { code: c });
+const quietly = pr => { if (pr && pr.catch) pr.catch(() => {}); return pr; };
+function loadJs(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(netErr('sdk-load')); document.head.appendChild(s); }); }
+const authReady = au => new Promise(res => { const un = au.onAuthStateChanged(() => { un(); res(); }); });
+async function netInit() {
+  if (NET.db) return;
+  const cfgF = window.NEJI_FIREBASE;
+  if (!cfgF || !cfgF.databaseURL) throw netErr('no-config');
+  if (window.KoboCloud && KoboCloud.ready) { try { await KoboCloud.ready(); } catch (e) {} }
+  if (!window.firebase || !firebase.apps) await loadJs(FB_SDK + 'firebase-app-compat.js');
+  if (!firebase.auth) await loadJs(FB_SDK + 'firebase-auth-compat.js');
+  if (!firebase.database) await loadJs(FB_SDK + 'firebase-database-compat.js');
+  if (!firebase.apps.length) firebase.initializeApp(cfgF);
+  const app = firebase.app();
+  await authReady(app.auth());
+  // one account for everything: Google if signed in, otherwise the shared guest account (KoboCloud.ensureGuest)
+  let u = app.auth().currentUser;
+  if (!u && window.KoboCloud && KoboCloud.ensureGuest) { try { await KoboCloud.ensureGuest(); } catch (e) {} u = app.auth().currentUser; }
+  if (!u) u = (await app.auth().signInAnonymously()).user;
+  NET.uid = u.uid; NET.db = app.database(); NET.TS = firebase.database.ServerValue.TIMESTAMP;
+}
+function netConnect() {
+  return new Promise((res, rej) => {
+    const to = setTimeout(() => rej(netErr('timeout')), 10000);
+    if (NET.connListening) { if (NET.connected) { clearTimeout(to); res(); } else NET.onConn = () => { clearTimeout(to); res(); }; return; }
+    NET.connListening = true;
+    NET.db.ref('.info/connected').on('value', s => {
+      const was = NET.connected; NET.connected = s.val() === true;
+      if (NET.connected) { if (NET.onConn) { const f = NET.onConn; NET.onConn = null; f(); } if (!was) netReconnected(); }
+    });
+    NET.onConn = () => { clearTimeout(to); res(); };
+    NET.db.ref('.info/serverTimeOffset').on('value', s => { NET.off = s.val() || 0; });
+  });
+}
+function netReconnected() {
+  if (NET.phase === 'queue' && NET.qref) { quietly(NET.qref.onDisconnect().remove()); quietly(NET.qref.set(queueEntry())); }
+  if ((NET.phase === 'room' || NET.phase === 'play' || NET.phase === 'done') && NET.rref) {
+    const m = NET.rref.child('m/' + NET.uid);
+    quietly(m.onDisconnect().remove());
+    quietly(m.update({ n: NET.nick, e: save.on.r }));
+  }
+}
+function netOn(ref, ev, f) { ref.on(ev, f, e => { if (NET.phase !== 'off') onlineFail(e); }); NET.offs.push(() => ref.off(ev, f)); }
+function netTimer(f, ms) { const id = setInterval(f, ms); NET.timers.push(id); return id; }
+function netStopListening() { NET.offs.forEach(f => { try { f(); } catch (e) {} }); NET.offs = []; NET.timers.forEach(clearInterval); NET.timers = []; }
+const others = () => Object.keys(NET.members || {}).filter(id => id !== NET.uid);
+// rooms this device took part in: leftovers are removed the next time it goes online
+function roomsList() { try { const a = JSON.parse(store.get(ROOMS_KEY) || '[]'); return Array.isArray(a) ? a.filter(e => e && typeof e.r === 'string' && /^[-\w]{1,40}$/.test(e.r) && typeof e.t === 'number') : []; } catch (e) { return []; } }
+function roomsSave(a) { store.set(ROOMS_KEY, JSON.stringify(a.slice(-8))); }
+function roomRemember(rid) { roomsSave(roomsList().filter(e => e.r !== rid).concat([{ r: rid, t: Date.now() }])); }
+function roomForget(rid) { roomsSave(roomsList().filter(e => e.r !== rid)); }
+async function netSweep() {
+  for (const e of roomsList()) {
+    if (e.r === NET.rid || Date.now() - e.t < 30000) continue;
+    let v; try { v = (await NET.db.ref('shogi/rooms/' + e.r).once('value')).val(); } catch (err) { continue; }
+    if (!v) { roomForget(e.r); continue; }
+    const mine = !!(v.inv && v.inv[NET.uid]);
+    const alive = v.m && Object.keys(v.m).some(id => id !== NET.uid);
+    if (mine && (!alive || v.end)) { try { await NET.db.ref('shogi/rooms/' + e.r).remove(); roomForget(e.r); } catch (err) {} }
+    else if (!mine || Date.now() - e.t > 86400000) roomForget(e.r);
+  }
+}
+function netLeave() {
+  NET.gen++;
+  netStopListening();
+  if (NET.qref) { quietly(NET.qref.onDisconnect().cancel()); quietly(NET.qref.remove()); NET.qref = null; }
+  if (NET.cref) { quietly(NET.cref.onDisconnect().cancel()); if (NET.codeHost) quietly(NET.cref.remove()); NET.cref = null; }
+  if (NET.rref) {
+    const rref = NET.rref, rid = NET.rid, m = rref.child('m/' + NET.uid);
+    quietly(m.onDisconnect().cancel());
+    if (NET.odRoom) quietly(rref.onDisconnect().cancel());
+    // the last one out of a finished (or never started) room removes it; otherwise only our own entry
+    if ((NET.phase === 'done' || NET.phase === 'room') && !others().length) quietly(rref.remove().then(() => roomForget(rid)));
+    else quietly(m.remove());
+  }
+  NET.rref = null; NET.rid = null; NET.phase = 'off'; NET.members = {}; NET.odRoom = false; NET.discMsg = ''; NET.st = 0; NET.codeHost = false;
+}
+function onlineShow(state, o) {
+  o = o || {};
+  for (const k of ['onNick', 'onMenu', 'onWait', 'onErr']) $(k).hidden = k !== state;
+  if (state === 'onMenu') {
+    save = readSave();
+    $('onRec').textContent = T('オンライン R{r}（{w}勝{l}敗）', { r: save.on.r, w: save.on.w, l: save.on.l });
+    segButtons($('onTc'), TCS.map((x, i) => [i, T(x.l)]), NET.tc, v => { NET.tc = v; store.set('kusoge.shogi.tc', String(v)); onlineShow('onMenu'); });
+    $('onMenuErr').textContent = o.err || '';
+  }
+  if (state === 'onNick') { $('onNickIn').value = cleanNick(store.get('kobo.nick')); $('onNickNote').textContent = ''; }
+  if (state === 'onErr') $('onErrD').textContent = o.detail ? '(' + o.detail + ')' : '';
+  show('ovOnline');
+}
+function onlineStatus(t, sub, code) { $('onStat').textContent = t; $('onSub').textContent = sub || ''; $('onCodeShow').hidden = !code; $('onCodeShow').textContent = code || ''; }
+function onlineMenu() {
+  netLeave();
+  const tc = +store.get('kusoge.shogi.tc'); if (tc >= 0 && tc < TCS.length) NET.tc = tc;
+  const nick = cleanNick(store.get('kobo.nick'));
+  if (!nick) return onlineShow('onNick');
+  NET.nick = nick;
+  onlineShow('onMenu');
+}
+$('onNickForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const n = cleanNick($('onNickIn').value);
+  if (!n) { $('onNickNote').textContent = T('ニックネームを1文字以上入れてください'); return; }
+  store.set('kobo.nick', n);
+  if (window.KoboCloud && KoboCloud.setNickname) { try { quietly(KoboCloud.setNickname(n)); } catch (e) {} }
+  onlineMenu();
+});
+$('onBack').addEventListener('click', () => { netLeave(); showTitle(); });
+$('onRetry').addEventListener('click', () => onlineMenu());
+$('onRandom').addEventListener('click', () => onlineStart('random'));
+$('onHost').addEventListener('click', () => onlineStart('host'));
+$('onJoin').addEventListener('click', () => {
+  const c = String($('onCode').value || '').replace(/\D/g, '');
+  if (c.length !== 6) { $('onMenuErr').textContent = T('部屋のコード（6けた）'); return; }
+  onlineStart('join', c);
+});
+function onlineFail(e) {
+  console.warn('shogi online', e);
+  const g = NET.gen; netLeave(); NET.gen = g;
+  onlineShow('onErr', { detail: (e && (e.code || e.message)) || 'error' });
+}
+async function onlineStart(kind, code) {
+  netLeave();
+  save = readSave();
+  const gen = ++NET.gen;
+  onlineShow('onWait'); onlineStatus(T('つないでいます…'));
+  try { await netInit(); await netConnect(); } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  if (gen !== NET.gen) return;
+  netSweep().catch(() => {});
+  if (kind === 'random') netQueue(gen);
+  else if (kind === 'host') netHostCode(gen);
+  else netJoinCode(gen, code);
+}
+// ---- random matchmaking
+function queueEntry() { return { n: NET.nick, t: NET.TS, c: NET.tc, e: save.on.r }; }
+async function netQueue(gen) {
+  NET.phase = 'queue';
+  NET.qref = NET.db.ref('shogi/queue/' + NET.uid);
+  try { await NET.qref.onDisconnect().remove(); await NET.qref.set(queueEntry()); } catch (e) { if (gen === NET.gen) onlineFail(e); return; }
+  if (gen !== NET.gen) return;
+  onlineStatus(T('対戦相手をさがしています…'), T(TCS[NET.tc].l));
+  netOn(NET.db.ref('shogi/queue'), 'value', s => { NET.q = s.val() || {}; netQueueEval(); });
+  netTimer(netQueueEval, 500);
+}
+function netQueueEval() {
+  if (NET.phase !== 'queue' || !NET.q) return;
+  const q = NET.q, now = sNow(), me = NET.uid;
+  for (const id in q) {
+    const e = q[id];
+    if (e && e.r && id !== me && !NET.bad.has(e.r) && Array.isArray(e.m) && e.m.indexOf(me) >= 0 && now - (e.t || 0) < 90000) return netJoin(e.r, false);
+  }
+  const open = Object.keys(q).filter(id => { const e = q[id]; return e && !e.r && e.c === NET.tc && typeof e.t === 'number' && now - e.t < 120000; })
+    .sort((a, b) => q[a].t - q[b].t || (a < b ? -1 : 1));
+  const my = open.indexOf(me);
+  if (my < 0) return;
+  onlineStatus(T('対戦相手をさがしています…'), T(TCS[NET.tc].l) + ' · ' + T('{n}人が待っています', { n: open.length }));
+  if (my % 2 === 0 && open[my + 1]) netCreate(open[my + 1], q[open[my + 1]]);
+}
+// make a room for me and `other` (black / white at random)
+async function netCreate(other, oe, after) {
+  NET.phase = 'creating';
+  const gen = NET.gen, ref = NET.db.ref('shogi/rooms').push();
+  const iBlack = after ? after.black : Math.random() < 0.5;
+  const tc = TCS[after ? after.tc : NET.tc];
+  const otm = DEBUG && /[?&]otm=(\d+)/.exec(location.search);
+  roomRemember(ref.key);
+  try {
+    await ref.set({ at: NET.TS, h: NET.uid, inv: { [NET.uid]: 1, [other]: 1 }, b: iBlack ? NET.uid : other, w: iBlack ? other : NET.uid, c: after ? after.tc : NET.tc, tm: otm ? +otm[1] : tc.tm, by: tc.by });
+    if (gen !== NET.gen) { quietly(ref.remove()); return null; }
+    if (NET.qref && !after) await NET.qref.update({ r: ref.key, m: [NET.uid, other] });
+    if (NET.cref && !after) await NET.cref.child('r').set(ref.key);
+  } catch (e) { if (gen === NET.gen) onlineFail(e); return null; }
+  if (gen !== NET.gen) return null;
+  if (!after) netJoin(ref.key, true);
+  return ref.key;
+}
+// ---- friend rooms by code
+async function netHostCode(gen) {
+  NET.phase = 'code'; NET.codeHost = true;
+  let code = '', ref = null;
+  for (let i = 0; i < 5; i++) {
+    code = String(100000 + Math.floor(Math.random() * 900000));
+    ref = NET.db.ref('shogi/codes/' + code);
+    // (removing a code is only allowed once it exists: set first, then the onDisconnect)
+    try { await ref.set({ h: NET.uid, t: NET.TS, c: NET.tc }); await ref.onDisconnect().remove(); break; }
+    catch (e) { quietly(ref.onDisconnect().cancel()); ref = null; }
+  }
+  if (gen !== NET.gen) return;
+  if (!ref) return onlineFail(netErr('code'));
+  NET.cref = ref; NET.code = code;
+  onlineStatus(T('友だちにこのコードを伝えてください'), T('友だちが入るのを待っています…') + ' · ' + T(TCS[NET.tc].l), code);
+  netOn(ref.child('g'), 'value', s => { const g = s.val(); if (g && NET.phase === 'code') netCreate(g); });
+}
+async function netJoinCode(gen, code) {
+  NET.phase = 'code'; NET.codeHost = false;
+  const ref = NET.db.ref('shogi/codes/' + code);
+  let v = null;
+  try { v = (await ref.once('value')).val(); } catch (e) { v = null; }
+  if (gen !== NET.gen) return;
+  if (!v || !v.h || v.g || v.h === NET.uid) { onlineShow('onMenu', { err: T('その部屋は見つかりませんでした') }); return; }
+  NET.tc = v.c >= 0 && v.c < TCS.length ? v.c : 1;
+  try { await ref.child('g').set(NET.uid); } catch (e) { if (gen === NET.gen) onlineShow('onMenu', { err: T('その部屋は見つかりませんでした') }); return; }
+  NET.cref = ref;
+  onlineStatus(T('対戦相手が見つかりました！'), T('まもなく開始…'), code);
+  netOn(ref.child('r'), 'value', s => { const r = s.val(); if (r && NET.phase === 'code') netJoin(r, false); });
+}
+// ---- the room
+async function netJoin(rid, creator) {
+  const gen = NET.gen;
+  netStopListening();
+  // moving on from a finished room (rematch): leave it; the last one out removes it
+  if (NET.rref && NET.rid !== rid) {
+    const old = NET.rref, oid = NET.rid, om = old.child('m/' + NET.uid);
+    quietly(om.onDisconnect().cancel()); if (NET.odRoom) quietly(old.onDisconnect().cancel());
+    old.child('m').once('value').then(sn => { const v = sn.val() || {}; return Object.keys(v).some(id => id !== NET.uid) ? om.remove() : old.remove().then(() => roomForget(oid)); }).catch(() => {});
+    NET.rref = null;
+  }
+  const qref = NET.qref; NET.qref = null;
+  if (qref) { const drop = () => { quietly(qref.onDisconnect().cancel()); quietly(qref.remove()); }; if (creator) setTimeout(drop, 5000); else drop(); }
+  if (NET.cref) { const c = NET.cref, host = NET.codeHost; NET.cref = null; quietly(c.onDisconnect().cancel()); if (host) setTimeout(() => quietly(c.remove()), 5000); }
+  NET.phase = 'room'; NET.rid = rid; NET.rref = NET.db.ref('shogi/rooms/' + rid); NET.members = {}; NET.mt = []; NET.st = 0; NET.end = null; NET.rm = {}; NET.oppGoneAt = 0; NET.discMsg = ''; NET.odRoom = false;
+  try {
+    const meta = (await NET.rref.once('value')).val();
+    if (gen !== NET.gen) return;
+    if (!meta || !meta.inv || !meta.inv[NET.uid] || meta.end) { NET.bad.add(rid); NET.rref = null; return onlineMenu(); }
+    NET.meta = meta; NET.side = meta.b === NET.uid ? 0 : 1;
+    NET.tm = Math.max(0, +meta.tm || 0); NET.by = Math.max(0, +meta.by || 0);
+    roomRemember(rid);
+    const m = NET.rref.child('m/' + NET.uid);
+    await m.onDisconnect().remove();
+    await m.set({ n: NET.nick, j: NET.TS, e: save.on.r });
+  } catch (e) { if (gen === NET.gen) { NET.bad.add(rid); NET.rref = null; onlineFail(e); } return; }
+  if (gen !== NET.gen) return;
+  onlineShow('onWait'); onlineStatus(T('対戦相手が見つかりました！'), T('まもなく開始…'));
+  netOn(NET.rref.child('m'), 'value', s => netMembers(s.val() || {}));
+  netOn(NET.rref.child('st'), 'value', s => { const st = s.val(); if (st && NET.phase === 'room') netStart(st); });
+  netOn(NET.rref.child('mv'), 'child_added', s => netMoveSeen(+s.key, s.val()));
+  netOn(NET.rref.child('end'), 'value', s => { const v = s.val(); if (v) netEndSeen(v); });
+  netOn(NET.rref.child('rm'), 'value', s => { NET.rm = s.val() || {}; netRematchEval(); });
+  netOn(NET.rref.child('nx'), 'value', s => { const nx = s.val(); if (nx && NET.phase === 'done' && nx !== NET.rid) netJoin(nx, false); });
+  const joined = Date.now();
+  netTimer(() => {
+    if (NET.phase === 'room') {
+      // the creator starts the clock when both are in; nobody came in time → look again
+      if (NET.meta.h === NET.uid && others().length && NET.members[NET.uid] && !NET.stSent) { NET.stSent = true; NET.rref.child('st').set(NET.TS).catch(onlineFail); }
+      if (Date.now() - joined > 20000) { NET.bad.add(NET.rid); onlineMenu(); }
+    }
+    if (NET.phase === 'play') netTick();
+  }, 250);
+  NET.stSent = false;
+}
+function netMembers(m) {
+  NET.members = m;
+  const o = others()[0];
+  if (o && m[o]) { NET.oppNick = cleanNick(m[o].n) || T('相手'); NET.oppR = typeof m[o].e === 'number' ? Math.round(m[o].e) : 0; }
+  if (NET.phase === 'play') {
+    if (!o) { if (!NET.oppGoneAt) NET.oppGoneAt = Date.now(); }
+    else { NET.oppGoneAt = 0; NET.discMsg = ''; }
+    renderAll();
+  }
+  if (NET.phase === 'done') {
+    if (!o) $('resSub').textContent = T('相手は部屋を出ました');
+    // alone in a finished room: if this page disappears too, the server removes the room
+    if (!o && m[NET.uid] && !NET.odRoom && NET.rref) { NET.odRoom = true; quietly(NET.rref.onDisconnect().remove()); }
+  }
+}
+function netStart(st) {
+  NET.phase = 'play'; NET.st = st; NET.localT = Date.now() + NET.off;
+  NET.side = NET.meta.b === NET.uid ? 0 : 1;
+  const mt = NET.mt.slice();
+  newGame({ mode: 'online', sfen: E.START });
+  NET.mt = mt;
+  // moves that arrived before the start signal was seen
+  for (let i = 0; NET.pendingMv && NET.pendingMv[i]; i++) netMoveSeen(i, NET.pendingMv[i]);
+  NET.pendingMv = null;
+  renderAll();
+}
+function netMoveSeen(i, v) {
+  if (!v || typeof v.m !== 'string') return;
+  if (NET.phase === 'room') { NET.pendingMv = NET.pendingMv || []; NET.pendingMv[i] = v; NET.mt[i] = v.t; return; }
+  if (NET.phase !== 'play' && NET.phase !== 'done') return;
+  NET.mt[i] = v.t;
+  if (i < game.moves.length) { renderClocks(); return; } // our own move coming back
+  if (i !== game.moves.length || ended) return;
+  const r = applyMove(v.m);
+  if (!r) console.warn('shogi online: bad move', i, v.m);
+}
+function netSendMove(usi) {
+  const i = game.moves.length - 1;
+  NET.localT = sNow();
+  NET.rref.update({ ['mv/' + i]: { m: usi, t: NET.TS, i }, n: i + 1 }).catch(e => console.warn('move refused', e));
+  // the game ended with this move (mate, repetition): the mover records it
+  if (game.result && ['mate', 'sennichite', 'perpetual'].indexOf(game.result.reason) >= 0) netEnd(game.result.reason, game.result.winner);
+}
+const SIDE_CH = ['b', 'w'];
+function netEnd(reason, winner) {
+  if (!NET.rref || NET.endSent) return;
+  NET.endSent = true;
+  const val = { r: reason, w: winner < 0 ? 'd' : SIDE_CH[winner], by: NET.uid, t: NET.TS, n: game ? game.moves.length : 0 };
+  NET.rref.child('end').transaction(cur => (cur ? undefined : val), () => {}, false);
+}
+function netEndSeen(v) {
+  NET.end = v;
+  if (NET.phase !== 'play' && NET.phase !== 'room') return;
+  NET.phase = 'done';
+  if (game && !ended) {
+    const w = v.w === 'b' ? 0 : v.w === 'w' ? 1 : -1;
+    // moves still on the way: apply them first
+    finish(game.end(w, ['resign', 'time', 'mate', 'sennichite', 'perpetual', 'declare', 'disc'].indexOf(v.r) >= 0 ? v.r : 'resign'));
+  }
+  netMembers(NET.members);
+}
+function netTick() {
+  if (!game || ended) return;
+  renderClocks();
+  // time: the side to move ran out (the opponent's page waits 1.5 s more for the move to arrive)
+  const cl = clocks(), sd = game.pos.side, c = cl[sd];
+  const grace = sd === NET.side ? 0 : 1500;
+  if (NET.tm + NET.by > 0 && c.main <= 0 && c.byo < -grace) { netEnd('time', sd ^ 1); finish(game.timeout(sd)); return; }
+  // the opponent disconnected and did not come back
+  if (NET.oppGoneAt) {
+    const left = Math.ceil((DISC_MS - (Date.now() - NET.oppGoneAt)) / 1000);
+    NET.discMsg = T('相手の接続が切れました。{n}秒で、あなたの勝ちになります', { n: Math.max(0, left) });
+    renderStatus();
+    if (left <= 0) { netEnd('disc', NET.side); finish(game.end(NET.side, 'disc')); }
+  }
+}
+function netRematch() {
+  if (!NET.rref || NET.phase !== 'done') { onlineMenu(); return; }
+  if (!others().length) { onlineMenu(); return; }
+  quietly(NET.rref.child('rm/' + NET.uid).set(1));
+  $('resAgain').disabled = true;
+  $('resSub').textContent = T('もう一局を申し込みました…');
+}
+async function netRematchEval() {
+  if (NET.phase !== 'done') return;
+  const o = others()[0];
+  if (o && NET.rm[o] && !NET.rm[NET.uid]) $('resSub').textContent = T('相手がもう一局を待っています');
+  if (!(o && NET.rm[o] && NET.rm[NET.uid])) return;
+  if (NET.meta.h !== NET.uid || NET.nxSent) return;
+  NET.nxSent = true;
+  const rid = await netCreate(o, null, { black: NET.meta.w === NET.uid, tc: NET.meta.c });
+  if (!rid) return;
+  try { await NET.rref.child('nx').set(rid); } catch (e) {}
+  netJoin(rid, true);
+}
+// netJoin resets per-room flags
+const netJoinBase = netJoin;
+netJoin = function (rid, creator) { NET.endSent = false; NET.nxSent = false; ended = false; return netJoinBase(rid, creator); };
+
+// ---------------------------------------------------------------- platform hooks
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { saveGame(); },
+  isIdle: () => !game || ended,
+  dispose() { if (worker && worker !== 'none') worker.terminate(); },
+});
+window.addEventListener('resize', layoutSoon);
+if (window.visualViewport) visualViewport.addEventListener('resize', layoutSoon);
+try { new ResizeObserver(() => layoutSoon()).observe($('stage')); } catch (e) {}
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) save = readSave(); });
+if (UI && UI.theme && UI.theme.onChange) UI.theme.onChange(() => setTimeout(() => { readPal(); dirty = true; drawLogo(); }, 0));
+window.addEventListener('pagehide', () => { saveGame(); if (cfg.mode === 'online' && game && !ended && NET.rref) { /* the server's onDisconnect removes our member entry */ } });
+
+readPal(); layout(); renderAll();
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut;
+showTitle();
+if (firstVisit && !DEBUG) { /* the title has the how-to button; show the rules once */ showHowto('ovTitle'); }
+requestAnimationFrame(loop);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { dirty = true; drawLogo(); });
+
+// ---------------------------------------------------------------- test hooks (?debug)
+if (DEBUG) {
+  const pt = (x, y) => { const r = cv.getBoundingClientRect(); return [r.left + x, r.top + y]; };
+  window.__shogi = {
+    E, get game() { return game; }, get cfg() { return cfg; }, net: NET, get save() { return readSave(); },
+    ready: () => !!LY,
+    state: () => ({ mode: cfg.mode, sfen: game ? game.pos.sfen() : null, moves: game ? game.usi.slice() : [], side: game ? game.pos.side : 0, result: game ? game.result : null,
+      ended, thinking, flipped, sel, targets: targets.map(E.toUsi), net: { phase: NET.phase, rid: NET.rid, uid: NET.uid, side: NET.side, code: NET.code, end: NET.end },
+      overlay: OVS.find(id => !$(id).hidden) || null, status: $('stText').textContent, canAct: canAct() }),
+    squarePoint: sq => { const [x, y] = sqXY(sq); return pt(x + LY.c / 2, y + LY.c / 2); },
+    usiSquare: s => (s.charCodeAt(1) - 97) * 9 + (9 - +s[0]),
+    handPoint: (side, t) => { const h = LY.hands.find(h => h.side === side && h.t === t); return h ? pt(h.x + h.w / 2, h.y + h.h / 2) : null; },
+    tap: sq => tapSquare(sq), tapHand,
+    move: usi => { const m = game && game.pos.parse(usi); return m ? humanMove(m) : false; },
+    newCpu: o => newGame(Object.assign({ mode: 'cpu', lv: 1, human: 0, hc: 'hirate', sfen: E.START, undo: false }, o || {}, { sfen: E.HANDICAPS[(o && o.hc) || 'hirate'] })),
+    new2p: () => newGame({ mode: '2p', sfen: E.START }), startTsume, undo, resign, showTitle, openKifu, kifText, layout, finish: r => finish(r),
+    netInit: async () => { await netInit(); await netConnect(); return NET.uid; },
+    online: { random: tc => { if (tc != null) NET.tc = tc; return onlineStart('random'); }, host: tc => { if (tc != null) NET.tc = tc; return onlineStart('host'); }, join: c => onlineStart('join', c), menu: onlineMenu, rematch: netRematch },
+    thumbScene() {
+      hideAll(); store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb');
+      newGame({ mode: '2p', sfen: E.START });
+      for (const u of ['7g7f', '3c3d', '2g2f', '4c4d', '2f2e', '2b3c', '3i4h', '8b4b', '5i6h', '5a6b', '6h7h', '6b7b', '5g5f', '7a8b', '4i5h', '3a3b', '2e2d', '2c2d', '2h2d', 'P*2c']) game.play(u);
+      mlCache = []; anim = null; selectAt('b', 3 * 9 + 7); ended = false; renderAll(); layout(); draw();
+      return true;
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, { ready: () => !!LY, state: () => window.__shogi.state() });
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.shogi.save': 'newest', 'kusoge.shogi.game': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

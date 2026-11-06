@@ -23,6 +23,8 @@
 | `hole/` | あなぼこシティ | Three.js r128。街は14都市。どれも OpenStreetMap と国土地理院のデータから作る（`tools/osm-city.js` → `hole/cities/*.json`、組み立ては `hole/realcity.js`、説明は `hole/cities/README.md`）。オンライン対戦は Firebase Realtime Database（`hole/queue`・`hole/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__hole` |
 | `hitsumabushi/` | ひつまぶし工房 | Canvas 2D。保存は `kusoge.hitsumabushi.save`（ランキングは `best`＝1日の最高点）。`?debug` で `window.__hitsu`。通しプレイ：`node tools/tests/hitsumabushi-play.js` |
 | `planet/` | わくせいシミュレーター | Three.js r128。気候（緯度帯のエネルギー収支）・炭素と酸素の箱モデル・プレート・生命・文明は同じファイルの `PSim`。保存は `kusoge.planet.save`（ランキングは `total`＝8シナリオのベストの合計）と自由モードの星 `kusoge.planet.world`。対戦なし。`?debug` で `window.__planet`。通しプレイ：`node tools/tests/planet-play.js` |
+| `hitblow/` | ヒットアンドブロー | DOM（紙吹雪だけ Canvas）。保存は `kusoge.hitblow.save`（ランキングは `best`＝ひとりで遊んだ1問の最高点）と途中のゲーム `kusoge.hitblow.state`（同期しない）。デイリー・CPU対戦・オンライン対戦（`vs/queue/hitblow`）。`?debug` で `window.__hitblow`。通しプレイ：`node tools/tests/hitblow-play.js` |
+| `shogi/` | 将棋 | Canvas 2D。ルールと CPU は `shogi/engine.js`（`ShogiEngine`。Web Worker でも同じファイル。perft は `tools/tests/unit/shogi-engine.test.js`）。保存は `kusoge.shogi.save`（ランキングは `top`＝最強CPUに平手・待ったなしで勝った数）と続きの対局 `kusoge.shogi.game`。オンライン対局は RTDB（`shogi/queue`・`shogi/codes`・`shogi/rooms`、ルールは `database.rules.json`）。`?debug` で `window.__shogi`。通しプレイ：`node tools/tests/shogi-play.js` |
 | `ranking/` | ランキング（ゲーム別・総合） | |
 | `common/cloud.js` | Googleログインと Firestore 同期・ランキング送信 | `KoboCloud.sync({ key: 'max' or 'newest' })` |
 | `common/i18n.js` | 日本語 / 英語の切り替え | `KoboI18n.add({ en: { '日本語': 'English' } })`、`KoboI18n.t('日本語')` |
