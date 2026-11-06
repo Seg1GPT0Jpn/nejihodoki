@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ひまつぶし工房</title>
 <meta name="description" content="広告なし・課金なしで遊べるミニゲーム集。ネジ外し・ブロックはめ・おちもの・いかだ暮らし・ゲートランナー・59049・いろみず分け・くるま出し・あなぼこシティ。">
-<meta name="theme-color" content="#1d2a35" data-kb-theme-color>
+<meta name="theme-color" content="#1d2a35" media="(prefers-color-scheme: dark)" data-kb-theme-color>
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" data-kb-theme-color>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -47,6 +48,8 @@ KoboI18n.add({ en: {
   'アカウント': 'Account',
   '記録はこの端末のブラウザに保存されます。Googleでログインすると、全ゲームの記録をクラウドに保存して、どの端末でも続きから遊べます。': 'Records are saved in this device\'s browser. Sign in with Google to save every game to the cloud and continue on any device.',
   'ホーム画面に追加': 'Add to Home Screen',
+  'アプリのように全画面で開けます。一度開いたゲームは通信なしでも遊べます。': 'Opens full screen like an app. Games you have opened once also work offline.',
+  'Safari の共有ボタン（□に↑）→「ホーム画面に追加」→「追加」': 'In Safari: Share (square with ↑) → "Add to Home Screen" → "Add"',
   'ホーム画面に追加すると、アプリのように全画面で開けます。一度開いたゲームは通信なしでも遊べます。': 'Add this site to your Home Screen to open it full screen like an app. Games you have opened once also work offline.',
   'ホーム画面に追加するには、Safari の共有ボタン（□に↑）→「ホーム画面に追加」を押してください。': 'To add it to your Home Screen, tap Safari\'s Share button (square with ↑), then "Add to Home Screen".',
   'ホーム画面に追加するには、ブラウザのメニュー（︙）→「ホーム画面に追加」を押してください。': 'To add it to your Home Screen, open the browser menu (︙) and choose "Add to Home Screen" (or "Install app").',
@@ -597,25 +600,37 @@ footer nav a:hover { color: var(--kb-accent-text); }
         link(T('プロフィール'), T('レベル・実績・フレンド・データの削除'), 'profile/'),
         link(T('利用規約とプライバシー'), T('保存するデータと消し方'), 'about/'),
       ]));
+      // install (P4): only when the browser offered it (beforeinstallprompt) or on iOS Safari (instructions)
+      const ins = installState();
+      if (ins.prompt) extra.push(UI.list([UI.listRow({ title: T('ホーム画面に追加'), sub: T('アプリのように全画面で開けます。一度開いたゲームは通信なしでも遊べます。'), onClick: () => { s && s.close && s.close('install'); promptInstall(); }, chevron: true })]));
+      else if (ins.ios) extra.push(UI.list([UI.listRow({ title: T('ホーム画面に追加'), sub: T('Safari の共有ボタン（□に↑）→「ホーム画面に追加」→「追加」'), chevron: false })]));
     } catch (e) {}
     const s = UI.openSettings({ extra });
   };
 
   // ---------- install to home screen ----------
   let evt = null;
-  const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const standalone = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: minimal-ui)').matches || navigator.standalone === true;
+  // { prompt: the browser offered an install prompt, ios: iOS / iPadOS Safari (no prompt: instructions), ok: worth showing at all }
+  function installState() {
+    if (standalone() || !('serviceWorker' in navigator) || !window.isSecureContext) return { ok: false };
+    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    return { ok: true, prompt: !!evt, ios: !evt && ios };
+  }
+  async function promptInstall() { if (!evt) return renderInstall(); const e = evt; e.prompt(); try { await e.userChoice; } catch (x) {} evt = null; renderInstall(); }
   function renderInstall() {
     const box = $('installBox'), btn = $('installBtn'), msg = $('installMsg');
-    if (standalone() || !('serviceWorker' in navigator) || location.protocol !== 'https:') { box.hidden = true; return; }
+    const st = installState();
+    if (!st.ok || location.protocol !== 'https:' && !evt) { box.hidden = true; return; }
     box.hidden = false;
-    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    const ios = st.ios;
     if (evt) { btn.hidden = false; msg.textContent = T('ホーム画面に追加すると、アプリのように全画面で開けます。一度開いたゲームは通信なしでも遊べます。'); }
     else if (ios) { btn.hidden = true; msg.textContent = T('ホーム画面に追加するには、Safari の共有ボタン（□に↑）→「ホーム画面に追加」を押してください。'); }
     else { btn.hidden = true; msg.textContent = T('ホーム画面に追加するには、ブラウザのメニュー（︙）→「ホーム画面に追加」を押してください。'); }
   }
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); evt = e; renderInstall(); });
   addEventListener('appinstalled', () => { evt = null; renderInstall(); });
-  $('installBtn').onclick = async () => { if (!evt) return; evt.prompt(); try { await evt.userChoice; } catch (e) {} evt = null; renderInstall(); };
+  $('installBtn').onclick = promptInstall;
 
   // ---------- version ----------
   function renderVersion() {

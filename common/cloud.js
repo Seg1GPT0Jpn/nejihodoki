@@ -15,7 +15,7 @@
 // 書き込みを減らす（R2）：
 //   nejiUsers への push は、変わったキーだけを、前の push から30秒以上あけてまとめて送る（静かなあとの最初の変化は2秒後）。
 //   ページを隠したとき（visibilitychange:hidden / pagehide）はすぐ送る。値が同じなら送らない。
-//   kusogeRanks は、送る内容（名前とスコア）が変わったときだけ、60秒に1回まで。
+//   kusogeRanks は、送る内容（名前とスコア）が変わったときだけ、60秒に1回まで。2026-12-02 0:00（日本時間）からは送らない（ルールが読むだけにする）。
 // 再読み込み（R14）：reloadOnNewer のページで別の端末の進行を取り込むのは、遊んでいないとき（KoboGame.isIdle()、
 //   KoboGame がなければ「ページを開いてからまだ触っていない」）だけ。遊んでいる最中なら端末の保存は書き換えず、
 //   トーストで知らせる（次に開いたときに取り込まれる）。
@@ -426,13 +426,21 @@
       if (e && e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') emit({ error: e.code || 'login' });
     }
   }
-  // anonymous sign-in on the default app, only when something needs an account (ranking, play counts)
+  // anonymous sign-in on the default app, only when something needs an account (ranking, play counts).
+  // One sign-in at a time: rank.js, achievements.js and versus.js can ask at the same moment, and two parallel
+  // signInAnonymously() calls would make two accounts (the first one's writes are then refused: uid ≠ token). Found by the load test.
+  let guestP = null;
   async function ensureGuest() {
     if (!(await init()) || !auth) return null;
     if (!auth.currentUser) {
-      const r = await auth.signInAnonymously();
-      const u = (r && r.user) || auth.currentUser;
-      if (u && (!user || user.uid !== u.uid)) onAuth(u);
+      if (!guestP) {
+        guestP = Promise.resolve(auth.signInAnonymously()).then(r => {
+          const u = (r && r.user) || auth.currentUser;
+          if (u && (!user || user.uid !== u.uid)) onAuth(u);
+        });
+        guestP.then(() => { guestP = null; }, () => { guestP = null; });
+      }
+      await guestP;
     }
     return userInfo();
   }
@@ -565,15 +573,18 @@
   function rankSent() { try { return JSON.parse(ls.get(RANK_SENT) || 'null'); } catch (e) { return null; } }
   const rankDirty = () => { const s = rankSent(); return !(s && user && s.uid === user.uid && s.sig === rankSig()); };
   function scheduleRank() {
-    if (!user || !db || !nick() || !rankDirty()) return;
+    if (!user || !db || !nick() || !legacyOpen() || !rankDirty()) return;
     const t = now(), at = Math.max(t + RANK_DEBOUNCE, lastRankAt + RANK_MIN);
     if (rankTimer && rankAt <= at) return;
     clearTimeout(rankTimer); rankAt = at;
     rankTimer = setTimeout(() => { rankTimer = 0; submitScores().catch(() => {}); }, at - t);
   }
   // sends only when the name or a score changed since the last send from this device (R2)
+  // kusogeRanks is read-only from 2026-12-02 0:00 JST (firestore.rules legacyOpen()): stop sending then (a refused write each time)
+  const LEGACY_END = Date.UTC(2026, 11, 1, 15, 0, 0);
+  const legacyOpen = () => now() < LEGACY_END;
   async function submitScores() {
-    if (!user || !db || !nick()) return;
+    if (!user || !db || !nick() || !legacyOpen()) return;
     const scores = rankScores(), sig = JSON.stringify([nick(), scores]), s = rankSent(), uid = user.uid;
     if (s && s.uid === uid && s.sig === sig) return;
     clearTimeout(rankTimer); rankTimer = 0;

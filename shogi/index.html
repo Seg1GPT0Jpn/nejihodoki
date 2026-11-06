@@ -1268,8 +1268,26 @@ const netErr = c => Object.assign(new Error(c), { code: c });
 const quietly = pr => { if (pr && pr.catch) pr.catch(() => {}); return pr; };
 function loadJs(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(netErr('sdk-load')); document.head.appendChild(s); }); }
 const authReady = au => new Promise(res => { const un = au.onAuthStateChanged(() => { un(); res(); }); });
+// RTDB の接続（無料プランは同時に100まで）は、待ち行列にも部屋にもいない状態が20秒続いたら閉じる（goOffline）。
+// 次にオンラインを開くときに netInit が開き直す（goOnline）。閉じると、サーバーに残した onDisconnect の片付けも走る。
+const NET_IDLE_OFF = 20000;
+function netIdleWatch() {
+  if (NET.idleT) return;
+  NET.idleT = setInterval(() => {
+    if (!NET.db || NET.dbOff || typeof NET.db.goOffline !== 'function') return;
+    if (NET.qref || NET.rref || NET.cref || !(NET.phase === 'off' || NET.phase === 'done')) { NET.idleAt = 0; return; }
+    if (!NET.idleAt) { NET.idleAt = Date.now(); return; }
+    if (Date.now() - NET.idleAt < NET_IDLE_OFF) return;
+    NET.idleAt = 0; NET.dbOff = true; NET.connected = false;
+    try { NET.db.goOffline(); } catch (e) {}
+  }, 5000);
+}
 async function netInit() {
-  if (NET.db) return;
+  if (NET.db) {
+    if (NET.dbOff) { NET.dbOff = false; NET.idleAt = 0; try { NET.db.goOnline(); } catch (e) {} }
+    NET.idleAt = 0;
+    return;
+  }
   const cfgF = window.NEJI_FIREBASE;
   if (!cfgF || !cfgF.databaseURL) throw netErr('no-config');
   if (window.KoboCloud && KoboCloud.ready) { try { await KoboCloud.ready(); } catch (e) {} }
@@ -1284,6 +1302,7 @@ async function netInit() {
   if (!u && window.KoboCloud && KoboCloud.ensureGuest) { try { await KoboCloud.ensureGuest(); } catch (e) {} u = app.auth().currentUser; }
   if (!u) u = (await app.auth().signInAnonymously()).user;
   NET.uid = u.uid; NET.db = app.database(); NET.TS = firebase.database.ServerValue.TIMESTAMP;
+  netIdleWatch();
 }
 function netConnect() {
   return new Promise((res, rej) => {

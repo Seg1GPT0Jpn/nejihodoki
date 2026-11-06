@@ -864,8 +864,10 @@
       try {
         doc.documentElement.setAttribute('data-kb-theme', r);
         // theme-color は、ページが <meta name="theme-color" data-kb-theme-color> で頼んだときだけ書き換える（ゲームの色を勝手に変えない）
-        var m = doc.querySelector && doc.querySelector('meta[name="theme-color"][data-kb-theme-color]');
-        if (m && m.setAttribute) m.setAttribute('content', THEME_COLOR[r]);
+        // （明るい用と暗い用の2つ（media 付き）があれば、両方とも）
+        var sel = 'meta[name="theme-color"][data-kb-theme-color]';
+        var ms = doc.querySelectorAll ? doc.querySelectorAll(sel) : doc.querySelector ? [doc.querySelector(sel)] : [];
+        for (var i = 0; i < ms.length; i++) if (ms[i] && ms[i].setAttribute) ms[i].setAttribute('content', THEME_COLOR[r]);
       } catch (e) {}
       return r;
     },

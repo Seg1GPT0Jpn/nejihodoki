@@ -6,7 +6,7 @@
 //   読み込んだときに html[data-kb-theme] を付ける（system のときは外し、CSS の prefers-color-scheme に任せる）。
 //   html[data-kb-theme-pref] には選んだ値、meta[name=theme-color] には今の背景色を入れる。
 // 部品：KoboUI.header / button / iconButton / icon / card / badge / listRow / list / toggle / segmented / slider / tabs /
-//       sheet / modal / confirm / toast / settingsPanel / openSettings / pauseMenu / theme
+//       sheet / modal / confirm / toast / settingsPanel / openSettings / pauseMenu / theme / watchUpdates（sw.js の更新のトースト。読み込むと自動で動く）
 (function () {
   'use strict';
   const I = window.KoboI18n;
@@ -21,6 +21,7 @@
     '一時停止': 'Paused', 'つづける': 'Resume', 'はじめから': 'Restart', 'ホームへ戻る': 'Back to Home',
     'はじめからやり直しますか？': 'Start over from the beginning?', '今の進み具合は消えます。': 'Your current progress will be lost.',
     'やり直す': 'Restart', 'やめる': 'Cancel', 'OK': 'OK', 'キャンセル': 'Cancel',
+    '新しいバージョンがあります': 'A new version is available', '更新': 'Update',
     'オン': 'On', 'オフ': 'Off', '音を出す': 'Sound on', '音を消す': 'Sound off', 'ヘルプ': 'Help', '遊び方': 'How to play',
   } });
 
@@ -88,9 +89,10 @@
     r.setAttribute('data-kb-theme-pref', pref);
     if (pref === 'system') r.removeAttribute('data-kb-theme'); else r.setAttribute('data-kb-theme', pref);
     const color = resolved(pref) === 'light' ? '#f4f1ea' : '#1d2a35';
-    let m = document.querySelector('meta[name="theme-color"]');
-    if (!m && document.head) { m = el('meta', { name: 'theme-color' }); document.head.appendChild(m); }
-    if (m) m.setAttribute('content', color);
+    // a page may have a light and a dark theme-color (media="(prefers-color-scheme: …)"): both follow the chosen theme
+    const ms = Array.from(document.querySelectorAll('meta[name="theme-color"]'));
+    if (!ms.length && document.head) { const m = el('meta', { name: 'theme-color' }); document.head.appendChild(m); ms.push(m); }
+    ms.forEach(m => m.setAttribute('content', color));
     return pref;
   }
   function setTheme(pref) {
@@ -321,7 +323,8 @@
 
   // ---------- トースト ----------
   let toastBox = null;
-  // toast(message, { type:'ok'|'danger'|'accent', ms, bottom })
+  // toast(message, { type:'ok'|'danger'|'accent', ms, bottom, action: { label, onClick }, sticky })
+  //   action：トーストの中のボタン（押すと onClick、トーストは消える）。sticky：自動で消えない（× で閉じる）
   function toast(msg, o) {
     o = o || {};
     if (!toastBox || !document.body.contains(toastBox)) {
@@ -329,12 +332,59 @@
       document.body.appendChild(toastBox);
     }
     toastBox.classList.toggle('kb-toasts--bottom', !!o.bottom);
-    const t = el('div', { class: 'kb-toast' + (o.type ? ' kb-toast--' + o.type : ''), text: msg });
+    const t = el('div', { class: 'kb-toast' + (o.type ? ' kb-toast--' + o.type : '') + (o.action || o.sticky ? ' kb-toast--act' : '') });
+    const out = () => { t.classList.add('is-out'); setTimeout(() => t.remove(), 260); };
+    if (o.action || o.sticky) {
+      t.append(el('span', { class: 'kb-toast__msg', text: msg }));
+      if (o.action) t.append(el('button', { type: 'button', class: 'kb-toast__btn', text: o.action.label, onclick: e => { out(); o.action.onClick && o.action.onClick(e); } }));
+      if (o.sticky) t.append(el('button', { type: 'button', class: 'kb-toast__x', 'aria-label': T('とじる'), text: '×', onclick: out }));
+    } else t.textContent = msg;
     toastBox.append(t);
     while (toastBox.children.length > 3) toastBox.firstChild.remove();
-    const ms = o.ms || Math.min(6000, 1800 + String(msg).length * 45);
-    setTimeout(() => { t.classList.add('is-out'); setTimeout(() => t.remove(), 260); }, ms);
+    if (!o.sticky) setTimeout(out, o.ms || Math.min(o.action ? 12000 : 6000, 1800 + String(msg).length * 45 + (o.action ? 6000 : 0)));
     return t;
+  }
+
+  // ---------- 新しいバージョン（sw.js の更新） ----------
+  // 新しい Service Worker が「待機」になったら「新しいバージョンがあります — 更新」を出す。押したときだけ入れ替えて読み込み直す。
+  // 遊んでいる最中（KoboGame.isIdle() が false）は出さずに待つ。ほかのタブで更新が押されても、このタブは読み込み直さない。
+  function watchUpdates() {
+    const sw = navigator.serviceWorker;
+    if (!sw || !sw.getRegistration || window.KOBO_NO_UPDATE_TOAST) return;
+    let shown = false, asked = false, waitT = 0;
+    sw.addEventListener('controllerchange', () => { if (asked) location.reload(); });
+    const idle = () => {
+      try {
+        const C = window.KoboCloud; if (C && typeof C.isIdle === 'function') return !!C.isIdle();
+        const G = window.KoboGame; if (G && typeof G.isIdle === 'function') return !!G.isIdle();
+      } catch (e) {}
+      return true;
+    };
+    const offer = reg => {
+      if (shown || !reg || !reg.waiting || !sw.controller) return;
+      if (!document.body || !idle()) { clearTimeout(waitT); waitT = setTimeout(() => offer(reg), 4000); return; }
+      shown = true;
+      toast(T('新しいバージョンがあります'), { sticky: true, action: { label: T('更新'), onClick: () => {
+        const w = reg.waiting; if (!w) { location.reload(); return; }
+        asked = true; w.postMessage({ type: 'SKIP_WAITING' });
+      } } }).classList.add('kb-toast--update');
+    };
+    const track = reg => {
+      if (!reg || reg.__kbTracked) return; reg.__kbTracked = true;
+      offer(reg);
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing; if (!w) return;
+        w.addEventListener('statechange', () => { if (w.state === 'installed') offer(reg); });
+      });
+    };
+    sw.getRegistration().then(reg => (reg ? track(reg) : sw.ready.then(track)), () => {});
+    // 戻ってきたときに新しい版を探す（30分に1回まで。ページを開いたときはブラウザが自分で探す）
+    let lastCheck = Date.now();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 30 * 60000) return;
+      lastCheck = Date.now();
+      sw.getRegistration().then(r => r && r.update()).catch(() => {});
+    });
   }
 
   // ---------- 設定のまとまり ----------
@@ -427,6 +477,7 @@
     header, button, iconButton, card, badge, listRow, list,
     toggle, segmented, slider, tabs,
     sheet, modal, confirm, toast,
-    settingsPanel, openSettings, pauseMenu,
+    settingsPanel, openSettings, pauseMenu, watchUpdates,
   };
+  try { watchUpdates(); } catch (e) {}
 })();

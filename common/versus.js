@@ -180,7 +180,7 @@
   const S = {
     phase: 'off', // off | nick | connecting | queue | room | countdown | play | final | result | err
     gen: 0, practice: false, started: false,
-    db: null, uid: null, TS: null, off: 0, connected: false, connListening: false, onConn: null,
+    db: null, uid: null, TS: null, off: 0, connected: false, connListening: false, onConn: null, dbOff: false, idleAt: 0, idleT: 0,
     nick: '', qref: null, q: null, rid: null, rref: null, room: null, meta: null, go: null, host: false, goSent: false, joinAt: 0,
     offs: [], timers: [], tick: 0,
     seed: 0, st: 0, end: 0, dur: 180, pl: [], names: {}, myScore: 0, reported: 0, lastW: null, lastWAt: 0, resSent: false, finalAt: 0,
@@ -202,8 +202,25 @@
     return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(err('sdk-load')); document.head.appendChild(s); });
   }
   const authReady = au => new Promise(res => { const un = au.onAuthStateChanged(() => { un(); res(); }); });
+  // RTDB の接続（無料プランは同時に100まで）は、待ち行列にも部屋にもいない状態が20秒続いたら閉じる（goOffline）。
+  // 次に対戦を開くときに netInit が開き直す（goOnline）。閉じると、サーバーに残した onDisconnect の片付けも走る。
+  const IDLE_OFF = 20000;
+  function idleWatch() {
+    if (S.idleT) return;
+    S.idleT = setInterval(() => {
+      if (!S.db || S.dbOff || typeof S.db.goOffline !== 'function') return;
+      if (S.qref || S.rref || S.phase === 'connecting' || S.phase === 'creating' || S.phase === 'room') { S.idleAt = 0; return; }
+      if (!S.idleAt) { S.idleAt = Date.now(); return; }
+      if (Date.now() - S.idleAt < IDLE_OFF) return;
+      S.idleAt = 0; S.dbOff = true; S.connected = false;
+      try { S.db.goOffline(); } catch (e) {}
+    }, 5000);
+  }
   async function netInit() {
-    if (S.db) return;
+    if (S.db) {
+      if (S.dbOff) { S.dbOff = false; S.idleAt = 0; try { S.db.goOnline(); } catch (e) {} }
+      return;
+    }
     if (DEBUG && window.__koboVsFake) { const f = await window.__koboVsFake(); S.db = f.db; S.uid = f.uid; S.TS = f.TIMESTAMP; return; }
     const cfg = window.NEJI_FIREBASE;
     if (!cfg || !cfg.databaseURL) throw err('no-config');
@@ -225,6 +242,7 @@
     }
     if (!u) u = (await app.auth().signInAnonymously()).user; // no cloud.js on this page (or http): same default app
     S.uid = u.uid; S.db = app.database(); S.TS = firebase.database.ServerValue.TIMESTAMP;
+    idleWatch();
   }
   function netConnect() {
     return new Promise((res, rej) => {
@@ -676,5 +694,5 @@
     reportScore(n) { S.reported = Math.max(0, Math.floor(Number(n) || 0)); },
     stats: () => readStats(),
   };
-  if (DEBUG) window.__koboVs = { get state() { return { phase: S.phase, seed: S.seed, uid: S.uid, rid: S.rid, pl: S.pl.slice(), names: S.names, room: S.room, myScore: S.myScore, practice: S.practice, st: S.st, end: S.end, off: S.off }; }, sNow };
+  if (DEBUG) window.__koboVs = { get state() { return { dbOff: S.dbOff, phase: S.phase, seed: S.seed, uid: S.uid, rid: S.rid, pl: S.pl.slice(), names: S.names, room: S.room, myScore: S.myScore, practice: S.practice, st: S.st, end: S.end, off: S.off }; }, sNow };
 })();

@@ -538,6 +538,24 @@ test('ensureGuest signs in anonymously; guests are not synced to nejiUsers by de
   eq(w.server.docs['kusogeRanks/' + u.uid].scores.drop, 50);
   eq((await p.K.ensureGuest()).uid, u.uid, 'idempotent');
 });
+test('ensureGuest: calls at the same moment make one anonymous account, not two (P4 load test)', async () => {
+  const w = world(), A = w.device({});
+  const p = await A.open({ sync: { 'kusoge.drop.best': 'max' }, path: '/drop/' });
+  const au = p.ctx.firebase.auth(), orig = au.signInAnonymously;
+  // the real sign-in takes a network round trip: rank.js, achievements.js and versus.js can all ask before it answers
+  au.signInAnonymously = () => new Promise(r => setImmediate(r)).then(() => orig.call(au));
+  const us = await Promise.all([p.K.ensureGuest(), p.K.ensureGuest(), p.K.ensureGuest()]);
+  eq(w.server.anonN, 1, 'one account');
+  ok(us.every(u => u && u.uid === us[0].uid), 'same uid for every caller');
+  eq((await p.K.ensureGuest()).uid, us[0].uid, 'later calls reuse it');
+  eq(w.server.anonN, 1);
+});
+test('kusogeRanks (legacy) is not written after the rules close it (2026-12-02 JST)', async () => {
+  const w = world({ t0: Date.UTC(2026, 11, 1, 15, 0, 1) }), A = w.device({ user: G1, storage: { 'kusoge.drop.best': '50', 'kobo.nick': 'late' } });
+  const p = await A.open({ sync: { 'kusoge.drop.best': 'max' }, path: '/drop/' });
+  await w.clock.tick(5000); p.set('kusoge.drop.best', '60'); await w.clock.tick(120000); await p.K.submitScores();
+  eq(w.server.writesTo('kusogeRanks/'), 0);
+});
 test('linkGoogle keeps the uid and starts syncing; login() on a guest links', async () => {
   const w = world(), A = w.device({ storage: { 'kusoge.drop.best': '70' } });
   const p = await A.open({ sync: { 'kusoge.drop.best': 'max' }, path: '/drop/' });
