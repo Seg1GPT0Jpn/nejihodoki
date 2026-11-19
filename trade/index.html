@@ -566,16 +566,24 @@ function recipeHtml(it, s) {
    ゲームの状態
    ============================================================ */
 var G = null;
-var settings = { who: store('who') || 'random', speed: store('speed') || 'normal', view: store('view') || 'real', predict: null };
+// 国のタイプはくじ。画面では選べない（先生の実演用に URL の ?type=A〜D だけ残す）
+var FIXED_TYPE = (function () { var m = /[?&]type=([ABCD])\b/.exec(location.search); return m ? m[1] : null; })();
+function cleanName(v) {
+  v = String(v || '').replace(/[\u0000-\u001f\u007f<>&"]/g, '').replace(/\s+/g, ' ').trim();
+  return Array.from(v).slice(0, 10).join('');
+}
+var settings = { who: FIXED_TYPE || 'random', name: cleanName(store('name')), speed: store('speed') || 'normal', view: store('view') || 'real', predict: null };
 applyTheme(settings.view);
 var dirty = true;
 
 function newGame() {
   var types = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'];
-  var names = shuffle(COUNTRY_NAMES.slice());
+  var myName = cleanName(settings.name);
+  var names = shuffle(COUNTRY_NAMES.filter(function (n) { return n !== myName; })).slice(0, 8);
   var colors = shuffle(COUNTRY_COLORS.slice());
   var order = shuffle(types.slice());
   var meIdx = settings.who === 'random' ? Math.floor(rnd() * 8) : order.indexOf(settings.who);
+  if (myName) names[meIdx] = myName;
   var countries = order.map(function (t, i) {
     var it = { money: 0, paper: 0, scissors: 0, ruler: 0, setsq: 0, compass: 0, pencil: 0, rect: 0, tri: 0, semi: 0, circle: 0 };
     var ini = INIT[t];
@@ -1163,7 +1171,8 @@ function openRules(isStart) {
         items.map(function (o) { return '<button type="button" data-' + key + '="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
     };
     opts = seg('viewL', '表示', [['real', THEMES.real.label], ['class', THEMES.class.label]], settings.view, 'view') + '<p class="lead">ルールと数字は同じです。「授業の紙と道具」にすると、紙・ハサミ・図形で遊べます。</p></div>' +
-      seg('whoL', 'あなたの国', [['random', 'ランダム（おすすめ）'], ['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']], settings.who, 'who') + '<p class="lead">ランダムにすると、授業と同じく、自分がどんな国なのかは持ち物でしかわかりません（最後に発表）。</p></div>' +
+      '<div class="opt"><label for="nameIn">あなたの国の名前</label><input id="nameIn" class="name-in" type="text" maxlength="10" autocomplete="off" spellcheck="false" placeholder="例：ひまわり国（空欄ならおまかせ）" value="' + esc(settings.name) + '">' +
+      '<p class="lead">名前は自由に決められます（10文字まで）。国のタイプ（先進国・新興国・産油国・途上国）はくじで決まり、選べません。自分がどんな国なのかは、配られた持ち物から考えよう。答えは最後に発表します。</p></div>' +
       seg('prL', '予想しよう：40分後、いちばんお金を持っているのはどのタイプの国？', [['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']], settings.predict, 'pr') + '<p class="lead">最後に、予想と結果をくらべます。</p></div>' +
       seg('spdL', '時間の速さ（ゲームの40分）', SPEEDS.map(function (s) { return [s.id, s.label]; }), settings.speed, 'spd') + '</div>';
   }
@@ -1174,10 +1183,11 @@ function openRules(isStart) {
     function (root) {
       root.addEventListener('click', function (e) {
         var b = e.target.closest('button'); if (!b) return;
-        if (b.dataset.view) { settings.view = b.dataset.view; store('view', settings.view); applyTheme(settings.view); newGame(); render(); renderMap(); openRules(true); return; }
-        if (b.dataset.who) { settings.who = b.dataset.who; store('who', settings.who); mark(root, 'who', b); }
+        if (b.dataset.view) { var ni0 = root.querySelector('#nameIn'); if (ni0) settings.name = cleanName(ni0.value);
+          settings.view = b.dataset.view; store('view', settings.view); applyTheme(settings.view); newGame(); render(); renderMap(); openRules(true); return; }
         if (b.dataset.pr) { settings.predict = b.dataset.pr; mark(root, 'pr', b); }
         if (b.dataset.spd) { settings.speed = b.dataset.spd; store('speed', settings.speed); mark(root, 'spd', b); }
+        if (b.id === 'startBtn') { var ni = root.querySelector('#nameIn'); settings.name = cleanName(ni && ni.value); store('name', settings.name); }
         if (b.id === 'startBtn') { ac(); SFX.ding(); closeModal(); newGame(); G.running = true; G.paused = false; render(); renderMap(); }
         if (b.id === 'closeBtn') { closeModal(); if (G) G.paused = wasPaused; }
       });
