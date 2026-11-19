@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>貿易ゲーム</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="紙と道具で図形を作って国連に売る、地理総合の「貿易ゲーム」。先進国・新興国・産油国・途上国に分かれて、交渉しながらお金をかせぐ。">
+<meta name="description" content="資源と技術で製品をつくって輸出する、地理総合の「貿易ゲーム」。先進国・新興国・産油国・途上国に分かれて、交渉しながらお金をかせぐ。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
@@ -218,7 +218,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.2
 <main class="board">
   <div class="col">
     <section class="panel" aria-labelledby="deskH">
-      <div class="panel-h"><h2 id="deskH">わが国の机</h2><span class="sub">紙＝資源、道具＝技術、シャーペン＝働き手</span></div>
+      <div class="panel-h"><h2 id="deskH">わが国の机</h2><span class="sub" id="deskSub"></span></div>
       <div class="inv" id="inv"></div>
     </section>
     <section class="panel" aria-labelledby="lineH">
@@ -232,7 +232,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.2
   </div>
   <div class="col">
     <section class="panel" aria-labelledby="worldH">
-      <div class="panel-h"><h2 id="worldH">ほかの国</h2><span class="sub">机の上は見えるけれど、お金は見えない</span></div>
+      <div class="panel-h"><h2 id="worldH">ほかの国</h2><span class="sub" id="worldSub"></span></div>
       <div class="world" id="world"></div>
     </section>
     <section class="panel" aria-labelledby="newsH">
@@ -287,6 +287,84 @@ var SPEEDS = [
 /* ============================================================
    小さな道具
    ============================================================ */
+/* ---------- 表示のしかた（ルールと数字は同じ。名前と絵だけ変わる） ---------- */
+var THEMES = {
+  real: {
+    id: 'real', label: '現実の資源と産業',
+    names: { money: 'お金', paper: '資源', scissors: '生産設備', ruler: '加工技術', setsq: '精密技術', compass: '先端技術', pencil: '労働力',
+      rect: '衣類', tri: '家電製品', semi: '化学製品', circle: '半導体' },
+    unit: { paper: '万トン', pencil: '', tool: 'つ', shape: '個' },
+    spec: { rect: '軽工業', tri: '機械工業', semi: '化学工業', circle: 'ハイテク産業' },
+    desk: 'わが国の産業', deskSub: '資源と技術と労働力で製品をつくり、輸出してお金にする', worldH: 'ほかの国', worldSub: '資源や技術は見えるけれど、お金は見えない',
+    lineSub: '労働力1につき1ライン', noLine: '労働力がないので生産できません。ほかの国から手に入れよう。', making: 'を生産しています', choose: 'つくる製品をえらんでください',
+    mkt: '世界市場への輸出', sell1: '1個輸出', sellAll: '全部', sold: 'を輸出して', product: '製品',
+    perSheet: function (n) { return '資源1万トンで' + n + '個'; }, partial: '使いかけの資源', empty: '資源も技術もほとんどない',
+    guess: 'どんな国なのかは、持っている資源や技術から考えてみよう。',
+    opening: '国連（先生）：「これから40分間、貿易ゲームを始めます。製品は世界市場に輸出するとお金になります。」',
+    donation: function (ns) { return '国連：「ODA（政府開発援助）として、' + ns + 'に生産設備を1つずつ援助します。」'; }, donationToast: 'ODAで生産設備が援助されました',
+    drop: '国連：「世界中で作られすぎて余ったため、国際価格が下がりました。」', dropToast: '国際価格が下がりました',
+    last3: '国連：「残り3分。製品は輸出するまでお金になりません。」', end: '国連：「時間です！ 生産をやめてください。」',
+    tradeLead: '交渉中は時計が止まっています。資源は1万トン単位で取引します（使いかけの分は渡せません）。技術を渡すと、自分はその技術を使えなくなります。',
+    intro: '資源と技術で製品をつくり、世界市場に輸出してお金をかせぐゲームです。地理総合の授業で行われる「貿易ゲーム」を、現実の資源と産業に置きかえて、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。',
+    facts: [
+      '8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。',
+      '製品は世界市場に輸出するとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。',
+      '労働力1つで1つの生産ラインが動きます。技術は使ってもなくなりませんが、資源は使うとなくなります。',
+      '足りないもの（資源・技術・お金）は、ほかの国と交渉して手に入れます。交渉しているあいだは時計が止まります。',
+      '国連（先生）は、とちゅうでODA（援助）をしたり、作られすぎた製品の国際価格を下げたりします。',
+      '最後に持っているお金だけが得点です。輸出していない製品・資源・技術は数えません。'
+    ],
+    questions: [
+      'いちばんお金をかせいだのはどのタイプの国でしたか。はじめに持っていた何が有利にはたらきましたか。',
+      '産油国は資源をたくさん持っていました。資源のまま売る国と、技術で製品にして輸出する国では、かせぎ方にどんな差が出ましたか。',
+      'ODAで途上国に生産設備が援助されました。役に立ちましたか。設備だけでは足りなかったものは何でしょう。',
+      '半導体や家電製品の国際価格が下がったとき、困ったのはどの国でしたか。一つの商品の輸出にたよる経済（モノカルチャー経済）と比べてみよう。',
+      '先端技術を持つ国と持たない国の差は、現実の世界ではどんなところに表れていますか。公正な貿易（フェアトレード）にするには、どんなルールがあるとよいでしょう。'
+    ]
+  },
+  class: {
+    id: 'class', label: '授業の紙と道具',
+    names: { money: 'お金', paper: '紙', scissors: 'ハサミ', ruler: '定規', setsq: '三角定規', compass: 'コンパス', pencil: 'シャーペン',
+      rect: '長方形', tri: '正三角形', semi: '分度器形', circle: '円' },
+    unit: { paper: '枚', pencil: '本', tool: '個', shape: '個' },
+    spec: { rect: '13×8cm', tri: '1辺 9cm', semi: '直径 10cm', circle: '半径 4.5cm' },
+    desk: 'わが国の机', deskSub: '紙＝資源、道具＝技術、シャーペン＝働き手', worldH: 'ほかの国', worldSub: '机の上は見えるけれど、お金は見えない',
+    lineSub: 'シャーペン1本につき1ライン', noLine: 'シャーペンがないので作れません。ほかの国から手に入れよう。', making: 'を作っています', choose: '作る図形をえらんでください',
+    mkt: '国連の買い取り窓口', sell1: '1個売る', sellAll: '全部', sold: 'を売って', product: '図形',
+    perSheet: function (n) { return '紙1枚で' + n + '個'; }, partial: '使いかけの紙', empty: '机の上はほぼ空っぽ',
+    guess: 'どんな国なのかは、机の上の道具から考えてみよう。',
+    opening: '国連（先生）：「これから40分間、貿易ゲームを始めます。作った図形は国連が買い取ります。」',
+    donation: function (ns) { return '国連：「' + ns + 'に、ハサミを1つずつ寄付します。」'; }, donationToast: '国連からハサミが寄付されました',
+    drop: '国連：「たくさん作られて余っているので、買い取り価格を下げます。」', dropToast: '買い取り価格が下がりました',
+    last3: '国連：「残り3分。図形は売るまでお金になりません。」', end: '国連：「時間です！ 図形を作るのをやめてください。」',
+    tradeLead: '交渉中は時計が止まっています。紙は1枚単位で取引します（使いかけの紙は渡せません）。',
+    intro: '紙（資源）と道具（技術）で図形を作り、国連に売ってお金をかせぐゲームです。地理総合の授業で行われる「貿易ゲーム」を、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。',
+    facts: [
+      '8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。',
+      '図形は「国連の買い取り窓口」に売るとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。',
+      'シャーペン1本で1つの生産ラインが動きます。道具は使ってもなくなりませんが、紙は使うとなくなります。',
+      '足りないもの（紙・道具・お金）は、ほかの国と交渉して手に入れます。交渉しているあいだは時計が止まります。',
+      '国連（先生）は、とちゅうで寄付をしたり、余っている図形の買い取り価格を下げたりします。',
+      '最後に持っているお金だけが得点です。売っていない図形・紙・道具は数えません。'
+    ],
+    questions: [
+      'いちばんお金をかせいだのはどのタイプの国でしたか。はじめに持っていた何が有利にはたらきましたか。',
+      '産油国は紙（資源）をたくさん持っていました。資源を売るだけの国と、道具（技術）で製品にして売る国では、かせぎ方にどんな差が出ましたか。',
+      '国連から途上国へのハサミの寄付は役に立ちましたか。ハサミだけでは足りなかったものは何でしょう。',
+      '円や正三角形の買い取り価格が下がったとき、困ったのはどの国でしたか。一つの商品にたよる経済（モノカルチャー経済）と比べてみよう。',
+      '現実の世界で、紙・道具・シャーペン・国連はそれぞれ何にあたるでしょうか。公正な貿易（フェアトレード）にするには、どんなルールがあるとよいでしょう。'
+    ]
+  }
+};
+var TH = THEMES.real;
+function applyTheme(id) {
+  TH = THEMES[id] || THEMES.real;
+  for (var k in TH.names) NAMES[k] = TH.names[k];
+  UNIT = { paper: TH.unit.paper, pencil: TH.unit.pencil };
+  SHAPE_KEYS.forEach(function (s) { SHAPES[s].name = TH.names[s]; SHAPES[s].spec = TH.spec[s]; });
+}
+function unitOf(k) { if (k in UNIT) return UNIT[k]; return SHAPE_KEYS.indexOf(k) >= 0 ? TH.unit.shape : TH.unit.tool; }
+
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function fmt$(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
@@ -302,6 +380,7 @@ function store(k, v) { try { if (v === undefined) return localStorage.getItem('k
 
 /* ---------- 絵 ---------- */
 function shapeSvg(k) {
+  if (TH.id === 'real') return productSvg(k);
   var st = 'fill="var(--paper)" stroke="var(--paper-ink)" stroke-width="1.6" stroke-linejoin="round"';
   if (k === 'rect') return '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="7.5" width="30" height="18.5" rx="0.5" ' + st + '/></svg>';
   if (k === 'tri') return '<svg viewBox="0 0 40 32" aria-hidden="true"><polygon points="20,4 36,29.5 4,29.5" ' + st + '/></svg>';
@@ -312,8 +391,26 @@ function shapeSvg(k) {
   }
   return '<svg viewBox="0 0 40 32" aria-hidden="true"><circle cx="20" cy="16" r="13" ' + st + '/></svg>';
 }
+function productSvg(k) {
+  var st = 'fill="var(--paper)" stroke="var(--paper-ink)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"';
+  var ln = 'fill="none" stroke="var(--paper-ink)" stroke-width="1.3" stroke-linecap="round"';
+  if (k === 'rect') return '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M14 4 L8 6 L3 12 L8 15 L10 13 V29 H30 V13 L32 15 L37 12 L32 6 L26 4 Q20 9 14 4 Z" ' + st + '/></svg>';
+  if (k === 'tri') return '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="4" width="30" height="20" rx="2" ' + st + '/><rect x="9" y="8" width="22" height="12" rx="1" ' + ln + '/><path d="M15 28 H25 M20 24 V28" ' + ln + '/></svg>';
+  if (k === 'semi') return '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M16 3 H24 M17 3 V12 L8 27 Q7 29 9.5 29 H30.5 Q33 29 32 27 L23 12 V3" ' + st + '/><path d="M12 21 H28" ' + ln + '/></svg>';
+  var pins = '';
+  for (var i = 0; i < 4; i++) { var y = 9 + i * 4.5; pins += '<path d="M7 ' + y + ' H11 M29 ' + y + ' H33" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/>'; }
+  return '<svg viewBox="0 0 40 32" aria-hidden="true">' + pins + '<rect x="11" y="5" width="18" height="22" rx="2" ' + st + '/><rect x="15.5" y="11" width="9" height="10" rx="1" ' + ln + '/></svg>';
+}
 function itemSvg(k) {
   var s = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  if (TH.id === 'real') switch (k) {
+    case 'paper': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><ellipse cx="16" cy="7" rx="9" ry="3"/><path d="M7 7 V25 A9 3 0 0 0 25 25 V7 M7 13 A9 3 0 0 0 25 13 M7 19 A9 3 0 0 0 25 19"/></svg>';
+    case 'scissors': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M3 28 V14 L10 18 V14 L17 18 V6 H23 V28 Z"/><path d="M8 23 H11 M14 23 H17"/></svg>';
+    case 'ruler': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="16" cy="16" r="5"/><path d="M16 4 V8 M16 24 V28 M4 16 H8 M24 16 H28 M7.5 7.5 L10.3 10.3 M21.7 21.7 L24.5 24.5 M7.5 24.5 L10.3 21.7 M21.7 10.3 L24.5 7.5"/></svg>';
+    case 'setsq': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="4"/><path d="M16 3 V9 M16 23 V29 M3 16 H9 M23 16 H29"/></svg>';
+    case 'compass': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="16" cy="16" r="2"/><ellipse cx="16" cy="16" rx="12" ry="5"/><ellipse cx="16" cy="16" rx="12" ry="5" transform="rotate(60 16 16)"/><ellipse cx="16" cy="16" rx="12" ry="5" transform="rotate(120 16 16)"/></svg>';
+    case 'pencil': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="16" cy="9" r="5"/><path d="M6 29 V25 A7 7 0 0 1 13 18 H19 A7 7 0 0 1 26 25 V29"/></svg>';
+  }
   switch (k) {
     case 'scissors': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="9" cy="23" r="4"/><circle cx="23" cy="23" r="4"/><path d="M11.5 20 L22 5 M20.5 20 L10 5"/></svg>';
     case 'ruler': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><rect x="3" y="11" width="26" height="10" rx="1.5"/><path d="M7 11v4 M11 11v3 M15 11v4 M19 11v3 M23 11v4"/></svg>';
@@ -338,7 +435,8 @@ function clipsHtml(m) {
    ゲームの状態
    ============================================================ */
 var G = null;
-var settings = { who: store('who') || 'random', speed: store('speed') || 'normal' };
+var settings = { who: store('who') || 'random', speed: store('speed') || 'normal', view: store('view') || 'real' };
+applyTheme(settings.view);
 
 function newGame() {
   var types = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'];
@@ -363,8 +461,8 @@ function newGame() {
   G = { t: 0, running: false, paused: false, over: false, countries: countries, me: countries[meIdx],
     price: price, prev: {}, period: period, total: total, news: [], offers: [], offerSeq: 0,
     nextCpuTrade: 1.0, nextOffer: 2.0, nextReview: 5, donated: false, warned: {}, speed: speedSec() };
-  addNews('un', '国連（先生）：「これから40分間、貿易ゲームを始めます。作った図形は国連が買い取ります。」');
-  addNews('', 'あなたは「' + G.me.name + '」の代表です。' + (settings.who === 'random' ? 'どんな国なのかは、机の上の道具から考えてみよう。' : 'あなたの国は' + TYPES[G.me.type].label + 'です。'));
+  addNews('un', TH.opening);
+  addNews('', 'あなたは「' + G.me.name + '」の代表です。' + (settings.who === 'random' ? TH.guess : 'あなたの国は' + TYPES[G.me.type].label + 'です。'));
   dirty = true;
 }
 function speedSec() { for (var i = 0; i < SPEEDS.length; i++) if (SPEEDS[i].id === settings.speed) return SPEEDS[i].sec; return 7.5; }
@@ -410,7 +508,7 @@ function bundleText(b) {
   var parts = [];
   ['money', 'paper', 'scissors', 'ruler', 'setsq', 'compass', 'pencil'].concat(SHAPE_KEYS).forEach(function (k) {
     if (!b[k]) return;
-    parts.push(k === 'money' ? fmt$(b[k]) : NAMES[k] + ' ' + b[k] + (UNIT[k] || '個'));
+    parts.push(k === 'money' ? fmt$(b[k]) : NAMES[k] + ' ' + b[k] + unitOf(k));
   });
   return parts.length ? parts.join('・') : 'なにも';
 }
@@ -451,7 +549,7 @@ function produce(c, dt) {
     var sh = SHAPES[ln.shape];
     if (!ln.busy) {
       if (!hasTools(it, ln.shape)) { ln.why = missing(it, ln.shape).join('・') + 'がない'; return; }
-      if (it.paper < sh.area) { ln.why = '紙が足りない'; return; }
+      if (it.paper < sh.area) { ln.why = NAMES.paper + 'が足りない'; return; }
       it.paper -= sh.area; ln.busy = true; ln.prog = 0; ln.why = '';
       if (c.isPlayer) dirty = true;
     }
@@ -480,8 +578,8 @@ function events() {
     G.donated = true;
     var ds = G.countries.filter(function (c) { return c.type === 'D'; });
     ds.forEach(function (c) { c.items.scissors += 1; });
-    addNews('un', '国連：「' + ds.map(function (c) { return c.name; }).join('と') + 'に、ハサミを1つずつ寄付します。」');
-    if (G.me.type === 'D') toast('国連からハサミが寄付されました');
+    addNews('un', TH.donation(ds.map(function (c) { return c.name; }).join('と')));
+    if (G.me.type === 'D') toast(TH.donationToast);
     dirty = true;
   }
   // 国連による買い取り価格の見直し（5分ごと）
@@ -498,14 +596,14 @@ function events() {
       G.period[s] = 0;
     });
     if (changed.length) {
-      addNews('warn', '国連：「たくさん作られて余っているので、買い取り価格を下げます。」 ' + changed.join('、'));
-      toast('買い取り価格が下がりました');
+      addNews('warn', TH.drop + ' ' + changed.join('、'));
+      toast(TH.dropToast);
     }
     G.nextReview += 5;
     dirty = true;
   }
   if (G.t >= 30 && !G.warned[30]) { G.warned[30] = 1; addNews('un', '国連：「残り10分です。」'); }
-  if (G.t >= 37 && !G.warned[37]) { G.warned[37] = 1; addNews('un', '国連：「残り3分。図形は売るまでお金になりません。」'); toast('残り3分'); }
+  if (G.t >= 37 && !G.warned[37]) { G.warned[37] = 1; addNews('un', TH.last3); toast('残り3分'); }
   // CPU どうしの取引
   while (G.t >= G.nextCpuTrade) { cpuTradeRound(); G.nextCpuTrade += 0.8 + rnd() * 0.6; }
   // CPU からあなたへの提案
@@ -578,6 +676,7 @@ function render() {
   var me = G.me, it = me.items;
   $('meChip').innerHTML = '<span class="flag" style="background:' + me.color + '"></span>' + esc(me.name) + (settings.who !== 'random' ? '（' + TYPES[me.type].label + '）' : '') + 'の代表';
   $('wallet').innerHTML = fmt$(it.money) + clipsHtml(it.money);
+  $('deskH').textContent = TH.desk; $('deskSub').textContent = TH.deskSub; $('mktH').textContent = TH.mkt; $('worldSub').textContent = TH.worldSub;
 
   // 机
   var invKeys = ['paper', 'pencil', 'scissors', 'ruler', 'setsq', 'compass'];
@@ -586,7 +685,7 @@ function render() {
     var n = k === 'paper' ? it.paper / SHEET : it[k];
     var shown = k === 'paper' ? (Math.floor(n * 10 + 1e-9) / 10).toFixed(1) : n;
     h += '<div class="inv-item' + (n > 0 ? '' : ' zero') + '">' + itemSvg(k) + '<b class="num">' + shown + '</b>' + NAMES[k] +
-      (k === 'paper' && n > 0 ? '<span class="paper-meter" title="使いかけの紙"><i style="width:' + Math.round((it.paper % SHEET) / SHEET * 100) + '%"></i></span>' : '') + '</div>';
+      (k === 'paper' && n > 0 ? '<span class="paper-meter" title="' + TH.partial + '"><i style="width:' + Math.round((it.paper % SHEET) / SHEET * 100) + '%"></i></span>' : '') + '</div>';
   });
   SHAPE_KEYS.forEach(function (s) {
     h += '<div class="inv-item' + (it[s] > 0 ? '' : ' zero') + '">' + shapeSvg(s) + '<b class="num">' + it[s] + '</b>' + SHAPES[s].name + '</div>';
@@ -594,18 +693,18 @@ function render() {
   $('inv').innerHTML = h;
 
   // 生産ライン
-  $('lineSub').textContent = 'シャーペン1本につき1ライン';
+  $('lineSub').textContent = TH.lineSub;
   h = '';
-  if (!me.lines.length) h = '<p class="empty-note">シャーペンがないので作れません。ほかの国から手に入れよう。</p>';
+  if (!me.lines.length) h = '<p class="empty-note">' + TH.noLine + '</p>';
   me.lines.forEach(function (ln, i) {
-    var st = ln.busy ? SHAPES[ln.shape].name + 'を作っています' : (ln.shape ? (ln.why || '準備中') : '作る図形をえらんでください');
+    var st = ln.busy ? SHAPES[ln.shape].name + TH.making : (ln.shape ? (ln.why || '準備中') : TH.choose);
     h += '<div class="line"><div class="line-top"><span class="who">ライン ' + (i + 1) + '</span><span class="line-status' + (ln.why ? ' bad' : '') + '">' + esc(st) + '</span></div><div class="picks">';
     SHAPE_KEYS.forEach(function (s) {
       var ok = hasTools(it, s);
       var miss = missing(it, s);
       h += '<button type="button" class="pick" data-line="' + i + '" data-shape="' + s + '" aria-pressed="' + (ln.shape === s) + '"' + (ok || ln.shape === s ? '' : ' disabled') +
         ' title="' + (ok ? SHAPES[s].name + '：' + SHAPES[s].time + '分で1個' : miss.join('・') + 'が必要') + '">' + shapeSvg(s) + SHAPES[s].name +
-        '<span class="need">' + (ok ? SHAPES[s].time + '分・紙1/' + Math.floor(SHEET / SHAPES[s].area) : miss.join('・') + 'が必要') + '</span></button>';
+        '<span class="need">' + (ok ? SHAPES[s].time + '分・' + TH.perSheet(Math.floor(SHEET / SHAPES[s].area)) : miss.join('・') + 'が必要') + '</span></button>';
     });
     h += '</div><div class="prog"><i data-prog="' + i + '"></i></div></div>';
   });
@@ -617,8 +716,8 @@ function render() {
     var sh = SHAPES[s], down = G.price[s] < sh.base;
     h += '<div class="mkt-row">' + shapeSvg(s) + '<div class="mkt-name">' + sh.name + '<small>' + sh.spec + '・' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '</small></div>' +
       '<div class="price num' + (down ? ' down' : '') + '">' + (down ? '<s>' + fmt$(sh.base) + '</s>' : '') + fmt$(G.price[s]) + '</div>' +
-      '<div class="sell-btns"><button class="btn" type="button" data-sell="' + s + '" data-n="1"' + (it[s] ? '' : ' disabled') + '>1個売る</button>' +
-      '<button class="btn money" type="button" data-sell="' + s + '" data-n="all"' + (it[s] ? '' : ' disabled') + '>全部（' + it[s] + '）</button></div></div>';
+      '<div class="sell-btns"><button class="btn" type="button" data-sell="' + s + '" data-n="1"' + (it[s] ? '' : ' disabled') + '>' + TH.sell1 + '</button>' +
+      '<button class="btn money" type="button" data-sell="' + s + '" data-n="all"' + (it[s] ? '' : ' disabled') + '>' + TH.sellAll + '（' + it[s] + '）</button></div></div>';
   });
   $('mkt').innerHTML = h;
 
@@ -628,9 +727,9 @@ function render() {
     if (c.isPlayer) return;
     var ci = c.items, tags = '';
     var pp = Math.floor(ci.paper / SHEET * 10 + 1e-9) / 10;
-    if (pp > 0) tags += '<span class="tag">' + itemSvg('paper') + '紙 ' + pp.toFixed(1) + '</span>';
+    if (pp > 0) tags += '<span class="tag">' + itemSvg('paper') + NAMES.paper + ' ' + pp.toFixed(1) + (TH.id === 'real' ? UNIT.paper : '') + '</span>';
     ['pencil', 'scissors', 'ruler', 'setsq', 'compass'].forEach(function (k) { if (ci[k]) tags += '<span class="tag">' + itemSvg(k) + NAMES[k] + (ci[k] > 1 ? '×' + ci[k] : '') + '</span>'; });
-    if (!tags) tags = '<span>机の上はほぼ空っぽ</span>';
+    if (!tags) tags = '<span>' + TH.empty + '</span>';
     h += '<div class="cty"><div class="cty-h"><span class="flag" style="background:' + c.color + '"></span>' + esc(c.name) + '</div><div class="cty-items">' + tags + '</div>' +
       '<button class="btn primary" type="button" data-trade="' + c.id + '">交渉する</button></div>';
   });
@@ -683,7 +782,7 @@ document.addEventListener('click', function (e) {
   } else if (d.sell) {
     var n = d.n === 'all' ? G.me.items[d.sell] : 1;
     var got = sell(G.me, d.sell, n);
-    if (got) toast(SHAPES[d.sell].name + 'を' + n + '個売って ' + fmt$(got));
+    if (got) toast(SHAPES[d.sell].name + 'を' + n + '個' + TH.sold + ' ' + fmt$(got));
   } else if (d.trade !== undefined) {
     var o = d.fromOffer ? findOffer(+d.fromOffer) : null;
     openTrade(G.countries[+d.trade], o);
@@ -719,35 +818,33 @@ function closeModal() { $('modalRoot').innerHTML = ''; modalOpen = null; }
 function rulesHtml() {
   var cards = SHAPE_KEYS.map(function (s) {
     var sh = SHAPES[s];
-    return '<div class="rule">' + shapeSvg(s) + '<b>' + sh.name + '</b>' + sh.spec + '<div class="p num">' + fmt$(sh.base) + '</div>' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '<br>' + sh.time + '分で1個・紙1枚から' + Math.floor(SHEET / sh.area) + '個</div>';
+    return '<div class="rule">' + shapeSvg(s) + '<b>' + sh.name + '</b>' + sh.spec + '<div class="p num">' + fmt$(sh.base) + '</div>' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '<br>' + sh.time + '分で1個・' + TH.perSheet(Math.floor(SHEET / sh.area)) + '</div>';
   }).join('');
   return '<div class="rules">' + cards + '</div>' +
-    '<ul class="facts">' +
-    '<li>8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。</li>' +
-    '<li>図形は「国連の買い取り窓口」に売るとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。</li>' +
-    '<li>シャーペン1本で1つの生産ラインが動きます。道具は使ってもなくなりませんが、紙は使うとなくなります。</li>' +
-    '<li>足りないもの（紙・道具・お金）は、ほかの国と交渉して手に入れます。交渉しているあいだは時計が止まります。</li>' +
-    '<li>国連（先生）は、とちゅうで寄付をしたり、余っている図形の買い取り価格を下げたりします。</li>' +
-    '<li>最後に持っているお金だけが得点です。売っていない図形・紙・道具は数えません。</li></ul>';
+    '<ul class="facts">' + TH.facts.map(function (f) { return '<li>' + f + '</li>'; }).join('') + '</ul>';
 }
 function openRules(isStart) {
   var wasPaused = G && G.paused;
   if (G && G.running) G.paused = true;
   var opts = '';
   if (isStart) {
-    opts = '<div class="opt"><label id="whoL">あなたの国</label><div class="seg" role="group" aria-labelledby="whoL" id="whoSeg">' +
+    opts = '<div class="opt"><label id="viewL">表示</label><div class="seg" role="group" aria-labelledby="viewL">' +
+      ['real', 'class'].map(function (v) { return '<button type="button" data-view="' + v + '" aria-pressed="' + (settings.view === v) + '">' + THEMES[v].label + '</button>'; }).join('') +
+      '</div><p class="lead">ルールと数字は同じです。「授業の紙と道具」にすると、紙・ハサミ・図形で遊べます。</p></div>' +
+      '<div class="opt"><label id="whoL">あなたの国</label><div class="seg" role="group" aria-labelledby="whoL" id="whoSeg">' +
       [['random', 'ランダム（おすすめ）'], ['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']].map(function (o) {
         return '<button type="button" data-who="' + o[0] + '" aria-pressed="' + (settings.who === o[0]) + '">' + o[1] + '</button>';
       }).join('') + '</div><p class="lead">ランダムにすると、授業と同じように、自分がどんな国なのかは配られた道具でしかわかりません（最後に発表）。</p></div>' +
       '<div class="opt"><label id="spdL">時間の速さ（ゲームの40分）</label><div class="seg" role="group" aria-labelledby="spdL" id="spdSeg">' +
       SPEEDS.map(function (s) { return '<button type="button" data-spd="' + s.id + '" aria-pressed="' + (settings.speed === s.id) + '">' + s.label + '</button>'; }).join('') + '</div></div>';
   }
-  showModal('<div class="modal-body"><h2>貿易ゲーム</h2><p class="lead">紙（資源）と道具（技術）で図形を作り、国連に売ってお金をかせぐゲームです。地理総合の授業で行われる「貿易ゲーム」を、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。</p>' +
+  showModal('<div class="modal-body"><h2>貿易ゲーム</h2><p class="lead">' + TH.intro + '</p>' +
     rulesHtml() + opts + '</div><div class="modal-foot">' +
     (isStart ? '<button class="btn primary big" type="button" id="startBtn">はじめる</button>' : '<button class="btn primary big" type="button" id="closeBtn">ゲームにもどる</button>') + '</div>',
     function (root) {
       root.addEventListener('click', function (e) {
         var b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.view) { settings.view = b.dataset.view; store('view', settings.view); applyTheme(settings.view); if (G && !G.running) { newGame(); render(); } openRules(true); return; }
         if (b.dataset.who) { settings.who = b.dataset.who; store('who', settings.who); root.querySelectorAll('[data-who]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
         if (b.dataset.spd) { settings.speed = b.dataset.spd; store('speed', settings.speed); root.querySelectorAll('[data-spd]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
         if (b.id === 'startBtn') { closeModal(); newGame(); G.running = true; G.paused = false; render(); }
@@ -789,7 +886,7 @@ function maxFor(side, k) {
 }
 function stepRow(side, k) {
   var it = side === 'give' ? G.me.items : TR.p.items;
-  var have = k === 'money' ? (side === 'give' ? fmt$(it.money) + 'まで' : '相手のお金は見えない') : (k === 'paper' ? sheets(it) : it[k]) + (UNIT[k] || '個') + 'ある';
+  var have = k === 'money' ? (side === 'give' ? fmt$(it.money) + 'まで' : '相手のお金は見えない') : (k === 'paper' ? sheets(it) : it[k]) + unitOf(k) + 'ある';
   var v = TR[side][k] || 0;
   var unit = k === 'money' ? 100 : 1;
   var ctl = k === 'money'
@@ -812,7 +909,7 @@ function drawTrade(reply) {
   TR.reply = r;
   document.getElementById('trBody').innerHTML =
     '<h2><span class="flag" style="background:' + p.color + ';width:26px;height:18px;margin-right:8px;vertical-align:middle"></span>' + esc(p.name) + 'と交渉</h2>' +
-    '<p class="lead">交渉中は時計が止まっています。紙は1枚単位で取引します（使いかけの紙は渡せません）。</p>' +
+    '<p class="lead">' + TH.tradeLead + '</p>' +
     '<div class="trade-cols"><div class="side"><h3>あなたが渡すもの</h3>' + giveRows + '</div><div class="side"><h3>' + esc(p.name) + 'からもらうもの</h3>' + getRows + '</div></div>' +
     '<div class="reply ' + r.cls + '"><span class="flag" style="background:' + p.color + '"></span><span>' + esc(p.name) + '：' + esc(r.text) + '</span></div>';
 }
@@ -868,7 +965,7 @@ function askPrice() {
 function endGame() {
   if (G.over) return;
   G.over = true; G.running = false;
-  addNews('un', '国連：「時間です！ 図形を作るのをやめてください。」');
+  addNews('un', TH.end);
   dirty = true;
   render(); renderClock();
   var list = G.countries.slice().sort(function (a, b) { return b.items.money - a.items.money; });
@@ -889,15 +986,10 @@ function endGame() {
   var unsold = SHAPE_KEYS.reduce(function (s, k) { return s + G.me.items[k]; }, 0);
   showModal('<div class="modal-body"><h2>ゲーム終了</h2>' +
     '<div class="reveal">' + (settings.who === 'random' ? 'あなたの国「' + esc(G.me.name) + '」は <b>' + TYPES[G.me.type].label + '</b> でした（' + TYPES[G.me.type].real + '）。' : 'あなたは' + TYPES[G.me.type].label + '「' + esc(G.me.name) + '」でした。') +
-    '<br>結果は8か国中 <b>' + myRank + '位</b>、' + fmt$(G.me.startMoney) + ' → <b>' + fmt$(G.me.items.money) + '</b>' + (unsold ? '（売らずに残った図形 ' + unsold + '個はお金になりませんでした）' : '') + '</div>' +
+    '<br>結果は8か国中 <b>' + myRank + '位</b>、' + fmt$(G.me.startMoney) + ' → <b>' + fmt$(G.me.items.money) + '</b>' + (unsold ? '（売らずに残った' + TH.product + ' ' + unsold + '個はお金になりませんでした）' : '') + '</div>' +
     '<h3>順位</h3><div class="rank-wrap"><table class="rank"><thead><tr><th>位</th><th>国</th><th>タイプ</th><th class="r">はじめ</th><th class="r">おわり</th><th class="r">倍率</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     '<h3>国のタイプごとの平均</h3><div class="typebars">' + bars + '</div>' +
-    '<h3>ふりかえり</h3><ol class="qs">' +
-    '<li>いちばんお金をかせいだのはどのタイプの国でしたか。はじめに持っていた何が有利にはたらきましたか。</li>' +
-    '<li>産油国は紙（資源）をたくさん持っていました。資源を売るだけの国と、道具（技術）で製品にして売る国では、かせぎ方にどんな差が出ましたか。</li>' +
-    '<li>国連から途上国へのハサミの寄付は役に立ちましたか。ハサミだけでは足りなかったものは何でしょう。</li>' +
-    '<li>円や正三角形の買い取り価格が下がったとき、困ったのはどの国でしたか。一つの商品にたよる経済（モノカルチャー経済）と比べてみよう。</li>' +
-    '<li>現実の世界で、紙・道具・シャーペン・国連はそれぞれ何にあたるでしょうか。公正な貿易（フェアトレード）にするには、どんなルールがあるとよいでしょう。</li></ol>' +
+    '<h3>ふりかえり</h3><ol class="qs">' + TH.questions.map(function (q) { return '<li>' + q + '</li>'; }).join('') + '</ol>' +
     '</div><div class="modal-foot"><button class="btn" type="button" id="seeBoard">盤面を見る</button><button class="btn primary big" type="button" id="againBtn">もう一度あそぶ</button></div>',
     function (root) {
       root.addEventListener('click', function (e) {
