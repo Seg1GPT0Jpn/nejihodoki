@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>貿易ゲーム</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="紙と道具で図形を作って国連に売る、地理総合の「貿易ゲーム」。先進国・新興国・産油国・途上国に分かれて、交渉しながらお金をかせぐ。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+/* Layout: graph-paper desk. Left column = your own desk (stock, production lines, UN buying desk),
+   right column = the other seven countries and the news feed. Stacks to one column on phones. */
+:root{
+  --bg:#e8eef3; --grid:#d3dde6; --panel:#ffffff; --panel-2:#f3f6f9; --ink:#1b2833; --muted:#5a6976; --line:#c8d3dd;
+  --un:#1c6bb3; --un-soft:#dcebf8; --money:#21774a; --money-soft:#ddf0e4; --warn:#b14f17; --warn-soft:#fbe6d8;
+  --paper:#fffef8; --paper-ink:#24313c; --shadow:0 1px 2px rgba(20,40,60,.08),0 4px 14px rgba(20,40,60,.06);
+  --f-display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --grid:#18222b; --panel:#17212a; --panel-2:#1c2731; --ink:#e2e9ef; --muted:#93a3b1; --line:#2a3743;
+  --un:#5ea9ec; --un-soft:#182e43; --money:#5cc489; --money-soft:#16321f; --warn:#f09358; --warn-soft:#3a2417;
+  --paper:#f3f1e8; --paper-ink:#24313c; --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --grid:#18222b; --panel:#17212a; --panel-2:#1c2731; --ink:#e2e9ef; --muted:#93a3b1; --line:#2a3743;
+  --un:#5ea9ec; --un-soft:#182e43; --money:#5cc489; --money-soft:#16321f; --warn:#f09358; --warn-soft:#3a2417;
+  --paper:#f3f1e8; --paper-ink:#24313c; --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0; background-color:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--panel)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:3px solid var(--un);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.25}
+.num{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand h1{font-size:20px;font-weight:900;letter-spacing:.04em}
+.me-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.flag{display:inline-block;width:18px;height:12px;border-radius:2px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.clock{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0}
+.clock-t{font-family:var(--f-display);font-weight:700;font-size:20px;white-space:nowrap}
+.clock-t small{font-size:12px;color:var(--muted);font-weight:500}
+.track{flex:1;height:8px;border-radius:4px;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;min-width:60px}
+.track i{display:block;height:100%;background:var(--un);width:0}
+.wallet{display:flex;align-items:center;gap:8px;background:var(--money-soft);color:var(--money);border-radius:10px;padding:4px 12px;font-family:var(--f-display);font-weight:700;font-size:20px}
+.wallet .clips{display:flex;gap:2px;align-items:center;font-size:12px;font-weight:500}
+.bar-btns{display:flex;gap:6px}
+.icon-btn{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:5px 10px;font-size:13px;white-space:nowrap}
+.icon-btn:hover{border-color:var(--un)}
+
+/* board */
+.board{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;
+  padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:820px){.board{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;min-width:0}
+.panel-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.panel-h h2{font-size:17px;font-weight:900}
+.panel-h .sub{font-size:12px;color:var(--muted)}
+.un-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--un);background:var(--un-soft);padding:1px 7px;border-radius:999px}
+
+/* inventory */
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.inv-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);font-size:12px;text-align:center}
+.inv-item.zero{opacity:.38}
+.inv-item svg{width:34px;height:34px}
+.inv-item b{font-size:16px;font-family:var(--f-display)}
+.paper-meter{height:5px;width:70%;border-radius:3px;background:var(--line);overflow:hidden}
+.paper-meter i{display:block;height:100%;background:var(--un)}
+
+/* production lines */
+.lines{display:flex;flex-direction:column;gap:10px}
+.line{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-2)}
+.line-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:13px}
+.line-top .who{font-weight:700;font-family:var(--f-display)}
+.line-status{font-size:12px;color:var(--muted);margin-left:auto}
+.line-status.bad{color:var(--warn)}
+.picks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pick{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 2px;font-size:11px;line-height:1.3}
+.pick svg{width:30px;height:24px}
+.pick[aria-pressed="true"]{border-color:var(--un);box-shadow:0 0 0 2px var(--un) inset;background:var(--un-soft)}
+.pick:disabled{opacity:.4;cursor:not-allowed}
+.pick .need{color:var(--muted);font-size:10px}
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;width:0;background:var(--money)}
+.empty-note{font-size:13px;color:var(--muted);padding:6px 2px}
+
+/* market */
+.mkt{display:flex;flex-direction:column}
+.mkt-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:4px 10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line)}
+.mkt-row:first-child{border-top:0}
+.mkt-row svg{width:40px;height:32px}
+.mkt-name{font-weight:700;font-family:var(--f-display);font-size:15px}
+.mkt-name small{display:block;font-family:var(--f-body);font-weight:400;font-size:11px;color:var(--muted)}
+.price{font-family:var(--f-display);font-weight:900;font-size:18px;text-align:right;white-space:nowrap}
+.price s{font-size:12px;color:var(--muted);font-weight:500;margin-right:4px}
+.price.down{color:var(--warn)}
+.sell-btns{display:flex;gap:4px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--un)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--un);border-color:var(--un);color:#fff}
+.btn.money{background:var(--money);border-color:var(--money);color:#fff}
+.btn.big{padding:10px 20px;font-size:16px;border-radius:10px}
+
+/* world */
+.world{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.cty{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-2);display:flex;flex-direction:column;gap:6px;min-width:0}
+.cty-h{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:700}
+.cty-h .flag{width:22px;height:15px}
+.cty-items{display:flex;flex-wrap:wrap;gap:4px;font-size:11px;color:var(--muted);min-height:22px}
+.tag{display:inline-flex;align-items:center;gap:3px;border-radius:6px;background:var(--panel);border:1px solid var(--line);padding:1px 6px;white-space:nowrap}
+.tag svg{width:14px;height:14px}
+.cty .btn{align-self:flex-start}
+
+/* offers + news */
+.offer{border:1px solid var(--money);background:var(--money-soft);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.offer-h{display:flex;align-items:center;gap:6px;font-weight:700}
+.offer .row{display:flex;gap:6px;flex-wrap:wrap}
+.offers{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.news{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;font-size:13px}
+.news li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px;padding:6px 8px;border-radius:8px;background:var(--panel-2)}
+.news li.un{background:var(--un-soft)}
+.news li.warn{background:var(--warn-soft)}
+.news time{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;padding-top:2px}
+
+/* modal */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(10,20,30,.55);display:flex;align-items:center;justify-content:center;
+  padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.modal{background:var(--panel);color:var(--ink);border-radius:14px;width:min(760px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.35);min-width:0}
+.modal-body{overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.modal h2{font-size:22px;font-weight:900}
+.modal h3{font-size:15px;font-weight:700}
+.lead{color:var(--muted);font-size:14px;margin:0}
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.rule{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px;background:var(--panel-2)}
+.rule svg{width:56px;height:44px}
+.rule b{display:block;font-family:var(--f-display);font-size:15px}
+.rule .p{font-family:var(--f-display);font-weight:900;color:var(--money);font-size:17px}
+.facts{margin:0;padding-left:1.2em;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.opt{display:flex;flex-direction:column;gap:6px}
+.opt label{font-weight:700;font-size:14px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:6px 12px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--un);border-color:var(--un);color:#fff}
+
+/* trade modal */
+.trade-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.trade-cols{grid-template-columns:minmax(0,1fr)}}
+.side{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.side h3{display:flex;align-items:center;gap:6px}
+.step{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px}
+.step>div:first-of-type{flex:1 1 90px;min-width:0}
+.step .ctl{margin-left:auto}
+.step svg{width:22px;height:22px;flex:none}
+.step .ctl{display:flex;align-items:center;gap:4px}
+.step .ctl button{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);font-weight:700;padding:0}
+.step .ctl button.wide{width:auto;padding:0 6px;font-size:11px}
+.step .ctl output{min-width:52px;text-align:center;font-family:var(--f-display);font-weight:700}
+.step .have{color:var(--muted);font-size:11px}
+.reply{display:flex;gap:10px;align-items:flex-start;background:var(--panel-2);border-radius:10px;padding:10px 12px;font-size:14px;min-height:46px}
+.reply .flag{margin-top:5px}
+.reply.ok{background:var(--money-soft)}
+.reply.ng{background:var(--warn-soft)}
+
+/* results */
+.rank{width:100%;border-collapse:collapse;font-size:14px}
+.rank th,.rank td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.rank td.r{text-align:right;font-variant-numeric:tabular-nums}
+.rank tr.me td{background:var(--un-soft);font-weight:700}
+.rank-wrap{overflow-x:auto}
+.typebars{display:flex;flex-direction:column;gap:6px}
+.tb{display:grid;grid-template-columns:110px minmax(0,1fr) 80px;align-items:center;gap:8px;font-size:13px}
+.tb .bar-out{height:16px;background:var(--panel-2);border-radius:4px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.tb .bar-out i{display:block;height:100%;background:var(--un)}
+.tb .v{text-align:right;font-variant-numeric:tabular-nums}
+.qs{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.reveal{font-size:16px;background:var(--un-soft);border-radius:10px;padding:10px 14px}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.paused-badge{font-size:12px;font-weight:700;color:var(--warn);white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){.prog i,.track i{transition:width .2s linear}}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <h1>貿易ゲーム</h1>
+      <span class="me-chip" id="meChip"></span>
+    </div>
+    <div class="clock">
+      <span class="clock-t num" id="clockT">0:00 <small>/ 40分</small></span>
+      <div class="track" aria-hidden="true"><i id="clockBar"></i></div>
+      <span class="paused-badge" id="pausedBadge" hidden>一時停止中</span>
+    </div>
+    <div class="wallet num" id="wallet" title="あなたの国のお金"></div>
+    <div class="bar-btns">
+      <button class="icon-btn" id="pauseBtn" type="button">一時停止</button>
+      <button class="icon-btn" id="helpBtn" type="button">ルール</button>
+    </div>
+  </div>
+</header>
+
+<main class="board">
+  <div class="col">
+    <section class="panel" aria-labelledby="deskH">
+      <div class="panel-h"><h2 id="deskH">わが国の机</h2><span class="sub">紙＝資源、道具＝技術、シャーペン＝働き手</span></div>
+      <div class="inv" id="inv"></div>
+    </section>
+    <section class="panel" aria-labelledby="lineH">
+      <div class="panel-h"><h2 id="lineH">生産ライン</h2><span class="sub" id="lineSub"></span></div>
+      <div class="lines" id="lines"></div>
+    </section>
+    <section class="panel" aria-labelledby="mktH">
+      <div class="panel-h"><h2 id="mktH">国連の買い取り窓口</h2><span class="un-tag">国連＝先生</span></div>
+      <div class="mkt" id="mkt"></div>
+    </section>
+  </div>
+  <div class="col">
+    <section class="panel" aria-labelledby="worldH">
+      <div class="panel-h"><h2 id="worldH">ほかの国</h2><span class="sub">机の上は見えるけれど、お金は見えない</span></div>
+      <div class="world" id="world"></div>
+    </section>
+    <section class="panel" aria-labelledby="newsH">
+      <div class="panel-h"><h2 id="newsH">とどいた提案とニュース</h2></div>
+      <div class="offers" id="offers"></div>
+      <ul class="news" id="news"></ul>
+    </section>
+  </div>
+</main>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+'use strict';
+/* ============================================================
+   ルールとデータ
+   ============================================================ */
+var GAME_MIN = 40;          // 授業と同じ 40 分
+var SHEET = 600;            // 紙1枚の面積（ゲーム内の単位）
+var SHAPE_KEYS = ['rect', 'tri', 'semi', 'circle'];
+var TOOL_KEYS = ['scissors', 'ruler', 'setsq', 'compass'];
+var SHAPES = {
+  rect:   { name: '長方形',   spec: '13×8cm',    base: 300,  time: 1.0, area: 120, tools: ['scissors', 'ruler'],             floor: 300, drop: 0,   limit: 99 },
+  tri:    { name: '正三角形', spec: '1辺 9cm',    base: 700,  time: 1.5, area: 50,  tools: ['scissors', 'ruler', 'setsq'],    floor: 300, drop: 100, limit: 12 },
+  semi:   { name: '分度器形', spec: '直径 10cm',  base: 500,  time: 1.5, area: 60,  tools: ['scissors', 'ruler', 'compass'],  floor: 300, drop: 100, limit: 12 },
+  circle: { name: '円',       spec: '半径 4.5cm', base: 1500, time: 2.0, area: 85,  tools: ['scissors', 'compass'],           floor: 700, drop: 200, limit: 9 }
+};
+var NAMES = { money: 'お金', paper: '紙', scissors: 'ハサミ', ruler: '定規', setsq: '三角定規', compass: 'コンパス', pencil: 'シャーペン',
+  rect: '長方形', tri: '正三角形', semi: '分度器形', circle: '円' };
+var UNIT = { paper: '枚', pencil: '本' };
+var TYPES = {
+  A: { label: '先進国', real: '技術も資本もある工業国' },
+  B: { label: '新興国', real: '技術を身につけ追い上げる国' },
+  C: { label: '産油国', real: '資源（紙）は多いが技術がない国' },
+  D: { label: '途上国', real: '資源も技術もお金も少ない国' }
+};
+var INIT = {
+  A: { money: 2000, paper: 1,  scissors: 1, ruler: 1, setsq: 1, compass: 1, pencil: 2 },
+  B: { money: 500,  paper: 1,  scissors: 1, ruler: 1, setsq: 1, compass: 0, pencil: 1 },
+  C: { money: 200,  paper: 20, scissors: 0, ruler: 0, setsq: 0, compass: 0, pencil: 1 },
+  D: { money: 700,  paper: 1,  scissors: 0, ruler: 0, setsq: 0, compass: 0, pencil: 1 }
+};
+var COUNTRY_NAMES = ['ミラ国', 'ソラン国', 'トーバ国', 'ルケ国', 'ナビア国', 'オルド国', 'ザイン国', 'エスタ国'];
+var COUNTRY_COLORS = ['#d24b3e', '#2e86c1', '#e0a526', '#3a9a5c', '#8e5bb5', '#e07b39', '#4a5a6a', '#c2508d'];
+var SPEEDS = [
+  { id: 'fast', label: 'はやい（約3分）', sec: 4.5 },
+  { id: 'normal', label: 'ふつう（約5分）', sec: 7.5 },
+  { id: 'slow', label: 'じっくり（約8分）', sec: 12 }
+];
+
+/* ============================================================
+   小さな道具
+   ============================================================ */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function fmt$(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function r100(n) { return Math.round(n / 100) * 100; }
+function f100(n) { return Math.floor(n / 100) * 100; }
+function c100(n) { return Math.ceil(n / 100) * 100; }
+function mmss(t) { var m = Math.floor(t); var s = Math.floor((t - m) * 60); return m + ':' + (s < 10 ? '0' : '') + s; }
+var seed = (Date.now() ^ 0x5f3759df) >>> 0;
+function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+function pick(a) { return a[Math.floor(rnd() * a.length)]; }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function store(k, v) { try { if (v === undefined) return localStorage.getItem('kusoge.trade.' + k); localStorage.setItem('kusoge.trade.' + k, v); } catch (e) { return null; } }
+
+/* ---------- 絵 ---------- */
+function shapeSvg(k) {
+  var st = 'fill="var(--paper)" stroke="var(--paper-ink)" stroke-width="1.6" stroke-linejoin="round"';
+  if (k === 'rect') return '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="7.5" width="30" height="18.5" rx="0.5" ' + st + '/></svg>';
+  if (k === 'tri') return '<svg viewBox="0 0 40 32" aria-hidden="true"><polygon points="20,4 36,29.5 4,29.5" ' + st + '/></svg>';
+  if (k === 'semi') {
+    var ticks = '';
+    for (var a = 0; a <= 180; a += 30) { var rad = a * Math.PI / 180; var x1 = 20 + Math.cos(rad) * 15, y1 = 27 - Math.sin(rad) * 15, x2 = 20 + Math.cos(rad) * 12, y2 = 27 - Math.sin(rad) * 12; ticks += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="var(--paper-ink)" stroke-width="1"/>'; }
+    return '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M3 27 A17 17 0 0 1 37 27 Z" ' + st + '/>' + ticks + '<circle cx="20" cy="27" r="1.4" fill="var(--paper-ink)"/></svg>';
+  }
+  return '<svg viewBox="0 0 40 32" aria-hidden="true"><circle cx="20" cy="16" r="13" ' + st + '/></svg>';
+}
+function itemSvg(k) {
+  var s = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  switch (k) {
+    case 'scissors': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="9" cy="23" r="4"/><circle cx="23" cy="23" r="4"/><path d="M11.5 20 L22 5 M20.5 20 L10 5"/></svg>';
+    case 'ruler': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><rect x="3" y="11" width="26" height="10" rx="1.5"/><path d="M7 11v4 M11 11v3 M15 11v4 M19 11v3 M23 11v4"/></svg>';
+    case 'setsq': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M5 5 V27 H27 Z"/><path d="M10 16 V22 H16 Z"/></svg>';
+    case 'compass': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="16" cy="6" r="2.5"/><path d="M15 8.5 L8 27 M17 8.5 L24 27 M11 19 H21"/></svg>';
+    case 'pencil': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M22 4 L28 10 L11 27 L4 28 L5 21 Z"/><path d="M19 7 L25 13"/></svg>';
+    case 'paper': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M8 3 H20 L26 9 V29 H8 Z"/><path d="M20 3 V9 H26"/></svg>';
+    case 'money': return clipSvg(true);
+  }
+  return shapeSvg(k);
+}
+function clipSvg(big) {
+  var w = big ? 12 : 8, h = big ? 22 : 15;
+  return '<svg viewBox="0 0 12 22" width="' + w + '" height="' + h + '" aria-hidden="true"><path d="M4 7 V17 A2.5 2.5 0 0 0 9 17 V5 A3.5 3.5 0 0 0 2 5 V16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+}
+function clipsHtml(m) {
+  var big = Math.floor(m / 1000), small = Math.floor((m % 1000) / 100);
+  return '<span class="clips" title="大クリップ ' + big + '個・小クリップ ' + small + '個">' + clipSvg(true) + '×' + big + ' ' + clipSvg(false) + '×' + small + '</span>';
+}
+
+/* ============================================================
+   ゲームの状態
+   ============================================================ */
+var G = null;
+var settings = { who: store('who') || 'random', speed: store('speed') || 'normal' };
+
+function newGame() {
+  var types = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'];
+  var names = shuffle(COUNTRY_NAMES.slice());
+  var colors = shuffle(COUNTRY_COLORS.slice());
+  var order = shuffle(types.slice());
+  var meIdx;
+  if (settings.who === 'random') meIdx = Math.floor(rnd() * 8);
+  else meIdx = order.indexOf(settings.who);
+  var countries = order.map(function (t, i) {
+    var it = { money: 0, paper: 0, scissors: 0, ruler: 0, setsq: 0, compass: 0, pencil: 0, rect: 0, tri: 0, semi: 0, circle: 0 };
+    var ini = INIT[t];
+    for (var k in ini) it[k] = ini[k];
+    it.paper = ini.paper * SHEET;
+    var c = { id: i, name: names[i], color: colors[i], type: t, isPlayer: i === meIdx, items: it, startMoney: ini.money,
+      lines: [], greed: 150 + Math.round(rnd() * 3) * 100, share: 0.3 + rnd() * 0.25, sold: 0, deals: 0 };
+    syncLines(c);
+    return c;
+  });
+  var price = {}, period = {}, total = {};
+  SHAPE_KEYS.forEach(function (s) { price[s] = SHAPES[s].base; period[s] = 0; total[s] = 0; });
+  G = { t: 0, running: false, paused: false, over: false, countries: countries, me: countries[meIdx],
+    price: price, prev: {}, period: period, total: total, news: [], offers: [], offerSeq: 0,
+    nextCpuTrade: 1.0, nextOffer: 2.0, nextReview: 5, donated: false, warned: {}, speed: speedSec() };
+  addNews('un', '国連（先生）：「これから40分間、貿易ゲームを始めます。作った図形は国連が買い取ります。」');
+  addNews('', 'あなたは「' + G.me.name + '」の代表です。' + (settings.who === 'random' ? 'どんな国なのかは、机の上の道具から考えてみよう。' : 'あなたの国は' + TYPES[G.me.type].label + 'です。'));
+  dirty = true;
+}
+function speedSec() { for (var i = 0; i < SPEEDS.length; i++) if (SPEEDS[i].id === settings.speed) return SPEEDS[i].sec; return 7.5; }
+function syncLines(c) {
+  while (c.lines.length < c.items.pencil) c.lines.push({ shape: null, prog: 0, busy: false, why: '' });
+  while (c.lines.length > c.items.pencil) c.lines.pop();
+}
+function remain() { return Math.max(0, GAME_MIN - G.t); }
+function sheets(it) { return Math.floor(it.paper / SHEET + 1e-9); }
+function hasTools(it, s) { return SHAPES[s].tools.every(function (k) { return it[k] > 0; }); }
+function missing(it, s) { return SHAPES[s].tools.filter(function (k) { return !(it[k] > 0); }).map(function (k) { return NAMES[k]; }); }
+
+/* ---------- 国の「価値」の見積もり（CPU の判断に使う。同じ式で相手の得も見積もる） ---------- */
+function expPrice(s) { var p = G.price[s]; return (s === 'circle' || s === 'tri') ? p * 0.85 : p; }
+function valueOf(it, R) {
+  var v = it.money;
+  SHAPE_KEYS.forEach(function (s) { v += it[s] * G.price[s] * 0.97; });
+  var can = SHAPE_KEYS.filter(function (s) { return hasTools(it, s); })
+    .sort(function (a, b) { return expPrice(b) / SHAPES[b].area - expPrice(a) / SHAPES[a].area; });
+  var T = it.pencil * Math.max(0, R - 0.3), P = it.paper, pv = 0;
+  can.forEach(function (s) {
+    var sh = SHAPES[s];
+    var n = Math.max(0, Math.min(Math.floor(T / sh.time), Math.floor(P / sh.area)));
+    pv += n * expPrice(s); T -= n * sh.time; P -= n * sh.area;
+  });
+  v += pv * 0.8 + P * 0.4;                               // 使い切れない紙も、売れば少しはお金になる
+  TOOL_KEYS.forEach(function (k) { v += Math.min(it[k], 2) * 100; });
+  v += it.pencil * 60;
+  return v;
+}
+function cloneIt(it) { var o = {}; for (var k in it) o[k] = it[k]; return o; }
+function applyB(it, b, sign) { for (var k in b) { if (!b[k]) continue; it[k] += sign * (k === 'paper' ? b[k] * SHEET : b[k]); } }
+function canPay(it, b) { for (var k in b) { if (!b[k]) continue; var have = k === 'paper' ? sheets(it) : it[k]; if (have < b[k]) return false; } return true; }
+function isEmpty(b) { for (var k in b) if (b[k]) return false; return true; }
+// country が give を出して get を受け取ったときの得
+function gainOf(c, give, get) {
+  var R = remain(), a = cloneIt(c.items);
+  var before = valueOf(a, R);
+  applyB(a, give, -1); applyB(a, get, 1);
+  return valueOf(a, R) - before;
+}
+function bundleText(b) {
+  var parts = [];
+  ['money', 'paper', 'scissors', 'ruler', 'setsq', 'compass', 'pencil'].concat(SHAPE_KEYS).forEach(function (k) {
+    if (!b[k]) return;
+    parts.push(k === 'money' ? fmt$(b[k]) : NAMES[k] + ' ' + b[k] + (UNIT[k] || '個'));
+  });
+  return parts.length ? parts.join('・') : 'なにも';
+}
+function doTrade(a, b, aGives, bGives) {
+  applyB(a.items, aGives, -1); applyB(a.items, bGives, 1);
+  applyB(b.items, bGives, -1); applyB(b.items, aGives, 1);
+  syncLines(a); syncLines(b);
+  a.deals++; b.deals++;
+  dirty = true;
+}
+
+/* ---------- 国連の買い取り ---------- */
+function sell(c, s, n) {
+  n = Math.min(n, c.items[s]);
+  if (n <= 0) return 0;
+  var got = n * G.price[s];
+  c.items[s] -= n; c.items.money += got; c.sold += got;
+  G.period[s] += n; G.total[s] += n;
+  dirty = true;
+  return got;
+}
+
+/* ============================================================
+   時間を進める
+   ============================================================ */
+function step(dt) {
+  if (G.over) return;
+  G.t = Math.min(GAME_MIN, G.t + dt);
+  G.countries.forEach(function (c) { produce(c, dt); });
+  events();
+  if (G.t >= GAME_MIN) endGame();
+}
+function produce(c, dt) {
+  var it = c.items;
+  c.lines.forEach(function (ln) {
+    if (!c.isPlayer && !ln.busy) ln.shape = cpuChoose(c);
+    if (!ln.shape) { ln.why = ''; return; }
+    var sh = SHAPES[ln.shape];
+    if (!ln.busy) {
+      if (!hasTools(it, ln.shape)) { ln.why = missing(it, ln.shape).join('・') + 'がない'; return; }
+      if (it.paper < sh.area) { ln.why = '紙が足りない'; return; }
+      it.paper -= sh.area; ln.busy = true; ln.prog = 0; ln.why = '';
+      if (c.isPlayer) dirty = true;
+    }
+    ln.prog += dt;
+    if (ln.prog >= sh.time) {
+      it[ln.shape]++; ln.busy = false; ln.prog = 0;
+      if (!c.isPlayer) sell(c, ln.shape, it[ln.shape]);
+      else dirty = true;
+    }
+  });
+}
+function cpuChoose(c) {
+  var it = c.items, best = null, bv = -1;
+  SHAPE_KEYS.forEach(function (s) {
+    if (!hasTools(it, s) || it.paper < SHAPES[s].area) return;
+    // 紙が少ないときは「紙あたり」、多いときは「時間あたり」で選ぶ
+    var paperRich = it.paper / SHAPES[s].area > c.items.pencil * remain() / SHAPES[s].time;
+    var v = paperRich ? G.price[s] / SHAPES[s].time : G.price[s] / SHAPES[s].area;
+    if (v > bv) { bv = v; best = s; }
+  });
+  return best;
+}
+function events() {
+  // 国連からの寄付（途上国にハサミ）
+  if (!G.donated && G.t >= 12) {
+    G.donated = true;
+    var ds = G.countries.filter(function (c) { return c.type === 'D'; });
+    ds.forEach(function (c) { c.items.scissors += 1; });
+    addNews('un', '国連：「' + ds.map(function (c) { return c.name; }).join('と') + 'に、ハサミを1つずつ寄付します。」');
+    if (G.me.type === 'D') toast('国連からハサミが寄付されました');
+    dirty = true;
+  }
+  // 国連による買い取り価格の見直し（5分ごと）
+  if (G.t >= G.nextReview && G.nextReview < GAME_MIN) {
+    var changed = [];
+    SHAPE_KEYS.forEach(function (s) {
+      var sh = SHAPES[s];
+      if (sh.drop && G.period[s] >= sh.limit && G.price[s] > sh.floor) {
+        var old = G.price[s];
+        G.price[s] = Math.max(sh.floor, old - sh.drop);
+        G.prev[s] = old;
+        changed.push(sh.name + ' ' + fmt$(old) + '→' + fmt$(G.price[s]));
+      }
+      G.period[s] = 0;
+    });
+    if (changed.length) {
+      addNews('warn', '国連：「たくさん作られて余っているので、買い取り価格を下げます。」 ' + changed.join('、'));
+      toast('買い取り価格が下がりました');
+    }
+    G.nextReview += 5;
+    dirty = true;
+  }
+  if (G.t >= 30 && !G.warned[30]) { G.warned[30] = 1; addNews('un', '国連：「残り10分です。」'); }
+  if (G.t >= 37 && !G.warned[37]) { G.warned[37] = 1; addNews('un', '国連：「残り3分。図形は売るまでお金になりません。」'); toast('残り3分'); }
+  // CPU どうしの取引
+  while (G.t >= G.nextCpuTrade) { cpuTradeRound(); G.nextCpuTrade += 0.8 + rnd() * 0.6; }
+  // CPU からあなたへの提案
+  if (G.t >= G.nextOffer) { cpuOfferToMe(); G.nextOffer += 2.2 + rnd() * 1.6; }
+  // 期限切れの提案
+  var n0 = G.offers.length;
+  G.offers = G.offers.filter(function (o) { return o.until > G.t; });
+  if (G.offers.length !== n0) dirty = true;
+}
+
+/* ---------- CPU の交渉 ---------- */
+var CANDIDATES = [{ paper: 1 }, { paper: 2 }, { paper: 3 }, { paper: 5 }, { scissors: 1 }, { ruler: 1 }, { setsq: 1 }, { compass: 1 }, { pencil: 1 }];
+function bestSale(seller, buyer, maxPrice, share) {
+  // seller が品物を出し、buyer がお金を払う取引で、いちばん得の大きいものを探す
+  var best = null;
+  CANDIDATES.forEach(function (b) {
+    if (!canPay(seller.items, b)) return;
+    var loss = -gainOf(seller, b, {});
+    var gain = gainOf(buyer, {}, b);
+    var surplus = gain - loss;
+    if (surplus < 400) return;
+    var price = r100(loss + surplus * share);
+    price = Math.min(price, f100(maxPrice), f100(gain - 100));
+    if (price < loss + 100) return;
+    var score = surplus - Math.max(0, (loss + surplus * share) - price); // 払えない分はへらす
+    if (!best || score > best.score) best = { bundle: b, price: price, score: score, loss: loss, gain: gain };
+  });
+  return best;
+}
+function cpuTradeRound() {
+  var cpus = G.countries.filter(function (c) { return !c.isPlayer; });
+  var best = null;
+  for (var i = 0; i < 4; i++) {
+    var s = pick(cpus), b = pick(cpus);
+    if (s === b) continue;
+    var d = bestSale(s, b, b.items.money, s.share);
+    if (d && (!best || d.score > best.score)) best = { s: s, b: b, d: d };
+  }
+  if (!best) return;
+  doTrade(best.s, best.b, best.d.bundle, { money: best.d.price });
+  addNews('', best.b.name + 'が' + best.s.name + 'から ' + bundleText(best.d.bundle) + ' を ' + fmt$(best.d.price) + ' で買いました。');
+}
+function cpuOfferToMe() {
+  if (G.offers.length >= 3 || remain() < 2) return;
+  var me = G.me;
+  var cpus = shuffle(G.countries.filter(function (c) { return !c.isPlayer; }));
+  for (var i = 0; i < cpus.length; i++) {
+    var c = cpus[i];
+    if (G.offers.some(function (o) { return o.from === c; })) continue;
+    var buy = bestSale(me, c, c.items.money, 0.35);   // c があなたから買う
+    var sellD = bestSale(c, me, me.items.money, 0.65); // c があなたに売る
+    var d = null, kind = '';
+    if (buy && (!sellD || buy.score >= sellD.score)) { d = buy; kind = 'buy'; } else if (sellD) { d = sellD; kind = 'sell'; }
+    if (!d) continue;
+    var o = { id: ++G.offerSeq, from: c, until: G.t + 4, myGive: kind === 'buy' ? d.bundle : { money: d.price }, myGet: kind === 'buy' ? { money: d.price } : d.bundle };
+    G.offers.push(o);
+    addNews('', c.name + 'から提案がとどきました。');
+    dirty = true;
+    return;
+  }
+}
+
+/* ============================================================
+   画面
+   ============================================================ */
+var dirty = true;
+function render() {
+  if (!G) return;
+  dirty = false;
+  var me = G.me, it = me.items;
+  $('meChip').innerHTML = '<span class="flag" style="background:' + me.color + '"></span>' + esc(me.name) + (settings.who !== 'random' ? '（' + TYPES[me.type].label + '）' : '') + 'の代表';
+  $('wallet').innerHTML = fmt$(it.money) + clipsHtml(it.money);
+
+  // 机
+  var invKeys = ['paper', 'pencil', 'scissors', 'ruler', 'setsq', 'compass'];
+  var h = '';
+  invKeys.forEach(function (k) {
+    var n = k === 'paper' ? it.paper / SHEET : it[k];
+    var shown = k === 'paper' ? (Math.floor(n * 10 + 1e-9) / 10).toFixed(1) : n;
+    h += '<div class="inv-item' + (n > 0 ? '' : ' zero') + '">' + itemSvg(k) + '<b class="num">' + shown + '</b>' + NAMES[k] +
+      (k === 'paper' && n > 0 ? '<span class="paper-meter" title="使いかけの紙"><i style="width:' + Math.round((it.paper % SHEET) / SHEET * 100) + '%"></i></span>' : '') + '</div>';
+  });
+  SHAPE_KEYS.forEach(function (s) {
+    h += '<div class="inv-item' + (it[s] > 0 ? '' : ' zero') + '">' + shapeSvg(s) + '<b class="num">' + it[s] + '</b>' + SHAPES[s].name + '</div>';
+  });
+  $('inv').innerHTML = h;
+
+  // 生産ライン
+  $('lineSub').textContent = 'シャーペン1本につき1ライン';
+  h = '';
+  if (!me.lines.length) h = '<p class="empty-note">シャーペンがないので作れません。ほかの国から手に入れよう。</p>';
+  me.lines.forEach(function (ln, i) {
+    var st = ln.busy ? SHAPES[ln.shape].name + 'を作っています' : (ln.shape ? (ln.why || '準備中') : '作る図形をえらんでください');
+    h += '<div class="line"><div class="line-top"><span class="who">ライン ' + (i + 1) + '</span><span class="line-status' + (ln.why ? ' bad' : '') + '">' + esc(st) + '</span></div><div class="picks">';
+    SHAPE_KEYS.forEach(function (s) {
+      var ok = hasTools(it, s);
+      var miss = missing(it, s);
+      h += '<button type="button" class="pick" data-line="' + i + '" data-shape="' + s + '" aria-pressed="' + (ln.shape === s) + '"' + (ok || ln.shape === s ? '' : ' disabled') +
+        ' title="' + (ok ? SHAPES[s].name + '：' + SHAPES[s].time + '分で1個' : miss.join('・') + 'が必要') + '">' + shapeSvg(s) + SHAPES[s].name +
+        '<span class="need">' + (ok ? SHAPES[s].time + '分・紙1/' + Math.floor(SHEET / SHAPES[s].area) : miss.join('・') + 'が必要') + '</span></button>';
+    });
+    h += '</div><div class="prog"><i data-prog="' + i + '"></i></div></div>';
+  });
+  $('lines').innerHTML = h;
+
+  // 市場
+  h = '';
+  SHAPE_KEYS.forEach(function (s) {
+    var sh = SHAPES[s], down = G.price[s] < sh.base;
+    h += '<div class="mkt-row">' + shapeSvg(s) + '<div class="mkt-name">' + sh.name + '<small>' + sh.spec + '・' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '</small></div>' +
+      '<div class="price num' + (down ? ' down' : '') + '">' + (down ? '<s>' + fmt$(sh.base) + '</s>' : '') + fmt$(G.price[s]) + '</div>' +
+      '<div class="sell-btns"><button class="btn" type="button" data-sell="' + s + '" data-n="1"' + (it[s] ? '' : ' disabled') + '>1個売る</button>' +
+      '<button class="btn money" type="button" data-sell="' + s + '" data-n="all"' + (it[s] ? '' : ' disabled') + '>全部（' + it[s] + '）</button></div></div>';
+  });
+  $('mkt').innerHTML = h;
+
+  // ほかの国
+  h = '';
+  G.countries.forEach(function (c) {
+    if (c.isPlayer) return;
+    var ci = c.items, tags = '';
+    var pp = Math.floor(ci.paper / SHEET * 10 + 1e-9) / 10;
+    if (pp > 0) tags += '<span class="tag">' + itemSvg('paper') + '紙 ' + pp.toFixed(1) + '</span>';
+    ['pencil', 'scissors', 'ruler', 'setsq', 'compass'].forEach(function (k) { if (ci[k]) tags += '<span class="tag">' + itemSvg(k) + NAMES[k] + (ci[k] > 1 ? '×' + ci[k] : '') + '</span>'; });
+    if (!tags) tags = '<span>机の上はほぼ空っぽ</span>';
+    h += '<div class="cty"><div class="cty-h"><span class="flag" style="background:' + c.color + '"></span>' + esc(c.name) + '</div><div class="cty-items">' + tags + '</div>' +
+      '<button class="btn primary" type="button" data-trade="' + c.id + '">交渉する</button></div>';
+  });
+  $('world').innerHTML = h;
+
+  // 提案
+  h = '';
+  G.offers.forEach(function (o) {
+    var ok = canPay(me.items, o.myGive) && canPay(o.from.items, o.myGet);
+    h += '<div class="offer"><div class="offer-h"><span class="flag" style="background:' + o.from.color + '"></span>' + esc(o.from.name) + 'からの提案<span class="line-status num">あと' + Math.max(0, Math.ceil(o.until - G.t)) + '分</span></div>' +
+      '<div>あなたが出す：<b>' + esc(bundleText(o.myGive)) + '</b><br>あなたがもらう：<b>' + esc(bundleText(o.myGet)) + '</b></div>' +
+      '<div class="row"><button class="btn money" type="button" data-accept="' + o.id + '"' + (ok ? '' : ' disabled') + '>受ける</button><button class="btn" type="button" data-decline="' + o.id + '">ことわる</button>' +
+      '<button class="btn" type="button" data-trade="' + o.from.id + '" data-from-offer="' + o.id + '">条件を変えて交渉</button></div></div>';
+  });
+  $('offers').innerHTML = h;
+
+  // ニュース
+  $('news').innerHTML = G.news.slice(-60).reverse().map(function (n) {
+    return '<li class="' + n.cls + '"><time>' + n.at + '</time><span>' + esc(n.text) + '</span></li>';
+  }).join('');
+}
+function renderClock() {
+  if (!G) return;
+  $('clockT').innerHTML = mmss(G.t) + ' <small>/ 40分</small>';
+  $('clockBar').style.width = (G.t / GAME_MIN * 100) + '%';
+  var bars = document.querySelectorAll('[data-prog]');
+  for (var i = 0; i < bars.length; i++) {
+    var ln = G.me.lines[+bars[i].getAttribute('data-prog')];
+    bars[i].style.width = ln && ln.busy ? Math.min(100, ln.prog / SHAPES[ln.shape].time * 100) + '%' : '0%';
+  }
+  $('pausedBadge').hidden = !(G.paused && !G.over && G.running);
+  $('pauseBtn').textContent = G.paused ? '再開' : '一時停止';
+}
+function addNews(cls, text) { if (!G) return; G.news.push({ cls: cls, text: text, at: Math.floor(G.t) + '分' }); dirty = true; }
+var toastTimer = 0;
+function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600); }
+
+/* ============================================================
+   操作
+   ============================================================ */
+document.addEventListener('click', function (e) {
+  var el = e.target.closest('button');
+  if (!el || !G) return;
+  var d = el.dataset;
+  if (d.shape !== undefined && d.line !== undefined) {
+    var ln = G.me.lines[+d.line];
+    if (!ln) return;
+    ln.shape = ln.shape === d.shape && !ln.busy ? null : d.shape;
+    dirty = true;
+  } else if (d.sell) {
+    var n = d.n === 'all' ? G.me.items[d.sell] : 1;
+    var got = sell(G.me, d.sell, n);
+    if (got) toast(SHAPES[d.sell].name + 'を' + n + '個売って ' + fmt$(got));
+  } else if (d.trade !== undefined) {
+    var o = d.fromOffer ? findOffer(+d.fromOffer) : null;
+    openTrade(G.countries[+d.trade], o);
+  } else if (d.accept) {
+    acceptOffer(+d.accept);
+  } else if (d.decline) {
+    G.offers = G.offers.filter(function (x) { return x.id !== +d.decline; }); dirty = true;
+  }
+});
+function findOffer(id) { for (var i = 0; i < G.offers.length; i++) if (G.offers[i].id === id) return G.offers[i]; return null; }
+function acceptOffer(id) {
+  var o = findOffer(id);
+  if (!o) return;
+  if (!canPay(G.me.items, o.myGive) || !canPay(o.from.items, o.myGet)) { toast('いまは条件がそろいません'); return; }
+  doTrade(G.me, o.from, o.myGive, o.myGet);
+  G.offers = G.offers.filter(function (x) { return x !== o; });
+  addNews('', 'あなたは' + o.from.name + 'と取引：' + bundleText(o.myGive) + ' → ' + bundleText(o.myGet));
+  toast('取引成立！');
+}
+$('pauseBtn').addEventListener('click', function () { if (G && G.running && !G.over) { G.paused = !G.paused; renderClock(); } });
+$('helpBtn').addEventListener('click', function () { openRules(false); });
+document.addEventListener('visibilitychange', function () { if (document.hidden && G && G.running && !G.over) { G.paused = true; renderClock(); } });
+
+/* ---------- モーダル ---------- */
+var modalOpen = null;
+function showModal(html, onBind) {
+  $('modalRoot').innerHTML = '<div class="scrim" role="dialog" aria-modal="true"><div class="modal">' + html + '</div></div>';
+  modalOpen = true;
+  if (onBind) onBind($('modalRoot').firstChild);
+}
+function closeModal() { $('modalRoot').innerHTML = ''; modalOpen = null; }
+
+function rulesHtml() {
+  var cards = SHAPE_KEYS.map(function (s) {
+    var sh = SHAPES[s];
+    return '<div class="rule">' + shapeSvg(s) + '<b>' + sh.name + '</b>' + sh.spec + '<div class="p num">' + fmt$(sh.base) + '</div>' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '<br>' + sh.time + '分で1個・紙1枚から' + Math.floor(SHEET / sh.area) + '個</div>';
+  }).join('');
+  return '<div class="rules">' + cards + '</div>' +
+    '<ul class="facts">' +
+    '<li>8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。</li>' +
+    '<li>図形は「国連の買い取り窓口」に売るとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。</li>' +
+    '<li>シャーペン1本で1つの生産ラインが動きます。道具は使ってもなくなりませんが、紙は使うとなくなります。</li>' +
+    '<li>足りないもの（紙・道具・お金）は、ほかの国と交渉して手に入れます。交渉しているあいだは時計が止まります。</li>' +
+    '<li>国連（先生）は、とちゅうで寄付をしたり、余っている図形の買い取り価格を下げたりします。</li>' +
+    '<li>最後に持っているお金だけが得点です。売っていない図形・紙・道具は数えません。</li></ul>';
+}
+function openRules(isStart) {
+  var wasPaused = G && G.paused;
+  if (G && G.running) G.paused = true;
+  var opts = '';
+  if (isStart) {
+    opts = '<div class="opt"><label id="whoL">あなたの国</label><div class="seg" role="group" aria-labelledby="whoL" id="whoSeg">' +
+      [['random', 'ランダム（おすすめ）'], ['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']].map(function (o) {
+        return '<button type="button" data-who="' + o[0] + '" aria-pressed="' + (settings.who === o[0]) + '">' + o[1] + '</button>';
+      }).join('') + '</div><p class="lead">ランダムにすると、授業と同じように、自分がどんな国なのかは配られた道具でしかわかりません（最後に発表）。</p></div>' +
+      '<div class="opt"><label id="spdL">時間の速さ（ゲームの40分）</label><div class="seg" role="group" aria-labelledby="spdL" id="spdSeg">' +
+      SPEEDS.map(function (s) { return '<button type="button" data-spd="' + s.id + '" aria-pressed="' + (settings.speed === s.id) + '">' + s.label + '</button>'; }).join('') + '</div></div>';
+  }
+  showModal('<div class="modal-body"><h2>貿易ゲーム</h2><p class="lead">紙（資源）と道具（技術）で図形を作り、国連に売ってお金をかせぐゲームです。地理総合の授業で行われる「貿易ゲーム」を、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。</p>' +
+    rulesHtml() + opts + '</div><div class="modal-foot">' +
+    (isStart ? '<button class="btn primary big" type="button" id="startBtn">はじめる</button>' : '<button class="btn primary big" type="button" id="closeBtn">ゲームにもどる</button>') + '</div>',
+    function (root) {
+      root.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.who) { settings.who = b.dataset.who; store('who', settings.who); root.querySelectorAll('[data-who]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
+        if (b.dataset.spd) { settings.speed = b.dataset.spd; store('speed', settings.speed); root.querySelectorAll('[data-spd]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
+        if (b.id === 'startBtn') { closeModal(); newGame(); G.running = true; G.paused = false; render(); }
+        if (b.id === 'closeBtn') { closeModal(); if (G) G.paused = wasPaused; }
+      });
+    });
+}
+
+/* ---------- 交渉の画面 ---------- */
+var TR = null;
+function openTrade(partner, offer) {
+  if (!partner || G.over) return;
+  G.paused = true;
+  TR = { p: partner, give: {}, get: {} };
+  if (offer) { TR.give = cloneIt(offer.myGive); TR.get = cloneIt(offer.myGet); }
+  showModal('<div class="modal-body" id="trBody"></div><div class="modal-foot">' +
+    '<button class="btn" type="button" id="trClose">交渉をやめる</button>' +
+    '<button class="btn" type="button" id="trAsk">いくらなら応じる？</button>' +
+    '<button class="btn primary" type="button" id="trSend">この条件で提案する</button></div>', function (root) {
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.side) {
+        var side = TR[b.dataset.side], k = b.dataset.k, delta = +b.dataset.d;
+        var max = maxFor(b.dataset.side, k);
+        side[k] = Math.max(0, Math.min(max, (side[k] || 0) + delta));
+        drawTrade();
+      }
+      if (b.id === 'trClose') { closeModal(); G.paused = false; TR = null; dirty = true; }
+      if (b.id === 'trAsk') askPrice();
+      if (b.id === 'trSend') propose();
+    });
+    drawTrade();
+  });
+}
+function maxFor(side, k) {
+  var it = side === 'give' ? G.me.items : TR.p.items;
+  if (k === 'money') return side === 'give' ? it.money : 99900;   // 相手のお金は見えない
+  return k === 'paper' ? sheets(it) : it[k];
+}
+function stepRow(side, k) {
+  var it = side === 'give' ? G.me.items : TR.p.items;
+  var have = k === 'money' ? (side === 'give' ? fmt$(it.money) + 'まで' : '相手のお金は見えない') : (k === 'paper' ? sheets(it) : it[k]) + (UNIT[k] || '個') + 'ある';
+  var v = TR[side][k] || 0;
+  var unit = k === 'money' ? 100 : 1;
+  var ctl = k === 'money'
+    ? '<button type="button" class="wide" data-side="' + side + '" data-k="money" data-d="-1000" aria-label="1000ドル減らす">−1000</button><button type="button" data-side="' + side + '" data-k="money" data-d="-100" aria-label="100ドル減らす">−</button><output class="num">' + fmt$(v) + '</output><button type="button" data-side="' + side + '" data-k="money" data-d="100" aria-label="100ドル増やす">＋</button><button type="button" class="wide" data-side="' + side + '" data-k="money" data-d="1000" aria-label="1000ドル増やす">＋1000</button>'
+    : '<button type="button" data-side="' + side + '" data-k="' + k + '" data-d="-' + unit + '" aria-label="減らす">−</button><output class="num">' + v + '</output><button type="button" data-side="' + side + '" data-k="' + k + '" data-d="' + unit + '" aria-label="増やす">＋</button>';
+  return '<div class="step">' + itemSvg(k) + '<div>' + NAMES[k] + '<div class="have">' + have + '</div></div><div class="ctl">' + ctl + '</div></div>';
+}
+function drawTrade(reply) {
+  var p = TR.p, keys = ['money', 'paper', 'pencil', 'scissors', 'ruler', 'setsq', 'compass'].concat(SHAPE_KEYS);
+  var giveRows = '', getRows = '';
+  keys.forEach(function (k) {
+    var mine = k === 'money' || (k === 'paper' ? sheets(G.me.items) : G.me.items[k]) > 0 || TR.give[k];
+    var theirs = k === 'money' || (k === 'paper' ? sheets(p.items) : p.items[k]) > 0 || TR.get[k];
+    if (SHAPE_KEYS.indexOf(k) >= 0 && !G.me.items[k] && !TR.give[k]) mine = false;
+    if (SHAPE_KEYS.indexOf(k) >= 0) theirs = false;   // CPU はすぐ国連に売るので、図形は持っていない
+    if (mine) giveRows += stepRow('give', k);
+    if (theirs) getRows += stepRow('get', k);
+  });
+  var r = reply || TR.reply || { cls: '', text: '何と何を交換しますか？' };
+  TR.reply = r;
+  document.getElementById('trBody').innerHTML =
+    '<h2><span class="flag" style="background:' + p.color + ';width:26px;height:18px;margin-right:8px;vertical-align:middle"></span>' + esc(p.name) + 'と交渉</h2>' +
+    '<p class="lead">交渉中は時計が止まっています。紙は1枚単位で取引します（使いかけの紙は渡せません）。</p>' +
+    '<div class="trade-cols"><div class="side"><h3>あなたが渡すもの</h3>' + giveRows + '</div><div class="side"><h3>' + esc(p.name) + 'からもらうもの</h3>' + getRows + '</div></div>' +
+    '<div class="reply ' + r.cls + '"><span class="flag" style="background:' + p.color + '"></span><span>' + esc(p.name) + '：' + esc(r.text) + '</span></div>';
+}
+function propose() {
+  var p = TR.p, give = TR.give, get = TR.get;
+  if (isEmpty(give) && isEmpty(get)) return drawTrade({ cls: 'ng', text: '「何を交換するか決めてから話しましょう。」' });
+  if (!canPay(G.me.items, give)) return drawTrade({ cls: 'ng', text: '「あなた、それを持っていませんよね？」' });
+  if (!canPay(p.items, get)) {
+    if (get.money > p.items.money) return drawTrade({ cls: 'ng', text: '「そんなにお金は持っていません。」' });
+    return drawTrade({ cls: 'ng', text: '「それは持っていません。」' });
+  }
+  var g = gainOf(p, get, give);
+  var gift = isEmpty(get);
+  if ((gift && g >= 0) || g >= p.greed) {
+    doTrade(G.me, p, give, get);
+    addNews('', 'あなたは' + p.name + 'と取引：' + bundleText(give) + ' → ' + bundleText(get));
+    TR.give = {}; TR.get = {};
+    drawTrade({ cls: 'ok', text: gift ? '「ありがとうございます！大切に使います。」' : pick(['「いいでしょう、取引成立です。」', '「決まりですね。よろしくお願いします。」', '「ちょうど欲しかったところです。成立！」']) });
+    return;
+  }
+  var t;
+  if (g >= p.greed - 700) t = pick(['「うーん…あと少し条件がよければ応じます。」', '「おしいですね。もうひと声。」']);
+  else if (g >= -1500) t = pick(['「それでは私たちが損をしてしまいます。」', '「その条件では受けられません。」']);
+  else t = pick(['「話になりません！」', '「さすがにそれは無理です。」']);
+  drawTrade({ cls: 'ng', text: t });
+}
+function askPrice() {
+  var p = TR.p, give = TR.give, get = TR.get;
+  if (isEmpty(give) && isEmpty(get)) return drawTrade({ cls: '', text: '「まず、何がほしいのか（何を売りたいのか）を決めてください。」' });
+  if (!canPay(G.me.items, give)) return drawTrade({ cls: 'ng', text: '「あなた、それを持っていませんよね？」' });
+  var nonMoneyGet = cloneIt(get); delete nonMoneyGet.money;
+  if (!canPay(p.items, nonMoneyGet)) return drawTrade({ cls: 'ng', text: '「それは持っていません。」' });
+  var g = gainOf(p, get, give);
+  var diff = g - p.greed;
+  if (diff < 0) {
+    // あなたがもっと払う必要がある。CPU は少し上乗せして言う
+    var need = c100(-diff * 1.25 + 100);
+    var fromGet = Math.min(get.money || 0, need);
+    var add = need - fromGet;
+    if ((give.money || 0) + add > G.me.items.money) return drawTrade({ cls: 'ng', text: '「あと ' + fmt$(need) + ' ほしいところですが…あなたのお金では足りないようですね。ほかのものを足してみては？」' });
+    get.money = (get.money || 0) - fromGet; give.money = (give.money || 0) + add;
+    return drawTrade({ cls: '', text: '「' + (add ? 'あなたが ' + fmt$(give.money) + ' 払うなら' : 'お金を ' + fmt$(get.money) + ' にしてくれるなら') + '、応じましょう。」（値切れるかも？）' });
+  }
+  var extra = f100(diff * 0.5);
+  if (extra < 100) return drawTrade({ cls: 'ok', text: '「その条件でけっこうです。」' });
+  var fromGive = Math.min(give.money || 0, extra);
+  var more = Math.min(extra - fromGive, f100(p.items.money - (get.money || 0)));
+  give.money = (give.money || 0) - fromGive; get.money = (get.money || 0) + Math.max(0, more);
+  drawTrade({ cls: 'ok', text: '「' + (get.money ? fmt$(get.money) + ' 払いましょう' : 'お金は ' + fmt$(give.money) + ' でいいですよ') + '。」（もっと強気にいけるかも？）' });
+}
+
+/* ---------- 結果 ---------- */
+function endGame() {
+  if (G.over) return;
+  G.over = true; G.running = false;
+  addNews('un', '国連：「時間です！ 図形を作るのをやめてください。」');
+  dirty = true;
+  render(); renderClock();
+  var list = G.countries.slice().sort(function (a, b) { return b.items.money - a.items.money; });
+  var myRank = list.indexOf(G.me) + 1;
+  var rows = list.map(function (c, i) {
+    var ratio = c.items.money / c.startMoney;
+    return '<tr class="' + (c.isPlayer ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td><span class="flag" style="background:' + c.color + '"></span> ' + esc(c.name) + (c.isPlayer ? '（あなた）' : '') + '</td><td>' + TYPES[c.type].label + '</td><td class="r">' + fmt$(c.startMoney) + '</td><td class="r">' + fmt$(c.items.money) + '</td><td class="r">×' + ratio.toFixed(1) + '</td></tr>';
+  }).join('');
+  var avg = {}, mx = 1;
+  ['A', 'B', 'C', 'D'].forEach(function (t) {
+    var cs = G.countries.filter(function (c) { return c.type === t; });
+    avg[t] = cs.reduce(function (s, c) { return s + c.items.money; }, 0) / cs.length;
+    mx = Math.max(mx, avg[t]);
+  });
+  var bars = ['A', 'B', 'C', 'D'].map(function (t) {
+    return '<div class="tb"><span>' + TYPES[t].label + '</span><div class="bar-out"><i style="width:' + (avg[t] / mx * 100).toFixed(1) + '%"></i></div><span class="v">' + fmt$(avg[t]) + '</span></div>';
+  }).join('');
+  var unsold = SHAPE_KEYS.reduce(function (s, k) { return s + G.me.items[k]; }, 0);
+  showModal('<div class="modal-body"><h2>ゲーム終了</h2>' +
+    '<div class="reveal">' + (settings.who === 'random' ? 'あなたの国「' + esc(G.me.name) + '」は <b>' + TYPES[G.me.type].label + '</b> でした（' + TYPES[G.me.type].real + '）。' : 'あなたは' + TYPES[G.me.type].label + '「' + esc(G.me.name) + '」でした。') +
+    '<br>結果は8か国中 <b>' + myRank + '位</b>、' + fmt$(G.me.startMoney) + ' → <b>' + fmt$(G.me.items.money) + '</b>' + (unsold ? '（売らずに残った図形 ' + unsold + '個はお金になりませんでした）' : '') + '</div>' +
+    '<h3>順位</h3><div class="rank-wrap"><table class="rank"><thead><tr><th>位</th><th>国</th><th>タイプ</th><th class="r">はじめ</th><th class="r">おわり</th><th class="r">倍率</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<h3>国のタイプごとの平均</h3><div class="typebars">' + bars + '</div>' +
+    '<h3>ふりかえり</h3><ol class="qs">' +
+    '<li>いちばんお金をかせいだのはどのタイプの国でしたか。はじめに持っていた何が有利にはたらきましたか。</li>' +
+    '<li>産油国は紙（資源）をたくさん持っていました。資源を売るだけの国と、道具（技術）で製品にして売る国では、かせぎ方にどんな差が出ましたか。</li>' +
+    '<li>国連から途上国へのハサミの寄付は役に立ちましたか。ハサミだけでは足りなかったものは何でしょう。</li>' +
+    '<li>円や正三角形の買い取り価格が下がったとき、困ったのはどの国でしたか。一つの商品にたよる経済（モノカルチャー経済）と比べてみよう。</li>' +
+    '<li>現実の世界で、紙・道具・シャーペン・国連はそれぞれ何にあたるでしょうか。公正な貿易（フェアトレード）にするには、どんなルールがあるとよいでしょう。</li></ol>' +
+    '</div><div class="modal-foot"><button class="btn" type="button" id="seeBoard">盤面を見る</button><button class="btn primary big" type="button" id="againBtn">もう一度あそぶ</button></div>',
+    function (root) {
+      root.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.id === 'againBtn') { closeModal(); openRules(true); }
+        if (b.id === 'seeBoard') closeModal();
+      });
+    });
+}
+
+/* ============================================================
+   ループ
+   ============================================================ */
+var last = 0;
+function frame(ts) {
+  var dtReal = last ? Math.min(0.25, (ts - last) / 1000) : 0;
+  last = ts;
+  if (G && G.running && !G.paused && !G.over) {
+    var dt = dtReal / speedSec();
+    while (dt > 0) { var s = Math.min(0.02, dt); step(s); dt -= s; }
+  }
+  if (dirty && !modalOpen) render();
+  else if (dirty && G && G.over) render();
+  renderClock();
+  requestAnimationFrame(frame);
+}
+
+// テスト用：?debug で window.__trade（ゲーム時間を一気に進める）
+if (/[?&]debug/.test(location.search)) {
+  window.__trade = {
+    get G() { return G; },
+    start: function (who) { settings.who = who || 'random'; newGame(); G.running = true; closeModal(); render(); },
+    run: function (min) { var end = Math.min(GAME_MIN, G.t + min); while (G.t < end - 1e-9 && !G.over) step(Math.min(0.02, end - G.t)); render(); },
+    gainOf: gainOf, valueOf: valueOf
+  };
+}
+
+newGame();
+G.running = false;
+render();
+openRules(true);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
