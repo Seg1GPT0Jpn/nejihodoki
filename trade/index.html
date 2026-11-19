@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>貿易ゲーム</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0b0c0f">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="貿易ゲーム">
 <meta name="description" content="資源と技術で製品をつくって輸出する、地理総合の「貿易ゲーム」。8つの国に分かれ、交渉しながら40分でお金をかせぐ。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,7 +71,7 @@ h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance;font-weight:600}
 .wallet .clips{display:flex;gap:3px;align-items:center;font-size:11px;color:var(--text-3);font-family:var(--f-mono)}
 .wallet.bump .amt{color:var(--up)}
 .hud-btns{display:flex;gap:6px}
-.hbtn{border:1px solid var(--line-2);background:transparent;color:var(--text-2);border-radius:var(--r-sm);padding:6px 12px;font-size:12px;white-space:nowrap;transition:border-color .12s var(--ease),color .12s var(--ease)}
+.hbtn{text-decoration:none;display:inline-block;border:1px solid var(--line-2);background:transparent;color:var(--text-2);border-radius:var(--r-sm);padding:6px 12px;font-size:12px;white-space:nowrap;transition:border-color .12s var(--ease),color .12s var(--ease)}
 .hbtn:hover{border-color:var(--line-3);color:var(--text)}
 .hbtn[aria-pressed="true"]{color:var(--text);border-color:var(--accent)}
 
@@ -330,6 +338,12 @@ details.how p{margin:6px 0 0;color:var(--text-2)}
   .slot{min-height:64px;padding:6px}
   .slot .n{font-size:15px}
 }
+@media (pointer:coarse),(max-width:600px){
+  .hbtn,.seg button,.feel button{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+  .step .ctl button{width:44px;height:44px}
+  .step .ctl button.wide{height:44px}
+  .btn{min-height:44px}
+}
 @media (prefers-reduced-transparency:reduce){.hud,.modal,.toast{background:var(--s2);backdrop-filter:none;-webkit-backdrop-filter:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -347,6 +361,7 @@ details.how p{margin:6px 0 0;color:var(--text-2)}
     <span class="paused" id="pausedBadge" hidden>一時停止中</span>
     <div class="wallet" id="wallet" title="あなたの国のお金"><span class="amt num" id="walletAmt">$0</span><span class="clips" id="walletClips"></span></div>
     <div class="hud-btns">
+      <a class="hbtn" id="homeBtn" href="../" title="ゲーム一覧へ戻る">一覧へ</a>
       <button class="hbtn" id="soundBtn" type="button" aria-pressed="true">音</button>
       <button class="hbtn" id="pauseBtn" type="button">一時停止</button>
       <button class="hbtn" id="helpBtn" type="button">ルール</button>
@@ -1173,7 +1188,7 @@ function openRules(isStart) {
   if (isStart) {
     var seg = function (id, label, items, cur, key) {
       return '<div class="opt"><label id="' + id + '">' + label + '</label><div class="seg" role="group" aria-labelledby="' + id + '">' +
-        items.map(function (o) { return '<button type="button" data-' + key + '="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+        items.map(function (o) { return '<button type="button" class="sub" data-' + key + '="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
     };
     opts = seg('viewL', '表示', [['real', THEMES.real.label], ['class', THEMES.class.label]], settings.view, 'view') + '<p class="lead">ルールと数字は同じです。「授業の紙と道具」にすると、紙・ハサミ・図形で遊べます。</p></div>' +
       '<div class="opt"><label for="nameIn">あなたの国の名前</label><input id="nameIn" class="name-in" type="text" maxlength="10" autocomplete="off" spellcheck="false" placeholder="例：ひまわり国（空欄ならおまかせ）" value="' + esc(settings.name) + '">' +
@@ -1223,7 +1238,7 @@ function openTrade(partner, offer) {
   TR = { p: partner, give: {}, get: {}, reply: null, no: ++G.contractNo };
   if (offer) { TR.give = cloneIt(offer.myGive); TR.get = cloneIt(offer.myGet); }
   showModal('<div class="modal-body" id="trBody"></div><div class="modal-foot">' +
-    '<button class="btn" type="button" id="trClose">交渉をやめる</button>' +
+    '<button class="btn sub" type="button" id="trClose">交渉をやめる</button>' +
     '<button class="btn" type="button" id="trAsk">いくらなら応じる？</button>' +
     '<button class="btn primary" type="button" id="trSend">この条件で調印をもとめる</button></div>', function (root) {
     root.addEventListener('click', function (e) {
@@ -1252,7 +1267,7 @@ function stepRow(side, k) {
   var it = side === 'give' ? G.me.items : TR.p.items;
   var have = k === 'money' ? (side === 'give' ? fmt$(it.money) + 'まで' : '相手のお金は見えない') : (k === 'paper' ? sheets(it) : it[k]) + unitOf(k) + 'ある';
   var v = TR[side][k] || 0;
-  var b = function (d, label, aria, wide) { return '<button type="button"' + (wide ? ' class="wide"' : '') + ' data-side="' + side + '" data-k="' + k + '" data-d="' + d + '" aria-label="' + aria + '">' + label + '</button>'; };
+  var b = function (d, label, aria, wide) { return '<button type="button" class="sub' + (wide ? ' wide' : '') + '" data-side="' + side + '" data-k="' + k + '" data-d="' + d + '" aria-label="' + aria + '">' + label + '</button>'; };
   var ctl = k === 'money'
     ? b(-1000, '−1000', '1000ドル減らす', 1) + b(-100, '−', '100ドル減らす') + '<output class="num">' + fmt$(v) + '</output>' + b(100, '＋', '100ドル増やす') + b(1000, '＋1000', '1000ドル増やす', 1)
     : b(-1, '−', '減らす') + '<output class="num">' + v + '</output>' + b(1, '＋', '増やす');
@@ -1337,6 +1352,22 @@ function askPrice() {
 /* ============================================================
    ふりかえり（4つのステップ）
    ============================================================ */
+// 記録（ハブのカードと実績に使う。この端末だけ）
+function saveResult(rank) {
+  var sv = {};
+  try { sv = JSON.parse(localStorage.getItem('kusoge.trade.save') || '{}') || {}; } catch (e) { sv = {}; }
+  var me = G.me, x10 = Math.round(me.items.money / me.startMoney * 10);
+  sv.v = 1;
+  sv.plays = (sv.plays || 0) + 1;
+  sv.best = Math.max(sv.best || 0, me.items.money);
+  sv.bestX = Math.max(sv.bestX || 0, x10);
+  sv.types = sv.types || {}; sv.types[me.type] = (sv.types[me.type] || 0) + 1;
+  sv.typesN = Object.keys(sv.types).length;
+  sv.deals = (sv.deals || 0) + G.myDeals;
+  if (me.type === 'D' && rank <= 4) sv.dTop = (sv.dTop || 0) + 1;
+  if (rank === 1) sv.wins = (sv.wins || 0) + 1;
+  try { localStorage.setItem('kusoge.trade.save', JSON.stringify(sv)); } catch (e) {}
+}
 function gini(xs) {
   var a = xs.slice().sort(function (p, q) { return p - q; }), n = a.length, s = 0, w = 0;
   a.forEach(function (x, i) { s += x; w += (2 * (i + 1) - n - 1) * x; });
@@ -1390,6 +1421,7 @@ function endGame() {
   var bestType = ['A', 'B', 'C', 'D'].sort(function (a, b) { return avg[b] - avg[a]; })[0];
   var unsold = SHAPE_KEYS.reduce(function (s, k) { return s + G.me.items[k]; }, 0);
   var g0 = gini(G.countries.map(function (c) { return c.startMoney; })), g1 = gini(G.countries.map(function (c) { return c.items.money; }));
+  saveResult(myRank);
   var growthBest = G.countries.slice().sort(function (a, b) { return b.items.money / b.startMoney - a.items.money / a.startMoney; })[0];
   var real = TH.id === 'real';
 
@@ -1399,7 +1431,7 @@ function endGame() {
     '<div class="reveal">' + (settings.who === 'random' ? 'あなたの国「' + esc(G.me.name) + '」は <b>' + TYPES[G.me.type].label + '</b> でした（' + TYPES[G.me.type].real + '）。' : 'あなたは' + TYPES[G.me.type].label + '「' + esc(G.me.name) + '」でした。') +
     '<br>8か国中 <b>' + myRank + '位</b>、' + fmt$(G.me.startMoney) + ' → <b>' + fmt$(G.me.items.money) + '</b>（×' + (G.me.items.money / G.me.startMoney).toFixed(1) + '）' + (unsold ? '<br>売らずに残った' + TH.product + ' ' + unsold + '個は、お金になりませんでした。' : '') + '</div>' +
     '<h3>ゲーム中、どんな気持ちになりましたか（いくつでも）</h3><div class="feel">' +
-    ['楽しかった', 'くやしかった', '不公平だと思った', 'あせった', '取引がうまくいった', '相手に足元を見られた', 'もっと交渉したかった', '何をすればいいかわからなかった'].map(function (f) { return '<button type="button" data-feel="' + f + '" aria-pressed="' + !!G.feel[f] + '">' + f + '</button>'; }).join('') + '</div>' +
+    ['楽しかった', 'くやしかった', '不公平だと思った', 'あせった', '取引がうまくいった', '相手に足元を見られた', 'もっと交渉したかった', '何をすればいいかわからなかった'].map(function (f) { return '<button type="button" class="sub" data-feel="' + f + '" aria-pressed="' + !!G.feel[f] + '">' + f + '</button>'; }).join('') + '</div>' +
     '<h3>あなたの国に起きたこと</h3><ul class="moments">' + (G.moments.length ? G.moments.map(function (m) { return '<li><time class="num">' + m.at + '分</time><span>' + esc(m.text) + '</span></li>'; }).join('') : '<li><time>—</time><span>ほかの国との取引はありませんでした。</span></li>') + '</ul>' +
     '<p class="lead">取引 ' + G.myDeals + '回・断られた提案 ' + G.rejects + '回・輸出で得たお金 ' + fmt$(G.mySales) + '</p>');
   // 2 何が起きた
@@ -1447,7 +1479,7 @@ function endGame() {
     root.querySelector('#againBtn').hidden = cur !== pages.length - 1;
   };
   G.reopen = function () {
-    showModal('<div class="modal-body"></div><div class="modal-foot"><button class="btn" type="button" id="seeBoard">盤面を見る</button><span class="grow"></span>' +
+    showModal('<div class="modal-body"></div><div class="modal-foot"><button class="btn sub" type="button" id="seeBoard">盤面を見る</button><span class="grow"></span>' +
       '<button class="btn" type="button" id="dbBack">もどる</button><button class="btn primary big" type="button" id="dbNext">つぎへ</button><button class="btn gold big" type="button" id="againBtn" hidden>もう一度あそぶ</button></div>',
       function (root) {
         draw(root);
@@ -1486,7 +1518,9 @@ if (/[?&]debug/.test(location.search)) {
     get G() { return G; },
     start: function (who) { settings.who = who || 'random'; newGame(); G.running = true; closeModal(); render(); renderMap(); },
     run: function (min, keepCards) { var end = Math.min(GAME_MIN, G.t + min); while (G.t < end - 1e-9 && !G.over) step(Math.min(0.02, end - G.t)); if (!keepCards) G.cards = []; render(); renderMap(); },
-    gainOf: gainOf, valueOf: valueOf
+    gainOf: gainOf, valueOf: valueOf,
+    thumbScene: function () { settings.name = 'さくら共和国'; newGame(); G.running = true; closeModal(); G.me.lines.forEach(function (l, i) { l.shape = i ? 'tri' : 'circle'; });
+      var end = 9.4; while (G.t < end) step(0.02); G.cards = []; G.paused = true; render(); renderMap(); document.querySelector('.hud').style.display = 'none'; var m = $('map').getBoundingClientRect(); window.scrollTo(0, window.scrollY + m.top + m.height / 2 - innerHeight / 2); }
   };
 }
 

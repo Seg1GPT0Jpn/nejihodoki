@@ -98,6 +98,7 @@ const FIX = {
   'td-save.json': { has: ['td.first', 'td.m1'], not: ['td.m4', 'td.all', 'td.stars24', 'td.boss', 'td.w30', 'td.k1000', 'td.s10k'] },
   'physics-save.json': { has: ['physics.first', 'physics.l1', 'physics.w1'], not: ['physics.all', 'physics.stars144', 'physics.gears50', 'physics.par20', 'physics.make1', 'physics.share1'] },
   'minigolf-save.json': { has: ['minigolf.first', 'minigolf.h1', 'minigolf.r1', 'minigolf.ace', 'minigolf.under1'], not: ['minigolf.all', 'minigolf.ace10', 'minigolf.under15', 'minigolf.daily3'] },
+  'trade-save.json': { has: ['trade.first', 'trade.p1', 'trade.deal', 'trade.x10'], not: ['trade.deal20', 'trade.types', 'trade.dtop'] },
   'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
 };
 test('retroactive: fixture saves for every game unlock exactly what the records show, once, marked as retroactive', () => {

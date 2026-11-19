@@ -26,6 +26,7 @@ const RECIPES = {
   td: [{ query: '?debug', eval: 'window.__td && __td.thumbScene()' }],
   physics: [{ query: '?debug', eval: 'window.__physics && __physics.thumbScene()' }],
   minigolf: [{ query: '?debug', eval: 'window.__minigolf && __minigolf.thumbScene()' }],
+  trade: [{ query: '?debug&type=A', eval: 'window.__trade && __trade.thumbScene()' }],
 };
 const VP = { name: 'thumb', width: 480, height: 320, dpr: 1.5, safe: {} };
 

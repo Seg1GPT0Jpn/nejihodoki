@@ -6,7 +6,8 @@ const { newSession } = require('../lib/browser');
 const { jpScan } = require('../lib/layout');
 
 function plan(opts) {
-  return opts.pages(pages()).map(p => ({ page: p.id, vp: 'ip12', lang: 'en', run: (env, t) => one(env, t, p) }));
+  // jaOnly（レジストリ）：まだ日本語だけのページ（trade）は英語の確認をしない
+  return opts.pages(pages()).filter(p => !p.jaOnly).map(p => ({ page: p.id, vp: 'ip12', lang: 'en', run: (env, t) => one(env, t, p) }));
 }
 async function one(env, t, p) {
   const s = await newSession(env, { vp: viewports.get('ip12'), lang: 'en' });

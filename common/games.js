@@ -574,6 +574,35 @@
         'kusoge.minigolf.save': { fields: { c: { each: { fields: { b: 'minPos', r: 'max', h: { each: 'minPos' } } } }, under: 'max', done: 'max', stats: { each: 'max' }, tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'trade', order: 18, path: 'trade/', added: '2026-11-19',
+      title: { ja: '貿易ゲーム', en: 'Trade Game' },
+      short: { ja: '貿易ゲーム', en: 'Trade Game' },
+      desc: { ja: '8つの国に分かれて、資源と技術で製品をつくり世界市場に輸出する。国のタイプはくじで決まる。交渉・値下がり・援助を通して、豊かな国と貧しい国の差を考える地理総合の教材。', en: 'Eight countries turn resources and technology into products for the world market. Your country type is drawn by lot. Negotiate, ride out price drops and aid, and think about why rich and poor countries drift apart — a geography class simulation.' },
+      label: { ja: '貿易シミュレーション', en: 'Trade simulation' },
+      genres: ['simulation'], tags: ['2d', 'education', 'negotiation', 'economy'],
+      keywords: { ja: ['貿易', '貿易ゲーム', '地理', '地理総合', '南北問題', 'フェアトレード', 'ODA', '交渉', '経済', '授業'], en: ['trade', 'trading game', 'geography', 'economy', 'fair trade', 'aid', 'negotiation', 'class', 'simulation'] },
+      icon: 'img/icons/trade.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#0f1a2e"/><circle cx="36" cy="36" r="13" fill="#0b0c0f" stroke="#4589ff" stroke-width="2"/><circle cx="36" cy="36" r="21" fill="none" stroke="#4589ff" stroke-opacity=".35" stroke-dasharray="2 3"/><path d="M12 18Q36 4 60 18M12 54Q36 68 60 54" fill="none" stroke="#78a9ff" stroke-width="1.6"/><circle cx="12" cy="18" r="5" fill="#d2a106"/><circle cx="60" cy="18" r="5" fill="#ff7eb6"/><circle cx="12" cy="54" r="5" fill="#08bdba"/><circle cx="60" cy="54" r="5" fill="#a56eff"/><path d="M31 39l4-6 3 3 4-6" fill="none" stroke="#f2f3f5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>', iconBg: '#0f1a2e',
+      thumb: 'img/thumbs/trade.webp', thumb2x: 'img/thumbs/trade@2x.webp',
+      tech: '2d',
+      // no ranking: the country type is drawn by lot, so comparing money between players would not be fair.
+      // pause: true — the 40-minute clock runs in real time and stops while hidden, negotiating or paused
+      flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: false },
+      // the page is Japanese only for now (made for the 地理総合 class); tools/tests skip the English-text check for it
+      jaOnly: true,
+      versus: null,
+      score: { unit: { ja: 'ドル', en: 'dollars' }, fmt: { ja: '${n}', en: '${n}' }, order: 'desc', cap: 10000000, maxRate: null },
+      rankSource: { key: 'kusoge.trade.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.trade.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: '最高 ${n}', en: 'Best ${n}' } },
+      keys: {
+        'kusoge.trade.save': '{ v:1, plays（遊んだ回数）, best（最後に持っていたお金の最高）, bestX（はじめのお金からの倍率×10 の最高）, types:{ A〜D: その国のタイプで遊んだ回数 }, typesN（遊んだタイプの数）, deals（交渉で成立した取引の合計）, dTop（途上国で4位以内に入った回数）, wins（1位になった回数） }。この端末だけ（同期しない）',
+        'kusoge.trade.name': '自分の国の名前（10文字まで）',
+        'kusoge.trade.view': '表示（real：現実の資源と産業 / class：授業の紙と道具）',
+        'kusoge.trade.speed': '時間の速さ（fast / normal / slow）',
+      },
+      // not synced: the record is per device (the class plays on shared devices)
+      sync: {},
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -745,6 +774,14 @@
       { id: 'minigolf.under1', tier: 2, icon: 'star', title: { ja: 'パーより少なく', en: 'Under Par' }, desc: { ja: '9ホールをパーより少ない打数で回る', en: 'Finish a 9-hole round under par' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'under' }, gte: 1 } },
       { id: 'minigolf.under15', tier: 4, icon: 'trophy', title: { ja: '親方の腕前', en: "The Master's Touch" }, desc: { ja: '3つのコースのアンダーを合わせて15にする', en: 'Reach 15 under par across the courses' }, when: { rec: { key: 'kusoge.minigolf.save', path: 'under' }, gte: 15 } },
       { id: 'minigolf.daily3', tier: 2, icon: 'star', title: { ja: '今日のひと打ち', en: 'Daily Putter' }, desc: { ja: '今日のホールを3回遊ぶ', en: 'Play 3 daily holes' }, when: { any: [{ rec: { key: 'kusoge.minigolf.save', path: 'stats.daily' }, gte: 3 }, { stat: 'gameDaily', gte: 3 }] } },
+    ],
+    trade: [
+      { id: 'trade.p1', tier: 1, icon: 'check', title: { ja: 'はじめての貿易', en: 'First Trade Day' }, desc: { ja: '貿易ゲームを最後まで遊ぶ', en: 'Play the Trade Game to the end' }, when: { rec: { key: 'kusoge.trade.save', path: 'plays' }, gte: 1 } },
+      { id: 'trade.deal', tier: 1, icon: 'check', title: { ja: '交渉成立', en: 'Deal Done' }, desc: { ja: 'ほかの国との取引を成立させる', en: 'Close a deal with another country' }, when: { rec: { key: 'kusoge.trade.save', path: 'deals' }, gte: 1 } },
+      { id: 'trade.deal20', tier: 2, icon: 'star', title: { ja: '交渉の達人', en: 'Master Negotiator' }, desc: { ja: '取引を合わせて20回成立させる', en: 'Close 20 deals in total' }, when: { rec: { key: 'kusoge.trade.save', path: 'deals' }, gte: 20 } },
+      { id: 'trade.x10', tier: 2, icon: 'star', title: { ja: '10倍の成長', en: 'Tenfold Growth' }, desc: { ja: 'はじめのお金を10倍以上にする', en: 'End with 10× your starting money' }, when: { rec: { key: 'kusoge.trade.save', path: 'bestX' }, gte: 100 } },
+      { id: 'trade.types', tier: 3, icon: 'trophy', title: { ja: '4つの立場', en: 'Four Viewpoints' }, desc: { ja: '先進国・新興国・産油国・途上国のすべてで遊ぶ', en: 'Play as all four country types' }, when: { rec: { key: 'kusoge.trade.save', path: 'typesN' }, gte: 4 }, grantsTitle: { ja: '世界を知る人', en: 'World Watcher' } },
+      { id: 'trade.dtop', tier: 4, icon: 'trophy', title: { ja: '逆転の途上国', en: 'Against the Odds' }, desc: { ja: '途上国で8か国中4位以内に入る', en: 'Finish in the top 4 as a developing country' }, when: { rec: { key: 'kusoge.trade.save', path: 'dTop' }, gte: 1 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

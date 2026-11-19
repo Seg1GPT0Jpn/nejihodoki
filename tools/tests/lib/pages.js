@@ -29,7 +29,7 @@ function fromRegistry() {
     return list.map(g => {
       const fb = FALLBACK_GAMES.find(x => x.id === g.id) || {};
       const three = g.three != null ? !!g.three : (g.tech ? /three|3d/i.test(String(g.tech)) : !!fb.three);
-      return { id: g.id, three };
+      return { id: g.id, three, jaOnly: !!g.jaOnly };
     });
   } catch (e) { return null; }
 }
@@ -37,7 +37,7 @@ function fromRegistry() {
 function games() {
   const reg = fromRegistry();
   const list = reg || FALLBACK_GAMES;
-  return list.map(g => ({ id: g.id, path: '/' + g.id + '/', kind: 'game', three: !!g.three, source: reg ? 'registry' : 'fallback' }));
+  return list.map(g => ({ id: g.id, path: '/' + g.id + '/', kind: 'game', three: !!g.three, jaOnly: !!g.jaOnly, source: reg ? 'registry' : 'fallback' }));
 }
 function pages() {
   return [{ id: 'hub', path: '/', kind: 'hub' }, { id: 'ranking', path: '/ranking/', kind: 'ranking' }, { id: 'profile', path: '/profile/', kind: 'profile' }, ...games()];

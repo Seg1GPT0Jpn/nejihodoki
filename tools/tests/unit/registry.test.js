@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -103,8 +103,8 @@ test('flags reflect what the pages have today', () => {
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,minigolf', 'games without a match');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,minigolf,trade', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 

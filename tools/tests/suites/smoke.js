@@ -35,8 +35,9 @@ async function smokeOne(env, t, p) {
         games: document.querySelectorAll('#glist .grow').length, del: !!document.getElementById('delBtn'), h1: !!document.querySelector('h1') }));
       t.check('main-elements', info.h1 && /\d/.test(info.lv) && info.ach >= 15 && info.games === games().length && info.del, info);
     } else {
-      const info = await page.evaluate(() => ({ canvas: document.querySelectorAll('canvas').length, home: !!document.querySelector('a[href="../"]') }));
-      t.check('main-elements', info.canvas > 0 && info.home, info);
+      // 盤面は canvas か、SVG の盤面（trade の世界地図 svg#map）
+      const info = await page.evaluate(() => ({ canvas: document.querySelectorAll('canvas').length, svg: !!document.querySelector('svg#map'), home: !!document.querySelector('a[href="../"]') }));
+      t.check('main-elements', (info.canvas > 0 || info.svg) && info.home, info);
     }
     if (p.three) {
       // 最初の描画が5秒以内（WebGL の draw 呼び出しを数える。__kb.ready() があればそれも）
