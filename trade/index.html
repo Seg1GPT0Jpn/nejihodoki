@@ -5,242 +5,376 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>貿易ゲーム</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="資源と技術で製品をつくって輸出する、地理総合の「貿易ゲーム」。先進国・新興国・産油国・途上国に分かれて、交渉しながらお金をかせぐ。">
+<meta name="description" content="資源と技術で製品をつくって輸出する、地理総合の「貿易ゲーム」。8つの国に分かれ、交渉しながら40分でお金をかせぐ。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Dela+Gothic+One&display=swap">
 <style>
-/* Layout: graph-paper desk. Left column = your own desk (stock, production lines, UN buying desk),
-   right column = the other seven countries and the news feed. Stacks to one column on phones. */
+/* Layout: a dark "world sea" stage at the top where the 8 countries sit around the world market and every
+   export / trade / aid travels as a moving token; below it three working panels (your factory, the market
+   ticker, the dispatch feed). One fixed color + icon per product everywhere. Red = price falling, only. */
 :root{
-  --bg:#e8eef3; --grid:#d3dde6; --panel:#ffffff; --panel-2:#f3f6f9; --ink:#1b2833; --muted:#5a6976; --line:#c8d3dd;
-  --un:#1c6bb3; --un-soft:#dcebf8; --money:#21774a; --money-soft:#ddf0e4; --warn:#b14f17; --warn-soft:#fbe6d8;
-  --paper:#fffef8; --paper-ink:#24313c; --shadow:0 1px 2px rgba(20,40,60,.08),0 4px 14px rgba(20,40,60,.06);
-  --f-display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --bg:#edf0f3; --surface:#ffffff; --surface-2:#f3f5f7; --ink:#131e29; --muted:#536271; --line:#cdd6de;
+  --sea:#0d2131; --sea-2:#15324a; --sea-3:#1d4260; --sea-line:#2f587a; --sea-ink:#e8f0f6; --sea-muted:#8fb0c8;
+  --slot:#13283a; --slot-line:#2a4760;
+  --un:#1f6fd1; --un-soft:#dde9fa; --gold:#f2b230; --gold-ink:#5a3d00;
+  --gain:#16884a; --gain-soft:#dbf1e4; --loss:#d7363c; --loss-soft:#fde2e2;
+  --p-rect:#f0a01a; --p-tri:#2f8de0; --p-semi:#1aae80; --p-circle:#8a5cf0; --p-ink:#10202c;
+  --paper:#fbfaf6; --paper-ink:#1e2a35; --paper-line:#d9d4c7;
+  --shadow:0 1px 2px rgba(15,35,55,.08),0 6px 18px rgba(15,35,55,.08);
+  --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#10161c; --grid:#18222b; --panel:#17212a; --panel-2:#1c2731; --ink:#e2e9ef; --muted:#93a3b1; --line:#2a3743;
-  --un:#5ea9ec; --un-soft:#182e43; --money:#5cc489; --money-soft:#16321f; --warn:#f09358; --warn-soft:#3a2417;
-  --paper:#f3f1e8; --paper-ink:#24313c; --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25); color-scheme:dark}}
+  --bg:#0b1218; --surface:#131d27; --surface-2:#18242f; --ink:#e6edf3; --muted:#93a4b4; --line:#273746;
+  --sea:#071420; --sea-2:#0e2638; --sea-3:#163650; --sea-line:#24496a;
+  --un:#5aa2f0; --un-soft:#172c45; --gain:#4fd08b; --gain-soft:#11301f; --loss:#ff6a6f; --loss-soft:#3a191b;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#10161c; --grid:#18222b; --panel:#17212a; --panel-2:#1c2731; --ink:#e2e9ef; --muted:#93a3b1; --line:#2a3743;
-  --un:#5ea9ec; --un-soft:#182e43; --money:#5cc489; --money-soft:#16321f; --warn:#f09358; --warn-soft:#3a2417;
-  --paper:#f3f1e8; --paper-ink:#24313c; --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25); color-scheme:dark}
+  --bg:#0b1218; --surface:#131d27; --surface-2:#18242f; --ink:#e6edf3; --muted:#93a4b4; --line:#273746;
+  --sea:#071420; --sea-2:#0e2638; --sea-3:#163650; --sea-line:#24496a;
+  --un:#5aa2f0; --un-soft:#172c45; --gain:#4fd08b; --gain-soft:#11301f; --loss:#ff6a6f; --loss-soft:#3a191b;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3); color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{min-height:100%}
-body{
-  margin:0; background-color:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.6;
-  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
-  background-size:20px 20px;
-}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--panel)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--sea)}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,select:focus-visible{outline:3px solid var(--un);outline-offset:2px}
-h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.25}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.25;text-wrap:balance}
 .num{font-variant-numeric:tabular-nums}
+.disp{font-family:var(--f-display);font-weight:400;letter-spacing:.02em}
 
-/* top bar */
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
-  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.bar-in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand h1{font-size:20px;font-weight:900;letter-spacing:.04em}
-.me-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
-.flag{display:inline-block;width:18px;height:12px;border-radius:2px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
-.clock{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0}
-.clock-t{font-family:var(--f-display);font-weight:700;font-size:20px;white-space:nowrap}
-.clock-t small{font-size:12px;color:var(--muted);font-weight:500}
-.track{flex:1;height:8px;border-radius:4px;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;min-width:60px}
-.track i{display:block;height:100%;background:var(--un);width:0}
-.wallet{display:flex;align-items:center;gap:8px;background:var(--money-soft);color:var(--money);border-radius:10px;padding:4px 12px;font-family:var(--f-display);font-weight:700;font-size:20px}
-.wallet .clips{display:flex;gap:2px;align-items:center;font-size:12px;font-weight:500}
-.bar-btns{display:flex;gap:6px}
-.icon-btn{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:5px 10px;font-size:13px;white-space:nowrap}
-.icon-btn:hover{border-color:var(--un)}
+/* ---------- HUD ---------- */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--sea);color:var(--sea-ink);border-bottom:1px solid var(--sea-line);
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hud-in{max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.brand{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:22px;letter-spacing:.06em}
+.brand span{font-size:12px;color:var(--sea-muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.flag{display:inline-block;width:18px;height:12px;border-radius:2px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.clock{display:flex;align-items:center;gap:10px}
+.clock svg{width:44px;height:44px;flex:none}
+.clock-t{font-family:var(--f-display);font-size:22px;line-height:1}
+.clock-t small{display:block;font-family:var(--f-body);font-size:11px;color:var(--sea-muted);margin-top:3px}
+.goal{display:flex;flex-direction:column;line-height:1.2;font-size:11px;color:var(--sea-muted)}
+.goal b{font-family:var(--f-display);font-weight:400;font-size:20px;color:var(--sea-ink)}
+.goal b.up{color:#7ee2a8}
+.wallet{margin-left:auto;display:flex;align-items:center;gap:10px;background:var(--sea-2);border:1px solid var(--sea-line);border-radius:12px;padding:4px 14px 4px 10px;transform-origin:center}
+.wallet .amt{font-family:var(--f-display);font-size:24px;color:#8ff0b6;line-height:1.1}
+.wallet .clips{display:flex;gap:3px;align-items:center;font-size:12px;color:var(--sea-muted)}
+.wallet.bump{animation:bump .45s cubic-bezier(.3,1.8,.5,1)}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}
+.hud-btns{display:flex;gap:6px}
+.hbtn{border:1px solid var(--sea-line);background:var(--sea-2);color:var(--sea-ink);border-radius:9px;padding:6px 11px;font-size:13px;white-space:nowrap}
+.hbtn:hover{border-color:var(--gold)}
+.hbtn[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
 
-/* board */
-.board{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;
-  padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.col{display:flex;flex-direction:column;gap:16px;min-width:0}
-@media (max-width:820px){.board{grid-template-columns:minmax(0,1fr)}}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;min-width:0}
-.panel-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.panel-h h2{font-size:17px;font-weight:900}
+/* ---------- stage (world map) ---------- */
+.stage-wrap{background:var(--sea);padding-block:4px 18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.stage{max-width:1240px;margin:0 auto;position:relative;color:var(--sea-ink)}
+.stage-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding:6px 2px}
+.stage-h h2{font-family:var(--f-display);font-weight:400;font-size:17px;letter-spacing:.05em}
+.stage-h p{margin:0;font-size:12px;color:var(--sea-muted)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--sea-muted)}
+.legend i{display:inline-block;vertical-align:middle;margin-right:4px}
+#map{display:block;width:100%;height:auto;max-width:100%;
+  background:radial-gradient(ellipse at 50% 50%,var(--sea-3) 0%,var(--sea-2) 45%,var(--sea) 100%);border-radius:16px;border:1px solid var(--sea-line)}
+#map .lane{stroke:var(--sea-line);stroke-width:1.5;stroke-dasharray:3 7;fill:none}
+#map .node{cursor:pointer}
+#map .node .card{fill:var(--sea-2);stroke:var(--sea-line);stroke-width:1.5}
+#map .node:hover .card,#map .node:focus .card{stroke:var(--gold);stroke-width:2.5}
+#map .node:focus{outline:none}
+#map .node.me .card{fill:#1f3d58;stroke:var(--gold);stroke-width:2.5}
+#map .node.me{cursor:default}
+#map .nm{font-family:var(--f-display);fill:var(--sea-ink)}
+#map .sm{fill:var(--sea-muted);font-family:var(--f-body)}
+#map .hub-c{fill:var(--sea);stroke:var(--gold);stroke-width:2.5}
+#map .hub-t{font-family:var(--f-display);fill:var(--gold)}
+#map .badge{fill:var(--gold)}
+#map .badge-t{fill:var(--gold-ink);font-family:var(--f-body);font-weight:700}
+#map .deal-flash{fill:none;stroke:var(--gold);stroke-width:3}
+
+/* ---------- panels ---------- */
+.board{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,.9fr);gap:16px;align-items:start;
+  padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (max-width:1120px){.board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.feed{grid-column:1/-1}}
+@media (max-width:740px){.board{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px 16px;min-width:0}
+.panel-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.panel-h h2{font-family:var(--f-display);font-weight:400;font-size:18px;letter-spacing:.04em}
 .panel-h .sub{font-size:12px;color:var(--muted)}
-.un-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--un);background:var(--un-soft);padding:1px 7px;border-radius:999px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.06em;padding:1px 8px;border-radius:999px;background:var(--un-soft);color:var(--un);white-space:nowrap}
+.shake{animation:shake .45s ease}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
 
-/* inventory */
-.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
-.inv-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);font-size:12px;text-align:center}
-.inv-item.zero{opacity:.38}
-.inv-item svg{width:34px;height:34px}
-.inv-item b{font-size:16px;font-family:var(--f-display)}
-.paper-meter{height:5px;width:70%;border-radius:3px;background:var(--line);overflow:hidden}
-.paper-meter i{display:block;height:100%;background:var(--un)}
+/* tray of owned goods: dark slots, bright tokens */
+.tray{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;background:var(--slot);border-radius:12px;padding:8px;border:1px solid var(--slot-line)}
+.slot{position:relative;aspect-ratio:1/1;max-width:100%;border-radius:9px;background:#0b1c2a;border:1px solid var(--slot-line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#e8f0f6;font-size:10px;text-align:center;line-height:1.15;padding:2px}
+.slot svg{width:52%;height:52%}
+.slot .n{position:absolute;right:4px;bottom:2px;font-family:var(--f-display);font-size:15px;color:#fff;text-shadow:0 1px 0 #000}
+.slot .l{color:#9fb7ca;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.slot.zero{opacity:.32}
+.slot.res svg{color:var(--gold)}
+.slot.tech svg{color:#6fd3ff}
+.slot.lab svg{color:#f3f6f9}
+.slot .meter{position:absolute;left:6px;right:6px;top:4px;height:3px;border-radius:2px;background:#29445c;overflow:hidden}
+.slot .meter i{display:block;height:100%;background:var(--gold)}
+.tray-cap{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:6px 2px 14px}
 
 /* production lines */
-.lines{display:flex;flex-direction:column;gap:10px}
-.line{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-2)}
-.line-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:13px}
-.line-top .who{font-weight:700;font-family:var(--f-display)}
-.line-status{font-size:12px;color:var(--muted);margin-left:auto}
-.line-status.bad{color:var(--warn)}
+.lines{display:flex;flex-direction:column;gap:12px}
+.line{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface-2)}
+.line-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.line-top .who{font-family:var(--f-display);font-size:14px}
+.line-status{font-size:12px;color:var(--muted);margin-left:auto;text-align:right}
+.line-status.bad{color:var(--loss);font-weight:700}
 .picks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.pick{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 2px;font-size:11px;line-height:1.3}
-.pick svg{width:30px;height:24px}
-.pick[aria-pressed="true"]{border-color:var(--un);box-shadow:0 0 0 2px var(--un) inset;background:var(--un-soft)}
-.pick:disabled{opacity:.4;cursor:not-allowed}
-.pick .need{color:var(--muted);font-size:10px}
-.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:8px}
-.prog i{display:block;height:100%;width:0;background:var(--money)}
-.empty-note{font-size:13px;color:var(--muted);padding:6px 2px}
+.pick{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 2px 5px;font-size:11px;line-height:1.25;transition:transform .12s}
+.pick:hover:not(:disabled){transform:translateY(-2px);border-color:var(--pc)}
+.pick:active:not(:disabled){transform:translateY(1px)}
+.pick svg.pi{width:30px;height:24px}
+.pick b{font-size:12px}
+.pick[aria-pressed="true"]{border-color:var(--pc);box-shadow:0 0 0 2px var(--pc) inset;background:color-mix(in srgb,var(--pc) 14%,var(--surface))}
+.pick:disabled{opacity:.42;cursor:not-allowed}
+.recipe{display:flex;align-items:center;gap:1px;color:var(--muted)}
+.recipe svg{width:13px;height:13px}
+.recipe .miss{color:var(--loss)}
+.belt{position:relative;height:22px;margin-top:9px;border-radius:6px;overflow:hidden;background:repeating-linear-gradient(90deg,var(--line) 0 2px,transparent 2px 14px),var(--surface)}
+.belt.run{animation:belt .6s linear infinite}
+@keyframes belt{to{background-position:14px 0,0 0}}
+.belt .fill{position:absolute;inset:0 auto 0 0;width:0;background:color-mix(in srgb,var(--pc,var(--gain)) 25%,transparent)}
+.belt svg{position:absolute;top:1px;width:24px;height:20px;transform:translateX(-50%)}
+.empty-note{font-size:13px;color:var(--muted);padding:6px 2px;margin:0}
 
-/* market */
-.mkt{display:flex;flex-direction:column}
-.mkt-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:4px 10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line)}
-.mkt-row:first-child{border-top:0}
-.mkt-row svg{width:40px;height:32px}
-.mkt-name{font-weight:700;font-family:var(--f-display);font-size:15px}
-.mkt-name small{display:block;font-family:var(--f-body);font-weight:400;font-size:11px;color:var(--muted)}
-.price{font-family:var(--f-display);font-weight:900;font-size:18px;text-align:right;white-space:nowrap}
-.price s{font-size:12px;color:var(--muted);font-weight:500;margin-right:4px}
-.price.down{color:var(--warn)}
-.sell-btns{display:flex;gap:4px}
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+/* market ticker */
+.tick{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.tick:first-of-type{border-top:0;padding-top:2px}
+.tick .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--pc) 18%,var(--surface))}
+.tick .ic svg{width:34px;height:28px}
+.tick .nm{font-weight:700;font-size:15px}
+.tick .nm small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.price{text-align:right;line-height:1.05}
+.price .v{font-family:var(--f-display);font-size:22px}
+.price .d{display:block;font-size:11px;font-weight:700}
+.price.down .v,.price.down .d{color:var(--loss)}
+.price.up .d{color:var(--gain)}
+.price.flat .d{color:var(--muted);font-weight:400}
+.tick-low{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center}
+.spark{width:100%;height:30px;display:block}
+.supply{font-size:11px;color:var(--muted)}
+.supply .bar{position:relative;height:6px;border-radius:3px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;margin-top:3px}
+.supply .bar i{position:absolute;inset:0 auto 0 0;background:var(--pc)}
+.supply .bar i.over{background:var(--loss)}
+.supply.warn{color:var(--loss);font-weight:700}
+.sell{display:flex;gap:4px;justify-content:flex-end}
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 11px;font-size:13px;font-weight:700;white-space:nowrap;transition:transform .1s}
 .btn:hover:not(:disabled){border-color:var(--un)}
+.btn:active:not(:disabled){transform:translateY(1px) scale(.98)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn.primary{background:var(--un);border-color:var(--un);color:#fff}
-.btn.money{background:var(--money);border-color:var(--money);color:#fff}
-.btn.big{padding:10px 20px;font-size:16px;border-radius:10px}
+.btn.go{background:var(--gain);border-color:var(--gain);color:#fff}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.btn.big{padding:11px 22px;font-size:16px;border-radius:12px}
+details.how{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;font-size:13px}
+details.how summary{cursor:pointer;font-weight:700;color:var(--un)}
+details.how p{margin:6px 0 0;color:var(--muted)}
 
-/* world */
-.world{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.cty{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-2);display:flex;flex-direction:column;gap:6px;min-width:0}
-.cty-h{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:700}
-.cty-h .flag{width:22px;height:15px}
-.cty-items{display:flex;flex-wrap:wrap;gap:4px;font-size:11px;color:var(--muted);min-height:22px}
-.tag{display:inline-flex;align-items:center;gap:3px;border-radius:6px;background:var(--panel);border:1px solid var(--line);padding:1px 6px;white-space:nowrap}
-.tag svg{width:14px;height:14px}
-.cty .btn{align-self:flex-start}
-
-/* offers + news */
-.offer{border:1px solid var(--money);background:var(--money-soft);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+/* feed */
+.offers{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.offer{position:relative;border-radius:12px;padding:12px;background:var(--paper);color:var(--paper-ink);border:1px solid var(--paper-line);box-shadow:var(--shadow);font-size:13px;display:flex;flex-direction:column;gap:6px;animation:drop .35s cubic-bezier(.3,1.5,.5,1)}
+@keyframes drop{from{transform:translateY(-10px) rotate(-1deg);opacity:0}}
 .offer-h{display:flex;align-items:center;gap:6px;font-weight:700}
+.offer-h .ttl{margin-left:auto;font-size:11px;color:#6b7680;font-weight:400}
 .offer .row{display:flex;gap:6px;flex-wrap:wrap}
-.offers{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
-.news{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;font-size:13px}
-.news li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px;padding:6px 8px;border-radius:8px;background:var(--panel-2)}
+.offer .btn:not(.go){background:#fff;color:var(--paper-ink);border-color:var(--paper-line)}
+.offer .x{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px}
+.offer .x span{color:#6b7680}
+.news{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto;font-size:13px}
+.news li{display:grid;grid-template-columns:38px minmax(0,1fr);gap:6px;padding:6px 8px;border-radius:8px;background:var(--surface-2)}
 .news li.un{background:var(--un-soft)}
-.news li.warn{background:var(--warn-soft)}
-.news time{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;padding-top:2px}
+.news li.warn{background:var(--loss-soft)}
+.news li.me{background:var(--gain-soft)}
+.news time{color:var(--muted);font-size:11px;padding-top:2px}
 
-/* modal */
-.scrim{position:fixed;inset:0;z-index:50;background:rgba(10,20,30,.55);display:flex;align-items:center;justify-content:center;
+/* ---------- modal / cards ---------- */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(5,14,22,.62);display:flex;align-items:center;justify-content:center;
   padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
-.modal{background:var(--panel);color:var(--ink);border-radius:14px;width:min(760px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.35);min-width:0}
-.modal-body{overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
-.modal-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.modal h2{font-size:22px;font-weight:900}
+.modal{background:var(--surface);color:var(--ink);border-radius:16px;width:min(780px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 14px 50px rgba(0,0,0,.4);min-width:0;animation:pop .28s cubic-bezier(.3,1.4,.5,1)}
+@keyframes pop{from{transform:scale(.94);opacity:0}}
+.modal-body{overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.modal-body>*{flex-shrink:0}
+.modal-foot{padding:12px 22px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+.modal-foot .grow{margin-right:auto;font-size:12px;color:var(--muted)}
+.modal h2{font-family:var(--f-display);font-weight:400;font-size:24px;letter-spacing:.03em}
 .modal h3{font-size:15px;font-weight:700}
 .lead{color:var(--muted);font-size:14px;margin:0}
-.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.rule{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px;background:var(--panel-2)}
-.rule svg{width:56px;height:44px}
-.rule b{display:block;font-family:var(--f-display);font-size:15px}
-.rule .p{font-family:var(--f-display);font-weight:900;color:var(--money);font-size:17px}
+.question{font-family:var(--f-display);font-size:20px;line-height:1.45;background:var(--sea);color:var(--sea-ink);border-radius:12px;padding:14px 16px;margin:0}
+.question small{display:block;font-family:var(--f-body);font-size:12px;color:var(--sea-muted);margin-bottom:4px}
+.recipes{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.rcard{border:1.5px solid var(--pc);border-radius:12px;padding:10px;background:color-mix(in srgb,var(--pc) 8%,var(--surface));display:flex;flex-direction:column;gap:4px;font-size:12px}
+.rcard .top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.rcard .top svg{width:40px;height:32px}
+.rcard .p{font-family:var(--f-display);font-size:20px}
+.rcard b{font-size:15px}
+.rcard .recipe svg{width:16px;height:16px}
 .facts{margin:0;padding-left:1.2em;font-size:14px;display:flex;flex-direction:column;gap:4px}
 .opt{display:flex;flex-direction:column;gap:6px}
 .opt label{font-weight:700;font-size:14px}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
-.seg button{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:6px 12px;font-size:13px}
+.seg button{border:1.5px solid var(--line);background:var(--surface-2);border-radius:9px;padding:6px 12px;font-size:13px}
 .seg button[aria-pressed="true"]{background:var(--un);border-color:var(--un);color:#fff}
 
-/* trade modal */
-.trade-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-@media (max-width:560px){.trade-cols{grid-template-columns:minmax(0,1fr)}}
-.side{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.side h3{display:flex;align-items:center;gap:6px}
-.step{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px}
-.step>div:first-of-type{flex:1 1 90px;min-width:0}
-.step .ctl{margin-left:auto}
-.step svg{width:22px;height:22px;flex:none}
-.step .ctl{display:flex;align-items:center;gap:4px}
-.step .ctl button{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);font-weight:700;padding:0}
-.step .ctl button.wide{width:auto;padding:0 6px;font-size:11px}
-.step .ctl output{min-width:52px;text-align:center;font-family:var(--f-display);font-weight:700}
-.step .have{color:var(--muted);font-size:11px}
-.reply{display:flex;gap:10px;align-items:flex-start;background:var(--panel-2);border-radius:10px;padding:10px 12px;font-size:14px;min-height:46px}
-.reply .flag{margin-top:5px}
-.reply.ok{background:var(--money-soft)}
-.reply.ng{background:var(--warn-soft)}
+/* event card */
+.ev{border-radius:16px;overflow:hidden}
+.ev-top{padding:18px 22px 14px;color:#fff;display:flex;gap:14px;align-items:center}
+.ev-top svg{width:54px;height:54px;flex:none}
+.ev-top small{display:block;font-size:12px;opacity:.85;letter-spacing:.08em}
+.ev-top h2{color:#fff}
+.ev.crash .ev-top{background:var(--loss)}
+.ev.aid .ev-top{background:#b9820a}
+.ev.rise .ev-top{background:var(--gain)}
+.ev.find .ev-top{background:#3c5a74}
+.ev dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;font-size:14px}
+.ev dt{font-weight:700;color:var(--muted);font-size:12px;padding-top:2px;white-space:nowrap}
+.ev dd{margin:0}
+.term{border-left:4px solid var(--un);background:var(--un-soft);padding:8px 12px;border-radius:0 8px 8px 0;font-size:13px}
 
-/* results */
+/* contract */
+.contract{background:var(--paper);color:var(--paper-ink);border-radius:16px;width:min(760px,100%)}
+.contract .modal-body{position:relative}
+.contract .modal-foot{border-top-color:var(--paper-line)}
+.contract .btn:not(.primary){background:#fff;color:var(--paper-ink);border-color:var(--paper-line)}
+.contract .lead{color:#5f6a73}
+.c-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:3px double var(--paper-line);padding-bottom:10px;flex-wrap:wrap}
+.c-head h2{color:var(--paper-ink)}
+.c-head .no{font-size:12px;color:#7a8389;font-variant-numeric:tabular-nums}
+.c-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:580px){.c-cols{grid-template-columns:minmax(0,1fr)}}
+.c-side{border:1px solid var(--paper-line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0;background:#fff}
+.c-side h3{display:flex;align-items:center;gap:6px;font-size:14px}
+.c-side h3 small{color:#7a8389;font-weight:400}
+.step{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px}
+.step svg{width:22px;height:22px;flex:none}
+.step>div:first-of-type{flex:1 1 90px;min-width:0}
+.step .ctl{display:flex;align-items:center;gap:4px;margin-left:auto}
+.step .ctl button{width:30px;height:30px;border-radius:8px;border:1px solid var(--paper-line);background:#f4f1ea;color:var(--paper-ink);font-weight:700;padding:0}
+.step .ctl button.wide{width:auto;padding:0 6px;font-size:11px}
+.step .ctl output{min-width:54px;text-align:center;font-family:var(--f-display);font-size:15px}
+.step .have{color:#7a8389;font-size:11px}
+.reply{display:flex;gap:10px;align-items:flex-start;background:#f1ede3;border-radius:10px;padding:10px 12px;font-size:14px;min-height:46px}
+.reply .flag{margin-top:5px}
+.reply.ok{background:#dcefe2}
+.reply.ng{background:#f8dfdc}
+.sign{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#7a8389;flex-wrap:wrap}
+.sign span{border-bottom:1px solid #b9b2a2;min-width:140px;padding-bottom:2px}
+.stamp{position:absolute;right:34px;bottom:64px;font-family:var(--f-display);font-size:42px;padding:2px 16px;border:5px solid currentColor;border-radius:10px;transform:rotate(-12deg);pointer-events:none;opacity:.88;mix-blend-mode:multiply}
+.stamp.ok{color:#c0262d}
+.stamp.ng{color:#33475b}
+@media (prefers-reduced-motion:no-preference){.stamp{animation:stamp .22s cubic-bezier(.2,1.6,.4,1)}}
+@keyframes stamp{from{transform:rotate(-12deg) scale(1.9);opacity:0}}
+
+/* debrief */
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.steps span.on{background:var(--sea);color:var(--sea-ink);border-color:var(--sea)}
+.reveal{font-size:16px;background:var(--un-soft);border-radius:12px;padding:12px 14px}
+.feel{display:flex;flex-wrap:wrap;gap:6px}
+.feel button{border:1.5px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 14px;font-size:14px}
+.feel button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.moments{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.moments li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px}
+.moments time{font-family:var(--f-display);color:var(--un)}
+.chart-wrap{overflow-x:auto}
+.chart{width:100%;min-width:480px;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.chart .grid{stroke:var(--line)}
+.keys{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px}
+.keys span{display:inline-flex;align-items:center;gap:5px}
 .rank{width:100%;border-collapse:collapse;font-size:14px}
 .rank th,.rank td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-.rank td.r{text-align:right;font-variant-numeric:tabular-nums}
+.rank td.r,.rank th.r{text-align:right;font-variant-numeric:tabular-nums}
 .rank tr.me td{background:var(--un-soft);font-weight:700}
-.rank-wrap{overflow-x:auto}
+.tw{overflow-x:auto}
 .typebars{display:flex;flex-direction:column;gap:6px}
-.tb{display:grid;grid-template-columns:110px minmax(0,1fr) 80px;align-items:center;gap:8px;font-size:13px}
-.tb .bar-out{height:16px;background:var(--panel-2);border-radius:4px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
-.tb .bar-out i{display:block;height:100%;background:var(--un)}
+.tb{display:grid;grid-template-columns:72px minmax(0,1fr) 84px;align-items:center;gap:8px;font-size:13px}
+.tb .o{height:16px;background:var(--surface-2);border-radius:4px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.tb .o i{display:block;height:100%;background:var(--un)}
 .tb .v{text-align:right;font-variant-numeric:tabular-nums}
-.qs{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:14px}
-.reveal{font-size:16px;background:var(--un-soft);border-radius:10px;padding:10px 14px}
-.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
-.paused-badge{font-size:12px;font-weight:700;color:var(--warn);white-space:nowrap}
-@media (prefers-reduced-motion:no-preference){.prog i,.track i{transition:width .2s linear}}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat div{background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted)}
+.stat b{display:block;font-family:var(--f-display);font-weight:400;font-size:22px;color:var(--ink)}
+.qs{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.map-t th{background:var(--surface-2)}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--sea);color:var(--sea-ink);border:1px solid var(--sea-line);padding:9px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.paused{font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap}
+.coin{position:fixed;left:0;top:0;z-index:70;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff6c8,#f2b230 55%,#a87300);box-shadow:0 0 0 1.5px #7a5500;pointer-events:none}
+.float{position:fixed;z-index:70;font-family:var(--f-display);font-size:18px;color:var(--gain);pointer-events:none;text-shadow:0 1px 0 var(--surface)}
+@media (max-width:600px){
+  .brand{display:none}
+  .hud-in{gap:6px 12px}
+  .wallet{padding:3px 10px}
+  .wallet .amt{font-size:20px}
+  .wallet .clips{display:none}
+  .hud-btns{width:100%;justify-content:flex-end}
+  .hud-btns .hbtn{padding:4px 10px;font-size:12px}
+  .modal-body{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<header class="bar">
-  <div class="bar-in">
-    <div class="brand">
-      <h1>貿易ゲーム</h1>
-      <span class="me-chip" id="meChip"></span>
+<header class="hud">
+  <div class="hud-in">
+    <div class="brand"><h1>貿易ゲーム</h1><span id="meChip"></span></div>
+    <div class="clock" title="ゲーム内の時間（40分）">
+      <svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="#2f587a" stroke-width="5"/><circle id="clockRing" cx="22" cy="22" r="18" fill="none" stroke="#f2b230" stroke-width="5" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1" transform="rotate(-90 22 22)"/></svg>
+      <div class="clock-t num" id="clockT">0:00<small>のこり 40分</small></div>
     </div>
-    <div class="clock">
-      <span class="clock-t num" id="clockT">0:00 <small>/ 40分</small></span>
-      <div class="track" aria-hidden="true"><i id="clockBar"></i></div>
-      <span class="paused-badge" id="pausedBadge" hidden>一時停止中</span>
-    </div>
-    <div class="wallet num" id="wallet" title="あなたの国のお金"></div>
-    <div class="bar-btns">
-      <button class="icon-btn" id="pauseBtn" type="button">一時停止</button>
-      <button class="icon-btn" id="helpBtn" type="button">ルール</button>
+    <div class="goal" title="はじめのお金からどれだけ増えたか"><span>成長</span><b class="num" id="growth">×1.0</b></div>
+    <span class="paused" id="pausedBadge" hidden>一時停止中</span>
+    <div class="wallet" id="wallet" title="あなたの国のお金"><span class="amt num" id="walletAmt">$0</span><span class="clips" id="walletClips"></span></div>
+    <div class="hud-btns">
+      <button class="hbtn" id="soundBtn" type="button" aria-pressed="true">音</button>
+      <button class="hbtn" id="pauseBtn" type="button">一時停止</button>
+      <button class="hbtn" id="helpBtn" type="button">ルール</button>
     </div>
   </div>
 </header>
 
+<div class="stage-wrap">
+  <section class="stage" aria-labelledby="stageH">
+    <div class="stage-h">
+      <div><h2 id="stageH">世界の貿易</h2><p id="stageHint">国をクリックすると、その国と交渉できます</p></div>
+      <div class="legend" aria-hidden="true">
+        <span><i style="width:9px;height:9px;border-radius:50%;background:#f0a01a"></i>輸出</span>
+        <span><i style="width:16px;height:3px;background:#f2b230"></i>国どうしの取引</span>
+        <span><i style="width:9px;height:9px;transform:rotate(45deg);background:#ffe08a"></i>援助</span>
+      </div>
+    </div>
+    <svg id="map" role="group" aria-label="8つの国と世界市場"></svg>
+  </section>
+</div>
+
 <main class="board">
-  <div class="col">
-    <section class="panel" aria-labelledby="deskH">
-      <div class="panel-h"><h2 id="deskH">わが国の机</h2><span class="sub" id="deskSub"></span></div>
-      <div class="inv" id="inv"></div>
-    </section>
-    <section class="panel" aria-labelledby="lineH">
-      <div class="panel-h"><h2 id="lineH">生産ライン</h2><span class="sub" id="lineSub"></span></div>
-      <div class="lines" id="lines"></div>
-    </section>
-    <section class="panel" aria-labelledby="mktH">
-      <div class="panel-h"><h2 id="mktH">国連の買い取り窓口</h2><span class="un-tag">国連＝先生</span></div>
-      <div class="mkt" id="mkt"></div>
-    </section>
-  </div>
-  <div class="col">
-    <section class="panel" aria-labelledby="worldH">
-      <div class="panel-h"><h2 id="worldH">ほかの国</h2><span class="sub" id="worldSub"></span></div>
-      <div class="world" id="world"></div>
-    </section>
-    <section class="panel" aria-labelledby="newsH">
-      <div class="panel-h"><h2 id="newsH">とどいた提案とニュース</h2></div>
-      <div class="offers" id="offers"></div>
-      <ul class="news" id="news"></ul>
-    </section>
-  </div>
+  <section class="panel" aria-labelledby="deskH">
+    <div class="panel-h"><h2 id="deskH">わが国の工場</h2><span class="sub" id="deskSub"></span></div>
+    <div class="tray" id="tray"></div>
+    <div class="tray-cap"><span id="trayCap1"></span><span id="trayCap2"></span></div>
+    <div class="lines" id="lines"></div>
+  </section>
+  <section class="panel" id="mktPanel" aria-labelledby="mktH">
+    <div class="panel-h"><h2 id="mktH">世界市場</h2><span class="chip">国連＝先生</span></div>
+    <div id="mkt"></div>
+    <details class="how"><summary>値段が変わるしくみ</summary><p id="howText"></p></details>
+  </section>
+  <section class="panel feed" aria-labelledby="newsH">
+    <div class="panel-h"><h2 id="newsH">とどいた提案とニュース</h2></div>
+    <div class="offers" id="offers"></div>
+    <ul class="news" id="news"></ul>
+  </section>
 </main>
 
 <div id="modalRoot"></div>
@@ -252,22 +386,22 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.2
    ルールとデータ
    ============================================================ */
 var GAME_MIN = 40;          // 授業と同じ 40 分
-var SHEET = 600;            // 紙1枚の面積（ゲーム内の単位）
+var SHEET = 600;            // 資源（紙）1単位の量
 var SHAPE_KEYS = ['rect', 'tri', 'semi', 'circle'];
 var TOOL_KEYS = ['scissors', 'ruler', 'setsq', 'compass'];
 var SHAPES = {
-  rect:   { name: '長方形',   spec: '13×8cm',    base: 300,  time: 1.0, area: 120, tools: ['scissors', 'ruler'],             floor: 300, drop: 0,   limit: 99 },
-  tri:    { name: '正三角形', spec: '1辺 9cm',    base: 700,  time: 1.5, area: 50,  tools: ['scissors', 'ruler', 'setsq'],    floor: 300, drop: 100, limit: 12 },
-  semi:   { name: '分度器形', spec: '直径 10cm',  base: 500,  time: 1.5, area: 60,  tools: ['scissors', 'ruler', 'compass'],  floor: 300, drop: 100, limit: 12 },
-  circle: { name: '円',       spec: '半径 4.5cm', base: 1500, time: 2.0, area: 85,  tools: ['scissors', 'compass'],           floor: 700, drop: 200, limit: 9 }
+  rect:   { base: 300,  time: 1.0, area: 120, tools: ['scissors', 'ruler'],            floor: 300, drop: 0,   limit: 99 },
+  tri:    { base: 700,  time: 1.5, area: 50,  tools: ['scissors', 'ruler', 'setsq'],   floor: 300, drop: 100, limit: 12 },
+  semi:   { base: 500,  time: 1.5, area: 60,  tools: ['scissors', 'ruler', 'compass'], floor: 300, drop: 100, limit: 12 },
+  circle: { base: 1500, time: 2.0, area: 85,  tools: ['scissors', 'compass'],          floor: 700, drop: 200, limit: 9 }
 };
-var NAMES = { money: 'お金', paper: '紙', scissors: 'ハサミ', ruler: '定規', setsq: '三角定規', compass: 'コンパス', pencil: 'シャーペン',
-  rect: '長方形', tri: '正三角形', semi: '分度器形', circle: '円' };
-var UNIT = { paper: '枚', pencil: '本' };
+var PCOLOR = { rect: 'var(--p-rect)', tri: 'var(--p-tri)', semi: 'var(--p-semi)', circle: 'var(--p-circle)' };
+var PHEX = { rect: '#f0a01a', tri: '#2f8de0', semi: '#1aae80', circle: '#8a5cf0' };
+var NAMES = {}, UNIT = {};
 var TYPES = {
   A: { label: '先進国', real: '技術も資本もある工業国' },
-  B: { label: '新興国', real: '技術を身につけ追い上げる国' },
-  C: { label: '産油国', real: '資源（紙）は多いが技術がない国' },
+  B: { label: '新興国', real: '技術を身につけて追い上げる国' },
+  C: { label: '産油国', real: '資源は多いが、加工する技術がない国' },
   D: { label: '途上国', real: '資源も技術もお金も少ない国' }
 };
 var INIT = {
@@ -277,16 +411,13 @@ var INIT = {
   D: { money: 700,  paper: 1,  scissors: 0, ruler: 0, setsq: 0, compass: 0, pencil: 1 }
 };
 var COUNTRY_NAMES = ['ミラ国', 'ソラン国', 'トーバ国', 'ルケ国', 'ナビア国', 'オルド国', 'ザイン国', 'エスタ国'];
-var COUNTRY_COLORS = ['#d24b3e', '#2e86c1', '#e0a526', '#3a9a5c', '#8e5bb5', '#e07b39', '#4a5a6a', '#c2508d'];
+var COUNTRY_COLORS = ['#e2574c', '#3b9be0', '#e8b02a', '#43b06c', '#a274d6', '#ef8a3c', '#7d93a8', '#e0679f'];
 var SPEEDS = [
   { id: 'fast', label: 'はやい（約3分）', sec: 4.5 },
   { id: 'normal', label: 'ふつう（約5分）', sec: 7.5 },
   { id: 'slow', label: 'じっくり（約8分）', sec: 12 }
 ];
 
-/* ============================================================
-   小さな道具
-   ============================================================ */
 /* ---------- 表示のしかた（ルールと数字は同じ。名前と絵だけ変わる） ---------- */
 var THEMES = {
   real: {
@@ -295,32 +426,15 @@ var THEMES = {
       rect: '衣類', tri: '家電製品', semi: '化学製品', circle: '半導体' },
     unit: { paper: '万トン', pencil: '', tool: 'つ', shape: '個' },
     spec: { rect: '軽工業', tri: '機械工業', semi: '化学工業', circle: 'ハイテク産業' },
-    desk: 'わが国の産業', deskSub: '資源と技術と労働力で製品をつくり、輸出してお金にする', worldH: 'ほかの国', worldSub: '資源や技術は見えるけれど、お金は見えない',
-    lineSub: '労働力1につき1ライン', noLine: '労働力がないので生産できません。ほかの国から手に入れよう。', making: 'を生産しています', choose: 'つくる製品をえらんでください',
-    mkt: '世界市場への輸出', sell1: '1個輸出', sellAll: '全部', sold: 'を輸出して', product: '製品',
-    perSheet: function (n) { return '資源1万トンで' + n + '個'; }, partial: '使いかけの資源', empty: '資源も技術もほとんどない',
+    desk: 'わが国の工場', deskSub: '資源×技術×労働力 → 製品', hub: '世界市場', mkt: '世界市場', aidWord: 'ODA（援助）',
+    lineSub: '労働力1につき1ライン', noLine: '労働力がないので生産できません。ほかの国から手に入れよう。', making: 'を生産中', choose: 'つくる製品をえらぶ',
+    sell1: '1個', sellAll: '全部輸出', sold: 'を輸出して', product: '製品',
+    perSheet: function (n) { return '資源1万トンで' + n + '個'; }, partial: '使いかけの資源',
     guess: 'どんな国なのかは、持っている資源や技術から考えてみよう。',
     opening: '国連（先生）：「これから40分間、貿易ゲームを始めます。製品は世界市場に輸出するとお金になります。」',
-    donation: function (ns) { return '国連：「ODA（政府開発援助）として、' + ns + 'に生産設備を1つずつ援助します。」'; }, donationToast: 'ODAで生産設備が援助されました',
-    drop: '国連：「世界中で作られすぎて余ったため、国際価格が下がりました。」', dropToast: '国際価格が下がりました',
     last3: '国連：「残り3分。製品は輸出するまでお金になりません。」', end: '国連：「時間です！ 生産をやめてください。」',
-    tradeLead: '交渉中は時計が止まっています。資源は1万トン単位で取引します（使いかけの分は渡せません）。技術を渡すと、自分はその技術を使えなくなります。',
-    intro: '資源と技術で製品をつくり、世界市場に輸出してお金をかせぐゲームです。地理総合の授業で行われる「貿易ゲーム」を、現実の資源と産業に置きかえて、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。',
-    facts: [
-      '8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。',
-      '製品は世界市場に輸出するとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。',
-      '労働力1つで1つの生産ラインが動きます。技術は使ってもなくなりませんが、資源は使うとなくなります。',
-      '足りないもの（資源・技術・お金）は、ほかの国と交渉して手に入れます。交渉しているあいだは時計が止まります。',
-      '国連（先生）は、とちゅうでODA（援助）をしたり、作られすぎた製品の国際価格を下げたりします。',
-      '最後に持っているお金だけが得点です。輸出していない製品・資源・技術は数えません。'
-    ],
-    questions: [
-      'いちばんお金をかせいだのはどのタイプの国でしたか。はじめに持っていた何が有利にはたらきましたか。',
-      '産油国は資源をたくさん持っていました。資源のまま売る国と、技術で製品にして輸出する国では、かせぎ方にどんな差が出ましたか。',
-      'ODAで途上国に生産設備が援助されました。役に立ちましたか。設備だけでは足りなかったものは何でしょう。',
-      '半導体や家電製品の国際価格が下がったとき、困ったのはどの国でしたか。一つの商品の輸出にたよる経済（モノカルチャー経済）と比べてみよう。',
-      '先端技術を持つ国と持たない国の差は、現実の世界ではどんなところに表れていますか。公正な貿易（フェアトレード）にするには、どんなルールがあるとよいでしょう。'
-    ]
+    tradeLead: '交渉中は時計が止まっています。資源は1万トン単位。技術をゆずると、自分はその技術を使えなくなります。',
+    intro: '資源と技術で製品をつくり、世界市場に輸出してお金をかせぐゲームです。地理総合の授業で行う「貿易ゲーム」を、現実の資源と産業に置きかえました。ほかの7か国はコンピューターが動かします。'
   },
   class: {
     id: 'class', label: '授業の紙と道具',
@@ -328,46 +442,32 @@ var THEMES = {
       rect: '長方形', tri: '正三角形', semi: '分度器形', circle: '円' },
     unit: { paper: '枚', pencil: '本', tool: '個', shape: '個' },
     spec: { rect: '13×8cm', tri: '1辺 9cm', semi: '直径 10cm', circle: '半径 4.5cm' },
-    desk: 'わが国の机', deskSub: '紙＝資源、道具＝技術、シャーペン＝働き手', worldH: 'ほかの国', worldSub: '机の上は見えるけれど、お金は見えない',
-    lineSub: 'シャーペン1本につき1ライン', noLine: 'シャーペンがないので作れません。ほかの国から手に入れよう。', making: 'を作っています', choose: '作る図形をえらんでください',
-    mkt: '国連の買い取り窓口', sell1: '1個売る', sellAll: '全部', sold: 'を売って', product: '図形',
-    perSheet: function (n) { return '紙1枚で' + n + '個'; }, partial: '使いかけの紙', empty: '机の上はほぼ空っぽ',
+    desk: 'わが国の机', deskSub: '紙＝資源、道具＝技術、シャーペン＝働き手', hub: '国連', mkt: '国連の買い取り窓口', aidWord: '寄付',
+    lineSub: 'シャーペン1本につき1ライン', noLine: 'シャーペンがないので作れません。ほかの国から手に入れよう。', making: 'を作っています', choose: '作る図形をえらぶ',
+    sell1: '1個', sellAll: '全部売る', sold: 'を売って', product: '図形',
+    perSheet: function (n) { return '紙1枚で' + n + '個'; }, partial: '使いかけの紙',
     guess: 'どんな国なのかは、机の上の道具から考えてみよう。',
     opening: '国連（先生）：「これから40分間、貿易ゲームを始めます。作った図形は国連が買い取ります。」',
-    donation: function (ns) { return '国連：「' + ns + 'に、ハサミを1つずつ寄付します。」'; }, donationToast: '国連からハサミが寄付されました',
-    drop: '国連：「たくさん作られて余っているので、買い取り価格を下げます。」', dropToast: '買い取り価格が下がりました',
     last3: '国連：「残り3分。図形は売るまでお金になりません。」', end: '国連：「時間です！ 図形を作るのをやめてください。」',
     tradeLead: '交渉中は時計が止まっています。紙は1枚単位で取引します（使いかけの紙は渡せません）。',
-    intro: '紙（資源）と道具（技術）で図形を作り、国連に売ってお金をかせぐゲームです。地理総合の授業で行われる「貿易ゲーム」を、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。',
-    facts: [
-      '8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。',
-      '図形は「国連の買い取り窓口」に売るとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。',
-      'シャーペン1本で1つの生産ラインが動きます。道具は使ってもなくなりませんが、紙は使うとなくなります。',
-      '足りないもの（紙・道具・お金）は、ほかの国と交渉して手に入れます。交渉しているあいだは時計が止まります。',
-      '国連（先生）は、とちゅうで寄付をしたり、余っている図形の買い取り価格を下げたりします。',
-      '最後に持っているお金だけが得点です。売っていない図形・紙・道具は数えません。'
-    ],
-    questions: [
-      'いちばんお金をかせいだのはどのタイプの国でしたか。はじめに持っていた何が有利にはたらきましたか。',
-      '産油国は紙（資源）をたくさん持っていました。資源を売るだけの国と、道具（技術）で製品にして売る国では、かせぎ方にどんな差が出ましたか。',
-      '国連から途上国へのハサミの寄付は役に立ちましたか。ハサミだけでは足りなかったものは何でしょう。',
-      '円や正三角形の買い取り価格が下がったとき、困ったのはどの国でしたか。一つの商品にたよる経済（モノカルチャー経済）と比べてみよう。',
-      '現実の世界で、紙・道具・シャーペン・国連はそれぞれ何にあたるでしょうか。公正な貿易（フェアトレード）にするには、どんなルールがあるとよいでしょう。'
-    ]
+    intro: '紙（資源）と道具（技術）で図形を作り、国連に売ってお金をかせぐゲームです。地理総合の授業で行う「貿易ゲーム」を、ひとりで遊べるようにしました。ほかの7か国はコンピューターが動かします。'
   }
 };
 var TH = THEMES.real;
 function applyTheme(id) {
   TH = THEMES[id] || THEMES.real;
-  for (var k in TH.names) NAMES[k] = TH.names[k];
+  NAMES = {}; for (var k in TH.names) NAMES[k] = TH.names[k];
   UNIT = { paper: TH.unit.paper, pencil: TH.unit.pencil };
   SHAPE_KEYS.forEach(function (s) { SHAPES[s].name = TH.names[s]; SHAPES[s].spec = TH.spec[s]; });
 }
 function unitOf(k) { if (k in UNIT) return UNIT[k]; return SHAPE_KEYS.indexOf(k) >= 0 ? TH.unit.shape : TH.unit.tool; }
 
+/* ============================================================
+   小さな道具
+   ============================================================ */
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-function fmt$(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmt$(n) { return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
 function r100(n) { return Math.round(n / 100) * 100; }
 function f100(n) { return Math.floor(n / 100) * 100; }
 function c100(n) { return Math.ceil(n / 100) * 100; }
@@ -377,32 +477,58 @@ function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 42949
 function pick(a) { return a[Math.floor(rnd() * a.length)]; }
 function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 function store(k, v) { try { if (v === undefined) return localStorage.getItem('kusoge.trade.' + k); localStorage.setItem('kusoge.trade.' + k, v); } catch (e) { return null; } }
+var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- 音（Web Audio。最初のクリックのあとで鳴る） ---------- */
+var AC = null, soundOn = store('sound') !== 'off';
+function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = false; } } return AC || null; }
+function tone(f, d, type, vol, f2, delay) {
+  if (!soundOn) return; var a = ac(); if (!a) return;
+  var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.05);
+}
+var SFX = {
+  sell: function () { tone(988, 0.09, 'triangle', 0.12); tone(1319, 0.16, 'triangle', 0.12, null, 0.07); },
+  made: function () { tone(660, 0.06, 'sine', 0.05); },
+  stamp: function () { tone(120, 0.18, 'sine', 0.35, 50); tone(900, 0.03, 'square', 0.04); },
+  nope: function () { tone(200, 0.2, 'sawtooth', 0.06, 140); },
+  crash: function () { tone(520, 0.5, 'sawtooth', 0.07, 130); },
+  rise: function () { tone(523, 0.1, 'triangle', 0.1); tone(784, 0.18, 'triangle', 0.1, null, 0.09); },
+  aid: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.18, 'triangle', 0.08, null, i * 0.08); }); },
+  ding: function () { tone(1568, 0.25, 'sine', 0.08); },
+  tick: function () { tone(1200, 0.025, 'square', 0.025); }
+};
 
 /* ---------- 絵 ---------- */
-function shapeSvg(k) {
-  if (TH.id === 'real') return productSvg(k);
-  var st = 'fill="var(--paper)" stroke="var(--paper-ink)" stroke-width="1.6" stroke-linejoin="round"';
-  if (k === 'rect') return '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="7.5" width="30" height="18.5" rx="0.5" ' + st + '/></svg>';
-  if (k === 'tri') return '<svg viewBox="0 0 40 32" aria-hidden="true"><polygon points="20,4 36,29.5 4,29.5" ' + st + '/></svg>';
+function shapeSvg(k, cls) {
+  var c = cls ? ' class="' + cls + '"' : '';
+  if (TH.id === 'real') return productSvg(k, c);
+  var st = 'fill="' + PCOLOR[k] + '" stroke="var(--p-ink)" stroke-width="1.8" stroke-linejoin="round"';
+  if (k === 'rect') return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="7.5" width="30" height="18.5" rx="0.5" ' + st + '/></svg>';
+  if (k === 'tri') return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><polygon points="20,4 36,29.5 4,29.5" ' + st + '/></svg>';
   if (k === 'semi') {
     var ticks = '';
-    for (var a = 0; a <= 180; a += 30) { var rad = a * Math.PI / 180; var x1 = 20 + Math.cos(rad) * 15, y1 = 27 - Math.sin(rad) * 15, x2 = 20 + Math.cos(rad) * 12, y2 = 27 - Math.sin(rad) * 12; ticks += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="var(--paper-ink)" stroke-width="1"/>'; }
-    return '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M3 27 A17 17 0 0 1 37 27 Z" ' + st + '/>' + ticks + '<circle cx="20" cy="27" r="1.4" fill="var(--paper-ink)"/></svg>';
+    for (var a = 0; a <= 180; a += 30) { var rad = a * Math.PI / 180; ticks += '<line x1="' + (20 + Math.cos(rad) * 15).toFixed(1) + '" y1="' + (27 - Math.sin(rad) * 15).toFixed(1) + '" x2="' + (20 + Math.cos(rad) * 12).toFixed(1) + '" y2="' + (27 - Math.sin(rad) * 12).toFixed(1) + '" stroke="var(--p-ink)" stroke-width="1"/>'; }
+    return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><path d="M3 27 A17 17 0 0 1 37 27 Z" ' + st + '/>' + ticks + '</svg>';
   }
-  return '<svg viewBox="0 0 40 32" aria-hidden="true"><circle cx="20" cy="16" r="13" ' + st + '/></svg>';
+  return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><circle cx="20" cy="16" r="13" ' + st + '/></svg>';
 }
-function productSvg(k) {
-  var st = 'fill="var(--paper)" stroke="var(--paper-ink)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"';
-  var ln = 'fill="none" stroke="var(--paper-ink)" stroke-width="1.3" stroke-linecap="round"';
-  if (k === 'rect') return '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M14 4 L8 6 L3 12 L8 15 L10 13 V29 H30 V13 L32 15 L37 12 L32 6 L26 4 Q20 9 14 4 Z" ' + st + '/></svg>';
-  if (k === 'tri') return '<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="4" width="30" height="20" rx="2" ' + st + '/><rect x="9" y="8" width="22" height="12" rx="1" ' + ln + '/><path d="M15 28 H25 M20 24 V28" ' + ln + '/></svg>';
-  if (k === 'semi') return '<svg viewBox="0 0 40 32" aria-hidden="true"><path d="M16 3 H24 M17 3 V12 L8 27 Q7 29 9.5 29 H30.5 Q33 29 32 27 L23 12 V3" ' + st + '/><path d="M12 21 H28" ' + ln + '/></svg>';
+function productSvg(k, c) {
+  var st = 'fill="' + PCOLOR[k] + '" stroke="var(--p-ink)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"';
+  var ln = 'fill="none" stroke="var(--p-ink)" stroke-width="1.4" stroke-linecap="round"';
+  if (k === 'rect') return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><path d="M14 4 L8 6 L3 12 L8 15 L10 13 V29 H30 V13 L32 15 L37 12 L32 6 L26 4 Q20 9 14 4 Z" ' + st + '/></svg>';
+  if (k === 'tri') return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><rect x="5" y="4" width="30" height="20" rx="2" ' + st + '/><rect x="9" y="8" width="22" height="12" rx="1" fill="#e9f4ff" stroke="var(--p-ink)" stroke-width="1.2"/><path d="M15 28 H25 M20 24 V28" ' + ln + '/></svg>';
+  if (k === 'semi') return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true"><path d="M16 3 H24 M17 3 V12 L8 27 Q7 29 9.5 29 H30.5 Q33 29 32 27 L23 12 V3" ' + st + '/><path d="M12 21 H28" ' + ln + '/></svg>';
   var pins = '';
-  for (var i = 0; i < 4; i++) { var y = 9 + i * 4.5; pins += '<path d="M7 ' + y + ' H11 M29 ' + y + ' H33" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/>'; }
-  return '<svg viewBox="0 0 40 32" aria-hidden="true">' + pins + '<rect x="11" y="5" width="18" height="22" rx="2" ' + st + '/><rect x="15.5" y="11" width="9" height="10" rx="1" ' + ln + '/></svg>';
+  for (var i = 0; i < 4; i++) { var y = 9 + i * 4.5; pins += '<path d="M6.5 ' + y + ' H11 M29 ' + y + ' H33.5" fill="none" stroke="' + PCOLOR.circle + '" stroke-width="1.8" stroke-linecap="round"/>'; }
+  return '<svg' + c + ' viewBox="0 0 40 32" aria-hidden="true">' + pins + '<rect x="11" y="5" width="18" height="22" rx="2" ' + st + '/><rect x="15.5" y="11" width="9" height="10" rx="1" ' + ln + '/></svg>';
 }
 function itemSvg(k) {
   var s = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  if (SHAPE_KEYS.indexOf(k) >= 0) return shapeSvg(k);
+  if (k === 'money') return clipSvg(true);
   if (TH.id === 'real') switch (k) {
     case 'paper': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><ellipse cx="16" cy="7" rx="9" ry="3"/><path d="M7 7 V25 A9 3 0 0 0 25 25 V7 M7 13 A9 3 0 0 0 25 13 M7 19 A9 3 0 0 0 25 19"/></svg>';
     case 'scissors': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M3 28 V14 L10 18 V14 L17 18 V6 H23 V28 Z"/><path d="M8 23 H11 M14 23 H17"/></svg>';
@@ -418,9 +544,8 @@ function itemSvg(k) {
     case 'compass': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><circle cx="16" cy="6" r="2.5"/><path d="M15 8.5 L8 27 M17 8.5 L24 27 M11 19 H21"/></svg>';
     case 'pencil': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M22 4 L28 10 L11 27 L4 28 L5 21 Z"/><path d="M19 7 L25 13"/></svg>';
     case 'paper': return '<svg viewBox="0 0 32 32" aria-hidden="true" ' + s + '><path d="M8 3 H20 L26 9 V29 H8 Z"/><path d="M20 3 V9 H26"/></svg>';
-    case 'money': return clipSvg(true);
   }
-  return shapeSvg(k);
+  return '';
 }
 function clipSvg(big) {
   var w = big ? 12 : 8, h = big ? 22 : 15;
@@ -428,24 +553,29 @@ function clipSvg(big) {
 }
 function clipsHtml(m) {
   var big = Math.floor(m / 1000), small = Math.floor((m % 1000) / 100);
-  return '<span class="clips" title="大クリップ ' + big + '個・小クリップ ' + small + '個">' + clipSvg(true) + '×' + big + ' ' + clipSvg(false) + '×' + small + '</span>';
+  return '<span title="大クリップ ' + big + '個・小クリップ ' + small + '個">' + clipSvg(true) + '×' + big + ' ' + clipSvg(false) + '×' + small + '</span>';
+}
+function recipeHtml(it, s) {
+  return '<span class="recipe">' + SHAPES[s].tools.map(function (k) {
+    var has = !it || it[k] > 0;
+    return '<span class="' + (has ? '' : 'miss') + '" title="' + NAMES[k] + (has ? '' : '（ない）') + '">' + itemSvg(k) + '</span>';
+  }).join('<span aria-hidden="true">+</span>') + '</span>';
 }
 
 /* ============================================================
    ゲームの状態
    ============================================================ */
 var G = null;
-var settings = { who: store('who') || 'random', speed: store('speed') || 'normal', view: store('view') || 'real' };
+var settings = { who: store('who') || 'random', speed: store('speed') || 'normal', view: store('view') || 'real', predict: null };
 applyTheme(settings.view);
+var dirty = true;
 
 function newGame() {
   var types = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'];
   var names = shuffle(COUNTRY_NAMES.slice());
   var colors = shuffle(COUNTRY_COLORS.slice());
   var order = shuffle(types.slice());
-  var meIdx;
-  if (settings.who === 'random') meIdx = Math.floor(rnd() * 8);
-  else meIdx = order.indexOf(settings.who);
+  var meIdx = settings.who === 'random' ? Math.floor(rnd() * 8) : order.indexOf(settings.who);
   var countries = order.map(function (t, i) {
     var it = { money: 0, paper: 0, scissors: 0, ruler: 0, setsq: 0, compass: 0, pencil: 0, rect: 0, tri: 0, semi: 0, circle: 0 };
     var ini = INIT[t];
@@ -456,14 +586,16 @@ function newGame() {
     syncLines(c);
     return c;
   });
-  var price = {}, period = {}, total = {};
-  SHAPE_KEYS.forEach(function (s) { price[s] = SHAPES[s].base; period[s] = 0; total[s] = 0; });
+  var price = {}, period = {}, total = {}, ph = {};
+  SHAPE_KEYS.forEach(function (s) { price[s] = SHAPES[s].base; period[s] = 0; total[s] = 0; ph[s] = [SHAPES[s].base]; });
   G = { t: 0, running: false, paused: false, over: false, countries: countries, me: countries[meIdx],
-    price: price, prev: {}, period: period, total: total, news: [], offers: [], offerSeq: 0,
-    nextCpuTrade: 1.0, nextOffer: 2.0, nextReview: 5, donated: false, warned: {}, speed: speedSec() };
+    price: price, period: period, total: total, priceHist: ph, news: [], offers: [], offerSeq: 0, contractNo: 0,
+    nextCpuTrade: 1.0, nextOffer: 2.0, nextReview: 5, nextHist: 1, donated: false, discovered: false, warned: {},
+    hist: countries.map(function (c) { return [c.items.money]; }), cards: [], moments: [], rejects: 0, myDeals: 0, mySales: 0,
+    flights: [], shownMoney: countries[meIdx].items.money, predict: settings.predict, feel: {} };
   addNews('un', TH.opening);
   addNews('', 'あなたは「' + G.me.name + '」の代表です。' + (settings.who === 'random' ? TH.guess : 'あなたの国は' + TYPES[G.me.type].label + 'です。'));
-  dirty = true;
+  dirty = true; mapDirty = true;
 }
 function speedSec() { for (var i = 0; i < SPEEDS.length; i++) if (SPEEDS[i].id === settings.speed) return SPEEDS[i].sec; return 7.5; }
 function syncLines(c) {
@@ -474,6 +606,7 @@ function remain() { return Math.max(0, GAME_MIN - G.t); }
 function sheets(it) { return Math.floor(it.paper / SHEET + 1e-9); }
 function hasTools(it, s) { return SHAPES[s].tools.every(function (k) { return it[k] > 0; }); }
 function missing(it, s) { return SHAPES[s].tools.filter(function (k) { return !(it[k] > 0); }).map(function (k) { return NAMES[k]; }); }
+function moment(text) { G.moments.push({ at: Math.floor(G.t), text: text }); }
 
 /* ---------- 国の「価値」の見積もり（CPU の判断に使う。同じ式で相手の得も見積もる） ---------- */
 function expPrice(s) { var p = G.price[s]; return (s === 'circle' || s === 'tri') ? p * 0.85 : p; }
@@ -488,7 +621,7 @@ function valueOf(it, R) {
     var n = Math.max(0, Math.min(Math.floor(T / sh.time), Math.floor(P / sh.area)));
     pv += n * expPrice(s); T -= n * sh.time; P -= n * sh.area;
   });
-  v += pv * 0.8 + P * 0.4;                               // 使い切れない紙も、売れば少しはお金になる
+  v += pv * 0.8 + P * 0.4;
   TOOL_KEYS.forEach(function (k) { v += Math.min(it[k], 2) * 100; });
   v += it.pencil * 60;
   return v;
@@ -497,7 +630,6 @@ function cloneIt(it) { var o = {}; for (var k in it) o[k] = it[k]; return o; }
 function applyB(it, b, sign) { for (var k in b) { if (!b[k]) continue; it[k] += sign * (k === 'paper' ? b[k] * SHEET : b[k]); } }
 function canPay(it, b) { for (var k in b) { if (!b[k]) continue; var have = k === 'paper' ? sheets(it) : it[k]; if (have < b[k]) return false; } return true; }
 function isEmpty(b) { for (var k in b) if (b[k]) return false; return true; }
-// country が give を出して get を受け取ったときの得
 function gainOf(c, give, get) {
   var R = remain(), a = cloneIt(c.items);
   var before = valueOf(a, R);
@@ -517,16 +649,18 @@ function doTrade(a, b, aGives, bGives) {
   applyB(b.items, bGives, -1); applyB(b.items, aGives, 1);
   syncLines(a); syncLines(b);
   a.deals++; b.deals++;
-  dirty = true;
+  fly(a.id, b.id, 'trade');
+  dirty = true; mapDirty = true;
 }
 
-/* ---------- 国連の買い取り ---------- */
+/* ---------- 世界市場（国連）の買い取り ---------- */
 function sell(c, s, n) {
   n = Math.min(n, c.items[s]);
   if (n <= 0) return 0;
   var got = n * G.price[s];
   c.items[s] -= n; c.items.money += got; c.sold += got;
   G.period[s] += n; G.total[s] += n;
+  fly(c.id, 'hub', s);
   dirty = true;
   return got;
 }
@@ -548,8 +682,8 @@ function produce(c, dt) {
     if (!ln.shape) { ln.why = ''; return; }
     var sh = SHAPES[ln.shape];
     if (!ln.busy) {
-      if (!hasTools(it, ln.shape)) { ln.why = missing(it, ln.shape).join('・') + 'がない'; return; }
-      if (it.paper < sh.area) { ln.why = NAMES.paper + 'が足りない'; return; }
+      if (!hasTools(it, ln.shape)) { if (!ln.why && c.isPlayer) dirty = true; ln.why = missing(it, ln.shape).join('・') + 'がない'; return; }
+      if (it.paper < sh.area) { if (!ln.why && c.isPlayer) dirty = true; ln.why = NAMES.paper + 'が足りない'; return; }
       it.paper -= sh.area; ln.busy = true; ln.prog = 0; ln.why = '';
       if (c.isPlayer) dirty = true;
     }
@@ -557,7 +691,7 @@ function produce(c, dt) {
     if (ln.prog >= sh.time) {
       it[ln.shape]++; ln.busy = false; ln.prog = 0;
       if (!c.isPlayer) sell(c, ln.shape, it[ln.shape]);
-      else dirty = true;
+      else { dirty = true; SFX.made(); }
     }
   });
 }
@@ -565,7 +699,6 @@ function cpuChoose(c) {
   var it = c.items, best = null, bv = -1;
   SHAPE_KEYS.forEach(function (s) {
     if (!hasTools(it, s) || it.paper < SHAPES[s].area) return;
-    // 紙が少ないときは「紙あたり」、多いときは「時間あたり」で選ぶ
     var paperRich = it.paper / SHAPES[s].area > c.items.pencil * remain() / SHAPES[s].time;
     var v = paperRich ? G.price[s] / SHAPES[s].time : G.price[s] / SHAPES[s].area;
     if (v > bv) { bv = v; best = s; }
@@ -573,42 +706,79 @@ function cpuChoose(c) {
   return best;
 }
 function events() {
-  // 国連からの寄付（途上国にハサミ）
+  // 国連の援助（途上国に生産設備・ハサミ）
   if (!G.donated && G.t >= 12) {
     G.donated = true;
     var ds = G.countries.filter(function (c) { return c.type === 'D'; });
-    ds.forEach(function (c) { c.items.scissors += 1; });
-    addNews('un', TH.donation(ds.map(function (c) { return c.name; }).join('と')));
-    if (G.me.type === 'D') toast(TH.donationToast);
-    dirty = true;
+    ds.forEach(function (c) { c.items.scissors += 1; fly('hub', c.id, 'aid'); });
+    var who = ds.map(function (c) { return c.name; }).join('と');
+    addNews('un', '国連：「' + who + 'に、' + NAMES.scissors + 'を1つずつ' + (TH.id === 'real' ? '援助' : '寄付') + 'します。」');
+    moment('国連が' + who + 'に' + NAMES.scissors + 'を' + (TH.id === 'real' ? '援助' : '寄付') + 'した' + (G.me.type === 'D' ? '（あなたの国も受け取った）' : ''));
+    SFX.aid();
+    G.cards.push({ kind: 'aid', tag: '国連からのお知らせ', title: TH.id === 'real' ? 'ODA（政府開発援助）' : '国連からの寄付',
+      rows: [['なにが', who + 'に、' + NAMES.scissors + 'が1つずつ届きました。' + (G.me.type === 'D' ? ' あなたの国にも届いています。' : '')],
+             ['なぜ', '道具や設備が足りない国が、自分で製品をつくれるようにするため。'],
+             ['考えよう', NAMES.scissors + 'だけで、製品はつくれるでしょうか。ほかに何が必要でしょう。']],
+      term: 'ODA（政府開発援助）：先進国などの政府が、発展途上国の経済や暮らしをよくするために行う、資金や技術の援助。' });
+    dirty = true; mapDirty = true;
   }
-  // 国連による買い取り価格の見直し（5分ごと）
+  // 新しい資源の発見（途上国の1つ）
+  if (!G.discovered && G.t >= 24) {
+    G.discovered = true;
+    var d = pick(G.countries.filter(function (c) { return c.type === 'D'; }));
+    d.items.paper += 6 * SHEET;
+    fly('hub', d.id, 'aid');
+    addNews('un', 'ニュース：' + d.name + 'で新しい' + (TH.id === 'real' ? '鉱山' : '紙の束') + 'が見つかり、' + NAMES.paper + 'が6' + UNIT.paper + '増えました。');
+    moment(d.name + 'で' + NAMES.paper + 'が見つかった' + (d.isPlayer ? '（あなたの国！）' : ''));
+    SFX.rise();
+    G.cards.push({ kind: 'find', tag: 'ワールドニュース', title: TH.id === 'real' ? '新しい鉱山が見つかった' : '紙の束が見つかった',
+      rows: [['なにが', d.name + 'で' + NAMES.paper + 'が6' + UNIT.paper + '見つかりました。' + (d.isPlayer ? ' あなたの国です！' : '')],
+             ['考えよう', '資源が増えても、加工する技術がなければ、どうやってお金にしますか。原料のまま売るのと、製品にして売るのでは、どれくらい差があるでしょう。']],
+      term: '付加価値：原料を加工することで新しく生まれる価値。同じ資源でも、製品にすると高く売れる。' });
+    dirty = true; mapDirty = true;
+  }
+  // 国連による価格の見直し（5分ごと）
   if (G.t >= G.nextReview && G.nextReview < GAME_MIN) {
-    var changed = [];
+    var downs = [], ups = [], why = [];
     SHAPE_KEYS.forEach(function (s) {
-      var sh = SHAPES[s];
+      var sh = SHAPES[s], old = G.price[s];
       if (sh.drop && G.period[s] >= sh.limit && G.price[s] > sh.floor) {
-        var old = G.price[s];
         G.price[s] = Math.max(sh.floor, old - sh.drop);
-        G.prev[s] = old;
-        changed.push(sh.name + ' ' + fmt$(old) + '→' + fmt$(G.price[s]));
+        downs.push(sh.name + ' ' + fmt$(old) + '→' + fmt$(G.price[s]));
+        why.push(sh.name + '：' + G.period[s] + '個（目安 ' + sh.limit + '個）');
+        if (G.me.items[s] > 0 || G.me.lines.some(function (l) { return l.shape === s; })) moment(sh.name + 'の値段が ' + fmt$(old) + '→' + fmt$(G.price[s]) + ' に下がった（あなたも作っていた）');
+      } else if (sh.drop && G.period[s] <= Math.floor(sh.limit / 3) && G.price[s] < sh.base) {
+        G.price[s] = Math.min(sh.base, old + 100);
+        ups.push(sh.name + ' ' + fmt$(old) + '→' + fmt$(G.price[s]));
       }
       G.period[s] = 0;
+      G.priceHist[s].push(G.price[s]);
     });
-    if (changed.length) {
-      addNews('warn', TH.drop + ' ' + changed.join('、'));
-      toast(TH.dropToast);
+    if (downs.length) {
+      addNews('warn', '国連：「作られすぎて余ったので、値段を下げます。」 ' + downs.join('、'));
+      SFX.crash();
+      var mp = $('mktPanel'); if (mp && !reduceMotion) { mp.classList.remove('shake'); void mp.offsetWidth; mp.classList.add('shake'); }
+      G.cards.push({ kind: 'crash', tag: TH.id === 'real' ? '国際価格のニュース' : '国連からのお知らせ', title: '値段が下がった！',
+        rows: [['なにが', downs.join('、')],
+               ['なぜ', 'この5分間に売られた数が、国連の目安より多かったから（供給過剰）。' + why.join('、')],
+               ['現実では', '原料や農産物などの一次産品は、値段が大きく動きます。Christian Aid の貿易ゲーム教材は、1999〜2001年にウガンダのコーヒーの価格が1ポンドあたり0.63ドルから0.25ドルに下がった例を紹介しています。'],
+               ['考えよう', 'みんなが同じ製品をつくると、何が起きますか。その製品しかつくれない国は、どうなるでしょう。']].concat(ups.length ? [['値上がり', ups.join('、') + '（あまり売られなかったので）']] : []),
+        term: 'モノカルチャー経済：特定の農産物や鉱産資源などの輸出にたよる経済。その値段が下がると、国全体の収入が大きく減る。' });
+    } else if (ups.length) {
+      addNews('me', '国連：「あまり売られていないので、値段を上げます。」 ' + ups.join('、'));
+      SFX.rise();
     }
     G.nextReview += 5;
     dirty = true;
   }
+  if (G.t >= G.nextHist) {
+    G.countries.forEach(function (c, i) { G.hist[i].push(c.items.money); });
+    G.nextHist += 1;
+  }
   if (G.t >= 30 && !G.warned[30]) { G.warned[30] = 1; addNews('un', '国連：「残り10分です。」'); }
-  if (G.t >= 37 && !G.warned[37]) { G.warned[37] = 1; addNews('un', TH.last3); toast('残り3分'); }
-  // CPU どうしの取引
+  if (G.t >= 37 && !G.warned[37]) { G.warned[37] = 1; addNews('un', TH.last3); toast('残り3分！ 手持ちの' + TH.product + 'を売ろう'); SFX.ding(); }
   while (G.t >= G.nextCpuTrade) { cpuTradeRound(); G.nextCpuTrade += 0.8 + rnd() * 0.6; }
-  // CPU からあなたへの提案
   if (G.t >= G.nextOffer) { cpuOfferToMe(); G.nextOffer += 2.2 + rnd() * 1.6; }
-  // 期限切れの提案
   var n0 = G.offers.length;
   G.offers = G.offers.filter(function (o) { return o.until > G.t; });
   if (G.offers.length !== n0) dirty = true;
@@ -617,7 +787,6 @@ function events() {
 /* ---------- CPU の交渉 ---------- */
 var CANDIDATES = [{ paper: 1 }, { paper: 2 }, { paper: 3 }, { paper: 5 }, { scissors: 1 }, { ruler: 1 }, { setsq: 1 }, { compass: 1 }, { pencil: 1 }];
 function bestSale(seller, buyer, maxPrice, share) {
-  // seller が品物を出し、buyer がお金を払う取引で、いちばん得の大きいものを探す
   var best = null;
   CANDIDATES.forEach(function (b) {
     if (!canPay(seller.items, b)) return;
@@ -628,8 +797,8 @@ function bestSale(seller, buyer, maxPrice, share) {
     var price = r100(loss + surplus * share);
     price = Math.min(price, f100(maxPrice), f100(gain - 100));
     if (price < loss + 100) return;
-    var score = surplus - Math.max(0, (loss + surplus * share) - price); // 払えない分はへらす
-    if (!best || score > best.score) best = { bundle: b, price: price, score: score, loss: loss, gain: gain };
+    var score = surplus - Math.max(0, (loss + surplus * share) - price);
+    if (!best || score > best.score) best = { bundle: b, price: price, score: score };
   });
   return best;
 }
@@ -653,47 +822,150 @@ function cpuOfferToMe() {
   for (var i = 0; i < cpus.length; i++) {
     var c = cpus[i];
     if (G.offers.some(function (o) { return o.from === c; })) continue;
-    var buy = bestSale(me, c, c.items.money, 0.35);   // c があなたから買う
-    var sellD = bestSale(c, me, me.items.money, 0.65); // c があなたに売る
+    var buy = bestSale(me, c, c.items.money, 0.35);
+    var sellD = bestSale(c, me, me.items.money, 0.65);
     var d = null, kind = '';
     if (buy && (!sellD || buy.score >= sellD.score)) { d = buy; kind = 'buy'; } else if (sellD) { d = sellD; kind = 'sell'; }
     if (!d) continue;
-    var o = { id: ++G.offerSeq, from: c, until: G.t + 4, myGive: kind === 'buy' ? d.bundle : { money: d.price }, myGet: kind === 'buy' ? { money: d.price } : d.bundle };
-    G.offers.push(o);
+    G.offers.push({ id: ++G.offerSeq, from: c, until: G.t + 4, myGive: kind === 'buy' ? d.bundle : { money: d.price }, myGet: kind === 'buy' ? { money: d.price } : d.bundle });
     addNews('', c.name + 'から提案がとどきました。');
+    SFX.ding();
     dirty = true;
     return;
   }
 }
 
 /* ============================================================
+   世界地図（ステージ）
+   ============================================================ */
+var mapDirty = true, MAP = null, lastMapW = 0;
+function mapLayout() {
+  var w = $('map').getBoundingClientRect().width || 1000;
+  var narrow = w < 640;
+  var L = narrow
+    ? { W: 420, H: 540, hub: { x: 210, y: 270 }, hr: 52, nw: 128, nh: 78, fs: 16, ss: 13 }
+    : { W: 1000, H: 420, hub: { x: 500, y: 210 }, hr: 60, nw: 168, nh: 80, fs: 18, ss: 13 };
+  var me = G.me.id, others = G.countries.filter(function (c) { return !c.isPlayer; }).map(function (c) { return c.id; });
+  var orderIds = [me].concat(others);
+  L.pos = {};
+  orderIds.forEach(function (id, k) {
+    var p;
+    if (narrow) {
+      var slots = [[72, 474], [348, 474], [72, 338], [348, 338], [72, 202], [348, 202], [72, 66], [348, 66]];
+      p = { x: slots[k][0], y: slots[k][1] };
+    } else {
+      var ang = (90 + k * 45) * Math.PI / 180;
+      p = { x: 500 + Math.cos(ang) * 390, y: 210 + Math.sin(ang) * 148 };
+    }
+    L.pos[id] = p;
+  });
+  L.pos.hub = L.hub;
+  L.narrow = narrow;
+  return L;
+}
+function nestSvg(svg, x, y, size, color) {
+  return svg.replace('<svg', '<svg x="' + x + '" y="' + y + '" width="' + size + '" height="' + size + '" style="color:' + color + '"');
+}
+function renderMap() {
+  if (!G) return;
+  mapDirty = false;
+  MAP = mapLayout();
+  var L = MAP, h = '';
+  var svg = $('map');
+  svg.setAttribute('viewBox', '0 0 ' + L.W + ' ' + L.H);
+  // 航路
+  G.countries.forEach(function (c) { var p = L.pos[c.id]; h += '<path class="lane" d="M' + p.x + ' ' + p.y + ' L' + L.hub.x + ' ' + L.hub.y + '"/>'; });
+  // 世界市場
+  h += '<g><circle class="hub-c" cx="' + L.hub.x + '" cy="' + L.hub.y + '" r="' + L.hr + '"/>' +
+    '<text class="hub-t" x="' + L.hub.x + '" y="' + (L.hub.y + 6) + '" text-anchor="middle" font-size="' + (TH.hub.length > 3 ? 15 : 18) + '">' + esc(TH.hub) + '</text>' +
+    '<text class="sm" x="' + L.hub.x + '" y="' + (L.hub.y + 24) + '" text-anchor="middle" font-size="11">' + (TH.id === 'real' ? '国連が見守る' : '買い取り窓口') + '</text></g>';
+  // 国
+  G.countries.forEach(function (c) {
+    var p = L.pos[c.id], w = L.nw, ht = L.nh, x0 = p.x - w / 2, y0 = p.y - ht / 2, it = c.items;
+    var g = '<g class="node' + (c.isPlayer ? ' me' : '') + '" data-node="' + c.id + '"' + (c.isPlayer ? '' : ' tabindex="0" role="button" aria-label="' + esc(c.name) + 'と交渉する"') + '>';
+    g += '<rect class="card" x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + ht + '" rx="12"/>';
+    g += '<rect x="' + (x0 + 10) + '" y="' + (y0 + 12) + '" width="22" height="15" rx="2" fill="' + c.color + '"/>';
+    g += '<text class="nm" x="' + (x0 + 38) + '" y="' + (y0 + 26) + '" font-size="' + L.fs + '">' + esc(c.name) + '</text>';
+    var pp = Math.floor(it.paper / SHEET * 10 + 1e-9) / 10;
+    g += nestSvg(itemSvg('paper'), x0 + 10, y0 + 36, 16, '#f2b230') + '<text class="sm" x="' + (x0 + 29) + '" y="' + (y0 + 49) + '" font-size="' + L.ss + '">' + pp.toFixed(pp >= 10 ? 0 : 1) + '</text>';
+    g += nestSvg(itemSvg('pencil'), x0 + w - 44, y0 + 36, 16, '#e8f0f6') + '<text class="sm" x="' + (x0 + w - 25) + '" y="' + (y0 + 49) + '" font-size="' + L.ss + '">×' + it.pencil + '</text>';
+    TOOL_KEYS.forEach(function (k, i) {
+      var has = it[k] > 0;
+      g += '<g opacity="' + (has ? 1 : 0.22) + '">' + nestSvg(itemSvg(k), x0 + 10 + i * 21, y0 + 56, 17, has ? '#6fd3ff' : '#8fb0c8') + '</g>';
+    });
+    if (c.isPlayer) g += '<rect class="badge" x="' + (x0 + w - 46) + '" y="' + (y0 - 10) + '" width="44" height="20" rx="10"/><text class="badge-t" x="' + (x0 + w - 24) + '" y="' + (y0 + 4) + '" text-anchor="middle" font-size="12">あなた</text>';
+    else if (G.offers.some(function (o) { return o.from === c; })) g += '<circle cx="' + (x0 + w - 8) + '" cy="' + (y0 + 8) + '" r="9" fill="#ff6a6f"/><text x="' + (x0 + w - 8) + '" y="' + (y0 + 12) + '" text-anchor="middle" font-size="12" fill="#fff" font-weight="700">!</text>';
+    g += '</g>';
+    h += g;
+  });
+  h += '<g id="fx"></g>';
+  svg.innerHTML = h;
+}
+// 動くもの：輸出（国→市場）、取引（国↔国）、援助（市場→国）
+function fly(from, to, kind) {
+  if (!G || reduceMotion) return;
+  if (G.flights.length > 40) G.flights.shift();
+  G.flights.push({ from: from, to: to, kind: kind, t0: performance.now(), dur: kind === 'trade' ? 1100 : 900 });
+}
+function renderFx(now) {
+  var fx = document.getElementById('fx');
+  if (!fx || !MAP) return;
+  var h = '';
+  G.flights = G.flights.filter(function (f) { return now - f.t0 < f.dur + 400; });
+  G.flights.forEach(function (f) {
+    var a = MAP.pos[f.from], b = MAP.pos[f.to];
+    if (!a || !b) return;
+    if (f.to === 'hub' || f.from === 'hub') {
+      var o = f.to === 'hub' ? a : b, dx = o.x - MAP.hub.x, dy = o.y - MAP.hub.y, dl = Math.sqrt(dx * dx + dy * dy) || 1;
+      var edge = { x: MAP.hub.x + dx / dl * (MAP.hr + 4), y: MAP.hub.y + dy / dl * (MAP.hr + 4) };
+      if (f.to === 'hub') b = edge; else a = edge;
+    }
+    var p = Math.min(1, Math.max(0, (now - f.t0) / f.dur));
+    var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    if (f.kind === 'trade') {
+      var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 60;
+      var fade = p >= 1 ? Math.max(0, 1 - (now - f.t0 - f.dur) / 400) : 1;
+      h += '<path d="M' + a.x + ' ' + a.y + ' Q' + mx + ' ' + my + ' ' + b.x + ' ' + b.y + '" stroke="#f2b230" stroke-width="3" fill="none" stroke-dasharray="' + (e * 900) + ' 2000" opacity="' + (0.85 * fade) + '"/>';
+      var q = function (t) { return { x: (1 - t) * (1 - t) * a.x + 2 * (1 - t) * t * mx + t * t * b.x, y: (1 - t) * (1 - t) * a.y + 2 * (1 - t) * t * my + t * t * b.y }; };
+      var p1 = q(e), p2 = q(1 - e);
+      if (p < 1) h += '<circle cx="' + p1.x + '" cy="' + p1.y + '" r="6" fill="#f2b230"/><circle cx="' + p2.x + '" cy="' + p2.y + '" r="6" fill="#8ff0b6"/>';
+    } else if (p < 1) {
+      var x = a.x + (b.x - a.x) * e, y = a.y + (b.y - a.y) * e;
+      if (f.kind === 'aid') h += '<rect x="' + (x - 7) + '" y="' + (y - 7) + '" width="14" height="14" fill="#ffe08a" stroke="#b9820a" stroke-width="2" transform="rotate(45 ' + x + ' ' + y + ')"/>';
+      else h += '<circle cx="' + x + '" cy="' + y + '" r="7" fill="' + PHEX[f.kind] + '" stroke="#0d2131" stroke-width="2"/>';
+    }
+  });
+  fx.innerHTML = h;
+}
+
+/* ============================================================
    画面
    ============================================================ */
-var dirty = true;
 function render() {
   if (!G) return;
   dirty = false;
   var me = G.me, it = me.items;
   $('meChip').innerHTML = '<span class="flag" style="background:' + me.color + '"></span>' + esc(me.name) + (settings.who !== 'random' ? '（' + TYPES[me.type].label + '）' : '') + 'の代表';
-  $('wallet').innerHTML = fmt$(it.money) + clipsHtml(it.money);
-  $('deskH').textContent = TH.desk; $('deskSub').textContent = TH.deskSub; $('mktH').textContent = TH.mkt; $('worldSub').textContent = TH.worldSub;
+  $('walletClips').innerHTML = clipsHtml(it.money);
+  $('deskH').textContent = TH.desk; $('deskSub').textContent = TH.deskSub; $('mktH').textContent = TH.mkt;
 
-  // 机
-  var invKeys = ['paper', 'pencil', 'scissors', 'ruler', 'setsq', 'compass'];
+  // トレイ
   var h = '';
-  invKeys.forEach(function (k) {
-    var n = k === 'paper' ? it.paper / SHEET : it[k];
-    var shown = k === 'paper' ? (Math.floor(n * 10 + 1e-9) / 10).toFixed(1) : n;
-    h += '<div class="inv-item' + (n > 0 ? '' : ' zero') + '">' + itemSvg(k) + '<b class="num">' + shown + '</b>' + NAMES[k] +
-      (k === 'paper' && n > 0 ? '<span class="paper-meter" title="' + TH.partial + '"><i style="width:' + Math.round((it.paper % SHEET) / SHEET * 100) + '%"></i></span>' : '') + '</div>';
+  var pp = it.paper / SHEET;
+  h += '<div class="slot res' + (it.paper > 0 ? '' : ' zero') + '" title="' + NAMES.paper + '">' + (it.paper % SHEET > 0 ? '<span class="meter" title="' + TH.partial + '"><i style="width:' + Math.round((it.paper % SHEET) / SHEET * 100) + '%"></i></span>' : '') + itemSvg('paper') + '<span class="l">' + NAMES.paper + '</span><span class="n num">' + (Math.floor(pp * 10 + 1e-9) / 10) + '</span></div>';
+  h += '<div class="slot lab' + (it.pencil ? '' : ' zero') + '" title="' + NAMES.pencil + '">' + itemSvg('pencil') + '<span class="l">' + NAMES.pencil + '</span><span class="n num">' + it.pencil + '</span></div>';
+  TOOL_KEYS.forEach(function (k) {
+    h += '<div class="slot tech' + (it[k] ? '' : ' zero') + '" title="' + NAMES[k] + '">' + itemSvg(k) + '<span class="l">' + NAMES[k] + '</span><span class="n num">' + it[k] + '</span></div>';
   });
   SHAPE_KEYS.forEach(function (s) {
-    h += '<div class="inv-item' + (it[s] > 0 ? '' : ' zero') + '">' + shapeSvg(s) + '<b class="num">' + it[s] + '</b>' + SHAPES[s].name + '</div>';
+    h += '<div class="slot' + (it[s] ? '' : ' zero') + '" title="' + SHAPES[s].name + '">' + shapeSvg(s) + '<span class="l">' + SHAPES[s].name + '</span><span class="n num">' + it[s] + '</span></div>';
   });
-  $('inv').innerHTML = h;
+  $('tray').innerHTML = h;
+  var stock = SHAPE_KEYS.reduce(function (a, s) { return a + it[s] * G.price[s]; }, 0);
+  $('trayCap1').textContent = '上段：資源・労働力・技術　下段：' + TH.product;
+  $('trayCap2').textContent = stock ? '在庫を全部売ると +' + fmt$(stock) : '';
 
   // 生産ライン
-  $('lineSub').textContent = TH.lineSub;
   h = '';
   if (!me.lines.length) h = '<p class="empty-note">' + TH.noLine + '</p>';
   me.lines.forEach(function (ln, i) {
@@ -701,96 +973,137 @@ function render() {
     h += '<div class="line"><div class="line-top"><span class="who">ライン ' + (i + 1) + '</span><span class="line-status' + (ln.why ? ' bad' : '') + '">' + esc(st) + '</span></div><div class="picks">';
     SHAPE_KEYS.forEach(function (s) {
       var ok = hasTools(it, s);
-      var miss = missing(it, s);
-      h += '<button type="button" class="pick" data-line="' + i + '" data-shape="' + s + '" aria-pressed="' + (ln.shape === s) + '"' + (ok || ln.shape === s ? '' : ' disabled') +
-        ' title="' + (ok ? SHAPES[s].name + '：' + SHAPES[s].time + '分で1個' : miss.join('・') + 'が必要') + '">' + shapeSvg(s) + SHAPES[s].name +
-        '<span class="need">' + (ok ? SHAPES[s].time + '分・' + TH.perSheet(Math.floor(SHEET / SHAPES[s].area)) : miss.join('・') + 'が必要') + '</span></button>';
+      h += '<button type="button" class="pick" style="--pc:' + PCOLOR[s] + '" data-line="' + i + '" data-shape="' + s + '" aria-pressed="' + (ln.shape === s) + '"' + (ok || ln.shape === s ? '' : ' disabled') +
+        ' title="' + (ok ? SHAPES[s].name + '：' + SHAPES[s].time + '分で1個・' + TH.perSheet(Math.floor(SHEET / SHAPES[s].area)) : missing(it, s).join('・') + 'が必要') + '">' +
+        shapeSvg(s, 'pi') + '<b>' + SHAPES[s].name + '</b>' + recipeHtml(it, s) + '</button>';
     });
-    h += '</div><div class="prog"><i data-prog="' + i + '"></i></div></div>';
+    var pc = ln.shape ? PCOLOR[ln.shape] : 'var(--gain)';
+    h += '</div><div class="belt' + (ln.busy && !G.paused ? ' run' : '') + '" style="--pc:' + pc + '" data-belt="' + i + '"><span class="fill"></span>' + (ln.busy ? shapeSvg(ln.shape) : '') + '</div></div>';
   });
   $('lines').innerHTML = h;
 
   // 市場
   h = '';
   SHAPE_KEYS.forEach(function (s) {
-    var sh = SHAPES[s], down = G.price[s] < sh.base;
-    h += '<div class="mkt-row">' + shapeSvg(s) + '<div class="mkt-name">' + sh.name + '<small>' + sh.spec + '・' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '</small></div>' +
-      '<div class="price num' + (down ? ' down' : '') + '">' + (down ? '<s>' + fmt$(sh.base) + '</s>' : '') + fmt$(G.price[s]) + '</div>' +
-      '<div class="sell-btns"><button class="btn" type="button" data-sell="' + s + '" data-n="1"' + (it[s] ? '' : ' disabled') + '>' + TH.sell1 + '</button>' +
-      '<button class="btn money" type="button" data-sell="' + s + '" data-n="all"' + (it[s] ? '' : ' disabled') + '>' + TH.sellAll + '（' + it[s] + '）</button></div></div>';
+    var sh = SHAPES[s], hist = G.priceHist[s], prev = hist.length > 1 ? hist[hist.length - 2] : sh.base, cur = G.price[s];
+    var cls = cur < prev ? 'down' : cur > prev ? 'up' : 'flat';
+    var d = cur < prev ? '▼ ' + fmt$(prev - cur) : cur > prev ? '▲ ' + fmt$(cur - prev) : (cur < sh.base ? 'はじめ ' + fmt$(sh.base) : '変わらず');
+    var lim = sh.limit < 99 ? sh.limit : 0, n = G.period[s];
+    var over = lim && (n + it[s]) >= lim;
+    h += '<div class="tick" style="--pc:' + PCOLOR[s] + '"><div class="ic">' + shapeSvg(s) + '</div>' +
+      '<div class="nm">' + sh.name + '<small>' + sh.spec + '・' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '</small></div>' +
+      '<div class="price ' + cls + '"><span class="v num">' + fmt$(cur) + '</span><span class="d">' + d + '</span></div>' +
+      '<div class="tick-low"><div>' + sparkSvg(hist, s) +
+      (lim ? '<div class="supply' + (over ? ' warn' : '') + '">この5分の売れた数 <b class="num">' + n + '</b> / 目安 ' + lim + (over && it[s] ? '　全部売ると値下がりの原因に' : '') +
+        '<div class="bar"><i class="' + (n >= lim ? 'over' : '') + '" style="width:' + Math.min(100, n / lim * 100) + '%"></i></div></div>' : '<div class="supply">いつも同じ値段（値下がりしない）</div>') +
+      '</div><div class="sell"><button class="btn" type="button" data-sell="' + s + '" data-n="1"' + (it[s] ? '' : ' disabled') + '>' + TH.sell1 + '</button>' +
+      '<button class="btn go" type="button" data-sell="' + s + '" data-n="all"' + (it[s] ? '' : ' disabled') + '>' + TH.sellAll + (it[s] ? ' +' + fmt$(it[s] * cur) : '') + '</button></div></div></div>';
   });
   $('mkt').innerHTML = h;
-
-  // ほかの国
-  h = '';
-  G.countries.forEach(function (c) {
-    if (c.isPlayer) return;
-    var ci = c.items, tags = '';
-    var pp = Math.floor(ci.paper / SHEET * 10 + 1e-9) / 10;
-    if (pp > 0) tags += '<span class="tag">' + itemSvg('paper') + NAMES.paper + ' ' + pp.toFixed(1) + (TH.id === 'real' ? UNIT.paper : '') + '</span>';
-    ['pencil', 'scissors', 'ruler', 'setsq', 'compass'].forEach(function (k) { if (ci[k]) tags += '<span class="tag">' + itemSvg(k) + NAMES[k] + (ci[k] > 1 ? '×' + ci[k] : '') + '</span>'; });
-    if (!tags) tags = '<span>' + TH.empty + '</span>';
-    h += '<div class="cty"><div class="cty-h"><span class="flag" style="background:' + c.color + '"></span>' + esc(c.name) + '</div><div class="cty-items">' + tags + '</div>' +
-      '<button class="btn primary" type="button" data-trade="' + c.id + '">交渉する</button></div>';
-  });
-  $('world').innerHTML = h;
+  $('howText').textContent = '国連は5分ごとに、それぞれの' + TH.product + 'が何個売れたかを調べます。目安より多ければ値下がり（供給過剰）、目安の3分の1以下なら少し値上がりします。' + SHAPES.rect.name + 'は値段が変わりません。';
 
   // 提案
   h = '';
   G.offers.forEach(function (o) {
     var ok = canPay(me.items, o.myGive) && canPay(o.from.items, o.myGet);
-    h += '<div class="offer"><div class="offer-h"><span class="flag" style="background:' + o.from.color + '"></span>' + esc(o.from.name) + 'からの提案<span class="line-status num">あと' + Math.max(0, Math.ceil(o.until - G.t)) + '分</span></div>' +
-      '<div>あなたが出す：<b>' + esc(bundleText(o.myGive)) + '</b><br>あなたがもらう：<b>' + esc(bundleText(o.myGet)) + '</b></div>' +
-      '<div class="row"><button class="btn money" type="button" data-accept="' + o.id + '"' + (ok ? '' : ' disabled') + '>受ける</button><button class="btn" type="button" data-decline="' + o.id + '">ことわる</button>' +
-      '<button class="btn" type="button" data-trade="' + o.from.id + '" data-from-offer="' + o.id + '">条件を変えて交渉</button></div></div>';
+    h += '<div class="offer"><div class="offer-h"><span class="flag" style="background:' + o.from.color + '"></span>' + esc(o.from.name) + 'からの提案<span class="ttl num">あと' + Math.max(0, Math.ceil(o.until - G.t)) + '分</span></div>' +
+      '<div class="x"><span>出す</span><b>' + esc(bundleText(o.myGive)) + '</b><span>もらう</span><b>' + esc(bundleText(o.myGet)) + '</b></div>' +
+      '<div class="row"><button class="btn go" type="button" data-accept="' + o.id + '"' + (ok ? '' : ' disabled') + '>受ける</button><button class="btn" type="button" data-decline="' + o.id + '">ことわる</button>' +
+      '<button class="btn" type="button" data-trade="' + o.from.id + '" data-from-offer="' + o.id + '">条件を変える</button></div></div>';
   });
   $('offers').innerHTML = h;
 
-  // ニュース
   $('news').innerHTML = G.news.slice(-60).reverse().map(function (n) {
-    return '<li class="' + n.cls + '"><time>' + n.at + '</time><span>' + esc(n.text) + '</span></li>';
+    return '<li class="' + n.cls + '"><time class="num">' + n.at + '</time><span>' + esc(n.text) + '</span></li>';
   }).join('');
+  mapDirty = true;
 }
-function renderClock() {
+function sparkSvg(hist, s) {
+  var pts = hist.concat([G.price[s]]), W = 200, H = 30, max = SHAPES[s].base, min = 0;
+  var n = Math.max(GAME_MIN / 5, pts.length - 1);
+  var path = pts.map(function (v, i) { return (i ? 'L' : 'M') + (i / n * (W - 6) + 3).toFixed(1) + ' ' + (H - 3 - (v - min) / (max - min) * (H - 8)).toFixed(1); }).join(' ');
+  var lx = ((pts.length - 1) / n * (W - 6) + 3).toFixed(1), ly = (H - 3 - (pts[pts.length - 1] - min) / (max - min) * (H - 8)).toFixed(1);
+  return '<svg class="spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="' + W + '" y1="5" y2="5" stroke="var(--line)" stroke-dasharray="2 3"/><path d="' + path + '" fill="none" stroke="' + PCOLOR[s] + '" stroke-width="2.2" vector-effect="non-scaling-stroke"/><circle cx="' + lx + '" cy="' + ly + '" r="3" fill="' + PCOLOR[s] + '"/></svg>';
+}
+function renderClock(now) {
   if (!G) return;
-  $('clockT').innerHTML = mmss(G.t) + ' <small>/ 40分</small>';
-  $('clockBar').style.width = (G.t / GAME_MIN * 100) + '%';
-  var bars = document.querySelectorAll('[data-prog]');
-  for (var i = 0; i < bars.length; i++) {
-    var ln = G.me.lines[+bars[i].getAttribute('data-prog')];
-    bars[i].style.width = ln && ln.busy ? Math.min(100, ln.prog / SHAPES[ln.shape].time * 100) + '%' : '0%';
+  $('clockT').innerHTML = mmss(G.t) + '<small>のこり ' + Math.ceil(remain()) + '分</small>';
+  $('clockRing').setAttribute('stroke-dashoffset', (113.1 * (1 - G.t / GAME_MIN)).toFixed(1));
+  var target = G.me.items.money;
+  if (Math.abs(G.shownMoney - target) < 1) G.shownMoney = target; else G.shownMoney += (target - G.shownMoney) * 0.18;
+  $('walletAmt').textContent = fmt$(G.shownMoney);
+  var gr = G.me.items.money / G.me.startMoney;
+  $('growth').textContent = '×' + (gr >= 10 ? gr.toFixed(0) : gr.toFixed(1));
+  $('growth').className = 'num' + (gr > 1 ? ' up' : '');
+  var belts = document.querySelectorAll('[data-belt]');
+  for (var i = 0; i < belts.length; i++) {
+    var ln = G.me.lines[+belts[i].getAttribute('data-belt')];
+    var p = ln && ln.busy ? Math.min(100, ln.prog / SHAPES[ln.shape].time * 100) : 0;
+    belts[i].firstChild.style.width = p + '%';
+    var ic = belts[i].querySelector('svg'); if (ic) ic.style.left = Math.max(4, p) + '%';
+    belts[i].classList.toggle('run', !!(ln && ln.busy && !G.paused));
   }
   $('pausedBadge').hidden = !(G.paused && !G.over && G.running);
   $('pauseBtn').textContent = G.paused ? '再開' : '一時停止';
+  renderFx(now || performance.now());
 }
 function addNews(cls, text) { if (!G) return; G.news.push({ cls: cls, text: text, at: Math.floor(G.t) + '分' }); dirty = true; }
 var toastTimer = 0;
 function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600); }
 
+/* ---------- 売ったときの手ごたえ ---------- */
+function flyCoins(fromEl, amount) {
+  var w = $('wallet');
+  var end = function () { w.classList.remove('bump'); void w.offsetWidth; w.classList.add('bump'); };
+  if (reduceMotion || !fromEl || !fromEl.getBoundingClientRect) { end(); return; }
+  var a = fromEl.getBoundingClientRect(), b = w.getBoundingClientRect();
+  var x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = b.left + 30, y1 = b.top + b.height / 2;
+  var n = Math.min(8, 3 + Math.floor(amount / 1500));
+  for (var i = 0; i < n; i++) (function (i) {
+    var c = document.createElement('div'); c.className = 'coin'; document.body.appendChild(c);
+    var dx = (rnd() - 0.5) * 60, up = -80 - rnd() * 60;
+    var an = c.animate([
+      { transform: 'translate(' + (x0 - 9) + 'px,' + (y0 - 9) + 'px) scale(.6)' },
+      { transform: 'translate(' + (x0 - 9 + dx) + 'px,' + (y0 - 9 + up) + 'px) scale(1.1)', offset: 0.35 },
+      { transform: 'translate(' + (x1 - 9) + 'px,' + (y1 - 9) + 'px) scale(.7)' }
+    ], { duration: 620 + i * 70, easing: 'cubic-bezier(.45,0,.55,1)', fill: 'forwards' });
+    an.onfinish = function () { c.remove(); if (i === n - 1) end(); };
+  })(i);
+  var f = document.createElement('div'); f.className = 'float num'; f.textContent = '+' + fmt$(amount);
+  f.style.left = (x0 - 30) + 'px'; f.style.top = (y0 - 20) + 'px'; document.body.appendChild(f);
+  f.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-46px)', opacity: 0 }], { duration: 1000, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { f.remove(); };
+}
+
 /* ============================================================
    操作
    ============================================================ */
 document.addEventListener('click', function (e) {
+  if (!G) return;
+  var node = e.target.closest && e.target.closest('[data-node]');
+  if (node) { var c = G.countries[+node.getAttribute('data-node')]; if (c && !c.isPlayer) { SFX.tick(); openTrade(c, null); } else if (c) toast('ここがあなたの国です'); return; }
   var el = e.target.closest('button');
-  if (!el || !G) return;
+  if (!el) return;
   var d = el.dataset;
   if (d.shape !== undefined && d.line !== undefined) {
     var ln = G.me.lines[+d.line];
     if (!ln) return;
     ln.shape = ln.shape === d.shape && !ln.busy ? null : d.shape;
+    SFX.tick();
     dirty = true;
   } else if (d.sell) {
     var n = d.n === 'all' ? G.me.items[d.sell] : 1;
     var got = sell(G.me, d.sell, n);
-    if (got) toast(SHAPES[d.sell].name + 'を' + n + '個' + TH.sold + ' ' + fmt$(got));
+    if (got) { G.mySales += got; SFX.sell(); flyCoins(el, got); toast(SHAPES[d.sell].name + 'を' + n + '個' + TH.sold + ' ' + fmt$(got)); }
   } else if (d.trade !== undefined) {
-    var o = d.fromOffer ? findOffer(+d.fromOffer) : null;
-    openTrade(G.countries[+d.trade], o);
+    openTrade(G.countries[+d.trade], d.fromOffer ? findOffer(+d.fromOffer) : null);
   } else if (d.accept) {
     acceptOffer(+d.accept);
   } else if (d.decline) {
     G.offers = G.offers.filter(function (x) { return x.id !== +d.decline; }); dirty = true;
   }
+});
+document.addEventListener('keydown', function (e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('data-node') !== null) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
 });
 function findOffer(id) { for (var i = 0; i < G.offers.length; i++) if (G.offers[i].id === id) return G.offers[i]; return null; }
 function acceptOffer(id) {
@@ -799,142 +1112,189 @@ function acceptOffer(id) {
   if (!canPay(G.me.items, o.myGive) || !canPay(o.from.items, o.myGet)) { toast('いまは条件がそろいません'); return; }
   doTrade(G.me, o.from, o.myGive, o.myGet);
   G.offers = G.offers.filter(function (x) { return x !== o; });
-  addNews('', 'あなたは' + o.from.name + 'と取引：' + bundleText(o.myGive) + ' → ' + bundleText(o.myGet));
+  G.myDeals++;
+  addNews('me', 'あなたは' + o.from.name + 'と取引：' + bundleText(o.myGive) + ' → ' + bundleText(o.myGet));
+  moment(o.from.name + 'の提案を受けた：' + bundleText(o.myGive) + ' → ' + bundleText(o.myGet));
+  SFX.stamp();
   toast('取引成立！');
 }
 $('pauseBtn').addEventListener('click', function () { if (G && G.running && !G.over) { G.paused = !G.paused; renderClock(); } });
-$('helpBtn').addEventListener('click', function () { openRules(false); });
+$('helpBtn').addEventListener('click', function () { if (G && G.over && G.reopen) G.reopen(); else openRules(false); });
+$('soundBtn').addEventListener('click', function () { soundOn = !soundOn; store('sound', soundOn ? 'on' : 'off'); this.setAttribute('aria-pressed', soundOn); if (soundOn) SFX.tick(); });
+$('soundBtn').setAttribute('aria-pressed', soundOn);
 document.addEventListener('visibilitychange', function () { if (document.hidden && G && G.running && !G.over) { G.paused = true; renderClock(); } });
+window.addEventListener('resize', function () { var w = $('map').getBoundingClientRect().width; if (Math.abs(w - lastMapW) > 4) { lastMapW = w; mapDirty = true; } });
 
 /* ---------- モーダル ---------- */
 var modalOpen = null;
-function showModal(html, onBind) {
-  $('modalRoot').innerHTML = '<div class="scrim" role="dialog" aria-modal="true"><div class="modal">' + html + '</div></div>';
+function showModal(html, onBind, cls) {
+  $('modalRoot').innerHTML = '<div class="scrim" role="dialog" aria-modal="true"><div class="modal ' + (cls || '') + '">' + html + '</div></div>';
   modalOpen = true;
-  if (onBind) onBind($('modalRoot').firstChild);
+  var root = $('modalRoot').firstChild;
+  if (onBind) onBind(root);
+  var f = root.querySelector('.btn.primary,.btn.gold,.btn.go'); if (f) f.focus({ preventScroll: true });
 }
 function closeModal() { $('modalRoot').innerHTML = ''; modalOpen = null; }
 
-function rulesHtml() {
-  var cards = SHAPE_KEYS.map(function (s) {
+function recipeCards() {
+  return '<div class="recipes">' + SHAPE_KEYS.map(function (s) {
     var sh = SHAPES[s];
-    return '<div class="rule">' + shapeSvg(s) + '<b>' + sh.name + '</b>' + sh.spec + '<div class="p num">' + fmt$(sh.base) + '</div>' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '<br>' + sh.time + '分で1個・' + TH.perSheet(Math.floor(SHEET / sh.area)) + '</div>';
-  }).join('');
-  return '<div class="rules">' + cards + '</div>' +
-    '<ul class="facts">' + TH.facts.map(function (f) { return '<li>' + f + '</li>'; }).join('') + '</ul>';
+    return '<div class="rcard" style="--pc:' + PCOLOR[s] + '"><div class="top">' + shapeSvg(s) + '<span class="p num">' + fmt$(sh.base) + '</span></div><b>' + sh.name + '</b><span>' + sh.spec + '</span>' +
+      recipeHtml(null, s) + '<span>' + sh.tools.map(function (k) { return NAMES[k]; }).join('＋') + '</span><span>' + sh.time + '分で1個・' + TH.perSheet(Math.floor(SHEET / sh.area)) + '</span></div>';
+  }).join('') + '</div>';
+}
+function factsHtml() {
+  var real = TH.id === 'real';
+  return '<ul class="facts">' +
+    '<li>8つの国（先進国・新興国・産油国・途上国が2か国ずつ）が、40分でどれだけお金をかせげるかを競います。</li>' +
+    '<li>' + TH.product + 'は' + TH.mkt + 'に売るとお金になります。100ドル＝小クリップ、1000ドル＝大クリップ。</li>' +
+    '<li>' + NAMES.pencil + '1つで生産ラインが1本動きます。' + (real ? '技術' : '道具') + 'は使ってもなくなりませんが、' + NAMES.paper + 'は使うとなくなります。</li>' +
+    '<li>足りないもの（' + NAMES.paper + '・' + (real ? '技術' : '道具') + '・お金）は、地図の国をクリックして交渉します。交渉中は時計が止まります。</li>' +
+    '<li>国連（先生）は、5分ごとに値段を見直します。作られすぎた' + TH.product + 'は値下がりします。とちゅうで' + TH.aidWord + 'もあります。</li>' +
+    '<li>最後に持っているお金だけが得点です。売っていない' + TH.product + '・' + NAMES.paper + '・' + (real ? '技術' : '道具') + 'は数えません。</li></ul>';
 }
 function openRules(isStart) {
   var wasPaused = G && G.paused;
   if (G && G.running) G.paused = true;
   var opts = '';
   if (isStart) {
-    opts = '<div class="opt"><label id="viewL">表示</label><div class="seg" role="group" aria-labelledby="viewL">' +
-      ['real', 'class'].map(function (v) { return '<button type="button" data-view="' + v + '" aria-pressed="' + (settings.view === v) + '">' + THEMES[v].label + '</button>'; }).join('') +
-      '</div><p class="lead">ルールと数字は同じです。「授業の紙と道具」にすると、紙・ハサミ・図形で遊べます。</p></div>' +
-      '<div class="opt"><label id="whoL">あなたの国</label><div class="seg" role="group" aria-labelledby="whoL" id="whoSeg">' +
-      [['random', 'ランダム（おすすめ）'], ['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']].map(function (o) {
-        return '<button type="button" data-who="' + o[0] + '" aria-pressed="' + (settings.who === o[0]) + '">' + o[1] + '</button>';
-      }).join('') + '</div><p class="lead">ランダムにすると、授業と同じように、自分がどんな国なのかは配られた道具でしかわかりません（最後に発表）。</p></div>' +
-      '<div class="opt"><label id="spdL">時間の速さ（ゲームの40分）</label><div class="seg" role="group" aria-labelledby="spdL" id="spdSeg">' +
-      SPEEDS.map(function (s) { return '<button type="button" data-spd="' + s.id + '" aria-pressed="' + (settings.speed === s.id) + '">' + s.label + '</button>'; }).join('') + '</div></div>';
+    var seg = function (id, label, items, cur, key) {
+      return '<div class="opt"><label id="' + id + '">' + label + '</label><div class="seg" role="group" aria-labelledby="' + id + '">' +
+        items.map(function (o) { return '<button type="button" data-' + key + '="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+    };
+    opts = seg('viewL', '表示', [['real', THEMES.real.label], ['class', THEMES.class.label]], settings.view, 'view') + '<p class="lead">ルールと数字は同じです。「授業の紙と道具」にすると、紙・ハサミ・図形で遊べます。</p></div>' +
+      seg('whoL', 'あなたの国', [['random', 'ランダム（おすすめ）'], ['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']], settings.who, 'who') + '<p class="lead">ランダムにすると、授業と同じく、自分がどんな国なのかは持ち物でしかわかりません（最後に発表）。</p></div>' +
+      seg('prL', '予想しよう：40分後、いちばんお金を持っているのはどのタイプの国？', [['A', '先進国'], ['B', '新興国'], ['C', '産油国'], ['D', '途上国']], settings.predict, 'pr') + '<p class="lead">最後に、予想と結果をくらべます。</p></div>' +
+      seg('spdL', '時間の速さ（ゲームの40分）', SPEEDS.map(function (s) { return [s.id, s.label]; }), settings.speed, 'spd') + '</div>';
   }
-  showModal('<div class="modal-body"><h2>貿易ゲーム</h2><p class="lead">' + TH.intro + '</p>' +
-    rulesHtml() + opts + '</div><div class="modal-foot">' +
-    (isStart ? '<button class="btn primary big" type="button" id="startBtn">はじめる</button>' : '<button class="btn primary big" type="button" id="closeBtn">ゲームにもどる</button>') + '</div>',
+  showModal('<div class="modal-body"><h2>貿易ゲーム</h2>' +
+    (isStart ? '<p class="question"><small>このゲームで考える問い</small>資源をたくさん持つ国が、豊かになれないのはなぜだろう？</p>' : '') +
+    '<p class="lead">' + TH.intro + '</p>' + recipeCards() + factsHtml() + opts + '</div><div class="modal-foot">' +
+    (isStart ? '<span class="grow">はじめると音が鳴ります（右上で消せます）</span><button class="btn gold big" type="button" id="startBtn">はじめる</button>' : '<button class="btn primary big" type="button" id="closeBtn">ゲームにもどる</button>') + '</div>',
     function (root) {
       root.addEventListener('click', function (e) {
         var b = e.target.closest('button'); if (!b) return;
-        if (b.dataset.view) { settings.view = b.dataset.view; store('view', settings.view); applyTheme(settings.view); if (G && !G.running) { newGame(); render(); } openRules(true); return; }
-        if (b.dataset.who) { settings.who = b.dataset.who; store('who', settings.who); root.querySelectorAll('[data-who]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
-        if (b.dataset.spd) { settings.speed = b.dataset.spd; store('speed', settings.speed); root.querySelectorAll('[data-spd]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
-        if (b.id === 'startBtn') { closeModal(); newGame(); G.running = true; G.paused = false; render(); }
+        if (b.dataset.view) { settings.view = b.dataset.view; store('view', settings.view); applyTheme(settings.view); newGame(); render(); renderMap(); openRules(true); return; }
+        if (b.dataset.who) { settings.who = b.dataset.who; store('who', settings.who); mark(root, 'who', b); }
+        if (b.dataset.pr) { settings.predict = b.dataset.pr; mark(root, 'pr', b); }
+        if (b.dataset.spd) { settings.speed = b.dataset.spd; store('speed', settings.speed); mark(root, 'spd', b); }
+        if (b.id === 'startBtn') { ac(); SFX.ding(); closeModal(); newGame(); G.running = true; G.paused = false; render(); renderMap(); }
         if (b.id === 'closeBtn') { closeModal(); if (G) G.paused = wasPaused; }
       });
     });
 }
+function mark(root, key, b) { root.querySelectorAll('[data-' + key + ']').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }
 
-/* ---------- 交渉の画面 ---------- */
+/* ---------- 出来事カード ---------- */
+var CARD_ICONS = {
+  crash: '<svg viewBox="0 0 54 54" aria-hidden="true" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12 L20 26 L30 18 L48 40"/><path d="M36 40 H48 V28"/></svg>',
+  aid: '<svg viewBox="0 0 54 54" aria-hidden="true" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"><rect x="8" y="20" width="38" height="26" rx="3"/><path d="M27 20 V46 M8 30 H46 M27 20 C20 8 10 12 18 20 M27 20 C34 8 44 12 36 20"/></svg>',
+  find: '<svg viewBox="0 0 54 54" aria-hidden="true" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"><path d="M6 44 L20 18 L30 32 L36 24 L48 44 Z"/><circle cx="40" cy="12" r="5"/></svg>'
+};
+function showCard(cd) {
+  G.paused = true;
+  showModal('<div class="ev ' + cd.kind + '"><div class="ev-top">' + (CARD_ICONS[cd.kind] || CARD_ICONS.find) + '<div><small>' + esc(cd.tag) + '・' + Math.floor(G.t) + '分</small><h2>' + esc(cd.title) + '</h2></div></div>' +
+    '<div class="modal-body"><dl>' + cd.rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' +
+    (cd.term ? '<div class="term"><b>用語</b>　' + esc(cd.term) + '</div>' : '') + '</div></div>' +
+    '<div class="modal-foot"><button class="btn primary big" type="button" id="cardOk">ゲームにもどる</button></div>',
+    function (root) { root.querySelector('#cardOk').addEventListener('click', function () { closeModal(); G.paused = false; dirty = true; }); });
+}
+
+/* ---------- 交渉（協定書） ---------- */
 var TR = null;
 function openTrade(partner, offer) {
-  if (!partner || G.over) return;
+  if (!partner || G.over || !G.running) return;
   G.paused = true;
-  TR = { p: partner, give: {}, get: {} };
+  TR = { p: partner, give: {}, get: {}, reply: null, no: ++G.contractNo };
   if (offer) { TR.give = cloneIt(offer.myGive); TR.get = cloneIt(offer.myGet); }
   showModal('<div class="modal-body" id="trBody"></div><div class="modal-foot">' +
     '<button class="btn" type="button" id="trClose">交渉をやめる</button>' +
     '<button class="btn" type="button" id="trAsk">いくらなら応じる？</button>' +
-    '<button class="btn primary" type="button" id="trSend">この条件で提案する</button></div>', function (root) {
+    '<button class="btn primary" type="button" id="trSend">この条件で調印をもとめる</button></div>', function (root) {
     root.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       if (b.dataset.side) {
         var side = TR[b.dataset.side], k = b.dataset.k, delta = +b.dataset.d;
-        var max = maxFor(b.dataset.side, k);
-        side[k] = Math.max(0, Math.min(max, (side[k] || 0) + delta));
+        side[k] = Math.max(0, Math.min(maxFor(b.dataset.side, k), (side[k] || 0) + delta));
+        TR.reply = null; SFX.tick();
         drawTrade();
       }
       if (b.id === 'trClose') { closeModal(); G.paused = false; TR = null; dirty = true; }
       if (b.id === 'trAsk') askPrice();
-      if (b.id === 'trSend') propose();
     });
+    // 判子は押した瞬間に（mousedown）
+    root.querySelector('#trSend').addEventListener('pointerdown', function (e) { if (e.button === 0) propose(); });
+    root.querySelector('#trSend').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); propose(); } });
     drawTrade();
-  });
+  }, 'contract');
 }
 function maxFor(side, k) {
   var it = side === 'give' ? G.me.items : TR.p.items;
-  if (k === 'money') return side === 'give' ? it.money : 99900;   // 相手のお金は見えない
+  if (k === 'money') return side === 'give' ? it.money : 99900;
   return k === 'paper' ? sheets(it) : it[k];
 }
 function stepRow(side, k) {
   var it = side === 'give' ? G.me.items : TR.p.items;
   var have = k === 'money' ? (side === 'give' ? fmt$(it.money) + 'まで' : '相手のお金は見えない') : (k === 'paper' ? sheets(it) : it[k]) + unitOf(k) + 'ある';
   var v = TR[side][k] || 0;
-  var unit = k === 'money' ? 100 : 1;
+  var b = function (d, label, aria, wide) { return '<button type="button"' + (wide ? ' class="wide"' : '') + ' data-side="' + side + '" data-k="' + k + '" data-d="' + d + '" aria-label="' + aria + '">' + label + '</button>'; };
   var ctl = k === 'money'
-    ? '<button type="button" class="wide" data-side="' + side + '" data-k="money" data-d="-1000" aria-label="1000ドル減らす">−1000</button><button type="button" data-side="' + side + '" data-k="money" data-d="-100" aria-label="100ドル減らす">−</button><output class="num">' + fmt$(v) + '</output><button type="button" data-side="' + side + '" data-k="money" data-d="100" aria-label="100ドル増やす">＋</button><button type="button" class="wide" data-side="' + side + '" data-k="money" data-d="1000" aria-label="1000ドル増やす">＋1000</button>'
-    : '<button type="button" data-side="' + side + '" data-k="' + k + '" data-d="-' + unit + '" aria-label="減らす">−</button><output class="num">' + v + '</output><button type="button" data-side="' + side + '" data-k="' + k + '" data-d="' + unit + '" aria-label="増やす">＋</button>';
-  return '<div class="step">' + itemSvg(k) + '<div>' + NAMES[k] + '<div class="have">' + have + '</div></div><div class="ctl">' + ctl + '</div></div>';
+    ? b(-1000, '−1000', '1000ドル減らす', 1) + b(-100, '−', '100ドル減らす') + '<output class="num">' + fmt$(v) + '</output>' + b(100, '＋', '100ドル増やす') + b(1000, '＋1000', '1000ドル増やす', 1)
+    : b(-1, '−', '減らす') + '<output class="num">' + v + '</output>' + b(1, '＋', '増やす');
+  var col = k === 'paper' ? '#b9820a' : TOOL_KEYS.indexOf(k) >= 0 ? '#1f7fb0' : '#33424f';
+  return '<div class="step"><span style="color:' + col + ';display:contents">' + itemSvg(k) + '</span><div>' + NAMES[k] + '<div class="have">' + have + '</div></div><div class="ctl">' + ctl + '</div></div>';
 }
-function drawTrade(reply) {
+function drawTrade(reply, stamp) {
   var p = TR.p, keys = ['money', 'paper', 'pencil', 'scissors', 'ruler', 'setsq', 'compass'].concat(SHAPE_KEYS);
   var giveRows = '', getRows = '';
   keys.forEach(function (k) {
+    var isShape = SHAPE_KEYS.indexOf(k) >= 0;
     var mine = k === 'money' || (k === 'paper' ? sheets(G.me.items) : G.me.items[k]) > 0 || TR.give[k];
-    var theirs = k === 'money' || (k === 'paper' ? sheets(p.items) : p.items[k]) > 0 || TR.get[k];
-    if (SHAPE_KEYS.indexOf(k) >= 0 && !G.me.items[k] && !TR.give[k]) mine = false;
-    if (SHAPE_KEYS.indexOf(k) >= 0) theirs = false;   // CPU はすぐ国連に売るので、図形は持っていない
+    var theirs = !isShape && (k === 'money' || (k === 'paper' ? sheets(p.items) : p.items[k]) > 0 || TR.get[k]);
     if (mine) giveRows += stepRow('give', k);
     if (theirs) getRows += stepRow('get', k);
   });
-  var r = reply || TR.reply || { cls: '', text: '何と何を交換しますか？' };
-  TR.reply = r;
-  document.getElementById('trBody').innerHTML =
-    '<h2><span class="flag" style="background:' + p.color + ';width:26px;height:18px;margin-right:8px;vertical-align:middle"></span>' + esc(p.name) + 'と交渉</h2>' +
+  if (reply) TR.reply = reply;
+  var r = TR.reply || { cls: '', text: '何と何を交換しますか？' };
+  $('trBody').innerHTML =
+    '<div class="c-head"><h2>貿易協定書</h2><span class="no">No.' + String(TR.no).padStart(3, '0') + '　' + Math.floor(G.t) + '分</span></div>' +
     '<p class="lead">' + TH.tradeLead + '</p>' +
-    '<div class="trade-cols"><div class="side"><h3>あなたが渡すもの</h3>' + giveRows + '</div><div class="side"><h3>' + esc(p.name) + 'からもらうもの</h3>' + getRows + '</div></div>' +
-    '<div class="reply ' + r.cls + '"><span class="flag" style="background:' + p.color + '"></span><span>' + esc(p.name) + '：' + esc(r.text) + '</span></div>';
+    '<div class="c-cols"><div class="c-side"><h3><span class="flag" style="background:' + G.me.color + '"></span>' + esc(G.me.name) + '<small>（あなた）が渡す</small></h3>' + giveRows + '</div>' +
+    '<div class="c-side"><h3><span class="flag" style="background:' + p.color + '"></span>' + esc(p.name) + '<small>が渡す</small></h3>' + getRows + '</div></div>' +
+    '<div class="reply ' + r.cls + '"><span class="flag" style="background:' + p.color + '"></span><span>' + esc(p.name) + '：' + esc(r.text) + '</span></div>' +
+    '<div class="sign"><span>甲：' + esc(G.me.name) + '</span><span>乙：' + esc(p.name) + '</span></div>' +
+    (stamp ? '<div class="stamp ' + stamp + '" aria-hidden="true">' + (stamp === 'ok' ? '調印' : '却下') + '</div>' : '');
 }
 function propose() {
   var p = TR.p, give = TR.give, get = TR.get;
   if (isEmpty(give) && isEmpty(get)) return drawTrade({ cls: 'ng', text: '「何を交換するか決めてから話しましょう。」' });
   if (!canPay(G.me.items, give)) return drawTrade({ cls: 'ng', text: '「あなた、それを持っていませんよね？」' });
   if (!canPay(p.items, get)) {
-    if (get.money > p.items.money) return drawTrade({ cls: 'ng', text: '「そんなにお金は持っていません。」' });
-    return drawTrade({ cls: 'ng', text: '「それは持っていません。」' });
+    SFX.nope();
+    if (get.money > p.items.money) return drawTrade({ cls: 'ng', text: '「そんなにお金は持っていません。」' }, 'ng');
+    return drawTrade({ cls: 'ng', text: '「それは持っていません。」' }, 'ng');
   }
   var g = gainOf(p, get, give);
   var gift = isEmpty(get);
   if ((gift && g >= 0) || g >= p.greed) {
+    var txt = bundleText(give) + ' → ' + bundleText(get);
     doTrade(G.me, p, give, get);
-    addNews('', 'あなたは' + p.name + 'と取引：' + bundleText(give) + ' → ' + bundleText(get));
+    G.myDeals++;
+    addNews('me', 'あなたは' + p.name + 'と取引：' + txt);
+    moment(p.name + 'と取引：' + txt);
     TR.give = {}; TR.get = {};
-    drawTrade({ cls: 'ok', text: gift ? '「ありがとうございます！大切に使います。」' : pick(['「いいでしょう、取引成立です。」', '「決まりですね。よろしくお願いします。」', '「ちょうど欲しかったところです。成立！」']) });
+    SFX.stamp();
+    drawTrade({ cls: 'ok', text: gift ? '「ありがとうございます！大切に使います。」' : pick(['「いいでしょう、取引成立です。」', '「決まりですね。よろしくお願いします。」', '「ちょうど欲しかったところです。成立！」']) }, 'ok');
     return;
   }
+  G.rejects++;
+  if (G.rejects === 1) moment(p.name + 'に提案を断られた');
   var t;
   if (g >= p.greed - 700) t = pick(['「うーん…あと少し条件がよければ応じます。」', '「おしいですね。もうひと声。」']);
   else if (g >= -1500) t = pick(['「それでは私たちが損をしてしまいます。」', '「その条件では受けられません。」']);
   else t = pick(['「話になりません！」', '「さすがにそれは無理です。」']);
-  drawTrade({ cls: 'ng', text: t });
+  SFX.nope();
+  drawTrade({ cls: 'ng', text: t }, 'ng');
 }
 function askPrice() {
   var p = TR.p, give = TR.give, get = TR.get;
@@ -942,10 +1302,8 @@ function askPrice() {
   if (!canPay(G.me.items, give)) return drawTrade({ cls: 'ng', text: '「あなた、それを持っていませんよね？」' });
   var nonMoneyGet = cloneIt(get); delete nonMoneyGet.money;
   if (!canPay(p.items, nonMoneyGet)) return drawTrade({ cls: 'ng', text: '「それは持っていません。」' });
-  var g = gainOf(p, get, give);
-  var diff = g - p.greed;
+  var diff = gainOf(p, get, give) - p.greed;
   if (diff < 0) {
-    // あなたがもっと払う必要がある。CPU は少し上乗せして言う
     var need = c100(-diff * 1.25 + 100);
     var fromGet = Math.min(get.money || 0, need);
     var add = need - fromGet;
@@ -961,45 +1319,124 @@ function askPrice() {
   drawTrade({ cls: 'ok', text: '「' + (get.money ? fmt$(get.money) + ' 払いましょう' : 'お金は ' + fmt$(give.money) + ' でいいですよ') + '。」（もっと強気にいけるかも？）' });
 }
 
-/* ---------- 結果 ---------- */
+/* ============================================================
+   ふりかえり（4つのステップ）
+   ============================================================ */
+function gini(xs) {
+  var a = xs.slice().sort(function (p, q) { return p - q; }), n = a.length, s = 0, w = 0;
+  a.forEach(function (x, i) { s += x; w += (2 * (i + 1) - n - 1) * x; });
+  return s ? w / (n * s) : 0;
+}
+function wealthChart() {
+  var W = 640, H = 270, L = 58, R = 14, T = 12, B = 30;
+  var max = 0; G.hist.forEach(function (h) { h.forEach(function (v) { if (v > max) max = v; }); });
+  var stepV = [1000, 2000, 5000, 10000, 20000, 50000, 100000].find(function (s) { return max / s <= 5; }) || 200000;
+  var top = Math.ceil(max / stepV) * stepV || stepV;
+  var x = function (t) { return L + t / GAME_MIN * (W - L - R); }, y = function (v) { return H - B - v / top * (H - T - B); };
+  var h = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="8か国のお金の移り変わり">';
+  for (var v = 0; v <= top; v += stepV) h += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + fmt$(v) + '</text>';
+  [0, 10, 20, 30, 40].forEach(function (t) { h += '<text x="' + x(t) + '" y="' + (H - 10) + '" text-anchor="middle">' + t + '分</text>'; });
+  var evs = [[12, TH.aidWord], [24, '資源の発見']];
+  evs.forEach(function (e) { h += '<line x1="' + x(e[0]) + '" x2="' + x(e[0]) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="var(--muted)" stroke-dasharray="3 4"/><text x="' + (x(e[0]) + 4) + '" y="' + (T + 10) + '">' + e[1] + '</text>'; });
+  G.countries.forEach(function (c, i) {
+    var pts = G.hist[i].concat([c.items.money]);
+    var d = pts.map(function (v, k) { return (k ? 'L' : 'M') + x(Math.min(GAME_MIN, k)).toFixed(1) + ' ' + y(v).toFixed(1); }).join(' ');
+    h += '<path d="' + d + '" fill="none" stroke="' + c.color + '" stroke-width="' + (c.isPlayer ? 4 : 2) + '" stroke-linejoin="round"' + (c.isPlayer ? '' : ' opacity=".85"') + '/>';
+  });
+  return h + '</svg>';
+}
 function endGame() {
   if (G.over) return;
   G.over = true; G.running = false;
+  G.countries.forEach(function (c, i) { G.hist[i].push(c.items.money); });
   addNews('un', TH.end);
+  SFX.aid();
   dirty = true;
-  render(); renderClock();
+  render(); renderMap(); renderClock();
   var list = G.countries.slice().sort(function (a, b) { return b.items.money - a.items.money; });
   var myRank = list.indexOf(G.me) + 1;
-  var rows = list.map(function (c, i) {
-    var ratio = c.items.money / c.startMoney;
-    return '<tr class="' + (c.isPlayer ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td><span class="flag" style="background:' + c.color + '"></span> ' + esc(c.name) + (c.isPlayer ? '（あなた）' : '') + '</td><td>' + TYPES[c.type].label + '</td><td class="r">' + fmt$(c.startMoney) + '</td><td class="r">' + fmt$(c.items.money) + '</td><td class="r">×' + ratio.toFixed(1) + '</td></tr>';
-  }).join('');
   var avg = {}, mx = 1;
   ['A', 'B', 'C', 'D'].forEach(function (t) {
     var cs = G.countries.filter(function (c) { return c.type === t; });
     avg[t] = cs.reduce(function (s, c) { return s + c.items.money; }, 0) / cs.length;
     mx = Math.max(mx, avg[t]);
   });
-  var bars = ['A', 'B', 'C', 'D'].map(function (t) {
-    return '<div class="tb"><span>' + TYPES[t].label + '</span><div class="bar-out"><i style="width:' + (avg[t] / mx * 100).toFixed(1) + '%"></i></div><span class="v">' + fmt$(avg[t]) + '</span></div>';
-  }).join('');
+  var bestType = ['A', 'B', 'C', 'D'].sort(function (a, b) { return avg[b] - avg[a]; })[0];
   var unsold = SHAPE_KEYS.reduce(function (s, k) { return s + G.me.items[k]; }, 0);
-  showModal('<div class="modal-body"><h2>ゲーム終了</h2>' +
-    '<div class="reveal">' + (settings.who === 'random' ? 'あなたの国「' + esc(G.me.name) + '」は <b>' + TYPES[G.me.type].label + '</b> でした（' + TYPES[G.me.type].real + '）。' : 'あなたは' + TYPES[G.me.type].label + '「' + esc(G.me.name) + '」でした。') +
-    '<br>結果は8か国中 <b>' + myRank + '位</b>、' + fmt$(G.me.startMoney) + ' → <b>' + fmt$(G.me.items.money) + '</b>' + (unsold ? '（売らずに残った' + TH.product + ' ' + unsold + '個はお金になりませんでした）' : '') + '</div>' +
-    '<h3>順位</h3><div class="rank-wrap"><table class="rank"><thead><tr><th>位</th><th>国</th><th>タイプ</th><th class="r">はじめ</th><th class="r">おわり</th><th class="r">倍率</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<h3>国のタイプごとの平均</h3><div class="typebars">' + bars + '</div>' +
-    '<h3>ふりかえり</h3><ol class="qs">' + TH.questions.map(function (q) { return '<li>' + q + '</li>'; }).join('') + '</ol>' +
-    '</div><div class="modal-foot"><button class="btn" type="button" id="seeBoard">盤面を見る</button><button class="btn primary big" type="button" id="againBtn">もう一度あそぶ</button></div>',
-    function (root) {
-      root.addEventListener('click', function (e) {
-        var b = e.target.closest('button'); if (!b) return;
-        if (b.id === 'againBtn') { closeModal(); openRules(true); }
-        if (b.id === 'seeBoard') closeModal();
-      });
-    });
-}
+  var g0 = gini(G.countries.map(function (c) { return c.startMoney; })), g1 = gini(G.countries.map(function (c) { return c.items.money; }));
+  var growthBest = G.countries.slice().sort(function (a, b) { return b.items.money / b.startMoney - a.items.money / a.startMoney; })[0];
+  var real = TH.id === 'real';
 
+  var pages = [];
+  // 1 気持ち
+  pages.push('<h2>ふりかえり ①　どんな気持ちだった？</h2>' +
+    '<div class="reveal">' + (settings.who === 'random' ? 'あなたの国「' + esc(G.me.name) + '」は <b>' + TYPES[G.me.type].label + '</b> でした（' + TYPES[G.me.type].real + '）。' : 'あなたは' + TYPES[G.me.type].label + '「' + esc(G.me.name) + '」でした。') +
+    '<br>8か国中 <b>' + myRank + '位</b>、' + fmt$(G.me.startMoney) + ' → <b>' + fmt$(G.me.items.money) + '</b>（×' + (G.me.items.money / G.me.startMoney).toFixed(1) + '）' + (unsold ? '<br>売らずに残った' + TH.product + ' ' + unsold + '個は、お金になりませんでした。' : '') + '</div>' +
+    '<h3>ゲーム中、どんな気持ちになりましたか（いくつでも）</h3><div class="feel">' +
+    ['楽しかった', 'くやしかった', '不公平だと思った', 'あせった', '取引がうまくいった', '相手に足元を見られた', 'もっと交渉したかった', '何をすればいいかわからなかった'].map(function (f) { return '<button type="button" data-feel="' + f + '" aria-pressed="' + !!G.feel[f] + '">' + f + '</button>'; }).join('') + '</div>' +
+    '<h3>あなたの国に起きたこと</h3><ul class="moments">' + (G.moments.length ? G.moments.map(function (m) { return '<li><time class="num">' + m.at + '分</time><span>' + esc(m.text) + '</span></li>'; }).join('') : '<li><time>—</time><span>ほかの国との取引はありませんでした。</span></li>') + '</ul>' +
+    '<p class="lead">取引 ' + G.myDeals + '回・断られた提案 ' + G.rejects + '回・輸出で得たお金 ' + fmt$(G.mySales) + '</p>');
+  // 2 何が起きた
+  var rows = list.map(function (c, i) {
+    return '<tr class="' + (c.isPlayer ? 'me' : '') + '"><td class="r">' + (i + 1) + '</td><td><span class="flag" style="background:' + c.color + '"></span> ' + esc(c.name) + (c.isPlayer ? '（あなた）' : '') + '</td><td>' + TYPES[c.type].label + '</td><td class="r">' + fmt$(c.startMoney) + '</td><td class="r">' + fmt$(c.items.money) + '</td><td class="r">×' + (c.items.money / c.startMoney).toFixed(1) + '</td></tr>';
+  }).join('');
+  pages.push('<h2>ふりかえり ②　何が起きた？</h2>' +
+    (G.predict ? '<div class="reveal">あなたの予想：<b>' + TYPES[G.predict].label + '</b>　→　結果：いちばんかせいだのは <b>' + TYPES[bestType].label + '</b>（平均）' + (G.predict === bestType ? '　予想どおり！' : '　予想とちがった。なぜだろう？') + '</div>' : '') +
+    '<h3>8か国のお金の移り変わり</h3><div class="chart-wrap">' + wealthChart() + '</div>' +
+    '<div class="keys">' + G.countries.map(function (c) { return '<span><i class="flag" style="background:' + c.color + '"></i>' + esc(c.name) + '（' + TYPES[c.type].label + '）' + (c.isPlayer ? '★' : '') + '</span>'; }).join('') + '</div>' +
+    '<h3>順位</h3><div class="tw"><table class="rank"><thead><tr><th class="r">位</th><th>国</th><th>タイプ</th><th class="r">はじめ</th><th class="r">おわり</th><th class="r">倍率</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<h3>タイプごとの平均</h3><div class="typebars">' + ['A', 'B', 'C', 'D'].map(function (t) {
+      return '<div class="tb"><span>' + TYPES[t].label + '</span><div class="o"><i style="width:' + (avg[t] / mx * 100).toFixed(1) + '%"></i></div><span class="v">' + fmt$(avg[t]) + '</span></div>';
+    }).join('') + '</div>');
+  // 3 公平か
+  var endowRows = ['A', 'B', 'C', 'D'].map(function (t) {
+    var I = INIT[t];
+    return '<tr><td>' + TYPES[t].label + '</td><td class="r">' + fmt$(I.money) + '</td><td class="r">' + I.paper + '</td><td class="r">' + I.pencil + '</td><td>' + TOOL_KEYS.filter(function (k) { return I[k]; }).map(function (k) { return NAMES[k]; }).join('・') + (TOOL_KEYS.some(function (k) { return I[k]; }) ? '' : 'なし') + '</td><td class="r">' + fmt$(avg[t]) + '</td></tr>';
+  }).join('');
+  pages.push('<h2>ふりかえり ③　これは公平だった？</h2>' +
+    '<div class="stat"><div>格差の大きさ（ジニ係数）<b class="num">' + g0.toFixed(2) + ' → ' + g1.toFixed(2) + '</b>0＝みんな同じ、1に近いほど格差が大きい</div>' +
+    '<div>いちばん増やした国<b>' + esc(growthBest.name) + '</b>' + TYPES[growthBest.type].label + '・×' + (growthBest.items.money / growthBest.startMoney).toFixed(1) + '</div>' +
+    '<div>' + TH.product + 'が売れた数<b class="num">' + SHAPE_KEYS.reduce(function (a, s) { return a + G.total[s]; }, 0) + '個</b>' + SHAPE_KEYS.map(function (s) { return SHAPES[s].name + ' ' + G.total[s]; }).join('・') + '</div></div>' +
+    '<h3>はじめに配られたもの</h3><div class="tw"><table class="rank"><thead><tr><th>タイプ</th><th class="r">お金</th><th class="r">' + NAMES.paper + '</th><th class="r">' + NAMES.pencil + '</th><th>' + (real ? '技術' : '道具') + '</th><th class="r">おわりの平均</th></tr></thead><tbody>' + endowRows + '</tbody></table></div>' +
+    '<ol class="qs"><li>はじめに配られたものは、国によってどれくらいちがいましたか。その差は40分でどう変わりましたか。</li>' +
+    '<li>' + NAMES.paper + 'をたくさん持つ産油国と、' + (real ? '技術' : '道具') + 'を持つ先進国。交渉のとき、どちらが強い立場でしたか。それはなぜ？</li>' +
+    '<li>値段が下がったとき、困ったのはどの国でしたか。一つの' + TH.product + 'にたよっていた国はありましたか。</li>' +
+    '<li>' + TH.aidWord + 'は役に立ちましたか。' + NAMES.scissors + 'だけでは足りなかったものは何でしょう。</li></ol>');
+  // 4 どうあるべきか
+  var mapRows = [[NAMES.paper, '原油・鉱産資源・農産物などの一次産品'], [real ? '生産設備・加工技術・精密技術・先端技術' : 'ハサミ・定規・三角定規・コンパス', '工業化の度合い・技術力・資本'],
+    [NAMES.pencil, '働く人・人口'], [TH.mkt, '国際市場'], ['国連の値下げ', '国際価格の変動・供給過剰'], [TH.aidWord, 'ODA（政府開発援助）'], ['国どうしの交渉', '貿易協定・二国間の取引'], ['相手のお金が見えない', '情報の差（情報の非対称性）']];
+  pages.push('<h2>ふりかえり ④　世界はどうあるべき？</h2>' +
+    '<h3>ゲームのしくみは、現実の何にあたる？</h3><div class="tw"><table class="rank map-t"><thead><tr><th>ゲームでは</th><th>現実の世界では</th></tr></thead><tbody>' + mapRows.map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<ol class="qs"><li>このゲームのモデルは、現実の世界とどこがちがうでしょう。足りないしくみは何ですか。</li>' +
+    '<li>もしルールを1つだけ変えられるなら、どう変えると公平になりますか。（例：' + (real ? '技術' : '道具') + 'を貸し出せる、値段の下限を決める、援助のしかたを変える）</li>' +
+    '<li>公正な貿易（フェアトレード）とは何でしょう。このゲームの中で、フェアトレードにあたる行動はありましたか。</li>' +
+    '<li>はじめの問いにもどろう：<b>資源をたくさん持つ国が、豊かになれないのはなぜだろう？</b></li></ol>');
+
+  var cur = 0;
+  var draw = function (root) {
+    root.querySelector('.modal-body').innerHTML = '<div class="steps">' + ['気持ち', '何が起きた', '公平だった？', 'どうあるべき？'].map(function (s, i) { return '<span class="' + (i === cur ? 'on' : '') + '">' + (i + 1) + '. ' + s + '</span>'; }).join('') + '</div>' + pages[cur];
+    root.querySelector('.modal-body').scrollTop = 0;
+    root.querySelector('#dbBack').disabled = cur === 0;
+    root.querySelector('#dbNext').hidden = cur === pages.length - 1;
+    root.querySelector('#againBtn').hidden = cur !== pages.length - 1;
+  };
+  G.reopen = function () {
+    showModal('<div class="modal-body"></div><div class="modal-foot"><button class="btn" type="button" id="seeBoard">盤面を見る</button><span class="grow"></span>' +
+      '<button class="btn" type="button" id="dbBack">もどる</button><button class="btn primary big" type="button" id="dbNext">つぎへ</button><button class="btn gold big" type="button" id="againBtn" hidden>もう一度あそぶ</button></div>',
+      function (root) {
+        draw(root);
+        root.addEventListener('click', function (e) {
+          var b = e.target.closest('button'); if (!b) return;
+          if (b.dataset.feel) { G.feel[b.dataset.feel] = !G.feel[b.dataset.feel]; b.setAttribute('aria-pressed', !!G.feel[b.dataset.feel]); SFX.tick(); }
+          if (b.id === 'dbNext' && cur < pages.length - 1) { cur++; draw(root); SFX.tick(); }
+          if (b.id === 'dbBack' && cur > 0) { cur--; draw(root); }
+          if (b.id === 'againBtn') { closeModal(); $('helpBtn').textContent = 'ルール'; openRules(true); }
+          if (b.id === 'seeBoard') { closeModal(); $('helpBtn').textContent = 'ふりかえり'; toast('右上の「ふりかえり」で、いつでも戻れます'); }
+        });
+      });
+  };
+  G.reopen();
+}
 /* ============================================================
    ループ
    ============================================================ */
@@ -1011,25 +1448,25 @@ function frame(ts) {
     var dt = dtReal / speedSec();
     while (dt > 0) { var s = Math.min(0.02, dt); step(s); dt -= s; }
   }
-  if (dirty && !modalOpen) render();
-  else if (dirty && G && G.over) render();
-  renderClock();
+  if (G && !modalOpen && G.cards.length && G.running && !G.over) showCard(G.cards.shift());
+  if (dirty && (!modalOpen || (G && G.over))) render();
+  if (mapDirty) renderMap();
+  renderClock(ts);
   requestAnimationFrame(frame);
 }
 
-// テスト用：?debug で window.__trade（ゲーム時間を一気に進める）
 if (/[?&]debug/.test(location.search)) {
   window.__trade = {
     get G() { return G; },
-    start: function (who) { settings.who = who || 'random'; newGame(); G.running = true; closeModal(); render(); },
-    run: function (min) { var end = Math.min(GAME_MIN, G.t + min); while (G.t < end - 1e-9 && !G.over) step(Math.min(0.02, end - G.t)); render(); },
+    start: function (who) { settings.who = who || 'random'; newGame(); G.running = true; closeModal(); render(); renderMap(); },
+    run: function (min, keepCards) { var end = Math.min(GAME_MIN, G.t + min); while (G.t < end - 1e-9 && !G.over) step(Math.min(0.02, end - G.t)); if (!keepCards) G.cards = []; render(); renderMap(); },
     gainOf: gainOf, valueOf: valueOf
   };
 }
 
 newGame();
-G.running = false;
 render();
+renderMap();
 openRules(true);
 requestAnimationFrame(frame);
 </script>
