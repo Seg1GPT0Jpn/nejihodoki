@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // ころがし工房ゴルフの全ホールを、保存してある答え（minigolf-solutions.js）で流す（ブラウザなし。minigolf/engine.js をそのまま使う）
-//   node tools/tests/minigolf-levels.js                 … 全部の確認と、人のまねによるむずかしさの段ごとの確認（数分。MG_HUMAN_N=回数）
+//   node tools/tests/minigolf-levels.js                 … 全部の確認と、人のまねによるむずかしさの段ごとの確認（段ごとに決まった6ホール。1〜2分。MG_HUMAN_N=回数）
+//   node tools/tests/minigolf-levels.js --full          … 人のまねを全ホールで（十数分）
 //   node tools/tests/minigolf-levels.js --solve 2-3,3-1 … 答えをさがして出す（ホールを変えたとき。1ホール数秒〜1分。出力を minigolf-solutions.js に貼る）
 //   node tools/tests/minigolf-levels.js --solve all     … 全ホール（4つのプロセスで並べる）
 // 各ホール：答えがカップに入る・打数（罰打こみ）がパー以内・2回流して同じ結果（決まった結果）・何もしないと入らない・
@@ -181,15 +182,19 @@ if (require.main !== module) {
   for (let i = 0; i < HOLES.length; i++) for (let j = 0; j < i; j++) { const s2 = Math.max(HU.similarity(ras[i], ras[j]), HU.similarity(mir[i], ras[j])); if (s2 > worst.s) worst = { s: s2, a: HOLES[i].id, b: HOLES[j].id }; }
   check('no near-duplicate holes (most alike: ' + worst.a + ' / ' + worst.b + ' ' + worst.s.toFixed(2) + ')', worst.s <= 0.75, worst);
   // the difficulty curve: a "noisy human" (minigolf-human.js) plays every stored answer with angle / power / timing noise
-  const N = +process.env.MG_HUMAN_N || 12;
+  // default: a fixed sample of 6 holes per tier (seeded by the hole id, the same every run; ~1–2 min). --full: every hole
+  const N = +process.env.MG_HUMAN_N || 12, FULL = process.argv.includes('--full');
+  const hid = id => { let x = 2166136261; for (const c of 'mg|' + id) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; } return x; };
+  const sample = FULL ? HOLES : [].concat(...[1, 2, 3, 4, 5].map(t => HOLES.filter(h => COURSES[h.course].tier === t).sort((a, b) => hid(a.id) - hid(b.id)).slice(0, 6)));
   (async () => {
-    const ids = HOLES.map(h => h.id), k = 4, chunks = Array.from({ length: k }, (_, c) => ids.filter((_, i) => i % k === c));
+    const ids = sample.map(h => h.id), k = 4, chunks = Array.from({ length: k }, (_, c) => ids.filter((_, i) => i % k === c));
     const res = Object.assign({}, ...(await Promise.all(chunks.map(ch => new Promise((ok, bad) => { const w = fork(__filename, ['--human']); w.on('message', ok); w.on('error', bad); w.send({ ids: ch, n: N }); })))));
     const BANDS = { 1: [0.75, 1], 2: [0.4, 0.92], 3: [0.25, 0.72], 4: [0.12, 0.45], 5: [0.03, 0.25] };
+    console.log(FULL ? '  every hole:' : '  a fixed sample of 6 holes per tier (--full: every hole):');
     console.log('  tier  holes  noise(±deg/±%)  within par  aces(noisy)  random-shot aces  par(avg)');
     let prev = 2;
     for (let t = 1; t <= 5; t++) {
-      const hs = HOLES.filter(h => COURSES[h.course].tier === t); if (!hs.length) continue;
+      const hs = sample.filter(h => COURSES[h.course].tier === t); if (!hs.length) continue;
       const m = f => hs.reduce((s, h) => s + f(h), 0) / hs.length;
       const rate = m(h => res[h.id].rate), ace = m(h => res[h.id].ace), rand = m(h => res[h.id].rand), par = m(h => h.par);
       console.log(`  ${t}     ${String(hs.length).padStart(3)}    ${HU.NOISE[t].a} / ${Math.round(HU.NOISE[t].p * 100)}           ${(rate * 100).toFixed(0).padStart(3)}%        ${(ace * 100).toFixed(0).padStart(3)}%          ${(rand * 100).toFixed(1)}%          ${par.toFixed(1)}`);
