@@ -48,7 +48,7 @@ KoboI18n.add({ en: {
   '1打ごとに自動で保存。とちゅうで閉じても、つづきから': 'Saved after every stroke. Close any time and continue later',
   'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks', 'コースの選びへ': 'Course select', 'このホールをやめる': 'Leave this hole',
   'ラウンドをやめてタイトルへ': 'Quit the round', '自動保存しました': 'Autosaved',
-  '準備中': 'Coming soon', 'ランキング：星の合計 {n}': 'Ranking: {n} stars in total', 'このコースの星 {n} / 27': 'Stars on this course {n} / 27',
+  'ランキング：星の合計 {n}': 'Ranking: {n} stars in total', 'このコースの星 {n} / 27': 'Stars on this course {n} / 27',
   '星：カップイン ★、パー＋1以内 ★★、パー以内 ★★★。全ホールの星の合計がランキング': 'Stars: holed ★, within par + 1 ★★, within par ★★★. Your stars over every hole are your ranking',
   'はね戸は矢印の向きにだけ通れる。赤いスイッチの上を通ると、赤い扉が開く': 'Flap gates only let you through the way the arrows point. Roll over a red switch to open the red doors',
 } });
@@ -165,7 +165,6 @@ header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 760px; margin: 
 .tabs.tiers { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .tabs.tiers .tab { font-size: 11px; padding: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tab small { display: block; font-size: 10px; font-weight: 500; opacity: .8; }
-.ct.soon { opacity: .45; }
 .tab { min-width: 0; min-height: 44px; border-radius: 12px; border: 1px solid var(--mg-line); background: var(--mg-panel); color: var(--kb-ink); cursor: pointer; font: 800 12px var(--kb-font-body); padding: 4px; line-height: 1.2; touch-action: manipulation; }
 .tab.sel { border-color: var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-accent-text); }
 .tab:disabled { opacity: .45; cursor: default; }
@@ -848,12 +847,12 @@ function showTitle() {
   const box = $('tCourses'); box.innerHTML = '';
   COURSES.forEach((C, k) => {
     if (tierOf(k) !== tSel) return;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'ct' + (C.ready ? '' : ' soon'); b.dataset.course = k;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ct'; b.dataset.course = k;
     const ok = courseOpen(k), rec = courseRec(k);
     const tx = document.createElement('span'); tx.className = 'ctx';
-    tx.innerHTML = '<span>' + (k + 1) + '. ' + esc(L2(C.n)) + '</span><small>' + esc(!C.ready ? T('準備中') : ok ? L2(C.d) : T('前のコースを回ると開きます')) + '</small>';
+    tx.innerHTML = '<span>' + (k + 1) + '. ' + esc(L2(C.n)) + '</span><small>' + esc(ok ? L2(C.d) : T('前のコースを回ると開きます')) + '</small>';
     const rb = document.createElement('b'); rb.className = 'rec';
-    if (C.ready) {
+    {
       const c = document.createElement('canvas'); c.width = 68; c.height = 96; ART.thumb(c, courseHoles(k)[0]); b.append(c);
       rb.textContent = '★' + courseStars(save, k) + '/27' + (rec && rec.t > 0 ? '　' + T('パー {n}・ベスト {b}', { n: coursePar(k), b: rec.t }) : '　' + T('パー {n}', { n: coursePar(k) }));
     }
@@ -896,14 +895,14 @@ async function confirmNew() {
   return true;
 }
 let pSel = 0, tSel = null;
-// the 5 tier tabs (a tier opens with its first course; one with no built course yet says "coming soon")
+// the 5 tier tabs (a tier opens with its first course)
 function tierTabs(el, sel, on) {
   el.innerHTML = '';
   TIERS.forEach((T2, t) => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (t === sel ? ' sel' : ''); b.dataset.tier = t;
-    const open = COURSES.some((C, k) => tierOf(k) === t && courseOpen(k)), ready = COURSES.some((C, k) => tierOf(k) === t && C.ready);
+    const open = COURSES.some((C, k) => tierOf(k) === t && courseOpen(k));
     let st = 0; COURSES.forEach((C, k) => { if (tierOf(k) === t) st += courseStars(save, k); });
-    b.innerHTML = esc(L2(T2.n)) + '<small>' + esc(ready ? '★' + st : T('準備中')) + '</small>';
+    b.innerHTML = esc(L2(T2.n)) + '<small>' + esc('★' + st) + '</small>';
     b.disabled = !open && t !== sel; b.setAttribute('aria-pressed', t === sel ? 'true' : 'false');
     b.addEventListener('click', () => { sfx('tap'); on(t); });
     el.appendChild(b);

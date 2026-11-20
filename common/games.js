@@ -549,7 +549,7 @@
       id: 'minigolf', order: 17, path: 'minigolf/', added: '2026-11-06',
       title: { ja: 'ころがし工房ゴルフ', en: 'Workshop Mini Golf' },
       short: { ja: 'ころがし工房ゴルフ', en: 'Workshop Mini Golf' },
-      desc: { ja: '作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規の坂、回る歯車、ばね、パイプ、インクだまり。スイッチの扉とはね戸も。5つの段に、だんだんむずかしくなるコースがならぶ。練習と今日のホールも。', en: 'Mini golf on the workbench. Pull back, let go, sink it. Ruler slopes, spinning gears, springs, pipes, ink puddles, switch doors and flap gates. Course after course in 5 tiers that get really hard, plus practice and a daily hole.' },
+      desc: { ja: '作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規の坂、回る歯車、ばね、パイプ、インクだまり。スイッチの扉とはね戸も。5つの段・22コース・198ホール、だんだんむずかしくなる。練習と今日のホールも。', en: 'Mini golf on the workbench. Pull back, let go, sink it. Ruler slopes, spinning gears, springs, pipes, ink puddles, switch doors and flap gates. 198 holes on 22 courses in 5 tiers that get really hard, plus practice and a daily hole.' },
       label: { ja: 'ミニゴルフ', en: 'Mini golf' },
       genres: ['action'], tags: ['2d', 'physics', 'sports', 'stages', 'daily'],
       keywords: { ja: ['ゴルフ', 'ミニゴルフ', 'パターゴルフ', 'パター', 'ボール', '物理', 'ホールインワン', '工房', '歯車'], en: ['golf', 'mini golf', 'minigolf', 'putt', 'putting', 'crazy golf', 'ball', 'physics', 'hole in one'] },

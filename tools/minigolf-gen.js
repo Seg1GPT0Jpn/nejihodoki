@@ -47,6 +47,12 @@ const THEME = {
   15: { seps: ['door', 'pipe'], parts: { slope: 3, inkside: 2, sand: 1 } },
   16: { seps: ['door'], parts: { inkside: 5, river: 2 } },
   17: { seps: ['door', 'switch', 'gate', 'pipe'], parts: { inkside: 2, river: 2, gear: 2, ruler: 2, slope: 2, bumper: 1, sand: 1 } },
+  // 親方（18〜22）：せまい戸口と、線のすぐそばのインク
+  18: { seps: ['door'], parts: { inkside: 3, sand: 1, bumper: 1 } },
+  19: { seps: ['door'], parts: { gear: 4, inkside: 1 } },
+  20: { seps: ['door', 'gate'], parts: { river: 3, inkside: 3 } },
+  21: { seps: ['switch', 'pipe', 'door'], parts: { inkside: 2, slope: 1, sand: 1 } },
+  22: { seps: ['door', 'switch', 'gate', 'pipe'], parts: { inkside: 3, river: 2, gear: 2, slope: 2, bumper: 1 } },
 };
 const MIX = { seps: ['door', 'door', 'switch', 'gate', 'pipe'], parts: { inkside: 3, river: 2, gear: 2, ruler: 2, slope: 2, bumper: 1, sand: 1 } };
 
@@ -60,7 +66,7 @@ function make(course, seed) {
   const W = pick([7, 7.5, 8]), x0 = r2((9 - W) / 2), x1 = x0 + W;
   // V3（コース7から）：帯を高くして部品を大きく、帯ごとに2つめの部品、コースの「ひねり」（seed が4の倍数）
   const V3 = course >= 7, twist = V3 && seed % 4 === 0;
-  const nb = V3 ? { 2: 3, 3: 4, 4: 4, 5: 5 }[T] + (rnd() < 0.35 && !(th.parts.gear || th.parts.ruler || th.seps[0] === 'pipe') ? 1 : 0) : T + (T <= 2 ? 1 : 2) + (rnd() < 0.4 ? 1 : 0) - (T === 5 && rnd() < 0.3 ? 1 : 0); // 帯の数（ティーとカップの帯を入れて）
+  const nb = V3 ? { 2: 3, 3: 4, 4: 4, 5: 4 }[T] + (rnd() < 0.35 && !(th.parts.gear || th.parts.ruler || th.seps[0] === 'pipe') ? 1 : 0) : T + (T <= 2 ? 1 : 2) + (rnd() < 0.4 ? 1 : 0) - (T === 5 && rnd() < 0.3 ? 1 : 0); // 帯の数（ティーとカップの帯を入れて）
   const bh = V3 ? Math.min(3.9, Math.max(3.0, 15.5 / nb)) : Math.min(3.8, Math.max(2.8, 14.5 / nb));
   const Ht = r2(bh * nb), y0 = 1, y1 = r2(y0 + Ht);
   const gw = U(...{ 2: [1.15, 1.5], 3: [0.95, 1.2], 4: [0.8, 1.0], 5: [0.68, 0.85] }[T] || [1.3, 1.6]);
@@ -217,7 +223,7 @@ function evaluate(course, seed) {
   let best = null;
   for (const par of [sol.strokes, sol.strokes + 1, sol.strokes + 2]) {
     if (par > 5 || par < 2) continue;
-    const r = HU.human(h, sol.shots, { tier: T, n: T >= 4 ? 12 : 16, par });
+    const r = HU.human(h, sol.shots, { tier: T, n: T >= 5 ? 10 : T >= 4 ? 12 : 16, par });
     const d = r.rate < lo ? lo - r.rate : r.rate > hi ? r.rate - hi : 0;
     const sc = d * 10 + Math.abs(r.rate - mid);
     if (!best || sc < best.sc) best = { par, rate: r.rate, sc, inBand: d === 0 };
@@ -244,7 +250,7 @@ if (process.argv[2] === '--worker') {
   // 調べた結果はとっておく（1つ調べるたびに書く。えらび直すだけなら、もう一度は調べない）。生成のしかたを変えたら CACHE_V を上げる
   const CACHE = path.join(__dirname, 'tests/out/minigolf-gen-cache.json'), CACHE_V = 2; // V3 の作り方はコース7からなので、4〜6の結果はそのまま使える
   let cache = {}; try { cache = JSON.parse(fs.readFileSync(CACHE, 'utf8')); } catch (e) {}
-  const cv = c => (c === 14 || c === 15 ? 4 : c >= 14 ? 3 : CACHE_V); // 14から：パー＋2まで・橋を少し広く
+  const cv = c => (c === 14 || c === 15 || c >= 18 ? 4 : c >= 14 ? 3 : CACHE_V); // 14から：パー＋2まで・橋を少し広く
   const ck = j => cv(j.course) + '|' + j.course + '|' + j.seed;
   const saveCache = () => { fs.mkdirSync(path.dirname(CACHE), { recursive: true }); fs.writeFileSync(CACHE + '.tmp', JSON.stringify(cache)); fs.renameSync(CACHE + '.tmp', CACHE); };
   const jobs = [];
@@ -291,7 +297,8 @@ function select(c, res, cand) {
   }
   if (pickd.length < 9) { console.log(`course ${c}: only ${pickd.length} usable holes — run with more --cand or another --base`); return; }
   const inBand = pickd.filter(r => r.inBand).length;
-  if (inBand < 7) { console.log(`course ${c}: only ${inBand} of 9 picked holes are in the tier's band — not written; try more --cand`); return; }
+  // 9つのうち、段の目安の中にあるのが7つ以上（親方の段は6つ以上）でなければ書かない
+  if (inBand < (TIER(c) >= 5 ? 6 : 7)) { console.log(`course ${c}: only ${inBand} of 9 picked holes are in the tier's band — not written; try more --cand`); return; }
   // コースの中は、やさしい順（成功率の高い順）
   pickd.sort((a, b) => b.rate - a.rate);
   // 主題を見せて、くり返して、さいごにひねる：ひねりのホールは8・9番に（あれば2つまで）
@@ -310,7 +317,7 @@ function select(c, res, cand) {
 }
 
 function NAMES(c, i) {
-  const A = { 13: [['からくり', 'Contraption'], ['仕掛け', 'Gadget']], 14: [['夜の橋', 'Night Bridge'], ['夜のばね', 'Night Spring']], 15: [['銅管', 'Copper Pipe'], ['森の坂', 'Wood Slope']], 16: [['墨', 'Ink'], ['流れ', 'Flow']], 17: [['試験', 'Exam'], ['課題', 'Task']], 11: [['坂', 'Slope'], ['インクの坂', 'Ink Slope']], 12: [['ばね', 'Spring'], ['ばねの部屋', 'Spring Room']], 4: [['戸口', 'Doorway'], ['すきま', 'Gap']], 5: [['スイッチ', 'Switch'], ['扉', 'Door']], 6: [['はね戸', 'Flap'], ['坂の戸', 'Slope Gate']], 7: [['橋', 'Bridge'], ['川', 'River']], 8: [['歯車', 'Gear'], ['回廊', 'Hall']], 9: [['関所', 'Checkpoint'], ['定規', 'Ruler']], 10: [['パイプ', 'Pipe'], ['管', 'Tube']] };
+  const A = { 18: [['針の穴', 'Needle'], ['細道', 'Narrow Way']], 19: [['大時計', 'Clock'], ['振り子', 'Pendulum']], 20: [['インクの海', 'Ink Sea'], ['小島', 'Islet']], 21: [['迷宮', 'Labyrinth'], ['抜け道', 'Passage']], 22: [['頂', 'Summit'], ['親方', 'Master']], 13: [['からくり', 'Contraption'], ['仕掛け', 'Gadget']], 14: [['夜の橋', 'Night Bridge'], ['夜のばね', 'Night Spring']], 15: [['銅管', 'Copper Pipe'], ['森の坂', 'Wood Slope']], 16: [['墨', 'Ink'], ['流れ', 'Flow']], 17: [['試験', 'Exam'], ['課題', 'Task']], 11: [['坂', 'Slope'], ['インクの坂', 'Ink Slope']], 12: [['ばね', 'Spring'], ['ばねの部屋', 'Spring Room']], 4: [['戸口', 'Doorway'], ['すきま', 'Gap']], 5: [['スイッチ', 'Switch'], ['扉', 'Door']], 6: [['はね戸', 'Flap'], ['坂の戸', 'Slope Gate']], 7: [['橋', 'Bridge'], ['川', 'River']], 8: [['歯車', 'Gear'], ['回廊', 'Hall']], 9: [['関所', 'Checkpoint'], ['定規', 'Ruler']], 10: [['パイプ', 'Pipe'], ['管', 'Tube']] };
   const nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
   const base = (A[c] || [['工房', 'Workshop'], ['台', 'Bench']])[i % 2];
   return [base[0] + 'の' + nums[i], base[1] + ' ' + (i + 1)];

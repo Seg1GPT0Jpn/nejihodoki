@@ -234,8 +234,8 @@ async function tiers(env) {
   const s = await open(env, { seed: ALL });
   const p = s.page;
   await p.click('#tTiers .tab[data-tier="1"]');
-  const n = COURSES.filter(c => c.tier === 2).length, built = COURSES.filter(c => c.tier === 2 && c.ready).length;
-  check(`tier 2: ${n} course rows, ${n - built} "coming soon"`, (await p.$$('.ct')).length === n && (await p.$$('.ct.soon')).length === n - built, null);
+  const n = COURSES.filter(c => c.tier === 2).length;
+  check(`all 22 courses built; tier 2: ${n} course rows`, COURSES.length === 22 && COURSES.every(c => c.ready) && (await p.$$('.ct')).length === n, null);
   check('tier 2: its first course is open (course 3 done)', !(await p.$eval('.ct[data-course="3"]', b => b.disabled)), null);
   await shot(p, '12-tier2');
   await p.click('.ct[data-course="3"]');
