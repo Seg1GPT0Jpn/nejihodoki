@@ -30,7 +30,7 @@
     { id: 'c11', n: ['インクへの坂', 'Slopes to the Ink'], d: ['坂がインクへ引っぱる。強さが命', 'Slopes drag you to the ink. Power is everything'] },
     { id: 'c12', n: ['ばねの部屋', 'Spring Rooms'], d: ['ばねにはじかれて、インクのそばを通る', 'Springs fling you past the ink'] },
     { id: 'c13', n: ['からくり部屋', 'Contraption Room'], d: ['スイッチ・はね戸・歯車がいっしょに', 'Switches, flaps and gears together'] },
-    { id: 'c14', n: ['夜の作業台', 'Night Bench'], d: ['せまい橋と、動く定規', 'Narrow bridges and moving rulers'] },
+    { id: 'c14', n: ['夜の作業台', 'Night Bench'], d: ['せまい橋と、ばねと、はね戸', 'Narrow bridges, springs and flap gates'] },
     { id: 'c15', n: ['銅管の森', 'Copper Woods'], d: ['パイプと坂の組み合わせ', 'Pipes meet slopes'] },
     { id: 'c16', n: ['墨流し', 'Marbled Ink'], d: ['インクのあいだを、何度も曲がる', 'Weave between the ink, again and again'] },
     { id: 'c17', n: ['名工の試験', "Master's Exam"], d: ['ここまでのすべて', 'Everything so far'] },
