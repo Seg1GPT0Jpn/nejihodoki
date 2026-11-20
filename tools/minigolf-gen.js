@@ -41,6 +41,12 @@ const THEME = {
   10: { seps: ['pipe', 'door'], parts: { inkside: 2, plain: 1, sand: 1 } },
   11: { seps: ['door'], parts: { slope: 4, inkside: 2 } },
   12: { seps: ['door'], parts: { bumper: 3, inkside: 2 } },
+  // 名工（13〜17）：主題を2つずつ組み合わせる
+  13: { seps: ['switch', 'gate', 'door'], parts: { gear: 2, inkside: 2, sand: 1 } },
+  14: { seps: ['door', 'gate'], parts: { river: 3, bumper: 2, sand: 1 } },
+  15: { seps: ['door', 'pipe'], parts: { slope: 3, inkside: 2, sand: 1 } },
+  16: { seps: ['door'], parts: { inkside: 5, river: 2 } },
+  17: { seps: ['door', 'switch', 'gate', 'pipe'], parts: { inkside: 2, river: 2, gear: 2, ruler: 2, slope: 2, bumper: 1, sand: 1 } },
 };
 const MIX = { seps: ['door', 'door', 'switch', 'gate', 'pipe'], parts: { inkside: 3, river: 2, gear: 2, ruler: 2, slope: 2, bumper: 1, sand: 1 } };
 
@@ -65,7 +71,7 @@ function make(course, seed) {
   for (let k = 1; k < nb; k++) {
     const ys = r2(y1 - bh * k);
     let kind = k === 1 || rnd() < 0.7 ? th.seps[0] : pick(th.seps);
-    if (kind === 'switch' && T <= 2 && seps.some(q => q.kind === 'switch')) kind = 'door'; // 職人の段：スイッチは1つまで
+    if (kind === 'switch' && seps.some(q => q.kind === 'switch')) kind = 'door'; // スイッチは1つまで
     const m = 0.5 + gw / 2;
     const gx = r2(side < 0 ? U(x0 + m, x0 + W * 0.38) : U(x1 - W * 0.38, x1 - m));
     side = -side;
@@ -114,7 +120,7 @@ function make(course, seed) {
         const blocked = [doorUp, doorDn].some(s => s && s.gx + gw / 2 + tight > bx0 && s.gx - gw / 2 - tight < bx1 && Math.min(Math.abs(yy - s.ys), Math.abs(yy + hh - s.ys)) < 0.9);
         if (!blocked) h.ink.push(R(bx0, yy, bx1, yy + hh));
       } else if (part === 'river' && bot - top > 2.6) {
-        const ry = r2(mid - 0.45), bw = r2(U(...{ 2: [1.1, 1.4], 3: [0.9, 1.1], 4: [0.75, 0.95], 5: [0.6, 0.8] }[T])), bx = r2(U(x0 + 1 + bw / 2, x1 - 1 - bw / 2));
+        const ry = r2(mid - 0.45), bw = r2(U(...{ 2: [1.1, 1.4], 3: [0.9, 1.1], 4: [course >= 14 ? 0.85 : 0.75, course >= 14 ? 1.05 : 0.95], 5: [0.72, 0.9] }[T])), bx = r2(U(x0 + 1 + bw / 2, x1 - 1 - bw / 2));
         h.ink.push(R(x0, ry, bx - bw / 2, ry + 0.9), R(bx + bw / 2, ry, x1, ry + 0.9));
         if (twist) h.slopes.push({ p: R(bx - bw / 2, ry, bx + bw / 2, ry + 0.9), g: [r2((rnd() < 0.5 ? -1 : 1) * U(1.5, 2.5)), 0] }); // ひねり：かたむいた橋
       } else if (part === 'gear' && bot - top > 2.4) {
@@ -157,12 +163,14 @@ function make(course, seed) {
     h.ink = h.ink.filter(P => { const b = MG.bbox(P); return keep.every(([x, y]) => x < b.x0 - 0.6 || x > b.x1 + 0.6 || y < b.y0 - 0.6 || y > b.y1 + 0.6); });
     if (!h.ink.length) delete h.ink;
   }
-  if (twist && twisted(h, course)) { h.twist = 1; const tt = TWIST_TIP[course]; if (tt) h.tip = tt; }
+  if (twist && twisted(h, course)) { h.twist = 1; const tt = TWIST_TIP[course >= 13 ? twistKind(h) : course]; if (tt) h.tip = tt; }
   return h;
 }
 
 // ひねりの部品が、ほんとうに置けたか（置けなかったら、ふつうのホール）
-function twisted(h, c) {
+function twistKind(h) { for (const c of [7, 8, 9, 10, 11, 12]) if (twisted(h, c, true)) return c; return 0; }
+function twisted(h, c, exact) {
+  if (c >= 13 && !exact) return !!twistKind(h);
   const g = h.gears || [], r = h.rulers || [];
   return c === 7 ? (h.slopes || []).some(s => s.g[1] === 0 && MG.bbox(s.p).x1 - MG.bbox(s.p).x0 < 2)
     : c === 8 ? g.some(a => g.some(b => a !== b && a.y === b.y && a.w === -b.w))
@@ -202,14 +210,14 @@ function evaluate(course, seed) {
   if (ace > (T <= 2 ? 0.02 : 0.005)) return { seed, bad: 'ace ' + ace };
   const { solve } = require('./tests/minigolf-levels.js');
   const maxS = Math.min(5, T + 2);
-  const sol = solve(h, { beam: 4, max: maxS + ((h.doors || []).length ? 1 : 0), deadline: Date.now() + ((h.doors || []).length ? 150000 : (h.gears || h.rulers) ? 110000 : 60000) });
+  const sol = solve(h, { beam: 4, max: maxS + ((h.doors || []).length ? 1 : 0), deadline: Date.now() + ((h.doors || []).length ? 150000 : (h.gears || h.rulers) ? 110000 : 60000) * (T >= 4 ? 1.3 : 1) });
   if (!sol) return { seed, bad: 'nosol' };
   if (sol.strokes < 2) return { seed, bad: 'ace-solution' };
   const [lo, hi] = BAND[T], mid = (lo + hi) / 2;
   let best = null;
-  for (const par of T <= 3 ? [sol.strokes, sol.strokes + 1, sol.strokes + 2] : [sol.strokes, sol.strokes + 1]) {
+  for (const par of [sol.strokes, sol.strokes + 1, sol.strokes + 2]) {
     if (par > 5 || par < 2) continue;
-    const r = HU.human(h, sol.shots, { tier: T, n: 16, par });
+    const r = HU.human(h, sol.shots, { tier: T, n: T >= 4 ? 12 : 16, par });
     const d = r.rate < lo ? lo - r.rate : r.rate > hi ? r.rate - hi : 0;
     const sc = d * 10 + Math.abs(r.rate - mid);
     if (!best || sc < best.sc) best = { par, rate: r.rate, sc, inBand: d === 0 };
@@ -236,7 +244,8 @@ if (process.argv[2] === '--worker') {
   // 調べた結果はとっておく（1つ調べるたびに書く。えらび直すだけなら、もう一度は調べない）。生成のしかたを変えたら CACHE_V を上げる
   const CACHE = path.join(__dirname, 'tests/out/minigolf-gen-cache.json'), CACHE_V = 2; // V3 の作り方はコース7からなので、4〜6の結果はそのまま使える
   let cache = {}; try { cache = JSON.parse(fs.readFileSync(CACHE, 'utf8')); } catch (e) {}
-  const ck = j => CACHE_V + '|' + j.course + '|' + j.seed;
+  const cv = c => (c === 14 || c === 15 ? 4 : c >= 14 ? 3 : CACHE_V); // 14から：パー＋2まで・橋を少し広く
+  const ck = j => cv(j.course) + '|' + j.course + '|' + j.seed;
   const saveCache = () => { fs.mkdirSync(path.dirname(CACHE), { recursive: true }); fs.writeFileSync(CACHE + '.tmp', JSON.stringify(cache)); fs.renameSync(CACHE + '.tmp', CACHE); };
   const jobs = [];
   for (const c of courses) for (let s = base; s < base + cand; s++) jobs.push({ course: c, seed: s });
@@ -244,7 +253,7 @@ if (process.argv[2] === '--worker') {
   const left = {}; courses.forEach(c => { left[c] = todo.filter(j => j.course === c).length; });
   const t0 = Date.now();
   // コースの候補がそろったら、すぐにえらんで holes-gen.js に書く
-  const finish = c => { try { select(c, jobs.filter(j => j.course === c).map(j => cache[ck(j)]), cand); } catch (e) { console.log('course ' + c + ': ' + (e.stack || e)); } };
+  const finish = c => { try { select(c, Object.keys(cache).filter(k => k.startsWith(cv(c) + '|' + c + '|')).map(k => cache[k]), cand); } catch (e) { console.log('course ' + c + ': ' + (e.stack || e)); } };
   courses.forEach(c => { if (!left[c]) finish(c); });
   let next = 0, live = 0;
   const worker = () => {
@@ -266,7 +275,7 @@ function select(c, res, cand) {
   // 公開したコースのホールは変えない（保存の記録が合わなくなる）。作り直すときだけ --replace
   if (gen.some(h => h.id.startsWith(c + '-')) && !process.argv.includes('--replace')) { console.log(`course ${c}: already in holes-gen.js — kept (use --replace to rebuild it)`); return; }
   const ok = res.filter(r => r && r.h && tidy(r.h));
-  console.log(`course ${c}: ${ok.length} solved of ${cand}; rejected: ` + JSON.stringify(res.filter(r => r && !r.h).reduce((m, r) => { const k = String(r.bad).split(' ')[0]; m[k] = (m[k] || 0) + 1; return m; }, {})));
+  console.log(`course ${c}: ${ok.length} solved of ${res.length} (all seeds tried so far); rejected: ` + JSON.stringify(res.filter(r => r && !r.h).reduce((m, r) => { const k = String(r.bad).split(' ')[0]; m[k] = (m[k] || 0) + 1; return m; }, {})));
   const mid = (BAND[TIER(c)][0] + BAND[TIER(c)][1]) / 2;
   ok.sort((a, b) => (b.inBand - a.inBand) || (Math.abs(a.rate - mid) - Math.abs(b.rate - mid)));
   const { mirror } = require('./tests/minigolf-levels.js');
@@ -281,6 +290,8 @@ function select(c, res, cand) {
     pickd.push(Object.assign(r, { ra, sim }));
   }
   if (pickd.length < 9) { console.log(`course ${c}: only ${pickd.length} usable holes — run with more --cand or another --base`); return; }
+  const inBand = pickd.filter(r => r.inBand).length;
+  if (inBand < 7) { console.log(`course ${c}: only ${inBand} of 9 picked holes are in the tier's band — not written; try more --cand`); return; }
   // コースの中は、やさしい順（成功率の高い順）
   pickd.sort((a, b) => b.rate - a.rate);
   // 主題を見せて、くり返して、さいごにひねる：ひねりのホールは8・9番に（あれば2つまで）
@@ -299,7 +310,7 @@ function select(c, res, cand) {
 }
 
 function NAMES(c, i) {
-  const A = { 11: [['坂', 'Slope'], ['インクの坂', 'Ink Slope']], 12: [['ばね', 'Spring'], ['ばねの部屋', 'Spring Room']], 4: [['戸口', 'Doorway'], ['すきま', 'Gap']], 5: [['スイッチ', 'Switch'], ['扉', 'Door']], 6: [['はね戸', 'Flap'], ['坂の戸', 'Slope Gate']], 7: [['橋', 'Bridge'], ['川', 'River']], 8: [['歯車', 'Gear'], ['回廊', 'Hall']], 9: [['関所', 'Checkpoint'], ['定規', 'Ruler']], 10: [['パイプ', 'Pipe'], ['管', 'Tube']] };
+  const A = { 13: [['からくり', 'Contraption'], ['仕掛け', 'Gadget']], 14: [['夜の橋', 'Night Bridge'], ['夜のばね', 'Night Spring']], 15: [['銅管', 'Copper Pipe'], ['森の坂', 'Wood Slope']], 16: [['墨', 'Ink'], ['流れ', 'Flow']], 17: [['試験', 'Exam'], ['課題', 'Task']], 11: [['坂', 'Slope'], ['インクの坂', 'Ink Slope']], 12: [['ばね', 'Spring'], ['ばねの部屋', 'Spring Room']], 4: [['戸口', 'Doorway'], ['すきま', 'Gap']], 5: [['スイッチ', 'Switch'], ['扉', 'Door']], 6: [['はね戸', 'Flap'], ['坂の戸', 'Slope Gate']], 7: [['橋', 'Bridge'], ['川', 'River']], 8: [['歯車', 'Gear'], ['回廊', 'Hall']], 9: [['関所', 'Checkpoint'], ['定規', 'Ruler']], 10: [['パイプ', 'Pipe'], ['管', 'Tube']] };
   const nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
   const base = (A[c] || [['工房', 'Workshop'], ['台', 'Bench']])[i % 2];
   return [base[0] + 'の' + nums[i], base[1] + ' ' + (i + 1)];
@@ -317,4 +328,4 @@ function write(gen, sols) {
   console.log('wrote', path.relative(process.cwd(), GEN_FILE), gen.length, 'holes');
 }
 
-module.exports = { make, evaluate, valid, twisted, BAND, TIER };
+module.exports = { make, evaluate, valid, twisted, NAMES, BAND, TIER };
