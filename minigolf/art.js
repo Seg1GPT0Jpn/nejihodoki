@@ -165,6 +165,19 @@
       ctx.beginPath(); ctx.moveTo(W[0][0], W[0][1]); for (var j = 1; j < W.length; j++) ctx.lineTo(W[j][0], W[j][1]);
       ctx.strokeStyle = C.wallSide; ctx.lineWidth = 0.22; ctx.stroke(); ctx.strokeStyle = C.wall; ctx.lineWidth = 0.16; ctx.stroke();
     });
+    // はね戸：うすい板と、通れる向きの矢印
+    (h.gates || []).forEach(function (q) {
+      var d = q.d * Math.PI / 180, ux = Math.cos(d), uy = Math.sin(d), mx = (q.a[0] + q.b[0]) / 2, my = (q.a[1] + q.b[1]) / 2;
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 0.14; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(q.a[0] + 0.04, q.a[1] + 0.07); ctx.lineTo(q.b[0] + 0.04, q.b[1] + 0.07); ctx.stroke();
+      ctx.strokeStyle = '#6fc3e8'; ctx.lineWidth = 0.1; ctx.setLineDash([0.16, 0.08]);
+      ctx.beginPath(); ctx.moveTo(q.a[0], q.a[1]); ctx.lineTo(q.b[0], q.b[1]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(160,225,255,.9)'; ctx.lineWidth = 0.08;
+      for (var gk = -1; gk <= 1; gk += 2) {
+        var cx = mx + (q.b[0] - q.a[0]) * 0.25 * gk, cy = my + (q.b[1] - q.a[1]) * 0.25 * gk;
+        ctx.beginPath(); ctx.moveTo(cx - ux * 0.2 - uy * 0.18, cy - uy * 0.2 + ux * 0.18); ctx.lineTo(cx + ux * 0.05, cy + uy * 0.05); ctx.lineTo(cx - ux * 0.2 + uy * 0.18, cy - uy * 0.2 - ux * 0.18); ctx.stroke();
+      }
+    });
     // インクびん（くい）
     (h.posts || []).forEach(function (q) {
       var x = q[0], y = q[1], r = q[2];
@@ -336,6 +349,25 @@
       }
     });
   }
+  // スイッチ（赤いボタン。押すと緑）と扉（赤白のしましま。開くと点線だけ）
+  function drawDoors(ctx, h, open) {
+    (h.doors || []).forEach(function (P, i) {
+      var on = open & (1 << i);
+      if (on) { path(ctx, P); ctx.strokeStyle = 'rgba(255,140,120,.55)'; ctx.lineWidth = 0.05; ctx.setLineDash([0.12, 0.1]); ctx.stroke(); ctx.setLineDash([]); return; }
+      path(ctx, P); ctx.fillStyle = '#d8402e'; ctx.fill();
+      ctx.save(); path(ctx, P); ctx.clip();
+      var bb = MG.bbox(P); ctx.strokeStyle = '#fff3e8'; ctx.lineWidth = 0.12;
+      for (var x = bb.x0 - 1; x < bb.x1 + 1; x += 0.36) { ctx.beginPath(); ctx.moveTo(x, bb.y1); ctx.lineTo(x + (bb.y1 - bb.y0), bb.y0); ctx.stroke(); }
+      ctx.restore(); path(ctx, P); ctx.strokeStyle = '#7a1a10'; ctx.lineWidth = 0.05; ctx.stroke();
+    });
+    (h.switches || []).forEach(function (q) {
+      var on = q[3] == null ? open : (open & q[3]) === q[3];
+      circle(ctx, q[0] + 0.04, q[1] + 0.07, q[2] || 0.32); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fill();
+      circle(ctx, q[0], q[1], q[2] || 0.32); ctx.fillStyle = '#5a5f66'; ctx.fill();
+      circle(ctx, q[0], q[1], (q[2] || 0.32) * 0.7); ctx.fillStyle = on ? '#4ac060' : '#e8402e'; ctx.fill();
+      circle(ctx, q[0] - 0.05, q[1] - 0.06, (q[2] || 0.32) * 0.25); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fill();
+    });
+  }
   // 1枚
   function frame(ctx, v, o) {
     var G = o.G, h = v.hole, t = o.t || 0, gt = G ? G.time() : 0;
@@ -344,6 +376,7 @@
     apply(ctx, v);
     var P = MG.prep(h);
     P.rulers.forEach(function (r) { drawRuler(ctx, r, gt); });
+    drawDoors(ctx, h, G ? G.open : 0);
     if (G && (G.st === 'rest' || G.st === 'roll') && o.trail) {
       ctx.fillStyle = 'rgba(255,255,255,.18)';
       o.trail.forEach(function (q, i) { circle(ctx, q[0], q[1], MG.BALL_R * (0.35 + 0.5 * i / o.trail.length)); ctx.fill(); });
@@ -372,6 +405,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, w, hgt);
     apply(ctx, v); drawStatic(ctx, v);
     var P = MG.prep(hole);
+    drawDoors(ctx, hole, 0);
     P.rulers.forEach(function (r) { drawRuler(ctx, r, 0); }); P.gears.forEach(function (g) { drawGear(ctx, g, 0); });
     drawBall(ctx, hole.tee[0], hole.tee[1]); drawFlag(ctx, hole, 0, v);
     cache = keep;

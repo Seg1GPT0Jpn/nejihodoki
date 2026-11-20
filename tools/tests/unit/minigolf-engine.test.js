@@ -95,6 +95,24 @@ test('stroke limit is par + 4; a shot is quantized to 1/20° and 1/1000', () => 
   for (let i = 0; i < 5; i++) { MG.settle(G); G.shoot(90, 0.05); }
   MG.settle(G); eq(G.st, 'over'); ok(!G.shoot(0, 0.5), 'no more shots');
 });
+test('flap gates: through one way, a wall the other way', () => {
+  const gate = { a: [0, 5], b: [10, 5], d: -90 }; // passes upward only
+  const up = MG.create(box({ cup: [-5, -5], tee: [5, 8], gates: [gate] })); up.shoot(-90, 0.5); MG.settle(up);
+  ok(up.y < 5, 'went up through: ' + up.y);
+  const dn = MG.create(box({ cup: [-5, -5], tee: [5, 2], gates: [gate] })); dn.shoot(90, 0.5); MG.settle(dn);
+  ok(dn.y < 5, 'bounced back from below the gate: ' + dn.y);
+});
+test('switch doors: shut until the ball rolls over the switch; the snapshot keeps them open', () => {
+  const door = [[0, 4.8], [10, 4.8], [10, 5.2], [0, 5.2]];
+  const shut = MG.create(box({ cup: [-5, -5], doors: [door] })); shut.shoot(-90, 0.5); MG.settle(shut);
+  ok(shut.y > 5, 'the door stops it: ' + shut.y);
+  const h = box({ cup: [-5, -5], doors: [door], switches: [[5, 6.5, 0.3, 1]] });
+  const G = MG.create(h); G.shoot(-90, 0.5); MG.settle(G);
+  ok(G.open === 1 && G.y < 5, 'switch opened it and the ball went through: ' + G.y);
+  ok(G.events.some(e => e.k === 'switch'), 'switch event');
+  const R = MG.restore(h, JSON.parse(JSON.stringify(G.snap())));
+  eq(R.open, 1); eq(MG.restore(h, { tick: 1, x: 5, y: 8, strokes: 1 }).open, 0, 'an old snapshot has the doors shut');
+});
 test('scoreName', () => {
   eq(MG.scoreName(1, 3), 'ace'); eq(MG.scoreName(2, 4), 'eagle'); eq(MG.scoreName(2, 3), 'birdie'); eq(MG.scoreName(3, 3), 'par'); eq(MG.scoreName(4, 3), 'bogey'); eq(MG.scoreName(5, 3), 'double'); eq(MG.scoreName(7, 3), 'over');
 });

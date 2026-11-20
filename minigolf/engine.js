@@ -61,13 +61,17 @@
     edges(hole.poly, true, walls);
     (hole.blocks || []).forEach(function (b) { edges(b, true, walls); });
     (hole.walls || []).forEach(function (w) { edges(w, false, walls); });
+    // 扉（スイッチで開く。閉じているあいだはかべ）と、はね戸（決まった向きにだけ通れる板）
+    var doors = (hole.doors || []).map(function (d) { var o = []; edges(d, true, o); return o; });
+    var gates = (hole.gates || []).map(function (q) { var d = q.d * DEG, g = seg(q.a[0], q.a[1], q.b[0], q.b[1]); g.ux = dcos(d); g.uy = dsin(d); g.d = q.d; return g; });
+    var switches = (hole.switches || []).map(function (q) { return { x: q[0], y: q[1], r: q[2] || 0.32, m: q[3] == null ? -1 : q[3] }; });
     var rulers = (hole.rulers || []).map(function (r) {
       var a = (r.ang || 0) * DEG;
       return { ax: r.a[0], ay: r.a[1], bx: r.b[0], by: r.b[1], hx: dcos(a) * r.len / 2, hy: dsin(a) * r.len / 2, per: r.per, ph: r.ph || 0, len: r.len, ang: r.ang || 0 };
     });
     var gears = (hole.gears || []).map(function (g) { return { x: g.x, y: g.y, r: g.r, n: g.arms || 4, w: g.w, ph: g.ph || 0 }; });
     var p = {
-      walls: walls, rulers: rulers, gears: gears,
+      walls: walls, rulers: rulers, gears: gears, doors: doors, gates: gates, switches: switches,
       posts: (hole.posts || []).map(function (q) { return { x: q[0], y: q[1], r: q[2] }; }),
       bumpers: (hole.bumpers || []).map(function (q) { return { x: q[0], y: q[1], r: q[2] }; }),
       pipes: (hole.pipes || []).map(function (q) { var d = q.d * DEG; return { ax: q.a[0], ay: q.a[1], bx: q.b[0], by: q.b[1], ux: dcos(d), uy: dsin(d), d: q.d }; }),
@@ -101,8 +105,9 @@
     this.tick = 0; this.x = hole.tee[0]; this.y = hole.tee[1]; this.vx = 0; this.vy = 0;
     this.st = 'rest'; this.strokes = 0; this.pen = 0; this.lx = this.x; this.ly = this.y;
     this.slow = 0; this.roll = 0; this.pipeT = 0; this.pipeI = -1; this.pipeV = 0; this.touch = false; this.lip = false;
-    this.events = []; this.evN = 0; this.shots = []; this.bumpI = -1;
+    this.events = []; this.evN = 0; this.shots = []; this.bumpI = -1; this.open = 0;
   }
+  Game.prototype.doorOpen = function (i) { return !!(this.open & (1 << i)); };
   Game.prototype.ev = function (k, a) { this.events.push({ k: k, t: this.tick, a: a == null ? 0 : a }); this.evN++; if (this.events.length > 64) this.events.shift(); };
   Game.prototype.canShoot = function () { return this.st === 'rest'; };
   Game.prototype.done = function () { return this.st === 'sunk' || this.st === 'over'; };
@@ -188,6 +193,21 @@
       r = this.hitSeg(w.ax, w.ay, w.dx, w.dy, w.l2, 0, E_WALL, 0, 0);
       if (r) { hit = true; if (r > 0.8) this.ev('wall', r); }
     }
+    for (i = 0; i < P.doors.length; i++) {
+      if (this.open & (1 << i)) continue;
+      for (var dj = 0; dj < P.doors[i].length; dj++) {
+        var dw = P.doors[i][dj];
+        r = this.hitSeg(dw.ax, dw.ay, dw.dx, dw.dy, dw.l2, 0, E_WALL, 0, 0);
+        if (r) { hit = true; if (r > 0.8) this.ev('wall', r); }
+      }
+    }
+    // はね戸：通れる向き（u）の先にいて、戻ろうとしている球だけを止める
+    for (i = 0; i < P.gates.length; i++) {
+      var gt = P.gates[i], sd = (this.x - gt.ax) * gt.ux + (this.y - gt.ay) * gt.uy;
+      if (sd <= 0 || this.vx * gt.ux + this.vy * gt.uy >= 0) continue;
+      r = this.hitSeg(gt.ax, gt.ay, gt.dx, gt.dy, gt.l2, 0.04, E_WALL, 0, 0);
+      if (r) { hit = true; if (r > 0.8) this.ev('wall', r); }
+    }
     for (i = 0; i < P.posts.length; i++) {
       var q = P.posts[i], c = this.hitCircle(q.x, q.y, q.r, E_POST);
       if (c) { hit = true; if (c.vn > 0.8) this.ev('wall', c.vn); }
@@ -210,6 +230,8 @@
     if (!inPoly(this.hole.poly, this.x, this.y)) return true;
     var bl = this.hole.blocks || [];
     for (var i = 0; i < bl.length; i++) if (inPoly(bl[i], this.x, this.y)) return true;
+    var dr = this.hole.doors || [];
+    for (var j = 0; j < dr.length; j++) if (!(this.open & (1 << j)) && inPoly(dr[j], this.x, this.y)) return true;
     return false;
   };
   Game.prototype.toRest = function (x, y) { this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.st = 'rest'; this.slow = 0; };
@@ -255,6 +277,11 @@
           return;
         }
       }
+      // スイッチ：上を通ると扉が開く（m：開く扉のビット。-1 はぜんぶ）
+      for (var si = 0; si < P.switches.length; si++) {
+        var sw = P.switches[si], sx = this.x - sw.x, sy = this.y - sw.y;
+        if (sx * sx + sy * sy < sw.r * sw.r) { var nb = this.open | (sw.m < 0 ? 0x7fffffff : sw.m); if (nb !== this.open) { this.open = nb; this.ev('switch', si); } }
+      }
       // インク（罰打1。打つ前の場所へ）
       for (var ii = 0; ii < P.ink.length; ii++) {
         if (inBB(P.inkBB[ii], this.x, this.y) && inPoly(P.ink[ii], this.x, this.y)) {
@@ -280,9 +307,9 @@
     if ((this.slow >= REST_TICKS && (gm2 <= frr * frr || touched)) || this.roll > MAX_ROLL) { this.toRest(this.x, this.y); this.afterRest(); }
   };
   // 止まっているときの状態（自動保存）
-  Game.prototype.snap = function () { return { v: 1, tick: this.tick, x: this.x, y: this.y, strokes: this.strokes, pen: this.pen, lx: this.lx, ly: this.ly }; };
+  Game.prototype.snap = function () { return { v: 1, tick: this.tick, x: this.x, y: this.y, strokes: this.strokes, pen: this.pen, lx: this.lx, ly: this.ly, open: this.open }; };
   Game.prototype.hash = function () {
-    var s = [this.tick, this.x, this.y, this.vx, this.vy, this.strokes, this.st].join('|'), h = 2166136261;
+    var s = [this.tick, this.x, this.y, this.vx, this.vy, this.strokes, this.st].concat(this.open ? [this.open] : []).join('|'), h = 2166136261;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
     return h.toString(16);
   };
@@ -297,6 +324,7 @@
     G.tick = Math.max(0, Math.floor(num(sn.tick, 0)));
     G.x = num(sn.x, G.x); G.y = num(sn.y, G.y); G.lx = num(sn.lx, G.x); G.ly = num(sn.ly, G.y);
     G.strokes = Math.max(0, Math.floor(num(sn.strokes, 0))); G.pen = Math.max(0, Math.floor(num(sn.pen, 0)));
+    G.open = Math.max(0, Math.floor(num(sn.open, 0))) | 0; // 古い保存には無い（閉じたまま）
     if (G.lost()) { G.x = hole.tee[0]; G.y = hole.tee[1]; G.lx = G.x; G.ly = G.y; }
     if (G.strokes >= G.limit) G.st = 'over';
     return G;

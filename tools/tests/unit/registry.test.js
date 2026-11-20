@@ -170,7 +170,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('td', k => null), 0, 'td: nothing saved');
   eq(P.rankValue('physics', k => '{"v":1,"lv":{"1-1":{"c":2,"g":1,"p":1,"b":1,"t":3200}},"stars":3,"done":1}'), 3, 'physics: total stars');
   eq(P.rankValue('physics', k => null), 0, 'physics: nothing saved');
-  eq(P.rankValue('minigolf', k => '{"v":1,"c":{"c1":{"b":22,"r":2,"h":{"1":1}}},"under":3,"done":1}'), 3, 'minigolf: strokes under par');
+  eq(P.rankValue('minigolf', k => '{"v":2,"c":{"c1":{"t":30,"r":2,"s":{"1":2}}},"stars":41,"under":3,"done":1}'), 41, 'minigolf: total stars');
+  eq(P.rankValue('minigolf', k => '{"v":1,"c":{"c1":{"b":22,"r":2,"h":{"1":1}}},"under":3,"done":1}'), 0, 'minigolf: an old v1 save has no stars yet');
   eq(P.rankValue('minigolf', k => null), 0, 'minigolf: nothing saved');
 });
 

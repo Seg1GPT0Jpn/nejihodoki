@@ -28,8 +28,9 @@ const results = [];
 const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + JSON.stringify(info).slice(0, 600)}`); };
 const SAVE = 'kusoge.minigolf.save', RUN = 'kusoge.minigolf.run';
 const SEEN = { 'kusoge.minigolf.howto': '1' };
-const DONE = Object.assign({}, SEEN, { [SAVE]: JSON.stringify({ v: 1, c: {}, under: 0, done: 0, stats: {}, tut: 1 }) });
-const ALL = Object.assign({}, SEEN, { [SAVE]: JSON.stringify({ v: 1, c: { c1: { b: 30, r: 1, h: {} }, c2: { b: 32, r: 1, h: {} } }, under: 0, done: 2, stats: {}, tut: 1 }) });
+const DONE = Object.assign({}, SEEN, { [SAVE]: JSON.stringify({ v: 2, c: {}, stars: 0, under: 0, done: 0, stats: {}, tut: 1 }) });
+const ALL = Object.assign({}, SEEN, { [SAVE]: JSON.stringify({ v: 2, c: { c1: { t: 30, r: 1, s: {} }, c2: { t: 32, r: 1, s: {} }, c3: { t: 33, r: 1, s: {} } }, stars: 0, under: 0, done: 3, stats: {}, tut: 1 }) });
+const { COURSES } = require('../../minigolf/holes.js');
 const I18N_WATCH = `(() => { let k = null; window.__jpMiss = [];
   Object.defineProperty(window, 'KoboI18n', { configurable: true, get() { return k; }, set(v) {
     k = v; if (!v || !v.t) return; const t = v.t;
@@ -107,7 +108,8 @@ async function round(env) {
   const s = await open(env, { seed: DONE });
   const p = s.page;
   let x = await st(p);
-  check('title with 3 courses, only the first open', x.title && (await p.$$('.ct')).length === 3 && (await p.$$('.ct:disabled')).length === 2, x);
+  check('title: 5 tier tabs, the first tier\'s 3 courses, only the first open', x.title && (await p.$$('#tTiers .tab')).length === 5 && (await p.$$('.ct')).length === 3 && (await p.$$('.ct:disabled')).length === 2, x);
+  check('later tiers are locked until their first course opens', (await p.$$('#tTiers .tab:disabled')).length === 4, null);
   await p.click('.ct[data-course="0"]');
   await p.evaluate(() => __minigolf.freeze(true));
   const card = [];
@@ -125,6 +127,7 @@ async function round(env) {
   }
   x = await st(p);
   const total = card.reduce((a, b) => a + b, 0), par = HOLES.slice(0, 9).reduce((a, h) => a + h.par, 0);
+  const stars = card.reduce((a, n, i) => a + (n <= HOLES[i].par ? 3 : n <= HOLES[i].par + 1 ? 2 : 1), 0);
   check('round card: shown after the 9th hole', x.card2 && /ラウンド終了/.test(await p.textContent('#cTitle')), x);
   const cells = await p.$$eval('#cTable tr:nth-child(3) td', tds => tds.map(t => t.textContent));
   check('scorecard: 9 strokes and the total', JSON.stringify(cells.slice(0, 9).map(Number)) === JSON.stringify(card) && Number(cells[9]) === total, { cells, card });
@@ -132,14 +135,14 @@ async function round(env) {
   await shot(p, '2-scorecard');
   x = await st(p);
   const sv = x.save;
-  check('records: round counted, best = total, under = par − total', sv.c.c1.r === 1 && sv.c.c1.b === total && sv.under === Math.max(0, par - total) && sv.done === 1, sv);
-  check('per-hole bests are kept', Object.keys(sv.c.c1.h).length === 9, sv.c.c1.h);
+  check('records: round counted, best = total, under = par − total, stars per hole', sv.c.c1.r === 1 && sv.c.c1.t === total && sv.under === Math.max(0, par - total) && sv.done === 1 && sv.stars === stars && sv.v === 2, sv);
+  check('per-hole bests are kept', Object.keys(sv.c.c1.s).length === 9, sv.c.c1.s);
   check('the round in progress is gone', (await stored(p, RUN)) === null, await stored(p, RUN));
   const ach = await p.evaluate(() => { try { return Object.keys(JSON.parse(localStorage.getItem('kobo.ach') || '{}').u || JSON.parse(localStorage.getItem('kobo.ach') || '{}')); } catch (e) { return []; } });
   check('achievements: first putt and a round on Ruler Bench', JSON.stringify(ach).includes('minigolf.h1') && JSON.stringify(ach).includes('minigolf.r1'), ach);
   await p.click('#cAlt');
   check('course 2 is open now', (await p.$$('.ct:disabled')).length === 1, null);
-  check('rank value equals the saved under-par total', await p.evaluate(() => KoboPlatform.rankValue('minigolf')) === sv.under, sv.under);
+  check('rank value equals the saved stars', await p.evaluate(() => KoboPlatform.rankValue('minigolf')) === sv.stars && sv.stars > 0, sv.stars);
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
   await s.close();
 }
@@ -179,7 +182,7 @@ async function practice(env) {
   const s = await open(env, { seed: ALL });
   const p = s.page;
   await p.click('#tPractice');
-  check('practice: 3 course tabs and 9 holes', (await p.$$('.tab')).length === 3 && (await p.$$('.hb')).length === 9, null);
+  check('practice: tier tabs, the tier\'s 3 course tabs and 9 holes', (await p.$$('#pTiers .tab')).length === 5 && (await p.$$('#pTabs .tab')).length === 3 && (await p.$$('.hb')).length === 9, null);
   await p.click('.tab[data-course="1"]');
   await shot(p, '4-practice');
   await p.click('.hb[data-hole="2-3"]');
@@ -222,6 +225,43 @@ async function daily(env) {
   const other = await p.evaluate(() => __minigolf.dailyInfo(20261225));
   check('the daily hole comes from the date seed', other.hi === (other.seed >>> 0) % HOLES.length, other);
   await shot(p, '5-daily');
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+  await s.close();
+}
+
+async function tiers(env) {
+  console.log('12. tiers: a later tier, a generated hole with its stored answer, the opening tip off the flag');
+  const s = await open(env, { seed: ALL });
+  const p = s.page;
+  await p.click('#tTiers .tab[data-tier="1"]');
+  const n = COURSES.filter(c => c.tier === 2).length, built = COURSES.filter(c => c.tier === 2 && c.ready).length;
+  check(`tier 2: ${n} course rows, ${n - built} "coming soon"`, (await p.$$('.ct')).length === n && (await p.$$('.ct.soon')).length === n - built, null);
+  check('tier 2: its first course is open (course 3 done)', !(await p.$eval('.ct[data-course="3"]', b => b.disabled)), null);
+  await shot(p, '12-tier2');
+  await p.click('.ct[data-course="3"]');
+  await p.evaluate(() => __minigolf.freeze(true));
+  let x = await st(p);
+  const h = HOLES.find(q => q.id === '4-1');
+  check('course 4 opens on 4-1', x.hole === '4-1' && x.mode === 'course', x);
+  // the opening tip must not cover the flag
+  const cover = async () => p.evaluate(() => {
+    const t = document.getElementById('tip'); if (t.hidden) return false;
+    const r = t.getBoundingClientRect(), c = document.getElementById('board').getBoundingClientRect(), v = __minigolf.view, hh = __kb.state();
+    const H = __minigolf.HOLES.find(q => q.id === hh.hole), cp = v.toScreen(H.cup[0], H.cup[1]);
+    const top = v.rot ? cp.y - 0.3 * v.s : cp.y - 1.35 * v.s;
+    return r.bottom > c.top + top && r.top < c.top + cp.y + 0.4 * v.s && r.right > c.left + cp.x - 0.5 * v.s && r.left < c.left + cp.x + 0.8 * v.s;
+  });
+  check('4-1: the opening tip does not cover the flag', !(await cover()), null);
+  await shot(p, '12-gen-hole');
+  x = await replay(p, '4-1');
+  await waitResult(p);
+  check('4-1: the stored answer sinks it within par in the page', x.won && x.strokes <= h.par, x);
+  for (const id of ['1-5', '2-9', '3-8', '5-9', '6-9']) {
+    if (!HOLES.find(q => q.id === id)) continue;
+    await p.evaluate(id => __minigolf.practice(id), id);
+    check(id + ': the opening tip does not cover the flag', !(await cover()), id);
+    await shot(p, '12-' + id);
+  }
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
   await s.close();
 }
@@ -295,6 +335,7 @@ async function english(env) {
   await scan('title'); await shot(p, '9-en-title');
   await p.click('#tPractice'); await scan('practice');
   await p.click('#pBack');
+  await p.click('#tTiers .tab[data-tier="0"]');
   await p.click('.ct[data-course="2"]');
   await p.evaluate(() => __minigolf.freeze(true));
   await scan('hole 3-1');
@@ -367,7 +408,7 @@ async function perf(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, round, resume, practice, daily, ink, pause, touch, english, layouts, perf]) {
+  for (const f of [first, round, resume, practice, daily, ink, pause, touch, english, layouts, perf, tiers]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

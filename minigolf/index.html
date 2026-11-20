@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>ころがし工房ゴルフ</title>
 <meta name="theme-color" content="#1f2a1e">
-<meta name="description" content="作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規・歯車・ばね・インクだまりの3コース27ホール。">
+<meta name="description" content="作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規・歯車・ばね・インク・スイッチの扉。5つの段に、むずかしいコースがならぶ。">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="icon" href="../favicon-32.png">
@@ -44,10 +44,13 @@ KoboI18n.add({ en: {
   '点線が打つ向き。引っぱりを小さく戻すと、打たずにやめられる': 'The dotted line shows the direction. Slide back to the start to cancel',
   '坂は矢印の向きへ転がる。おがくずの上ではすぐ止まる。ばねは強くはじく': 'Slopes roll the ball along the arrows. Sawdust stops it fast. Springs kick it hard',
   '歯車と定規は動いている。インクに入ると罰打1で、打つ前の場所へ。パイプは入ると出口から出てくる': 'Gears and rulers move. Ink costs one stroke and puts you back. Pipes carry the ball to their exit',
-  '1ホールに打てるのは パー＋4 打まで。9ホールの合計がパーより少ないと、ランキングに入る': 'Each hole allows up to par + 4 strokes. Finish a 9-hole round under par to get on the ranking',
+  '1ホールに打てるのは パー＋4 打まで': 'Each hole allows up to par + 4 strokes',
   '1打ごとに自動で保存。とちゅうで閉じても、つづきから': 'Saved after every stroke. Close any time and continue later',
   'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks', 'コースの選びへ': 'Course select', 'このホールをやめる': 'Leave this hole',
   'ラウンドをやめてタイトルへ': 'Quit the round', '自動保存しました': 'Autosaved',
+  '準備中': 'Coming soon', 'ランキング：星の合計 {n}': 'Ranking: {n} stars in total', 'このコースの星 {n} / 27': 'Stars on this course {n} / 27',
+  '星：カップイン ★、パー＋1以内 ★★、パー以内 ★★★。全ホールの星の合計がランキング': 'Stars: holed ★, within par + 1 ★★, within par ★★★. Your stars over every hole are your ranking',
+  'はね戸は矢印の向きにだけ通れる。赤いスイッチの上を通ると、赤い扉が開く': 'Flap gates only let you through the way the arrows point. Roll over a red switch to open the red doors',
 } });
 </script>
 <script src="../common/games.js"></script>
@@ -159,6 +162,10 @@ header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 760px; margin: 
 .ct:disabled { opacity: .5; cursor: default; box-shadow: none; }
 .ct .lock { width: 18px; height: 18px; color: var(--kb-dim); flex: none; }
 .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.tabs.tiers { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.tabs.tiers .tab { font-size: 11px; padding: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab small { display: block; font-size: 10px; font-weight: 500; opacity: .8; }
+.ct.soon { opacity: .45; }
 .tab { min-width: 0; min-height: 44px; border-radius: 12px; border: 1px solid var(--mg-line); background: var(--mg-panel); color: var(--kb-ink); cursor: pointer; font: 800 12px var(--kb-font-body); padding: 4px; line-height: 1.2; touch-action: manipulation; }
 .tab.sel { border-color: var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-accent-text); }
 .tab:disabled { opacity: .45; cursor: default; }
@@ -204,7 +211,7 @@ body.thumb #main { padding: 0; max-width: none; }
   #meter { flex: 1 1 auto; }
   .card { max-width: 660px; }
   .howto { max-width: 680px; }
-  .courses { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .courses { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ct canvas { display: none; }
   .holes { grid-template-columns: repeat(9, minmax(0, 1fr)); }
   .card h2.logo { font-size: 22px; }
@@ -241,6 +248,7 @@ body.thumb #main { padding: 0; max-width: none; }
     <div class="scroll">
       <p data-i18n>引っぱって、はなして、カップへ。作業台の上のミニゴルフ。</p>
       <p id="tStats"></p>
+      <div class="tabs tiers" id="tTiers" role="tablist"></div>
       <div class="courses" id="tCourses"></div>
     </div>
     <button class="btn" id="tContinue" type="button" hidden></button>
@@ -254,6 +262,7 @@ body.thumb #main { padding: 0; max-width: none; }
     <h2 id="pTitle" data-i18n>練習</h2>
     <div class="scroll">
       <p data-i18n>練習：好きなホールを何度でも。記録には入りません</p>
+      <div class="tabs tiers" id="pTiers"></div>
       <div class="tabs" id="pTabs"></div>
       <div class="holes" id="pHoles"></div>
     </div>
@@ -299,6 +308,7 @@ body.thumb #main { padding: 0; max-width: none; }
   </div>
 </div>
 <script src="engine.js"></script>
+<script src="holes-gen.js"></script>
 <script src="holes.js"></script>
 <script src="art.js"></script>
 <script src="../common/game.js"></script>
@@ -310,7 +320,7 @@ body.thumb #main { padding: 0; max-width: none; }
 // and this file the chrome: pull-back aiming, the scorecard, rounds / practice / today's hole, saving and the platform events.
 const T = KoboI18n.t;
 const EN = KoboI18n.lang === 'en';
-const MG = window.MinigolfEngine, ART = window.MinigolfArt, HOLES = window.MinigolfHoles, COURSES = window.MinigolfCourses;
+const MG = window.MinigolfEngine, ART = window.MinigolfArt, HOLES = window.MinigolfHoles, COURSES = window.MinigolfCourses, TIERS = window.MinigolfTiers;
 const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'minigolf';
@@ -335,10 +345,13 @@ function tone(f, d, o, key, gap) { if (!AU) return; const t = now(); if (key && 
 function vibrate(p) { if (AU && AU.vibrate) AU.vibrate(p); }
 const coursePar = ci => HOLES.filter(h => h.course === ci).reduce((s, h) => s + h.par, 0);
 const courseHoles = ci => HOLES.filter(h => h.course === ci);
+const stageNo = h => h.course * 9 + h.no; // stable across batches of new courses (HOLES order is not)
 const signed = d => (d === 0 ? T('イーブン') : (d > 0 ? '+' : '−') + Math.abs(d));
 
 // ---------- save ----------
-function defSave() { return { v: 1, c: {}, under: 0, done: 0, stats: { rounds: 0, holes: 0, strokes: 0, aces: 0, birdies: 0, ink: 0, daily: 0 }, tut: 0 }; }
+// v2 (22 courses): c[id] = { r: rounds, t: best 9-hole total, s: { "1".."9": fewest strokes } }. v1's b / h were for the old,
+// easier holes (the first 3 courses were re-tuned), so they stay in the save untouched and unused; r (rounds) still opens the next course.
+function defSave() { return { v: 2, c: {}, stars: 0, under: 0, done: 0, stats: { rounds: 0, holes: 0, strokes: 0, aces: 0, birdies: 0, ink: 0, daily: 0, under: 0 }, tut: 0 }; }
 function readSave() {
   let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
   const d = defSave();
@@ -346,19 +359,25 @@ function readSave() {
   const out = Object.assign(d, s);
   out.c = s.c && typeof s.c === 'object' && !Array.isArray(s.c) ? s.c : {};
   out.stats = Object.assign(defSave().stats, s.stats && typeof s.stats === 'object' ? s.stats : {});
+  for (const k of Object.keys(out.c)) { const r = out.c[k]; if (!r || typeof r !== 'object' || Array.isArray(r)) { delete out.c[k]; continue; } if (!r.s || typeof r.s !== 'object' || Array.isArray(r.s)) r.s = {}; }
+  out.v = 2;
   recount(out);
   return out;
 }
-// under = for each course, how many strokes under par the best round was (never below 0); done = courses with a finished round
+// stars (the ranking) = per hole: 1 holed out, 2 within par + 1, 3 within par (best of the course rounds), added up over every hole
+// under = for each course, strokes under par of the best round (never below 0); done = courses with a finished round
+const holeStars = (n, par) => (!(n > 0) ? 0 : n <= par ? 3 : n <= par + 1 ? 2 : 1);
+function courseStars(s, k) { const r = s.c[COURSES[k].id]; if (!r || !r.s) return 0; return courseHoles(k).reduce((a, h) => a + holeStars(r.s[h.no], h.par), 0); }
 function recount(s) {
-  let u = 0, dn = 0;
-  COURSES.forEach((C, k) => { const r = s.c[C.id]; if (!r) return; if (r.r > 0) dn++; if (r.b > 0) u += Math.max(0, coursePar(k) - r.b); });
-  s.under = Math.max(s.under | 0, u); s.done = Math.max(s.done | 0, dn);
+  let u = 0, dn = 0, st = 0;
+  COURSES.forEach((C, k) => { const r = s.c[C.id]; if (!r) return; if (r.r > 0) dn++; if (r.t > 0 && C.ready) u += Math.max(0, coursePar(k) - r.t); st += courseStars(s, k); });
+  s.under = Math.max(s.under | 0, u); s.done = Math.max(s.done | 0, dn); s.stars = Math.max(s.stars | 0, st);
 }
 let save = readSave();
 function writeSave() { recount(save); if (!DEBUG_NOSAVE) store.set(SAVE_KEY, JSON.stringify(save)); }
 const courseRec = ci => save.c[COURSES[ci].id] || null;
-const courseOpen = ci => ci === 0 || !!(courseRec(ci - 1) && courseRec(ci - 1).r > 0) || !!(courseRec(ci) && courseRec(ci).r > 0);
+const courseOpen = ci => !!COURSES[ci] && COURSES[ci].ready && (ci === 0 || !!(courseRec(ci - 1) && courseRec(ci - 1).r > 0) || !!(courseRec(ci) && courseRec(ci).r > 0));
+const tierOf = ci => (COURSES[ci] && COURSES[ci].tier || 1) - 1;
 let DEBUG_NOSAVE = false;
 
 // ---------- state ----------
@@ -440,6 +459,7 @@ function pumpEvents() {
     else if (e.k === 'ink') { if (AU) AU.noise(0.25, { vol: 0.14, freq: 700 }); sfx('fail'); vibrate([20, 30, 20]); fx.push({ k: 'ink', x: e.x || G.x, y: e.y || G.y, t0: t, d: 0.7 }); showTip({ text: T('インク！ 罰打1'), sub: T('打つ前の場所にもどった'), bad: true }, 2400); hud(true); }
     else if (e.k === 'out') { sfx('error'); showTip({ text: T('場外：打つ前の場所にもどった'), bad: true }, 2000); }
     else if (e.k === 'lip') tone(700, 0.05, { type: 'square', vol: 0.03 });
+    else if (e.k === 'switch') { tone(520, 0.08, { type: 'square', vol: 0.06 }); setTimeout(() => tone(780, 0.12, { type: 'square', vol: 0.06 }), 90); vibrate(15); const q = hole().switches[e.a]; if (q) fx.push({ k: 'ring', x: q[0], y: q[1], r: 0.9, c: '255,120,100', t0: t, d: 0.5 }); needDraw = true; }
     else if (e.k === 'cup') { sinkT = now(); tone(440, 0.06, { type: 'square', vol: 0.05 }); setTimeout(() => sfx('coin'), 120); vibrate([20, 40, 30]); fx.push({ k: 'cup', x: hole().cup[0], y: hole().cup[1], t0: t, d: 1.2 }); }
   }
 }
@@ -496,6 +516,7 @@ cv.addEventListener('pointerdown', e => {
   e.preventDefault();
   try { cv.setPointerCapture(e.pointerId); } catch (x) {}
   aim = { id: e.pointerId, x0: e.clientX, y0: e.clientY, a: 0, p: 0 };
+  if (tut == null && !$('tip').classList.contains('bad')) $('tip').hidden = true; // the opening tip goes once you start aiming
   sfx('tap'); needDraw = true; meter(0);
 });
 cv.addEventListener('pointermove', e => {
@@ -562,11 +583,11 @@ function onHoleEnd() {
   if (run.mode === 'course') {
     run.card.push(strokes);
     // best per hole (fewest strokes)
-    const C = COURSES[run.ci], rec = save.c[C.id] || { b: 0, r: 0, h: {} };
-    if (!rec.h || typeof rec.h !== 'object') rec.h = {};
-    const k = String(h.no); if (sunk && (!(rec.h[k] > 0) || strokes < rec.h[k])) rec.h[k] = strokes;
+    const C = COURSES[run.ci], rec = save.c[C.id] || { r: 0, t: 0, s: {} };
+    if (!rec.s || typeof rec.s !== 'object') rec.s = {};
+    const k = String(h.no); if (sunk && (!(rec.s[k] > 0) || strokes < rec.s[k])) rec.s[k] = strokes;
     save.c[C.id] = rec;
-    if (sunk) emit('stage_clear', { stage: h.index + 1, stars: Math.max(0, Math.min(3, h.par + 1 - strokes)), mode: 'normal' });
+    if (sunk) emit('stage_clear', { stage: stageNo(h), stars: holeStars(strokes, h.par), mode: 'normal' });
     if (run.card.length >= 9) finishRound(); else writeSave();
   } else if (run.mode === 'daily') {
     const pts = sunk ? Math.max(10, 100 * (h.par + 4 - strokes)) : 0;
@@ -574,32 +595,33 @@ function onHoleEnd() {
     const prev = PF && PF.daily ? PF.daily.get(run.dk, GAME) : null;
     holeEnd.pts = pts; holeEnd.newBest = pts > 0 && (!prev || pts > (prev.best | 0));
     writeSave();
-    emit('play_end', { mode: 'daily', dateKey: run.dk, score: pts, durationMs: Date.now() - run.wall, reason: sunk ? 'clear' : 'over', stats: { strokes, hole: h.index + 1 } });
+    emit('play_end', { mode: 'daily', dateKey: run.dk, score: pts, durationMs: Date.now() - run.wall, reason: sunk ? 'clear' : 'over', stats: { strokes, hole: stageNo(h) } });
     const now2 = PF && PF.daily ? PF.daily.get(run.dk, GAME) : null;
     holeEnd.best = Math.max(pts, now2 ? now2.best | 0 : 0, prev ? prev.best | 0 : 0);
     run.started = false;
   } else {
     writeSave();
-    emit('play_end', { mode: 'practice', score: 0, durationMs: Date.now() - run.wall, reason: sunk ? 'clear' : 'over', stage: h.index + 1 });
+    emit('play_end', { mode: 'practice', score: 0, durationMs: Date.now() - run.wall, reason: sunk ? 'clear' : 'over', stage: stageNo(h) });
     run.started = false;
   }
   if (run.mode !== 'course' || run.card.length >= 9) clearRun();
-  else if (!DEBUG_NOSAVE) store.set(RUN_KEY, JSON.stringify({ v: 1, mode: 'course', ci: run.ci, hi: run.hi + 1, card: run.card, dk: null, seed: null, snap: null, pend: null, at: Date.now() }));
+  else if (!DEBUG_NOSAVE) store.set(RUN_KEY, JSON.stringify({ v: 2, mode: 'course', ci: run.ci, hi: run.hi + 1, hid: HOLES[run.hi + 1] && HOLES[run.hi + 1].id, card: run.card, dk: null, seed: null, snap: null, pend: null, at: Date.now() }));
   if (sunk) { const nm = MG.scoreName(strokes, h.par); if (nm === 'ace' || nm === 'eagle' || nm === 'albatross') sfx('win'); else if (nm === 'birdie' || nm === 'par') sfx('clear'); else sfx('ok'); }
   else { sfx('over'); showTip({ text: T('打数の上限。次へ進もう'), bad: true }, 2200); }
   setTimeout(showHoleResult, reduceMotion.matches ? 300 : sunk ? 1100 : 1400);
 }
 function finishRound() {
   const ci = run.ci, C = COURSES[ci], rec = save.c[C.id], total = run.card.reduce((a, b) => a + b, 0), par = coursePar(ci);
-  const beforeUnder = save.under, beforeBest = rec.b | 0;
+  const beforeStars = save.stars | 0, beforeBest = rec.t | 0;
   rec.r = (rec.r | 0) + 1;
-  const newBest = !(rec.b > 0) || total < rec.b;
-  if (newBest) rec.b = total;
+  const newBest = !(rec.t > 0) || total < rec.t;
+  if (newBest) rec.t = total;
   save.stats.rounds = (save.stats.rounds | 0) + 1;
+  if (total < par) save.stats.under = (save.stats.under | 0) + 1;
   writeSave();
-  lastRound = { ci, card: run.card.slice(), total, par, newBest: newBest && beforeBest > 0, firstRound: !(beforeBest > 0), best: rec.b, under: save.under };
-  if (save.under > beforeUnder) emit('best', { score: save.under });
-  emit('progress', { key: 'under', value: save.under });
+  lastRound = { ci, card: run.card.slice(), total, par, newBest: newBest && beforeBest > 0, firstRound: !(beforeBest > 0), best: rec.t, under: save.under, stars: save.stars, cstars: courseStars(save, ci) };
+  if (save.stars > beforeStars) emit('best', { score: save.stars });
+  emit('progress', { key: 'stars', value: save.stars });
   emit('play_end', { mode: 'normal', score: Math.max(0, par - total), durationMs: Date.now() - run.wall, reason: 'clear', stage: ci + 1, stats: { strokes: total, par } });
   run.started = false;
 }
@@ -674,7 +696,7 @@ function showRoundCard() {
   $('cSub').textContent = T('合計 {n}（{d}）', { n: R.total, d: signed(d) }) + ' — ' + (d < 0 ? T('パーより {n} 打少ない！', { n: -d }) : d === 0 ? T('パーと同じ') : T('パーより {n} 打多い', { n: d }));
   $('cNew').hidden = !R.newBest;
   $('cTable').innerHTML = cardTable(R.ci, R.card, -1);
-  $('cNote').textContent = T('ベスト {n}', { n: R.best }) + '　' + T('ランキング：パーより少ない打数の合計 {n}', { n: R.under });
+  $('cNote').textContent = T('ベスト {n}', { n: R.best }) + '　' + T('このコースの星 {n} / 27', { n: R.cstars }) + '　' + T('ランキング：星の合計 {n}', { n: R.stars });
   $('cNext').textContent = T('このコースをもう一度'); $('cNext').dataset.act = 'again';
   $('cAlt').hidden = false; $('cAlt').textContent = T('タイトルへ'); $('cAlt').dataset.act = 'title';
   $('ovCard').hidden = false;
@@ -690,7 +712,7 @@ function showCard() { // during a round: the card so far
   $('cNew').hidden = true;
   $('cTable').innerHTML = cardTable(run.ci, run.card, run.card.length);
   const rec = courseRec(run.ci);
-  $('cNote').textContent = rec && rec.b > 0 ? T('ベスト {n}', { n: rec.b }) : '';
+  $('cNote').textContent = rec && rec.t > 0 ? T('ベスト {n}', { n: rec.t }) : '';
   $('cNext').textContent = T('とじる'); $('cNext').dataset.act = 'close';
   $('cAlt').hidden = true;
   $('ovCard').hidden = false;
@@ -711,13 +733,13 @@ function startPlay(mode, extra) {
   const h = hole();
   if (mode === 'course') emit('play_start', { mode: 'normal', stage: run.ci + 1, resumed: !!run.resumed });
   else if (mode === 'daily') emit('play_start', { mode: 'daily', dateKey: run.dk, seed: run.seed });
-  else emit('play_start', { mode: 'practice', stage: h.index + 1 });
+  else emit('play_start', { mode: 'practice', stage: stageNo(h) });
 }
 function endPlay(reason) {
   if (!run || !run.started) return;
   if (run.mode === 'course') emit('play_end', { mode: 'normal', score: 0, durationMs: Date.now() - run.wall, reason: reason || 'quit', stage: run.ci + 1 });
   else if (run.mode === 'daily') emit('play_end', { mode: 'daily', dateKey: run.dk, score: 0, durationMs: Date.now() - run.wall, reason: 'quit' });
-  else emit('play_end', { mode: 'practice', score: 0, durationMs: Date.now() - run.wall, reason: 'quit', stage: hole().index + 1 });
+  else emit('play_end', { mode: 'practice', score: 0, durationMs: Date.now() - run.wall, reason: 'quit', stage: stageNo(hole()) });
   run.started = false;
 }
 function startCourse(ci) {
@@ -754,7 +776,7 @@ function openHole(snap, pendShot) {
   $('holeChip').innerHTML = '<b>' + esc(tag) + '</b><span>' + esc(L2(h.n)) + '</span>';
   cv.setAttribute('aria-label', T('ホール {id}', { id: h.id }) + ' ' + L2(h.n) + ' ' + T('パー {n}', { n: h.par }));
   layout(); hud();
-  if (tut != null) coachTip(); else showTip({ text: L2(h.tip), sub: T('打てるのは {n} 打まで', { n: h.par + 4 }) }, 3800);
+  if (tut != null) coachTip(); else showTip({ text: L2(h.tip), sub: T('打てるのは {n} 打まで', { n: h.par + 4 }) }, 3000);
   if (G.done()) { onHoleEnd(); return; }
   persist();
 }
@@ -765,11 +787,13 @@ function persist() {
   if (run.mode === 'practice') return;
   if (G.st !== 'rest' && !pend) return;
   const snap = pend ? Object.assign(G.snap(), { tick: G.shots.length ? G.shots[G.shots.length - 1][0] : G.tick, x: G.lx, y: G.ly, strokes: G.strokes - 1 }) : G.snap();
-  store.set(RUN_KEY, JSON.stringify({ v: 1, mode: run.mode, ci: run.ci, hi: run.hi, card: run.card, dk: run.dk, seed: run.seed, snap, pend: pend || null, at: Date.now() }));
+  store.set(RUN_KEY, JSON.stringify({ v: 2, mode: run.mode, ci: run.ci, hi: run.hi, hid: hole().id, card: run.card, dk: run.dk, seed: run.seed, snap, pend: pend || null, at: Date.now() }));
 }
 function readRun() {
   let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) { r = null; }
-  if (!r || r.v !== 1 || !HOLES[r.hi] || !Array.isArray(r.card)) return null;
+  // v1 rounds were on the old holes (re-tuned since): dropped
+  if (r && typeof r.hid === 'string') { const i = HOLES.findIndex(h => h.id === r.hid); if (i >= 0) r.hi = i; else return null; }
+  if (!r || r.v !== 2 || !HOLES[r.hi] || !Array.isArray(r.card) || !COURSES[r.ci] || !COURSES[r.ci].ready) return null;
   if (r.mode === 'daily') { if (!PF || r.dk !== PF.jstDateKey()) return null; }
   else if (r.mode !== 'course' || r.card.length >= 9) return null;
   return r;
@@ -791,10 +815,14 @@ function showTip(o, ms) {
   el.hidden = false; tipPos();
   if (ms) tipT = setTimeout(() => showTip(null), ms);
 }
-function tipPos() { // keep the bubble away from the ball
+function tipPos() { // keep the bubble off the flag first, then off the ball: top or bottom, whichever covers less
   if (!G || !V) return;
-  const p = V.toScreen(G.x, G.y);
-  $('tip').classList.toggle('bottom', p.y < V.H * 0.35);
+  const el = $('tip'), th = (el.offsetHeight || 48) + 12, h = hole();
+  const ball = V.toScreen(G.x, G.y), cup = V.toScreen(h.cup[0], h.cup[1]);
+  const flagTop = V.rot ? cup.y - 0.3 * V.s : cup.y - 1.35 * V.s; // the pencil flag stands up on the screen
+  const cover = (y0, y1) => (Math.min(cup.y + 0.4 * V.s, y1) > Math.max(flagTop, y0) ? 2 : 0) + (ball.y + 0.3 * V.s > y0 && ball.y - 0.3 * V.s < y1 ? 1 : 0);
+  const top = cover(0, th), bot = cover(V.H - th, V.H);
+  el.classList.toggle('bottom', bot < top || (bot === top && ball.y < V.H * 0.35));
 }
 const COACH = ['画面のどこからでも、打ちたい向きと反対に引っぱって、はなそう', '止まったら、もう一度。カップに入れたらホールアウト'];
 function coachTip() { if (tut == null) return; const el = $('tip'); el.className = 'coach'; el.innerHTML = '<span class="tag">' + esc(T('チュートリアル')) + '</span>' + esc(T(COACH[tut])); el.hidden = false; tipPos(); }
@@ -811,19 +839,25 @@ function showTitle() {
   hideOverlays(); cancelAim();
   const s = save.stats;
   const bits = [];
-  if (save.under > 0) bits.push(T('ランキング：パーより少ない打数の合計 {n}', { n: save.under }));
+  if (save.stars > 0) bits.push(T('ランキング：星の合計 {n}', { n: save.stars }));
   if (s.aces > 0) bits.push(T('ホールインワン {n} 回', { n: s.aces }));
   $('tStats').textContent = bits.join('　');
+  // the courses come in 5 tiers (workshops): tabs, then the 4–5 courses of the chosen tier
+  if (tSel == null) { tSel = 0; COURSES.forEach((C, k) => { if (courseOpen(k)) tSel = tierOf(k); }); }
+  tierTabs($('tTiers'), tSel, t => { tSel = t; showTitle(); });
   const box = $('tCourses'); box.innerHTML = '';
   COURSES.forEach((C, k) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'ct'; b.dataset.course = k;
+    if (tierOf(k) !== tSel) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ct' + (C.ready ? '' : ' soon'); b.dataset.course = k;
     const ok = courseOpen(k), rec = courseRec(k);
-    const c = document.createElement('canvas'); c.width = 68; c.height = 96; ART.thumb(c, courseHoles(k)[0]);
     const tx = document.createElement('span'); tx.className = 'ctx';
-    tx.innerHTML = '<span>' + (k + 1) + '. ' + esc(L2(C.n)) + '</span><small>' + esc(ok ? L2(C.d) : T('前のコースを回ると開きます')) + '</small>';
+    tx.innerHTML = '<span>' + (k + 1) + '. ' + esc(L2(C.n)) + '</span><small>' + esc(!C.ready ? T('準備中') : ok ? L2(C.d) : T('前のコースを回ると開きます')) + '</small>';
     const rb = document.createElement('b'); rb.className = 'rec';
-    rb.textContent = rec && rec.b > 0 ? T('パー {n}・ベスト {b}', { n: coursePar(k), b: rec.b }) : T('パー {n}', { n: coursePar(k) });
-    b.append(c, tx, rb);
+    if (C.ready) {
+      const c = document.createElement('canvas'); c.width = 68; c.height = 96; ART.thumb(c, courseHoles(k)[0]); b.append(c);
+      rb.textContent = '★' + courseStars(save, k) + '/27' + (rec && rec.t > 0 ? '　' + T('パー {n}・ベスト {b}', { n: coursePar(k), b: rec.t }) : '　' + T('パー {n}', { n: coursePar(k) }));
+    }
+    b.append(tx, rb);
     if (!ok) { b.disabled = true; b.insertAdjacentHTML('beforeend', '<svg class="lock" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1v11H6V10zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>'); }
     b.addEventListener('click', async () => { if (AU) AU.ctx(); if (!(await confirmNew())) return; sfx('ok'); startCourse(k); });
     box.appendChild(b);
@@ -861,13 +895,28 @@ async function confirmNew() {
   }
   return true;
 }
-let pSel = 0;
+let pSel = 0, tSel = null;
+// the 5 tier tabs (a tier opens with its first course; one with no built course yet says "coming soon")
+function tierTabs(el, sel, on) {
+  el.innerHTML = '';
+  TIERS.forEach((T2, t) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (t === sel ? ' sel' : ''); b.dataset.tier = t;
+    const open = COURSES.some((C, k) => tierOf(k) === t && courseOpen(k)), ready = COURSES.some((C, k) => tierOf(k) === t && C.ready);
+    let st = 0; COURSES.forEach((C, k) => { if (tierOf(k) === t) st += courseStars(save, k); });
+    b.innerHTML = esc(L2(T2.n)) + '<small>' + esc(ready ? '★' + st : T('準備中')) + '</small>';
+    b.disabled = !open && t !== sel; b.setAttribute('aria-pressed', t === sel ? 'true' : 'false');
+    b.addEventListener('click', () => { sfx('tap'); on(t); });
+    el.appendChild(b);
+  });
+}
 function showPractice(ci) {
   hideOverlays();
   if (ci != null) pSel = ci;
   if (!courseOpen(pSel)) pSel = 0;
+  tierTabs($('pTiers'), tierOf(pSel), t => { const k = COURSES.findIndex((C, i) => tierOf(i) === t && courseOpen(i)); if (k >= 0) showPractice(k); });
   const tabs = $('pTabs'); tabs.innerHTML = '';
   COURSES.forEach((C, k) => {
+    if (tierOf(k) !== tierOf(pSel) || !C.ready) return;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (k === pSel ? ' sel' : ''); b.dataset.course = k;
     b.textContent = L2(C.n); b.disabled = !courseOpen(k); b.setAttribute('aria-pressed', k === pSel ? 'true' : 'false');
     b.addEventListener('click', () => { sfx('tap'); showPractice(k); });
@@ -877,8 +926,8 @@ function showPractice(ci) {
   const rec = courseRec(pSel);
   courseHoles(pSel).forEach(h => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'hb'; b.dataset.hole = h.id;
-    const best = rec && rec.h && rec.h[h.no];
-    b.innerHTML = '<span>' + esc(h.id) + '</span><small>' + esc(L2(h.n)) + '</small><span class="pb">' + esc(T('パー {n}', { n: h.par })) + (best ? ' · ' + best : '') + '</span>';
+    const best = rec && rec.s && rec.s[h.no];
+    b.innerHTML = '<span>' + esc(h.id) + (best ? ' ' + '★'.repeat(holeStars(best, h.par)) : '') + '</span><small>' + esc(L2(h.n)) + '</small><span class="pb">' + esc(T('パー {n}', { n: h.par })) + (best ? ' · ' + best : '') + '</span>';
     b.addEventListener('click', async () => { if (AU) AU.ctx(); if (!(await confirmNew())) return; sfx('ok'); startPractice(h.index); });
     box.appendChild(b);
   });
@@ -895,7 +944,9 @@ function renderHowto() {
     '点線が打つ向き。引っぱりを小さく戻すと、打たずにやめられる',
     '坂は矢印の向きへ転がる。おがくずの上ではすぐ止まる。ばねは強くはじく',
     '歯車と定規は動いている。インクに入ると罰打1で、打つ前の場所へ。パイプは入ると出口から出てくる',
-    '1ホールに打てるのは パー＋4 打まで。9ホールの合計がパーより少ないと、ランキングに入る',
+    'はね戸は矢印の向きにだけ通れる。赤いスイッチの上を通ると、赤い扉が開く',
+    '1ホールに打てるのは パー＋4 打まで',
+    '星：カップイン ★、パー＋1以内 ★★、パー以内 ★★★。全ホールの星の合計がランキング',
     '1打ごとに自動で保存。とちゅうで閉じても、つづきから']);
 }
 let howtoFirst = false;
@@ -1029,7 +1080,7 @@ if (DEBUG) {
       const x0 = r.left + Math.max(20, Math.min(r.width - 20, b.x)), y0 = r.top + Math.max(20, Math.min(r.height - 20, b.y));
       return { x0, y0, x1: x0 - sx * len, y1: y0 - sy * len };
     },
-    unlockAll: () => { COURSES.forEach(C => { save.c[C.id] = save.c[C.id] || { b: 0, r: 1, h: {} }; if (!(save.c[C.id].r > 0)) save.c[C.id].r = 1; }); writeSave(); },
+    unlockAll: () => { COURSES.forEach(C => { save.c[C.id] = save.c[C.id] || { r: 1, t: 0, s: {} }; if (!(save.c[C.id].r > 0)) save.c[C.id].r = 1; }); writeSave(); },
     fps(ms) { return new Promise(res => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(Math.round(f * 1000 / (performance.now() - t0))); }; requestAnimationFrame(tick); }); },
     persist, readRun, title: showTitle, howto: () => showHowto(false), menu: openMenu, card: showCard, practiceMenu: showPractice,
     thumbScene(id) { // a hole with the gear turning and the aim guide out, for the hub thumbnail
