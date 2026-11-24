@@ -356,7 +356,7 @@
       id: 'planet', order: 11, path: 'planet/', added: '2026-11-04',
       title: { ja: 'わくせいシミュレーター', en: 'Planet Simulator' },
       short: { ja: 'わくせい', en: 'Planet' },
-      desc: { ja: '地球のような星を、誕生から46億年かけて育てる。温室効果・氷の反射・岩の風化・プレート・海流・生命と酸素、そして文明。', en: 'Grow an Earth-like planet over 4.6 billion years: the greenhouse effect, reflecting ice, rock weathering, plates, ocean currents, life and oxygen, and finally a civilization.' },
+      desc: { ja: '火山・山・海の道・彗星・いのちで星をいじって、海から生命、森、文明、そして宇宙へ。コンボを見つけ、全球凍結と暴走温室から星を守る。', en: 'Shape a planet with volcanoes, mountains, seaways, comets and life, and grow it from its first ocean to forests, cities and space. Find combos and save it from snowballs and runaway greenhouses.' },
       label: { ja: 'シミュレーション', en: 'Simulation' },
       genres: ['simulation'], tags: ['3d', 'sandbox', 'science', 'stages'],
       keywords: { ja: ['惑星', 'わくせい', '地球', '気候', '温暖化', '進化', '生命', '文明', 'シミュレーション', '科学'], en: ['planet', 'earth', 'climate', 'warming', 'evolution', 'life', 'civilization', 'simulation', 'science'] },
@@ -371,8 +371,8 @@
       rankSource: { key: 'kusoge.planet.save', paths: ['total'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.planet.save', paths: ['total'], agg: 'first', min: 1, num: true, tpl: { ja: 'シナリオ合計 {n} 点', en: 'Scenario total: {n} pts' } },
       keys: {
-        'kusoge.planet.save': '{ v:1, sc:{ <シナリオid>:{ best（0〜1000）, stars（1〜3） } }（クリアしたものだけ）, total（best の合計＝ランキング）, stats:{ life, goe, thaw, civ, space, ext, collapse, worlds, clears, maxMyr }, tut }',
-        'kusoge.planet.world': '自由モードの星 { v:1, t（年）, p:{ dist, size, water, n2, co2, seed }, T[32], A, O, ch4, o2, wl, lost, iceL/iceO/veg（64×32 を1文字ずつ）, plates[], bumps[], craters[], volcs[], life{}, civ{}, ev[], flags{}, hist:{ r[], l[] }, spd, at }。15秒ごと・止めたとき・隠れたときに書く',
+        'kusoge.planet.save': '{ v:1, sc:{ <シナリオid（cradle, snow, green, gate, goe, sun, warm, dawn）>:{ best（0〜1000）, stars（1〜3） } }（クリアしたものだけ）, total（best の合計＝ランキング）, stats:{ life, goe, thaw, civ, space, ext, collapse, worlds, clears, maxMyr, combos（見つけたコンボの数）, ends（宇宙時代のエンディング）, ms（1つの星で届いた節目の最大） }, tut, cmb（見つけたコンボの id をカンマで） }',
+        'kusoge.planet.world': '自由モードの星 { v:1, name?, t（年）, p:{ dist, size, water, n2, co2, seed }, T[32], A, O, ch4, o2, wl, lost, iceL/iceO/veg/reach（64×32 を1文字ずつ。reach はいのちの広がり）, reachOn, plates[], bumps[], craters[], volcs[], life{}, civ{}, ev[], flags{}, combos[], ms{ <節目>: 年 }, boost, aur, surp, nextSurp, hist:{ r[], l[] }, spd, at }。15秒ごと・止めたとき・隠れたときに書く。2026-11 より前の保存（reach・ms なし）は、いのちが全体にいるものとして読み、節目は今の状態から作り直す',
         'kusoge.planet.howto': '遊び方を見た（\'1\'）',
       },
       // records only grow: per-field max (stars and bests per scenario). The free-mode planet is one whole state: newest wins
@@ -714,6 +714,9 @@
       { id: 'planet.space', tier: 3, icon: 'star', title: { ja: '宇宙時代', en: 'Space Age' }, desc: { ja: '文明が技術100に届く', en: 'A civilization reaches technology 100' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.space' }, gte: 1 } },
       { id: 'planet.sc1', tier: 1, icon: 'check', title: { ja: 'はじめてのお題', en: 'First Scenario' }, desc: { ja: 'シナリオを1つクリア', en: 'Clear a scenario' }, when: { rec: { key: 'kusoge.planet.save', path: 'sc', measure: 'count' }, gte: 1 } },
       { id: 'planet.sc8', tier: 3, icon: 'trophy', title: { ja: '星の設計者', en: 'Planet Architect' }, desc: { ja: '8つのシナリオをすべてクリア', en: 'Clear all 8 scenarios' }, when: { rec: { key: 'kusoge.planet.save', path: 'sc', measure: 'count' }, gte: 8 }, grantsTitle: { ja: '星の設計者', en: 'Planet Architect' } },
+      { id: 'planet.combo1', tier: 1, icon: 'star', title: { ja: 'はじめてのコンボ', en: 'First Combo' }, desc: { ja: '道具の組み合わせでコンボを起こす', en: 'Set off a combo by combining tools' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.combos' }, gte: 1 } },
+      { id: 'planet.combo5', tier: 3, icon: 'trophy', title: { ja: 'コンボ博士', en: 'Combo Scholar' }, desc: { ja: '5つのコンボをすべて見つける', en: 'Discover all 5 combos' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.combos' }, gte: 5 } },
+      { id: 'planet.ending', tier: 3, icon: 'globe', title: { ja: '星の物語', en: 'A Planet\'s Story' }, desc: { ja: '自分の星を宇宙時代まで育てる', en: 'Grow your own planet to the space age' }, when: { rec: { key: 'kusoge.planet.save', path: 'stats.ends' }, gte: 1 } },
       { id: 'planet.pts5k', tier: 2, icon: 'star', title: { ja: '五千点の宇宙', en: '5,000-Point Cosmos' }, desc: { ja: 'シナリオ合計5,000点', en: 'Reach a scenario total of 5,000' }, when: { rec: { key: 'kusoge.planet.save', path: 'total' }, gte: 5000 } },
     ],
     hitblow: [
