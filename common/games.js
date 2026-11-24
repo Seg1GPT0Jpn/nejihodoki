@@ -279,6 +279,7 @@
         'kusoge.parking.howto': '遊び方を見た（\'1\'）',
         'kusoge.parking.tutorial': '\'1\' | \'skip\' | \'old\'',
         'kusoge.parking.save': '{ level, best, stars:{ "<level>": 1〜3 } }',
+        'kusoge.parking.x': 'ミッションの星とラッシュのベスト { v:1, s:[12ミッションの星0〜3], r: ラッシュの最高点 }（端末内だけ。同期しない・ランキングに入らない）',
       },
       sync: { 'kusoge.parking.save': { fields: { level: 'newest', best: 'max', stars: 'mapMax' } } },
     },

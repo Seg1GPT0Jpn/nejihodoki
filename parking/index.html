@@ -36,6 +36,7 @@
   --kb-shadow: 0 20px 50px rgba(0, 0, 0, .45);
   --pk-card: linear-gradient(#2c4152, #213342); --pk-btn-shadow: #b88c12;
   --pk-float: rgba(29, 42, 53, .92); --pk-float-ink: #f6f3ea; --pk-star-off: #3b5163; --pk-star-off-line: #2c4152;
+  --pk-over: #ffb86b; --pk-bad: #ff8a80; --pk-sel: #5ee0ff;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -47,6 +48,7 @@
     --kb-shadow: 0 16px 40px rgba(31, 42, 51, .2);
     --pk-card: linear-gradient(#ffffff, #f3f1ea); --pk-btn-shadow: #c99a17;
     --pk-float: rgba(255, 255, 255, .95); --pk-float-ink: #1d2a35; --pk-star-off: #d5dbde; --pk-star-off-line: #b9c2c7;
+    --pk-over: #a85a00; --pk-bad: #c62828; --pk-sel: #0a7fa6;
     color-scheme: light;
   }
 }
@@ -58,6 +60,7 @@
   --kb-shadow: 0 16px 40px rgba(31, 42, 51, .2);
   --pk-card: linear-gradient(#ffffff, #f3f1ea); --pk-btn-shadow: #c99a17;
   --pk-float: rgba(255, 255, 255, .95); --pk-float-ink: #1d2a35; --pk-star-off: #d5dbde; --pk-star-off-line: #b9c2c7;
+  --pk-over: #a85a00; --pk-bad: #c62828; --pk-sel: #0a7fa6;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -103,6 +106,7 @@ header {
 .mode-bar svg { width: 15px; height: 15px; flex: none; color: var(--kb-accent-text); }
 .mode-bar span { overflow: hidden; text-overflow: ellipsis; }
 .mode-bar b { color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
+.mode-bar b.warn-t { color: var(--pk-bad); }
 #play { position: relative; flex: 1; min-height: 0; touch-action: none; background: #7fbf63; }
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .tip {
@@ -213,7 +217,43 @@ header {
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); } }
-@media (prefers-reduced-motion: reduce) { .overlay, .card, .coach, .stars svg.on { animation: none; } .tip, .toast { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .overlay, .card, .coach, .stars svg.on, .combo, .chip b.warn { animation: none; } .tip, .toast, .combo { transition: none; } .prog i { transition: none; } }
+/* progress bar (cars out / time left), counters, effects */
+.prog { flex: none; height: 5px; margin: 0 max(12px, var(--kb-sar)) 4px max(12px, var(--kb-sal)); border-radius: 3px; background: var(--kb-sunken); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); transition: transform .35s ease-out; background: linear-gradient(90deg, var(--kb-accent), #ff9f43); }
+.prog.rush i { transition: transform .25s linear; }
+.prog.low i { background: linear-gradient(90deg, #ff6b6b, #ff9f43); }
+@media (max-height: 440px) and (min-width: 560px) { .prog { display: none; } }
+.chip b.over { color: var(--pk-over); }
+.chip b.warn { color: var(--pk-bad); animation: blink 1s ease-in-out infinite; }
+#fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.combo {
+  position: absolute; right: 12px; top: 10px; padding: 5px 12px; border-radius: 999px; pointer-events: none;
+  background: var(--kb-accent); color: var(--kb-accent-ink); border: 2px solid var(--pk-btn-shadow); font: 400 17px var(--kb-font-display); letter-spacing: .04em;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25); transition: opacity .25s; animation: pop .35s cubic-bezier(.2,1.6,.4,1);
+}
+.combo.off { opacity: 0; animation: none; }
+.combo small { font: 800 11px var(--kb-font-body); margin-left: 4px; letter-spacing: 0; }
+@keyframes blink { 50% { opacity: .55; } }
+/* mode picker, mission list, stuck / time-up cards */
+.mode-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; min-height: 58px; padding: 8px 12px; position: relative; margin-top: 10px; }
+.mode-opt:first-of-type { margin-top: 4px; }
+.mode-opt b { font-size: 15px; }
+.mode-opt small { font-size: 11.5px; font-weight: 500; color: var(--kb-dim); line-height: 1.35; padding-right: 22px; }
+.mode-opt kbd { position: absolute; right: 10px; top: 8px; font: 800 11px var(--kb-font-body); padding: 1px 7px; border-radius: 6px; border: 1px solid var(--kb-line); color: var(--kb-dim); }
+.mode-opt.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent-soft) inset; }
+.keyhelp { font-size: 11px; color: var(--kb-dim); margin: 8px 0 0; line-height: 1.5; font-weight: 800; }
+@media (pointer: coarse) { .keyhelp.kbonly { display: none; } }
+.card p.note { margin: 0 0 6px; font-size: 12.5px; color: var(--kb-dim); font-weight: 800; line-height: 1.5; }
+.world { margin: 10px 0 2px; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); text-align: left; letter-spacing: .06em; }
+.misgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 2px; }
+.lvbtn.ms { min-height: 62px; position: relative; padding: 4px 2px; }
+.lvbtn.ms .r { font: 800 9px var(--kb-font-body); color: var(--kb-dim); line-height: 1.1; min-height: 10px; text-align: center; }
+.lvbtn.locked { opacity: .5; }
+.lvbtn.ms svg { position: absolute; right: 4px; top: 4px; width: 13px; height: 13px; color: var(--kb-dim); }
+.lvbtn:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.mode-opt:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.badge { display: inline-block; margin: 6px auto 0; background: var(--kb-accent); color: var(--kb-accent-ink); font-weight: 800; font-size: 13px; padding: 3px 12px; border-radius: 999px; }
 /* online battle entry (common/versus.js) */
 .vs-slot { display: contents; }
 #vsSlot .kvs-entry { height: 44px; min-width: 44px; }
@@ -253,9 +293,12 @@ header {
     <button class="icon" id="sound" type="button" aria-label="サウンド" data-i18n-attr="aria-label" aria-pressed="true"></button>
     <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
+  <div class="prog" id="prog" role="progressbar" aria-label="出庫の進み具合" data-i18n-attr="aria-label" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><i id="progFill"></i></div>
   <div class="mode-bar" id="modeBar" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span id="modeText"></span></div>
   <div id="play">
     <canvas id="cv" data-i18n-attr="aria-label" aria-label="駐車場。車をタップすると矢印の向きへ走る"></canvas>
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <div class="combo off" id="combo" aria-hidden="true"></div>
     <div class="tip off" id="tip"></div>
     <div class="coach" id="coach" hidden role="status" aria-live="polite">
       <span class="step" id="coachStep">1</span>
@@ -285,9 +328,9 @@ header {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
       <span data-i18n>リスタート</span>
     </button>
-    <button class="tool" id="levels" type="button" aria-label="ステージ選択" data-i18n-attr="aria-label">
+    <button class="tool" id="levels" type="button" aria-label="モード" data-i18n-attr="aria-label">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
-      <span data-i18n>ステージ</span>
+      <span data-i18n>モード</span>
     </button>
   </div>
 </div>
@@ -297,8 +340,10 @@ header {
     <div class="stars" id="winStars"></div>
     <div class="result" data-i18n-html>手数 <b id="winMoves">0</b> ／ 目標 <b id="winPar">0</b></div>
     <div class="gain" id="winGain" hidden></div>
+    <div class="sub-line" id="winInfo" hidden></div>
     <button class="btn" id="next" type="button" data-i18n>次のステージへ</button>
     <button class="btn sub" id="again" type="button" data-i18n>もう一度</button>
+    <button class="btn link" id="winModes" type="button" data-i18n>モードをえらぶ</button>
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
@@ -314,10 +359,52 @@ header {
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
+<div class="overlay" id="modes" hidden role="dialog" aria-modal="true" aria-labelledby="modesTitle">
+  <div class="card">
+    <h2 id="modesTitle" data-i18n>モード</h2>
+    <button class="btn sub mode-opt" id="mdNormal" type="button"><kbd>1</kbd><b data-i18n>ふつうのステージ</b><small id="mdNormalS"></small></button>
+    <button class="btn sub mode-opt" id="mdMis" type="button"><kbd>2</kbd><b data-i18n>ミッション</b><small id="mdMisS"></small></button>
+    <button class="btn sub mode-opt" id="mdRush" type="button"><kbd>3</kbd><b data-i18n>ラッシュ</b><small id="mdRushS"></small></button>
+    <button class="btn sub mode-opt" id="mdDaily" type="button"><kbd>4</kbd><b data-i18n>今日のチャレンジ</b><small data-i18n>全員が同じ3つの駐車場。今日のベストを目ざそう</small></button>
+    <p class="keyhelp kbonly" id="mdKeys" data-i18n>1〜4 で選ぶ ・ M で閉じる</p>
+    <button class="btn link" id="mdClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="mis" hidden role="dialog" aria-modal="true" aria-labelledby="misTitle">
+  <div class="card">
+    <h2 id="misTitle" data-i18n>ミッション</h2>
+    <p class="note" data-i18n>手数に上限があります。戻すと手数は減ります。★は少ない手数ほど多い。</p>
+    <div id="misList"></div>
+    <button class="btn sub" id="misModes" type="button" data-i18n>モードをえらぶ</button>
+    <button class="btn link" id="misClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="stuck" hidden role="dialog" aria-modal="true" aria-labelledby="stuckTitle">
+  <div class="card narrow">
+    <h2 id="stuckTitle" data-i18n>手数ぎれ…</h2>
+    <div class="result" data-i18n>このミッションの手数の上限に達しました。戻してやり直そう。</div>
+    <button class="btn" id="stuckUndo" type="button" data-i18n>一手戻す</button>
+    <button class="btn sub" id="stuckRestart" type="button" data-i18n>リスタート</button>
+    <button class="btn link" id="stuckModes" type="button" data-i18n>モードをえらぶ</button>
+  </div>
+</div>
+<div class="overlay" id="rres" hidden role="dialog" aria-modal="true" aria-labelledby="rresTitle">
+  <div class="card narrow">
+    <h2 id="rresTitle" data-i18n>タイムアップ！</h2>
+    <div class="big" id="rresScore">0</div>
+    <div class="badge" id="rresNew" hidden data-i18n>ベスト更新！</div>
+    <div class="sub-line" id="rresLots"></div>
+    <div class="sub-line" id="rresBest"></div>
+    <button class="btn" id="rresAgain" type="button" data-i18n>もう一度挑戦</button>
+    <button class="btn sub" id="rresModes" type="button" data-i18n>モードをえらぶ</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
 <div class="overlay" id="select" hidden role="dialog" aria-modal="true" aria-labelledby="selTitle">
   <div class="card">
     <h2 id="selTitle" data-i18n>ステージ</h2>
     <div class="lvgrid" id="lvgrid"></div>
+    <button class="btn sub" id="selModes" type="button" data-i18n>モードをえらぶ</button>
     <button class="btn sub" id="selDaily" type="button" data-i18n>今日のチャレンジ</button>
     <div class="langrow"><span data-i18n>言語 / Language</span><span id="langPick"></span></div>
     <button class="btn sub" id="selClose" type="button" data-i18n>とじる</button>
@@ -334,6 +421,7 @@ header {
       <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="44" rx="6" fill="#5c6371"/><g fill="#ffcf3f" stroke="#b88c12" stroke-width="1"><path d="M16 14l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z"/><path d="M32 8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L32 22.8l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z"/><path d="M48 14l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z"/></g><rect x="8" y="34" width="48" height="8" rx="4" fill="#263746"/><path d="M15 38h4M30 38h4M45 38h4" stroke="#f6f3ea" stroke-width="2" stroke-linecap="round"/></svg>
         <p data-i18n-html><b>全部の車を出したら</b>クリア<small>少ない手数ほど星が増える。下の「戻す」「ヒント」も使える</small></p></li>
     </ol>
+    <p class="keyhelp kbonly" data-i18n>キー：矢印で車を選ぶ・Enter／Space で発進・N 次の車・U 戻す・H ヒント・R リスタート・M モード・L ステージ</p>
     <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
     <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
   </div>
@@ -409,12 +497,42 @@ KoboI18n.add({ en: {
   '駐車場 {i}': 'Lot {i}', '今日のベスト {b} 点 ・ {n} 回目': 'Today’s best {b} pts · try #{n}',
   '全員が同じ3つの駐車場に挑む、1日1つのチャレンジ。ヒントなし、何度でも挑戦できます。': 'One challenge a day: everyone gets the same three lots. No hints; try as often as you like.',
   'デイリーではヒントは使えない': 'No hints in the daily challenge',
+  // modes, missions, rush
+  '出庫の進み具合': 'Cars out', 'モード': 'Modes', 'モードをえらぶ': 'Choose a mode', 'ふつうのステージ': 'Regular stages',
+  'どこまでも続くステージ。いま Lv.{n}': 'Endless stages. Now at Lv.{n}',
+  'ミッション': 'Missions', 'ラッシュ': 'Rush',
+  '手数の上限つきの12ミッション。★ {n} / 36': '12 missions with a move limit. ★ {n} / 36',
+  '時間内に何ロット出せる？ ベスト {p} 点': 'How many lots before time runs out? Best {p} pts',
+  '時間内に何ロット出せる？ まだ記録なし': 'How many lots before time runs out? No record yet',
+  '全員が同じ3つの駐車場。今日のベストを目ざそう': 'Everyone gets the same 3 lots. Beat today’s best',
+  '1〜4 で選ぶ ・ M で閉じる': 'Press 1–4 to pick · M to close',
+  '/ 上限 {n}': '/ limit {n}', '時間内に出せるだけ出そう！': 'Clear as many as you can!',
+  '手数に上限があります。戻すと手数は減ります。★は少ない手数ほど多い。': 'Each mission has a move limit. Undo gives moves back. Fewer moves, more ★.',
+  'ミッション {n}': 'Mission {n}', 'ミッション{n}': 'Mission {n}',
+  'はじめの駐車場': 'Starter lots', 'ゲートと回転台': 'Gates and turntables', 'ねこの横断歩道': 'Cat crossings',
+  'ヒントなし': 'No hints', '戻すなし': 'No undo', '道具なし': 'No tools',
+  'ひとつ前のミッションをクリアすると開きます': 'Clear the previous mission to open it',
+  '★3は{n}手以内': '★3 within {n}', '上限 {n}手': 'limit {n}', '{a} / {b}手': '{a} / {b} moves',
+  '目標：{n}手以内で★3': 'Goal: ★3 within {n} moves', '（目安 {n}手）': ' (par {n})', '{n}手': '{n} moves',
+  'つぎのミッションが開いた！': 'Next mission unlocked!', '次のミッションへ': 'Next mission', 'ミッション一覧へ': 'Mission list',
+  '手数の上限です。戻すかリスタートを': 'Move limit reached. Undo or restart',
+  '手数ぎれ…': 'Out of moves…', 'このミッションの手数の上限に達しました。戻してやり直そう。': 'You have used all the moves for this mission. Undo and try again.',
+  'このミッションでは使えません': 'Not allowed in this mission',
+  'ラッシュではヒントは使えない': 'No hints in Rush',
+  'タイムアップ！': 'Time’s up!', 'ベスト更新！': 'New best!', 'ベスト {p} 点': 'Best {p} pts', '{n}ロットを出庫': '{n} lots cleared',
+  '残り {t}': '{t} left', '{n} ロット': '{n} lots', '+{n}秒': '+{n} s', '出庫コンボ': 'Combo', '×{n}': '×{n}',
+  'ロット': 'Lot', '{n}ロット目': 'Lot {n}',
+  '制限時間のなかで、できるだけ多くの駐車場を空にしよう。出すたびに時間が増える（目標どおりならさらに+5秒）。': 'Empty as many lots as you can before the clock runs out. Each clear adds time (+5 s more at par).',
+  'もう一度 R でリスタート': 'Press R again to restart',
+  'キー：矢印で車を選ぶ・Enter／Space で発進・N 次の車・U 戻す・H ヒント・R リスタート・M モード・L ステージ': 'Keys: arrows pick a car · Enter / Space drive · N next car · U undo · H hint · R restart · M modes · L stages',
+  'ミッション クリア！': 'Mission cleared!',
 } });
 const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const $ = id => document.getElementById(id);
 const GAME = 'parking';
 const KEY_SAVE = 'kusoge.parking.save', KEY_STATE = 'kusoge.parking.state', KEY_DAILY = 'kusoge.parking.daily';
 const KEY_HOWTO = 'kusoge.parking.howto', KEY_TUT = 'kusoge.parking.tutorial';
+const KEY_X = 'kusoge.parking.x';   // { v:1, s:[stars x12 missions], r: best rush score }  This device only, not synced, not in the ranking
 const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const store = {
@@ -445,6 +563,15 @@ function loadSave() {
 }
 let save = loadSave();
 const persist = () => store.set(KEY_SAVE, JSON.stringify(save));
+// mission stars and the best rush (engine.js: readX / recordMission / recordRush). Written as max stars / max score, also against another tab.
+let xs = Core.readX(store.get(KEY_X));
+function writeX() {
+  const d = Core.readX(store.get(KEY_X));
+  for (let i = 0; i < xs.s.length; i++) xs.s[i] = Math.max(xs.s[i], d.s[i]);
+  xs.r = Math.max(xs.r, d.r);
+  store.set(KEY_X, JSON.stringify({ v: 1, s: xs.s, r: xs.r }));
+}
+const xsTotal = () => xs.s.reduce((a, b) => a + b, 0);
 
 // ---------- UI bits ----------
 let toastT = 0, tipT = 0;
@@ -490,6 +617,9 @@ const sfx = {
   gate() { tone(523, 0.12, 'triangle', 0.08); tone(784, 0.18, 'triangle', 0.08, 0.1); },
   win() { [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, k) => tone(f, 0.22, 'triangle', 0.1, k * 0.09)); },
   daily() { if (A) A.sfx('win'); },
+  tick() { tone(1200, 0.05, 'square', 0.04, 0, 0, 2400); },
+  combo(n) { const f = 520 * Math.pow(1.0595, Math.min(12, n * 2)); tone(f, 0.1, 'triangle', 0.08); tone(f * 1.5, 0.14, 'triangle', 0.06, 0.07); },
+  over() { tone(330, 0.16, 'sawtooth', 0.06, 0, 0, 900); tone(247, 0.3, 'sawtooth', 0.06, 0.14, 0, 800); },
 };
 function buzz(p) { if (A) A.vibrate(p); }
 function renderSoundBtn() {
@@ -653,7 +783,10 @@ let world = null; // per-level scene objects
 let cars = [];   // visuals per car index
 let anims = [];
 let catForce = null, catT0 = 0, hintMark = null, hintFor = -1;
-let mode = 'normal'; // 'normal' (the stages) | 'daily' (today's three lots)
+let mode = 'normal'; // 'normal' (the stages) | 'daily' (today's three lots) | 'mis' (missions) | 'rush' (against the clock)
+let mis = null;      // { idx, info } while a mission is played (info = Core.missionInfo)
+let rush = null;     // { seed, k, score, cleared, left, done, best0, moves } while a rush run is on
+let menuOpen = false, kbUsed = false, kbSel = -1, kbPrev = null, restartArm = 0;
 let daily = null;    // { dateKey, seed, idx, score, stars, moves, done, best, tries } in daily mode
 let sess = null;     // KoboGame play session
 let tut = null;      // { step } while the first two stages teach the moves
@@ -791,7 +924,7 @@ function buildWorld() {
     v.hit.userData.car = i; root.add(v.group);
     return Object.assign(v, { motion: null, len: c.len });
   });
-  syncAll();
+  syncAll(); updateKbMark();
 }
 
 function placeCar(i) {
@@ -854,6 +987,157 @@ function updateCat(t) {
   cat.body.position.y = (walking ? Math.abs(Math.sin(t * 14)) * 0.03 : 0) + Math.sin(jump / 0.5 * Math.PI) * 0.25 * (jump > 0 ? 1 : 0);
 }
 
+
+// ---------- Effects: puffs, sparks and confetti on a 2D layer over the lot; a screen shake; the exit combo ----------
+const fxc = $('fx'), fxg = fxc.getContext('2d');
+let parts = [], fxLastClear = false;
+function fxResize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = Math.max(1, play.clientWidth), h = Math.max(1, play.clientHeight);
+  fxc.width = Math.round(w * dpr); fxc.height = Math.round(h * dpr);
+}
+function projPlay(x, y, z) { _v.set(x, y, z).project(camera); return [(_v.x + 1) / 2 * play.clientWidth, (1 - _v.y) / 2 * play.clientHeight]; }
+const CONF = ['#ff5a5f', '#ffb238', '#3fb7f2', '#68d16b', '#a97cf8', '#ff7ec0', '#ffe14d'];
+function puff(wx, wz, n, o) {
+  if (reduceMQ.matches || !world) return;
+  const [x, y] = projPlay(wx, 0.15, wz), sc = Math.max(0.6, play.clientWidth / 360);
+  for (let k = 0; k < n; k++) parts.push({ k: 'puff', x: x + (Math.random() - 0.5) * 8 * sc, y: y + (Math.random() - 0.5) * 6 * sc, vx: (Math.random() - 0.5) * 26 * sc, vy: -(8 + Math.random() * 26) * sc,
+    r: (4 + Math.random() * 4) * sc, gr: (14 + Math.random() * 10) * sc, age: 0, life: 0.45 + Math.random() * 0.3, col: (o && o.col) || '230,230,225' });
+}
+function sparks(wx, wz, n, col) {
+  if (reduceMQ.matches || !world) return;
+  const [x, y] = projPlay(wx, 0.4, wz), sc = Math.max(0.6, play.clientWidth / 360);
+  for (let k = 0; k < n; k++) { const a = Math.random() * 6.283, v = (50 + Math.random() * 90) * sc;
+    parts.push({ k: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 30 * sc, r: (1.5 + Math.random() * 1.8) * sc, age: 0, life: 0.35 + Math.random() * 0.3, col: col || '#ffe14d' }); }
+}
+function confetti(n) {
+  if (reduceMQ.matches) return;
+  const w = play.clientWidth;
+  for (let k = 0; k < n; k++) parts.push({ k: 'conf', x: Math.random() * w, y: -8 - Math.random() * 30, vx: (Math.random() - 0.5) * 110, vy: 40 + Math.random() * 120, w: 5 + Math.random() * 4, h: 3 + Math.random() * 3,
+    rot: Math.random() * 6.283, vr: (Math.random() - 0.5) * 12, age: 0, life: 1.4 + Math.random() * 0.9, col: CONF[(Math.random() * CONF.length) | 0] });
+}
+function shakeScreen(px) {
+  if (reduceMQ.matches || !play.animate) return;
+  try { play.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${px}px,${-px / 2}px)` }, { transform: `translate(${-px}px,${px / 2}px)` }, { transform: `translate(${px / 2}px,0)` }, { transform: 'translate(0,0)' }], { duration: 260, easing: 'ease-out' }); } catch (e) {}
+}
+function fxStep(dt) {
+  if (!parts.length) { if (fxLastClear) { fxg.clearRect(0, 0, fxc.width, fxc.height); fxLastClear = false; } return; }
+  const dpr = fxc.width / Math.max(1, play.clientWidth);
+  fxg.setTransform(dpr, 0, 0, dpr, 0, 0); fxg.clearRect(0, 0, play.clientWidth, play.clientHeight); fxLastClear = true;
+  for (const q of parts) {
+    q.age += dt;
+    const u = q.age / q.life;
+    if (u >= 1) continue;
+    q.x += q.vx * dt; q.y += q.vy * dt;
+    if (q.k === 'puff') {
+      const r = q.r + q.gr * u; fxg.fillStyle = `rgba(${q.col},${0.5 * (1 - u)})`; fxg.beginPath(); fxg.arc(q.x, q.y, r, 0, 6.283); fxg.fill();
+    } else if (q.k === 'spark') {
+      q.vy += 160 * dt; fxg.globalAlpha = 1 - u; fxg.fillStyle = q.col; fxg.fillRect(q.x - q.r, q.y - q.r, q.r * 2, q.r * 2); fxg.globalAlpha = 1;
+    } else {
+      q.vy += 90 * dt; q.rot += q.vr * dt; fxg.save(); fxg.translate(q.x, q.y); fxg.rotate(q.rot); fxg.globalAlpha = Math.min(1, (1 - u) * 2); fxg.fillStyle = q.col; fxg.fillRect(-q.w / 2, -q.h / 2, q.w, q.h); fxg.restore(); fxg.globalAlpha = 1;
+    }
+  }
+  parts = parts.filter(q => q.age < q.life);
+  if (!parts.length) { fxg.clearRect(0, 0, play.clientWidth, play.clientHeight); fxLastClear = false; }
+}
+// exit combo: cars that leave one after another within a couple of seconds
+let combo = 0, comboT = 0, comboLast = 0, comboBest = 0;
+function comboHit() {
+  const t = now(); combo = t - comboLast < 2.4 && combo > 0 ? combo + 1 : 1; comboLast = t; comboBest = Math.max(comboBest, combo);
+  const el = $('combo'); clearTimeout(comboT);
+  if (combo >= 2) {
+    el.textContent = ''; el.append(T('出庫コンボ') + ' ');
+    const b = document.createElement('small'); b.textContent = T('×{n}', { n: combo }); el.append(b);
+    el.classList.remove('off'); void el.offsetWidth; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    sfx.combo(combo); buzz(8);
+    if (combo === 4 || combo === 7 || combo >= 10 && combo % 5 === 0) { confetti(14 + combo * 2); shakeScreen(3); }
+    comboT = setTimeout(() => { el.classList.add('off'); }, 2300);
+  } else el.classList.add('off');
+}
+function comboReset() { combo = 0; comboLast = 0; clearTimeout(comboT); $('combo').classList.add('off'); }
+function puffTail(i, n) {
+  const v = cars[i]; if (!v || !lv) return;
+  const d = st[i * 3 + 2], [cx, cz] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len), h = v.len / 2;
+  puff(cx - DX[d] * h, cz - DY[d] * h, n);
+}
+function puffNose(i, n, spark) {
+  const v = cars[i]; if (!v || !lv) return;
+  const d = st[i * 3 + 2], [cx, cz] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len), h = v.len / 2 + 0.1;
+  puff(cx + DX[d] * h, cz + DY[d] * h, n, { col: '200,196,185' });
+  if (spark) sparks(cx + DX[d] * h, cz + DY[d] * h, spark, '#ffe14d');
+}
+
+// ---------- Progress bar ----------
+function updateProg() {
+  if (!lv) return;
+  let f, low = false;
+  if (mode === 'rush' && rush) { f = Math.max(0, Math.min(1, rush.left / Core.RUSH.MAX)); low = rush.left <= 10 && !rush.done; }
+  else f = nc ? Core.aliveCount(st) === 0 ? 1 : (nc - Core.aliveCount(st)) / nc : 0;
+  $('progFill').style.transform = 'scaleX(' + f.toFixed(3) + ')';
+  const pg = $('prog'); pg.classList.toggle('rush', mode === 'rush'); pg.classList.toggle('low', low);
+  pg.setAttribute('aria-valuenow', f.toFixed(2));
+  pg.setAttribute('aria-label', T(mode === 'rush' ? '残り {t}' : '出庫の進み具合', { t: rush ? fmtClock(rush.left) : '' }));
+}
+function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+
+// ---------- Keyboard cursor: arrows pick a car, Enter drives it ----------
+let selMark = null;
+const selMat = new THREE.MeshBasicMaterial({ color: '#5ee0ff', transparent: true, opacity: 0.7, depthWrite: false });
+const selRim = new THREE.MeshBasicMaterial({ color: '#1d2a35', transparent: true, opacity: 0.55, depthWrite: false });
+function carPos(i) { return carCenter(st[i * 3], st[i * 3 + 1], st[i * 3 + 2], cars[i].len); }
+function updateKbMark() {
+  if (!world || !lv) return;
+  if (kbSel >= 0 && (kbSel >= nc || st[kbSel * 3] < 0)) kbReselect();
+  else if (kbUsed && kbSel < 0 && nc) { if (!kbPrev) kbPrev = [0, 0]; kbReselect(); }
+  if (!kbUsed || kbSel < 0 || mode === 'rush' && rush && rush.done) { if (selMark) selMark.visible = false; dirty = true; return; }
+  if (!selMark) {
+    selMark = new THREE.Group();
+    const rim = new THREE.Mesh(G.plane, selRim), glow = new THREE.Mesh(G.plane, selMat);
+    rim.position.y = 0.018; glow.position.y = 0.024; selMark.add(rim, glow); selMark.userData = { rim, glow };
+  }
+  if (selMark.parent !== world.root) world.root.add(selMark);
+  const i = kbSel, d = st[i * 3 + 2], L = cars[i].len, h = d & 1, [x, z] = carPos(i);
+  selMark.userData.rim.scale.set((h ? L : 1) + 0.46, 1, (h ? 1 : L) + 0.46);
+  selMark.userData.glow.scale.set((h ? L : 1) + 0.32, 1, (h ? 1 : L) + 0.32);
+  selMark.position.set(x, 0, z); selMark.visible = true; dirty = true;
+}
+function kbReselect() {
+  const from = kbPrev || [0, 0]; let best = -1, bd = 1e9;
+  for (let i = 0; i < nc; i++) { if (st[i * 3] < 0) continue; const [x, z] = carPos(i), dd = Math.hypot(x - from[0], z - from[1]); if (dd < bd) { bd = dd; best = i; } }
+  kbSel = best;
+}
+function kbMove(dx, dy) {
+  if (!lv || won || !nc) return;
+  kbUsed = true;
+  if (kbSel < 0 || st[kbSel * 3] < 0) { kbPrev = [0, 0]; kbReselect(); }
+  else {
+    const [sx, sz] = carPos(kbSel); let best = -1, bs = 1e9;
+    for (let i = 0; i < nc; i++) {
+      if (i === kbSel || st[i * 3] < 0) continue;
+      const [x, z] = carPos(i), ax = x - sx, az = z - sz, along = ax * dx + az * dy, perp = Math.abs(ax * dy - az * dx);
+      if (along < 0.2) continue;
+      const sc = along + perp * 1.8; if (sc < bs) { bs = sc; best = i; }
+    }
+    if (best >= 0) kbSel = best; else sfx.click();
+  }
+  if (kbSel >= 0) kbPrev = carPos(kbSel);
+  updateKbMark(); sfx.click();
+}
+function kbCycle() {
+  if (!lv || won || !nc) return;
+  kbUsed = true;
+  let i = kbSel;
+  for (let k = 0; k < nc; k++) { i = (i + 1) % nc; if (st[i * 3] >= 0) { kbSel = i; break; } }
+  if (kbSel >= 0) kbPrev = carPos(kbSel);
+  updateKbMark(); sfx.click();
+}
+function kbGo() {
+  if (!lv || won || blocked()) return;
+  kbUsed = true;
+  if (kbSel < 0 || st[kbSel * 3] < 0) { kbMove(0, 0); return; }
+  if (kbSel >= 0) kbPrev = carPos(kbSel);
+  tapCar(kbSel);
+}
+
 // ---------- Moves ----------
 function busy(i) { return !!cars[i].motion; }
 function pushUndo() { undoStack.push({ st: Int8Array.from(st), moves }); if (undoStack.length > 60) undoStack.shift(); }
@@ -863,9 +1147,9 @@ function shake(obj, amp, dur) {
 }
 function hitFx(i, r) {
   buzz(30);
-  if (r.hit === 'car') { sfx.honk(); shake(cars[r.car].inner, 0.07); }
-  else if (r.hit === 'block') { sfx.thud(); const b = world.blocks[r.hy * lv.W + r.hx]; if (b) { const base = b.rotation.z; tween(0.4, p => { b.rotation.z = base + Math.sin(p * Math.PI * 5) * 0.18 * (1 - p); }); } }
-  else if (r.hit === 'barrier') { sfx.thud(); world.arms.forEach(a => shake(a.parent, 0.04)); toast(T('ゲートはあと{n}台出ると開く', { n: lv.barrier.need - leftCount() })); }
+  if (r.hit === 'car') { sfx.honk(); shake(cars[r.car].inner, 0.07); puffNose(i, 4, 5); shakeScreen(2); }
+  else if (r.hit === 'block') { sfx.thud(); puffNose(i, 4, 6); shakeScreen(3); const b = world.blocks[r.hy * lv.W + r.hx]; if (b) { const base = b.rotation.z; tween(0.4, p => { b.rotation.z = base + Math.sin(p * Math.PI * 5) * 0.18 * (1 - p); }); } }
+  else if (r.hit === 'barrier') { sfx.thud(); puffNose(i, 3, 5); shakeScreen(3); world.arms.forEach(a => shake(a.parent, 0.04)); toast(T('ゲートはあと{n}台出ると開く', { n: lv.barrier.need - leftCount() })); }
   else if (r.hit === 'cat') { sfx.meow(); catJump = now() + 0.5; toast(T('ねこが渡ってる！ちょっと待って')); }
 }
 function bumpLocal(v, sgn, amp, dur) {
@@ -896,14 +1180,19 @@ function drive(i, m) {
     dirty = true;
     return;
   }
+  if (atLimit()) return;
   startPlay(); pushUndo(); moves++; showTip('');
   const [x0, z0] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len);
+  puffTail(i, r.exit ? 5 : 3);
   if (r.exit) {
+    if (kbSel === i) kbPrev = [x0, z0];
     st[i * 3] = -1;
     sfx.vroom(); buzz(12);
     animateExit(i, m, x0, z0);
     updateGate(false);
+    comboHit();
   } else {
+    comboLast = 0;
     st[i * 3] += DX[m] * r.k; st[i * 3 + 1] += DY[m] * r.k;
     const [x1, z1] = carCenter(st[i * 3], st[i * 3 + 1], d, v.len);
     sfx.vroom();
@@ -950,6 +1239,7 @@ function animateExit(i, m, x0, z0) {
     const fade = total - s; v.group.scale.setScalar(fade < 2.5 ? Math.max(0.01, fade / 2.5) : 1);
   }, () => { v.group.visible = false; v.group.scale.setScalar(1); });
   v.exitAnim = a;
+  setTimeout(() => { if (lv && world) { const [sx, sy] = projPlay(0, 0.4, -lv.H / 2 - RC - 1.5); if (sy > 0 && !reduceMQ.matches) sparks(0, -lv.H / 2 - RC - 1.5, 7, '#fff1a8'); } }, Math.min(900, T * 700));
 }
 
 function rotateCar(i) {
@@ -965,7 +1255,8 @@ function rotateCar(i) {
     explain('turn', T('まわりがふさがっていて回れない'));
     return;
   }
-  startPlay(); pushUndo(); moves++; showTip('');
+  if (atLimit()) return;
+  startPlay(); pushUndo(); moves++; showTip(''); comboLast = 0;
   const [px, pz] = carCenter(rt.tx, rt.ty, 0, 1);
   const p0 = v.group.position.clone(), h0 = v.group.rotation.y;
   st[i * 3] = rt.x; st[i * 3 + 1] = rt.y; st[i * 3 + 2] = rt.d;
@@ -986,15 +1277,30 @@ function afterMove() {
   const alive = Core.aliveCount(st);
   if (alive === 0 && vs) { won = true; vsCleared(); dirty = true; return; }
   if (alive === 0) { won = true; lotCleared(); }
-  else persistLot();
-  tutorialSync();
+  else { persistLot(); if (mode === 'mis' && mis && moves >= mis.info.limit) limitReached(); }
+  tutorialSync(); updateKbMark();
   dirty = true;
+}
+// missions: moves run out at the limit (the next one would exceed it)
+const atLimit = () => { if (mode === 'mis' && mis && moves >= mis.info.limit) { toast(T('手数の上限です。戻すかリスタートを')); sfx.over(); buzz(30); showStuck(); return true; } return false; };
+function limitReached() {
+  const g = lv;
+  setTimeout(() => { if (lv === g && !won && mode === 'mis' && mis && moves >= mis.info.limit && Core.aliveCount(st) > 0) { sfx.over(); showStuck(); } }, 700);
+}
+function showStuck() {
+  if (!$('stuck').hidden) return;
+  const noUndo = mis && (mis.info.rule === 'noUndo' || mis.info.rule === 'noTools') || !undoStack.length || undosLeft <= 0;
+  $('stuckUndo').hidden = noUndo; $('stuck').hidden = false; down = null;
+  setTimeout(() => ($('stuckUndo').hidden ? $('stuckRestart') : $('stuckUndo')).focus({ preventScroll: true }), 50);
 }
 
 // A lot is clear: stars, save (normal stages) or the day's run (daily), events, then the result card.
 function lotCleared() {
   const n = lv.n, par = lv.par, stars = Core.starsFor(moves, par), wonLv = lv, g = KG();
   startPlay();
+  shakeScreen(3);
+  if (mode === 'mis' && mis) { missionCleared(); return; }
+  if (mode === 'rush' && rush) { rushCleared(); return; }
   if (mode === 'daily' && daily) {
     const pts = Core.lotPoints(moves, par), last = lv.dailyIdx >= DAILY_N - 1;
     daily.score += pts; daily.stars[lv.dailyIdx] = stars; daily.moves += moves;
@@ -1024,13 +1330,14 @@ function lotCleared() {
 function undo() {
   if (won) return;
   if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
+  if (mode === 'mis' && mis && (mis.info.rule === 'noUndo' || mis.info.rule === 'noTools')) { toast(T('このミッションでは使えません')); return; }
   if (!undoStack.length) { toast(T('戻せる手がない')); return; }
   if (undosLeft <= 0) { toast(T('このステージの「戻す」は使い切った')); return; }
   const s = undoStack.pop(); undosLeft--;
   anims.forEach(a => { a.dead = true; }); anims = [];
   cars.forEach(c => { c.motion = null; });
-  st = s.st; moves = s.moves; clearHint();
-  syncAll(); updateHUD(); sfx.click(); persistLot(); tutorialSync();
+  st = s.st; moves = s.moves; clearHint(); comboReset(); $('stuck').hidden = true;
+  syncAll(); updateHUD(); sfx.click(); persistLot(); tutorialSync(); updateKbMark();
 }
 
 function clearHint() {
@@ -1068,6 +1375,8 @@ const glowMat = new THREE.MeshBasicMaterial({ color: '#fff1a8', transparent: tru
 function hint() {
   if (won || vs || KoboVersus.active()) return;
   if (mode === 'daily') { toast(T('デイリーではヒントは使えない')); return; }
+  if (mode === 'rush') { toast(T('ラッシュではヒントは使えない')); return; }
+  if (mode === 'mis' && mis && (mis.info.rule === 'noHint' || mis.info.rule === 'noTools')) { toast(T('このミッションでは使えません')); return; }
   if (hintsLeft <= 0) { toast(T('このステージのヒントは使い切った')); return; }
   const sol = Core.solve(lv, st, 60000);
   if (!sol || !sol.moves.length) { toast(T('行き詰まり…「戻す」かリスタートを')); return; }
@@ -1077,23 +1386,30 @@ function hint() {
 }
 
 function updateHUD() {
-  $('lvl').textContent = mode === 'daily' && lv.dailyIdx != null ? (lv.dailyIdx + 1) + '/' + DAILY_N : lv.n;
-  $('lvlabel').textContent = mode === 'daily' && lv.dailyIdx != null ? T('駐車場') : 'Lv';
+  const dl = mode === 'daily' && lv.dailyIdx != null, ms = mode === 'mis' && mis, rs = mode === 'rush' && rush;
+  $('lvl').textContent = dl ? (lv.dailyIdx + 1) + '/' + DAILY_N : ms ? mis.idx + 1 : rs ? rush.k + 1 : lv.n;
+  $('lvlabel').textContent = dl || rs ? T('駐車場') : ms ? T('ミッション') : 'Lv';
   $('moves').textContent = moves;
-  $('par').textContent = T('/ 目標 {n}', { n: lv.par });
-  const noHint = !!vs || mode === 'daily';
-  $('undoN').textContent = undosLeft; $('hintN').textContent = noHint ? 0 : hintsLeft;
-  $('undo').disabled = undosLeft <= 0; $('hint').disabled = hintsLeft <= 0 || noHint;
+  $('par').textContent = ms ? T('/ 上限 {n}', { n: mis.info.limit }) : T('/ 目標 {n}', { n: lv.par });
+  const mb = $('moves'); let cls = '';
+  if (ms) { const left = mis.info.limit - moves; cls = left <= 2 && Core.aliveCount(st) > 0 ? 'warn' : moves > mis.info.star3 ? 'over' : ''; }
+  else if (moves > lv.par) cls = 'over';
+  mb.className = cls;
+  const ruleOff = ms && (mis.info.rule === 'noHint' || mis.info.rule === 'noTools'), undoOff = ms && (mis.info.rule === 'noUndo' || mis.info.rule === 'noTools');
+  const noHint = !!vs || mode === 'daily' || rs || ruleOff;
+  $('undoN').textContent = undoOff ? 0 : undosLeft; $('hintN').textContent = noHint ? 0 : hintsLeft;
+  $('undo').disabled = undosLeft <= 0 || undoOff; $('hint').disabled = hintsLeft <= 0 || noHint;
   $('levels').disabled = !!vs;
+  updateProg();
 }
 
 // ---------- Lots: normal stages, the daily run ----------
 let curLevelHints = { n: 0, left: HINT_MAX };
-function hideCards() { $('win').hidden = true; $('dres').hidden = true; }
+function hideCards() { $('win').hidden = true; $('dres').hidden = true; $('stuck').hidden = true; $('rres').hidden = true; }
 function resetLot() {
   anims.forEach(a => { a.dead = true; }); anims = [];
   nc = lv.cars.length; st = Core.makeState(lv); moves = 0; undoStack = []; undosLeft = UNDO_MAX; hintsLeft = HINT_MAX; won = false;
-  catT0 = now() + 1.5; catForce = null; down = null;
+  catT0 = now() + 1.5; catForce = null; down = null; kbSel = -1; comboReset(); $('stuck').hidden = true; parts = [];
 }
 // a saved lot in progress { n, st, moves, undosLeft, hintsLeft }: used only if it fits this lot exactly
 function restoreLot(s) {
@@ -1123,7 +1439,7 @@ function persistDaily(lot) {
 }
 // the lot in progress, so closing the page and coming back continues the same lot (turn-based: Q-5/Q-6)
 function persistLot() {
-  if (vs || !lv || won) return;
+  if (vs || !lv || won || mode === 'mis' || mode === 'rush') return;   // missions and rush are not saved midway
   const snap = { n: lv.n, st: Array.from(st), moves, undosLeft, hintsLeft };
   if (mode === 'daily') { if (daily && !daily.done) persistDaily(Object.assign({ idx: lv.dailyIdx }, snap)); }
   else store.set(KEY_STATE, JSON.stringify(Object.assign({ v: 1 }, snap)));
@@ -1134,7 +1450,7 @@ function startLevel(n, keepHints, snap) {
   n = Math.max(1, n | 0);
   hideCards();
   if (mode === 'daily') persistLot();
-  mode = 'normal'; daily = null;
+  mode = 'normal'; daily = null; mis = null; rush = null;
   lv = Core.generate(n);
   resetLot();
   if (curLevelHints.n !== n || !keepHints) curLevelHints = { n, left: HINT_MAX };
@@ -1150,6 +1466,8 @@ function restartLot() {
   if (vs) { if (KoboVersus.canPlay() && !won) { sfx.click(); vsLot(vs.idx); } return; }
   if (KoboVersus.active()) return;
   sfx.click();
+  if (mode === 'mis' && mis) { startMission(mis.idx); return; }
+  if (mode === 'rush' && rush) { if (!rush.done) loadRushLot(rush.k); return; }
   if (mode === 'daily' && daily) { if (!daily.done) loadDailyLot(daily.idx, null); return; }
   curLevelHints.left = hintsLeft; startLevel(lv.n, true);
 }
@@ -1172,8 +1490,8 @@ function startDaily(dateKey) {
   const dk = PF.isDateKey(dateKey) && Number(dateKey) <= PF.jstDateKey() ? Number(dateKey) : PF.jstDateKey();
   endPlay('quit');
   if (mode === 'normal') persistLot();
-  $('select').hidden = true;
-  mode = 'daily';
+  $('select').hidden = true; $('modes').hidden = true; $('mis').hidden = true;
+  mode = 'daily'; mis = null; rush = null; tut = null;
   daily = { dateKey: dk, seed: PF.dailySeed(GAME, dk), idx: 0, score: 0, stars: [], moves: 0, done: false, best: 0, tries: 0 };
   const s = readJSON(KEY_DAILY);
   let lot = null;
@@ -1208,16 +1526,38 @@ function setMode(m) {
   if (m !== 'normal' || vs) return;
   startLevel(save.level, false, readJSON(KEY_STATE));
 }
+let rushEls = null;
+function ruleLabel(r) { return r === 'noHint' ? 'ヒントなし' : r === 'noUndo' ? '戻すなし' : r === 'noTools' ? '道具なし' : ''; }
 function renderMode() {
-  const bar = $('modeBar'), on = mode === 'daily' && !!daily && !vs;
-  bar.hidden = !on;
+  const bar = $('modeBar'), on = ((mode === 'daily' && !!daily) || (mode === 'mis' && !!mis) || (mode === 'rush' && !!rush)) && !vs;
+  bar.hidden = !on; rushEls = null;
   if (!on) return;
-  bar.title = T('全員が同じ3つの駐車場に挑む、1日1つのチャレンジ。ヒントなし、何度でも挑戦できます。');
   const t = $('modeText'); t.textContent = '';
+  if (mode === 'mis') {
+    const i = mis.info, rl = ruleLabel(i.rule);
+    bar.title = T('手数に上限があります。戻すと手数は減ります。★は少ない手数ほど多い。');
+    const b1 = document.createElement('b'); b1.textContent = mis.idx + 1;
+    t.append(T('ミッション') + ' ', b1, T(' ・ ') + T('★3は{n}手以内', { n: i.star3 }) + (rl ? T(' ・ ') + T(rl) : ''));
+    return;
+  }
+  if (mode === 'rush') {
+    bar.title = T('制限時間のなかで、できるだけ多くの駐車場を空にしよう。出すたびに時間が増える（目標どおりならさらに+5秒）。');
+    rushEls = { time: document.createElement('b'), score: document.createElement('b'), lots: document.createElement('b') };
+    t.append(T('ラッシュ') + T(' ・ '), rushEls.time, T(' ・ '), rushEls.score, T(' ・ '), rushEls.lots);
+    updateRushHud(); return;
+  }
+  bar.title = T('全員が同じ3つの駐車場に挑む、1日1つのチャレンジ。ヒントなし、何度でも挑戦できます。');
   const i = lv && lv.dailyIdx != null ? lv.dailyIdx + 1 : daily.idx + 1;
   const b1 = document.createElement('b'); b1.textContent = i + '/' + DAILY_N;
   const b2 = document.createElement('b'); b2.textContent = T('{p} 点', { p: daily.score });
   t.append(T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + T(' ・ '), b1, T(' ・ '), b2);
+}
+function updateRushHud() {
+  if (!rushEls || !rush) return;
+  rushEls.time.textContent = T('残り {t}', { t: fmtClock(rush.left) });
+  rushEls.time.className = rush.left <= 10 && !rush.done ? 'warn-t' : '';
+  rushEls.score.textContent = T('{p} 点', { p: rush.score });
+  rushEls.lots.textContent = T('{n} ロット', { n: rush.cleared });
 }
 function showDailyResult() {
   $('dresDate').textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) });
@@ -1234,13 +1574,169 @@ function showDailyResult() {
   setTimeout(() => $('dresAgain').focus({ preventScroll: true }), 50);
 }
 
+
+// ---------- Missions: 12 fixed lots (3 worlds x 4) with a move limit, stars by moves, some with tools off. Reported to KoboGame as practice ----------
+function missionTip() {
+  const i = mis.info, rl = ruleLabel(i.rule);
+  return lv.tip ? T(lv.tip) : T('ミッション{n}', { n: mis.idx + 1 }) + T(' ・ ') + T('★3は{n}手以内', { n: i.star3 }) + (rl ? T(' ・ ') + T(rl) : '');
+}
+function startMission(i) {
+  if (vs || KoboVersus.active()) return;
+  i = Math.max(0, Math.min(Core.MISSION_N - 1, i | 0));
+  if (!Core.missionOpen(xs, i)) { toast(T('ひとつ前のミッションをクリアすると開きます')); sfx.click(); return; }
+  endPlay('quit');
+  if (mode === 'normal' || mode === 'daily') persistLot();
+  mode = 'mis'; daily = null; rush = null; mis = { idx: i, info: Core.missionInfo(i) };
+  hideCards(); $('mis').hidden = true; $('modes').hidden = true; $('select').hidden = true;
+  tut = null; clearHint();
+  lv = mis.info.lot; lv.missionIdx = i;
+  resetLot();
+  const r = mis.info.rule;
+  if (r === 'noUndo' || r === 'noTools') undosLeft = 0;
+  if (r === 'noHint' || r === 'noTools') hintsLeft = 0;
+  buildWorld(); fitCamera(); updateHUD(); renderMode(); tutorialSync();
+  showTip(missionTip());
+}
+function missionCleared() {
+  const g = lv, idx = mis.idx, stars = Math.max(1, Core.missionStars(idx, moves));
+  const wasOpen = Core.missionOpen(xs, idx + 1);
+  Core.recordMission(xs, idx, stars); writeX();
+  const opened = !wasOpen && idx + 1 < Core.MISSION_N && Core.missionOpen(xs, idx + 1);
+  mis.last = { stars, opened };
+  endPlay('clear', stars, { stats: { stars, moves, par: mis.info.par } });
+  setTimeout(() => { if (lv !== g || !won) return; sfx.win(); buzz([20, 30, 40]); if (stars === 3) confetti(36); showWin(stars); }, 1300);
+}
+function openMis() {
+  if (vs || KoboVersus.active()) return;
+  sfx.click(); $('modes').hidden = true; $('select').hidden = true;
+  const root = $('misList'); root.innerHTML = '';
+  const names = ['はじめの駐車場', 'ゲートと回転台', 'ねこの横断歩道'];
+  for (let w = 0; w < 3; w++) {
+    const h = document.createElement('div'); h.className = 'world'; h.textContent = T(names[w]); root.appendChild(h);
+    const grid = document.createElement('div'); grid.className = 'misgrid'; root.appendChild(grid);
+    for (let k = 0; k < Core.WORLD_SIZE; k++) {
+      const i = w * Core.WORLD_SIZE + k, open = Core.missionOpen(xs, i), n = xs.s[i], rl = ruleLabel(Core.MISSION_DEFS[i].rule);
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = String(i);
+      b.className = 'lvbtn ms' + (open ? '' : ' locked') + (mode === 'mis' && mis && mis.idx === i ? ' cur' : '');
+      if (!open) b.setAttribute('aria-disabled', 'true');
+      b.setAttribute('aria-label', T('ミッション{n}', { n: i + 1 }) + (n ? ' ★' + n : '') + (rl ? ' ' + T(rl) : ''));
+      b.innerHTML = (i + 1) + '<i>' + '★'.repeat(n) + '</i><span class="r">' + (rl ? T(rl) : '') + '</span>'
+        + (open ? '' : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>');
+      b.addEventListener('click', () => startMission(i));
+      grid.appendChild(b);
+    }
+  }
+  $('mis').hidden = false; down = null;
+  const first = root.querySelector('.cur') || [...root.querySelectorAll('.lvbtn.ms')].find(b => !b.classList.contains('locked') && !(xs.s[+b.dataset.i] >= 1)) || root.querySelector('.lvbtn.ms');
+  if (first) { first.scrollIntoView({ block: 'nearest' }); setTimeout(() => { try { first.focus({ preventScroll: true }); } catch (e) {} }, 60); }
+}
+
+// ---------- Rush: lots against the clock. Each clear adds time. Best = the highest score. Reported as practice ----------
+const RUSH_ID_OVERLAYS = ['modes', 'mis', 'select', 'howto', 'win', 'dres', 'stuck', 'rres'];
+function clockOn() {
+  return mode === 'rush' && !!rush && !rush.done && !vs && !won && !!lv && !menuOpen && !glLost && !document.hidden && !KoboVersus.active() && RUSH_ID_OVERLAYS.every(id => $(id).hidden);
+}
+function startRush(seed) {
+  if (vs || KoboVersus.active()) return;
+  endPlay('quit');
+  if (mode === 'normal' || mode === 'daily') persistLot();
+  mode = 'rush'; daily = null; mis = null; tut = null; clearHint();
+  rush = { seed: (seed | 0) || (((Date.now() & 0x7fffffff) ^ ((Math.random() * 1e9) | 0)) | 0) || 1, k: 0, score: 0, cleared: 0, left: Core.RUSH.START, done: false, best0: xs.r, moves: 0 };
+  hideCards(); $('modes').hidden = true; $('select').hidden = true; $('mis').hidden = true;
+  loadRushLot(0);
+  toast(T('時間内に出せるだけ出そう！'), true);
+}
+function loadRushLot(k) {
+  lv = Core.rushLot(rush.seed, k); lv.rushK = k; rush.k = k;
+  resetLot(); hintsLeft = 0; clearHint();
+  buildWorld(); fitCamera(); updateHUD(); renderMode(); tutorialSync();
+  showTip(T('駐車場 {n}', { n: k + 1 }) + T(' ・ ') + T('目標 {n}手', { n: lv.par }));
+  const sd = rush.seed;
+  setTimeout(() => { try { Core.rushLot(sd, k + 1); } catch (e) {} }, 400);   // build the next lot while this one is played
+}
+function rushCleared() {
+  const r = rush, g = lv, par = lv.par, pts = Core.lotPoints(moves, par), left2 = Core.rushTime(r.left, moves, par), bonus = Math.round(left2 - r.left);
+  startPlay();
+  r.score += pts; r.cleared++; r.moves += moves; r.left = left2;
+  updateHUD(); updateRushHud();
+  setTimeout(() => { if (rush === r && lv === g) { sfx.win(); buzz([20, 30]); confetti(moves <= par ? 26 : 10); } }, 500);
+  toast(T('ぜんぶ出た！ +{n}点', { n: pts }) + T(' ・ ') + T('+{n}秒', { n: bonus }), true);
+  setTimeout(() => { if (rush !== r || lv !== g || r.done || vs) return; loadRushLot(r.k + 1); }, 1300);
+}
+function rushTick(dt) {
+  if (!clockOn()) return;
+  const prev = Math.ceil(rush.left);
+  rush.left -= dt;
+  if (rush.left <= 0) { rush.left = 0; rushOver(); return; }
+  if (Math.ceil(rush.left) !== prev) { updateRushHud(); if (rush.left <= 10) sfx.tick(); }
+  updateProg();
+}
+function rushOver() {
+  const r = rush; if (!r || r.done) return;
+  r.done = true; won = true; down = null;
+  const isNew = Core.recordRush(xs, r.score); writeX();
+  endPlay('clear', r.score, { stats: { lots: r.cleared, moves: r.moves } });
+  updateHUD(); updateRushHud(); sfx.over(); buzz([30, 40, 30]); shakeScreen(4);
+  setTimeout(() => { if (rush === r && !vs) showRushResult(isNew); }, 700);
+}
+function showRushResult(isNew) {
+  const r = rush; if (!r) return;
+  $('rresScore').textContent = T('{p} 点', { p: r.score });
+  $('rresNew').hidden = !isNew;
+  $('rresLots').textContent = T('{n}ロットを出庫', { n: r.cleared });
+  $('rresBest').textContent = xs.r ? T('ベスト {p} 点', { p: xs.r }) : '';
+  if (isNew && r.score > 0) confetti(40);
+  $('rres').hidden = false;
+  setTimeout(() => $('rresAgain').focus({ preventScroll: true }), 50);
+}
+
+// ---------- Mode picker (M, the Modes button, the menu, the result cards) ----------
+function openModes() {
+  if (vs || KoboVersus.active()) return;
+  $('select').hidden = true; $('mis').hidden = true; down = null; sfx.click();
+  $('mdNormalS').textContent = T('どこまでも続くステージ。いま Lv.{n}', { n: save.level });
+  $('mdMisS').textContent = T('手数の上限つきの12ミッション。★ {n} / 36', { n: xsTotal() });
+  $('mdRushS').textContent = xs.r ? T('時間内に何ロット出せる？ ベスト {p} 点', { p: xs.r }) : T('時間内に何ロット出せる？ まだ記録なし');
+  $('mdDaily').hidden = !PF;
+  const cur = mode === 'mis' ? 'mdMis' : mode === 'rush' ? 'mdRush' : mode === 'daily' ? 'mdDaily' : 'mdNormal';
+  ['mdNormal', 'mdMis', 'mdRush', 'mdDaily'].forEach(id => $(id).classList.toggle('cur', id === cur));
+  $('mdKeys').hidden = !(kbUsed || !matchMedia('(pointer: coarse)').matches);
+  $('modes').hidden = false;
+  setTimeout(() => { try { $(cur).focus({ preventScroll: true }); } catch (e) {} }, 50);
+}
+function closeModes() { $('modes').hidden = true; dirty = true; }
+function pickMode(n) {
+  $('modes').hidden = true;
+  if (n === 0) { if (mode !== 'normal') setMode('normal'); else openSelect(); }
+  else if (n === 1) openMis();
+  else if (n === 2) startRush();
+  else if (PF) startDaily();
+}
+$('mdNormal').addEventListener('click', () => pickMode(0));
+$('mdMis').addEventListener('click', () => pickMode(1));
+$('mdRush').addEventListener('click', () => pickMode(2));
+$('mdDaily').addEventListener('click', () => pickMode(3));
+$('mdClose').addEventListener('click', closeModes);
+$('modes').addEventListener('click', e => { if (e.target === $('modes')) closeModes(); });
+$('misClose').addEventListener('click', () => { $('mis').hidden = true; });
+$('misModes').addEventListener('click', openModes);
+$('mis').addEventListener('click', e => { if (e.target === $('mis')) $('mis').hidden = true; });
+$('selModes').addEventListener('click', openModes);
+$('winModes').addEventListener('click', () => { $('win').hidden = true; openModes(); });
+$('stuckModes').addEventListener('click', () => { $('stuck').hidden = true; openModes(); });
+$('stuckRestart').addEventListener('click', () => { $('stuck').hidden = true; restartLot(); });
+$('stuckUndo').addEventListener('click', () => { $('stuck').hidden = true; undo(); });
+$('rresAgain').addEventListener('click', () => { sfx.click(); startRush(); });
+$('rresModes').addEventListener('click', () => { $('rres').hidden = true; openModes(); });
+
 // ---------- Play sessions (KoboGame events) ----------
 // normal: one session per stage, from the first move to the clear (or leaving it). daily: one session for the day's run.
 function startPlay() {
   if (sess || vs || !lv) return;
-  sess = { mode, t0: performance.now(), stage: mode === 'daily' ? (lv.dailyIdx || 0) + 1 : lv.n, dateKey: daily ? daily.dateKey : undefined };
+  const special = mode === 'mis' || mode === 'rush';   // missions and rush are practice for the platform (no best, no achievements)
+  sess = { mode: special ? 'practice' : mode, t0: performance.now(), stage: mode === 'daily' ? (lv.dailyIdx || 0) + 1 : mode === 'mis' && mis ? mis.idx + 1 : mode === 'rush' && rush ? rush.k + 1 : lv.n, dateKey: daily ? daily.dateKey : undefined };
   const g = KG(); if (!g) return;
-  g.emit('play_start', mode === 'daily' ? { mode, dateKey: daily.dateKey, seed: daily.seed, stage: sess.stage } : { mode, stage: lv.n });
+  g.emit('play_start', mode === 'daily' ? { mode, dateKey: daily.dateKey, seed: daily.seed, stage: sess.stage } : { mode: sess.mode, stage: sess.stage });
 }
 function endPlay(reason, score, extra) {
   if (!sess) return;
@@ -1288,7 +1784,7 @@ $('coachBtn').addEventListener('click', () => { sfx.click(); finishTutorial(fals
 const _v = new THREE.Vector3();
 function fitCamera() {
   const w = Math.max(1, play.clientWidth), h = Math.max(1, play.clientHeight);
-  renderer.setSize(w, h, false); camera.aspect = w / h;
+  renderer.setSize(w, h, false); camera.aspect = w / h; fxResize();
   if (!lv) return;
   const tilt = (h / w > 1.25 ? 58 : 50) * Math.PI / 180, cs = Math.cos(tilt), sn = Math.sin(tilt);
   const ex = lv.W / 2 + ROAD_OUT + 0.1, ez = lv.H / 2 + ROAD_OUT + 0.1;
@@ -1323,7 +1819,26 @@ function pick(cx, cy) {
   ndc.set((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hits = ray.intersectObjects(cars.filter((c, i) => st[i * 3] >= 0).map(c => c.hit), false);
-  return hits.length ? hits[0].object.userData.car : -1;
+  if (hits.length) return hits[0].object.userData.car;
+  // a finger is wider than a car's edge: take the nearest car whose footprint (grown a little) holds the touched spot on the ground
+  const pt = ray.ray.intersectPlane(groundPlane, _p);
+  if (!pt) return -1;
+  let best = -1, bd = 1e9;
+  for (let i = 0; i < nc; i++) {
+    if (st[i * 3] < 0) continue;
+    const d = st[i * 3 + 2], L = cars[i].len, [x, z] = carCenter(st[i * 3], st[i * 3 + 1], d, L), h = d & 1;
+    const ax = Math.abs(pt.x - x) - (h ? L : 1) / 2, az = Math.abs(pt.z - z) - (h ? 1 : L) / 2;
+    if (ax > 0.3 || az > 0.3) continue;
+    const dd = Math.hypot(Math.max(0, ax), Math.max(0, az));
+    if (dd < bd) { bd = dd; best = i; }
+  }
+  return best;
+}
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.3), _p = new THREE.Vector3();
+function tapCar(i) {
+  if (i < 0 || st[i * 3] < 0) return;
+  const o = Core.buildOcc(lv, st);
+  if (Core.rotTarget(lv, st, o, i)) rotateCar(i); else drive(i, st[i * 3 + 2]);
 }
 function toScreen(x, y, z) {
   _v.set(x, y, z).project(camera); const r = cv.getBoundingClientRect();
@@ -1345,8 +1860,8 @@ cv.addEventListener('pointerup', e => {
   if (dist < 14) {
     if (i < 0) i = pick(e.clientX, e.clientY);
     if (i < 0) return;
-    const o = Core.buildOcc(lv, st);
-    if (Core.rotTarget(lv, st, o, i)) rotateCar(i); else drive(i, st[i * 3 + 2]);
+    kbSel = i; kbPrev = carPos(i); if (kbUsed) updateKbMark();
+    tapCar(i);
     return;
   }
   if (i < 0 || st[i * 3] < 0) return;
@@ -1365,27 +1880,36 @@ $('hint').addEventListener('click', hint);
 $('restart').addEventListener('click', restartLot);
 $('next').addEventListener('click', () => {
   sfx.click();
+  if (mode === 'mis' && mis) { hideCards(); if (mis.idx + 1 < Core.MISSION_N) startMission(mis.idx + 1); else openMis(); return; }
   if (mode === 'daily' && daily) { hideCards(); loadDailyLot(daily.idx, null); return; }
   startLevel(lv.n + 1);
 });
-$('again').addEventListener('click', () => { sfx.click(); startLevel(lv.n, true); });
+$('again').addEventListener('click', () => { sfx.click(); if (mode === 'mis' && mis) { startMission(mis.idx); return; } startLevel(lv.n, true); });
 $('dresAgain').addEventListener('click', () => { sfx.click(); dailyRetry(); });
 $('dresNormal').addEventListener('click', () => { sfx.click(); setMode('normal'); });
-$('levels').addEventListener('click', () => { if (!vs && !KoboVersus.active()) openSelect(); });
+$('levels').addEventListener('click', () => { if (!vs && !KoboVersus.active()) openModes(); });
 $('selClose').addEventListener('click', () => { $('select').hidden = true; });
 $('selDaily').addEventListener('click', () => { sfx.click(); $('select').hidden = true; startDaily(); });
 $('select').addEventListener('click', e => { if (e.target === $('select')) $('select').hidden = true; });
 
 const STAR = on => `<svg viewBox="0 0 24 24" class="${on ? 'on' : ''}" aria-hidden="true"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
 function showWin(stars, pts) {
+  const ms = mode === 'mis' && mis, dl = mode === 'daily' && daily;
   $('winStars').innerHTML = STAR(stars >= 1) + STAR(stars >= 2) + STAR(stars >= 3);
-  $('winStars').setAttribute('role', 'img'); $('winStars').setAttribute('aria-label', T('ステージ {n} 星{s}', { n: lv.n, s: stars }));
+  $('winStars').setAttribute('role', 'img');
+  $('winStars').setAttribute('aria-label', ms ? T('ミッション{n}', { n: mis.idx + 1 }) + ' ' + stars + '/3' : T('ステージ {n} 星{s}', { n: lv.n, s: stars }));
   $('winMoves').textContent = moves; $('winPar').textContent = lv.par;
-  $('winTitle').textContent = T(stars === 3 ? 'かんぺき！' : 'ぜんぶ出た！');
-  const dl = mode === 'daily' && daily;
+  $('winTitle').textContent = T(stars === 3 ? 'かんぺき！' : ms ? 'ミッション クリア！' : 'ぜんぶ出た！');
   $('winGain').hidden = !dl; if (dl) $('winGain').textContent = T('+{n} 点', { n: pts || 0 });
-  $('next').textContent = dl ? T('次の駐車場へ（{i}/{n}）', { i: daily.idx + 1, n: DAILY_N }) : T('次のステージへ');
+  const info = $('winInfo'), parts = [];
+  if (ms) {
+    if (stars < 3) parts.push(T('目標：{n}手以内で★3', { n: mis.info.star3 }));
+    if (mis.last && mis.last.opened) parts.push(T('つぎのミッションが開いた！'));
+  }
+  info.hidden = !parts.length; info.textContent = parts.join(T(' ・ '));
+  $('next').textContent = dl ? T('次の駐車場へ（{i}/{n}）', { i: daily.idx + 1, n: DAILY_N }) : ms ? T(mis.idx + 1 < Core.MISSION_N ? '次のミッションへ' : 'ミッション一覧へ') : T('次のステージへ');
   $('again').hidden = !!dl;
+  $('winModes').hidden = !!dl;
   $('win').hidden = false;
   setTimeout(() => $('next').focus({ preventScroll: true }), 50);
 }
@@ -1409,13 +1933,14 @@ function openSelect() {
 function openMenu() {
   if (!UI || KoboVersus.active()) return;
   down = null;
+  menuOpen = true;
   const close = f => () => { m.close(); closedMenu(); f(); };
   const extra = [
     { label: T('遊び方'), icon: 'help', onClick: close(() => showHowto(false)) },
+    { label: T('モード'), icon: 'star', onClick: close(openModes) },
     { label: T('ステージ選択'), icon: 'menu', onClick: close(openSelect) },
   ];
-  if (mode === 'daily') extra.push({ label: T('ふつうのステージに戻る'), icon: 'home', onClick: close(() => setMode('normal')) });
-  else if (PF) extra.push({ label: T('今日のチャレンジ'), icon: 'star', onClick: close(() => startDaily()) });
+  if (mode !== 'normal') extra.push({ label: T('ふつうのステージに戻る'), icon: 'home', onClick: close(() => setMode('normal')) });
   const m = UI.pauseMenu({
     title: T('メニュー'),
     onResume: closedMenu,
@@ -1426,7 +1951,7 @@ function openMenu() {
   });
   m.open();
 }
-function closedMenu() { const g = KG(); if (g) g.menuClosed(); dirty = true; }
+function closedMenu() { menuOpen = false; const g = KG(); if (g) g.menuClosed(); dirty = true; }
 $('menuBtn').addEventListener('click', () => { sfx.click(); openMenu(); });
 if (!UI) $('menuBtn').hidden = true;
 
@@ -1453,16 +1978,76 @@ $('howtoAlt').addEventListener('click', () => {
   try { localStorage.removeItem(KEY_TUT); } catch (e) {}
   startLevel(1);
 });
+function moveFocus(list, cols, key) {
+  list = list.filter(b => !b.hidden);
+  if (!list.length) return;
+  let i = list.indexOf(document.activeElement); if (i < 0) i = 0;
+  const d = key === 'ArrowLeft' ? -1 : key === 'ArrowRight' ? 1 : key === 'ArrowUp' ? -cols : cols;
+  const j = Math.max(0, Math.min(list.length - 1, i + d));
+  list[j].focus(); list[j].scrollIntoView({ block: 'nearest' });
+}
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  if (!$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); }
-  else if (!$('select').hidden) { e.preventDefault(); $('select').hidden = true; }
+  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+  const k = e.key, tag = e.target && e.target.tagName, lk = k.length === 1 ? k.toLowerCase() : k;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (menuOpen) return;   // KoboUI's menu has its own keys
+  const eat = () => { e.preventDefault(); };
+  if (!$('howto').hidden) { if (k === 'Escape') { eat(); $('howtoGo').click(); } return; }
+  if (!$('modes').hidden) {
+    if (k === 'Escape' || lk === 'm') { eat(); closeModes(); }
+    else if (/^[1-4]$/.test(k)) { eat(); if (k !== '4' || PF) pickMode(+k - 1); }
+    else if (k.startsWith('Arrow')) { eat(); moveFocus([...document.querySelectorAll('#modes .mode-opt')], 1, k); }
+    return;
+  }
+  if (!$('mis').hidden) {
+    if (k === 'Escape') { eat(); $('mis').hidden = true; }
+    else if (lk === 'm') { eat(); openModes(); }
+    else if (k.startsWith('Arrow')) { eat(); moveFocus([...document.querySelectorAll('#misList .lvbtn.ms')], 4, k); }
+    return;
+  }
+  if (!$('select').hidden) {
+    if (k === 'Escape') { eat(); $('select').hidden = true; }
+    else if (lk === 'm') { eat(); openModes(); }
+    else if (k.startsWith('Arrow')) { eat(); moveFocus([...document.querySelectorAll('#lvgrid .lvbtn')], 5, k); }
+    return;
+  }
+  if (!$('stuck').hidden) {
+    if (lk === 'r') { eat(); $('stuckRestart').click(); } else if (lk === 'u' && !$('stuckUndo').hidden) { eat(); $('stuckUndo').click(); } else if (lk === 'm') { eat(); $('stuckModes').click(); }
+    return;
+  }
+  if (!$('win').hidden || !$('dres').hidden || !$('rres').hidden) {
+    if (lk === 'm') { eat(); $('win').hidden = true; $('dres').hidden = true; $('rres').hidden = true; openModes(); }
+    else if (lk === 'r' && !$('rres').hidden) { eat(); $('rresAgain').click(); }
+    else if (lk === 'r' && !$('win').hidden && !$('again').hidden) { eat(); $('again').click(); }
+    return;
+  }
+  if (!lv || e.repeat && k !== 'ArrowLeft' && k !== 'ArrowRight' && k !== 'ArrowUp' && k !== 'ArrowDown') return;
+  const onBtn = tag === 'BUTTON' || tag === 'A';
+  if (k === 'ArrowUp' || lk === 'w') { eat(); kbMove(0, -1); }
+  else if (k === 'ArrowDown' || lk === 's') { eat(); kbMove(0, 1); }
+  else if (k === 'ArrowLeft' || lk === 'a') { eat(); kbMove(-1, 0); }
+  else if (k === 'ArrowRight' || lk === 'd') { eat(); kbMove(1, 0); }
+  else if ((k === 'Enter' || k === ' ') && !onBtn) { eat(); kbGo(); }
+  else if (lk === 'n') { eat(); kbCycle(); }
+  else if (lk === 'u') { eat(); undo(); }
+  else if (lk === 'h') { eat(); hint(); }
+  else if (lk === 'm') { eat(); openModes(); }
+  else if (lk === 'l') { eat(); if (!vs && !KoboVersus.active()) openSelect(); }
+  else if (k === 'Escape') { eat(); openMenu(); }
+  else if (lk === 'r') {
+    eat();
+    if (moves > 0 && !won && now() - restartArm > 2.5) { restartArm = now(); toast(T('もう一度 R でリスタート')); }
+    else { restartArm = 0; restartLot(); }
+  }
 });
 
 // ---------- Loop: render only when something changed ----------
+let lastT = now();
 function frame() {
   requestAnimationFrame(frame);
-  const t = now();
+  const t = now(), dt = Math.min(0.1, Math.max(0, t - lastT)); lastT = t;
+  rushTick(dt); fxStep(dt);
+  if (selMark && selMark.visible && !reduceMQ.matches) { selMat.opacity = 0.55 + Math.sin(t * 6) * 0.2; dirty = true; }
   if (anims.length) {
     const list = anims.slice();
     for (const a of list) {
@@ -1542,7 +2127,7 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同�
   onStart({ seed, practice }) {
     if (!vs) {
       endPlay('quit'); persistLot();
-      vs = { snap: { lv, st: Int8Array.from(st), moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, mode, daily, win: !$('win').hidden, dres: !$('dres').hidden } };
+      vs = { snap: { lv, st: Int8Array.from(st), moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, mode, daily, mis, rush, win: !$('win').hidden, dres: !$('dres').hidden, stuck: !$('stuck').hidden, rres: !$('rres').hidden } };
     }
     if (vs.playing) vsEmit('play_end', { mode: vs.playing, score: vs.score || 0, reason: 'quit' });
     vs.salt = (seed | 0) || 1; vs.score = 0; vs.tips = {};
@@ -1561,11 +2146,12 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同�
     if (vs.playing) vsEmit('play_end', { mode: vs.playing, score: vs.score, reason: 'quit' });
     const s = vs.snap; vs = null;
     anims.forEach(a => { a.dead = true; }); anims = [];
-    ({ lv, moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, mode, daily } = s);
+    ({ lv, moves, undoStack, undosLeft, hintsLeft, won, curLevelHints, mode, daily, mis, rush } = s);
     st = s.st; nc = lv.cars.length; hintMark = null; hintFor = -1; down = null;
     catT0 = now() + 1.5; catForce = null;
     buildWorld(); fitCamera(); updateHUD(); renderMode(); showTip(''); tutorialSync();
-    $('win').hidden = !s.win; $('dres').hidden = !s.dres;
+    $('win').hidden = !s.win; $('dres').hidden = !s.dres; $('stuck').hidden = !s.stuck; $('rres').hidden = !s.rres;
+    if (mode === 'rush' && rush && won && !rush.done) loadRushLot(rush.k + 1);   // the lot was cleared when the match began: go on to the next
   },
 });
 KoboVersus.button($('vsSlot'), { compact: true });
@@ -1619,12 +2205,16 @@ booted = true;
 
 if (window.__kb) Object.assign(window.__kb, {
   ready: () => booted && !!lv && frames > 0,
-  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score: mode === 'daily' && daily ? daily.score : save.best - 1,
+  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score: mode === 'daily' && daily ? daily.score : mode === 'rush' && rush ? rush.score : save.best - 1,
     time: sess ? Math.round(performance.now() - sess.t0) : 0, over: won, stage: lv ? lv.n : null,
     paused: !!(window.KoboGame && KoboGame.paused()), moves, par: lv ? lv.par : 0, alive: lv ? Core.aliveCount(st) : 0,
     level: save.level, best: save.best, stars: Object.assign({}, save.stars), undosLeft, hintsLeft,
     daily: daily ? { dateKey: daily.dateKey, idx: daily.idx, lot: lv && lv.dailyIdx, score: daily.score, stars: daily.stars.slice(), done: daily.done, best: daily.best, tries: daily.tries } : null,
-    howto: !$('howto').hidden, winShown: !$('win').hidden, dailyShown: !$('dres').hidden, coach: !$('coach').hidden, glLost, frames }),
+    howto: !$('howto').hidden, winShown: !$('win').hidden, dailyShown: !$('dres').hidden, coach: !$('coach').hidden, glLost, frames,
+    modesShown: !$('modes').hidden, misShown: !$('mis').hidden, stuckShown: !$('stuck').hidden, rushShown: !$('rres').hidden, selectShown: !$('select').hidden,
+    mis: mis ? { idx: mis.idx, limit: mis.info.limit, par: mis.info.par, star3: mis.info.star3, star2: mis.info.star2, rule: mis.info.rule } : null,
+    rush: rush ? { seed: rush.seed, k: rush.k, score: rush.score, cleared: rush.cleared, left: rush.left, done: rush.done } : null,
+    x: { s: xs.s.slice(), r: xs.r }, kbSel, kbUsed, combo, comboBest, parts: parts.length, clock: clockOn() }),
   // clear the lot now (at par if no move was made yet)
   win() {
     if (!lv || won || vs) return false;
@@ -1651,6 +2241,10 @@ if (window.__kb) Object.assign(window.__kb, {
   tutorial: () => ({ step: tut ? tut.step : (store.get(KEY_TUT) ? TUT.length : 0), done: !!store.get(KEY_TUT), active: !!tut }),
   daily: dk => startDaily(dk), normal: () => setMode('normal'), menu: openMenu, howto: () => showHowto(false), restart: restartLot,
   goto: n => startLevel(n), speed: k => { timeScale = k; }, carScreen: i => window.__parking.carScreen(i),
+  modes: openModes, misList: openMis, misStart: i => startMission(i), rushStart: seed => startRush(seed),
+  rushAdvance(sec) { if (rush && !rush.done) { rush.left = Math.max(0, rush.left - sec); updateRushHud(); updateProg(); if (rush.left <= 0) rushOver(); } },
+  flush: flushAnims,
+  misLimit(n) { if (mis) { mis.info = Object.assign({}, mis.info, { limit: n }); updateHUD(); renderMode(); } },
 });
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});

@@ -7,6 +7,7 @@
 //   ParkingEngine.solve(lv, state, cap?) 最少のタップ数の解き方 { taps, moves, waves, partial, nodes } か null
 //   ParkingEngine.makeState / slide / rotTarget / closure / buildOcc / cellsOf / aliveCount   盤の操作
 //   ParkingEngine.dailyLot(seed, i) / DAILY_LEVELS / lotPoints(moves, par) / starsFor(moves, par)
+//   ミッション12（missionInfo / missionStars / missionOpen）・ラッシュ（rushLot / rushTime）・端末だけの記録 kusoge.parking.x（readX / recordMission / recordRush）
 (function (root) {
 'use strict';
 const Core = (() => {
@@ -372,8 +373,64 @@ const Core = (() => {
   // Stars for one lot: 3 at par or better, 2 a little over par, 1 otherwise.
   function starsFor(moves, par) { return moves <= par ? 3 : moves <= par + Math.max(2, Math.ceil(par * 0.12)) ? 2 : 1; }
 
+  // ---------- Missions and Rush (this device only: kusoge.parking.x = { v:1, s:[stars x12], r: best rush score }) ----------
+  // Missions: twelve fixed lots (3 worlds x 4) made by the stage generator with fixed salts, so every device plays the same ones.
+  // Each has a limit on the number of moves (undo gives moves back) and a rule that switches tools off. The solver's tap count is
+  // the par, so 3 stars is always reachable. Opening one needs a star on the one before it.
+  const MISSION_DEFS = [
+    { n: 6, salt: 201, rule: 'none' }, { n: 10, salt: 204, rule: 'noHint' }, { n: 14, salt: 203, rule: 'none' }, { n: 20, salt: 215, rule: 'noUndo' },
+    { n: 30, salt: 204, rule: 'none' }, { n: 40, salt: 213, rule: 'noHint' }, { n: 50, salt: 213, rule: 'none' }, { n: 58, salt: 207, rule: 'noUndo' },
+    { n: 70, salt: 205, rule: 'none' }, { n: 84, salt: 232, rule: 'noHint' }, { n: 100, salt: 205, rule: 'noUndo' }, { n: 130, salt: 230, rule: 'noTools' },
+  ];
+  const MISSION_N = MISSION_DEFS.length, WORLD_SIZE = 4, SLACK_F = [0.3, 0.2, 0.12];
+  const missionCache = new Map();
+  function missionInfo(i) {
+    const d = MISSION_DEFS[i]; if (!d) return null;
+    let m = missionCache.get(i);
+    if (!m) {
+      const lot = generate(d.n, d.salt), par = lot.par, world = Math.floor(i / WORLD_SIZE), slack = Math.ceil(par * SLACK_F[world]) + 2;
+      m = { i, world, n: d.n, salt: d.salt, rule: d.rule, par, limit: par + slack, star3: par + (world === 0 ? 1 : 0), star2: par + Math.ceil(slack / 2) };
+      missionCache.set(i, m);
+    }
+    return Object.assign({ lot: generate(d.n, d.salt) }, m);   // a fresh lot each time (play never changes a lot, but be safe)
+  }
+  // stars for a finished mission: 0 over the limit, else 3 / 2 / 1
+  function missionStars(i, moves) {
+    const m = missionInfo(i); if (!m || !(moves >= 0) || moves > m.limit) return 0;
+    return moves <= m.star3 ? 3 : moves <= m.star2 ? 2 : 1;
+  }
+  function missionOpen(x, i) { return i === 0 || (i > 0 && i < MISSION_N && (Number(x && x.s && x.s[i - 1]) || 0) >= 1); }
+  // Rush: clear as many lots as you can before the clock runs out. Lots rise from level 5 by 3; each clear adds time (more at par).
+  const RUSH = { START: 90, BONUS: 10, PAR_BONUS: 5, MAX: 150, LEVEL0: 5, STEP: 3, LEVEL_MAX: 60 };
+  const rushLevel = k => Math.min(RUSH.LEVEL_MAX, RUSH.LEVEL0 + RUSH.STEP * Math.max(0, k | 0));
+  const rushSalt = seed => ((seed | 0) ^ 0x7a5b11) | 0 || 1;
+  function rushLot(seed, k) { return generate(rushLevel(k), rushSalt(seed)); }
+  function rushTime(left, moves, par) { return Math.min(RUSH.MAX, Math.max(0, left) + RUSH.BONUS + (moves <= par ? RUSH.PAR_BONUS : 0)); }
+  function readX(raw) {
+    let o = null;
+    try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { o = null; }
+    const x = { v: 1, s: new Array(MISSION_N).fill(0), r: 0 };
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return x;
+    if (Array.isArray(o.s)) for (let i = 0; i < MISSION_N; i++) { const n = Math.floor(Number(o.s[i])); x.s[i] = n >= 1 && n <= 3 ? n : 0; }
+    const r = Math.floor(Number(o.r)); x.r = r > 0 && isFinite(r) ? Math.min(r, 1e6) : 0;
+    return x;
+  }
+  function recordMission(x, i, stars) {
+    if (!(i >= 0 && i < MISSION_N) || !(stars >= 1)) return false;
+    stars = Math.min(3, stars | 0);
+    if (stars <= x.s[i]) return false;
+    x.s[i] = stars; return true;
+  }
+  function recordRush(x, score) {
+    score = Math.round(Number(score)); if (!(score > 0) || !isFinite(score)) return false;
+    score = Math.min(score, 1e6);
+    if (x.r >= score) return false;
+    x.r = score; return true;
+  }
+
   return { DX, DY, T_EMPTY, T_CONE, T_PILLAR, T_TURN, makeState, aliveCount, buildOcc, cellsOf, slide, rotTarget, closure, solve, generate, config, difficulty, rng32,
-    DAILY_LEVELS, dailySalt, dailyLot, lotPoints, starsFor };
+    DAILY_LEVELS, dailySalt, dailyLot, lotPoints, starsFor,
+    MISSION_DEFS, MISSION_N, WORLD_SIZE, missionInfo, missionStars, missionOpen, RUSH, rushLevel, rushSalt, rushLot, rushTime, readX, recordMission, recordRush };
 })();
 root.ParkingEngine = Core;
 if (typeof module === 'object' && module && module.exports) module.exports = Core;
