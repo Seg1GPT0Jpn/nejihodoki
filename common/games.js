@@ -225,6 +225,7 @@
         'kusoge.n59049.daily': '今日のデイリーの盤 { v:1, dateKey, draws, cells, score, won, mv, yaw, pitch, t }。終わると消す（端末だけ）',
         'kusoge.n59049.howto': '遊び方を見た（\'1\'）',
         'kusoge.n59049.tutorial': '\'1\' | \'skip\' | \'old\'',
+        'kusoge.n59049.x': 'ステージの星とラッシュのベスト { v:1, s:[12ステージの星0〜3], r, c }（端末内だけ。同期しない・ランキングに入らない）',
       },
       // bestTile は今は同期されていない（AUDIT 2章）。ここで max に足す
       sync: { 'kusoge.n59049.best': 'max', 'kusoge.n59049.bestTile': 'max', 'kusoge.n59049.state': 'newest' },
