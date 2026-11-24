@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>いろあわせカード工房</title>
+<meta name="theme-color" content="#14243d">
+<meta name="description" content="糸の4色と数字を合わせて、手札を先に使い切るカードゲーム。とりかえ・のぞき見・からまり・ふた針・まもり糸・染め直しの特別札つき。CPUと2〜4人、強さは3段階。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="いろあわせカード工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* いろあわせカード工房: a sewing-workshop cutting mat. Cards keep their own thread colours in both themes; the mat and the room follow the light / dark theme.
+   --kb-* are the shared tokens re-tinted to workshop navy and brass; --cc-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0f1a2e; --kb-surface: #182742; --kb-surface-2: #1f3253; --kb-sunken: #0b1424; --kb-line: #33496f;
+  --kb-ink: #f2f5fb; --kb-dim: #aab9d3;
+  --kb-accent: #ffc14d; --kb-accent-ink: #2b1d00; --kb-accent-text: #ffd078; --kb-accent-soft: rgba(255, 193, 77, .16);
+  --kb-scrim: rgba(5, 10, 20, .8); --kb-toast-bg: rgba(9, 16, 30, .95); --kb-focus: #ffd98a;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --cc-mat: #1d4c5c; --cc-mat2: #163b49; --cc-grid: rgba(255, 255, 255, .07); --cc-rail: #0a1626; --cc-rim: rgba(255, 193, 77, .3);
+  --cc-panel: rgba(220, 235, 255, .06); --cc-line: rgba(190, 215, 255, .16); --cc-card: linear-gradient(#1b2d4d, #13223c);
+  --cc-go: linear-gradient(#ffd27a, #f0a93a); --cc-go-ink: #2b1d00; --cc-go-shadow: #94620f;
+  --cc-key: linear-gradient(#27406a, #1c3254); --cc-key-shadow: #08111f;
+  --cc-title: linear-gradient(90deg, #ffd98a, #8fd3ff 55%, #ff9aa8);
+  --cc-bad: #ff8d7d; --cc-ok: #6fe3b0;
+  --cc-paper: #fffaf0;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #eef2f8; --kb-surface: #ffffff; --kb-surface-2: #f3f6fb; --kb-sunken: #e0e7f1; --kb-line: #c3cfe2;
+    --kb-ink: #15233b; --kb-dim: #4b5f80;
+    --kb-accent: #b8730a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5300; --kb-accent-soft: rgba(184, 115, 10, .12);
+    --kb-scrim: rgba(21, 35, 59, .45); --kb-toast-bg: rgba(21, 35, 59, .95); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(21, 35, 59, .2);
+    --cc-mat: #6fb5a8; --cc-mat2: #5aa396; --cc-grid: rgba(255, 255, 255, .28); --cc-rail: #2d5a64; --cc-rim: rgba(255, 255, 255, .55);
+    --cc-panel: rgba(21, 35, 59, .05); --cc-line: #cdd8ea; --cc-card: linear-gradient(#ffffff, #f3f6fb);
+    --cc-go: linear-gradient(#e0a02f, #b8730a); --cc-go-ink: #ffffff; --cc-go-shadow: #7a4b05;
+    --cc-key: linear-gradient(#ffffff, #eef2f9); --cc-key-shadow: #b6c4dc;
+    --cc-title: linear-gradient(90deg, #8a5300, #1f5fae 55%, #b83a52);
+    --cc-bad: #c43b27; --cc-ok: #0f8a5c;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #eef2f8; --kb-surface: #ffffff; --kb-surface-2: #f3f6fb; --kb-sunken: #e0e7f1; --kb-line: #c3cfe2;
+  --kb-ink: #15233b; --kb-dim: #4b5f80;
+  --kb-accent: #b8730a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5300; --kb-accent-soft: rgba(184, 115, 10, .12);
+  --kb-scrim: rgba(21, 35, 59, .45); --kb-toast-bg: rgba(21, 35, 59, .95); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(21, 35, 59, .2);
+  --cc-mat: #6fb5a8; --cc-mat2: #5aa396; --cc-grid: rgba(255, 255, 255, .28); --cc-rail: #2d5a64; --cc-rim: rgba(255, 255, 255, .55);
+  --cc-panel: rgba(21, 35, 59, .05); --cc-line: #cdd8ea; --cc-card: linear-gradient(#ffffff, #f3f6fb);
+  --cc-go: linear-gradient(#e0a02f, #b8730a); --cc-go-ink: #ffffff; --cc-go-shadow: #7a4b05;
+  --cc-key: linear-gradient(#ffffff, #eef2f9); --cc-key-shadow: #b6c4dc;
+  --cc-title: linear-gradient(90deg, #8a5300, #1f5fae 55%, #b83a52);
+  --cc-bad: #c43b27; --cc-ok: #0f8a5c;
+  --cc-paper: #fffaf0;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 62%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 8px 0; max-width: 1100px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400; font-size: clamp(15px, 4.7vw, 20px); letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--cc-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--cc-line); background: var(--cc-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.back:focus-visible, .icon:focus-visible, .btn:focus-visible, .opt:focus-visible, .tog:focus-visible, .act:focus-visible, .cd:focus-visible, #deck:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.info { display: flex; align-items: center; gap: 4px; margin: 1px 0 3px; overflow: hidden; }
+.chip { flex: none; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--cc-panel); border: 1px solid var(--cc-line); color: var(--kb-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip.mode { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.turn { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.turn.you { background: var(--kb-accent-soft); border-color: var(--kb-accent); color: var(--kb-accent-text); }
+.chip.acc { margin-left: auto; color: var(--kb-accent-text); background: var(--kb-accent-soft); border-color: transparent; }
+.chip.prac { color: var(--cc-ok); }
+
+/* the mat */
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 1100px; margin: 0 auto; box-sizing: border-box; padding: 0 8px 6px; gap: 5px; }
+#table { position: relative; flex: 1 1 auto; min-height: 120px; border-radius: 22px; overflow: hidden; touch-action: none;
+  background: linear-gradient(var(--cc-grid) 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(90deg, var(--cc-grid) 1px, transparent 1px) 0 0 / 28px 28px, radial-gradient(120% 90% at 50% 40%, var(--cc-mat) 0%, var(--cc-mat2) 100%);
+  box-shadow: inset 0 0 0 3px var(--cc-rail), inset 0 0 0 4px var(--cc-rim), inset 0 8px 30px rgba(0, 0, 0, .3); }
+#table.mine::after { content: ""; position: absolute; inset: 0; border-radius: 22px; pointer-events: none; box-shadow: inset 0 0 0 3px var(--kb-accent), inset 0 -18px 28px -10px rgba(255, 193, 77, .35); animation: mine 1.6s ease-in-out infinite; z-index: 5; }
+#status { flex: none; min-height: 34px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 3px 10px; border-radius: 14px; background: var(--cc-panel); border: 1px solid var(--cc-line); font-size: 13px; font-weight: 800; text-align: center; line-height: 1.3; color: var(--kb-ink); }
+#status.you { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+#ctl { flex: none; display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; min-height: 48px; }
+#ctl[hidden] { display: none; }
+.act { flex: 1 1 0; min-width: 0; max-width: 190px; min-height: 48px; box-sizing: border-box; border-radius: 15px; border: 1px solid var(--cc-line); background: var(--cc-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--cc-key-shadow); font: 800 14px var(--kb-font-body); line-height: 1.15; padding: 4px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; touch-action: manipulation; }
+.act small { font-size: 10.5px; font-weight: 500; opacity: .85; }
+.act:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--cc-key-shadow); }
+.act.go { background: var(--cc-go); color: var(--cc-go-ink); border-color: transparent; box-shadow: 0 3px 0 var(--cc-go-shadow); font-size: 15px; }
+.act.danger { border-color: var(--cc-bad); color: var(--cc-bad); }
+.act:disabled { opacity: .42; cursor: default; box-shadow: none; }
+.act.pulse { animation: pulse 1.1s ease-in-out infinite; }
+.act .sw { display: inline-flex; align-items: center; gap: 5px; }
+.act .sw svg { width: 18px; height: 18px; flex: none; }
+.act.col { color: #fff; border-color: transparent; text-shadow: 0 1px 1px rgba(0, 0, 0, .35); }
+.act.c0 { background: #d6455d; box-shadow: 0 3px 0 #8f1f36; } .act.c1 { background: #2f6fd0; box-shadow: 0 3px 0 #173d85; }
+.act.c2 { background: #2f9e5b; box-shadow: 0 3px 0 #17623a; } .act.c3 { background: #eab12c; color: #3b2600; text-shadow: none; box-shadow: 0 3px 0 #8a5d05; }
+
+/* the centre: direction ring, piles, colour badge */
+#ringw { position: absolute; left: 0; top: 0; pointer-events: none; transition: transform .5s cubic-bezier(.3, 1.4, .5, 1); }
+#ringw.rev { transform: scaleX(-1); }
+#ring { width: 100%; height: 100%; overflow: visible; }
+#ring .spin { transform-origin: 0 0; animation: spin 16s linear infinite; }
+#ring .arc { fill: none; stroke: var(--rc, #fff); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 3.2 3.4; opacity: .8; transition: stroke .4s; }
+#ring .head { fill: var(--rc, #fff); opacity: .95; transition: fill .4s; }
+#ringw.flip #ring .spin { animation-duration: 1.2s; }
+#deck { position: absolute; left: 0; top: 0; margin: 0; padding: 0; border: 0; background: none; cursor: default; }
+#deck .st { position: absolute; left: 0; top: 0; width: var(--cw); height: calc(var(--cw) * 1.4); border-radius: calc(var(--cw) * .1); background-size: 100% 100%; box-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 3px 8px rgba(0, 0, 0, .25); }
+#deck .cnt { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 999px; background: rgba(6, 14, 28, .78); color: #fff; font: 800 11px var(--kb-font-body); font-variant-numeric: tabular-nums; z-index: 2; }
+#deck.tap { cursor: pointer; }
+#deck.tap .st:nth-of-type(3) { animation: glow 1s ease-in-out infinite; }
+#badge { position: absolute; left: 0; top: 0; display: grid; place-items: center; border-radius: 50%; color: #fff; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .4); transition: background .35s, transform .35s; pointer-events: none; z-index: 40; }
+#badge svg { width: 62%; height: 62%; fill: currentColor; }
+#badge.c3 { color: #3b2600; }
+.seat { position: absolute; display: flex; align-items: center; gap: 5px; box-sizing: border-box; padding: 2px 8px 2px 3px; border-radius: 999px; background: rgba(6, 14, 28, .62); border: 1.5px solid transparent; color: #f2f5fb; font-size: 11.5px; font-weight: 800; white-space: nowrap; z-index: 30; max-width: 100%; transform: translateX(-50%); transition: border-color .2s, background .2s; }
+.seat.on { border-color: #ffc14d; background: rgba(255, 193, 77, .3); box-shadow: 0 0 14px rgba(255, 193, 77, .55); animation: bob 1.1s ease-in-out infinite; }
+.seat.me { transform: none; } .seat.me.on { animation: none; }
+.seat .av { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--c, #6b8f82); color: #fff; font: 800 12px var(--kb-font-body); }
+.seat b { overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; }
+.seat .n { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: #fff; color: #15233b; font: 800 11px var(--kb-font-body); text-align: center; font-variant-numeric: tabular-nums; }
+.seat .ward { flex: none; width: 15px; height: 15px; color: #8fe3ff; }
+.seat .last { flex: none; padding: 0 6px; border-radius: 9px; background: #ff6f86; color: #fff; font: 800 10px var(--kb-font-body); }
+.seat .last.warn { background: #ffb02e; color: #2b1d00; animation: pulse2 .9s ease-in-out infinite; }
+.bubble { max-width: 70%; overflow: hidden; text-overflow: ellipsis; position: absolute; transform: translate(-50%, 0); padding: 2px 9px; border-radius: 10px; background: #fff; color: #15233b; font-size: 11.5px; font-weight: 800; white-space: nowrap; z-index: 62; pointer-events: none; animation: bub .25s ease-out; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+.bubble.hot { background: #ffc14d; } .bubble.bad { background: #ff8d7d; } .bubble.ok { background: #8fe3b8; }
+.banner { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 70; pointer-events: none; font: 400 clamp(22px, 7vw, 40px) var(--kb-font-display); color: #fff6d6; text-shadow: 0 3px 0 #8c5a0f, 0 0 18px rgba(255, 193, 77, .8); white-space: nowrap; animation: banner 1.2s ease-out forwards; }
+#peekBox { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 75; max-width: calc(100% - 20px); box-sizing: border-box; padding: 8px 10px 10px; border-radius: 16px; background: var(--cc-card); border: 1px solid var(--cc-line); box-shadow: var(--kb-shadow); text-align: center; color: var(--kb-ink); animation: rise .25s ease-out; }
+#peekBox b { display: block; font-size: 12.5px; margin-bottom: 6px; }
+#peekBox .row { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.mini { position: relative; width: var(--mw, 38px); height: calc(var(--mw, 38px) * 1.4); --cw: var(--mw, 38px); flex: none; border-radius: calc(var(--mw, 38px) * .1); background: var(--cc-paper); box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+
+/* cards: one element per card, moved by transform; the back and the face flip */
+.cd { position: absolute; left: 0; top: 0; width: var(--cw); height: calc(var(--cw) * 1.4); margin: 0; padding: 0; border: 0; background: none; transform-origin: 50% 50%; will-change: transform; transition: transform .42s cubic-bezier(.22, .8, .3, 1), opacity .25s; transition-delay: var(--dl, 0s); perspective: 700px; }
+.cd.nt, #table.inst .cd, #table.inst .cd .fl { transition: none !important; }
+.cd.tap { cursor: pointer; }
+.cd .fl { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .34s ease; transition-delay: var(--dl, 0s); }
+.cd.up .fl { transform: rotateY(180deg); }
+.cd .fc { position: absolute; inset: 0; border-radius: calc(var(--cw) * .1); backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 3px 8px rgba(0, 0, 0, .22); }
+.cd .back { background-color: #26407a; background-size: 100% 100%; }
+.cd .face { transform: rotateY(180deg); background: var(--cc-paper); }
+.cd.hid { opacity: 0; pointer-events: none; }
+.cd.dim .fc { filter: brightness(.6) saturate(.7); }
+.cd.sel .face { box-shadow: 0 0 0 2px var(--kb-accent), 0 0 14px 2px var(--kb-accent); }
+.cd.hl .fc { animation: glow 1s ease-in-out infinite; }
+.cd.bad { animation: shake .3s; }
+.cf { position: absolute; inset: calc(var(--cw) * .04); border-radius: calc(var(--cw) * .075); background: var(--cm, #888); color: var(--ci, #fff); overflow: hidden; font-family: var(--kb-font-display), "M PLUS Rounded 1c", sans-serif; }
+.cf.c0 { --cm: #d6455d; --cd: #8f1f36; --ci: #fff; } .cf.c1 { --cm: #2f6fd0; --cd: #173d85; --ci: #fff; }
+.cf.c2 { --cm: #2f9e5b; --cd: #17623a; --ci: #fff; } .cf.c3 { --cm: #eab12c; --cd: #8a5d05; --ci: #3b2600; }
+.cf.dye { --cm: #2a3350; --cd: #2a3350; --ci: #fff; }
+.cf::before { content: ""; position: absolute; inset: calc(var(--cw) * .035); border: calc(var(--cw) * .022) dashed currentColor; opacity: .6; border-radius: calc(var(--cw) * .05); pointer-events: none; }
+.cf .mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 66%; height: 56%; border-radius: 50%; background: rgba(255, 255, 255, .95); color: var(--cd); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.cf .num { font-size: calc(var(--cw) * .5); line-height: 1; margin-top: calc(var(--cw) * -.01); }
+.cf .rv { width: calc(var(--cw) * .17); height: calc(var(--cw) * .17); margin-top: calc(var(--cw) * -.01); }
+.cf .ic { width: calc(var(--cw) * .44); height: calc(var(--cw) * .44); }
+.cf .dr { width: calc(var(--cw) * .46); height: calc(var(--cw) * .46); }
+.cf.dye .mid { background: rgba(255, 255, 255, .96); }
+.cf .ix { position: absolute; left: 7%; top: 4%; display: flex; flex-direction: column; align-items: center; line-height: 1; width: 22%; font-style: normal; }
+.cf .ix.br { left: auto; right: 7%; top: auto; bottom: 4%; transform: rotate(180deg); }
+.cf .ix b { font-size: calc(var(--cw) * .21); font-weight: 400; }
+.cf .ix .su { width: calc(var(--cw) * .16); height: calc(var(--cw) * .16); margin-top: calc(var(--cw) * .01); }
+.cf .wm { position: absolute; right: -8%; bottom: -6%; opacity: .16; pointer-events: none; }
+.cf .wm .sh { width: calc(var(--cw) * .62); height: calc(var(--cw) * .62); }
+.cf .lb { position: absolute; left: 4%; right: 4%; bottom: calc(var(--cw) * .1); text-align: center; font-size: calc(var(--cw) * .12); letter-spacing: .02em; white-space: nowrap; font-family: var(--kb-font-body); font-weight: 800; }
+.cf.a .mid, .cf.dye .mid { top: 46%; height: 50%; }
+.cf.a .ix.br { display: none; }
+.cf.dye .lb { color: #fff; }
+
+.hand-tag { position: absolute; z-index: 3; pointer-events: none; font-size: 10.5px; font-weight: 800; color: rgba(255, 255, 255, .85); text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .22s ease-out; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.panel { width: 100%; max-width: 440px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--cc-card); border: 1px solid var(--cc-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); animation: rise .25s ease-out; }
+.panel > * { flex: none; }
+.panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel h2.logo { background: var(--cc-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 25px; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--cc-go); color: var(--cc-go-ink); box-shadow: 0 3px 0 var(--cc-go-shadow); font: 800 16px var(--kb-font-body); text-decoration: none; line-height: 1.2; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--cc-go-shadow); }
+.btn.sub { background: var(--cc-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--cc-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.opts { text-align: left; }
+.og { margin: 8px 0 0; }
+.og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--cc-panel); border: 1px solid var(--cc-line); }
+.opt { flex: 1; min-width: 0; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; line-height: 1.2; }
+.opt small { display: block; font-size: 10.5px; font-weight: 500; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.tog { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 6px; padding: 4px 10px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--cc-line); background: var(--cc-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); cursor: pointer; text-align: left; }
+.tog span { flex: 1; } .tog small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.tog i { flex: none; width: 40px; height: 24px; border-radius: 12px; background: var(--kb-line); position: relative; transition: background .15s; }
+.tog i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tog[aria-checked="true"] i { background: var(--kb-accent); } .tog[aria-checked="true"] i::after { transform: translateX(16px); }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; box-sizing: border-box; padding: 6px 12px; border-radius: 16px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; text-align: left; }
+.qm b { display: block; font-size: 15px; } .qm small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.gdesc { margin: 8px 0 0; font-size: 12.5px; font-weight: 500; color: var(--kb-ink); line-height: 1.5; }
+.gbest { margin: 4px 0 0; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
+.rank { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rank li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; background: var(--cc-panel); border: 1px solid var(--cc-line); font-size: 13.5px; font-weight: 800; text-align: left; }
+.rank li.me { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.rank li .no { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-surface); color: var(--kb-accent-text); font: 400 14px var(--kb-font-display); }
+.rank li .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank li .sc { flex: none; font-size: 12px; color: var(--kb-dim); font-variant-numeric: tabular-nums; }
+.big { font-family: var(--kb-font-display); font-size: 34px; line-height: 1.1; color: var(--kb-ink); }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.howto { max-width: 460px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); }
+.howto li { margin: 3px 0; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.kinds { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.kinds .k { display: flex; gap: 10px; align-items: center; padding: 5px 6px; border-radius: 12px; background: var(--cc-panel); border: 1px solid var(--cc-line); }
+.kinds .k .mini { --mw: 40px; }
+.kinds .k div { font-size: 12.5px; line-height: 1.45; color: var(--kb-ink); } .kinds .k b { color: var(--kb-accent-text); }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--cc-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--cc-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
+body.thumb h1, body.thumb .icon, body.thumb .hrow .back, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #ctl, body.thumb #status, body.thumb .info { display: none !important; }
+
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes shake { 20%, 60% { margin-left: -5px; } 40%, 80% { margin-left: 5px; } }
+@keyframes glow { 50% { box-shadow: 0 0 0 2px #ffc14d, 0 0 16px 4px rgba(255, 193, 77, .85); } }
+@keyframes pulse { 50% { box-shadow: 0 3px 0 var(--cc-go-shadow), 0 0 0 4px rgba(255, 193, 77, .45); } }
+@keyframes pulse2 { 50% { transform: scale(1.12); } }
+@keyframes mine { 50% { opacity: .45; } }
+@keyframes bob { 50% { transform: translateX(-50%) translateY(2px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bub { from { transform: translate(-50%, 6px) scale(.8); opacity: 0; } }
+@keyframes banner { 0% { transform: translate(-50%, -50%) scale(.6); opacity: 0; } 18% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; } 30% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { transform: translate(-50%, -70%) scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cd, .cd .fl { transition-duration: .01s !important; } .banner, .panel, .overlay { animation: none; } .banner { opacity: 1; } .cd.hl .fc, .act.pulse, #ring .spin, .seat.on, #table.mine::after { animation: none; } }
+@media (max-height: 600px) { .panel { padding: 10px 12px 8px; } .panel h2.logo { font-size: 22px; } .btn { min-height: 46px; margin-top: 6px; } .og { margin-top: 5px; } }
+@media (max-width: 379px) { h1 { visibility: hidden; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  header { padding-top: 0; } .info { margin: 0 0 2px; }
+  .panel { max-width: 700px; } .howto { max-width: 720px; }
+  .act { min-height: 44px; } #ctl { min-height: 44px; } #status { min-height: 30px; padding: 1px 8px; font-size: 12.5px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <h1 data-i18n>いろあわせカード工房</h1>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="info">
+      <span class="chip mode" id="iGame"></span>
+      <span class="chip turn" id="iTurn"></span>
+      <span class="chip prac" id="iPrac" hidden></span>
+      <span class="chip acc" id="iBest"></span>
+    </div>
+  </header>
+  <div id="main">
+    <div id="table" role="application" aria-label="カードの机" data-i18n-attr="aria-label"></div>
+    <div id="status" role="status" aria-live="polite"></div>
+    <div id="ctl"></div>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="panel">
+    <h2 class="logo" id="tTitle" data-i18n>いろあわせカード工房</h2>
+    <div class="scroll opts">
+      <button class="qm" id="tQuick" type="button"><span><b data-i18n>クイックマッチ</b><small id="tQuickSub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <button class="qm" id="tResume" type="button" hidden style="margin-top:6px"><span><b data-i18n>つづきから</b><small id="tResumeSub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <p class="gdesc" id="tDesc"></p>
+      <p class="gbest" id="tBest"></p>
+      <div id="tOpts"></div>
+    </div>
+    <div class="foot">
+      <button class="btn" id="tPlay" type="button" data-i18n>あそぶ</button>
+      <div class="row2"><button class="btn sub" id="tPrac" type="button" data-i18n>れんしゅう</button><button class="btn sub" id="tPass" type="button" data-i18n>ふたりで（1台）</button></div>
+      <div class="row2"><button class="btn sub" id="tTut" type="button" data-i18n>チュートリアル</button><button class="btn sub" id="tHow" type="button" data-i18n>ルール</button></div>
+      <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="panel">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <p id="rSub"></p>
+      <ol class="rank" id="rRank"></ol>
+      <div class="big" id="rPts"></div>
+      <div id="rNew" class="newrec" hidden></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rAgain" type="button" data-i18n>もう一度</button>
+    <div class="row2"><button class="btn sub" id="rTitleBtn" type="button" data-i18n>タイトルへ</button><button class="btn sub" id="rHow" type="button" data-i18n>ルール</button></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="ovRound" hidden role="dialog" aria-modal="true" aria-labelledby="roTitle">
+  <div class="panel">
+    <h2 id="roTitle"></h2>
+    <div class="scroll">
+      <p id="roSub"></p>
+      <ol class="rank" id="roRank"></ol>
+    </div>
+    <button class="btn" id="roNext" type="button" data-i18n>次のラウンド</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovPass" hidden role="dialog" aria-modal="true" aria-labelledby="paTitle">
+  <div class="panel">
+    <h2 id="paTitle"></h2>
+    <p id="paSub"></p>
+    <button class="btn" id="paGo" type="button" data-i18n>手札を見る</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle"></h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<script src="art.js"></script>
+<script src="engine.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// いろあわせカード工房 — a shedding card game: match the thread colour or the number, use the six workshop cards, and empty your hand first.
+// The rules and the CPUs live in engine.js (pure, seeded, runs in node too); this file is the table: cards that deal, fly to the pile and
+// slide into your hand, a direction ring, tap or drag to play, the title, rules, the tutorial, results, saves.
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  "いろあわせカード工房": "Color Match Cards",
+  "カードの机": "Card table",
+  "伏せたカード": "Face-down card",
+  "{n}枚": "{n} cards",
+  "{n}点": "{n} pts",
+  "とりかえ": "Swap", "のぞき見": "Peek", "からまり": "Tangle", "ふた針": "Double", "まもり糸": "Shield", "染め直し": "Re-dye",
+  "数字 {n}": "number {n}",
+  "あなたの番": "Your turn",
+  "おわり": "Over",
+  "{n}の番": "{n}'s turn",
+  "{n}の番です…": "{n}'s turn…",
+  "{n}の番です": "{n}'s turn",
+  "あなたの番：{c}か{t}の札を出そう": "Your turn: play {c} or {t}",
+  "あなたの番：{c}の札を出そう": "Your turn: play a {c} card",
+  "出せる札がありません。山札をひこう": "No playable card. Draw from the deck.",
+  "ひいた札が出せます。出すか、このまま終わろう": "You can play the card you drew, or end your turn.",
+  "{n}が「ラスト！」を言い忘れた！ つかまえよう": "{n} forgot to call \"Last!\" Catch them!",
+  "残り2枚。先に「ラスト！」を宣言しよう": "Two cards left. Call \"Last!\" first.",
+  "ラスト！": "Last!",
+  "つかまえた！": "Caught!",
+  "つかまえた！（+2枚）": "Catch! (+2 cards)",
+  "ひく": "Draw",
+  "山札": "Deck",
+  "出さずに終わる": "Keep it",
+  "ヒント": "Hint",
+  "やめる": "Cancel",
+  "{c}にする": "Pick {c}",
+  "{n}と入れかえ": "Swap with {n}",
+  "{n}の手札を見る": "Peek at {n}",
+  "{n}の手札": "{n}'s hand",
+  "みる": "Look",
+  "次の人": "next",
+  "前の人": "previous",
+  "いまの色：{c}": "Current color: {c}",
+  "ぐるり！向きが逆に": "Reverse!",
+  "とりかえ！": "Swap!",
+  "{a}と{b}が入れかえ": "{a} and {b} swapped hands",
+  "のぞき見！": "Peek!",
+  "{n}が{m}の手札をのぞいた": "{n} peeked at {m}'s hand",
+  "からまり！ +2枚": "Tangled! +2",
+  "ふた針！もう一度": "Double! Go again",
+  "まもり糸！": "Shield up!",
+  "はね返した！": "Blocked!",
+  "染め直し！{c}": "Re-dyed! {c}",
+  "パス": "Pass",
+  "あがり！": "Out!",
+  "{n}が{m}点": "{n} scores {m}",
+  "{n}の勝ち": "{n} wins",
+  "あなたの勝ち": "You win",
+  "この色・数字は出せません": "That one does not match",
+  "いまの色（{c}）か同じ数字・同じ種類だけ出せます": "Only the current color ({c}), the same number or the same kind can be played",
+  "手札を見る": "Show my hand",
+  "画面を{n}さんに渡して、準備ができたらタップ": "Hand the screen to {n}, then tap when ready",
+  "{n}さんの番": "{n}'s turn",
+  "ひとり目": "Player 1",
+  "ふたり目": "Player 2",
+  "プレイヤー1": "Player 1",
+  "プレイヤー2": "Player 2",
+  "次のラウンド": "Next round",
+  "ラウンド {r}/{m} 終了": "Round {r}/{m} done",
+  "ラウンド {r}/{m}": "Round {r}/{m}",
+  "{n}が{p}点もらった": "{n} wins {p} pts",
+  "合計点": "Total",
+  "1位！おめでとう": "1st place! Congratulations",
+  "{n}位": "{n}",
+  "{n}人": "{n} players",
+  "はじめての勝ち！": "First win!",
+  "れんしゅうなので記録は残りません": "Practice games are not recorded",
+  "ふたりで遊ぶ対戦は記録に入りません": "Pass-and-play games are not recorded",
+  "チュートリアルは記録に入りません": "The tutorial is not recorded",
+  "勝つと、CPUの強さに応じて★がもらえます（よわい1・ふつう2・つよい3）。10ラウンドは3倍": "Win to earn ★ by CPU strength (Easy 1, Normal 2, Hard 3). A 10-round match pays triple",
+  "次はきっと勝てる！": "You will get it next time!",
+  "ルール": "Rules",
+  "はじめに": "Welcome",
+  "人数": "Players",
+  "CPUの強さ": "CPU strength",
+  "よわい": "Easy", "ふつう": "Normal", "つよい": "Hard",
+  "あそびかた": "Mode",
+  "1ゲーム": "Single game",
+  "10ラウンド": "10 rounds",
+  "{n}ラウンド": "{n} rounds",
+  "CPUをはやく進める": "Speed up the CPUs",
+  "CPUの待ち時間を短くします": "Shorter waits between CPU moves",
+  "あそぶ": "Play",
+  "れんしゅう": "Practice",
+  "ふたりで（1台）": "2 players (1 device)",
+  "チュートリアル": "Tutorial",
+  "ふたりで": "2 players",
+  "あきらめる": "Give up",
+  "タイトルへ": "Title",
+  "クイックマッチ": "Quick match",
+  "つづきから": "Resume",
+  "ゲーム一覧へ": "Back to games",
+  "もう一度": "Play again",
+  "言語 / Language": "Language",
+  "とじる": "Close",
+  "チュートリアルへ": "Start the tutorial",
+  "ゲーム一覧へ戻る": "Back to games",
+  "サウンド": "Sound",
+  "サウンド オン": "Sound on",
+  "サウンド オフ": "Sound off",
+  "メニュー": "Menu",
+  "ひとやすみ": "Paused",
+  "まだ記録がありません": "No record yet",
+  "{p}回あそんで{w}回勝ち": "Played {p}, won {w}",
+  "★ {n}": "★ {n}",
+  "いまの色は{c}、数字は{n}。同じ色か同じ数字の札が出せるよ。光っている札をタップ（ドラッグでもOK）": "The color is {c} and the number is {n}. Play a card of the same color or the same number. Tap a glowing card (dragging works too).",
+  "いまの色は{c}。同じ色か、同じ種類の札を出そう。光っている札をタップ": "The color is {c}. Play the same color or the same kind. Tap a glowing card.",
+  "出せる札がないときは、山札をタップ（または「ひく」ボタン）": "No playable card? Tap the deck (or the Draw button).",
+  "ひいた札が出せるなら、そのまま出せるよ": "If the card you drew can be played, play it right away.",
+  "手札が2枚になったら、先に「ラスト！」を押そう。忘れると2枚ひくことも": "With two cards left, press \"Last!\" first. Forget it and you may draw 2.",
+  "特別札は、出すと効きめが出るよ。とりかえ・のぞき見・からまり・ふた針・まもり糸・染め直し": "Special cards have effects when played: Swap, Peek, Tangle, Double, Shield and Re-dye.",
+  "手札を先に使い切ると勝ち！": "Be the first to empty your hand!",
+  "ヒント：{c}": "Hint: {c}",
+  "ヒント：山札をひこう": "Hint: draw from the deck",
+  "ヒント：出さずに終わる": "Hint: keep it and end your turn",
+  "つよいCPUの手は、光っている札です": "The strong CPU would play the glowing card",
+  "{n}枚": "{n} cards",
+  "あと{n}枚": "{n} left"
+} });
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.ColorCardsEngine, ART = window.ColorCardsArt;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'colorcards';
+const SAVE_KEY = 'kusoge.colorcards.save';   // records and settings (registry: per-field merge)
+const RUN_KEY = 'kusoge.colorcards.game';    // the unfinished game on this device (not synced)
+const HOWTO_KEY = 'kusoge.colorcards.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name, a) { if (A) A.sfx(name, a); }
+const rndSeed = () => (Math.floor(Math.random() * 4294967295) + 1) >>> 0;
+
+const NAMES = [L('あなた', 'You'), L('モカ', 'Mocha'), L('ココ', 'Coco'), L('ハル', 'Haru')];
+const AV = ['#e8a838', '#4f8fd6', '#d65f7a', '#7c6bd1'];
+const LV_NAME = { 1: T('よわい'), 2: T('ふつう'), 3: T('つよい') };
+const LV_PTS = { 1: 1, 2: 2, 3: 3 };
+const MATCH_ROUNDS = 10;
+const TUT_SEED = 20261124;
+const colName = k => (EN ? ART.COLORS[k].en : ART.COLORS[k].ja);
+const kindName = kind => T(ART.KIND[kind].ja);
+function cardLabel(c) {
+  const i = E.INFO[c];
+  if (i.kind === 'n') return colName(i.color) + ' ' + i.num;
+  if (i.kind === 'dye') return kindName('dye');
+  return colName(i.color) + ' ' + kindName(i.kind);
+}
+
+// ---------- save ----------
+function newSave() { return { v: 1, pts: 0, w: {}, stats: {}, set: { n: 3, level: 2, mode: 'quick', fast: 0 }, tut: 0 }; }
+function readSave() {
+  let o = null;
+  try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = newSave();
+  if (o && typeof o === 'object') {
+    s.pts = Math.max(0, Math.floor(Number(o.pts) || 0));
+    if (o.w && typeof o.w === 'object') for (const k of ['q', 'm']) if (o.w[k] && typeof o.w[k] === 'object') s.w[k] = { p: Math.max(0, Math.floor(Number(o.w[k].p) || 0)), w: Math.max(0, Math.floor(Number(o.w[k].w) || 0)) };
+    if (o.stats && typeof o.stats === 'object') for (const k of Object.keys(o.stats)) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0) s.stats[k] = v; }
+    if (o.set && typeof o.set === 'object') {
+      s.set.n = clamp(Math.round(o.set.n) || 3, 2, 4); s.set.level = clamp(Math.round(o.set.level) || 2, 1, 3);
+      s.set.mode = o.set.mode === 'match' ? 'match' : 'quick'; s.set.fast = o.set.fast ? 1 : 0;
+    }
+    s.tut = o.tut ? 1 : 0;
+  }
+  return s;
+}
+let save = readSave();
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
+const wRec = k => (save.w[k] = save.w[k] || { p: 0, w: 0 });
+const stat = k => Number(save.stats[k]) || 0;
+function bump(k, n) { save.stats[k] = stat(k) + (n === undefined ? 1 : n); }
+
+// =====================================================================================
+// the table: one DOM element per card, positioned by the layout; CSS transitions do the dealing, flying and sliding
+// =====================================================================================
+const tableEl = $('table');
+const tb = { W: 0, H: 0, cw: 44, els: new Map(), seats: new Map(), lay: null, pos: {} };
+document.body.insertAdjacentHTML('afterbegin', ART.sprite());
+tableEl.innerHTML = '<div id="ringw"><svg id="ring" viewBox="-50 -50 100 100" aria-hidden="true"><g class="spin"><path class="arc" d="M0 -42A42 42 0 0 1 36 -21"/><path class="arc" d="M0 42A42 42 0 0 1 -36 21"/><path class="head" d="M36 -21l-1 -8 8 4z" transform="rotate(8 36 -21)"/><path class="head" d="M-36 21l1 8 -8 -4z" transform="rotate(8 -36 21)"/></g></svg></div>' +
+  '<button id="deck" type="button" aria-label="山札" data-i18n-attr="aria-label" tabindex="-1"><span class="st"></span><span class="st"></span><span class="st"></span><span class="cnt"></span></button>' +
+  '<div id="badge" aria-hidden="true"></div>';
+const deckEl = $('deck'), ringW = $('ringw'), badgeEl = $('badge');
+tableEl.querySelectorAll('#deck .st').forEach(e => { e.style.backgroundImage = ART.backURL(); });
+function cardEl(c) {
+  let el = tb.els.get(c);
+  if (el) return el;
+  el = document.createElement('div');
+  el.className = 'cd hid nt'; el.dataset.c = c; el.setAttribute('role', 'img');
+  el.innerHTML = '<div class="fl"><div class="fc back"></div><div class="fc face">' + ART.faceHTML(c, T) + '</div></div>';
+  el.querySelector('.back').style.backgroundImage = ART.backURL();
+  tableEl.appendChild(el); tb.els.set(c, el);
+  return el;
+}
+function clearTable() {
+  tb.els.forEach(el => el.remove()); tb.els.clear();
+  tb.seats.forEach(el => el.remove()); tb.seats.clear();
+  tableEl.querySelectorAll('.bubble,.banner,#peekBox').forEach(el => el.remove());
+  deckEl.hidden = true; badgeEl.style.visibility = 'hidden'; ringW.style.visibility = 'hidden';
+}
+function measure() { const r = tableEl.getBoundingClientRect(); tb.W = Math.round(r.width); tb.H = Math.round(r.height); }
+const tf = (x, y, cw, ch, s, r) => 'translate(' + (x - cw / 2).toFixed(1) + 'px,' + (y - ch / 2).toFixed(1) + 'px) rotate(' + r + 'deg) scale(' + s + ')';
+const hash = n => { let h = (n * 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return ((h ^ (h >>> 13)) >>> 0) / 4294967296; };
+function bubble(x, y, text, cls) {
+  const el = document.createElement('div'); el.className = 'bubble' + (cls ? ' ' + cls : ''); el.textContent = text;
+  el.style.left = Math.round(clamp(x, 40, tb.W - 40)) + 'px'; el.style.top = Math.round(y) + 'px'; tableEl.appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
+function banner(text) {
+  tableEl.querySelectorAll('.banner').forEach(el => el.remove());
+  const el = document.createElement('div'); el.className = 'banner'; el.textContent = text; tableEl.appendChild(el);
+  setTimeout(() => el.remove(), 1250);
+}
+
+// ---------- state helpers ----------
+let S = null; // the game being played
+let cpuDelayMul = 1;
+const cpuWait = ms => Math.round(ms * cpuDelayMul * (save.set.fast ? 0.4 : 1));
+const isHuman = s => !!S && S.st.humans.indexOf(s) >= 0;
+const humanTurn = () => !!S && !S.over && !S.st.over && S.st.phase !== 'roundover' && isHuman(S.st.turn);
+function nameOf(s) {
+  if (S && S.mode === 'pass') return s === 0 ? T('プレイヤー1') : T('プレイヤー2');
+  return NAMES[s] || ('CPU' + s);
+}
+const viewerOf = () => (S && S.viewer >= 0 ? S.viewer : (S && S.base) || 0);
+const rel = s => (s - viewerOf() + S.st.n) % S.st.n;     // 0 = the seat shown at the bottom
+const seatAtRel = r => (r + viewerOf()) % S.st.n;
+
+// sorted hand (colour, then numbers, then special cards; the re-dye last) so that it reads like a fan of thread
+function sortHand(h) {
+  const key = c => { const i = E.INFO[c]; return i.kind === 'dye' ? 1000 + c : i.color * 100 + (i.kind === 'n' ? i.num : 20 + ['swap', 'peek', 'tangle', 'double', 'shield'].indexOf(i.kind)) + (c % 2) * 0.1; };
+  return h.slice().sort((a, b) => key(a) - key(b));
+}
+
+// ---------- the layout: where every card, seat and pile goes ----------
+const SO = 0.46; // scale of the rivals' cards
+function compute(st) {
+  const W = tb.W, H = tb.H, n = st.n, v = viewerOf(), pad = 8;
+  const mine = sortHand(st.hands[v]);
+  let cw = clamp(Math.min(78, W / 5.6), 30, 78), rows = 1;
+  for (; cw > 30; cw -= 2) {
+    const per = Math.max(1, Math.floor((W - 2 * pad - cw) / (cw * 0.36)) + 1);
+    rows = Math.min(4, Math.ceil(mine.length / per));
+    const need = 30 + cw * 1.4 * SO + 10 + cw * 1.4 * 1.0 + 12 + cw * 1.4 + (rows - 1) * cw * 1.4 * 0.46 + 12;
+    if (need <= H) break;
+  }
+  const ch = cw * 1.4, rowStep = ch * 0.46;
+  const per = Math.max(1, Math.floor((W - 2 * pad - cw) / (cw * 0.36)) + 1);
+  rows = Math.min(4, Math.ceil(mine.length / per));
+  const yb = H - 8 - ch / 2;                    // bottom row centre
+  const zoneTop = 30 + ch * SO + 8, zoneBot = yb - ch / 2 - (rows - 1) * rowStep - 14;
+  const cy = (zoneTop + zoneBot) / 2, cx = W / 2;
+  const lay = { cw, ch, cards: {}, seats: [], deck: { x: cx - cw * 0.62, y: cy }, disc: { x: cx + cw * 0.62, y: cy }, cy, cx, ring: Math.max(60, Math.min(W - 16, zoneBot - zoneTop + 8, cw * 4.8)) };
+  const myTurn = humanTurn() && S.viewer === st.turn && !S.dealing;
+  const drawn = st.phase === 'drawn';
+  const canTap = c => myTurn && !S.pend && (drawn ? c === st.drawn : E.playable(st, c));
+  // my hand
+  const base = Math.ceil(mine.length / rows) || 1; let i = 0;
+  for (let r = 0; r < rows; r++) {
+    const k = Math.min(base, mine.length - i), step = k > 1 ? Math.min(cw * 0.78, (W - 2 * pad - cw) / (k - 1)) : 0, x0 = cx - step * (k - 1) / 2;
+    for (let j = 0; j < k; j++, i++) {
+      const c = mine[i], tap = canTap(c), pend = S.pend && S.pend.c === c;
+      const cls = []; if (tap) cls.push('tap'); if (pend) cls.push('sel');
+      if (myTurn && !tap && !S.pend) cls.push('dim');
+      if (S.hl.indexOf(c) >= 0) cls.push('hl');
+      lay.cards[c] = { x: x0 + j * step, y: yb - (rows - 1 - r) * rowStep - (tap || pend ? ch * 0.13 : 0), s: 1, r: 0, up: S.viewer >= 0, z: 20 + i + r * 40, cls };
+    }
+  }
+  // rivals
+  const opps = n - 1, zw = W / opps;
+  for (let k = 1; k < n; k++) {
+    const s = seatAtRel(k), h = st.hands[s], x = zw * (k - 0.5), ow = cw * SO;
+    const step = h.length > 1 ? Math.min(ow * 0.55, (zw - 12 - ow) / (h.length - 1)) : 0, x0 = x - step * (h.length - 1) / 2;
+    h.forEach((c, j) => { lay.cards[c] = { x: x0 + j * step, y: 30 + ch * SO / 2, s: SO, r: 0, up: false, z: 5 + j, cls: [] }; });
+    lay.seats.push({ seat: s, x, y: 3, w: zw - 6, rel: k });
+    tb.pos[s] = { x, y: 34 };
+  }
+  tb.pos[v] = { x: cx, y: yb - ch * 0.9 };
+  lay.seats.push({ seat: v, me: true, x: 8, y: zoneBot - 24, rel: 0 });
+  // piles: the top four cards of the discard pile, a little untidy
+  const top = st.disc.slice(-4);
+  top.forEach((c, j) => { const k = top.length - 1 - j; lay.cards[c] = { x: lay.disc.x + (hash(c) - 0.5) * cw * (k ? 0.3 : 0.1), y: lay.disc.y + (hash(c + 7) - 0.5) * cw * (k ? 0.3 : 0.1), s: 1, r: (hash(c + 3) - 0.5) * (k ? 26 : 8), up: true, z: 10 + j, cls: [] }; });
+  return lay;
+}
+function render(lay, o) {
+  o = o || {};
+  tb.lay = lay;
+  if (o.instant) tableEl.classList.add('inst');
+  const cw = lay.cw, ch = lay.ch, st = S.st, stag = o.stagger || 0;
+  tableEl.style.setProperty('--cw', cw + 'px');
+  // deck, ring, colour badge
+  deckEl.hidden = false; ringW.style.visibility = ''; badgeEl.style.visibility = '';
+  deckEl.style.width = cw + 'px'; deckEl.style.height = ch + 'px';
+  deckEl.style.transform = 'translate(' + (lay.deck.x - cw / 2).toFixed(1) + 'px,' + (lay.deck.y - ch / 2).toFixed(1) + 'px)';
+  deckEl.style.setProperty('--cw', cw + 'px');
+  deckEl.querySelectorAll('.st').forEach((e, i) => { e.style.transform = 'translate(' + (i * 1.6) + 'px,' + (-i * 1.6) + 'px)'; });
+  deckEl.querySelector('.cnt').textContent = st.draw.length;
+  const canDraw = humanTurn() && S.viewer === st.turn && st.phase === 'play' && !S.dealing && !E.hasPlay(st, st.turn);
+  deckEl.classList.toggle('tap', canDraw); deckEl.tabIndex = canDraw ? 0 : -1;
+  deckEl.setAttribute('aria-label', T('山札') + ' ' + st.draw.length);
+  const rd = lay.ring; ringW.style.width = rd + 'px'; ringW.style.height = rd + 'px';
+  ringW.style.transform = ''; ringW.style.left = (lay.cx - rd / 2) + 'px'; ringW.style.top = (lay.cy - rd / 2) + 'px';
+  ringW.classList.toggle('rev', st.dir === -1);
+  ringW.style.setProperty('--rc', ART.COLORS[st.color].main);
+  const bd = Math.round(cw * 0.5);
+  badgeEl.style.width = bd + 'px'; badgeEl.style.height = bd + 'px';
+  badgeEl.style.transform = 'translate(' + Math.round(lay.disc.x + cw * 0.5) + 'px,' + Math.round(lay.disc.y - ch * 0.62) + 'px)';
+  badgeEl.style.background = ART.COLORS[st.color].main; badgeEl.className = 'c' + st.color;
+  badgeEl.innerHTML = '<svg viewBox="0 0 24 24"><use href="#cc-s' + st.color + '"/></svg>';
+  // cards
+  const seen = new Set();
+  for (const key of Object.keys(lay.cards)) {
+    const c = +key, p = lay.cards[key], el = cardEl(c);
+    seen.add(c);
+    if (el.classList.contains('hid') && !o.instant) { // new on the table: start from the deck, face down
+      el.classList.add('nt'); el.style.transform = tf(lay.deck.x, lay.deck.y, cw, ch, 1, 0); el.classList.remove('up'); void el.offsetWidth;
+    }
+    el.classList.remove('nt');
+    const dl = o.delay && o.delay[c] != null ? o.delay[c] * stag : 0;
+    el.style.setProperty('--dl', dl + 'ms');
+    el.style.transform = tf(p.x, p.y, cw, ch, p.s == null ? 1 : p.s, p.r || 0);
+    el.style.zIndex = p.z == null ? 1 : p.z;
+    el.classList.remove('hid');
+    el.classList.toggle('up', !!p.up);
+    for (const k of ['tap', 'sel', 'dim', 'hl']) el.classList.toggle(k, p.cls.indexOf(k) >= 0);
+    if (p.cls.indexOf('tap') >= 0) { el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button'); } else { el.removeAttribute('tabindex'); el.setAttribute('role', 'img'); }
+    el.setAttribute('aria-label', p.up ? cardLabel(c) : T('伏せたカード'));
+  }
+  tb.els.forEach((el, c) => { if (!seen.has(c)) { el.classList.add('hid'); el.classList.remove('tap', 'sel', 'hl'); el.removeAttribute('tabindex'); } });
+  // seats
+  const keys = new Set();
+  lay.seats.forEach(sd => {
+    const s = sd.seat; keys.add(s);
+    let el = tb.seats.get(s);
+    if (!el) { el = document.createElement('div'); tableEl.appendChild(el); tb.seats.set(s, el); }
+    const on = !st.over && st.phase !== 'roundover' && st.turn === s, len = st.hands[s].length;
+    el.className = 'seat' + (on ? ' on' : '') + (sd.me ? ' me' : '');
+    el.style.left = Math.round(sd.x) + 'px'; el.style.top = Math.round(sd.y) + 'px';
+    el.style.transform = sd.me ? 'none' : ''; if (sd.w) el.style.maxWidth = Math.round(sd.w) + 'px';
+    const ward = st.ward[s] ? '<svg class="ward" viewBox="0 0 24 24" aria-label="' + esc(kindName('shield')) + '"><use href="#cc-i-shield"/></svg>' : '';
+    const last = len === 1 ? '<span class="last' + (st.uncalled === s ? ' warn' : '') + '">' + (st.uncalled === s ? '!' : T('ラスト！')) + '</span>' : '';
+    el.innerHTML = '<span class="av" style="--c:' + AV[s % 4] + '">' + esc(sd.me && S.mode !== 'pass' ? L('あ', 'Y') : nameOf(s).charAt(0)) + '</span><b>' + esc(nameOf(s)) + '</b><span class="n">' + len + '</span>' + ward + last;
+  });
+  tb.seats.forEach((el, k) => { if (!keys.has(k)) { el.remove(); tb.seats.delete(k); } });
+  tableEl.classList.toggle('mine', humanTurn() && S.viewer === st.turn && !S.dealing);
+  if (o.instant) { void tableEl.offsetWidth; tableEl.classList.remove('inst'); }
+}
+function refresh(o) {
+  if (!S) return;
+  measure();
+  render(compute(S.st), o);
+  hud();
+}
+
+// =====================================================================================
+// status line, buttons, hud
+// =====================================================================================
+function topDesc(st) {
+  const t = E.topInfo(st);
+  return t.kind === 'n' ? T('数字 {n}', { n: t.num }) : t.kind === 'dye' ? '' : kindName(t.kind);
+}
+function statusInfo() {
+  const st = S.st;
+  if (S.note) return { text: S.note, you: false };
+  if (st.over) return { text: T('おわり'), you: false };
+  if (st.phase === 'roundover') return { text: T('ラウンド {r}/{m}', { r: st.round, m: st.match }), you: false };
+  const w = st.turn;
+  if (!isHuman(w)) return { text: T('{n}の番です…', { n: nameOf(w) }), you: false };
+  const mv = E.legal(st), c = colName(st.color), t = topDesc(st);
+  if (mv.some(m => m.t === 'catch')) return { text: T('{n}が「ラスト！」を言い忘れた！ つかまえよう', { n: nameOf(st.uncalled) }), you: true };
+  let base;
+  if (st.phase === 'drawn') base = T('ひいた札が出せます。出すか、このまま終わろう');
+  else if (!E.hasPlay(st, w)) base = T('出せる札がありません。山札をひこう');
+  else base = t ? T('あなたの番：{c}か{t}の札を出そう', { c, t }) : T('あなたの番：{c}の札を出そう', { c });
+  if (mv.some(m => m.t === 'call') && st.hands[w].length === 2) base = T('残り2枚。先に「ラスト！」を宣言しよう');
+  if (S.mode === 'pass') base = T('{n}の番です', { n: nameOf(w) }) + ' — ' + base.replace(/^(あなたの番：|Your turn: )/, '');
+  return { text: base, you: true };
+}
+function modeLabel() {
+  const st = S.st;
+  if (S.mode === 'tutorial') return T('チュートリアル');
+  if (S.mode === 'pass') return T('ふたりで') + (st.match ? ' · ' + T('ラウンド {r}/{m}', { r: st.round, m: st.match }) : '');
+  return st.match ? T('ラウンド {r}/{m}', { r: st.round, m: st.match }) : T('1ゲーム');
+}
+function coachText() {
+  if (!S || S.mode !== 'tutorial' || !humanTurn()) return '';
+  const st = S.st, mv = E.legal(st);
+  if (mv.some(m => m.t === 'call') && st.hands[0].length === 2) return T('手札が2枚になったら、先に「ラスト！」を押そう。忘れると2枚ひくことも');
+  if (st.phase === 'drawn') return T('ひいた札が出せるなら、そのまま出せるよ');
+  if (!E.hasPlay(st, 0)) return T('出せる札がないときは、山札をタップ（または「ひく」ボタン）');
+  if (!S.coached) return topDesc(st) ? T('いまの色は{c}、数字は{n}。同じ色か同じ数字の札が出せるよ。光っている札をタップ（ドラッグでもOK）', { c: colName(st.color), n: E.topInfo(st).num }) : T('いまの色は{c}。同じ色か、同じ種類の札を出そう。光っている札をタップ', { c: colName(st.color) });
+  if (st.hands[0].some(c => E.INFO[c].kind !== 'n')) return T('特別札は、出すと効きめが出るよ。とりかえ・のぞき見・からまり・ふた針・まもり糸・染め直し');
+  return T('手札を先に使い切ると勝ち！');
+}
+function hud() {
+  if (!S) return;
+  const st = S.st;
+  $('iGame').textContent = modeLabel();
+  const my = humanTurn() && S.viewer === st.turn;
+  const tn = $('iTurn');
+  tn.hidden = false;
+  tn.textContent = st.over ? T('おわり') : st.phase === 'roundover' ? T('ラウンド {r}/{m}', { r: st.round, m: st.match }) : my ? (S.mode === 'pass' ? T('{n}の番', { n: nameOf(st.turn) }) : T('あなたの番')) : T('{n}の番', { n: nameOf(st.turn) });
+  tn.classList.toggle('you', my);
+  $('iPrac').hidden = !(S.practice || S.mode === 'tutorial'); $('iPrac').textContent = S.mode === 'tutorial' ? T('チュートリアル') : T('れんしゅう');
+  if (S.mode === 'tutorial') $('iGame').textContent = T('ルール');
+  $('iBest').textContent = '★ ' + fmtN(save.pts);
+  const sv = statusInfo();
+  const co = coachText();
+  const stEl = $('status'); stEl.textContent = (S.hintText ? sv.text + ' 💡 ' + S.hintText : co ? sv.text + ' 💡 ' + co : sv.text); stEl.classList.toggle('you', !!sv.you);
+  $('live').textContent = sv.text;
+  controls();
+}
+function actList() {
+  const st = S.st; if (!S || S.over || !humanTurn() || S.viewer !== st.turn || S.dealing) return [];
+  const w = st.turn, mv = E.legal(st), list = [];
+  if (S.pend) { // choosing a colour or a target for the card just picked
+    const c = S.pend.c, i = E.INFO[c];
+    S.pend.moves.forEach(m => {
+      if (i.kind === 'dye') list.push({ id: 'col' + m.color, label: colName(m.color), cls: 'col c' + m.color, html: '<span class="sw"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#cc-s' + m.color + '"/></svg>' + esc(colName(m.color)) + '</span>', mv: m });
+      else if (i.kind === 'swap') { const nx = E.nextSeat(st, w, 1) === m.with; list.push({ id: 'with' + m.with, label: T('{n}と入れかえ', { n: nameOf(m.with) }), sub: (st.hands[m.with].length) + (EN ? ' cards' : '枚') + ' · ' + (E.neighbours(st, w).length > 1 ? (nx ? T('次の人') : T('前の人')) : ''), mv: m }); }
+      else if (i.kind === 'peek') list.push({ id: 'target' + m.target, label: T('{n}の手札を見る', { n: nameOf(m.target) }), sub: st.hands[m.target].length + (EN ? ' cards' : '枚'), mv: m });
+    });
+    list.push({ id: 'cancel', label: T('やめる'), cancel: true });
+    return list;
+  }
+  if (mv.some(m => m.t === 'catch')) list.push({ id: 'catch', label: T('つかまえた！'), sub: T('つかまえた！（+2枚）'), cls: 'go pulse', mv: { t: 'catch' } });
+  if (mv.some(m => m.t === 'call')) list.push({ id: 'call', label: T('ラスト！'), cls: st.hands[w].length === 2 ? 'go pulse' : 'go', mv: { t: 'call' } });
+  if (st.phase === 'drawn') list.push({ id: 'keep', label: T('出さずに終わる'), mv: { t: 'keep' } });
+  else if (!E.hasPlay(st, w)) list.push({ id: 'draw', label: T('ひく'), sub: T('山札'), cls: 'go pulse', mv: { t: 'draw' } });
+  if ((S.practice || S.mode === 'tutorial') && !st.over) list.push({ id: 'hint', label: T('ヒント'), hint: true });
+  return list;
+}
+function controls() {
+  const el = $('ctl');
+  const list = actList();
+  const key = list.map(b => b.id + '|' + b.label + '|' + (b.sub || '') + '|' + (b.cls || '')).join(';');
+  if (el.dataset.key === key) { el._list = list; return; }
+  el.dataset.key = key; el._list = list;
+  el.innerHTML = '';
+  list.forEach(b => {
+    const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'act ' + (b.cls || ''); bt.dataset.id = b.id;
+    bt.innerHTML = (b.html || esc(b.label)) + (b.sub ? '<small>' + esc(b.sub) + '</small>' : '');
+    bt.addEventListener('click', () => onButton(b.id));
+    el.appendChild(bt);
+  });
+  el.style.visibility = list.length ? '' : 'hidden';
+}
+function onButton(id) {
+  const b = ($('ctl')._list || []).find(x => x.id === id);
+  if (!b || !S) return;
+  sfx('tap');
+  if (b.cancel) { S.pend = null; refresh(); return; }
+  if (b.hint) { showHint(); return; }
+  if (b.mv) play(b.mv);
+}
+
+// =====================================================================================
+// the flow: loop → CPU moves → events → animation
+// =====================================================================================
+function loop() {
+  if (!S) return;
+  clearTimeout(S.timer);
+  const st = S.st;
+  if (S.menu || S.over) return;
+  if (st.over) { S.timer = setTimeout(finish, cpuWait(900)); return; }
+  if (st.phase === 'roundover') { showRound(); return; }
+  hud();
+  if (isHuman(st.turn)) {
+    if (S.mode === 'pass' && S.viewer !== st.turn) { coverPass(); return; }
+    S.waiting = true;
+    if (S.mode === 'tutorial' && !S.hl.length && !S.pend) autoHint();
+    return;
+  }
+  S.waiting = false;
+  S.timer = setTimeout(() => { if (S && !S.over && !S.menu) step(E.cpu(st)); }, cpuWait(780));
+}
+function step(mv) {
+  if (!S || S.over || !mv) return;
+  const st = S.st;
+  clearTimeout(S.timer);
+  const mover = st.turn;
+  const roundBefore = st.round;
+  const ev = E.apply(st, mv);
+  S.pend = null; S.hl = []; S.hintText = ''; S.note = '';
+  if (isHuman(mover) && mv.t === 'play') S.coached = true;
+  if (mv.t === 'next') { S.viewer = S.mode === 'pass' ? -1 : 0; }
+  const newDeal = st.round !== roundBefore;
+  if (newDeal) { clearTable(); measure(); render(compute(st), dealOpts(st)); hud(); startDeal(st); }
+  else { onEvents(ev, mover); refresh(); }
+  persist();
+  let extra = 0;
+  if (ev.some(e => e.t === 'peek' && isHuman(e.seat))) extra = 3300;
+  if (ev.some(e => e.t === 'rev' || e.t === 'swap')) extra += 450;
+  if (!newDeal) S.timer = setTimeout(loop, cpuWait(430) + extra);
+}
+function play(mv) {
+  if (!S || S.over || S.dealing) return false;
+  const st = S.st;
+  if (!humanTurn() || S.viewer !== st.turn) return false;
+  if (!E.legal(st).some(m => E.sameJSON(m, mv))) { sfx('error'); return false; }
+  clearTimeout(S.timer);
+  step(mv);
+  return true;
+}
+function flash(seat, text, cls) {
+  if (!S || !tb.pos[seat]) return;
+  bubble(tb.pos[seat].x, tb.pos[seat].y + (seat === viewerOf() ? 0 : 6), text, cls);
+}
+function onEvents(ev, mover) {
+  const st = S.st;
+  const me = viewerOf();
+  for (const e of ev) {
+    if (e.t === 'play') {
+      sfx(e.kind === 'n' ? 'move' : 'pop');
+      if (!isHuman(e.seat) || S.mode === 'pass') { if (e.kind !== 'n') flash(e.seat, kindName(e.kind), 'hot'); }
+    } else if (e.t === 'draw') {
+      sfx(e.cause === 'draw' ? 'tap' : 'fail');
+      if (e.cause === 'tangle') flash(e.seat, T('からまり！ +2枚'), 'bad');
+      else if (e.cause === 'catch') flash(e.seat, '+2', 'bad');
+    } else if (e.t === 'rev') {
+      banner(T('ぐるり！向きが逆に')); sfx('select');
+      ringW.classList.add('flip'); setTimeout(() => ringW.classList.remove('flip'), 700);
+    } else if (e.t === 'swap') {
+      banner(T('とりかえ！')); sfx('combo', 3);
+      flash(e.with, T('{a}と{b}が入れかえ', { a: nameOf(e.seat), b: nameOf(e.with) }).slice(0, 26), 'hot'); $('live').textContent = T('{a}と{b}が入れかえ', { a: nameOf(e.seat), b: nameOf(e.with) });
+    } else if (e.t === 'peek') {
+      sfx('select');
+      if (isHuman(e.seat) && (S.mode !== 'pass' || S.viewer === e.seat)) showReveal(e.target, e.cards);
+      else flash(e.seat, T('{n}が{m}の手札をのぞいた', { n: nameOf(e.seat), m: nameOf(e.target) }), 'hot');
+    } else if (e.t === 'block') {
+      sfx('ok'); flash(e.seat, T('はね返した！'), 'ok');
+    } else if (e.t === 'ward') {
+      sfx('ok'); flash(e.seat, T('まもり糸！'), 'ok');
+    } else if (e.t === 'double') {
+      sfx('coin'); flash(e.seat, T('ふた針！もう一度'), 'hot');
+    } else if (e.t === 'dye') {
+      flash(e.seat, T('染め直し！{c}', { c: colName(e.color) }), 'hot');
+    } else if (e.t === 'call') {
+      sfx('coin'); flash(e.seat, T('ラスト！'), 'hot');
+    } else if (e.t === 'catch') {
+      sfx('hit'); banner(T('つかまえた！')); flash(e.seat, T('つかまえた！（+2枚）'), 'bad');
+    } else if (e.t === 'pass') {
+      if (!isHuman(e.seat) || S.mode === 'pass') flash(e.seat, T('パス'));
+    } else if (e.t === 'win') {
+      banner(T('あがり！'));
+    } else if (e.t === 'reshuffle') { sfx('drop'); }
+  }
+  void me; void mover;
+}
+function showReveal(target, cards) {
+  const old = $('peekBox'); if (old) old.remove();
+  const box = document.createElement('div'); box.id = 'peekBox';
+  const mw = clamp(Math.floor((tb.W - 60) / Math.max(4, Math.min(cards.length, 8))) - 4, 26, 46);
+  box.style.setProperty('--mw', mw + 'px');
+  box.innerHTML = '<b>' + esc(T('{n}の手札', { n: nameOf(target) })) + '</b><div class="row">' + sortHand(cards).map(c => '<div class="mini" role="img" aria-label="' + esc(cardLabel(c)) + '">' + ART.faceHTML(c, T) + '</div>').join('') + '</div>';
+  tableEl.appendChild(box);
+  const kill = () => box.remove();
+  box.addEventListener('click', kill);
+  setTimeout(kill, 3200);
+}
+
+// ---------- hints ----------
+function planOf(mv) {
+  if (!mv) return [];
+  const steps = [];
+  const st = S.st, lg = E.legal(st);
+  if (lg.some(m => m.t === 'catch')) steps.push({ btn: 'catch' });
+  if (mv.t === 'draw') { steps.push({ btn: 'draw' }); return steps; }
+  if (mv.t === 'keep') { steps.push({ btn: 'keep' }); return steps; }
+  if (lg.some(m => m.t === 'call') && st.hands[st.turn].length === 2) steps.push({ btn: 'call' });
+  steps.push({ card: mv.c });
+  const same = lg.filter(m => m.t === 'play' && m.c === mv.c);
+  if (same.length > 1) steps.push({ btn: mv.color != null ? 'col' + mv.color : mv.with != null ? 'with' + mv.with : 'target' + mv.target });
+  return steps;
+}
+function hintMove() { const st = S.st; return humanTurn() ? E.hint(st) : null; }
+function autoHint() {
+  const m = hintMove(); if (!m) return;
+  S.hl = m.t === 'play' ? [m.c] : []; refresh();
+}
+function showHint() {
+  const m = hintMove(); if (!m || !S) return;
+  const st = S.st;
+  if (m.t === 'play') { S.hl = [m.c]; S.hintText = T('ヒント：{c}', { c: cardLabel(m.c) }); }
+  else if (m.t === 'draw') { S.hl = []; S.hintText = T('ヒント：山札をひこう'); }
+  else { S.hl = []; S.hintText = T('ヒント：出さずに終わる'); }
+  void st; refresh();
+}
+
+// ---------- input ----------
+function note(text) { if (!S) return; S.note = text; hud(); clearTimeout(S.noteT); S.noteT = setTimeout(() => { if (S) { S.note = ''; hud(); } }, 2200); }
+function reject(c) {
+  const el = tb.els.get(c); sfx('error');
+  if (el) { el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); setTimeout(() => el.classList.remove('bad'), 350); }
+  note(T('いまの色（{c}）か同じ数字・同じ種類だけ出せます', { c: colName(S.st.color) }));
+}
+function onCard(c) {
+  if (!S || S.over || S.menu || anyOverlay() || S.dealing) return;
+  const st = S.st;
+  if (!humanTurn() || S.viewer !== st.turn) { sfx('error'); return; }
+  if (S.pend) { if (S.pend.c === c) { S.pend = null; refresh(); } return; }
+  if (st.hands[st.turn].indexOf(c) < 0) return;
+  if (st.phase === 'drawn' ? c !== st.drawn : !E.playable(st, c)) { reject(c); return; }
+  const moves = E.legal(st).filter(m => m.t === 'play' && m.c === c);
+  if (moves.length === 1) { play(moves[0]); return; }
+  sfx('select'); S.pend = { c, moves }; refresh();
+}
+function onDeck() {
+  if (!S || S.over || S.menu || anyOverlay() || S.dealing) return;
+  const st = S.st;
+  if (humanTurn() && S.viewer === st.turn && st.phase === 'play' && !E.hasPlay(st, st.turn)) { sfx('tap'); play({ t: 'draw' }); }
+  else if (humanTurn()) { sfx('error'); if (st.phase === 'drawn') note(T('ひいた札が出せます。出すか、このまま終わろう')); else note(T('いまの色（{c}）か同じ数字・同じ種類だけ出せます', { c: colName(st.color) })); }
+}
+deckEl.addEventListener('click', onDeck);
+let drag = null;
+tableEl.addEventListener('pointerdown', e => {
+  const el = e.target.closest && e.target.closest('.cd'); if (!el || !S || S.over || anyOverlay()) return;
+  if (!el.classList.contains('tap')) { if (el.classList.contains('dim')) onCard(+el.dataset.c); return; }
+  drag = { el, id: +el.dataset.c, x0: e.clientX, y0: e.clientY, moved: false, pid: e.pointerId, tr: el.style.transform };
+  try { tableEl.setPointerCapture(e.pointerId); } catch (x) {}
+});
+tableEl.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+  if (!drag.moved && Math.hypot(dx, dy) > 9) { drag.moved = true; drag.el.classList.add('nt'); drag.el.style.zIndex = 200; }
+  if (drag.moved) drag.el.style.transform = drag.tr + ' translate(' + dx + 'px,' + dy + 'px) scale(1.06)';
+});
+function endDrag(e, cancel) {
+  if (!drag || (e && e.pointerId !== drag.pid)) return;
+  const d = drag; drag = null;
+  try { tableEl.releasePointerCapture(d.pid); } catch (x) {}
+  if (d.moved) {
+    d.el.classList.remove('nt');
+    const dy = e.clientY - d.y0, ch = tb.lay ? tb.lay.ch : 60;
+    d.el.style.transform = d.tr;
+    if (!cancel && dy < -ch * 0.5) onCard(d.id); else setTimeout(() => refresh(), 0);
+  } else if (!cancel) onCard(d.id);
+}
+tableEl.addEventListener('pointerup', e => endDrag(e, false));
+tableEl.addEventListener('pointercancel', e => endDrag(e, true));
+tableEl.addEventListener('keydown', e => {
+  const el = e.target.closest && e.target.closest('.cd.tap'); if (!el) return;
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCard(+el.dataset.c); }
+});
+deckEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onDeck(); } });
+
+// ---------- saving the unfinished game ----------
+function persist() {
+  if (!S || S.over) { store.del(RUN_KEY); return; }
+  store.set(RUN_KEY, JSON.stringify({ v: 1, st: S.st, mode: S.mode, practice: S.practice ? 1 : 0, ms: Math.round(S.ms + (Date.now() - S.t0)), coached: S.coached ? 1 : 0, at: Date.now() }));
+}
+function readRun() {
+  try {
+    const r = JSON.parse(store.get(RUN_KEY) || 'null');
+    if (!r || r.v !== 1 || !r.st || r.st.game !== 'colorcards' || r.st.over || !Array.isArray(r.st.hands) || !Array.isArray(r.st.draw) || !Array.isArray(r.st.humans)) return null;
+    if (['quick', 'match', 'pass', 'tutorial'].indexOf(r.mode) < 0) return null;
+    return r;
+  } catch (e) { return null; }
+}
+
+// ---------- start / resume ----------
+function mkSession(st, mode, practice, ms) {
+  return { st, mode, practice, cfg: { n: st.n, level: st.level, mode, practice }, viewer: mode === 'pass' ? -1 : 0, base: 0, pend: null, hl: [], hintText: '', note: '', timer: 0, menu: false, over: false, ms, t0: Date.now(), recorded: false, waiting: false, dealing: false, coached: false };
+}
+function dealOpts(st) {
+  const delay = {}, n = st.n, total = st.handSize * n;
+  st.hands.forEach((h, s) => h.forEach((c, i) => { delay[c] = i * n + ((s - viewerOf() + n) % n); }));
+  delay[st.disc[st.disc.length - 1]] = total + 1;
+  const stag = Math.min(60, Math.round(800 / total));
+  return { stagger: reduceMotion.matches ? 0 : stag, delay, total, stag };
+}
+function startDeal(st) {
+  const o = dealOpts(st);
+  S.dealing = true; sfx('tap');
+  const t = reduceMotion.matches ? 200 : (o.total + 2) * o.stag + 520;
+  clearTimeout(S.timer);
+  S.timer = setTimeout(() => {
+    if (!S) return;
+    S.dealing = false; refresh();
+    if (S.mode === 'pass') { S.viewer = -1; }
+    loop();
+  }, cpuWait(t));
+}
+function startGame(o) {
+  o = o || {};
+  const mode = o.mode || 'quick', practice = !!o.practice;
+  const n = mode === 'pass' ? 2 : mode === 'tutorial' ? 2 : clamp(o.n || save.set.n, 2, 4);
+  const level = mode === 'tutorial' ? 1 : (o.level || save.set.level);
+  const match = mode !== 'tutorial' && (o.match != null ? o.match : (save.set.mode === 'match' ? MATCH_ROUNDS : 0));
+  clearTimeout(S && S.timer);
+  clearTable(); hideOverlays(); $('peekBox') && $('peekBox').remove();
+  const st = E.create({ seed: mode === 'tutorial' ? TUT_SEED : (o.seed || rndSeed()), n, level, humans: mode === 'pass' ? [0, 1] : [0], match: match || 0, first: mode === 'tutorial' ? 0 : undefined, hand: mode === 'tutorial' ? 5 : 7 });
+  S = mkSession(st, mode, practice || mode === 'tutorial', 0);
+  S.cfg = { n, level, mode, practice, match: match || 0 };
+  if (mode !== 'pass' && mode !== 'tutorial') { save.set.n = n; save.set.level = level; save.set.mode = match ? 'match' : 'quick'; }
+  writeSave();
+  emit('play_start', { mode: S.practice ? 'practice' : 'normal', seed: st.seed });
+  measure();
+  render(compute(st), dealOpts(st));
+  hud(); startDeal(st);
+  persist();
+  return S;
+}
+function resumeGame(r) {
+  clearTimeout(S && S.timer);
+  clearTable(); hideOverlays();
+  S = mkSession(r.st, r.mode, !!r.practice, r.ms || 0);
+  S.cfg = { n: r.st.n, level: r.st.level, mode: r.mode, practice: !!r.practice, match: r.st.match };
+  S.coached = !!r.coached;
+  if (S.mode === 'pass') S.viewer = -1;
+  emit('play_start', { mode: S.practice ? 'practice' : 'normal', resumed: true });
+  measure(); render(compute(S.st), { instant: true }); hud();
+  S.timer = setTimeout(loop, 250);
+}
+
+// ---------- pass and play: the screen is covered between the two players' turns ----------
+function coverPass() {
+  if (!S) return;
+  S.viewer = -1; refresh();
+  const w = S.st.turn;
+  $('paTitle').textContent = T('{n}さんの番', { n: nameOf(w) });
+  $('paSub').textContent = T('画面を{n}さんに渡して、準備ができたらタップ', { n: nameOf(w) });
+  $('ovPass').hidden = false;
+  try { $('paGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('paGo').addEventListener('click', () => {
+  if (!S) return;
+  $('ovPass').hidden = true; S.viewer = S.st.turn; S.base = S.st.turn; sfx('ok');
+  refresh({ instant: false });
+  loop();
+});
+
+// ---------- results ----------
+function burst() {
+  if (reduceMotion.matches) return;
+  const fx = $('fx'), c = fx.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cols = ['#d6455d', '#2f6fd0', '#2f9e5b', '#eab12c', '#fff'], parts = [];
+  for (let i = 0; i < 70; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 60, y: H * 0.4, vx: (Math.random() - 0.5) * 9, vy: -4 - Math.random() * 7, r: Math.random() * 3, vr: (Math.random() - 0.5) * 0.4, c: cols[i % cols.length], s: 5 + Math.random() * 5, t: 0 });
+  (function tick() {
+    c.clearRect(0, 0, W, H);
+    parts.forEach(p => { p.t++; p.vy += 0.28; p.x += p.vx; p.y += p.vy; p.r += p.vr; c.save(); c.globalAlpha = Math.max(0, 1 - p.t / 100); c.translate(p.x, p.y); c.rotate(p.r); c.fillStyle = p.c; c.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); c.restore(); });
+    if (parts[0].t < 100) requestAnimationFrame(tick); else c.clearRect(0, 0, W, H);
+  })();
+}
+function scoreCol(st, res, s) {
+  if (st.match) return T('{n}点', { n: res.scores[s] });
+  return s === res.winner ? T('あがり！') : T('あと{n}枚', { n: st.hands[s].length });
+}
+function fillRank(ol, st, res) {
+  ol.innerHTML = '';
+  res.order.forEach(s => {
+    const li = document.createElement('li'); if (s === 0 && S.mode !== 'pass') li.className = 'me';
+    li.innerHTML = '<span class="no">' + res.rank[s] + '</span><span class="nm">' + esc(nameOf(s)) + '</span><span class="sc">' + esc(scoreCol(st, res, s)) + '</span>';
+    ol.appendChild(li);
+  });
+}
+function finish() {
+  if (!S || S.over) return;
+  S.over = true; clearTimeout(S.timer);
+  const st = S.st, res = E.result(st), rank = res.rank[0], win = S.mode === 'pass' ? true : rank === 1;
+  const dur = Math.round(S.ms + (Date.now() - S.t0)), counts = !S.practice && S.mode !== 'pass' && S.mode !== 'tutorial';
+  let earned = 0, firstWin = false;
+  if (counts && !S.recorded) {
+    S.recorded = true;
+    const k = st.match ? 'm' : 'q', r = wRec(k), x = st.stat;
+    r.p++; bump('plays');
+    for (const [a, b] of [['swap', 'swap'], ['peek', 'peek'], ['tangle', 'tangle'], ['block', 'block'], ['dye', 'dye'], ['zero', 'zero'], ['calls', 'calls'], ['catches', 'catches'], ['dblOut', 'dblOut']]) if (x[b][0]) bump(a, x[b][0]);
+    if (win && rank === 1) {
+      r.w++; bump('wins'); earned = LV_PTS[st.level] * (st.match ? 3 : 1); save.pts += earned; firstWin = stat('wins') === 1;
+      if (st.level === 3) bump('hard');
+      if (st.match) { bump('matchWins'); } else {
+        if (x.maxHand[0] >= 12) bump('comeback');
+        if (x.draws[0] === 0) bump('noDraw');
+      }
+    }
+    if (st.match) bump('matches');
+    writeSave();
+  }
+  if (S.mode === 'tutorial' && !save.tut) { save.tut = 1; writeSave(); }
+  store.del(RUN_KEY);
+  emit('play_end', { mode: S.practice ? 'practice' : 'normal', score: earned, durationMs: dur, reason: win && rank === 1 ? 'clear' : 'over' });
+  if (win && rank === 1 && !reduceMotion.matches) burst();
+  sfx(win && rank === 1 ? 'win' : 'over');
+  hud();
+  setTimeout(() => showResult(res, earned, firstWin), cpuWait(700));
+}
+function showResult(res, earned, firstWin) {
+  if (!S) return;
+  const st = S.st, rank = res.rank[0], win = rank === 1;
+  if (S.mode === 'pass') $('rTitle').textContent = T('{n}の勝ち', { n: nameOf(res.order[0]) });
+  else $('rTitle').textContent = win ? T('1位！おめでとう') : T('{n}位', { n: rank });
+  $('rSub').textContent = (st.match ? T('{n}ラウンド', { n: st.match }) : T('1ゲーム')) + ' · ' + T('{n}人', { n: st.n }) + (S.mode === 'pass' ? '' : ' · ' + LV_NAME[st.level]) + (S.practice && S.mode !== 'tutorial' ? ' · ' + T('れんしゅう') : '');
+  fillRank($('rRank'), st, res);
+  $('rPts').textContent = earned ? '★ +' + earned : '';
+  $('rNew').hidden = !firstWin; $('rNew').textContent = T('はじめての勝ち！');
+  $('rNote').textContent = S.mode === 'pass' ? T('ふたりで遊ぶ対戦は記録に入りません') : S.mode === 'tutorial' ? T('チュートリアルは記録に入りません') : S.practice ? T('れんしゅうなので記録は残りません') : (win ? T('勝つと、CPUの強さに応じて★がもらえます（よわい1・ふつう2・つよい3）。10ラウンドは3倍') : T('次はきっと勝てる！'));
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+function showRound() {
+  if (!S || !$('ovRound').hidden) return;
+  const st = S.st, res = E.result(st);
+  $('roTitle').textContent = T('ラウンド {r}/{m} 終了', { r: st.round, m: st.match });
+  $('roSub').textContent = T('{n}が{p}点もらった', { n: nameOf(st.winner), p: st.roundGain });
+  fillRank($('roRank'), st, res);
+  clearTimeout(S.timer);
+  S.timer = setTimeout(() => { if (S && S.st.phase === 'roundover' && !S.menu) { sfx('clear'); $('ovRound').hidden = false; try { $('roNext').focus({ preventScroll: true }); } catch (e) {} } }, cpuWait(1100));
+}
+$('roNext').addEventListener('click', () => { $('ovRound').hidden = true; if (S) { S.dealing = false; step({ t: 'next' }); } });
+function giveUp() {
+  if (!S || S.over) return;
+  S.over = true; clearTimeout(S.timer); store.del(RUN_KEY);
+  emit('play_end', { mode: S.practice ? 'practice' : 'normal', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' });
+}
+
+// =====================================================================================
+// rules page
+// =====================================================================================
+function rulesSections() {
+  return [
+    { h: L('あそびかた', 'How to play'), li: [
+      L('手札（7枚）を、先に全部出し切った人の勝ちです。2〜4人、CPUと遊べます。', 'Be the first to play every card in your hand (7 cards each). 2 to 4 players, with CPU rivals.'),
+      L('出せるのは、いまの色と同じ色の札、場の札と同じ数字の札（特別札は同じ種類）、そして「染め直し」。', 'You may play a card of the current color, the same number as the top card (or the same kind for special cards), or a Re-dye.'),
+      L('出せる札がなければ、山札から1枚ひきます。ひいた札が出せるなら、すぐ出してもOK。出せる札があるときは、ひけません。', 'No playable card? Draw one. If it can be played you may play it at once. You cannot draw while you hold a playable card.'),
+      L('札はタップ、または上にドラッグして出します。光っている札が出せる札です。', 'Tap a card, or drag it upward, to play it. Glowing cards are playable.'),
+    ] },
+    { h: L('ぐるり（数字の0）', 'Reverse (the number 0)'), li: [
+      L('数字の「0」を出すと、まわる向きが逆になります。机の真ん中の輪の矢印で、いまの向きが分かります。', 'Playing a 0 reverses the direction of play. The arrows in the ring in the middle of the table show the current direction.'),
+    ] },
+    { h: L('ラスト！とつかまえた！', 'Last! and Caught!'), li: [
+      L('手札が2枚になったら、自分の番に「ラスト！」ボタンを押しましょう。', 'When you hold two cards, press the "Last!" button during your turn.'),
+      L('押さずに残り1枚にすると、次の人が「つかまえた！」と言えて、あなたは2枚ひきます。CPUも言い忘れることがあるので、見つけたら「つかまえた！」を押そう。', 'If you drop to one card without calling, the next player can catch you and you draw 2. CPUs forget sometimes too — press "Caught!" when you spot it.'),
+    ] },
+    { h: L('10ラウンドマッチ', '10-round match'), li: [
+      L('ラウンドに勝った人は、ほかの人の残った札の点をもらいます（数字はそのまま、特別札10〜30点）。10ラウンドで合計がいちばん多い人の勝ち。', 'The round winner scores the points left in the others\' hands (numbers count face value, special cards 10-30). After 10 rounds the highest total wins.'),
+    ] },
+    { h: L('ランキング', 'Ranking'), li: [
+      L('CPUに勝つと★がもらえます（よわい1・ふつう2・つよい3）。10ラウンドマッチは3倍。★の合計がランキングです。れんしゅう・ふたりで・チュートリアルは記録に入りません。', 'Beat the CPUs to earn ★ (Easy 1, Normal 2, Hard 3; a 10-round match pays triple). Your total ★ is your ranking. Practice, 2-player and the tutorial do not count.'),
+    ] },
+  ];
+}
+const KIND_ROWS = [
+  { c: 80, ja: 'となりの人（次か前）と、手札を丸ごと入れかえる。手札の少ない人とかえると大チャンス。', en: 'Trade your whole hand with a neighbor (next or previous). Great against a player with few cards.' },
+  { c: 84, ja: '好きな1人の手札をのぞき見る。見たカードは、そのあとの作戦に使おう。', en: 'Look at one player\'s hand. Use what you see to plan.' },
+  { c: 88, ja: '次の人が2枚ひく（そのあと、ふつうに出せる）。', en: 'The next player draws 2 (then plays normally).' },
+  { c: 92, ja: '出したあと、もう一度、自分の番。', en: 'After playing it, you take another turn.' },
+  { c: 96, ja: '自分に「まもり」がつき、次の1回の「とりかえ・のぞき見・からまり」をはね返す。', en: 'Gives you a ward that bounces the next Swap, Peek or Tangle aimed at you.' },
+  { c: 100, ja: 'いつでも出せて、好きな色を決められる。', en: 'Playable any time, and you choose the color.' },
+  { c: 0, ja: '数字の0。出すと、まわる向きが逆になる。', en: 'The number 0. Playing it reverses the direction.' },
+];
+function rulesHTML() {
+  let h = '<p class="lead">' + esc(L('糸の4色と数字を合わせて、手札を先に使い切ろう。', 'Match thread colors and numbers, and empty your hand first.')) + '</p>';
+  const secs = rulesSections();
+  h += '<h3>' + esc(secs[0].h) + '</h3><ul>' + secs[0].li.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>';
+  h += '<h3>' + esc(L('特別なカード', 'Special cards')) + '</h3><div class="kinds">' + KIND_ROWS.map(k => '<div class="k"><div class="mini" role="img" aria-label="' + esc(cardLabel(k.c)) + '">' + ART.faceHTML(k.c, T) + '</div><div>' + (k.c === 0 ? '' : '<b>' + esc(kindName(E.INFO[k.c].kind)) + '</b><br>') + esc(L(k.ja, k.en)) + '</div></div>').join('') + '</div>';
+  h += '<h3>' + esc(L('色のしるし', 'Color marks')) + '</h3><ul><li>' + [0, 1, 2, 3].map(k => esc(colName(k)) + ': ' + (EN ? ['button', 'diamond', 'leaf', 'star'][k] : ['ボタン', 'ひし形', '葉', '星'][k])).join(' / ') + '</li></ul>';
+  for (let i = 1; i < secs.length; i++) h += '<h3>' + esc(secs[i].h) + '</h3><ul>' + secs[i].li.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>';
+  return h;
+}
+function showHowto(first) {
+  $('howtoTitle').textContent = T('ルール');
+  const body = $('howBody'); body.innerHTML = rulesHTML();
+  $('howtoGo').textContent = first ? T('チュートリアルへ') : T('とじる');
+  if (S) S.menu = true;
+  const wasTitle = !$('ovTitle').hidden, wasResult = !$('ovResult').hidden;
+  $('howto').dataset.from = first ? 'first' : wasTitle ? 'title' : wasResult ? 'result' : 'game';
+  hideOverlays(); $('howto').hidden = false; body.scrollTop = 0;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1');
+  const from = $('howto').dataset.from; $('howto').hidden = true;
+  if (S) S.menu = false;
+  if (from === 'first') { startGame({ mode: 'tutorial', practice: true }); return; }
+  if (from === 'result' && S && S.over) $('ovResult').hidden = false;
+  else if (from === 'game' && S && !S.over) loop();
+  else showTitle();
+});
+
+// =====================================================================================
+// title
+// =====================================================================================
+const OVERLAYS = ['ovTitle', 'ovResult', 'ovRound', 'ovPass', 'howto'];
+const hideOverlays = () => OVERLAYS.forEach(id => { $(id).hidden = true; });
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden])');
+const segHTML = (vals, cur, key) => vals.map(v => '<button class="opt" type="button" data-' + key + '="' + v[0] + '" aria-pressed="' + (String(v[0]) === String(cur)) + '">' + esc(v[1]) + '</button>').join('');
+function renderTitle() {
+  const w = save.w;
+  const q = w.q || { p: 0, w: 0 }, m = w.m || { p: 0, w: 0 };
+  $('tDesc').textContent = L('糸の4色と数字を合わせて、手札を先に使い切ろう。とりかえ・のぞき見・からまり・ふた針・まもり糸・染め直しの6つの特別札つき。', 'Match thread colors and numbers to empty your hand first. Six special cards: Swap, Peek, Tangle, Double, Shield and Re-dye.');
+  $('tBest').textContent = q.p + m.p ? T('{p}回あそんで{w}回勝ち', { p: q.p + m.p, w: q.w + m.w }) : T('まだ記録がありません');
+  const o = $('tOpts');
+  let h = '<div class="og"><div class="ol">' + esc(T('人数')) + '</div><div class="seg" id="optN">' + segHTML([2, 3, 4].map(n => [n, T('{n}人', { n })]), save.set.n, 'n') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('CPUの強さ')) + '</div><div class="seg" id="optLv">' + segHTML([1, 2, 3].map(n => [n, LV_NAME[n]]), save.set.level, 'lv') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('あそびかた')) + '</div><div class="seg" id="optMode">' + segHTML([['quick', T('1ゲーム')], ['match', T('10ラウンド')]], save.set.mode, 'm') + '</div></div>';
+  h += '<button class="tog" type="button" role="switch" id="optFast" aria-checked="' + !!save.set.fast + '"><span>' + esc(T('CPUをはやく進める')) + '<small>' + esc(T('CPUの待ち時間を短くします')) + '</small></span><i></i></button>';
+  o.innerHTML = h;
+  o.querySelectorAll('[data-n]').forEach(b => b.addEventListener('click', () => { save.set.n = +b.dataset.n; writeSave(); sfx('tap'); renderTitle(); }));
+  o.querySelectorAll('[data-lv]').forEach(b => b.addEventListener('click', () => { save.set.level = +b.dataset.lv; writeSave(); sfx('tap'); renderTitle(); }));
+  o.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { save.set.mode = b.dataset.m; writeSave(); sfx('tap'); renderTitle(); }));
+  $('optFast').addEventListener('click', () => { save.set.fast = save.set.fast ? 0 : 1; writeSave(); sfx('tap'); renderTitle(); });
+  $('tQuickSub').textContent = (save.set.mode === 'match' ? T('10ラウンド') : T('1ゲーム')) + ' · ' + T('{n}人', { n: save.set.n }) + ' · ' + LV_NAME[save.set.level];
+  const run = readRun();
+  $('tResume').hidden = !run;
+  if (run) $('tResumeSub').textContent = (run.mode === 'tutorial' ? T('チュートリアル') : run.st.match ? T('10ラウンド') : T('1ゲーム')) + ' · ' + T('{n}人', { n: run.st.n }) + (run.practice && run.mode !== 'tutorial' ? ' · ' + T('れんしゅう') : '');
+}
+function showTitle() {
+  if (S) { S.menu = true; if (!S.over) persist(); }
+  hideOverlays(); renderTitle(); $('ovTitle').hidden = false;
+  try { $('tPlay').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tPlay').addEventListener('click', () => startGame({ mode: 'quick' }));
+$('tQuick').addEventListener('click', () => startGame({ mode: 'quick' }));
+$('tPrac').addEventListener('click', () => startGame({ mode: 'quick', practice: true }));
+$('tPass').addEventListener('click', () => startGame({ mode: 'pass' }));
+$('tTut').addEventListener('click', () => startGame({ mode: 'tutorial', practice: true }));
+$('tHow').addEventListener('click', () => showHowto(false));
+$('tResume').addEventListener('click', () => { const r = readRun(); if (r) resumeGame(r); });
+$('rAgain').addEventListener('click', () => { const c = S && S.cfg; startGame(c ? { n: c.n, level: c.level, mode: c.mode === 'tutorial' ? 'quick' : c.mode, practice: c.mode === 'tutorial' ? false : c.practice, match: c.match } : {}); });
+$('rTitleBtn').addEventListener('click', () => { if (S) S.menu = true; showTitle(); });
+$('rHow').addEventListener('click', () => showHowto(false));
+
+// =====================================================================================
+// sound, menu, theme, resize
+// =====================================================================================
+function renderSound() {
+  const b = $('sndBtn'), muted = A ? A.muted : true;
+  b.setAttribute('aria-pressed', String(!muted)); b.setAttribute('aria-label', T(muted ? 'サウンド オフ' : 'サウンド オン'));
+  b.innerHTML = !muted
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!A) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  m.setAttribute('content', UI && UI.theme && UI.theme.resolved() === 'light' ? '#eef2f8' : '#14243d');
+}
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = !!(S && !S.over);
+  const extra = [{ label: T('ルール'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (on) extra.push({ label: T('あきらめる'), icon: 'close', onClick: () => { pm.close(); giveUp(); showTitle(); } });
+  extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra,
+    onResume: () => { if (S) S.menu = false; const g = KG(); if (g) g.menuClosed(); if (S && !S.over) loop(); },
+    onRestart: on ? () => { const c = S.cfg; giveUp(); startGame({ n: c.n, level: c.level, mode: c.mode, practice: c.practice, match: c.match }); } : undefined,
+    onOpen: () => { if (S) S.menu = true; const g = KG(); if (g) g.menuOpened(); persist(); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+let rz = 0;
+function relayout() {
+  clearTimeout(rz);
+  rz = setTimeout(() => {
+    if (!S || !tb.els.size) return;
+    const w = tb.W, h = tb.H; measure();
+    if (Math.abs(w - tb.W) > 2 || Math.abs(h - tb.H) > 2) { tb.els.forEach(el => el.classList.add('nt')); refresh(); void tableEl.offsetWidth; tb.els.forEach(el => el.classList.remove('nt')); }
+  }, 120);
+}
+window.addEventListener('resize', relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe(tableEl);
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+if (KG()) KG().register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { persist(); },
+  isIdle: () => !S || S.over,
+  dispose() { if (S) clearTimeout(S.timer); },
+});
+window.addEventListener('pagehide', () => { if (S) persist(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY && (!S || S.over)) { save = readSave(); if (!$('ovTitle').hidden) renderTitle(); } });
+
+// ---------- boot ----------
+renderSound(); themeColor(); measure();
+{
+  $('iGame').textContent = T('いろあわせカード工房'); $('iTurn').hidden = true; $('iBest').textContent = '★ ' + fmtN(save.pts); $('status').textContent = ''; $('ctl').style.visibility = 'hidden';
+  const first = store.get(HOWTO_KEY) == null && !save.tut;
+  if (first) { save.tut = 1; writeSave(); showHowto(true); } else showTitle();
+}
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const sel = step => (step.card != null ? '.cd[data-c="' + step.card + '"]' : '#ctl [data-id="' + step.btn + '"]');
+  const api = {
+    ready: () => true,
+    state: () => {
+      const st = S && S.st;
+      return {
+        started: !!S, mode: S ? S.mode : '', over: !!(S && S.over), practice: !!(S && S.practice), n: st ? st.n : 0, level: st ? st.level : 0,
+        turn: st ? st.turn : -1, human: !!(S && humanTurn() && S.viewer === st.turn && !S.dealing), dealing: !!(S && S.dealing), phase: st ? st.phase : '', color: st ? st.color : -1, dir: st ? st.dir : 0,
+        title: !$('ovTitle').hidden, result: !$('ovResult').hidden, round: !$('ovRound').hidden, pass: !$('ovPass').hidden, howto: !$('howto').hidden, menu: !!(S && S.menu),
+        status: $('status').textContent, hand: st ? st.hands[viewerOf()].slice() : [], counts: st ? st.hands.map(h => h.length) : [], pend: !!(S && S.pend), roundNo: st ? st.round : 0, match: st ? st.match : 0,
+        scores: st ? st.scores.slice() : [], pts: save.pts, hl: S ? S.hl.slice() : [], draw: st ? st.draw.length : 0, step: st ? st.step : 0, uncalled: st ? st.uncalled : -1, ward: st ? st.ward.slice() : [],
+        save: JSON.parse(JSON.stringify(save)),
+      };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__colorcards = {
+    api, E, get S() { return S; }, get save() { return save; },
+    start(o) { startGame(o || {}); return api.state(); },
+    setSpeed(m) { cpuDelayMul = m; },
+    plan() { return S && !S.over && humanTurn() && !S.dealing ? (S.pend ? [] : planOf(hintMove())).map(s => Object.assign({ sel: sel(s) }, s)) : []; },
+    move() { return S ? hintMove() : null; },
+    title: showTitle, finish() { if (S && !S.over) finish(); }, howto: showHowto, openMenu,
+    resume() { const r = readRun(); if (r) resumeGame(r); return !!r; },
+    persist, rig(fn) { if (S) { fn(S.st); refresh(); } return api.state(); },
+    thumbScene() { // a three-player game in progress, your turn with a good hand, for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays(); clearTable();
+      let st = null;
+      for (let seed = 1; seed < 3000 && !st; seed++) {
+        const c = E.create({ seed, n: 3, level: 2, humans: [0], first: 1 });
+        for (let k = 0; k < 14 && !c.over && c.turn !== 0; k++) E.apply(c, E.cpu(c));
+        if (c.over || c.turn !== 0 || c.phase !== 'play') continue;
+        const h = c.hands[0], kinds = new Set(h.map(x => E.INFO[x].kind));
+        if (h.length >= 6 && h.length <= 8 && kinds.size >= 3 && h.filter(x => E.playable(c, x)).length >= 2 && c.hands[1].length >= 4 && c.hands[2].length >= 4) st = c;
+      }
+      S = mkSession(st, 'quick', false, 0);
+      S.cfg = { n: 3, level: 2, mode: 'quick', practice: false, match: 0 };
+      measure(); render(compute(st), { instant: true }); hud();
+      return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.colorcards.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

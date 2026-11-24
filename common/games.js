@@ -689,6 +689,34 @@
         'kusoge.town.save': { fields: { best: 'max', tier: 'max', renown: 'max', rs: { each: 'max' }, qd: { each: 'max' }, un: { each: 'max' }, stats: { each: 'max' }, daily: { fields: { last: 'max', streak: 'max' }, rest: 'newest' }, tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'colorcards', order: 22, path: 'colorcards/', added: '2026-11-24',
+      title: { ja: 'いろあわせカード工房', en: 'Color Match Cards' },
+      short: { ja: 'いろあわせカード', en: 'Color Match' },
+      desc: { ja: '糸の4色と数字を合わせて、手札を先に使い切るカードゲーム。0で向きが逆になり、とりかえ・のぞき見・からまり・ふた針・まもり糸・染め直しの特別札つき。「ラスト！」の言い忘れにも注意。CPUと2〜4人（強さは3段階）、10ラウンドマッチ、ふたりで1台もOK。', en: 'A shedding card game: match thread colors and numbers and empty your hand first. A 0 reverses the direction, and six workshop cards (Swap, Peek, Tangle, Double, Shield, Re-dye) shake things up. Do not forget to call "Last!". 2 to 4 players with three CPU strengths, a 10-round match and pass-and-play.' },
+      label: { ja: 'カードゲーム', en: 'Card game' },
+      genres: ['board'], tags: ['2d', 'turn', 'cards', 'casual'],
+      keywords: { ja: ['カード', 'トランプ', '色合わせ', '数字合わせ', '手札', 'CPU', 'ふたりで', 'ラスト'], en: ['card game', 'shedding game', 'color matching', 'number matching', 'hand', 'cpu', 'pass and play', 'last card'] },
+      icon: 'img/icons/colorcards.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#1d4c5c"/><g stroke="#fff" stroke-opacity=".12"><path d="M0 18h72M0 36h72M0 54h72M18 0v72M36 0v72M54 0v72"/></g><g transform="rotate(-18 24 40)"><rect x="9" y="14" width="27" height="40" rx="4" fill="#d6455d" stroke="#fffaf0" stroke-width="2.5"/><rect x="12.5" y="17.5" width="20" height="33" rx="2.5" fill="none" stroke="#fff" stroke-dasharray="3 2.4" stroke-opacity=".8"/><circle cx="22.5" cy="34" r="8" fill="#fff"/><text x="22.5" y="39.5" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="15" fill="#8f1f36">7</text></g><g transform="rotate(8 46 38)"><rect x="32" y="12" width="27" height="40" rx="4" fill="#2f6fd0" stroke="#fffaf0" stroke-width="2.5"/><rect x="35.5" y="15.5" width="20" height="33" rx="2.5" fill="none" stroke="#fff" stroke-dasharray="3 2.4" stroke-opacity=".8"/><circle cx="45.5" cy="32" r="8" fill="#fff"/><path d="M40 32c3-3 8-3 11 0M40 32c3 3 8 3 11 0" fill="none" stroke="#173d85" stroke-width="2"/><circle cx="45.5" cy="32" r="2.4" fill="#173d85"/></g><path d="M50 62c8 0 12-4 14-10" fill="none" stroke="#eab12c" stroke-width="3" stroke-linecap="round"/><circle cx="14" cy="60" r="5" fill="#2f9e5b" stroke="#fff" stroke-width="1.5"/></svg>',
+      thumb: 'img/thumbs/colorcards.webp', thumb2x: 'img/thumbs/colorcards@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.colorcards.game); no online battle (CPU and pass-and-play only)
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: false, stages: false },
+      versus: null,
+      // ★: 1 / 2 / 3 for a win against Easy / Normal / Hard CPUs, triple for a 10-round match (practice, tutorial and pass-and-play count nothing). The cap leaves room for years of play
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.colorcards.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.colorcards.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.colorcards.save': '{ v:1, pts（★の合計＝ランキング）, w:{ q|m（1ゲーム・10ラウンド）:{ p（遊んだ回数）, w（勝った回数） } }, stats:{ plays, wins, hard（つよいCPUに勝った回数）, swap, peek, tangle, block（まもり糸ではね返した）, dye, zero（0で向きを変えた）, calls（ラスト！の宣言）, catches（つかまえた！）, dblOut（ふた針のあとにあがった）, comeback（12枚以上持って勝った）, noDraw（一度もひかずに勝った）, matches, matchWins }, set:{ n, level, mode（quick|match）, fast }, tut }',
+        'kusoge.colorcards.game': 'とちゅうのゲーム（毎手自動保存）{ v:1, st（colorcards/engine.js の状態そのまま）, mode, practice, ms, coached, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.colorcards.howto': 'ルールを見た（\'1\'）',
+      },
+      // counters only grow (max); the last settings are a whole value (newest)
+      sync: {
+        'kusoge.colorcards.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -926,6 +954,24 @@
       { id: 'town.rest', tier: 3, icon: 'restart', title: { ja: 'ぐっすり一晩', en: 'A Good Night\'s Rest' }, desc: { ja: '8時間るすにして、町に戻る', en: 'Come back after being away for 8 hours' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.awayMax' }, gte: 28800 } },
       { id: 'town.new3', tier: 4, icon: 'trophy', title: { ja: '町づくりの名人', en: 'Master Town-Builder' }, desc: { ja: '町を3回ひらきなおす', en: 'Open a new town three times' }, when: { rec: { key: 'kusoge.town.save', path: 'tier' }, gte: 3 }, grantsTitle: { ja: '町づくりの名人', en: 'Town Builder' } },
       { id: 'town.pop600', tier: 4, icon: 'trophy', hidden: true, title: { ja: '眠らない町', en: 'The Town That Never Sleeps' }, desc: { ja: '人口を600人にする', en: 'Reach 600 residents' }, when: { rec: { key: 'kusoge.town.save', path: 'best' }, gte: 600 }, grantsTitle: { ja: '町の名士', en: 'Town Notable' } },
+    ],
+    colorcards: [
+      { id: 'colorcards.first', tier: 1, icon: 'check', title: { ja: 'はじめの一勝', en: 'First Finish' }, desc: { ja: 'CPUに勝って、手札を使い切る', en: 'Empty your hand first against the CPUs' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.wins' }, gte: 1 } },
+      { id: 'colorcards.swap', tier: 1, icon: 'star', title: { ja: 'とりかえっこ', en: 'Trading Places' }, desc: { ja: '「とりかえ」で手札を入れかえる', en: 'Swap hands with a Swap card' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.swap' }, gte: 1 } },
+      { id: 'colorcards.peek', tier: 1, icon: 'star', title: { ja: 'のぞき見の目', en: 'Sharp Eye' }, desc: { ja: '「のぞき見」で相手の手札を見る', en: 'Peek at a hand with a Peek card' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.peek' }, gte: 1 } },
+      { id: 'colorcards.rev', tier: 1, icon: 'restart', title: { ja: 'ぐるりと逆まわし', en: 'Turn the Table' }, desc: { ja: '数字の0で向きを5回変える', en: 'Reverse the direction with a 0 five times' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.zero' }, gte: 5 } },
+      { id: 'colorcards.call', tier: 2, icon: 'check', title: { ja: 'ラスト！の名人', en: 'Last-Call Habit' }, desc: { ja: '「ラスト！」を10回宣言する', en: 'Call "Last!" 10 times' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.calls' }, gte: 10 } },
+      { id: 'colorcards.catch', tier: 2, icon: 'star', title: { ja: '見のがさない', en: 'Eagle Ears' }, desc: { ja: '言い忘れた相手を「つかまえた！」する', en: 'Catch a rival who forgot to call "Last!"' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.catches' }, gte: 1 } },
+      { id: 'colorcards.tangle', tier: 2, icon: 'star', title: { ja: 'からまりの達人', en: 'Master of Tangles' }, desc: { ja: '「からまり」を合わせて10回決める', en: 'Land 10 Tangles in total' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.tangle' }, gte: 10 } },
+      { id: 'colorcards.block', tier: 2, icon: 'check', title: { ja: 'まもり糸、きらり', en: 'Thread of Protection' }, desc: { ja: '「まもり糸」で攻撃をはね返す', en: 'Bounce an attack with a Shield' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.block' }, gte: 1 } },
+      { id: 'colorcards.dye', tier: 2, icon: 'star', title: { ja: '染めもの上手', en: 'Dye Works' }, desc: { ja: '「染め直し」を10回使う', en: 'Play Re-dye 10 times' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.dye' }, gte: 10 } },
+      { id: 'colorcards.win10', tier: 2, icon: 'trophy', title: { ja: '十勝', en: 'Ten Wins' }, desc: { ja: '合わせて10回勝つ', en: 'Win 10 games in total' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.wins' }, gte: 10 } },
+      { id: 'colorcards.hard', tier: 3, icon: 'trophy', title: { ja: '強敵に勝つ', en: 'Beat the Best' }, desc: { ja: '「つよい」CPUに勝つ', en: 'Win against Hard CPUs' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.hard' }, gte: 1 } },
+      { id: 'colorcards.dbl', tier: 3, icon: 'star', title: { ja: 'ふた針でフィニッシュ', en: 'Double Finish' }, desc: { ja: '「ふた針」のあと、続けて最後の札を出す', en: 'Play your last card right after a Double' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.dblOut' }, gte: 1 } },
+      { id: 'colorcards.comeback', tier: 3, icon: 'trophy', title: { ja: '大逆転', en: 'Great Comeback' }, desc: { ja: '手札が12枚以上になっても、最後には勝つ', en: 'Win after holding 12 or more cards' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.comeback' }, gte: 1 } },
+      { id: 'colorcards.match', tier: 3, icon: 'trophy', title: { ja: '10ラウンドの覇者', en: 'Match Champion' }, desc: { ja: '10ラウンドマッチで1位になる', en: 'Win a 10-round match' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.matchWins' }, gte: 1 } },
+      { id: 'colorcards.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'pts' }, gte: 30 } },
+      { id: 'colorcards.nodraw', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ひと息であがり', en: 'Not a Single Draw' }, desc: { ja: '一度も山札をひかずに勝つ', en: 'Win without ever drawing from the deck' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.noDraw' }, gte: 1 }, grantsTitle: { ja: '糸の名人', en: 'Thread Master' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

@@ -91,6 +91,12 @@
   プレイ回数の `plus1('town')`、同期する保存のキー `kusoge~town~save`（人口の最高・ほまれ・研究・終えた目標・統計）の形の確認です。いまの町（`kusoge.town.run`）は同期しません。
 - **Realtime Database は貼り直し不要**です（ひまつぶしタウンには対戦がないので、`database.rules.json` は変えていません）。
 
+## 新作「いろあわせカード工房」（colorcards）を足したとき
+- **Firestore だけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、いろあわせカード工房のランキング送信と端末間の同期だけが失敗します**（ゲームは遊べて、端末の保存は残ります）。
+  変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'colorcards': 100000`＝★の合計）、旧ランキングの点の確認 `okCap(…'colorcards')`（town のときと同じく `okCap()` に1行足しただけで、式の数の上限の中に収まっています）、
+  プレイ回数の `plus1('colorcards')`、同期する保存のキー `kusoge~colorcards~save`（★・勝った回数・統計）の形の確認です。とちゅうのゲーム（`kusoge.colorcards.game`）は同期しません。
+- **Realtime Database は貼り直し不要**です（対戦がないので、`database.rules.json` は変えていません）。
+
 ## ころがし工房ゴルフのランキングを「星の合計」に変えたとき（2026-11）
 - **貼り直し不要**です。ランキングの値は「パーより少ない打数」から「星の合計」（最大594）に変わりましたが、上限 `'minigolf': 1000` の中なので `firestore.rules` は同じです。
 
