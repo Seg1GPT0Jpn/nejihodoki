@@ -44,7 +44,7 @@ node tools/tests/physics-play.js               # ころころ工房の通し（�
 node tools/tests/physics-editor-play.js        # ころころ工房「つくる」の通し（本物のドラッグでレベルを作る・ためしてクリア・共有コードと URL・新しいページで開いて解く・壊れたコード・自分のレベル・タッチ・全画面サイズ）
 node tools/tests/minigolf-levels.js            # ころがし工房ゴルフの全ホールを保存した答えで流す（パー以内・決まった結果・はさまない・似たホールがない）と、人のまね（minigolf-human.js）の段ごとの成功率（段ごとに6ホール、1〜2分）。--full で全ホール、--solve <id> で答えさがし
 node tools/minigolf-gen.js --course 13 --cand 20 # コース4から先のホールを部品から作って、人のまねでえらぶ（1候補およそ1分、4コア）
-node tools/tests/minigolf-play.js              # ころがし工房ゴルフの通し（遊び方・チュートリアル・本物のドラッグで打つ・スコアカード・9ホール・保存と再開・練習・今日のホール・一時停止・英語・全画面サイズ）
+node tools/tests/minigolf-play.js              # ころがし工房ゴルフの通し（遊び方・チュートリアル・本物のドラッグで打つ・スコアカード・9ホール・保存と再開・練習・今日のホール・一時停止・オンライン対戦の練習（同じ seed → 同じホールの並び・点の式・保存しない・終了後に元へ戻る）・英語・全画面サイズ）
 node tools/tests/pwa-offline.js                # PWA の通し：/ と /nejihodoki/ の両方で、はじめに保存するのはハブと common/ だけ（はじめての転送量を測る）、開いたことのないゲームはオフラインで offline.html、全ゲームを1回開くとそのページと ENGINES が保存されて通信なしで開けること、オフラインのページ（日本語・英語）、マニフェストとインストールの条件（Chrome の判定 CDP Page.getInstallabilityErrors ＋ アイコン・shortcuts・screenshots の大きさ）、更新のトースト（遊んでいる最中は出ない・押したときだけ読み込み直す・古い保存の片付け）。--base /nejihodoki で片方だけ、--game blocks で選ぶ
 node tools/tests/load/run.js                   # 負荷テスト（エミュレーターだけ。本番にはつながない）：Firestore 200人（本物の common/*.js）＋ RTDB 50組（本物の Firebase SDK）。約5分。--quick で約2分。結果は tools/tests/load/out/results.json、まとめは docs/LOAD_TEST.md
 node tools/tests/colorcards-play.js            # いろあわせカード工房の通し（本物のクリックで1ゲーム・れんしゅうとヒント・ドラッグ・ラスト！とつかまえた！・10ラウンドマッチ・ふたりで・チュートリアル・保存と再開・英語・全画面サイズ）

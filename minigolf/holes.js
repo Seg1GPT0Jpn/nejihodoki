@@ -150,7 +150,34 @@
   COURSES.forEach(function (c, k) { c.ready = H.filter(function (h) { return h.course === k; }).length === 9; });
   H.forEach(function (h) { if (!h.tip) h.tip = COURSES[h.course].d; });
 
-  var api = { COURSES: COURSES, HOLES: H, TIERS: TIERS };
+  // オンライン対戦：seed から、全員同じホールの並びを決める（乱数は mulberry32。Math.random は使わない）。
+  // k 番目のホールの段は 0,0,0,1,1,1,2,2,2,3… と上がり（最大は4段目まで。k が 12 を超えたら親方も混じる）、ときどき1つ下の段から選ぶ。
+  // 同じホールは出ない。既存の 198 ホールの中身は変えない。
+  function vsPlan(seed, n) {
+    var a = (seed >>> 0) || 1;
+    var rnd = function () {
+      a = (a + 0x6D2B79F5) >>> 0; var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    var used = {}, out = [], count = n || 60;
+    for (var k = 0; k < count; k++) {
+      var tier = Math.min(k < 12 ? 3 : 4, Math.floor(k / 3));
+      if (tier > 0 && rnd() < 0.3) tier--;
+      var pick = null;
+      for (var tries = 0; tries < 30 && !pick; tries++) {
+        var cs = COURSES.filter(function (c) { return c.ready && c.tier === tier + 1; });
+        var c = cs[Math.floor(rnd() * cs.length)], no = 1 + Math.floor(rnd() * 9);
+        var h = H.filter(function (x) { return x.course === COURSES.indexOf(c) && x.no === no; })[0];
+        if (h && !used[h.id]) pick = h;
+      }
+      if (!pick) { pick = H.filter(function (x) { return !used[x.id]; })[0] || H[0]; }
+      used[pick.id] = 1; out.push(pick);
+    }
+    return out;
+  }
+
+  var api = { COURSES: COURSES, HOLES: H, TIERS: TIERS, vsPlan: vsPlan };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  root.MinigolfHoles = H; root.MinigolfCourses = COURSES; root.MinigolfTiers = TIERS;
+  root.MinigolfHoles = H; root.MinigolfVsPlan = vsPlan; root.MinigolfCourses = COURSES; root.MinigolfTiers = TIERS;
 })(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this);

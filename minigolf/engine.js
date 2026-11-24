@@ -358,7 +358,17 @@
     return d <= -3 ? 'albatross' : d === -2 ? 'eagle' : d === -1 ? 'birdie' : d === 0 ? 'par' : d === 1 ? 'bogey' : d === 2 ? 'double' : 'over';
   }
 
+  // オンライン対戦：1ホールの点。カップインしたホールだけ（打数の上限・時間切れは0点）。パーなら300、1打少ないごとに +100、1打多いごとに −60（最低50）。
+  // ホールインワン（1打）は +200。strokes は罰打を含む打数（球の strokes と同じ）
+  var VS_PAR = 300, VS_UNDER = 100, VS_OVER = 60, VS_MIN = 50, VS_ACE = 200;
+  function vsPoints(strokes, par, sunk) {
+    if (!sunk || !(strokes > 0)) return 0;
+    var d = par - strokes, p = d >= 0 ? VS_PAR + VS_UNDER * d : Math.max(VS_MIN, VS_PAR + VS_OVER * d);
+    return p + (strokes === 1 ? VS_ACE : 0);
+  }
+
   var api = {
+    vsPoints: vsPoints,
     DT: DT, SUB: SUB, BALL_R: BALL_R, CUP_R: CUP_R, VMAX: VMAX, SINK_V: SINK_V, GEAR_HUB: GEAR_HUB, GEAR_TH: GEAR_TH, RULER_TH: RULER_TH,
     dsin: dsin, dcos: dcos, qa: qa, qp: qp, inPoly: inPoly, bbox: bbox, prep: prep,
     rulerAt: rulerAt, gearAngle: gearAngle, gearArms: gearArms,

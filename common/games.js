@@ -562,17 +562,17 @@
       id: 'minigolf', order: 17, path: 'minigolf/', added: '2026-11-06',
       title: { ja: 'ころがし工房ゴルフ', en: 'Workshop Mini Golf' },
       short: { ja: 'ころがし工房ゴルフ', en: 'Workshop Mini Golf' },
-      desc: { ja: '作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規の坂、回る歯車、ばね、パイプ、インクだまり。スイッチの扉とはね戸も。5つの段・22コース・198ホール、だんだんむずかしくなる。練習と今日のホールも。', en: 'Mini golf on the workbench. Pull back, let go, sink it. Ruler slopes, spinning gears, springs, pipes, ink puddles, switch doors and flap gates. 198 holes on 22 courses in 5 tiers that get really hard, plus practice and a daily hole.' },
+      desc: { ja: '作業台の上のミニゴルフ。引っぱって、はなして、カップへ。定規の坂、回る歯車、ばね、パイプ、インクだまり。スイッチの扉とはね戸も。5つの段・22コース・198ホール、だんだんむずかしくなる。練習と今日のホール、オンライン対戦も。', en: 'Mini golf on the workbench. Pull back, let go, sink it. Ruler slopes, spinning gears, springs, pipes, ink puddles, switch doors and flap gates. 198 holes on 22 courses in 5 tiers that get really hard, plus practice and a daily hole.' },
       label: { ja: 'ミニゴルフ', en: 'Mini golf' },
-      genres: ['action'], tags: ['2d', 'physics', 'sports', 'stages', 'daily'],
+      genres: ['action'], tags: ['2d', 'physics', 'sports', 'stages', 'daily', 'versus'],
       keywords: { ja: ['ゴルフ', 'ミニゴルフ', 'パターゴルフ', 'パター', 'ボール', '物理', 'ホールインワン', '工房', '歯車'], en: ['golf', 'mini golf', 'minigolf', 'putt', 'putting', 'crazy golf', 'ball', 'physics', 'hole in one'] },
       icon: 'img/icons/minigolf.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#c99a5c"/><path d="M0 14h72M0 30h72M0 47h72M0 63h72" stroke="#b8874a" stroke-width="1.2"/><rect x="8" y="7" width="56" height="58" rx="3" fill="#3f9a52" stroke="#e8c58c" stroke-width="5"/><path d="M14 4.5v4M20 4.5v2.5M26 4.5v4M32 4.5v2.5M38 4.5v4M44 4.5v2.5M50 4.5v4M56 4.5v2.5" stroke="#6a4a22" stroke-width="1.2"/><ellipse cx="20" cy="50" rx="8" ry="5.5" fill="#1c2350"/><path d="M15 48q3-2 6-1" stroke="#7a8ad8" stroke-width="1.4" fill="none" stroke-linecap="round"/><g transform="translate(51 26)"><circle r="8" fill="#8a5e14"/><circle r="6" fill="#d8a23a"/><path d="M-11 0H11M0-11V11" stroke="#8a5e14" stroke-width="3.4" stroke-linecap="round"/><path d="M-10 0H10M0-10V10" stroke="#d8a23a" stroke-width="2" stroke-linecap="round"/><circle r="2.2" fill="#8a5e14"/></g><circle cx="25" cy="24" r="4.6" fill="#d9e8d2"/><circle cx="25" cy="24" r="3.6" fill="#0c140c"/><path d="M25 24V8" stroke="#e8b420" stroke-width="2.4" stroke-linecap="round"/><path d="M25.5 8.5l12 3.5-12 4z" fill="#e04848"/><path d="M42 53q-8-10-14-24" stroke="#fff" stroke-width="2" stroke-dasharray="2 3.2" fill="none" stroke-linecap="round"/><circle cx="45" cy="56" r="4.8" fill="#fff" stroke="#8a948a" stroke-width="1"/></svg>', iconBg: '#c99a5c',
       thumb: 'img/thumbs/minigolf.webp', thumb2x: 'img/thumbs/minigolf@2x.webp',
       tech: '2d',
-      // no online battle: a round is 9 quiet holes against par; today's hole is the shared contest
+      // online battle (common/versus.js): 4 minutes, everyone plays the same seeded run of holes (MinigolfVsPlan), par 300 +100/−60 per stroke, +200 ace, a hole not sunk = 0
       // pause: true — the ball and the gears move in real time and stop while hidden or paused
-      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
-      versus: null,
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: true, stages: true },
+      versus: 'common',
       // stars over every hole (best of the course rounds): 1 holed out, 2 within par + 1, 3 within par. 22 courses × 9 holes × 3 = at most 594 (cap 1000).
       // (until 2026-11 the ranking was "strokes under par"; the 3 old courses were re-tuned, so the new value starts from the new records)
       score: { unit: { ja: '星', en: 'stars' }, fmt: { ja: '★{n}', en: '★{n}' }, order: 'desc', cap: 1000, maxRate: null },

@@ -116,4 +116,20 @@ test('switch doors: shut until the ball rolls over the switch; the snapshot keep
 test('scoreName', () => {
   eq(MG.scoreName(1, 3), 'ace'); eq(MG.scoreName(2, 4), 'eagle'); eq(MG.scoreName(2, 3), 'birdie'); eq(MG.scoreName(3, 3), 'par'); eq(MG.scoreName(4, 3), 'bogey'); eq(MG.scoreName(5, 3), 'double'); eq(MG.scoreName(7, 3), 'over');
 });
+test('vsPoints: par 300, +100 per stroke under, −60 per stroke over (min 50), ace +200, not sunk 0', () => {
+  eq(MG.vsPoints(3, 3, true), 300); eq(MG.vsPoints(2, 3, true), 400); eq(MG.vsPoints(1, 3, true), 700, 'ace on a par 3');
+  eq(MG.vsPoints(4, 3, true), 240); eq(MG.vsPoints(5, 3, true), 180); eq(MG.vsPoints(7, 3, true), 60); eq(MG.vsPoints(9, 3, true), 50, 'floor');
+  eq(MG.vsPoints(7, 3, false), 0, 'stroke limit'); eq(MG.vsPoints(0, 3, true), 0);
+  for (const h of HOLES) { const best = MG.vsPoints(1, h.par, true), lim = MG.vsPoints(h.par + 4, h.par, true); ok(best > lim && lim >= 50, h.id); }
+});
+test('vsPlan: same seed → same holes, no repeats, rising tiers, all from the 198 existing holes', () => {
+  const { vsPlan, COURSES } = require(path.join(ROOT, 'minigolf/holes.js'));
+  const a = vsPlan(12345, 60), b = vsPlan(12345, 60), c = vsPlan(54321, 60);
+  eq(a.map(h => h.id).join(), b.map(h => h.id).join(), 'deterministic');
+  ok(a.map(h => h.id).join() !== c.map(h => h.id).join(), 'a different seed gives a different run');
+  eq(new Set(a.map(h => h.id)).size, 60, 'no repeats');
+  ok(a.every(h => HOLES.includes(h)), 'only existing holes');
+  eq(a.slice(0, 25).map(h => h.id).join(), vsPlan(12345, 25).map(h => h.id).join(), 'a prefix does not depend on the length');
+  for (let sd = 1; sd < 200; sd++) { const p = vsPlan(sd * 7919, 12); ok(p[0].course <= 2 && p[1].course <= 2 && p[2].course <= 2, 'starts in tier 1: ' + sd); ok(p.every((h, k) => COURSES[h.course].tier - 1 <= Math.floor(k / 3)), 'tier never above k/3: ' + sd); }
+});
 run('minigolf-engine');

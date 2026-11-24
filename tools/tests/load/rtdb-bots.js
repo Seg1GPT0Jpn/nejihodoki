@@ -28,7 +28,7 @@ function ensureSdk() {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const VS_GAMES = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'fit'];
+const VS_GAMES = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'fit', 'minigolf'];
 
 // ---------------------------------------------------------------- SDK の入った vm（WebSocket の数と転送量を数える）
 function sdkContext(net) {

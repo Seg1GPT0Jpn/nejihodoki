@@ -45,6 +45,10 @@ KoboI18n.add({ en: {
   '坂は矢印の向きへ転がる。おがくずの上ではすぐ止まる。ばねは強くはじく': 'Slopes roll the ball along the arrows. Sawdust stops it fast. Springs kick it hard',
   '歯車と定規は動いている。インクに入ると罰打1で、打つ前の場所へ。パイプは入ると出口から出てくる': 'Gears and rulers move. Ink costs one stroke and puts you back. Pipes carry the ball to their exit',
   '1ホールに打てるのは パー＋4 打まで': 'Each hole allows up to par + 4 strokes',
+  // online battle (common/versus.js has the shared strings)
+  '点': 'pts', '{n}点': '{n} pts', '第{n}ホール': 'Hole {n}', '対戦 {n}・{id}': 'Battle {n} · {id}', '{n}ホール目 ・パー {p}': 'Hole {n} · par {p}',
+  '+{n}点': '+{n}', '打数の上限：0点': 'Stroke limit: 0 pts', '対戦': 'Battle',
+  'オンライン対戦：2〜4人で4分間、同じホールの並びを回って点を競う。パーで300点、1打少ないごとに +100、1打多いごとに −60（最低50）、ホールインワンは +200。カップインできなかったホールは0点': 'Online battle: 2–4 players, 4 minutes, the same run of holes for everyone. Par is 300 pts, +100 per stroke under, −60 per stroke over (at least 50), +200 for a hole in one. A hole you do not sink scores 0',
   '1打ごとに自動で保存。とちゅうで閉じても、つづきから': 'Saved after every stroke. Close any time and continue later',
   'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks', 'コースの選びへ': 'Course select', 'このホールをやめる': 'Leave this hole',
   'ラウンドをやめてタイトルへ': 'Quit the round', '自動保存しました': 'Autosaved',
@@ -53,6 +57,7 @@ KoboI18n.add({ en: {
   'はね戸は矢印の向きにだけ通れる。赤いスイッチの上を通ると、赤い扉が開く': 'Flap gates only let you through the way the arrows point. Roll over a red switch to open the red doors',
 } });
 </script>
+<script src="../common/versus.js"></script>
 <script src="../common/games.js"></script>
 <script src="../common/platform.js"></script>
 <script src="../common/audio.js"></script>
@@ -192,7 +197,18 @@ table.sc td.tot, table.sc th.tot { width: 2.6em; }
 .howto li { margin: 4px 0; }
 .langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--mg-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
 .langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--mg-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
-body.thumb header, body.thumb #bar, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip { display: none !important; }
+/* online battle entry (common/versus.js) */
+.vs-slot { display: contents; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.vs-wrap { display: block; }
+.vs-wrap .kvs-entry { margin-top: 8px; min-height: 44px; border-radius: 16px; background: var(--mg-panel); border-color: var(--mg-line); font-size: 13.5px; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+@media (max-width: 359px) { #vsSlot .kvs-entry { display: none; } } /* narrow phones: the title screen has the entry button */
+#vsInfo { flex: none; min-width: 96px; min-height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--mg-line); background: var(--kb-surface); color: var(--kb-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 10px; font-weight: 800; line-height: 1.25; }
+#vsInfo small { font-size: 10.5px; color: var(--kb-dim); font-weight: 800; white-space: nowrap; }
+#vsInfo b { font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#vsInfo b.pen { color: var(--mg-bad); }
+body.thumb #vsSlot, body.thumb #vsInfo, body.thumb header, body.thumb #bar, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip { display: none !important; }
 body.thumb #main { padding: 0; max-width: none; }
 
 @keyframes rise { from { transform: translateY(12px) scale(.97); opacity: 0; } }
@@ -225,6 +241,7 @@ body.thumb #main { padding: 0; max-width: none; }
       <span class="chip" id="holeChip" data-i18n>ころがし工房ゴルフ</span>
       <span class="chip" id="parChip"></span>
       <span class="chip" id="strokeChip" aria-label="打数" data-i18n-attr="aria-label">0</span>
+      <span id="vsSlot" class="vs-slot"></span>
       <button class="icon" id="sndBtn" type="button" aria-label="サウンド オン" aria-pressed="true"></button>
       <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
     </div>
@@ -235,6 +252,7 @@ body.thumb #main { padding: 0; max-width: none; }
       <div id="tip" hidden role="status" aria-live="polite"></div>
     </div>
     <div id="bar">
+      <div id="vsInfo" hidden aria-live="off"><small id="vsInfoL"></small><b id="vsInfoN"></b></div>
       <button id="cardBtn" type="button"><span data-i18n>スコアカード</span><b id="cardTot">0</b></button>
       <div id="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="強さ" data-i18n-attr="aria-label"><div id="meterFill"></div><span id="meterText" data-i18n>ひっぱって打つ</span></div>
     </div>
@@ -252,6 +270,7 @@ body.thumb #main { padding: 0; max-width: none; }
     </div>
     <button class="btn" id="tContinue" type="button" hidden></button>
     <div class="row2"><button class="btn sub" id="tDaily" type="button" hidden></button><button class="btn sub" id="tPractice" type="button" data-i18n>練習</button></div>
+    <span class="vs-wrap" id="tVs"></span>
     <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
   </div>
 </div>
@@ -320,7 +339,7 @@ body.thumb #main { padding: 0; max-width: none; }
 const T = KoboI18n.t;
 const EN = KoboI18n.lang === 'en';
 const MG = window.MinigolfEngine, ART = window.MinigolfArt, HOLES = window.MinigolfHoles, COURSES = window.MinigolfCourses, TIERS = window.MinigolfTiers;
-const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null, VS = window.KoboVersus || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'minigolf';
 const SAVE_KEY = 'kusoge.minigolf.save';  // records per course (registry: per-field merge)
@@ -442,7 +461,7 @@ function loop(t) {
   if (fx.length) fx = fx.filter(f => t / 1000 - f.t0 < f.d);
   if (G && G.st === 'rest' && trail.length && !aim) { trail.shift(); needDraw = true; }
 }
-const playing = () => !!(run && run.started);
+const playing = () => !!(run && run.started && (run.mode !== 'vs' || (VS && VS.canPlay())));
 
 // ---------- engine events → effects and sounds ----------
 function pumpEvents() {
@@ -468,7 +487,7 @@ const HS = {};
 function setText(id, s) { if (HS[id] !== s) { HS[id] = s; $(id).textContent = s; } }
 function hud(bump) {
   const h = hole();
-  if (!run) { setText('parChip', T('パー {n}', { n: h.par })); setText('strokeChip', T('{n} 打', { n: 0 })); $('cardBtn').hidden = true; meter(0); return; }
+  if (!run) { setText('parChip', T('パー {n}', { n: h.par })); setText('strokeChip', T('{n} 打', { n: 0 })); $('cardBtn').hidden = true; $('vsInfo').hidden = true; meter(0); return; }
   setText('parChip', T('パー {n}', { n: h.par }));
   const n = G ? G.strokes : 0;
   setText('strokeChip', T('{n} 打', { n }));
@@ -483,6 +502,13 @@ function hud(bump) {
     tb.className = d < 0 ? 'under' : d > 0 ? 'over' : '';
     $('cardBtn').hidden = false;
   } else { $('cardBtn').hidden = true; }
+  // battle: the header is covered by the match HUD, so the hole, par and strokes show here beside the power meter
+  const vi = $('vsInfo'); vi.hidden = run.mode !== 'vs';
+  if (run.mode === 'vs') {
+    setText('vsInfoL', T('{n}ホール目 ・パー {p}', { n: (run.k | 0) + 1, p: h.par }));
+    setText('vsInfoN', T('{n} 打', { n }) + ' / ' + (h.par + 4));
+    $('vsInfoN').classList.toggle('pen', !!(G && G.pen));
+  }
   meter(aim ? aim.p : 0);
 }
 function cardDiff(card, ci) { const hs = courseHoles(ci); let d = 0; card.forEach((s, i) => { d += s - hs[i].par; }); return d; }
@@ -537,6 +563,7 @@ window.addEventListener('keydown', e => {
   const tg = e.target && e.target.tagName;
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(tg)) return;
   if (/^(BUTTON|A)$/.test(tg) && (e.key === ' ' || e.key === 'Enter')) return;
+  if (VS && VS.active() && !(vs && VS.canPlay())) return; // the battle screens own the keyboard (nickname, cards)
   if (anyOverlay()) return;
   if (e.key === 'Escape') { if (aim) cancelAim(); else openMenu(); return; }
   if (!canAim()) return;
@@ -576,6 +603,7 @@ function onHoleEnd() {
   const h = hole(), sunk = G.st === 'sunk', strokes = G.strokes;
   holeEnd = { sunk, strokes, hi: run.hi, mode: run.mode };
   aim = null; meter(0);
+  if (run.mode === 'vs') { vsHoleEnd(sunk, strokes, h); return; }
   const st = save.stats;
   if (sunk && run.mode !== 'practice') { st.holes = (st.holes | 0) + 1; st.strokes = (st.strokes | 0) + strokes; if (strokes === 1) st.aces = (st.aces | 0) + 1; if (strokes < h.par) st.birdies = (st.birdies | 0) + 1; st.ink = (st.ink | 0) + G.pen; }
   if (tut != null) endTut();
@@ -628,6 +656,7 @@ function finishRound() {
 // ---------- results ----------
 const NAME = { ace: 'ホールインワン！', albatross: 'アルバトロス！', eagle: 'イーグル！', birdie: 'バーディー！', par: 'パー！', bogey: 'ボギー', double: 'ダブルボギー', over: 'カップイン' };
 function showHoleResult() {
+  if (vs) return; // a solo result that was due during a battle is shown on exit
   const R = holeEnd; if (!R) return;
   const h = HOLES[R.hi];
   hideOverlays();
@@ -735,11 +764,18 @@ function startPlay(mode, extra) {
   else emit('play_start', { mode: 'practice', stage: stageNo(h) });
 }
 function endPlay(reason) {
-  if (!run || !run.started) return;
+  if (!run || !run.started || run.mode === 'vs') return;
   if (run.mode === 'course') emit('play_end', { mode: 'normal', score: 0, durationMs: Date.now() - run.wall, reason: reason || 'quit', stage: run.ci + 1 });
   else if (run.mode === 'daily') emit('play_end', { mode: 'daily', dateKey: run.dk, score: 0, durationMs: Date.now() - run.wall, reason: 'quit' });
   else emit('play_end', { mode: 'practice', score: 0, durationMs: Date.now() - run.wall, reason: 'quit', stage: stageNo(hole()) });
   run.started = false;
+}
+function endPlayEvent() { // the solo round is set aside for a battle: report it as left, but keep it as it is
+  if (!run || !run.started) return;
+  const dur = Date.now() - run.wall;
+  if (run.mode === 'course') emit('play_end', { mode: 'normal', score: 0, durationMs: dur, reason: 'quit', stage: run.ci + 1 });
+  else if (run.mode === 'daily') emit('play_end', { mode: 'daily', dateKey: run.dk, score: 0, durationMs: dur, reason: 'quit' });
+  else emit('play_end', { mode: 'practice', score: 0, durationMs: dur, reason: 'quit', stage: stageNo(hole()) });
 }
 function startCourse(ci) {
   if (!courseOpen(ci)) return;
@@ -771,7 +807,7 @@ function openHole(snap, pendShot) {
   }
   tut = run.mode === 'course' && h.index === 0 && !save.tut && G.strokes === 0 ? 0 : run.mode === 'course' && h.index === 0 && !save.tut && G.strokes > 0 ? 1 : null;
   Object.keys(HS).forEach(k => delete HS[k]); meterKey = '';
-  const tag = run.mode === 'daily' ? T('今日のホール') : run.mode === 'practice' ? T('練習・{id}', { id: h.id }) : h.id;
+  const tag = run.mode === 'vs' ? T('対戦 {n}・{id}', { n: (run.k | 0) + 1, id: h.id }) : run.mode === 'daily' ? T('今日のホール') : run.mode === 'practice' ? T('練習・{id}', { id: h.id }) : h.id;
   $('holeChip').innerHTML = '<b>' + esc(tag) + '</b><span>' + esc(L2(h.n)) + '</span>';
   cv.setAttribute('aria-label', T('ホール {id}', { id: h.id }) + ' ' + L2(h.n) + ' ' + T('パー {n}', { n: h.par }));
   layout(); hud();
@@ -782,7 +818,7 @@ function openHole(snap, pendShot) {
 
 // ---------- autosave ----------
 function persist() {
-  if (DEBUG_NOSAVE || !run || !run.started || !G) return;
+  if (DEBUG_NOSAVE || !run || !run.started || !G || vs) return; // nothing is saved during a battle
   if (run.mode === 'practice') return;
   if (G.st !== 'rest' && !pend) return;
   const snap = pend ? Object.assign(G.snap(), { tick: G.shots.length ? G.shots[G.shots.length - 1][0] : G.tick, x: G.lx, y: G.ly, strokes: G.strokes - 1 }) : G.snap();
@@ -946,6 +982,7 @@ function renderHowto() {
     'はね戸は矢印の向きにだけ通れる。赤いスイッチの上を通ると、赤い扉が開く',
     '1ホールに打てるのは パー＋4 打まで',
     '星：カップイン ★、パー＋1以内 ★★、パー以内 ★★★。全ホールの星の合計がランキング',
+    'オンライン対戦：2〜4人で4分間、同じホールの並びを回って点を競う。パーで300点、1打少ないごとに +100、1打多いごとに −60（最低50）、ホールインワンは +200。カップインできなかったホールは0点',
     '1打ごとに自動で保存。とちゅうで閉じても、つづきから']);
 }
 let howtoFirst = false;
@@ -986,6 +1023,7 @@ function themeColor() {
 let pm = null;
 $('menuBtn').addEventListener('click', () => openMenu());
 function openMenu() {
+  if (VS && VS.active()) return;
   if (!UI) { showTitle(); return; }
   if (pm && pm.isOpen) return;
   cancelAim();
@@ -1001,13 +1039,101 @@ function openMenu() {
   pm.open();
 }
 
+// ---------- online battle (common/versus.js) ----------
+// Everyone gets the same run of holes: MinigolfVsPlan(seed) (holes.js) draws them from the match seed with a seeded random (never Math.random), rising
+// from the apprentice courses to the master ones, never repeating. A hole scores only when it is sunk: par 300, +100 per stroke under, −60 per stroke
+// over (min 50), +200 for a hole in one (MG.vsPoints); the stroke limit (par + 4) or the clock running out scores 0. Time only limits how many holes you
+// get to. Nothing is saved and no star or best is touched during a battle (versus.js rule); the solo round is set aside as it is and comes back on exit.
+let vs = null;   // { snap, playing: 'versus' | 'practice' | null, practice, plan } while a battle owns the board
+function vsHoleEnd(sunk, strokes, h) {
+  const pts = MG.vsPoints(strokes, h.par, sunk);
+  run.vsScore = (run.vsScore | 0) + pts; if (sunk) run.vsHoles = (run.vsHoles | 0) + 1;
+  holeEnd.pts = pts;
+  if (VS) VS.reportScore(run.vsScore);
+  if (sunk) { const nm = MG.scoreName(strokes, h.par); if (nm === 'ace' || nm === 'eagle' || nm === 'albatross') sfx('win'); else if (nm === 'birdie' || nm === 'par') sfx('clear'); else sfx('ok'); }
+  else sfx('over');
+  showTip(sunk ? { text: T(NAME[MG.scoreName(strokes, h.par)]) + '  ' + T('+{n}点', { n: pts }), sub: T('{n} 打（パー {p}）', { n: strokes, p: h.par }) } : { text: T('打数の上限：0点'), bad: true }, 1400);
+  const r = run;
+  setTimeout(() => {
+    if (!vs || run !== r || !VS || !VS.canPlay()) return;
+    r.k++; r.hi = vs.plan[r.k % vs.plan.length].index; openHole();
+  }, reduceMotion.matches ? 500 : 1500);
+}
+function vsEnd(reason) {
+  if (!vs || !vs.playing) return;
+  emit('play_end', { mode: vs.playing, score: run && run.mode === 'vs' ? run.vsScore | 0 : 0, durationMs: run ? Date.now() - run.wall : 0, reason, stats: { holes: run ? run.vsHoles | 0 : 0 } });
+  vs.playing = null;
+}
+if (VS) {
+  KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員が同じホールの並びを回ります。',
+    game: GAME, title: T('ころがし工房ゴルフ'), duration: 240, unit: T('点'),
+    theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--mg-btn)', accentInk: '#2a1606', accentShadow: 'var(--mg-btn-shadow)', card: 'var(--mg-card)',
+      line: 'var(--mg-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
+    hudCover: () => document.querySelector('header'),
+    onOpen() { cancelAim(); const g = KG(); if (g) g.pause('versus'); },
+    onStart({ seed, practice }) {
+      if (!vs) {
+        // the solo round (or the title / hole result / scorecard on top of it) is set aside exactly as it is
+        const solo = !!(run && run.started);
+        if (solo) { persist(); endPlayEvent(); }
+        vs = { snap: { run, G, holeEnd, tut, ov: OVERLAYS.filter(id => !$(id).hidden), solo, tip: !$('tip').hidden }, playing: null, practice: !!practice, plan: null };
+      } else vsEnd('quit');
+      vs.practice = !!practice; seed = seed >>> 0;
+      vs.plan = window.MinigolfVsPlan(seed, 60);
+      clearTimeout(tipT); $('tip').hidden = true;
+      run = { mode: 'vs', ci: vs.plan[0].course, hi: vs.plan[0].index, card: [], dk: null, seed, started: true, wall: Date.now(), k: 0, vsScore: 0, vsHoles: 0 };
+      vs.playing = practice ? 'practice' : 'versus';
+      paused = false;
+      openHole();
+      emit('play_start', { mode: vs.playing, seed });
+    },
+    onGo() { lastT = now(); acc = 0; needDraw = true; hud(); },
+    getScore: () => (run && run.mode === 'vs' ? run.vsScore | 0 : 0),
+    onEnd() {
+      if (!run || run.mode !== 'vs') return;
+      cancelAim(); vsEnd('over'); needDraw = true;
+    },
+    onExit() {
+      if (vs) {
+        vsEnd('quit');
+        const s = vs.snap; vs = null;
+        aim = null; fx = []; trail = []; pend = null; acc = 0; clearTimeout(tipT); $('tip').hidden = true;
+        hideOverlays();
+        run = s.run; G = s.G; holeEnd = s.holeEnd; tut = s.tut;
+        if (G) evRead = G.evN;
+        s.ov.forEach(id => { $(id).hidden = false; });
+        Object.keys(HS).forEach(k => delete HS[k]); meterKey = '';
+        if (run) {
+          const h = hole();
+          const tag = run.mode === 'daily' ? T('今日のホール') : run.mode === 'practice' ? T('練習・{id}', { id: h.id }) : h.id;
+          $('holeChip').innerHTML = '<b>' + esc(tag) + '</b><span>' + esc(L2(h.n)) + '</span>';
+          cv.setAttribute('aria-label', T('ホール {id}', { id: h.id }) + ' ' + L2(h.n) + ' ' + T('パー {n}', { n: h.par }));
+        } else { run = null; G = MG.create(HOLES[0]); $('holeChip').innerHTML = '<b>1-1</b><span>' + esc(L2(HOLES[0].n)) + '</span>'; }
+        layout(); hud(); meter(0);
+        if (s.solo && run) emit('play_start', { mode: run.mode === 'course' ? 'normal' : run.mode, stage: run.mode === 'course' ? run.ci + 1 : undefined, dateKey: run.dk || undefined, resumed: true });
+        if (tut != null) coachTip();
+        if (!$('ovTitle').hidden) showTitle();
+        // a hole that ended during the battle screens: its result card comes now
+        else if (run && run.started && G && G.done() && holeEnd && !anyOverlay()) showHoleResult();
+        needDraw = true;
+      }
+      // onOpen paused the game: a solo ball in motion comes back through the pause menu (KoboGame.resume → our resume hook), never running on its own
+      paused = true;
+      const g = KG(); if (g) g.resume('api');
+      paused = false; lastT = now(); acc = 0;
+    },
+  });
+  VS.button($('vsSlot'), { compact: true });
+  VS.button($('tVs'));
+}
+
 // ---------- KoboGame: the ball rolls in real time (stops while hidden; waits for "Resume") ----------
 if (window.KoboGame) KoboGame.register({
   id: GAME,
   pause() { paused = true; cancelAim(); persist(); },
-  resume() { if (!paused) return; if (playing() && G && G.st !== 'rest' && !anyOverlay()) openMenu(); paused = false; lastT = now(); acc = 0; },
+  resume() { if (!paused) return; if (!vs && playing() && G && G.st !== 'rest' && !anyOverlay()) openMenu(); paused = false; lastT = now(); acc = 0; },
   save() { persist(); },
-  isIdle: () => !(playing() && G && G.st !== 'rest'),
+  isIdle: () => !vs && !(playing() && G && G.st !== 'rest'),
   dispose() { cancelAnimationFrame(raf); },
   daily: { start({ dateKey }) { startDaily(dateKey); } },
 });
@@ -1047,6 +1173,8 @@ if (DEBUG) {
       card: run ? run.card.slice() : [], par: hole().par, over: !!(G && G.done()), won: !!(G && G.st === 'sunk'), score: save.under, under: save.under,
       aim: aim ? { a: aim.a, p: aim.p } : null, tut, paused, menuOpen, rot: V ? V.rot : false, dk: run ? run.dk : null,
       title: !$('ovTitle').hidden, result: !$('ovHole').hidden, card2: !$('ovCard').hidden, practice: !$('ovPractice').hidden, howto: !$('howto').hidden,
+      vsScore: run && run.mode === 'vs' ? run.vsScore | 0 : null, vsHoles: run && run.mode === 'vs' ? run.vsHoles | 0 : 0, k: run && run.mode === 'vs' ? run.k : null,
+      vs: vs ? { playing: vs.playing, practice: vs.practice, plan: vs.plan.slice(0, 30).map(h => h.id) } : null, vsInfo: $('vsInfo').hidden ? '' : $('vsInfo').textContent,
       tip: $('tip').hidden ? '' : $('tip').textContent, save: JSON.parse(JSON.stringify(save)), last: holeEnd, round: lastRound,
     }),
     win() { if (!G || !playing()) return false; G.x = hole().cup[0]; G.y = hole().cup[1]; G.st = 'sunk'; if (!G.strokes) G.strokes = 1; G.ev('cup', G.strokes); pumpEvents(); onHoleEnd(); return true; },

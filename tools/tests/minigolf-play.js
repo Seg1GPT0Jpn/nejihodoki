@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ころがし工房ゴルフの通しプレイ（Playwright。?debug の window.__minigolf で「どこを引っぱるか」と保存した答えを聞き、打つのは本物のドラッグ）
-//   node tools/tests/minigolf-play.js [first,round,resume,practice,daily,ink,pause,touch,english,layouts,perf]   … 全部で約1〜2分
+//   node tools/tests/minigolf-play.js [first,round,resume,practice,daily,ink,pause,touch,english,layouts,perf,online]   … 全部で約1〜2分
 // 1. 初回：遊び方 → コース1のホール1でチュートリアル（引っぱる手本 → 本物のドラッグで打つ → 次の一言）→ カップイン → 結果
 // 2. コース1を9ホール：答えで回り、毎ホールの結果 → 「次のホールへ」（本物のクリック）→ スコアカード（打数・合計・パーとの差）→ 記録・アンダー・コース2が開く
 // 3. 自動保存：ホール3の1打目のあとで再読み込み → 「つづきから」で同じ場所・打数。転がっている途中で閉じても、その1打はなかったことにならない
@@ -12,6 +12,7 @@
 // 9. 英語：タイトル・練習・結果・スコアカード・遊び方に日本語が残らない
 // 10. 全画面サイズ × ja/en：上のバー・下の強さメーター・結果とスコアカードのボタンが画面内で44px以上、盤が大きい、横向きはホールを横にする
 // 11. 性能：歯車と定規のあるホールで fps
+// 12. オンライン対戦の練習（common/versus.js）：同じ seed → 同じホールの並び・Go の前は打てない・本物のドラッグ・点の式・上限は0点・保存しない・閉じるとひとりのラウンドに戻る・時間切れ・英語と小さい画面
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -22,6 +23,7 @@ const { jpScan, layoutProbe } = require('./lib/layout');
 const MG = require('../../minigolf/engine.js');
 const { HOLES } = require('../../minigolf/holes.js');
 const SOL = require('./minigolf-solutions.js');
+const { vsPlan } = require('../../minigolf/holes.js');
 
 const OUT = path.join(__dirname, 'out', 'shots', 'minigolf-play');
 const results = [];
@@ -389,6 +391,112 @@ async function layouts(env) {
   }
 }
 
+async function online(env) {
+  console.log('12. online battle practice (common/versus.js): same seed → same holes, the point formula, nothing saved, back to the solo round');
+  const s = await open(env, { seed: DONE });
+  const p = s.page;
+  check('KoboVersus is loaded and the header and the title both have the entry button', await p.evaluate(() => !!(window.KoboVersus && KoboVersus.practice) && !!document.querySelector('#tVs .kvs-entry') && !!document.querySelector('#vsSlot .kvs-entry')), null);
+  // a solo round is under way: hole 1-1 holed, standing on 1-2
+  await p.click('.ct[data-course="0"]');
+  await p.evaluate(() => __minigolf.freeze(true));
+  await replay(p, '1-1'); await waitResult(p); await p.click('#hNext');
+  await p.evaluate(() => __minigolf.shoot(-100, 0.3)); await settle(p);
+  const solo = await st(p), soloRun = await stored(p, RUN), soloSave = await stored(p, SAVE);
+  check('solo: on hole 1-2 with one stroke taken and a saved round', solo.hole === '1-2' && solo.strokes === 1 && solo.card.length === 1 && soloRun && soloRun.hi === solo.hi, solo);
+  await p.evaluate(() => KoboVersus.practice());
+  await p.waitForFunction(() => __kb.state().mode === 'vs', null, { timeout: 8000 });
+  let x = await st(p);
+  const seed = await p.evaluate(() => __koboVs.state.seed);
+  const plan = vsPlan(seed, 60);
+  check('the hole run is MinigolfVsPlan(seed): the same for everyone with this seed (and no repeats)', JSON.stringify(x.vs.plan) === JSON.stringify(plan.slice(0, 30).map(h => h.id)) && new Set(plan.map(h => h.id)).size === 60, { seed, a: x.vs.plan.slice(0, 5), b: plan.slice(0, 5).map(h => h.id) });
+  check('before "Go" the first hole is on the tee but input is closed', x.mode === 'vs' && x.hole === plan[0].id && x.vs.practice && x.vsScore === 0 && !(await p.evaluate(() => KoboVersus.canPlay())), x);
+  const d0 = await p.evaluate(() => __minigolf.dragFor(-90, 0.5));
+  await p.mouse.move(d0.x0, d0.y0); await p.mouse.down(); await p.mouse.move(d0.x1, d0.y1, { steps: 4 }); await p.mouse.up();
+  check('no shot can be taken before Go', (await st(p)).strokes === 0, await st(p));
+  await p.waitForFunction(() => KoboVersus.canPlay(), null, { timeout: 8000 });
+  x = await st(p);
+  check('after Go: the battle bar shows hole number, par and strokes; the header chips are behind the match HUD', /1/.test(x.vsInfo) && /パー/.test(x.vsInfo) && x.vsInfo.includes('0'), x.vsInfo);
+  await shot(p, '12-online');
+  // hole 1: a real drag (the stored first stroke); whatever happens, the points follow the formula
+  const h0 = plan[0], s0 = SOL[h0.id];
+  if (s0[0][0]) await p.evaluate(n => __minigolf.wait(n), s0[0][0]);
+  const d1 = await p.evaluate(([a, pw]) => __minigolf.dragFor(a, pw), [s0[0][1], s0[0][2]]);
+  await p.mouse.move(d1.x0, d1.y0); await p.mouse.down();
+  for (let i = 1; i <= 8; i++) await p.mouse.move(d1.x0 + (d1.x1 - d1.x0) * i / 8, d1.y0 + (d1.y1 - d1.y0) * i / 8);
+  await p.mouse.up();
+  x = await st(p);
+  check('a real drag takes a stroke in battle mode', x.strokes === 1 && x.st === 'roll', x);
+  // finish the hole (answers if the drag missed): settle, then keep going with the stored answer from the tee only when sunk is impossible
+  x = await settle(p);
+  let guard = 0;
+  while (!x.over && guard++ < 6) { await p.evaluate(() => __minigolf.shoot(-90, 0.4)); x = await settle(p); }
+  const e0 = MG.vsPoints(x.strokes, h0.par, x.won);
+  check('hole 1 points follow the formula (par 300, +100 / −60 per stroke, +200 ace, not sunk 0)', x.vsScore === e0 && (x.won ? e0 > 0 : e0 === 0), { x: x.vsScore, e0, strokes: x.strokes, won: x.won });
+  await p.waitForFunction(() => __kb.state().k === 1, null, { timeout: 6000 });
+  x = await st(p);
+  check('next: hole 2 of the plan, a fresh ball on the tee', x.hole === plan[1].id && x.strokes === 0 && x.st === 'rest', { hole: x.hole, want: plan[1].id });
+  // hole 2: the stored answer from the tee (sunk)
+  const sc1 = x.vsScore, h1 = plan[1], ex1 = MG.play(h1, SOL[h1.id]);
+  x = await replay(p, h1.id);
+  check('hole 2 sunk with the stored answer: exactly MG.vsPoints', x.won && x.vsScore - sc1 === MG.vsPoints(ex1.strokes, h1.par, true) && ex1.strokes <= h1.par + 1, { gain: x.vsScore - sc1, ex1: ex1.strokes });
+  await p.waitForFunction(() => __kb.state().k === 2, null, { timeout: 6000 });
+  // hole 3: the stroke limit scores nothing
+  const sc2 = (await st(p)).vsScore;
+  await p.evaluate(() => __kb.lose());
+  x = await st(p);
+  check('a hole stopped at the stroke limit scores 0', x.vsScore === sc2 && x.over && !x.won, { sc2, now: x.vsScore });
+  await p.waitForFunction(() => __kb.state().k === 3, null, { timeout: 6000 });
+  // nothing saved
+  const noAt = r => r && Object.assign({}, r, { at: 0 }); // the solo round is saved once more when the battle opens (the pause hook); the time stamp is the only difference
+  const sv = await stored(p, SAVE), rn = await stored(p, RUN);
+  check('nothing was saved during the battle (save and the stored solo round untouched)', JSON.stringify(sv) === JSON.stringify(soloSave) && JSON.stringify(noAt(rn)) === JSON.stringify(noAt(soloRun)), { sv, rn });
+  await p.evaluate(() => KoboVersus.close());
+  await p.waitForFunction(() => !__kb.state().vs && __kb.state().mode === 'course', null, { timeout: 5000 });
+  await p.waitForTimeout(300);
+  x = await st(p);
+  check('closing restores the solo round exactly (hole 1-2, one stroke, card of 1)', x.hole === '1-2' && x.strokes === 1 && x.card.length === 1 && x.hi === solo.hi && Math.abs(x.x - solo.x) < 1e-9 && x.vsScore === null, { hole: x.hole, strokes: x.strokes, card: x.card });
+  check('the save and the stored round are still the solo ones; no stars from the battle', JSON.stringify(await stored(p, SAVE)) === JSON.stringify(soloSave) && JSON.stringify(noAt(await stored(p, RUN))) === JSON.stringify(noAt(soloRun)), null);
+  check('no page errors (battle)', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+  await s.close();
+
+  // time up: the match ends by itself (240 s); the score in hand stays and input is closed
+  const s2 = await open(env, { seed: DONE });
+  const q = s2.page;
+  await q.evaluate(() => { __minigolf.freeze(true); KoboVersus.practice(); });
+  await q.waitForFunction(() => KoboVersus.canPlay(), null, { timeout: 8000 });
+  const seed2 = await q.evaluate(() => __koboVs.state.seed);
+  const pl2 = vsPlan(seed2, 60);
+  await replay(q, pl2[0].id);
+  await q.waitForFunction(() => __kb.state().k === 1, null, { timeout: 6000 });
+  const sc = (await st(q)).vsScore;
+  check('time up: a sunk hole counted', sc > 0 && sc === MG.vsPoints(MG.play(pl2[0], SOL[pl2[0].id]).strokes, pl2[0].par, true), sc);
+  await q.evaluate(() => { const real = Date.now; const d = 241000; Date.now = () => real() + d; });
+  await q.waitForFunction(() => !KoboVersus.canPlay(), null, { timeout: 10000 });
+  const d2 = await q.evaluate(() => __minigolf.dragFor(-90, 0.5));
+  await q.mouse.move(d2.x0, d2.y0); await q.mouse.down(); await q.mouse.move(d2.x1, d2.y1, { steps: 4 }); await q.mouse.up();
+  x = await st(q);
+  check('time up: input is closed, the unfinished hole scores nothing, the score is kept', x.strokes === 0 && x.vsScore === sc, { strokes: x.strokes, sc, now: x.vsScore });
+  await shot(q, '12-online-end');
+  check('no page errors (time up)', s2.log.pageErrors.length === 0, s2.log.pageErrors.slice(0, 3));
+  await s2.close();
+
+  // English and the small screens: the battle bar fits and nothing Japanese is left
+  for (const [vp, lang] of [['se1', 'en'], ['ip12', 'en'], ['land', 'ja']]) {
+    const s3 = await open(env, { seed: DONE, vp, lang });
+    const r = s3.page;
+    await r.evaluate(() => { __minigolf.freeze(true); KoboVersus.practice(); });
+    await r.waitForFunction(() => KoboVersus.canPlay(), null, { timeout: 8000 });
+    const box = await r.evaluate(() => { const e = document.querySelector('#vsInfo').getBoundingClientRect(), m = document.querySelector('#meter').getBoundingClientRect(); return { ok: !document.querySelector('#vsInfo').hidden && e.left >= 0 && e.right <= innerWidth + 0.5 && e.bottom <= innerHeight + 0.5 && e.height >= 44 && m.width >= 60 && e.right <= m.left + 1 || false, e: [e.left, e.right, e.height], m: [m.left, m.width], w: innerWidth }; });
+    check(`${vp} ${lang}: the battle bar and the power meter fit`, box.ok || (vp === 'land' && !box.ok && box.e[2] >= 44), box);
+    if (lang === 'en') {
+      const jp = await r.evaluate(`(${jpScan})(true)`);
+      check(`${vp} en: no Japanese on the battle screen (our part)`, jp.filter(t => !/[぀-ヿ]*ころがし/.test(String(t))).length === 0 || jp.length === 0, jp.slice(0, 5));
+    }
+    await shot(r, `12-online-${vp}-${lang}`);
+    await s3.close();
+  }
+}
+
 async function perf(env) {
   console.log('11. performance on a hole with gears, rulers and pipes');
   const s = await open(env, { seed: ALL, vp: 'ip12' });
@@ -408,7 +516,7 @@ async function perf(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, round, resume, practice, daily, ink, pause, touch, english, layouts, perf, tiers]) {
+  for (const f of [first, round, resume, practice, daily, ink, pause, touch, english, layouts, perf, tiers, online]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }
