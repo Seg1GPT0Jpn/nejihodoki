@@ -9,6 +9,7 @@
 // 4. 保存と再開：CPU 戦の途中で再読み込み → 「続きから」→ 同じ局面
 // 5. 詰将棋：王手でない手は戻される → 正解で記録
 // 6. 英語：表記が ☗P-7f、見えている文字に日本語がない
+// 8. 追加：ヒント（CPU 戦・詰将棋の2段）・キーボード・棋譜の見返し（局面を1手ずつ）・四枚/六枚落ち・詰将棋の一覧（手数ごと）
 // 7. オンライン（エミュレーター）：友だちのコードで2人 → 指して投了 / 相手の切断 → 待って勝ち
 'use strict';
 const fs = require('fs');
@@ -176,7 +177,7 @@ async function tsume(browser, env) {
   const p = await open(browser, env);
   await p.click('#tTsume');
   await shot(p, 'tsume-list');
-  await p.click('#tsumeList button:nth-child(3)'); // problem 3 (mate in 3)
+  await p.click('#tsumeList button:nth-of-type(3)'); // problem 3 (mate in 3)
   await sleep(300);
   // a quiet move is not allowed
   const pos = await st(p);
@@ -197,6 +198,117 @@ async function tsume(browser, env) {
   check('saved as solved', (await p.evaluate(() => __shogi.save.mate.s)).includes('t3'));
   await shot(p, 'tsume-solved');
   await p.ctx.close();
+}
+
+async function extras(browser, env) {
+  console.log('8. hints, keyboard, move review, big handicaps, tsume list');
+  const p = await open(browser, env);
+  // handicap: four pieces — the CPU (white) has no rook, bishop or lances and moves first
+  await p.click('#tCpu');
+  await p.click('#cpuHc button:nth-child(6)');
+  check('CPU setup describes the level', (await p.textContent('#cpuLvDesc')).length > 3);
+  await p.click('#cpuGo');
+  await p.waitForFunction(() => __shogi.state().moves.length === 1 && __shogi.state().canAct, null, { timeout: 30000 });
+  let s = await st(p);
+  check('four-piece handicap: the start position is the 四枚落ち one', new E.Game(E.HANDICAPS.yon).pos.sfen() === E.HANDICAPS.yon && s.moves.length === 1 && s.mode === 'cpu');
+  // hint button (CPU game): highlights a legal move and marks the game as assisted
+  await p.click('#bHint');
+  await p.waitForFunction(() => __shogi.hintState && __shogi.hintState.stage === 2, null, { timeout: 10000 });
+  const hs = await p.evaluate(() => ({ h: __shogi.hintState, undo: __shogi.cfg.undo }));
+  const legal = new E.Position(s.sfen).legal().map(u => { const i = E.info(new E.Position(s.sfen).parse(u)); return (i.from >= 0 ? i.from : 'd' + i.drop) + '>' + i.to; });
+  check('the hint is a legal move', legal.includes((hs.h.from >= 0 ? hs.h.from : 'd' + hs.h.drop) + '>' + hs.h.to), hs);
+  check('using a hint marks the game (not counted for the top record)', hs.undo === true);
+  await shot(p, 'hint');
+  // keyboard: arrows move the cursor, Enter selects and moves (7g→7f is a pawn move for black; white moved first)
+  await p.keyboard.press('Escape'); // clear the hint
+  await p.evaluate(() => { document.activeElement && document.activeElement.blur(); });
+  const target = await p.evaluate(() => { const st = __shogi.state(); const g = new __shogi.E.Position(st.sfen); return g.legal().find(u => /^[1-9][a-i][1-9][a-i]$/.test(u) && !g.at(__shogi.usiSquare(u.slice(2, 4)))); });
+  // move the cursor to the source square of `target` by the keyboard, then to its destination
+  const cur = { c: 4, r: 6 };
+  const goto = async usi => {
+    const sq = (usi.charCodeAt(1) - 97) * 9 + (9 - +usi[0]);
+    let col = sq % 9, row = (sq / 9) | 0;
+    if ((await st(p)).flipped) { col = 8 - col; row = 8 - row; }
+    while (cur.c < col) { await p.keyboard.press('ArrowRight'); cur.c++; }
+    while (cur.c > col) { await p.keyboard.press('ArrowLeft'); cur.c--; }
+    while (cur.r < row) { await p.keyboard.press('ArrowDown'); cur.r++; }
+    while (cur.r > row) { await p.keyboard.press('ArrowUp'); cur.r--; }
+    await p.keyboard.press('Enter'); await sleep(80);
+  };
+  await goto(target.slice(0, 2));
+  s = await st(p);
+  check('keyboard: Enter selects a piece', s.sel && s.sel.kind === 'b' && s.targets.length > 0, s.sel);
+  await goto(target.slice(2, 4));
+  await p.waitForFunction(n => __shogi.state().moves.length > n, 1, { timeout: 5000 });
+  check('keyboard: Enter on a target square moves', (await st(p)).moves[1] === target.replace('+', '') || (await st(p)).moves[1].startsWith(target.slice(0, 4)), (await st(p)).moves);
+  await waitTurn(p, 3);
+  // move review in the kifu overlay
+  await p.keyboard.press('k');
+  await p.waitForFunction(() => __shogi.state().overlay === 'ovKifu');
+  let rv = await p.evaluate(() => __shogi.review.i);
+  const n = (await st(p)).moves.length;
+  check('review opens at the last move', rv === n, [rv, n]);
+  await p.keyboard.press('ArrowLeft');
+  check('review: ← goes one move back', (await p.evaluate(() => __shogi.review.i)) === n - 1);
+  await p.click('#rvFirst');
+  check('review: ⏮ goes to the start', (await p.evaluate(() => __shogi.review.i)) === 0 && (await p.textContent('#rvPos')) === '0 / ' + n);
+  await p.click('#kifList li:nth-child(2)');
+  check('review: tapping a move jumps there', (await p.evaluate(() => __shogi.review.i)) === 2);
+  const px = await p.evaluate(() => { const c = document.getElementById('kifBoard'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let k = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) k++; return k; });
+  check('the review board is drawn', px > 5000, px);
+  await shot(p, 'review');
+  await p.keyboard.press('Escape');
+  check('Esc closes the review', (await st(p)).overlay !== 'ovKifu');
+  check('no page errors', !p.errs.length, p.errs);
+  await p.ctx.close();
+
+  // tsume list is grouped by length; a hint in two steps; the solution line is shown
+  const q = await open(browser, env);
+  await q.click('#tTsume');
+  const grp = await q.$$eval('#tsumeList .grp', els => els.map(e => e.textContent));
+  check('tsume list has groups for 1 / 3 / 5 / 7 moves', grp.length >= 4 && /1手詰/.test(grp[0]) && /7手詰/.test(grp[grp.length - 1]), grp);
+  const nProb = await q.$$eval('#tsumeList button', els => els.length);
+  check('at least 30 problems', nProb >= 30, nProb);
+  await q.click('#tsumeList button:nth-of-type(3)');
+  await sleep(200);
+  const pos0 = await st(q);
+  const sol = E.solveMate(new E.Position(pos0.sfen), 3);
+  await q.click('#bHint');
+  let h1 = await q.evaluate(() => __shogi.hintState);
+  check('tsume hint step 1 shows only the piece', h1 && h1.stage === 1 && h1.to === -1 && (h1.from >= 0 || h1.drop > 0), h1);
+  await q.click('#bHint');
+  h1 = await q.evaluate(() => __shogi.hintState);
+  const i0 = E.info(new E.Position(pos0.sfen).parse(sol.pv[0]));
+  check('tsume hint step 2 shows the destination of the real solution', h1 && h1.stage === 2 && h1.to === i0.to, [h1, i0.to]);
+  await q.evaluate(() => __shogi.startTsume(2));
+  await sleep(100);
+  check('restarting a problem clears the hint', (await q.evaluate(() => __shogi.hintState)) === null);
+  // solve it by the book → the result lists the line, and the page throws confetti
+  for (let k = 0; k < 2; k++) {
+    const cs = await st(q);
+    const r = E.solveMate(new E.Position(cs.sfen), 3 - cs.moves.length);
+    await clickMove(q, r.pv[0]);
+    if (k === 0) await q.waitForFunction(() => __shogi.state().moves.length === 2 && __shogi.state().canAct, null, { timeout: 10000 });
+  }
+  await q.waitForFunction(() => !document.getElementById('ovResult').hidden, null, { timeout: 8000 });
+  const sub = await q.textContent('#resSub');
+  check('result shows the solution line', /^手順：/.test(sub) && sub.includes('▲'), sub);
+  check('no page errors (tsume)', !q.errs.length, q.errs);
+  await q.ctx.close();
+
+  // English: the new texts are translated
+  const en = await open(browser, env, { lang: 'en' });
+  await en.click('#tCpu');
+  const jp1 = await en.evaluate(`(${jpScan})(true)`);
+  check('English CPU setup (levels, handicaps, description) has no Japanese', jp1.length === 0, jp1);
+  await en.click('#cpuGo');
+  await en.waitForFunction(() => __shogi.state().mode === 'cpu');
+  const jp2 = await en.evaluate(`(${jpScan})(true)`);
+  check('English game screen (hint button) has no Japanese', jp2.length === 0, jp2);
+  await en.click('#bKif');
+  const jp3 = await en.evaluate(`(${jpScan})(true)`);
+  check('English review overlay has no Japanese', jp3.length === 0, jp3);
+  await en.ctx.close();
 }
 
 async function english(browser, env) {
@@ -290,6 +402,7 @@ async function online(browser, env) {
     await controls(browser, env);
     await resume(browser, env);
     await tsume(browser, env);
+    await extras(browser, env);
     await english(browser, env);
     }
     if (!NO_ONLINE) await online(browser, env);

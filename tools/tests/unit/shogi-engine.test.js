@@ -170,21 +170,76 @@ test('stronger level beats the beginner level (2 games, short time)', () => {
   eq(wins, 2);
 });
 // the problems shipped in shogi/index.html: each has a mate of exactly the stated length, with one first move
-test('詰将棋：the page\'s problems are sound (mate length exact, unique first move)', () => {
-  const html = readText('shogi/index.html');
-  const m = /const PROBLEMS = (\[[\s\S]*?\]);/.exec(html);
-  ok(m, 'PROBLEMS in shogi/index.html');
-  const list = new Function('return ' + m[1])(); // plain data literal
-  ok(list.length >= 6, list.length + ' problems');
+test('詰将棋：the page\'s problems (shogi/puzzles.js) are sound: exact mate length, unique first move, nothing shorter', () => {
+  const list = require(path.join(ROOT, 'shogi/puzzles.js'));
+  ok(list.length >= 30 && list.length <= 50, list.length + ' problems (the save keeps at most 50 ids)');
+  const ids = new Set(), sfens = new Set();
+  const byN = {};
   for (const pr of list) {
+    ok(/^t\d+$/.test(pr.id) && !ids.has(pr.id), pr.id + ' unique id'); ids.add(pr.id);
+    ok(!sfens.has(pr.sfen), pr.id + ' unique position'); sfens.add(pr.sfen);
+    byN[pr.n] = (byN[pr.n] || 0) + 1;
     const p = P(pr.sfen);
     eq(p.inCheck(1), false, pr.id + ': defender not in check at the start');
+    ok(p.side === 0, pr.id + ': attacker (black) to move');
     const r = E.solveMate(p, pr.n);
     ok(r, pr.id + ' has a mate');
     eq(r.mate, pr.n, pr.id + ' length');
     eq(r.firsts.length, 1, pr.id + ' unique first move: ' + r.firsts);
     eq(r.firsts[0], pr.first, pr.id + ' first move');
     if (pr.n > 1) eq(E.solveMate(p, pr.n - 2), null, pr.id + ' no shorter mate');
+    // the whole line is legal and ends in checkmate
+    const g = new E.Game(pr.sfen);
+    for (const u of r.pv) ok(g.play(u), pr.id + ' pv move ' + u);
+    eq(g.pos.inCheck(), true, pr.id + ' ends in check'); eq(g.pos.hasLegalMove(), false, pr.id + ' ends in mate');
+  }
+  for (const n of [1, 3, 5, 7]) ok(byN[n] >= 4, 'at least 4 problems of ' + n + ' moves: ' + JSON.stringify(byN));
+  for (const id of ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8']) ok(ids.has(id), 'old problem ' + id + ' is kept (saves refer to it)');
+});
+test('the page uses puzzles.js (no inline copy) and sw.js caches it', () => {
+  const html = readText('shogi/index.html');
+  ok(/<script src="puzzles\.js"><\/script>/.test(html) && /const PROBLEMS = window\.ShogiPuzzles;/.test(html));
+  ok(readText('sw.js').includes("'./shogi/puzzles.js'"));
+});
+test('handicaps: every position is legal, the stronger side (white) moves first, pieces are removed as named', () => {
+  const count = (sfen, ch) => (sfen.split(' ')[0].match(new RegExp(ch, 'g')) || []).length;
+  const rm = { hirate: '', kyo: 'l', kaku: 'b', hisha: 'r', nimai: 'rb', yon: 'rbll', roku: 'rbllnn' };
+  deep(Object.keys(E.HANDICAPS).sort(), Object.keys(rm).sort());
+  for (const [k, sfen] of Object.entries(E.HANDICAPS)) {
+    const p = P(sfen);
+    ok(p.legal().length > 20, k + ' has moves');
+    eq(p.side, k === 'hirate' ? 0 : 1, k + ' side to move');
+    eq(count(sfen, 'K'), 1, k + ' black king'); eq(count(sfen, 'k'), 1, k + ' white king');
+    eq(count(sfen, 'P'), 9); eq(count(sfen, 'p'), 9);
+    for (const ch of 'rblnRBLN') { const mine = ch === ch.toUpperCase(); const full = { r: 1, b: 1, l: 2, n: 2 }[ch.toLowerCase()]; const gone = mine ? 0 : rm[k].split(ch).length - 1; eq(count(sfen, ch), full - gone, k + ' count of ' + ch); }
+    eq(p.sfen(), sfen.replace(/ 1$/, ' 1'), k + ' sfen round trip');
+  }
+});
+test('the CPU can play a handicap start and the hint level (3, 800 ms budget) returns a legal move', () => {
+  for (const k of ['kyo', 'yon', 'roku']) {
+    const p = P(E.HANDICAPS[k]);
+    const r = E.search(p, { level: 3, timeMs: 300 });
+    ok(p.legal().includes(r.usi), k + ' ' + r.usi);
+  }
+  const g = E.Game.fromMoves(E.START, ['7g7f', '3c3d']);
+  const r = E.search(g.pos, { level: 3, timeMs: 300, history: g.keys.slice(0, -1) });
+  ok(g.pos.legal().includes(r.usi), 'hint move ' + r.usi);
+});
+test('tsume hint logic: at each position along the solution, solveMate(pos, remaining) names the line move', () => {
+  const list = require(path.join(ROOT, 'shogi/puzzles.js'));
+  for (const pr of list.filter(x => x.n >= 3).slice(0, 6)) {
+    const g = new E.Game(pr.sfen);
+    let left = pr.n;
+    while (left >= 1) {
+      const r = E.solveMate(g.pos, left);
+      ok(r && r.pv.length, pr.id + ' mate remains with ' + left);
+      ok(g.play(r.pv[0]), pr.id + ' hint move legal');
+      if (g.result) break;
+      // the defender replies with its longest resistance
+      const rep = r.pv[1]; ok(rep && g.play(rep), pr.id + ' reply');
+      left -= 2;
+    }
+    eq(g.pos.hasLegalMove(), false, pr.id + ' mated by following the hints');
   }
 });
 

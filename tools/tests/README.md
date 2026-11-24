@@ -32,7 +32,8 @@ node tools/tests/unit/hitsumabushi-engine.test.js  # ひつまぶし工房の中
 node tools/tests/hitblow-play.js               # ヒットアンドブローの通し（勝ち・負け・デイリーの答えが全員同じ・CPU対戦を最後まで・保存と再読み込み・英語・オンライン練習・ミッション12（一覧と鍵・ヒットだけ／ブローだけ・はじめのヒント・ひらめき・ボットが全部クリア・★と次が開く・practice 報告・ランキングの値が変わらない・キー／タッチ・こわれた保存・連勝・全画面サイズ））。引数で一部だけ：missions,keysAndTouch,compat,missionsEnglish
 node tools/tests/unit/hitblow-engine.test.js     # ヒットアンドブローの中身（判定・ヒットだけ／ブローだけの見え方・点数が前と同じ・12ミッションの条件と★・強いボットが全部解ける・kusoge.hitblow.x の読み込みと記録・連勝・engine.js が使われていること）
 node tools/tests/planet-play.js                # わくせいシミュレーターの通し（はじめてのコーチ・彫刻・降りて歩く（キーとタッチ）・一周・発見・時代・危機・8お題の勝ち負け・手で雪玉と図書館・保存と再開・銀河・共有URL・古い保存・ふしぎな星・まなぶと3問チェック・なぜ？・英語・fps）
-node tools/tests/shogi-play.js                 # 将棋の通し（CPU に詰みまで・待った・成り・打つ・棋譜・ふたりで・続きから・詰将棋・英語・オンライン（エミュレーター）。--no-online で省く）
+node tools/tests/shogi-play.js                 # 将棋の通し（CPU に詰みまで・待った・成り・打つ・棋譜・ふたりで・続きから・詰将棋（手数ごとの一覧・ヒント2段階・手順表示）・ヒント・キーボード・棋譜の見返し・四枚落ち・英語・オンライン（エミュレーター）。--no-online で省く）
+node tools/tests/unit/shogi-engine.test.js     # 将棋の中身（perft・駒の動き・反則・千日手・入玉宣言・表記・CPU・詰将棋32問を毎回解き直す（一意・最短）・駒落ち7種・ヒント）
 node tools/tests/escape-play.js                # からくり工房からの脱出の通し（5部屋を正解の手順で本物のクリック・日本語と英語・ヒント・自動保存と再開・採点・全画面サイズ）
 node tools/tests/td-play.js                    # 工房まもりの通し（チュートリアル・本物のタップで建てる／強化／売る・勝ち・負け・エンドレス・デイリー・保存と再開・一時停止・英語・全画面サイズ・200体の性能）
 node tools/tests/td-balance.js                 # 工房まもりのバランス（自動プレイで全マップに勝てる・1種類だけの台では★3にならず、マップ4から負ける）
