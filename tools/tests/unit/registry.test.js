@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -104,7 +104,7 @@ test('flags reflect what the pages have today', () => {
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit', 'games with a daily today');
   eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,minigolf,trade,cards,fit', 'games without a match');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,minigolf,trade,cards,fit,town', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -177,6 +177,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('cards', k => null), 0, 'cards: nothing saved');
   eq(P.rankValue('fit', k => '{"v":1,"st":{"1-1":{"s":3,"t":9000,"c":1}},"best":9,"stars":3,"stats":{"solved":4}}'), 9, 'fit: best time attack');
   eq(P.rankValue('fit', k => null), 0, 'fit: nothing saved');
+  eq(P.rankValue('town', k => '{"v":1,"best":131,"tier":1,"renown":2,"stats":{"built":40}}'), 131, 'town: biggest population');
+  eq(P.rankValue('town', k => null), 0, 'town: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

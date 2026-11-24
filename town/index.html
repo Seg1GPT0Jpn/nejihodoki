@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ひまつぶしタウン</title>
+<meta name="theme-color" content="#16203a">
+<meta name="description" content="ちいさな町を育てる放置ゲーム。すまい・はたけ・風車小屋・いちば・みなと…を並べて、となり合わせのボーナスをねらおう。るすの間も町ははたらき続けます。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ひまつぶしタウン">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'ひまつぶしタウン': 'Idle Town', 'ゲーム一覧へ戻る': 'Back to games', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '遊び方': 'How to play', '言語 / Language': 'Language', 'とじる': 'Close', 'もどる': 'Back', 'メニュー': 'Menu', 'やめる': 'Cancel', 'OK': 'OK',
+  // header and resources
+  'コイン': 'Coins', '木材': 'Wood', '食べもの': 'Food', 'ひらめき': 'Spark', '人口': 'Population', '{n}/秒': '{n}/s', '{n}人': '{n}', '町の絵': 'The town',
+  '食べものがたりない！': 'Out of food!', '食べものが足りないと、人がふえず税も半分になります': 'Without food, residents stop arriving and tax is halved',
+  // dock
+  'たてる': 'Build', 'ひろげる': 'Expand', '土地をひろげる': 'Expand the land', '{n}×{n} マスに': 'To {n}×{n}', 'ひろげられない': 'Cannot expand yet', 'これ以上は町をひらきなおすと広がります': 'Open a new town to get more land',
+  '人口 {n} で開く': 'Opens at {n} residents', '町をひらきなおすと開く': 'Opens with a new town', 'ひらきなおし {n} 回目で開く': 'Opens at town {n}',
+  'タップして場所をえらぶ': 'Tap an empty tile', 'を置く場所をえらぼう': ' — choose a spot', '{name} を置く場所をえらぼう': 'Place the {name}: choose a spot',
+  'ここに建てる': 'Build here', '空き地': 'Empty lot', '空き地をえらんだ。建物をえらぼう': 'Empty lot selected. Pick a building',
+  'コインがたりない': 'Not enough coins', '木材がたりない': 'Not enough wood', 'あと {n}': '{n} more', '池のほとりにだけ建てられます': 'Only on the shore of the pond', 'そこには建てられません': 'You cannot build there',
+  '土地の外です。土地をひろげると建てられます': 'Outside your land. Expand it to build here', '池だ。みなとは池のほとりに建つよ': 'A pond. Harbors go on the shore',
+  '建てた！': 'Built!', 'あたらしい建物： {name}': 'New building: {name}', 'ひろげた！': 'Land expanded!',
+  // info panel
+  'Lv{n}': 'Lv{n}', 'そだてる': 'Upgrade', '→ Lv{n}': '→ Lv{n}', 'こわす': 'Demolish', 'ほんとうに？': 'Sure?', 'さいだいレベル': 'Max level', 'さいだいレベル（ひらきなおすと上がる）': 'Max level (rises with each new town)',
+  'となり合わせ': 'Neighbours', 'すんでいる人 {a}/{b}人': 'Residents {a}/{b}', '税 {n}/秒': 'tax {n}/s', 'コイン +{n}/秒': 'Coins +{n}/s', '木材 +{n}/秒': 'Wood +{n}/s', '食べもの +{n}/秒': 'Food +{n}/s', 'ひらめき +{n}/{u}': 'Spark +{n}/{u}', '分': 'min', '時間': 'h',
+  '{name} がとなりにいる +{pct}%': 'Next to {name}: +{pct}%', '{name} が近くにいる +{pct}%': 'A {name} nearby: +{pct}%', 'となりに {names} を置くとふえる': 'Place {names} next to it for a bonus', 'まわり8マスの建物を +30%': 'Boosts the 8 tiles around it by +30%',
+  '町の中心。ここからコインがわく': 'The heart of the town. It makes a few coins', 'ここに建てると +{n}/秒': 'Building here adds +{n}/s', 'おすすめ': 'Best spot',
+  '{n} 件': '{n}', 'こわして {c} コインと {w} 木材が戻った': 'Demolished: got back {c} coins and {w} wood',
+  // quest strip and list
+  'もくひょう': 'Goals', 'つぎの目標': 'Next goal', '目標がぜんぶ終わりました。町をもっと大きくしよう': 'All goals done. Keep growing your town', 'もくひょう たっせい！': 'Goal reached!',
+  '{name}を建てる': 'Build a {name}', '{name}を{n}つにする': 'Have {n} × {name}', '人口を{n}人にする': 'Reach {n} residents', 'どれかの建物を Lv{n} にする': 'Raise a building to Lv{n}', '土地を {n}×{n} にひろげる': 'Expand your land to {n}×{n}',
+  '旅人に合計 {n} 回さわる': 'Greet {n} visitors in total', '{n} しゅるいの建物を建てる': 'Build {n} kinds of buildings', '{a}を{b}のとなりに建てる': 'Put a {a} next to a {b}', 'ごほうび': 'Reward',
+  'つぎの目標': 'Next goals', 'たっせいずみ': 'Done', '目標': 'Goals', '{n} 個たっせい': '{n} done', 'いまの目標': 'Current goal', '町をひらきなおせるようになる': 'Open a new town',
+  // visitor, events
+  '旅人がきた！タップしてみよう': 'A visitor! Tap to say hello', 'おみやげをもらった！': 'Got a souvenir!',
+  'にわか雨：はたけが2ばい': 'Shower: farms ×2', 'お祭り：いちばとすまいがにぎわう': 'Festival: markets ×2, cottages pay more', '金のそよ風：コインが1.5ばい': 'Golden breeze: coins ×1.5', '船がついた：みなとが3ばい': 'A ship is in: harbor ×3',
+  // toolbar
+  '研究': 'Research', 'おくりもの': 'Gift', 'まち': 'Town',
+  // welcome
+  'おかえりなさい！': 'Welcome back!', '{t}のあいだ、町ははたらいていました': 'The town kept working for {t}', 'るす番の時間は最大 {h}時間まで。研究でのばせます': 'Away time pays up to {h} hours. Research can extend it',
+  '長くるすにしたので、{h}時間ぶんだけ受け取ります': 'You were away a long time: {h} hours were counted', 'うけとる': 'Collect', '人口': 'Residents', '{n}人ふえた': '{n} more', '{n}人へった': '{n} fewer',
+  '{h}時間{m}分': '{h}h {m}m', '{m}分': '{m} min', '{s}秒': '{s}s', 'ふえた': 'Gained',
+  // gift
+  'きょうのおくりもの': 'Daily gift', '1日1回、町にとどきます。毎日とりにくると、7日めはとくべつ': 'One a day. Come back daily — the 7th day is special', '{n}日つづけて': '{n}-day streak', 'おくりものを開ける': 'Open the gift',
+  'きょうの分は もう受け取りました。また あした！': "Today's gift is already collected. See you tomorrow!", 'おくりもの：': 'Gift:',
+  // research
+  '研究（ひらめきでおぼえる）': 'Research (paid with spark)', '研究は町をひらきなおしても、なくなりません': 'Research stays when you open a new town', 'ひらめきを手に入れるには：旅人・目標・おくりもの・としょかん': 'Get spark from: visitors, goals, the daily gift, libraries',
+  '買う': 'Buy', 'ひらめき {n}': 'Spark {n}', 'ひらめきがたりない': 'Not enough spark', 'さいだい': 'Max', '研究した！': 'Researched!',
+  'ふかふかの寝どこ': 'Cozy Beds', 'るすの間にかせぐ時間の上限が +1時間': 'The most away-time that pays: +1 hour', 'おおきな財布': 'Bigger Purses', 'コインのもうけが +10%': 'Coin income +10%',
+  'こえた土': 'Rich Soil', '食べものが +20%': 'Food +20%', 'よく切れるのこぎり': 'Sharp Saws', '木材が +25%': 'Wood +25%', 'じょうぶな道具': 'Sturdy Tools', '建てる・育てるねだんが −6%': 'Building and upgrade prices −6%',
+  'となり近所づきあい': 'Good Neighbours', 'となり合わせのボーナスが +20%': 'Neighbour bonuses +20%', 'にぎやか通り': 'Busy Street', '旅人がよく来る（間が −15%）': 'Visitors come more often (−15% wait)', 'おみやげ上手': 'Souvenirs', '旅人のおみやげが +50%': 'Visitor gifts +50%',
+  // town / prestige
+  'わたしの町': 'My Town', '町をひらきなおす': 'Open a New Town', '町をひらきなおせます！': 'You can open a new town!', '人口が {n} 人になると ひらきなおせます（いま {p} 人）': 'Reach {n} residents to open a new town (now {p})',
+  'ひらきなおすと：町は空き地にもどり、コインと建物はなくなります。ひらめき・研究・記録・ほまれは のこります。': 'Opening a new town resets the town, coins and buildings. Spark, research, records and renown stay.',
+  'ほまれ +{n}': 'Renown +{n}', 'ほまれ {n}': 'Renown {n}', 'もうけが ×{a} → ×{b}': 'All income ×{a} → ×{b}', 'あたらしくできること': 'New things you unlock', '土地が {n}×{n} まで': 'Land up to {n}×{n}', '建物のレベルが Lv{n} まで': 'Building levels up to Lv{n}',
+  '{name} が使える': 'Unlock: {name}', 'ほんとうにひらきなおす': 'Yes, open a new town', 'ひらきなおした！': 'A new town begins!', 'あたらしい町がはじまります': 'A fresh start, with a permanent bonus', 'ひらきなおし {n} 回': 'New towns: {n}',
+  '最高の人口': 'Best population', 'ほまれ': 'Renown', 'いまのもうけ ×{n}': 'Income multiplier ×{n}', 'たてた建物': 'Buildings built', 'さわった旅人': 'Visitors greeted', 'いちばん長いるす': 'Longest away',
+  '町の記録': 'Records', 'ひらきなおしの回数': 'New towns opened', 'ほまれの数': 'Renown earned',
+  // how to
+  '建物をならべて、ちいさな町を育てよう。るすの間も町ははたらいて、コインがたまります。': 'Place buildings and grow a little town. It keeps earning coins while you are away.',
+  '建物のカードをタップして、空き地をタップすると建ちます。まず「すまい」と「はたけ」。': 'Tap a building card, then an empty tile, to build. Start with a Cottage and a Farm.',
+  '建物は、となり合わせでボーナス：はたけ×風車小屋、すまい×こうえん、いちば×すまい…。置き方が大事！': 'Neighbours give bonuses: farm × windmill, cottage × park, market × cottage… Layout matters!',
+  '建物をタップして「そだてる」と、はたらきがぐんと上がります。土地には かぎりがあるので、広げながら工夫しよう。': 'Tap a building and Upgrade it to boost it a lot. Land is limited, so expand it step by step.',
+  '空をとぶ旅人をタップすると おみやげ。ときどき お祭りや雨で、もうけが2ばいになります。': 'Tap the visitors drifting by for souvenirs. Now and then a festival or shower doubles your income.',
+  '人口がふえたら「町をひらきなおす」で ほまれ（ずっと続くもうけの倍率）と、新しい建物・土地がもらえます。': 'When your population is big, open a new town for renown (a permanent income bonus) plus new buildings and land.',
+  '自動保存。とじても町は育ちます（るす番は最大8時間〜）。時計を戻すと、るすの分はもらえません。': 'Autosaves. The town grows while closed (8 hours or more). Setting the clock back gives nothing.',
+  'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks',
+  // tutorial
+  '空き地をタップして、すまいを建てよう': 'Tap an empty tile and build a Cottage', 'はたけも建てよう。食べものがないと人がふえないよ': 'Build a Farm too. Without food, nobody moves in', '人が住みはじめた！コインは自動でたまります': 'Residents are moving in! Coins arrive on their own',
+  '空をとぶ旅人をタップしよう。おみやげがもらえる': 'Tap a visitor in the sky for a souvenir', 'きこり小屋で木材をあつめよう。大きな建物に使うよ': 'Build a Woodcutter for wood. Bigger buildings need it',
+  // menu, errors
+  'ゲームをやめてゲーム一覧へ': 'Back to games', '時計が戻っているので、るすの分は数えません': 'Your clock is set back, so no away-time was counted', '時計が大きくずれているので、るすの分は数えません': 'Your clock looks wrong, so no away-time was counted',
+  'チュートリアル': 'Tutorial',
+  // building names are in the engine
+  'コインのたねがたりない': 'Not enough coins',
+  'まちの広場': 'Town Square',
+} });
+</script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ひまつぶしタウン: a soft storybook look. --kb-* are the shared tokens re-tinted; --tn-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #141c33; --kb-surface: #1e2a47; --kb-surface-2: #283760; --kb-sunken: #0e1426; --kb-line: #3a4a78;
+  --kb-ink: #f6f1e4; --kb-dim: #b7c0dc;
+  --kb-accent: #ffd479; --kb-accent-ink: #2b2005; --kb-accent-text: #ffd98a; --kb-accent-soft: rgba(255, 212, 121, .16);
+  --kb-scrim: rgba(8, 12, 26, .78); --kb-focus: #ffe8a8;
+  --tn-panel: rgba(255, 255, 255, .07); --tn-line: rgba(200, 215, 255, .2); --tn-card: linear-gradient(#26345a, #1b2748);
+  --tn-go: linear-gradient(#ffd479, #f0a93a); --tn-go-shadow: #8a5a12; --tn-good: #8fe3a0; --tn-bad: #ff9a86;
+  --tn-title: linear-gradient(90deg, #ffe7a8, #ffc65a 55%, #ff9a6a);
+  --tn-night: 1; --tn-sky1: #1b2652; --tn-sky2: #4a5a92; --tn-cloud: rgba(180, 195, 240, .22); --tn-grass: #5d9a58; --tn-grass2: #548f50; --tn-water: #3a6aa8; --tn-waterline: rgba(190, 225, 255, .7); --tn-leaf1: #3f8a4a; --tn-leaf2: #2f7040;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #e9f3dc; --kb-surface: #fffdf3; --kb-surface-2: #f3f0dc; --kb-sunken: #dbe6c8; --kb-line: #c9d6b0;
+    --kb-ink: #34402a; --kb-dim: #66745a;
+    --kb-accent: #d9801f; --kb-accent-ink: #ffffff; --kb-accent-text: #a85c10; --kb-accent-soft: rgba(217, 128, 31, .12);
+    --kb-scrim: rgba(52, 64, 42, .42); --kb-focus: #1f6fbf;
+    --tn-panel: rgba(52, 64, 42, .06); --tn-line: #cfdab8; --tn-card: linear-gradient(#fffdf3, #f3f0dc);
+    --tn-go: linear-gradient(#f0a640, #d9801f); --tn-go-shadow: #8a4a0c; --tn-good: #2f8a3a; --tn-bad: #c2412a;
+    --tn-title: linear-gradient(90deg, #b8661a, #d9801f 55%, #c24a3a);
+    --tn-night: 0; --tn-sky1: #8fd2f2; --tn-sky2: #eaf6e4; --tn-cloud: rgba(255, 255, 255, .85); --tn-grass: #9ad47a; --tn-grass2: #8ccb6c; --tn-water: #6cb6e0; --tn-waterline: rgba(255, 255, 255, .85); --tn-leaf1: #5fb85a; --tn-leaf2: #4a9e4c;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #e9f3dc; --kb-surface: #fffdf3; --kb-surface-2: #f3f0dc; --kb-sunken: #dbe6c8; --kb-line: #c9d6b0;
+  --kb-ink: #34402a; --kb-dim: #66745a;
+  --kb-accent: #d9801f; --kb-accent-ink: #ffffff; --kb-accent-text: #a85c10; --kb-accent-soft: rgba(217, 128, 31, .12);
+  --kb-scrim: rgba(52, 64, 42, .42); --kb-focus: #1f6fbf;
+  --tn-panel: rgba(52, 64, 42, .06); --tn-line: #cfdab8; --tn-card: linear-gradient(#fffdf3, #f3f0dc);
+  --tn-go: linear-gradient(#f0a640, #d9801f); --tn-go-shadow: #8a4a0c; --tn-good: #2f8a3a; --tn-bad: #c2412a;
+  --tn-title: linear-gradient(90deg, #b8661a, #d9801f 55%, #c24a3a);
+  --tn-night: 0; --tn-sky1: #8fd2f2; --tn-sky2: #eaf6e4; --tn-cloud: rgba(255, 255, 255, .85); --tn-grass: #9ad47a; --tn-grass2: #8ccb6c; --tn-water: #6cb6e0; --tn-waterline: rgba(255, 255, 255, .85); --tn-leaf1: #5fb85a; --tn-leaf2: #4a9e4c;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 65%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 900px; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; padding: 4px 9px; border-radius: 999px; background: var(--tn-panel); border: 1px solid var(--tn-line); color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.chip svg { width: 15px; height: 15px; flex: none; }
+#modeChip { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; color: var(--kb-dim); background: transparent; border: 0; padding-left: 2px; font-size: 12.5px; }
+.icon { position: relative; flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--tn-line); background: var(--tn-panel); color: var(--kb-ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+#res { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 0 2px 4px; }
+.rc { min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 3px 2px 2px; border-radius: 12px; background: var(--tn-panel); border: 1px solid var(--tn-line); line-height: 1.15; }
+.rc b { display: flex; align-items: center; gap: 3px; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; max-width: 100%; }
+.rc b svg { width: 14px; height: 14px; flex: none; }
+.rc b span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc small { font-size: 10px; color: var(--kb-dim); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rc.bad { border-color: var(--tn-bad); } .rc.bad small { color: var(--tn-bad); }
+.rc.flash { animation: flashbad .5s ease-out; }
+.rc.up { animation: gain .5s ease-out; }
+
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 900px; margin: 0 auto; box-sizing: border-box; padding: 0 6px 6px; gap: 5px; }
+#stageWrap { flex: 1 1 auto; min-height: 120px; position: relative; overflow: hidden; border-radius: 16px; box-shadow: 0 6px 22px rgba(0, 0, 0, .25), 0 0 0 1px var(--tn-line); background: var(--tn-sky2); }
+#town { position: absolute; left: 0; top: 0; display: block; touch-action: none; cursor: pointer; }
+#tip { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 6; padding: 6px 10px; border-radius: 12px; background: rgba(30, 40, 24, .92); color: #fffbe8; border: 1px solid rgba(255, 240, 190, .5); font-size: 12.5px; font-weight: 800; line-height: 1.4; pointer-events: none; animation: rise .3s ease-out; }
+#tip .tag { display: inline-block; font-size: 10.5px; padding: 1px 7px; margin-right: 6px; border-radius: 999px; background: #ffd479; color: #2b2005; }
+#flash { position: absolute; left: 0; right: 0; top: 36%; z-index: 7; text-align: center; font-family: var(--kb-font-display); font-size: 30px; color: #fff3b0; text-shadow: 0 3px 0 #a8651a, 0 0 18px rgba(255, 200, 80, .8); pointer-events: none; opacity: 0; padding: 0 10px; }
+#flash.on { animation: flash 1.5s ease-out; }
+#flash small { display: block; font-family: var(--kb-font-body); font-size: 14px; font-weight: 800; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .45); margin-top: 4px; }
+#ev { position: absolute; left: 8px; top: 8px; z-index: 5; display: flex; align-items: center; gap: 6px; max-width: calc(100% - 16px); padding: 4px 10px; border-radius: 999px; background: rgba(255, 250, 225, .94); color: #4a3510; border: 1px solid #e0b860; font-size: 12px; font-weight: 800; box-shadow: 0 2px 8px rgba(0, 0, 0, .2); pointer-events: none; }
+#ev i { display: block; height: 4px; width: 38px; border-radius: 4px; background: rgba(0, 0, 0, .15); overflow: hidden; flex: none; }
+#ev i b { display: block; height: 100%; background: #e0902a; }
+#toast { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 6; text-align: center; pointer-events: none; }
+#toast span { display: inline-block; max-width: 100%; padding: 6px 12px; border-radius: 12px; background: rgba(30, 36, 24, .92); color: #fffbe8; font-size: 12.5px; font-weight: 800; animation: rise .25s ease-out; }
+#qbar { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 5px 10px; border-radius: 14px; border: 1px solid var(--tn-line); background: var(--tn-panel); color: var(--kb-ink); font: 800 12.5px var(--kb-font-body); text-align: left; cursor: pointer; }
+#qbar .q { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+#qbar .qt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#qbar .bar { height: 6px; border-radius: 6px; background: rgba(128, 128, 128, .25); overflow: hidden; }
+#qbar .bar b { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #7fe4ff, #8fe3a0); transition: width .3s; }
+#qbar .rw { flex: none; display: flex; gap: 6px; font-size: 11.5px; color: var(--kb-accent-text); }
+#qbar .rw span { display: inline-flex; align-items: center; gap: 2px; }
+#qbar .rw svg { width: 12px; height: 12px; }
+#qbar.done { animation: gain .6s ease-out; }
+#qbar .flag { flex: none; width: 24px; height: 24px; }
+#dock { flex: none; position: relative; min-height: 92px; }
+#cards { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 6px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; touch-action: pan-x; scrollbar-width: thin; }
+.bcard { flex: none; width: 78px; min-height: 86px; box-sizing: border-box; scroll-snap-align: start; padding: 4px 3px 4px; border-radius: 14px; border: 1px solid var(--tn-line); background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 3px 0 var(--kb-sunken); display: flex; flex-direction: column; align-items: center; gap: 1px; font: 800 11px var(--kb-font-body); cursor: pointer; position: relative; }
+.bcard canvas { width: 46px; height: 40px; display: block; }
+.bcard .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
+.bcard .co { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1px 5px; font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--kb-dim); line-height: 1.2; }
+.bcard .co span { display: inline-flex; align-items: center; gap: 1px; } .bcard .co svg { width: 10px; height: 10px; }
+.bcard .co .no { color: var(--tn-bad); }
+.bcard .cn { position: absolute; top: 2px; right: 4px; font-size: 10px; color: var(--kb-dim); }
+.bcard:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
+.bcard.armed { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent), 0 3px 0 var(--kb-sunken); background: var(--kb-accent-soft); }
+.bcard.locked { opacity: .55; } .bcard.locked canvas { filter: grayscale(1) brightness(.7); }
+.bcard.dim { opacity: .85; }
+.bcard.new::after { content: ''; position: absolute; top: 3px; left: 4px; width: 9px; height: 9px; border-radius: 50%; background: #ff6a5a; box-shadow: 0 0 0 2px var(--kb-surface); }
+#info { display: flex; gap: 8px; align-items: stretch; padding: 6px 8px; border-radius: 14px; border: 1px solid var(--tn-line); background: var(--kb-surface); min-height: 80px; box-sizing: border-box; }
+#info canvas { width: 54px; height: 54px; flex: none; align-self: flex-start; }
+#info .it { flex: 1 1 auto; min-width: 0; font-size: 12px; line-height: 1.4; }
+#info .it h3 { margin: 0 0 1px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+#info .it h3 em { font-style: normal; font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--kb-accent-soft); color: var(--kb-accent-text); }
+#info .it div { color: var(--kb-dim); font-weight: 800; }
+#info .it div.good { color: var(--tn-good); }
+#info .it div.bad { color: var(--tn-bad); }
+#info .acts { flex: none; display: flex; flex-direction: column; gap: 5px; width: 110px; }
+#info .acts button { min-height: 40px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 6px 10px; border-radius: 16px; border: 0; background: var(--tn-go); color: #2a1606; font: 800 15px var(--kb-font-body); box-shadow: 0 3px 0 var(--tn-go-shadow); cursor: pointer; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--tn-go-shadow); }
+.btn.sub { background: var(--tn-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--tn-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.btn.small { min-height: 40px; margin-top: 0; font-size: 12.5px; padding: 4px 6px; border-radius: 12px; }
+.btn.danger { background: #d9604a; color: #fff; box-shadow: 0 3px 0 #7a2a1a; }
+.btn small { font-size: 10.5px; font-weight: 800; opacity: .9; }
+.btn svg { width: 12px; height: 12px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn .stk { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.btn .pr { display: inline-flex; gap: 6px; }
+.btn .pr span { display: inline-flex; align-items: center; gap: 2px; }
+#bar { flex: none; display: flex; gap: 6px; }
+.tb { flex: 1 1 0; position: relative; min-width: 44px; min-height: 50px; border-radius: 14px; border: 1px solid var(--tn-line); background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 3px 0 var(--kb-sunken); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font: 800 11px var(--kb-font-body); cursor: pointer; padding: 2px; }
+.tb svg { width: 22px; height: 22px; }
+.tb span { display: block; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
+.tb .dot { position: absolute; top: 4px; right: 8px; width: 10px; height: 10px; border-radius: 50%; background: #ff6a5a; box-shadow: 0 0 0 2px var(--kb-surface); animation: blink 1s steps(2) infinite; }
+.tb.go { background: var(--tn-go); color: #2a1606; border: 0; box-shadow: 0 3px 0 var(--tn-go-shadow); }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .2s ease-out; }
+.card { width: 100%; max-width: 440px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--tn-card); border: 1px solid var(--tn-line); border-radius: 22px; padding: 16px 16px 10px; text-align: center; box-shadow: 0 18px 50px rgba(0, 0, 0, .4); animation: rise .28s ease-out; }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--tn-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 26px; line-height: 1.2; }
+.card p { margin: 4px 0; font-size: 12.5px; line-height: 1.55; color: var(--kb-dim); }
+.card p svg { width: 16px; height: 16px; vertical-align: -3px; }
+.card p.big { font-size: 14px; color: var(--kb-ink); font-weight: 800; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.gains { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 4px; }
+.gains div { padding: 8px 4px; border-radius: 12px; background: var(--tn-panel); border: 1px solid var(--tn-line); font-size: 11px; color: var(--kb-dim); font-weight: 800; }
+.gains b { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 18px; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.gains b svg { width: 16px; height: 16px; }
+.list { text-align: left; margin: 6px 0; }
+.li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 5px 0; border-radius: 12px; background: var(--tn-panel); border: 1px solid var(--tn-line); font-size: 12.5px; font-weight: 800; }
+.li .tx { flex: 1 1 auto; min-width: 0; line-height: 1.35; } .li .tx small { display: block; font-weight: 500; color: var(--kb-dim); font-size: 11px; }
+.li.cur { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.li.done { opacity: .6; }
+.li .rw { flex: none; display: flex; gap: 6px; color: var(--kb-accent-text); font-size: 11px; } .li .rw span { display: inline-flex; align-items: center; gap: 2px; } .li .rw svg { width: 11px; height: 11px; }
+.li .btn { width: auto; min-width: 74px; margin: 0; min-height: 38px; font-size: 12px; padding: 2px 8px; border-radius: 12px; flex: none; }
+.pips { display: inline-flex; gap: 3px; margin-top: 2px; } .pips i { width: 8px; height: 8px; border-radius: 50%; background: rgba(128, 128, 128, .35); display: block; } .pips i.on { background: #ffcf4a; box-shadow: 0 0 0 1px #a8651a inset; }
+.big-box { font-size: 54px; line-height: 1.1; margin: 4px 0; }
+.week { display: flex; justify-content: center; gap: 5px; margin: 8px 0; } .week i { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--tn-line); background: var(--tn-panel); display: grid; place-items: center; font: 800 11px var(--kb-font-body); font-style: normal; color: var(--kb-dim); } .week i.on { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: transparent; } .week i.sp { border-color: var(--kb-accent); }
+.prog { height: 10px; border-radius: 8px; background: rgba(128, 128, 128, .25); overflow: hidden; margin: 8px 0 2px; } .prog b { display: block; height: 100%; background: linear-gradient(90deg, #7fe4ff, #8fe3a0); }
+.howto { max-width: 460px; text-align: left; } .howto h2 { text-align: center; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); } .howto li { margin: 4px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--tn-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--tn-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+#reborn { position: fixed; inset: 0; z-index: 40; pointer-events: none; background: radial-gradient(circle at 50% 45%, rgba(255, 246, 200, .95), rgba(255, 214, 120, .6) 40%, rgba(255, 214, 120, 0) 70%); opacity: 0; }
+#reborn.on { animation: reborn 1.6s ease-out; }
+body.thumb header, body.thumb #res, body.thumb #qbar, body.thumb #dock, body.thumb #bar, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip, body.thumb #ev { display: none !important; }
+body.thumb #main { padding: 0; max-width: none; }
+body.thumb #stageWrap { border-radius: 0; box-shadow: none; }
+@keyframes rise { from { transform: translateY(12px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes gain { 0% { background: rgba(255, 210, 90, .55); transform: scale(1.04); } }
+@keyframes flashbad { 0% { background: rgba(255, 120, 100, .5); } }
+@keyframes blink { 50% { opacity: .5; } }
+@keyframes flash { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1.12); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-22px); } }
+@keyframes reborn { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .card, .overlay, #tip, #flash.on, #reborn.on, .tb .dot, #qbar.done, .rc.up, .rc.flash { animation: none; } }
+@media (max-width: 359px) { .chip { padding: 4px 6px; font-size: 12px; } .rc b { font-size: 13px; } .bcard { width: 72px; } }
+@media (max-height: 640px) { .card { padding: 12px 12px 8px; } .btn { min-height: 44px; margin-top: 6px; } .card h2.logo { font-size: 22px; } #dock { min-height: 84px; } .bcard { min-height: 78px; } .bcard canvas { height: 34px; width: 40px; } .tb { min-height: 44px; } #info { min-height: 74px; } }
+/* wide screens and landscape phones: the town on the left, the controls on the right */
+@media (orientation: landscape) and (min-width: 600px) {
+  header { max-width: none; padding-top: 0; }
+  #main { flex-direction: row; max-width: none; padding-top: 2px; gap: 8px; }
+  #side { width: min(340px, 40%); flex: none; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+  #stageWrap { min-width: 0; }
+  #cards { flex-wrap: wrap; overflow-x: hidden; overflow-y: auto; max-height: 100%; touch-action: pan-y; }
+  #dock { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .card { max-width: 660px; }
+  .howto { max-width: 680px; }
+}
+@media (orientation: portrait), (max-width: 599px) { #side { display: contents; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <span class="chip" id="modeChip" data-i18n>ひまつぶしタウン</span>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド オン" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+    <div id="res">
+      <div class="rc" id="rcPop" aria-label="人口" data-i18n-attr="aria-label"><b><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4.2" fill="#f3c9a2"/><path d="M4 21c0-5 3.6-8 8-8s8 3 8 8z" fill="#4a7bd0"/></svg><span id="vPop">0</span></b><small id="sPop"></small></div>
+      <div class="rc" id="rcCoin" aria-label="コイン" data-i18n-attr="aria-label"><b><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#d9a420"/><circle cx="12" cy="12" r="7.4" fill="#ffd860"/><path d="M9 12h6" stroke="#b8860b" stroke-width="2" stroke-linecap="round"/></svg><span id="vCoin">0</span></b><small id="sCoin"></small></div>
+      <div class="rc" id="rcWood" aria-label="木材" data-i18n-attr="aria-label"><b><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="10" rx="5" fill="#a06a3a"/><ellipse cx="19" cy="12" rx="2.4" ry="4" fill="#e8c898"/></svg><span id="vWood">0</span></b><small id="sWood"></small></div>
+      <div class="rc" id="rcFood" aria-label="食べもの" data-i18n-attr="aria-label"><b><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7.4" fill="#e8584a"/><path d="M12 7c0-3 2-4 4-4-1 2-1 3-4 4z" fill="#4f9a3a"/></svg><span id="vFood">0</span></b><small id="sFood"></small></div>
+      <div class="rc" id="rcSpark" aria-label="ひらめき" data-i18n-attr="aria-label"><b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#7fe4ff" stroke="#1a6a8a" stroke-width="1.2" stroke-linejoin="round"/></svg><span id="vSpark">0</span></b><small id="sSpark"></small></div>
+    </div>
+  </header>
+  <div id="main">
+    <div id="stageWrap">
+      <canvas id="town" width="360" height="400" role="img" aria-label="町の絵" data-i18n-attr="aria-label"></canvas>
+      <div id="ev" hidden><span id="evTx"></span><i><b id="evBar"></b></i></div>
+      <div id="tip" hidden role="status" aria-live="polite"></div>
+      <div id="flash" aria-hidden="true"></div>
+      <div id="toast" aria-live="polite"></div>
+    </div>
+    <div id="side">
+      <button id="qbar" type="button">
+        <svg class="flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4" stroke="#8a5a30" stroke-width="2" stroke-linecap="round"/><path d="M5 4h13l-3 4.5 3 4.5H5z" fill="#ff7a6a" stroke="#a8403a" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        <span class="q"><span class="qt" id="qText"></span><span class="bar"><b id="qFill"></b></span></span>
+        <span class="rw" id="qRw"></span>
+      </button>
+      <div id="dock">
+        <div id="cards" role="list"></div>
+        <div id="info" hidden></div>
+      </div>
+      <div id="bar">
+        <button class="tb" id="btnQuests" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-3 4.5 3 4.5H5z"/></svg><span data-i18n>もくひょう</span></button>
+        <button class="tb" id="btnResearch" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-i18n>研究</span></button>
+        <button class="tb" id="btnGift" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="1.5"/><path d="M3.5 13h17M12 9v11M12 9c-2-4-6-4-5-1 .6 1.5 3 1 5 1zM12 9c2-4 6-4 5-1-.6 1.5-3 1-5 1z"/></svg><span data-i18n>おくりもの</span><i class="dot" id="giftDot" hidden></i></button>
+        <button class="tb" id="btnTown" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l5-4 5 4v8H3zM13 19v-6l4-3 4 3v6zM8 19v-5h2v5"/></svg><span data-i18n>まち</span><i class="dot" id="townDot" hidden></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovWelcome" hidden role="dialog" aria-modal="true" aria-labelledby="wTitle">
+  <div class="card">
+    <h2 class="logo" id="wTitle" data-i18n>おかえりなさい！</h2>
+    <div class="scroll">
+      <p class="big" id="wAway"></p>
+      <div class="gains" id="wGains"></div>
+      <p id="wNote"></p>
+    </div>
+    <button class="btn" id="wOk" type="button" data-i18n>うけとる</button>
+  </div>
+</div>
+<div class="overlay" id="ovQuests" hidden role="dialog" aria-modal="true" aria-labelledby="qTitle">
+  <div class="card">
+    <h2 id="qTitle" data-i18n>もくひょう</h2>
+    <div class="scroll"><div class="list" id="qList"></div></div>
+    <button class="btn link" id="qClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="ovResearch" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card">
+    <h2 id="rTitle" data-i18n>研究（ひらめきでおぼえる）</h2>
+    <p id="rSpark" class="big"></p>
+    <div class="scroll"><div class="list" id="rList"></div><p data-i18n>研究は町をひらきなおしても、なくなりません</p><p data-i18n>ひらめきを手に入れるには：旅人・目標・おくりもの・としょかん</p></div>
+    <button class="btn link" id="rClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="ovGift" hidden role="dialog" aria-modal="true" aria-labelledby="gTitle">
+  <div class="card">
+    <h2 id="gTitle" data-i18n>きょうのおくりもの</h2>
+    <div class="scroll">
+      <div class="big-box" id="gBox" aria-hidden="true">🎁</div>
+      <p data-i18n>1日1回、町にとどきます。毎日とりにくると、7日めはとくべつ</p>
+      <div class="week" id="gWeek"></div>
+      <div class="gains" id="gGains" hidden></div>
+      <p id="gNote"></p>
+    </div>
+    <button class="btn" id="gOpen" type="button" data-i18n>おくりものを開ける</button>
+    <button class="btn link" id="gClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="ovTown" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="card">
+    <h2 id="tTitle" data-i18n>わたしの町</h2>
+    <div class="scroll">
+      <div class="gains" id="tStats"></div>
+      <div id="tPrestige"></div>
+    </div>
+    <button class="btn" id="tGo" type="button" data-i18n>町をひらきなおす</button>
+    <button class="btn link" id="tClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+<div id="reborn" aria-hidden="true"></div>
+
+<script src="engine.js"></script>
+<script src="art.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ひまつぶしタウン — an original idle town. town/engine.js is the pure economy (also run headless by the unit tests and the bot);
+// town/art.js draws the buildings; this file is the chrome: the map view and taps, the clock, saving, the panels and the platform events.
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const E = window.TownEngine, Art = window.TownArt;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'town';
+const SAVE_KEY = 'kusoge.town.save';   // the part that follows you (records, renown, research, goals done): synced
+const RUN_KEY = 'kusoge.town.run';     // the town on this device (buildings, coins, the clock): not synced
+const HOWTO_KEY = 'kusoge.town.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const L = o => (o ? (EN ? o.en : o.ja) : '');
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name, a) { if (AU) AU.sfx(name, a); }
+function tone(f, d, o) { if (AU) AU.tone(f, d, o); }
+function vibrate(p) { if (AU && AU.vibrate) AU.vibrate(p); }
+// sounds built only from common/audio.js (no BGM)
+const snd = {
+  place() { if (AU) AU.noise(0.05, { vol: 0.08, freq: 700 }); tone(200, 0.09, { type: 'triangle', vol: 0.15, slide: 130 }); tone(780, 0.06, { type: 'sine', vol: 0.05, delay: 0.04 }); vibrate(10); },
+  up() { tone(523, 0.08, { type: 'triangle', vol: 0.09 }); tone(659, 0.08, { type: 'triangle', vol: 0.09, delay: 0.07 }); tone(880, 0.14, { type: 'triangle', vol: 0.1, delay: 0.14 }); },
+  coin() { sfx('coin'); },
+  visitor() { tone(880, 0.07, { type: 'sine', vol: 0.05 }); tone(1175, 0.09, { type: 'sine', vol: 0.05, delay: 0.08 }); },
+  hello() { sfx('pop'); setTimeout(() => sfx('coin'), 90); },
+  quest() { sfx('clear'); },
+  big() { sfx('win'); vibrate([20, 30, 50]); },
+  bad() { sfx('error'); },
+  sel() { sfx('tap'); },
+  boom() { if (AU) AU.noise(0.12, { vol: 0.1, freq: 500 }); tone(160, 0.2, { type: 'sine', vol: 0.12, slide: 70 }); },
+  event() { tone(660, 0.1, { type: 'triangle', vol: 0.07 }); tone(990, 0.16, { type: 'triangle', vol: 0.07, delay: 0.1 }); },
+  born() { sfx('win'); setTimeout(() => sfx('clear'), 500); },
+};
+
+// ---------- numbers and words ----------
+function fmt(n) {
+  n = Math.floor(n + 1e-9);
+  if (n < 10000) return String(n);
+  const u = ['K', 'M', 'B', 'T', 'Qa'];
+  let i = -1, v = n;
+  while (v >= 1000 && i < u.length - 1) { v /= 1000; i++; }
+  return (v >= 100 ? Math.floor(v) : v >= 10 ? (Math.floor(v * 10) / 10).toFixed(1).replace(/\.0$/, '') : (Math.floor(v * 100) / 100).toFixed(2).replace(/0$/, '').replace(/\.$/, '')) + u[i];
+}
+const rt = r => (r >= 100 ? Math.round(r) : r >= 10 ? r.toFixed(1) : r >= 0.1 ? r.toFixed(1) : r > 0 ? r.toFixed(2) : '0');
+const nm = type => L(E.BUILDINGS[type].name);
+function dur(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return T('{h}時間{m}分', { h, m });
+  if (m > 0) return T('{m}分', { m });
+  return T('{s}秒', { s: sec });
+}
+const ICON = {
+  coin: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#d9a420"/><circle cx="12" cy="12" r="7.4" fill="#ffd860"/></svg>',
+  wood: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="10" rx="5" fill="#a06a3a"/><ellipse cx="19" cy="12" rx="2.4" ry="4" fill="#e8c898"/></svg>',
+  food: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7.4" fill="#e8584a"/><path d="M12 7c0-3 2-4 4-4-1 2-1 3-4 4z" fill="#4f9a3a"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#7fe4ff" stroke="#1a6a8a" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+  pop: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4.2" fill="#f3c9a2"/><path d="M4 21c0-5 3.6-8 8-8s8 3 8 8z" fill="#4a7bd0"/></svg>',
+};
+const priceHtml = (c, w) => (c ? `<span>${ICON.coin}${fmt(c)}</span>` : '') + (w ? `<span>${ICON.wood}${fmt(w)}</span>` : '');
+
+// ---------- the town, saving, the clock ----------
+const wallNow = () => Date.now() + clockOff;
+let clockOff = 0;                 // only ?debug moves this (to pretend to be away)
+let S = null;
+let DEBUG_NOSAVE = false;
+let lastSave = 0, lastPersistErr = false;
+function readJSON(k) { try { const v = JSON.parse(store.get(k) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } }
+function load() { return E.unpack(readJSON(SAVE_KEY), readJSON(RUN_KEY), wallNow()); }
+function persist(force) {
+  if (DEBUG_NOSAVE || !S) return;
+  const n = performance.now();
+  if (!force && n - lastSave < 4000) return;
+  lastSave = n;
+  store.set(RUN_KEY, JSON.stringify(E.packRun(S)));
+  store.set(SAVE_KEY, JSON.stringify(E.packMeta(S)));
+}
+window.addEventListener('storage', e => {
+  if (e.key === SAVE_KEY && !DEBUG_NOSAVE && S) { // another tab or a cloud merge raised the permanent part: take the larger numbers
+    const m = readJSON(SAVE_KEY); if (!m) return;
+    const o = E.unpack(m, null, 0);
+    S.best = Math.max(S.best, o.best); S.tier = Math.max(S.tier, o.tier); S.renown = Math.max(S.renown, o.renown);
+    for (const k of Object.keys(o.rs)) S.rs[k] = Math.max(S.rs[k] || 0, o.rs[k]);
+    for (const k of Object.keys(o.qd)) S.qd[k] = 1;
+    for (const k of Object.keys(o.un)) S.un[k] = 1;
+    for (const k of Object.keys(S.stats)) S.stats[k] = Math.max(S.stats[k], o.stats[k] || 0);
+    S.daily.last = Math.max(S.daily.last, o.daily.last); S.tut = Math.max(S.tut, o.tut); E.touch(S); needUI = true;
+  }
+});
+
+// ---------- view ----------
+const cv = $('town'), ctx = cv.getContext('2d');
+const wrap = $('stageWrap');
+const view = { W: 360, H: 400, dpr: 1, tw: 60, ox: 180, oy: 40, s: 5, init: false };
+let k = {};     // colours from the theme
+let night = false;
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  night = g('--tn-night') === '1';
+  k = { sky1: g('--tn-sky1') || '#8fd2f2', sky2: g('--tn-sky2') || '#eaf6e4', cloud: g('--tn-cloud') || '#fff', grass: g('--tn-grass') || '#9ad47a', grass2: g('--tn-grass2') || '#8ccb6c', water: g('--tn-water') || '#6cb6e0', waterLine: g('--tn-waterline') || '#fff', leaf1: g('--tn-leaf1') || '#5fb85a', leaf2: g('--tn-leaf2') || '#4a9e4c' };
+}
+function fitTarget(s) {
+  const W = view.W, H = view.H;
+  const tw = Math.max(20, Math.min(W * 0.97 / s, H / (s / 2 + 1.25)));
+  const hh = tw / 4, lo = E.lo(s);
+  const topY = 2 * lo * hh - 0.95 * tw, botY = 2 * (lo + s) * hh + 0.22 * tw;
+  return { tw, ox: W / 2 + 0 * tw, oy: H / 2 - (topY + botY) / 2, s };
+}
+function layout() {
+  const r = wrap.getBoundingClientRect();
+  const W = Math.max(100, Math.floor(r.width)), H = Math.max(100, Math.floor(r.height));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  Object.assign(view, { W, H, dpr });
+  const tg = fitTarget(S ? S.land : 5);
+  if (!view.init) { Object.assign(view, tg); view.init = true; }
+  needDraw = true;
+}
+// grid position of a tile centre (the middle of tile x,y) on screen
+const tileXY = (gx, gy) => [view.ox + (gx - gy) * view.tw / 2, view.oy + (gx + gy) * view.tw / 4];
+function toGrid(px, py) {
+  const hw = view.tw / 2, hh = view.tw / 4, a = (px - view.ox) / hw, b = (py - view.oy) / hh;
+  return [(a + b) / 2, (b - a) / 2];
+}
+
+// ---------- effects ----------
+const fx = { floats: [], bits: [], pops: {}, rings: [], acc: {}, nextEmit: {} };
+let t0 = performance.now(), simT = 0;
+let sel = null;          // { x, y } the tile being looked at
+let armed = null;        // a building type waiting for a tile
+let bubbles = null;      // { type, items: [{x,y,gain}] } what each empty tile would give
+let needDraw = true, needUI = true;
+let wildSeen = 0;
+function floatText(x, y, text, kind, big) { if (fx.floats.length < 40) fx.floats.push({ x, y, text, kind, t: 0, life: big ? 1.7 : 1.3, big }); }
+function burst(x, y, n, o) {
+  o = o || {};
+  const cols = o.cols || ['#ffd860', '#ff8a5a', '#7fe4ff', '#ff8ac0', '#9be37a', '#ffffff'];
+  for (let i = 0; i < n && fx.bits.length < 260; i++) {
+    const a = (o.up ? -Math.PI / 2 + (Math.random() - 0.5) * 1.8 : Math.random() * Math.PI * 2), sp = (o.speed || 90) * (0.4 + Math.random() * 0.8);
+    fx.bits.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (o.lift || 0), g: o.g == null ? 220 : o.g, life: 0.7 + Math.random() * (o.life || 0.7), t: 0, c: cols[(Math.random() * cols.length) | 0], r: 1.6 + Math.random() * 2.2, rect: !!o.rect });
+  }
+}
+function ring(x, y, col) { fx.rings.push({ x, y, t: 0, col: col || 'rgba(255,240,170,' }); }
+function tileCenter(x, y) { return tileXY(x + 0.5, y + 0.5); }
+function pop(x, y) { fx.pops[y * E.GRID + x] = { t: 0 }; }
+
+// ---------- drawing ----------
+function draw(ts) {
+  const t = simT, W = view.W, H = view.H, dpr = view.dpr;
+  const c = ctx;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  Art.sky(c, W, H, t, k, night);
+  const tw = view.tw, hw = tw / 2, hh = tw / 4;
+  const R = E.rates(S), GR = E.GRID;
+  const glows = [];
+  const lo = E.lo(S.land), hi = lo + S.land;
+  // the wild ring around the land (trees; a hint that there is more)
+  const wl = Math.min(GR, S.land + 1), wlo = E.lo(wl);
+  for (let d = 0; d <= 2 * (GR - 1); d++) for (let y = 0; y < GR; y++) {
+    const x = d - y; if (x < 0 || x >= GR) continue;
+    if (E.owned(S, x, y)) continue;
+    if (!(x >= wlo && y >= wlo && x < wlo + wl && y < wlo + wl)) continue;
+    const [cx, cy] = tileCenter(x, y);
+    if (cx < -tw || cx > W + tw || cy < -tw || cy > H + tw) continue;
+    c.globalAlpha = 0.55; Art.poly(c, [[cx, cy - hh], [cx + hw, cy], [cx, cy + hh], [cx - hw, cy]], k.grass2, null);
+    const dc = E.decor(x, y);
+    if (dc === 1 || dc === 0) Art.tree(c, cx, cy, tw, E.hash2(x, y, 9), t, k); else if (dc === 3) Art.rock(c, cx, cy, tw);
+    c.globalAlpha = 1;
+  }
+  // soft shadow of the island
+  { const [tx, ty] = tileXY(lo, lo), [rx, ry] = tileXY(hi, lo), [bx, by] = tileXY(hi, hi), [lx, ly] = tileXY(lo, hi);
+    c.fillStyle = 'rgba(0,0,0,.10)'; c.beginPath(); c.moveTo(tx, ty + tw * 0.12); c.lineTo(rx + tw * 0.04, ry + tw * 0.14); c.lineTo(bx, by + tw * 0.24); c.lineTo(lx - tw * 0.04, ly + tw * 0.14); c.closePath(); c.fill(); }
+  // ground, back to front
+  const waterSeed = 0.7;
+  for (let d = 0; d <= 2 * (GR - 1); d++) for (let y = 0; y < GR; y++) {
+    const x = d - y; if (x < 0 || x >= GR || !E.owned(S, x, y)) continue;
+    const [cx, cy] = tileCenter(x, y);
+    const p = fx.pops[y * GR + x];
+    if (E.isWater(x, y)) { Art.water(c, cx, cy, tw, t, k, waterSeed + x * 0.9 + y); continue; }
+    const front = !E.owned(S, x + 1, y) || !E.owned(S, x, y + 1);
+    Art.ground(c, cx, cy, tw, { grass: (x + y) % 2 ? k.grass : k.grass2 }, front);
+    if (!S.g[E.IDX(x, y)]) Art.grassTexture(c, cx, cy, tw, E.hash2(x, y, 4), E.hash2(x, y, 5));
+    void p;
+  }
+  // the pond edge (a darker rim where grass meets water)
+  // selected tile
+  if (sel) {
+    const [cx, cy] = tileCenter(sel.x, sel.y), pul = 0.5 + 0.5 * Math.sin(t * 5);
+    c.lineWidth = 2.4; c.strokeStyle = `rgba(255,236,150,${0.75 + 0.25 * pul})`; c.fillStyle = 'rgba(255,240,170,.28)';
+    Art.poly(c, [[cx, cy - hh], [cx + hw, cy], [cx, cy + hh], [cx - hw, cy]], c.fillStyle, c.strokeStyle, 2.4);
+  }
+  // when a building is armed: the tiles it can go on glow
+  if (armed) {
+    const pul = 0.5 + 0.5 * Math.sin(t * 4);
+    for (let y = 0; y < GR; y++) for (let x = 0; x < GR; x++) {
+      if (!E.owned(S, x, y) || E.isWater(x, y) || S.g[E.IDX(x, y)]) continue;
+      if (E.BUILDINGS[armed].shore && !E.isShore(x, y)) continue;
+      const [cx, cy] = tileCenter(x, y);
+      Art.poly(c, [[cx, cy - hh * 0.85], [cx + hw * 0.85, cy], [cx, cy + hh * 0.85], [cx - hw * 0.85, cy]], `rgba(255,255,255,${0.18 + 0.14 * pul})`, `rgba(255,255,255,${0.5 + 0.3 * pul})`, 1.4);
+    }
+  }
+  // objects, back to front
+  const items = [];
+  for (let y = 0; y < GR; y++) for (let x = 0; x < GR; x++) {
+    const b = S.g[E.IDX(x, y)]; if (!b) continue; items.push({ x, y, b });
+  }
+  items.sort((a, b2) => (a.x + a.y) - (b2.x + b2.y) || a.x - b2.x);
+  for (const it of items) {
+    const [cx, cy] = tileCenter(it.x, it.y);
+    const o = { lv: it.b.lv, t, night, glows, seed: E.hash2(it.x, it.y, 1), water: null };
+    if (it.b.b === 'harbor') { for (const d of E.N4) if (E.isWater(it.x + d[0], it.y + d[1])) { o.water = d; break; } }
+    const p = fx.pops[it.y * GR + it.x];
+    c.save();
+    if (p) { const a = p.t / 0.45; if (a < 1) { const s = 1 + 0.28 * Math.sin(a * Math.PI) * (1 - a * 0.4) - 0.0; c.translate(cx, cy + hh * 0.5); c.scale(s, 2 - s > 0.9 ? 1 + (s - 1) * 0.6 : 0.9); c.translate(-cx, -(cy + hh * 0.5)); } }
+    Art.building(c, it.b.b, cx, cy, tw, o, k);
+    c.restore();
+  }
+  // wild trees at the near edge of the land are not drawn; free tiles may show flowers (done above)
+  // the smoke of production: coins and things float up from buildings
+  for (const f of fx.floats) {
+    const a = f.t / f.life, y = f.y - a * 26 * (f.big ? 1.4 : 1), al = a < 0.15 ? a / 0.15 : a > 0.7 ? Math.max(0, (1 - a) / 0.3) : 1;
+    c.globalAlpha = al;
+    const fs = f.big ? 15 : Math.max(10, Math.min(13, tw * 0.2));
+    c.font = `800 ${fs}px "M PLUS Rounded 1c", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const col = { coin: '#ffd860', wood: '#d8a468', food: '#ff8a7a', spark: '#7fe4ff', pop: '#ffffff' }[f.kind] || '#fff';
+    const txt = f.text, w = c.measureText(txt).width;
+    Art.ICON[f.kind] && Art.ICON[f.kind](c, f.x - w / 2 - fs * 0.55, y, fs * 0.45);
+    c.lineWidth = 3; c.strokeStyle = 'rgba(40,24,8,.75)'; c.strokeText(txt, f.x + fs * 0.4, y); c.fillStyle = col; c.fillText(txt, f.x + fs * 0.4, y);
+    c.globalAlpha = 1;
+  }
+  // bubbles for the armed building
+  if (armed && bubbles && bubbles.type === armed) {
+    c.font = `800 ${Math.max(10, Math.min(13, tw * 0.2))}px "M PLUS Rounded 1c", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const top = bubbles.items.reduce((m, i) => Math.max(m, i.gain), 0);
+    for (const it of bubbles.items) {
+      const [cx, cy] = tileCenter(it.x, it.y), best = it.gain > 0 && it.gain >= top - 1e-9, txt = '+' + rt(Math.max(0, it.gain));
+      const w = c.measureText(txt).width + 10, y = cy - tw * 0.12 - (best ? Math.sin(t * 6) * 2 : 0);
+      Art.rrect(c, cx - w / 2, y - 8, w, 16, 8, best ? '#ffd860' : 'rgba(255,255,255,.9)', 'rgba(70,40,10,.5)');
+      c.fillStyle = '#3a2808'; c.fillText(txt, cx, y + 0.5);
+      if (best) { c.fillStyle = '#ff8a3a'; c.beginPath(); c.moveTo(cx - 4, y + 8); c.lineTo(cx + 4, y + 8); c.lineTo(cx, y + 13); c.fill(); }
+    }
+  }
+  // the coach's pointing finger
+  if (tipTile && !armed) {
+    const [cx, cy] = tileCenter(tipTile.x, tipTile.y), b = Math.sin(t * 6) * 3;
+    c.fillStyle = '#ffffff'; c.strokeStyle = 'rgba(60,30,10,.7)'; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(cx, cy - 6 + b); c.lineTo(cx - 8, cy - 18 + b); c.lineTo(cx - 3, cy - 18 + b); c.lineTo(cx - 3, cy - 28 + b); c.lineTo(cx + 3, cy - 28 + b); c.lineTo(cx + 3, cy - 18 + b); c.lineTo(cx + 8, cy - 18 + b); c.closePath(); c.fill(); c.stroke();
+  }
+  // visitors drift over the town
+  for (const v of S.vis) {
+    const p = visitorPos(v);
+    Art.visitor(c, p.x, p.y, Math.max(0.55, tw / 64) * 1.2, v.kind, t + v.id, false);
+    const pul = 0.5 + 0.5 * Math.sin(t * 6 + v.id);
+    c.fillStyle = `rgba(255,255,255,${0.7 + 0.3 * pul})`; c.beginPath(); c.arc(p.x + 14, p.y - 22 - pul * 2, 7, 0, Math.PI * 2); c.fill(); c.strokeStyle = 'rgba(70,40,10,.6)'; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#e0564a'; c.font = '800 11px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('!', p.x + 14, p.y - 21.5 - pul * 2);
+  }
+  // events
+  drawEvent(c, t, W, H);
+  // night: a blue wash, then the lights
+  if (night) {
+    c.fillStyle = 'rgba(14,20,60,.28)'; c.fillRect(0, 0, W, H);
+  }
+  c.globalCompositeOperation = 'lighter';
+  for (const g of glows) { const r = g[2] * (g[4] ? 1 : 1), gr = c.createRadialGradient(g[0], g[1], 0, g[0], g[1], r); const a = night ? 0.7 : (g[4] ? 0.5 : 0.0); if (a <= 0) continue; gr.addColorStop(0, `rgba(${g[3]},${a})`); gr.addColorStop(1, `rgba(${g[3]},0)`); c.fillStyle = gr; c.fillRect(g[0] - r, g[1] - r, r * 2, r * 2); }
+  c.globalCompositeOperation = 'source-over';
+  // rings, confetti
+  for (const r of fx.rings) { const a = r.t / 0.7; c.strokeStyle = r.col + (1 - a) + ')'; c.lineWidth = 3 * (1 - a) + 1; c.beginPath(); c.ellipse(r.x, r.y, (8 + a * 46) * tw / 64 * 1.4, (4 + a * 23) * tw / 64 * 1.4, 0, 0, Math.PI * 2); c.stroke(); }
+  for (const b of fx.bits) { const a = b.t / b.life; c.globalAlpha = Math.max(0, 1 - a * a); c.fillStyle = b.c; if (b.rect) { c.save(); c.translate(b.x, b.y); c.rotate(b.t * 8); c.fillRect(-b.r, -b.r * 0.6, b.r * 2, b.r * 1.2); c.restore(); } else { c.beginPath(); c.arc(b.x, b.y, b.r * (1 - a * 0.4), 0, Math.PI * 2); c.fill(); } c.globalAlpha = 1; }
+}
+function visitorPos(v) {
+  const p = 1 - v.ttl / v.life, W = view.W, H = view.H;
+  const y0 = H * (0.1 + 0.18 * v.lane), wob = Math.sin(simT * 1.6 + v.id) * 6 + Math.sin(simT * 0.7 + v.id * 2) * 4;
+  const left = v.id % 2 === 0;
+  const x = left ? -30 + p * (W + 60) : W + 30 - p * (W + 60);
+  return { x, y: y0 + wob + p * H * 0.1, left };
+}
+function drawEvent(c, t, W, H) {
+  if (!S.ev) return;
+  const ty = S.ev.type, a = Math.min(1, S.ev.left / 3, (S.ev.life - S.ev.left) / 1.5 + 0.1);
+  c.save(); c.globalAlpha = Math.max(0, a);
+  if (ty === 'rain') {
+    c.fillStyle = 'rgba(40,60,100,.14)'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(190,225,255,.75)'; c.lineWidth = 1.4;
+    for (let i = 0; i < 60; i++) { const x = ((i * 53.7 + t * 90) % (W + 40)) - 20, y = ((i * 97.3 + t * 520) % (H + 40)) - 20; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 5, y + 14); c.stroke(); }
+    c.fillStyle = 'rgba(120,135,165,.8)'; for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(W * (0.15 + i * 0.25) + Math.sin(t + i) * 8, 18 + (i % 2) * 8, 40, 12, 0, 0, Math.PI * 2); c.fill(); }
+  } else if (ty === 'fest') {
+    c.strokeStyle = 'rgba(120,70,30,.8)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(0, 6); c.quadraticCurveTo(W / 2, 34, W, 6); c.stroke();
+    const cols = ['#e0564a', '#ffd860', '#3fa08a', '#7a6fd0', '#ff8ac0'];
+    for (let i = 0; i < 12; i++) { const f = (i + 0.5) / 12, x = f * W, y = 6 + 28 * (1 - Math.pow(2 * f - 1, 2)) * 0.98; Art.poly(c, [[x - 7, y], [x + 7, y], [x, y + 14]], cols[i % 5], 'rgba(60,30,10,.35)', 0.6); }
+    for (let i = 0; i < 26; i++) { const x = (i * 37.1 + Math.sin(t * 1.4 + i) * 12) % W, y = ((i * 71.3 + t * 40) % (H + 20)) - 10; c.fillStyle = cols[i % 5]; c.save(); c.translate(x, y); c.rotate(t * 3 + i); c.fillRect(-2.5, -1.5, 5, 3); c.restore(); }
+  } else if (ty === 'wind') {
+    for (let i = 0; i < 30; i++) { const f = ((t * 0.12 + i * 0.137) % 1), x = f * (W + 40) - 20, y = H * (0.2 + 0.6 * ((i * 0.618) % 1)) + Math.sin(f * 12 + i) * 10; c.fillStyle = `rgba(255,224,120,${0.9 - Math.abs(f - 0.5)})`; Art.poly(c, [[x, y - 3], [x + 1.2, y - 1], [x + 3, y], [x + 1.2, y + 1], [x, y + 3], [x - 1.2, y + 1], [x - 3, y], [x - 1.2, y - 1]], c.fillStyle, null); }
+  } else if (ty === 'ship') {
+    for (let i = 0; i < 18; i++) { const x = (i * 41.7 + 20) % W, y = ((i * 63.1 + t * 70) % (H + 30)) - 15; Art.ICON.coin(c, x, y, 4); }
+  }
+  c.restore();
+}
+
+// ---------- the loop ----------
+let raf = 0, lastTs = 0, resync = true, bootDone = false;
+let uiTimer = 0, questTimer = 0, saveTimer = 0, bestSent = 0;
+function loop(ts) {
+  raf = requestAnimationFrame(loop);
+  let dtm = lastTs ? Math.min(ts - lastTs, 24 * 3600 * 1000) : 16; lastTs = ts;
+  if (dtm < 0) dtm = 0;
+  let now;
+  if (resync) { now = wallNow(); resync = false; } else now = S.t + dtm;
+  const r = E.advance(S, now);
+  onAdvance(r);
+  const dts = Math.min(dtm, 100) / 1000;
+  simT += dts;
+  // animations
+  for (const f of fx.floats) f.t += dts; fx.floats = fx.floats.filter(f => f.t < f.life);
+  for (const b of fx.bits) { b.t += dts; b.x += b.vx * dts; b.y += b.vy * dts; b.vy += b.g * dts; } fx.bits = fx.bits.filter(b => b.t < b.life);
+  for (const q of fx.rings) q.t += dts; fx.rings = fx.rings.filter(q => q.t < 0.7);
+  for (const key of Object.keys(fx.pops)) { fx.pops[key].t += dts; if (fx.pops[key].t > 0.5) delete fx.pops[key]; }
+  emitProduction(dts);
+  // the view follows the land size
+  const tg = fitTarget(S.land), kk = reduceMotion.matches ? 1 : 1 - Math.pow(0.0008, dts);
+  for (const key of ['tw', 'ox', 'oy']) view[key] += (tg[key] - view[key]) * kk;
+  uiTimer += dts; questTimer += dts; saveTimer += dts;
+  if (questTimer > 0.4) { questTimer = 0; checkGoals(); }
+  if (uiTimer > 0.25 || needUI) { uiTimer = 0; needUI = false; updateHud(); }
+  if (saveTimer > 5) { saveTimer = 0; persist(true); }
+  draw(ts);
+}
+// little rewards float up from the buildings that work
+function emitProduction(dt) {
+  const R = E.rates(S);
+  if (S.res.food <= 0) { /* hungry */ }
+  for (let i = 0; i < R.tiles.length; i++) {
+    const tl = R.tiles[i]; if (!tl) continue;
+    let kind = '', rate = 0;
+    if (tl.coin > 0) { kind = 'coin'; rate = tl.coin; } else if (tl.wood > 0) { kind = 'wood'; rate = tl.wood; } else if (tl.food > 0) { kind = 'food'; rate = tl.food; } else if (tl.spark > 0) { kind = 'spark'; rate = tl.spark; }
+    else if (tl.cap > 0 && S.pop > 0) { kind = 'coin'; rate = R.taxPerPop * (tl.cap * S.pop / Math.max(1, R.cap)) * (tl.tax / Math.max(1e-9, R.taxW)); }
+    if (!kind || rate <= 0) continue;
+    fx.acc[i] = (fx.acc[i] || 0) + rate * dt;
+    const per = kind === 'spark' ? 1 : 1;
+    const period = Math.max(3.2, per / rate * 1.1);
+    fx.nextEmit[i] = (fx.nextEmit[i] == null ? (i % 7) * 0.5 + period * 0.3 : fx.nextEmit[i]) - dt;
+    if (fx.nextEmit[i] <= 0) {
+      const v = fx.acc[i]; fx.acc[i] = 0; fx.nextEmit[i] = period * (0.8 + 0.4 * ((i * 37) % 10) / 10);
+      if (v >= 0.95 && fx.floats.length < 26 && !document.hidden) {
+        const x = i % E.GRID, y = Math.floor(i / E.GRID), [cx, cy] = tileCenter(x, y);
+        floatText(cx, cy - view.tw * 0.45, '+' + fmt(v), kind);
+      }
+    }
+  }
+}
+function onAdvance(r) {
+  if (r.mode === 'away' && r.raw >= 60) showWelcome(r);
+  if (r.clock === 'back') { if (!clockWarned) { clockWarned = true; toast(T('時計が戻っているので、るすの分は数えません')); } }
+  else if (r.clock === 'jump') toast(T('時計が大きくずれているので、るすの分は数えません'));
+  for (const e of r.events || []) {
+    if (e.type === 'visitor') { snd.visitor(); if (S.tut === 0 && !S.qd.t1) coach(T('空をとぶ旅人をタップしよう。おみやげがもらえる')); }
+    if (e.type === 'event') { snd.event(); showEvent(); }
+  }
+}
+let clockWarned = false;
+
+// ---------- goals ----------
+function questText(q) {
+  const n = q.n;
+  switch (q.kind) {
+    case 'build': return n === 1 ? T('{name}を建てる', { name: nm(q.type) }) : T('{name}を{n}つにする', { name: nm(q.type), n });
+    case 'pop': return T('人口を{n}人にする', { n });
+    case 'lv': return T('どれかの建物を Lv{n} にする', { n });
+    case 'land': return T('土地を {n}×{n} にひろげる', { n });
+    case 'taps': return T('旅人に合計 {n} 回さわる', { n });
+    case 'types': return T('{n} しゅるいの建物を建てる', { n });
+    case 'pair': return T('{a}を{b}のとなりに建てる', { a: nm(q.a), b: nm(q.b) });
+  }
+  return '';
+}
+const rwHtml = rw => ['coin', 'wood', 'spark'].filter(x => rw[x]).map(x => `<span>${ICON[x]}${fmt(rw[x])}</span>`).join('');
+function checkGoals() {
+  const before = S.best;
+  const added = E.refreshUnlocks(S);
+  for (const t of added) { if (bootDone) { toast(T('あたらしい建物： {name}', { name: nm(t) })); newCard[t] = 1; } }
+  if (added.length) buildCards();
+  const done = E.checkQuests(S);
+  for (const q of done) celebrate(q);
+  if (done.length) { persist(true); renderQuest(); updateCards(); emit('progress', { key: 'goals', value: Object.keys(S.qd).length }); }
+  else if (!qCache || qCache.id !== (E.currentQuest(S) || {}).id) renderQuest();
+  if (S.best > before && bootDone && performance.now() - bestSent > 8000) { bestSent = performance.now(); emit('best', { score: S.best }); }
+  if (bootDone && S.tut === 0 && S.qd.l1) { S.tut = 1; hideTip(); persist(true); }
+  coachUpdate();
+  $('townDot').hidden = !E.prestigeInfo(S).ok;
+  $('giftDot').hidden = !E.giftReady(S, wallNow());
+}
+function celebrate(q) {
+  const [cx, cy] = [view.W / 2, view.H * 0.5];
+  flash(T('もくひょう たっせい！'), questText(q), q.big);
+  burst(cx, cy, q.big ? 70 : 34, { up: true, speed: q.big ? 220 : 160, lift: 60, rect: true, life: 1.0 });
+  if (q.big) { burst(view.W * 0.25, view.H * 0.55, 24, { up: true, speed: 160, rect: true }); burst(view.W * 0.75, view.H * 0.55, 24, { up: true, speed: 160, rect: true }); }
+  q.big ? snd.big() : snd.quest();
+  $('qbar').classList.remove('done'); void $('qbar').offsetWidth; $('qbar').classList.add('done');
+  for (const x of ['coin', 'wood', 'spark']) if (q.reward[x]) floatText(cx + (x === 'coin' ? -40 : x === 'wood' ? 0 : 40), cy + 28, '+' + fmt(q.reward[x]), x, true);
+}
+let qCache = null;
+function renderQuest() {
+  const q = E.currentQuest(S);
+  qCache = { id: q ? q.id : '' };
+  if (!q) { $('qText').textContent = T('目標がぜんぶ終わりました。町をもっと大きくしよう'); $('qFill').style.width = '100%'; $('qRw').innerHTML = ''; return; }
+  const pr = E.questProgress(S, q);
+  $('qText').textContent = questText(q) + (q.kind === 'pop' || q.kind === 'build' && q.n > 1 || q.kind === 'taps' || q.kind === 'types' ? `  ${Math.min(pr.v, pr.goal)}/${pr.goal}` : '');
+  $('qFill').style.width = Math.min(100, pr.v / pr.goal * 100) + '%';
+  $('qRw').innerHTML = rwHtml(q.reward);
+}
+
+// ---------- the panels at the bottom ----------
+const newCard = {};
+function cardIcon(type, locked) {
+  const cvs = document.createElement('canvas'); const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cvs.width = 46 * dpr; cvs.height = 40 * dpr; cvs.style.width = '46px'; cvs.style.height = '40px';
+  const c = cvs.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const tw = 46;
+  if (type === 'land') { Art.poly(c, [[23, 12], [43, 22], [23, 32], [3, 22]], '#9ad47a', 'rgba(40,100,40,.5)', 1); Art.poly(c, [[23, 7], [38, 14], [23, 21], [8, 14]], 'rgba(255,255,255,.0)', 'rgba(255,255,255,.9)', 1.4); c.fillStyle = '#fff'; c.font = '800 14px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('+', 23, 22); return cvs; }
+  Art.building(c, type, 23, 29, tw * 0.95, { lv: 1, t: 0.5, night: false, glows: [], seed: 0.3, water: [0, 1] }, { grass: '#9ad47a', leaf1: '#5fb85a', leaf2: '#4a9e4c' });
+  return cvs;
+}
+let cardEls = {};
+function buildCards() {
+  const box = $('cards'); box.innerHTML = ''; cardEls = {};
+  for (const type of E.TYPES) {
+    const unl = E.unlocked(S, type);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'bcard' + (unl ? '' : ' locked') + (newCard[type] ? ' new' : ''); b.dataset.type = type; b.setAttribute('role', 'listitem');
+    b.appendChild(cardIcon(type));
+    const n1 = document.createElement('span'); n1.className = 'nm'; n1.textContent = nm(type); b.appendChild(n1);
+    const co = document.createElement('span'); co.className = 'co'; b.appendChild(co);
+    const cn = document.createElement('span'); cn.className = 'cn'; b.appendChild(cn);
+    b.addEventListener('click', () => onCard(type));
+    box.appendChild(b); cardEls[type] = { b, co, cn };
+  }
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'bcard'; b.dataset.type = 'land'; b.setAttribute('role', 'listitem');
+  b.appendChild(cardIcon('land'));
+  const n1 = document.createElement('span'); n1.className = 'nm'; n1.textContent = T('ひろげる'); b.appendChild(n1);
+  const co = document.createElement('span'); co.className = 'co'; b.appendChild(co);
+  b.addEventListener('click', () => onExpand());
+  box.appendChild(b); cardEls.land = { b, co, cn: document.createElement('span') };
+  updateCards();
+}
+function lockText(type) {
+  const n = E.BUILDINGS[type].need || {};
+  if (n.tier != null && S.tier < n.tier) return n.tier === S.tier + 1 ? T('町をひらきなおすと開く') : T('ひらきなおし {n} 回目で開く', { n: n.tier });
+  if (n.peak != null) return T('人口 {n} で開く', { n: n.peak });
+  return '';
+}
+function updateCards() {
+  for (const type of E.TYPES) {
+    const el = cardEls[type]; if (!el) continue;
+    const unl = E.unlocked(S, type), c = E.cost(S, type);
+    el.b.classList.toggle('locked', !unl);
+    el.b.classList.toggle('armed', armed === type);
+    el.b.classList.toggle('dim', unl && !E.affordable(S, c));
+    el.b.classList.toggle('new', !!newCard[type] && unl);
+    if (unl) el.co.innerHTML = `<span class="${S.res.coin >= c.c ? '' : 'no'}">${ICON.coin}${fmt(c.c)}</span>` + (c.w ? `<span class="${S.res.wood >= c.w ? '' : 'no'}">${ICON.wood}${fmt(c.w)}</span>` : '');
+    else el.co.textContent = lockText(type);
+    el.cn.textContent = unl ? '×' + E.countOf(S, type) : '';
+    el.b.setAttribute('aria-label', nm(type));
+  }
+  const el = cardEls.land;
+  if (el) {
+    const why = E.canExpand(S), c = E.landCost(S.land + 1);
+    el.b.classList.toggle('locked', why === 'tier' || why === 'max');
+    el.b.classList.toggle('dim', why === 'money');
+    if (why === 'tier' || why === 'max') el.co.textContent = why === 'max' ? T('さいだい') : T('これ以上は町をひらきなおすと広がります');
+    else el.co.innerHTML = `<span>${T('{n}×{n} マスに', { n: S.land + 1 })}</span><span class="${S.res.coin >= c.c ? '' : 'no'}">${ICON.coin}${fmt(c.c)}</span><span class="${S.res.wood >= c.w ? '' : 'no'}">${ICON.wood}${fmt(c.w)}</span>`;
+    el.b.setAttribute('aria-label', T('土地をひろげる'));
+  }
+}
+function toast(msg) {
+  const t = $('toast'); t.innerHTML = ''; const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.innerHTML = ''; }, 2600);
+}
+function flash(msg, sub, big) {
+  const f = $('flash'); f.innerHTML = esc(msg) + (sub ? '<small>' + esc(sub) + '</small>' : ''); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  f.style.fontSize = big ? '34px' : '28px';
+}
+function flashRes(id) { const e = $(id); e.classList.remove('flash'); void e.offsetWidth; e.classList.add('flash'); }
+function whyNot(why, type) {
+  snd.bad();
+  const c = type ? E.cost(S, type) : null;
+  if (why === 'money') {
+    if (c && S.res.coin < c.c) { flashRes('rcCoin'); toast(T('コインがたりない') + ' (' + T('あと {n}', { n: fmt(c.c - S.res.coin) }) + ')'); }
+    else if (c) { flashRes('rcWood'); toast(T('木材がたりない') + ' (' + T('あと {n}', { n: fmt(c.w - S.res.wood) }) + ')'); }
+    else toast(T('コインがたりない'));
+  } else if (why === 'shore') toast(T('池のほとりにだけ建てられます'));
+  else if (why === 'locked') toast(lockText(type));
+  else if (why === 'land') toast(T('土地の外です。土地をひろげると建てられます'));
+  else if (why === 'water') toast(T('池だ。みなとは池のほとりに建つよ'));
+  else toast(T('そこには建てられません'));
+}
+function onCard(type) {
+  AU && AU.ctx && AU.ctx();
+  if (!E.unlocked(S, type)) { whyNot('locked', type); return; }
+  newCard[type] = 0;
+  clearDestroy();
+  if (sel && !S.g[E.IDX(sel.x, sel.y)] && E.owned(S, sel.x, sel.y)) { tryBuild(type, sel.x, sel.y); return; }
+  if (sel) { sel = null; showInfo(); }
+  armed = armed === type ? null : type;
+  if (armed) { snd.sel(); computeBubbles(); toast(T('{name} を置く場所をえらぼう', { name: nm(type) })); } else bubbles = null;
+  updateCards(); needDraw = true;
+}
+function computeBubbles() {
+  if (!armed) { bubbles = null; return; }
+  const items = [];
+  for (let y = 0; y < E.GRID; y++) for (let x = 0; x < E.GRID; x++) {
+    if (!E.owned(S, x, y) || E.isWater(x, y) || S.g[E.IDX(x, y)]) continue;
+    if (E.BUILDINGS[armed].shore && !E.isShore(x, y)) continue;
+    items.push({ x, y, gain: E.gainIfBuilt(S, armed, x, y, 0.35, 0.03) });
+  }
+  bubbles = { type: armed, items };
+}
+function tryBuild(type, x, y) {
+  const why = E.canBuild(S, type, x, y);
+  if (why) { whyNot(why, type); return false; }
+  E.build(S, type, x, y);
+  const [cx, cy] = tileCenter(x, y);
+  pop(x, y); burst(cx, cy, 14, { up: true, speed: 100, cols: ['#e8d8b0', '#c8a878', '#ffffff'], g: 260 }); ring(cx, cy);
+  snd.place(); snd.coin();
+  sel = null; tipTile = null;
+  if (armed) computeBubbles();
+  persist(true); checkGoals(); updateCards(); showInfo(); needUI = true;
+  return true;
+}
+function onExpand() {
+  AU && AU.ctx && AU.ctx();
+  const why = E.canExpand(S);
+  if (why === 'tier' || why === 'max') { snd.bad(); toast(T('これ以上は町をひらきなおすと広がります')); return; }
+  if (why) { snd.bad(); const c = E.landCost(S.land + 1); if (S.res.coin < c.c) { flashRes('rcCoin'); toast(T('コインがたりない') + ' (' + T('あと {n}', { n: fmt(c.c - S.res.coin) }) + ')'); } else { flashRes('rcWood'); toast(T('木材がたりない') + ' (' + T('あと {n}', { n: fmt(c.w - S.res.wood) }) + ')'); } return; }
+  E.expand(S);
+  snd.up(); sfx('clear'); toast(T('ひろげた！'));
+  for (let i = 0; i < 6; i++) setTimeout(() => burst(view.W * (0.2 + 0.6 * Math.random()), view.H * (0.3 + 0.4 * Math.random()), 10, { up: true, speed: 120, cols: ['#9ad47a', '#ffffff', '#ffd860'] }), i * 60);
+  if (armed) computeBubbles();
+  persist(true); checkGoals(); updateCards(); needDraw = true;
+}
+
+// ---------- tapping the map ----------
+function pointer(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function tileAt(px, py) {
+  const GR = E.GRID, hh = view.tw / 4;
+  // buildings are tall: look for the front-most one whose picture is under the finger first
+  const cand = [];
+  for (let y = 0; y < GR; y++) for (let x = 0; x < GR; x++) { const b = S.g[E.IDX(x, y)]; if (!b) continue; const [cx, cy] = tileCenter(x, y); const hgt = b.b === 'tower' ? 1.0 : b.b === 'mill' || b.b === 'library' ? 0.8 : 0.55; if (Math.abs(px - cx) <= view.tw * 0.36 && py <= cy + hh * 0.6 && py >= cy - view.tw * hgt) cand.push({ x, y, d: x + y }); }
+  const [gx, gy] = toGrid(px, py), gxi = Math.floor(gx), gyi = Math.floor(gy);
+  if (gxi >= 0 && gyi >= 0 && gxi < GR && gyi < GR && S.g[E.IDX(gxi, gyi)]) return { x: gxi, y: gyi };
+  if (cand.length) { cand.sort((a, b) => b.d - a.d); return cand[0]; }
+  return { x: gxi, y: gyi };
+}
+cv.addEventListener('pointerdown', e => {
+  if (anyOverlay()) return;
+  AU && AU.ctx && AU.ctx();
+  const [px, py] = pointer(e);
+  // a visitor?
+  for (const v of S.vis) {
+    const p = visitorPos(v);
+    if (Math.abs(px - p.x) < 34 && Math.abs(py - p.y) < 40) { greet(v, p); return; }
+  }
+  const t = tileAt(px, py);
+  if (t.x < 0 || t.y < 0 || t.x >= E.GRID || t.y >= E.GRID) { deselect(); return; }
+  onTile(t.x, t.y);
+});
+function greet(v, p) {
+  const g = E.tapVisitor(S, v.id); if (!g) return;
+  snd.hello();
+  burst(p.x, p.y, 22, { up: false, speed: 130, g: 200 });
+  ring(p.x, p.y, 'rgba(255,230,140,');
+  floatText(p.x - 24, p.y - 20, '+' + fmt(g.coin), 'coin', true);
+  if (g.wood) floatText(p.x + 4, p.y - 6, '+' + fmt(g.wood), 'wood', true);
+  if (g.spark) { floatText(p.x + 30, p.y - 20, '+' + g.spark, 'spark', true); snd.big(); toast(T('おみやげをもらった！') + ' ✦'); }
+  flashRes('rcCoin'); persist(true); checkGoals(); needUI = true;
+}
+function onTile(x, y) {
+  const GR = E.GRID;
+  clearDestroy();
+  if (!E.owned(S, x, y)) { snd.bad(); toast(T('土地の外です。土地をひろげると建てられます')); deselect(); return; }
+  if (E.isWater(x, y)) { snd.sel(); toast(T('池だ。みなとは池のほとりに建つよ')); return; }
+  const b = S.g[E.IDX(x, y)];
+  if (b) { armed = null; bubbles = null; sel = { x, y }; snd.sel(); updateCards(); showInfo(); needDraw = true; return; }
+  if (armed) { tryBuild(armed, x, y); return; }
+  sel = { x, y }; snd.sel(); toast(T('空き地をえらんだ。建物をえらぼう')); showInfo(); needDraw = true;
+  void GR;
+}
+function deselect() { sel = null; armed = null; bubbles = null; clearDestroy(); showInfo(); updateCards(); needDraw = true; }
+
+// ---------- the info panel ----------
+let destroyArm = 0;
+function clearDestroy() { destroyArm = 0; }
+function showInfo() {
+  const box = $('info'), cards = $('cards');
+  if (!sel || !S.g[E.IDX(sel.x, sel.y)]) { box.hidden = true; cards.hidden = false; return; }
+  const b = S.g[E.IDX(sel.x, sel.y)], def = E.BUILDINGS[b.b], R = E.rates(S), tl = R.tiles[E.IDX(sel.x, sel.y)] || {};
+  cards.hidden = true; box.hidden = false;
+  const lines = [];
+  if (b.b === 'plaza') lines.push(['', T('町の中心。ここからコインがわく')]);
+  if (b.b === 'house') lines.push(['', T('すんでいる人 {a}/{b}人', { a: Math.floor(S.pop * tl.cap / Math.max(1, R.cap)), b: tl.cap }) + (EN ? ' · ' : '・') + T('税 {n}/秒', { n: rt(R.taxPerPop * (S.pop * tl.cap / Math.max(1, R.cap)) * (tl.tax / Math.max(1e-9, R.taxW))) })]);
+  if (tl.coin > 0) lines.push(['good', T('コイン +{n}/秒', { n: rt(tl.coin) })]);
+  if (tl.wood > 0) lines.push(['good', T('木材 +{n}/秒', { n: rt(tl.wood) })]);
+  if (tl.food > 0) lines.push(['good', T('食べもの +{n}/秒', { n: rt(tl.food) })]);
+  if (tl.spark > 0) { const perMin = tl.spark * 60 >= 1; lines.push(['good', T('ひらめき +{n}/{u}', { n: perMin ? rt(tl.spark * 60) : rt(tl.spark * 3600), u: perMin ? T('分') : T('時間') })]); }
+  if (b.b === 'tower') lines.push(['', T('まわり8マスの建物を +30%')]);
+  for (const bn of tl.bonus || []) lines.push(['good', bn.with === 'tower' ? T('{name} が近くにいる +{pct}%', { name: nm('tower'), pct: bn.pct }) : T('{name} がとなりにいる +{pct}%', { name: nm(bn.with), pct: bn.pct })]);
+  const want = (E.ADJ[b.b] || []).filter(a => !(tl.bonus || []).some(x => x.with === a[0])).map(a => nm(a[0]));
+  if (want.length) lines.push(['', T('となりに {names} を置くとふえる', { names: want.join(EN ? ', ' : '・') })]);
+  const up = def.fixed ? null : E.upCost(S, b), why = def.fixed ? 'none' : E.canUpgrade(S, sel.x, sel.y);
+  const mx = !def.fixed && b.lv >= E.maxLv(S);
+  const sell = { c: Math.floor(b.c * 0.5), w: Math.floor(b.w * 0.5) };
+  box.innerHTML = '<canvas id="infoIco"></canvas><div class="it"><h3>' + esc(nm(b.b)) + (def.fixed ? '' : '<em>' + esc(T('Lv{n}', { n: b.lv })) + '</em>') + '</h3>' + lines.map(l => `<div class="${l[0]}">${esc(l[1])}</div>`).join('') + '</div>' +
+    '<div class="acts">' + (def.fixed ? '' :
+      (mx ? `<button class="btn small" id="iUp" type="button" disabled><span class="stk">${esc(T('さいだいレベル'))}</span></button>` : `<button class="btn small" id="iUp" type="button"><span class="stk">${esc(T('そだてる'))} ${esc(T('→ Lv{n}', { n: b.lv + 1 }))}<span class="pr">${priceHtml(up.c, up.w)}</span></span></button>`) +
+      `<button class="btn small sub" id="iDel" type="button">${esc(T('こわす'))}</button>`) + '<button class="btn small link" id="iClose" type="button">' + esc(T('とじる')) + '</button></div>';
+  const ico = $('infoIco'), dpr = Math.min(2, window.devicePixelRatio || 1); ico.width = 54 * dpr; ico.height = 54 * dpr;
+  const c = ico.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  Art.building(c, b.b, 27, 38, 54, { lv: b.lv, t: simT, night: false, glows: [], seed: 0.3, water: [0, 1] }, { grass: '#9ad47a', leaf1: '#5fb85a', leaf2: '#4a9e4c' });
+  if ($('iUp') && !mx) { if (why === 'money') $('iUp').classList.add('sub'); $('iUp').addEventListener('click', () => doUpgrade()); }
+  if ($('iDel')) $('iDel').addEventListener('click', () => doDemolish());
+  $('iClose').addEventListener('click', () => deselect());
+}
+function doUpgrade() {
+  if (!sel) return;
+  const why = E.canUpgrade(S, sel.x, sel.y);
+  if (why === 'money') { snd.bad(); const b = S.g[E.IDX(sel.x, sel.y)], c = E.upCost(S, b); if (S.res.coin < c.c) { flashRes('rcCoin'); toast(T('コインがたりない') + ' (' + T('あと {n}', { n: fmt(c.c - S.res.coin) }) + ')'); } else { flashRes('rcWood'); toast(T('木材がたりない') + ' (' + T('あと {n}', { n: fmt(c.w - S.res.wood) }) + ')'); } return; }
+  if (why) { snd.bad(); return; }
+  E.upgrade(S, sel.x, sel.y);
+  const [cx, cy] = tileCenter(sel.x, sel.y);
+  pop(sel.x, sel.y); ring(cx, cy); burst(cx, cy - view.tw * 0.2, 22, { up: true, speed: 140, cols: ['#ffd860', '#fff4b0', '#ffffff'] });
+  snd.up(); persist(true); checkGoals(); showInfo(); updateCards(); needUI = true;
+}
+function doDemolish() {
+  if (!sel) return;
+  if (!destroyArm) { destroyArm = 1; const d = $('iDel'); d.textContent = T('ほんとうに？'); d.classList.add('danger'); d.classList.remove('sub'); setTimeout(() => { if (destroyArm === 1) { destroyArm = 0; if ($('iDel')) { $('iDel').textContent = T('こわす'); $('iDel').classList.remove('danger'); $('iDel').classList.add('sub'); } } }, 3000); return; }
+  const b = S.g[E.IDX(sel.x, sel.y)], c = Math.floor(b.c * 0.5), w = Math.floor(b.w * 0.5);
+  E.demolish(S, sel.x, sel.y);
+  const [cx, cy] = tileCenter(sel.x, sel.y);
+  burst(cx, cy, 16, { up: true, speed: 110, cols: ['#c8b898', '#a89878', '#ffffff'] }); snd.boom();
+  toast(T('こわして {c} コインと {w} 木材が戻った', { c: fmt(c), w: fmt(w) }));
+  sel = null; destroyArm = 0; persist(true); showInfo(); updateCards(); needUI = true; needDraw = true;
+}
+
+// ---------- HUD ----------
+let lastVals = {};
+function bump(id, key, v) { if (lastVals[key] != null && v > lastVals[key]) { const e = $(id); e.classList.remove('up'); void e.offsetWidth; e.classList.add('up'); } lastVals[key] = v; }
+function updateHud() {
+  const R = E.rates(S), r = S.res, p = Math.floor(S.pop + 1e-9);
+  $('vPop').textContent = fmt(p); $('sPop').textContent = '/' + fmt(R.cap);
+  $('vCoin').textContent = fmt(r.coin); $('sCoin').textContent = '+' + rt(E.coinRate(S)) + (EN ? '/s' : '/秒');
+  $('vWood').textContent = fmt(r.wood); $('sWood').textContent = '+' + rt(R.wood) + (EN ? '/s' : '/秒');
+  const fn = E.foodNet(S);
+  $('vFood').textContent = fmt(r.food); $('sFood').textContent = (fn >= 0 ? '+' : '−') + rt(Math.abs(fn)) + (EN ? '/s' : '/秒');
+  $('rcFood').classList.toggle('bad', r.food <= 0 && S.pop > 0);
+  $('rcFood').title = r.food <= 0 && S.pop > 0 ? T('食べものが足りないと、人がふえず税も半分になります') : '';
+  const sp = R.spark > 0 ? R.spark * 60 : 0;
+  $('vSpark').textContent = r.spark >= 10 ? fmt(r.spark) : (Math.floor(r.spark * 10) / 10).toFixed(1).replace(/\.0$/, ''); $('sSpark').textContent = sp > 0 ? '+' + rt(sp) + (EN ? '/min' : '/分') : '';
+  bump('rcCoin', 'coin', Math.floor(r.coin)); bump('rcSpark', 'spark', Math.floor(r.spark)); bump('rcWood', 'wood', Math.floor(r.wood));
+  updateCards();
+  renderQuestProgress();
+  renderEvent();
+  if (S.res.food <= 0 && S.pop > 3 && !hungryWarned) { hungryWarned = true; toast(T('食べものがたりない！')); } else if (S.res.food > 5) hungryWarned = false;
+  if (sel && !$('info').hidden && performance.now() - infoT > 1000) { infoT = performance.now(); if (!destroyArm) showInfo(); }
+}
+let infoT = 0, hungryWarned = false;
+function renderQuestProgress() { const q = E.currentQuest(S); if (!q) return; const pr = E.questProgress(S, q); $('qFill').style.width = Math.min(100, pr.v / pr.goal * 100) + '%'; const txt = questText(q) + (q.kind === 'pop' || q.kind === 'build' && q.n > 1 || q.kind === 'taps' || q.kind === 'types' ? `  ${Math.min(pr.v, pr.goal)}/${pr.goal}` : ''); if ($('qText').textContent !== txt) $('qText').textContent = txt; }
+function evName(ty) { return { rain: T('にわか雨：はたけが2ばい'), fest: T('お祭り：いちばとすまいがにぎわう'), wind: T('金のそよ風：コインが1.5ばい'), ship: T('船がついた：みなとが3ばい') }[ty]; }
+function showEvent() { renderEvent(); }
+function renderEvent() {
+  const e = $('ev');
+  if (!S.ev) { e.hidden = true; return; }
+  e.hidden = false; const tx = evName(S.ev.type); if ($('evTx').textContent !== tx) $('evTx').textContent = tx; $('evBar').style.width = Math.max(0, S.ev.left / S.ev.life * 100) + '%';
+}
+
+// ---------- the coach (first visit) ----------
+let tipTile = null;
+function hideTip() { $('tip').hidden = true; tipTile = null; }
+function coach(msg) { const t = $('tip'); t.innerHTML = '<span class="tag">' + esc(T('チュートリアル')) + '</span>' + esc(msg); t.hidden = false; }
+function bestEmpty(type) {
+  let best = null;
+  for (let y = 0; y < E.GRID; y++) for (let x = 0; x < E.GRID; x++) {
+    if (!E.owned(S, x, y) || E.isWater(x, y) || S.g[E.IDX(x, y)]) continue;
+    if (E.BUILDINGS[type].shore && !E.isShore(x, y)) continue;
+    const g = E.gainIfBuilt(S, type, x, y, 0.35, 0.03) - (Math.abs(x - E.PLAZA.x) + Math.abs(y - E.PLAZA.y)) * 1e-6;
+    if (!best || g > best.g) best = { x, y, g };
+  }
+  return best;
+}
+function coachUpdate() {
+  if (S.tut !== 0 || !bootDone || anyOverlay()) { if (S.tut !== 0) hideTip(); return; }
+  const q = E.currentQuest(S);
+  if (!q) { hideTip(); return; }
+  const msgs = { h1: '空き地をタップして、すまいを建てよう', f1: 'はたけも建てよう。食べものがないと人がふえないよ', p3: '人が住みはじめた！コインは自動でたまります', t1: '空をとぶ旅人をタップしよう。おみやげがもらえる', l1: 'きこり小屋で木材をあつめよう。大きな建物に使うよ' };
+  const m = msgs[q.id]; if (!m) { hideTip(); return; }
+  if (q.id === 't1' && !S.vis.length) { hideTip(); return; }
+  coach(T(m));
+  tipTile = (q.id === 'h1' || q.id === 'f1' || q.id === 'l1') && !armed && !sel ? bestEmpty(q.type) : null;
+}
+
+// ---------- panels ----------
+const OVERLAYS = ['ovWelcome', 'ovQuests', 'ovResearch', 'ovGift', 'ovTown', 'howto'];
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden);
+function openOv(id) { OVERLAYS.forEach(o => { $(o).hidden = o !== id; }); hideTip(); AU && AU.ctx && AU.ctx(); const f = $(id).querySelector('.btn'); try { f && f.focus({ preventScroll: true }); } catch (e) {} }
+function closeOv() { OVERLAYS.forEach(o => { $(o).hidden = true; }); needUI = true; coachUpdate(); }
+
+// welcome back
+let welcomePending = null;
+function showWelcome(r) {
+  const g = r.gains || { coin: 0, wood: 0, food: 0, spark: 0, pop: 0 };
+  const cap = E.offlineCapH(S);
+  $('wAway').textContent = T('{t}のあいだ、町ははたらいていました', { t: dur(r.dt) });
+  const cells = [['coin', g.coin], ['wood', g.wood], ['food', g.food], ['spark', g.spark]].filter(x => Math.abs(x[1]) >= 0.5 || x[0] === 'coin');
+  $('wGains').innerHTML = cells.map(x => `<div>${esc(T({ coin: 'コイン', wood: '木材', food: '食べもの', spark: 'ひらめき' }[x[0]]))}<b>${ICON[x[0]]}${x[1] < 0 ? '−' : '+'}${x[0] === 'spark' ? (Math.abs(x[1]) >= 10 ? fmt(Math.abs(x[1])) : (Math.floor(Math.abs(x[1]) * 10) / 10).toFixed(1)) : fmt(Math.abs(x[1]))}</b></div>`).join('')
+    + (g.pop !== 0 ? `<div>${esc(T('人口'))}<b>${ICON.pop}${g.pop > 0 ? '+' : '−'}${Math.abs(g.pop)}</b></div>` : '');
+  $('wNote').textContent = r.capped ? T('長くるすにしたので、{h}時間ぶんだけ受け取ります', { h: cap }) : T('るす番の時間は最大 {h}時間まで。研究でのばせます', { h: cap });
+  openOv('ovWelcome');
+  snd.coin(); sfx('clear');
+  welcomePending = r;
+}
+$('wOk').addEventListener('click', () => { closeOv(); welcomePending = null; persist(true); burst(view.W / 2, view.H * 0.4, 26, { up: true, speed: 170, rect: true }); });
+
+// goal list
+function showQuests() {
+  const items = [], cur = E.currentQuest(S);
+  let n = 0;
+  for (const q of E.QUESTS) { if (q.tier > S.tier) continue; if (S.qd[q.id]) continue; if (n >= 6) break; items.push(q); n++; }
+  const done = Object.keys(S.qd).length;
+  $('qList').innerHTML = (items.length ? items.map((q, i) => { const pr = E.questProgress(S, q); return `<div class="li ${i === 0 ? 'cur' : ''}"><div class="tx">${esc(questText(q))}<small>${i === 0 ? esc(T('いまの目標')) + ' · ' + Math.min(pr.v, pr.goal) + '/' + pr.goal : esc(T('つぎの目標'))}</small></div><div class="rw">${rwHtml(q.reward)}</div></div>`; }).join('') : `<p>${esc(T('目標がぜんぶ終わりました。町をもっと大きくしよう'))}</p>`)
+    + `<p>${esc(T('{n} 個たっせい', { n: done }))}</p>`;
+  void cur; openOv('ovQuests');
+}
+$('btnQuests').addEventListener('click', showQuests); $('qbar').addEventListener('click', showQuests); $('qClose').addEventListener('click', closeOv);
+
+// research
+function researchName(id) { return L(E.RESEARCH_BY_ID[id].name); }
+function showResearch() {
+  $('rSpark').innerHTML = ICON.spark + ' ' + esc(T('ひらめき {n}', { n: Math.floor(S.res.spark * 10) / 10 }));
+  $('rList').innerHTML = E.RESEARCH.map(r => {
+    const lv = E.rl(S, r.id), max = lv >= r.max, c = max ? 0 : r.cost[lv], ok = S.res.spark >= c;
+    const pips = Array.from({ length: r.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
+    return `<div class="li"><div class="tx">${esc(L(r.name))}<small>${esc(L(r.desc))}</small><span class="pips">${pips}</span></div>` + (max ? `<span class="rw">${esc(T('さいだい'))}</span>` : `<button class="btn ${ok ? '' : 'sub'}" type="button" data-r="${r.id}">${ICON.spark}${c}</button>`) + '</div>';
+  }).join('');
+  $('rList').querySelectorAll('button[data-r]').forEach(b => b.addEventListener('click', () => {
+    const why = E.buyResearch(S, b.dataset.r);
+    if (why) { snd.bad(); toast(T('ひらめきがたりない')); return; }
+    snd.up(); toast(T('研究した！')); persist(true); emit('progress', { key: 'research', value: S.stats.research }); showResearch(); needUI = true;
+  }));
+  openOv('ovResearch');
+}
+$('btnResearch').addEventListener('click', showResearch); $('rClose').addEventListener('click', closeOv);
+
+// daily gift
+let giftShown = null;
+function showGift() {
+  const ready = E.giftReady(S, wallNow());
+  const streak = ready ? ((S.daily.last && E.dayNum(wallNow()) === S.daily.last + 1) ? S.daily.streak + 1 : 1) : S.daily.streak;
+  $('gWeek').innerHTML = Array.from({ length: 7 }, (_, i) => `<i class="${i < ((streak - 1) % 7) + (ready ? 0 : 1) ? 'on' : ''} ${i === 6 ? 'sp' : ''}">${i + 1}</i>`).join('');
+  $('gGains').hidden = true; $('gBox').textContent = '🎁';
+  $('gOpen').hidden = !ready;
+  $('gNote').textContent = ready ? T('{n}日つづけて', { n: Math.max(1, ready ? streak : S.daily.streak) }) : T('きょうの分は もう受け取りました。また あした！');
+  openOv('ovGift');
+}
+$('btnGift').addEventListener('click', showGift); $('gClose').addEventListener('click', closeOv);
+$('gOpen').addEventListener('click', () => {
+  const g = E.claimGift(S, wallNow()); if (!g) { showGift(); return; }
+  $('gBox').textContent = '✨';
+  $('gGains').hidden = false;
+  $('gGains').innerHTML = [['coin', g.coin], ['wood', g.wood], ['spark', g.spark]].filter(x => x[1] > 0).map(x => `<div>${esc(T({ coin: 'コイン', wood: '木材', spark: 'ひらめき' }[x[0]]))}<b>${ICON[x[0]]}+${fmt(x[1])}</b></div>`).join('');
+  $('gNote').textContent = T('{n}日つづけて', { n: g.streak });
+  $('gOpen').hidden = true; snd.big(); burst(view.W / 2, view.H * 0.4, 30, { up: true, speed: 170, rect: true });
+  persist(true); needUI = true; $('giftDot').hidden = true; emit('progress', { key: 'gifts', value: S.stats.gifts });
+});
+
+// town: records and prestige
+let confirmP = false;
+function showTown() {
+  confirmP = false;
+  const info = E.prestigeInfo(S);
+  $('tStats').innerHTML = [
+    [T('最高の人口'), ICON.pop + fmt(S.best)], [T('ほまれ'), '✦ ' + S.renown], [T('いまのもうけ ×{n}', { n: '' }).replace('×', '×'), '×' + (1 + E.RENOWN_MUL * S.renown).toFixed(2).replace(/\.?0+$/, '')],
+    [T('ひらきなおしの回数'), String(S.stats.prestiges)], [T('たてた建物'), fmt(S.stats.built)], [T('さわった旅人'), fmt(S.stats.taps)],
+  ].map(x => `<div>${esc(x[0])}<b>${x[1]}</b></div>`).join('');
+  const un = info.unlocks.map(t => esc(T('{name} が使える', { name: nm(t) })));
+  const body = [];
+  if (info.ok) {
+    body.push(`<p class="big">${esc(T('町をひらきなおせます！'))}</p>`);
+    body.push(`<div class="li"><div class="tx">${esc(T('ほまれ +{n}', { n: info.gain }))}<small>${esc(T('もうけが ×{a} → ×{b}', { a: info.mulNow.toFixed(2).replace(/\.?0+$/, ''), b: info.mulNext.toFixed(2).replace(/\.?0+$/, '') }))}</small></div></div>`);
+    body.push(`<p class="big">${esc(T('あたらしくできること'))}</p><div class="list">` + [`<div class="li"><div class="tx">${esc(T('土地が {n}×{n} まで', { n: info.land }))}</div></div>`, `<div class="li"><div class="tx">${esc(T('建物のレベルが Lv{n} まで', { n: info.maxLv }))}</div></div>`].concat(un.map(u => `<div class="li"><div class="tx">${u}</div></div>`)).join('') + '</div>');
+    body.push(`<p>${esc(T('ひらきなおすと：町は空き地にもどり、コインと建物はなくなります。ひらめき・研究・記録・ほまれは のこります。'))}</p>`);
+  } else {
+    body.push(`<p class="big">${esc(T('人口が {n} 人になると ひらきなおせます（いま {p} 人）', { n: info.need, p: info.pop }))}</p><div class="prog"><b style="width:${Math.min(100, info.pop / info.need * 100)}%"></b></div>`);
+    body.push(`<p>${esc(T('ひらきなおすと：町は空き地にもどり、コインと建物はなくなります。ひらめき・研究・記録・ほまれは のこります。'))}</p>`);
+  }
+  $('tPrestige').innerHTML = body.join('');
+  $('tGo').hidden = !info.ok; $('tGo').textContent = T('町をひらきなおす'); $('tGo').classList.remove('danger');
+  openOv('ovTown');
+}
+$('btnTown').addEventListener('click', showTown); $('tClose').addEventListener('click', closeOv);
+$('tGo').addEventListener('click', () => {
+  if (!confirmP) { confirmP = true; $('tGo').textContent = T('ほんとうにひらきなおす'); $('tGo').classList.add('danger'); return; }
+  doPrestige();
+});
+function doPrestige() {
+  const info = E.prestigeInfo(S); if (!info.ok) return;
+  closeOv();
+  const rb = $('reborn'); rb.classList.remove('on'); void rb.offsetWidth; rb.classList.add('on');
+  snd.born();
+  const ok = E.prestige(S, wallNow());
+  if (!ok) return;
+  sel = null; armed = null; bubbles = null; fx.floats = []; fx.acc = {}; fx.nextEmit = {};
+  Object.assign(view, fitTarget(S.land));
+  buildCards(); renderQuest(); persist(true); needUI = true;
+  for (let i = 0; i < 8; i++) setTimeout(() => burst(view.W * (0.15 + 0.7 * Math.random()), view.H * (0.2 + 0.5 * Math.random()), 22, { up: true, speed: 190, rect: true }), 100 + i * 110);
+  flash(T('ひらきなおした！'), T('ほまれ +{n}', { n: info.gain }) + ' · ' + T('あたらしい町がはじまります'), true);
+  emit('progress', { key: 'tier', value: S.tier }); emit('best', { score: S.best });
+  newCard.harbor = S.un.harbor ? 1 : 0;
+}
+
+// how to play
+function renderHowto() {
+  const li = a => '<ul>' + a.map(x => '<li>' + esc(T(x)) + '</li>').join('') + '</ul>';
+  $('howBody').innerHTML = '<p class="lead">' + esc(T('建物をならべて、ちいさな町を育てよう。るすの間も町ははたらいて、コインがたまります。')) + '</p>' + li([
+    '建物のカードをタップして、空き地をタップすると建ちます。まず「すまい」と「はたけ」。', '建物は、となり合わせでボーナス：はたけ×風車小屋、すまい×こうえん、いちば×すまい…。置き方が大事！',
+    '建物をタップして「そだてる」と、はたらきがぐんと上がります。土地には かぎりがあるので、広げながら工夫しよう。', '空をとぶ旅人をタップすると おみやげ。ときどき お祭りや雨で、もうけが2ばいになります。',
+    '人口がふえたら「町をひらきなおす」で ほまれ（ずっと続くもうけの倍率）と、新しい建物・土地がもらえます。', '自動保存。とじても町は育ちます（るす番は最大8時間〜）。時計を戻すと、るすの分はもらえません。']);
+}
+let howtoFirst = false;
+function showHowto(first) { howtoFirst = !!first; renderHowto(); $('howtoGo').textContent = first ? T('やってみる') : T('とじる'); $('howtoAlt').hidden = !first; openOv('howto'); }
+$('howtoGo').addEventListener('click', () => { store.set(HOWTO_KEY, '1'); closeOv(); if (AU) AU.ctx(); });
+$('howtoAlt').addEventListener('click', () => { store.set(HOWTO_KEY, '1'); S.tut = 1; persist(true); closeOv(); });
+{ const s2 = KoboI18n.picker($('langPick')); if (s2) s2.id = 'langSel'; }
+
+// sound, theme, menu
+function renderSound() {
+  const b = $('sndBtn'), on = !(AU && AU.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!AU) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!AU) return; AU.toggleMute(); if (!AU.muted) sfx('ok'); });
+if (AU) AU.onChange(renderSound);
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (!m) return; const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false; m.setAttribute('content', light ? '#e9f3dc' : '#16203a'); }
+let pm = null;
+function openMenu() {
+  if (!UI) { showHowto(false); return; }
+  if (pm && pm.isOpen) return;
+  pm = UI.pauseMenu({
+    title: T('メニュー'), home: '../',
+    extra: [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }],
+    onResume: () => { const g = KG(); if (g) g.menuClosed(); },
+    onOpen: () => { const g = KG(); if (g) g.menuOpened(); persist(true); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && anyOverlay()) closeOv(); });
+
+// ---------- the platform ----------
+let sessionStart = performance.now(), sessionOpen = false;
+function startSession() { if (sessionOpen) return; sessionOpen = true; sessionStart = performance.now(); emit('play_start', { mode: 'normal' }); }
+function endSession(reason) {
+  if (!sessionOpen) return; sessionOpen = false;
+  const ms = Math.round(performance.now() - sessionStart);
+  emit('play_end', { mode: 'normal', score: S.best, durationMs: ms, reason: reason || 'leave', stats: { tier: S.tier, pop: Math.floor(S.pop) } });
+}
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  save() { persist(true); },
+  isIdle: () => true,
+  dispose() { cancelAnimationFrame(raf); },
+});
+window.addEventListener('pagehide', () => { persist(true); endSession('leave'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { persist(true); endSession('hidden'); } else { resync = true; startSession(); } });
+window.addEventListener('pageshow', () => { resync = true; });
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(() => { themeColor(); readColors(); needDraw = true; showInfo(); }, 0));
+window.addEventListener('resize', () => layout());
+try { new ResizeObserver(() => layout()).observe(wrap); } catch (e) {}
+
+// ---------- boot ----------
+renderSound(); themeColor(); readColors();
+S = load();
+{ const r0 = E.advance(S, wallNow()); if (r0.mode === 'away' && r0.raw >= 60) welcomePending = r0; }
+layout(); Object.assign(view, fitTarget(S.land)); view.init = true;
+buildCards(); renderQuest(); updateHud();
+const firstVisit = store.get(HOWTO_KEY) == null && !S.tut && !S.stats.built;
+if (firstVisit) showHowto(true);
+else if (welcomePending) showWelcome(welcomePending);
+bootDone = true; resync = false; lastTs = 0;
+startSession();
+raf = requestAnimationFrame(loop);
+// the light changes with the page theme
+setInterval(() => { readColors(); }, 4000);
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const page = (x, y) => { const r = cv.getBoundingClientRect(); return { x: r.left + x, y: r.top + y }; };
+  const api = {
+    ready: () => bootDone,
+    state: () => {
+      const R = E.rates(S), q = E.currentQuest(S), pi = E.prestigeInfo(S), counts = {};
+      for (const b of S.g) if (b) counts[b.b] = (counts[b.b] || 0) + 1;
+      return {
+        pop: Math.floor(S.pop + 1e-9), cap: R.cap, best: S.best, tier: S.tier, renown: S.renown, land: S.land, res: Object.assign({}, S.res), rate: E.coinRate(S), counts, built: S.g.filter(b => b && b.b !== 'plaza').length,
+        quest: q ? q.id : null, quests: Object.keys(S.qd).length, qprog: q ? E.questProgress(S, q) : null, tut: S.tut, rs: Object.assign({}, S.rs), stats: Object.assign({}, S.stats), daily: Object.assign({}, S.daily),
+        vis: S.vis.length, ev: S.ev ? S.ev.type : null, t: S.t, armed, sel: sel ? Object.assign({}, sel) : null, prestige: pi, giftReady: E.giftReady(S, wallNow()), cap8: E.offlineCapH(S),
+        welcome: !$('ovWelcome').hidden, welcomeText: $('wAway').textContent, quests_ov: !$('ovQuests').hidden, research_ov: !$('ovResearch').hidden, gift_ov: !$('ovGift').hidden, town_ov: !$('ovTown').hidden, howto: !$('howto').hidden,
+        night, tw: view.tw, W: view.W, H: view.H, cards: Object.keys(cardEls).filter(t => cardEls[t].b && !cardEls[t].b.classList.contains('locked')),
+      };
+    },
+    cellPoint: (x, y) => { const [cx, cy] = tileCenter(x, y); return page(cx, cy - view.tw * 0.08); },
+    visitorPoint: () => { const v = S.vis[0]; if (!v) return null; const p = visitorPos(v); return page(p.x, p.y); },
+    bestTile: type => bestEmpty(type),
+    cardEl: type => cardEls[type] && cardEls[type].b,
+    skip(ms) { clockOff += ms; resync = true; return true; },
+    clock: { now: wallNow, off: () => clockOff, set(o) { clockOff = o; resync = true; } },
+    grant(o) { for (const k of Object.keys(o)) S.res[k] = (S.res[k] || 0) + o[k]; E.touch(S); needUI = true; return S.res; },
+    setPop(n) { S.pop = n; S.peak = Math.max(S.peak, n); S.best = Math.max(S.best, Math.floor(n)); E.touch(S); needUI = true; return S.pop; },
+    setLand(n) { S.land = n; E.touch(S); buildCards(); return S.land; },
+    spawnVisitor() { S.vis.push({ id: ++S.vid, ttl: 12, life: 24, kind: S.vid % 4, lane: 0.3 }); return S.vis.length; },
+    setEvent(ty) { S.ev = ty ? { type: ty, left: 40, life: 45 } : null; E.touch(S); return true; },
+    persist: () => persist(true), noSave() { DEBUG_NOSAVE = true; }, checkGoals,
+    saved: () => ({ meta: readJSON(SAVE_KEY), run: readJSON(RUN_KEY) }),
+    openTown: showTown, openQuests: showQuests, openResearch: showResearch, openGift: showGift, openMenu, howto: () => showHowto(false), closeOv,
+    simulate(sec) { const r = E.advance(S, S.t + sec * 1000); onAdvance(r); needUI = true; return r.mode; },
+    E,
+  };
+  window.__kb = Object.assign(window.__kb || {}, { ready: api.ready, state: api.state });
+  window.__town = Object.assign(api, {
+    get S() { return S; },
+    thumbScene() { // a pretty mid-game town for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); DEBUG_NOSAVE = true;
+      const g = new Array(100).fill(null), put = (x, y, b, lv) => { g[E.IDX(x, y)] = [b, lv, 0, 0]; };
+      put(2, 2, 'house', 3); put(3, 2, 'house', 2); put(4, 2, 'park', 1); put(5, 2, 'house', 3); put(6, 2, 'lumber', 2);
+      put(2, 3, 'house', 2); put(3, 3, 'market', 2); put(5, 3, 'mill', 2); put(6, 3, 'farm', 3);
+      put(2, 4, 'park', 1); put(3, 4, 'house', 3); put(5, 4, 'farm', 2); put(6, 4, 'farm', 2);
+      put(2, 5, 'workshop', 2); put(3, 5, 'house', 2); put(4, 5, 'library', 2); put(5, 5, 'house', 3); put(6, 5, 'park', 1);
+      put(2, 6, 'lumber', 1); put(6, 6, 'harbor', 2);
+      const run = { v: 1, t: S.t, born: S.t, land: 5, g, res: { coin: 842, wood: 210, food: 90, spark: 3 }, pop: 58, peak: 58, ev: null, en: 100, vn: 100, vid: 0, rn: 7, age: 0, kinds: {}, tier: 1 };
+      S = E.unpack({ tier: 1, renown: 2, best: 58, un: { house: 1, lumber: 1, farm: 1, park: 1, mill: 1, workshop: 1, market: 1, harbor: 1, library: 1 }, qd: {}, tut: 1 }, run, S.t);
+      S.vis = [{ id: 2, ttl: 15, life: 24, kind: 0, lane: 0.25 }]; S.vn = 999; S.en = 999; S.tut = 1; for (const q of E.QUESTS) S.qd[q.id] = 1; fx.floats = []; fx.bits = []; $('flash').classList.remove('on');
+      closeOv(); hideTip(); sel = null; armed = null; simT = 3.2; layout(); Object.assign(view, fitTarget(S.land)); needDraw = true; draw(0);
+      return true;
+    },
+  });
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.town.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

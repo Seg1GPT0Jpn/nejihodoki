@@ -70,6 +70,9 @@ async function runCases(T, opt = {}) {
     // ぴったりパズル工房（fit）：記録 kusoge.fit.save だけを同期する（とちゅうのパズル kusoge.fit.run は端末だけ）
     await check(g, 'own push fit save (stage stars and best time attack)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~fit~save': { v: JSON.stringify({ v: 1, st: { '1-1': { s: 3, t: 9000, c: 2 }, '2-4': { s: 1, t: 61000, c: 1 } }, best: 12, stars: 4, stats: { solved: 9, perfect: 1, noHint: 7 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'fit save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~fit~save': { v: 7, t: now } } }, A, { merge: true }));
+    // ひまつぶしタウン（town）：記録 kusoge.town.save だけを同期する（いまの町 kusoge.town.run は端末だけ）
+    await check(g, 'own push town save (best population, renown, research, goals)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~town~save': { v: JSON.stringify({ v: 1, best: 120, tier: 1, renown: 2, rs: { rest: 1, wealth: 2 }, qd: { h1: 1, f1: 1, p4: 1 }, un: { house: 1, farm: 1, harbor: 1 }, stats: { built: 40, upgrades: 12, taps: 9, gifts: 3, prestiges: 1, research: 3, returns: 2, awayMax: 30000, kinds: 7 }, daily: { last: 20800, streak: 3 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'town save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~town~save': { v: 7, t: now } } }, A, { merge: true }));
     const many = {}; for (let i = 0; i < 301; i++) many['kobo~k' + i] = { v: '1', t: now };
     await check(g, 'games map with 301 keys', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: many }, A, { merge: true }));
     await check(g, 'level not a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { level: 'x' }, A, { merge: true }));
@@ -184,6 +187,8 @@ async function runCases(T, opt = {}) {
     await check(g3, 'cards +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { cards: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'fit +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { fit: 1 }, A, { merge: true }));
     await check(g3, 'fit +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { fit: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'town +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { town: 1 }, A, { merge: true }));
+    await check(g3, 'town +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { town: 9 }, A, { merge: true }));
     await check(g3, 'td +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { td: 9 }, A, { merge: true }));
     await check(g3, 'escape +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { escape: 9 }, A, { merge: true }));
     await check(g3, 'update +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { blocks: 999999 }, B, { merge: true }));

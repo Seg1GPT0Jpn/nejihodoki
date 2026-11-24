@@ -661,6 +661,34 @@
         'kusoge.fit.save': { fields: { st: { each: { fields: { s: 'max', t: 'minPos', c: 'max' } } }, best: 'max', stars: 'max', stats: { each: 'max' }, daily: { fields: { last: 'max', ms: 'minPos' }, rest: 'newest' }, tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'town', order: 21, path: 'town/', added: '2026-11-24',
+      title: { ja: 'ひまつぶしタウン', en: 'Idle Town' },
+      short: { ja: 'ひまつぶしタウン', en: 'Idle Town' },
+      desc: { ja: 'ちいさな町を育てる放置ゲーム。すまい・はたけ・風車小屋・いちば・みなと・としょかん・見はり塔をならべて、となり合わせのボーナスをねらおう。るすの間も町ははたらき、おかえりなさいでコインがどっさり。人口がふえたら「町をひらきなおす」でずっと続くボーナス。', en: 'A cozy idle game about growing a little town. Place cottages, farms, windmills, markets, a harbor, a library and a lookout tower, and chase neighbour bonuses. The town keeps earning while you are away. Open a new town for a permanent bonus.' },
+      label: { ja: '放置シミュレーション', en: 'Idle town builder' },
+      genres: ['simulation'], tags: ['2d', 'idle', 'relax', 'upgrades', 'economy', 'casual'],
+      keywords: { ja: ['放置', '街づくり', '町づくり', '育成', 'シミュレーション', 'クリッカー', 'インクリメンタル', '建物', '村', '農場', '経営'], en: ['idle', 'incremental', 'clicker', 'town builder', 'city builder', 'village', 'farm', 'tycoon', 'relaxing', 'cozy', 'offline progress'] },
+      icon: 'img/icons/town.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b6fb0"/><circle cx="55" cy="16" r="7" fill="#ffe9a0"/><ellipse cx="22" cy="14" rx="10" ry="3.4" fill="#fff" opacity=".85"/><polygon points="36,26 66,42 36,58 6,42" fill="#7fc468" stroke="#3f8a40" stroke-width="1.5"/><polygon points="6,42 36,58 36,64 6,48" fill="#8a6038"/><polygon points="36,58 66,42 66,48 36,64" fill="#6e4a2a"/><g stroke="#5a3a20" stroke-width=".8"><polygon points="22,38 30,42 22,46 14,42" fill="#f6e4c1"/><polygon points="14,42 22,46 22,50 14,46" fill="#e3cba0"/><polygon points="22,46 30,42 30,46 22,50" fill="#cfb184"/><polygon points="22,30 32,38 22,42 12,38" fill="#d9644a"/><polygon points="44,36 52,40 44,44 36,40" fill="#f6e4c1"/><polygon points="44,44 52,40 52,44 44,48" fill="#cfb184"/><polygon points="44,28 54,36 44,40 34,36" fill="#3f9aa8"/></g><rect x="49" y="22" width="3" height="16" rx="1" fill="#f0e6d2" stroke="#5a3a20" stroke-width=".6"/><g stroke="#8a5a3a" stroke-width="1.6" stroke-linecap="round"><path d="M50.5 24 L43 17"/><path d="M50.5 24 L58 31"/><path d="M50.5 24 L58 17"/><path d="M50.5 24 L43 31"/></g></svg>',
+      thumb: 'img/thumbs/town.webp', thumb2x: 'img/thumbs/town@2x.webp',
+      tech: '2d',
+      // pause: false — the town earns by the clock (also while the page is closed, up to the away cap), so nothing is stopped; hiding the page just saves. No online play
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: false, stages: false },
+      versus: null,
+      // ranking = the biggest population the town ever reached (it only grows). Moving the clock forward is the one way to cheat (see HANDOFF.md); the cap leaves room for years of play
+      score: { unit: { ja: '人', en: 'residents' }, fmt: { ja: '{n}人', en: '{n} residents' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.town.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.town.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: '最高 {n}人', en: 'Best {n}' } },
+      keys: {
+        'kusoge.town.save': '{ v:1, best（町の人口の最高＝ランキング）, tier（町をひらきなおした回数）, renown（ほまれ＝ずっと続くもうけの倍率）, rs:{ <研究の id>: レベル }, qd:{ <目標の id>: 1 }（終えた目標）, un:{ <建物>: 1 }（使えるようになった建物）, stats:{ built, upgrades, taps（旅人にさわった数）, gifts, prestiges, research, returns（1時間以上のるす番から戻った回数）, awayMax（いちばん長いるす番の秒数）, kinds, expands, events }, daily:{ last（おくりものを受け取った日の通し日）, streak }, tut }。記録とほまれと研究だけ（同期する）',
+        'kusoge.town.run': 'いまの町（自動保存）{ v:1, t（最後に進めた時刻 ms。時計を戻しても下がらない）, born, land（土地の一辺）, g（100マス：[建物, Lv, 払ったコイン, 払った木材] か 0）, res:{ coin, wood, food, spark }, pop, peak, ev, en, vn, vid, rn（乱数）, age, kinds, tier }。この端末だけ（同期しない）',
+        'kusoge.town.howto': '遊び方を見た（\'1\'）',
+      },
+      // records, renown, research and finished goals only grow (max). The town itself stays on the device (the clock and the layout can not be merged)
+      sync: {
+        'kusoge.town.save': { fields: { best: 'max', tier: 'max', renown: 'max', rs: { each: 'max' }, qd: { each: 'max' }, un: { each: 'max' }, stats: { each: 'max' }, daily: { fields: { last: 'max', streak: 'max' }, rest: 'newest' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -881,6 +909,23 @@
       { id: 'fit.stars150', tier: 3, icon: 'trophy', title: { ja: '星150', en: '150 Stars' }, desc: { ja: '星を150個ためる', en: 'Collect 150 stars' }, when: { rec: { key: 'kusoge.fit.save', path: 'stars' }, gte: 150 } },
       { id: 'fit.w8', tier: 4, icon: 'trophy', title: { ja: '親方の弟子', en: "Master's Apprentice" }, desc: { ja: '8つの世界をすべてクリアする', en: 'Clear every stage of all eight worlds' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.worlds' }, gte: 8 }, grantsTitle: { ja: '親方の弟子', en: 'Apprentice' } },
       { id: 'fit.ta25', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ぴったり名人', en: 'Fit Virtuoso' }, desc: { ja: 'タイムアタックで3分に25問解く', en: 'Solve 25 puzzles in one 3-minute time attack' }, when: { rec: { key: 'kusoge.fit.save', path: 'best' }, gte: 25 }, grantsTitle: { ja: 'ぴったり名人', en: 'Fit Virtuoso' } },
+    ],
+    town: [
+      { id: 'town.pop10', tier: 1, icon: 'check', title: { ja: '最初のご近所さん', en: 'First Neighbours' }, desc: { ja: '人口を10人にする', en: 'Reach 10 residents' }, when: { rec: { key: 'kusoge.town.save', path: 'best' }, gte: 10 } },
+      { id: 'town.build10', tier: 1, icon: 'check', title: { ja: '大工さん', en: 'Carpenter' }, desc: { ja: '建物を合わせて10こ建てる', en: 'Build 10 buildings' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.built' }, gte: 10 } },
+      { id: 'town.tap1', tier: 1, icon: 'star', title: { ja: 'いらっしゃい', en: 'Welcome, Traveller' }, desc: { ja: '空をとぶ旅人にさわる', en: 'Greet a visitor' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.taps' }, gte: 1 } },
+      { id: 'town.up10', tier: 2, icon: 'check', title: { ja: '育てじょうず', en: 'Green Thumb' }, desc: { ja: '建物を合わせて10回そだてる', en: 'Upgrade buildings 10 times' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.upgrades' }, gte: 10 } },
+      { id: 'town.pop50', tier: 2, icon: 'star', title: { ja: 'にぎやかな通り', en: 'Busy Streets' }, desc: { ja: '人口を50人にする', en: 'Reach 50 residents' }, when: { rec: { key: 'kusoge.town.save', path: 'best' }, gte: 50 } },
+      { id: 'town.kinds', tier: 2, icon: 'star', title: { ja: 'なんでもそろう', en: 'One of Everything' }, desc: { ja: '8しゅるいの建物を建てる', en: 'Build 8 kinds of buildings' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.kinds' }, gte: 8 } },
+      { id: 'town.back', tier: 2, icon: 'restart', title: { ja: 'おかえりなさい', en: 'Welcome Back' }, desc: { ja: '1時間以上るすにして、町に戻る', en: 'Come back after being away for an hour or more' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.returns' }, gte: 1 } },
+      { id: 'town.new1', tier: 2, icon: 'trophy', title: { ja: 'はじめての ひらきなおし', en: 'A Fresh Start' }, desc: { ja: '町をはじめてひらきなおす', en: 'Open a new town for the first time' }, when: { rec: { key: 'kusoge.town.save', path: 'tier' }, gte: 1 } },
+      { id: 'town.res5', tier: 2, icon: 'star', title: { ja: '研究ずき', en: 'Curious Minds' }, desc: { ja: '研究を合わせて5回する', en: 'Buy 5 research levels' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.research' }, gte: 5 } },
+      { id: 'town.gift7', tier: 3, icon: 'star', title: { ja: '毎日のおくりもの', en: 'Daily Delivery' }, desc: { ja: 'おくりものを7回受け取る', en: 'Collect the daily gift 7 times' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.gifts' }, gte: 7 } },
+      { id: 'town.tap100', tier: 3, icon: 'star', title: { ja: '旅人の人気者', en: 'Friend of Travellers' }, desc: { ja: '旅人に合計100回さわる', en: 'Greet 100 visitors' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.taps' }, gte: 100 } },
+      { id: 'town.pop200', tier: 3, icon: 'trophy', title: { ja: '大きな町', en: 'A Big Town' }, desc: { ja: '人口を200人にする', en: 'Reach 200 residents' }, when: { rec: { key: 'kusoge.town.save', path: 'best' }, gte: 200 } },
+      { id: 'town.rest', tier: 3, icon: 'restart', title: { ja: 'ぐっすり一晩', en: 'A Good Night\'s Rest' }, desc: { ja: '8時間るすにして、町に戻る', en: 'Come back after being away for 8 hours' }, when: { rec: { key: 'kusoge.town.save', path: 'stats.awayMax' }, gte: 28800 } },
+      { id: 'town.new3', tier: 4, icon: 'trophy', title: { ja: '町づくりの名人', en: 'Master Town-Builder' }, desc: { ja: '町を3回ひらきなおす', en: 'Open a new town three times' }, when: { rec: { key: 'kusoge.town.save', path: 'tier' }, gte: 3 }, grantsTitle: { ja: '町づくりの名人', en: 'Town Builder' } },
+      { id: 'town.pop600', tier: 4, icon: 'trophy', hidden: true, title: { ja: '眠らない町', en: 'The Town That Never Sleeps' }, desc: { ja: '人口を600人にする', en: 'Reach 600 residents' }, when: { rec: { key: 'kusoge.town.save', path: 'best' }, gte: 600 }, grantsTitle: { ja: '町の名士', en: 'Town Notable' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

@@ -104,7 +104,8 @@ const FIX = {
   'trade-save.json': { has: ['trade.first', 'trade.p1', 'trade.deal', 'trade.x10'], not: ['trade.deal20', 'trade.types', 'trade.dtop'] },
   'cards-save.json': { has: ['cards.first', 'cards.om1', 'cards.rev', 'cards.dh1', 'cards.cut8', 'cards.hard'], not: ['cards.all', 'cards.royal', 'cards.pts30', 'cards.flush', 'cards.bj', 'cards.sv1', 'cards.cn4'] },
   'fit-save.json': { has: ['fit.first', 'fit.snug', 'fit.star3', 'fit.daily', 'fit.w1', 'fit.swift', 'fit.ta10'], not: ['fit.decoy', 'fit.w4', 'fit.w8', 'fit.ta25', 'fit.stars150', 'fit.nohint'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1', 'cards.first', 'cards.om1', 'fit.first', 'fit.snug'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
+  'town-save.json': { has: ['town.first', 'town.pop10', 'town.build10', 'town.tap1', 'town.up10', 'town.pop50', 'town.kinds', 'town.back', 'town.new1', 'town.res5', 'town.pop200', 'town.rest'], not: ['town.gift7', 'town.tap100', 'town.new3', 'town.pop600'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1', 'cards.first', 'cards.om1', 'fit.first', 'fit.snug', 'town.first', 'town.pop10'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
 };
 test('retroactive: fixture saves for every game unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();
