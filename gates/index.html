@@ -137,6 +137,7 @@ header { display: flex; align-items: center; gap: 4px; flex: none; height: 44px;
   background: var(--scr); color: var(--chalk); padding: 14px; box-sizing: border-box; text-align: center; gap: 10px; overflow-y: auto; touch-action: pan-y;
 }
 .screen > :first-child { margin-top: auto; }
+#scrTitle .row2 .btn { padding: 12px 4px; font-size: 15px; }
 #vsSlotTitle { width: 100%; max-width: 360px; }
 #vsSlotTitle .kvs-entry { margin-top: 0; background: var(--card); min-height: 44px; box-sizing: border-box; }
 .screen > :last-child { margin-bottom: auto; }
@@ -233,6 +234,46 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
 #vign { position: absolute; inset: 0; pointer-events: none; opacity: 0; box-shadow: inset 0 0 70px 18px rgba(255,40,30,.75); }
 #vign.on { animation: vign 1.3s ease-out; }
 @keyframes vign { 0%, 40% { opacity: 1; } 20%, 60% { opacity: .35; } 100% { opacity: 0; } }
+/* mission HUD, combo, gate flash */
+#mgoal { position: absolute; left: 12px; top: 80px; max-width: 62%; background: rgba(22,32,46,.78); color: #f3f6fa; font: 800 11.5px/1.3 var(--font-body); border-radius: 10px; padding: 4px 9px; pointer-events: none; font-variant-numeric: tabular-nums; }
+#mgoal b { color: #ffe27a; font-family: var(--font-display); font-weight: 400; font-size: 13px; }
+#combo { position: absolute; right: 12px; top: 80px; text-align: right; pointer-events: none; font-family: var(--font-display); font-size: 26px; line-height: 1; color: #fff; transform-origin: right top;
+  text-shadow: -2px -2px 0 #14202e, 2px -2px 0 #14202e, -2px 2px 0 #14202e, 2px 2px 0 #14202e, 0 4px 0 #0008; font-variant-numeric: tabular-nums; }
+#combo small { display: block; font-size: 11px; color: #ffe27a; letter-spacing: .08em; margin-bottom: 2px; }
+#combo.hot { color: #ffd23d; } #combo.hotter { color: #ff9a3d; }
+#combo.bump { animation: cbump .22s ease-out; }
+@keyframes cbump { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
+#gflash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+#gflash.g { box-shadow: inset 0 0 55px 8px rgba(70,255,150,.55); }
+#gflash.b { box-shadow: inset 0 0 55px 8px rgba(255,70,60,.6); }
+#gflash.m { box-shadow: inset 0 0 70px 12px rgba(255,214,60,.7); }
+#gflash.on { animation: gfl .42s ease-out; }
+@keyframes gfl { 0% { opacity: 1; } 100% { opacity: 0; } }
+.kbhint { margin: 0; font-size: 11px; color: var(--dim); font-weight: 800; }
+@media (hover: none), (max-height: 640px) { .kbhint { display: none; } }
+/* mission list */
+#misGrid { display: flex; flex-direction: column; gap: 6px; }
+.mw { display: flex; align-items: center; gap: 6px; }
+.mw > span { flex: none; width: 46px; font-size: 10.5px; font-weight: 800; color: var(--dim); text-align: left; line-height: 1.2; }
+.mw .mc { flex: 1; min-width: 0; }
+.mc { min-height: 48px; border-radius: 12px; border: 2px solid transparent; background: var(--kb-sunken); color: var(--chalk); font: 400 16px var(--font-display); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 2px; box-sizing: border-box; }
+.mc small { font: 800 10.5px var(--font-body); color: var(--sun-text); letter-spacing: -.5px; min-height: 12px; }
+.mc.sel { border-color: var(--kb-accent); }
+.mc:disabled { opacity: .45; cursor: default; }
+.mc:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 1px; }
+#misDetail .t { font-family: var(--font-display); font-size: 18px; }
+#misDetail ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+#misDetail li.ok { color: var(--good-text); }
+#misDetail li .k { color: var(--sun-text); font-weight: 800; }
+#mrNew { background: var(--kb-accent); color: var(--kb-accent-ink); }
+#scrMRes h2 em { font-size: .6em; }
+#scrMRes .stars3 { font-size: 30px; letter-spacing: 4px; color: var(--sun-text); line-height: 1; }
+#scrMRes .stars3 i { font-style: normal; display: inline-block; animation: pop .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+#scrMRes .stars3 i:nth-child(2) { animation-delay: .15s; } #scrMRes .stars3 i:nth-child(3) { animation-delay: .3s; }
+#scrMRes .stars3 i.off { opacity: .25; }
+#mrList .rew { animation: rin .35s ease-out both; }
+#mrList .rew .okm { color: var(--good-text); } #mrList .rew .ngm { color: var(--bad-text); }
+.row2 .btn.t3 { font-size: 15px; }
 /* clear screen */
 .newbest { display: inline-block; font-family: var(--font-display); font-size: 13px; background: var(--kb-accent); color: var(--kb-accent-ink); border-radius: 999px; padding: 4px 12px; }
 #scrClear h2 { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
@@ -246,9 +287,10 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
 @keyframes pop { 0% { transform: scale(.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes rin { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  #coachHand, #vign.on, #scrClear h2, #scrClear .stars3 i, #cList .rew, .sk.fire { animation: none; }
+  #coachHand, #vign.on, #scrClear h2, #scrClear .stars3 i, #cList .rew, .sk.fire, #combo.bump, #gflash.on, #scrMRes .stars3 i, #mrList .rew { animation: none; }
 }
-:root[data-kb-motion="reduce"] #coachHand, :root[data-kb-motion="reduce"] #vign.on, :root[data-kb-motion="reduce"] #scrClear h2 { animation: none; }
+:root[data-kb-motion="reduce"] #coachHand, :root[data-kb-motion="reduce"] #vign.on, :root[data-kb-motion="reduce"] #scrClear h2,
+:root[data-kb-motion="reduce"] #combo.bump, :root[data-kb-motion="reduce"] #gflash.on, :root[data-kb-motion="reduce"] #scrMRes .stars3 i, :root[data-kb-motion="reduce"] #mrList .rew { animation: none; }
 @media (max-height: 720px) {
   .screen { padding: 10px 12px; gap: 7px; }
   .screen h2 { font-size: 22px; }
@@ -296,6 +338,9 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
       </div>
       <div id="pbar"><i id="pfill"></i><span id="ptext"></span></div>
       <div id="vign"></div>
+      <div id="gflash"></div>
+      <div id="mgoal" hidden></div>
+      <div id="combo" hidden aria-hidden="true"></div>
       <div id="banner" hidden></div>
       <div id="coach" hidden><div role="status" aria-live="polite"><span class="cs" id="coachStep">1/5</span><p id="coachText"></p><button type="button" id="coachSkip" data-i18n>スキップ</button></div></div>
       <svg id="coachHand" hidden viewBox="0 0 56 56" aria-hidden="true"><path d="M8 28h40M8 28l8-7M8 28l8 7M48 28l-8-7M48 28l-8 7" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28" cy="28" r="9" fill="#ffcf33" stroke="#16202e" stroke-width="3"/></svg>
@@ -324,10 +369,34 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
       <div class="row2">
         <button class="btn sub" id="btnBase" data-i18n>基地</button>
         <button class="btn sub" id="btnHeroes" data-i18n>英雄</button>
+        <button class="btn sub" id="btnMis" data-i18n>ミッション</button>
       </div>
       <div id="vsSlotTitle"></div>
       <button class="btn sub" id="btnHow" type="button" data-i18n>遊び方</button>
       <div class="langrow"><span data-i18n>言語</span><span id="langPickT"></span></div>
+      <p class="kbhint" data-i18n>PC：Enter 出撃 / M ミッション / B 基地 / H 英雄</p>
+    </section>
+
+    <section class="screen" id="scrMis" hidden>
+      <h2><span data-i18n>ミッション</span> <em id="misTotal">0/36</em></h2>
+      <div class="card" id="misGrid" role="group" aria-label="ミッション" data-i18n-attr="aria-label"></div>
+      <div class="card hd" id="misDetail" aria-live="polite"></div>
+      <button class="btn" id="btnMisGo" data-i18n>出撃！</button>
+      <div class="row2">
+        <button class="btn sub" id="btnMisBack" data-i18n>もどる</button>
+      </div>
+    </section>
+
+    <section class="screen" id="scrMRes" hidden>
+      <h2><em id="mrNo">MISSION 1</em><br><span id="mrTitle"></span></h2>
+      <div class="stars3" id="mrStars" aria-hidden="true"></div>
+      <div class="newbest" id="mrNew" hidden></div>
+      <div class="card" id="mrList"></div>
+      <button class="btn" id="mrNext" data-i18n>次のミッションへ</button>
+      <div class="row2">
+        <button class="btn sub" id="mrRetry" data-i18n>もう一度</button>
+        <button class="btn sub" id="mrBack" data-i18n>ミッション一覧</button>
+      </div>
     </section>
 
     <section class="screen" id="scrBase" hidden>
@@ -419,6 +488,7 @@ html[lang="en"] .hc.inteam::after { content: "Team"; }
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../common/game.js"></script>
+<script src="engine.js"></script>
 <script>
 KoboI18n.add({ en: {
   'ゲートランナー': 'Gate Runner', '← ゲーム一覧': '← Games', 'ゲート<span>ランナー</span>': 'Gate <span>Runner</span>',
@@ -489,6 +559,67 @@ KoboI18n.add({ en: {
   'その調子！ ボスまで走り抜けよう': 'Nice! Now run on to the boss',
   'ひとやすみ中': 'Paused', 'ステージをやり直す': 'Restart stage',
   '仲間 {n}人': 'Squad {n}', 'クラウドの記録を読み込みました': 'Loaded your progress from the cloud',
+  'ミッション': 'Missions',
+  'PC：Enter 出撃 / M ミッション / B 基地 / H 英雄': 'PC: Enter Deploy / M Missions / B Base / H Heroes',
+  'もう一度': 'Again',
+  'ミッション一覧': 'Mission list',
+  '次のミッションへ': 'Next mission',
+  'ミッション一覧にもどる': 'Back to missions',
+  'ミッション {n}': 'Mission {n}',
+  '昼': 'Day',
+  '夕方': 'Dusk',
+  '夜': 'Night',
+  '生き残り': 'Survivors',
+  '撃破数': 'Kills',
+  'タイム': 'Time',
+  '失った人数': 'Lost',
+  '最大コンボ': 'Best combo',
+  '生き残り {v}人以上': 'Survive with {v}+',
+  '最大 {v}人以上': 'Peak squad {v}+',
+  '{v}体以上倒す': 'Defeat {v}+ enemies',
+  '{v}秒以内にクリア': 'Clear within {v}s',
+  '失う人数 {v}人以下': 'Lose {v} or fewer',
+  '{v}コンボ以上': '{v}+ combo',
+  '{k} {x}（★2 {a} / ★3 {b}）': '{k} {x} (★2 {a} / ★3 {b})',
+  '部隊 {n}人・{w}': 'Squad {n}, {w}',
+  '英雄：{h}': 'Heroes: {h}',
+  '英雄なし': 'No heroes',
+  'ゾンビの数 ×{n}': 'Zombies ×{n}',
+  '短いコース': 'Short course',
+  'ボスの体力 ×{n}': 'Boss HP ×{n}',
+  '{n}人突破！': '{n} strong!',
+  '{n} コンボ！': '{n} combo!',
+  '★が増えた！': 'More stars!',
+  '自己ベスト更新！': 'New best time!',
+  'ベストタイム': 'Best time',
+  '{n}秒': '{n}s',
+  'ボスを倒す': 'Defeat the boss',
+  '前のミッションを★1以上でクリアすると開きます': 'Clear the previous mission to unlock this one',
+  'ボスの体力 {n}': 'Boss HP {n}',
+  'はじめの一歩': 'First Steps',
+  'ゲートで仲間を増やして、ボスまで走りぬけよう。': 'Grow your squad through the gates and run all the way to the boss.',
+  'ゲートの目利き': 'Eye for Gates',
+  'いい数字のゲートをえらんで、部隊をふくらませよう。': 'Pick the best numbers and swell your squad.',
+  'ゾンビの大群': 'Zombie Swarm',
+  'いつもの2倍の群れ！ 撃って撃って撃ちまくれ。': 'Twice the usual horde! Keep shooting.',
+  '中ボスの門': 'Mid-boss Gate',
+  '中ボスとボスが待っている。ほとんど減らさずに突破しよう。': 'A mid-boss and a boss await. Break through without losing many.',
+  '夕やけの急行': 'Sunset Express',
+  '道は短い。ボスまで一直線、はやさがいのち。': 'A short road. Straight to the boss, speed is everything.',
+  'ひとりぼっち': 'All Alone',
+  '英雄はお休み。ゲートと銃だけで勝ちぬこう。': 'No heroes today. Win with gates and guns alone.',
+  '連続キル': 'Kill Chain',
+  '倒しつづけるとコンボが伸びる。途切れさせずに大物を狙え。': 'Keep killing to build the combo. Don\'t let it break.',
+  '岩のボス': 'Rock Boss',
+  'ボスの体力は2倍。時間をかけすぎると押しつぶされる。': 'Double boss HP. Take too long and you get crushed.',
+  '夜のゲート街': 'Night Gate Street',
+  '暗い道にゲートがならぶ。人数をどこまで伸ばせるか。': 'Gates line the dark road. How big can your squad get?',
+  '闇の突撃': 'Dark Assault',
+  '短い道に敵がぎっしり。倒した数をきそおう。': 'A short road packed with enemies. Rack up the kills.',
+  '英雄なしの夜': 'Night Without Heroes',
+  '英雄なしで夜をこえる。生き残りが多いほど高評価。': 'Cross the night without heroes. More survivors, better rating.',
+  '最後のボス': 'The Last Boss',
+  '最強のボス。すべてを使って、最短で倒せ！': 'The toughest boss. Use everything and take it down fast!',
 } });
 </script>
 <script>
@@ -508,6 +639,7 @@ const reduced = () => {
 try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => { rmCache = null; }); } catch (e) {}
 if (UI) { $('helpBtn').appendChild(UI.icon('help')); $('setBtn').appendChild(UI.icon('settings')); } else { $('helpBtn').textContent = '?'; $('setBtn').textContent = '⚙'; }
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+let sbx = null, mis = null; // missions: sbx = the fixed team's own save (never stored), mis = { m } while a mission is being played
 const frnd = Math.random; // visual-only randomness
 let seed = (Date.now() ^ 0x5bd1e995) >>> 0;
 const rndG = () => rnd();
@@ -562,6 +694,9 @@ const HQ_MAX = 15;
 WEAPONS.forEach(w => w.name = T(w.name)); Object.values(SPECIAL).forEach(w => w.name = T(w.name)); ZK.forEach(z => z.name = T(z.name));
 HEROES.forEach(h => { for (const k of ['name', 'role', 'ch', 'sk', 'skd', 'pas']) h[k] = T(h[k]); });
 BLD.forEach(b => { b.name = T(b.name); b.ch = T(b.ch); });
+// missions (gates/engine.js): fixed squads and courses, stars kept apart from the normal save (kusoge.gates.x: this device only)
+const GE = window.GatesEngine, MIS = GE.MISSIONS;
+MIS.forEach(m => { m.name = T(m.name); m.desc = T(m.desc); });
 
 /* =============================== save =============================== */
 function defSave() {
@@ -610,6 +745,17 @@ function mutate(fn) {
   writeSave();
   return r;
 }
+const X_KEY = 'kusoge.gates.x';
+let xs = GE.blankX();
+function loadX() { try { return GE.loadX(localStorage.getItem(X_KEY)); } catch (e) { return GE.blankX(); } }
+function writeX(x) { try { localStorage.setItem(X_KEY, JSON.stringify(x)); } catch (e) {} }
+function missionSave(m) { // the squad a mission gives everybody: fixed base levels and heroes, whatever the real save is
+  const d = defSave();
+  d.bld.hq = 8; d.bld.bar = m.bl[0]; d.bld.lab = m.bl[1]; d.bld.arm = m.bl[2];
+  for (const h of HEROES) d.heroes[h.id] = { lv: m.hl, star: 0, cards: 0 };
+  d.sel = m.team.slice();
+  return d;
+}
 let vs = null; // online battle: { snap, seed, leg, dist, bosses, minis } while a match owns the run (see KoboVersus below)
 loadSave();
 if (save.migrated) { delete save.migrated; writeSave(); }
@@ -626,7 +772,7 @@ const stageHQ = s => 1 + Math.floor((s - 1) / 5);
 const maxStage = () => Math.min(save.best + 1, save.bld.hq * 5);
 const heroUnlocked = h => save.bld.hq >= h.hq;
 const heroMaxLv = id => Math.min(save.bld.hq * 5, 10 + 10 * save.heroes[id].star);
-const heroMul = id => { const x = save.heroes[id]; return (1 + 0.15 * (x.lv - 1)) * (1 + 0.3 * x.star); };
+const heroMul = id => { const x = (sbx || save).heroes[id]; return (1 + 0.15 * (x.lv - 1)) * (1 + 0.3 * x.star); };
 const expCost = lv => Math.round(20 * Math.pow(lv, 1.5));
 function bldCost(b, lv) { return { c: Math.round(b.c * Math.pow(b.cm, lv - 1)), m: Math.round(b.m * Math.pow(b.mm, lv - 1)) }; }
 function bldMax(b) { return b.id === 'hq' ? HQ_MAX : hqMaxOther(); }
@@ -793,6 +939,7 @@ const R = {
   stage: 1, n: 0, px: 0, tpx: 0, dist: 0, speed: 0, L: 600, phase: 'demo', t: 0, fireAcc: 0, kills: 0, coinsRaw: 0, truck: 0, truckCap: 60, truckPct: 0.35,
   mats: 0, boss: null, mini: null, miniDone: false, ev: [], evI: 0, endT: 0, shot: 0, stompT: 0, shake: 0, bump: 0, god: false, noSpawn: false, noBoss: false,
   peak: 0, lost: 0, healLost: 0, tier: 0, sp: '', rapid: 0, shieldT: 0, heroes: [], mulDmg: 1, mulRate: 1, rangeMul: 1, expMul: 1, bossMul: 1, objMul: 1, contactMul: 1,
+  combo: 0, comboT: 0, maxCombo: 0, mile: 0, tWin: 0, zc: 1, lm: 1, bh: 1,
   rad: 0.5, front: 0.6, startN: 8, banner: '', bannerT: 0, hint: '', hintT: 0, heroAcc: 0, gatesTaken: 0, cratesOpened: 0, log: [],
 };
 let mode = 'title', timeScale = 1;
@@ -800,6 +947,30 @@ let keyL = false, keyR = false;
 const curW = () => R.sp ? SPECIAL[R.sp] : WEAPONS[R.tier];
 function weaponName() { return curW().name; }
 function logEv(s) { if (DEBUG) { R.log.push(s); if (R.log.length > 400) R.log.shift(); } }
+// juice: screen-edge flash on gates / milestones, kill combo, squad-size milestones, sky colour per stage band
+function gflash(c) { if (simming || reduced()) return; const el = $('gflash'); el.className = ''; void el.offsetWidth; el.className = c + ' on'; }
+const COMBO_AT = [10, 25, 50, 100, 200], MILES = [50, 100, 200, 400, 800];
+function comboHit() {
+  R.combo++; R.comboT = 1.6; if (R.combo > R.maxCombo) R.maxCombo = R.combo;
+  if (COMBO_AT.indexOf(R.combo) >= 0) {
+    floatText(T('{n} コンボ！', { n: R.combo }), R.px, R.dist + 2, 3.1, '#ffe27a', 30);
+    burst(R.px, R.dist + 1, 1.4, 8, 0xffe27a, 6, 0.14); sfx.skill();
+  }
+}
+function milestone() {
+  let m = 0; while (R.mile < MILES.length && R.n >= MILES[R.mile]) m = MILES[R.mile++];
+  if (!m || R.phase === 'dead' || R.phase === 'won') return;
+  floatText(T('{n}人突破！', { n: m }), R.px, R.dist + 1, 3.3, '#ffd23d', 34);
+  for (const c of [0xffd23d, 0x5dff9a, 0x4fc3ff, 0xff5f8f]) burst(R.px, R.dist + 1, 1.6, 10, c, 7, 0.15);
+  gflash('m'); sfx.power(); vibrate(25); R.bump = 1;
+}
+const SKY = [0xa8dcff, 0xf3b78e, 0x6a82b8];
+function setSky(w) {
+  if (!gfx) return;
+  const c = SKY[w] != null ? SKY[w] : SKY[0];
+  gfx.scene.background.setHex(c); gfx.scene.fog.color.setHex(c);
+  $('stage').style.background = '#' + c.toString(16).padStart(6, '0'); dirty = true;
+}
 
 /* =============================== gates =============================== */
 function gateLabel(e) {
@@ -855,7 +1026,7 @@ function gateVals(ev, n) {
 }
 function buildStage(s) {
   const ev = [];
-  const L = 560 + 18 * Math.min(s, 20); R.L = L;
+  const L = Math.round((560 + 18 * Math.min(s, 20)) * (R.lm || 1)); R.L = L;
   const mid = s >= 4 ? L * 0.5 : -1;
   let z = 40, i = 0, est = 9 + 2 * s, crateN = 0, wi = 0;
   lastRole = 0;
@@ -871,7 +1042,7 @@ function buildStage(s) {
       }
     } else {
       const fr = z / L, hm = 0.65 + 0.7 * fr; // waves ramp up along the stage
-      const cnt = Math.round((7 + 3.0 * s) * (0.55 + 0.9 * fr) * (0.85 + rnd() * 0.3));
+      const cnt = Math.round((7 + 3.0 * s) * (0.55 + 0.9 * fr) * (0.85 + rnd() * 0.3) * (R.zc || 1));
       const form = rnd() * 3 | 0, side = rnd() < 0.5 ? -1 : 1;
       for (let k = 0; k < cnt; k++) {
         let x, zz;
@@ -939,8 +1110,11 @@ function clearPools() {
 function startRun(st, opt) {
   clearPools();
   opt = opt || {};
-  const s = st || save.stage;
-  const o = loadout(save);
+  const m = opt.mission || null;
+  mis = m ? { m } : null; sbx = m ? missionSave(m) : null;
+  const s = m ? m.stage : (st || save.stage);
+  const o = loadout(sbx || save);
+  if (m) { o.n = m.n; o.tier = m.tier; }
   R.stage = s; R.n = o.n; R.startN = o.n; R.peak = R.n; R.tier = o.tier; R.sp = '';
   R.mulDmg = o.mulDmg; R.mulRate = o.mulRate; R.truckPct = o.truckPct; R.truckCap = o.truckCap;
   const has = id => o.sel.indexOf(id) >= 0;
@@ -951,18 +1125,24 @@ function startRun(st, opt) {
   R.boss = null; R.mini = null; R.miniDone = false; R.endT = 0; R.shot = 0; R.stompT = 0; R.shake = 0; R.bump = 0; R.lost = 0; R.healLost = 0;
   R.rapid = 0; R.shieldT = 0; R.noSpawn = false; R.noBoss = false; R.gatesTaken = 0; R.cratesOpened = 0; R.log = [];
   R.bannerT = 0; R.hintT = 0; R.slowT = 0;
+  R.combo = 0; R.comboT = 0; R.maxCombo = 0; R.tWin = 0; R.mile = MILES.filter(v => v <= R.n).length;
+  R.zc = m && m.mods.zc || 1; R.lm = m && m.mods.lm || 1; R.bh = m && m.mods.bh || 1;
+  if (m) seed = m.seed >>> 0; // the same course every time
   buildStage(s);
   updRad();
   mode = 'run'; show(null); $('hud').hidden = false;
-  $('hudStage').textContent = 'STAGE ' + s;
-  hudCache.reset();
+  $('hudStage').textContent = m ? 'MISSION ' + (m.index + 1) : 'STAGE ' + s;
+  hudCache.reset(); hudCache.cb = 0; hudCache.mg = -1;
+  $('combo').hidden = true; $('mgoal').hidden = !m; $('truck').hidden = !!m;
+  setSky(m ? m.world : Math.floor((s - 1) / 5) % 3);
   buildSkillHud();
   // stage 1 is the tutorial the first time (and when replayed from the how-to screen); online battles never get it
-  R.tutorial = !vs && s === 1 && (opt.tutorial || (!save.tut && save.best === 0));
+  R.tutorial = !vs && !m && s === 1 && (opt.tutorial || (!save.tut && save.best === 0));
   if (R.tutorial) tutBegin();
+  else if (m) setBanner(m.name, T('ミッション {n}', { n: m.index + 1 }), 1.8);
   else setBanner('STAGE ' + s, s >= 4 ? T('中ボスとボスが待ち構える') : T('ボスを倒せ！'), 1.6);
   dirty = true;
-  if (!vs) emit('play_start', { mode: 'normal', stage: s, tutorial: R.tutorial || undefined });
+  if (!vs) emit('play_start', { mode: m ? 'practice' : 'normal', stage: s, tutorial: R.tutorial || undefined });
 }
 /* =============================== tutorial (stage 1, first time) ===============================
    Each step makes the player do the move once: steer both ways, take a green gate, shoot a ▲ gate up, break a crate,
@@ -1046,7 +1226,7 @@ function startBoss() {
   R.phase = 'boss';
   const e = newEnt(T_BOSS); if (!e) return;
   const s = R.stage;
-  e.kind = 0; e.x = 0; e.z = R.dist + 42; e.w = 1.9; e.hp = e.max = Math.round(bossHP(s)); e.vz = 1.05 + Math.min(s, 15) * 0.03; e.atkT = 3; e.sz = 1;
+  e.kind = 0; e.x = 0; e.z = R.dist + 42; e.w = 1.9; e.hp = e.max = Math.round(bossHP(s) * (R.bh || 1)); e.vz = 1.05 + Math.min(s, 15) * 0.03; e.atkT = 3; e.sz = 1;
   R.boss = e; R.stompT = 0;
   sfx.boss(); setBanner('BOSS!', T('赤い地面から逃げろ'), 1.6); vignette(); vibrate([60, 60, 60]);
   logEv('boss');
@@ -1080,7 +1260,7 @@ function die() {
 }
 function win() {
   if (R.phase === 'won' || R.phase === 'over' || R.phase === 'dead') return;
-  R.phase = 'won'; R.endT = 1.6; R.shake = 0.8;
+  R.phase = 'won'; R.endT = 1.6; R.shake = 0.8; R.tWin = R.t;
   if (vs) vs.bosses++;
   const b = R.boss;
   if (b) {
@@ -1094,8 +1274,101 @@ function win() {
   for (const t of tele) t.on = false;
   sfx.boom(); sfx.clear(); setBanner(T('撃破！'), '', 1.5);
 }
-let lastResult = null;
+let lastResult = null, lastMis = null, misSel = 0;
+const GL = { surv: '生き残り', peak: '最大人数', kills: '撃破数', time: 'タイム', lost: '失った人数', combo: '最大コンボ' };
+const GT = { surv: '生き残り {v}人以上', peak: '最大 {v}人以上', kills: '{v}体以上倒す', time: '{v}秒以内にクリア', lost: '失う人数 {v}人以下', combo: '{v}コンボ以上' };
+const goalText = (m, i) => T(GT[m.goal.k], { v: m.goal.v[i] });
+const curRes = () => ({ won: true, n: R.n, peak: R.peak, kills: R.kills, t: R.t, lost: R.lost, combo: R.maxCombo });
+const starStr = (n, of) => '★'.repeat(n) + '☆'.repeat(of - n);
+function missionEnd(won) {
+  R.phase = 'over'; $('hud').hidden = true; hideCoach();
+  const m = mis.m;
+  const r = { won, n: R.n, peak: R.peak, kills: R.kills, t: Math.round((R.tWin || R.t) * 10) / 10, lost: R.lost, combo: R.maxCombo };
+  const stars = GE.starsFor(m, r);
+  xs = loadX();
+  const old = xs.s[m.index] || 0, oldT = xs.t[m.index] || 0;
+  const rec = GE.record(xs, m.id, stars, won ? r.t : 0); writeX(xs);
+  const coins = GE.coinsFor(m, old, stars);
+  if (coins > 0) mutate(sv => { sv.coins += coins; });
+  lastMis = { m, r, stars, old, coins, rec };
+  emit('play_end', { mode: 'practice', score: stars, stage: m.stage, reason: won ? 'clear' : 'over', kills: R.kills, durationMs: Math.round(R.t * 1000) });
+  $('mrNo').textContent = 'MISSION ' + (m.index + 1);
+  $('mrTitle').textContent = won ? T('クリア！') : T('全滅…');
+  $('mrStars').innerHTML = won ? [0, 1, 2].map(i => '<i' + (i < stars ? '' : ' class="off"') + '>★</i>').join('') : '';
+  const nw = $('mrNew');
+  nw.hidden = !(rec.stars || (rec.time && oldT > 0));
+  nw.textContent = rec.stars ? T('★が増えた！') : T('自己ベスト更新！');
+  const ok = b => '<span class="' + (b ? 'okm' : 'ngm') + '">' + (b ? '✓' : '✗') + '</span>';
+  const val = x => m.goal.k === 'time' ? T('{n}秒', { n: x }) : m.goal.k === 'kills' || m.goal.k === 'combo' ? x : T('{n}人', { n: x });
+  const nowv = val(GE.metric(m, r));
+  $('mrList').innerHTML =
+    rew(T('ボスを倒す'), ok(won)) +
+    rew('★2 ' + goalText(m, 0), nowv + ' ' + ok(GE.goalMet(m, r, 0))) +
+    rew('★3 ' + goalText(m, 1), nowv + ' ' + ok(GE.goalMet(m, r, 1))) +
+    rew(T('生き残り / 最大'), T('{a} / {b}人', { a: r.n, b: r.peak })) +
+    rew(T('倒した敵'), r.kills) + rew(T('最大コンボ'), r.combo) +
+    (won ? rew(T('タイム'), T('{n}秒', { n: r.t })) : '') +
+    (xs.t[m.index] ? rew(T('ベストタイム'), T('{n}秒', { n: xs.t[m.index] })) : '') +
+    (coins ? '<div class="rew tot"><span>' + T('コイン') + '</span><span class="cost"><i class="coin-ico"></i>+' + coins + '</span></div>' : '');
+  [...$('mrList').children].forEach((c, i) => { c.style.animationDelay = (i * 0.06).toFixed(2) + 's'; });
+  const hasNext = won && m.index + 1 < MIS.length && GE.unlocked(xs, m.index + 1);
+  $('mrNext').hidden = !hasNext;
+  $('mrRetry').className = 'btn' + (hasNext ? ' sub' : '');
+  mode = 'mres'; show('scrMRes'); if (won) { sfx.win(); vibrate([30, 40, 70]); } else sfx.fail();
+  dirty = true;
+}
+function misFirst() {
+  const m = xs.c && GE.byId(xs.c);
+  if (m) return xs.s[m.index] >= 1 && m.index + 1 < MIS.length ? m.index + 1 : m.index;
+  for (let i = 0; i < MIS.length; i++) if (GE.unlocked(xs, i) && !xs.s[i]) return i;
+  return 0;
+}
+function toMis(sel) { toDemo(); mode = 'mis'; xs = loadX(); misSel = clamp(sel != null ? sel : misFirst(), 0, MIS.length - 1); renderMis(); show('scrMis'); }
+function renderMis() {
+  const g = $('misGrid'); g.textContent = '';
+  const wn = [T('昼'), T('夕方'), T('夜')];
+  for (let w = 0; w < 3; w++) {
+    const row = document.createElement('div'); row.className = 'mw';
+    const lab = document.createElement('span'); lab.textContent = 'W' + (w + 1) + ' ' + wn[w]; row.appendChild(lab);
+    for (let k = 0; k < 4; k++) {
+      const i = w * 4 + k, m = MIS[i], open = GE.unlocked(xs, i), n = xs.s[i] || 0;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'mc' + (i === misSel ? ' sel' : ''); b.dataset.i = i;
+      b.setAttribute('aria-label', T('ミッション {n}', { n: i + 1 }) + ' ' + m.name + (open ? ' ' + starStr(n, 3) : ''));
+      if (i === misSel) b.setAttribute('aria-current', 'true');
+      const a = document.createElement('span'); a.textContent = i + 1; const sm = document.createElement('small'); sm.textContent = open ? starStr(n, 3) : '···';
+      b.append(a, sm); if (!open) b.style.opacity = '.45';
+      b.addEventListener('click', () => { misSel = i; sfx.click(); renderMis(); });
+      row.appendChild(b);
+    }
+    g.appendChild(row);
+  }
+  $('misTotal').textContent = GE.totalStars(xs) + '/' + MIS.length * 3;
+  const m = MIS[misSel], n = xs.s[misSel] || 0, open = GE.unlocked(xs, misSel);
+  const hn = m.team.map(id => HMAP[id].name).join(T('・'));
+  const li = (c, h) => '<li' + (c ? ' class="ok"' : '') + '>' + h + '</li>';
+  const mods = [];
+  if (m.mods.zc) mods.push(T('ゾンビの数 ×{n}', { n: m.mods.zc }));
+  if (m.mods.lm) mods.push(T('短いコース'));
+  if (m.mods.bh) mods.push(T('ボスの体力 ×{n}', { n: m.mods.bh }));
+  $('misDetail').innerHTML = '<div class="t">' + (misSel + 1) + '. ' + m.name + '</div><div>' + m.desc + '</div><ul>' +
+    li(0, T('部隊 {n}人・{w}', { n: m.n, w: WEAPONS[m.tier].name }) + ' / ' + (hn ? T('英雄：{h}', { h: hn }) : T('英雄なし'))) +
+    (mods.length ? li(0, mods.join(' / ')) : '') +
+    li(n >= 1, '<span class="k">★1</span> ' + T('ボスを倒す')) + li(n >= 2, '<span class="k">★2</span> ' + goalText(m, 0)) + li(n >= 3, '<span class="k">★3</span> ' + goalText(m, 1)) +
+    (xs.t[misSel] ? li(0, T('ベストタイム') + ' ' + T('{n}秒', { n: xs.t[misSel] })) : '') +
+    (open ? '' : '<li style="color:var(--bad-text)">' + T('前のミッションを★1以上でクリアすると開きます') + '</li>') + '</ul>';
+  $('btnMisGo').disabled = !open;
+  dirty = true;
+}
+function startMission(i) { const m = MIS[i]; if (m && !vs) startRun(m.stage, { mission: m }); }
+function misMove(d) { const n = clamp(misSel + d, 0, MIS.length - 1); if (n !== misSel) { misSel = n; sfx.click(); renderMis(); const b = $('misGrid').querySelector('.mc.sel'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); } }
+$('btnMis').addEventListener('click', () => { sfx.click(); toMis(); });
+$('btnMisGo').addEventListener('click', () => { if (!GE.unlocked(xs, misSel)) return; sfx.click(); startMission(misSel); });
+$('btnMisBack').addEventListener('click', () => { sfx.click(); toTitle(); });
+$('mrNext').addEventListener('click', () => { if (lastMis) { sfx.click(); startMission(lastMis.m.index + 1); } });
+$('mrRetry').addEventListener('click', () => { if (lastMis) { sfx.click(); startMission(lastMis.m.index); } });
+$('mrBack').addEventListener('click', () => { sfx.click(); toMis(lastMis && lastMis.stars >= 1 && lastMis.m.index + 1 < MIS.length ? lastMis.m.index + 1 : lastMis ? lastMis.m.index : null); });
 function endRun(won) {
+  if (mis) { missionEnd(won); return; }
   R.phase = 'over';
   $('hud').hidden = true; hideCoach();
   const s = R.stage, truck = Math.floor(R.truck);
@@ -1135,6 +1408,7 @@ function endRun(won) {
       rew(T('経験値'), '<span class="cost"><i class="exp-ico"></i>' + res.exp + '</span>') +
       rew(T('英雄カード'), Object.keys(cc).map(k => k + '×' + cc[k]).join(' ') || '-') +
       rew(T('生き残り / 最大'), T('{a} / {b}人', { a: R.n, b: R.peak })) +
+      (R.maxCombo >= 5 ? rew(T('最大コンボ'), R.maxCombo) : '') +
       '<div class="rew tot"><span>' + T('コイン合計') + '</span><span class="cost"><i class="coin-ico"></i><b id="cTot">' + (truck + res.bonus) + '</b></span></div>';
     countUp($('cTot'), truck + res.bonus);
     $('btnNext').textContent = save.stage > s ? T('STAGE {n} へ', { n: save.stage }) : T('基地を強化して先へ');
@@ -1214,7 +1488,7 @@ function squadOverlap(cx, hw) {
   return b > a ? (b - a) / (2 * rad) : 0;
 }
 function killZ(e) {
-  e.on = false; R.kills++;
+  e.on = false; R.kills++; comboHit();
   const v = e.coin * (1 + 0.25 * (R.stage - 1));
   R.coinsRaw += v; R.truck = Math.min(R.truckCap, R.truck + v * R.truckPct);
   burst(e.x, e.z, 0.6 * e.sz, e.kind === ZT ? 14 : 5, 0x7cd65c, 4, 0.14 * e.sz);
@@ -1421,10 +1695,10 @@ function applyGate(g) {
   logEv('gate ' + g.label + ' ' + before + '->' + nn);
   if (diff >= 0) {
     R.n = nn; R.bump = 1;
-    floatText(g.label, R.px, R.dist + 1, 2.6, '#5dff9a', 40); sfx.good();
+    floatText(g.label, R.px, R.dist + 1, 2.6, '#5dff9a', 40); sfx.good(); if (diff > 0) gflash('g');
     burst(g.x, g.z, 1.5, 14, 0x5dff9a, 5, 0.16);
   } else {
-    floatText(g.label, R.px, R.dist + 1, 2.6, '#ff6b6b', 40); sfx.bad();
+    floatText(g.label, R.px, R.dist + 1, 2.6, '#ff6b6b', 40); sfx.bad(); if (!R.god) gflash('b');
     if (!R.god) {
       R.n = nn; R.lost += -diff; R.healLost += Math.ceil(-diff * 0.5); R.bump = 1; vibrate(60);
       burst(R.px, R.dist, 0.5, Math.min(20, -diff), 0xff4d4d, 4, 0.13);
@@ -1517,7 +1791,7 @@ function updHeroes(dt) {
     if (h.cd > 0) { h.cd -= dt; continue; }
     let cast = false;
     const id = h.id;
-    if (id === 'ren') { if (near >= 4 || boss) { R.rapid = 4 + 0.2 * (save.heroes.ren.lv - 1); cast = true; } }
+    if (id === 'ren') { if (near >= 4 || boss) { R.rapid = 4 + 0.2 * ((sbx || save).heroes.ren.lv - 1); cast = true; } }
     else if (id === 'mina') { if (R.healLost >= 3) { const a = Math.ceil(R.healLost * Math.min(0.85, 0.32 * h.m)); addMen(a); R.healLost = 0; cast = '+' + a; } }
     else if (id === 'bulk') {
       if (near >= 3 || boss) {
@@ -1533,7 +1807,7 @@ function updHeroes(dt) {
         for (let i = 0; i < ENT_N; i++) { const e = ents[i]; if (e.on && (e.t === T_Z || e.t === T_BOSS || e.t === T_WALL) && Math.abs(e.x - x) < 0.8 + (e.t === T_BOSS ? e.w : 0) && e.z - R.dist > 0 && e.z - R.dist < 60) damage(e, e.t === T_BOSS ? dmg * 1.5 : dmg, 2); }
         beam(x, R.dist + 1, R.dist + 60, 0x9ef0ff, 0.22); cast = true;
       }
-    } else if (id === 'gou') { if (near >= 2 || boss || tele.some(t => t.on)) { R.shieldT = 4 + 0.2 * (save.heroes.gou.lv - 1); cast = true; } }
+    } else if (id === 'gou') { if (near >= 2 || boss || tele.some(t => t.on)) { R.shieldT = 4 + 0.2 * ((sbx || save).heroes.gou.lv - 1); cast = true; } }
     else if (id === 'sora') {
       if (near >= 5 || boss) {
         for (let k = 0; k < 6; k++) explode(-3.5 + rnd() * 7, R.dist + 8 + k * 6, 2.6, hz * 7 * h.m, 0);
@@ -1567,6 +1841,8 @@ function updParticles(dt) {
 }
 function update(dt) {
   R.t += dt;
+  if (R.comboT > 0) { R.comboT -= dt; if (R.comboT <= 0) R.combo = 0; }
+  if (R.n >= MILES[R.mile]) milestone();
   if (keyL) R.tpx -= 10 * dt;
   if (keyR) R.tpx += 10 * dt;
   const lim = Math.max(0.6, 4.8 - R.rad * 0.55);
@@ -2206,18 +2482,29 @@ function syncHud(dt) {
       if (h.fx > 0.5) { el.classList.remove('fire'); void el.offsetWidth; el.classList.add('fire'); }
     }
   }
+  const cb = R.combo >= 5 ? R.combo : 0;
+  if (hudCache.cb !== cb) {
+    const el = $('combo');
+    if (!cb) el.hidden = true;
+    else { el.hidden = false; el.className = cb >= 50 ? 'hotter' : cb >= 20 ? 'hot' : ''; el.innerHTML = '<small>COMBO</small>×' + cb; if (hudCache.cb && !reduced()) { void el.offsetWidth; el.classList.add('bump'); } }
+    hudCache.cb = cb;
+  }
+  if (mis) {
+    const g = mis.m.goal, x = Math.floor(GE.metric(mis.m, curRes()));
+    if (hudCache.mg !== x) { hudCache.mg = x; $('mgoal').textContent = T('{k} {x}（★2 {a} / ★3 {b}）', { k: T(GL[g.k]), x, a: g.v[0], b: g.v[1] }); }
+  }
   const bn = R.bannerT > 0 ? R.banner + '|' + R.bannerSub : '';
   if (hudCache.banner !== bn) { hudCache.banner = bn; const el = $('banner'); el.hidden = !bn; if (bn) { el.innerHTML = ''; el.appendChild(document.createTextNode(R.banner)); if (R.bannerSub) { const s = document.createElement('small'); s.textContent = R.bannerSub; el.appendChild(s); } el.style.color = /BOSS|ボス|boss/i.test(R.banner) ? '#ff6b5b' : '#ffcf33'; } }
 }
 
 /* =============================== screens =============================== */
-const SCREENS = ['scrTitle', 'scrBase', 'scrHeroes', 'scrSelect', 'scrClear', 'scrFail'];
+const SCREENS = ['scrTitle', 'scrBase', 'scrHeroes', 'scrSelect', 'scrClear', 'scrFail', 'scrMis', 'scrMRes'];
 function show(id) { for (const s of SCREENS) $(s).hidden = s !== id; dirty = true; }
 // re-draw the menu on screen after the save changed underneath (another tab, or a cloud merge while idle)
 function refreshScreen() {
-  if (mode === 'title') toTitle(); else if (mode === 'base') renderBase(); else if (mode === 'heroes') renderHeroes(); else if (mode === 'select') renderSelect();
+  if (mode === 'title') toTitle(); else if (mode === 'base') renderBase(); else if (mode === 'heroes') renderHeroes(); else if (mode === 'select') renderSelect(); else if (mode === 'mis') { xs = loadX(); renderMis(); }
 }
-function toDemo() { clearPools(); hideCoach(); R.tutorial = false; R.slowT = 0; R.phase = 'demo'; R.boss = null; R.mini = null; R.shake = 0; R.bump = 0; $('hud').hidden = true; R.heroes = []; R.shieldT = 0; }
+function toDemo() { sbx = null; mis = null; $('truck').hidden = false; $('mgoal').hidden = true; setSky(0); clearPools(); hideCoach(); R.tutorial = false; R.slowT = 0; R.phase = 'demo'; R.boss = null; R.mini = null; R.shake = 0; R.bump = 0; $('hud').hidden = true; R.heroes = []; R.shieldT = 0; }
 function toTitle() {
   toDemo(); mode = 'title';
   $('tBest').textContent = save.best; $('tCoins').textContent = save.coins; $('tPower').textContent = calcPower();
@@ -2346,6 +2633,7 @@ const pm = UI ? UI.pauseMenu({
 function pause() {
   if (mode !== 'run' || vs) return;
   mode = 'paused'; keyL = keyR = false; dragging = false; dirty = true;
+  if (retreatBtn) { const sp = retreatBtn.querySelector('span'); if (sp) sp.textContent = mis ? T('ミッション一覧にもどる') : T('撤退する（トラックの中身だけ持ち帰る）'); }
   $('banner').hidden = true; hudCache.banner = '-';
   if (pm) pm.open();
 }
@@ -2356,6 +2644,7 @@ function resume() {
 }
 function retreat() {
   if (mode !== 'paused' && mode !== 'run') return;
+  if (mis) { const mi = mis.m.index; emit('play_end', { mode: 'practice', score: 0, stage: R.stage, reason: 'quit', kills: R.kills, durationMs: Math.round(R.t * 1000) }); if (G) G.resume('api'); toMis(mi); return; }
   const t = Math.floor(R.truck), m = R.mats;
   mutate(sv => { sv.coins += t; sv.mat += m; });
   R.truck = 0; R.mats = 0;
@@ -2364,6 +2653,7 @@ function retreat() {
   toTitle();
 }
 function restartStage() {
+  if (mis) { const m0 = mis.m; emit('play_end', { mode: 'practice', score: 0, stage: R.stage, reason: 'quit', kills: R.kills, durationMs: Math.round(R.t * 1000) }); if (G) G.resume('api'); startRun(m0.stage, { mission: m0 }); return; }
   emit('play_end', { mode: 'normal', score: 0, stage: R.stage, reason: 'quit', kills: R.kills, durationMs: Math.round(R.t * 1000) });
   if (G) G.resume('api');
   startRun(R.stage, { tutorial: R.tutorial && !tut.done });
@@ -2430,10 +2720,40 @@ const endDrag = e => { if (e.pointerId === dragId) dragging = false; };
 stageEl.addEventListener('pointerup', endDrag); stageEl.addEventListener('pointercancel', endDrag);
 addEventListener('keydown', e => {
   const k = e.key;
+  if (mode !== 'run' && mode !== 'paused') { menuKey(e); if (e.defaultPrevented) return; }
   if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keyL = true; e.preventDefault(); }
   else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keyR = true; e.preventDefault(); }
   else if (k === 'Escape' || k === 'p' || k === 'P') { if (mode === 'run') pause(); else if (k === 'Escape' && !$('ovHow').hidden) closeHow(); }
 });
+// menus by keyboard: Enter / Space = the main button, arrows = choose, Esc = back (not while a dialog is open or a button has focus for Enter / Space)
+function menuKey(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || vs || mode === 'run' || mode === 'paused') return;
+  const k = e.key, t = e.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || !$('ovHow').hidden) return;
+  if (document.querySelector('.kb-layer:not([hidden]), dialog[open]')) return;
+  try { if (KoboVersus.active()) return; } catch (x) {}
+  const onBtn = tag === 'BUTTON' || tag === 'A';
+  const go = (k === 'Enter' || k === ' ') && !onBtn, key = k.length === 1 ? k.toLowerCase() : k;
+  let used = true;
+  if (mode === 'title') {
+    if (go) { sfx.click(); toSelect(); } else if (key === 'm') { sfx.click(); toMis(); } else if (key === 'b') { sfx.click(); toBase(); } else if (key === 'h') { sfx.click(); toHeroes(); } else used = false;
+  } else if (mode === 'select') {
+    if (k === 'ArrowLeft') $('stPrev').click(); else if (k === 'ArrowRight') $('stNext').click();
+    else if (go) $('btnStart').click(); else if (k === 'Escape') { sfx.click(); toTitle(); } else used = false;
+  } else if (mode === 'mis') {
+    if (k === 'ArrowLeft') misMove(-1); else if (k === 'ArrowRight') misMove(1); else if (k === 'ArrowUp') misMove(-4); else if (k === 'ArrowDown') misMove(4);
+    else if (go) $('btnMisGo').click(); else if (k === 'Escape') { sfx.click(); toTitle(); } else used = false;
+  } else if (mode === 'mres') {
+    if (go) { if (!$('mrNext').hidden) $('mrNext').click(); else $('mrRetry').click(); } else if (key === 'r') $('mrRetry').click(); else if (k === 'Escape') $('mrBack').click(); else used = false;
+  } else if (mode === 'clear') {
+    if (go) $('btnNext').click(); else if (key === 'b') $('btnClearBase').click(); else if (k === 'Escape') { sfx.click(); toTitle(); } else used = false;
+  } else if (mode === 'fail') {
+    if (go || key === 'r') $('btnRetry').click(); else if (k === 'Escape') { sfx.click(); toTitle(); } else used = false;
+  } else if (mode === 'base' || mode === 'heroes') {
+    if (k === 'Escape') { sfx.click(); toTitle(); } else used = false;
+  } else used = false;
+  if (used) e.preventDefault();
+}
 addEventListener('keyup', e => {
   const k = e.key;
   if (k === 'ArrowLeft' || k === 'a' || k === 'A') keyL = false;
@@ -2461,7 +2781,7 @@ function frame(ts) {
     let rem = dt * k;
     while (rem > 1e-6 && mode === 'run') { const st = Math.min(rem, 0.02); update(st); rem -= st; }
     watchFps(dt);
-  } else if (mode === 'title' || mode === 'base' || mode === 'heroes' || mode === 'select') {
+  } else if (mode === 'title' || mode === 'base' || mode === 'heroes' || mode === 'select' || mode === 'mis') {
     const anim = !reduced() && ts - lastInput < MENU_ANIM_MS && $('ovHow').hidden;
     if (anim) { menuAcc += dt; if (menuAcc < 1 / 30) return; demoUpdate(menuAcc); menuAcc = 0; }
     else if (!dirty) return;
@@ -2531,7 +2851,7 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員が同�
   onOpen() { keyL = keyR = false; dragging = false; if (mode === 'run') pause(); if (G) G.pause('versus'); },
   onStart({ seed: sd, practice }) {
     if (!vs) {
-      if (mode === 'run' || mode === 'paused') emit('play_end', { mode: 'normal', score: 0, stage: R.stage, reason: 'quit', kills: R.kills });
+      if (mode === 'run' || mode === 'paused') emit('play_end', { mode: mis ? 'practice' : 'normal', score: 0, stage: R.stage, reason: 'quit', kills: R.kills });
       if (pm && pm.isOpen) pm.close();
       $('ovHow').hidden = true;
       vs = { snap: { save } };
@@ -2586,7 +2906,7 @@ if (G) {
 if (DEBUG) {
   window.__gates = {
     R, ents, tele, ZK, HEROES, WEAPONS, hpZ, bossHP, recPower, calcPower, loadout, soldierF, squadDPS, applyOp,
-    get save() { return save; }, get mode() { return mode; }, get vs() { return vs && { seed: vs.seed, leg: vs.leg, dist: vs.dist, bosses: vs.bosses, minis: vs.minis, score: vsScore() }; },
+    get save() { return save; }, get mode() { return mode; }, GE, MIS, get mis() { return mis && mis.m; }, get xs() { return xs; }, get lastMis() { return lastMis; }, misMove, toMis, get vs() { return vs && { seed: vs.seed, leg: vs.leg, dist: vs.dist, bosses: vs.bosses, minis: vs.minis, score: vsScore() }; },
     course() { return R.ev.map(e => e.t + ':' + e.z.toFixed(2) + ':' + (e.x != null ? e.x.toFixed(2) : '') + ':' + (e.p != null ? e.p : '') + (e.k != null ? e.k : '') + (e.kind || '')).join('|'); },
     setSeed(n) { seed = n >>> 0; },
     setTimeScale(s) { timeScale = s; },
@@ -2642,11 +2962,11 @@ if (DEBUG) {
     R.tpx = clamp(tx, -4.2, 4.2);
   }
   window.__kb = Object.assign(window.__kb || {}, {
-    ready: () => !!gfx && (mode === 'title' || mode === 'run' || mode === 'select' || mode === 'base' || mode === 'heroes' || mode === 'clear' || mode === 'fail' || mode === 'paused'),
+    ready: () => !!gfx && (mode === 'title' || mode === 'run' || mode === 'select' || mode === 'base' || mode === 'heroes' || mode === 'clear' || mode === 'fail' || mode === 'paused' || mode === 'mis' || mode === 'mres'),
     state: () => ({
-      mode: vs ? (vs.practice ? 'practice' : 'versus') : 'normal', screen: mode, phase: R.phase,
-      score: vs ? vsScore() : (mode === 'clear' ? R.stage : 0), time: R.t, over: mode === 'clear' || mode === 'fail' || R.phase === 'over',
-      won: mode === 'clear', stage: R.stage, paused: mode === 'paused', n: R.n, best: save.best, coins: save.coins,
+      mode: vs ? (vs.practice ? 'practice' : 'versus') : mis ? 'practice' : 'normal', mission: mis ? mis.m.id : null, combo: R.combo, maxCombo: R.maxCombo, screen: mode, phase: R.phase,
+      score: vs ? vsScore() : (mode === 'clear' ? R.stage : 0), time: R.t, over: mode === 'clear' || mode === 'fail' || mode === 'mres' || R.phase === 'over',
+      won: mode === 'clear' || (mode === 'mres' && !!lastMis && lastMis.stars >= 1), stage: R.stage, paused: mode === 'paused', n: R.n, best: save.best, coins: save.coins,
       tutorial: R.tutorial ? { step: tut.step, done: tut.done } : null, quality: qLv, frames: gfx ? gfx.renderer.info.render.frame : 0, howto: !$('ovHow').hidden,
     }),
     win() { if (mode === 'run' && R.phase !== 'over') { const was = R.god; R.god = true; if (R.tutorial && !tut.done) tutFinish(true); win(); R.god = was; return true; } return false; },
@@ -2662,6 +2982,7 @@ if (DEBUG) {
     tutorial: () => ({ step: tut.step, done: R.tutorial ? tut.done : !!save.tut, id: R.tutorial && !tut.done ? TUT[tut.step].id : null, total: TUT.length, active: !!R.tutorial && !tut.done, sub: tut.sub }),
     skipTutorial() { if (R.tutorial && !tut.done) tutFinish(true); },
     start(stage, opt) { startRun(stage || 1, opt); },
+    startMission(i) { startMission(i); return window.__kb.state(); },
     pause, resume, openHow, closeHow,
   });
 }

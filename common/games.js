@@ -187,6 +187,7 @@
       record: { key: 'kusoge.gates.save', paths: ['best', 'bestStage', 'stage'], agg: 'or', min: 1, tpl: { ja: 'ステージ {n} まで到達', en: 'Reached stage {n}' } },
       keys: {
         'kusoge.gates.save': '{ v:2, best, stage, coins, mat, exp, bld:{…}, heroes:{ id:{ lv, star, cards } }, sel:[…], runs, tut, seen }（tut・seen はチュートリアル・遊び方を見たかの 0/1。旧2D版は gates の migrate() が読む）',
+        'kusoge.gates.x': 'ミッションの星と最短クリア秒 { v:1, s:[12ミッションの星0〜3], t:[最短秒], c }（端末内だけ。同期しない・ランキングに入らない）',
       },
       // R4：コイン・素材・経験値・カード（使うと減るもの）と選択は newest、最高ステージ・建物・ヒーローのレベルと星は max
       sync: {
