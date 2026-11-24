@@ -413,7 +413,8 @@
       record: { key: 'kusoge.hitblow.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best: {n} pts' } },
       keys: {
         'kusoge.hitblow.save': '{ v:1, best（1問の最高点＝ランキング。ひとりで遊んだときだけ）, bests:{ <n|c><3|4|5>[x]:{ s（点）, g（最少の回数）, t（最速 ms） } }, stats:{ plays, wins, losses, lucky（1回目で正解）, fast4（4つを4回以内）, win5, winDup, cpuPlays, cpu1, cpu2, cpu3（CPU の強さごとの勝ち）, vsSolved }, daily:{ last, win（最後に当てた日）, streak, max, res:{ dk, won, g, s, ms, a, rows } }, set:{ sym, d, dup, cpu }, tut }',
-        'kusoge.hitblow.state': '途中のゲーム（ひとり・デイリー）{ v:1, kind, cfg, secret, rows:[[推理, H, B]], cur, ms, dk, memo:{ s[], p[] }, tut }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.hitblow.x': 'ミッションの星・ベストの回数とひとりの連勝 { v:1, s:[12ミッションの星0〜3], b:[12ミッションのベストの回数], ws（連勝）, wm（最高の連勝） }（端末内だけ。同期しない・ランキングに入らない）',
+        'kusoge.hitblow.state': '途中のゲーム（ひとり・デイリー）{ v:1, kind, cfg, secret, rows:[[推理, H, B]], cur, ms, dk, memo:{ s[], p[] }, tut, （ミッション：mi, gv, hp, hn） }。この端末だけ（同期しない）。終わると消す',
         'kusoge.hitblow.howto': '遊び方を見た（\'1\'）',
       },
       // records only grow (max; fewest tries / fastest = minPos); settings and the last daily result are whole values (newest)

@@ -29,7 +29,8 @@ node tools/tests/unit/raft-engine.test.js      # いかだ暮らしの航海の�
 node tools/tests/unit/drop-engine.test.js      # おちものタワーの中身（形と順番が変わらない・ライン判定・12ステージ・Sim・ボットが全ステージを解く・進み具合の読み込み）
 node tools/tests/unit/blocks-engine.test.js    # ブロックはめの中身（形と順番が変わらない・15ステージ・決まった結果・ボットが全ステージを解く・進み具合の読み込み）
 node tools/tests/unit/hitsumabushi-engine.test.js  # ひつまぶし工房の中身（特別営業10日の条件・ねらいの数え方・★・れんぞく・保存 kusoge.hitsumabushi.x の読み込みと記録・engine.js が使われていること）
-node tools/tests/hitblow-play.js               # ヒットアンドブローの通し（勝ち・負け・デイリーの答えが全員同じ・CPU対戦を最後まで・保存と再読み込み・英語）
+node tools/tests/hitblow-play.js               # ヒットアンドブローの通し（勝ち・負け・デイリーの答えが全員同じ・CPU対戦を最後まで・保存と再読み込み・英語・オンライン練習・ミッション12（一覧と鍵・ヒットだけ／ブローだけ・はじめのヒント・ひらめき・ボットが全部クリア・★と次が開く・practice 報告・ランキングの値が変わらない・キー／タッチ・こわれた保存・連勝・全画面サイズ））。引数で一部だけ：missions,keysAndTouch,compat,missionsEnglish
+node tools/tests/unit/hitblow-engine.test.js     # ヒットアンドブローの中身（判定・ヒットだけ／ブローだけの見え方・点数が前と同じ・12ミッションの条件と★・強いボットが全部解ける・kusoge.hitblow.x の読み込みと記録・連勝・engine.js が使われていること）
 node tools/tests/planet-play.js                # わくせいシミュレーターの通し（はじめてのコーチ・彫刻・降りて歩く（キーとタッチ）・一周・発見・時代・危機・8お題の勝ち負け・手で雪玉と図書館・保存と再開・銀河・共有URL・古い保存・ふしぎな星・まなぶと3問チェック・なぜ？・英語・fps）
 node tools/tests/shogi-play.js                 # 将棋の通し（CPU に詰みまで・待った・成り・打つ・棋譜・ふたりで・続きから・詰将棋・英語・オンライン（エミュレーター）。--no-online で省く）
 node tools/tests/escape-play.js                # からくり工房からの脱出の通し（5部屋を正解の手順で本物のクリック・日本語と英語・ヒント・自動保存と再開・採点・全画面サイズ）
