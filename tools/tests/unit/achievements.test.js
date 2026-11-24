@@ -103,7 +103,8 @@ const FIX = {
   'minigolf-save2.json': { has: ['minigolf.first', 'minigolf.h1', 'minigolf.r1'], not: ['minigolf.all', 'minigolf.t2', 'minigolf.t5', 'minigolf.stars100', 'minigolf.under1', 'minigolf.ace'] },
   'trade-save.json': { has: ['trade.first', 'trade.p1', 'trade.deal', 'trade.x10'], not: ['trade.deal20', 'trade.types', 'trade.dtop'] },
   'cards-save.json': { has: ['cards.first', 'cards.om1', 'cards.rev', 'cards.dh1', 'cards.cut8', 'cards.hard'], not: ['cards.all', 'cards.royal', 'cards.pts30', 'cards.flush', 'cards.bj', 'cards.sv1', 'cards.cn4'] },
-  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1', 'cards.first', 'cards.om1'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
+  'fit-save.json': { has: ['fit.first', 'fit.snug', 'fit.star3', 'fit.daily', 'fit.w1', 'fit.swift', 'fit.ta10'], not: ['fit.decoy', 'fit.w4', 'fit.w8', 'fit.ta25', 'fit.stars150', 'fit.nohint'] },
+  'hub-records.json': { has: ['all.variety6', 'all.varietyAll', 'neji.lv10', 'blocks.s1k', 'raft.d15', 'n59049.s10k', 'gates.st5', 'hole.first', 'hitsumabushi.first', 'planet.first', 'hitblow.first', 'shogi.first', 'escape.first', 'td.first', 'td.m1', 'physics.first', 'physics.l1', 'minigolf.first', 'minigolf.h1', 'cards.first', 'cards.om1', 'fit.first', 'fit.snug'], not: ['water.st10', 'hole.win1', 'physics.w1', 'minigolf.r1'] },
 };
 test('retroactive: fixture saves for every game unlock exactly what the records show, once, marked as retroactive', () => {
   const games = new Set();
@@ -199,7 +200,7 @@ test('live: daily streak across JST days, all-dailies-in-one-day, level and meta
   for (let i = 0; i < 3; i++) { const dk = P.jstDateKey(t); play(P, 'blocks', { t, dur: MIN, mode: 'daily', dateKey: dk, score: 5 }); t += DAY; }
   ok(A.has('all.daily1')); ok(A.has('all.streak3')); ok(!A.has('all.streak7'));
   const dk = P.jstDateKey(t);
-  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
+  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf', 'fit']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
   ok(A.has('all.dailyAll'));
   ok(A.has('all.ach10'), 'meta achievement after 10 unlocks');
   ok(P.xp.info(t).lv >= 2);

@@ -633,6 +633,34 @@
         'kusoge.cards.save': { fields: { pts: 'max', g: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'fit', order: 20, path: 'fit/', added: '2026-11-24',
+      title: { ja: 'ぴったりパズル工房', en: 'Fit Workshop' },
+      short: { ja: 'ぴったり工房', en: 'Fit Workshop' },
+      desc: { ja: '木と真鍮の工房で、決まった形の板（3〜5マスのピース）をぴったり敷きつめるタイムパズル。回して・裏返して・ドラッグで置こう。8つの世界に128ステージ、今日のパズル、3分間のタイムアタック。ひっかけのピースにも注意。', en: 'A timed tile-fitting puzzle in a wood-and-brass workshop. Drag, rotate and flip pieces of 3 to 5 cells until they fill the board exactly. 128 stages in 8 worlds, a daily puzzle and a 3-minute time attack. Watch out for decoy pieces.' },
+      label: { ja: 'タイムパズル', en: 'Timed puzzle' },
+      genres: ['puzzle'], tags: ['2d', 'stages', 'daily', 'endless', 'realtime', 'relax'],
+      keywords: { ja: ['パズル', 'ぴったり', 'ポリオミノ', 'ペントミノ', 'タイル', 'はめ込み', 'タイムアタック', '図形', '工房'], en: ['puzzle', 'tiling', 'polyomino', 'pentomino', 'tile', 'fit', 'time attack', 'shapes', 'workshop', 'tangram'] },
+      icon: 'img/icons/fit.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#4a2f1a"/><rect x="5" y="5" width="62" height="62" rx="6" fill="#6a4426" stroke="#d9b45a" stroke-width="2"/><g stroke="#f4e4b8" stroke-width="1.2"><rect x="10" y="12" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="10" y="26" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="10" y="40" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="24" y="40" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="24" y="12" width="14" height="14" rx="2.5" fill="#e08a3c"/><rect x="38" y="12" width="14" height="14" rx="2.5" fill="#e08a3c"/><rect x="24" y="26" width="14" height="14" rx="2.5" fill="#e08a3c"/><rect x="38" y="26" width="14" height="14" rx="2.5" fill="#e08a3c"/></g><g transform="rotate(14 54 52)" stroke="#f4e4b8" stroke-width="1.2"><rect x="40" y="38" width="13" height="13" rx="2.5" fill="#d0527a"/><rect x="40" y="51" width="13" height="13" rx="2.5" fill="#d0527a"/><rect x="53" y="51" width="13" height="13" rx="2.5" fill="#d0527a"/></g><circle cx="12" cy="9" r="1.6" fill="#d9b45a"/><circle cx="60" cy="9" r="1.6" fill="#d9b45a"/></svg>',
+      thumb: 'img/thumbs/fit.webp', thumb2x: 'img/thumbs/fit@2x.webp',
+      tech: '2d',
+      // pause: true — the clock runs while a puzzle is on screen and stops while hidden or paused; no online play
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // ranking = the best 3-minute time attack (puzzles solved). A time attack can't pass about 90 puzzles; the daily board's score is 600 minus the seconds
+      score: { unit: { ja: '問', en: 'solved' }, fmt: { ja: '{n}問', en: '{n} solved' }, order: 'desc', cap: 1000, maxRate: null },
+      rankSource: { key: 'kusoge.fit.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.fit.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '星 {n} / 384', en: '{n} / 384 stars' } },
+      keys: {
+        'kusoge.fit.save': '{ v:1, st:{ \'<世界>-<番号>\':{ s（最高の星 0〜3）, t（最短 ms）, c（クリア回数） } }（遊んだステージだけ）, best（タイムアタックで3分に解いた最高の数＝ランキング）, stars（s の合計）, stats:{ solved, perfect（星3）, noHint, fast（10秒以内・ヒントなし）, decoy（ひっかけつきを解いた）, daily, atRuns, worlds（全部クリアした世界の数）, flips }, daily:{ last（日付）, ms }, tut }',
+        'kusoge.fit.run': 'とちゅうのパズル（自動保存）{ v:1, mode:\'stage\'|\'daily\'|\'attack\', id, dk, seed, k（タイムアタックの何問目）, solved, ms（かかった時間）, pen（ヒントなどの加算）, s（fit/engine.js の Session.snapshot）, tut, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.fit.howto': '遊び方を見た（\'1\'）',
+      },
+      // records only grow (max; fastest = minPos); the puzzle in progress is not synced
+      sync: {
+        'kusoge.fit.save': { fields: { st: { each: { fields: { s: 'max', t: 'minPos', c: 'max' } } }, best: 'max', stars: 'max', stats: { each: 'max' }, daily: { fields: { last: 'max', ms: 'minPos' }, rest: 'newest' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -839,6 +867,20 @@
       { id: 'cards.hard', tier: 3, icon: 'trophy', title: { ja: '強敵に勝つ', en: 'Beat the Best' }, desc: { ja: '「つよい」CPUに勝って1位になる', en: 'Finish first against Hard CPUs' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.hard' }, gte: 1 } },
       { id: 'cards.all', tier: 4, icon: 'trophy', title: { ja: '広場の主', en: 'Master of the Table' }, desc: { ja: '6つのゲームすべてで1位になる', en: 'Finish first in all six games' }, when: { rec: { key: 'kusoge.cards.save', path: 'g', each: 'w', measure: 'countGte', min: 1 }, gte: 6 }, grantsTitle: { ja: '広場の主', en: 'Table Master' } },
       { id: 'cards.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.cards.save', path: 'pts' }, gte: 30 } },
+    ],
+    fit: [
+      { id: 'fit.snug', tier: 1, icon: 'check', title: { ja: 'ぴったり！', en: 'Snug Fit' }, desc: { ja: 'パズルを1つ解く', en: 'Solve a puzzle' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.solved' }, gte: 1 } },
+      { id: 'fit.star3', tier: 1, icon: 'star', title: { ja: '三ツ星の手ぎわ', en: 'Three-Star Hands' }, desc: { ja: 'ステージを星3つでクリアする', en: 'Clear a stage with 3 stars' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.perfect' }, gte: 1 } },
+      { id: 'fit.daily', tier: 1, icon: 'check', title: { ja: '今日のぴったり', en: 'Puzzle of the Day' }, desc: { ja: '今日のパズルを解く', en: 'Solve the daily puzzle' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.daily' }, gte: 1 } },
+      { id: 'fit.w1', tier: 2, icon: 'star', title: { ja: '木くず掃除', en: 'Sawdust Swept' }, desc: { ja: '1つ目の世界の16ステージをすべてクリアする', en: 'Clear all 16 stages of the first world' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.worlds' }, gte: 1 } },
+      { id: 'fit.swift', tier: 2, icon: 'star', title: { ja: '電光石火', en: 'Lightning Fit' }, desc: { ja: 'ヒントなしで10秒以内にパズルを解く', en: 'Solve a puzzle in 10 seconds without a hint' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.fast' }, gte: 1 } },
+      { id: 'fit.decoy', tier: 2, icon: 'check', title: { ja: 'おとりに負けない', en: 'Not Fooled' }, desc: { ja: 'ひっかけのピースがあるパズルを解く', en: 'Solve a puzzle that has decoy pieces' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.decoy' }, gte: 1 } },
+      { id: 'fit.ta10', tier: 2, icon: 'star', title: { ja: '10問ダッシュ', en: 'Ten in Three' }, desc: { ja: 'タイムアタックで3分に10問解く', en: 'Solve 10 puzzles in one 3-minute time attack' }, when: { rec: { key: 'kusoge.fit.save', path: 'best' }, gte: 10 } },
+      { id: 'fit.nohint', tier: 2, icon: 'check', title: { ja: 'ひとりで解いた', en: 'Unaided' }, desc: { ja: 'ヒントなしで合わせて30問解く', en: 'Solve 30 puzzles without using a hint' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.noHint' }, gte: 30 } },
+      { id: 'fit.w4', tier: 3, icon: 'star', title: { ja: '真鍮の間をぬけて', en: 'Through the Brass Hall' }, desc: { ja: '4つの世界をすべてクリアする', en: 'Clear all stages of four worlds' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.worlds' }, gte: 4 } },
+      { id: 'fit.stars150', tier: 3, icon: 'trophy', title: { ja: '星150', en: '150 Stars' }, desc: { ja: '星を150個ためる', en: 'Collect 150 stars' }, when: { rec: { key: 'kusoge.fit.save', path: 'stars' }, gte: 150 } },
+      { id: 'fit.w8', tier: 4, icon: 'trophy', title: { ja: '親方の弟子', en: "Master's Apprentice" }, desc: { ja: '8つの世界をすべてクリアする', en: 'Clear every stage of all eight worlds' }, when: { rec: { key: 'kusoge.fit.save', path: 'stats.worlds' }, gte: 8 }, grantsTitle: { ja: '親方の弟子', en: 'Apprentice' } },
+      { id: 'fit.ta25', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ぴったり名人', en: 'Fit Virtuoso' }, desc: { ja: 'タイムアタックで3分に25問解く', en: 'Solve 25 puzzles in one 3-minute time attack' }, when: { rec: { key: 'kusoge.fit.save', path: 'best' }, gte: 25 }, grantsTitle: { ja: 'ぴったり名人', en: 'Fit Virtuoso' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
