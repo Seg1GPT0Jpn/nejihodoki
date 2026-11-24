@@ -13,7 +13,7 @@ node tools/tests/run.js --vp all --lang en      # 画面サイズ（quick|core|a
 node tools/tests/run.js --list                  # 実行するタスクの一覧だけ出す
 node tools/tests/hitsumabushi-play.js          # ひつまぶし工房の通しプレイ（チュートリアル・1営業日・採点・厳しさ・保存・デイリー・英語）
 node tools/tests/hitblow-play.js               # ヒットアンドブローの通し（勝ち・負け・デイリーの答えが全員同じ・CPU対戦を最後まで・保存と再読み込み・英語）
-node tools/tests/planet-play.js                # わくせいシミュレーターの通し（チュートリアル・気候の物理・8シナリオの勝ち負け・本物のタップでクリア・危険の知らせ・星のデザインと共有URL・節目とエンディング・古い保存・英語）
+node tools/tests/planet-play.js                # わくせいシミュレーターの通し（はじめてのコーチ・彫刻・降りて歩く（キーとタッチ）・一周・発見・時代・危機・8お題の勝ち負け・手で雪玉と図書館・保存と再開・銀河・共有URL・古い保存・ふしぎな星・まなぶと3問チェック・なぜ？・英語・fps）
 node tools/tests/shogi-play.js                 # 将棋の通し（CPU に詰みまで・待った・成り・打つ・棋譜・ふたりで・続きから・詰将棋・英語・オンライン（エミュレーター）。--no-online で省く）
 node tools/tests/escape-play.js                # からくり工房からの脱出の通し（5部屋を正解の手順で本物のクリック・日本語と英語・ヒント・自動保存と再開・採点・全画面サイズ）
 node tools/tests/td-play.js                    # 工房まもりの通し（チュートリアル・本物のタップで建てる／強化／売る・勝ち・負け・エンドレス・デイリー・保存と再開・一時停止・英語・全画面サイズ・200体の性能）

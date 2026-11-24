@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // わくせいシミュレーターの通しテスト（Playwright、?debug の window.__planet / __kb を使う）
-//   node tools/tests/planet-play.js          … 全部（約3〜4分）。スクリーンショットは tools/tests/out/shots/planet-play/
-// 1. 初回：遊び方 → チュートリアル（本物の操作：地球儀のドラッグ、▶、道具「火山」で地球儀をタップ、海ができたら「いのち」で海をタップ）
-// 2. 気候の物理：CO₂が多いほど暖かい／遠いほど寒い／全球凍結の始まりと、火山のCO₂での脱出（ヒステリシス）／近すぎると暴走温室で海が干上がる／
-//    岩の風化がCO₂を元に戻す（サーモスタット）／明るくなる太陽でCO₂が下がる
-// 3. シナリオ8本：何もしないと失敗、筋のよい手（sim.js の plan をページの道具で）で勝つ。本物のタップだけで「生命のゆりかご」に勝つ回も1本。
-//    ベスト・星・合計点の保存、まだ開いていないシナリオは押せない
-// 4. 危険の知らせ（凍りそう → 「火山で暖める」）と、自由モードの危機のカード
-// 5. 自由モード：星のデザイン（名前・ひな形）→ 海と生命の節目のお祝い・コンボ図鑑 → 共有URLで同じ星 → 再読み込みで続きから → 古い保存 → 宇宙時代のエンディング
-// 6. 英語：タイトル・各タブ・デザイン・共有・図鑑・シナリオ・結果・危機・エンディングで、日本語が見えない
+//   node tools/tests/planet-play.js [名前]   … 全部（約4〜6分）。スクリーンショットは tools/tests/out/shots/planet-play/
+// 1. はじめて：コーチ（本物の操作：ドラッグで回す → ▶ → 「山」を長おしでなぞる → 降りる → キーで歩いて光の柱 → 上空へ）
+// 2. 彫刻：長おしの一筆で山脈（ops がふえ、地形が変わり、地面の高さが上がる）・海をほる・タップの道具
+// 3. 地上：降りる → キー（WASD）とタッチ（スティック）で歩く・ジャンプ・地面にぴったり・星を一周（実績）・見つけて図鑑と✦
+// 4. 時代：海の時代のタイトル、危機（凍りそう → 火山の提案）
+// 5. お題8つ：何もしないと失敗、筋のよい手（sim.js の plan をページの道具で、dawn は歩いて図書館）で勝つ。合計点
+// 6. 保存と再開（地形・見つけたもの・わたしの銀河）、共有 URL（同じ地形）、古い保存
+// 7. ふしぎな星（小さな月は大きくジャンプ）、まなぶ（章 → やってみる → 3問チェック → 記録。ランキングに入らない）、なぜ？カード
+// 8. 英語：日本語が見えない（タイトル・まなぶ・なぜ？・クイズ・地上・結果）／画質と fps
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -19,301 +19,271 @@ const { jpScan } = require('./lib/layout');
 
 const OUT = path.join(__dirname, 'out', 'shots', 'planet-play');
 const results = [];
-const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + JSON.stringify(info)}`); };
+const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + JSON.stringify(info).slice(0, 600)}`); };
 const SAVE = 'kusoge.planet.save', WORLD = 'kusoge.planet.world';
-const SEEN = { 'kusoge.planet.howto': '1', [SAVE]: { v: 1, sc: {}, total: 0, stats: {}, tut: 1 } };
+const SEEN = { 'kusoge.planet.howto': '1', 'kusoge.planet.q': 'lo', [SAVE]: { v: 1, sc: {}, total: 0, stats: {}, tut: 1 } };
 
 async function open(env, o = {}) {
-  const s = await B.newSession(env, { vp: V.get(o.vp || 'ip12'), lang: o.lang || 'ja', seed: o.seed || {}, isMobile: false, hasTouch: false });
+  const s = await B.newSession(env, { vp: V.get(o.vp || 'ip12'), lang: o.lang || 'ja', seed: o.seed || {}, isMobile: !!o.touch, hasTouch: !!o.touch });
   await s.goto('/planet/?debug' + (o.query || ''));
-  await s.page.waitForFunction(() => window.__kb && __kb.ready && __kb.ready());
+  await s.page.waitForFunction(() => window.__kb && __kb.ready && __kb.ready(), null, { timeout: 30000 });
   return s;
 }
 const st = p => p.evaluate(() => __kb.state());
 const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.png') });
-async function canvasCenter(p) { return p.evaluate(() => { const b = document.getElementById('cv').getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }); }
-// a point of open sea that faces the camera (optionally near lat/lon), in page pixels
-async function seaPoint(p, near) {
-  return p.evaluate(near => {
-    const P = __planet, S = P.S, w = P.world, cv = document.getElementById('cv').getBoundingClientRect();
-    let best = null, bd = 1e9;
-    for (let c = 0; c < S.N; c++) {
-      if (w.lf[c] > 0.05 || !S.habitable(w, c)) continue;
-      const [lat, lon] = S.cellLL(c), xy = P.project(lat, lon);
-      if (xy[2] > 0.995 || xy[0] < cv.left + 30 || xy[0] > cv.right - 30 || xy[1] < cv.top + 140 || xy[1] > cv.bottom - 90) continue;
-      const hit = P.pick(xy[0], xy[1]); if (!hit || w.lf[S.cellOf(hit.lat, hit.lon)] > 0.05) continue;
-      const d = near ? S.angDeg(lat, lon, near[0], near[1]) : Math.hypot(xy[0] - (cv.left + cv.width / 2), xy[1] - (cv.top + cv.height / 2));
-      if (d < bd) { bd = d; best = [xy[0], xy[1], lat, lon]; }
-    }
+const center = p => p.evaluate(() => { const b = document.getElementById('cv').getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; });
+async function hold(p, key, ms) { await p.keyboard.down(key); await p.waitForTimeout(ms); await p.keyboard.up(key); }
+// a point of land (or sea) facing the camera, in page pixels
+async function screenPoint(p, land) {
+  return p.evaluate(land => {
+    const P = __planet, S = P.S, w = P.world, cv = document.getElementById('cv').getBoundingClientRect(); let best = null, bd = 1e9;
+    for (let c = 0; c < S.N; c++) { const isLand = w.lf[c] > 0.9; if (isLand !== land) continue; const [lat, lon] = S.cellLL(c), xy = P.project(lat, lon); if (xy[0] < cv.left + 40 || xy[0] > cv.right - 40 || xy[1] < cv.top + 170 || xy[1] > cv.bottom - 220) continue;
+      const h = P.pickAt(xy[0], xy[1]); if (!h || S.angDeg(h.lat, h.lon, lat, lon) > 4) continue; const d = Math.hypot(xy[0] - (cv.left + cv.width / 2), xy[1] - (cv.top + cv.height / 2)); if (d < bd) { bd = d; best = [xy[0], xy[1], lat, lon]; } }
     return best;
-  }, near || null);
+  }, land);
+}
+// turn the walker toward a site and walk there with real key presses
+async function walkTo(p, siteId, maxMs) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < (maxMs || 20000)) {
+    const r = await p.evaluate(id => { const P = __planet, E = P.E, s = P.S.sites(P.world).find(x => x.id === id); if (!s || s.found) return { done: true };
+      const q = P.S.dirOf(s.lat, s.lon), t = new E.p.constructor(q[0] - E.p.x, q[1] - E.p.y, q[2] - E.p.z); t.addScaledVector(E.p, -t.dot(E.p));
+      const side = new E.p.constructor().crossVectors(E.p, E.f), ang = Math.atan2(t.dot(side), t.dot(E.f)); return { ang }; }, siteId);
+    if (r.done) return true;
+    if (Math.abs(r.ang) > 0.25) await hold(p, r.ang > 0 ? 'KeyA' : 'KeyD', Math.min(500, Math.abs(r.ang) / 2.4 * 1000)); else await hold(p, 'KeyW', 900);
+  }
+  return false;
 }
 
-async function tutorial(env) {
-  console.log('1. first visit: how to play → tutorial with real input');
-  const s = await open(env); const p = s.page;
+async function coach(env) {
+  console.log('1. first visit: the coach, with real input');
+  const s = await open(env, { seed: { 'kusoge.planet.q': 'lo' } }); const p = s.page;
   let x = await st(p);
-  check('first visit shows how to play', x.overlays.includes('howto'), x.overlays);
-  await p.click('#howtoGo');
+  check('a first visit drops straight into a newborn planet with a coach bubble (no text wall)', x.mode === 'free' && x.t === 0 && x.coach === 0 && x.era === 'molten' && x.overlays.length === 0, [x.mode, x.coach, x.overlays]);
+  await shot(p, 'coach-molten');
+  const c = await center(p);
+  await p.mouse.move(c[0] - 90, c[1]); await p.mouse.down(); await p.mouse.move(c[0] + 90, c[1] + 20, { steps: 10 }); await p.mouse.up();
+  x = await st(p); check('dragging turns the globe (step 2)', x.coach === 1, x.coach);
+  await p.click('#playBtn'); await p.waitForTimeout(600); await p.click('#playBtn');
+  x = await st(p); check('▶ runs time', x.t > 1e6, x.t);
+  await p.evaluate(() => __planet.run(1.2e8, { quiet: true, coarse: 5e4 }));
+  x = await st(p); check('an ocean forms; the coach moves on to the mountain tool', x.ms.ocean != null && x.coach === 2 && x.tool === 'raise', [x.ms, x.coach, x.tool]);
+  check('a new era is announced with a title card', !!x.eraCard && /海/.test(x.eraCard), x.eraCard);
+  await shot(p, 'era-ocean');
+  const pt = await screenPoint(p, true) || await screenPoint(p, false);
+  const ops0 = x.ops, geo0 = x.geoV;
+  await p.mouse.move(pt[0], pt[1]); await p.mouse.down(); await p.waitForTimeout(800);
+  for (let k = 1; k <= 8; k++) { await p.mouse.move(pt[0] + k * 6, pt[1] - k * 3); await p.waitForTimeout(120); }
+  await p.mouse.up();
   x = await st(p);
-  check('a new planet starts at its birth with the tutorial', x.mode === 'free' && x.tutorial === 0 && x.t === 0 && x.overlays.length === 0 && !!x.name, x);
-  const c = await canvasCenter(p);
-  await p.mouse.move(c[0] - 80, c[1]); await p.mouse.down(); await p.mouse.move(c[0] + 80, c[1] + 20, { steps: 12 }); await p.mouse.up();
-  x = await st(p); check('dragging the globe turns it (step 2)', x.tutorial === 1, x.tutorial);
-  await p.click('#playBtn'); await p.waitForTimeout(700);
-  x = await st(p); check('▶ runs time at 10 million years a second', x.running && x.t > 2e6 && x.speedYps === 1e7 && x.tutorial === 2, { t: x.t, sp: x.speedYps, tut: x.tutorial });
-  await p.click('#playBtn');
-  check('step 3 opens the tools', x.tab === 'tools', x.tab);
-  await p.click('.tl[data-k="volcano"]');
-  const c2 = await canvasCenter(p); await p.mouse.click(c2[0], c2[1]);
-  x = await st(p); check('Volcano → tap the globe erupts, with effects on the globe (step 3)', x.events.includes('volcano') && x.tutorial === 3 && x.fx > 0, { ev: x.events, tut: x.tutorial, fx: x.fx });
-  await p.waitForTimeout(400); await shot(p, 'tutorial-volcano');
-  await p.evaluate(() => __planet.run(1.3e8, { quiet: true }));
-  x = await st(p); check('an ocean forms and the journey celebrates it', x.ms.ocean != null && x.water > 0.5, x.ms);
-  await p.click('.tl[data-k="seed"]');
-  const sp = await seaPoint(p);
-  if (sp) await p.mouse.click(sp[0], sp[1]);
+  check('hold and stroke with the Mountain tool: a range is sculpted (one stroke, many dabs)', x.ops > ops0 && x.geoV > geo0 && x.coach === 3, { ops: [ops0, x.ops], coach: x.coach });
+  await shot(p, 'sculpt');
+  await p.click('#diveBtn'); await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 });
+  x = await st(p); check('“Dive” flies down to the surface; the walker stands on the ground', x.view === 'surface' && x.coach === 4 && Math.abs(x.explorer.r - x.explorer.ground) < 0.003, x.explorer);
+  const target = await p.evaluate(() => { const P = __planet, [a, o] = P.E.latLon(); const s = P.S.sites(P.world).filter(q => !q.found).sort((q, r) => P.S.angDeg(a, o, q.lat, q.lon) - P.S.angDeg(a, o, r.lat, r.lon))[0]; return s && s.id; });
+  const got = await walkTo(p, target, 40000);
   x = await st(p);
-  check('Life → tap the sea starts life there (step 4)', x.stage === 1 && x.reachOn && x.tutorial === 4, { st: x.stage, tut: x.tutorial, sp });
-  await p.waitForTimeout(300);
-  x = await st(p); check('a celebration shows on the globe', !!x.celeb, x.celeb);
-  await shot(p, 'tutorial-life');
-  await p.click('#tutNext');
-  x = await st(p); check('the tutorial finishes and is remembered; the journey takes over', x.tutorial === null && x.save.tut === 1 && !!x.journey, x);
+  check('walking with WASD reaches the pillar of light: a discovery, ✦ and the log', got && x.found.includes(target) && x.save.stats.spark > 0 && x.save.dex.length > 0 && x.coach === 5, { got, target, found: x.found, coach: x.coach });
+  await p.waitForTimeout(300); await shot(p, 'discovery');
+  await p.click('#upBtn'); await p.waitForFunction(() => __kb.state().view === 'orbit', null, { timeout: 15000 });
+  x = await st(p); check('“Up” flies back to orbit and the coach is done and remembered', x.view === 'orbit' && x.coach === null && x.save.tut === 1, [x.view, x.coach]);
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
 }
 
-async function physics(env) {
-  console.log('2. climate physics (energy balance + carbon cycle)');
-  const s = await open(env, { seed: SEEN }); const p = s.page;
-  const r = await p.evaluate(() => {
-    const S = __planet.S, out = {};
-    const earth = (o) => { o = o || {}; const w = S.create({ t: o.t || 4.57e9, p: Object.assign({ seed: 7, co2: 280 }, o.p || {}) }); w.noCiv = true; w.wl = 1; S.seaLevel(w); w.life.st = 6; w.life.euk = 1; w.o2 = 1; w.life.div = 70; S.settle(w, 2e5, o.co2 || 280); return w; };
-    const eqT = (w, co2, yrs) => { S.settle(w, yrs || 1e5, co2); return w.d.Tg; };
-    const w = earth(); out.t280 = w.d.Tg; out.ice280 = w.d.ice; out.t560 = eqT(w, 560); out.t1120 = eqT(w, 1120); out.t140 = eqT(w, 140);
-    const a = earth({ p: { dist: 1.03 } }), b = earth({ p: { dist: 0.97 } }); out.tFar = a.d.Tg; out.tNear = b.d.Tg;
-    const sb = earth({ t: 4.0e9 }); S.setParam(sb, 'co2', 900); S.advance(sb, 2e5); out.preT = sb.d.Tg;
-    S.setParam(sb, 'dist', 1.12); S.advance(sb, 6e4); out.snowOn = !!sb.flags.snow; out.snowIce = sb.d.ice;
-    S.setParam(sb, 'dist', 1.0); S.advance(sb, 5e4); out.stillFrozen = !!sb.flags.snow && sb.d.ice > 0.8; out.co2a = sb.A; out.W = sb.d.Wl; out.V = sb.d.V;
-    for (let k = 0; k < 4; k++) S.tools.volcano(sb, 0, k * 90);
-    let yrs = 0; while (sb.flags.snow && yrs < 2e7) { S.advance(sb, 1e5); yrs += 1e5; }
-    out.thawYrs = yrs; out.thawed = !sb.flags.snow; out.co2b = sb.A; out.thawEv = sb.ev.some(e => e.k === 'thaw');
-    const sn = earth({ t: 4.0e9 }); S.setParam(sn, 'co2', 900); S.advance(sn, 2e5); S.setParam(sn, 'dist', 1.12); S.advance(sn, 6e4); S.setParam(sn, 'dist', 1.0);
-    yrs = 0; while (sn.flags.snow && yrs < 3e7) { S.advance(sn, 2.5e5); yrs += 2.5e5; } out.thawNatural = yrs; out.thawedNatural = !sn.flags.snow;
-    const rg = earth(); S.setParam(rg, 'dist', 0.86); S.advance(rg, 1e5); out.rgT = rg.d.Tg; out.rgBoil = rg.ev.some(e => e.k === 'boil');
-    S.advance(rg, 3e8, { coarse: 5e4 }); out.rgWater = rg.wl; out.rgDry = rg.ev.some(e => e.k === 'dry'); out.rgDead = !!rg.flags.dead || rg.life.st === 0;
-    const th = earth(); S.advance(th, 1e6); out.base = th.A; S.setParam(th, 'co2', 2000); S.advance(th, 1e3); out.spikeT = th.d.Tg; S.advance(th, 1e6); out.afterSpike = th.A; out.afterSpikeT = th.d.Tg;
-    S.setParam(th, 'co2', 100); S.advance(th, 1e6); out.afterDrop = th.A;
-    const br = earth(); S.advance(br, 1e6); out.co2Now = br.A; S.advance(br, 8e8, { coarse: 5e4 }); out.co2Later = br.A; out.lumLater = S.lum(br.t);
-    return out;
-  });
-  check('present-day Earth: about 15 °C with ice caps', r.t280 > 11 && r.t280 < 19 && r.ice280 > 0.05 && r.ice280 < 0.25, [r.t280, r.ice280]);
-  check('more CO2 → warmer (140 < 280 < 560 < 1120 ppm)', r.t140 < r.t280 && r.t280 < r.t560 && r.t560 < r.t1120, [r.t140, r.t280, r.t560, r.t1120]);
-  check('CO2 doubling warms 2–6 °C (sensitivity incl. ice-albedo feedback)', r.t560 - r.t280 > 2 && r.t560 - r.t280 < 6, r.t560 - r.t280);
-  check('farther from the star → colder, closer → warmer', r.tFar < r.t280 && r.tNear > r.t280, [r.tFar, r.t280, r.tNear]);
-  check('dimming the star sets off a snowball (ice-albedo runaway)', r.snowOn && r.snowIce > 0.9, [r.snowOn, r.snowIce]);
-  check('hysteresis: back at 1 AU the planet stays frozen', r.stillFrozen, r.stillFrozen);
-  check('in a snowball weathering stops while volcanoes keep going', r.W < r.V * 0.4, [r.W, r.V]);
-  check('volcanic CO2 builds up and the snowball thaws', r.thawed && r.thawEv && r.co2b > r.co2a, [r.thawed, r.co2a, r.co2b, r.thawYrs]);
-  check('without help it also thaws, but later', r.thawedNatural && r.thawNatural > r.thawYrs, [r.thawNatural, r.thawYrs]);
-  check('too close → runaway greenhouse (oceans boil)', r.rgBoil && r.rgT > 65, [r.rgBoil, r.rgT]);
-  check('the oceans escape and life ends', r.rgDry && r.rgWater < 0.05 && r.rgDead, [r.rgDry, r.rgWater, r.rgDead]);
-  check('weathering draws a CO2 spike back down (thermostat)', r.spikeT > r.t280 + 3 && r.afterSpike < r.base * 1.6, [r.base, r.afterSpike, r.spikeT]);
-  check('and refills CO2 after a drop', r.afterDrop > 160, r.afterDrop);
-  check('brightening star: the thermostat lowers CO2', r.co2Later < r.co2Now * 0.6 && r.lumLater > 1.05, [r.co2Now, r.co2Later]);
+async function sculptAndWalk(env) {
+  console.log('2–3. sculpting, digging, walking with keys and touch, jumping, round the planet');
+  const s = await open(env, { seed: SEEN, touch: true }); const p = s.page;
+  await p.evaluate(() => { __planet.earthNow(); __planet.faceTo(10, 30); });
+  let x = await st(p);
+  const g0 = await p.evaluate(() => { const d = __planet.S.dirOf(10, 30); return __planet.W.groundAt(...d); });
+  await p.evaluate(() => { __planet.pick('raise'); for (let k = 0; k < 10; k++) __planet.tool('raise', 10, 30, { cont: k > 0 }); });
+  const g1 = await p.evaluate(() => { const d = __planet.S.dirOf(10, 30); return __planet.W.groundAt(...d); });
+  check('raising lifts the drawn ground (what you walk on)', g1 > g0 + 0.01, [g0, g1]);
+  await p.evaluate(() => { __planet.pick('raise'); __planet.pick('sink'); for (let k = 0; k < 12; k++) __planet.tool('sink', -20, 60, { cont: k > 0 }); });
+  const lf = await p.evaluate(() => __planet.world.lf[__planet.S.cellOf(-20, 60)]);
+  check('digging makes sea', lf < 0.5, lf);
+  await p.evaluate(() => __planet.dive(10, 30)); await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 });
+  const a = await st(p);
+  await hold(p, 'KeyW', 2500);
+  let b = await st(p);
+  check('W walks forward over the sphere', b.explorer.walked > a.explorer.walked + 0.02 && Math.abs(b.explorer.r - b.explorer.ground) < 0.004 || b.explorer.swim, [a.explorer, b.explorer]);
+  await p.keyboard.down('Space'); await p.waitForTimeout(150);
+  x = await st(p); await p.keyboard.up('Space');
+  check('Space jumps', x.explorer.jumped >= 1 && x.explorer.alt > 0, x.explorer);
+  await p.waitForTimeout(1200);
+  // touch: drag the stick up with real touch events
+  const zone = await p.evaluate(() => { const r = document.getElementById('stickZone').getBoundingClientRect(); return [r.left + r.width * 0.5, r.top + r.height * 0.6]; });
+  const cdp = await p.context().newCDPSession(p);
+  const w0 = (await st(p)).explorer.walked;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: zone[0], y: zone[1] }] });
+  for (let k = 1; k <= 6; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: zone[0], y: zone[1] - k * 9 }] }); await p.waitForTimeout(30); }
+  await p.waitForTimeout(2200);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  x = await st(p); check('touch: the virtual stick walks', x.explorer.walked > w0 + 0.02, [w0, x.explorer.walked]);
+  const jb = await p.evaluate(() => { const r = document.getElementById('jumpBtn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+  const j0 = x.explorer.jumped; await p.touchscreen.tap(jb[0], jb[1]); await p.waitForTimeout(200);
+  x = await st(p); check('touch: the jump button jumps', x.explorer.jumped > j0, [j0, x.explorer.jumped]);
+  await shot(p, 'surface-walk');
+  // all the way round: most of the loop is skipped, the last part is walked for real
+  await p.evaluate(() => { __planet.E.walked = 2 * Math.PI - 0.06; });
+  await hold(p, 'KeyW', 2500); await p.waitForTimeout(400);
+  x = await st(p); check('walking all the way round the planet is noticed (achievement record)', x.save.stats.walk >= 1, x.save.stats);
+  check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
 }
 
 async function scenarios(env) {
-  console.log('3. scenarios: lose by doing nothing, win with a sensible plan (through the page)');
+  console.log('5. challenges: lose by doing nothing, win with a sensible plan (through the page)');
   const s = await open(env, { seed: SEEN }); const p = s.page;
   const ids = await p.evaluate(() => __planet.scenarios());
-  check('8 scenarios', ids.length === 8, ids);
-  let x = await st(p);
+  check('8 challenges with the saved ids', ids.join() === 'cradle,snow,green,gate,goe,sun,warm,dawn', ids);
   const locked = await p.$$eval('#tList .scard', b => b.map(e => e.classList.contains('locked')));
-  check('a new player can open the first two scenarios only', locked.join() === 'false,false,true,true,true,true,true,true', locked);
-  await p.click('#tList .scard:nth-child(5)');
-  x = await st(p); check('a locked scenario does not start', x.mode === 'title' && x.overlays.includes('ovTitle'), x.mode);
+  check('a new player can open the first two only', locked.join() === 'false,false,true,true,true,true,true,true', locked);
   for (let i = 0; i < ids.length; i++) {
-    const r = await p.evaluate(async i => {
-      const P = __planet; P.scenario(i); P.begin();
-      const lim = P.sc.def.limit;
-      for (let k = 0; k < 20 && !P.sc.ended; k++) P.run(lim / 20, { quiet: true, chunk: P.sc.def.civ ? 25 : lim / 20 });
-      if (!P.sc.ended) P.run(lim, { quiet: true });
-      const x = __kb.state();
-      return { ended: x.sc.ended, overlays: x.overlays, best: x.save.sc[x.sc.id] ? x.save.sc[x.sc.id].best : 0, title: document.getElementById('rTitle').textContent, why: document.getElementById('rWhy').textContent };
-    }, i);
-    check(`${ids[i]}: doing nothing fails`, r.ended && r.overlays.includes('ovResult') && r.best === 0 && /失敗/.test(r.title), r);
-    const w = await p.evaluate(async i => {
-      const P = __planet; P.scenario(i); P.begin();
-      const lim = P.sc.def.limit;
-      for (let k = 0; k < 20 && !P.sc.ended; k++) { P.strat(k); P.run(lim / 20, { quiet: true, chunk: P.sc.def.civ ? 25 : lim / 20 }); }
-      if (!P.sc.ended) P.run(lim, { quiet: true });
-      const x = __kb.state();
-      return { ended: x.sc.ended, best: x.save.sc[x.sc.id] ? x.save.sc[x.sc.id].best : 0, stars: x.save.sc[x.sc.id] ? x.save.sc[x.sc.id].stars : 0, total: x.save.total, title: document.getElementById('rTitle').textContent, used: x.sc.used, actions: x.sc.actions };
-    }, i);
-    check(`${ids[i]}: the plan wins (score ${w.best}, ${w.stars}★, ${w.actions} tools)`, w.ended && /クリア/.test(w.title) && w.best >= 600 && w.best <= 1000 && w.stars >= 1, w);
+    const r = await p.evaluate(i => { const P = __planet; P.scenario(i); P.begin(); const lim = P.sc.def.limit; for (let k = 0; k < 20 && !P.sc.ended; k++) P.run(lim / 20, { quiet: true, chunk: P.sc.def.civ ? 25 : lim / 20 }); if (!P.sc.ended) P.run(lim, { quiet: true }); const x = __kb.state(); return { ended: x.sc.ended, win: x.sc.win, ov: x.overlays, title: document.getElementById('rTitle').textContent }; }, i);
+    check(`${ids[i]}: doing nothing fails`, r.ended && !r.win && r.ov.includes('ovResult') && /失敗/.test(r.title), r);
+    const w = await p.evaluate(i => { const P = __planet; P.scenario(i); P.begin(); const lim = P.sc.def.limit; for (let k = 0; k < 20 && !P.sc.ended; k++) { P.strat(k); P.run(lim / 20, { quiet: true, chunk: P.sc.def.civ ? 25 : lim / 20 }); } if (!P.sc.ended) P.run(lim, { quiet: true }); const x = __kb.state(); return { ended: x.sc.ended, win: x.sc.win, score: x.sc.score, best: x.save.sc[x.sc.id] && x.save.sc[x.sc.id].best, title: document.getElementById('rTitle').textContent }; }, i);
+    check(`${ids[i]}: the plan wins (${w.score})`, w.ended && w.win && /クリア/.test(w.title) && w.best >= 600, w);
     if (i === 0) await shot(p, 'result');
   }
-  x = await st(p);
-  const sum = Object.values(x.save.sc).reduce((a, v) => a + v.best, 0);
-  check('the scenario total is the sum of the bests (ranking value)', x.save.total === sum && sum > 4800 && sum <= 8000, [x.save.total, sum]);
-  const rank = await p.evaluate(() => KoboPlatform.rankValue('planet'));
-  check('KoboPlatform.rankValue reads the total', rank === x.save.total, rank);
-  await s.close();
-}
-
-async function cradleByHand(env) {
-  console.log('3b. the cradle, won with real taps only (volcanoes, then life in the thawed sea)');
-  const s = await open(env, { seed: SEEN }); const p = s.page;
-  await p.click('#tList .scard:nth-child(1)');
-  let x = await st(p); check('the intro shows the goal, the chain and the tools', x.overlays.includes('ovIntro') && /🌋/.test(await p.textContent('#inChain')) && /8/.test(await p.textContent('#inTools')), x.overlays);
-  await p.click('#inGo'); await p.click('#playBtn'); // pause: we act first
-  await p.click('.tl[data-k="volcano"]');
-  for (let k = 0; k < 3; k++) { const pt = await seaPoint(p); await p.mouse.click(pt[0] + (k - 1) * 18, pt[1]); }
-  x = await st(p);
-  check('three taps: three eruptions, the budget counts down', x.sc.actions === 3 && x.sc.left === 5 && /のこり\s*5/.test(await p.textContent('#budget')), x.sc);
-  await p.evaluate(() => __planet.run(1e6, { quiet: true }));
-  const v = await p.evaluate(() => { const vs = __planet.world.volcs; return [vs[vs.length - 1].lat, vs[vs.length - 1].lon]; });
-  await p.click('.tl[data-k="seed"]');
-  const sp = await seaPoint(p, v); await p.mouse.click(sp[0], sp[1]);
-  x = await st(p);
-  check('life sown next to the volcano: the hot-spring combo', x.stage === 1 && x.combos.includes('vent'), { st: x.stage, c: x.combos });
-  await p.waitForTimeout(250); await shot(p, 'cradle-combo');
-  await p.click('#playBtn'); await p.click('#fastBtn');
-  await p.waitForFunction(() => __kb.state().sc.ended, null, { timeout: 90000 }).catch(() => {});
-  x = await st(p);
-  check('...and the cradle is won in real time', x.sc.ended && x.sc.win && /クリア/.test(await p.textContent('#rTitle')), x.sc);
-  check('the combo is in the result and in the combo book', /熱水のゆりかご/.test(await p.textContent('#rWhy')) && x.save.cmb.includes('vent'), x.save.cmb);
-  await shot(p, 'cradle-win');
+  const x = await st(p), sum = Object.values(x.save.sc).reduce((a, v) => a + v.best, 0);
+  check('the total is the sum of the bests (the ranking value, ≤ 8000)', x.save.total === sum && sum > 4800 && sum <= 8000, [x.save.total, sum]);
+  check('KoboPlatform.rankValue reads the total', await p.evaluate(() => KoboPlatform.rankValue('planet')) === x.save.total);
+  // the 3-question check after a challenge: optional, does not change the total
+  await p.click('#rQuiz'); for (let q = 0; q < 3; q++) { await p.click('#qzA button >> nth=0'); await p.click('#qzNext'); }
+  const y = await st(p); check('the 3-question check after a challenge runs and leaves the total alone', y.overlays.includes('ovResult') && y.save.total === x.save.total, [y.overlays, y.save.total]);
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
 }
 
-async function danger(env) {
-  console.log('4. danger: warnings that suggest a verb, and crisis cards');
+async function snowAndDawnByHand(env) {
+  console.log('5b. the snowball by real taps (a great eruption and a comet), the dawn by walking to the libraries');
   const s = await open(env, { seed: SEEN }); const p = s.page;
-  await p.evaluate(() => { __planet.scenario(0); __planet.begin(); });
-  let shown = false;
-  for (let k = 0; k < 20 && !shown; k++) { await p.evaluate(() => __planet.run(2.5e5, { quiet: true })); shown = (await st(p)).dangerShown; }
-  let x = await st(p);
-  check('the cradle warns before it freezes', shown && x.danger.k === 'snow' && !x.sc.ended, x.danger);
-  await shot(p, 'danger');
+  await p.evaluate(() => { __planet.scenario(1); __planet.begin(); });
+  await p.waitForTimeout(500);
+  let x = await st(p); check('a frozen planet: the danger card suggests volcanoes', x.dangerShown && /火山/.test(await p.textContent('#dgGo')), x.danger);
+  await shot(p, 'crisis-snowball');
   await p.click('#dgGo');
-  x = await st(p); check('“Warm it with volcanoes” picks the volcano tool', x.tool === 'volcano' && x.tab === 'tools', [x.tool, x.tab]);
-  await p.evaluate(() => { __planet.earthNow(); __planet.set('dist', 0.85); __planet.run(2e5); });
-  x = await st(p);
-  check('free mode: the runaway greenhouse explains itself and offers a fix', x.overlays.includes('ovEvent') && /沸騰/.test(await p.textContent('#evTitle')) && await p.isVisible('#evAct'), x.overlays);
-  await p.click('#evAct');
-  x = await st(p); check('the fix opens the planet settings', x.tab === 'planet' && !x.overlays.includes('ovEvent'), x.tab);
+  const pt = await screenPoint(p, false) || await screenPoint(p, true);
+  for (let k = 0; k < 3; k++) await p.mouse.click(pt[0] + k * 3, pt[1]);
+  await p.click('.tool[data-k="asteroid"]'); const pt2 = await screenPoint(p, false); await p.mouse.click(pt2[0] - 60, pt2[1] + 40);
+  x = await st(p); check('four taps: a great eruption and a comet on the ice', x.sc.actions === 4 && x.combos.includes('super'), [x.sc, x.combos]);
+  await p.evaluate(() => __planet.run(2e6, { quiet: true, chunk: 1e5 }));
+  x = await st(p); check('…and the snowball thaws: cleared', x.sc.ended && x.sc.win, x.sc);
+  await p.evaluate(() => { __planet.closeAll(); __planet.scenario(7); __planet.begin(); });
+  const libs = await p.evaluate(() => __planet.S.sites(__planet.world).filter(q => q.k === 'lib').map(q => q.id));
+  await p.evaluate(() => __planet.dive()); await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 });
+  for (const id of libs) { await p.evaluate(id => { const s = __planet.S.sites(__planet.world).find(q => q.id === id); __planet.teleport(s.lat - 9, s.lon); }, id); await walkTo(p, id, 30000); }
+  x = await st(p); check('walking to the three ancient libraries', libs.length === 3 && libs.every(id => x.found.includes(id)), [libs, x.found]);
+  await shot(p, 'dawn-library');
+  await p.evaluate(() => __planet.run(200, { quiet: true, chunk: 25 }));
+  x = await st(p); check('…lifts the civilization into space: cleared', x.sc.ended && x.sc.win, x.sc);
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
 }
 
-async function freeMode(env) {
-  console.log('5. free mode: design, milestones, sharing, saving, the ending');
+async function saveShare(env) {
+  console.log('6. save and resume, the galaxy, sharing, old saves');
   const s = await open(env, { seed: SEEN }); const p = s.page;
-  await p.click('#tNew');
-  let x = await st(p); check('“Make your own planet” opens the designer', x.overlays.includes('ovDesign'), x.overlays);
-  await p.fill('#dzName', 'テスト星'); await p.click('#dzPreset [data-k="ocean"]');
-  const wv = await p.$eval('#dz_water', e => +e.value); check('a preset sets the sliders (water world)', wv > 2, wv);
-  await shot(p, 'design');
-  await p.click('#dzGo');
-  x = await st(p); check('the planet is born with its name', x.mode === 'free' && x.name === 'テスト星' && x.t === 0 && /テスト星/.test(await p.textContent('#iEra')), [x.mode, x.name]);
-  await p.evaluate(() => { __planet.run(1.3e8, { quiet: true, coarse: 5e4 }); __planet.tool('volcano', 5, 30); });
-  await p.evaluate(() => __planet.tool('seed', 5, 33));
-  await p.evaluate(() => __planet.run(1e9, { quiet: true, coarse: 5e4 }));
-  x = await st(p);
-  check('milestones: ocean, then life', x.ms.ocean != null && x.ms.life != null && x.ms.life >= x.ms.ocean, x.ms);
-  check('the journey points to the next milestone', /つぎ/.test(x.journey || ''), x.journey);
-  check('milestones go into the records', x.save.stats.life >= 1 && x.save.stats.ms >= 2, x.save.stats);
-  await p.evaluate(() => __planet.combos());
-  const book = await p.$$eval('#cbList li', l => l.map(e => e.className));
-  check('the combo book lists 5 combos, the found one first-class', book.length === 5 && book.filter(c => c === 'found').length >= 1, book);
-  await shot(p, 'combo-book');
-  await p.click('#cbClose');
-  const url = await p.evaluate(() => __planet.shareUrl());
-  check('the share URL carries the recipe', /\?p=[A-Za-z0-9_-]+$/.test(url), url);
-  const s2 = await open(env, { seed: SEEN, query: '&' + url.split('?')[1] }); const p2 = s2.page;
-  let y = await st(p2);
-  check('opening it shows the shared design with the same name', y.overlays.includes('ovDesign') && await p2.isVisible('#dzShared') && await p2.inputValue('#dzName') === 'テスト星', y.overlays);
-  await p2.click('#dzGo');
-  y = await st(p2);
-  const same = await p2.evaluate(seed => __planet.world.seed === seed, await p.evaluate(() => __planet.world.seed));
-  check('…and grows the same planet (same seed and recipe)', y.mode === 'free' && same && Math.abs(y.dist - x.dist) < 1e-6, [same, y.dist, x.dist]);
-  await s2.close();
+  await p.click('#tNew'); await p.fill('#dzName', 'テスト星'); await p.click('#dzGo');
+  await p.evaluate(() => { __planet.run(1.3e8, { quiet: true, coarse: 5e4 }); for (let k = 0; k < 6; k++) __planet.tool('raise', 15, 40 + k * 2, { cont: k > 0 }); __planet.tool('seed', 0, 0); __planet.tool('volcano', 5, 30); __planet.run(2e6, { quiet: true }); });
+  const site = await p.evaluate(() => { const s = __planet.S.sites(__planet.world).find(q => !q.found); __planet.S.discover(__planet.world, s.id); return s.id; });
   await p.evaluate(() => __planet.saveWorld());
   const a = await st(p);
+  const url = await p.evaluate(() => __planet.shareUrl());
+  check('the share URL carries the recipe with the sculpting', /\?p=[A-Za-z0-9_-]+$/.test(url) && (await p.evaluate(u => __planet.readCode(u.split('?p=')[1]).ops.length, url)) === a.ops, url.length);
   await s.reload(); await p.waitForFunction(() => window.__kb && __kb.ready());
-  x = await st(p);
-  check('after reload: the title offers to continue the named planet', x.mode === 'title' && await p.isVisible('#tContinue') && /テスト星/.test(await p.textContent('#tContinue')), x.overlays);
-  await p.click('#tContinue');
-  x = await st(p);
-  check('continue restores the same planet (time, stage, life map, milestones)', x.mode === 'free' && Math.abs(x.t - a.t) < 1 && x.stage === a.stage && x.reachOn && Math.abs(x.seaLife - a.seaLife) < 0.05 && x.ms.life === a.ms.life, { t: [a.t, x.t], st: [a.stage, x.stage] });
-  check('the graph history came back too', x.hist > 1 && x.histL > 1, [x.hist, x.histL]);
-  await p.click('#playBtn'); await p.waitForTimeout(1500); await p.click('#playBtn');
-  const z = await st(p);
-  check('time keeps running after loading', z.t > x.t, [x.t, z.t]);
+  let x = await st(p);
+  check('after reload: the title offers to continue the named planet', x.mode === 'title' && /テスト星/.test(await p.textContent('#tContinue')), x.overlays);
+  await p.click('#tContinue'); x = await st(p);
+  check('continue restores the same planet (time, sculpting, finds)', x.mode === 'free' && Math.abs(x.t - a.t) < 1 && x.ops === a.ops && x.found.includes(site), { t: [a.t, x.t], ops: [a.ops, x.ops] });
+  await p.evaluate(() => __planet.title()); await p.click('#tNew'); await p.click('#dzGo');
+  await p.evaluate(() => __planet.title());
+  const shelf = await p.$$eval('#tShelf .pc', l => l.length);
+  check('a second planet: the first one waits in “my galaxy”', shelf >= 1, shelf);
+  await p.click('#tShelf .pc'); x = await st(p); check('…and can be picked up again', x.mode === 'free' && x.name === 'テスト星', x.name);
   const raw = await p.evaluate(k => localStorage.getItem(k).length, WORLD);
-  check('the saved planet is small enough to sync (< 120 KB)', raw < 120000, raw);
-  const fps = await p.evaluate(async () => { __planet.speed(7); __planet.play(); await new Promise(r => setTimeout(r, 4500)); const q = __kb.state().quality; __planet.pause(); return q; });
-  console.log('      fps while running at 10 Myr/s (swiftshader):', JSON.stringify(fps));
-  check('it renders while running', fps.fps == null || fps.fps > 5, fps);
-  // a surprise: a solar flare lights up the auroras
-  await p.evaluate(() => { const w = __planet.world; w.nextSurp = w.t + 1; __planet.run(2e6, { quiet: true }); });
-  x = await st(p); check('surprises happen on a free planet', x.events.includes('surprise'), x.events.slice(-6));
-  // the ending: a civilization reaches space
-  await p.evaluate(() => { __planet.earthNow({ civ: true, stage: 7 }); __planet.run(3, { quiet: true }); const c = __planet.world.civ; c.tech = 99.95; c.pol = { en: 2, rs: 2, env: 1 }; __planet.run(5, { quiet: true }); });
-  await p.waitForFunction(() => __kb.state().overlays.includes('ovEnd'), null, { timeout: 8000 }).catch(() => {});
-  x = await st(p);
-  check('reaching space ends the story with a timeline', x.overlays.includes('ovEnd') && /物語/.test(await p.textContent('#endTitle')) && (await p.$$('#endList li')).length >= 3 && x.save.stats.ends >= 1, x.overlays);
-  await shot(p, 'ending');
-  await p.click('#endGo');
+  check('the saved galaxy is small enough to sync (< 150 KB)', raw < 150000, raw);
+  const s2 = await open(env, { seed: SEEN, query: '&' + url.split('?')[1] }); const p2 = s2.page;
+  let y = await st(p2);
+  check('opening the URL shows the shared design with its name', y.overlays.includes('ovDesign') && await p2.isVisible('#dzShared') && await p2.inputValue('#dzName') === 'テスト星', y.overlays);
+  await p2.click('#dzGo'); y = await st(p2);
+  const same = await p2.evaluate(ops => __planet.world.ops.length === ops, a.ops);
+  check('…and the new planet is born with the same sculpted land', y.mode === 'free' && same, [y.ops, a.ops]);
+  await shot(p2, 'shared');
+  await s2.close();
+  // an old ?p= link (before sculpting) still opens
+  const old = Buffer.from(JSON.stringify({ v: 1, n: 'Old', d: 1, s: 1, w: 1, seed: 1234 })).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const s3 = await open(env, { seed: SEEN, query: '&p=' + old }); y = await st(s3.page);
+  check('an old share link still opens the designer', y.overlays.includes('ovDesign') && await s3.page.inputValue('#dzName') === 'Old', y.overlays);
+  await s3.close();
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
+  // a save from before the redesign
+  const legacy = { 'kusoge.planet.howto': '1', 'kusoge.planet.q': 'lo', [SAVE]: { v: 1, sc: { green: { best: 812, stars: 2 }, snow: { best: 905, stars: 3 } }, total: 1717, stats: { life: 1, goe: 1, worlds: 2, clears: 2, maxMyr: 2400 }, tut: 1 },
+    [WORLD]: { v: 1, t: 2400000000, p: { dist: 1, size: 1, water: 1, n2: 0.78, co2: 300000, seed: 4242 }, A: 25000, O: 150000, ch4: 300, o2: 0.004, wl: 1, lost: 0, life: { st: 2, prog: 0.2, pre: 1, div: 6, nudge: null, euk: 0, seedT: -1 }, civ: null, ev: [{ t: 600000000, k: 'life' }], flags: { goe: 1 }, hist: { r: [], l: [] }, spd: 6 } };
+  const s4 = await open(env, { seed: legacy }); const p4 = s4.page;
+  x = await st(p4); check('old records keep their total', x.save.total === 1717 && /1,?717/.test(await p4.textContent('#tTotal')), x.save.total);
+  await p4.click('#tContinue'); x = await st(p4);
+  check('the old planet continues', x.mode === 'free' && x.stage === 2 && x.t === 2.4e9, [x.mode, x.stage]);
+  await p4.evaluate(() => __planet.run(5e7, { quiet: true })); x = await st(p4); check('…and keeps running', x.t > 2.4e9);
+  check('no page errors (old save)', !s4.log.pageErrors.length, s4.log.pageErrors);
+  await s4.close();
 }
 
-async function oldSave(env) {
-  console.log('5b. a save from before the redesign');
-  const old = { 'kusoge.planet.howto': '1', [SAVE]: { v: 1, sc: { green: { best: 812, stars: 2 }, snow: { best: 905, stars: 3 } }, total: 1717, stats: { life: 1, goe: 1, worlds: 2, clears: 2, maxMyr: 2400 }, tut: 1 },
-    [WORLD]: { v: 1, t: 2400000000, p: { dist: 1, size: 1, water: 1, n2: 0.78, co2: 300000, seed: 4242 }, A: 25000, O: 150000, ch4: 300, o2: 0.004, wl: 1, lost: 0, life: { st: 2, prog: 0.2, pre: 1, div: 6, nudge: null, euk: 0, seedT: -1 }, civ: null, ev: [{ t: 600000000, k: 'life' }, { t: 2300000000, k: 'goe' }], flags: { goe: 1 }, hist: { r: [], l: [] }, spd: 6 } };
-  const s = await open(env, { seed: old }); const p = s.page;
-  let x = await st(p);
-  check('old records keep their total', x.save.total === 1717 && /1,?717/.test(await p.textContent('#tTotal')), x.save.total);
-  const locked = await p.$$eval('#tList .scard', b => b.filter(e => e.classList.contains('locked')).length);
-  check('two clears open four scenarios', locked === 4, locked);
-  await p.click('#tContinue');
-  x = await st(p);
-  check('the old planet continues: life everywhere, its milestones known, no fanfare', x.mode === 'free' && x.stage === 2 && x.seaLife > 0.5 && x.ms.life != null && !x.celeb, { st: x.stage, ms: x.ms, c: x.celeb });
-  await p.evaluate(() => __planet.run(5e7, { quiet: true }));
-  x = await st(p); check('…and keeps running', x.t > 2.4e9, x.t);
+async function wondersLearn(env) {
+  console.log('7. wonder planets, learn mode, why cards');
+  const s = await open(env, { seed: SEEN }); const p = s.page;
+  for (const id of ['ring', 'ice', 'lava', 'moon', 'bloom']) { await p.click(`#tWonders .pc[data-w="${id}"]`); await p.waitForTimeout(300); await shot(p, 'wonder-' + id); await p.evaluate(() => __planet.title()); }
+  let x = await st(p); check('all five wonder planets can be visited (and are remembered)', x.save.stats.wonders === 5, x.save.stats);
+  const jump = async id => { await p.evaluate(id => { __planet.wonder(id); __planet.dive(); }, id); await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 }); await p.waitForTimeout(300); await p.keyboard.down('Space'); let m = 0; for (let k = 0; k < 14; k++) { await p.waitForTimeout(80); const e = (await st(p)).explorer; m = Math.max(m, e.alt / (e.r)); } await p.keyboard.up('Space'); return m; };
+  const hMoon = await jump('moon'); await shot(p, 'moon-jump'); const hEarth = await jump('ring');
+  check('the tiny moon: jumps go much higher', hMoon > hEarth * 2, [hMoon, hEarth]);
+  await p.evaluate(() => __planet.title('learn'));
+  const chap = await p.$$eval('#lList .chap', l => l.length); check('learn mode lists 7 chapters', chap === 7, chap);
+  await p.click('#lList .chap >> nth=0'); x = await st(p); check('a chapter opens with an explanation', x.overlays.includes('ovLesson') && /46億年/.test(await p.textContent('#lsText')), x.overlays);
+  await p.click('#lsGo'); await p.evaluate(() => __planet.run(1.2e8, { quiet: true, coarse: 5e4 })); await p.waitForTimeout(1500);
+  x = await st(p); check('trying it on the globe: the ocean forms and the result shows', x.overlays.includes('ovLesson') && x.lesson && x.lesson.phase === 'done', [x.overlays, x.lesson]);
+  await shot(p, 'learn-result');
+  await p.click('#lsGo'); x = await st(p); check('the 3-question check opens', x.overlays.includes('ovQuiz') && (await p.$$('#qzA button')).length === 3);
+  await shot(p, 'quiz');
+  for (let q = 0; q < 3; q++) { const right = await p.evaluate(() => { const Q = __planet.L.Q, id = __planet.L.CHAPTERS[0].quiz[__kb.state().quiz.i]; return Q[id].ok; }); await p.click(`#qzA button[data-a="${right}"]`); await p.click('#qzNext'); }
+  x = await st(p); check('the chapter is recorded as done (and the ranking total is untouched)', x.save.learn.includes('birth') && x.save.total === 0 && x.mode === 'title', [x.save.learn, x.save.total]);
+  // the real Earth: step through 4.6 billion years
+  await p.click('#lList .chap >> nth=6'); await p.click('#lsGo'); await shot(p, 'history-0');
+  for (let k = 0; k < 11; k++) { await p.click('#hsNext'); if (k === 8) await shot(p, 'history-kpg'); }
+  await p.waitForTimeout(1200); x = await st(p); check('“the real Earth” replays 4.6 billion years to today', x.overlays.includes('ovLesson') && x.lesson.phase === 'done', x.lesson);
+  await p.evaluate(() => { __planet.closeAll(); __planet.why('snow'); }); x = await st(p);
+  check('a “why?” card explains with a curriculum link', x.overlays.includes('ovWhy') && /アルベド/.test(await p.textContent('#whyText')) && /理科/.test(await p.textContent('#whyTopic')), x.overlays);
+  await shot(p, 'why');
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
 }
 
 async function english(env) {
-  console.log('6. English');
-  const s = await open(env, { lang: 'en', seed: SEEN }); const p = s.page;
+  console.log('8. English, graphics and fps');
+  const s = await open(env, { lang: 'en', seed: { 'kusoge.planet.howto': '1', [SAVE]: SEEN[SAVE] } }); const p = s.page;
   const scan = async label => { const jp = await p.evaluate(`(${jpScan})(true)`); check('en: no Japanese visible — ' + label, jp.length === 0, jp); };
-  await scan('title');
-  await p.evaluate(() => __planet.design(null)); await scan('designer'); await p.click('#dzGo');
-  await p.evaluate(() => __planet.finishTutorial());
-  await p.evaluate(() => { __planet.run(1.3e8, { quiet: true, coarse: 5e4 }); __planet.tool('volcano', 0, 0); __planet.tool('seed', 0, 3); });
-  await scan('free mode with a celebration');
-  for (const t of ['tools', 'planet', 'life', 'civ', 'graph']) { await p.evaluate(t => __planet.tab(t), t); await scan('tab ' + t); }
-  await p.evaluate(() => __planet.combos()); await scan('combo book'); await p.evaluate(() => __planet.closeAll());
-  await p.evaluate(() => { document.getElementById('shareBtn') || __planet.tab('planet'); document.getElementById('shareBtn').click(); }); await scan('share'); await p.evaluate(() => __planet.closeAll());
-  await p.evaluate(() => __planet.mech()); await scan('how it works'); await p.evaluate(() => __planet.closeAll());
-  await p.evaluate(() => { __planet.earthNow(); __planet.set('dist', 0.85); __planet.run(2e5); }); await B.frames(p, 2);
-  let x = await st(p);
-  check('en: the runaway greenhouse explains itself', x.overlays.includes('ovEvent') && /boil/i.test(await p.textContent('#evTitle')), x.overlays);
-  await scan('crisis card'); await shot(p, 'en-crisis');
-  await p.evaluate(() => __planet.ending(false, null)); await scan('ending'); await p.evaluate(() => __planet.closeAll());
-  await p.evaluate(() => __planet.scenario(0)); await scan('scenario intro');
-  await p.evaluate(() => { __planet.begin(); __planet.run(2.5e6, { quiet: true }); }); await B.frames(p, 2); await scan('danger warning');
-  await p.evaluate(() => __planet.run(4e7, { quiet: true }));
-  await scan('scenario result'); await shot(p, 'en-result');
+  await scan('title (play)'); await p.click('#tModeLearn'); await scan('title (learn)');
+  await p.click('#lList .chap >> nth=2'); await scan('chapter'); await p.click('#lsGo'); await scan('lesson on the globe');
+  await p.evaluate(() => __planet.why('impact')); await scan('why card'); await p.evaluate(() => __planet.closeAll());
+  await p.evaluate(() => __planet.quiz(['tilt', 'day', 'moon'])); await scan('quiz'); await p.click('#qzA button >> nth=1'); await scan('quiz answered'); await p.evaluate(() => __planet.closeAll());
+  await p.evaluate(() => { __planet.earthNow(); __planet.info(); }); await scan('details'); await p.evaluate(() => __planet.closeAll());
+  await p.evaluate(() => __planet.dex()); await scan('discovery log'); await p.evaluate(() => __planet.closeAll());
+  await p.evaluate(() => __planet.dive()); await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 }); await p.waitForTimeout(700); await scan('surface with a hint');
+  await shot(p, 'en-surface');
+  await p.evaluate(() => { __planet.ascend(); __planet.scenario(0); }); await scan('challenge intro');
+  await p.evaluate(() => { __planet.begin(); __planet.run(4e7, { quiet: true }); }); await scan('challenge result');
+  // graphics: high quality by default, light mode by itself when it is slow
+  await p.evaluate(() => { __planet.closeAll(); __planet.earthNow(); __planet.play(); });
+  await p.waitForTimeout(9000);
+  let q = (await st(p)).quality;
+  console.log('      orbit, auto quality (swiftshader):', JSON.stringify(q));
+  await p.evaluate(() => { __planet.pause(); __planet.dive(); }); await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 });
+  await p.keyboard.down('KeyW'); await p.waitForTimeout(6000); await p.keyboard.up('KeyW');
+  const q2 = (await st(p)).quality; console.log('      surface walking:', JSON.stringify(q2));
+  check('it renders smoothly enough under software GL (falls back to light mode when slow)', (q.q === 'lo' || q.fps >= 24) && q2.fps >= 20, [q, q2]);
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors);
   await s.close();
 }
@@ -323,9 +293,8 @@ async function english(env) {
   B.ensureCdn();
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
-  const t0 = Date.now();
-  const only = process.argv[2];
-  for (const f of [tutorial, physics, scenarios, cradleByHand, danger, freeMode, oldSave, english]) {
+  const t0 = Date.now(), only = process.argv[2];
+  for (const f of [coach, sculptAndWalk, scenarios, snowAndDawnByHand, saveShare, wondersLearn, english]) {
     if (only && f.name !== only) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 600)); }
   }

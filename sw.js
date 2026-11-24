@@ -5,7 +5,7 @@
 // 開いたことのないゲームは、オフラインでは offline.html。ゲームを足すときは games.js に足すだけでよい。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 47;
+const BUILD = 48;
 const PREFIX = 'kobo-v';
 const VERSION = PREFIX + BUILD + '.' + REG.version;
 const OFFLINE = './offline.html';
@@ -16,7 +16,7 @@ const CORE = ['./', './index.html', OFFLINE, './firebase-config.js', './manifest
   './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css',
   './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
 // ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
-const ENGINES = ['./parking/engine.js', './planet/sim.js', './water/engine.js', './shogi/engine.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes-gen.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js',
+const ENGINES = ['./parking/engine.js', './planet/sim.js', './planet/world.js', './planet/explorer.js', './planet/learn.js', './water/engine.js', './shogi/engine.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes-gen.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js',
   './hole/cities/fujisawa.json', './hole/cities/shonandai.json', './hole/cities/kamiooka.json', './hole/cities/shonanhs.json',
   './hole/cities/shibuya.json', './hole/cities/asakusa.json', './hole/cities/shinjuku.json', './hole/cities/yokohama.json', './hole/cities/dotonbori.json', './hole/cities/osakajo.json', './hole/cities/kyoto.json', './hole/cities/nagoya.json', './hole/cities/sapporo.json', './hole/cities/fukuoka.json'];
 // ページ（オフラインで開けるのは、一度開いたものだけ）

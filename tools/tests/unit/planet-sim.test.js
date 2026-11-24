@@ -2,7 +2,8 @@
 // 実行：node tools/tests/unit/planet-sim.test.js   （8つのシナリオを2回ずつ最後まで流すので 1 分ほど）
 // - どのシナリオも、何もしないと負け、sim.js の plan（ふつうの遊び方）で勝てる（＝クリアできることの証明）
 // - 同じ手なら同じ結果（決まった結果：serialize が1文字まで同じ）
-// - 道具・コンボ・いのちの広がり・危険の知らせ・節目・古い保存の読み込み
+// - 彫刻（ops の列 → 地形。共有コードで同じ地形）・見つけるもの（marks・生き物・ヒント）・時代・街と「ひらめき」・ふしぎな星
+// - 古い保存（2026-11 の作り直しの前・彫刻の前）の読み込み
 'use strict';
 const path = require('path');
 const crypto = require('crypto');
@@ -15,7 +16,7 @@ test('8 scenarios, the ids the saves use', () => {
   for (const d of S.SCEN) ok(typeof d.plan === 'function' && typeof d.check === 'function' && d.limit > 0, d.id);
 });
 
-test('every scenario: doing nothing fails, the plan wins (score 600–1000, within the tool budget)', () => {
+test('every scenario: doing nothing fails, the plan wins (score 600–1000, within the budget)', () => {
   S.SCEN.forEach((d, i) => {
     const a = S.scPlay(i, false);
     ok(a.ended && !a.win && a.score === 0, d.id + ' nothing: ' + a.why);
@@ -26,69 +27,126 @@ test('every scenario: doing nothing fails, the plan wins (score 600–1000, with
   });
 });
 
+test('the snowball needs a chain now: scattered volcanoes or comets alone stay frozen', () => {
+  const i = S.SC_IDS.indexOf('snow');
+  const tryIt = f => { const sc = S.scStart(i), A = S.scApi(sc); f(A); S.scRun(sc, sc.def.limit); return sc.win; };
+  ok(!tryIt(A => { for (let k = 0; k < 6; k++) A.tool('volcano', 0, k * 60); }), 'six scattered volcanoes are not enough');
+  ok(!tryIt(A => { for (let k = 0; k < 6; k++) A.tool('asteroid', 0, k * 60); }), 'six comets are not enough');
+  ok(!tryIt(A => { for (let k = 0; k < 3; k++) A.tool('volcano', 0, k * 3); }), 'a great eruption alone is not enough');
+  ok(tryIt(A => { for (let k = 0; k < 3; k++) A.tool('volcano', 0, k * 3); A.tool('asteroid', 30, 90); }), 'a great eruption and a comet on the ice');
+});
+
 test('deterministic: the same plan gives exactly the same planet', () => {
-  for (const id of ['cradle', 'goe', 'warm']) {
+  for (const id of ['cradle', 'green', 'warm']) {
     const i = S.SC_IDS.indexOf(id), a = S.scPlay(i, true), b = S.scPlay(i, true);
     eq(hash(a.st), hash(b.st), id); eq(a.score, b.score, id + ' score');
   }
-  const f = () => { const w = S.create({ t: 0, p: { seed: 4242 } }); w.surp = true; w.noCiv = true; S.advance(w, 1.2e9, { coarse: 5e4 }); return w; };
-  eq(hash(f()), hash(f()), 'free planet with surprises');
+  const f = () => { const w = S.create({ t: 0, p: { seed: 4242 } }); w.surp = true; w.noCiv = true; S.advance(w, 1.5e8, { coarse: 5e4 }); for (let k = 0; k < 6; k++) S.tools.raise(w, 10, k * 3, { cont: k > 0 }); S.tools.seed(w, 0, 0); S.advance(w, 1.2e9, { coarse: 5e4 }); return w; };
+  eq(hash(f()), hash(f()), 'free planet with sculpting and surprises');
 });
 
-test('the budget: tools stop when it is used up, locked tools never work', () => {
-  const sc = S.scStart(S.SC_IDS.indexOf('snow'));
-  for (let k = 0; k < sc.def.budget; k++) eq(S.scTool(sc, 'volcano', 0, k * 30), 'ok');
-  eq(S.scTool(sc, 'volcano', 0, 0), 'empty'); eq(S.scLeft(sc), 0);
+test('the budget counts strokes: a brush stroke goes on for free, tools stop when used up, locked tools never work', () => {
+  const sc = S.scStart(S.SC_IDS.indexOf('gate'));
+  eq(S.scTool(sc, 'sink', 48, 0), 'ok');
+  for (let k = 0; k < 14; k++) eq(S.scTool(sc, 'sink', 48, k, { cont: true }), 'ok');
+  eq(S.scTool(sc, 'sink', 48, 20, { cont: true }), 'no', 'a stroke has at most 14 more dabs'); eq(sc.actions, 1);
+  for (let k = 1; k < sc.def.budget; k++) eq(S.scTool(sc, 'raise', 0, k * 30), 'ok');
+  eq(S.scTool(sc, 'raise', 0, 0), 'empty'); eq(S.scLeft(sc), 0);
+  eq(S.scTool(sc, 'volcano', 0, 0, { cont: true }), 'no', 'only brushes continue');
   eq(S.scTool(S.scStart(S.SC_IDS.indexOf('snow')), 'sink', 0, 0), 'locked');
 });
 
-test('the cradle tells the story: it slides into a snowball unless volcanoes warm it, and the danger warning comes first', () => {
-  const sc = S.scStart(0); let warned = false;
-  while (!sc.ended) { S.scRun(sc, 2.5e5); const d = S.danger(sc.st); if (d.k === 'snow' && d.lv >= 0.3 && !sc.st.flags.snow) warned = true; }
-  ok(!sc.win && sc.why === 'snow', 'freezes: ' + sc.why); ok(warned, 'warned before the snowball');
-  ok(S.scUsed(sc) > 1.5e6, 'the slide takes a while (' + S.scUsed(sc) + ' years)');
+test('sculpting: raising and digging change the land and the sea; the op list rebuilds the same terrain', () => {
+  const w = S.create({ t: 2e8, p: { seed: 5 } }); w.noCiv = true; S.advance(w, 1e4);
+  const k = 64 * S.HX + 128, e0 = w.elev[k];
+  const [lat, lon] = S.latLonOf(S.PX[k], S.PY[k], S.PZ[k]);
+  for (let q = 0; q < 6; q++) S.tools.raise(w, lat, lon, { cont: q > 0 });
+  ok(w.elev[k] > e0 + 2.5, 'a mountain rose ' + e0.toFixed(2) + ' → ' + w.elev[k].toFixed(2));
+  for (let q = 0; q < 12; q++) S.tools.sink(w, lat, lon + 40, { cont: q > 0 });
+  const kd = S.cellOf(lat, lon + 40); ok(w.lf[kd] < 0.5, 'a deep pit fills with sea ' + w.lf[kd]);
+  const code = S.opsCode(w.ops), ops = S.opsRead(code);
+  eq(JSON.stringify(ops), JSON.stringify(w.ops), 'ops survive the 4-character code');
+  ok(code.length === w.ops.length * 4 && /^[A-Za-z0-9_-]*$/.test(code), 'URL-safe and compact (' + code.length + ' chars for ' + w.ops.length + ' ops)');
+  const v = S.create({ t: 2e8, p: { seed: 5 } }); v.noCiv = true; S.advance(v, 1e4); S.applyOps(v, ops);
+  let md = 0; for (let q = 0; q < S.HN; q++) md = Math.max(md, Math.abs(v.sculpt[q] - w.sculpt[q]));
+  ok(md < 1e-5, 'the same sculpted field from the code (max diff ' + md + ')');
+  ok(S.opsRead('!!!!' + code.slice(0, 8)).length === 2, 'bad characters are skipped');
 });
 
-test('life spreads from where it is sown, faster next to a volcano (combo)', () => {
-  const mk = () => { const w = S.create({ t: 3e8, p: { seed: 11 } }); w.noCiv = true; S.advance(w, 2e5); return w; };
-  const a = mk(), b = mk();
-  ok(S.tools.seed(a, 0, 0), 'seeded'); ok(a.reachOn && a.life.st === 1, 'life');
-  ok(S.seaLife(a) < 0.05, 'starts small ' + S.seaLife(a));
-  S.tools.volcano(b, 0, 10); ok(S.tools.seed(b, 0, 0), 'seeded b'); ok(b.combos.includes('vent'), 'vent combo');
-  S.advance(a, 5e6); S.advance(b, 5e6);
-  ok(S.seaLife(b) > S.seaLife(a) * 1.5, 'combo spreads faster ' + S.seaLife(a).toFixed(2) + ' < ' + S.seaLife(b).toFixed(2));
-  S.advance(a, 6e7); ok(S.seaLife(a) > 0.8, 'fills the sea in time ' + S.seaLife(a));
-  ok(!S.tools.seed(S.create({ t: 1e7, p: { seed: 3 } }), 0, 0), 'no ocean yet: no life');
+test('things to find: comets leave crystals, life leaves a vent, creatures have names in both languages; the explorer finds them nearby', () => {
+  const w = S.create({ t: 3e8, p: { seed: 11 } }); w.noCiv = true; S.advance(w, 2e5);
+  S.tools.seed(w, 0, 0); S.tools.asteroid(w, 30, 60);
+  const ks = S.sites(w).map(s => s.k);
+  ok(ks.includes('vent') && ks.includes('cry'), 'vent and crystals ' + ks);
+  const cry = S.sites(w).find(s => s.k === 'cry');
+  eq(S.explore(w, cry.lat + 20, cry.lon).length, 0, 'too far: nothing');
+  const h = S.hint(w, cry.lat - 15, cry.lon); ok(h && h.site.id === cry.id && h.dir === 'n', 'the hint points north ' + JSON.stringify(h && [h.site.id, h.dir]));
+  const got = S.explore(w, cry.lat + 2, cry.lon);
+  ok(got.length === 1 && got[0].id === cry.id && got[0].spark > 0, 'found with sparks'); ok(w.found.includes(cry.id), 'remembered');
+  eq(S.explore(w, cry.lat, cry.lon).length, 0, 'not twice');
+  const L = S.create({ t: 4.5e9, p: { seed: 7, co2: 300 } }); L.noCiv = true; L.wl = 1; S.seaLevel(L); L.life.st = 6; L.life.euk = 1; L.o2 = 1; L.life.div = 60; S.settle(L, 1e5, 330);
+  const sp = S.sites(L).filter(s => s.k === 'sp');
+  ok(sp.length >= 3, 'land creatures ' + sp.length);
+  for (const s of sp) { ok(/^[゠-ヿ]+$/.test(s.sp.name.ja) && /^[A-Za-z ]+$/.test(s.sp.name.en), 'names ' + s.sp.name.ja + ' / ' + s.sp.name.en); ok(L.lf[S.cellOf(s.lat, s.lon)] > 0.3, 'lives on land'); }
+  eq(JSON.stringify(S.species(L, 3, false)), JSON.stringify(S.species(L, 3, false)), 'the same creature every time');
 });
 
-test('the other combos', () => {
-  const w = S.create({ t: 3e8, p: { seed: 5 } }); w.noCiv = true; S.advance(w, 1e5);
-  for (let k = 0; k < 3; k++) S.tools.volcano(w, 20, 40 + k * 3); ok(w.combos.includes('super'), 'three volcanoes: flood eruption');
-  const s = S.scStart(S.SC_IDS.indexOf('snow')); S.tools.asteroid(s.st, 0, 0); ok(s.st.combos.includes('melt'), 'comet on ice');
-  const g = S.scStart(S.SC_IDS.indexOf('gate')); S.tools.sink(g.st, 48, 0); ok(g.st.combos.includes('current'), 'seaway at 48°N');
-  // a mountain on a coast
-  const r = S.create({ t: 4.5e9, p: { seed: 7, co2: 300 } }); r.noCiv = true; r.wl = 1; S.seaLevel(r); S.advance(r, 1e4);
-  let done = false; for (let c = 0; c < S.N && !done; c++) { const [lat, lon] = S.cellLL(c); if (r.lf[c] > 0.6) { S.tools.raise(r, lat, lon); done = r.combos.includes('rain'); } }
-  ok(done, 'mountain by the sea');
+test('eras follow the milestones, from molten to space', () => {
+  const w = S.create({ t: 0, p: { seed: 99 } }); w.noCiv = true;
+  eq(S.ERAS[S.era(w)], 'molten'); S.advance(w, 5e7, { coarse: 5e4 }); eq(S.ERAS[S.era(w)], 'rain');
+  S.advance(w, 1e8, { coarse: 5e4 }); eq(S.ERAS[S.era(w)], 'ocean');
+  S.tools.seed(w, 0, 0); S.advance(w, 1e4); eq(S.ERAS[S.era(w)], 'life');
+  w.ms.forest = w.t; eq(S.ERAS[S.era(w)], 'forest'); w.ms.space = w.t; eq(S.ERAS[S.era(w)], 'space');
 });
 
-test('milestones come in order on a free planet, surprises happen, and it all survives a save', () => {
+test('cities and ideas: a city that takes up clean energy cuts the warming', () => {
+  const i = S.SC_IDS.indexOf('warm'), a = S.scStart(i), b = S.scStart(i);
+  const cs = S.cities(b.st); ok(cs.length >= 4, 'cities to tap ' + cs.length);
+  for (let k = 0; k < 4; k++) { const c = S.cities(b.st).filter(x => !x.clean)[0]; eq(S.scTool(b, 'idea', c.lat, c.lon), 'ok'); }
+  ok(S.cleanShare(b.st) > 0.4, 'clean share ' + S.cleanShare(b.st));
+  eq(S.scTool(b, 'idea', -89, 0), 'no', 'no city near the pole');
+  S.scRun(a, 150, { chunk: 25 }); S.scRun(b, 150, { chunk: 25 });
+  ok(b.st.civ.cum < a.st.civ.cum * 0.8, 'less fuel burnt ' + Math.round(a.st.civ.cum) + ' → ' + Math.round(b.st.civ.cum));
+});
+
+test('wonder planets: five strange worlds, each with its own things to find, standing still in time', () => {
+  eq(S.WONDERS.join(), 'ring,ice,lava,moon,bloom');
+  const want = { ring: 'arch', ice: 'geyser', lava: 'lava', moon: 'cry', bloom: 'bloom' };
+  for (const id of S.WONDERS) {
+    const w = S.wonder(id);
+    ok(w.frozen && w.wonder === id, id + ' frozen');
+    ok(S.sites(w).some(s => s.k === want[id]), id + ' has ' + want[id]);
+    eq(hash(w), hash(S.wonder(id)), id + ' the same every time');
+  }
+  ok(S.wonder('moon').p.size < 0.5, 'the moon is small (low gravity)');
+  ok(S.wonder('ring').rings, 'the ring world has rings');
+});
+
+test('milestones come in order on a free planet, and it all survives a save (sculpting, marks, finds)', () => {
   const w = S.create({ t: 0, p: { seed: 99 } }); w.surp = true; w.noCiv = true;
   S.advance(w, 2.2e8, { coarse: 5e4 }); ok(w.ms.ocean != null, 'ocean');
-  S.tools.seed(w, 0, 0); S.advance(w, 2.4e9, { coarse: 5e4 });
+  for (let q = 0; q < 5; q++) S.tools.raise(w, 20, 20 + q, { cont: q > 0 });
+  S.tools.seed(w, 0, 0); S.tools.asteroid(w, -20, 100); S.advance(w, 2.4e9, { coarse: 5e4 });
   ok(w.ms.life != null && w.ms.life > w.ms.ocean, 'life after the ocean');
-  ok(w.ev.some(e => e.k === 'surprise') || w.nextSurp > 0, 'surprises are scheduled');
+  const cry = S.sites(w).find(s => s.k === 'cry'); S.discover(w, cry.id);
   const o = JSON.parse(JSON.stringify(S.serialize(w))), w2 = S.deserialize(o);
   eq(JSON.stringify(w2.ms), JSON.stringify(w.ms), 'milestones saved'); ok(w2.reachOn && Math.abs(S.seaLife(w2) - S.seaLife(w)) < 0.05, 'life map saved');
+  eq(JSON.stringify(w2.ops), JSON.stringify(w.ops), 'sculpting saved'); ok(Math.abs(w2.elev[9000] - w.elev[9000]) < 0.05, 'same terrain');
+  eq(w2.marks.length, w.marks.length, 'marks saved'); ok(w2.found.includes(cry.id), 'finds saved');
+  ok(JSON.stringify(o).length < 40000, 'compact ' + JSON.stringify(o).length);
 });
 
-test('an old save (before the redesign) loads: life everywhere, milestones rebuilt quietly', () => {
+test('old saves load: before the redesign (life everywhere, milestones rebuilt quietly) and before sculpting (old drift, nothing to find yet)', () => {
   const old = { v: 1, t: 2400000000, p: { dist: 1, size: 1, water: 1, n2: 0.78, co2: 300000, seed: 4242 }, A: 25000, O: 150000, ch4: 300, o2: 0.004, wl: 1, lost: 0,
     life: { st: 2, prog: 0.2, pre: 1, div: 6, nudge: null, euk: 0, seedT: -1 }, civ: null, ev: [{ t: 600000000, k: 'life' }], flags: { goe: 1 } };
   const w = S.deserialize(old);
   ok(w && !w.reachOn && w.life.st === 2, 'loaded'); ok(w.ms.life != null && w.ms.sky != null, 'milestones rebuilt ' + JSON.stringify(w.ms));
   ok(!(w.news || []).some(e => e.k === 'ms'), 'no fanfare for old milestones');
+  eq(w.ops.length, 0); eq(w.marks.length, 0); eq(w.drift, 1, 'old planets keep their drift');
   S.advance(w, 1e6); ok(isFinite(w.d.Tg), 'runs');
+  const mid = Object.assign({}, old, { reach: 'A'.repeat(2048), reachOn: 1, combos: ['vent'], ms: { ocean: 8e7, life: 1.3e8 }, civ: { on: true, y: 3, pop: 1, tech: 20, fos: 4000, res: 90, stab: 70, pol: { en: 1, rs: 0, env: 0 }, T0: 14, lu: 0.1 } });
+  const m = S.deserialize(mid); ok(m && m.combos.includes('vent') && Array.isArray(m.civ.clean), 'a save from the first redesign (civ without ideas)');
+  S.advance(m, 4); ok(isFinite(m.d.Tg) && m.civ.cs != null, 'its civilization runs');
   eq(S.deserialize({ v: 2 }), null, 'unknown version');
 });
 
