@@ -57,6 +57,8 @@ node tools/tests/town-play.js                 # ひまつぶしタウンの通�
 node tools/tests/town-balance.js              # ひまつぶしタウンの経済のバランス（ボットが最適に近く遊ぶ：最初の目標・最初のひらきなおしの時間・行きづまらないこと）
 node tools/tests/fit-play.js                  # ぴったりパズル工房の通し（本物のドラッグとタップでステージを解く・ヒント・やり直し・今日のパズル・タイムアタック・保存と再開・英語・全画面サイズ）
 node tools/tests/cards-play.js                 # トランプ広場の通し（6ゲームを本物のクリックで最後まで・ドラッグ・れんしゅうとヒント・保存と再開・英語・全画面サイズ）
+node tools/tests/trade-play.js                 # 貿易ゲームの通し（はじめる画面・本物のクリックで売る・ふつうは値下がりが前と同じ／かんたん／むずかしい・ミッション一覧と鍵・ボットが全8ミッションをクリア・★の保存（kusoge.trade.x）と次が開く・best に入らない・キーボード・5つのできごと・輸送費・ライト／ダーク・英語・古い保存）
+node tools/tests/unit/trade-engine.test.js     # 貿易ゲームの中身（値段の見直しがふつうなら前と同じ・できごとの計画・8ミッションの条件と★・kusoge.trade.x の読み込みと記録・英語の辞書が全部そろう・engine.js と sw.js）
 node tools/tests/shots.js                       # サムネイルを tools/tests/out/thumbs/ に試し撮り
 node tools/tests/shots.js --write               # サムネイルを img/thumbs/ に書く（<id>.webp 360×240、<id>@2x.webp 720×480）
 ```

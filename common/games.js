@@ -592,7 +592,7 @@
       id: 'trade', order: 18, path: 'trade/', added: '2026-11-19',
       title: { ja: '貿易ゲーム', en: 'Trade Game' },
       short: { ja: '貿易ゲーム', en: 'Trade Game' },
-      desc: { ja: '8つの国に分かれて、資源と技術で製品をつくり世界市場に輸出する。国のタイプはくじで決まる。交渉・値下がり・援助を通して、豊かな国と貧しい国の差を考える地理総合の教材。', en: 'Eight countries turn resources and technology into products for the world market. Your country type is drawn by lot. Negotiate, ride out price drops and aid, and think about why rich and poor countries drift apart — a geography class simulation.' },
+      desc: { ja: '8つの国に分かれて、資源と技術で製品をつくり世界市場に輸出する。国のタイプはくじで決まる。交渉・値下がり・援助・災害や航路の混雑を通して、豊かな国と貧しい国の差を考える地理総合の教材。8つのミッションと3段階のむずかしさ、日本語と英語。', en: 'Eight countries turn resources and technology into products for the world market. Your country type is drawn by lot. Negotiate, ride out price drops, disasters and shipping jams, take on eight missions, and think about why rich and poor countries drift apart — a geography class simulation.' },
       label: { ja: '貿易シミュレーション', en: 'Trade simulation' },
       genres: ['simulation'], tags: ['2d', 'education', 'negotiation', 'economy'],
       keywords: { ja: ['貿易', '貿易ゲーム', '地理', '地理総合', '南北問題', 'フェアトレード', 'ODA', '交渉', '経済', '授業'], en: ['trade', 'trading game', 'geography', 'economy', 'fair trade', 'aid', 'negotiation', 'class', 'simulation'] },
@@ -602,8 +602,6 @@
       // no ranking: the country type is drawn by lot, so comparing money between players would not be fair.
       // pause: true — the 40-minute clock runs in real time and stops while hidden, negotiating or paused
       flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: false },
-      // the page is Japanese only for now (made for the 地理総合 class); tools/tests skip the English-text check for it
-      jaOnly: true,
       versus: null,
       score: { unit: { ja: 'ドル', en: 'dollars' }, fmt: { ja: '${n}', en: '${n}' }, order: 'desc', cap: 10000000, maxRate: null },
       rankSource: { key: 'kusoge.trade.save', paths: ['best'], agg: 'first', offset: 0 },
@@ -613,6 +611,9 @@
         'kusoge.trade.name': '自分の国の名前（10文字まで）',
         'kusoge.trade.view': '表示（real：現実の資源と産業 / class：授業の紙と道具）',
         'kusoge.trade.speed': '時間の速さ（fast / normal / slow）',
+        'kusoge.trade.x': 'ミッション8つの記録 { v:1, s:[★0〜3 ×8], b:[ベストの倍率×10 ×8] }。この端末だけ（同期しない）。ランキング・実績・ベストには入らない',
+        'kusoge.trade.diff': 'むずかしさ（e / n / h）',
+        'kusoge.trade.ev': 'ランダムなできごと（on / off）',
       },
       // not synced: the record is per device (the class plays on shared devices)
       sync: {},
