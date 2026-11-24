@@ -138,7 +138,7 @@ body.thumb .hud, body.thumb .kb-layer { display: none !important; }
 #toast { left: 50%; bottom: calc(var(--kb-sab) + 150px); transform: translate(-50%, 8px); opacity: 0; transition: opacity .2s, transform .2s; padding: 8px 14px; border-radius: 14px; font-size: 13px; font-weight: 800; pointer-events: none; max-width: 88%; text-align: center; }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
 #celeb { left: 50%; top: 30%; transform: translate(-50%, -50%) scale(.7); opacity: 0; pointer-events: none; width: min(84%, 320px); padding: 12px 14px; border-radius: 22px; text-align: center; transition: opacity .3s, transform .45s cubic-bezier(.2, 1.5, .4, 1); background: radial-gradient(120% 140% at 50% 0%, rgba(255, 220, 120, .35), rgba(8, 12, 30, .88) 62%); border: 1px solid rgba(255, 220, 140, .7); box-shadow: 0 0 40px rgba(255, 200, 90, .35); }
-#celeb.on { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+#celeb.on { opacity: 1; transform: translate(-50%, -50%) scale(1); } #celeb.on button { pointer-events: auto; }
 #celeb .ci { font-size: 34px; line-height: 1.1; }
 #celeb b { display: block; font-family: var(--kb-font-display); font-weight: 400; font-size: 18px; margin-top: 2px; color: #fff; }
 #celeb span { display: block; font-size: 12px; line-height: 1.45; margin-top: 3px; color: #e3eaff; }
@@ -248,7 +248,7 @@ details.more p { margin: 0 0 8px !important; color: var(--kb-ink) !important; }
 .dexgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; text-align: center; }
 .dexgrid div { border-radius: 12px; border: 1px dashed var(--p-line); padding: 6px 4px; font-size: 11px; font-weight: 800; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .dexgrid div.f { border-style: solid; border-color: #f2b632; } .dexgrid div i { font-style: normal; font-size: 22px; } .dexgrid div:not(.f) i { filter: grayscale(1) brightness(.4); }
-.dexgrid canvas { width: 64px; height: 48px; }
+.dexgrid img { width: 76px; height: 76px; margin: -6px 0 -4px; } .dexgrid div.sp { background: radial-gradient(circle at 50% 40%, rgba(120, 190, 255, .22), transparent 70%); }
 .seg { display: flex; gap: 4px; flex-wrap: wrap; } .seg button { flex: 1 1 30%; min-height: 44px; border-radius: 12px; border: 1px solid var(--p-line); background: var(--p-panel); color: var(--kb-ink); font: 800 12.5px var(--kb-font-body); cursor: pointer; }
 .seg button[aria-checked="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: transparent; }
 .seg button:disabled { opacity: .45; }
@@ -548,6 +548,7 @@ const TOOLS = [
   { k: 'idea', i: '💡', n: ['ひらめき', 'Idea'], need: 0, civ: 1, why: 'idea', col: 0xffe36b, say: ['この街はきれいなエネルギーへ', 'This city goes clean'] },
 ];
 const toolOf = k => TOOLS.find(t => t.k === k);
+const BRUSHES = ['raise', 'sink'];
 const tn = t => EN ? t.n[1] : t.n[0];
 const MARK = { cry: ['💎', '結晶', 'Crystals', 'impact'], fos: ['🐚', '化石', 'Fossils', 'animals'], ruin: ['🏛️', '遺跡', 'Ruins', 'civ'], aur: ['🌌', 'オーロラ', 'Aurora', 'sky'], vent: ['♨️', '海底の温泉', 'Deep-sea vent', 'life'], tree: ['🌳', '大きな木', 'Great tree', 'forest'], city: ['🏙️', 'はじまりの街', 'First city', 'civ'], rocket: ['🚀', 'ロケット発射場', 'Launch site', 'space'], lib: ['📚', '古代の図書館', 'Ancient library', 'civ'], geyser: ['⛲', '間欠泉', 'Geyser', 'volcano'], lava: ['🌋', '溶岩の滝', 'Lava falls', 'volcano'], arch: ['🌉', '石のアーチ', 'Stone arch', 'rain'], shell: ['🐌', '巨大な貝', 'Giant shell', 'animals'], ice: ['🧊', '氷の洞くつ', 'Ice cave', 'snow'], flag: ['🛰️', '古い着陸船', 'Old lander', 'space'], bloom: ['🌸', '巨大な花', 'Giant flower', 'forest'] };
 const markName = k => MARK[k] ? (EN ? MARK[k][2] : MARK[k][1]) : k;
@@ -587,6 +588,7 @@ function initGL() {
   // multisampling is cheap on a real GPU but very slow in a software renderer: probe which one we have
   let soft = false; try { const g = document.createElement('canvas').getContext('webgl'), x = g && g.getExtension('WEBGL_debug_renderer_info'); soft = !!(x && /swiftshader|llvmpipe|software/i.test(g.getParameter(x.UNMASKED_RENDERER_WEBGL))); const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) {}
   softGL = soft;
+  if (soft && !qLock) qual = 'lo'; // a software renderer: start light (high quality stays one tap away in the menu)
   try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: qual === 'hi' && !soft, powerPreference: 'high-performance' }); } catch (e) { renderer = null; }
   if (!renderer) { const b = document.createElement('div'); b.id = 'nogl'; b.innerHTML = '<div><b></b><p></p><a class="btn sub" href="../"></a></div>'; b.querySelector('b').textContent = TT('3D を表示できません', 'Cannot show 3D'); b.querySelector('p').textContent = TT('この端末やブラウザでは WebGL（3D グラフィック）が使えません。別のブラウザでためしてください。', 'WebGL (3D graphics) is not available on this device or browser. Please try another browser.'); b.querySelector('a').textContent = T('ゲーム一覧へ'); $('app').appendChild(b); return false; }
   scene = new THREE.Scene(); scene.background = new THREE.Color(0x02040c);
@@ -600,7 +602,7 @@ function initGL() {
 function setQuality(q, auto) {
   qual = q; if (!auto) { store.set(QUALITY_KEY, q); qLock = true; }
   if (!glOk) return;
-  W.setQuality(q === 'hi' ? 1 : 0.5); W.setLevel(q === 'hi' ? 6 : 5); post.on = q === 'hi';
+  W.setQuality(q === 'hi' ? 1 : 0.5); W.setLevel(q === 'hi' ? 7 : 5); post.on = q === 'hi';
   PR = q === 'hi' ? Math.min(1.25, window.devicePixelRatio || 1) : Math.min(0.6, window.devicePixelRatio || 1); resize(); W.sync({ recolor: true, flora: true });
 }
 function resize() {
@@ -615,6 +617,7 @@ function watchFps(dt) {
   if (fpsMon.t < 2.5) return;
   const f = fpsMon.n / fpsMon.t; fpsMon.last = Math.round(f); fpsMon.t = 0; fpsMon.n = 0;
   if (f < 26) fpsMon.low++; else fpsMon.low = 0;
+  if (qual === 'hi' && W.level < 7 && f >= 40) W.setLevel(7); // fast enough: the finest terrain
   if (fpsMon.low >= 2 && qual === 'hi' && !qLock) { fpsMon.low = 0; setQuality('lo', true); toast(TT('かるい画質に切りかえました', 'Switched to light graphics')); }
   else if (fpsMon.low >= 2 && PR > 0.55) { fpsMon.low = 0; PR = Math.max(0.5, PR - 0.15); resize(); }
 }
@@ -767,7 +770,7 @@ function useTool(k, lat, lon, o) {
   if (lesson) lesson.used[k] = (lesson.used[k] || 0) + (cont ? 0 : 1);
   if (!cont) { addStat('sculpt'); coachEvent('use:' + k); }
   if (glOk) {
-    W.sync(); W.burst(lat, lon, k);
+    if (BRUSHES.includes(k) && W.dab) W.dab(lat, lon, 6); else W.sync(); W.burst(lat, lon, k);
     if (k === 'volcano') { W.plume(lat, lon, 10); sfx.boom(); } else if (k === 'raise') sfx.rumble(); else if (k === 'sink') sfx.dig(); else if (k === 'asteroid') { sfx.whoosh(); setTimeout(() => sfx.boom(), 350); } else if (k === 'rain') sfx.rain(); else if (k === 'seed') sfx.sprout(); else sfx.tap();
     if (['seed', 'asteroid', 'idea'].includes(k)) W.sync({ recolor: true, flora: true, marks: true }); else if (k === 'rain') W.sync({ recolor: true, flora: true });
   }
@@ -996,10 +999,30 @@ function showInfo() {
 $('infoBtn').addEventListener('click', showInfo); $('infoClose').addEventListener('click', () => { $('ovInfo').hidden = true; });
 
 // ================= dex =================
+// creature portraits: the same 3D model as on the planet, rendered once into a small picture
+const portraitCache = new Map();
+function portrait(sp, key) {
+  if (!glOk || glLost) return null; if (portraitCache.has(key)) return portraitCache.get(key);
+  try {
+    const sz = 128, rt = new THREE.WebGLRenderTarget(sz, sz), sc2 = new THREE.Scene();
+    sc2.add(new THREE.HemisphereLight(0xe6f2ff, 0x4a4036, 0.85)); const dl = new THREE.DirectionalLight(0xfff4e0, 0.95); dl.position.set(2, 3, 2.5); sc2.add(dl);
+    const mesh = new THREE.Mesh(W.creatureGeo(sp), new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 25, specular: 0x222222 })); sc2.add(mesh);
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(0.75, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22 })); sc2.add(ground);
+    mesh.geometry.computeBoundingBox(); const bb = mesh.geometry.boundingBox, c = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3()).length();
+    ground.position.y = bb.min.y + 0.01;
+    const cam = new THREE.PerspectiveCamera(32, 1, 0.01, 50); cam.position.set(c.x + size * 1.1, c.y + size * 0.55, c.z + size * 1.45); cam.lookAt(c);
+    const prev = renderer.getClearColor(new THREE.Color()), pa = renderer.getClearAlpha();
+    renderer.setClearColor(0x000000, 0); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(sc2, cam);
+    const px = new Uint8Array(sz * sz * 4); renderer.readRenderTargetPixels(rt, 0, 0, sz, sz, px); renderer.setRenderTarget(null); renderer.setClearColor(prev, pa); rt.dispose();
+    const cvs = document.createElement('canvas'); cvs.width = cvs.height = sz; const x = cvs.getContext('2d'), img = x.createImageData(sz, sz);
+    for (let y = 0; y < sz; y++) img.data.set(px.subarray((sz - 1 - y) * sz * 4, (sz - y) * sz * 4), y * sz * 4);
+    x.putImageData(img, 0, 0); const url = cvs.toDataURL(); portraitCache.set(key, url); return url;
+  } catch (e) { return null; }
+}
 function showDex() {
   running = false; renderTime();
   const dex = setOf(save.dex), sp = [...dex].filter(x => x[0] === 's').map(x => { const [, seed, i, sea] = x.split(':'); return S.species({ seed: +seed >>> 0 }, +i, sea === '1'); });
-  $('dexSp').innerHTML = sp.length ? sp.map(s => '<div class="f"><i style="font-size:26px;color:hsl(' + Math.round(s.hue * 360) + ',60%,60%)">' + (s.sea ? '🐟' : '🦎') + '</i>' + (EN ? s.name.en : s.name.ja) + '</div>').join('') : '<div>' + TT('まだいない。降りて、生き物をさがそう', 'None yet. Dive down and look for creatures') + '</div>';
+  $('dexSp').innerHTML = sp.length ? sp.map((s, i) => { const u = portrait(s, [...dex].filter(x => x[0] === 's')[i]); return '<div class="f sp">' + (u ? '<img alt="" src="' + u + '">' : '<i>' + (s.sea ? '🐟' : '🦎') + '</i>') + (EN ? s.name.en : s.name.ja) + '</div>'; }).join('') : '<div>' + TT('まだいない。降りて、生き物をさがそう', 'None yet. Dive down and look for creatures') + '</div>';
   $('dexMk').innerHTML = Object.keys(MARK).map(k => { const f = dex.has('k:' + k); return '<div class="' + (f ? 'f' : '') + '"><i>' + MARK[k][0] + '</i>' + (f ? markName(k) : '？？？') + '</div>'; }).join('');
   const cm = setOf(save.cmb); $('dexCb').innerHTML = COMBOS.map(c => '<div class="' + (cm.has(c) ? 'f' : '') + '"><i>✨</i>' + (cm.has(c) ? TT(COMBO_TXT[c][0], COMBO_TXT[c][1]) : '？？？') + '</div>').join('');
   $('dexUl').innerHTML = TOOLS.filter(t => t.need).concat(PRESETS.filter(p => p.need)).map(t => '<div class="' + (spark() >= t.need ? 'f' : '') + '"><i>' + t.i + '</i>' + (EN ? t.n[1] : t.n[0]) + '<small>✦' + t.need + '</small></div>').join('');
@@ -1022,8 +1045,8 @@ function serializeWorld(w) { const o = S.serialize(w); o.at = Date.now(); return
 function startPlanet(w, m, o) { // put a planet on screen in a mode
   hideOverlays(); clearCeleb(); o = o || {};
   mode = m; world = w; sc = o.sc || null; wonderId = o.wonder || null; lesson = o.lesson || null; tool = null; running = false;
-  view = 'orbit'; trans = null; cine = null; if (glOk) { E.show(false); W.setSurface(0); W.setPlanet(w); W.look(); }
-  orb.dist = 3.4; orb.auto = true; shownEra = S.era(w); endShown = !!(w.ms && w.ms.space != null);
+  view = 'orbit'; trans = null; cine = null; if (glOk) { E.show(false); W.setSurface(0); W.focus = null; W.setPlanet(w); W.look(); }
+  orb.dist = 2.9; orb.auto = true; shownEra = S.era(w); endShown = !!(w.ms && w.ms.space != null);
   spd = m === 'scen' ? sc.def.speed : w.civ && w.civ.on ? 1 : 7;
   $('goal').hidden = m !== 'scen'; $('lesson').hidden = m !== 'learn'; $('hintT').textContent = '';
   buildDock(); renderTime(); renderHud(); dangerCheck(); sitesKey = '';
@@ -1352,7 +1375,7 @@ function loop(ts) {
     recolorDue -= dt; cloudDue -= dt;
     if (world.geoV !== W.geoV) W.sync();
     if (running && recolorDue <= 0) { recolorDue = view === 'orbit' ? 0.7 : 2.5; const key = S.sites(world).map(s => s.id + (s.found ? '+' : '')).join(); W.sync({ recolor: true, flora: true, marks: key !== sitesKey }); sitesKey = key; W.look(); }
-    if (cloudDue <= 0) { cloudDue = 6; W.sync({ clouds: true }); }
+    if (cloudDue <= 0) { cloudDue = 15; W.sync({ clouds: true }); }
     W.tick(dt, tSec, camera);
     if (post) post.render(scene, camera); else renderer.render(scene, camera);
     watchFps(dt);
@@ -1428,7 +1451,7 @@ if (DEBUG) {
     tool: useTool, play: () => setRunning(true), pause: () => setRunning(false), speed: setSpeed, pick: k => pickTool(k),
     scenario: i => showIntro(i), begin() { if (!$('ovIntro').hidden) startScenario(introI); }, strat(k) { if (sc && !sc.ended) sc.def.plan(k, uiApi, world); }, scenarios: () => S.SC_IDS,
     chapter: i => showChapter(i), lessonGo: () => $('lsGo').click(), wonder: visitWonder, title: showTitle, design: showDesign, shareUrl, readCode, dex: showDex, why: showWhy, info: showInfo, ending: showEnding, quiz: showQuiz,
-    saveWorld, loadWorld: () => { const w = loadWorld(); if (w) startFree(w, false); return !!w; }, readSave, closeAll: hideOverlays, menu: openMenu, coach: () => coach && coach.step, finishCoach,
+    saveWorld, loadWorld: () => { const w = loadWorld(); if (w) startFree(w, false); return !!w; }, readSave, closeAll: hideOverlays, menu: openMenu, coach: () => coach && coach.step, finishCoach, hush: () => { clearCeleb(); $('eraCard').classList.remove('on'); $('toast').classList.remove('on'); },
     dive, ascend, quality: q => setQuality(q), orbit: (yaw, pitch, dist) => { if (yaw != null) orb.yaw = yaw; if (pitch != null) orb.pitch = pitch; if (dist != null) orb.dist = dist; orb.auto = false; },
     faceTo(lat, lon) { orb.yaw = (lon + 90) * Math.PI / 180; orb.pitch = clamp(lat * Math.PI / 180, -1.3, 1.3); orb.auto = false; orbitPose(camera, orb); },
     project, pickAt: pick, teleport(lat, lon) { const d = S.dirOf(lat, lon); E.place(new THREE.Vector3(d[0], d[1], d[2]), E.f.clone()); },

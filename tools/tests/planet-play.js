@@ -70,6 +70,7 @@ async function coach(env) {
   x = await st(p); check('an ocean forms; the coach moves on to the mountain tool', x.ms.ocean != null && x.coach === 2 && x.tool === 'raise', [x.ms, x.coach, x.tool]);
   check('a new era is announced with a title card', !!x.eraCard && /海/.test(x.eraCard), x.eraCard);
   await shot(p, 'era-ocean');
+  await p.evaluate(() => __planet.hush()); // the celebration fades away by itself; do not wait for it
   const pt = await screenPoint(p, true) || await screenPoint(p, false);
   const ops0 = x.ops, geo0 = x.geoV;
   await p.mouse.move(pt[0], pt[1]); await p.mouse.down(); await p.waitForTimeout(800);

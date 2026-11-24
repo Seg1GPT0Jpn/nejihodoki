@@ -4,21 +4,44 @@ const PExplorer = (() => {
 'use strict';
 function create(THREE, scene, W) {
   const E = { p: new THREE.Vector3(0, 0, 1), f: new THREE.Vector3(0, 1, 0), alt: 0, vUp: 0, grounded: true, swim: false, phase: 0, speed: 0, cf: new THREE.Vector3(0, 1, 0), yawOff: 0, pitchOff: 0, walked: 0, steps: 0, r: 1 };
-  // ---- the body: a round surveyor in a cream suit, a teal visor, a backpack beacon and a red scarf (original design) ----
-  const g = new THREE.Group(), L = (c, e) => new THREE.MeshLambertMaterial({ color: c, emissive: e || 0 });
-  const suit = L(0xf3e6cf), dark = L(0x3b3a46), scarf = L(0xe2513c), visor = new THREE.MeshLambertMaterial({ color: 0x3fd6c4, emissive: 0x0d5a52 });
-  const mesh = (geo, m, x, y, z, sx, sy, sz) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); if (sx) o.scale.set(sx, sy || sx, sz || sx); g.add(o); return o; };
-  const body = mesh(new THREE.SphereGeometry(0.32, 12, 10), suit, 0, 0.52, 0, 1, 1.1, 0.95);
-  const head = mesh(new THREE.SphereGeometry(0.3, 14, 10), suit, 0, 1.02, 0);
-  mesh(new THREE.SphereGeometry(0.22, 12, 8, -0.9, 1.8, 0.7, 1.2), visor, 0, 1.03, 0.1, 1.05, 1, 1.12).rotation.y = Math.PI / 2;
-  mesh(new THREE.TorusGeometry(0.24, 0.06, 6, 14), scarf, 0, 0.8, 0, 1, 1, 1).rotation.x = Math.PI / 2;
-  const tail = mesh(new THREE.BoxGeometry(0.08, 0.28, 0.04), scarf, -0.2, 0.7, -0.18);
-  mesh(new THREE.BoxGeometry(0.3, 0.36, 0.18), dark, 0, 0.6, -0.3);
-  mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.4, 4), dark, 0.08, 1.0, -0.33);
-  const beacon = mesh(new THREE.SphereGeometry(0.06, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd36b }), 0.08, 1.22, -0.33);
-  const legL = mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.3, 6), dark, -0.12, 0.17, 0);
-  const legR = mesh(legL.geometry, dark, 0.12, 0.17, 0);
-  const armL = mesh(new THREE.SphereGeometry(0.08, 8, 6), suit, -0.33, 0.55, 0, 1, 1.6, 1), armR = mesh(armL.geometry, suit, 0.33, 0.55, 0, 1, 1.6, 1);
+  // ---- the body: a little survey robot in a round helmet (original design): white shell with orange trim, a big dark glossy visor,
+  // a glowing antenna, a backpack with teal light strips and a thruster that flares when it jumps. Limbs hang from pivots so they swing.
+  const g = new THREE.Group(), rig = new THREE.Group(); g.add(rig);
+  const P = (c, sh, e) => new THREE.MeshPhongMaterial({ color: c, shininess: sh == null ? 30 : sh, specular: 0x333333, emissive: e || 0 });
+  const shell = P(0xf4f1ea, 50), trim = P(0xff7a2f, 30), dark = P(0x3a3f4a, 20), glowM = new THREE.MeshBasicMaterial({ color: 0x5ff2d8 });
+  const visorM = new THREE.MeshPhongMaterial({ color: 0x0f1c2e, specular: 0x9fdcff, shininess: 110, emissive: 0x06202a });
+  const thrM = new THREE.MeshBasicMaterial({ color: 0xffa040, transparent: true, opacity: 0 });
+  const add = (parent, geo, m, x, y, z, sx, sy, sz) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); if (sx) o.scale.set(sx, sy || sx, sz || sx); parent.add(o); return o; };
+  const pivot = (x, y, z) => { const o = new THREE.Group(); o.position.set(x, y, z); rig.add(o); return o; };
+  // torso
+  const body = add(rig, new THREE.SphereGeometry(0.26, 16, 12), shell, 0, 0.5, 0, 1, 1.15, 0.92);
+  add(rig, new THREE.CylinderGeometry(0.265, 0.25, 0.08, 16), trim, 0, 0.42, 0);
+  add(rig, new THREE.BoxGeometry(0.14, 0.1, 0.04), trim, 0, 0.56, 0.235);
+  add(rig, new THREE.SphereGeometry(0.03, 8, 6), glowM, 0.04, 0.57, 0.26);
+  // head: a big round helmet with a visor that wraps the front
+  const head = new THREE.Group(); head.position.set(0, 0.98, 0); rig.add(head);
+  add(head, new THREE.SphereGeometry(0.34, 20, 16), shell, 0, 0, 0);
+  add(head, new THREE.SphereGeometry(0.3, 20, 14, -1.15, 2.3, 0.62, 1.35), visorM, 0, 0.0, 0.065, 1.02, 0.98, 1.0).rotation.y = Math.PI / 2;
+  add(head, new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xe8fbff }), 0.12, 0.08, 0.31, 1, 0.6, 0.4);
+  add(head, new THREE.TorusGeometry(0.2, 0.035, 8, 24), trim, 0, -0.3, 0).rotation.x = Math.PI / 2; // the collar
+  add(head, new THREE.CylinderGeometry(0.06, 0.07, 0.06, 10), trim, 0.29, 0.02, 0).rotation.z = Math.PI / 2;
+  add(head, new THREE.CylinderGeometry(0.06, 0.07, 0.06, 10), trim, -0.29, 0.02, 0).rotation.z = Math.PI / 2;
+  add(head, new THREE.CylinderGeometry(0.012, 0.012, 0.26, 5), dark, 0.16, 0.36, -0.06).rotation.z = -0.25;
+  const beacon = add(head, new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshBasicMaterial({ color: 0x5ff2d8 }), 0.195, 0.49, -0.06);
+  // backpack (this is what the camera sees most): rounded case, two light strips, a thruster nozzle
+  add(rig, new THREE.BoxGeometry(0.34, 0.36, 0.16), shell, 0, 0.58, -0.27);
+  add(rig, new THREE.CylinderGeometry(0.08, 0.08, 0.36, 10), shell, 0.17, 0.58, -0.27);
+  add(rig, new THREE.CylinderGeometry(0.08, 0.08, 0.36, 10), shell, -0.17, 0.58, -0.27);
+  const strips = [add(rig, new THREE.BoxGeometry(0.04, 0.22, 0.02), glowM, 0.08, 0.6, -0.36), add(rig, new THREE.BoxGeometry(0.04, 0.22, 0.02), glowM, -0.08, 0.6, -0.36)];
+  add(rig, new THREE.BoxGeometry(0.3, 0.05, 0.17), trim, 0, 0.77, -0.27);
+  add(rig, new THREE.CylinderGeometry(0.05, 0.07, 0.08, 10), dark, 0, 0.37, -0.29);
+  const flame = add(rig, new THREE.ConeGeometry(0.06, 0.25, 10), thrM, 0, 0.22, -0.29); flame.rotation.x = Math.PI;
+  // arms and legs on pivots
+  const armL = pivot(-0.29, 0.62, 0), armR = pivot(0.29, 0.62, 0);
+  for (const [a, s] of [[armL, -1], [armR, 1]]) { add(a, new THREE.CylinderGeometry(0.055, 0.05, 0.24, 8), shell, s * 0.02, -0.12, 0); add(a, new THREE.SphereGeometry(0.075, 10, 8), trim, s * 0.02, -0.27, 0.01); }
+  const legL = pivot(-0.11, 0.3, 0), legR = pivot(0.11, 0.3, 0);
+  for (const l of [legL, legR]) { add(l, new THREE.CylinderGeometry(0.07, 0.065, 0.2, 8), shell, 0, -0.1, 0); add(l, new THREE.SphereGeometry(0.09, 10, 8), dark, 0, -0.24, 0.03, 1, 0.7, 1.3); }
+  const tail = { rotation: {} }; // (the old scarf; kept so the animation code stays simple)
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.32, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
   scene.add(shadow); scene.add(g); g.visible = false; shadow.visible = false;
   E.group = g; E.shadow = shadow;
@@ -54,10 +77,15 @@ function create(THREE, scene, W) {
     up.copy(E.p); side.crossVectors(up, E.f).normalize(); m.makeBasis(side, up, E.f); g.quaternion.setFromRotationMatrix(m);
     g.position.copy(E.p).multiplyScalar(E.r); g.scale.setScalar(scale);
     const sw = Math.sin(E.phase) * Math.min(1, Math.abs(E.speed) / (R * 0.03));
-    legL.rotation.x = sw * 0.7; legR.rotation.x = -sw * 0.7; armL.rotation.x = -sw * 0.6; armR.rotation.x = sw * 0.6;
-    body.position.y = 0.52 + Math.abs(sw) * 0.04 - (E.swim ? 0.2 : 0); head.position.y = 1.02 + Math.abs(sw) * 0.04 - (E.swim ? 0.2 : 0);
-    tail.rotation.x = 0.4 + sw * 0.3 + (E.grounded ? 0 : 0.6);
-    beacon.material.color.setHSL(0.12, 1, 0.55 + 0.2 * Math.sin(performance.now() / 300));
+    const now = performance.now() / 1000, air = !E.grounded && !E.swim, run = Math.min(1, Math.abs(E.speed) / (R * 0.06));
+    // walk: legs and arms swing, the body bobs and leans into the step; jump: arms up, legs tucked, the thruster flares; idle: it breathes
+    legL.rotation.x = air ? -0.6 : sw * 0.8; legR.rotation.x = air ? 0.3 : -sw * 0.8;
+    armL.rotation.x = air ? -2.4 : -sw * 0.7; armR.rotation.x = air ? -2.4 : sw * 0.7; armL.rotation.z = air ? -0.3 : -0.12; armR.rotation.z = air ? 0.3 : 0.12;
+    rig.position.y = Math.abs(sw) * 0.06 + (run < 0.05 && !air ? Math.sin(now * 2.2) * 0.012 : 0) - (E.swim ? 0.28 : 0);
+    rig.rotation.x = run * 0.18 * Math.sign(E.speed || 1) - (air ? 0.12 : 0);
+    head.rotation.z = Math.sin(E.phase) * 0.05 * run; head.rotation.x = -rig.rotation.x * 0.5;
+    thrM.opacity = air && E.vUp > 0 ? 0.9 : Math.max(0, thrM.opacity - 0.08); flame.scale.y = 0.7 + 0.5 * Math.random();
+    const gl = 0.55 + 0.25 * Math.sin(now * 3); beacon.material.color.setHSL(0.47, 0.85, gl); for (const st2 of strips) st2.material.color.setHSL(0.47, 0.8, 0.5 + 0.15 * Math.sin(now * 2 + 1));
     shadow.position.copy(E.p).multiplyScalar(g2 + scale * 0.02); shadow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), E.p); shadow.scale.setScalar(scale * (1 - Math.min(0.6, E.alt / (scale * 3))));
     shadow.visible = g.visible && !E.swim;
     // footstep ticks
@@ -68,13 +96,13 @@ function create(THREE, scene, W) {
     const R = W.R, scale = R * SIZE;
     E.cf.lerp(E.f, Math.min(1, dt * 2.2)); E.cf.addScaledVector(E.p, -E.cf.dot(E.p)).normalize();
     if (!(look && look.held)) { E.yawOff *= Math.exp(-dt * 1.2); E.pitchOff *= Math.exp(-dt * 1.2); }
-    const fwd = tmp.copy(E.cf).applyAxisAngle(E.p, E.yawOff);
-    const back = scale * (6.2 + 2 * Math.max(0, E.pitchOff)), hgt = scale * (3.4 + 3 * E.pitchOff);
+    const fwd = tmp.copy(E.cf).applyAxisAngle(E.p, (E.lockYaw != null ? E.lockYaw : E.yawOff) + 0.28); // a little from the side, so the visor shows
+    const back = scale * ((E.lockYaw != null ? 3.2 : 6.2) + 2 * Math.max(0, E.pitchOff)), hgt = scale * ((E.lockYaw != null ? 1.2 : 3.4) + 3 * E.pitchOff);
     const cpos = new THREE.Vector3().copy(E.p).multiplyScalar(E.r + hgt).addScaledVector(fwd, -back);
     // never under the ground
     const cd = cpos.clone().normalize(), cg = W.groundAt(cd.x, cd.y, cd.z); if (cpos.length() < cg + scale * 1.2) cpos.copy(cd.multiplyScalar(cg + scale * 1.2));
     cam.position.copy(cpos); cam.up.copy(E.p);
-    cam.lookAt(new THREE.Vector3().copy(E.p).multiplyScalar(E.r + scale * 1.3).addScaledVector(fwd, scale * 2.5));
+    cam.lookAt(new THREE.Vector3().copy(E.p).multiplyScalar(E.r + scale * (E.lockYaw != null ? 0.75 : 1.3)).addScaledVector(fwd, E.lockYaw != null ? 0 : scale * 2.5));
   };
   E.show = v => { g.visible = v; shadow.visible = v; };
   E.latLon = () => { const y = Math.max(-1, Math.min(1, E.p.y)); return [Math.asin(y) * 180 / Math.PI, Math.atan2(-E.p.z, E.p.x) * 180 / Math.PI]; };
