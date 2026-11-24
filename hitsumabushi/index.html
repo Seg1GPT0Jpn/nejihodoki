@@ -130,6 +130,39 @@ KoboI18n.add({ en: {
   '2〜4人で {t} のスコア勝負。全員に同じ注文が同じ順番で来ます。': '2–4 players, {t} score battle. Everyone gets the same orders in the same order.',
 } });
 </script>
+<script>
+// special days (特別営業), the streak and the keyboard tips
+KoboI18n.add({ en: {
+  '特別営業': 'Special days', '特別営業 {n}': 'Special {n}', '特別営業：{n}': 'Special day: {n}', '特別営業 {n}：{s}': 'Special {n}: {s}', '特別営業 ★{n}/{m}': 'Special days ★{n}/{m}',
+  '特別営業の一覧へ': 'Special days list', 'つぎの特別営業へ': 'Next special day', 'つぎの特別営業がひらいた！': 'Next special day unlocked!', 'ぜんぶの特別営業をクリア！': 'All special days cleared!',
+  '前の特別営業を★1つ以上でクリアするとひらく': 'Clear the previous special day with 1+ star to unlock',
+  'だれでも同じ条件・お金や評判は変わらず、ランキングにも入りません': 'Same rules for everyone. Money and reputation stay as they are, and it is not ranked.',
+  'さいだいれんぞく {n}皿': 'Best streak: {n}', 'れんぞく ×{n}': 'Streak ×{n}', 'れんぞくの最高': 'Best streak', 'あと10秒で閉店です': '10 seconds to closing', 'もどる': 'Back', '？？？': '???', 'ベスト': 'Best',
+  '点数': 'Score', 'はじめてクリア！': 'First clear!', '自己ベスト更新！': 'New personal best!', 'ねらいに届きませんでした。{g}': 'Goal not reached. {g}',
+  // goals
+  'お出しした皿': 'Dishes served', '極上の皿': 'Exquisite dishes', '「上」以上の皿': 'Dishes rated Good or better', 'おだやかな営業': 'Calm service', 'れんぞく': 'Streak',
+  'お出し': 'Served', '上の皿': 'Good+', 'おだやか': 'Calm',
+  // worlds
+  'はじめての特別営業': 'First special days', 'やさしいお客さん': 'Gentle customers', 'こだわりのお客さん': 'Picky customers', '失敗すると作り直しを頼まれます': 'Bad dishes get sent back',
+  '本気のお客さん': 'Strict customers', '焦げは出せず、待たせると帰ります': 'No burnt eel, and waiting customers leave',
+  // days
+  'ひるどきの行列': 'Lunch rush', 'ひつまぶしとうな丼。まずは、たくさんお出ししよう': 'Hitsumabushi and unadon. Serve as many as you can',
+  'ひつまぶしの日': 'Hitsumabushi day', 'ひつまぶしだけ。食べ方も4通りそろいぶみ': 'Only hitsumabushi, in all its ways of eating',
+  'うな丼ランチ': 'Unadon lunch', '丼ものばかり。回転がはやい': 'All rice bowls. Fast turnover',
+  '白焼きの会': 'Shirayaki party', 'タレを塗らない白焼きとお吸い物。わさびをそえて': 'Plain-grilled eel and clear soup. Add wasabi',
+  'こだわり客の夜': 'Night of the picky', 'こだわりのお客さんは、失敗すると作り直しを頼みます': 'Picky customers send back a bad dish',
+  'ざわつく宵口': 'Busy early evening', '焼き台3つ、客席5つ。次から次へとお客さん': 'Three grills, five seats. Customers keep coming',
+  'う巻きとお吸い物': 'Umaki and soup', 'そえものの注文がいっぱい。最後まで気をぬかない': 'Lots of side orders. Stay sharp to the end',
+  'せっかち客ぞろい': 'Impatient crowd', '「急いで」の注文ばかり。上の皿をつなげよう': 'Mostly "in a hurry" orders. Chain Good dishes',
+  '大盛りの日': 'Big-portion day', '大盛りのチップをいただこう': 'Earn tips on big portions',
+  '老舗の一日': 'A day at the old shop', 'ぜんぶ本気のお客さん。焦がさず、待たせず': 'All strict customers. Do not burn, do not keep them waiting',
+  // how to
+  '特別営業と、キーボード': 'Special days and keyboard',
+  '特別営業：決まった条件で、ねらいを達成する10日間。★は達成度で1〜3。お金や評判は変わりません': 'Special days: 10 set-up days with a goal. 1 to 3 stars by how well you do. Money and reputation do not change',
+  '「上」以上の皿をつなげると「れんぞく」。音が上がります': 'Chain dishes rated Good or better for a streak. The sound rises',
+  'キー：F 返す ・ A うなぎをのせる ・ U あげる ・ 1〜3 焼き台 ・ Tab 焼き場／盛り場 ・ ←→ お客さん ・ Enter お出しする ・ Space 刻む ・ X 作り直す ・ P ひとやすみ': 'Keys: F turn · A add eel · U take off · 1–3 grill · Tab grill/plating · ←→ customer · Enter serve · Space chop · X remake · P pause',
+} });
+</script>
 <script src="../common/games.js"></script>
 <script src="../common/platform.js"></script>
 <script src="../common/audio.js"></script>
@@ -366,10 +399,32 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
   .howto-btns { display: flex; flex-direction: row-reverse; gap: 8px; } .howto-btns .btn { flex: 1; }
   .sfoot { display: flex; gap: 8px; align-items: center; } .sfoot > .btn { flex: 1.3; } .sfoot .row2 { flex: 2; } .sfoot .btn.link { flex: none; width: auto; }
 }
+/* special days (特別営業): goal chip, stage list, stars on the result */
+.chip.goal { color: var(--kb-ink); background: var(--kb-accent-soft); }
+.clock.late, .clock.late #iClock { color: var(--h-tag-hurry); }
+.clock.late .bar i { background: var(--h-tag-hurry); }
+.stagecard { max-width: 420px; text-align: left; }
+.stagecard h2, .stagecard #stNote { text-align: center; }
+.stlist { margin-top: 4px; padding-right: 2px; }
+.stw { display: flex; flex-direction: column; margin: 8px 2px 4px; }
+.stw b { font-size: 12.5px; color: var(--kb-accent-text); } .stw small { font-size: 11px; color: var(--kb-dim); }
+.stg { display: flex; align-items: center; gap: 10px; box-sizing: border-box; width: 100%; min-height: 56px; margin-bottom: 6px; padding: 6px 10px; border-radius: 14px; border: 1px solid var(--h-line); background: var(--h-panel); color: var(--kb-ink); text-align: left; cursor: pointer; font-family: inherit; }
+.stg:active { transform: translateY(1px); }
+.stg:disabled { opacity: .45; cursor: default; }
+.stg:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.stg .no { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--kb-accent); color: var(--kb-accent-ink); display: grid; place-items: center; font: 400 14px var(--kb-font-display); }
+.stg:disabled .no { background: var(--h-line); color: var(--kb-dim); }
+.stg .tx { flex: 1; min-width: 0; } .stg .tx b { display: block; font-size: 13.5px; overflow-wrap: anywhere; } .stg .tx small { display: block; font-size: 11px; color: var(--kb-dim); line-height: 1.35; overflow-wrap: anywhere; }
+.stg .stars { flex: none; text-align: right; font-size: 15px; letter-spacing: 1px; color: var(--h-c-warn); white-space: nowrap; }
+.stg .stars em { display: block; font-style: normal; font-size: 10.5px; letter-spacing: 0; color: var(--kb-dim); }
+.dstars { display: flex; justify-content: center; gap: 6px; font-size: 36px; line-height: 1.1; margin: 2px 0 4px; }
+.dstars span { color: var(--h-line); }
+.dstars span.on { color: var(--h-c-warn); animation: starpop .5s both; animation-delay: calc(var(--i) * .28s); }
+@keyframes starpop { 0% { transform: scale(0) rotate(-40deg); opacity: 0; } 70% { transform: scale(1.3) rotate(8deg); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(20px) scale(.95); } }
 @keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
-@media (prefers-reduced-motion: reduce) { .overlay, .card, .coach, .newrec, .tool.pulse, .tool.alert, .tool.burn { animation: none; } #toast { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .overlay, .card, .coach, .newrec, .tool.pulse, .tool.alert, .tool.burn, .dstars span.on { animation: none; } #toast { transition: none; } }
 </style>
 </head>
 <body>
@@ -390,6 +445,7 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
       <span class="chip score" id="iScore">0点</span>
       <span class="chip" id="iMoney">¥0</span>
       <span class="chip" id="iStock">うなぎ 0</span>
+      <span class="chip goal" id="iGoal" hidden></span>
       <span class="chip strict" id="iStrict">やさしい</span>
     </div>
   </header>
@@ -433,8 +489,8 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
     <div class="sbody scroll" id="shopBody"></div>
     <div class="sfoot">
       <button class="btn" id="openBtn" type="button"></button>
-      <div class="row2"><button class="btn sub" id="shopDaily" type="button" data-i18n>今日のチャレンジ</button><span id="shopVs" class="vs-slot"></span></div>
-      <div class="row2"><button class="btn link" id="shopHow" type="button" data-i18n>遊び方</button><a class="btn link" href="../" data-i18n>ゲーム一覧へ</a></div>
+      <div class="row2"><button class="btn sub" id="shopDaily" type="button" data-i18n>今日のチャレンジ</button><button class="btn sub" id="shopStage" type="button"></button></div>
+      <div class="row2"><span id="shopVs" class="vs-slot"></span><button class="btn link" id="shopHow" type="button" data-i18n>遊び方</button><a class="btn link" href="../" data-i18n>ゲーム一覧へ</a></div>
     </div>
   </div>
 </div>
@@ -443,8 +499,9 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
   <div class="card">
     <h2 id="dTitle"></h2>
     <div class="scroll">
-      <div class="label" data-i18n>本日の点数</div>
+      <div class="label" id="dLabel" data-i18n>本日の点数</div>
       <div class="big" id="dScore">0</div>
+      <div class="dstars" id="dStars" hidden aria-hidden="true"><span>★</span><span>★</span><span>★</span></div>
       <div id="dNew" class="newrec" hidden data-i18n>ベスト更新！</div>
       <div class="drows" id="dRows"></div>
       <p id="dNote"></p>
@@ -452,8 +509,18 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
     </div>
     <button class="btn" id="dNext" type="button" data-i18n>閉店後の仕込みへ</button>
     <button class="btn" id="dAgain" type="button" data-i18n>もう一度挑戦</button>
+    <button class="btn sub" id="dList" type="button" hidden data-i18n>特別営業の一覧へ</button>
     <button class="btn sub" id="dNormal" type="button" data-i18n>ふつうの営業へ</button>
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="ovStage" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="card stagecard">
+    <h2 id="stTitle" data-i18n>特別営業</h2>
+    <p id="stNote"></p>
+    <div class="scroll stlist" id="stList"></div>
+    <button class="btn sub" id="stBack" type="button" data-i18n>もどる</button>
   </div>
 </div>
 
@@ -482,6 +549,14 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
         </ul>
       </details>
       <details>
+        <summary data-i18n>特別営業と、キーボード</summary>
+        <ul>
+          <li data-i18n>特別営業：決まった条件で、ねらいを達成する10日間。★は達成度で1〜3。お金や評判は変わりません</li>
+          <li data-i18n>「上」以上の皿をつなげると「れんぞく」。音が上がります</li>
+          <li data-i18n>キー：F 返す ・ A うなぎをのせる ・ U あげる ・ 1〜3 焼き台 ・ Tab 焼き場／盛り場 ・ ←→ お客さん ・ Enter お出しする ・ Space 刻む ・ X 作り直す ・ P ひとやすみ</li>
+        </ul>
+      </details>
+      <details>
         <summary data-i18n>お店と、お客さんの厳しさ</summary>
         <ul>
           <li data-i18n>点数：焼き・タレ・刻み・盛りつけ・注文どおりか、と早さ。点数が高いほどチップが増えます</li>
@@ -500,6 +575,7 @@ html[lang="en"] .tool span { font-size: 11.5px; letter-spacing: -.03em; }
   </div>
 </div>
 <script src="../common/game.js"></script>
+<script src="engine.js"></script>
 <script>
 (() => {
 'use strict';
@@ -513,6 +589,8 @@ const KG = () => window.KoboGame || null;
 const GAME = 'hitsumabushi';
 const SAVE_KEY = 'kusoge.hitsumabushi.save';   // progress (registry: per-field merge)
 const HOWTO_KEY = 'kusoge.hitsumabushi.howto'; // '1' = the how-to was shown
+const X_KEY = 'kusoge.hitsumabushi.x';         // special days: stars / bests / longest streak (this device only: not synced, not ranked)
+const HE = window.HitsuEngine;                 // hitsumabushi/engine.js: the special days, goals, streak, the x save
 const DEBUG = /[?&]debug\b/.test(location.search);
 const $ = id => document.getElementById(id);
 const store = {
@@ -608,6 +686,8 @@ function readSave() {
   return o;
 }
 let save = readSave();
+let XV = HE.readX(store.get(X_KEY));
+function mutX(fn) { XV = HE.readX(store.get(X_KEY)); const r = fn(XV); store.set(X_KEY, JSON.stringify(XV)); return r; }
 function writeSave() {
   const cur = readSave();
   save.best = Math.max(save.best, cur.best);
@@ -658,6 +738,8 @@ const sfx = {
   bell() { tone(1568, 0.5, 'sine', 0.05); tone(2093, 0.4, 'sine', 0.03, 0.02); },
   day() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, 'triangle', 0.08, i * 0.1)); },
   coin() { tone(1319, 0.06, 'square', 0.03); tone(1760, 0.12, 'square', 0.03, 0.05); },
+  streak(n) { const b = 660 * Math.pow(1.0595, Math.min(12, n) * 2); tone(b, 0.1, 'triangle', 0.06); tone(b * 1.5, 0.14, 'sine', 0.05, 0.07); },
+  star(i) { tone(660 * Math.pow(1.26, i), 0.2, 'triangle', 0.08, 0); tone(1320 * Math.pow(1.26, i), 0.25, 'sine', 0.05, 0.05); },
   warn() { tone(880, 0.05, 'square', 0.03); tone(880, 0.05, 'square', 0.03, 0.12); },
 };
 function vibrate(p) { if (A && A.vibrate) A.vibrate(reduceMotion.matches && Array.isArray(p) ? p[0] : p); }
@@ -694,9 +776,11 @@ function makeLook(rnd) { return { skin: pick(rnd, SKINS), hair: pick(rnd, HAIRS)
 function makeOrder(setup, rnd, at, regIds) {
   const menu = setup.menu;
   const dishW = { hitsu: 5 }; if (menu.includes('don')) dishW.don = 3; if (menu.includes('shira')) dishW.shira = 2;
+  if (setup.only && setup.only.some(k => dishW[k])) for (const k of Object.keys(dishW)) if (!setup.only.includes(k)) delete dishW[k]; // special days: only these dishes
   const c = { id: uid++, at, dish: wpick(rnd, dishW), req: [], style: 0, side: null, strict: false, reg: null, usual: false, asked: false,
     look: makeLook(rnd), wait: 0, qwait: 0, state: 'new', seat: -1, late: false, leaveAt: 0, result: null, enter: 0 };
   if (c.dish === 'hitsu') c.style = Math.floor(rnd() * 4);
+  if (setup.styleMin && c.dish === 'hitsu') c.style = Math.max(c.style, setup.styleMin);
   // requests: a few at first, more as the shop grows
   const nReq = setup.rank === 0 ? (rnd() < 0.45 ? 1 : 0) : setup.rank === 1 ? Math.floor(rnd() * 3) : 1 + Math.floor(rnd() * (setup.strict === 'A' ? 3 : 2));
   const pool = ['tare', 'well', 'large', 'hurry'];
@@ -707,8 +791,16 @@ function makeOrder(setup, rnd, at, regIds) {
     const k = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
     c.req.push(k === 'tare' ? (rnd() < 0.6 ? 'tareMore' : 'tareLess') : k);
   }
+  if (setup.forceReq && rnd() < (setup.forceP || 0.5)) { // special days: a themed request on most slips
+    for (const k of setup.forceReq) {
+      if (c.req.includes(k) || (c.dish === 'shira' && (k === 'large' || k === 'tareMore' || k === 'tareLess'))) continue;
+      if (k === 'tareMore') c.req = c.req.filter(q => q !== 'tareLess');
+      if (k === 'tareLess') c.req = c.req.filter(q => q !== 'tareMore');
+      c.req.push(k);
+    }
+  }
   const sides = []; if (menu.includes('kimo')) sides.push('kimo'); if (menu.includes('umaki')) sides.push('umaki');
-  if (sides.length && rnd() < 0.3) c.side = pick(rnd, sides);
+  if (sides.length && rnd() < (setup.sideP || 0.3)) c.side = pick(rnd, sides);
   if (setup.strict !== 'B') c.strict = rnd() < (setup.strict === 'A' ? 0.4 : 0.3);
   // a regular instead (only in the normal shop: matches and dailies are the same for everyone)
   if (regIds && regIds.length && rnd() < 0.3) {
@@ -724,7 +816,7 @@ function makeOrder(setup, rnd, at, regIds) {
 function genSchedule(setup, rnd, from, regIds) {
   const list = [];
   const thr = Math.min(setup.grills / 36, 1 / 17); // dishes per second a good cook can make
-  const interval = (1 / (thr * 0.92)) * (1 - 0.035 * Math.min(setup.rank, 4));
+  const interval = (1 / (thr * 0.92)) * (1 - 0.035 * Math.min(setup.rank, 4)) * (setup.rush || 1);
   let t = from + 2 + rnd() * 3;
   while (t < setup.dur - 28) { list.push(makeOrder(setup, rnd, t, regIds)); t += interval * (0.65 + rnd() * 0.7); }
   return list;
@@ -849,8 +941,9 @@ const RATING = ['残念…', 'いまいち', 'まずまず', '上', '極上！']
 // ---------- a business day ----------
 function newDay(mode, opt) {
   opt = opt || {};
-  const setup = mode === 'normal' || mode === 'tutorial' ? saveSetup() : Object.assign({}, FIXED, { menu: FIXED.menu.slice() });
-  const seed = (opt.seed != null ? opt.seed : (Math.random() * 4294967296)) >>> 0;
+  const stg = mode === 'stage' ? HE.info(opt.stage) : null;
+  const setup = stg ? HE.setupOf(opt.stage) : mode === 'normal' || mode === 'tutorial' ? saveSetup() : Object.assign({}, FIXED, { menu: FIXED.menu.slice() });
+  const seed = (stg ? stg.seed : opt.seed != null ? opt.seed : (Math.random() * 4294967296)) >>> 0;
   const rnd = mkRng(seed);
   const own = mode === 'normal' || mode === 'tutorial';
   const regIds = mode === 'normal' ? REGS.filter(r => save.day >= r.from && (r.dish === 'hitsu' || setup.menu.includes(r.dish))).map(r => r.id) : null;
@@ -859,7 +952,8 @@ function newDay(mode, opt) {
     sched: [], cust: [], seats: new Array(setup.seats).fill(null), queue: [],
     grills: new Array(setup.grills).fill(null), board: null, plate: newPlate(), sel: null,
     score: 0, money: own ? save.money : 0, tips: 0, sales: 0, stock: own ? save.stock : 999, used: 0,
-    rep: 0, served: [], refused: 0, angry: 0, lost: 0, perfect: 0, remembered: 0, day: own ? save.day : 1,
+    rep: 0, served: [], refused: 0, angry: 0, lost: 0, perfect: 0, remembered: 0, day: own ? save.day : stg ? opt.stage + 1 : 1,
+    stage: stg ? opt.stage : -1, good: 0, streak: 0, maxStreak: 0, warned: false,
     wallStart: Date.now(), regIds,
   };
   if (mode === 'tutorial') {
@@ -885,17 +979,17 @@ function startDay(mode, opt) {
   tut = tutorial ? { step: 0 } : null;
   layout();
   D.started = true;
-  const pm = D.mode;
+  const pm = D.mode === 'stage' ? 'practice' : D.mode; // special days are reported as practice (no achievements, no best)
   emit('play_start', pm === 'daily' ? { mode: 'daily', dateKey: D.dateKey, seed: D.seed } : { mode: pm, stage: D.day, seed: pm === 'normal' ? undefined : D.seed });
   sfx.bell();
   if (tut) renderCoach();
-  else toast(D.mode === 'normal' ? T('{n}日目、開店です！', { n: D.day }) : D.mode === 'daily' ? T('今日のチャレンジ、開店です！') : T('開店！'));
+  else toast(D.mode === 'stage' ? T('特別営業：{n}', { n: T(HE.info(D.stage).name) }) : D.mode === 'normal' ? T('{n}日目、開店です！', { n: D.day }) : D.mode === 'daily' ? T('今日のチャレンジ、開店です！') : T('開店！'));
   refreshAll();
 }
 function endPlay(reason) {
   if (!D || !D.started || D.ended) return;
   D.ended = true;
-  emit('play_end', { mode: D.mode, score: D.score, reason, stage: D.day, stats: dayStats() });
+  emit('play_end', { mode: D.mode === 'stage' ? 'practice' : D.mode, score: D.score, reason, stage: D.day, stats: dayStats() });
 }
 function dayStats() { return { served: D.served.length, perfect: D.perfect, remembered: D.remembered, angry: D.angry, refused: D.refused, sales: D.sales, tips: D.tips, day: D.day }; }
 
@@ -915,6 +1009,12 @@ function seat(c, i) {
     toast(c.usual ? T('{n}が来た。「いつもの」だって', { n: T(REG_BY[c.reg].name) }) : T('常連の{n}が来ました', { n: T(REG_BY[c.reg].name) }));
   }
   sfx.bell();
+}
+function cycleCust(dir) { // keyboard: the next / previous customer at the counter
+  if (!D) return;
+  const l = D.cust.filter(c => c.state === 'seat').sort((a, b) => a.seat - b.seat); if (!l.length) return;
+  let i = l.findIndex(c => c.id === D.sel); i = i < 0 ? 0 : (i + dir + l.length) % l.length;
+  selectCustomer(l[i]);
 }
 const selCust = () => (D ? D.cust.find(c => c.id === D.sel && c.state === 'seat') || null : null);
 function autoSelect() {
@@ -1081,7 +1181,7 @@ function serve() {
   D.plate = newPlate(); mini = null;
   if (picky && (burnt || !r.vesselOk || r.pts < 50)) {
     // a picky customer sends it back: the eel is lost and they keep waiting
-    D.refused++; c.wait += 12; D.rep -= 1;
+    D.refused++; c.wait += 12; D.rep -= 1; D.streak = 0;
     say(c, T('作り直して！'), 'bad'); sfx.angry(); vibrate([30, 30, 30]);
     toast(T('作り直しを頼まれた…（{why}）', { why: T(r.notes[0] || '見た目') }));
     refreshAll();
@@ -1091,6 +1191,8 @@ function serve() {
   D.seats[c.seat] = c; D.score += r.pts; D.sales += r.price; D.tips += r.tip; D.money += r.price + r.tip;
   D.served.push({ dish: c.dish, pts: r.pts, rating: r.rating, reg: c.reg, notes: r.notes });
   if (r.rating >= 4) D.perfect++;
+  if (r.rating >= 3) D.good++;
+  D.streak = HE.streakNext(D.streak, r.rating); if (D.streak > D.maxStreak) D.maxStreak = D.streak;
   if (r.remembered) D.remembered++;
   D.rep += r.pts >= 85 ? 3 : r.pts >= 70 ? 2 : r.pts >= 50 ? 1 : r.pts < 35 ? -1 : 0;
   if (vs && r.pts >= 60) vs.score += r.pts;
@@ -1099,7 +1201,12 @@ function serve() {
   (r.rating >= 4 ? sfx.great : r.rating >= 2 ? sfx.serve : sfx.bad)();
   if (r.tip) setTimeout(() => sfx.coin(), 250);
   const sr = seatRect(c.seat);
-  if (sr) floater(sr.x + sr.w / 2, sr.y + sr.h * 0.3, '+' + r.pts + (r.tip ? '  ' + yen(r.tip) : ''), r.rating >= 3 ? 'good' : 'ok');
+  if (sr) {
+    floater(sr.x + sr.w / 2, sr.y + sr.h * 0.3, '+' + r.pts + (r.tip ? '  ' + yen(r.tip) : ''), r.rating >= 3 ? 'good' : 'ok');
+    if (r.rating >= 4) { burst(sr.x + sr.w / 2, sr.y + sr.h * 0.45, 22); shake(2.5); }
+    else if (r.rating === 3) burst(sr.x + sr.w / 2, sr.y + sr.h * 0.45, 9);
+    if (D.streak >= 3) { floater(sr.x + sr.w / 2, sr.y + sr.h * 0.05, T('れんぞく ×{n}', { n: D.streak }), 'combo'); setTimeout(() => sfx.streak(D.streak), 120); }
+  }
   toast(T('{r}　{p}点', { r: T(RATING[r.rating]), p: r.pts }) + (r.notes.length ? '　' + r.notes.map(n => T(n)).join(T('・')) : ''));
   D.sel = null; autoSelect();
   if (tut && tut.step === 9) tutStep(10);
@@ -1136,7 +1243,7 @@ function update(dt) {
         c.late = true;
         const leaves = D.setup.strict === 'A' || (D.setup.strict === 'C' && c.strict);
         if (leaves) {
-          c.state = 'angry'; c.leaveAt = D.t + 1.8; D.angry++; D.rep -= D.setup.strict === 'A' ? 3 : 2;
+          c.state = 'angry'; c.leaveAt = D.t + 1.8; D.angry++; D.streak = 0; shake(3); D.rep -= D.setup.strict === 'A' ? 3 : 2;
           say(c, T('もう帰る！'), 'bad'); sfx.angry();
           toast(T('{n}が怒って帰ってしまった…', { n: c.reg ? T(REG_BY[c.reg].name) : T('お客さん') }));
         } else say(c, T('まだかな…'), 'bad');
@@ -1186,6 +1293,7 @@ function update(dt) {
   if (mini && mini.anim > 0) mini.anim = Math.max(0, mini.anim - dt * 3);
   if (mini && mini.done && nowSec() - mini.done > 0.7) mini = null;
   if (tut) tutCheck();
+  if (!frozen && !D.warned && D.dur - D.t <= 10 && D.t > 20 && !vs) { D.warned = true; toast(T('あと10秒で閉店です')); sfx.warn(); }
   if (!frozen && D.t >= D.dur && !vs) closeShop();
 }
 function closeShop() {
@@ -1441,6 +1549,13 @@ function spark(x, y, kind) { if (fx.length < 260) fx.push({ x, y, kind, t: 0, vx
 function dripAt(lane) { const L = LY && LY.lanes[lane]; if (!L) return; const r = L.fil; spark(r.x + Math.random() * r.w, r.y + r.h, 'drip'); }
 function steamPuff() { if (!LY) return; const c = LY.vCenter; for (let i = 0; i < 4; i++) spark(c.x + (Math.random() - 0.5) * c.rx, c.y - c.ry * 0.3, 'steam'); }
 function floater(x, y, text, kind) { floaters.push({ x, y, text, kind, t: 0 }); }
+const BURST_COL = ['#ffd36b', '#ff8a3a', '#fff3c0', '#e5533d', '#7fd49a'];
+function burst(x, y, n) { // sparkles for a great dish (a few, and none with reduced motion)
+  if (reduceMotion.matches) return;
+  for (let i = 0; i < n && fx.length < 260; i++) { const a = Math.random() * 6.283, v = 50 + Math.random() * 110; fx.push({ x, y, kind: 'conf', t: 0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, life: 0.7 + Math.random() * 0.5, r: 2 + Math.random() * 2, col: BURST_COL[i % BURST_COL.length] }); }
+}
+let shakeT = 0, shakeA = 0;
+function shake(a) { if (reduceMotion.matches) return; shakeA = a; shakeT = 0.28; }
 
 // ---------- drawing: people at the counter ----------
 function drawPerson(c, x, y, s, cust, mood) {
@@ -1996,14 +2111,15 @@ function drawFx(dt) {
     const a = clamp(1 - p.t / p.life, 0, 1);
     if (p.kind === 'steam') { p.vx += (Math.sin(p.t * 3 + p.y * 0.05) * 10) * dt; p.r += dt * 8; ctx.globalAlpha = 0.16 * a * Math.min(1, p.t * 3); ctx.drawImage(statics.ss, p.x - p.r * 1.6, p.y - p.r * 1.6, p.r * 3.2, p.r * 3.2); ctx.globalAlpha = 1; }
     else if (p.kind === 'ember') { ctx.fillStyle = `rgba(255,${150 + 80 * a | 0},60,${a})`; ctx.fillRect(p.x, p.y, 2, 2); }
+    else if (p.kind === 'conf') { p.vy += 260 * dt; p.vx *= 0.985; ctx.globalAlpha = a; ctx.fillStyle = p.col; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.t * 9 + p.r); ctx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); ctx.restore(); ctx.globalAlpha = 1; }
     else if (p.kind === 'drip' || p.kind === 'drop') { p.vy += 300 * dt; ctx.fillStyle = `rgba(110,45,10,${a})`; ctx.beginPath(); ctx.arc(p.x, p.y, 1.8, 0, 7); ctx.fill(); }
   }
   fx = fx.filter(p => p.t < p.life);
   for (const f of floaters) {
     f.t += dt; const a = clamp(1.6 - f.t, 0, 1);
-    ctx.globalAlpha = a; ctx.font = font(15); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = a; ctx.font = font(f.kind === 'combo' ? 17 : 15); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeText(f.text, f.x, f.y - f.t * 22);
-    ctx.fillStyle = f.kind === 'good' ? '#ffe066' : '#fff'; ctx.fillText(f.text, f.x, f.y - f.t * 22); ctx.globalAlpha = 1;
+    ctx.fillStyle = f.kind === 'good' || f.kind === 'combo' ? '#ffe066' : '#fff'; ctx.fillText(f.text, f.x, f.y - f.t * 22); ctx.globalAlpha = 1;
   }
   floaters = floaters.filter(f => f.t < 1.6);
 }
@@ -2012,6 +2128,7 @@ function draw(dt) {
   if (!LY || !statics) return;
   const t = nowSec();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (shakeT > 0) { shakeT = Math.max(0, shakeT - (dt || 0.016)); const k = shakeA * shakeT / 0.28; ctx.translate((Math.random() - 0.5) * 2 * k, (Math.random() - 0.5) * 2 * k); }
   ctx.drawImage(statics.bg, 0, 0, W, H);
   // warm lamp light from above
   const lg = ctx.createRadialGradient(W * 0.5, -H * 0.1, 0, W * 0.5, -H * 0.1, Math.max(W, H) * 0.9);
@@ -2093,9 +2210,19 @@ function clockText() {
   return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
 }
 function setText(id, s) { const el = $(id); if (el && el.textContent !== s) el.textContent = s; }
+function liveStats() { return D ? { score: D.score, served: D.served.length, perfect: D.perfect, good: D.good, tips: D.tips, angry: D.angry, refused: D.refused, streak: D.maxStreak } : null; }
+const KIND_SHORT = { score: '点', served: 'お出し', perfect: '極上', good: '上の皿', tips: 'チップ', clean: 'おだやか', streak: 'れんぞく' };
+function goalChip() {
+  const S = HE.info(D.stage), v = HE.metric(S.kind, liveStats()), n = HE.starsFor(D.stage, v), next = S.stars[Math.min(n, 2)];
+  return T(KIND_SHORT[S.kind]) + ' ' + fmtN(v) + '/' + fmtN(next) + ' ' + '★'.repeat(n) + '☆'.repeat(3 - n);
+}
 function renderHud() {
   const normal = !D || D.mode === 'normal';
-  setText('iDay', !D ? T('{n}日目', { n: save.day }) : D.mode === 'daily' ? T('今日のチャレンジ') : D.mode === 'versus' ? T('対戦') : D.mode === 'practice' ? T('練習') : T('{n}日目', { n: D.day }));
+  const stg = !!(D && D.mode === 'stage' && HE.info(D.stage));
+  $('iGoal').hidden = !stg; if (stg) setText('iGoal', goalChip());
+  const late = !!(D && D.started && !D.over && !vs && D.t > 20 && D.dur - D.t <= 10);
+  $('iClock').parentNode.classList.toggle('late', late);
+  setText('iDay', !D ? T('{n}日目', { n: save.day }) : stg ? T('特別営業 {n}', { n: D.stage + 1 }) : D.mode === 'daily' ? T('今日のチャレンジ') : D.mode === 'versus' ? T('対戦') : D.mode === 'practice' ? T('練習') : T('{n}日目', { n: D.day }));
   setText('iClock', clockText());
   $('iBar').style.transform = 'scaleX(' + (D ? clamp(1 - D.t / D.dur, 0, 1) : 1).toFixed(3) + ')';
   setText('iScore', T('{n}点', { n: fmtN(vs ? vs.score : D ? D.score : 0) }));
@@ -2227,7 +2354,7 @@ $('trashBtn').addEventListener('click', () => trash());
 $('serveBtn').addEventListener('click', () => serve());
 
 // ---------- overlays ----------
-const OVERLAYS = ['howto', 'ovShop', 'ovDay'];
+const OVERLAYS = ['howto', 'ovShop', 'ovDay', 'ovStage'];
 function hideOverlays() { for (const id of OVERLAYS) $(id).hidden = true; }
 const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden);
 let howFirst = false;
@@ -2280,6 +2407,7 @@ function renderShop() {
   $('shopStory').textContent = T(STORY[save.rank]);
   $('shopStrict').textContent = T('お客さん：{s}', { s: T(STRICT_NAME[strictOf(save.rank)]) });
   $('openBtn').textContent = T('{n}日目を開店する', { n: save.day });
+  $('shopStage').textContent = T('特別営業 ★{n}/{m}', { n: HE.totalStars(XV), m: HE.N * 3 });
   for (const b of document.querySelectorAll('#shopTabs button')) b.setAttribute('aria-selected', String(b.dataset.tab === shopTab));
   let h = '';
   if (shopTab === 'stock') {
@@ -2319,6 +2447,7 @@ $('shopHow').addEventListener('click', () => { $('ovShop').hidden = true; showHo
 
 // the result of a day
 function finishDay() {
+  if (D.mode === 'stage') return finishStage();
   const normal = D.mode === 'normal';
   let newBest = false, rankUp = null;
   const gotRep = D.rep;
@@ -2332,6 +2461,7 @@ function finishDay() {
     const st = save.stats; st.served += D.served.length; st.perfect += D.perfect; st.remembered += D.remembered; st.days++; st.angry += D.angry; st.score += D.score;
     if (!save.tut) save.tut = 1;
     writeSave();
+    if (D.maxStreak) mutX(x => HE.recordStreak(x, D.maxStreak));
     if (newBest || (D.score > 0 && save.stats.days === 1)) emit('best', { score: D.score });
     emit('stage_clear', { stage: D.day });
   }
@@ -2341,6 +2471,8 @@ function finishDay() {
 }
 function showDayResult(o) {
   const daily = D.mode === 'daily';
+  $('dLabel').textContent = T('本日の点数'); $('dStars').hidden = true; $('dList').hidden = true;
+  $('dNext').textContent = T('閉店後の仕込みへ'); $('dNew').textContent = T('ベスト更新！'); $('dAgain').textContent = T('もう一度挑戦');
   $('dTitle').textContent = daily ? T('今日のチャレンジ 結果') : T('{n}日目の営業、おしまい', { n: D.day });
   $('dScore').textContent = T('{n}点', { n: fmtN(D.score) });
   $('dNew').hidden = !o.newBest;
@@ -2352,6 +2484,7 @@ function showDayResult(o) {
   if (D.angry) rows.push([T('怒って帰った'), T('{n}人', { n: D.angry })]);
   if (D.refused) rows.push([T('作り直し'), T('{n}回', { n: D.refused })]);
   if (D.remembered) rows.push([T('「いつもの」を覚えていた'), T('{n}回', { n: D.remembered })]);
+  if (D.maxStreak >= 3) rows.push([T('れんぞくの最高'), T('{n}皿', { n: D.maxStreak })]);
   if (D.lost) rows.push([T('入れずに帰った'), T('{n}人', { n: D.lost })]);
   $('dRows').innerHTML = rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('');
   let note = '';
@@ -2365,9 +2498,79 @@ function showDayResult(o) {
   $('ovDay').hidden = false;
   refreshAll();
 }
-$('dNext').addEventListener('click', () => showShop());
-$('dAgain').addEventListener('click', () => startDaily(D && D.dateKey));
+$('dNext').addEventListener('click', () => { if (D && D.mode === 'stage') startStage(D.stage + 1); else showShop(); });
+$('dAgain').addEventListener('click', () => { if (D && D.mode === 'stage') startStage(D.stage); else startDaily(D && D.dateKey); });
+$('dList').addEventListener('click', () => { D = null; layout(); openStages(); });
 $('dNormal').addEventListener('click', () => { D = null; showShop(); layout(); });
+
+// ---------- special days (特別営業): 10 fixed days with a goal, from hitsumabushi/engine.js ----------
+const fmtGoal = (kind, n) => kind === 'tips' ? yen(n) : kind === 'score' ? T('{n}点', { n: fmtN(n) }) : T('{n}皿', { n: fmtN(n) });
+const starStr = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+function goalText(S) { return T(HE.KINDS[S.kind].ja) + (EN ? ': ' : '：') + S.stars.map((v, k) => '★' + (k + 1) + ' ' + fmtGoal(S.kind, v)).join(T('・')); }
+const ST_WORLDS = [['はじめての特別営業', 'やさしいお客さん'], ['こだわりのお客さん', '失敗すると作り直しを頼まれます'], ['本気のお客さん', '焦げは出せず、待たせると帰ります']];
+function startStage(i) {
+  if (vs || !HE.info(i) || !HE.open(XV, i)) return false;
+  startDay('stage', { stage: i, noTutorial: true });
+  return true;
+}
+function openStages() {
+  if (vs) return;
+  hideOverlays(); XV = HE.readX(store.get(X_KEY));
+  const list = $('stList'); list.textContent = ''; let w = -1, k = 0;
+  HE.STAGES.forEach((S, i) => {
+    if (S.world !== w) {
+      w = S.world; const hd = document.createElement('div'); hd.className = 'stw';
+      const hb = document.createElement('b'), hs = document.createElement('small'); hb.textContent = T(ST_WORLDS[w][0]); hs.textContent = T(ST_WORLDS[w][1]); hd.append(hb, hs); list.appendChild(hd);
+    }
+    const locked = !HE.open(XV, i);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'stg'; b.dataset.si = i; b.disabled = locked;
+    const no = document.createElement('span'); no.className = 'no'; no.textContent = i + 1;
+    const tx = document.createElement('div'); tx.className = 'tx';
+    const nm = document.createElement('b'); nm.textContent = locked ? T('？？？') : T(S.name);
+    const sm = document.createElement('small'); sm.textContent = locked ? T('前の特別営業を★1つ以上でクリアするとひらく') : T(S.desc);
+    tx.append(nm, sm); if (!locked) { const g = document.createElement('small'); g.textContent = goalText(S); tx.appendChild(g); }
+    const st = document.createElement('div'); st.className = 'stars'; st.textContent = starStr(XV.s[i] || 0);
+    const em = document.createElement('em'); em.textContent = XV.b[i] ? T('ベスト') + ' ' + fmtGoal(S.kind, XV.b[i]) : ''; st.appendChild(em);
+    b.append(no, tx, st); list.appendChild(b);
+    if (!locked) k = i;
+  });
+  $('stNote').textContent = '★ ' + HE.totalStars(XV) + '/' + HE.N * 3 + (XV.c ? '　' + T('さいだいれんぞく {n}皿', { n: XV.c }) : '') + '　' + T('だれでも同じ条件・お金や評判は変わらず、ランキングにも入りません');
+  $('ovStage').hidden = false; refreshAll();
+  const el = list.querySelector('.stg[data-si="' + k + '"]');
+  if (el) { try { list.scrollTop = Math.max(0, el.offsetTop - list.offsetTop - 10); el.focus({ preventScroll: true }); } catch (e) {} }
+}
+$('stList').addEventListener('click', e => { const b = e.target.closest && e.target.closest('.stg'); if (b && !b.disabled) { sfx.tap(); startStage(Number(b.dataset.si)); } });
+$('stBack').addEventListener('click', () => showShop());
+$('shopStage').addEventListener('click', () => { sfx.tap(); openStages(); });
+function finishStage() {
+  const i = D.stage, S = HE.info(i), v = HE.metric(S.kind, liveStats()), stars = HE.starsFor(i, v);
+  let first = false, isNew = false, prev = 0;
+  mutX(x => { prev = x.s[i] || 0; first = stars > 0 && !(x.s[i] > 0); isNew = v > (x.b[i] || 0) && v > 0; HE.record(x, i, stars, v); HE.recordStreak(x, D.maxStreak); });
+  endPlay('over');
+  const rows = [
+    [T('点数'), T('{n}点', { n: fmtN(D.score) })], [T('お出しした皿'), T('{n}皿', { n: D.served.length })], [T('極上'), T('{n}皿', { n: D.perfect })],
+    [T('「上」以上の皿'), T('{n}皿', { n: D.good })], [T('チップ'), yen(D.tips)],
+  ];
+  if (D.maxStreak >= 2) rows.push([T('れんぞくの最高'), T('{n}皿', { n: D.maxStreak })]);
+  if (D.angry) rows.push([T('怒って帰った'), T('{n}人', { n: D.angry })]);
+  if (D.refused) rows.push([T('作り直し'), T('{n}回', { n: D.refused })]);
+  if (D.lost) rows.push([T('入れずに帰った'), T('{n}人', { n: D.lost })]);
+  $('dTitle').textContent = T('特別営業 {n}：{s}', { n: i + 1, s: T(S.name) });
+  $('dLabel').textContent = T(HE.KINDS[S.kind].ja);
+  $('dScore').textContent = fmtGoal(S.kind, v);
+  const ds = $('dStars'); ds.hidden = false;
+  [...ds.children].forEach((el, k) => { el.className = k < stars ? 'on' : ''; el.style.setProperty('--i', k); if (k < stars) setTimeout(() => { if (!$('ovDay').hidden) sfx.star(k); }, 250 + k * 280); });
+  $('dNew').textContent = first ? T('はじめてクリア！') : T('自己ベスト更新！');
+  $('dNew').hidden = !(first || isNew || stars > prev);
+  $('dRows').innerHTML = rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('');
+  const next = i + 1 < HE.N;
+  $('dNote').textContent = stars === 0 ? T('ねらいに届きませんでした。{g}', { g: goalText(S) }) : (first && next ? T('つぎの特別営業がひらいた！') : first ? T('ぜんぶの特別営業をクリア！') : goalText(S));
+  $('dStory').hidden = true;
+  $('dNext').textContent = T('つぎの特別営業へ'); $('dNext').hidden = !(stars > 0 && next);
+  $('dAgain').textContent = T('もう一度挑戦'); $('dAgain').hidden = false; $('dList').hidden = false; $('dNormal').hidden = false;
+  $('ovDay').hidden = false; if (stars >= 3) { sfx.day(); } refreshAll();
+  return true;
+}
 function startDaily(dateKey) {
   if (!PF || vs) return;
   const dk = dateKey && PF.isDateKey(dateKey) ? Number(dateKey) : PF.jstDateKey();
@@ -2402,7 +2605,7 @@ function doPause(reason) {
     title: T('ひとやすみ'), home: '../', extra: [pinfo,
       { label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }],
     onResume: resumePlay,
-    onRestart: D.mode === 'daily' ? () => { paused = false; startDaily(D.dateKey); } : D.tutorial ? undefined : () => { paused = false; restartDay(); },
+    onRestart: D.mode === 'stage' ? () => { paused = false; const i = D.stage; endPlay('quit'); D = null; startStage(i); } : D.mode === 'daily' ? () => { paused = false; startDaily(D.dateKey); } : D.tutorial ? undefined : () => { paused = false; restartDay(); },
     onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); },
   });
   pm.open();
@@ -2424,12 +2627,23 @@ document.addEventListener('keydown', e => {
   if (VS && VS.active() && !vs) return;
   const tg = e.target && e.target.tagName;
   if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer')) return;
+  if (!$('ovStage').hidden) {
+    if (e.key === 'Escape') { e.preventDefault(); showShop(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const bs = [...document.querySelectorAll('#stList .stg:not(:disabled)')]; if (!bs.length) return; e.preventDefault();
+      const i = bs.indexOf(document.activeElement); const j = i < 0 ? 0 : clamp(i + (e.key === 'ArrowDown' ? 1 : -1), 0, bs.length - 1); bs[j].focus(); return;
+    }
+  }
   if (e.key === 'Escape') { if (!$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); } else if (D && D.started && !D.over) openMenu(); return; }
   if (!canAct() || anyOverlay()) return;
   const k = e.key.toLowerCase();
   if (k === ' ' || k === 'enter') { if (view === 'plate' && D.board && !D.board.done) { e.preventDefault(); chopTap(); } else if (k === 'enter' && view === 'plate') serve(); }
   else if (k === 'f') flip();
   else if (k === 'u') takeOff();
+  else if (k === 'arrowleft' || k === 'arrowright') { e.preventDefault(); cycleCust(k === 'arrowright' ? 1 : -1); }
+  else if (k === 'p') openMenu();
+  else if (k === 'x') trash();
+  else if (k === 'q') askUsual();
   else if (k === 'a') addEel();
   else if (k === 'tab') { e.preventDefault(); setView(view === 'grill' ? 'plate' : 'grill'); }
   else if (/^[1-3]$/.test(k) && D.grills[+k - 1]) selLane = +k - 1;
@@ -2553,6 +2767,8 @@ if (DEBUG) {
   const api = {
     ready: () => booted && !!LY,
     state: () => ({
+      stage: D && D.mode === 'stage' ? D.stage : -1, streak: D ? D.streak : 0, maxStreak: D ? D.maxStreak : 0, good: D ? D.good : 0, stageList: !$('ovStage').hidden, x: JSON.parse(JSON.stringify(XV)),
+      goal: D && D.mode === 'stage' ? $('iGoal').textContent : '',
       mode: vs ? (vs.playing || D.mode) : D ? D.mode : 'shop', score: vs ? vs.score : D ? D.score : 0, time: D ? Math.round(D.t * 1000) : 0,
       over: !!(D && D.over), paused, view, day: D ? D.day : save.day, dur: D ? D.dur : 0, strict: D ? D.setup.strict : strictOf(save.rank),
       money: D && D.mode === 'normal' ? D.money : save.money, stock: D && D.mode === 'normal' ? D.stock : save.stock,
@@ -2572,6 +2788,7 @@ if (DEBUG) {
   window.__kb = Object.assign(window.__kb || {}, api);
   window.__hitsu = {
     api, get D() { return D; }, get save() { return save; }, judge, required, readSave, layout,
+    startStage, openStages, HE, setX(o) { mutX(x => Object.assign(x, o)); }, get X() { return XV; },
     startDay: (mode, o) => (mode === 'daily' ? startDaily(o && o.dateKey) : startDay(mode || 'normal', o)),
     finishTutorial: () => finishTutorial(true), shop: showShop, howto: () => showHowto(false), buy,
     addEel, flip, takeOff, chopTap, chopNow, chooseVessel, dropRice, dropEel, toggleAcc, openMini, miniDown, miniUp, serve, trash, askUsual, setView, bot,

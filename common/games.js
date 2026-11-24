@@ -349,6 +349,7 @@
       keys: {
         'kusoge.hitsumabushi.save': '{ v:1, day（次に開く日）, best（1日の最高点）, money, stock（うなぎ）, rep（評判）, rank（0〜4 屋台→老舗）, up:{ grills, seats, coal, look }, menu:[…], regs:{ <id>:{ visits, known } }, stats:{ served, perfect, remembered, days, angry, score }, story, tut }。営業中の日は保存しない（閉店で書く）',
         'kusoge.hitsumabushi.howto': '遊び方を見た（\'1\'）',
+        'kusoge.hitsumabushi.x': '特別営業の星とベスト { v:1, s:[10日の星0〜3], b:[10日のベスト], c: さいだいれんぞく }（端末内だけ。同期しない・ランキングに入らない）',
       },
       // お金・在庫・評判は使うと減るので newest。日・ベスト・格・改装・統計は大きい方、メニューは和集合、常連は回数の大きい方
       sync: {

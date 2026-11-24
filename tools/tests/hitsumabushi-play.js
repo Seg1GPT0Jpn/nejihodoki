@@ -6,6 +6,7 @@
 // 3. 採点：完璧な皿・焦げ・器ちがい・わさび抜き違反・急いで・常連の「いつもの」
 // 4. 厳しさ B→C→A：B は焦げも出せる / C のこだわり客は作り直し / A は焦げを出せず、待たせると怒って帰る
 // 5. 仕込み（仕入れ・改装・メニュー）が保存されること、デイリーはベストを変えないこと、英語で日本語が見えないこと
+// 6. 特別営業10日：一覧・ねらい・★と次が開く・ふつうの保存は変わらない・キー（矢印・P・Esc）・タッチ・ボットが全部★3・こわれた保存・英語
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -277,13 +278,126 @@ async function dailyAndEnglish(env) {
   await s2.close();
 }
 
+
+// ---- 特別営業（10日）：一覧・ねらい・★・保存・キーボード・タッチ・英語
+const XKEY = 'kusoge.hitsumabushi.x';
+async function specialDays(env) {
+  console.log('6. special days: list, goal chip, bot clears, stars + unlock, normal save untouched, keys, touch, en');
+  const s = await open(env, { seed: seedOf(Object.assign({}, BASE, { best: 321, day: 5, rep: 33, money: 12345 })) });
+  const p = s.page;
+  let x = await st(p);
+  check('shop is open and shows the special days button', x.shop && /特別営業/.test(await p.textContent('#shopStage')), await p.textContent('#shopStage'));
+  await p.click('#shopStage');
+  x = await st(p);
+  check('the list opens (shop closed)', x.stageList && !x.shop);
+  const dis = await p.$$eval('#stList .stg', bs => bs.map(b => b.disabled));
+  check('10 days, only the first is open', dis.length === 10 && !dis[0] && dis.slice(1).every(Boolean), dis);
+  await shot(p, '6-list');
+  await p.keyboard.press('Escape');
+  x = await st(p);
+  check('Esc in the list goes back to the shop', x.shop && !x.stageList);
+  await p.click('#shopStage');
+  await p.keyboard.press('ArrowDown');
+  check('arrow keys keep the focus on the days', await p.evaluate(() => !!(document.activeElement && document.activeElement.classList.contains('stg'))));
+  await p.click('#stList .stg[data-si="0"]');
+  x = await st(p);
+  check('day 1 starts as a stage (not the normal shop)', x.mode === 'stage' && x.stage === 0 && !x.stageList, x.mode);
+  check('goal chip shows the goal', /お出し 0\/4/.test(x.goal) && await p.isVisible('#iGoal') && !(await p.isVisible('#iMoney')), x.goal);
+  // the fixed seed: the same orders every time
+  const q1 = await p.evaluate(() => __hitsu.D.sched.map(c => c.dish + c.req.join('')).join('|'));
+  await p.evaluate(() => { __hitsu.D.over = true; __hitsu.startStage(0); });
+  const q2 = await p.evaluate(() => __hitsu.D.sched.map(c => c.dish + c.req.join('')).join('|'));
+  check('special days are deterministic', q1 === q2 && q1.length > 5, [q1, q2]);
+  // keyboard: arrows pick the customer, P pauses
+  await p.evaluate(() => __hitsu.advance(40));
+  x = await st(p);
+  const seated = x.cust.filter(c => c.state === 'seat');
+  check('customers arrived', seated.length >= 2, seated.length);
+  const before = x.sel; await p.keyboard.press('ArrowRight');
+  x = await st(p);
+  check('ArrowRight selects another customer', x.sel !== before && x.sel != null, [before, x.sel]);
+  await p.keyboard.press('ArrowLeft');
+  check('ArrowLeft goes back', (await st(p)).sel === before);
+  await p.keyboard.press('p');
+  await p.waitForSelector('.kb-layer');
+  check('P opens the pause menu', (await st(p)).paused);
+  await p.click('.kb-layer--pause .kb-btn--primary');
+  check('resume continues the day', !(await st(p)).paused);
+  // a streak of perfect dishes
+  const r = await p.evaluate(() => { const H = __hitsu; H.api.step(1); H.api.step(1); return H.api.state().streak; });
+  check('perfect dishes in a row make a streak', r === 2, r);
+  // play the rest with the bot: the day closes, result with stars, saved in x only
+  const res = await p.evaluate(() => { const H = __hitsu; let n = 0; while (!H.D.over && n++ < 2000) { H.advance(0.5); H.api.step(1); } return H.api.state(); });
+  check('the day closes with a result card', res.result && res.over, res.mode);
+  const txt = await p.textContent('#dTitle');
+  check('result title names the day', /特別営業 1/.test(txt) && (await p.$$('#dStars span.on')).length >= 1, txt);
+  await shot(p, '6-result');
+  const sv = await p.evaluate(() => ({ save: __hitsu.save, x: __hitsu.X, ls: localStorage.getItem('kusoge.hitsumabushi.x') }));
+  check('x save has the stars and day 2 opens', sv.x.s[0] >= 1 && sv.ls && JSON.parse(sv.ls).s[0] >= 1, sv.x);
+  check('normal save untouched (day, best, rep, money)', sv.save.day === 5 && sv.save.best === 321 && sv.save.rep === 33 && sv.save.money === 12345, sv.save);
+  check('the next-day button is offered', await p.isVisible('#dNext') && /つぎの特別営業/.test(await p.textContent('#dNext')));
+  await p.click('#dNext');
+  x = await st(p);
+  check('next day starts (stage 2)', x.mode === 'stage' && x.stage === 1, x.stage);
+  // all 10 days are clearable by the bot (each gets 3 stars)
+  const all = await p.evaluate(() => {
+    const H = __hitsu, out = [];
+    H.setX({ s: new Array(10).fill(1) });
+    for (let i = 0; i < 10; i++) {
+      H.startStage(i); const D = H.D; let n = 0;
+      while (!D.over && n++ < 2000) { H.advance(0.5); H.api.step(1); }
+      out.push(H.X.s[i]);
+    }
+    return out;
+  });
+  check('the bot clears every special day with 3 stars', all.length === 10 && all.every(v => v === 3), all);
+  await p.evaluate(() => __hitsu.openStages());
+  check('the list shows 30/30 stars', /30\/30/.test(await p.textContent('#stNote')), await p.textContent('#stNote'));
+  check('the normal best is untouched by special days', (await p.evaluate(() => __hitsu.save.best)) === 321);
+  await s.close();
+
+  // old saves: a broken x, and no x key at all
+  const s2 = await open(env, { seed: Object.assign(seedOf(BASE), { [XKEY]: '{broken' }) });
+  await s2.page.click('#shopStage');
+  const d2 = await s2.page.$$eval('#stList .stg', bs => bs.map(b => b.disabled));
+  check('a broken x save loads as empty (only day 1 open)', d2.length === 10 && !d2[0] && d2[1], d2);
+  await s2.close();
+  const s3 = await open(env, { seed: seedOf(BASE) });
+  check('no x key: the shop works, the stage button shows 0 stars', /0\/30/.test(await s3.page.textContent('#shopStage')));
+  await s3.close();
+
+  // touch on a phone, English UI
+  const s4 = await B.newSession(env, { vp: V.get('ip12'), lang: 'en', seed: Object.assign(seedOf(BASE), { [XKEY]: JSON.stringify({ v: 1, s: [3, 1, 0, 0, 0, 0, 0, 0, 0, 0], b: [9, 4], c: 5 }) }), isMobile: true, hasTouch: true });
+  await s4.goto('/hitsumabushi/?debug');
+  await s4.page.waitForFunction(() => window.__kb && __kb.ready());
+  await s4.page.tap('#shopStage');
+  let jp = await s4.page.evaluate(`(${jpScan})(true)`);
+  check('en: no Japanese on the special days list', jp.length === 0, jp);
+  await shot(s4.page, '6-list-en');
+  await s4.page.tap('#stList .stg[data-si="2"]');
+  x = await st(s4.page);
+  check('touch: tapping an open day starts it', x.mode === 'stage' && x.stage === 2, x.mode);
+  jp = await s4.page.evaluate(`(${jpScan})(true)`);
+  check('en: no Japanese in the stage HUD', jp.length === 0, jp);
+  await s4.page.evaluate(() => { const H = __hitsu; let n = 0; while (!H.D.over && n++ < 2000) { H.advance(0.5); H.api.step(1); } });
+  jp = await s4.page.evaluate(`(${jpScan})(true)`);
+  check('en: no Japanese on the stage result', jp.length === 0, jp);
+  check('en: stage result shows stars and a next button', (await s4.page.$$('#dStars span.on')).length === 3 && await s4.page.isVisible('#dNext'));
+  await shot(s4.page, '6-result-en');
+  await s4.page.tap('#dList');
+  check('touch: the list button returns to the list', (await st(s4.page)).stageList);
+  const ox = await s4.page.evaluate(() => JSON.parse(localStorage.getItem('kusoge.hitsumabushi.x')));
+  check('stars never go down; bests only improve', ox.s[0] === 3 && ox.s[1] === 1 && ox.s[2] === 3 && ox.b[0] >= 9 && ox.c >= 5, ox);
+  await s4.close();
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   B.ensureCdn();
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
-  for (const f of [tutorial, fullDay, scoring, strictness, dailyAndEnglish]) {
+  for (const f of [tutorial, fullDay, scoring, strictness, dailyAndEnglish, specialDays]) {
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 600)); }
   }
   await browser.close(); await srv.close();
