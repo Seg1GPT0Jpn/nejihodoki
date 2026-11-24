@@ -70,6 +70,12 @@ header { display: flex; align-items: center; gap: 6px; min-width: 0; }
   background: radial-gradient(120% 90% at 50% 35%, #34495a 0%, #22313d 60%, #1a2630 100%);
   border: 1px solid var(--rail);
 }
+#prog { position: absolute; left: 0; right: 0; top: 0; height: 4px; background: rgba(255,255,255,.08); z-index: 1; pointer-events: none; }
+#prog i { display: block; height: 100%; width: 0; background: var(--brass); border-radius: 0 4px 4px 0; transition: width .25s; }
+.levels button { position: relative; }
+.levels button small { position: absolute; left: 0; right: 0; bottom: 1px; font-size: 8px; line-height: 1; color: var(--brass-text); letter-spacing: 0; font-weight: 800; }
+.levels button.cur small { color: var(--brass-ink); }
+.starsum { font-size: 13px; color: var(--chalk-dim); text-align: left; margin: -4px 0 0; }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 .hint-line {
@@ -201,6 +207,7 @@ input[type="text"], .kc-nick input {
   <div id="tray"></div>
   <div id="stage">
     <canvas id="gl"></canvas>
+    <div id="prog" aria-hidden="true"><i id="progBar"></i></div>
     <div id="vsSlot"></div>
     <div id="loading" data-i18n>組み立て中…</div>
     <div class="toast" id="toast" role="status" aria-live="polite" data-i18n>予備スロットがいっぱい</div>
@@ -261,6 +268,7 @@ input[type="text"], .kc-nick input {
     <p class="note" id="dailyNote"></p>
     <div id="vsSlotMenu"></div>
     <h3 data-i18n>レベルを選ぶ</h3>
+    <p class="starsum" id="starSum"></p>
     <div class="levels" id="levelGrid"></div>
     <div id="installBox">
       <h3 data-i18n>ホーム画面に追加（アプリのように開く）</h3>
@@ -327,6 +335,8 @@ KoboI18n.add({ en: {
   '次の箱': 'Next', '予備 {used}/{n}': 'Spare {used}/{n}',
   '{name} ・ のこり {left} 本 ・ 箱 {boxes}': '{name} · {left} left · {boxes} boxes', 'のこり {left} 本 ・ 箱 {boxes}': '{left} left · {boxes} boxes',
   '鍵つきネジ。金の印のネジを先に抜こう': 'Locked screw. Remove the gold-marked one first',
+  '出荷！': 'Shipped!', 'さびたネジ。何回かタップするとゆるむ': 'Rusty screw. Tap it a few times to loosen it', 'ゆるんだ！': 'Loose!',
+  '最大コンボ ×{n}。': 'Best combo ×{n}.', '星が増えた！': 'More stars!', 'はじめてのクリア！': 'First clear!', '★ {n}（{m} レベル クリア）': '★ {n} ({m} levels cleared)',
   '赤く光った部品がじゃまで抜けない': 'The red-glowing part is in the way',
   '星 {n} / 3': '{n} of 3 stars', '星 {n}': '{n} stars',
   '{name}を分解しました。ネジ {screws} 本、部品 {parts} 個。': 'You took apart the {name}: {screws} screws, {parts} parts.',
@@ -479,6 +489,8 @@ const proxyMat = new THREE.MeshBasicMaterial({ visible: false });
 const lockGeo = new THREE.TorusGeometry(SCREW_R * 1.05, 0.045, 8, 24);
 const lockMat = new THREE.MeshStandardMaterial({ color: 0x3a4148, metalness: .7, roughness: .35 });
 const keyGeo = new THREE.OctahedronGeometry(0.09);
+const rustGeo = new THREE.CylinderGeometry(SCREW_R * 1.3, SCREW_R * 1.3, 0.14, 14);
+const rustMat = new THREE.MeshStandardMaterial({ color: 0x8a4b22, metalness: .15, roughness: .95, emissive: 0x2a1204 });
 const keyMat = new THREE.MeshStandardMaterial({ color: 0xf2b33d, metalness: .7, roughness: .25, emissive: 0x442200 });
 const screwMats = COLORS.map(c => new THREE.MeshStandardMaterial({ color: c, metalness: .3, roughness: .32 }));
 const slotMats = COLORS.map(c => new THREE.MeshStandardMaterial({ color: new THREE.Color(c).multiplyScalar(.35), roughness: .6 }));
@@ -1188,6 +1200,17 @@ function buildLevel(level, opt = {}) {
     if (L.locks.some(l => l && l.includes(i))) { const k = new THREE.Mesh(keyGeo, keyMat); k.position.y = 0.11; g.add(k); }
     s.pos0 = g.position.clone(); s.quat0 = g.quaternion.clone();
   });
+  // rusty screws (level 8+): they need several taps before they come out. The abstract level (solver) is untouched.
+  const nRust = vs ? 0 : opt.noRust ? 0 : level >= 8 ? Math.min(1 + Math.floor((level - 8) / 3), 5) : 0;
+  if (nRust) {
+    const rr = mulberry32(level * 7919 + 11), keys = new Set(L.locks.filter(Boolean).flat());
+    const cand = shuffle(screws.filter(s => s.lockedBy < 0 && !keys.has(s.i)), rr);
+    cand.slice(0, nRust).forEach(s => {
+      s.rust0 = 3;
+      const d = new THREE.Mesh(rustGeo, rustMat); d.position.y = 0.04; s.g.add(d); s.rustMesh = d;
+    });
+  }
+  screws.forEach(s => { s.rustLeft = s.rust0 || 0; });
   parts.forEach(p => {
     p.size0 = screws.filter(s => s.part === p).length; p.left = p.size0; p.state = 'on'; p.flash = 0;
     p.pos0 = p.mesh.position.clone(); p.rot0 = p.mesh.rotation.clone();
@@ -1201,8 +1224,8 @@ function buildLevel(level, opt = {}) {
 }
 function disposeModel(g) {
   g.traverse(o => {
-    if (o.geometry && ![headGeo, slotGeo, proxyGeo, lockGeo, keyGeo].includes(o.geometry)) o.geometry.dispose();
-    if (o.material && !screwMats.includes(o.material) && !slotMats.includes(o.material) && ![proxyMat, lockMat, keyMat].includes(o.material)) o.material.dispose();
+    if (o.geometry && ![headGeo, slotGeo, proxyGeo, lockGeo, keyGeo, rustGeo].includes(o.geometry)) o.geometry.dispose();
+    if (o.material && !screwMats.includes(o.material) && !slotMats.includes(o.material) && ![proxyMat, lockMat, keyMat, rustMat].includes(o.material)) o.material.dispose();
   });
 }
 
@@ -1267,7 +1290,7 @@ function startLevel(n, opt, resume) {
     const lv = buildLevel(n, opt || {});
     S = { ...lv, active: [null, null], buffer: new Array(lv.slots).fill(null), flyers: [], hints: HINTS, undos: UNDOS,
       slotUsed: false, hintUsed: false, undoUsed: false, history: [],
-      over: false, won: false, winT: 0, hint: null, bufShake: 0, time: 0, wobbleUntil: performance.now() + 3000, started: false, ended: false, t0: 0 };
+      over: false, won: false, winT: 0, hint: null, bufShake: 0, time: 0, wobbleUntil: performance.now() + 3000, started: false, ended: false, t0: 0, combo: 0, maxCombo: 0, lastTake: 0 };
     S.sig = lv.screws.map(x => x.color).join('') + '|' + lv.queue.join('') + '|' + lv.parts.length;
     S.active = [newBox(), newBox()]; S.levelNo = n; S.opt = opt || null; S.vsK = vs ? vs.k : -1;
     const size = lv.bounds.getSize(V(0, 0, 0)), center = lv.bounds.getCenter(V(0, 0, 0));
@@ -1305,7 +1328,7 @@ function screenOf(obj) {
 
 /* ---- undo: logical snapshots, restored and "settled" (full boxes shipped, spare screws moved in) ---- */
 function snapshot() {
-  return { removed: S.screws.map(s => s.removed), buffer: S.buffer.map(v => v ? v.color : null),
+  return { rust: S.screws.map(s => s.rustLeft | 0), removed: S.screws.map(s => s.removed), buffer: S.buffer.map(v => v ? v.color : null),
     active: S.active.map(b => b && { color: b.color, reserved: b.reserved }), queue: S.queue.slice() };
 }
 function restore(snap) {
@@ -1313,6 +1336,7 @@ function restore(snap) {
   if (S.hint) { S.hint.s.g.scale.setScalar(1); S.hint = null; }
   S.screws.forEach((s, i) => {
     s.removed = snap.removed[i]; s.anim = 0; s.shake = 0;
+    if (s.rust0) { s.rustLeft = s.removed ? 0 : (snap.rust ? snap.rust[i] : s.rustLeft); rustLook(s); }
     s.g.visible = !s.removed; s.g.position.copy(s.pos0); s.g.quaternion.copy(s.quat0); s.g.scale.setScalar(1);
   });
   S.screws.forEach(s => { if (s.lockRing) s.lockRing.visible = !s.lockKey.removed; });
@@ -1355,6 +1379,10 @@ function takeScrew(s) {
     S.buffer[k] = { color: s.color, arrived: false }; target = { kind: 'buf', k };
   }
   beginPlay();
+  const sp = screenOf(s.g); spark(sp.x, sp.y, COLORS[s.color], 9, 220);
+  const nowT = performance.now(); S.combo = nowT - S.lastTake < 2200 ? S.combo + 1 : 1; S.lastTake = nowT;
+  if (S.combo > S.maxCombo) S.maxCombo = S.combo;
+  if (S.combo >= 2) { A.sfx('combo', S.combo); if (S.combo >= 3) floatText('COMBO ×' + S.combo, sp.x, sp.y - 30, COLORS[s.color]); }
   S.history.push(snap); if (S.history.length > 60) S.history.shift();
   s.removed = true; s.anim = 0.001; s.target = target;
   if (S.hint && S.hint.s === s) { s.g.scale.setScalar(1); S.hint = null; }
@@ -1371,7 +1399,8 @@ function arrive(f) {
   if (t.kind === 'box') {
     if (!S.active.includes(t.box)) return;
     t.box.filled++;
-    if (t.box.filled === 3) { t.box.state = 'out'; t.box.t = 0; beep(660, .08, 'sine'); beep(990, .12, 'sine', .08); buzz(20); tutDone('box'); }
+    if (t.box.filled === 3) { t.box.state = 'out'; t.box.t = 0; beep(660, .08, 'sine'); beep(990, .12, 'sine', .08); buzz(20); tutDone('box');
+      const bi = S.active.indexOf(t.box), bp = boxSlotPos(bi, 1); spark(bp.x, bp.y, COLORS[t.box.color], 26, 340); floatText(T('出荷！'), bp.x, bp.y - 34, COLORS[t.box.color]); A.sfx('coin'); }
     else beep(520, .04, 'sine');
   } else if (S.buffer[t.k]) { S.buffer[t.k].arrived = true; beep(400, .04, 'sine'); pullFromBuffer(); }
 }
@@ -1424,7 +1453,8 @@ function update(dt) {
         out.normalize();
         p.vel = out.multiplyScalar(2.2 + Math.random()).add(V(0, 2.5, 0));
         p.spin = V((Math.random() - .5) * 5, (Math.random() - .5) * 5, (Math.random() - .5) * 5);
-        beep(240, .16, 'sine');
+        beep(240, .16, 'sine'); A.noise(.18, { vol: .1, freq: 900 });
+        const dp = screenOf(p.mesh); spark(dp.x, dp.y, '#cfd8dc', 14, 260); camShake = reducedMotion() ? 0 : .22;
       }
     } else if (p.state === 'fall') {
       active = true;
@@ -1449,6 +1479,7 @@ function update(dt) {
     else if (b.state === 'out' && b.t >= .38) { S.active[i] = newBox(); pullFromBuffer(); }
   }
   if (S.bufShake > 0) { active = true; S.bufShake -= dt; }
+  if (camShake > 0) { active = true; camShake = Math.max(0, camShake - dt); }
   if (S.hint) {
     S.hint.t -= dt;
     if (S.hint.t <= 0 || S.hint.s.removed) { S.hint.s.g.scale.setScalar(1); S.hint = null; }
@@ -1520,13 +1551,37 @@ function drawFx(dt) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
   if (S) drawTray();
   for (let i = confetti.length - 1; i >= 0; i--) {
-    const c = confetti[i]; c.vy += 600 * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.r += c.vr * dt; c.life -= dt;
+    const c = confetti[i];
+    if (c.k === 's') {
+      c.vy += 500 * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.life -= dt;
+      if (c.life <= 0) { confetti.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, c.life / c.max); ctx.fillStyle = c.color;
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.sz * (.4 + .6 * c.life / c.max), 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue;
+    }
+    if (c.k === 't') {
+      c.y -= 40 * dt; c.life -= dt;
+      if (c.life <= 0) { confetti.splice(i, 1); continue; }
+      ctx.save(); ctx.globalAlpha = Math.min(1, c.life * 2.2); ctx.font = '800 20px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'center';
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,16,22,.85)'; ctx.strokeText(c.text, c.x, c.y); ctx.fillStyle = c.color; ctx.fillText(c.text, c.x, c.y); ctx.restore(); continue;
+    }
+    c.vy += 600 * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.r += c.vr * dt; c.life -= dt;
     if (c.life <= 0 || c.y > innerHeight + 20) { confetti.splice(i, 1); continue; }
     ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.r); ctx.fillStyle = c.color; ctx.globalAlpha = Math.min(1, c.life);
     ctx.fillRect(-5, -3, 10, 6); ctx.restore();
   }
 }
 function reducedMotion() { return P.fx.reducedMotion(); }
+function spark(x, y, color, n, spd) {
+  if (reducedMotion()) return;
+  for (let i = 0; i < n; i++) { const a = Math.random() * 7, v = spd * (.35 + Math.random() * .65), life = .35 + Math.random() * .35;
+    confetti.push({ k: 's', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - spd * .25, life, max: life, color, sz: 2 + Math.random() * 3 }); }
+  kick();
+}
+function floatText(text, x, y, color) {
+  x = Math.max(70, Math.min(innerWidth - 70, x));
+  confetti.push({ k: 't', x, y, text, color, life: 1 }); kick();
+}
+function rustLook(s) { if (s.rustMesh) { s.rustMesh.visible = s.rustLeft > 0; const k = [0, .55, .8, 1][s.rustLeft] || 0; s.rustMesh.scale.set(k, 1, k); } }
 function burst() {
   if (reducedMotion()) return;
   kick();
@@ -1598,9 +1653,11 @@ function drawTray() {
 /* =========================================================
    Camera + input
    ========================================================= */
+let camShake = 0, rustSeen = false;
 function placeCamera() {
   const d = cam.dist, cp = Math.cos(cam.pitch);
   camera.position.set(cam.target.x + Math.sin(cam.yaw) * cp * d, cam.target.y + Math.sin(cam.pitch) * d, cam.target.z + Math.cos(cam.yaw) * cp * d);
+  if (camShake > 0) { const a = camShake * .09; camera.position.x += (Math.random() - .5) * a; camera.position.y += (Math.random() - .5) * a; }
   camera.lookAt(cam.target);
 }
 function resize3d() {
@@ -1667,7 +1724,15 @@ function tap(cx, cy) {
     if (d < bd) { bd = d; best = s; }
   }
   const s = best;
-  if (isExposed(s)) takeScrew(s);
+  if (isExposed(s)) {
+    if (s.rustLeft > 0) {
+      s.rustLeft--; rustLook(s); s.shake = .22; const rp = screenOf(s.g);
+      spark(rp.x, rp.y, '#b9703a', 7, 160); A.noise(.07, { vol: .12, freq: 2400 }); beep(300 + 90 * (3 - s.rustLeft), .06, 'square'); buzz(15);
+      if (s.rustLeft > 0) { if (!rustSeen) { rustSeen = true; toast(T('さびたネジ。何回かタップするとゆるむ'), true); } kick(); return; }
+      toast(T('ゆるんだ！'), true);
+    }
+    takeScrew(s);
+  }
   else if (!isUnlocked(s) && s.blockers.every(id => S.parts[id].state !== 'on')) {
     s.shake = .35; beep(160, .07, 'square'); buzz(25);
     if (S.hint) S.hint.s.g.scale.setScalar(1);
@@ -1689,6 +1754,7 @@ function ui() {
   $('lvLabel').textContent = vs ? 'VS ' + (vs.k + 1) : daily ? daily.label : 'LEVEL ' + level;
   drawSoundBtn();
   if (!S) return;
+  { const tot = S.screws.length || 1; $('progBar').style.width = (S.screws.filter(x => x.removed).length / tot * 100) + '%'; }
   if (vs) { // battle: no undo / hint / extra slot
     for (const id of ['hintBtn', 'undoBtn', 'slotBtn']) $(id).disabled = true;
     $('hintLeft').textContent = $('undoLeft').textContent = $('slotLeft').textContent = '—';
@@ -1717,6 +1783,8 @@ function win() {
   $('winStars').setAttribute('aria-label', T('星 {n} / 3', { n: stars }));
   $('winText').textContent = T('{name}を分解しました。ネジ {screws} 本、部品 {parts} 個。', { name: T(S.name), screws: S.screws.length, parts: S.parts.filter(p => p.size0).length });
   $('winNote').textContent = stars === 3 ? T('ヒント・戻す・＋スロットなしで完璧です。') : T('ヒント・戻す・＋スロットを使わずに解くと星3つ。');
+  if (!daily && S.maxCombo >= 3) $('winNote').textContent += ' ' + T('最大コンボ ×{n}。', { n: S.maxCombo });
+  { const pb = daily ? 0 : (store.get('stars', {}) || {})[level] || 0; if (!daily && stars > pb) $('winNote').textContent += ' ' + (pb ? T('星が増えた！') : T('はじめてのクリア！')); }
   $('winNote').textContent += T('　難易度：{ja}（{en}）', { ja: RANK_JA[S.rank], en: RANKS[S.rank] });
   clearState();
   if (daily) {
@@ -1904,11 +1972,13 @@ function openMenu() {
       h.textContent = 'WORLD ' + (w + 1) + '　' + T(WORLDS[w] || '無限工房'); grid.appendChild(h);
     }
     const bt = document.createElement('button'); bt.id = 'lvl-' + i; bt.type = 'button';
-    bt.textContent = i; if (i === level && !daily) bt.className = 'cur';
+    bt.textContent = i; if (stars[i]) { const sm = document.createElement('small'); sm.textContent = '★'.repeat(stars[i]); bt.appendChild(sm); }
+    if (i === level && !daily) bt.className = 'cur';
     if (stars[i]) { bt.title = T('星 {n}', { n: stars[i] }); bt.setAttribute('aria-label', 'LEVEL ' + i + ' · ' + T('星 {n}', { n: stars[i] })); }
     bt.onclick = () => { closeMenu(); startLevel(i); };
     grid.appendChild(bt);
   }
+  { const tot = Object.keys(stars).reduce((a, k) => a + (stars[k] | 0), 0), done = Object.keys(stars).length; $('starSum').textContent = T('★ {n}（{m} レベル クリア）', { n: tot, m: done }); }
   const dd = (store.get('daily', {}) || {})[todayKey()];
   $('dailyNote').textContent = dd ? T('今日はクリア済み（星 {n}）。何度でも挑戦できます。', { n: dd }) : T('毎日1問。日付ごとに同じ盤面で、難易度は高めです。');
   renderInstall();
@@ -2145,7 +2215,8 @@ KoboVersus.button($('vsSlotMenu'));
 
 // ---------- debug hook (?debug only): lets automated layout tests open every screen ----------
 if (/[?&]debug\b/.test(location.search)) window.__neji = { win, lose() { if (S) { S.over = true; lose(); } }, toast, openMenu, get ready() { return !!S; },
-  state() { return S && { name: S.name, levelNo: S.levelNo, vsK: S.vsK, seed: S.opt && S.opt.seed, screws: S.screws.length, removed: S.screws.filter(x => x.removed).length,
+  tapRust() { if (!S) return -1; const r = S.screws.find(x => x.rustLeft > 0 && !x.removed && isExposed(x)); if (!r) return -1; const p = screenOf(r.g); tap(p.x, p.y); return r.rustLeft; },
+  state() { return S && { rust: S.screws.filter(x => x.rustLeft > 0).length, name: S.name, levelNo: S.levelNo, vsK: S.vsK, seed: S.opt && S.opt.seed, screws: S.screws.length, removed: S.screws.filter(x => x.removed).length,
     won: S.won, over: S.over, colors: S.screws.map(x => x.color).join(''), queue: S.queue.join(''), level, score: vsScore(), busy: !$('loading').hidden }; },
   // test helper: pull the next screw of a solver plan (only when a tap would be allowed); bad = park a non-matching screw
   move(bad) {
