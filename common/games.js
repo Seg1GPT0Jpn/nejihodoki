@@ -304,6 +304,7 @@
       record: { key: 'kusoge.hole.save', paths: ['best.maxPts', 'best.matchPts'], agg: 'max', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best: {n} pts' } },
       keys: {
         'kusoge.hole.save': '{ best:{ matchRank, matchPts, maxPts?, soloPct, soloStars, maxSize }, coins, skins:{ owned:[…], sel }, perks:{ size, speed }, wins, camp:{ open, stars:[14], best:[14] }, online:{ plays, wins, best }, city, seen, tut }',
+        'kusoge.hole.x': 'ミッションの星・ベストと最大コンボ { v:1, s:[12ミッションの星0〜3], b:[12ミッションのベスト], c: 最大コンボ }（端末内だけ。同期しない・ランキングに入らない）',
         'kusoge.hole.rooms': 'この端末で最近入ったオンライン部屋（最大8件の { r, t }。同期しない）',
       },
       // R4：コイン（使うと減る）・選んだスキン・選んだ街は newest。持っているスキンは和集合、強化・記録・まちめぐりは大きい方。

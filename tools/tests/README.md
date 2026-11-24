@@ -21,6 +21,8 @@ node tools/tests/water-play.js                # いろみず分けの通し（�
 node tools/tests/unit/water-engine.test.js     # いろみず分けの中身（1〜300が前と同じ・ルール・デイリー・チャレンジ12ステージの★と上限・スプリント・kusoge.water.x の読み込みと記録）
 node tools/tests/parking-play.js              # くるま出しの通し（ふつう・出庫コンボ・キーボード（矢印・Enter・N・U・H・R 2回・M・L・Esc・数字）・モード選び・ミッション一覧と鍵・ボットが全12ミッションを★3でクリア・★の保存（kusoge.parking.x）・practice 報告・ヒントなし／戻すなし／道具なし・手数の上限と戻す・ラッシュ（時間・ボーナス・時間切れ・ベスト x.r）・タッチ・古い／こわれた保存・英語・画面サイズ×明るい暗い）
 node tools/tests/unit/parking-engine.test.js   # くるま出しの中身（1〜200と対戦ロットが前と同じ・ミッション12の★と上限・ラッシュ・kusoge.parking.x の読み込みと記録）
+node tools/tests/hole-play.js                 # あなぼこシティの通し（ふつうの対戦が今までどおり・キーボード（タイトルの 1〜6・S・Esc・結果の Enter／R／N／T・WASD）・コンボ・ミッション一覧と鍵・ボットが全12ミッションをクリア・★の保存（kusoge.hole.x）・次が開く・practice 報告・ランキングの値が変わらない・ミッション中は強化が効かない・fast／kills・本物のタッチ・こわれた x・英語・全画面サイズ）
+node tools/tests/unit/hole-engine.test.js      # あなぼこシティのミッションの中身（12ミッションの街と★の基準・★の計算・コンボ・kusoge.hole.x の読み込みと記録）
 node tools/tests/n59049-play.js               # 59049の通し（ふつう・キーボード（M・矢印・1〜4・H・R・U・N）・モード選びとステージ一覧・ボットが全12ステージをクリア・★の保存（kusoge.n59049.x）・practice 報告・いし・もどすと種つきの出る数字・ヒントの数・ラッシュ60手とベスト・タッチ（CDP のスワイプ）・古い／こわれた保存・英語・画面サイズ×明るい暗い）
 node tools/tests/unit/n59049-engine.test.js    # 59049の中身（合体の決まり・いし・種つき乱数・12ステージを探索で全部★3まで解く・ラッシュ・kusoge.n59049.x の読み込みと記録）
 node tools/tests/unit/raft-engine.test.js      # いかだ暮らしの航海の中身（8航海のねらい・上限・★・進み具合・kusoge.raft.x の読み込みと開く条件）

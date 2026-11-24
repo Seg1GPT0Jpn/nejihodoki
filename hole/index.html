@@ -232,7 +232,7 @@ h1 {
 #nogl > div { max-width: 310px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
 #nogl b { font-family: var(--font-display); font-weight: 400; font-size: 19px; }
 #nogl p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--dim); }
-@media (max-height: 600px) { #stIcon { height: 64px; width: 128px; } #ovStage .rule { display: none; }
+@media (max-height: 600px) { #stIcon, #mcIcon { height: 64px; width: 128px; } #ovStage .rule { display: none; }
   #ovResult .big { font-size: 34px; margin: 0; } #ovResult .stars { font-size: 24px; } #ovResult .res { margin: 4px 0; } #ovResult .res b { font-size: 16px; }
   #ovResult .btn { margin-top: 6px; } #ovResult .ttl { font-size: 21px; margin-bottom: 2px; } .hw svg { width: 40px; height: 30px; } .hw li { padding: 4px 8px; } }
 /* online battle */
@@ -269,9 +269,35 @@ h1 {
   #ovResult .btn { margin-top: 6px; } #ovResult .res b { font-size: 15px; }
 }
 #howGo { position: sticky; bottom: 0; z-index: 1; }
+.keyhint { display: none; }
+@media (hover: hover) and (pointer: fine) and (min-height: 700px) { .keyhint { display: block; margin-top: 8px; } }
 @keyframes pulse { 50% { opacity: .5; } }
-@media (prefers-reduced-motion: reduce) { #toast.show { animation-duration: .01s; } .stat b.warn { animation: none; } #coachHand { animation: none; } .btn:active { transform: none; } }
-:root[data-kb-motion="reduce"] #coachHand, :root[data-kb-motion="reduce"] .stat b.warn { animation: none; }
+/* missions (ミッション): goal chip + progress bar during a round, combo chip, floating +points; all on dark glass over the 3D city */
+.btn.plum { background: linear-gradient(#d9bdff, #a97ff2); color: #230a44; box-shadow: 0 4px 0 #6d45b0; }
+#mcIcon { width: 200px; height: 100px; display: block; margin: 0 auto 4px; border-radius: 12px; }
+#mhud { position: absolute; left: 8px; top: 8px; z-index: 2; pointer-events: none; width: min(180px, calc(100% - 168px)); box-sizing: border-box;
+  background: rgba(16, 24, 38, .7); color: #f4f8ff; border-radius: 12px; padding: 5px 8px 6px; font-size: 11.5px; font-weight: 800; line-height: 1.3; }
+#mhud .mbar { position: relative; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .18); margin: 4px 0 2px; overflow: hidden; }
+#mhud .mbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #5fe0b5, #ffd84d); border-radius: 99px; transition: width .15s; }
+#mhud .mbar u { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, .7); text-decoration: none; }
+#mhud .mv { font-variant-numeric: tabular-nums; color: #ffd84d; }
+#combo { position: absolute; left: 8px; top: 8px; z-index: 2; pointer-events: none; background: rgba(16, 24, 38, .72); color: #ffd84d; border-radius: 12px; padding: 2px 10px;
+  font-family: var(--font-display); font-size: 21px; text-shadow: 0 2px 0 #0007; transform-origin: left center; }
+#mhud:not([hidden]) ~ #combo { top: 74px; }
+#combo.bump { animation: cbump .26s ease-out; }
+@keyframes cbump { 0% { transform: scale(1.55); } 100% { transform: scale(1); } }
+#pops { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.pop { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-display); font-size: 15px; color: #fff; text-shadow: 0 2px 0 #0009, 0 0 8px #0006; white-space: nowrap; animation: popup .85s ease-out forwards; }
+.pop.c { color: #ffd84d; font-size: 20px; }
+@keyframes popup { 0% { opacity: 0; margin-top: 0; } 15% { opacity: 1; } 100% { opacity: 0; margin-top: -38px; } }
+@keyframes popfade { 0% { opacity: 1; } 100% { opacity: 0; } }
+@media (max-height: 600px) { #ovMisCard .rule { display: none; } }
+@media (max-height: 480px) { #mcIcon, #ovMisCard .note { display: none; } #ovMisCard .btn { display: inline-flex; width: calc(50% - 4px); margin-top: 6px; padding: 6px 8px; } }
+@media (max-height: 520px) { #mhud .mt { display: none; } #mhud:not([hidden]) ~ #combo { top: 52px; } }
+@media (prefers-reduced-motion: reduce) { #toast.show { animation-duration: .01s; } .stat b.warn { animation: none; } #coachHand { animation: none; } .btn:active { transform: none; }
+  #combo.bump { animation: none; } .pop { animation: popfade .85s forwards; } #mhud .mbar i { transition: none; } }
+:root[data-kb-motion="reduce"] #coachHand, :root[data-kb-motion="reduce"] .stat b.warn, :root[data-kb-motion="reduce"] #combo.bump { animation: none; }
+:root[data-kb-motion="reduce"] .pop { animation: popfade .85s forwards; }
 </style>
 </head>
 <body>
@@ -294,6 +320,9 @@ h1 {
   <div id="stage">
     <canvas id="cv" aria-label="あなぼこシティのゲーム画面" data-i18n-attr="aria-label"></canvas>
     <div id="rank" hidden></div>
+    <div id="mhud" hidden><div class="mt" id="mhT"></div><div class="mbar"><i id="mhFill"></i><u id="mhT1"></u><u id="mhT2"></u></div><div class="mv" id="mhV"></div></div>
+    <div id="combo" hidden aria-hidden="true"></div>
+    <div id="pops" aria-hidden="true"></div>
     <div id="toast"></div>
     <div id="msg" hidden></div>
     <div id="joy" hidden><div id="knob"></div></div>
@@ -318,6 +347,7 @@ h1 {
           <div class="logo"><span data-i18n>あなぼこシティ</span><small data-i18n>のみこめ！ まちじゅう まるごと</small></div>
           <p class="rule" data-i18n-html>街にあいた ふしぎな<em>あな</em>になって、<br>小さいものから のみこんで <em>どんどん大きく</em>なろう！</p>
           <button class="btn coral" id="btnCamp" type="button"><span id="tCampName">まちめぐり（14の街）</span><span class="cstar">★ <span id="tCampStars">0/30</span></span></button>
+          <button class="btn plum" id="btnMis" type="button"><span id="tMisName">ミッション（12）</span><span class="cstar">★ <span id="tMisStars">0/36</span></span></button>
           <button class="btn" id="btnMatch" type="button"><span data-i18n>CPUと たいせん（2分）</span><span class="cstar" id="rLv">Lv1</span></button>
           <button class="btn sky" id="btnOnline" type="button" data-i18n>オンライン対戦（4人まで）</button>
         </div>
@@ -331,6 +361,7 @@ h1 {
             <div><span data-i18n>ベスト のみこみ率</span> <b id="rSolo">-</b></div>
             <div><span data-i18n>最大サイズ</span> <b id="rSize">-</b></div>
           </div>
+          <p class="note keyhint" data-i18n>キー：1〜6 でモードを えらぶ（まちめぐり・ミッション・CPU・オンライン・ひとり・ながめる）、S でショップ</p>
           <div class="cityrow"><label for="citySel" data-i18n>たいせん・ひとりで遊ぶ街</label> <select id="citySel"></select></div>
         </div>
       </div>
@@ -415,6 +446,30 @@ h1 {
       </div>
     </div>
 
+    <div class="overlay" id="ovMis" hidden>
+      <div class="card camp">
+        <h2 class="ttl" data-i18n>ミッション</h2>
+        <p class="note" id="misNote"></p>
+        <div class="clist" id="misList"></div>
+        <button class="btn sub" id="btnMisBack" type="button" data-i18n>もどる</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="ovMisCard" hidden>
+      <div class="card">
+        <canvas id="mcIcon" width="240" height="120" aria-hidden="true"></canvas>
+        <div class="small" id="mcNo"></div>
+        <h2 class="ttl" id="mcName"></h2>
+        <p class="rule" id="mcDesc"></p>
+        <div class="goal" id="mcGoal"></div>
+        <div class="stline" id="mcStars"></div>
+        <div class="small" id="mcBest"></div>
+        <p class="note" data-i18n>ミッションでは ショップの パワーアップは 使えません（だれでも 同じ条件）</p>
+        <button class="btn" id="btnMcGo" type="button" data-i18n>スタート</button>
+        <button class="btn sub" id="btnMcBack" type="button" data-i18n>もどる</button>
+      </div>
+    </div>
+
     <div class="overlay" id="ovStage" hidden>
       <div class="card">
         <canvas id="stIcon" width="240" height="120" aria-hidden="true"></canvas>
@@ -439,6 +494,7 @@ h1 {
         <div class="stars" id="resStars" hidden></div>
         <div id="resNew" hidden><span class="newrec" data-i18n>ベスト更新！</span></div>
         <div class="small" id="resGoal" hidden></div>
+        <div class="small" id="resCmb" hidden></div>
         <ol class="olist" id="resList" hidden></ol>
         <div class="res">
           <div><span data-i18n>のみこんだ数</span><b id="resEat">0</b></div>
@@ -467,6 +523,7 @@ h1 {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="cities.js"></script>
 <script src="realcity.js"></script>
+<script src="engine.js"></script>
 <script src="../common/game.js"></script>
 <script>
 KoboI18n.add({ en: {
@@ -572,6 +629,61 @@ KoboI18n.add({ en: {
   'ほかのブラウザで開くか、ブラウザの設定で「ハードウェア アクセラレーション」をオンにしてください。': 'Try another browser, or turn on "hardware acceleration" in your browser settings.',
   '画面が一時的に止まりました。少し待つと元に戻ります。': 'The screen stopped for a moment. It will come back shortly.',
   'オンライン対戦に つなげませんでした': 'Could not connect to the online battle', 'もういちど つなぐ': 'Try again',
+  'ミッション（{n}）': 'Missions ({n})',
+  'ミッション': 'Missions',
+  'ミッション {n}': 'Mission {n}',
+  'ミッションへ': 'To missions',
+  'つぎの ミッションへ': 'Next mission',
+  'つぎの ミッションが ひらいた！': 'Next mission unlocked!',
+  'ぜんぶの ミッションを クリア！': 'All missions cleared!',
+  '前の ミッションを クリアで ひらく': 'Clear the previous mission to unlock',
+  'ベスト': 'Best',
+  'ミッションでは ショップの パワーアップは 使えません（だれでも 同じ条件）': 'Shop power-ups are off in missions (same rules for everyone).',
+  'だれでも 同じ条件・ランキングには 入りません': 'Same rules for everyone · not in the ranking',
+  '神奈川の街で はじめの一歩': 'First steps in Kanagawa',
+  '最初から あそべる 4つの街': 'Four cities open from the start',
+  'にぎやかな街': 'Busy cities',
+  '人も 車も ライバルも': 'People, cars and rivals',
+  'ライバルの街': 'Rival cities',
+  'うでだめしの 4つのミッション': 'Four missions to test your skill',
+  'のこり': 'Time left', 'コンボ': 'Combo',
+  'コンボ ×{n}！': 'Combo ×{n}!',
+  'さいだいコンボ ×{n}': 'Max combo ×{n}',
+  'ベスト ×{n}': 'Best ×{n}',
+  'とどいた！': 'reached!',
+  'のこり {n}秒': '{n}s left',
+  'じかんぎれ': 'Time up',
+  '{n}体': '{n}',
+  '★1は {n} いじょう': '★1 needs {n} or more',
+  '{t}で {n}コンボを めざそう': 'Reach a {n}-combo in {t}',
+  '{t}で ライバルを {n}体 のみこもう': 'Swallow {n} rival hole(s) in {t}',
+  '{t}で 直径{n}mの あなに なろう': 'Grow to a {n} m hole in {t}',
+  '街の{p}%を {t}いないに のみこもう': 'Swallow {p}% of the city within {t}',
+  'キー：1〜6 でモードを えらぶ（まちめぐり・ミッション・CPU・オンライン・ひとり・ながめる）、S でショップ': 'Keys: 1–6 pick a mode (Tour, Missions, CPU, Online, Solo, View), S opens the Shop',
+  'はじめの ひとのみ': 'First Gulp',
+  'つづけて パクパク': 'Chomp Chain',
+  'ライバルを のみこめ': 'Swallow the Rival',
+  'いそげ！ ダッシュ': 'Hurry! Dash',
+  '交差点の 大そうじ': 'Crossing Cleanup',
+  'どんどん 大きく': 'Bigger and Bigger',
+  'ビル街の れんぞく': 'Downtown Chain',
+  '港までダッシュ': 'Dash to the Harbor',
+  'ネオンの 大乱戦': 'Neon Brawl',
+  'お城の まわりを まるごと': 'Around the Castle',
+  '古都の ながい れんぞく': 'Old Capital Chain',
+  'お城より 大きく': 'Bigger than the Castle',
+  '時間は90秒。ちかくのものから のみこんで、街をどれだけ のみこめるか。': 'You have 90 seconds. Start with what is close and see how much of the city you can swallow.',
+  '1.6秒いないに つぎをのみこむと コンボがつづく。とぎれさせずに ならんだものを のみこもう。': 'Swallow the next thing within 1.6 s to keep the combo going. Chain everything in a row without a break.',
+  '大きくなって、小さいライバルの あなを のみこもう。': 'Grow big, then swallow the smaller rival holes.',
+  '街の0.5%を のみこんだら クリア。のこり時間が多いほど高評価。': 'Swallow 0.5% of the city to clear. The more time left, the better the rating.',
+  '人も車も いっぱいの街で、80秒でどこまで のみこめるか。': 'A city full of people and cars. How much can you swallow in 80 seconds?',
+  'あなの直径をのばそう。のみこむほど大きくなる。ライバルにも気をつけて。': 'Stretch your hole. The more you swallow, the bigger it gets. Watch out for rivals.',
+  'ライバルがじゃまをする中で、コンボを伸ばそう。': 'Rivals get in the way. Keep your combo growing anyway.',
+  '街の2%を のみこんだら クリア。ひろい港を走りぬけよう。': 'Swallow 2% of the city to clear. Dash across the wide harbor.',
+  '4つのライバルがいる。大きくなって のみこんでしまおう。': 'Four rivals are here. Grow big and swallow them up.',
+  'ひろい公園とお堀の街。100秒で、のみこめるだけ のみこめ。': 'A city of wide parks and moats. Swallow all you can in 100 seconds.',
+  'せまい道に ものがならぶ。ライバルをよけて コンボをつなげ。': 'Things line the narrow streets. Dodge the rivals and chain combos.',
+  '110秒で、どこまで大きくなれるか。のみこむほど あなは広がる。': 'How big can you get in 110 seconds? Your hole widens with every swallow.',
   'オンライン対戦中は 止まりません。やめると この試合は 負けになります。': 'An online battle cannot be paused. If you quit, this match counts as a loss.',
 } });
 </script>
@@ -681,6 +793,11 @@ else runMigration();
 let SV = loadSave();
 function writeSave() { store.set(SAVE_KEY, JSON.stringify(SV)); }
 function mutate(fn) { SV = loadSave(); const r = fn(SV); writeSave(); return r; }
+// kusoge.hole.x = { v:1, s:[ミッションの星×12], b:[ベスト×12], c: 最大コンボ }（hole/engine.js。端末だけ・同期しない・ランキングに入らない）
+const HE = window.HoleEngine;
+const X_KEY = 'kusoge.hole.x';
+let XV = HE.readX(store.get(X_KEY));
+function mutX(fn) { XV = HE.readX(store.get(X_KEY)); const r = fn(XV); store.set(X_KEY, JSON.stringify(XV)); return r; }
 
 // ---------------------------------------------------------------- constants
 const RADII = [1.0, 1.25, 1.55, 1.9, 2.3, 2.8, 3.4, 4.1, 4.9, 5.8, 6.9, 8.2, 9.7, 11.4, 13.4, 15.6];
@@ -746,6 +863,7 @@ const sfx = {
     if (size > 1.5) tone('triangle', 140 / Math.pow(size, 0.3), 45, 0.28, 0.38);
     if (size > 4) noise(500, 120, 0.4, 0.25);
   },
+  combo(n) { const f = 520 * Math.pow(1.0595, Math.min(24, n * 2)); tone('triangle', f, f * 1.25, 0.14, 0.22); if (n % 5 === 0) tone('sine', f * 1.5, f * 2, 0.25, 0.18, 0.06); },
   whoosh() { noise(250, 2400, 0.55, 0.32, 0.9); tone('sine', 300, 900, 0.35, 0.12, 0.05); },
   gulp() { tone('square', 420, 60, 0.5, 0.14); noise(1600, 150, 0.5, 0.3); },
   big() { noise(900, 60, 1.2, 0.4, 0.7); tone('triangle', 90, 30, 1.2, 0.4); },
@@ -959,6 +1077,7 @@ const CITIES = HC.cities || [];
 // まちめぐり: the tour cities open one after another (camp.open); the free cities (Kanagawa) are open from the start
 const TOUR_N = NTOUR;
 const isOpen = i => !!CITIES[i] && (CITIES[i].free || i < SV.camp.open);
+const MIS_CITY = HE.MISSIONS.map(m => CITIES.findIndex(C => C.id === m.city)); // the city index of each mission
 
 // ---------------------------------------------------------------- world (rebuilt per map: one of the campaign cities)
 const objs = [];
@@ -1441,11 +1560,11 @@ function setHoleSize(h, R) {
 function holeSpeed(h) {
   let base = 7.6 * (1 - Math.min(0.32, (h.R - 1) * 0.028));
   if (W.big && h.R > 12) base *= Math.pow(h.R / 12, 0.85); // a real-scale map: big holes travel faster
-  return h.isPlayer ? base * (1 + 0.05 * SV.perks.speed) : base;
+  return h.isPlayer && G.mode !== 'mis' ? base * (1 + 0.05 * SV.perks.speed) : base;
 }
 
 // ---------------------------------------------------------------- game state
-const G = { mode: 'title', playing: false, paused: false, t: ROUND, time: 0, ts: 1, diff: 0.25, eatVal: 0, resultShown: false, hudT: 0, lastSec: 99, aiOff: false, ended: true, played: 0 };
+const G = { cmb: HE.newCombo(), mis: -1, fastLeft: 0, mode: 'title', playing: false, paused: false, t: ROUND, time: 0, ts: 1, diff: 0.25, eatVal: 0, resultShown: false, hudT: 0, lastSec: 99, aiOff: false, ended: true, played: 0 };
 let player = makeHole(T('あなた'), '#ffffff', true);
 let rivals = [];
 for (let n = 0; n < 5; n++) { const r = makeHole(T(RIVALS[n].name), RIVALS[n].color, false); r.ai = { think: 0, mode: 'eat', tx: 0, tz: 0, tobj: null, prey: null, fx: 0, fz: 0, wx: 0, wz: 0, diff: 0.3 }; rivals.push(r); }
@@ -1497,12 +1616,13 @@ function startRound(mode, si, net, opt) {
   opt = opt || {};
   ensureAudio();
   if (G.playing && !G.ended) endPlay('quit'); // a restart from the pause menu
-  if (mode !== 'camp' && mode !== 'online' && opt.si == null) si = pickCity();
-  const C = CITIES[si], online = mode === 'online';
+  if (mode === 'mis') { si = MIS_CITY[opt.mis]; opt.si = si; if (!(si >= 0)) return showTitle(); }
+  else if (mode !== 'camp' && mode !== 'online' && opt.si == null) si = pickCity();
+  const C = CITIES[si], online = mode === 'online', M = mode === 'mis' ? HE.info(opt.mis) : null;
   if (C.data && !C.D) { // a real-map city: fetch its data file first, then start
     const tok = G.loadTok = { si };
     G.playing = false; tutStop(); setPlayingUi(false);
-    ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow', 'ovView'].forEach(id => $(id).hidden = true);
+    ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow', 'ovView', 'ovMis', 'ovMisCard'].forEach(id => $(id).hidden = true);
     showLoading();
     loadCity(si).then(() => { if (G.loadTok !== tok) return; G.loadTok = null; $('msg').hidden = true; startRound(mode, si, net, Object.assign({}, opt, { si })); },
       () => { if (G.loadTok !== tok) return; G.loadTok = null; $('msg').hidden = true; toast(T('街のデータを 読みこめませんでした')); showTitle(); });
@@ -1511,21 +1631,27 @@ function startRound(mode, si, net, opt) {
   G.loadTok = null;
   buildWorld(si, online ? net.sd : 0, mode === 'match' || online ? 'battle' : 'camp');
   if (G.mode === 'view') endViewUi();
-  G.mode = mode; G.stage = mode === 'camp' ? si : -1; G.city = si; G.playing = true; G.paused = false; G.t = mode === 'camp' ? C.time : online ? NET.len || ROUND : ROUND; G.time = 0; G.eatVal = 0; G.resultShown = false; G.lastSec = 99; G.climax = 0;
+  G.mode = mode; G.stage = mode === 'camp' ? si : -1; G.city = si; G.playing = true; G.paused = false; G.t = mode === 'camp' ? C.time : M ? M.time : online ? NET.len || ROUND : ROUND; G.time = 0; G.eatVal = 0; G.resultShown = false; G.lastSec = 99; G.climax = 0;
   G.ended = false; G.played = 0; dirty = true;
-  G.diff = mode === 'camp' ? C.diff : online ? 0.5 : Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160));
+  G.diff = mode === 'camp' ? C.diff : M ? M.diff : online ? 0.5 : Math.min(1, 0.22 + SV.wins * 0.07 + Math.min(0.15, SV.best.maxSize / 160));
   resetWorld();
   resetNetHoles();
   const seats = online ? net.seats : null;
-  const nR = online ? seats.length - 1 : mode === 'match' ? Math.min(5, 3 + Math.floor(SV.wins / 2)) : mode === 'camp' ? C.rivals : 0;
+  const nR = online ? seats.length - 1 : mode === 'match' ? Math.min(5, 3 + Math.floor(SV.wins / 2)) : mode === 'camp' ? C.rivals : M ? M.rivals : 0;
   G.rivN = nR;
+  G.mis = M ? opt.mis : -1; G.cmb = HE.newCombo(); G.fastLeft = 0; G.misStars = 0; G.dbgMetric = null; $('combo').hidden = true; $('pops').textContent = '';
   for (const h of holes) { h.alive = false; h.grp.visible = false; h.label.visible = false; }
-  const startPts = SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0;
+  const startPts = M ? (M.st ? TH[Math.min(M.st, TH.length) - 1] : 0) : SV.perks.size > 0 ? TH[Math.min(SV.perks.size, 3) - 1] : 0; // missions: the same start for everyone (M.st = the stage to start at)
   const setup = (h, x, z, pts) => {
     h.x = x; h.z = z; h.vx = h.vz = 0; h.pts = pts; h.stage = -1; h.st0 = W.big ? 3 : 0; h.alive = true; h.dying = 0; h.deadT = 0; h.inv = 1.5; h.eaten = 0; h.kills = 0; // (st0: real-scale maps start every hole a little bigger)
     h.grp.visible = true; h.label.visible = nR > 0; setStage(h, true); h.maxR = h.R; h.gy = GY(x, z); h.grp.position.set(x, h.gy, z); h.grp.scale.set(1, 1, 1);
   };
-  const corners = W.rstarts;
+  let corners = W.rstarts;
+  if (M && M.near && W.spawns.length) { // rivals start close to the player (a real-scale city is huge): the nearest spawn points at least 45 m away
+    const dd = q => Math.hypot(q[0] - W.start[0], q[1] - W.start[1]);
+    const sp = W.spawns.filter(q => dd(q) > 45).sort((u, v) => dd(u) - dd(v));
+    if (sp.length) corners = Array.from({ length: Math.max(nR, 1) }, (_, n) => sp[Math.min(sp.length - 1, n * 2)]);
+  }
   if (online) {
     // seat 0 starts at the city's start, the others at the far spawn points; every client uses the same seats
     let k = 0;
@@ -1550,8 +1676,9 @@ function startRound(mode, si, net, opt) {
   }
   camSnap = true;
   $('rank').hidden = nR === 0;
-  $('hRankL').textContent = mode === 'match' || online ? T('じゅんい') : T('のみこみ率');
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow', 'ovView'].forEach(id => $(id).hidden = true);
+  $('hRankL').textContent = mode === 'match' || online ? T('じゅんい') : M && (M.kind === 'combo' || M.kind === 'kills') ? T(HE.KINDS[M.kind].label) : T('のみこみ率');
+  misHudStart(M);
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovHow', 'ovView', 'ovMis', 'ovMisCard'].forEach(id => $(id).hidden = true);
   $('msg').hidden = true;
   if (pm && pm.isOpen) pm.close();
   setPlayingUi(true);
@@ -1559,20 +1686,21 @@ function startRound(mode, si, net, opt) {
   // the first city of the tour teaches the controls (first time, or "play the tutorial again")
   tutStop();
   if (mode === 'camp' && si === 0 && (opt.tutorial || !SV.tut)) tutBegin();
-  if (!online) { sfx.start(); toast(mode === 'match' ? T('{city}で スタート！', { city: T(C.name) }) : T(C.name)); }
+  if (!online) { sfx.start(); toast(mode === 'match' ? T('{city}で スタート！', { city: T(C.name) }) : M ? T(M.name) : T(C.name)); }
   else toast(T(C.name));
   updateHud(true);
-  emit('play_start', { mode: online ? 'versus' : 'normal', stage: mode === 'camp' ? si + 1 : undefined, city: CITIES[si].id, kind: mode });
+  emit('play_start', { mode: online ? 'versus' : M ? 'practice' : 'normal', stage: mode === 'camp' ? si + 1 : undefined, city: CITIES[si].id, kind: mode });
 }
 // one play_end per round: 'over' (time up), 'clear' (a campaign city with ★), 'quit'
 function endPlay(reason, extra) {
   if (G.ended) return;
   G.ended = true;
-  emit('play_end', Object.assign({ mode: G.mode === 'online' ? 'versus' : 'normal', score: Math.max(0, player.pts | 0), reason,
-    durationMs: Math.round(G.played * 1000), stage: G.mode === 'camp' ? G.stage + 1 : undefined, kind: G.mode }, extra || {}));
+  emit('play_end', Object.assign({ mode: G.mode === 'online' ? 'versus' : G.mode === 'mis' ? 'practice' : 'normal', score: Math.max(0, player.pts | 0), reason,
+    durationMs: Math.round(G.played * 1000), stage: G.mode === 'camp' ? G.stage + 1 : G.mode === 'mis' ? G.mis + 1 : undefined, kind: G.mode }, extra || {}));
 }
 function setPlayingUi(on) {
   $('pauseBtn').hidden = !on; $('helpBtn').hidden = !!on;
+  if (!on) { $('mhud').hidden = true; $('combo').hidden = true; }
 }
 
 // ---------------------------------------------------------------- input
@@ -1604,9 +1732,33 @@ window.addEventListener('keydown', e => {
   if ((e.code === 'Escape' || e.code === 'KeyP') && G.playing && !G.paused && !e.defaultPrevented && !document.querySelector('.kb-layer:not([hidden])')) pauseGame();
   else if (e.code === 'Escape' && !$('ovHow').hidden && !e.defaultPrevented) closeHow();
   else if (e.code === 'Escape' && G.mode === 'view' && !e.defaultPrevented) showTitle();
+  else if (!G.playing && !e.defaultPrevented && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && !document.querySelector('.kb-layer:not([hidden])') && menuKey(e)) e.preventDefault();
   if (G.mode === 'view' && /^Arrow/.test(e.code)) e.preventDefault();
   if (/^Arrow/.test(e.code) && G.playing) e.preventDefault();
 });
+// keys on the menus: Esc goes back one screen, 1-6 on the title picks a mode, Enter / R / N / T on the result card
+const shown = id => !$(id).hidden;
+function menuKey(e) {
+  const c = e.code, ae = document.activeElement, onBtn = ae && /^(BUTTON|SELECT|INPUT|A)$/.test(ae.tagName);
+  if (c === 'Escape') {
+    if (shown('ovMisCard')) { openMis(); return true; }
+    if (shown('ovMis') || shown('ovCamp') || shown('ovView') || shown('ovShop')) { showTitle(); return true; }
+    if (shown('ovStage')) { openCamp(); return true; }
+    if (shown('ovResult') && !shown('ovOnline')) { $('btnToTitle').click(); return true; }
+    return false;
+  }
+  if (shown('ovResult') && !shown('ovHow')) {
+    if ((c === 'Enter' && !onBtn) || c === 'KeyR') { $('btnAgain').click(); return true; }
+    if (c === 'KeyN' && !$('btnNext').hidden) { $('btnNext').click(); return true; }
+    if (c === 'KeyT') { $('btnToTitle').click(); return true; }
+    return false;
+  }
+  if (shown('ovTitle') && !shown('ovHow') && !shown('ovOnline')) {
+    const b = { Digit1: 'btnCamp', Digit2: 'btnMis', Digit3: 'btnMatch', Digit4: 'btnOnline', Digit5: 'btnSolo', Digit6: 'btnView', KeyS: 'btnShop' }[c];
+    if (b && !$(b).hidden) { $(b).click(); return true; }
+  }
+  return false;
+}
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
@@ -1712,7 +1864,7 @@ function updateFalling(o, dt) {
     if (G.mode !== 'online' && (h.alive || h.dying)) {
       addPts(h, Math.round(T.val * (W.boost || 1)));
       if (h.isPlayer) {
-        h.eaten++; G.eatVal += T.val; sfx.pop(T.s);
+        h.eaten++; G.eatVal += T.val; sfx.pop(T.s); comboEat(h, T);
         if (T.s >= 1.8) vibrate(Math.min(70, 12 + T.s * 6));
       }
     }
@@ -1822,6 +1974,8 @@ function update(dt) {
     }
   }
   for (const h of holes) if (h.alive && !h.remote) swallowCheck(h);
+  if (G.mode !== 'online' && G.mode !== 'view') updateCombo();
+  if (G.mode === 'mis') misTick();
   if (tut.on) tutUpdate(dt);
   if (G.t <= 0) endRound();
 }
@@ -1862,8 +2016,9 @@ function updateHud(force) {
       if (row.last !== txt) { row.last = txt; row.m.textContent = txt; }
       row.r.classList.toggle('dead', !row.h.alive);
     }
-  } else setText('hRank', 'r', soloPct().toFixed(1) + '%');
-  if (G.mode === 'camp' && G.rivN > 0) {
+  } else if (G.mode === 'mis' && (HE.info(G.mis).kind === 'combo' || HE.info(G.mis).kind === 'kills')) setText('hRank', 'r', String(HE.info(G.mis).kind === 'combo' ? G.cmb.max : player.kills));
+  else setText('hRank', 'r', soloPct().toFixed(1) + '%');
+  if ((G.mode === 'camp' || G.mode === 'mis') && G.rivN > 0) {
     rankOf(player);
     for (let k = 0; k < sortBuf.length; k++) {
       const row = rankRows.find(x => x.h === sortBuf[k]); if (!row) continue;
@@ -1874,6 +2029,70 @@ function updateHud(force) {
   }
 }
 function soloPct() { return G.eatVal / TOTAL_VAL * 100; }
+// ---------------------------------------------------------------- combo and missions (hole/engine.js). The combo is only shown (no bonus points: the ranking value is unchanged)
+const _pv = new THREE.Vector3();
+function popAt(x, y, z, text, cls) {
+  if (quiet || G.mode === 'view') return;
+  const box = $('pops'); if (!box) return;
+  _pv.set(x, y, z).project(camera); if (_pv.z > 1) return;
+  while (box.childElementCount > 7) box.firstChild.remove();
+  const el = document.createElement('div'); el.className = 'pop' + (cls ? ' ' + cls : ''); el.textContent = text;
+  el.style.left = Math.max(24, Math.min(stage.clientWidth - 24, (_pv.x * 0.5 + 0.5) * stage.clientWidth + (Math.random() * 20 - 10))) + 'px';
+  el.style.top = Math.max(20, (-_pv.y * 0.5 + 0.5) * stage.clientHeight) + 'px';
+  box.appendChild(el); setTimeout(() => el.remove(), 900);
+}
+function comboEat(h, ty) {
+  const n = HE.comboHit(G.cmb, G.played);
+  popAt(h.x, h.gy + 1.2, h.z, '+' + Math.round(ty.val * (W.boost || 1)));
+  if (n >= 2) {
+    sfx.combo(n);
+    if (n % 5 === 0) { popAt(h.x, h.gy + 2.4, h.z, T('コンボ ×{n}！', { n }), 'c'); camShake = Math.max(camShake, 0.35); vibrate(25); }
+  }
+}
+function updateCombo() {
+  const n = HE.comboLive(G.cmb, G.played), el = $('combo');
+  if (n >= 2) {
+    const t = '×' + n + ' ' + T('コンボ');
+    if (el.textContent !== t) { el.textContent = t; el.hidden = false; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  } else if (!el.hidden) { el.hidden = true; el.textContent = ''; }
+}
+// a value of the mission's goal number, with its unit
+function misFmt(M, v) {
+  return M.kind === 'pct' ? v + '%' : M.kind === 'size' ? v + 'm' : M.kind === 'fast' ? T('のこり {n}秒', { n: v }) : M.kind === 'kills' ? T('{n}体', { n: v }) : '×' + v;
+}
+function misGoalText(M) {
+  const t = fmtTime(M.time), v = M.stars[0];
+  return M.kind === 'pct' ? T('{t}で 街の{p}%を のみこもう', { t, p: v }) : M.kind === 'combo' ? T('{t}で {n}コンボを めざそう', { t, n: v })
+    : M.kind === 'kills' ? T('{t}で ライバルを {n}体 のみこもう', { t, n: v }) : M.kind === 'size' ? T('{t}で 直径{n}mの あなに なろう', { t, n: v })
+    : T('街の{p}%を {t}いないに のみこもう', { t, p: M.target });
+}
+const misStarsText = M => '★ ' + misFmt(M, M.stars[0]) + '　★★ ' + misFmt(M, M.stars[1]) + '　★★★ ' + misFmt(M, M.stars[2]);
+const misRivalText = M => M.rivals ? T('ライバル {n}体', { n: M.rivals }) : T('ライバルなし');
+function misStats() { return { pct: TOTAL_VAL ? soloPct() : 0, combo: G.cmb.max, kills: player.kills, size: player.maxR * 2, fastLeft: G.fastLeft }; }
+function misHudStart(M) {
+  const el = $('mhud'); el.hidden = !M; if (!M) return;
+  const a = M.stars, fast = M.kind === 'fast';
+  $('mhT').textContent = misGoalText(M);
+  $('mhT1').style.left = (a[0] / a[2] * 100) + '%'; $('mhT2').style.left = (a[1] / a[2] * 100) + '%';
+  $('mhT1').hidden = $('mhT2').hidden = fast;
+  $('mhFill').style.width = '0%'; G.mvTxt = '';
+}
+function misTick() {
+  const i = G.mis, M = HE.info(i); if (!M) return;
+  const st = misStats();
+  if (M.kind === 'fast' && !G.fastLeft && HE.goalReached(i, st.pct)) { G.fastLeft = Math.max(0.1, G.t); G.t = 0; st.fastLeft = G.fastLeft; }
+  const v = HE.metric(i, st), fast = M.kind === 'fast';
+  const cur = M.kind === 'pct' ? +st.pct.toFixed(1) : M.kind === 'size' ? +st.size.toFixed(1) : v;
+  const txt = fast ? st.pct.toFixed(1) + ' / ' + M.target + '%' : misFmt(M, cur) + '  ★3: ' + misFmt(M, M.stars[2]);
+  if (txt !== G.mvTxt) {
+    G.mvTxt = txt; $('mhV').textContent = txt;
+    $('mhFill').style.width = Math.round((fast ? Math.min(1, st.pct / M.target) : HE.progress(i, cur)) * 100) + '%';
+  }
+  if (!fast) {
+    const sn = HE.starsFor(i, cur);
+    if (sn > G.misStars) { G.misStars = sn; toast('★'.repeat(sn) + ' ' + T('とどいた！')); sfx.step(); vibrate(30); }
+  }
+}
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 function showMsg(t) { const el = $('msg'); el.innerHTML = ''; el.append(t); const b = document.createElement('b'); b.id = 'msgN'; b.textContent = '3'; el.appendChild(b); el.hidden = false; }
 
@@ -1896,9 +2115,10 @@ function showResult(online) {
   const maxSize = +(player.maxR * 2).toFixed(1), pts = Math.max(0, player.pts | 0);
   let coins = 0, isNew = false, newPts = false, reason = 'over', extra = {};
   const resStars = $('resStars');
-  $('btnNext').hidden = true; $('resList').hidden = true; resStars.hidden = true; $('resGoal').hidden = true;
+  $('btnNext').hidden = true; $('resList').hidden = true; resStars.hidden = true; $('resGoal').hidden = true; $('resCmb').hidden = true;
+  $('btnNext').textContent = G.mode === 'mis' ? T('つぎの ミッションへ') : T('つぎの街へ');
   $('resCity').textContent = G.mode === 'camp' ? '' : T('街：{city}', { city: T(CITIES[G.city].name) });
-  $('btnToTitle').textContent = G.mode === 'camp' ? T('まちめぐりへ') : T('タイトルへ');
+  $('btnToTitle').textContent = G.mode === 'camp' ? T('まちめぐりへ') : G.mode === 'mis' ? T('ミッションへ') : T('タイトルへ');
   if (G.mode === 'camp') {
     const si = G.stage, C = CITIES[si], pct = soloPct(), stars = C.stars.filter(v => pct >= v).length;
     let firstClear = false;
@@ -1922,6 +2142,21 @@ function showResult(online) {
     if (stars > 0) { reason = 'clear'; emit('stage_clear', { stage: si + 1, stars, timeMs: Math.round(G.played * 1000) }); sfx.best(); }
     else sfx.fail();
     extra = { stars, pct: +pct.toFixed(1) };
+  } else if (G.mode === 'mis') {
+    const i = G.mis, M = HE.info(i);
+    const v = G.dbgMetric != null ? G.dbgMetric : HE.metric(i, misStats()), stars = HE.starsFor(i, v);
+    let first = false;
+    mutX(x => { first = stars > 0 && !(x.s[i] > 0); isNew = v > (x.b[i] || 0) && stars > 0; HE.recordMission(x, i, stars, v); });
+    coins = HE.coinsFor(stars, first);
+    mutate(sv => { if (maxSize > sv.best.maxSize) sv.best.maxSize = maxSize; sv.coins += coins; });
+    $('resTtl').textContent = stars > 0 ? T('{name} クリア！', { name: T(M.name) }) : T('あと すこし！');
+    $('resBig').textContent = M.kind === 'fast' && !(v > 0) ? T('じかんぎれ') : misFmt(M, M.kind === 'pct' || M.kind === 'size' ? +v.toFixed(1) : v);
+    stars3(resStars, stars);
+    const goal = stars > 0 ? (first && i + 1 < HE.MISSIONS.length ? T('つぎの ミッションが ひらいた！') : first ? T('ぜんぶの ミッションを クリア！') : '') : T('★1は {n} いじょう', { n: misFmt(M, M.stars[0]) });
+    $('resGoal').textContent = goal; $('resGoal').hidden = !goal;
+    $('btnNext').hidden = !(stars > 0 && i + 1 < HE.MISSIONS.length);
+    if (stars > 0) sfx.best(); else sfx.fail();
+    reason = stars > 0 ? 'clear' : 'over'; extra = { stars, metric: v };
   } else if (G.mode === 'online') {
     // online ranking: everyone still in the room + the CPU seats, by points
     const list = holes.filter(h => h.inMatch && !h.left).sort((a, b) => b.pts - a.pts);
@@ -1976,6 +2211,10 @@ function showResult(online) {
     stars3(resStars, stars);
     extra = { stars, pct: +pct.toFixed(1) };
   }
+  if (G.mode !== 'online') {
+    mutX(x => HE.recordCombo(x, G.cmb.max));
+    if (G.cmb.max >= 2) { $('resCmb').hidden = false; $('resCmb').textContent = T('さいだいコンボ ×{n}', { n: G.cmb.max }) + (XV.c > G.cmb.max ? '　' + T('ベスト ×{n}', { n: XV.c }) : ''); }
+  }
   applySkin();
   endPlay(reason, extra);
   $('resNew').hidden = !isNew;
@@ -1986,7 +2225,7 @@ function showResult(online) {
   updateHud(true);
 }
 function hideOverlays(except) {
-  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovView'].forEach(id => { if (id !== except) $(id).hidden = true; });
+  ['ovTitle', 'ovResult', 'ovPause', 'ovShop', 'ovCamp', 'ovStage', 'ovOnline', 'ovView', 'ovMis', 'ovMisCard'].forEach(id => { if (id !== except) $(id).hidden = true; });
   G.loadTok = null; if (G.mode === 'view' && except !== 'none') endViewUi();
 }
 function showLoading() { const el = $('msg'); el.textContent = T('街を 読みこみ中…'); el.hidden = false; dirty = true; }
@@ -1995,7 +2234,7 @@ function quitRound() {
   if (G.playing) { endPlay('quit'); if (G.mode === 'online') netLeave(); }
   G.playing = false; G.paused = false; tutStop(); setPlayingUi(false);
   if (KG) KG.resume('api');
-  G.mode === 'camp' ? openCamp() : showTitle();
+  G.mode === 'camp' ? openCamp() : G.mode === 'mis' ? openMis() : showTitle();
 }
 function showTitle() {
   G.loadTok = null;
@@ -2010,6 +2249,8 @@ function renderTitle() {
   $('tCoins').textContent = SV.coins; renderCitySel();
   $('btnCamp').hidden = !CITIES.length;
   $('tCampName').textContent = T('まちめぐり（{n}の街）', { n: CITIES.length });
+  $('tMisName').textContent = T('ミッション（{n}）', { n: HE.MISSIONS.length });
+  $('tMisStars').textContent = HE.totalStars(XV) + '/' + HE.MISSIONS.length * 3;
   $('tCampStars').textContent = SV.camp.stars.reduce((a, b) => a + (b || 0), 0) + '/' + CITIES.length * 3;
   $('rPts').textContent = SV.best.maxPts ? T('{n}点', { n: SV.best.maxPts }) : '-';
   $('rRank').textContent = SV.best.matchRank ? T('{n}位', { n: SV.best.matchRank }) : '-';
@@ -2023,7 +2264,7 @@ const pm = UI ? UI.pauseMenu({
   title: T('ひとやすみ'), home: '../',
   extra: [{ label: T('やめてタイトルへ'), icon: 'back', onClick: () => { pm.close(); quitRound(); } }],
   onResume() { resume(); },
-  onRestart() { const m = G.mode, si = G.stage, tu = tut.on; G.paused = false; if (KG) KG.resume('api'); startRound(m, si, null, { tutorial: tu }); },
+  onRestart() { const m = G.mode, si = G.stage, tu = tut.on; G.paused = false; if (KG) KG.resume('api'); startRound(m, si, null, { tutorial: tu, mis: G.mis }); },
   onOpen() { if (KG) KG.menuOpened(); },
 }) : null;
 let onMenu = null;
@@ -2227,11 +2468,65 @@ function openStage(si) {
 }
 $('campList').addEventListener('click', e => { const b = e.target.closest('.cst'); if (!b || b.disabled) return; ensureAudio(); openStage(+b.dataset.si); });
 $('btnCamp').addEventListener('click', () => { ensureAudio(); openCamp(); });
+// ---------------------------------------------------------------- mission screens (ミッション)
+const MIS_WORLDS = [['神奈川の街で はじめの一歩', '最初から あそべる 4つの街'], ['にぎやかな街', '人も 車も ライバルも'], ['ライバルの街', 'うでだめしの 4つのミッション']];
+function openMis() {
+  ensureAudio();
+  G.playing = false; G.mode = 'title'; G.paused = false; G.resultShown = false; dirty = true;
+  hideOverlays('ovMis'); setPlayingUi(false); tutStop();
+  $('msg').hidden = true; $('rank').hidden = true;
+  const list = $('misList'); list.textContent = ''; let w = -1;
+  HE.MISSIONS.forEach((M, i) => {
+    if (M.world !== w) {
+      w = M.world; const hd = document.createElement('div'); hd.className = 'csec';
+      const hb = document.createElement('b'); hb.textContent = T(MIS_WORLDS[w][0]);
+      const hs = document.createElement('small'); hs.textContent = T(MIS_WORLDS[w][1]); hd.append(hb, hs); list.appendChild(hd);
+    }
+    const locked = !HE.open(XV, i), C = CITIES[MIS_CITY[i]];
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'cst'; b.dataset.mi = i; b.disabled = locked;
+    const cv = document.createElement('canvas'); cv.width = 112; cv.height = 84; drawIcon(cv, C, locked);
+    const tx = document.createElement('div'); tx.className = 'tx';
+    const nm = document.createElement('b'); nm.textContent = (i + 1) + '. ' + (locked ? T('？？？') : T(M.name));
+    const sm = document.createElement('small'); sm.textContent = locked ? T('前の ミッションを クリアで ひらく') : T(C.name) + ' / ' + T(HE.KINDS[M.kind].label);
+    const gl = document.createElement('small'); gl.textContent = locked ? '' : misGoalText(M);
+    tx.append(nm, sm); if (!locked) tx.appendChild(gl);
+    const st = document.createElement('div'); st.className = 'st'; st.innerHTML = starStr(XV.s[i] || 0);
+    const em = document.createElement('em'); em.textContent = XV.b[i] ? T('ベスト') + ' ' + misFmt(M, XV.b[i]) : '-'; st.appendChild(em);
+    b.append(cv, tx, st); list.appendChild(b);
+  });
+  $('misNote').textContent = '★ ' + HE.totalStars(XV) + '/' + HE.MISSIONS.length * 3 + (XV.c ? '　' + T('さいだいコンボ ×{n}', { n: XV.c }) : '') + '　' + T('だれでも 同じ条件・ランキングには 入りません');
+  $('ovMis').hidden = false;
+  let k = 0; HE.MISSIONS.forEach((M, i) => { if (HE.open(XV, i)) k = i; });
+  const el = list.querySelector('.cst[data-mi="' + k + '"]');
+  if (el) { try { list.scrollTop = Math.max(0, el.offsetTop - list.offsetTop - 10); el.focus({ preventScroll: true }); } catch (e) {} }
+}
+function openMisCard(i) {
+  const M = HE.info(i); if (!M || !HE.open(XV, i)) return openMis();
+  const si = MIS_CITY[i], C = CITIES[si];
+  G.misSel = i; G.mode = 'title'; G.playing = false; G.resultShown = false; dirty = true;
+  hideOverlays('ovMisCard'); setPlayingUi(false);
+  if (!buildWorld(si)) loadCity(si).then(() => { if (G.misSel === i && !$('ovMisCard').hidden) { buildWorld(si); camSnap = true; dirty = true; } }, () => {});
+  camSnap = true;
+  drawIcon($('mcIcon'), C, false);
+  $('mcNo').textContent = T('ミッション {n}', { n: i + 1 }) + ' / ' + HE.MISSIONS.length + ' · ' + T(C.name);
+  $('mcName').textContent = T(M.name);
+  $('mcDesc').textContent = T(M.desc);
+  $('mcGoal').textContent = misGoalText(M) + '　' + misRivalText(M);
+  $('mcStars').textContent = misStarsText(M);
+  $('mcBest').innerHTML = XV.b[i] ? T('ベスト') + ' ' + misFmt(M, XV.b[i]) + ' <span class="stline">' + '★'.repeat(XV.s[i] || 0) + '</span>' : T('まだ あそんでいません');
+  $('ovMisCard').hidden = false;
+  try { $('btnMcGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('btnMis').addEventListener('click', () => openMis());
+$('btnMisBack').addEventListener('click', showTitle);
+$('btnMcBack').addEventListener('click', openMis);
+$('btnMcGo').addEventListener('click', () => startRound('mis', 0, null, { mis: G.misSel }));
+$('misList').addEventListener('click', e => { const b = e.target.closest('.cst'); if (!b || b.disabled) return; ensureAudio(); openMisCard(+b.dataset.mi); });
 $('btnCampBack').addEventListener('click', showTitle);
 $('btnStBack').addEventListener('click', openCamp);
 $('btnStGo').addEventListener('click', () => startRound('camp', G.stage));
 $('btnStView').addEventListener('click', () => startView(G.stage));
-$('btnNext').addEventListener('click', () => openStage(G.stage + 1));
+$('btnNext').addEventListener('click', () => (G.mode === 'mis' ? openMisCard(G.mis + 1) : openStage(G.stage + 1)));
 
 // ---------------------------------------------------------------- buttons
 $('pauseBtn').addEventListener('click', () => { sfx.click(); if (G.playing) pauseGame(); });
@@ -2329,8 +2624,8 @@ $('btnShop').addEventListener('click', () => { ensureAudio(); $('ovTitle').hidde
 // menu buttons click (the shop's own buttons have their own sounds)
 $('stage').addEventListener('click', e => { if (e.target.closest('.overlay .btn, .cst')) sfx.click(); });
 $('btnShopBack').addEventListener('click', () => { $('ovShop').hidden = true; $('ovTitle').hidden = false; renderTitle(); });
-$('btnAgain').addEventListener('click', () => (G.mode === 'online' ? onlineOpen() : startRound(G.mode === 'title' ? 'match' : G.mode, G.stage)));
-$('btnToTitle').addEventListener('click', () => (G.mode === 'camp' ? openCamp() : showTitle()));
+$('btnAgain').addEventListener('click', () => (G.mode === 'online' ? onlineOpen() : startRound(G.mode === 'title' ? 'match' : G.mode, G.stage, null, G.mode === 'mis' ? { mis: G.mis } : undefined)));
+$('btnToTitle').addEventListener('click', () => (G.mode === 'camp' ? openCamp() : G.mode === 'mis' ? openMis() : showTitle()));
 // city choice for battle / solo: random, or one of the unlocked campaign cities
 function renderCitySel() {
   const sel = $('citySel'); sel.textContent = '';
@@ -3099,6 +3394,7 @@ if (DEBUG) {
     mode: G.mode === 'online' ? 'versus' : 'normal', screen: G.playing ? (G.paused ? 'paused' : 'play') : G.resultShown ? 'result' : 'menu', kind: G.mode,
     score: Math.max(0, player.pts | 0), time: G.t, over: !G.playing && (G.resultShown || !!G.ended), stage: G.stage >= 0 ? G.stage + 1 : null,
     paused: G.paused, playing: G.playing, loading: !!G.loadTok, view: G.mode === 'view', pct: TOTAL_VAL ? +soloPct().toFixed(2) : 0, eaten: player.eaten, size: +(player.R * 2).toFixed(1),
+    mis: G.mode === 'mis' ? G.mis + 1 : null, misHud: !$('mhud').hidden, comboMax: G.cmb ? G.cmb.max : 0, misStars: XV.s.slice(), comboBest: XV.c, misFast: G.fastLeft || 0, misOpen: !$('ovMis').hidden, misCard: !$('ovMisCard').hidden,
     best: SV.best.maxPts, coins: SV.coins, howto: !$('ovHow').hidden, result: !$('ovResult').hidden,
     tutorial: tut.on || tut.done ? { step: tut.step, done: tut.done } : null, quality: qLv, frames: renderer.info.render.frame, drawn: frames,
     net: { phase: NET.phase, sent: NET.sent, recv: NET.recv, lat: NET.latN ? Math.round(NET.lat / NET.latN) : null },
@@ -3121,19 +3417,22 @@ if (DEBUG) {
       if (tut.on) tutFinish(true);
       if (G.mode === 'camp') G.eatVal = TOTAL_VAL * (CITIES[G.stage].stars[2] + 1) / 100;
       else if (G.mode === 'solo') G.eatVal = TOTAL_VAL * 0.6;
+      else if (G.mode === 'mis') G.dbgMetric = HE.info(G.mis).stars[2];
       else { player.pts = Math.max(player.pts, 5000); for (const r of rivals) if (r.alive) r.pts = Math.min(r.pts, 100); }
       G.t = 0; endRound(); return true;
     },
     lose() {
       if (!G.playing || G.mode === 'online') return false;
       if (tut.on) tutFinish(true);
-      G.eatVal = 0; player.pts = 0; G.t = 0; endRound(); return true;
+      G.eatVal = 0; player.pts = 0; if (G.mode === 'mis') G.dbgMetric = 0; G.t = 0; endRound(); return true;
     },
     step: n => stepSim(n, true),
     sim: (n, botOn) => stepSim(n, botOn),
     tutorial: () => ({ step: tut.step, done: tut.on ? false : (tut.done || !!SV.tut), id: tut.on ? TUT[tut.step].id : null, total: TUT.length, active: tut.on, skipped: tut.skipped }),
     skipTutorial() { if (tut.on) tutFinish(true); },
     start(kind, stage, opt) { startRound(kind || 'match', stage == null ? 0 : stage, null, opt); return kbState(); },
+    startMission(i) { startRound('mis', 0, null, { mis: i }); return kbState(); },
+    openMis, openMisCard, HE: () => HE, X: () => XV, combo: () => ({ n: HE.comboLive(G.cmb, G.played), max: G.cmb.max }),
     pause: pauseGame, resume, openHow, closeHow, quit: quitRound, showTitle,
     move(x, z) { joy.x = x; joy.y = z; joy.on = !!(x || z); },
   });
