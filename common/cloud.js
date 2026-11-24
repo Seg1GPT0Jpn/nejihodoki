@@ -387,6 +387,7 @@
     chain = p.catch(() => {});
     return p;
   }
+  const PUSH_CHUNK = 8;
   async function doFlush(o) {
     if (!canSync() || pulledUid !== user.uid) return;
     const out = outgoing();
@@ -395,10 +396,21 @@
     if (!out.n) { if (o.first) await db.collection('nejiUsers').doc(uid).set({ updatedAt: now() }, { merge: true }); return; }
     if (!o.initial) lastPushAt = now();
     try {
-      await db.collection('nejiUsers').doc(uid).set({ games: out.games, updatedAt: now() }, { merge: true });
-      if (user && user.uid === uid) {
-        Object.assign(remote, out.next);
-        for (const k of out.del) { delete remote[k]; delete removeRemote[k]; }
+      // firestore.rules checks every entry a write changes, with a limit of 1000 expressions per write,
+      // so a push carries at most PUSH_CHUNK keys (a first sync with many games goes up in several writes)
+      const encs = Object.keys(out.games), byEnc = {};
+      for (const k of Object.keys(out.next)) byEnc[enc(k)] = k;
+      for (const k of out.del) byEnc[enc(k)] = k;
+      for (let i = 0; i < encs.length; i += PUSH_CHUNK) {
+        const part = {}; for (const ek of encs.slice(i, i + PUSH_CHUNK)) part[ek] = out.games[ek];
+        await db.collection('nejiUsers').doc(uid).set({ games: part, updatedAt: now() }, { merge: true });
+        if (user && user.uid === uid) {
+          for (const ek of Object.keys(part)) {
+            const k = byEnc[ek];
+            if (k == null) continue;
+            if (out.del.indexOf(k) >= 0) { delete remote[k]; delete removeRemote[k]; } else if (out.next[k]) remote[k] = out.next[k];
+          }
+        }
       }
     } catch (e) {
       console.warn('KoboCloud push', e);

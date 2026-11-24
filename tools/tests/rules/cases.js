@@ -76,6 +76,35 @@ async function runCases(T, opt = {}) {
     // いろあわせカード工房（colorcards）：記録 kusoge.colorcards.save だけを同期する（とちゅうのゲーム kusoge.colorcards.game は端末だけ）
     await check(g, 'own push colorcards save (stars, wins, stats)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~colorcards~save': { v: JSON.stringify({ v: 1, pts: 9, w: { q: { p: 6, w: 4 }, m: { p: 1, w: 1 } }, stats: { plays: 7, wins: 5, swap: 2, calls: 8 }, set: { n: 3, level: 2, mode: 'quick', fast: 0 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'colorcards save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~colorcards~save': { v: 7, t: now } } }, A, { merge: true }));
+    // おもちゃ大乱闘（brawl）：記録 kusoge.brawl.save だけを同期する（とちゅうのラダー kusoge.brawl.run は端末だけ）
+    await check(g, 'own push brawl save (best ladder score, unlocks, stats)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': { v: JSON.stringify({ v: 1, best: 9800, lw: 5, cl: 1, un: { c: { robo: 1, duck: 1, bear: 1, tin: 1 }, s: { bench: 1, box: 1, shelf: 1 } }, cp: { robo: 6 }, stats: { plays: 9, wins: 6, kos: 22, maxCmb: 4 }, set: { n: 1, lvl: 2, stage: 'bench', mode: 'stock', stk: 3, tm: 3, c1: 'robo', c2: 'duck', diff: 2 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'brawl save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'brawl save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': 'x' } }, A, { merge: true }));
+    await check(g, 'brawl save entry with an extra field', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': { v: '{}', t: now, a: 1, b: 2, c: 3 } } }, A, { merge: true }));
+    // 式の数の上限（1回の書き込みで1000）の確認。ルールは「この書き込みで変わるキー」だけを確かめる（firestore.rules の okEnt の上のコメント）。
+    // 以前は、すでにあるキーも毎回ぜんぶ確かめていたので、キーが15個ほどになった人の書き込みが拒否されていた。
+    {
+      const keys = [...require('fs').readFileSync(require('path').join(__dirname, '../../../firestore.rules'), 'utf8').matchAll(/okEntAt\(g, ch, '([^']+)'\)/g)].map(m => m[1]);
+      const part = (a, b, v) => { const o = {}; for (const k of keys.slice(a, b)) o[k] = { v: v || '{"v":1}', t: now }; return o; };
+      const U = await signUp(T);
+      const N = keys.length;
+      await check(g, `a new doc with 8 known keys in one write (the largest write common/cloud.js sends)`, 'allow', () => fsSet(T, `nejiUsers/${U.uid}`, { games: part(0, 8), updatedAt: now, level: 5, name: 'Taro Yamada' }, U, {}));
+      let firstBad = -1;
+      for (let i = 8; i < N; i += 8) {
+        const r = await fsSet(T, `nejiUsers/${U.uid}`, { games: part(i, Math.min(N, i + 8)), updatedAt: now }, U, { merge: true });
+        if (!r.ok && firstBad < 0) firstBad = i;
+      }
+      results.push({ group: g, name: `the doc grows to all ${N} known keys, 8 at a time (every write also carries all the keys already there)`, expect: 'allow', got: firstBad < 0 ? 'allow' : 'deny', pass: firstBad < 0, status: firstBad < 0 ? 200 : 403, detail: firstBad < 0 ? undefined : 'failed at key #' + firstBad });
+      await check(g, `a full doc (${N} keys): change 8 keys at once`, 'allow', () => fsSet(T, `nejiUsers/${U.uid}`, { games: part(0, 8, '{"v":2}'), updatedAt: now + 1 }, U, { merge: true }));
+      await check(g, `a full doc (${N} keys): change 1 key`, 'allow', () => fsSet(T, `nejiUsers/${U.uid}`, { games: { [keys[N - 1]]: { v: '{"v":3}', t: now + 2 } }, updatedAt: now + 2 }, U, { merge: true }));
+      await check(g, `a full doc (${N} keys): a bad entry among the changed keys is still denied`, 'deny', () => fsSet(T, `nejiUsers/${U.uid}`, { games: Object.assign(part(0, 3), { 'kusoge~brawl~save': { v: 5, t: now } }), updatedAt: now }, U, { merge: true }));
+      await check(g, `a full doc (${N} keys): an entry with an extra field is still denied`, 'deny', () => fsSet(T, `nejiUsers/${U.uid}`, { games: { 'kusoge~cards~save': { v: '{}', t: now, x: 1 } }, updatedAt: now }, U, { merge: true }));
+      await check(g, `a new doc: an entry without v is denied`, 'deny', async () => { const V = await signUp(T); return fsSet(T, `nejiUsers/${V.uid}`, { games: { 'kusoge~fit~save': { t: now } } }, V, {}); });
+      await check(g, `a full doc (${N} keys): an entry with v as a list is still denied`, 'deny', () => fsSet(T, `nejiUsers/${U.uid}`, { games: { 'kusoge~town~save': { v: ['x'], t: now } }, updatedAt: now }, U, { merge: true }));
+      await check(g, `a full doc (${N} keys): a tombstone { v: null, t } for one key`, 'allow', () => fsSet(T, `nejiUsers/${U.uid}`, { games: { [keys[2]]: { v: null, t: now + 3 } }, updatedAt: now + 3 }, U, { merge: true }));
+      await check(g, `a new doc with a bad entry among 3 good ones`, 'deny', async () => { const V = await signUp(T); return fsSet(T, `nejiUsers/${V.uid}`, { games: Object.assign(part(0, 3), { 'kusoge~town~save': { v: 1, t: now } }) }, V, {}); });
+      await check(g, `games over 300 keys is still denied on an existing doc`, 'deny', () => { const m = {}; for (let i = 0; i < 301; i++) m['kobo~k' + i] = { v: '1', t: now }; return fsSet(T, `nejiUsers/${U.uid}`, { games: m }, U, { merge: true }); });
+    }
     const many = {}; for (let i = 0; i < 301; i++) many['kobo~k' + i] = { v: '1', t: now };
     await check(g, 'games map with 301 keys', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: many }, A, { merge: true }));
     await check(g, 'level not a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { level: 'x' }, A, { merge: true }));
@@ -194,6 +223,8 @@ async function runCases(T, opt = {}) {
     await check(g3, 'town +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { town: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'colorcards +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { colorcards: 1 }, A, { merge: true }));
     await check(g3, 'colorcards +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { colorcards: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'brawl +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { brawl: 1 }, A, { merge: true }));
+    await check(g3, 'brawl +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { brawl: 9 }, A, { merge: true }));
     await check(g3, 'td +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { td: 9 }, A, { merge: true }));
     await check(g3, 'escape +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { escape: 9 }, A, { merge: true }));
     await check(g3, 'update +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { blocks: 999999 }, B, { merge: true }));

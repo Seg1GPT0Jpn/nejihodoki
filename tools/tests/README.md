@@ -29,6 +29,8 @@ node tools/tests/pwa-offline.js                # PWA の通し：/ と /nejihodo
 node tools/tests/load/run.js                   # 負荷テスト（エミュレーターだけ。本番にはつながない）：Firestore 200人（本物の common/*.js）＋ RTDB 50組（本物の Firebase SDK）。約5分。--quick で約2分。結果は tools/tests/load/out/results.json、まとめは docs/LOAD_TEST.md
 node tools/tests/colorcards-play.js            # いろあわせカード工房の通し（本物のクリックで1ゲーム・れんしゅうとヒント・ドラッグ・ラスト！とつかまえた！・10ラウンドマッチ・ふたりで・チュートリアル・保存と再開・英語・全画面サイズ）
 node tools/tests/unit/colorcards-engine.test.js # いろあわせカード工房の中身（デッキ・CPU 同士の多数の対局・反則の手なし・つよい ＞ よわい）
+node tools/tests/brawl-play.js               # おもちゃ大乱闘の通し（本物のキーとマルチタッチで試合・KO・ふたりで1台・ラダー8戦と開く内容・コンティニュー・れんしゅう・一時停止・保存と再開・英語・全画面サイズ）
+node tools/tests/unit/brawl-engine.test.js    # おもちゃ大乱闘の中身（決まった結果・ふっとばしの計算・ブラストゾーン・全部の技が当たる・3000試合の CPU 対戦・つよい＞ふつう＞かんたん）。BRAWL_MATCHES=400 で短く
 node tools/tests/town-play.js                 # ひまつぶしタウンの通し（本物のタップで建てる・そだてる・旅人・るす番（?debug の時計）・町をひらきなおす・保存と再開・英語・全画面サイズ）
 node tools/tests/town-balance.js              # ひまつぶしタウンの経済のバランス（ボットが最適に近く遊ぶ：最初の目標・最初のひらきなおしの時間・行きづまらないこと）
 node tools/tests/fit-play.js                  # ぴったりパズル工房の通し（本物のドラッグとタップでステージを解く・ヒント・やり直し・今日のパズル・タイムアタック・保存と再開・英語・全画面サイズ）

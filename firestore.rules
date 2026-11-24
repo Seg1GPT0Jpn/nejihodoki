@@ -13,10 +13,10 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
 
     // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
-    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards']; }
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl']; }
     function caps() {
       return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
-               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000 };
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000 };
     }
 
     // ===== 日本時間の日付と週 =====
@@ -44,35 +44,44 @@ service cloud.firestore {
     //       （ネジほどきのページが書くもの）level, maxLevel, stars, daily, name }
     // 昔の版が書いた知らないフィールドが残っているかもしれないので、トップレベルの許可リストは付けない。
     // games の中は、map を1件ずつ確かめることができないので、件数の上限と、知っているキーの形を確かめる。
-    // 式の数の上限（1回の書き込みで1000）に近いので、okEnt は最小にしてある（map でなければ keys() が失敗して拒否になる）
+    // 式の数の上限（1回の書き込みで1000）の対策：
+    //   ・merge の書き込みでは、すでにあるキーも含めた「ぜんぶ」が request.resource に入る。以前は毎回ぜんぶのキーを確かめていたので、
+    //     キーが15個ほどになった人の書き込みは、上限を超えて拒否されていた（ゲームが増えるほど悪くなる）。
+    //     いまは diff() で「この書き込みで変わるキー」だけを確かめる（確かめる中身は同じ。変えないキーは、前の書き込みで確かめずみ）。
+    //   ・1回に変えるキーは8個まで（common/cloud.js が8個ずつに分けて書く）。新しい作成（resource がない）は、入っているキーがぜんぶ「変わるキー」。
+    //   ・okEnt は e を使う回数をへらした形（e.keys().hasOnly で、v と t 以外のフィールドを拒否。map でなければ keys() が失敗して拒否になる）
     function okEnt(e) {
-      return e.keys().hasAll(['v', 't']) && e.size() <= 4
-        && (e.v == null || (e.v is string && e.v.size() <= 300000))
-        && e.t is number;
+      return e.keys().hasOnly(['v', 't']) && e.t is number
+        && (e.v == null || (e.v is string && e.v.size() <= 300000));
     }
-    function okEntAt(g, k) { return !(k in g) || okEnt(g[k]); }
+    function changedKeys(g) {
+      return resource == null || !('games' in resource.data) ? g.keys().toSet() : g.diff(resource.data.games).affectedKeys();
+    }
+    function okEntAt(g, ch, k) { return !(k in ch) || !(k in g) || okEnt(g[k]); }
     function okGames(g) {
+      let ch = changedKeys(g);
       return g is map && g.size() <= 300
-        && okEntAt(g, 'nejihodoki3d~maxLevel') && okEntAt(g, 'nejihodoki3d~stars') && okEntAt(g, 'nejihodoki3d~daily')
-        && okEntAt(g, 'kusoge~blocks~best') && okEntAt(g, 'kusoge~blocks~state')
-        && okEntAt(g, 'kusoge~drop~best')
-        && okEntAt(g, 'kusoge~raft~best') && okEntAt(g, 'kusoge~raft~save')
-        && okEntAt(g, 'kusoge~gates~save')
-        && okEntAt(g, 'kusoge~n59049~best') && okEntAt(g, 'kusoge~n59049~bestTile') && okEntAt(g, 'kusoge~n59049~state')
-        && okEntAt(g, 'kusoge~water~save') && okEntAt(g, 'kusoge~parking~save') && okEntAt(g, 'kusoge~hole~save')
-        && okEntAt(g, 'kusoge~hitsumabushi~save')
-        && okEntAt(g, 'kusoge~planet~save') && okEntAt(g, 'kusoge~planet~world')
-        && okEntAt(g, 'kusoge~hitblow~save')
-        && okEntAt(g, 'kusoge~shogi~save') && okEntAt(g, 'kusoge~shogi~game')
-        && okEntAt(g, 'kusoge~escape~save')
-        && okEntAt(g, 'kusoge~td~save')
-        && okEntAt(g, 'kusoge~physics~save')
-        && okEntAt(g, 'kusoge~minigolf~save')
-        && okEntAt(g, 'kusoge~cards~save')
-        && okEntAt(g, 'kusoge~fit~save')
-        && okEntAt(g, 'kusoge~town~save')
-        && okEntAt(g, 'kusoge~colorcards~save')
-        && okEntAt(g, 'kusoge~vs~stats');
+        && okEntAt(g, ch, 'nejihodoki3d~maxLevel') && okEntAt(g, ch, 'nejihodoki3d~stars') && okEntAt(g, ch, 'nejihodoki3d~daily')
+        && okEntAt(g, ch, 'kusoge~blocks~best') && okEntAt(g, ch, 'kusoge~blocks~state')
+        && okEntAt(g, ch, 'kusoge~drop~best')
+        && okEntAt(g, ch, 'kusoge~raft~best') && okEntAt(g, ch, 'kusoge~raft~save')
+        && okEntAt(g, ch, 'kusoge~gates~save')
+        && okEntAt(g, ch, 'kusoge~n59049~best') && okEntAt(g, ch, 'kusoge~n59049~bestTile') && okEntAt(g, ch, 'kusoge~n59049~state')
+        && okEntAt(g, ch, 'kusoge~water~save') && okEntAt(g, ch, 'kusoge~parking~save') && okEntAt(g, ch, 'kusoge~hole~save')
+        && okEntAt(g, ch, 'kusoge~hitsumabushi~save')
+        && okEntAt(g, ch, 'kusoge~planet~save') && okEntAt(g, ch, 'kusoge~planet~world')
+        && okEntAt(g, ch, 'kusoge~hitblow~save')
+        && okEntAt(g, ch, 'kusoge~shogi~save') && okEntAt(g, ch, 'kusoge~shogi~game')
+        && okEntAt(g, ch, 'kusoge~escape~save')
+        && okEntAt(g, ch, 'kusoge~td~save')
+        && okEntAt(g, ch, 'kusoge~physics~save')
+        && okEntAt(g, ch, 'kusoge~minigolf~save')
+        && okEntAt(g, ch, 'kusoge~cards~save')
+        && okEntAt(g, ch, 'kusoge~fit~save')
+        && okEntAt(g, ch, 'kusoge~town~save')
+        && okEntAt(g, ch, 'kusoge~colorcards~save')
+        && okEntAt(g, ch, 'kusoge~brawl~save')
+        && okEntAt(g, ch, 'kusoge~vs~stats');
     }
     function okNejiUser(d) {
       return (!('games' in d) || okGames(d.games))
@@ -102,7 +111,7 @@ service cloud.firestore {
         && okCap(s.get('gates', 0), c['gates']) && okCap(s.get('n59049', 0), c['n59049']) && okCap(s.get('water', 0), c['water']) && okCap(s.get('parking', 0), c['parking'])
         && okCap(s.get('hole', 0), c['hole']) && okCap(s.get('hitsumabushi', 0), c['hitsumabushi']) && okCap(s.get('planet', 0), c['planet']) && okCap(s.get('hitblow', 0), c['hitblow'])
         && okCap(s.get('shogi', 0), c['shogi']) && okCap(s.get('escape', 0), c['escape']) && okCap(s.get('td', 0), c['td']) && okCap(s.get('physics', 0), c['physics'])
-        && okCap(s.get('minigolf', 0), c['minigolf']) && okCap(s.get('trade', 0), c['trade']) && okCap(s.get('cards', 0), c['cards']) && okCap(s.get('fit', 0), c['fit']) && okCap(s.get('town', 0), c['town']) && okCap(s.get('colorcards', 0), c['colorcards']);
+        && okCap(s.get('minigolf', 0), c['minigolf']) && okCap(s.get('trade', 0), c['trade']) && okCap(s.get('cards', 0), c['cards']) && okCap(s.get('fit', 0), c['fit']) && okCap(s.get('town', 0), c['town']) && okCap(s.get('colorcards', 0), c['colorcards']) && okCap(s.get('brawl', 0), c['brawl']);
     }
     // 端末の時計のずれを30分まで許す
     function okUpdatedAt(t) {
@@ -199,7 +208,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(games())
         && request.resource.data.diff(prevPlays()).affectedKeys().size() == 1
         && plus1('neji') && plus1('blocks') && plus1('drop') && plus1('raft') && plus1('gates')
-        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape') && plus1('td') && plus1('physics') && plus1('minigolf') && plus1('trade') && plus1('cards') && plus1('fit') && plus1('town') && plus1('colorcards');
+        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape') && plus1('td') && plus1('physics') && plus1('minigolf') && plus1('trade') && plus1('cards') && plus1('fit') && plus1('town') && plus1('colorcards') && plus1('brawl');
     }
 
     // それ以外はすべて拒否（ルールに書いていないパスは、読むことも書くこともできない）

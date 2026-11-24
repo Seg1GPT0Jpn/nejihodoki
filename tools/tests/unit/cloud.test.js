@@ -501,6 +501,19 @@ test('R14: without KoboGame, a page the player already touched is not reloaded',
 });
 
 // ================================================================= platform keys, audio
+test('a first sync with many keys goes up in writes of at most 8 keys (firestore.rules checks every changed entry, 1000 expressions per write)', async () => {
+  const keys = Array.from({ length: 21 }, (_, i) => 'kusoge.g' + i + '.save');
+  const storage = { 'kobo.syncedUid': 'g1', 'kobo.mtime': JSON.stringify(Object.fromEntries(keys.map((k, i) => [k, 100 + i]))) };
+  keys.forEach((k, i) => { storage[k] = JSON.stringify({ v: 1, n: i }); });
+  const w = world(), A = w.device({ user: G1, storage });
+  const sync = {}; keys.forEach(k => { sync[k] = 'newest'; });
+  await A.open({ sync, path: '/drop/' });
+  await w.clock.tick(30000);
+  const ws = w.server.writes.filter(x => x.op === 'set' && x.path === 'nejiUsers/g1' && x.data.games && Object.keys(x.data.games).length);
+  ok(ws.length >= 3, 'split into several writes: ' + ws.length);
+  ok(ws.every(x => Object.keys(x.data.games).length <= 8), 'at most 8 keys per write: ' + ws.map(x => Object.keys(x.data.games).length).join(','));
+  eq(keys.filter(k => remoteVal(w.server, 'g1', k) !== undefined).length, 21, 'every key reached the cloud');
+});
 test('platform keys sync too; kobo.audio from the cloud also writes kusoge.sound', async () => {
   const w = world(), A = w.device({ user: G1, storage: { 'kobo.syncedUid': 'g1', 'kusoge.sound': '1', 'kobo.audio': '{"v":1,"master":0.8,"se":1,"bgm":0.6,"mute":false}', 'kobo.mtime': '{"kobo.audio":10}' } });
   seedRemote(w.server, 'g1', { 'kobo.audio': { v: { v: 1, master: 0.5, se: 1, bgm: 0.6, mute: true }, t: 20 }, 'kobo.history': { v: [{ g: 'blocks', t: 5 }], t: 5 } });

@@ -717,6 +717,34 @@
         'kusoge.colorcards.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'brawl', order: 23, path: 'brawl/', added: '2026-11-24',
+      title: { ja: 'おもちゃ大乱闘', en: 'Toy Brawl' },
+      short: { ja: 'おもちゃ大乱闘', en: 'Toy Brawl' },
+      desc: { ja: '工房のおもちゃたちが、ステージの外へふっとばし合う大乱闘。ダメージがたまるほど遠くへ飛ぶ。ぜんまいロボ・アヒル騎士・ブリキ兵・クマ・こま・びっくり箱の6人、5つのステージ。CPU（3段階）と1〜3人で、ふたりで1台で、8戦のラダーで、れんしゅうで。', en: 'A brawl where workshop toys knock each other off the stage. The more damage a toy has taken, the farther it flies. Six toys (a wind-up robot, a duck knight, a tin soldier, a plush bear, a spinning top and a jack-in-the-box) on five stages. Fight 1-3 CPUs (three levels), play two on one device, climb the 8-fight ladder or train.' },
+      label: { ja: '対戦アクション', en: 'Platform fighter' },
+      genres: ['action'], tags: ['2d', 'realtime', 'versus', 'stages', 'casual'],
+      keywords: { ja: ['格闘', '対戦', 'アクション', 'ふっとばし', '乱闘', 'おもちゃ', 'CPU', 'ふたりで', 'ラダー', '場外'], en: ['fighting', 'brawl', 'platform fighter', 'action', 'knockback', 'toys', 'cpu', 'two player', 'ladder', 'versus'] },
+      icon: 'img/icons/brawl.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b3175"/><path d="M0 56h72v16H0z" fill="#8a5a2b"/><path d="M0 56h72v5H0z" fill="#e2b673"/><rect x="8" y="34" width="18" height="20" rx="3" fill="#e0613a" stroke="#2a1d17" stroke-width="2.4"/><rect x="10" y="22" width="14" height="12" rx="3" fill="#f08a63" stroke="#2a1d17" stroke-width="2.4"/><circle cx="14.5" cy="28" r="2.6" fill="#fff"/><circle cx="20.5" cy="28" r="2.6" fill="#fff"/><path d="M17 22v-5" stroke="#2a1d17" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="15.5" r="2.4" fill="#f3b441" stroke="#2a1d17" stroke-width="1.6"/><path d="M25 41l12-2" stroke="#2a1d17" stroke-width="9" stroke-linecap="round"/><path d="M25 41l12-2" stroke="#b9bdc6" stroke-width="5" stroke-linecap="round"/><circle cx="39" cy="38.5" r="5.6" fill="#d2d5dc" stroke="#2a1d17" stroke-width="2.4"/><path d="M47 30l3 4 5-1-2 4 4 3-5 1-1 5-3-4-5 1 2-4-4-3 5-1z" fill="#ffd23f" stroke="#2a1d17" stroke-width="1.8" stroke-linejoin="round"/><g transform="rotate(-28 56 24)"><ellipse cx="56" cy="26" rx="9" ry="10" fill="#f2d13c" stroke="#2a1d17" stroke-width="2.4"/><path d="M60 14l9 2-8 5z" fill="#f09a2d" stroke="#2a1d17" stroke-width="2" stroke-linejoin="round"/><circle cx="59" cy="12" r="5" fill="#f2d13c" stroke="#2a1d17" stroke-width="2.4"/><path d="M53 10a6 6 0 0 1 11 0z" fill="#8da0c9" stroke="#2a1d17" stroke-width="2"/></g></svg>',
+      thumb: 'img/thumbs/brawl.webp', thumb2x: 'img/thumbs/brawl@2x.webp',
+      tech: '2d',
+      // real time (60 Hz): hiding the page pauses the match and waits for "Resume"; no online battle (CPU, two players on one device, ladder, training)
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: false },
+      versus: null,
+      // the best score of one ladder run (8 fights: win bonus + stocks left + KOs + speed, times the level; a continue costs 1000). A full run is about 12000-25000, so the cap leaves room
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.brawl.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.brawl.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best {n} pts' } },
+      keys: {
+        'kusoge.brawl.save': '{ v:1, best（ラダー1周のベスト得点＝ランキング）, lw（ラダーで勝った試合の数）, cl（ラダーをクリアした回数）, un:{ c:{ <おもちゃ>:1 }（開いたおもちゃ）, s:{ <ステージ>:1 }（開いたステージ） }, cp:{ <おもちゃ>:使った回数 }, stats:{ plays, wins, kos（ふっとばした数）, falls, maxCmb（最大コンボ）, perfect（残機を失わずに勝った）, hard（つよいCPUに勝った）, ffa（4人乱闘で勝った）, twop（ふたりで遊んだ）, smashKo（つよい攻撃でふっとばした）, spike, counter, ledge, grab, block, timed, boss, lad, train }, set:{ 最後に選んだ設定 }, tut }',
+        'kusoge.brawl.run': 'とちゅうのラダー（試合のあいだに自動保存）{ v:1, ch, diff（1〜3）, idx（次の試合 0〜7）, score, cont（のこりのコンティニュー）, seed, kos }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.brawl.howto': '遊び方を見た（\'1\'）',
+      },
+      // counters and unlocks only grow (max); the last setup is a whole value (newest)
+      sync: {
+        'kusoge.brawl.save': { fields: { best: 'max', lw: 'max', cl: 'max', un: { each: { each: 'max' } }, cp: { each: 'max' }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -972,6 +1000,29 @@
       { id: 'colorcards.match', tier: 3, icon: 'trophy', title: { ja: '10ラウンドの覇者', en: 'Match Champion' }, desc: { ja: '10ラウンドマッチで1位になる', en: 'Win a 10-round match' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.matchWins' }, gte: 1 } },
       { id: 'colorcards.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'pts' }, gte: 30 } },
       { id: 'colorcards.nodraw', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ひと息であがり', en: 'Not a Single Draw' }, desc: { ja: '一度も山札をひかずに勝つ', en: 'Win without ever drawing from the deck' }, when: { rec: { key: 'kusoge.colorcards.save', path: 'stats.noDraw' }, gte: 1 }, grantsTitle: { ja: '糸の名人', en: 'Thread Master' } },
+    ],
+    brawl: [
+      { id: 'brawl.first', tier: 1, icon: 'check', title: { ja: 'はじめの一勝', en: 'First Win' }, desc: { ja: 'CPUに勝つ', en: 'Beat a CPU in a match' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.wins' }, gte: 1 } },
+      { id: 'brawl.ledge', tier: 1, icon: 'star', title: { ja: 'ふちにぶらさがり', en: 'Hanging On' }, desc: { ja: 'ステージの縁につかまる', en: 'Grab a ledge' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.ledge' }, gte: 1 } },
+      { id: 'brawl.grab', tier: 1, icon: 'star', title: { ja: 'つかんでポイ', en: 'Grab and Toss' }, desc: { ja: '相手をつかむ', en: 'Grab an opponent' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.grab' }, gte: 1 } },
+      { id: 'brawl.twop', tier: 1, icon: 'check', title: { ja: 'ふたりで勝負', en: 'Head to Head' }, desc: { ja: '1台でふたりで対戦する', en: 'Play a two-player match on one device' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.twop' }, gte: 1 } },
+      { id: 'brawl.train', tier: 1, icon: 'check', title: { ja: 'まずはれんしゅう', en: 'Practice First' }, desc: { ja: 'れんしゅうモードで遊ぶ', en: 'Try Training mode' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.train' }, gte: 1 } },
+      { id: 'brawl.ko10', tier: 2, icon: 'star', title: { ja: 'ふっとばし屋', en: 'Launcher' }, desc: { ja: '合わせて10回ふっとばす', en: 'Knock out opponents 10 times in total' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.kos' }, gte: 10 } },
+      { id: 'brawl.smash', tier: 2, icon: 'star', title: { ja: '大技で場外へ', en: 'Smashed Out' }, desc: { ja: '「つよい攻撃」でふっとばす', en: 'Knock someone out with a smash attack' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.smashKo' }, gte: 1 } },
+      { id: 'brawl.block', tier: 2, icon: 'check', title: { ja: 'バリアの達人', en: 'Shield Master' }, desc: { ja: 'まもりで攻撃を10回ふせぐ', en: 'Block 10 attacks with your shield' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.block' }, gte: 10 } },
+      { id: 'brawl.counter', tier: 2, icon: 'star', title: { ja: 'カウンター成功', en: 'Turned the Tables' }, desc: { ja: 'アヒル騎士のカウンターを決める', en: "Land the Duck Knight's counter" }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.counter' }, gte: 1 } },
+      { id: 'brawl.combo5', tier: 2, icon: 'star', title: { ja: 'つながるコンボ', en: 'Combo Chain' }, desc: { ja: '5ヒットのコンボを決める', en: 'Land a 5-hit combo' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.maxCmb' }, gte: 5 } },
+      { id: 'brawl.ffa', tier: 2, icon: 'trophy', title: { ja: '4人乱闘の勝者', en: 'Last Toy Standing' }, desc: { ja: '4人の乱闘で勝つ', en: 'Win a four-way free-for-all' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.ffa' }, gte: 1 } },
+      { id: 'brawl.timed', tier: 2, icon: 'check', title: { ja: 'タイムアップの勝者', en: 'Beat the Clock' }, desc: { ja: '時間制の試合で勝つ', en: 'Win a timed match' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.timed' }, gte: 1 } },
+      { id: 'brawl.lad4', tier: 2, icon: 'trophy', title: { ja: 'ラダーの半分', en: 'Halfway Up' }, desc: { ja: 'ラダーで合わせて4勝する', en: 'Win 4 fights on the ladder' }, when: { rec: { key: 'kusoge.brawl.save', path: 'lw' }, gte: 4 } },
+      { id: 'brawl.hard', tier: 3, icon: 'trophy', title: { ja: '強敵に勝つ', en: 'Beat the Best' }, desc: { ja: '「つよい」CPUに勝つ', en: 'Win against a Hard CPU' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.hard' }, gte: 1 } },
+      { id: 'brawl.perfect', tier: 3, icon: 'trophy', title: { ja: 'ノーミスの勝利', en: 'Flawless' }, desc: { ja: '残機を1つも失わずに勝つ', en: 'Win without losing a stock' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.perfect' }, gte: 1 } },
+      { id: 'brawl.spike', tier: 3, icon: 'star', title: { ja: '流れ星', en: 'Shooting Star' }, desc: { ja: '空中の下づきで、相手をまっさかさまに落とす', en: 'Spike an opponent straight down with a down-air' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.spike' }, gte: 1 } },
+      { id: 'brawl.ko100', tier: 3, icon: 'trophy', title: { ja: '百人ぬき', en: 'Hundred KOs' }, desc: { ja: '合わせて100回ふっとばす', en: 'Knock out opponents 100 times in total' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.kos' }, gte: 100 } },
+      { id: 'brawl.all', tier: 3, icon: 'trophy', title: { ja: 'おもちゃコレクター', en: 'Toy Collector' }, desc: { ja: '6人のおもちゃをぜんぶ開く', en: 'Unlock all six toys' }, when: { rec: { key: 'kusoge.brawl.save', path: 'un.c', measure: 'count' }, gte: 6 } },
+      { id: 'brawl.clear', tier: 3, icon: 'trophy', title: { ja: 'ラダー制覇', en: 'Ladder Cleared' }, desc: { ja: 'ラダーの8戦をぬける', en: 'Clear all 8 fights of the ladder' }, when: { rec: { key: 'kusoge.brawl.save', path: 'cl' }, gte: 1 } },
+      { id: 'brawl.score15k', tier: 4, icon: 'trophy', title: { ja: '1万5千点', en: 'Fifteen Thousand' }, desc: { ja: 'ラダー1周で15000点をとる', en: 'Score 15,000 in one ladder run' }, when: { rec: { key: 'kusoge.brawl.save', path: 'best' }, gte: 15000 } },
+      { id: 'brawl.boss', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ガラクタ大王をたおした', en: 'Junk King Down' }, desc: { ja: 'ラダーの最後のボスに勝つ', en: 'Defeat the final boss of the ladder' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.boss' }, gte: 1 }, grantsTitle: { ja: '工房の王者', en: 'Workshop Champion' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
