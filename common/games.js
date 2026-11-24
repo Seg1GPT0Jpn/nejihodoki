@@ -605,6 +605,34 @@
       // not synced: the record is per device (the class plays on shared devices)
       sync: {},
     },
+    {
+      id: 'cards', order: 19, path: 'cards/', added: '2026-11-24',
+      title: { ja: 'トランプ広場', en: 'Card Table' },
+      short: { ja: 'トランプ広場', en: 'Card Table' },
+      desc: { ja: 'ババ抜き・神経衰弱・七並べ・大富豪・ポーカー・ブラックジャックの6つを、CPUと遊べるトランプ広場。2〜4人、強さは3段階。配る・めくる・出すの動きつき、遊び方と練習もあります。', en: 'Six classic card games against CPU players: Old Maid, Concentration, Sevens, Daifugo, Poker and Blackjack. 2 to 4 players, three strengths, smooth dealing and flipping, rules pages and a practice mode.' },
+      label: { ja: 'トランプ', en: 'Card games' },
+      genres: ['board'], tags: ['2d', 'turn', 'cards', 'casual'],
+      keywords: { ja: ['トランプ', 'カード', 'ババ抜き', '神経衰弱', '七並べ', '大富豪', 'ポーカー', 'ブラックジャック', 'CPU'], en: ['playing cards', 'card games', 'old maid', 'concentration', 'memory', 'sevens', 'daifugo', 'president', 'poker', 'blackjack', 'cpu'] },
+      icon: 'img/icons/cards.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#17614a"/><circle cx="36" cy="36" r="33" fill="#1d7358"/><g transform="rotate(-16 28 40)"><rect x="11" y="14" width="29" height="43" rx="4" fill="#243f86" stroke="#e7c36a" stroke-width="1.5"/><path d="M25.5 20l8 8-8 8-8-8zM25.5 36l8 8-8 8-8-8z" fill="none" stroke="#3a5cb0" stroke-width="1.3"/><circle cx="25.5" cy="35.5" r="3.2" fill="#e7c36a"/></g><g transform="rotate(11 44 36)"><rect x="28" y="10" width="32" height="46" rx="4" fill="#fffdf8" stroke="#c9b88a" stroke-width="1.2"/><text x="34" y="26" font-family="Georgia,serif" font-weight="700" font-size="14" fill="#1c2342">A</text><g transform="translate(35.5 26.5) scale(1.35)" fill="#1c2342"><path d="M12 1.8C9.4 5.6 3.6 8.4 3.6 13.4c0 2.7 2.1 4.6 4.5 4.6 1.5 0 2.7-.6 3.4-1.8-.1 2.7-.9 4.5-2.5 5.6h6c-1.6-1.1-2.4-2.9-2.5-5.6.7 1.2 1.9 1.8 3.4 1.8 2.4 0 4.5-1.9 4.5-4.6C20.4 8.4 14.6 5.6 12 1.8z"/></g></g></svg>', iconBg: '#17614a',
+      thumb: 'img/thumbs/cards.webp', thumb2x: 'img/thumbs/cards@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.cards.game); no online battle in this version (CPU only)
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: false, stages: false },
+      versus: null,
+      // ★: 1 / 2 / 3 for a first place against Easy / Normal / Hard CPUs (practice games count nothing). The cap leaves room for years of play
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.cards.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.cards.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.cards.save': '{ v:1, pts（★の合計＝ランキング）, g:{ om|cn|sv|dh|pk|bj:{ p（遊んだ回数）, w（1位の回数）, l（最下位の回数） } }, stats:{ plays, wins, hard（つよいCPUに勝った回数）, cnStreak（神経衰弱で続けて取った最高の組数）, rev（革命）, cut8（8切り）, pkHands（ポーカーで勝ったハンド）, pkFlush（フラッシュ以上で勝った試合）, royal, pkPot, pkDouble, pkChips, bj（ブラックジャック）, bjWon, bjDbl, bjDouble, bjChips }, set:{ game, n（人数）, level, fast, o:{ <ゲームid>:{ …ゲームごとの設定 } } }, tut }',
+        'kusoge.cards.game': 'とちゅうのゲーム（毎手自動保存）{ v:1, id, st（cards/engine.js の状態そのまま）, practice, opts, n, level, ms, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.cards.howto': '遊び方を見た（\'1\'）',
+      },
+      // counters only grow (max); the last settings are a whole value (newest)
+      sync: {
+        'kusoge.cards.save': { fields: { pts: 'max', g: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -797,6 +825,20 @@
       { id: 'trade.x10', tier: 2, icon: 'star', title: { ja: '10倍の成長', en: 'Tenfold Growth' }, desc: { ja: 'はじめのお金を10倍以上にする', en: 'End with 10× your starting money' }, when: { rec: { key: 'kusoge.trade.save', path: 'bestX' }, gte: 100 } },
       { id: 'trade.types', tier: 3, icon: 'trophy', title: { ja: '4つの立場', en: 'Four Viewpoints' }, desc: { ja: '先進国・新興国・産油国・途上国のすべてで遊ぶ', en: 'Play as all four country types' }, when: { rec: { key: 'kusoge.trade.save', path: 'typesN' }, gte: 4 }, grantsTitle: { ja: '世界を知る人', en: 'World Watcher' } },
       { id: 'trade.dtop', tier: 4, icon: 'trophy', title: { ja: '逆転の途上国', en: 'Against the Odds' }, desc: { ja: '途上国で8か国中4位以内に入る', en: 'Finish in the top 4 as a developing country' }, when: { rec: { key: 'kusoge.trade.save', path: 'dTop' }, gte: 1 } },
+    ],
+    cards: [
+      { id: 'cards.om1', tier: 1, icon: 'check', title: { ja: 'ババ回避', en: 'Dodged the Joker' }, desc: { ja: 'ババ抜きで1位になる', en: 'Finish first in Old Maid' }, when: { rec: { key: 'kusoge.cards.save', path: 'g.om.w' }, gte: 1 } },
+      { id: 'cards.cn4', tier: 2, icon: 'star', title: { ja: '集中力', en: 'In the Zone' }, desc: { ja: '神経衰弱で続けて4組そろえる', en: 'Match 4 pairs in a row in Concentration' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.cnStreak' }, gte: 4 } },
+      { id: 'cards.sv1', tier: 1, icon: 'check', title: { ja: '七の道', en: 'Lucky Seven' }, desc: { ja: '七並べで1位になる', en: 'Finish first in Sevens' }, when: { rec: { key: 'kusoge.cards.save', path: 'g.sv.w' }, gte: 1 } },
+      { id: 'cards.rev', tier: 2, icon: 'star', title: { ja: '革命だ！', en: 'Revolution!' }, desc: { ja: '大富豪で革命を起こす', en: 'Start a revolution in Daifugo' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.rev' }, gte: 1 } },
+      { id: 'cards.dh1', tier: 2, icon: 'trophy', title: { ja: '大富豪', en: 'Grand Rich' }, desc: { ja: '大富豪で1位になる', en: 'Finish first in Daifugo' }, when: { rec: { key: 'kusoge.cards.save', path: 'g.dh.w' }, gte: 1 } },
+      { id: 'cards.cut8', tier: 2, icon: 'star', title: { ja: '8切りの名手', en: 'Eight-Cut Expert' }, desc: { ja: '8切りを合わせて5回決める', en: 'Pull off the 8-cut 5 times in total' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.cut8' }, gte: 5 } },
+      { id: 'cards.flush', tier: 3, icon: 'star', title: { ja: 'フラッシュで勝負', en: 'Flush Win' }, desc: { ja: 'ポーカーでフラッシュ以上の役で勝つ', en: 'Win a poker hand with a flush or better' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.pkFlush' }, gte: 1 } },
+      { id: 'cards.royal', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ロイヤルな夜', en: 'Royal Night' }, desc: { ja: 'ポーカーでロイヤルフラッシュで勝つ', en: 'Win a poker hand with a royal flush' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.royal' }, gte: 1 }, grantsTitle: { ja: 'ロイヤル', en: 'Royal' } },
+      { id: 'cards.bj', tier: 2, icon: 'star', title: { ja: 'ナチュラル21', en: 'Natural 21' }, desc: { ja: 'ブラックジャックを出す', en: 'Be dealt a Blackjack' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.bj' }, gte: 1 } },
+      { id: 'cards.hard', tier: 3, icon: 'trophy', title: { ja: '強敵に勝つ', en: 'Beat the Best' }, desc: { ja: '「つよい」CPUに勝って1位になる', en: 'Finish first against Hard CPUs' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.hard' }, gte: 1 } },
+      { id: 'cards.all', tier: 4, icon: 'trophy', title: { ja: '広場の主', en: 'Master of the Table' }, desc: { ja: '6つのゲームすべてで1位になる', en: 'Finish first in all six games' }, when: { rec: { key: 'kusoge.cards.save', path: 'g', each: 'w', measure: 'countGte', min: 1 }, gte: 6 }, grantsTitle: { ja: '広場の主', en: 'Table Master' } },
+      { id: 'cards.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.cards.save', path: 'pts' }, gte: 30 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

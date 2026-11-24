@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -104,7 +104,7 @@ test('flags reflect what the pages have today', () => {
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf', 'games with a daily today');
   eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,minigolf,trade', 'games without a match');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,minigolf,trade,cards', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -173,6 +173,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('minigolf', k => '{"v":2,"c":{"c1":{"t":30,"r":2,"s":{"1":2}}},"stars":41,"under":3,"done":1}'), 41, 'minigolf: total stars');
   eq(P.rankValue('minigolf', k => '{"v":1,"c":{"c1":{"b":22,"r":2,"h":{"1":1}}},"under":3,"done":1}'), 0, 'minigolf: an old v1 save has no stars yet');
   eq(P.rankValue('minigolf', k => null), 0, 'minigolf: nothing saved');
+  eq(P.rankValue('cards', k => '{"v":1,"pts":7,"g":{"om":{"p":4,"w":2,"l":1}},"stats":{"plays":4,"wins":2}}'), 7, 'cards: total stars');
+  eq(P.rankValue('cards', k => null), 0, 'cards: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {
