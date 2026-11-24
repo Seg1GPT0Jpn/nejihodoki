@@ -252,6 +252,8 @@
         'kusoge.water.howto': '遊び方を見た（\'1\'）',
         'kusoge.water.tut': '\'1\' | \'skip\' | \'old\'',
         'kusoge.water.save': '{ level, best, stars:{ "<level>": 1〜3 } }',
+        'kusoge.water.x': 'チャレンジの星とスプリントのベスト { v:1, s:[12ステージの星0〜3], sp: ミリ秒（小さいほど良い） }（端末内だけ。同期しない・ランキングに入らない）',
+        'kusoge.water.marks': '色の目印（\'1\' = オン）。端末だけ',
       },
       sync: { 'kusoge.water.save': { fields: { level: 'newest', best: 'max', stars: 'mapMax' } } },
     },

@@ -15,6 +15,10 @@
 //     E.stuck(g) / E.won(g) / E.meta(g)（開いた錠はそのまま開いている）
 //     g.log：操作の記録。注ぐ = 試験管の番号2文字（36進）、'U' = 戻す、'X' = 試験管を追加、'H' = ヒント
 //     E.replay(pz, log) → { ok, g, won, err }   記録を最初から当てはめ直す（途中の盤の復元と検証）
+//   チャレンジ・スプリント（2026-11。ふつうのステージ・デイリーとは別の遊び。端末だけの保存 kusoge.water.x。ランキングには入らない）：
+//     E.STAGE_DEFS（12ステージ = 3ワールド×4。{ L, salt, rule }。rule = 'none' | 'noHint' | 'noExtra' | 'noTools'）、E.stageInfo(i) → { i, world, L, salt, rule, par, limit, star3, star2, pz }
+//     E.stageStars(i, moves) → 0〜3（moves = 戻した分を引いた手数。limit を超えると 0）、E.stageOpen(x, i)、E.SPRINT_DEFS（5問）、E.sprintPuzzle(i)、E.sprintMs(ms, hints, extra)（ヒント+10秒・試験管追加+15秒）
+//     E.readX(raw) → { v:1, s:[星×12], sp }（こわれた保存でも読める）、E.recordStage(x, i, stars) / E.recordSprint(x, ms) → 更新したか
 //   デイリー（SYSTEM_ARCHITECTURE.md 6章）：
 //     E.daily(seed) → [{ L, salt }]（3問。中くらいの難しさ）、E.dailyPuzzles(seed) → [pz]
 //     E.dailyScore({ pours, hints, extra, ms }) = 100000 − (手数 + ヒント×5 + 追加×10)×100 − 秒（最低1）
@@ -351,9 +355,56 @@
     return { ok: true, seed, ms, pours, hints, extra, score: dailyScore({ pours, hints, extra, ms }) };
   }
 
+
+  // ---- challenge stages and sprint (this device only: kusoge.water.x = { v:1, s:[stars ×12], sp: best sprint ms }) ----
+  // The puzzles come from generate(L, salt) with fixed salts, so every device plays the same ones. Each stage has a limit on the net number of
+  // pours (undo gives moves back) and a rule that switches tools off. The solver's solution (pz.sol) is the par, so ★3 is always reachable.
+  const STAGE_DEFS = [
+    { L: 5, salt: 101, rule: 'none' }, { L: 8, salt: 102, rule: 'noExtra' }, { L: 11, salt: 103, rule: 'none' }, { L: 14, salt: 104, rule: 'noHint' },
+    { L: 12, salt: 105, rule: 'none' }, { L: 25, salt: 106, rule: 'none' }, { L: 40, salt: 107, rule: 'noExtra' }, { L: 45, salt: 108, rule: 'noHint' },
+    { L: 100, salt: 109, rule: 'none' }, { L: 104, salt: 110, rule: 'noExtra' }, { L: 112, salt: 111, rule: 'noHint' }, { L: 120, salt: 112, rule: 'noTools' },
+  ];
+  const STAGE_N = STAGE_DEFS.length, WORLD_SIZE = 4;
+  const SPRINT_DEFS = [{ L: 4, salt: 7001 }, { L: 9, salt: 7002 }, { L: 14, salt: 7003 }, { L: 20, salt: 7004 }, { L: 28, salt: 7005 }];
+  const HINT_MS = 10000, EXTRA_MS = 15000;
+  function stageInfo(i) {
+    const d = STAGE_DEFS[i]; if (!d) return null;
+    const pz = generate(d.L, d.salt), par = pz.moves, world = Math.floor(i / WORLD_SIZE), f = [0.5, 0.4, 0.3][world];
+    return { i, world, L: d.L, salt: d.salt, rule: d.rule, par, limit: par + Math.ceil(par * f) + 2,
+      star3: par + (world === 0 ? 2 : 1), star2: par + Math.ceil(par * f / 2) + 2, pz };
+  }
+  function stageStars(i, moves) {
+    const s = stageInfo(i); if (!s || !(moves >= 0) || moves > s.limit) return 0;
+    return moves <= s.star3 ? 3 : moves <= s.star2 ? 2 : 1;
+  }
+  function stageOpen(x, i) { return i === 0 || (i > 0 && i < STAGE_N && (Number(x && x.s && x.s[i - 1]) || 0) >= 1); }
+  function sprintPuzzle(i) { const d = SPRINT_DEFS[i]; return d ? generate(d.L, d.salt) : null; }
+  function sprintMs(ms, hints, extra) { return Math.max(0, Math.round(Number(ms) || 0)) + HINT_MS * Math.max(0, hints | 0) + EXTRA_MS * Math.max(0, extra | 0); }
+  function readX(raw) {
+    let o = null;
+    try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { o = null; }
+    const x = { v: 1, s: new Array(STAGE_N).fill(0), sp: 0 };
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return x;
+    if (Array.isArray(o.s)) for (let i = 0; i < STAGE_N; i++) { const n = Math.floor(Number(o.s[i])); x.s[i] = n >= 1 && n <= 3 ? n : 0; }
+    const sp = Math.floor(Number(o.sp)); x.sp = sp > 0 && isFinite(sp) ? sp : 0;
+    return x;
+  }
+  function recordStage(x, i, stars) {
+    if (!(i >= 0 && i < STAGE_N) || !(stars >= 1)) return false;
+    stars = Math.min(3, stars | 0);
+    if (stars <= x.s[i]) return false;
+    x.s[i] = stars; return true;
+  }
+  function recordSprint(x, ms) {
+    ms = Math.round(Number(ms)); if (!(ms > 0) || !isFinite(ms)) return false;
+    if (x.sp && x.sp <= ms) return false;
+    x.sp = ms; return true;
+  }
+
   const Engine = {
     rng, spec, generate, solve, makeMeta, moves, apply, legal, isDone, isWin, doneCount, runLen, openSet, keyOf,
     HINTS_PER_LEVEL, newGame, canPour, pour, undo, addTube, useHint, meta, hintMove, stuck, won, replay,
+    STAGE_DEFS, STAGE_N, WORLD_SIZE, SPRINT_DEFS, HINT_MS, EXTRA_MS, stageInfo, stageStars, stageOpen, sprintPuzzle, sprintMs, readX, recordStage, recordSprint,
     DAILY_LEVELS: DAILY_LEVELS.slice(), daily, dailyPuzzles, dailyScore, encodeReplay, verify,
   };
   root.WaterEngine = Engine;

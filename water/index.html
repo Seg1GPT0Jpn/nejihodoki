@@ -100,6 +100,39 @@ KoboI18n.add({ en: {
   '今日のベスト {b} 点 ・ {n} 回目': 'Today’s best {b} · try #{n}', '今日のベスト更新！': 'New daily best!', 'もう一度挑戦': 'Try again',
   '全員が同じ3問を解く、1日ごとにかわるチャレンジ。手数と時間が少ないほど高得点。': 'Everyone gets the same 3 puzzles, new every day. Fewer moves and less time score higher.',
   'ヒントは+5手、試験管追加は+10手として数えます': 'Each hint counts as +5 moves, an extra tube as +10',
+  // modes, challenge, sprint
+  'モード': 'Modes', 'モードをえらぶ': 'Choose a mode', 'ふつうのステージ': 'Regular stages',
+  'どこまでも続くステージ。いま Lv.{n}': 'Endless stages. Now at Lv.{n}',
+  'チャレンジ': 'Challenge', 'スプリント': 'Sprint',
+  '手数の上限つきの12ステージ。★ {n} / 36': '12 stages with a move limit. ★ {n} / 36',
+  '5問をできるだけ速く。ベスト {t}': 'Five puzzles, as fast as you can. Best {t}',
+  '5問をできるだけ速く。まだ記録なし': 'Five puzzles, as fast as you can. No record yet',
+  '全員が同じ3問。今日のベストを目ざそう': 'Everyone gets the same 3 puzzles. Beat today’s best',
+  '1〜4 で選ぶ ・ M で閉じる': 'Press 1–4 to pick · M to close',
+  'チャレンジ ステージ{n}': 'Challenge · Stage {n}', 'ステージ{n}': 'Stage {n}',
+  'はじめの棚': 'First shelf', 'ふしぎな棚': 'Strange shelf', 'たかい棚': 'Tall shelf',
+  '手数に上限があります。戻すと手数は減ります。★は少ない手数ほど多い。': 'Each stage has a move limit. Undo gives moves back. Fewer moves, more ★.',
+  '前のステージをクリアすると開きます': 'Clear the previous stage to open it',
+  'ヒントなし': 'No hints', '追加なし': 'No extra tube', '道具なし': 'No tools', '使えない': 'Off',
+  'このステージでは使えません': 'Not allowed in this stage',
+  '{a} / {b}手': '{a} / {b} moves', '★3：{n}手以内': '★3: within {n}', '目標：{n}手以内で★3': 'Goal: ★3 within {n} moves',
+  '手数の上限です。戻すかリスタートを': 'Move limit reached. Undo or restart',
+  '手数ぎれ…': 'Out of moves…', 'このステージの手数の上限に達しました。戻してやり直そう。': 'You have used all the moves for this stage. Undo and try again.',
+  '（目安 {n}手）': ' (par {n})', 'つぎのステージが開いた！': 'Next stage unlocked!',
+  'ステージ一覧へ': 'Stage list', '上限 {n}手': 'limit {n}',
+  '光っている試験管から、矢印の先へ': 'Pour from the glowing tube to where the arrow points',
+  '光っている試験管から、矢印の先へ（+10秒）': 'Pour from the glowing tube to where the arrow points (+10 s)',
+  '空の試験管を1本追加しました': 'Added an empty tube',
+  '空の試験管を1本追加しました（+15秒）': 'Added an empty tube (+15 s)',
+  '+{n}秒': '+{n} s',
+  'スプリント クリア！': 'Sprint cleared!', 'タイム': 'Time', 'ベスト更新！': 'New best!', 'ベスト {t}': 'Best {t}',
+  '手数 {n} ・ 時間 {t}': '{n} moves · {t}', 'ヒント・追加のぶん +{n}秒': 'Hints and extra tubes: +{n} s', 'もう一度挑戦': 'Try again',
+  '5問のタイム勝負。ヒントは+10秒、試験管追加は+15秒。': 'Five puzzles against the clock. Hint +10 s, extra tube +15 s.',
+  'れんさ ×{n}': 'Chain ×{n}',
+  '色の目印：オン': 'Color marks: on', '色の目印：オフ': 'Color marks: off', '色の目印': 'Color marks',
+  'そろった色': 'Colors sorted',
+  'もう一度 R でリスタート': 'Press R again to restart',
+  'キー：矢印で選ぶ・Enter／Space で持ち上げて注ぐ・1〜9 で試験管・U 戻す・H ヒント・X 追加・R リスタート・M モード・C 目印': 'Keys: arrows pick · Enter/Space lift & pour · 1–9 tube · U undo · H hint · X extra · R restart · M modes · C marks',
 } });
 </script>
 <script src="../common/games.js"></script>
@@ -347,13 +380,32 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
   .howto-btns { display: flex; flex-direction: row-reverse; gap: 8px; }
   .howto-btns .btn { flex: 1; margin-top: 8px; }
 }
+.prog { height: 5px; border-radius: 3px; background: var(--w-panel); margin: 5px 2px 1px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); transition: transform .35s ease-out; background: linear-gradient(90deg, var(--kb-accent), var(--w-star)); }
+@media (max-height: 440px) and (min-width: 560px) { .prog { display: none; } }
+.mode-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; min-height: 58px; padding: 8px 12px; position: relative; }
+.mode-opt b { font-size: 15px; }
+.mode-opt small { font-size: 11.5px; font-weight: 500; color: var(--kb-dim); line-height: 1.35; }
+.mode-opt kbd { position: absolute; right: 10px; top: 8px; font: 800 11px var(--kb-font-body); padding: 1px 7px; border-radius: 6px; border: 1px solid var(--w-line); color: var(--kb-dim); }
+.mode-opt.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent-soft) inset; }
+.keyhelp { font-size: 11px; color: var(--kb-dim); margin: 8px 0 0; line-height: 1.5; }
+.world { margin: 10px 0 2px; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); text-align: left; letter-spacing: .06em; }
+.chgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 2px; }
+.lv.ch { aspect-ratio: auto; min-height: 62px; padding: 4px 2px; gap: 1px; position: relative; }
+.lv.ch .r { font-size: 9px; color: var(--kb-dim); letter-spacing: 0; line-height: 1.1; min-height: 10px; }
+.lv.ch.locked { opacity: .5; }
+.lv.ch svg { position: absolute; right: 4px; top: 4px; width: 13px; height: 13px; color: var(--kb-dim); }
+#chalList { overflow-y: auto; min-height: 0; flex: 0 1 auto; overscroll-behavior: contain; touch-action: pan-y; }
+#stage.shake { animation: shk .42s; }
+@keyframes shk { 15% { transform: translate(-5px, 2px); } 35% { transform: translate(5px, -2px); } 55% { transform: translate(-3px, 1px); } 75% { transform: translate(3px, 0); } }
 .tube-svg .g { fill: none; stroke: currentColor; stroke-width: 2; opacity: .7; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(20px) scale(.95); } }
 @keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
 @keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @media (prefers-reduced-motion: reduce) {
-  .overlay, .card, .coach, .newrec, .coach.nudge, .tool.pulse { animation: none; }
+  .overlay, .card, .coach, .newrec, .coach.nudge, .tool.pulse, #stage.shake { animation: none; }
+  .prog i { transition: none; }
   #toast { transition: none; }
 }
 </style>
@@ -375,6 +427,7 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
       <div class="chips" id="chips"></div>
       <div class="mstars" id="mstars" aria-label="このままクリアしたときの星" data-i18n-attr="aria-label"></div>
     </div>
+    <div class="prog" id="prog" role="progressbar" aria-label="そろった色" data-i18n-attr="aria-label" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" hidden><i id="progFill"></i></div>
   </header>
   <div class="mode-bar" id="modeBar" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
@@ -404,13 +457,14 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
     <p id="winText"></p>
     <button class="btn" id="nextBtn" type="button" data-i18n>つぎのステージへ</button>
     <button class="btn sub" id="replayBtn" type="button" data-i18n>もう一度あそぶ</button>
+    <button class="btn link" id="winModes" type="button" data-i18n>モードをえらぶ</button>
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
 <div class="overlay" id="ovStuck" hidden role="dialog" aria-modal="true" aria-labelledby="stuckTitle">
   <div class="card">
     <h2 id="stuckTitle" data-i18n>手づまり…</h2>
-    <p data-i18n>もう注げる試験管がありません。</p>
+    <p id="stuckText" data-i18n>もう注げる試験管がありません。</p>
     <div class="row2"><button class="btn" id="stUndo" type="button" data-i18n>↶ 戻す</button><button class="btn sub" id="stRestart" type="button" data-i18n>リスタート</button></div>
     <button class="btn sub" id="stExtra" type="button" data-i18n>試験管を追加</button>
     <button class="btn sub" id="stClose" type="button" data-i18n>とじる</button>
@@ -430,10 +484,44 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
+<div class="overlay" id="ovSprint" hidden role="dialog" aria-modal="true" aria-labelledby="spTitle">
+  <div class="card">
+    <h2 id="spTitle" data-i18n>スプリント クリア！</h2>
+    <div class="label" data-i18n>タイム</div>
+    <div class="big" id="spTime">0:00</div>
+    <div id="spNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+    <p id="spText"></p>
+    <p id="spBest"></p>
+    <button class="btn" id="spAgain" type="button" data-i18n>もう一度挑戦</button>
+    <button class="btn sub" id="spModes" type="button" data-i18n>モードをえらぶ</button>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="ovModes" hidden role="dialog" aria-modal="true" aria-labelledby="modesTitle">
+  <div class="card" style="max-width:380px">
+    <h2 id="modesTitle" data-i18n>モード</h2>
+    <button class="btn sub mode-opt" id="mdNormal" type="button"><kbd>1</kbd><b data-i18n>ふつうのステージ</b><small id="mdNormalS"></small></button>
+    <button class="btn sub mode-opt" id="mdChal" type="button"><kbd>2</kbd><b data-i18n>チャレンジ</b><small id="mdChalS"></small></button>
+    <button class="btn sub mode-opt" id="mdSprint" type="button"><kbd>3</kbd><b data-i18n>スプリント</b><small id="mdSprintS"></small></button>
+    <button class="btn sub mode-opt" id="mdDaily" type="button"><kbd>4</kbd><b data-i18n>今日のチャレンジ</b><small data-i18n>全員が同じ3問。今日のベストを目ざそう</small></button>
+    <p class="keyhelp" id="mdKeys" data-i18n>1〜4 で選ぶ ・ M で閉じる</p>
+    <button class="btn link" id="mdClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="overlay" id="ovChal" hidden role="dialog" aria-modal="true" aria-labelledby="chTitle">
+  <div class="card" style="max-width:380px">
+    <h2 id="chTitle" data-i18n>チャレンジ</h2>
+    <p data-i18n>手数に上限があります。戻すと手数は減ります。★は少ない手数ほど多い。</p>
+    <div id="chalList"></div>
+    <button class="btn sub" id="chModes" type="button" data-i18n>モードをえらぶ</button>
+    <button class="btn link" id="chClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
 <div class="overlay" id="ovLevels" hidden role="dialog" aria-modal="true" aria-labelledby="lvTitle">
   <div class="card" style="max-width:380px">
     <h2 id="lvTitle" data-i18n>ステージ</h2>
     <p data-i18n>あそんだところまで、どこからでも選べます。</p>
+    <button class="btn sub" id="lvModes" type="button" data-i18n>モードをえらぶ</button>
     <button class="btn sub" id="lvDaily" type="button" data-i18n>今日のチャレンジ</button>
     <div id="lvGrid"></div>
     <button class="btn sub" id="lvClose" type="button" data-i18n>とじる</button>
@@ -458,6 +546,7 @@ html[lang="en"] h1 { font-size: 16px; letter-spacing: 0; }
         <li data-i18n-html><b>のっぽ</b>の試験管はたくさん入ります。</li>
         <li data-i18n>★3：ヒントも試験管追加も使わずにクリア。どちらかを使うごとに★が1つ減ります（最低★1）。</li>
         <li data-i18n-html><b>戻す</b>は何回でも無料。ヒントは1面3回、試験管追加は1面1回まで。リスタートで回数ももとに戻ります。</li>
+        <li data-i18n>キー：矢印で選ぶ・Enter／Space で持ち上げて注ぐ・1〜9 で試験管・U 戻す・H ヒント・X 追加・R リスタート・M モード・C 目印</li>
       </ul>
     </details>
     <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
@@ -483,6 +572,8 @@ const CUR_KEY = 'kusoge.water.cur';        // { v:1, L, log }  the stage in prog
 const DAILY_KEY = 'kusoge.water.daily';    // { v:1, dateKey, idx, logs, log, ms } | { v:1, dateKey, done:true, score, ... }. This device only
 const HOWTO_KEY = 'kusoge.water.howto';    // '1' = the how-to was shown
 const TUT_KEY = 'kusoge.water.tut';        // '1' | 'skip' | 'old'
+const X_KEY = 'kusoge.water.x';            // { v:1, s:[stars ×12], sp }  challenge stars + best sprint (ms, smaller is better). This device only, not synced, not in the ranking
+const MARKS_KEY = 'kusoge.water.marks';    // '1' = color marks (shapes on the layers, for players who find the colors hard to tell apart). This device only
 const COLORS = ['#f2475c', '#ff9a2e', '#ffd83a', '#9be04a', '#2aa865', '#2ccac2', '#53b6ff', '#3d55dc', '#9353e6', '#ff7ac8', '#9a6239', '#eef2f7'];
 const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const store = {
@@ -503,6 +594,15 @@ function readSave() {
   return { level, best, stars };
 }
 let save = readSave();
+// challenge stars and the sprint record (engine.js: readX / recordStage / recordSprint). Written as max stars / min time, also against another tab.
+let xs = E.readX(store.get(X_KEY));
+function writeX() {
+  const cur = E.readX(store.get(X_KEY));
+  for (let i = 0; i < E.STAGE_N; i++) xs.s[i] = Math.max(xs.s[i], cur.s[i]);
+  if (cur.sp && (!xs.sp || cur.sp < xs.sp)) xs.sp = cur.sp;
+  store.set(X_KEY, JSON.stringify(xs));
+}
+let marks = store.get(MARKS_KEY) === '1';
 function writeSave() {
   const cur = readSave();
   save.best = Math.max(save.best, cur.best, save.level);
@@ -534,7 +634,7 @@ const sfx = {
       tone(f, 0.07, 'sine', 0.16, delay + i * 0.075, f * 1.7);
     }
   },
-  done() { [880, 1175, 1568].forEach((f, i) => tone(f, 0.35, 'sine', 0.09, i * 0.07)); tone(2349, 0.25, 'triangle', 0.03, 0.2); },
+  done(k) { const m = 1 + 0.09 * Math.min(6, k || 0); [880, 1175, 1568].forEach((f, i) => tone(f * m, 0.35, 'sine', 0.09, i * 0.07)); tone(2349 * m, 0.25, 'triangle', 0.03, 0.2); },
   reveal() { tone(1320, 0.1, 'sine', 0.06, 0, 990); },
   unlock() { tone(600, 0.08, 'square', 0.04); tone(900, 0.18, 'triangle', 0.08, 0.08, 1300); },
   bad() { tone(160, 0.12, 'square', 0.04, 0, 120); },
@@ -574,13 +674,16 @@ function themeColor() {
 // G = engine game state (E.newGame) + { L, pz, kind: 'normal' | 'daily' | 'vs', sel, won }
 let G = null;
 let anims = [], fx = [], hintMark = null;
-let mode = 'normal';   // 'normal' | 'daily' (an online match is `vs`, on top of either)
+let mode = 'normal';   // 'normal' | 'daily' | 'chal' (challenge stages) | 'sprint' (an online match is `vs`, on top of any)
+let chal = null;       // { idx, info } while a challenge stage is played (info = E.stageInfo)
+let sprint = null;     // { idx, ms, hints, extra, moves, done, total } while a sprint runs
+let kc = -1, kbUsed = false, rArm = 0, pops = [];   // keyboard cursor / was the keyboard used / R pressed once / floating texts
 let daily = null;      // { dateKey, seed, idx, logs, ms, done, score, best, tries }
 let vs = null;         // { snap, salt, idx, score, skipAt, playing } while a match owns the rack
 let tut = null;        // { step } while the tutorial runs (stage 1)
 let sess = null;       // the play session KoboGame knows about (play_start sent)
 let buildToken = 0, pendingTut = false, menuOpen = false, booted = false;
-const DAILY_N = E.DAILY_LEVELS.length;
+const DAILY_N = E.DAILY_LEVELS.length, SPRINT_N = E.SPRINT_DEFS.length;
 
 function newG(pz, extra) {
   const g = Object.assign(E.newGame(pz), { L: pz.L, pz, sel: -1, won: false }, extra || {});
@@ -595,6 +698,8 @@ function setGame(g) {
 function begin() {
   if (sess || vs || !G) return;
   if (mode === 'daily' && daily) { sess = { mode: 'daily' }; emit('play_start', { mode: 'daily', dateKey: daily.dateKey, seed: daily.seed }); }
+  else if (mode === 'chal' && chal) { sess = { mode: 'practice', stage: chal.idx + 1 }; emit('play_start', { mode: 'practice', stage: chal.idx + 1 }); }
+  else if (mode === 'sprint' && sprint) { sess = { mode: 'practice' }; emit('play_start', { mode: 'practice' }); }
   else { sess = { mode: 'normal', stage: G.L }; emit('play_start', { mode: 'normal', stage: G.L }); }
 }
 function endPlay(reason, extra) {
@@ -617,12 +722,12 @@ function startLevel(L, opt) {
   if (vs) return;
   L = Math.max(1, L | 0);
   endPlay('quit');
-  if (mode === 'daily') leaveDaily();
+  leaveSpecial();
   if (tut && L !== 1) finishTutorial('skip');
   if (opt.fresh) store.del(CUR_KEY);
   save.level = L; if (L > save.best) save.best = L; writeSave();
-  G = null; anims = []; fx = []; hintMark = null;
-  hideGameOverlays(); $('ovLevels').hidden = true;
+  G = null; anims = []; fx = []; pops = []; hintMark = null;
+  hideGameOverlays(); closeMenus();
   $('msg').textContent = T('つくっています…');
   renderMode(); refreshUI(); draw();
   const token = ++buildToken;
@@ -645,7 +750,13 @@ function startLevel(L, opt) {
     setTimeout(() => { try { E.generate(L + 1); } catch (e) {} }, 900);
   }, 30);
 }
-function starsNow() { if (!G) return 3; return Math.max(1, 3 - (G.hintsUsed ? 1 : 0) - (G.extraUsed ? 1 : 0)); }
+function starsNow() {
+  if (!G) return 3;
+  if (G.kind === 'chal' && chal) return Math.max(1, E.stageStars(chal.idx, G.history.length));
+  return Math.max(1, 3 - (G.hintsUsed ? 1 : 0) - (G.extraUsed ? 1 : 0));
+}
+const ruleNo = what => mode === 'chal' && !!chal && (chal.info.rule === 'noTools' || chal.info.rule === 'no' + what);   // what = 'Hint' | 'Extra'
+const ruleLabel = r => (r === 'noHint' ? 'ヒントなし' : r === 'noExtra' ? '追加なし' : r === 'noTools' ? '道具なし' : '');
 
 const GIM_INTRO = {
   hidden: [12, '？の色は、いちばん上に出るまでわかりません'],
@@ -661,8 +772,8 @@ function introGimmick(pz) {
   else if (pz.L === 100) t = 'ここから試験管は5段！';
   $('msg').textContent = t ? T(t) : '';
 }
-function puzzleTags(pz, first) {
-  const g = pz.spec.gim, tags = first.concat([T('{n}色', { n: pz.colors }), T('目標 {n}手', { n: pz.moves })]);
+function puzzleTags(pz, first, goal) {
+  const g = pz.spec.gim, tags = first.concat([T('{n}色', { n: pz.colors }), goal || T('目標 {n}手', { n: pz.moves })]);
   if (pz.K === 5) tags.push(T('5段'));
   if (g.hidden) tags.push('？');
   if (g.lock) tags.push(T('錠'));
@@ -673,11 +784,14 @@ function refreshUI() {
   const lb = $('lvBtn');
   if (vs && G) lb.textContent = T('第{n}問', { n: G.vsN || 1 });
   else if (mode === 'daily' && daily) lb.textContent = T('第{n}問 / {t}', { n: Math.min(DAILY_N, daily.idx + 1), t: DAILY_N });
+  else if (mode === 'sprint' && sprint) lb.textContent = T('第{n}問 / {t}', { n: Math.min(SPRINT_N, sprint.idx + 1), t: SPRINT_N });
+  else if (mode === 'chal' && chal) lb.textContent = T('ステージ{n}', { n: chal.idx + 1 });
   else lb.textContent = 'Lv.' + (G ? G.L : save.level);
   const chips = $('chips'); chips.innerHTML = '';
   if (G) {
     const add = (txt, cls) => { const s = document.createElement('span'); s.className = 'chip' + (cls ? ' ' + cls : ''); s.textContent = txt; chips.appendChild(s); };
-    if (mode === 'daily' && !vs) add(T('{n}手', { n: G.history.length }));
+    if (G.kind === 'chal' && chal) add(T('{a} / {b}手', { a: G.history.length, b: chal.info.limit }), chal.info.limit - G.history.length <= 3 ? 'g' : '');
+    else if ((mode === 'daily' || mode === 'sprint') && !vs) add(T('{n}手', { n: G.history.length }));
     add(T('{n}色', { n: G.pz.colors }));
     const g = G.pz.spec.gim;
     if (G.K === 5) add(T('5段'));
@@ -687,8 +801,9 @@ function refreshUI() {
     if (G.pz.spec.empties === 1) add(T('空き1'), 'g');
   }
   const st = starsNow();
-  $('mstars').hidden = !!vs || mode === 'daily';
+  $('mstars').hidden = !!vs || mode === 'daily' || mode === 'sprint';
   $('mstars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
+  renderProg(false);
   if (vs) { // a match: the hint button becomes "skip"; no extra tube, no stage list
     $('undoBtn').disabled = !G || !G.history.length || G.won;
     $('hintBtn').disabled = !G || G.won; $('extraBtn').disabled = true; $('restartBtn').disabled = !G || G.won; lb.disabled = true;
@@ -696,19 +811,30 @@ function refreshUI() {
   }
   lb.disabled = false;
   const left = G ? E.HINTS_PER_LEVEL - G.hintsUsed : E.HINTS_PER_LEVEL;
-  $('hintLeft').textContent = mode === 'daily' ? (left > 0 ? T('+{n}手', { n: 5 }) : T('使用ずみ')) : T('のこり{n}', { n: left });
-  $('extraLeft').textContent = G && G.extraUsed ? T('使用ずみ') : mode === 'daily' ? T('+{n}手', { n: 10 }) : T('1面1回');
+  const noH = ruleNo('Hint'), noE = ruleNo('Extra');
+  $('hintLeft').textContent = noH ? T('使えない') : mode === 'daily' ? (left > 0 ? T('+{n}手', { n: 5 }) : T('使用ずみ')) : mode === 'sprint' ? (left > 0 ? T('+{n}秒', { n: E.HINT_MS / 1000 }) : T('使用ずみ')) : T('のこり{n}', { n: left });
+  $('extraLeft').textContent = noE ? T('使えない') : G && G.extraUsed ? T('使用ずみ') : mode === 'daily' ? T('+{n}手', { n: 10 }) : mode === 'sprint' ? T('+{n}秒', { n: E.EXTRA_MS / 1000 }) : T('1面1回');
   $('undoBtn').disabled = !G || !G.history.length || G.won;
-  $('hintBtn').disabled = !G || G.won || G.hintsUsed >= E.HINTS_PER_LEVEL;
-  $('extraBtn').disabled = !G || G.won || G.extraUsed > 0;
+  $('hintBtn').disabled = !G || G.won || G.hintsUsed >= E.HINTS_PER_LEVEL || noH;
+  $('extraBtn').disabled = !G || G.won || G.extraUsed > 0 || noE;
   $('restartBtn').disabled = !G || G.won;
   $('undoBtn').classList.toggle('pulse', !!tut && tut.step === 3);
+}
+// the bar under the header: sorted colors / colors. During a pour it waits for the liquid to land (force = true from the landing timer)
+function renderProg(force) {
+  const el = $('prog'), on = !!G && !vs;
+  el.hidden = !on;
+  if (!on || (!force && anims.length)) return;
+  const n = E.doneCount(G.tubes, G.K), tot = Math.max(1, G.pz.colors);
+  $('progFill').style.transform = 'scaleX(' + Math.min(1, n / tot) + ')';
+  el.setAttribute('aria-valuemax', String(tot)); el.setAttribute('aria-valuenow', String(Math.min(tot, n)));
 }
 
 // ---------- moves ----------
 function finishAnims() { anims = []; }
 function doPour(f, t) {
   if (!E.canPour(G, f, t) || G.done[f]) return false;
+  if (G.kind === 'chal' && chal && G.history.length >= chal.info.limit) { G.sel = -1; toast(T('手数の上限です。戻すかリスタートを')); sfx.bad(); vibrate(20); return false; }
   finishAnims();
   const r = E.pour(G, f, t);
   if (!r) return false;
@@ -718,15 +844,19 @@ function doPour(f, t) {
   anims.push({ f, t, n: r.n, color: r.color, before: r.before, t0: performance.now(), dur });
   sfx.glug(r.n, r.before.dst.length, 0.2);
   vibrate(8);
-  afterChange(r);
+  afterChange(r, t);
   return true;
 }
-function afterChange(r) {
+function afterChange(r, to) {
   // effects fire when the pour lands
   const delay = 600, g = G;
   setTimeout(() => {
     if (G !== g) return;
-    r.newly.forEach(i => { burst(i, 18); sfx.done(); vibrate([12, 30, 12]); });
+    burst(to, 4, COLORS[r.color]);
+    renderProg(true);
+    g.chain = r.newly.length ? (g.chain || 0) + 1 : 0;
+    if (r.newly.length && g.chain >= 2) { popText(r.newly[0], T('れんさ ×{n}', { n: g.chain }), PAL.hint); if (g.chain >= 3) shake(); }
+    r.newly.forEach(i => { burst(i, 18 + 4 * Math.min(4, g.chain)); sfx.done(g.chain - 1); vibrate([12, 30, 12]); });
     r.revealed.forEach(i => { burst(i, 6, PAL.spark); sfx.reveal(); });
     r.opened.forEach(i => { burst(i, 14, PAL.lock); sfx.unlock(); toast(T('錠が開いた！')); });
   }, delay);
@@ -735,11 +865,17 @@ function afterChange(r) {
     G.won = true;
     if (vs) { refreshUI(); vsSolved(delay); return; }
     if (G.kind === 'daily') { dailySolved(delay); return; }
+    if (G.kind === 'sprint') { sprintSolved(delay); return; }
+    if (G.kind === 'chal') { chalWin(delay + 350); return; }
     win(delay + 350);
     return;
   }
   persist(); refreshUI();
   if (tut) tutAfterPour(r);
+  if (G.kind === 'chal' && chal && G.history.length >= chal.info.limit) {
+    setTimeout(() => { if (G === g && !G.won && chal && G.history.length >= chal.info.limit) showStuck('limit'); }, delay + 250);
+    return;
+  }
   if (E.stuck(G)) {
     if (vs) { setTimeout(() => { if (G === g && !G.won && E.stuck(G)) { toast(T('手づまり… 戻すかスキップを')); sfx.bad(); vibrate(30); } }, delay + 250); return; }
     setTimeout(() => { if (G === g && !G.won && E.stuck(G)) showStuck(); }, delay + 250);
@@ -749,23 +885,27 @@ const canAct = () => (vs ? KoboVersus.canPlay() : !KoboVersus.active());
 function undo() {
   if (!G || G.won || !G.history.length || !canAct()) return;
   finishAnims(); hintMark = null;
-  E.undo(G); G.sel = -1;
+  E.undo(G); G.sel = -1; G.chain = 0;
   sfx.undo(); hideGameOverlays(); persist(); refreshUI(); layout(); draw();
   if (tut) tutAfterUndo();
 }
 function addTube() {
   if (!G || G.won || G.extraUsed || vs || KoboVersus.active()) return;
+  if (ruleNo('Extra')) { toast(T('このステージでは使えません')); sfx.bad(); return; }
   finishAnims();
   E.addTube(G); begin();
+  if (mode === 'sprint' && sprint) sprint.extra++;
   hideGameOverlays(); persist(); layout(); refreshUI();
-  burst(G.tubes.length - 1, 10, PAL.accent); sfx.unlock(); toast(T(mode === 'daily' ? '空の試験管を1本追加しました（+10手）' : '空の試験管を1本追加しました（★−1）'));
+  burst(G.tubes.length - 1, 10, PAL.accent); sfx.unlock();
+  toast(T(mode === 'daily' ? '空の試験管を1本追加しました（+10手）' : mode === 'sprint' ? '空の試験管を1本追加しました（+15秒）' : mode === 'chal' ? '空の試験管を1本追加しました' : '空の試験管を1本追加しました（★−1）'));
   if (tut) tutGuide();
 }
 function restart() {
   if (!G) return;
   if (vs) { if (KoboVersus.canPlay() && !G.won) vsPuzzle(vs.idx); return; }
   if (KoboVersus.active() || G.won) return;
-  if (G.kind === 'daily') { // back to the start of this puzzle; hints and the extra tube stay counted
+  if (G.kind === 'chal' && chal) { startChal(chal.idx); return; }
+  if (G.kind === 'daily' || G.kind === 'sprint') { // back to the start of this puzzle; hints and the extra tube stay counted
     finishAnims(); hintMark = null;
     while (G.history.length) E.undo(G);
     G.sel = -1; hideGameOverlays(); persist(); refreshUI(); layout(); draw();
@@ -776,14 +916,16 @@ function restart() {
 function hint() {
   if (vs) { vsSkip(); return; }
   if (!G || G.won || G.hintsUsed >= E.HINTS_PER_LEVEL || KoboVersus.active()) return;
+  if (ruleNo('Hint')) { toast(T('このステージでは使えません')); sfx.bad(); return; }
   const h = E.hintMove(G);
   if (h.done) return;
   if (!h.move) { toast(T(h.aborted ? 'むずかしい形です。少し戻してみよう' : 'この形からは解けません。戻すかリスタートを')); sfx.bad(); return; }
   E.useHint(G); begin();
+  if (mode === 'sprint' && sprint) sprint.hints++;
   G.sel = -1;
   hintMark = { f: h.move[0], t: h.move[1], t0: performance.now() };
   sfx.hint(); persist(); refreshUI();
-  if (G.hintsUsed === 1) toast(T(mode === 'daily' ? '光っている試験管から、矢印の先へ（+5手）' : '光っている試験管から、矢印の先へ（★−1）'));
+  if (G.hintsUsed === 1) toast(T(mode === 'daily' ? '光っている試験管から、矢印の先へ（+5手）' : mode === 'sprint' ? '光っている試験管から、矢印の先へ（+10秒）' : mode === 'chal' ? '光っている試験管から、矢印の先へ' : '光っている試験管から、矢印の先へ（★−1）'));
 }
 // a normal stage is cleared: the record is written now, the card comes after the last pour has landed
 function win(showDelay) {
@@ -802,6 +944,8 @@ function win(showDelay) {
     if (G !== g || vs) return;
     sfx.win(); vibrate([20, 40, 20, 40, 60]);
     for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 4 : 12);
+    confetti(40); shake();
+    $('nextBtn').textContent = T('つぎのステージへ');
     $('winStars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
     const used = [];
     if (G.hintsUsed) used.push(T('ヒント{n}回', { n: G.hintsUsed }));
@@ -811,13 +955,17 @@ function win(showDelay) {
     setTimeout(() => { if (G === g && !vs) { $('ovWin').hidden = false; focusSoon('nextBtn'); } }, reduceMotion.matches ? 150 : 500);
   }, showDelay || 0);
 }
-function showStuck() {
-  $('stExtra').hidden = !!G.extraUsed;
+function showStuck(reason) {
+  const lim = reason === 'limit';
+  $('stuckTitle').textContent = T(lim ? '手数ぎれ…' : '手づまり…');
+  $('stuckText').textContent = T(lim ? 'このステージの手数の上限に達しました。戻してやり直そう。' : 'もう注げる試験管がありません。');
+  $('stExtra').hidden = lim || !!G.extraUsed || ruleNo('Extra');
   $('ovStuck').hidden = false;
   sfx.bad(); vibrate(30);
   focusSoon('stUndo');
 }
-function hideGameOverlays() { ['ovWin', 'ovStuck', 'ovDaily'].forEach(id => { $(id).hidden = true; }); }
+function hideGameOverlays() { ['ovWin', 'ovStuck', 'ovDaily', 'ovSprint'].forEach(id => { $(id).hidden = true; }); }
+function closeMenus() { ['ovLevels', 'ovModes', 'ovChal'].forEach(id => { $(id).hidden = true; }); }
 function focusSoon(id) { setTimeout(() => { const b = $(id); if (b && b.offsetParent) try { b.focus({ preventScroll: true }); } catch (e) {} }, 60); }
 
 // ---------- toast ----------
@@ -907,13 +1055,16 @@ $('howtoAlt').addEventListener('click', () => {
 // ---------- daily challenge: the same three puzzles for everyone today (JST date and seed from KoboPlatform) ----------
 // score = 100000 − (moves + hints×5 + extra tube×10)×100 − seconds (engine.dailyScore). The platform records the day's best.
 let clockAt = 0;
-function dailyMs() { return daily ? daily.ms + (clockAt ? performance.now() - clockAt : 0) : 0; }
+// the clock belongs to the daily challenge or the sprint (both have .ms and .done)
+const timer = () => (mode === 'daily' ? daily : mode === 'sprint' ? sprint : null);
+function dailyMs() { const t = timer(); return t ? t.ms + (clockAt ? performance.now() - clockAt : 0) : 0; }
 function clockStart() {
-  if (clockAt || vs || menuOpen || mode !== 'daily' || !daily || daily.done || !G || G.kind !== 'daily' || G.won) return;
-  if (document.visibilityState === 'hidden' || !$('howto').hidden) return;
+  const t = timer();
+  if (clockAt || vs || menuOpen || !t || t.done || !G || G.kind !== mode || G.won) return;
+  if (document.visibilityState === 'hidden' || !$('howto').hidden || !$('ovModes').hidden || !$('ovChal').hidden || !$('ovLevels').hidden) return;
   clockAt = performance.now();
 }
-function clockStop() { if (clockAt && daily) { daily.ms += performance.now() - clockAt; } clockAt = 0; }
+function clockStop() { const t = timer(); if (clockAt && t) { t.ms += performance.now() - clockAt; } clockAt = 0; }
 function dateLabel(dk) {
   const m = Math.floor(dk / 100) % 100, d = dk % 100;
   return KoboI18n.lang === 'en' ? T('{m}月{d}日', { mon: EN_MON[m - 1], d }) : T('{m}月{d}日', { m, d });
@@ -931,6 +1082,7 @@ function startDaily(dateKey, opt) {
   const dk = PF.isDateKey(dateKey) && Number(dateKey) <= today ? Number(dateKey) : today;
   endPlay('quit');
   if (tut) finishTutorial('skip');
+  if (mode === 'chal' || mode === 'sprint') { clockStop(); chal = null; sprint = null; }
   if (mode === 'daily') { clockStop(); persist(); }
   mode = 'daily';
   const seed = PF.dailySeed(GAME, dk);
@@ -945,7 +1097,7 @@ function startDaily(dateKey, opt) {
     }
   }
   refreshDailyRec();
-  $('ovLevels').hidden = true;
+  closeMenus();
   renderMode();
   if (daily.done) { G = null; hideGameOverlays(); refreshUI(); draw(); $('msg').textContent = ''; showDailyResult(false); return; }
   dailyPuzzle(daily.idx, log);
@@ -1015,26 +1167,219 @@ function showDailyResult(isNew) {
   focusSoon('dAgain');
 }
 function leaveDaily() { clockStop(); persist(); mode = 'normal'; daily = null; renderMode(); }
+function leaveSpecial() {
+  if (mode === 'daily') leaveDaily();
+  else if (mode === 'chal' || mode === 'sprint') { clockStop(); mode = 'normal'; chal = null; sprint = null; renderMode(); }
+}
 function setNormal() {
   if (vs) return;
-  if (mode !== 'daily') return;
+  if (mode === 'normal') return;
   endPlay('quit');
-  leaveDaily();
+  leaveSpecial();
   startLevel(save.level);
 }
 function renderMode() {
-  const bar = $('modeBar'), on = mode === 'daily' && !!daily && !vs;
+  const bar = $('modeBar'), on = ((mode === 'daily' && !!daily) || (mode === 'chal' && !!chal) || (mode === 'sprint' && !!sprint)) && !vs;
   if (bar.hidden === on) { bar.hidden = !on; layoutSoon(); }
   if (!on) return;
-  bar.title = T('全員が同じ3問を解く、1日ごとにかわるチャレンジ。手数と時間が少ないほど高得点。');
   const t = $('modeText'); t.innerHTML = '';
-  const a = document.createElement('span'); a.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + T(' ・ ');
-  const b = document.createElement('b'); b.textContent = daily.done ? String(daily.score) + ' ' + T('点') : T('第{n}問 / {t}', { n: Math.min(DAILY_N, daily.idx + 1), t: DAILY_N }) + T(' ・ ') + fmtTime(dailyMs());
+  const a = document.createElement('span'), b = document.createElement('b');
+  if (mode === 'daily') {
+    bar.title = T('全員が同じ3問を解く、1日ごとにかわるチャレンジ。手数と時間が少ないほど高得点。');
+    a.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + T(' ・ ');
+    b.textContent = daily.done ? String(daily.score) + ' ' + T('点') : T('第{n}問 / {t}', { n: Math.min(DAILY_N, daily.idx + 1), t: DAILY_N }) + T(' ・ ') + fmtTime(dailyMs());
+  } else if (mode === 'sprint') {
+    bar.title = T('5問のタイム勝負。ヒントは+10秒、試験管追加は+15秒。');
+    a.textContent = T('スプリント') + T(' ・ ');
+    b.textContent = sprint.done ? fmtTime(sprint.total) : T('第{n}問 / {t}', { n: Math.min(SPRINT_N, sprint.idx + 1), t: SPRINT_N }) + T(' ・ ') + fmtTime(dailyMs() + (sprint.hints * E.HINT_MS + sprint.extra * E.EXTRA_MS));
+  } else {
+    const i = chal.info, rl = ruleLabel(i.rule);
+    bar.title = T('手数に上限があります。戻すと手数は減ります。★は少ない手数ほど多い。');
+    a.textContent = T('チャレンジ ステージ{n}', { n: chal.idx + 1 }) + T(' ・ ') + (rl ? T(rl) + T(' ・ ') : '');
+    b.textContent = T('★3：{n}手以内', { n: i.star3 });
+  }
   t.append(a, b);
 }
-setInterval(() => { if (mode === 'daily' && daily && !daily.done && clockAt) renderMode(); }, 1000);
+setInterval(() => { if (timer() && !timer().done && clockAt) renderMode(); }, 1000);
 $('dAgain').addEventListener('click', () => { if (daily) startDaily(daily.dateKey, { fresh: true }); });
 $('dNormal').addEventListener('click', () => { $('ovDaily').hidden = true; setNormal(); });
+
+// ---------- challenge: 12 stages (3 shelves × 4) with a move limit, ★ by moves, some with tools off. Reported to KoboGame as practice ----------
+const chalStarsTotal = () => xs.s.reduce((a, b) => a + b, 0);
+function chalTags(info) {
+  const rl = ruleLabel(info.rule);
+  return puzzleTags(info.pz, [T('ステージ{n}', { n: info.i + 1 })].concat(rl ? [T(rl)] : []), T('上限 {n}手', { n: info.limit }));
+}
+function startChal(i) {
+  if (vs || KoboVersus.active()) return;
+  i = Math.max(0, Math.min(E.STAGE_N - 1, i | 0));
+  if (!E.stageOpen(xs, i)) { toast(T('前のステージをクリアすると開きます')); sfx.bad(); return; }
+  endPlay('quit');
+  if (tut) finishTutorial('skip');
+  leaveSpecial();
+  mode = 'chal'; chal = { idx: i, info: E.stageInfo(i) };
+  G = null; anims = []; fx = []; pops = []; hintMark = null; hideGameOverlays(); closeMenus();
+  $('msg').textContent = T('つくっています…');
+  renderMode(); refreshUI(); draw();
+  const token = ++buildToken, c = chal;
+  setTimeout(() => {
+    if (vs || token !== buildToken || chal !== c) return;
+    setGame(newG(c.info.pz, { kind: 'chal' }));
+    $('msg').textContent = chalTags(c.info);
+    renderMode();
+  }, 30);
+}
+function chalWin(showDelay) {
+  const c = chal, g = G, info = c.info, moves = G.history.length;
+  const st = Math.max(1, E.stageStars(c.idx, moves));
+  begin();
+  const wasOpen = E.stageOpen(xs, c.idx + 1);
+  E.recordStage(xs, c.idx, st); writeX();
+  const opened = !wasOpen && E.stageOpen(xs, c.idx + 1);
+  endPlay('clear', { score: st, stage: c.idx + 1, stats: { moves: G.moves, stars: st, hints: G.hintsUsed, extra: G.extraUsed, undos: G.undos } });
+  refreshUI();
+  setTimeout(() => {
+    if (G !== g || vs) return;
+    sfx.win(); vibrate([20, 40, 20, 40, 60]);
+    for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 4 : 12);
+    confetti(st * 14); shake();
+    $('winTitle').textContent = T('そろった！');
+    $('nextBtn').textContent = T(c.idx + 1 < E.STAGE_N ? 'つぎのステージへ' : 'ステージ一覧へ');
+    $('winStars').innerHTML = '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i>';
+    const parts = [T('ステージ{n}', { n: c.idx + 1 }) + T(' ・ ') + T('{n}手', { n: moves }) + T('（目安 {n}手）', { n: info.par })];
+    if (st < 3) parts.push(T('目標：{n}手以内で★3', { n: info.star3 }));
+    if (opened) parts.push(T('つぎのステージが開いた！'));
+    $('winText').textContent = parts.join(T(' ・ '));
+    setTimeout(() => { if (G === g && !vs) { $('ovWin').hidden = false; focusSoon('nextBtn'); } }, reduceMotion.matches ? 150 : 500);
+  }, showDelay || 0);
+}
+function openChal() {
+  if (vs || KoboVersus.active()) return;
+  closeMenus();
+  const root = $('chalList'); root.innerHTML = '';
+  const names = ['はじめの棚', 'ふしぎな棚', 'たかい棚'];
+  for (let w = 0; w < 3; w++) {
+    const h = document.createElement('div'); h.className = 'world'; h.textContent = T(names[w]); root.appendChild(h);
+    const grid = document.createElement('div'); grid.className = 'chgrid'; root.appendChild(grid);
+    for (let k = 0; k < E.WORLD_SIZE; k++) {
+      const i = w * E.WORLD_SIZE + k, open = E.stageOpen(xs, i), st = xs.s[i], rl = ruleLabel(E.STAGE_DEFS[i].rule);
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = String(i);
+      b.className = 'lv ch' + (open ? '' : ' locked') + (mode === 'chal' && chal && chal.idx === i ? ' cur' : '');
+      if (!open) b.setAttribute('aria-disabled', 'true');
+      b.setAttribute('aria-label', T('ステージ{n}', { n: i + 1 }) + (st ? ' ★' + st : '') + (rl ? ' ' + T(rl) : ''));
+      b.innerHTML = (i + 1) + '<small>' + (st ? '★'.repeat(st) : (KoboI18n.lang === 'ja' ? '・' : '·')) + '</small><span class="r">' + (rl ? T(rl) : '') + '</span>'
+        + (open ? '' : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>');
+      b.addEventListener('click', () => { if (!E.stageOpen(xs, i)) { sfx.bad(); toast(T('前のステージをクリアすると開きます')); return; } startChal(i); });
+      grid.appendChild(b);
+    }
+  }
+  $('ovChal').hidden = false; clockStop();
+  const first = root.querySelector('.cur') || [...root.querySelectorAll('.lv.ch')].find(b => !b.classList.contains('locked') && !(xs.s[+b.dataset.i] >= 1) ) || root.querySelector('.lv.ch');
+  if (first) { first.scrollIntoView({ block: 'nearest' }); setTimeout(() => { try { first.focus({ preventScroll: true }); } catch (e) {} }, 60); }
+}
+
+// ---------- sprint: five puzzles against the clock. Hint +10 s, extra tube +15 s. Best = the smallest time. Reported as practice ----------
+function fmtTenths(ms) { const t = Math.floor(ms / 100), s = Math.floor(t / 10); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + '.' + (t % 10); }
+function startSprint() {
+  if (vs || KoboVersus.active()) return;
+  endPlay('quit');
+  if (tut) finishTutorial('skip');
+  leaveSpecial();
+  mode = 'sprint'; sprint = { idx: 0, ms: 0, hints: 0, extra: 0, moves: 0, done: false, total: 0 };
+  closeMenus(); hideGameOverlays();
+  renderMode();
+  sprintPuzzle(0);
+}
+function sprintPuzzle(i) {
+  G = null; anims = []; fx = []; pops = []; hintMark = null; hideGameOverlays();
+  $('msg').textContent = T('つくっています…');
+  refreshUI(); draw();
+  const token = ++buildToken, sp = sprint;
+  setTimeout(() => {
+    if (vs || token !== buildToken || sprint !== sp) return;
+    const pz = E.sprintPuzzle(i);
+    setGame(newG(pz, { kind: 'sprint' }));
+    $('msg').textContent = puzzleTags(pz, [T('第{n}問 / {t}', { n: i + 1, t: SPRINT_N })]);
+    renderMode(); clockStart();
+    if (i + 1 < SPRINT_N) setTimeout(() => { try { E.sprintPuzzle(i + 1); } catch (e) {} }, 500);
+  }, 30);
+}
+function sprintSolved(delay) {
+  const g = G, sp = sprint;
+  begin(); clockStop();
+  sp.moves += G.history.length; sp.idx++;
+  refreshUI();
+  if (sp.idx < SPRINT_N) {
+    setTimeout(() => {
+      if (G !== g || sprint !== sp || vs) return;
+      sfx.win(); vibrate([20, 40, 20]); toast(T('第{n}問 クリア！', { n: sp.idx }));
+      for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 3 : 10);
+      confetti(10);
+    }, delay + 200);
+    setTimeout(() => { if (G === g && sprint === sp && !vs) sprintPuzzle(sp.idx); }, delay + 1200);
+    return;
+  }
+  const total = E.sprintMs(sp.ms, sp.hints, sp.extra), prev = xs.sp;
+  const isNew = E.recordSprint(xs, total); writeX();
+  sp.done = true; sp.total = total;
+  endPlay('clear', { score: 0, durationMs: Math.round(sp.ms), stats: { moves: sp.moves, hints: sp.hints, extra: sp.extra } });
+  renderMode();
+  setTimeout(() => {
+    if (sprint !== sp || vs) return;
+    sfx.win(); vibrate([20, 40, 20, 40, 60]);
+    if (G) for (let i = 0; i < G.tubes.length; i++) if (G.tubes[i].length) burst(i, reduceMotion.matches ? 4 : 12);
+    confetti(50); shake();
+    setTimeout(() => { if (sprint === sp && !vs) showSprintResult(isNew, prev); }, reduceMotion.matches ? 150 : 600);
+  }, delay);
+}
+function showSprintResult(isNew, prev) {
+  const sp = sprint; if (!sp) return;
+  $('spTime').textContent = fmtTenths(sp.total);
+  $('spNew').hidden = !isNew;
+  const pen = sp.hints * E.HINT_MS + sp.extra * E.EXTRA_MS;
+  const parts = [T('手数 {n} ・ 時間 {t}', { n: sp.moves, t: fmtTenths(sp.ms) })];
+  if (pen) parts.push(T('ヒント・追加のぶん +{n}秒', { n: Math.round(pen / 1000) }));
+  $('spText').textContent = parts.join(T(' ・ '));
+  $('spBest').textContent = T('ベスト {t}', { t: fmtTenths(xs.sp || sp.total) });
+  $('ovSprint').hidden = false;
+  focusSoon('spAgain');
+}
+$('spAgain').addEventListener('click', startSprint);
+$('spModes').addEventListener('click', () => { $('ovSprint').hidden = true; openModes(); });
+
+// ---------- mode picker (M, the menu, the stage list, the result cards) ----------
+function openModes() {
+  if (vs || KoboVersus.active()) return;
+  if (G) G.sel = -1;
+  closeMenus(); clockStop();
+  $('mdNormalS').textContent = T('どこまでも続くステージ。いま Lv.{n}', { n: save.level });
+  $('mdChalS').textContent = T('手数の上限つきの12ステージ。★ {n} / 36', { n: chalStarsTotal() });
+  $('mdSprintS').textContent = xs.sp ? T('5問をできるだけ速く。ベスト {t}', { t: fmtTenths(xs.sp) }) : T('5問をできるだけ速く。まだ記録なし');
+  $('mdDaily').hidden = !PF;
+  const cur = mode === 'normal' ? 'mdNormal' : mode === 'chal' ? 'mdChal' : mode === 'sprint' ? 'mdSprint' : 'mdDaily';
+  ['mdNormal', 'mdChal', 'mdSprint', 'mdDaily'].forEach(id => $(id).classList.toggle('cur', id === cur));
+  $('mdKeys').hidden = !(kbUsed || !matchMedia('(pointer: coarse)').matches);
+  $('ovModes').hidden = false;
+  focusSoon(cur);
+}
+function closeModes() { $('ovModes').hidden = true; clockStart(); }
+function pickMode(n) {
+  $('ovModes').hidden = true;
+  if (n === 0) { if (mode !== 'normal') setNormal(); else { clockStart(); openLevels(); } }
+  else if (n === 1) openChal();
+  else if (n === 2) startSprint();
+  else if (PF) startDaily();
+  else clockStart();
+}
+$('mdNormal').addEventListener('click', () => pickMode(0));
+$('mdChal').addEventListener('click', () => pickMode(1));
+$('mdSprint').addEventListener('click', () => pickMode(2));
+$('mdDaily').addEventListener('click', () => pickMode(3));
+$('mdClose').addEventListener('click', closeModes);
+$('chClose').addEventListener('click', () => { $('ovChal').hidden = true; clockStart(); });
+$('chModes').addEventListener('click', openModes);
+$('lvModes').addEventListener('click', openModes);
+$('winModes').addEventListener('click', () => { $('ovWin').hidden = true; openModes(); });
 
 // ---------- geometry ----------
 // a tube in local coords: origin = mouth centre, +y goes down the tube. Inner width w, layer height lh.
@@ -1212,6 +1557,10 @@ function drawTube(i, now, view) {
         ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText('？', v.ox, (a + b) / 2 + 1);
         ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(v.ox - g.r, a, g.w, 1);
       }
+      if (marks) {
+        const mr = Math.min(g.lh * 0.22, g.w * 0.2);
+        for (let k = 0; k < list.length; k++) if (!list[k].h && list[k].v >= 0.99) { const [a, b] = bandsY[k]; drawMark(list[k].c, v.ox, (a + b) / 2, mr); }
+      }
     }
   }
   ctx.restore();
@@ -1265,6 +1614,46 @@ function drawTube(i, now, view) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(T('のっぽ'), v.ox, s.bottom + 7); ctx.restore();
   }
 }
+// 12 shapes, one per color (the "color marks" option)
+function drawMark(c, x, y, r) {
+  ctx.save(); ctx.translate(x, y); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const poly = pts => { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0] * r, q[1] * r) : ctx.moveTo(q[0] * r, q[1] * r)); ctx.closePath(); };
+  let open = false;
+  ctx.beginPath();
+  switch (c % 12) {
+    case 0: ctx.arc(0, 0, r, 0, 7); break;
+    case 1: poly([[0, -1.1], [1.05, 0.8], [-1.05, 0.8]]); break;
+    case 2: poly([[-0.9, -0.9], [0.9, -0.9], [0.9, 0.9], [-0.9, 0.9]]); break;
+    case 3: poly([[0, -1.2], [1.1, 0], [0, 1.2], [-1.1, 0]]); break;
+    case 4: ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r); open = true; break;
+    case 5: ctx.moveTo(-r * 0.8, -r * 0.8); ctx.lineTo(r * 0.8, r * 0.8); ctx.moveTo(r * 0.8, -r * 0.8); ctx.lineTo(-r * 0.8, r * 0.8); open = true; break;
+    case 6: ctx.arc(0, 0, r * 0.9, 0, 7); open = true; break;
+    case 7: { const q = []; for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? 0.5 : 1.15; q.push([Math.cos(a) * rr, Math.sin(a) * rr]); } poly(q); break; }
+    case 8: poly([[-1.2, -0.38], [1.2, -0.38], [1.2, 0.38], [-1.2, 0.38]]); break;
+    case 9: poly([[0, 1.1], [1.05, -0.8], [-1.05, -0.8]]); break;
+    case 10: ctx.arc(-r * 0.6, 0, r * 0.4, 0, 7); ctx.moveTo(r * 1.0, 0); ctx.arc(r * 0.6, 0, r * 0.4, 0, 7); break;
+    default: poly([[-0.38, -1.2], [0.38, -1.2], [0.38, 1.2], [-0.38, 1.2]]);
+  }
+  if (open) {
+    ctx.lineWidth = Math.max(2.4, r * 0.55); ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.stroke();
+    ctx.lineWidth = Math.max(1.2, r * 0.28); ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.stroke();
+  } else {
+    ctx.lineWidth = Math.max(1.4, r * 0.3); ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+  }
+  ctx.restore();
+}
+function popText(i, text, col) {
+  if (!LY || !LY.slots[i]) return;
+  const s = LY.slots[i];
+  pops.push({ x: s.cx, y: s.my - LY.lift - 6, text, col: col || PAL.hint, age: 0, life: 1.2 });
+}
+function confetti(n) {
+  if (!W) return;
+  if (reduceMotion.matches) n = Math.ceil(n / 4);
+  for (let k = 0; k < n; k++) fx.push({ x: Math.random() * W, y: -8, vx: (Math.random() - 0.5) * 120, vy: 30 + Math.random() * 110, life: 1.5 + Math.random() * 0.9, age: 0, col: COLORS[(Math.random() * COLORS.length) | 0], r: 3 + Math.random() * 3 });
+}
+function shake() { if (reduceMotion.matches) return; const el = $('stage'); el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
 function star(x, y, r, col) {
   ctx.fillStyle = col; ctx.beginPath();
   for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, rr = k % 2 ? r * 0.3 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
@@ -1327,6 +1716,25 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 10 * Math.cos(ang - 0.45), y2 - 10 * Math.sin(ang - 0.45)); ctx.lineTo(x2 - 10 * Math.cos(ang + 0.45), y2 - 10 * Math.sin(ang + 0.45)); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
+  // keyboard cursor and tube numbers (shown once the keyboard is used)
+  if (kbUsed) {
+    ctx.save();
+    ctx.font = '800 11px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = PAL.mark;
+    LY.slots.forEach((s, i) => { if (i < 10) ctx.fillText(String((i + 1) % 10), s.cx, s.bottom + 18); });
+    const s = kc >= 0 ? LY.slots[kc] : null;
+    if (s) {
+      ctx.strokeStyle = PAL.accent; ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]);
+      roundRect(s.cx - LY.slotW / 2 + 3, s.my - LY.lift - 8, LY.slotW - 6, s.bottom - s.my + LY.lift + 16, 10); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // floating texts (chain)
+  pops = pops.filter(p => (p.age += dt) < p.life);
+  for (const p of pops) {
+    const k = p.age / p.life, y = p.y - (reduceMotion.matches ? 6 : k * 34);
+    ctx.save(); ctx.globalAlpha = Math.min(1, (1 - k) * 2.2); ctx.font = '800 17px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(p.text, p.x, y); ctx.fillStyle = p.col; ctx.fillText(p.text, p.x, y); ctx.restore();
+  }
   // particles
   fx = fx.filter(p => (p.age += dt) < p.life);
   for (const p of fx) { p.vy += 260 * dt; p.x += p.vx * dt; p.y += p.vy * dt; const k = 1 - p.age / p.life; star(p.x, p.y, p.r * k + 0.5, p.col); }
@@ -1360,6 +1768,7 @@ function tap(i) {
   else { G.sel = -1; sfx.bad(); vibrate(20); if (!G.open[i]) toast(T('錠がかかっています')); }
 }
 cv.addEventListener('pointerdown', e => {
+  kbUsed = false;
   const r = cv.getBoundingClientRect();
   tap(hitTube(e.clientX - r.left, e.clientY - r.top));
 });
@@ -1368,18 +1777,25 @@ $('undoBtn').addEventListener('click', undo);
 $('hintBtn').addEventListener('click', hint);
 $('extraBtn').addEventListener('click', addTube);
 $('restartBtn').addEventListener('click', restart);
-$('nextBtn').addEventListener('click', () => { startLevel(G ? G.L + 1 : save.level); });
-$('replayBtn').addEventListener('click', () => { startLevel(G ? G.L : save.level, { fresh: true }); });
+$('nextBtn').addEventListener('click', () => {
+  if (mode === 'chal' && chal) { if (chal.idx + 1 < E.STAGE_N) startChal(chal.idx + 1); else { $('ovWin').hidden = true; openChal(); } return; }
+  startLevel(G ? G.L + 1 : save.level);
+});
+$('replayBtn').addEventListener('click', () => {
+  if (mode === 'chal' && chal) { startChal(chal.idx); return; }
+  startLevel(G ? G.L : save.level, { fresh: true });
+});
 $('stUndo').addEventListener('click', undo);
 $('stRestart').addEventListener('click', restart);
 $('stExtra').addEventListener('click', addTube);
 $('stClose').addEventListener('click', () => { $('ovStuck').hidden = true; });
-$('lvBtn').addEventListener('click', () => { if (vs || KoboVersus.active()) return; openLevels(); });
-$('lvClose').addEventListener('click', () => { $('ovLevels').hidden = true; });
+$('lvBtn').addEventListener('click', () => { if (vs || KoboVersus.active()) return; if (mode === 'chal') openChal(); else if (mode === 'sprint') openModes(); else openLevels(); });
+$('lvClose').addEventListener('click', () => { $('ovLevels').hidden = true; clockStart(); });
 $('lvDaily').addEventListener('click', () => { $('ovLevels').hidden = true; if (mode === 'daily') setNormal(); else startDaily(); });
 $('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx.done(); });
 if (A) A.onChange(renderSound);
 function openLevels() {
+  clockStop();
   const grid = $('lvGrid'); grid.innerHTML = '';
   for (let L = 1; L <= save.best; L++) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'lv' + (G && G.kind === 'normal' && G.L === L ? ' cur' : '');
@@ -1401,9 +1817,11 @@ function openMenu() {
   if (G) G.sel = -1;
   const extra = [
     { label: T('遊び方'), icon: 'help', onClick: () => { m.close(); closedMenu(); showHowto(false); } },
-    { label: T('ステージをえらぶ'), icon: 'star', onClick: () => { m.close(); closedMenu(); openLevels(); } },
+    { label: T('モード'), icon: 'trophy', onClick: () => { m.close(); closedMenu(); openModes(); } },
+    { label: T('ステージをえらぶ'), icon: 'star', onClick: () => { m.close(); closedMenu(); if (mode === 'chal') openChal(); else openLevels(); } },
+    { label: T(marks ? '色の目印：オン' : '色の目印：オフ'), icon: 'check', onClick: () => { m.close(); closedMenu(); toggleMarks(); } },
   ];
-  if (mode === 'daily') extra.push({ label: T('ふつうのステージに戻る'), icon: 'back', onClick: () => { m.close(); closedMenu(); setNormal(); } });
+  if (mode !== 'normal') extra.push({ label: T('ふつうのステージに戻る'), icon: 'back', onClick: () => { m.close(); closedMenu(); setNormal(); } });
   else if (PF) extra.push({ label: T('今日のチャレンジ'), icon: 'trophy', onClick: () => { m.close(); closedMenu(); startDaily(); } });
   const m = UI.pauseMenu({
     title: T('メニュー'),
@@ -1415,21 +1833,74 @@ function openMenu() {
   });
   m.open();
 }
+function toggleMarks() {
+  marks = !marks; store.set(MARKS_KEY, marks ? '1' : '0');
+  toast(T(marks ? '色の目印：オン' : '色の目印：オフ')); draw();
+}
 function closedMenu() { menuOpen = false; const g = KG(); if (g) g.menuClosed(); clockStart(); }
 $('menuBtn').addEventListener('click', openMenu);
 
+const anyCard = () => ['ovWin', 'ovStuck', 'ovDaily', 'ovSprint', 'ovLevels', 'ovModes', 'ovChal'].some(id => !$(id).hidden);
+function moveFocus(list, cols, key) {
+  if (!list.length) return;
+  let i = list.indexOf(document.activeElement); if (i < 0) i = 0;
+  const d = key === 'ArrowLeft' ? -1 : key === 'ArrowRight' ? 1 : key === 'ArrowUp' ? -cols : cols;
+  const j = Math.max(0, Math.min(list.length - 1, i + d));
+  list[j].focus(); list[j].scrollIntoView({ block: 'nearest' });
+}
+function moveCursor(key) {
+  if (!LY || !G) return;
+  const n = G.tubes.length, per = LY.per || n;
+  if (kc < 0 || kc >= n) kc = G.sel >= 0 ? G.sel : 0;
+  else if (key === 'ArrowLeft') kc = (kc + n - 1) % n;
+  else if (key === 'ArrowRight') kc = (kc + 1) % n;
+  else if (LY.rows === 2) kc = key === 'ArrowUp' ? (kc >= per ? kc - per : kc) : (kc < per && kc + per < n ? kc + per : kc);
+  sfx.drop();
+}
 document.addEventListener('keydown', e => {
   if (KoboVersus.active() && !vs) return; // e.g. typing the nickname
   const tg = e.target && e.target.tagName;
   if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer')) return;
-  if (e.key === 'Escape') {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key, lk = k.length === 1 ? k.toLowerCase() : k;
+  if (k === 'Escape') {
     if (!$('howto').hidden) { e.preventDefault(); $('howtoGo').click(); }
-    else if (!$('ovLevels').hidden) $('ovLevels').hidden = true;
+    else if (!$('ovModes').hidden) closeModes();
+    else if (!$('ovChal').hidden) { $('ovChal').hidden = true; clockStart(); }
+    else if (!$('ovLevels').hidden) { $('ovLevels').hidden = true; clockStart(); }
     else if (!$('ovStuck').hidden) $('ovStuck').hidden = true;
+    else if (!anyCard() && !vs) { e.preventDefault(); openMenu(); }
     return;
   }
   if (!$('howto').hidden) return;
-  if (e.key === 'z' || e.key === 'Backspace') undo();
+  if (!$('ovModes').hidden) {
+    const n = '1234'.indexOf(k);
+    if (n >= 0) { e.preventDefault(); pickMode(n); }
+    else if (lk === 'm') closeModes();
+    else if (k.startsWith('Arrow')) { e.preventDefault(); moveFocus([...document.querySelectorAll('#ovModes .mode-opt')].filter(b => !b.hidden), 1, k); }
+    return;
+  }
+  if (!$('ovChal').hidden) {
+    if (k.startsWith('Arrow')) { e.preventDefault(); moveFocus([...document.querySelectorAll('#chalList .lv.ch')], 4, k); }
+    else if (lk === 'm') openModes();
+    return;
+  }
+  if (anyCard()) { if (k.startsWith('Arrow') && !$('ovLevels').hidden) { e.preventDefault(); moveFocus([...document.querySelectorAll('#lvGrid .lv')], 5, k); } return; }
+  if (!G) return;
+  if (k.startsWith('Arrow')) { e.preventDefault(); kbUsed = true; moveCursor(k); return; }
+  if ((k === 'Enter' || k === ' ') && tg === 'BUTTON') return; // a focused button handles its own Enter / Space
+  if (k === 'Enter' || k === ' ') { e.preventDefault(); kbUsed = true; if (kc < 0 || kc >= G.tubes.length) kc = 0; tap(kc); return; }
+  if (/^[0-9]$/.test(k)) { const i = k === '0' ? 9 : +k - 1; if (i < G.tubes.length) { e.preventDefault(); kbUsed = true; kc = i; tap(i); } return; }
+  if (lk === 'z' || lk === 'u' || k === 'Backspace') { e.preventDefault(); undo(); return; }
+  if (lk === 'h') { hint(); return; }
+  if (lk === 'x') { addTube(); return; }
+  if (lk === 'm') { if (!vs) openModes(); return; }
+  if (lk === 'c') { toggleMarks(); return; }
+  if (lk === 'r') {
+    if (!G.history.length || Date.now() - rArm < 2000) { rArm = 0; restart(); }
+    else { rArm = Date.now(); toast(T('もう一度 R でリスタート')); }
+    return;
+  }
 });
 const listeners = [];
 const on = (t, ev, f, o) => { t.addEventListener(ev, f, o); listeners.push(() => t.removeEventListener(ev, f, o)); };
@@ -1496,7 +1967,7 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同�
   hudCover: () => document.querySelector('header'),
   onOpen() {
     if (G) G.sel = -1;
-    ['howto', 'ovLevels'].forEach(id => { $(id).hidden = true; });
+    ['howto', 'ovLevels', 'ovModes', 'ovChal'].forEach(id => { $(id).hidden = true; });
     clockStop(); persist();
     const g = KG(); if (g) g.pause('versus');
   },
@@ -1506,7 +1977,7 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同�
       if (tut) finishTutorial('skip');
       clockStop(); persist();
       buildToken++; // a stage that was still being built is dropped (onExit rebuilds the rack)
-      vs = { snap: { G, msg: $('msg').textContent, ov: ['ovWin', 'ovStuck', 'ovDaily'].filter(id => !$(id).hidden), mode, daily } };
+      vs = { snap: { G, msg: $('msg').textContent, ov: ['ovWin', 'ovStuck', 'ovDaily', 'ovSprint'].filter(id => !$(id).hidden), mode, daily, chal, sprint } };
     }
     if (vs.playing) emit('play_end', { mode: vs.playing, score: vs.score || 0, reason: 'quit' });
     vs.salt = (seed | 0) || 1; vs.score = 0;
@@ -1526,9 +1997,9 @@ KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同�
     const s = vs.snap; vs = null;
     finishAnims(); fx = []; hintMark = null; hideGameOverlays();
     vsTools(false);
-    mode = s.mode; daily = s.daily;
+    mode = s.mode; daily = s.daily; chal = s.chal; sprint = s.sprint;
     renderMode();
-    if (!s.G) { if (mode === 'daily' && daily) startDaily(daily.dateKey); else startLevel(save.level); return; }
+    if (!s.G) { if (mode === 'daily' && daily) startDaily(daily.dateKey); else if (mode === 'chal' && chal) startChal(chal.idx); else if (mode === 'sprint' && sprint) startSprint(); else startLevel(save.level); return; }
     G = s.G; G.sel = -1;
     $('msg').textContent = s.msg;
     s.ov.forEach(id => { $(id).hidden = false; });
@@ -1569,10 +2040,15 @@ booted = true;
 function solveNow(n) {
   if (!G || G.won || !canAct()) return 0;
   if (tut && tut.step === 3) { undo(); return 1; }
-  const h = E.hintMove(G);
-  if (!h.path) return 0;
+  let path = null;
+  if (G.kind === 'chal' && chal) { // the stage's own solution (par) while the moves so far follow it
+    const sol = G.pz.sol, hs = G.history;
+    if (hs.every((m, i) => sol[i] && m.f === sol[i][0] && m.t === sol[i][1])) path = sol.slice(hs.length);
+  }
+  if (!path) { const h = E.hintMove(G); path = h.path; }
+  if (!path) return 0;
   let k = 0;
-  for (const m of h.path) { if (k >= n || !G || G.won) break; if (G.sel >= 0) G.sel = -1; if (tut && tut.step === 0) tap(m[0]); if (!doPour(m[0], m[1])) break; finishAnims(); k++; }
+  for (const m of path) { if (k >= n || !G || G.won) break; if (G.sel >= 0) G.sel = -1; if (tut && tut.step === 0) tap(m[0]); if (!doPour(m[0], m[1])) break; finishAnims(); k++; }
   return k;
 }
 if (window.__kb) Object.assign(window.__kb, {
@@ -1581,14 +2057,23 @@ if (window.__kb) Object.assign(window.__kb, {
     mode: vs ? (vs.playing || 'versus') : mode,
     score: vs ? vs.score : mode === 'daily' ? (daily && daily.done ? daily.score : 0) : save.best - 1,
     time: mode === 'daily' ? Math.round(dailyMs()) : 0,
-    over: !!(G && G.won) || !!(daily && daily.done), stage: G ? G.L : null,
+    over: !!(G && G.won) || !!(daily && daily.done) || !!(sprint && sprint.done), stage: G ? G.L : null,
     paused: !!(window.KoboGame && KoboGame.paused()) || menuOpen,
     moves: G ? G.moves : 0, net: G ? G.history.length : 0, hints: G ? G.hintsUsed : 0, extra: G ? G.extraUsed : 0, log: G ? G.log : '',
     level: save.level, best: save.best, stars: Object.assign({}, save.stars), kind: G ? G.kind : null,
     howto: !$('howto').hidden, winShown: !$('ovWin').hidden, stuckShown: !$('ovStuck').hidden, dailyShown: !$('ovDaily').hidden,
     daily: daily ? { dateKey: daily.dateKey, seed: daily.seed, idx: daily.idx, done: daily.done, score: daily.score, best: daily.best, tries: daily.tries, ms: Math.round(dailyMs()) } : null,
     tubes: G ? G.tubes.map(t => t.slice()) : null, busy: anims.length > 0,
+    chal: chal ? { idx: chal.idx, limit: chal.info.limit, par: chal.info.par, star3: chal.info.star3, star2: chal.info.star2, rule: chal.info.rule } : null,
+    sprint: sprint ? { idx: sprint.idx, hints: sprint.hints, extra: sprint.extra, moves: sprint.moves, done: sprint.done, total: sprint.total } : null,
+    x: { s: xs.s.slice(), sp: xs.sp }, marks, kc, kbUsed, progress: $('prog').hidden ? null : Number($('prog').getAttribute('aria-valuenow')),
+    modesShown: !$('ovModes').hidden, chalShown: !$('ovChal').hidden, sprintShown: !$('ovSprint').hidden, levelsShown: !$('ovLevels').hidden,
+    stuckTitle: $('stuckTitle').textContent, chain: G ? G.chain || 0 : 0,
+    sel: G ? G.sel : -1, won: !!(G && G.won),
   }),
+  chalStart: i => startChal(i), sprintStart: startSprint, modes: openModes, chalList: openChal,
+  chalLimit(n) { if (chal) { chal.info = Object.assign({}, chal.info, { limit: n }); refreshUI(); renderMode(); } },
+  setProgress(a) { xs = E.readX({ v: 1, s: a && a.s, sp: a && a.sp }); store.set(X_KEY, JSON.stringify(xs)); return xs; },
   // a stage game: "win" solves the current puzzle now (solver moves), "lose" shows the stuck card (from there: restart, undo or home)
   win() { if (!G || G.won || vs) return false; for (let k = 0; k < 20 && G && !G.won; k++) if (!solveNow(1e9)) break; return !!(G && G.won); },
   lose() { if (!G || G.won || vs) return false; showStuck(); return true; },
