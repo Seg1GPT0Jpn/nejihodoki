@@ -102,6 +102,9 @@ h1 span { color: var(--kb-accent-text); }
 .mode-bar svg { width: 15px; height: 15px; flex: none; color: var(--kb-accent-text); }
 .mode-bar span { overflow: hidden; text-overflow: ellipsis; }
 .mode-bar b { color: var(--kb-accent-text); }
+.mode-bar.timed { background: linear-gradient(90deg, var(--kb-accent) var(--p, 100%), transparent 0) bottom / 100% 3px no-repeat, var(--kb-accent-soft); font-variant-numeric: tabular-nums; }
+.mode-bar.urgent { border-color: #e2553c; color: #e2553c; }
+.mode-bar.urgent svg, .mode-bar.urgent b { color: #e2553c; }
 .mode-bar.done { background: var(--kb-accent); color: var(--kb-accent-ink); }
 .mode-bar.done svg, .mode-bar.done b { color: var(--kb-accent-ink); }
 .scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; padding: 0 max(16px, var(--kb-sar)) 6px max(16px, var(--kb-sal)); flex: none; }
@@ -111,9 +114,10 @@ h1 span { color: var(--kb-accent-text); }
 .label { font-size: 11px; color: var(--kb-dim); letter-spacing: .12em; font-weight: 800; }
 .score-best { text-align: right; justify-self: end; padding-bottom: 4px; min-width: 0; }
 .score-best b { display: block; font-family: var(--kb-font-display); font-weight: 400; font-size: 17px; color: var(--kb-accent-text); font-variant-numeric: tabular-nums; }
+.mode-btn { justify-self: start; align-self: center; margin-bottom: 4px; }
 .combo-chip {
-  justify-self: start; margin-bottom: 6px; font-size: 12px; font-weight: 800; color: var(--kb-accent-ink); background: var(--kb-accent);
-  border-radius: 999px; padding: 3px 10px; white-space: nowrap; transition: opacity .2s, transform .2s;
+  position: absolute; left: 6px; top: 6px; z-index: 1; pointer-events: none; font-size: 12px; font-weight: 800; color: var(--kb-accent-ink); background: var(--kb-accent);
+  border-radius: 999px; padding: 3px 10px; white-space: nowrap; transition: opacity .2s, transform .2s; box-shadow: 0 2px 0 var(--bk-btn-shadow);
 }
 .combo-chip.off { opacity: 0; transform: scale(.8); }
 /* tutorial coach: takes the place of the score row */
@@ -180,13 +184,61 @@ h1 span { color: var(--kb-accent-text); }
 .howto li svg { flex: none; width: 64px; height: 48px; }
 .howto li p { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
 .howto li p small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 2px; }
+/* stage tools */
+.tools { flex: none; display: flex; gap: 8px; justify-content: center; padding: 6px max(12px, var(--kb-sar)) max(8px, var(--kb-sab)) max(12px, var(--kb-sal)); }
+.tool {
+  flex: 1; min-width: 0; max-width: 140px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 14px; cursor: pointer;
+  border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink); font: 800 14px var(--kb-font-body); touch-action: manipulation; padding: 0 8px;
+}
+.tool svg { width: 20px; height: 20px; flex: none; }
+.tool span { white-space: nowrap; min-width: 0; }
+@media (max-width: 380px) { .tool { gap: 3px; padding: 0 4px; font-size: 13px; } .tool svg { width: 16px; height: 16px; } .tools { gap: 6px; } }
+.tool b { min-width: 1.4em; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; line-height: 20px; padding: 0 6px; text-align: center; }
+.tool:active:not(:disabled) { transform: scale(.96); }
+.tool:disabled { opacity: .4; cursor: default; }
+.tool.pulse { border-color: var(--kb-accent); box-shadow: 0 0 0 3px var(--kb-accent-soft); }
+.tool:focus-visible, .mode-opt:focus-visible, .stg:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+#app.has-tools #play { margin-bottom: 0; }
+/* mode picker and stage select */
+.modes { padding-top: 18px; }
+.modes h2 { margin-bottom: 10px; }
+.mode-list { display: grid; gap: 8px; text-align: left; }
+.mode-opt {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 8px 12px; border-radius: 14px; cursor: pointer; text-align: left;
+  border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink); font: 800 16px var(--kb-font-body); touch-action: manipulation;
+}
+.mode-opt svg { width: 28px; height: 28px; flex: none; color: var(--kb-accent-text); }
+.mode-opt span { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.mode-opt small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 1px; }
+.mode-opt.on { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.mode-opt:active { transform: scale(.985); }
+.stage-world { margin: 12px 0 6px; font-size: 13px; font-weight: 800; color: var(--kb-dim); letter-spacing: .06em; text-align: left; }
+.stage-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.stg {
+  min-height: 56px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-surface); color: var(--kb-ink); cursor: pointer; padding: 4px 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font: 400 18px var(--kb-font-display); touch-action: manipulation;
+}
+.stg i { font-style: normal; font: 800 10px var(--kb-font-body); color: var(--kb-accent-text); letter-spacing: -.05em; min-height: 12px; }
+.stg.done { border-color: var(--kb-accent); }
+.stg.cur { background: var(--kb-accent-soft); border-color: var(--kb-accent); }
+.stg:disabled { opacity: .4; cursor: default; }
+.stage-total { font-size: 13px; font-weight: 800; color: var(--kb-dim); }
+.stage-total b { color: var(--kb-accent-text); }
+.stars { font-size: 34px; letter-spacing: .08em; color: var(--kb-accent-text); margin-top: 4px; }
+.stars span.off { opacity: .28; }
+.stars.pop span:not(.off) { display: inline-block; animation: starpop .5s cubic-bezier(.2,1.8,.4,1) both; }
+.stars.pop span:nth-child(2) { animation-delay: .15s; } .stars.pop span:nth-child(3) { animation-delay: .3s; }
+.kbhint { margin: 10px 2px 0; font-size: 12px; color: var(--kb-dim); line-height: 1.5; }
+@media (pointer: coarse) { .kbhint { display: none; } }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@keyframes starpop { from { transform: scale(0) rotate(-40deg); opacity: 0; } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.94); } }
 @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.16); } 100% { transform: scale(1); } }
 @keyframes glow { 50% { box-shadow: 0 0 0 6px var(--kb-accent-soft); } }
 @keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @media (prefers-reduced-motion: reduce) {
-  .overlay, .card, .coach, .newrec, .score-main b.bump, .coach.nudge { animation: none; }
+  .overlay, .card, .coach, .newrec, .score-main b.bump, .coach.nudge, .stars.pop span { animation: none !important; }
   .combo-chip, .toast { transition: none; }
 }
 @media (max-height: 640px) {
@@ -213,12 +265,14 @@ h1 span { color: var(--kb-accent-text); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
   </header>
-  <div class="mode-bar" id="modeBar" hidden>
+  <div class="mode-bar" id="modeBar" hidden aria-live="off">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
     <span id="modeText"></span>
   </div>
   <div class="scores" id="scores">
-    <div class="combo-chip off" id="comboChip" data-i18n>コンボ ×2</div>
+    <button class="icon mode-btn" id="modeBtn" type="button" aria-label="モードをえらぶ" data-i18n-attr="aria-label" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" fill="currentColor"/></svg>
+    </button>
     <div class="score-main"><span class="label" data-i18n>スコア</span><b id="score">0</b></div>
     <div class="score-best"><span class="label" id="bestLabel" data-i18n>ベスト</span><b id="best">0</b></div>
   </div>
@@ -229,7 +283,14 @@ h1 span { color: var(--kb-accent-text); }
   </div>
   <div id="play">
     <canvas id="cv" data-i18n-attr="aria-label" aria-label="ゲーム盤。下のブロックを盤へドラッグして置く"></canvas>
+    <div class="combo-chip off" id="comboChip" data-i18n>コンボ ×2</div>
     <div class="toast off" id="toast"></div>
+    <div class="sr" id="live" role="status" aria-live="polite"></div>
+  </div>
+  <div class="tools" id="tools" hidden>
+    <button class="tool" id="toolUndo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span data-i18n>もどす</span><b id="nUndo">3</b></button>
+    <button class="tool" id="toolSwap" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h13l-3-3M19 15H6l3 3"/></svg><span data-i18n>入れかえ</span><b id="nSwap">2</b></button>
+    <button class="tool" id="toolHint" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-i18n>ヒント</span><b id="nHint">3</b></button>
   </div>
 </div>
 <div class="overlay" id="over" hidden role="dialog" aria-modal="true" aria-labelledby="overTitle">
@@ -237,13 +298,28 @@ h1 span { color: var(--kb-accent-text); }
     <h2 id="overTitle" data-i18n>置き場がない！</h2>
     <div class="label" data-i18n>スコア</div>
     <div class="big" id="overScore">0</div>
-    <div class="best"><span id="overBestLabel" data-i18n>ベスト</span> <b id="overBest">0</b></div>
+    <div class="best" id="overBestRow"><span id="overBestLabel" data-i18n>ベスト</span> <b id="overBest">0</b></div>
     <div id="overNew" class="newrec" hidden data-i18n>ベスト更新！</div>
     <div id="overGoal" class="goal" hidden></div>
+    <div class="stars" id="overStars" hidden aria-hidden="true"></div>
     <button class="btn" id="again" type="button" data-i18n>もう一度</button>
+    <button class="btn sub" id="overNext" type="button" hidden data-i18n>つぎのステージ</button>
     <button class="btn sub" id="overAlt" type="button"></button>
+    <button class="btn sub" id="overModes" type="button" data-i18n>モードをえらぶ</button>
     <div id="vsSlotOver"></div>
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+<div class="overlay" id="modes" hidden role="dialog" aria-modal="true" aria-labelledby="modesTitle">
+  <div class="card modes">
+    <h2 id="modesTitle" data-i18n>モードをえらぶ</h2>
+    <div id="modesMain" class="mode-list"></div>
+    <div id="modesStages" hidden>
+      <div class="stage-total" id="stageTotal"></div>
+      <div id="stageGrid"></div>
+      <button class="btn sub" id="stagesBack" type="button" data-i18n>モードにもどる</button>
+    </div>
+    <button class="btn link" id="modesClose" type="button" data-i18n>とじる</button>
   </div>
 </div>
 <div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
@@ -257,11 +333,13 @@ h1 span { color: var(--kb-accent-text); }
       <li><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="2" y="2" width="60" height="30" rx="5" fill="#d9ad72"/><g fill="#9a6ccc"><rect x="6" y="6" width="9" height="9" rx="2"/><rect x="16" y="6" width="9" height="9" rx="2"/><rect x="36" y="6" width="9" height="9" rx="2"/><rect x="6" y="18" width="9" height="9" rx="2"/><rect x="26" y="18" width="9" height="9" rx="2"/><rect x="46" y="18" width="9" height="9" rx="2"/></g><g fill="#26a3a6" opacity=".4"><rect x="20" y="36" width="9" height="9" rx="2"/><rect x="30" y="36" width="9" height="9" rx="2"/><rect x="40" y="36" width="9" height="9" rx="2"/></g></svg>
         <p data-i18n-html>3つとも置くと次の3つ。<b>置き場がなくなったら</b>おしまい<small>置けないブロックは薄くなる</small></p></li>
     </ol>
+    <p class="kbhint" data-i18n-html>キーボード：<b>矢印キー</b>で動かして <b>Enter</b> で置く。<b>1〜3</b> でブロックを選ぶ。</p>
     <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
     <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
   </div>
 </div>
 <script src="../common/game.js"></script>
+<script src="engine.js"></script>
 <script>
 (() => {
 'use strict';
@@ -301,11 +379,36 @@ KoboI18n.add({ en: {
   '全員が同じ順番のブロックで遊ぶ、1日1つの問題。何度でも挑戦できます。': 'One puzzle a day: everyone gets the same blocks in the same order. Try as many times as you like.',
   '今日のチャレンジをやめますか？': 'Leave the daily challenge?', '今の盤は保存されます。': 'Your board is saved for today.',
   'やめる': 'Leave', 'つづける': 'Keep playing',
+  // modes
+  'モードをえらぶ': 'Choose a mode', 'モードにもどる': 'Back to modes', 'クラシック': 'Classic',
+  '置き場がなくなるまで。ベスト {n} 点': 'Play until nothing fits. Best {n} pts',
+  'みんな同じ順番。目標 {n} 点': 'Same blocks for everyone. Goal {n} pts',
+  'ステージ': 'Stages', '{n}つのお題。★ {a} / {b}': '{n} puzzles. ★ {a} / {b}',
+  'タイムアタック': 'Time attack', '{n}秒でどこまで。ベスト {b} 点': 'How far in {n} seconds? Best {b} pts',
+  'ステージをえらぶ': 'Choose a stage', 'ワールド {n}': 'World {n}', '★ {a} / {b}': '★ {a} / {b}',
+  'はじめの庭': 'First Garden', 'いしの谷': 'Stone Valley', 'たからの山': 'Treasure Peak',
+  'ステージ {id}': 'Stage {id}', 'まだ開いていない': 'locked', 'ひとつ前のステージをクリアすると開きます': 'Clear the previous stage to unlock this one',
+  // stage goals and results
+  'ラインを {n}本 消す': 'Clear {n} lines', '{n}点 とる': 'Score {n} pts', 'コンボ ×{n} を出す': 'Make a ×{n} combo', '★をぜんぶ とる': 'Collect every ★', '盤を空にする': 'Clear the board',
+  'ライン {a}/{b}': 'Lines {a}/{b}', '{a}/{b}点': '{a}/{b} pts', 'コンボ {a}/{b}': 'Combo {a}/{b}', '盤を空に': 'Empty board', 'あと{n}手': '{n} moves left', '手数': 'MOVES',
+  'ステージ {id} クリア！': 'Stage {id} clear!', 'ざんねん…': 'So close…', 'つぎのステージ': 'Next stage',
+  '{m}手でクリア ・ パーフェクト！': 'Cleared in {m} moves · Perfect!', '{m}手でクリア ・ ★3は {p}手まで': 'Cleared in {m} moves · ★3 needs {p} or fewer',
+  '手数が足りなかった': 'Out of moves', '置き場がなくなった': 'Nothing fits any more',
+  '置き場がない！ 入れかえか もどすを使おう': 'Nothing fits! Use Swap or Undo',
+  'もどす': 'Undo', '入れかえ': 'Swap', 'ヒント': 'Hint', 'ひとつ もどした': 'Undid one move', 'ブロックを入れかえた': 'Swapped the blocks',
+  'ヒント：ブロック{n}を {r}行{c}列へ': 'Hint: block {n} at row {r}, column {c}',
+  // time attack
+  '{n}秒で どこまで？ 置くと はじまる': '{n} seconds. The clock starts when you place a block', 'タイムアップ！': 'Time’s up!', '秒': 's',
+  // keyboard
+  'キーボード：<b>矢印キー</b>で動かして <b>Enter</b> で置く。<b>1〜3</b> でブロックを選ぶ。': 'Keyboard: move with the <b>arrow keys</b>, <b>Enter</b> to place, <b>1–3</b> to pick a block.',
+  'ブロック{n}を選んだ。矢印キーで動かして Enter で置く': 'Block {n} picked. Arrow keys to move, Enter to place', '{r}行 {c}列': 'Row {r}, column {c}', '置けない': 'Can’t place there',
 } });
 const EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const N = 8, GAME = 'blocks';
+const BE = window.BlocksEngine; // blocks/engine.js: shapes, lines, stages, the planner bot
+const N = BE.N, GAME = 'blocks';
 const KEY_BEST = 'kusoge.blocks.best', KEY_STATE = 'kusoge.blocks.state', KEY_DAILY = 'kusoge.blocks.daily';
 const KEY_HOWTO = 'kusoge.blocks.howto', KEY_TUT = 'kusoge.blocks.tutorial';
+const KEY_X = 'kusoge.blocks.x'; // stage stars and the time-attack best (this device only; not synced)
 const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
 const G = () => window.KoboGame || null;
 const store = {
@@ -316,77 +419,34 @@ const store = {
 const reduceMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reduceMQ.matches;
 const fmt = n => (Number(n) || 0).toLocaleString('ja-JP');
+const SEP = KoboI18n.lang === 'en' ? ' · ' : ' ・ '; // the joint in the mode bar and toasts
 
 // ---------- Palette (lacquer / enamel) ----------
-const COLORS = ['#e2553c', '#3e64b8', '#5fa548', '#efb22d', '#9a6ccc', '#26a3a6', '#e8729a', '#d9822b'];
+const COLORS = ['#e2553c', '#3e64b8', '#5fa548', '#efb22d', '#9a6ccc', '#26a3a6', '#e8729a', '#d9822b', '#8c8780']; // the last one is the stone (stages only)
 
-// ---------- Pieces ----------
-function rot(cells) { // rotate 90° clockwise, normalise
-  const r = cells.map(([y, x]) => [x, -y]);
-  const my = Math.min(...r.map(c => c[0])), mx = Math.min(...r.map(c => c[1]));
-  return r.map(([y, x]) => [y - my, x - mx]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-}
-const key = cs => cs.map(c => c.join(',')).join(';');
-function rotations(cells, n) {
-  const out = []; const seen = new Set(); let cur = rot(rot(rot(rot(cells))));
-  for (let i = 0; i < n; i++) { const k = key(cur); if (!seen.has(k)) { seen.add(k); out.push(cur); } cur = rot(cur); }
-  return out;
-}
-const FAMILIES = [ // [name, base cells, rotations, total weight, color]
-  ['dot',   [[0,0]], 1, 5, 3],
-  ['I2',    [[0,0],[0,1]], 2, 8, 6],
-  ['I3',    [[0,0],[0,1],[0,2]], 2, 8, 4],
-  ['I4',    [[0,0],[0,1],[0,2],[0,3]], 2, 7, 1],
-  ['I5',    [[0,0],[0,1],[0,2],[0,3],[0,4]], 2, 4, 0],
-  ['O2',    [[0,0],[0,1],[1,0],[1,1]], 1, 7, 2],
-  ['O3',    [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]], 1, 2.5, 7],
-  ['R23',   [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]], 2, 3, 5],
-  ['V3',    [[0,0],[1,0],[1,1]], 4, 8, 6],
-  ['L4',    [[0,0],[1,0],[2,0],[2,1]], 4, 6, 7],
-  ['J4',    [[0,1],[1,1],[2,1],[2,0]], 4, 6, 1],
-  ['V5',    [[0,0],[1,0],[2,0],[2,1],[2,2]], 4, 4, 4],
-  ['T4',    [[0,0],[0,1],[0,2],[1,1]], 4, 6, 4],
-  ['S4',    [[0,1],[0,2],[1,0],[1,1]], 2, 4, 2],
-  ['Z4',    [[0,0],[0,1],[1,1],[1,2]], 2, 4, 0],
-];
-const PIECES = []; // {cells, w, h, color, weight}
-for (const [name, base, nrot, weight, color] of FAMILIES) {
-  const rs = rotations(base, nrot);
-  for (const cells of rs) {
-    PIECES.push({ name, cells, color, weight: weight / rs.length,
-      w: Math.max(...cells.map(c => c[1])) + 1, h: Math.max(...cells.map(c => c[0])) + 1 });
-  }
-}
-const pidOf = (name, w, h) => PIECES.findIndex(p => p.name === name && p.w === w && p.h === h);
-const TOTAL_W = PIECES.reduce((s, p) => s + p.weight, 0);
+// ---------- Pieces (blocks/engine.js: shapes, lines, stages, the planner bot) ----------
+const PIECES = BE.PIECES; // {cells, w, h, color, weight}
+const pidOf = BE.pidOf;
 // Normal play uses Math.random (with a fairness re-roll). The daily challenge and online battle draw from a seeded
 // sequence with no re-roll, so everyone gets the same pieces in the same order whatever their board looks like.
 let rnd = Math.random, vs = null; // vs = { snap } while a versus match owns the board
-function randomPiece() {
-  let r = rnd() * TOTAL_W;
-  for (let i = 0; i < PIECES.length; i++) { r -= PIECES[i].weight; if (r <= 0) return i; }
-  return PIECES.length - 1;
-}
+const randomPiece = () => BE.pickPiece(rnd);
 
 // ---------- State ----------
-// mode: 'normal' | 'daily' | 'tutorial' (an online match is `vs`, on top of whichever mode was showing)
+// mode: 'normal' | 'daily' | 'tutorial' | 'stage' | 'time' (an online match is `vs`, on top of whichever mode was showing)
 let mode = 'normal', board, tray, score, combo, best, over = false, moves = 0;
+let run = null, stageIdx = -1, gems = null; // stage mode: the BlocksEngine.StageRun, its index and the star-gem map of the board
+let ta = null;             // time attack: { left, running, last, bonus }
+let prog = BE.readProgress(store.get(KEY_X)); // { s: stars per stage, ta: best time-attack score }
+const transient = () => mode === 'tutorial' || mode === 'stage' || mode === 'time'; // modes that never touch the saved normal/daily boards
 let daily = null;          // { dateKey, seed, goal, best, tries, reached } while mode === 'daily'
 let draws = 0;             // pieces drawn from the daily sequence (saved, so a reload continues the same sequence)
 let sess = null;           // the play session reported to KoboGame (play_start → play_end)
 let bestAtStart = 0, bestToasted = false, goalToasted = false;
 best = parseInt(store.get(KEY_BEST), 10) || 0;
 
-function fits(pid, r0, c0) {
-  const p = PIECES[pid];
-  if (r0 < 0 || c0 < 0 || r0 + p.h > N || c0 + p.w > N) return false;
-  for (const [r, c] of p.cells) if (board[(r0 + r) * N + c0 + c] >= 0) return false;
-  return true;
-}
-function fitsAnywhere(pid) {
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (fits(pid, r, c)) return true;
-  return false;
-}
+const fits = (pid, r0, c0) => BE.fits(board, pid, r0, c0);
+const fitsAnywhere = pid => BE.fitsAnywhere(board, pid);
 const seeded = () => !!vs || mode === 'daily';
 function deal() {
   if (seeded()) { // the same three pieces for everyone, whatever their board looks like
@@ -411,7 +471,7 @@ function deal() {
 function resetRun() {
   board = new Array(N * N).fill(-1);
   score = 0; combo = 0; moves = 0; over = false;
-  effects.length = 0; popups.length = 0; placeFx = null; drag = null; returning = null;
+  effects.length = 0; popups.length = 0; parts.length = 0; placeFx = null; drag = null; returning = null; hintFx = null;
   bestAtStart = best; bestToasted = false; goalToasted = false;
 }
 function newGame() {
@@ -422,7 +482,7 @@ function newGame() {
   hideOver(); updateHud(true); save(); requestDraw();
 }
 function save() {
-  if (vs || mode === 'tutorial' || !board) return; // online matches and the tutorial never touch the saves
+  if (vs || transient() || !board) return; // online matches, the tutorial, stages and time attack never touch the saves
   const k = mode === 'daily' ? KEY_DAILY : KEY_STATE;
   if (over) { store.del(k); return; }
   const o = { v: 1, board, tray, score, combo, moves, b0: bestAtStart };
@@ -441,7 +501,7 @@ function readSave(k) {
 }
 function applySave(s) {
   board = s.board; tray = s.tray; score = Math.max(0, s.score | 0); combo = Math.max(0, s.combo | 0); moves = Math.max(0, s.moves | 0);
-  over = false; effects.length = 0; popups.length = 0; placeFx = null; drag = null; returning = null;
+  over = false; effects.length = 0; popups.length = 0; parts.length = 0; placeFx = null; drag = null; returning = null; hintFx = null;
   bestAtStart = Number.isFinite(s.b0) ? Math.min(s.b0, best) : best;
   bestToasted = score > bestAtStart; goalToasted = false;
 }
@@ -457,8 +517,9 @@ function stuck() { return !tray.some(v => v !== null && fitsAnywhere(v)); }
 // ---------- Play sessions (KoboGame events) ----------
 function startPlay() {
   if (sess || vs || mode === 'tutorial') return;
-  sess = { mode, t0: performance.now(), lines: 0, maxCombo: 0, dateKey: mode === 'daily' ? daily.dateKey : undefined };
-  const g = G(); if (g) g.emit('play_start', mode === 'daily' ? { mode, dateKey: daily.dateKey, seed: daily.seed } : { mode });
+  const em = mode === 'stage' || mode === 'time' ? 'practice' : mode; // stages and time attack are reported as practice (no ranking, no achievements)
+  sess = { mode: em, t0: performance.now(), lines: 0, maxCombo: 0, dateKey: mode === 'daily' ? daily.dateKey : undefined };
+  const g = G(); if (g) g.emit('play_start', em === 'daily' ? { mode: em, dateKey: daily.dateKey, seed: daily.seed } : { mode: em });
 }
 function endPlay(reason) {
   if (!sess) return;
@@ -470,9 +531,38 @@ function endPlay(reason) {
 }
 
 // ---------- Scoring & placement ----------
-const lineScore = n => 10 * n * (n + 1) / 2; // 1:10 2:30 3:60 4:100 ...
+const lineScore = BE.lineScore;
 let shake = null;
+// everything the player sees and hears for one placement (normal, daily, time attack and stages share it)
+function fx(o) {
+  const now = o.now, p = o.p;
+  placeFx = reduced() ? null : { cells: o.placed, t0: now };
+  if (!o.lines) { sfxPlace(); buzz(8); return; }
+  const pr = o.r0 + p.h / 2, pc = o.c0 + p.w / 2;
+  for (const cl of o.cleared) {
+    const r = (cl.idx / N) | 0, c = cl.idx % N, t0 = now + (reduced() ? 0 : Math.hypot(r + .5 - pr, c + .5 - pc) * 28);
+    effects.push({ r, c, color: cl.color, gem: !!cl.gem, t0 });
+    burst(r, c, cl.color, t0, !!cl.gem);
+  }
+  const cx = (o.cols.length ? o.cols.reduce((a, b) => a + b, 0) / o.cols.length : pc - .5) + .5;
+  const cy = (o.rows.length ? o.rows.reduce((a, b) => a + b, 0) / o.rows.length : pr - .5) + .5;
+  popups.push({ text: '+' + o.pts, x: cx, y: cy, t0: now, size: 1 });
+  let label = '';
+  if (o.allClear) label = T('全消し！');
+  else if (o.combo >= 2) label = T('コンボ ×{n}', { n: o.combo });
+  else if (o.lines >= 3) label = T('{n}ライン！', { n: o.lines });
+  else if (o.lines === 2) label = T('ダブル！');
+  if (label) popups.push({ text: label, x: N / 2, y: N / 2 - .3, t0: now + 60, size: 1.8, banner: true });
+  if (o.gems) popups.push({ text: '★ ×' + o.gems, x: cx, y: Math.max(.6, cy - .9), t0: now + 120, size: 1.2, banner: true });
+  const big = o.allClear || o.lines > 1 || o.combo > 1;
+  if (big && !reduced()) shake = { t0: now + 40, amp: Math.min(7, 2 + o.lines * 1.2 + o.combo * 0.8) };
+  sfxClear(o.lines, o.combo, o.allClear);
+  if (o.gems) sfxGem(o.gems);
+  buzz(big ? [18, 40, 22] : 16);
+  say(o.allClear ? T('全消し！') : T('{n}ライン！', { n: o.lines }));
+}
 function place(i, r0, c0) {
+  if (mode === 'stage') return placeStage(i, r0, c0);
   const pid = tray[i], p = PIECES[pid];
   const now = performance.now();
   startPlay();
@@ -480,52 +570,29 @@ function place(i, r0, c0) {
   for (const [r, c] of p.cells) { board[(r0 + r) * N + c0 + c] = p.color; placed.push((r0 + r) * N + c0 + c); }
   tray[i] = null; moves++;
   let gain = p.cells.length;
-  placeFx = reduced() ? null : { cells: placed, t0: now };
-  // find full lines
-  const rows = [], cols = [];
-  for (let r = 0; r < N; r++) { let f = true; for (let c = 0; c < N; c++) if (board[r * N + c] < 0) { f = false; break; } if (f) rows.push(r); }
-  for (let c = 0; c < N; c++) { let f = true; for (let r = 0; r < N; r++) if (board[r * N + c] < 0) { f = false; break; } if (f) cols.push(c); }
+  const fl = BE.fullLines(board), rows = fl.rows, cols = fl.cols;
   const lines = rows.length + cols.length;
+  const cleared = []; let pts = 0, allClear = false;
   if (lines) {
     combo++;
     if (sess) { sess.lines += lines; sess.maxCombo = Math.max(sess.maxCombo, combo); }
     const clr = new Set();
     rows.forEach(r => { for (let c = 0; c < N; c++) clr.add(r * N + c); });
     cols.forEach(c => { for (let r = 0; r < N; r++) clr.add(r * N + c); });
-    // pivot for staggered animation: centre of the placed piece
-    const pr = r0 + p.h / 2, pc = c0 + p.w / 2;
-    for (const idx of clr) {
-      const r = (idx / N) | 0, c = idx % N;
-      const d = Math.hypot(r + .5 - pr, c + .5 - pc);
-      effects.push({ r, c, color: board[idx], t0: now + (reduced() ? 0 : d * 28) });
-      board[idx] = -1;
-    }
-    let pts = lineScore(lines) * combo;
-    const allClear = board.every(v => v < 0);
+    for (const idx of clr) { cleared.push({ idx, color: board[idx] }); board[idx] = -1; }
+    pts = lineScore(lines) * combo;
+    allClear = board.every(v => v < 0);
     if (allClear) pts += 300;
     gain += pts;
-    const cx = (cols.length ? cols.reduce((a, b) => a + b, 0) / cols.length : pc - .5) + .5;
-    const cy = (rows.length ? rows.reduce((a, b) => a + b, 0) / rows.length : pr - .5) + .5;
-    popups.push({ text: '+' + pts, x: cx, y: cy, t0: now, size: 1 });
-    let label = '';
-    if (allClear) label = T('全消し！');
-    else if (combo >= 2) label = T('コンボ ×{n}', { n: combo });
-    else if (lines >= 3) label = T('{n}ライン！', { n: lines });
-    else if (lines === 2) label = T('ダブル！');
-    if (label) popups.push({ text: label, x: N / 2, y: N / 2 - .3, t0: now + 60, size: 1.8, banner: true });
-    const big = allClear || lines > 1 || combo > 1;
-    if (big && !reduced()) shake = { t0: now + 40, amp: Math.min(7, 2 + lines * 1.2 + combo * 0.8) };
-    sfxClear(lines, combo, allClear);
-    buzz(big ? [18, 40, 22] : 16);
-  } else {
-    combo = 0;
-    sfxPlace();
-    buzz(8);
-  }
+    if (mode === 'time' && ta) addTime(lines * BE.TIME.perLine, now);
+  } else combo = 0;
+  fx({ now, p, r0, c0, placed, cleared, rows, cols, lines, pts, allClear, combo, gems: 0 });
+  if (mode === 'time' && ta && !ta.running) { ta.running = true; ta.last = now; }
   score += gain;
   if (tray.every(v => v === null)) deal();
   updateHud();
   milestones();
+  kbdAfterPlace();
   if (mode === 'tutorial') { tutAfterPlace(lines); requestDraw(); return; }
   if (stuck()) {
     if (vs) { setTimeout(vsStuck, reduced() ? 150 : 450); requestDraw(); return; }
@@ -544,26 +611,42 @@ function milestones() {
   }
 }
 let overInfo = null;
-function finishRun() {
+function finishRun(why) {
   over = true;
-  const isNew = mode === 'normal' && score > 0 && score > bestAtStart;
+  let isNew = mode === 'normal' && score > 0 && score > bestAtStart;
   if (mode === 'normal') { if (score > best) best = score; store.set(KEY_BEST, String(best)); }
+  if (mode === 'time') { if (ta) ta.running = false; if (score > 0 && score > prog.ta) { prog.ta = score; saveProg(); isNew = true; } }
   save(); // deletes the run's save (a tombstone in the cloud, so the finished board doesn't come back: R3)
   const reason = mode === 'daily' && score >= daily.goal ? 'clear' : 'over';
   endPlay(reason);
   if (mode === 'daily') refreshDaily();
-  overInfo = { isNew, score };
+  overInfo = { isNew, score, why: why || 'stuck' };
   setTimeout(gameOver, reduced() ? 250 : 750);
 }
+const starsText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
 function gameOver() {
   if (!over || vs) return;
   const info = overInfo || { isNew: false, score };
-  const isDaily = mode === 'daily';
-  $('overTitle').textContent = isDaily ? T('今日のチャレンジ 終了') : T('置き場がない！');
+  const isDaily = mode === 'daily', isStage = mode === 'stage' && !!run, isTime = mode === 'time';
+  const goal = $('overGoal'), starsEl = $('overStars'), again = $('again'), next = $('overNext');
   $('overScore').textContent = fmt(score);
-  $('overNew').hidden = !info.isNew;
-  const goal = $('overGoal');
-  if (isDaily) {
+  $('overNew').hidden = !info.isNew || isStage;
+  starsEl.hidden = true; starsEl.classList.remove('pop'); next.hidden = true;
+  again.className = 'btn'; next.className = 'btn sub'; again.textContent = T('もう一度');
+  $('overBestRow').hidden = isStage; $('overModes').hidden = isStage; $('overAlt').hidden = false;
+  if (isStage) {
+    const won = !!info.won, n = info.stars | 0, st = run.stage;
+    $('overTitle').textContent = won ? T('ステージ {id} クリア！', { id: st.id }) : T('ざんねん…');
+    starsEl.hidden = false; starsEl.innerHTML = '';
+    for (let k = 1; k <= 3; k++) { const sp = document.createElement('span'); sp.textContent = '★'; if (k > n) sp.className = 'off'; starsEl.append(sp); }
+    if (won && !reduced()) { void starsEl.offsetWidth; starsEl.classList.add('pop'); }
+    goal.hidden = false; goal.classList.toggle('ok', won);
+    goal.textContent = won ? (n >= 3 ? T('{m}手でクリア ・ パーフェクト！', { m: moves }) : T('{m}手でクリア ・ ★3は {p}手まで', { m: moves, p: st.par3 }))
+      : (info.why === 'moves' ? T('手数が足りなかった') : T('置き場がなくなった'));
+    $('overAlt').textContent = T('ステージをえらぶ');
+    if (won && stageIdx + 1 < BE.STAGE_N) { next.hidden = false; next.className = 'btn'; again.className = 'btn sub'; }
+  } else if (isDaily) {
+    $('overTitle').textContent = T('今日のチャレンジ 終了');
     const d = daily;
     $('overBestLabel').textContent = T('今日のベスト');
     $('overBest').textContent = fmt(d.best);
@@ -571,17 +654,24 @@ function gameOver() {
     goal.classList.toggle('ok', score >= d.goal);
     goal.textContent = score >= d.goal ? T('目標達成！') : T('目標まで あと {n} 点', { n: fmt(d.goal - score) });
     $('overAlt').textContent = T('ふつうのゲームへ');
+  } else if (isTime) {
+    $('overTitle').textContent = info.why === 'time' ? T('タイムアップ！') : T('置き場がない！');
+    $('overBestLabel').textContent = T('ベスト');
+    $('overBest').textContent = fmt(prog.ta);
+    goal.hidden = true;
+    $('overAlt').textContent = T('ふつうのゲームへ');
   } else {
+    $('overTitle').textContent = T('置き場がない！');
     $('overBestLabel').textContent = T('ベスト');
     $('overBest').textContent = fmt(best);
     goal.hidden = true;
     $('overAlt').textContent = T('今日のチャレンジ');
     $('overAlt').hidden = !dailyAvailable();
   }
-  if (isDaily) $('overAlt').hidden = false;
   $('over').hidden = false;
-  if (info.isNew) { sfx('win'); buzz([20, 50, 20, 50, 40]); } else { sfx('over'); buzz([30, 60, 30]); }
-  setTimeout(() => $('again').focus({ preventScroll: true }), 50);
+  const good = isStage ? !!info.won : info.isNew;
+  if (good) { sfx('win'); buzz([20, 50, 20, 50, 40]); } else { sfx('over'); buzz([30, 60, 30]); }
+  setTimeout(() => (next.hidden ? again : next).focus({ preventScroll: true }), 50);
 }
 function hideOver() { $('over').hidden = true; }
 
@@ -590,11 +680,12 @@ const $ = id => document.getElementById(id);
 let shownScore = 0, hudAnim = 0, lastScore = 0;
 function updateHud(instant) {
   if (!vs && mode === 'normal' && score > best) { best = score; store.set(KEY_BEST, String(best)); }
-  const isDaily = mode === 'daily' && !vs;
-  $('bestLabel').textContent = isDaily ? T('今日のベスト') : T('ベスト');
-  $('best').textContent = fmt(isDaily ? Math.max(daily.best, score) : best);
+  const isDaily = mode === 'daily' && !vs, isStage = mode === 'stage' && !!run && !vs, isTime = mode === 'time' && !vs;
+  $('bestLabel').textContent = isDaily ? T('今日のベスト') : isStage ? T('手数') : T('ベスト');
+  $('best').textContent = isStage ? moves + '/' + run.stage.limit : isTime ? fmt(Math.max(prog.ta, score)) : fmt(isDaily ? Math.max(daily.best, score) : best);
   const chip = $('comboChip');
   if (combo >= 2) { chip.textContent = T('コンボ ×{n}', { n: combo }); chip.classList.remove('off'); } else chip.classList.add('off');
+  if (isStage) renderMode();
   const el = $('score');
   if (!instant && score > lastScore && !reduced()) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   lastScore = score;
@@ -627,6 +718,7 @@ function sfxClear(lines, cmb, allClear) {
   steps.forEach((s, k) => tone(base * Math.pow(2, s / 12), 0.16, 'triangle', 0.1, 0.04 + k * 0.055));
   if (allClear) [0, 7, 12, 19, 24].forEach((s, k) => tone(base * Math.pow(2, s / 12), 0.22, 'sine', 0.08, 0.36 + k * 0.07));
 }
+const sfxGem = n => { for (let k = 0; k < Math.min(4, n + 1); k++) tone(1046.5 * Math.pow(2, [0, 4, 7, 12][k] / 12), 0.2, 'sine', 0.07, 0.25 + k * 0.07); };
 function sfx(name) {
   if (!A) return;
   if (name === 'best') { [784, 988, 1319].forEach((f, k) => tone(f, 0.14, 'triangle', 0.08, 0.1 + k * 0.07)); return; }
@@ -648,24 +740,29 @@ $('sound').addEventListener('click', () => {
   if (!A.muted) tone(660, 0.08, 'sine', 0.08);
 });
 if (A) A.onChange(renderSoundBtn);
-$('again').addEventListener('click', () => { newGame(); });
+function restartMode() { if (mode === 'stage') startStage(stageIdx); else if (mode === 'time') startTime(); else newGame(); }
+$('again').addEventListener('click', restartMode);
+$('overNext').addEventListener('click', () => startStage(stageIdx + 1));
+$('overModes').addEventListener('click', () => { hideOver(); openModes(); });
 $('overAlt').addEventListener('click', () => {
-  if (mode === 'daily') { hideOver(); setMode('normal'); }
-  else { hideOver(); startDaily(); }
+  hideOver();
+  if (mode === 'stage') openModes('stages');
+  else if (mode === 'daily' || mode === 'time') setMode('normal');
+  else startDaily();
 });
 
 // ---------- Menu (KoboUI: settings, language, theme, volume) ----------
 function openMenu() {
   if (!UI || (vs && KoboVersus.active())) return;
-  cancelDrag();
-  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { m.close(); closedMenu(); showHowto(false); } }];
-  if (mode === 'daily') extra.push({ label: T('ふつうのゲームに戻る'), icon: 'home', onClick: () => { m.close(); closedMenu(); setMode('normal'); } });
-  else if (dailyAvailable() && mode !== 'tutorial') extra.push({ label: T('今日のチャレンジ'), icon: 'star', onClick: () => { m.close(); closedMenu(); startDaily(); } });
+  cancelDrag(); kbd = null;
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { m.close(); closedMenu(); showHowto(false); } },
+    { label: T('モードをえらぶ'), icon: 'star', onClick: () => { m.close(); closedMenu(); openModes(); } }];
+  if (mode === 'daily' || mode === 'stage' || mode === 'time') extra.push({ label: T('ふつうのゲームに戻る'), icon: 'home', onClick: () => { m.close(); closedMenu(); setMode('normal'); } });
   const m = UI.pauseMenu({
     title: T('メニュー'),
     onResume: closedMenu,
-    onRestart: () => { closedMenu(); if (mode === 'tutorial') startTutorial(); else { newGame(); toast(T('新しいゲーム')); } },
-    confirmRestart: moves > 0 && !over && mode !== 'tutorial',
+    onRestart: () => { closedMenu(); if (mode === 'tutorial') startTutorial(); else { restartMode(); if (mode === 'normal' || mode === 'daily') toast(T('新しいゲーム')); } },
+    confirmRestart: moves > 0 && !over && mode !== 'tutorial' && mode !== 'time',
     extra, home: '../',
     onOpen: () => { const g = G(); if (g) g.menuOpened(); },
   });
@@ -708,6 +805,8 @@ let tut = null; // { step, target: { i, r, c } | null, prevMode, t0 }
 function startTutorial() {
   if (vs) return;
   endPlay('quit');
+  const wasT = mode === 'stage' || mode === 'time';
+  if (wasT) { leaveTransient(); mode = 'normal'; if (!load()) { resetRun(); deal(); } }
   const prev = mode === 'tutorial' && tut ? tut.prevMode : mode;
   const prevDaily = mode === 'tutorial' && tut ? tut.prevDaily : (mode === 'daily' && daily ? daily.dateKey : null);
   if (mode !== 'tutorial') save();
@@ -799,6 +898,7 @@ function dateLabel(dk) {
 function startDaily(dateKey) {
   if (!PF || vs) return;
   if (mode === 'tutorial') { tut = null; store.set(KEY_TUT, '1'); renderCoach(); }
+  closeModes(true); leaveTransient();
   const dk = PF.isDateKey(dateKey) && Number(dateKey) <= PF.jstDateKey() ? Number(dateKey) : PF.jstDateKey();
   endPlay('quit');
   if (mode === 'normal' && board) save();
@@ -826,26 +926,252 @@ function setMode(m) {
   endPlay('quit');
   if (mode === 'daily') save();
   if (mode === 'tutorial') { tut = null; renderCoach(); }
+  closeModes(true); leaveTransient();
   mode = 'normal'; daily = null; rnd = Math.random;
   if (!load()) { resetRun(); deal(); save(); }
   hideOver(); renderMode(); updateHud(true); requestDraw(); layoutSoon();
   if (stuck()) finishRun();
 }
+function goalText(g) {
+  if (g.t === 'lines') return T('ラインを {n}本 消す', { n: g.n });
+  if (g.t === 'score') return T('{n}点 とる', { n: g.n });
+  if (g.t === 'combo') return T('コンボ ×{n} を出す', { n: g.n });
+  if (g.t === 'gems') return T('★をぜんぶ とる');
+  return T('盤を空にする');
+}
+function goalShort(g, pr) {
+  if (g.t === 'lines') return T('ライン {a}/{b}', { a: pr.have, b: pr.need });
+  if (g.t === 'score') return T('{a}/{b}点', { a: pr.have, b: pr.need });
+  if (g.t === 'combo') return T('コンボ {a}/{b}', { a: pr.have, b: pr.need });
+  if (g.t === 'gems') return '★ ' + pr.have + '/' + pr.need;
+  return T('盤を空に');
+}
+const fmtTime = sec => { const t = Math.max(0, Math.ceil(sec)); return ((t / 60) | 0) + ':' + String(t % 60).padStart(2, '0'); };
+let timeShown = '';
+function renderTime() {
+  const bar = $('modeBar');
+  if (!(mode === 'time' && ta && !vs)) return;
+  const txt = T('タイムアタック') + SEP + fmtTime(ta.left);
+  if (txt !== timeShown) { timeShown = txt; $('modeText').textContent = txt; }
+  bar.style.setProperty('--p', Math.max(0, Math.min(100, ta.left / BE.TIME.cap * 100)).toFixed(1) + '%');
+  bar.classList.toggle('urgent', ta.running && ta.left <= 10);
+}
 function renderMode() {
   const bar = $('modeBar');
-  const on = mode === 'daily' && !!daily && !vs;
-  bar.hidden = !on;
-  if (on) {
+  const isDaily = mode === 'daily' && !!daily && !vs, isStage = mode === 'stage' && !!run && !vs, isTime = mode === 'time' && !!ta && !vs;
+  bar.hidden = !(isDaily || isStage || isTime);
+  bar.className = 'mode-bar'; bar.removeAttribute('title'); timeShown = '';
+  if (isDaily) {
     const reached = Math.max(daily.best, score) >= daily.goal;
     bar.classList.toggle('done', reached);
     bar.title = T('全員が同じ順番のブロックで遊ぶ、1日1つの問題。何度でも挑戦できます。');
     $('modeText').innerHTML = '';
-    const lbl = document.createElement('span'); lbl.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + ' ・ ';
+    const lbl = document.createElement('span'); lbl.textContent = T('今日のチャレンジ（{d}）', { d: dateLabel(daily.dateKey) }) + SEP;
     const g = document.createElement('span');
     g.innerHTML = T(reached ? '目標達成！ <b>{g}</b> 点' : '目標 <b>{g}</b> 点', { g: fmt(daily.goal) });
     $('modeText').append(lbl, g);
+  } else if (isStage) {
+    const st = run.stage, pr = run.progress();
+    bar.classList.toggle('done', run.status === 'won');
+    bar.title = goalText(st.goal);
+    $('modeText').textContent = T('ステージ {id}', { id: st.id }) + SEP + goalShort(st.goal, pr) + SEP + T('あと{n}手', { n: run.movesLeft() });
+  } else if (isTime) {
+    bar.classList.add('timed'); renderTime();
   }
 }
+
+// ---------- Modes: stages (15 goal puzzles, 3 stars each) and time attack ----------
+function saveProg() { store.set(KEY_X, BE.writeProgress(prog)); }
+const progStars = () => prog.s.reduce((a, b) => a + b, 0);
+function leaveTransient() {
+  run = null; gems = null; ta = null; hintFx = null; kbd = null; timeShown = '';
+  renderTools();
+}
+function syncRun() { board = run.board; tray = run.tray; score = run.score; combo = run.combo; moves = run.moves; gems = run.gems; }
+// common start for stage / time attack: keep the saved board of the mode we leave
+function beginOther() {
+  if (mode === 'tutorial') { tut = null; store.set(KEY_TUT, '1'); renderCoach(); }
+  endPlay('quit');
+  if (mode === 'normal' || mode === 'daily') save();
+  leaveTransient(); daily = null;
+}
+function startStage(idx) {
+  if (vs || !(idx >= 0 && idx < BE.STAGE_N)) return;
+  if (!BE.unlocked(prog, idx)) { toast(T('ひとつ前のステージをクリアすると開きます')); return; }
+  beginOther();
+  mode = 'stage'; stageIdx = idx; rnd = Math.random;
+  resetRun(); run = new BE.StageRun(idx); syncRun();
+  dealAnim = reduced() ? null : { t0: performance.now() };
+  closeModes(true); hideOver(); renderMode(); renderTools(); updateHud(true); layoutSoon(); requestDraw();
+  toast(T('ステージ {id}', { id: run.stage.id }) + SEP + goalText(run.stage.goal), true);
+  say(T('ステージ {id}', { id: run.stage.id }) + ' ' + goalText(run.stage.goal));
+}
+function finishStage() {
+  over = true; kbd = null;
+  const won = run.status === 'won', st = run.stars();
+  if (won && st > prog.s[stageIdx]) { prog.s[stageIdx] = st; saveProg(); }
+  endPlay(won ? 'clear' : 'over');
+  renderMode(); renderTools();
+  overInfo = { isNew: false, score, won, stars: st, why: won ? '' : run.moves >= run.stage.limit ? 'moves' : 'stuck' };
+  setTimeout(gameOver, reduced() ? 250 : 750);
+}
+function placeStage(i, r0, c0) {
+  const pid = tray[i], p = PIECES[pid], now = performance.now();
+  const res = run.place(i, r0, c0);
+  if (!res) return;
+  startPlay();
+  if (sess) { sess.lines += res.lines; if (res.lines) sess.maxCombo = Math.max(sess.maxCombo, run.combo); }
+  syncRun(); hintFx = null;
+  fx({ now, p, r0, c0, placed: res.placed, cleared: res.cleared, rows: res.rows, cols: res.cols, lines: res.lines, pts: res.pts, allClear: res.allClear, combo: run.combo, gems: res.gems });
+  if (res.dealt && !reduced()) dealAnim = { t0: now };
+  updateHud(); renderTools(); kbdAfterPlace();
+  if (run.status !== 'play') finishStage();
+  else if (run.stuck()) { toast(T('置き場がない！ 入れかえか もどすを使おう'), true); pulseTools(); sfx('error'); }
+  requestDraw();
+}
+function renderTools() {
+  const on = mode === 'stage' && !!run && !vs;
+  $('tools').hidden = !on; $('app').classList.toggle('has-tools', on);
+  if (!on) return;
+  const act = run.status === 'play' && !over;
+  $('nUndo').textContent = run.undos; $('nSwap').textContent = run.swaps; $('nHint').textContent = run.hints;
+  $('toolUndo').disabled = !act || run.undos <= 0 || !run.hist.length;
+  $('toolSwap').disabled = !act || run.swaps <= 0;
+  $('toolHint').disabled = !act || run.hints <= 0;
+}
+function pulseTools() {
+  for (const id of ['toolUndo', 'toolSwap']) { const b = $(id); if (b.disabled) continue; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 1600); }
+}
+function afterToolChange() { effects.length = 0; popups.length = 0; parts.length = 0; placeFx = null; hintFx = null; syncRun(); updateHud(true); renderTools(); renderMode(); requestDraw(); }
+function useUndo() {
+  if (mode !== 'stage' || !run || over || !canInput()) return;
+  if (!run.undo()) { sfx('error'); return; }
+  afterToolChange(); sfxTool(0); say(T('ひとつ もどした'));
+}
+function useSwap() {
+  if (mode !== 'stage' || !run || over || !canInput()) return;
+  if (!run.swap()) { sfx('error'); return; }
+  afterToolChange(); dealAnim = reduced() ? null : { t0: performance.now() }; sfxTool(1); say(T('ブロックを入れかえた'));
+  if (run.status !== 'play') finishStage();
+}
+function useHint() {
+  if (mode !== 'stage' || !run || over || !canInput()) return;
+  const m = run.useHint();
+  if (!m) { sfx('error'); return; }
+  const now = performance.now();
+  hintFx = { i: m.i, r: m.r, c: m.c, t0: now, until: now + 6000 };
+  renderTools(); sfxTool(2); requestDraw();
+  say(T('ヒント：ブロック{n}を {r}行{c}列へ', { n: m.i + 1, r: m.r + 1, c: m.c + 1 }));
+}
+$('toolUndo').addEventListener('click', useUndo);
+$('toolSwap').addEventListener('click', useSwap);
+$('toolHint').addEventListener('click', useHint);
+function startTime() {
+  if (vs) return;
+  beginOther();
+  mode = 'time'; rnd = Math.random;
+  resetRun(); deal(); ta = { left: BE.TIME.start, running: false, last: 0 };
+  closeModes(true); hideOver(); renderMode(); renderTools(); updateHud(true); layoutSoon(); requestDraw();
+  toast(T('{n}秒で どこまで？ 置くと はじまる', { n: BE.TIME.start }), true);
+}
+function addTime(sec, now) {
+  const before = ta.left; ta.left = Math.min(BE.TIME.cap, ta.left + sec);
+  if (ta.left > before) popups.push({ text: '+' + Math.round(ta.left - before) + T('秒'), x: N / 2, y: 0.8, t0: now + 150, size: 1.1 });
+  renderTime();
+}
+function timeUp() { cancelDrag(); if (ta) ta.running = false; finishRun('time'); }
+const isLocked = () => !$('howto').hidden || !$('modes').hidden || !$('over').hidden || !!(UI && document.body.classList.contains('kb-lock'));
+setInterval(() => {
+  if (mode !== 'time' || !ta || !ta.running || over || vs) return;
+  const now = performance.now(); let dt = Math.min(250, now - ta.last); ta.last = now;
+  if (document.hidden || isLocked()) dt = 0; // the clock waits while a menu is open or the page is hidden
+  ta.left -= dt / 1000;
+  if (ta.left <= 0) { ta.left = 0; renderTime(); timeUp(); return; }
+  renderTime();
+}, 100);
+
+// ---------- Mode picker ----------
+let modesView = 'main';
+function modeIcon(kind) {
+  const a = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+  return kind === 'stage' ? `<svg ${a}><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8z"/></svg>`
+    : kind === 'time' ? `<svg ${a}><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.6 1.6M9.5 3h5"/></svg>`
+    : kind === 'daily' ? `<svg ${a}><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`
+    : `<svg ${a}><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>`;
+}
+function renderModes() {
+  const main = $('modesMain'), stg = $('modesStages');
+  const isStages = modesView === 'stages';
+  main.hidden = isStages; stg.hidden = !isStages;
+  $('modesTitle').textContent = isStages ? T('ステージをえらぶ') : T('モードをえらぶ');
+  $('modesClose').hidden = isStages;
+  if (!isStages) {
+    main.innerHTML = '';
+    const opts = [
+      { id: 'normal', name: T('クラシック'), sub: T('置き場がなくなるまで。ベスト {n} 点', { n: fmt(best) }) },
+    ];
+    if (dailyAvailable()) opts.push({ id: 'daily', name: T('今日のチャレンジ'), sub: T('みんな同じ順番。目標 {n} 点', { n: fmt(goalFor(PF.dailySeed(GAME, PF.jstDateKey()))) }) });
+    opts.push({ id: 'stage', name: T('ステージ'), sub: T('{n}つのお題。★ {a} / {b}', { n: BE.STAGE_N, a: progStars(), b: BE.STAGE_N * 3 }) });
+    opts.push({ id: 'time', name: T('タイムアタック'), sub: T('{n}秒でどこまで。ベスト {b} 点', { n: BE.TIME.start, b: fmt(prog.ta) }) });
+    for (const o of opts) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'mode-opt' + (o.id === mode ? ' on' : ''); b.dataset.mode = o.id;
+      b.innerHTML = modeIcon(o.id);
+      const sp = document.createElement('span'); sp.append(o.name); const sm = document.createElement('small'); sm.textContent = o.sub; sp.append(sm); b.append(sp);
+      b.addEventListener('click', () => pickMode(o.id));
+      main.append(b);
+    }
+  } else {
+    $('stageTotal').innerHTML = ''; $('stageTotal').append(T('★ {a} / {b}', { a: progStars(), b: BE.STAGE_N * 3 }));
+    const grid = $('stageGrid'); grid.innerHTML = '';
+    BE.WORLDS.forEach((w, wi) => {
+      const h = document.createElement('div'); h.className = 'stage-world'; h.textContent = T('ワールド {n}', { n: w.id }) + ' ' + T(w.ja); grid.append(h);
+      const g = document.createElement('div'); g.className = 'stage-grid';
+      for (let k = 0; k < BE.PER_WORLD; k++) {
+        const idx = wi * BE.PER_WORLD + k, st = BE.STAGES[idx], n = prog.s[idx];
+        const b = document.createElement('button'); b.type = 'button'; b.dataset.stage = st.id;
+        b.className = 'stg' + (n ? ' done' : '') + (mode === 'stage' && stageIdx === idx ? ' cur' : '');
+        b.disabled = !BE.unlocked(prog, idx);
+        b.setAttribute('aria-label', T('ステージ {id}', { id: st.id }) + (b.disabled ? ' ' + T('まだ開いていない') : ' ' + starsText(n)));
+        b.append(st.id); const i = document.createElement('i'); i.textContent = b.disabled ? '' : starsText(n); b.append(i);
+        b.addEventListener('click', () => startStage(idx));
+        g.append(b);
+      }
+      grid.append(g);
+    });
+  }
+}
+function pickMode(id) {
+  if (id === 'stage') { modesView = 'stages'; renderModes(); focusModes(); return; }
+  if (id === 'normal') { if (mode === 'normal') closeModes(); else { closeModes(true); setMode('normal'); } return; }
+  if (id === 'daily') { closeModes(true); startDaily(); return; }
+  if (id === 'time') startTime();
+}
+function focusModes() {
+  setTimeout(() => {
+    const t = modesView === 'stages' ? ($('stageGrid').querySelector('.stg.cur:not(:disabled)') || [...$('stageGrid').querySelectorAll('.stg:not(:disabled)')].pop()) : ($('modesMain').querySelector('.mode-opt.on') || $('modesMain').firstChild);
+    if (t) t.focus({ preventScroll: true });
+  }, 50);
+}
+function openModes(view) {
+  if (vs && window.KoboVersus && KoboVersus.active()) return;
+  if (!$('howto').hidden) return;
+  cancelDrag(); kbd = null;
+  modesView = view === 'stages' ? 'stages' : 'main';
+  renderModes(); $('modes').hidden = false; focusModes();
+}
+// silent: don't bring the game-over card back (a mode is starting)
+function closeModes(silent) {
+  if ($('modes').hidden) return;
+  $('modes').hidden = true; requestDraw();
+  if (!silent && over && !vs && $('over').hidden) gameOver();
+}
+$('modeBtn').addEventListener('click', () => openModes());
+$('modesClose').addEventListener('click', () => closeModes());
+$('stagesBack').addEventListener('click', () => { modesView = 'main'; renderModes(); focusModes(); });
+$('modes').addEventListener('click', e => { if (e.target === $('modes')) { if (modesView === 'stages') $('stagesBack').click(); else closeModes(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('modes').hidden) { e.preventDefault(); if (modesView === 'stages') $('stagesBack').click(); else closeModes(); }
+});
 
 // ---------- Canvas & layout ----------
 const cv = $('cv'), ctx = cv.getContext('2d');
@@ -966,7 +1292,9 @@ function drawTile(colorIdx, x, y, size, alpha, scale) {
 let drag = null;     // {i, pid, x, y, lift, t0, pointerId, snap:{r,c}|null}
 let returning = null; // {i, x, y, scale, t0}
 let dealAnim = null, placeFx = null;
-const effects = [], popups = [];
+const effects = [], popups = [], parts = [];
+let kbd = null, kbdSeen = false; // keyboard play: { i: tray slot, r, c: top-left cell } while a block is picked up with the keys
+let hintFx = null;               // stage hint: { i, r, c, t0, until }
 function liftFor(type) { return type === 'mouse' ? 0.5 : 1; } // in cells: how far the piece's bottom sits above the pointer
 function slotCenter(i) { return { x: 12 + slotW * (i + 0.5), y: trayY + trayH / 2 }; }
 function ghostTopLeft(px, py, p, type) {
@@ -987,7 +1315,7 @@ function snapFor(gx, gy, pid, i) {
 }
 function local(e) { return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
 function canInput() {
-  if (over || !$('howto').hidden || (UI && document.body.classList.contains('kb-lock'))) return false;
+  if (over || !$('howto').hidden || !$('modes').hidden || (UI && document.body.classList.contains('kb-lock'))) return false;
   if (vs) return KoboVersus.canPlay();
   if (window.KoboVersus && KoboVersus.active()) return false;
   if (mode === 'tutorial' && tut && (tut.step === 3 || (tut.step === 1 && !tut.target))) return false;
@@ -1003,7 +1331,7 @@ cv.addEventListener('pointerdown', e => {
   if (mode === 'tutorial' && tut && tut.target && tut.target.i !== i) { nudgeCoach(); toast(T('ゆれているブロックを動かそう')); return; }
   e.preventDefault();
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
-  returning = null;
+  returning = null; kbd = null; hintFx = null;
   drag = { i, pid: tray[i], x: p.x, y: p.y, type: e.pointerType || 'mouse', t0: performance.now(), pointerId: e.pointerId, snap: null };
   updateSnap();
   sfxPick(); buzz(5);
@@ -1045,6 +1373,104 @@ cv.addEventListener('pointercancel', e => endDrag(e, true));
 cv.addEventListener('lostpointercapture', e => { if (drag && e.pointerId === drag.pointerId) endDrag(e, true); });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 
+// ---------- Keyboard play: arrows (or WASD) move the block, Enter places it, 1-3 or Q/E pick one, Esc puts it down. Stages: U undo, X swap, H hint ----------
+function previewTarget() {
+  if (drag) return drag.snap ? { pid: drag.pid, r: drag.snap.r, c: drag.snap.c, ok: true } : null;
+  if (kbd && tray[kbd.i] != null) return { pid: tray[kbd.i], r: kbd.r, c: kbd.c, ok: kbdFits() };
+  return null;
+}
+function kbdFits() {
+  if (!kbd || tray[kbd.i] == null) return false;
+  if (mode === 'tutorial' && tut && tut.target) { const t = tut.target; return kbd.i === t.i && kbd.r === t.r && kbd.c === t.c && fits(tray[kbd.i], t.r, t.c); }
+  return fits(tray[kbd.i], kbd.r, kbd.c);
+}
+function kbdClamp() { const p = PIECES[tray[kbd.i]]; kbd.r = Math.max(0, Math.min(N - p.h, kbd.r)); kbd.c = Math.max(0, Math.min(N - p.w, kbd.c)); }
+function kbdSelect(i) {
+  if (i < 0 || i > 2 || tray[i] == null) { sfx('error'); return; }
+  if (mode === 'tutorial' && tut && tut.target && tut.target.i !== i) { nudgeCoach(); toast(T('ゆれているブロックを動かそう')); return; }
+  const was = kbd; kbdSeen = true;
+  kbd = { i, r: was ? was.r : 3, c: was ? was.c : 3 };
+  if (mode === 'tutorial' && tut && tut.target) { kbd.r = tut.target.r; kbd.c = tut.target.c; }
+  kbdClamp(); sfxPick();
+  say(T('ブロック{n}を選んだ。矢印キーで動かして Enter で置く', { n: i + 1 }));
+  requestDraw();
+}
+function kbdCycle(dir) {
+  const ids = [0, 1, 2].filter(i => tray[i] != null); if (!ids.length) return;
+  const cur = kbd ? ids.indexOf(kbd.i) : -1;
+  kbdSelect(ids[(cur + dir + ids.length * 2) % ids.length]);
+}
+function kbdAfterPlace() {
+  if (!kbd) return;
+  const ids = [0, 1, 2].filter(i => tray[i] != null);
+  const ok = ids.filter(i => fitsAnywhere(tray[i]));
+  if (over || !(ok.length || ids.length)) { kbd = null; return; }
+  kbd.i = (ok.length ? ok : ids)[0]; kbdClamp();
+}
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  if (!board || !$('howto').hidden || !$('modes').hidden || !$('over').hidden) return;
+  if (UI && document.body.classList.contains('kb-lock')) return;
+  const tg = e.target, tag = tg && tg.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || (tg && tg.isContentEditable)) return;
+  const k = e.key, lower = k.length === 1 ? k.toLowerCase() : k;
+  const onBtn = tag === 'BUTTON' || tag === 'A';
+  if (vs ? !KoboVersus.canPlay() : (window.KoboVersus && KoboVersus.active())) return;
+  if (mode === 'tutorial' && tut && (tut.step === 3 || (tut.step === 1 && !tut.target))) return;
+  const dirs = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1], w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1] };
+  if (mode === 'stage' && (lower === 'u' || lower === 'z')) { e.preventDefault(); useUndo(); return; }
+  if (mode === 'stage' && lower === 'x') { e.preventDefault(); useSwap(); return; }
+  if (mode === 'stage' && lower === 'h') { e.preventDefault(); useHint(); return; }
+  if (k === '1' || k === '2' || k === '3') { e.preventDefault(); kbdSelect(+k - 1); return; }
+  if (lower === 'q' || lower === 'e') { e.preventDefault(); kbdCycle(lower === 'q' ? -1 : 1); return; }
+  if (dirs[lower]) {
+    e.preventDefault();
+    if (!kbd) { const first = [0, 1, 2].find(i => tray[i] != null && fitsAnywhere(tray[i])); kbdSelect(first === undefined ? [0, 1, 2].find(i => tray[i] != null) : first); if (!kbd) return; }
+    const d = dirs[lower]; kbdSeen = true;
+    if (mode === 'tutorial' && tut && tut.target) { nudgeCoach(); return; }
+    const pr = kbd.r, pc = kbd.c; kbd.r += d[0]; kbd.c += d[1]; kbdClamp();
+    if (pr === kbd.r && pc === kbd.c) sfx('error'); else sfxDrop();
+    say(T('{r}行 {c}列', { r: kbd.r + 1, c: kbd.c + 1 }) + (kbdFits() ? '' : ' ' + T('置けない')));
+    requestDraw(); return;
+  }
+  if ((k === 'Enter' || k === ' ') && kbd && !onBtn) {
+    e.preventDefault();
+    if (!canInput()) return;
+    if (kbdFits()) { const { i, r, c } = kbd; cancelDrag(); place(i, r, c); requestDraw(); }
+    else { sfx('error'); if (mode === 'tutorial') nudgeCoach(); say(T('置けない')); }
+    return;
+  }
+  if (k === 'Escape' && kbd) { kbd = null; requestDraw(); }
+});
+
+// ---------- Effects: confetti, star gems, the screen-reader line ----------
+let sayT = 0;
+function say(msg) { const l = $('live'); l.textContent = ''; clearTimeout(sayT); sayT = setTimeout(() => { l.textContent = msg; }, 30); }
+const sfxTool = k => { [[500, 380], [660, 880], [880, 1320]][k].forEach((f, j) => tone(f, 0.1, 'triangle', 0.08, j * 0.07)); };
+function burst(r, c, colorIdx, t0, gem) {
+  if (reduced() || parts.length > 180) return;
+  const cx = bx + c * cell + cell / 2, cy = by + r * cell + cell / 2, n = gem ? 7 : 2;
+  const col = COLORS[colorIdx] || '#ffd45e';
+  for (let k = 0; k < n; k++) {
+    const a = Math.random() * Math.PI * 2, sp = cell * (gem ? 3.2 : 2.2) * (0.4 + Math.random() * 0.8);
+    parts.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - cell * 2, t0, life: 0.55 + Math.random() * 0.45,
+      size: cell * (gem ? 0.13 : 0.16) * (0.7 + Math.random() * 0.6), rot: Math.random() * 6, vr: (Math.random() - .5) * 14, col: gem ? '#ffe27a' : col, gem });
+  }
+}
+function starPath(g, cx, cy, R, r) {
+  g.beginPath();
+  for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rad = k % 2 ? r : R; const x = cx + Math.cos(a) * rad, y = cy + Math.sin(a) * rad; k ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath();
+}
+function drawGem(x, y, size, now, alpha, scale) {
+  const tw = reduced() ? 0.5 : 0.5 + 0.5 * Math.sin(now / 260 + x * 0.05), R = size * 0.34 * (scale || 1) * (1 + 0.06 * tw);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x + size / 2, y + size / 2 - size * 0.02);
+  starPath(ctx, 0, 0, R, R * 0.46); ctx.fillStyle = '#ffd45e'; ctx.fill();
+  ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(1.2, size * 0.05); ctx.strokeStyle = '#6b3d00'; ctx.stroke();
+  ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.4 * tw})`; ctx.beginPath(); ctx.arc(-R * 0.22, -R * 0.25, R * 0.14, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
 // ---------- Render ----------
 let raf = 0;
 function requestDraw() { if (!raf) raf = requestAnimationFrame(frame); }
@@ -1063,11 +1489,22 @@ function frame(now) {
   }
   // board
   if (boardLayer) ctx.drawImage(boardLayer, bx - border, by - border, boardLayer.width / dpr, boardLayer.height / dpr);
+  // the board is filling up: the frame pulses red
+  if (!over && !(mode === 'tutorial') && !vs) {
+    const fr = BE.fillRatio(board);
+    if (fr >= 0.7) {
+      const k = reduced() ? 0.6 : 0.5 + 0.5 * Math.sin(now / 240), a = Math.min(1, (fr - 0.66) * 3.2) * (0.25 + 0.4 * k);
+      ctx.strokeStyle = `rgba(230,70,50,${a.toFixed(3)})`; ctx.lineWidth = Math.max(2, border * 0.55);
+      rr(ctx, bx - border * 0.45, by - border * 0.45, cell * N + border * 0.9, cell * N + border * 0.9, border * 1.1); ctx.stroke();
+      if (!reduced()) busy = true;
+    }
+  }
   // preview data
+  const pv = previewTarget();
   let prevCells = null, hlRows = [], hlCols = [], prevColor = 0;
-  if (drag && drag.snap) {
-    const p = PIECES[drag.pid]; prevColor = p.color;
-    prevCells = new Set(p.cells.map(([r, c]) => (drag.snap.r + r) * N + drag.snap.c + c));
+  if (pv && pv.ok) {
+    const p = PIECES[pv.pid]; prevColor = p.color;
+    prevCells = new Set(p.cells.map(([r, c]) => (pv.r + r) * N + pv.c + c));
     const filled = i => board[i] >= 0 || prevCells.has(i);
     for (let r = 0; r < N; r++) { let f = true; for (let c = 0; c < N; c++) if (!filled(r * N + c)) { f = false; break; } if (f) hlRows.push(r); }
     for (let c = 0; c < N; c++) { let f = true; for (let r = 0; r < N; r++) if (!filled(r * N + c)) { f = false; break; } if (f) hlCols.push(c); }
@@ -1081,7 +1518,7 @@ function frame(now) {
   }
   // tutorial: the glowing target spot
   const tt = mode === 'tutorial' && tut && tut.target ? tut.target : null;
-  if (tt && !(drag && drag.snap)) {
+  if (tt && !(pv && pv.ok)) {
     const p = PIECES[tray[tt.i]];
     if (p) {
       const pulse = reduced() ? 0.5 : 0.35 + 0.3 * (0.5 + 0.5 * Math.sin(now / 180));
@@ -1102,6 +1539,25 @@ function frame(now) {
     if (placeFx && placeFx.cells.includes(i)) sc = 1 + 0.14 * (1 - ease(pfK)) * Math.cos(pfK * Math.PI * 1.5);
     const col = (prevCells && willClear(i)) ? prevColor : v;
     drawTile(col, bx + c * cell, by + r * cell, cell, 1, sc);
+    if (gems && gems[i]) { drawGem(bx + c * cell, by + r * cell, cell, now, 1); if (!reduced()) busy = true; }
+  }
+  // a block picked up with the keys that cannot go there: a red outline
+  if (pv && !pv.ok) {
+    ctx.strokeStyle = 'rgba(230,70,50,.9)'; ctx.lineWidth = 2.5;
+    for (const [r, c] of PIECES[pv.pid].cells) {
+      const rr0 = pv.r + r, cc0 = pv.c + c; if (rr0 < 0 || cc0 < 0 || rr0 >= N || cc0 >= N) continue;
+      rr(ctx, bx + cc0 * cell + 2, by + rr0 * cell + 2, cell - 4, cell - 4, cell * 0.2); ctx.stroke();
+    }
+  }
+  // stage hint: where the planner would put a block
+  if (hintFx) {
+    if (now > hintFx.until || tray[hintFx.i] == null) hintFx = null;
+    else {
+      const hp = PIECES[tray[hintFx.i]], k = reduced() ? 0.6 : 0.5 + 0.5 * Math.sin(now / 150);
+      ctx.fillStyle = `rgba(120,220,255,${0.18 + 0.2 * k})`; ctx.strokeStyle = `rgba(80,200,255,${0.6 + 0.35 * k})`; ctx.lineWidth = 2.5;
+      for (const [r, c] of hp.cells) { rr(ctx, bx + (hintFx.c + c) * cell + 2, by + (hintFx.r + r) * cell + 2, cell - 4, cell - 4, cell * 0.2); ctx.fill(); ctx.stroke(); }
+      busy = true;
+    }
   }
   // preview ghost on board
   if (prevCells) {
@@ -1123,12 +1579,25 @@ function frame(now) {
     rr(ctx, x + 2, y + 2, cell - 4, cell - 4, cell * 0.2); ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
     drawTile(f.color, x, y, cell, 1 - t * 0.6, Math.max(0.01, sc));
+    if (f.gem) drawGem(x, y, cell, now, 1 - t * 0.5, 1 + t * 0.9);
     // sparkle bits
     for (let s = 0; s < 3; s++) {
       const a = (f.r * 7 + f.c * 13 + s * 2.1), dist = cell * (0.3 + t * 0.9);
       ctx.fillStyle = `rgba(255,250,225,${1 - t})`;
       ctx.beginPath(); ctx.arc(x + cell / 2 + Math.cos(a) * dist, y + cell / 2 + Math.sin(a) * dist, cell * 0.06 * (1 - t), 0, 7); ctx.fill();
     }
+  }
+  // confetti bits
+  for (let k = parts.length - 1; k >= 0; k--) {
+    const q = parts[k], t = (now - q.t0) / 1000;
+    if (t < 0) { busy = true; continue; }
+    if (t >= q.life) { parts.splice(k, 1); continue; }
+    busy = true;
+    const u = t / q.life, px = q.x + q.vx * t, py = q.y + q.vy * t + 520 * t * t * (q.gem ? 0.25 : 1);
+    ctx.save(); ctx.translate(px, py); ctx.rotate(q.rot + q.vr * t); ctx.globalAlpha = Math.min(1, (1 - u) * 1.6);
+    ctx.fillStyle = q.col;
+    if (q.gem) { starPath(ctx, 0, 0, q.size * 1.5, q.size * 0.6); ctx.fill(); } else ctx.fillRect(-q.size / 2, -q.size / 2, q.size, q.size * 0.62);
+    ctx.restore();
   }
   // tray
   for (let i = 0; i < 3; i++) {
@@ -1174,6 +1643,22 @@ function frame(now) {
     for (const [r, c] of p.cells) { rr(ctx, x + c * size + size * 0.12, y + r * size + size * 0.22, size * 0.86, size * 0.86, size * 0.2); ctx.fill(); }
     for (const [r, c] of p.cells) drawTile(p.color, x + c * size, y + r * size, size, 1, 1.04);
   }
+  // keyboard: slot numbers, and a ring around the block picked up
+  if (kbdSeen && !over) {
+    for (let i = 0; i < 3; i++) {
+      if (tray[i] == null) continue;
+      const sc = slotCenter(i), p = PIECES[tray[i]], selI = kbd && kbd.i === i;
+      const bxx = sc.x - p.w * tcell / 2 - tcell * 0.15, byy = sc.y - p.h * tcell / 2 - tcell * 0.15;
+      if (selI) {
+        ctx.strokeStyle = '#f4b740'; ctx.lineWidth = 2.5;
+        rr(ctx, bxx - 3, byy - 3, p.w * tcell + tcell * 0.3 + 6, p.h * tcell + tcell * 0.3 + 6, tcell * 0.35); ctx.stroke();
+      }
+      const R = Math.max(7, tcell * 0.34), nx = bxx - 1, ny = byy - 1;
+      ctx.fillStyle = selI ? '#f4b740' : 'rgba(40,25,15,.75)'; ctx.beginPath(); ctx.arc(nx, ny, R, 0, 7); ctx.fill();
+      ctx.fillStyle = selI ? '#2d1b04' : '#fbf1e3'; ctx.font = `800 ${Math.round(R * 1.25)}px "M PLUS Rounded 1c", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), nx, ny + 0.5);
+    }
+  }
   // popups
   for (let k = popups.length - 1; k >= 0; k--) {
     const pp = popups[k], t = (now - pp.t0) / (pp.banner ? 1100 : 900);
@@ -1216,6 +1701,8 @@ KoboVersus.init({
   onOpen() { cancelDrag(); const g = G(); if (g) g.pause('versus'); },
   onStart({ seed, practice }) {
     if (mode === 'tutorial') { tut = null; store.set(KEY_TUT, '1'); mode = 'normal'; rnd = Math.random; if (!load()) { resetRun(); deal(); save(); } renderCoach(); }
+    if (mode === 'stage' || mode === 'time') { endPlay('quit'); leaveTransient(); mode = 'normal'; rnd = Math.random; if (!load()) { resetRun(); deal(); save(); } }
+    closeModes(true); kbd = null;
     if (!vs) {
       endPlay('quit');
       vs = { snap: { board: board.slice(), tray: tray.slice(), score, combo, moves, over, overShown: !$('over').hidden, mode, daily, draws, bestAtStart, bestToasted, goalToasted } };
@@ -1277,7 +1764,7 @@ renderSoundBtn();
 const launch = PF ? PF.launch() : { daily: null };
 if (!load()) { resetRun(); deal(); save(); }
 updateHud(true);
-renderMode();
+renderMode(); renderTools();
 layout();
 on(window, 'resize', layout);
 if (window.visualViewport) on(visualViewport, 'resize', layout);
@@ -1305,7 +1792,7 @@ booted = true;
 // ---------- Test hooks ----------
 // Small read-only hook kept for older scripts: where to press / release to drop tray piece i at (r, c).
 window.__blocksTest = {
-  get state() { return { board: board.slice(), tray: tray.slice(), score, combo, over, best }; },
+  get state() { return { board: board.slice(), tray: tray.slice(), score, combo, over, best, mode, gems: gems ? gems.slice() : null }; },
   pieces: PIECES,
   slotPoint(i) { const s = slotCenter(i); return { x: rect.left + s.x, y: rect.top + s.y }; },
   dropPoint(i, r, c, type) {
@@ -1316,34 +1803,21 @@ window.__blocksTest = {
     return { x: rect.left + px, y: rect.top + py };
   },
 };
-// greedy bot move: the placement that clears the most lines, then the one that leaves the most room
+// bot move: the placement that clears the most lines, then the one that leaves the most room (stages: the planner)
 function botMove() {
   if (mode === 'tutorial' && tut) {
     if (tut.target && tray[tut.target.i] != null) return { i: tut.target.i, r: tut.target.r, c: tut.target.c };
     if (tut.step === 1 && !tut.target) return null;
   }
-  let bestM = null, bestV = -1e9;
-  for (let i = 0; i < 3; i++) {
-    const pid = tray[i]; if (pid == null) continue;
-    const p = PIECES[pid];
-    for (let r = 0; r + p.h <= N; r++) for (let c = 0; c + p.w <= N; c++) {
-      if (!fits(pid, r, c)) continue;
-      const b = board.slice(); for (const [y, x] of p.cells) b[(r + y) * N + c + x] = 0;
-      let lines = 0; const fullR = [], fullC = [];
-      for (let y = 0; y < N; y++) { let f = true; for (let x = 0; x < N; x++) if (b[y * N + x] < 0) { f = false; break; } if (f) { lines++; fullR.push(y); } }
-      for (let x = 0; x < N; x++) { let f = true; for (let y = 0; y < N; y++) if (b[y * N + x] < 0) { f = false; break; } if (f) { lines++; fullC.push(x); } }
-      fullR.forEach(y => { for (let x = 0; x < N; x++) b[y * N + x] = -1; });
-      fullC.forEach(x => { for (let y = 0; y < N; y++) b[y * N + x] = -1; });
-      let holes = 0; for (let k = 0; k < N * N; k++) if (b[k] < 0) { const y = (k / N) | 0, x = k % N; let n = 0; if (y > 0 && b[k - N] >= 0) n++; if (y < N - 1 && b[k + N] >= 0) n++; if (x > 0 && b[k - 1] >= 0) n++; if (x < N - 1 && b[k + 1] >= 0) n++; if (n >= 3) holes++; }
-      const v = lines * 100 + p.cells.length * 2 - holes * 6 + b.filter(x => x < 0).length * 0.5;
-      if (v > bestV) { bestV = v; bestM = { i, r, c }; }
-    }
-  }
-  return bestM;
+  if (mode === 'stage' && run) return run.status === 'play' ? run.hint() : null;
+  return BE.bestMove(board, tray);
 }
 if (window.__kb) Object.assign(window.__kb, {
   ready: () => booted && !!rect && W > 0,
-  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score, time: sess ? Math.round(performance.now() - sess.t0) : 0, over, stage: null,
+  state: () => ({ mode: vs ? (vs.playing || 'versus') : mode, score, time: sess ? Math.round(performance.now() - sess.t0) : 0, over, stage: run ? run.stage.id : null,
+    run: run ? { id: run.stage.id, idx: stageIdx, status: run.status, moves: run.moves, limit: run.stage.limit, undos: run.undos, swaps: run.swaps, hints: run.hints, stars: run.stars(), progress: run.progress(), gems: run.gems.filter(Boolean).length } : null,
+    time2: ta ? { left: ta.left, running: ta.running } : null, prog: { s: prog.s.slice(), ta: prog.ta }, kbd: kbd ? { i: kbd.i, r: kbd.r, c: kbd.c, ok: kbdFits() } : null,
+    modesOpen: !$('modes').hidden, tools: !$('tools').hidden,
     paused: !!(window.KoboGame && KoboGame.paused()), moves, combo, best, tray: tray.slice(), board: board.slice(),
     daily: daily ? { dateKey: daily.dateKey, goal: daily.goal, best: daily.best, tries: daily.tries, draws } : null,
     howto: !$('howto').hidden, overShown: !$('over').hidden }),
@@ -1351,12 +1825,14 @@ if (window.__kb) Object.assign(window.__kb, {
   win() {
     if (over || vs || mode === 'tutorial') return false;
     startPlay();
+    if (mode === 'stage') { run.status = 'won'; syncRun(); updateHud(true); finishStage(); return true; }
     if (mode === 'daily') score = Math.max(score, daily.goal);
     updateHud(true); finishRun(); return true;
   },
   lose() {
     if (over || vs || mode === 'tutorial') return false;
     startPlay();
+    if (mode === 'stage') { run.status = 'lost'; updateHud(true); finishStage(); return true; }
     board.fill(4); updateHud(true); finishRun(); requestDraw(); return true;
   },
   step(n) {
@@ -1367,7 +1843,9 @@ if (window.__kb) Object.assign(window.__kb, {
   tutorial: () => ({ step: tut ? tut.step : (store.get(KEY_TUT) ? TUT_STEPS.length : 0), done: !tut && !!store.get(KEY_TUT), active: !!tut, target: tut && tut.target }),
   tutorialStart: startTutorial, tutorialFinish: finishTutorial,
   daily: dk => startDaily(dk), normal: () => setMode('normal'), menu: openMenu, howto: () => showHowto(false),
-  goalFor, pieces: PIECES,
+  stageStart: startStage, timeStart: startTime, modes: openModes, setTime: sec => { if (ta) { ta.left = sec; renderTime(); } },
+  setProgress: o => { prog = BE.readProgress(JSON.stringify(Object.assign({ v: 1 }, o))); saveProg(); },
+  goalFor, pieces: PIECES, bot: botMove,
 });
 })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(()=>{});
