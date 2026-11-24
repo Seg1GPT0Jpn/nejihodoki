@@ -30,6 +30,7 @@ const RECIPES = {
   fit: [{ query: '?debug', eval: 'window.__fit && __fit.thumbScene()' }],
   colorcards: [{ query: '?debug', eval: 'window.__colorcards && __colorcards.thumbScene()' }],
   brawl: [{ query: '?debug', eval: 'window.__brawl && __brawl.thumbScene()' }],
+  train: [{ query: '?debug', eval: 'window.__train && __train.thumbScene()' }],
   town: [{ query: '?debug', eval: 'window.__town && __town.thumbScene()' }],
   trade: [{ query: '?debug&type=A', eval: 'window.__trade && __trade.thumbScene()' }],
 };
@@ -58,7 +59,7 @@ async function main() {
   const list = pagesLib.filter(pagesLib.games(), o.game);
   let bad = 0;
   for (const g of list) {
-    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1', 'kusoge.planet.howto': '1', 'kusoge.hitblow.howto': '1', 'kusoge.shogi.howto': '1', 'kusoge.escape.howto': '1', 'kusoge.td.howto': '1', 'kusoge.cards.howto': '1', 'kusoge.fit.howto': '1', 'kusoge.brawl.howto': '1', 'kusoge.town.howto': '1', 'kusoge.colorcards.howto': '1', 'kusoge.physics.howto': '1', 'kusoge.minigolf.howto': '1' } });
+    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1', 'kusoge.planet.howto': '1', 'kusoge.hitblow.howto': '1', 'kusoge.shogi.howto': '1', 'kusoge.escape.howto': '1', 'kusoge.td.howto': '1', 'kusoge.cards.howto': '1', 'kusoge.fit.howto': '1', 'kusoge.brawl.howto': '1', 'kusoge.town.howto': '1', 'kusoge.colorcards.howto': '1', 'kusoge.train.howto': '1', 'kusoge.physics.howto': '1', 'kusoge.minigolf.howto': '1' } });
     try {
       const steps = RECIPES[g.id] || [];
       const q = steps.find(x => x && typeof x === 'object' && x.query);

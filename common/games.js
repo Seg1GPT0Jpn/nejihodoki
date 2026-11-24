@@ -745,6 +745,33 @@
         'kusoge.brawl.save': { fields: { best: 'max', lw: 'max', cl: 'max', un: { each: { each: 'max' } }, cp: { each: 'max' }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'train', order: 24, path: 'train/', added: '2026-11-24',
+      title: { ja: 'でんしゃでいこう', en: 'All Aboard!' },
+      short: { ja: 'でんしゃでいこう', en: 'All Aboard!' },
+      desc: { ja: 'ひなた線の運転士になって、時間どおりに、ぴたりと駅に止める運転ゲーム。ノッチで加速とブレーキ、制限速度と信号を守って、お客さんにやさしく。ぜんぶ架空の3つの路線・9つのルート、雨や雪や夜の運転も。', en: 'Drive a train on the fictional Hinata lines: work the notch lever, obey speed limits and signals, arrive on time and stop right on the marker without jolting the passengers. Nine routes on three made-up lines, with rain, snow, fog and night runs.' },
+      label: { ja: '運転シミュレーション', en: 'Driving sim' },
+      genres: ['simulation'], tags: ['2d', 'realtime', 'stages', 'casual'],
+      keywords: { ja: ['電車', '運転', '運転士', '鉄道', 'ノッチ', 'ブレーキ', '停車', '信号', '時刻表', 'シミュレーター'], en: ['train', 'driving', 'driver', 'railway', 'simulator', 'brake', 'stop', 'signal', 'timetable', 'conductor'] },
+      icon: 'img/icons/train.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#7ec8f0"/><path d="M0 40h72v32H0z" fill="#5fae4b"/><path d="M0 40q18-12 36-4t36-3v7H0z" fill="#8fcf7a"/><path d="M30 40L10 72h14l8-26zM42 40l20 32H48l-8-26z" fill="#9a948a"/><path d="M33 40L24 72M39 40l9 32" stroke="#e8edf0" stroke-width="2.4"/><path d="M26 66h20M28 58h16M30 52h12M31.5 47h9" stroke="#5b4a3c" stroke-width="2"/><path d="M60 8v38" stroke="#6b737b" stroke-width="2.4"/><rect x="55" y="8" width="10" height="20" rx="3" fill="#20252b"/><circle cx="60" cy="13" r="2.6" fill="#3a1512"/><circle cx="60" cy="18.5" r="2.6" fill="#ffc928"/><circle cx="60" cy="24" r="2.6" fill="#3ddc6a"/><circle cx="14" cy="14" r="7" fill="#fff6c0"/></svg>',
+      thumb: 'img/thumbs/train.webp', thumb2x: 'img/thumbs/train@2x.webp',
+      tech: '2d',
+      // real time (60 Hz): hiding the page pauses the run and waits for "Resume"; no online battle
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      // the sum of the best score of every route (9 routes, up to 1000 per leg; all nine perfect is about 26000), so the cap leaves room
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.train.save', paths: ['total'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.train.save', paths: ['total'], agg: 'first', min: 1, num: true, tpl: { ja: '合計 {n} 点', en: 'Total {n} pts' } },
+      keys: {
+        'kusoge.train.save': '{ v:1, total（9ルートのベスト得点の合計＝ランキング）, stars（★の合計）, r:{ <ルート r1〜r9>:{ b（ベスト得点）, s（★ 0〜3）, p（遊んだ回数）} }, un:{ l2, l3（開いた路線）}, stats:{ plays, clears, legs, stops, pita（0.6m以内で止めた）, ontime（ダイヤ±2秒）, smooth（乗りごこち95%以上）, gold（1区間950点以上）, three（★3の数）, night（夜のルートのクリア）, waits（赤信号で待った）, ats, red }, set:{ route（最後に選んだルート）}, tut }',
+        'kusoge.train.howto': '遊び方を見た（\'1\'）',
+      },
+      // counters, best scores and unlocks only grow (max); the last route is a whole value (newest)
+      sync: {
+        'kusoge.train.save': { fields: { total: 'max', stars: 'max', r: { each: { each: 'max' } }, un: { each: 'max' }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1023,6 +1050,25 @@
       { id: 'brawl.clear', tier: 3, icon: 'trophy', title: { ja: 'ラダー制覇', en: 'Ladder Cleared' }, desc: { ja: 'ラダーの8戦をぬける', en: 'Clear all 8 fights of the ladder' }, when: { rec: { key: 'kusoge.brawl.save', path: 'cl' }, gte: 1 } },
       { id: 'brawl.score15k', tier: 4, icon: 'trophy', title: { ja: '1万5千点', en: 'Fifteen Thousand' }, desc: { ja: 'ラダー1周で15000点をとる', en: 'Score 15,000 in one ladder run' }, when: { rec: { key: 'kusoge.brawl.save', path: 'best' }, gte: 15000 } },
       { id: 'brawl.boss', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ガラクタ大王をたおした', en: 'Junk King Down' }, desc: { ja: 'ラダーの最後のボスに勝つ', en: 'Defeat the final boss of the ladder' }, when: { rec: { key: 'kusoge.brawl.save', path: 'stats.boss' }, gte: 1 }, grantsTitle: { ja: '工房の王者', en: 'Workshop Champion' } },
+    ],
+    train: [
+      { id: 'train.first', tier: 1, icon: 'check', title: { ja: 'はじめての運転', en: 'First Run' }, desc: { ja: 'どれかのルートを★1でクリアする', en: 'Clear any route with at least ★1' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.clears' }, gte: 1 } },
+      { id: 'train.pita', tier: 1, icon: 'star', title: { ja: 'ぴたり停車', en: 'Spot On' }, desc: { ja: '停止位置から0.6m以内で止める', en: 'Stop within 0.6 m of the marker' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.pita' }, gte: 1 } },
+      { id: 'train.ontime', tier: 1, icon: 'check', title: { ja: '定時運転', en: 'Right on Time' }, desc: { ja: 'ダイヤとのずれ2秒以内で駅につく', en: 'Arrive within 2 seconds of the timetable' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.ontime' }, gte: 1 } },
+      { id: 'train.smooth', tier: 1, icon: 'star', title: { ja: 'やさしい運転', en: 'Gentle Hands' }, desc: { ja: '乗りごこち95%以上の区間をつくる', en: 'Finish a leg with 95% ride comfort or better' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.smooth' }, gte: 1 } },
+      { id: 'train.wait', tier: 2, icon: 'check', title: { ja: '赤信号で待つ', en: 'Wait for Green' }, desc: { ja: '赤信号の前で止まって、青を待つ', en: 'Stop and wait at a red signal' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.waits' }, gte: 1 } },
+      { id: 'train.stop50', tier: 2, icon: 'trophy', title: { ja: '50回停車', en: 'Fifty Stops' }, desc: { ja: '合わせて50回、駅に止める', en: 'Make 50 station stops in total' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.stops' }, gte: 50 } },
+      { id: 'train.pita10', tier: 2, icon: 'star', title: { ja: 'ぴたりの名人', en: 'Marker Master' }, desc: { ja: '0.6m以内の停車を10回', en: 'Make 10 stops within 0.6 m' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.pita' }, gte: 10 } },
+      { id: 'train.line2', tier: 2, icon: 'trophy', title: { ja: 'うみかぜ線が開く', en: 'Seaside Opens' }, desc: { ja: '★を4つ集めて、うみかぜ線を開く', en: 'Earn 4 stars to open the Umikaze Line' }, when: { rec: { key: 'kusoge.train.save', path: 'un.l2' }, gte: 1 } },
+      { id: 'train.rain', tier: 2, icon: 'check', title: { ja: '雨の日の運転', en: 'Rainy Day Driver' }, desc: { ja: '「あめのうみかぜ」をクリアする', en: 'Clear Rainy Seaside' }, when: { rec: { key: 'kusoge.train.save', path: 'r.r5.s' }, gte: 1 } },
+      { id: 'train.night', tier: 2, icon: 'star', title: { ja: '夜の運転士', en: 'Night Driver' }, desc: { ja: '夜のルートをクリアする', en: 'Clear a night route' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.night' }, gte: 1 } },
+      { id: 'train.three', tier: 3, icon: 'trophy', title: { ja: '★3の運転士', en: 'Three-Star Driver' }, desc: { ja: 'どれかのルートを★3でクリアする', en: 'Clear any route with three stars' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.three' }, gte: 1 } },
+      { id: 'train.line3', tier: 3, icon: 'trophy', title: { ja: 'ほしぞら線が開く', en: 'Starlight Opens' }, desc: { ja: '★を12個集めて、ほしぞら線を開く', en: 'Earn 12 stars to open the Hoshizora Line' }, when: { rec: { key: 'kusoge.train.save', path: 'un.l3' }, gte: 1 } },
+      { id: 'train.snow', tier: 3, icon: 'check', title: { ja: '雪の夜の運転', en: 'Snowy Night' }, desc: { ja: '「ゆきのほしぞら」をクリアする', en: 'Clear Snowy Starlight' }, when: { rec: { key: 'kusoge.train.save', path: 'r.r8.s' }, gte: 1 } },
+      { id: 'train.gold', tier: 3, icon: 'star', title: { ja: '満点に近い区間', en: 'Near Perfect Leg' }, desc: { ja: '1区間で950点以上をとる', en: 'Score 950 or more on a single leg' }, when: { rec: { key: 'kusoge.train.save', path: 'stats.gold' }, gte: 1 } },
+      { id: 'train.stars15', tier: 3, icon: 'trophy', title: { ja: '★15', en: 'Fifteen Stars' }, desc: { ja: '★を15個集める', en: 'Collect 15 stars' }, when: { rec: { key: 'kusoge.train.save', path: 'stars' }, gte: 15 } },
+      { id: 'train.pts15k', tier: 4, icon: 'trophy', title: { ja: '合計15000点', en: 'Fifteen Thousand' }, desc: { ja: 'ルートのベスト得点の合計が15000点', en: 'Reach a 15,000-point total across your best routes' }, when: { rec: { key: 'kusoge.train.save', path: 'total' }, gte: 15000 } },
+      { id: 'train.fog', tier: 4, icon: 'trophy', title: { ja: '霧の特急', en: 'Fog Express' }, desc: { ja: '「ひなた特急 ぜんせん」をクリアする', en: 'Clear Grand Limited' }, when: { rec: { key: 'kusoge.train.save', path: 'r.r9.s' }, gte: 1 }, grantsTitle: { ja: '名運転士', en: 'Master Driver' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

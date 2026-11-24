@@ -81,6 +81,10 @@ async function runCases(T, opt = {}) {
     await check(g, 'brawl save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'brawl save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': 'x' } }, A, { merge: true }));
     await check(g, 'brawl save entry with an extra field', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~brawl~save': { v: '{}', t: now, a: 1, b: 2, c: 3 } } }, A, { merge: true }));
+    // でんしゃでいこう（train）：記録 kusoge.train.save だけを同期する（途中保存はない）
+    await check(g, 'own push train save (total, stars, per-route bests, stats)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~train~save': { v: JSON.stringify({ v: 1, total: 5400, stars: 6, r: { r1: { b: 1900, s: 3, p: 2 }, r2: { b: 3500, s: 3, p: 1 } }, un: { l2: 1 }, stats: { plays: 3, clears: 2, pita: 2, stops: 6 }, set: { route: 'r2' }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'train save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~train~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'train save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~train~save': 'x' } }, A, { merge: true }));
     // 式の数の上限（1回の書き込みで1000）の確認。ルールは「この書き込みで変わるキー」だけを確かめる（firestore.rules の okEnt の上のコメント）。
     // 以前は、すでにあるキーも毎回ぜんぶ確かめていたので、キーが15個ほどになった人の書き込みが拒否されていた。
     {
@@ -225,6 +229,8 @@ async function runCases(T, opt = {}) {
     await check(g3, 'colorcards +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { colorcards: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'brawl +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { brawl: 1 }, A, { merge: true }));
     await check(g3, 'brawl +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { brawl: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'train +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { train: 1 }, A, { merge: true }));
+    await check(g3, 'train +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { train: 9 }, A, { merge: true }));
     await check(g3, 'td +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { td: 9 }, A, { merge: true }));
     await check(g3, 'escape +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { escape: 9 }, A, { merge: true }));
     await check(g3, 'update +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { blocks: 999999 }, B, { merge: true }));
