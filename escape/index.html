@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>からくり工房からの脱出</title>
 <meta name="theme-color" content="#1d1612">
-<meta name="description" content="親方が残したからくりの部屋を、手がかりを集めて解き明かす脱出ゲーム。5つの部屋、3段階のヒント、部屋ごとの自動保存。">
+<meta name="description" content="親方が残したからくりの部屋を、手がかりを集めて解き明かす脱出ゲーム。5つの部屋とおまけの蔵、3段階のヒント、部屋ごとの自動保存。">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="icon" href="../favicon-32.png">
@@ -56,7 +56,12 @@ KoboI18n.add({ en: {
   'ヒント（電球）は1つのなぞに3段階。見るとランクと点数が少し下がるだけ': 'Hints (light bulb) come in 3 steps per puzzle. They only lower your rank and score a little',
   '部屋ごとに自動で保存。とちゅうで閉じても、つづきから遊べる': 'Each room saves automatically. Close the page and continue later',
   'クリアのタイムとヒントの数で点数（1部屋最高1,000点）。5部屋のベストの合計がランキングに載る': 'Your time and hints make the score (up to 1,000 per room). The total of your best in the 5 rooms goes on the ranking',
-  'キーボード：← → で見回す、↓ か Esc で戻る、H でヒント': 'Keyboard: ← → to look around, ↓ or Esc to go back, H for hints',
+  'キーボード：← → で見回す、↓ か Esc で戻る、H でヒント、1〜9 で持ち物を選ぶ、M で音': 'Keyboard: ← → to look around, ↓ or Esc to go back, H for hints, 1–9 to pick a bag item, M for sound',
+  '画面を左右になぞっても、部屋を見回せる': 'You can also swipe left or right on the scene to look around',
+  '5部屋ぜんぶ出ると、おまけの部屋が開く。おまけの点数は5部屋の合計には入らない': 'Escape all 5 rooms to open a bonus room. Its score is not added to the 5-room total',
+  'おまけ': 'Bonus', 'おまけの部屋へ': 'To the bonus room', 'おまけの部屋「親方の蔵」が開きました': "The bonus room, the Master's Cellar, is now open",
+  'おまけの部屋の点数は、5部屋の合計（ランキング）には入りません': 'The bonus room score is not added to the 5-room total (ranking)', 'これまでのベスト': 'Previous best',
+  '解いたなぞ {a} / {b}': 'Puzzles solved {a} / {b}',
   'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks',
   // menu
   'ひとやすみ': 'Paused', 'この部屋を最初から': 'Restart this room', 'この部屋をやめてタイトルへ': 'Leave this room (title)',
@@ -136,8 +141,16 @@ header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 980px; margin: 
 
 #main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box; padding: 4px 6px 6px; gap: 6px; }
 #stageWrap { flex: 1 1 auto; min-height: 120px; position: relative; display: grid; place-items: end center; }
-#scene { display: block; border-radius: 14px; background: var(--es-stage); box-shadow: 0 6px 24px rgba(0, 0, 0, .35), 0 0 0 1px var(--es-line); touch-action: manipulation; cursor: default; }
+#scene { touch-action: none; display: block; border-radius: 14px; background: var(--es-stage); box-shadow: 0 6px 24px rgba(0, 0, 0, .35), 0 0 0 1px var(--es-line); touch-action: manipulation; cursor: default; }
 #scene.hot { cursor: pointer; }
+#scene.shake { animation: shake .32s; }
+#scene.glow { animation: glow .7s ease-out; }
+@keyframes shake { 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(255, 216, 120, .9), 0 6px 24px rgba(0, 0, 0, .35); } 100% { box-shadow: 0 0 0 26px rgba(255, 216, 120, 0), 0 6px 24px rgba(0, 0, 0, .35); } }
+.room em.bonus { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); margin-right: 6px; vertical-align: 1px; }
+.hint.solved { padding: 4px 10px; opacity: .75; }
+.hint.solved h3 { margin: 0; font-size: 12.5px; font-weight: 500; color: var(--es-good); }
+.prog { margin: 2px 0 0; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
 #side { flex: none; display: flex; flex-direction: column; gap: 6px; }
 #msg { margin: 0; min-height: 38px; box-sizing: border-box; padding: 4px 10px; border-radius: 12px; background: var(--es-panel); border: 1px solid var(--es-line); font-size: 12.5px; font-weight: 800; line-height: 1.4; display: flex; align-items: center; gap: 8px; overflow: hidden; }
 #msg span { flex: 1; min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -209,7 +222,7 @@ body.thumb { background: #1d1612; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
 @keyframes flash { from { background: var(--kb-accent-soft); } }
-@media (prefers-reduced-motion: reduce) { .card, .overlay, .slot.new, #msg.flash { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .card, .overlay, .slot.new, #msg.flash, #scene.shake, #scene.glow { animation: none; } }
 @media (max-height: 600px) {
   .card { padding: 12px 12px 8px; } .btn { min-height: 46px; margin-top: 6px; }
   .room { min-height: 50px; } .room canvas { width: 48px; height: 36px; }
@@ -322,12 +335,14 @@ body.thumb { background: #1d1612; }
     <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
   </div>
 </div>
+<script src="engine.js"></script>
 <script src="art.js"></script>
 <script src="room1.js"></script>
 <script src="room2.js"></script>
 <script src="room3.js"></script>
 <script src="room4.js"></script>
 <script src="room5.js"></script>
+<script src="room6.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -359,18 +374,14 @@ const fmtTime = ms => { const s = Math.floor((ms || 0) / 1000); return Math.floo
 const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
 const now = () => performance.now();
 function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
-function sfx(name, a) { if (AU) AU.sfx(name, a); }
+function sfx(name, a) { if (AU) AU.sfx(name, a); if (name === 'fail' || name === 'error') shake(); }
 function tone(f, d, o) { if (AU) AU.tone(f, d, o); }
 function noise(d, o) { if (AU) AU.noise(d, o); }
 
-// ---------- scoring ----------
+// ---------- scoring (escape/engine.js: unchanged formulas) ----------
+const EE = window.EscapeEngine;
 const RANKS = ['C', 'B', 'A', 'S'];
-function scoreOf(par, ms, hints) {
-  const hp = Math.max(0, 400 - 40 * hints);
-  const tp = Math.round(400 * clamp((3 * par - ms) / (2 * par), 0, 1));
-  return 200 + hp + tp;
-}
-const rankOf = s => (s >= 900 ? 4 : s >= 750 ? 3 : s >= 550 ? 2 : 1); // 4 = S
+const { scoreOf, rankOf } = EE;
 
 // ---------- the kit the rooms use ----------
 let run = null;        // { ri, room, S, inv, sel, view, back:[], ms, hints:{}, tut, over, at }
@@ -386,7 +397,7 @@ const K = {
   take(id) { take(id); },
   has: id => !!run && run.inv.includes(id),
   sel: () => (run ? run.sel : null),
-  ok() { sfx('ok'); vibrate(15); },
+  ok() { sfx('ok'); vibrate(15); const p = tapPoint(); sparkle(p.x, p.y, 16); },
   bad() { sfx('error'); },
   sfx, tone, noise,
   anim(ms) { animUntil = Math.max(animUntil, now() + (reduceMotion.matches ? Math.min(ms, 250) : ms)); redraw(); },
@@ -400,18 +411,11 @@ const ROOMS = window.EscapeRooms.build(K);
 const itemName = id => T(run.room.items[id].name);
 
 // ---------- save ----------
-function defSave() { return { v: 1, rooms: {}, total: 0, stats: { clears: 0, nh: 0, sRank: 0, fast: 0, hints: 0, done: 0 }, tut: 0 }; }
-function readSave() {
-  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
-  const d = defSave();
-  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
-  const out = Object.assign(d, s);
-  out.rooms = s.rooms && typeof s.rooms === 'object' && !Array.isArray(s.rooms) ? s.rooms : {};
-  out.stats = Object.assign(defSave().stats, s.stats && typeof s.stats === 'object' ? s.stats : {});
-  out.total = recount(out);
-  return out;
-}
-function recount(s) { let t = 0; for (const r of ROOMS) { const b = s.rooms[r.id]; if (b && b.s > 0) t += Math.min(1000, Math.floor(b.s)); } return t; }
+// rooms r1〜r5 count toward the total (the ranking value); the bonus room r6 keeps its own record but is not added to the total
+const ROOM_IDS = ROOMS.map(r => r.id), BONUS_IDS = ROOMS.filter(r => r.bonus).map(r => r.id);
+const ENDING_RI = 4; // clearing room 5 shows the ending
+function readSave() { return EE.readSave(store.get(SAVE_KEY), ROOM_IDS, BONUS_IDS); }
+const recount = s => EE.recount(s, ROOM_IDS, BONUS_IDS);
 let save = readSave();
 function writeSave() { save.total = recount(save); store.set(SAVE_KEY, JSON.stringify(save)); }
 const unlocked = i => i === 0 || !!(save.rooms[ROOMS[i - 1].id] && save.rooms[ROOMS[i - 1].id].c > 0);
@@ -446,7 +450,7 @@ function layout() {
   redraw();
 }
 function redraw() { if (!raf) raf = requestAnimationFrame(render); }
-let ripples = [], idleS = null;
+let ripples = [], sparks = [], idleS = null, lastTap = null;
 function render() {
   raf = 0;
   const t = now();
@@ -462,8 +466,25 @@ function render() {
     ctx.beginPath(); ctx.arc(r.x, r.y, 6 + 18 * k, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255,240,200,' + (0.7 * (1 - k)) + ')'; ctx.lineWidth = 2.5; ctx.stroke();
   }
-  if (t < animUntil || ripples.length) raf = requestAnimationFrame(render);
+  sparks = sparks.filter(p => t - p.t < 800);
+  for (const p of sparks) {
+    const k = (t - p.t) / 1000, a = 1 - (t - p.t) / 800, x = p.x + p.vx * k, y = p.y + p.vy * k + 260 * k * k;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(k * 6 + p.r); ctx.globalAlpha = Math.max(0, a);
+    ctx.fillStyle = p.c; ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const rr = i % 2 ? p.s * 0.35 : p.s; ctx.lineTo(Math.cos(i * Math.PI / 4) * rr, Math.sin(i * Math.PI / 4) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  if (t < animUntil || ripples.length || sparks.length) raf = requestAnimationFrame(render);
 }
+function sparkle(x, y, n) {
+  if (reduceMotion.matches) return;
+  const cols = ['#ffe08a', '#fff6d0', '#f0a84a', '#ffffff'], t = now();
+  for (let i = 0; i < (n || 12); i++) { const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 90; sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 50, r: Math.random() * 3, s: 3 + Math.random() * 4, c: cols[i % cols.length], t }); }
+  redraw();
+}
+function shake() { if (reduceMotion.matches) return; cv.classList.remove('shake'); void cv.offsetWidth; cv.classList.add('shake'); setTimeout(() => cv.classList.remove('shake'), 360); }
+function flashScene() { if (reduceMotion.matches) return; cv.classList.remove('glow'); void cv.offsetWidth; cv.classList.add('glow'); setTimeout(() => cv.classList.remove('glow'), 800); }
+const tapPoint = () => (lastTap && now() - lastTap.t < 1500 ? lastTap : { x: LW / 2, y: LH / 2 });
 new ResizeObserver(layout).observe($('stageWrap'));
 window.addEventListener('resize', layout);
 
@@ -520,12 +541,21 @@ function turn(d) {
 
 // ---------- input ----------
 function toLogical(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * LW, y: (e.clientY - r.top) / r.height * LH }; }
-cv.addEventListener('click', e => { const p = toLogical(e); tapAt(p.x, p.y); });
+let swipe = null, swipedAt = 0;
+cv.addEventListener('pointerdown', e => { swipe = { x: e.clientX, y: e.clientY, t: now(), id: e.pointerId }; });
+cv.addEventListener('pointerup', e => {
+  const s0 = swipe; swipe = null;
+  if (!s0 || !run || run.over || paused || !isWall(run.view)) return;
+  const dx = e.clientX - s0.x, dy = e.clientY - s0.y;
+  if (Math.abs(dx) >= 56 && Math.abs(dy) < 44 && now() - s0.t < 700) { swipedAt = now(); turn(dx > 0 ? -1 : 1); }
+});
+cv.addEventListener('pointercancel', () => { swipe = null; });
+cv.addEventListener('click', e => { if (swipedAt && now() - swipedAt < 400) { swipedAt = 0; return; } const p = toLogical(e); tapAt(p.x, p.y); });
 cv.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; const p = toLogical(e); cv.classList.toggle('hot', !!spotAt(p.x, p.y)); });
 function tapAt(x, y) {
   if (!run || run.over || paused) return;
   if (AU) AU.ctx();
-  ripples.push({ x, y, t: now() }); redraw();
+  ripples.push({ x, y, t: now() }); lastTap = { x, y, t: now() }; redraw();
   const sp = spotAt(x, y);
   if (!sp) { if (run.sel) { /* keep the selection */ } return; }
   const sel = run.sel;
@@ -544,7 +574,11 @@ $('navL').addEventListener('click', () => turn(-1));
 $('navR').addEventListener('click', () => turn(1));
 $('navBack').addEventListener('click', goBack);
 document.addEventListener('keydown', e => {
-  if (!run || run.over || paused || anyOverlay()) return;
+  if (!run || run.over || paused || anyOverlay() || e.ctrlKey || e.metaKey || e.altKey) return;
+  const vd = viewDef();
+  if (vd && vd.key && !run.view.startsWith('i:')) { let h = false; try { h = vd.key(e.key, run.S); } catch (err) { if (DEBUG) console.error(err); } if (h) { e.preventDefault(); afterAction(); return; } }
+  if (/^[1-9]$/.test(e.key)) { const id = run.inv[+e.key - 1]; if (id) { slotTap(id); e.preventDefault(); } return; }
+  if (e.key === 'm' || e.key === 'M') { if (AU) { AU.toggleMute(); if (!AU.muted) sfx('ok'); } return; }
   if (e.key === 'ArrowLeft') { turn(-1); e.preventDefault(); }
   else if (e.key === 'ArrowRight') { turn(1); e.preventDefault(); }
   else if (e.key === 'ArrowDown' || e.key === 'Escape' || e.key === 'Backspace') { goBack(); e.preventDefault(); }
@@ -556,7 +590,7 @@ const iconCache = new Map();
 function give(id) {
   if (!run || run.inv.includes(id)) return;
   run.inv.push(id); run.S.got = run.S.got || {}; run.S.got[id] = 1;
-  newSlot = id; sfx('pop'); vibrate(20);
+  newSlot = id; sfx('pop'); vibrate(20); { const p = tapPoint(); sparkle(p.x, p.y, 10); }
   say(T('「{name}」を手に入れた', { name: itemName(id) }));
   coachEvent('pickup');
 }
@@ -594,7 +628,7 @@ function slotTap(id) {
       run.inv = run.inv.filter(x => x !== rc.a && x !== rc.b); run.sel = null; if (rc.run) rc.run();
       run.inv.push(rc.out); run.S.got = run.S.got || {}; run.S.got[rc.out] = 1; newSlot = rc.out; run.sel = rc.out;
       if (run.view.startsWith('i:')) { run.view = 'i:' + rc.out; }
-      sfx('clear'); vibrate(30);
+      sfx('clear'); vibrate(30); sparkle(LW / 2, LH / 2, 22);
       say(T('「{name}」ができた！', { name: itemName(rc.out) }));
       coachEvent('combine'); afterAction(); return;
     }
@@ -691,7 +725,7 @@ function roomClear() {
   const room = run.room, hints = totalHints(), ms = Math.round(run.ms);
   const s = scoreOf(room.par, ms, hints), rk = rankOf(s);
   const b = save.rooms[room.id] || { s: 0, t: 0, r: 0, nh: 0, c: 0 };
-  const newBest = s > (b.s || 0);
+  const newBest = s > (b.s || 0), prevBest = b.s || 0;
   b.s = Math.max(b.s || 0, s); b.t = b.t > 0 ? Math.min(b.t, ms) : ms; b.r = Math.max(b.r || 0, rk); b.c = (b.c || 0) + 1; if (!hints) b.nh = 1;
   save.rooms[room.id] = b;
   const st = save.stats;
@@ -704,9 +738,9 @@ function roomClear() {
   emit('stage_clear', { stage: run.ri + 1, score: s, mode: 'normal' });
   if (save.total > before) emit('best', { score: save.total });
   emit('play_end', { mode: 'normal', score: s, durationMs: ms, reason: 'clear', stage: run.ri + 1, stats: { room: run.ri + 1, hints, rank: rk } });
-  lastResult = { ri: run.ri, s, rk, ms, hints, newBest };
-  sfx(run.ri === ROOMS.length - 1 ? 'win' : 'clear'); vibrate([30, 40, 60]);
-  burst();
+  lastResult = { ri: run.ri, s, rk, ms, hints, newBest, prev: prevBest };
+  sfx(run.ri >= ENDING_RI ? 'win' : 'clear'); vibrate([30, 40, 60]);
+  burst(); flashScene();
   renderAll();
   setTimeout(() => showResult(), 1100);
 }
@@ -745,7 +779,7 @@ function showTitle() {
     const ok = unlocked(i), rec = save.rooms[r.id];
     const c = document.createElement('canvas'); thumbFor(c, i);
     const sp = document.createElement('span');
-    sp.innerHTML = esc(roomTitle(i)) + '<small>' + esc(!ok ? T('前の部屋を出ると開きます') : rec && rec.c ? T('ベスト {s} 点・{r}・{t}', { s: fmtN(rec.s), r: RANKS[(rec.r || 1) - 1], t: fmtTime(rec.t) }) + (rec.nh ? '・' + T('ヒントなし') : '') : T('目安 {m}分', { m: Math.round(r.par / 60000) })) + '</small>';
+    sp.innerHTML = (r.bonus ? '<em class="bonus">' + esc(T('おまけ')) + '</em>' : '') + esc(roomTitle(i)) + '<small>' + esc(!ok ? T('前の部屋を出ると開きます') : rec && rec.c ? T('ベスト {s} 点・{r}・{t}', { s: fmtN(rec.s), r: RANKS[(rec.r || 1) - 1], t: fmtTime(rec.t) }) + (rec.nh ? '・' + T('ヒントなし') : '') : T('目安 {m}分', { m: Math.round(r.par / 60000) })) + '</small>';
     b.append(c, sp);
     if (rec && rec.c) { const k = document.createElement('b'); k.className = 'rk'; k.textContent = RANKS[(rec.r || 1) - 1]; b.appendChild(k); }
     b.disabled = !ok;
@@ -788,22 +822,25 @@ $('sBack').addEventListener('click', showTitle);
 function showResult() {
   const R = lastResult; if (!R) return;
   hideOverlays();
-  const last = R.ri === ROOMS.length - 1, room = ROOMS[R.ri];
-  $('rTitle').textContent = last ? T('エンディング') : T('脱出成功！');
+  const ending = R.ri === ENDING_RI, room = ROOMS[R.ri], lastRoom = R.ri === ROOMS.length - 1;
+  $('rTitle').textContent = ending ? T('エンディング') : T('脱出成功！');
   $('rStory').textContent = T(room.outro);
   $('rRank').textContent = RANKS[R.rk - 1];
   $('rNew').hidden = !R.newBest;
-  $('rRows').innerHTML = [[T('タイム'), T('{t}（目安 {p}）', { t: fmtTime(R.ms), p: fmtTime(room.par) })], [T('ヒントを見た数'), T('{n}回', { n: R.hints })], [T('点数'), T('{n} 点', { n: fmtN(R.s) })], [T('合計'), T('{n} 点', { n: fmtN(save.total) })]]
-    .map(([a, b]) => '<div>' + esc(a) + '<b>' + esc(b) + '</b></div>').join('');
-  $('rNext').textContent = last ? T('タイトルへ') : T('次の部屋へ');
+  const rows = [[T('タイム'), T('{t}（目安 {p}）', { t: fmtTime(R.ms), p: fmtTime(room.par) })], [T('ヒントを見た数'), T('{n}回', { n: R.hints })], [T('点数'), T('{n} 点', { n: fmtN(R.s) })]];
+  rows.push(R.prev > 0 && !R.newBest ? [T('これまでのベスト'), T('{n} 点', { n: fmtN(R.prev) })] : [T('合計'), T('{n} 点', { n: fmtN(save.total) })]);
+  $('rRows').innerHTML = rows.map(([a, b]) => '<div>' + esc(a) + '<b>' + esc(b) + '</b></div>').join('');
+  $('rNote').textContent = room.bonus ? T('おまけの部屋の点数は、5部屋の合計（ランキング）には入りません') : ending && ROOMS.length > ENDING_RI + 1 ? T('おまけの部屋「親方の蔵」が開きました') : T('ランクと点数は、タイムとヒントを見た数で決まります');
+  $('rNext').textContent = ending || lastRoom ? T('タイトルへ') : T('次の部屋へ');
   $('rTitleBtn').parentElement.hidden = false;
-  $('rTitleBtn').hidden = last;
+  $('rTitleBtn').textContent = ending && !lastRoom ? T('おまけの部屋へ') : T('タイトルへ');
+  $('rTitleBtn').hidden = lastRoom;
   $('ovResult').hidden = false;
   try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
 }
-$('rNext').addEventListener('click', () => { const R = lastResult; if (!R || R.ri === ROOMS.length - 1) { showTitle(); return; } showStory(R.ri + 1); });
+$('rNext').addEventListener('click', () => { const R = lastResult; if (!R || R.ri === ENDING_RI || R.ri === ROOMS.length - 1) { showTitle(); return; } showStory(R.ri + 1); });
 $('rAgain').addEventListener('click', () => { const R = lastResult; if (R) showStory(R.ri); });
-$('rTitleBtn').addEventListener('click', showTitle);
+$('rTitleBtn').addEventListener('click', () => { const R = lastResult; if (R && R.ri === ENDING_RI && ROOMS.length > ENDING_RI + 1) showStory(ENDING_RI + 1); else showTitle(); });
 
 // hints
 function openHints() {
@@ -820,13 +857,16 @@ function openPuzzles() {
 }
 function renderHints() {
   const list = openPuzzles(), box = $('hList');
-  if (!list.length) { box.innerHTML = '<p>' + esc(T('いま見られるヒントはありません')) + '</p>'; return; }
-  box.innerHTML = '<p><b>' + esc(T('いま取り組めるなぞ')) + '</b></p>' + list.map(p => {
+  const all = run.room.puzzles, solved = all.filter(p => { try { return p.done(run.S); } catch (e) { return false; } });
+  const prog = '<p class="prog">' + esc(T('解いたなぞ {a} / {b}', { a: solved.length, b: all.length })) + '</p>';
+  const solvedHtml = solved.length ? solved.map(p => '<div class="hint solved"><h3>✓ ' + esc(T(p.name)) + '</h3></div>').join('') : '';
+  if (!list.length) { box.innerHTML = prog + '<p>' + esc(T('いま見られるヒントはありません')) + '</p>' + solvedHtml; return; }
+  box.innerHTML = prog + '<p><b>' + esc(T('いま取り組めるなぞ')) + '</b></p>' + list.map(p => {
     const n = run.hints[p.id] | 0;
     const shown = p.hints.slice(0, n).map(h => '<li>' + esc(T(h)) + '</li>').join('');
     return '<div class="hint" data-p="' + p.id + '"><h3>' + esc(T(p.name)) + '</h3>' + (shown ? '<ol>' + shown + '</ol>' : '') +
       (n < 3 ? '<button class="btn sub" type="button" data-hint="' + p.id + '">' + esc(T('ヒント{n}を見る', { n: n + 1 })) + '</button>' : '') + '</div>';
-  }).join('');
+  }).join('') + solvedHtml;
 }
 $('hList').addEventListener('click', e => {
   const b = e.target.closest('[data-hint]'); if (!b || !run) return;
@@ -846,7 +886,7 @@ function renderHowto() {
     '拾った物は下の持ち物に入る。選んでから、使いたい場所をタップ', '選んだ物をもう一度タップすると、くわしく調べられる。別の持ち物をタップすると組み合わせる',
     '手がかりは全部、部屋の中にある（数字・形・色・絵）。言葉のしゃれは使わない', 'ヒント（電球）は1つのなぞに3段階。見るとランクと点数が少し下がるだけ',
     '部屋ごとに自動で保存。とちゅうで閉じても、つづきから遊べる', 'クリアのタイムとヒントの数で点数（1部屋最高1,000点）。5部屋のベストの合計がランキングに載る',
-    'キーボード：← → で見回す、↓ か Esc で戻る、H でヒント']);
+    '画面を左右になぞっても、部屋を見回せる', '5部屋ぜんぶ出ると、おまけの部屋が開く。おまけの点数は5部屋の合計には入らない', 'キーボード：← → で見回す、↓ か Esc で戻る、H でヒント、1〜9 で持ち物を選ぶ、M で音']);
 }
 let howtoFirst = false;
 function showHowto(first) {

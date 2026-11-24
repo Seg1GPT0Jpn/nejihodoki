@@ -155,9 +155,10 @@ async function firstVisit(env) {
   check('all five rooms recorded; total = sum of bests', Object.keys(sv2.rooms).length === 5 && sv2.total === Object.values(sv2.rooms).reduce((a, r) => a + r.s, 0) && sv2.stats.done === 5, sv2);
   const ach = await p.evaluate(() => window.KoboAchievements ? Object.keys(KoboAchievements.unlocked()).filter(id => /^escape\./.test(id)) : null);
   check('achievements: first, rooms, all five, no hints, rank S', ach && ['escape.first', 'escape.r1', 'escape.r3', 'escape.all', 'escape.nohint', 'escape.rankS'].every(id => ach.includes(id)), ach);
+  check('the ending offers the bonus room', /おまけ/.test(await p.textContent('#rTitleBtn')) && /親方の蔵/.test(await p.textContent('#rNote')), await p.textContent('#rTitleBtn'));
   await p.click('#rNext');
   x = await st(p);
-  check('title: every room unlocked, total shown', x.title && (await p.$$('#tRooms .room:not(:disabled)')).length === 5 && /\d/.test(await p.textContent('#tTotal')), x);
+  check('title: all six rooms unlocked (the sixth is the bonus), total shown', x.title && (await p.$$('#tRooms .room:not(:disabled)')).length === 6 && (await p.$$('#tRooms .room em.bonus')).length === 1 && /\d/.test(await p.textContent('#tTotal')), x);
   await shot(p, '2-title');
   await s.close();
 }
@@ -189,7 +190,7 @@ async function english(env) {
   // hints and title in English
   const s2 = await open(env, { lang: 'en', seed: SEEN });
   const p2 = s2.page;
-  for (let ri = 0; ri < 5; ri++) {
+  for (let ri = 0; ri < 6; ri++) {
     await p2.evaluate(i => __escape.jump(i), ri);
     await p2.click('#hintBtn');
     for (const b of await p2.$$('#hList [data-hint]')) { await b.click().catch(() => {}); }
@@ -199,12 +200,21 @@ async function english(env) {
     for (const it of Object.values(await p2.evaluate(() => Object.fromEntries(Object.entries(__escape.run.room.items).map(([k, v]) => [k, [v.name, v.desc]]))))) await p2.evaluate(a => a.forEach(s => KoboI18n.t(s)), it);
     const jp = await p2.evaluate(`(${jpScan})(true)`);
     check(`en: hint panel of room ${ri + 1} has no Japanese`, jp.length === 0, jp.slice(0, 5));
-    if (ri === 4) await shot(p2, '3-en-hints');
+    if (ri === 5) await shot(p2, '3-en-hints');
     await p2.click('#hClose');
   }
   const miss2 = await p2.evaluate(() => window.__jpMiss);
   check('en: every hint, puzzle name, item and story has a translation', miss2.length === 0, miss2.slice(0, 12));
   await s2.close();
+  // the bonus room (room 6) in English, start to finish
+  const s3 = await open(env, { lang: 'en', seed: SEEN });
+  const p3 = s3.page;
+  await p3.evaluate(() => __escape.jump(5));
+  const seen3 = new Set();
+  await playRoute(p3, 5, 0, { each: async (i, a) => { if (i % 5 === 0) { const jp = await p3.evaluate(`(${jpScan})(true)`); jp.forEach(t => seen3.add(t)); } if (i === 12) await shot(p3, '3-en-room6'); } });
+  const x6 = await waitResult(p3);
+  check('en: room 6 escaped; no Japanese on screen; every string translated', x6.last.ri === 5 && seen3.size === 0 && (await p3.evaluate(() => window.__jpMiss)).length === 0, { seen: [...seen3].slice(0, 6), miss: await p3.evaluate(() => window.__jpMiss) });
+  await s3.close();
 }
 
 async function resume(env) {
@@ -237,6 +247,84 @@ async function resume(env) {
   x = await waitResult(p);
   const sv2 = await stored(p, SAVE);
   check('a slower replay does not lower the best', x.last.s < sv.rooms.r3.s && sv2.rooms.r3.s === sv.rooms.r3.s && sv2.rooms.r3.c === 2 && sv2.total === sv.total, { last: x.last, r3: sv2.rooms.r3 });
+  await s.close();
+}
+
+async function bonus(env) {
+  console.log('8. bonus room 6: unlock by the ending, keyboard on the cart floor, swipe, number keys, score kept out of the total');
+  const mk = c => ({ s: 900, t: 300000, r: 4, nh: 1, c });
+  const seed = Object.assign({}, SEEN, { [SAVE]: JSON.stringify({ v: 1, rooms: { r1: mk(1), r2: mk(1), r3: mk(1), r4: mk(1) }, total: 3600, stats: {}, tut: 1 }) });
+  const s = await open(env, { seed });
+  const p = s.page;
+  check('before room 5 is cleared the bonus room is locked', (await p.$$('#tRooms .room:not(:disabled)')).length === 5 && await p.evaluate(() => document.querySelector('#tRooms .room[data-room="5"]').disabled), null);
+  await p.evaluate(() => __escape.jump(4));
+  await p.evaluate(() => __kb.win());
+  let x = await waitResult(p);
+  check('room 5 cleared → ending with a button to the bonus room', /エンディング/.test(await p.textContent('#rTitle')) && !(await p.evaluate(() => document.getElementById('rTitleBtn').hidden)), x.last);
+  await p.click('#rTitleBtn');
+  x = await st(p);
+  check('that button opens the story of room 6', x.story && /親方の蔵/.test(await p.textContent('#sTitle')), x);
+  await p.click('#sGo');
+  x = await st(p);
+  check('room 6 starts at wall 0 with an empty bag', x.room === 5 && x.inv.length === 0 && x.view === 'w0', x);
+  // swipe: drag left on the scene → look right
+  const box = await (await p.$('#scene')).boundingBox();
+  const sw = async dx => { const y = box.y + box.height * 0.5, x0 = box.x + box.width * (dx < 0 ? 0.8 : 0.2); await p.mouse.move(x0, y); await p.mouse.down(); await p.mouse.move(x0 + dx, y, { steps: 6 }); await p.mouse.up(); };
+  await sw(-box.width * 0.5);
+  check('swiping left turns to the next wall (and does not tap anything)', (await st(p)).view === 'w1', (await st(p)).view);
+  await sw(box.width * 0.5);
+  check('swiping right turns back', (await st(p)).view === 'w0', (await st(p)).view);
+  // the cart floor with the keyboard
+  await act(p, 'w:1'); await act(p, 's:yard');
+  x = await st(p);
+  check('the cart floor opens', x.view === 'yard6' && x.S.yard.n === 0, x);
+  const route = await p.evaluate(() => __escape.route(5));
+  const moves = route.filter(a => /^s:mv[UDLR]$/.test(a)).map(a => a[4]);
+  const KEY = { U: 'ArrowUp', D: 'ArrowDown', L: 'ArrowLeft', R: 'ArrowRight' };
+  for (const d of moves.slice(0, 3)) await p.keyboard.press(KEY[d]);
+  x = await st(p);
+  check('arrow keys move you on the floor (the down key does not leave the view)', x.view === 'yard6' && x.S.yard.n === 3, x.S.yard);
+  await p.keyboard.press('u');
+  x = await st(p);
+  check('U undoes a move', x.S.yard.n === 2, x.S.yard);
+  await p.keyboard.press('r');
+  x = await st(p);
+  check('R starts the floor over', x.S.yard.n === 0, x.S.yard);
+  await shot(p, '8-yard');
+  for (const d of moves.slice(0, 10)) await act(p, 's:mv' + d);
+  await shot(p, '8-yard-mid');
+  for (const d of moves.slice(10)) await act(p, 's:mv' + d);
+  x = await st(p);
+  check('the crates are all on the marks', x.S.yardOK === 1 && /カチッ/.test(x.msg), { yard: x.S.yard, msg: x.msg });
+  await shot(p, '8-yard-done');
+  await act(p, 'B'); await act(p, 's:cup');
+  await p.keyboard.press('1');
+  x = await st(p);
+  check('the 1 key selects the first bag item', x.inv[0] === 'pin' && x.sel === 'pin', x);
+  await p.keyboard.press('1');
+  x = await st(p);
+  check('pressing it again looks closer', x.view === 'i:pin', x.view);
+  await act(p, 'B');
+  // hints panel: progress and the solved list
+  await p.click('#hintBtn');
+  const ht = await p.textContent('#hList');
+  check('the hint panel shows progress and solved puzzles', /解いたなぞ 2 \/ 6/.test(ht) && /✓/.test(ht), ht.slice(0, 120));
+  await p.click('#hClose');
+  await p.evaluate(() => { __escape.run.sel = null; });
+  // the rest of the route: the chest part starts at "w:2"
+  const at = route.indexOf('w:2');
+  await playRoute(p, 5, at);
+  x = await waitResult(p);
+  check('room 6 escaped; score 1,000 (fast, no hints); rank S', x.last.ri === 5 && x.last.s === 1000 && x.last.rk === 4 && x.last.hints === 0, x.last);
+  check('result note says the bonus is not in the total', /ランキング/.test(await p.textContent('#rNote')), await p.textContent('#rNote'));
+  const sv = await stored(p, SAVE);
+  check('saved: r6 recorded, total unchanged (rooms 1–5 only)', sv.rooms.r6 && sv.rooms.r6.s === 1000 && sv.total === 3600 + sv.rooms.r5.s, sv);
+  const ach = await p.evaluate(() => window.KoboAchievements ? Object.keys(KoboAchievements.unlocked()).filter(id => /^escape\./.test(id)) : null);
+  check('achievement: master of the cellar', ach && ach.includes('escape.r6'), ach);
+  await shot(p, '8-result');
+  await p.click('#rNext');
+  x = await st(p);
+  check('back at the title', x.title, x);
   await s.close();
 }
 
@@ -334,7 +422,7 @@ async function fairness(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [firstVisit, english, resume, pause, layouts, fairness]) {
+  for (const f of [firstVisit, english, resume, pause, layouts, fairness, bonus]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }
