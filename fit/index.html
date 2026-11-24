@@ -56,6 +56,9 @@ KoboI18n.add({ en: {
   '時間が短いほど星が多い（★3は親時間以内）。ヒントは1回20秒ぶん増える': 'Faster means more stars (3 stars within the par time). Each hint adds 20 seconds',
   '今日のパズルは毎日1問、みんな同じ。タイムアタックは3分間で何問解けるか（ランキング）': 'The daily puzzle is one puzzle a day, the same for everyone. Time attack: how many can you solve in 3 minutes (ranking)',
   'とちゅうで閉じても自動保存。つづきから遊べる': 'Autosaves — close any time and continue later',
+  // online battle (common/versus.js has the shared strings)
+  '{n}点': '{n} pts', '第{n}問': 'Puzzle {n}', 'ぴったり！ +{n}点': 'Fit! +{n}', '−{n}点': '−{n}', 'スキップ −{n}点': 'Skip −{n}', 'ヒントを出すと {n}点引かれます': 'A hint costs {n} points',
+  'オンライン対戦：2〜4人で3分間、同じパズルをいくつ解けるか競う（1問1000点＋はやさボーナス最大500点。ヒント −100点・スキップ −200点）': 'Online battle: 2–4 players, 3 minutes, the same puzzles for everyone (1000 points per puzzle + up to 500 speed bonus; hint −100, skip −200)',
   'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks',
   // menu
   'このパズルを最初から': 'Restart this puzzle', 'タイトルへ戻る': 'Back to title', 'ゲームをやめてタイトルへ': 'Quit to title',
@@ -65,6 +68,7 @@ KoboI18n.add({ en: {
   '秒': 's', '分': 'm',
 } });
 </script>
+<script src="../common/versus.js"></script>
 <script src="../common/games.js"></script>
 <script src="../common/platform.js"></script>
 <script src="../common/audio.js"></script>
@@ -189,7 +193,14 @@ header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 820px; margin: 
 .howto li { margin: 4px 0; }
 .langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--fit-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
 .langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--fit-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
-body.thumb header, body.thumb #bar, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip { display: none !important; }
+/* online battle entry (common/versus.js) */
+.vs-slot { display: contents; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.vs-wrap { display: block; }
+.vs-wrap .kvs-entry { margin-top: 8px; min-height: 48px; border-radius: 16px; background: var(--fit-panel); border-color: var(--fit-line); font-size: 13.5px; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+@media (max-width: 359px) { #vsSlot .kvs-entry { display: none; } } /* narrow phones: the title screen has the entry button */
+body.thumb #vsSlot, body.thumb header, body.thumb #bar, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #tip { display: none !important; }
 body.thumb #main { padding: 0; max-width: none; }
 body.thumb #stageWrap { border-radius: 0; box-shadow: none; }
 
@@ -225,6 +236,7 @@ body.thumb #stageWrap { border-radius: 0; box-shadow: none; }
       <span class="chip" id="modeChip" data-i18n>ぴったりパズル工房</span>
       <span class="chip" id="infoChip" hidden></span>
       <span class="chip" id="timeChip" aria-label="時間" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg><span id="timeN">0:00</span></span>
+      <span id="vsSlot" class="vs-slot"></span>
       <button class="icon" id="sndBtn" type="button" aria-label="サウンド オン" aria-pressed="true"></button>
       <button class="icon" id="pauseBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg></button>
     </div>
@@ -254,6 +266,7 @@ body.thumb #stageWrap { border-radius: 0; box-shadow: none; }
       <p id="tStars"></p>
       <button class="btn sub" id="tDaily" type="button"></button>
       <button class="btn sub" id="tAttack" type="button"></button>
+      <span class="vs-wrap" id="tVs"></span>
     </div>
     <button class="btn" id="tContinue" type="button" hidden></button>
     <button class="btn" id="tStages" type="button" data-i18n>ステージをえらぶ</button>
@@ -303,7 +316,7 @@ body.thumb #stageWrap { border-radius: 0; box-shadow: none; }
 const T = KoboI18n.t;
 const EN = KoboI18n.lang === 'en';
 const F = window.FitEngine;
-const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null, VS = window.KoboVersus || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'fit';
 const SAVE_KEY = 'kusoge.fit.save';
@@ -391,7 +404,7 @@ let selId = -1;
 let hintG = null;        // { id, x, y, rot, flip, until }
 const fx = { pops: {}, fly: {}, sparks: [], win: null, shake: 0 };
 let colors = {};
-const playing = () => !!(run && run.started && !run.over);
+const playing = () => !!(run && run.started && !run.over && (run.mode !== 'vs' || (VS && VS.canPlay())));
 
 // ---------- canvas & view ----------
 const cv = $('board'), ctx = cv.getContext('2d');
@@ -627,12 +640,13 @@ function elapsed() { return run ? run.ms + run.pen : 0; }
 function remaining() { return Math.max(0, F.ATTACK_MS - elapsed()); }
 function hud() {
   if (!run) { $('timeN').textContent = '0:00'; return; }
-  const att = run.mode === 'attack';
-  const ms = att ? remaining() : elapsed();
+  const att = run.mode === 'attack', vsm = run.mode === 'vs';
+  const ms = att ? remaining() : vsm ? (run.pms | 0) : elapsed();
   $('timeN').textContent = run.tutRun ? '–' : fmtT(att ? Math.ceil(ms / 1000) * 1000 : ms);
   $('timeChip').classList.toggle('low', att && ms < 15000);
   const ic = $('infoChip');
-  if (att) { ic.hidden = false; ic.textContent = T('{n}問', { n: run.solved }); }
+  if (vsm) { ic.hidden = false; ic.textContent = T('{n}点', { n: run.vsScore | 0 }); }
+  else if (att) { ic.hidden = false; ic.textContent = T('{n}問', { n: run.solved }); }
   else if (run.puz.decoys > 0) { ic.hidden = false; ic.textContent = T('余り {n}', { n: run.puz.decoys }); }
   else ic.hidden = true;
 }
@@ -649,14 +663,19 @@ function setupRun(mode, puz, extra, snap) {
   if (snap) S.restore(snap);
   drag = null; selId = -1; hintG = null; fx.win = null; fx.sparks = []; fx.pops = {}; fx.fly = {};
   paused = false; lastT = now();
-  $('btnSkip').hidden = mode !== 'attack';
-  $('modeChip').textContent = mode === 'daily' ? T('今日のパズル') : mode === 'attack' ? T('タイムアタック') : stageName(puz.id) + SEP + worldName(puz.world);
+  renderMode();
   $('board').setAttribute('aria-label', T('ピースの盤'));
   layout(); hud(); updateButtons();
   if (run.tut != null) coach(); else tip(null);
-  if (!extra || !extra.keepEvents) emit('play_start', mode === 'daily' ? { mode: 'daily', dateKey: run.dk } : mode === 'attack' ? { mode: 'normal' } : { mode: 'normal', stage: puz.index + 1, resumed: !!snap });
+  if (mode !== 'vs' && (!extra || !extra.keepEvents)) emit('play_start', mode === 'daily' ? { mode: 'daily', dateKey: run.dk } : mode === 'attack' ? { mode: 'normal' } : { mode: 'normal', stage: puz.index + 1, resumed: !!snap });
   persist(true);
   needDraw = true;
+}
+function renderMode() {
+  if (!run || !run.started) { $('btnSkip').hidden = true; $('modeChip').textContent = T('ぴったりパズル工房'); return; }
+  const mode = run.mode, puz = run.puz;
+  $('btnSkip').hidden = mode !== 'attack' && mode !== 'vs';
+  $('modeChip').textContent = mode === 'vs' ? T(vs && vs.practice ? '練習' : 'オンライン対戦') : mode === 'daily' ? T('今日のパズル') : mode === 'attack' ? T('タイムアタック') : stageName(puz.id) + SEP + worldName(puz.world);
 }
 function startStage(id, snap, extra) {
   if (run && run.started && !run.over) endPlay('quit');
@@ -682,7 +701,7 @@ function startAttack(seed, snap, extra) {
   setupRun('attack', puz, Object.assign({ seed, k, solved: 0, id: 'attack' }, extra || {}), snap);
 }
 function endPlay(reason) {
-  if (!run || !run.started || run.over) return;
+  if (!run || !run.started || run.over || run.mode === 'vs') return; // a battle ends through KoboVersus (onEnd / onExit)
   if (run.mode === 'attack' && run.solved > 0) { finishAttack(); return; }
   emit('play_end', { mode: run.mode === 'daily' ? 'daily' : 'normal', dateKey: run.mode === 'daily' ? run.dk : undefined, score: 0, durationMs: Math.round(run.ms), reason: 'quit', stage: run.puz.index != null ? run.puz.index + 1 : 0 });
   run.over = true;
@@ -695,6 +714,7 @@ function afterAction(kind) {
   if (S.solved() && !run.solving) onSolved();
 }
 function onSolved() {
+  if (run.mode === 'vs') { vsSolved(); return; }
   run.solving = true; hintG = null; drag = null;
   celebrate(); snd.solve();
   if (run.tut != null) { run.tut = null; save.tut = 1; writeSave(); tip(null); }
@@ -712,6 +732,7 @@ function onSolved() {
 }
 function persistClear() { clearRun(); }
 function nextAttackPuzzle() {
+  run.pms = 0;
   const puz = F.attack(run.seed, run.k);
   run.puz = puz; run.id = puz.id; run.S = F.newSession(puz, false); run.solving = false; fx.win = null; fx.pops = {}; fx.fly = {}; selId = -1; hintG = null; drag = null;
   layout(); hud(); updateButtons(); persist(true); needDraw = true;
@@ -827,7 +848,7 @@ function retry(R) {
 // ---------- autosave ----------
 let DEBUG_NOSAVE = false;
 function persist(force) {
-  if (!run || !run.started || run.over || run.solving || DEBUG_NOSAVE) return;
+  if (!run || !run.started || run.over || run.solving || DEBUG_NOSAVE || run.mode === 'vs' || vs) return; // nothing is saved during a battle
   const o = { v: 1, mode: run.mode, id: run.id, dk: run.dk, seed: run.seed, k: run.k, solved: run.solved, ms: Math.round(run.ms), pen: run.pen, s: run.S.snapshot(), tut: run.tut, tutRun: run.tutRun, at: Date.now() };
   store.set(RUN_KEY, JSON.stringify(o));
 }
@@ -870,7 +891,7 @@ function updateButtons() {
   $('btnReset').disabled = !on || !S || !S.pieces.some(p => p.at);
   $('btnRot').disabled = !on; $('btnFlip').disabled = !on; $('btnHint').disabled = !on; $('btnSkip').disabled = !on;
   const h = run && run.mode === 'attack' ? F.ATTACK_HINT_MS : F.HINT_MS;
-  $('btnHint').title = T('ヒントを出すと {n} 秒増えます', { n: h / 1000 });
+  $('btnHint').title = run && run.mode === 'vs' ? T('ヒントを出すと {n}点引かれます', { n: VS_HINT }) : T('ヒントを出すと {n} 秒増えます', { n: h / 1000 });
 }
 function selectedPiece() {
   if (!run) return -1;
@@ -884,7 +905,7 @@ function turnPiece(kind, dir) {
   selId = id;
   const S = run.S;
   const r = S.turn(id, kind, dir);
-  if (kind === 'flip') save.stats.flips = (save.stats.flips | 0) + 1;
+  if (kind === 'flip' && run.mode !== 'vs') save.stats.flips = (save.stats.flips | 0) + 1;
   snd.turn(); tutEvent('turn');
   if (r === 'lifted') { snd.bad(); }
   if (hintG && hintG.id === id) hintG = null;
@@ -896,7 +917,8 @@ $('btnUndo').addEventListener('click', () => { if (!playing() || run.solving) re
 $('btnReset').addEventListener('click', () => { if (!playing() || run.solving) return; const S = run.S; const was = S.pieces.filter(p => p.at).map(p => p.id); if (!was.length) return; was.forEach(rememberAt); S.reset(); snd.undo(); hintG = null; was.forEach(id => flyFrom(id)); afterAction('reset'); });
 $('btnHint').addEventListener('click', () => useHint());
 $('btnSkip').addEventListener('click', () => {
-  if (!playing() || run.solving || run.mode !== 'attack') return;
+  if (!playing() || run.solving || (run.mode !== 'attack' && run.mode !== 'vs')) return;
+  if (run.mode === 'vs') { vsSkip(); return; }
   snd.skip(); penalty(F.ATTACK_SKIP_MS); flashText(T('−{n}秒', { n: F.ATTACK_SKIP_MS / 1000 }));
   run.k++; nextAttackPuzzle();
 });
@@ -906,11 +928,12 @@ function useHint() {
   S.pieces.forEach(p => { if (p.at) rememberAt(p.id); });
   const h = S.hint(); if (!h) return;
   h.lifted.forEach(id => flyFrom(id));
+  const vsm = run.mode === 'vs';
   const pen = run.mode === 'attack' ? F.ATTACK_HINT_MS : F.HINT_MS;
-  if (!run.tutRun) penalty(pen); else hud();
+  if (vsm) vsPoints(-VS_HINT); else if (!run.tutRun) penalty(pen); else hud();
   S.pieces[h.id].rot = h.rot; S.pieces[h.id].flip = h.flip; selId = h.id;
   hintG = { id: h.id, x: h.x, y: h.y, rot: h.rot, flip: h.flip, until: now() + 7000 };
-  snd.hint(); flashText(T('+{n}秒', { n: pen / 1000 }));
+  snd.hint(); flashText(vsm ? T('−{n}点', { n: VS_HINT }) : T('+{n}秒', { n: pen / 1000 }));
   afterAction('hint');
 }
 function flyFrom(id) {
@@ -998,6 +1021,7 @@ cv.addEventListener('pointercancel', e => endDrag(e, true));
 cv.addEventListener('contextmenu', e => { e.preventDefault(); if (drag) turnPiece('rot', 1); });
 window.addEventListener('keydown', e => {
   if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (VS && VS.active() && !(vs && VS.canPlay())) return; // the battle screens own the keyboard (nickname, cards)
   if (e.key === 'Escape') { if (playing() && !anyOverlay()) openMenu(); return; }
   if (!playing() || anyOverlay() || menuOpen) return;
   if (e.key === 'r' || e.key === 'R') turnPiece('rot', 1);
@@ -1014,11 +1038,12 @@ function loop() {
   const t = now(), dt = Math.min(100, t - lastT); lastT = t;
   if (run && playing() && !paused && !menuOpen && !anyOverlay() && !run.solving && !(run.tut === 0 || run.tut === 1) ) {
     run.ms += dt;
-    const att = run.mode === 'attack';
-    const sec = att ? Math.ceil(remaining() / 1000) : Math.floor(elapsed() / 1000);
+    const att = run.mode === 'attack', vsm = run.mode === 'vs';
+    if (vsm) run.pms = (run.pms || 0) + dt;
+    const sec = att ? Math.ceil(remaining() / 1000) : vsm ? Math.floor(run.pms / 1000) : Math.floor(elapsed() / 1000);
     if (sec !== run.lastSec) { run.lastSec = sec; hud(); if (att && sec <= 5 && sec > 0) snd.tick(); }
     if (att && remaining() <= 0) { finishAttack(); }
-    if (((run.ms / 1000) | 0) % 5 === 0 && run.lastSave !== ((run.ms / 1000) | 0)) { run.lastSave = (run.ms / 1000) | 0; persist(true); }
+    if (!vsm && ((run.ms / 1000) | 0) % 5 === 0 && run.lastSave !== ((run.ms / 1000) | 0)) { run.lastSave = (run.ms / 1000) | 0; persist(true); }
   }
   if (needDraw || hintG || fx.win || fx.sparks.length || Object.keys(fx.fly).length || Object.keys(fx.pops).length || (run && run.tut === 0) || drag) { draw(t); needDraw = !!(fx.win && t - fx.win.t0 < 1500); }
 }
@@ -1100,7 +1125,8 @@ function renderHowto() {
   $('howBody').innerHTML = '<p class="lead">' + esc(T('盤の形にぴったり合うように、ピースを全部ならべよう。すき間も重なりもなし。')) + '</p>' + li([
     'ピースをドラッグして盤に置く（近くのマスにぴたっと吸いつく）。置いたピースもドラッグで動かせる', 'ピースをタップで回転。⇋ で裏返し。キーボードは R で回転・F で裏返し',
     '「ひっかけ」のある世界では、使ってはいけない余りのピースが混じる。ぜんぶ使うとは限らない', '時間が短いほど星が多い（★3は親時間以内）。ヒントは1回20秒ぶん増える',
-    '今日のパズルは毎日1問、みんな同じ。タイムアタックは3分間で何問解けるか（ランキング）', 'とちゅうで閉じても自動保存。つづきから遊べる']);
+    '今日のパズルは毎日1問、みんな同じ。タイムアタックは3分間で何問解けるか（ランキング）',
+    'オンライン対戦：2〜4人で3分間、同じパズルをいくつ解けるか競う（1問1000点＋はやさボーナス最大500点。ヒント −100点・スキップ −200点）', 'とちゅうで閉じても自動保存。つづきから遊べる']);
 }
 let howtoFirst = false;
 function showHowto(first) {
@@ -1137,6 +1163,7 @@ function themeColor() {
 }
 let pm = null;
 function openMenu() {
+  if (VS && VS.active()) return;
   if (!UI) { showTitle(); return; }
   if (pm && pm.isOpen) return;
   const on = playing();
@@ -1152,13 +1179,101 @@ function openMenu() {
 }
 $('pauseBtn').addEventListener('click', () => openMenu());
 
+// ---------- online battle (common/versus.js) ----------
+// Everyone gets the same seeded run of puzzles: the time-attack generator F.attack(seed, k) (k = 0, 1, 2 … gently harder), which never touches
+// Math.random, so the same match seed gives every player the same puzzles in the same order. Score per puzzle = 1000 + a speed bonus (up to 500,
+// full at the 3-star time, zero at twice the 2-star time); a hint costs 100 and a skip 200 (never below 0). Nothing is saved and no best is
+// updated during a battle (versus.js rule); the solo run is set aside untouched and comes back on exit.
+const VS_BASE = 1000, VS_BONUS = 500, VS_HINT = 100, VS_SKIP = 200;
+let vs = null;   // { snap: { run, ov }, playing: 'versus' | 'practice' | null, practice } while a battle owns the board
+function vsBonus(puz, ms) {
+  const t = ms / 1000, a = puz.par.three, b = puz.par.two * 2;
+  if (t <= a) return VS_BONUS;
+  return Math.max(0, Math.round(VS_BONUS * (b - t) / Math.max(1, b - a)));
+}
+function vsPoints(d) { run.vsScore = Math.max(0, (run.vsScore | 0) + d); if (VS) VS.reportScore(run.vsScore); hud(); }
+function vsSolved() {
+  if (!VS || !VS.canPlay() || run.solving) return;
+  run.solving = true; hintG = null; drag = null;
+  const gain = VS_BASE + vsBonus(run.puz, run.pms);
+  run.solved++; vsPoints(gain);
+  celebrate(); snd.solve(); flashText(T('ぴったり！ +{n}点', { n: gain }));
+  const r = run;
+  setTimeout(() => { if (run !== r || r.over || !VS.canPlay()) return; r.k++; nextAttackPuzzle(); }, reduceMotion.matches ? 250 : 900);
+}
+function vsSkip() {
+  if (!VS || !VS.canPlay()) return;
+  snd.skip(); vsPoints(-VS_SKIP); flashText(T('−{n}点', { n: VS_SKIP }));
+  run.k++; nextAttackPuzzle();
+}
+function vsEnd(reason) {
+  if (!vs || !vs.playing) return;
+  emit('play_end', { mode: vs.playing, score: run && run.mode === 'vs' ? run.vsScore | 0 : 0, durationMs: run ? Math.round(run.ms) : 0, reason, stats: { solved: run ? run.solved | 0 : 0 } });
+  vs.playing = null;
+}
+if (VS) {
+  KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じ問題が同じ順番で出ます。',
+    game: GAME, title: T('ぴったりパズル工房'), duration: Math.round(F.ATTACK_MS / 1000), unit: T('点'),
+    theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--fit-go)', accentInk: '#2a1606', accentShadow: 'var(--fit-go-shadow)', card: 'var(--fit-card)',
+      line: 'var(--fit-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
+    hudCover: () => document.querySelector('header'),
+    onOpen() {
+      drag = null; selId = -1; hintG = null; cv.classList.remove('drag'); needDraw = true;
+      const g = KG(); if (g) g.pause('versus');
+    },
+    onStart({ seed, practice }) {
+      if (!vs) {
+        // the solo run (or the title / stage list / result card on top of it) is set aside exactly as it is
+        const solo = run && run.started && !run.over && !run.solving;
+        if (solo) { persist(true); emit('play_end', { mode: run.mode === 'daily' ? 'daily' : 'normal', dateKey: run.mode === 'daily' ? run.dk : undefined, score: 0, durationMs: Math.round(run.ms), reason: 'quit' }); }
+        vs = { snap: { run, ov: OVERLAYS.filter(id => !$(id).hidden), solo }, playing: null, practice: !!practice };
+      } else vsEnd('quit');
+      vs.practice = !!practice;
+      seed = seed >>> 0;
+      setupRun('vs', F.attack(seed, 0), { seed, k: 0, solved: 0, id: 'vs', vsScore: 0, pms: 0 });
+      vs.playing = practice ? 'practice' : 'versus';
+      paused = false; updateButtons(); hud();
+      emit('play_start', { mode: vs.playing, seed });
+    },
+    onGo() { lastT = now(); updateButtons(); needDraw = true; },
+    getScore: () => (run && run.mode === 'vs' ? run.vsScore | 0 : 0),
+    onEnd() {
+      if (!run || run.mode !== 'vs') return;
+      drag = null; hintG = null; cv.classList.remove('drag'); selId = -1;
+      vsEnd('over');
+      run.over = true; updateButtons(); needDraw = true;
+    },
+    onExit() {
+      if (vs) {
+        vsEnd('quit');
+        const s = vs.snap; vs = null;
+        drag = null; hintG = null; selId = -1; fx.win = null; fx.sparks = []; fx.pops = {}; fx.fly = {};
+        hideOverlays();
+        run = s.run;
+        s.ov.forEach(id => { $(id).hidden = false; });
+        renderMode(); layout(); hud(); updateButtons(); tip(null);
+        if (run.tut != null && run.started && !run.over) coach();
+        if (s.solo) emit('play_start', { mode: run.mode === 'daily' ? 'daily' : 'normal', dateKey: run.mode === 'daily' ? run.dk : undefined, resumed: true });
+        if (!$('ovTitle').hidden) showTitle();
+        needDraw = true;
+      }
+      // onOpen paused the game: a solo run comes back through the pause menu (KoboGame.resume → our resume hook), never running on its own
+      paused = true;
+      const g = KG(); if (g) g.resume('api');
+      paused = false; lastT = now();
+    },
+  });
+  VS.button($('vsSlot'), { compact: true });
+  VS.button($('tVs'));
+}
+
 // ---------- KoboGame: real time (stops while hidden; waits for "Resume") ----------
 if (window.KoboGame) KoboGame.register({
   id: GAME,
   pause() { paused = true; persist(true); },
-  resume() { if (!paused) return; if (playing() && !anyOverlay()) openMenu(); paused = false; lastT = now(); },
+  resume() { if (!paused) return; if (!vs && playing() && !anyOverlay()) openMenu(); paused = false; lastT = now(); },
   save() { persist(true); },
-  isIdle: () => !playing(),
+  isIdle: () => !playing() && !vs,
   dispose() { cancelAnimationFrame(raf); },
   daily: { start({ dateKey }) { startDaily(dateKey); } },
 });
@@ -1197,7 +1312,7 @@ if (DEBUG) {
       over: !!(run && run.over), solving: !!(run && run.solving), won: !!(run && run.S && run.S.solved()), hints: run ? run.S.hints : 0, moves: run ? run.S.moves : 0,
       pieces: run ? run.S.pieces.map(p => ({ id: p.id, type: p.type, rot: p.rot, flip: p.flip, at: p.at })) : [], placed: run ? run.S.pieces.filter(p => p.at).length : 0, total: run ? run.S.pieces.length : 0,
       board: run ? run.puz.board.length : 0, decoys: run ? run.puz.decoys : 0, solutions: run ? run.puz.solutions : 0, par: run ? run.puz.par : null, puzzle: run ? F.describe(run.puz) : null,
-      tut: run ? run.tut : null, sel: selId, ghost: !!hintG, dragging: !!(drag && drag.moved), paused, menuOpen, dk: run ? run.dk : null,
+      tut: run ? run.tut : null, sel: selId, ghost: !!hintG, dragging: !!(drag && drag.moved), paused, menuOpen, dk: run ? run.dk : null, vsScore: run && run.mode === 'vs' ? run.vsScore | 0 : null, pms: run ? Math.round(run.pms || 0) : 0, vs: vs ? { playing: vs.playing, practice: vs.practice, solo: !!vs.snap.solo } : null,
       title: !$('ovTitle').hidden, worlds: !$('ovWorlds').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, save: JSON.parse(JSON.stringify(save)), last: lastResult,
       cs: view.cs, land: view.land, hist: run ? run.S.hist.length : 0,
     }),
@@ -1222,7 +1337,7 @@ if (DEBUG) {
     piecePoint(id) { const S = run.S, p = S.pieces[id]; if (!p.at) { const sl = view.slots[id]; return page(sl.x + sl.w / 2, sl.y + sl.h / 2); } const c = S.absCells(id, p.at.x, p.at.y)[0]; return page(view.ox + (c[0] + 0.5) * view.cs, view.oy + (c[1] + 0.5) * view.cs); },
     trayPoint() { return page(view.tray.x + view.tray.w / 2, view.tray.y + view.tray.h - 6); },
     cellPoint(x, y) { return page(view.ox + (x + 0.5) * view.cs, view.oy + (y + 0.5) * view.cs); },
-    advance(ms) { if (run) { run.ms += ms; hud(); } },
+    advance(ms) { if (run) { run.ms += ms; if (run.mode === 'vs') run.pms = (run.pms || 0) + ms; hud(); } },
     solveNow() { if (!playing()) return false; const S = run.S; S.reset(); for (const s of run.puz.solution) { const p = S.pieces[s.id]; p.rot = s.rot; p.flip = s.flip; S.place(s.id, s.x, s.y); } afterAction('place'); return true; },
   };
   window.__kb = Object.assign(window.__kb || {}, { ready: api.ready, state: api.state });

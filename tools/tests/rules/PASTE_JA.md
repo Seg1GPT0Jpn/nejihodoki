@@ -171,3 +171,8 @@ Realtime Database：
   変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'train': 100000`＝9ルートのベスト得点の合計）、旧ランキングの点の確認 `okCap(…'train')`、プレイ回数の `plus1('train')`、
   同期する保存のキー `kusoge~train~save`（合計・★・ルートごとのベスト・統計）の形の確認（`okEntAt` に1行）です。式の数は、変わるキーだけを確かめる今の形のままで収まっています（テストが、全キーまで8個ずつ増やしても通ることを確かめます）。
 - **Realtime Database は貼り直し不要**です（対戦がないので、`database.rules.json` は変えていません）。
+
+## 「ぴったりパズル工房」（fit）にオンライン対戦を足したとき
+- **Realtime Database だけ**貼り直してください（上の「2. Realtime Database のルール」と同じ手順で、新しい `database.rules.json` の全文）。**貼り直さないと、ぴったりパズル工房の「オンライン対戦」で相手が見つからず「準備中」になります。**
+- 変わったのは、対戦のゲームの一覧（3か所の `…|hitsumabushi|hitblow|fit`）だけです。ぴったりパズル工房のオンライン対戦は `vs/queue/fit` を使います。
+- **Firestore は貼り直し不要**です（`firestore.rules` は変えていません。対戦の記録はこの端末の `kusoge.vs.stats` だけ）。

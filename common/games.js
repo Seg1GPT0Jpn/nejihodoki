@@ -650,16 +650,16 @@
       id: 'fit', order: 20, path: 'fit/', added: '2026-11-24',
       title: { ja: 'ぴったりパズル工房', en: 'Fit Workshop' },
       short: { ja: 'ぴったり工房', en: 'Fit Workshop' },
-      desc: { ja: '木と真鍮の工房で、決まった形の板（3〜5マスのピース）をぴったり敷きつめるタイムパズル。回して・裏返して・ドラッグで置こう。8つの世界に128ステージ、今日のパズル、3分間のタイムアタック。ひっかけのピースにも注意。', en: 'A timed tile-fitting puzzle in a wood-and-brass workshop. Drag, rotate and flip pieces of 3 to 5 cells until they fill the board exactly. 128 stages in 8 worlds, a daily puzzle and a 3-minute time attack. Watch out for decoy pieces.' },
+      desc: { ja: '木と真鍮の工房で、決まった形の板（3〜5マスのピース）をぴったり敷きつめるタイムパズル。回して・裏返して・ドラッグで置こう。8つの世界に128ステージ、今日のパズル、3分間のタイムアタック、オンライン対戦も。ひっかけのピースにも注意。', en: 'A timed tile-fitting puzzle in a wood-and-brass workshop. Drag, rotate and flip pieces of 3 to 5 cells until they fill the board exactly. 128 stages in 8 worlds, a daily puzzle, a 3-minute time attack and online score battles. Watch out for decoy pieces.' },
       label: { ja: 'タイムパズル', en: 'Timed puzzle' },
-      genres: ['puzzle'], tags: ['2d', 'stages', 'daily', 'endless', 'realtime', 'relax'],
+      genres: ['puzzle'], tags: ['2d', 'stages', 'daily', 'endless', 'realtime', 'relax', 'versus'],
       keywords: { ja: ['パズル', 'ぴったり', 'ポリオミノ', 'ペントミノ', 'タイル', 'はめ込み', 'タイムアタック', '図形', '工房'], en: ['puzzle', 'tiling', 'polyomino', 'pentomino', 'tile', 'fit', 'time attack', 'shapes', 'workshop', 'tangram'] },
       icon: 'img/icons/fit.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#4a2f1a"/><rect x="5" y="5" width="62" height="62" rx="6" fill="#6a4426" stroke="#d9b45a" stroke-width="2"/><g stroke="#f4e4b8" stroke-width="1.2"><rect x="10" y="12" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="10" y="26" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="10" y="40" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="24" y="40" width="14" height="14" rx="2.5" fill="#3d9a8b"/><rect x="24" y="12" width="14" height="14" rx="2.5" fill="#e08a3c"/><rect x="38" y="12" width="14" height="14" rx="2.5" fill="#e08a3c"/><rect x="24" y="26" width="14" height="14" rx="2.5" fill="#e08a3c"/><rect x="38" y="26" width="14" height="14" rx="2.5" fill="#e08a3c"/></g><g transform="rotate(14 54 52)" stroke="#f4e4b8" stroke-width="1.2"><rect x="40" y="38" width="13" height="13" rx="2.5" fill="#d0527a"/><rect x="40" y="51" width="13" height="13" rx="2.5" fill="#d0527a"/><rect x="53" y="51" width="13" height="13" rx="2.5" fill="#d0527a"/></g><circle cx="12" cy="9" r="1.6" fill="#d9b45a"/><circle cx="60" cy="9" r="1.6" fill="#d9b45a"/></svg>',
       thumb: 'img/thumbs/fit.webp', thumb2x: 'img/thumbs/fit@2x.webp',
       tech: '2d',
-      // pause: true — the clock runs while a puzzle is on screen and stops while hidden or paused; no online play
-      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
-      versus: null,
+      // pause: true — the clock runs while a puzzle is on screen and stops while hidden or paused. versus: common/versus.js, 3 minutes, the time-attack puzzles from the match seed (1000/puzzle + speed bonus)
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: true, stages: true },
+      versus: 'common',
       // ranking = the best 3-minute time attack (puzzles solved). A time attack can't pass about 90 puzzles; the daily board's score is 600 minus the seconds
       score: { unit: { ja: '問', en: 'solved' }, fmt: { ja: '{n}問', en: '{n} solved' }, order: 'desc', cap: 1000, maxRate: null },
       rankSource: { key: 'kusoge.fit.save', paths: ['best'], agg: 'first', offset: 0 },

@@ -309,6 +309,16 @@ async function runCases(T, opt = {}) {
     await check(g, 'room: anyone removes a room older than 30 min (R13)', 'allow', () => rtdb(T, 'DELETE', `vs/rooms/${room3}`, undefined, C));
     await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `vs/queue/${game}/${A.uid}`, undefined, A));
     await check(g, 'queue: remove someone else\'s', 'deny', () => rtdb(T, 'DELETE', `vs/queue/${game}/${B.uid}`, undefined, A));
+
+    // fit (ぴったりパズル工房) joins the battle games: its queue and its rooms are accepted like any other game's
+    const fit = 'fit', roomFit = rid('-rulestest');
+    cleanup.push(() => rtdb(T, 'DELETE', `vs/queue/${fit}/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `vs/rooms/${roomFit}`, undefined, A));
+    await check(g, 'fit: queue own set { n, t, h }', 'allow', () => rtdb(T, 'PUT', `vs/queue/${fit}/${A.uid}`, { n: 'ライブA', t: TS, h: TS }, A));
+    await check(g, 'fit: read the game queue', 'allow', () => rtdb(T, 'GET', `vs/queue/${fit}`, undefined, C));
+    await check(g, 'fit: room create with g = fit', 'allow', () => rtdb(T, 'PUT', `vs/rooms/${roomFit}`, Object.assign(meta(A), { g: fit }), A));
+    await check(g, 'fit: a look-alike id (fitx) is still unknown', 'deny', () => rtdb(T, 'PUT', `vs/queue/fitx/${A.uid}`, { n: 'x', t: TS, h: TS }, A));
+    await check(g, 'fit: queue own remove', 'allow', () => rtdb(T, 'DELETE', `vs/queue/${fit}/${A.uid}`, undefined, A));
+    await check(g, 'fit: room delete by the creator', 'allow', () => rtdb(T, 'DELETE', `vs/rooms/${roomFit}`, undefined, A));
   }
 
   // ================================================================ RTDB: hole（hole/index.html）
