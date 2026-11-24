@@ -367,16 +367,16 @@
       id: 'planet', order: 11, path: 'planet/', added: '2026-11-04',
       title: { ja: 'わくせいシミュレーター', en: 'Planet Simulator' },
       short: { ja: 'わくせい', en: 'Planet' },
-      desc: { ja: '宇宙から小さな星をつくり（山・海・火山・雨・いのち・彗星）、降りて歩いて、育った生き物や結晶・化石を見つける。マグマから宇宙の時代まで。理科をまなぶ章つき。', en: 'Shape a little planet from space (mountains, seas, volcanoes, rain, life, comets), then dive down, walk around it and discover the creatures, crystals and fossils that grew there. From magma to the space age, with science lessons.' },
+      desc: { ja: '宇宙から小さな星をつくり（山・海・火山・雨・いのち・彗星）、降りて歩いて、育った生き物や結晶・化石を見つける。マグマから宇宙の時代まで。理科をまなぶ章つき。2〜4人で同じ星を育てて点を競うオンライン対戦も。', en: 'Shape a little planet from space (mountains, seas, volcanoes, rain, life, comets), then dive down, walk around it and discover the creatures, crystals and fossils that grew there. From magma to the space age, with science lessons. Plus an online score battle: grow the same planet as 2–4 players.' },
       label: { ja: 'シミュレーション', en: 'Simulation' },
-      genres: ['simulation'], tags: ['3d', 'sandbox', 'science', 'stages', 'explore'],
+      genres: ['simulation'], tags: ['3d', 'sandbox', 'science', 'stages', 'explore', 'versus'],
       keywords: { ja: ['惑星', 'わくせい', '地球', '気候', '温暖化', '進化', '生命', '文明', 'シミュレーション', '科学', '理科', '探検', '図鑑'], en: ['planet', 'earth', 'climate', 'warming', 'evolution', 'life', 'civilization', 'simulation', 'science', 'explore', 'learning'] },
       icon: 'img/icons/planet.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#0b1430"/><g fill="#dfe8ff"><circle cx="9" cy="12" r="1"/><circle cx="20" cy="6" r=".8"/><circle cx="64" cy="58" r="1"/><circle cx="8" cy="62" r=".8"/></g><circle cx="58" cy="14" r="12" fill="#ffd36b" opacity=".18"/><circle cx="58" cy="14" r="7" fill="#ffd36b"/><circle cx="34" cy="39" r="23" fill="#2a78c2"/><path d="M16 31c5-6 11-2 15-6 5-4 12 0 14 5-4 5-9 2-13 6-4 5-10 6-16 3z" fill="#4fb35a"/><path d="M30 52c4-3 9-1 12-4 3 2 3 6-1 8-4 1-8 0-11-4z" fill="#4fb35a"/><path d="M25 18c3-1 6-2 10-2" stroke="#f4f8fc" stroke-width="5" stroke-linecap="round"/><path d="M20 21c5-3 12-4 19-3M40 44c4 0 7-1 10-3" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".8"/><path d="M13 47a23 23 0 0 0 42-5" stroke="#05122b" stroke-width="9" fill="none" opacity=".35"/><circle cx="34" cy="39" r="23" fill="none" stroke="#9fd6ff" stroke-width="1.5" opacity=".7"/></svg>', iconBg: '#0b1430',
       thumb: 'img/thumbs/planet.webp', thumb2x: 'img/thumbs/planet@2x.webp',
       tech: '3d',
-      // no online battle: a planet grows over millions of years, not in a 3-minute match
-      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: true },
-      versus: null,
+      // online battle (common/versus.js): 3 minutes, everyone grows the same seeded young planet (PSim.vsWorld) while the match clock runs 3M years a second; score = variety of life ×4 + green land %×3 + finds ×80 + evolution 120/stage + climate ≤150 (PSim.vsScore)
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: true, stages: true },
+      versus: 'common',
       // the sum of the best score of each of the 8 scenarios (up to 1,000 each)
       score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n} 点', en: '{n} pts' }, order: 'desc', cap: 10000, maxRate: null },
       rankSource: { key: 'kusoge.planet.save', paths: ['total'], agg: 'first', offset: 0 },

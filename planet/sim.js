@@ -1183,7 +1183,36 @@ function scPlay(i, withPlan, steps) { // a whole scenario: `steps` plan moves sp
   return sc;
 }
 
-return { WONDERS, wonder, lifeWorld, sculpt, stamp, rebuildSculpt, refreshElev, opsCode, opsRead, applyOps, addMark, sites, species, explore, discover, hint, era, ERAS, cities, cleanShare, SPARK, FIND_DEG, OPS_MAX, coastal, SCEN, SC_IDS, MS, scStart, scUsed, scLeft, scAllowed, scTool, scVisit, BRUSH, scCheck, scFinish, scRun, scApi, scPlay, danger, msCheck, seaLife, cellOf, cellLL, angDeg, habitable, arcticT, settle, landVeg, seaIceNorth, STAGES, EVO, advance, tools, setParam, serialize, deserialize, startCiv, endCiv, popMap, movePlates, event, REF, NX, NY, N, HX, HY, HN, K, latC, xC, wRow, PX, PY, PZ, PW, FLOOR, create, step, geology, seaLevel, forcing, lum, volc, rng, fbm, dirOf, latLonOf, rotM, mul, ortho, randAxis, clamp, sstep };
+// ---- online score battle (common/versus.js) ----
+// Everyone gets the same young planet from the match seed (same land, same sea creatures, three crystals to find) and grows it for the whole match.
+// Time is driven by the match clock, not by the player: VS_RATE years go by every second of the match, in fixed steps of VS_CH seconds (vsStep), so the
+// planet itself evolves the same for everybody; only what the players do to it (tools, walking) differs. The score is read from the model (vsScore):
+//   variety  = 4 per point of life.div (the variety of life the planet holds, up to ~100)
+//   green    = 3 per % of the land that is green
+//   finds    = 80 per thing found (creatures, crystals, fossils…)
+//   evolve   = 120 for each life stage above the sea life (plants, then animals)
+//   climate  = up to 150 for a mild planet (15 °C is best; frozen or boiling gives 0)
+const VS_RATE = 3e6, VS_CH = 0.25;
+function vsWorld(seed) {
+  seed = seed >>> 0;
+  const r = rng((seed ^ 0x7b5a1) >>> 0);
+  const st = lifeWorld(4.2e9, { seed, co2: 1500, dist: 0.98 + r() * 0.04, size: 0.9 + r() * 0.2, water: 0.8 + r() * 0.4 }, 4, 1);
+  settle(st, 5e5, 1500);
+  st.life.div = DIVK[4] * 0.9; st.flags.snow = 0; st.surp = false; st.noMarks = false; st.found = [];
+  const q = rng((seed ^ 0xc47) >>> 0);
+  for (let i = 0; i < 3; i++) { const c = landCell(st, q, k => st.iceL[k] < 0.3); const [a, o] = cellLL(c); addMark(st, 'cry', a + (q() - 0.5) * 4, o + (q() - 0.5) * 4); }
+  return st;
+}
+function vsStep(st) { advance(st, VS_RATE * VS_CH, { coarse: 5e4 }); }
+function vsScore(st) {
+  const L = st.life, d = st.d;
+  const div = Math.round(L.div) * 4, green = Math.round(landVeg(st) * 100) * 3, finds = st.found.length * 80;
+  const evolve = Math.max(0, Math.min(L.st, 6) - 4) * 120;
+  const climate = st.flags.snow ? 0 : Math.round(150 * clamp(1 - Math.abs(d.Tg - 15) / 25, 0, 1));
+  return { div, green, finds, evolve, climate, total: div + green + finds + evolve + climate };
+}
+
+return { VS_RATE, VS_CH, vsWorld, vsStep, vsScore, WONDERS, wonder, lifeWorld, sculpt, stamp, rebuildSculpt, refreshElev, opsCode, opsRead, applyOps, addMark, sites, species, explore, discover, hint, era, ERAS, cities, cleanShare, SPARK, FIND_DEG, OPS_MAX, coastal, SCEN, SC_IDS, MS, scStart, scUsed, scLeft, scAllowed, scTool, scVisit, BRUSH, scCheck, scFinish, scRun, scApi, scPlay, danger, msCheck, seaLife, cellOf, cellLL, angDeg, habitable, arcticT, settle, landVeg, seaIceNorth, STAGES, EVO, advance, tools, setParam, serialize, deserialize, startCiv, endCiv, popMap, movePlates, event, REF, NX, NY, N, HX, HY, HN, K, latC, xC, wRow, PX, PY, PZ, PW, FLOOR, create, step, geology, seaLevel, forcing, lum, volc, rng, fbm, dirOf, latLonOf, rotM, mul, ortho, randAxis, clamp, sstep };
 })();
 if (typeof window !== 'undefined') window.PSim = PSim;
 if (typeof module !== 'undefined' && module.exports) module.exports = PSim;

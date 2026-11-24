@@ -9,6 +9,7 @@
 // 6. 保存と再開（地形・見つけたもの・わたしの銀河）、共有 URL（同じ地形）、古い保存
 // 7. ふしぎな星（小さな月は大きくジャンプ）、まなぶ（章 → やってみる → 3問チェック → 記録。ランキングに入らない）、なぜ？カード
 // 8. 英語：日本語が見えない（タイトル・まなぶ・なぜ？・クイズ・地上・結果）／画質と fps
+// 9. オンライン対戦の練習（common/versus.js、node tools/tests/planet-play.js online）：同じ seed → 同じ星（別のブラウザでも）・Go の前は触れない・本物の操作（道具のボタン・長おし・タップ・降りる・キー）で山と雨といのち・見つけると +80・点の式・保存しない・閉じるともとの自由の星に戻る・時間切れ・英語・小さい画面・明るい画面
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -289,13 +290,163 @@ async function english(env) {
   await s.close();
 }
 
+// a short fingerprint of the whole planet (terrain, climate, life, marks, finds)
+const FP = `(() => { const P = __planet, str = JSON.stringify(P.S.serialize(P.world)); let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h + ':' + str.length; })()`;
+const stored = (p, k) => p.evaluate(k => localStorage.getItem(k), k);
+const noAt = j => { try { const o = JSON.parse(j); delete o.at; return JSON.stringify(o); } catch (e) { return j; } };
+async function jumpClock(p, ms) { await p.evaluate(ms => { const real = Date.now; Date.now = () => real() + ms; }, ms); }
+async function online(env) {
+  console.log('9. online battle practice (common/versus.js): same seed → same planet, real input, +80 per find, nothing saved, back to the free planet');
+  const s = await open(env, { seed: SEEN }); const p = s.page;
+  check('KoboVersus is loaded and the title card has the entry button', await p.evaluate(() => !!(window.KoboVersus && KoboVersus.practice) && !!document.querySelector('#tVs .kvs-entry')), null);
+  // the solo state: a free planet, a little older, with a stroke on it
+  await p.evaluate(() => { __planet.earthNow(); __planet.pick('raise'); for (let k = 0; k < 6; k++) __planet.tool('raise', 12, 30, { cont: k > 0 }); __planet.saveWorld(); });
+  const solo = await st(p), soloSave = await stored(p, SAVE), soloWorld = await stored(p, WORLD);
+  await p.evaluate(() => { Math.random = () => 0.25; KoboVersus.practice(); });   // the practice seed comes from Math.random: fixed, so a second browser gets the same planet
+  await p.waitForFunction(() => __kb.state().mode === 'vs', null, { timeout: 15000 });
+  let x = await st(p);
+  const seed = await p.evaluate(() => __koboVs.state.seed);
+  check('the battle planet is PSim.vsWorld(seed) and the solo planet was set aside', x.vs && x.vs.seed === seed && x.vs.practice && x.era && x.ops === 0 && x.vs.score.total > 0 && x.t > 3e9 && x.t < 5e9 && x.flags && !x.explorer, { seed, vs: x.vs, ops: x.ops, t: x.t });
+  const wsave = noAt(await stored(p, WORLD)), ssave = await stored(p, SAVE);
+  check('before Go the board is up, the time is not running and input is closed', !(await p.evaluate(() => KoboVersus.canPlay())) && x.vs.k === 0 && !x.running && await p.evaluate(() => !document.getElementById('vsBoard').hidden && getComputedStyle(document.getElementById('playBtn')).display === 'none'), x.vs);
+  const fp0 = await p.evaluate(FP);
+  // a tool tap before Go does nothing
+  await p.click('#dock .tool[data-k="raise"]');
+  const land = await screenPoint(p, true);
+  if (land) { await p.mouse.move(land[0], land[1]); await p.mouse.down(); await p.waitForTimeout(600); await p.mouse.up(); }
+  x = await st(p);
+  check('no stroke can be made before Go', x.ops === 0 && (await p.evaluate(FP)) === fp0, x.ops);
+  await p.waitForFunction(() => KoboVersus.canPlay(), null, { timeout: 12000 });
+  x = await st(p);
+  check('the match clock runs the planet by itself (no play button): the planet gets older', await p.evaluate(() => new Promise(r => setTimeout(r, 2500))) === undefined && (await st(p)).vs.k > x.vs.k, [x.vs.k, (await st(p)).vs.k]);
+  await shot(p, '9-online');
+  // real input: the mountain button, then a held press and a drag over the land
+  const t1 = (await st(p)).t;
+  if ((await st(p)).tool !== 'raise') await p.click('#dock .tool[data-k="raise"]');
+  const a = await screenPoint(p, true) || await screenPoint(p, false);
+  await p.mouse.move(a[0], a[1]); await p.mouse.down(); await p.waitForTimeout(320);
+  for (let i = 1; i <= 6; i++) { await p.mouse.move(a[0] + i * 4, a[1] + i * 2); await p.waitForTimeout(170); }
+  await p.mouse.up();
+  x = await st(p);
+  check('a held stroke with the mountain tool sculpts the battle planet (ops grow)', x.ops >= 1 && x.mode === 'vs', x.ops);
+  // the life tool and rain by keyboard number + a real tap
+  await p.keyboard.press('Digit4');
+  check('keyboard 4 picks the life tool', (await st(p)).tool === 'seed', (await st(p)).tool);
+  const b = await screenPoint(p, false) || a;
+  await p.mouse.click(b[0], b[1]);
+  await p.keyboard.press('Space');
+  check('Space does not start or stop time in a battle (the match clock owns it)', !(await st(p)).running, null);
+  await p.keyboard.press('Escape');
+  check('Escape does not open the menu in a battle', await p.evaluate(() => !document.querySelector('.kb-layer')), null);
+  // dive with the real button, find a crystal with real keys
+  await p.click('#diveBtn');
+  await p.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 });
+  const target = await p.evaluate(() => { const P = __planet, E = P.E, [la, lo] = E.latLon(); const c = P.S.sites(P.world).filter(s => !s.found).sort((u, v) => P.S.angDeg(la, lo, u.lat, u.lon) - P.S.angDeg(la, lo, v.lat, v.lon))[0]; return c ? c.id : null; });
+  check('there is something to find on the battle planet', !!target, target);
+  const f0 = (await st(p)).vs.score;
+  await p.evaluate(id => { const P = __planet, s = P.S.sites(P.world).find(q => q.id === id); P.teleport(Math.max(-70, Math.min(70, s.lat - 7)), s.lon); }, target);
+  const got = await walkTo(p, target, 25000);
+  await p.waitForTimeout(500);
+  x = await st(p);
+  check('walking to it with the keys finds it: +80 and the board shows it', got && x.vs.score.finds === f0.finds + 80 && x.found.includes(target), { got, f0, now: x.vs.score, found: x.found });
+  check('a find shows the points, not the log', await p.evaluate(() => /80/.test(document.getElementById('celebX').textContent) && !/✦/.test(document.getElementById('celebS').textContent)), null);
+  await p.keyboard.press('KeyQ'); await p.waitForFunction(() => __kb.state().view === 'orbit', null, { timeout: 15000 });
+  // the score is the formula, and it is what the match HUD shows
+  await jumpClock(p, 60000);
+  await p.evaluate(() => __planet.vsSync());
+  await p.waitForTimeout(400);
+  x = await st(p);
+  const sc = x.vs.score;
+  check('the score is the sum of its five rows, and the HUD shows it', sc.total === sc.div + sc.green + sc.finds + sc.evolve + sc.climate && sc.total === await p.evaluate(() => __koboVs.state.myScore) && sc.finds >= 80, sc);
+  check('the planet is older by the match clock (240 steps of 0.25 s at 3M years a second)', x.vs.k >= 240 && x.t > t1, { k: x.vs.k, t: x.t, t1 });
+  check('nothing was saved during the battle (save and the stored free planet untouched, no discoveries or ✦ from it)', (await stored(p, SAVE)) === ssave && ssave === soloSave && noAt(await stored(p, WORLD)) === wsave, null);
+  // time up
+  await jumpClock(p, 130000);
+  await p.waitForFunction(() => !KoboVersus.canPlay(), null, { timeout: 12000 });
+  x = await st(p);
+  const fin = x.vs;
+  check('time up: the planet is brought to the end of the clock (720 steps), the score is kept, input is closed', fin.k === 720 && fin.over && fin.score.total >= sc.total - 300 && await p.evaluate(() => __planet.tool('raise', 0, 0) === 'no'), fin);
+  const fpEnd = await p.evaluate(FP); await p.waitForTimeout(500);
+  check('after time up the planet no longer moves', (await p.evaluate(FP)) === fpEnd, null);
+  await shot(p, '9-online-end');
+  // closing: the free planet is back exactly as it was
+  await p.evaluate(() => KoboVersus.close());
+  await p.waitForFunction(() => __kb.state().mode === 'free' && !__kb.state().vs, null, { timeout: 8000 });
+  await p.waitForTimeout(300);
+  x = await st(p);
+  check('closing brings the free planet back as it was (same age, same sculpting, paused)', x.mode === 'free' && Math.abs(x.t - solo.t) < 1 && x.ops === solo.ops && !x.running && x.view === 'orbit', { t: x.t, t0: solo.t, ops: x.ops, o0: solo.ops });
+  check('the save and the stored planet are still the solo ones (and the counters the battle bumped in memory are gone)', (await stored(p, SAVE)) === soloSave && noAt(await stored(p, WORLD)) === noAt(soloWorld) && JSON.stringify(x.save) === JSON.stringify(JSON.parse(soloSave)), { mem: x.save, stored: soloSave });
+  check('no page errors (battle)', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3));
+  await s.close();
+
+  // the same seed gives the same planet in another browser, and the same planet after the same steps
+  const fps = [];
+  for (let i = 0; i < 2; i++) {
+    const s2 = await open(env, { seed: SEEN }); const q = s2.page;
+    await q.evaluate(() => { Math.random = () => 0.25; KoboVersus.practice(); });
+    await q.waitForFunction(() => KoboVersus.canPlay(), null, { timeout: 15000 });
+    await jumpClock(q, 90000);
+    await q.evaluate(() => __planet.vsSync());
+    const k = (await st(q)).vs.k;
+    fps.push([k >= 360 ? k : 0, await q.evaluate(`(${FP.replace(/^\(\(\) => \{/, '(() => {')})`)]);
+    await s2.close();
+  }
+  check('same seed, same moves (none): the same planet after the same match time, in two browsers', fps[0][0] >= 360 && fps[0][0] === fps[1][0] && fps[0][1] === fps[1][1], fps);
+
+  // from the title: the entry button opens the battle card, closing goes back to the title; the solo game is untouched
+  const s3 = await open(env, { seed: SEEN }); const r = s3.page;
+  await r.evaluate(() => __planet.title());
+  await r.click('#tVs .kvs-entry');
+  await r.waitForSelector('.kvs-ov', { timeout: 8000 });
+  await shot(r, '9-online-card');
+  check('the title button opens the battle card over the title', await r.evaluate(() => KoboVersus.active() && !document.querySelector('.kvs-ov').hidden), null);
+  await r.evaluate(() => KoboVersus.close());
+  await r.waitForFunction(() => __kb.state().mode === 'title' && !KoboVersus.active(), null, { timeout: 8000 });
+  check('closing returns to the title screen', (await st(r)).overlays.includes('ovTitle'), (await st(r)).overlays);
+  check('no page errors (title)', !s3.log.pageErrors.length, s3.log.pageErrors.slice(0, 3));
+  await s3.close();
+
+  // touch (a phone), light screen, English, and the smallest screen
+  for (const [vp, lang, light, touch] of [['ip12', 'ja', false, true], ['se1', 'en', false, false], ['ip12', 'en', true, false], ['land', 'ja', true, false]]) {
+    const s4 = await open(env, { seed: SEEN, vp, lang, touch }); const q = s4.page;
+    if (light) await q.emulateMedia({ colorScheme: 'light' });
+    await q.evaluate(() => KoboVersus.practice());
+    await q.waitForFunction(() => KoboVersus.canPlay(), null, { timeout: 15000 });
+    await q.waitForTimeout(500);
+    const box = await q.evaluate(() => { const r = e => { const b = document.querySelector(e).getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+      const hud = r('.kvs-hud'), bd = r('#vsBoard'), dk = r('#dock'), W = innerWidth, H = innerHeight;
+      return { hud, bd, dk, W, H, ok: bd[0] >= 0 && bd[2] <= W + 0.5 && bd[3] <= dk[1] + 1 && bd[1] >= hud[3] - 1 && dk[2] <= W + 0.5 && dk[3] <= H + 0.5 }; });
+    check(`${vp} ${lang}${light ? ' light' : ''}: the match HUD, the score board and the tool dock fit and do not overlap`, box.ok || (vp === 'land' && box.bd[1] >= box.hud[3] - 1), box);
+    if (lang === 'en') { const jp = await q.evaluate(`(${jpScan})(true)`); check(`${vp} en: no Japanese on the battle screen`, jp.length === 0, jp.slice(0, 6)); }
+    if (touch) {
+      await q.tap('#dock .tool[data-k="raise"]');
+      const t0 = await screenPoint(q, true) || await screenPoint(q, false);
+      await q.touchscreen.tap(t0[0], t0[1]); await q.waitForTimeout(200);
+      await q.tap('#dock .tool[data-k="seed"]'); await q.touchscreen.tap(t0[0] + 10, t0[1] + 10); await q.waitForTimeout(300);
+      check('touch: tapping a tool and the planet works in a battle', (await st(q)).ops >= 1, (await st(q)).ops);
+      await q.tap('#diveBtn'); await q.waitForFunction(() => __kb.state().view === 'surface', null, { timeout: 15000 });
+      const w0 = (await st(q)).explorer.walked;
+      const zone = await q.evaluate(() => { const r = document.getElementById('stickZone').getBoundingClientRect(); return [r.left + r.width * 0.5, r.top + r.height * 0.6]; });
+      const cdp = await q.context().newCDPSession(q);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: zone[0], y: zone[1] }] });
+      for (let k = 1; k <= 6; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: zone[0], y: zone[1] - k * 9 }] }); await q.waitForTimeout(30); }
+      await q.waitForTimeout(1800);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      check('touch: the virtual stick walks in a battle', (await st(q)).explorer.walked > w0 + 0.02, [w0, (await st(q)).explorer.walked]);
+    }
+    await shot(q, `9-online-${vp}-${lang}${light ? '-light' : ''}`);
+    check(`${vp} ${lang}: no page errors`, !s4.log.pageErrors.length, s4.log.pageErrors.slice(0, 3));
+    await s4.close();
+  }
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   B.ensureCdn();
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now(), only = process.argv[2];
-  for (const f of [coach, sculptAndWalk, scenarios, snowAndDawnByHand, saveShare, wondersLearn, english]) {
+  for (const f of [coach, sculptAndWalk, scenarios, snowAndDawnByHand, saveShare, wondersLearn, english, online]) {
     if (only && f.name !== only) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 600)); }
   }

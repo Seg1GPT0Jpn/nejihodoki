@@ -98,13 +98,13 @@ test('flags reflect what the pages have today', () => {
   for (const g of R.games) {
     const page = readText(g.path + 'index.html');
     eq(g.tech === '3d', /three(\.min)?\.js/.test(page), g.id + ' tech');
-    // every game has a match except the ones that say so honestly (planet: a sandbox over millions of years) — then the page has none either
+    // every game has a match except the ones that say so honestly (escape, td, physics, …) — then the page has none either
     if (g.flags.versus) eq(g.versus, /KoboVersus\.init/.test(page) ? 'common' : 'own', g.id + ' versus impl');
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit', 'games with a daily today');
   eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'planet,escape,td,physics,trade,cards,town,colorcards,brawl,train', 'games without a match');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,colorcards,brawl,train', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 

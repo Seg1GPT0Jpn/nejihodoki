@@ -32,8 +32,10 @@ KoboI18n.add({ en: {
   '降りて、歩く': 'Dive down and walk', 'スティックかWASDで歩く・ジャンプ。ぐるっと一周できる': 'Walk with the stick or WASD and jump. You can walk all the way round',
   '見つける': 'Discover', '光の柱へ行くと、生き物・結晶・化石が図鑑に。✦で新しい道具': 'Reach the pillars of light to log creatures, crystals and fossils. ✦ unlock new tools',
   '時代を進める': 'Move through the ages', 'マグマ→雨→海→生命→森→動物→文明→宇宙': 'Magma → rain → oceans → life → forests → animals → cities → space',
+  '2〜4人で3分、同じ星を育てて点を競う。生き物の多さ・緑・発見・進化・気候で点がつく': '2–4 players, 3 minutes: grow the same planet and compete. Points for variety of life, green land, finds, evolution and climate',
 } });
 </script>
+<script src="../common/versus.js"></script>
 <script src="../common/games.js"></script>
 <script src="../common/platform.js"></script>
 <script src="../common/audio.js"></script>
@@ -116,13 +118,20 @@ body.thumb .hud, body.thumb .kb-layer { display: none !important; }
 #rail i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; filter: grayscale(1) brightness(.6); opacity: .55; }
 #rail i.done { filter: none; opacity: 1; } #rail i.now { filter: none; opacity: 1; box-shadow: 0 0 0 2px #ffd36b, 0 0 12px rgba(255, 211, 107, .7); }
 /* scenario goal and learning task */
-#goal, #lesson { left: 50%; transform: translateX(-50%); top: calc(var(--kb-sat) + 84px); width: min(94%, 440px); padding: 7px 10px; border-radius: 16px; }
-#goal .gh, #lesson .gh { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; font-weight: 800; }
-#gTitle, #lsTask { color: #8ff0d4; overflow: hidden; text-overflow: ellipsis; }
+#goal, #lesson, #vsBoard { left: 50%; transform: translateX(-50%); top: calc(var(--kb-sat) + 84px); width: min(94%, 440px); padding: 7px 10px; border-radius: 16px; }
+#goal .gh, #lesson .gh, #vsBoard .gh { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; font-weight: 800; }
+#gTitle, #lsTask, #vbTitle { color: #8ff0d4; overflow: hidden; text-overflow: ellipsis; }
 #gLeft, #budget { margin-left: auto; color: #b9c6ea; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .gr { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px; font-size: 11.5px; color: #b9c6ea; margin-top: 3px; font-variant-numeric: tabular-nums; }
 .gr b { color: #fff; white-space: nowrap; } .gr.ok span:first-child { color: #7cf0a8; } .gr.ok span:first-child::before { content: '✓ '; }
 .gb { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .14); overflow: hidden; } .gb i { display: block; height: 100%; width: calc(var(--p, 0) * 100%); background: linear-gradient(90deg, #44cfae, #ffd36b); border-radius: 3px; transition: width .4s; }
+/* online score battle (common/versus.js): the score rows, the entry button, and only what a battle needs on screen */
+#vsBoard { pointer-events: none; }
+#vsBoard .gr { grid-template-columns: 4.6em 1fr auto; }
+#vsBoard .gr .gb i { background: linear-gradient(90deg, #62e0c2, #ffd36b); }
+body.vs #playBtn, body.vs #spdBtn, body.vs #infoBtn, body.vs #dgWhy, body.vs #celebWhy, body.vs #iSpark { display: none !important; }
+.vs-wrap { display: block; }
+.vs-wrap .kvs-entry { margin-top: 8px; min-height: 48px; border-radius: 16px; background: var(--p-panel); border-color: var(--p-line); font-size: 14px; }
 #lesson p { margin: 3px 0 0; font-size: 12px; line-height: 1.45; color: #dfe7ff; }
 #lesson .lrow { display: flex; gap: 6px; margin-top: 5px; }
 #lesson .lrow .btn { margin: 0; min-height: 44px; font-size: 13px; }
@@ -292,6 +301,7 @@ html[lang="en"] .tool { font-size: 10px; }
   </div>
   <div id="rail" class="hud glass" aria-hidden="true"></div>
   <div id="goal" class="hud glass" hidden><div class="gh"><span id="gTitle"></span><span id="budget"></span></div><div id="gRows"></div></div>
+  <div id="vsBoard" class="hud glass" hidden aria-live="off"><div class="gh"><span id="vbTitle"></span></div><div id="vbRows"></div></div>
   <div id="lesson" class="hud glass" hidden><div class="gh"><span id="lsTask"></span><span id="lsStep"></span></div><p id="lsSay"></p><div class="lrow" id="lsBtns"></div></div>
   <div id="hint" class="hud glass" hidden><span class="arw" id="hintArw">➤</span><span id="hintT"></span></div>
   <div id="coach" class="hud glass" hidden role="status" aria-live="polite"><span class="ci" id="coachI" aria-hidden="true"></span><p id="coachT"></p><button class="skip" id="coachSkip" type="button" data-i18n>スキップ</button></div>
@@ -326,6 +336,7 @@ html[lang="en"] .tool { font-size: 10px; }
     <div class="scroll" id="tPlayPane">
       <button class="btn two" id="tContinue" type="button"><span></span><small></small></button>
       <button class="btn" id="tNew" type="button" data-i18n>新しい星をつくる</button>
+      <span class="vs-wrap" id="tVs"></span>
       <div class="slabel"><span data-i18n>わたしの銀河</span><span id="tShelfN"></span></div>
       <div class="shelf" id="tShelf"></div>
       <div class="slabel"><span data-i18n>ふしぎな星をたずねる</span></div>
@@ -408,6 +419,7 @@ html[lang="en"] .tool { font-size: 10px; }
       <li><i aria-hidden="true">🪂</i><span><span data-i18n>降りて、歩く</span><small data-i18n>スティックかWASDで歩く・ジャンプ。ぐるっと一周できる</small></span></li>
       <li><i aria-hidden="true">✨</i><span><span data-i18n>見つける</span><small data-i18n>光の柱へ行くと、生き物・結晶・化石が図鑑に。✦で新しい道具</small></span></li>
       <li><i aria-hidden="true">🌍</i><span><span data-i18n>時代を進める</span><small data-i18n>マグマ→雨→海→生命→森→動物→文明→宇宙</small></span></li>
+      <li><i aria-hidden="true">🏁</i><span><span data-i18n>オンライン対戦</span><small data-i18n>2〜4人で3分、同じ星を育てて点を競う。生き物の多さ・緑・発見・進化・気候で点がつく</small></span></li>
     </ol></div>
     <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
     <button class="btn" id="howtoGo" type="button" data-i18n>OK</button></div>
@@ -428,7 +440,7 @@ const S = window.PSim, LRN = window.PLearn;
 const T = KoboI18n.t, EN = KoboI18n.lang === 'en', LANG = EN ? 'en' : 'ja';
 const TT = (ja, en, v) => { if (en) KoboI18n.add({ en: { [ja]: en } }); return T(ja, v); }; // a phrase and its English, side by side
 const PK = o => LRN.pick(o, LANG);
-const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null, VS = window.KoboVersus || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'planet';
 const SAVE_KEY = 'kusoge.planet.save';   // records: scenario bests, totals, stats, discoveries (dex), lessons done (learn)
@@ -477,6 +489,7 @@ function readSave() {
 let save = readSave();
 const setOf = s => new Set(s ? s.split(',') : []);
 function writeSave() {
+  if (vs) return; // an online battle never saves (versus rule): the counters it bumps are dropped when the battle closes
   const cur = readSave();
   for (const k of STAT_KEYS) save.stats[k] = Math.max(save.stats[k] || 0, cur.stats[k] || 0);
   for (const id of Object.keys(cur.sc)) { const a = save.sc[id], b = cur.sc[id]; if (!a) save.sc[id] = b; else { a.best = Math.max(a.best, b.best); a.stars = Math.max(a.stars, b.stars); } }
@@ -623,7 +636,8 @@ function watchFps(dt) {
 }
 
 // ================= state =================
-let mode = 'title';      // title | free | scen | wonder | learn
+let mode = 'title';      // title | free | scen | wonder | learn | vs (online score battle)
+let vs = null;           // { snap, w, k, n, startAt, dur, playing, practice, bkey } while a battle owns the screen (see the online battle block)
 let view = 'orbit';      // orbit | dive | surface
 let world = null, sc = null, wonderId = null, lesson = null;
 let running = false, spd = 7, tool = null, booted = false, lastSaveAt = 0;
@@ -635,7 +649,7 @@ let shelf = []; // other planets of the galaxy (serialized)
 function maxSpeed() { if (mode === 'scen') return sc.def.maxSpeed || sc.def.speed; if (world && world.civ && world.civ.on) return 3; return 8; }
 function minSpeed() { if (mode === 'scen') return Math.max(0, sc.def.speed - 1); if (world && world.civ && world.civ.on) return 1; return 5; }
 function setRunning(on) {
-  if (!world || world.frozen) on = false;
+  if (!world || world.frozen || mode === 'vs') on = false; // a battle's clock is the match clock
   running = !!on; renderTime();
   if (on && mode === 'free' && !freeSession) { freeSession = true; emit('play_start', { mode: 'normal' }); }
 }
@@ -672,6 +686,7 @@ function renderPlate() {
   if (!world) return;
   let name, sub;
   if (mode === 'wonder') { const I = WONDER_INFO[wonderId]; name = EN ? I[1] : I[0]; sub = EN ? I[2] : I[3]; }
+  else if (mode === 'vs') { name = TT('対戦の星', 'Battle planet'); sub = ageText(); }
   else if (mode === 'scen') { name = T(EN ? SC_TEXT[sc.def.id].t[1] : SC_TEXT[sc.def.id].t[0]); sub = ageText(); }
   else if (mode === 'learn') { name = PK(lesson.ch.title); sub = lesson.ch.id === 'history' && lesson.hs != null ? PK(LRN.HISTORY[lesson.hs].t).split(/[：:]/)[0] : ageText(); }
   else { name = TT('惑星{n}', 'Planet {n}', { n: planetName(world) }); sub = eraName(S.ERAS[S.era(world)]) + SEP + ageText(); }
@@ -723,6 +738,7 @@ function renderHud() {
   $('rail').hidden = !playing || !orbit || mode === 'learn' || mode === 'scen' || mode === 'wonder';
   $('seasonBar').hidden = !(mode === 'learn' && lesson && lesson.ch.id === 'season' && lesson.phase === 'try');
   $('iSpark').hidden = mode === 'learn';
+  $('vsBoard').hidden = mode !== 'vs'; document.body.classList.toggle('vs', mode === 'vs');
   if (sc) renderGoal();
 }
 function renderGoal() {
@@ -762,6 +778,7 @@ function project(lat, lon) { const d = S.dirOf(lat, lon), g = W.groundAt(d[0], d
 function useTool(k, lat, lon, o) {
   if (!world) return 'no';
   const t = toolOf(k); if (!t) return 'no';
+  if (mode === 'vs' && !vsLive()) return 'no'; // a battle takes input only between Go and time up
   const cont = !!(o && o.cont);
   let res;
   if (mode === 'scen') res = S.scTool(sc, k, lat, lon, cont ? { cont: true } : undefined);
@@ -820,6 +837,7 @@ const keys = new Set(); let stick = { x: 0, y: 0, id: null, cx: 0, cy: 0 }, jump
 function surfacePose(cam) { E.camera(cam, 10, null); }
 function dive(lat, lon) {
   if (!glOk || !world || view !== 'orbit') return false;
+  if (mode === 'vs' && !vsLive()) return false;
   if (lat == null) { const r = cv.getBoundingClientRect(), h = pick(r.left + r.width / 2, r.top + r.height / 2); if (!h) return false; lat = h.lat; lon = h.lon; }
   [lat, lon] = landNear(lat, lon); hourA = Math.atan2(S.dirOf(lat, lon)[2], S.dirOf(lat, lon)[0]) - 0.35; applySun();
   const d = S.dirOf(lat, lon); E.place(new THREE.Vector3(d[0], d[1], d[2]), new THREE.Vector3(0, 1, 0)); E.show(true);
@@ -862,6 +880,7 @@ sz.addEventListener('pointermove', e => { if (stick.id !== e.pointerId) return; 
 const stickEnd = e => { if (stick.id !== e.pointerId) return; stick = { x: 0, y: 0, id: null }; stEl.className = ''; };
 sz.addEventListener('pointerup', stickEnd); sz.addEventListener('pointercancel', stickEnd);
 function inputNow() {
+  if (mode === 'vs' && !vsLive()) { jumpQ = false; return { x: 0, y: 0, jump: false }; }
   let x = stick.x, y = stick.y;
   if (keys.has('KeyA') || keys.has('ArrowLeft')) x -= 1; if (keys.has('KeyD') || keys.has('ArrowRight')) x += 1;
   if (keys.has('KeyW') || keys.has('ArrowUp')) y += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) y -= 1;
@@ -884,6 +903,10 @@ function onFind(g) {
   const isSp = g.k === 'sp' || g.k === 'sea';
   const title = isSp ? TT('{n} を見つけた！', 'Found: {n}!', { n: EN ? g.sp.name.en : g.sp.name.ja }) : TT('{n} を見つけた！', 'Found: {n}!', { n: markName(g.k) });
   const text = isSp ? (g.k === 'sea' ? TT('海の生き物', 'A sea creature') : TT('陸の生き物・{h}にすむ', 'A land creature of the {h}', { h: TT({ forest: '森', grass: '草原', desert: '砂漠', snow: '雪原' }[g.sp.hab] || '野', EN ? { forest: 'forest', grass: 'grassland', desert: 'desert', snow: 'snowfield' }[g.sp.hab] || 'wild' : null) })) : '';
+  if (mode === 'vs') { // a battle: points, not the log or ✦ (nothing is saved)
+    celebrate({ icon: isSp ? (g.k === 'sea' ? '🐟' : '🦎') : (MARK[g.k] || ['✨'])[0], title, text: TT('+{n}点', '+{n} pts', { n: 80 }), ms: 1800 });
+    sfx.find(); if (glOk) W.burst(g.lat, g.lon, 'find'); renderVsBoard(); return;
+  }
   const key = isSp ? 's:' + (world.seed >>> 0) + ':' + g.sp.i + ':' + (g.sp.sea ? 1 : 0) : 'k:' + g.k;
   const fresh = !setOf(save.dex).has(key);
   save.dex = save.dex ? save.dex + ',' + key : key; addStat('spark', g.spark); writeSave();
@@ -911,6 +934,12 @@ function lastSentence(t) { const a = t.split(EN ? /(?<=\.)\s+/ : /(?<=。)/).fil
 function handleNews() {
   const w = world; if (coach && w && COACH[coach.step].on === 'ocean' && w.ms.ocean != null) coachEvent('ocean');
   if (!w || !w.news || !w.news.length) return;
+  if (mode === 'vs') { // a battle: no stats, no cards; the scoreboard and the marks follow the model
+    const ev = w.news.splice(0);
+    for (const e of ev) if (e.k === 'stage' && e.st >= 5 && e.st <= 6) { toast(e.st === 5 ? TT('陸に植物が広がった！ +120', 'Plants spread over the land! +120') : TT('陸に動物が生まれた！ +120', 'Animals appear on land! +120'), 2200); sfx.era(); }
+    if (glOk && ev.some(e => ['life', 'stage', 'extinct', 'ms', 'find'].includes(e.k))) W.sync({ marks: true });
+    return;
+  }
   const news = w.news.splice(0);
   for (const e of news) {
     if (e.k === 'ms' && mode !== 'learn' || e.k === 'ms' && lesson && lesson.ch.id !== 'history') {
@@ -1325,6 +1354,8 @@ $('playBtn').addEventListener('click', () => { sfx.tap(); setRunning(!running); 
 $('spdBtn').addEventListener('click', () => { sfx.tap(); setSpeed(spd >= maxSpeed() ? minSpeed() : spd + 1); });
 document.addEventListener('keydown', e => {
   const tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || document.querySelector('.kb-layer')) return;
+  if (VS && VS.active() && !(vs && VS.canPlay())) return; // the battle cards own the keyboard
+  if (mode === 'vs') { if (e.key === 'Escape') return; }
   if (e.key === 'Escape') { if (!$('howto').hidden) $('howtoGo').click(); else if (!anyOverlay()) openMenu(); return; }
   if (anyOverlay() || !world || mode === 'title') return;
   if (view === 'surface') { if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) { e.preventDefault(); keys.add(e.code); lastInput = performance.now(); } if (e.code === 'KeyQ' || e.code === 'KeyE') ascend(); return; }
@@ -1336,6 +1367,91 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => keys.delete(e.code));
 window.addEventListener('blur', () => keys.clear());
+
+// ================= online score battle (common/versus.js) =================
+// Everyone grows the SAME young planet: PSim.vsWorld(seed) builds it from the match seed (same land, same creatures, three crystals), and the match
+// clock, not the player, runs time: S.VS_RATE years a second in fixed steps of S.VS_CH seconds (vsSync), so the planet evolves the same for all and
+// only what each player does to it (tools, walking, finding) differs. The score is read from the model (S.vsScore: variety of life, green land,
+// finds, evolution, climate; a few rows in the board). During a battle nothing is saved and no best or stat is touched (writeSave is off, and the
+// in-memory counters are dropped on exit); the solo state (title, free planet, challenge, lesson, wonder) is set aside and comes back as it was.
+function vsLive() { return !!(vs && vs.w && world === vs.w && VS && VS.canPlay()); }
+// bring the battle planet up to the match clock (budget in ms; null = all the way, used for the final score)
+function vsSync(budget) {
+  if (!vs || !vs.w || vs.over) return;
+  const el = (Date.now() - vs.startAt) / 1000, want = Math.min(vs.n, Math.max(0, Math.floor(el / S.VS_CH))), t0 = performance.now();
+  let did = 0;
+  while (vs.k < want && (budget == null || performance.now() - t0 < budget)) { S.vsStep(vs.w); vs.k++; did++; }
+  if (did) handleNews();
+}
+const VS_ROWS = [['多様さ', 'Variety', 'div', 400], ['緑', 'Green', 'green', 240], ['発見', 'Finds', 'finds', 320], ['進化', 'Evolve', 'evolve', 240], ['気候', 'Climate', 'climate', 150]];
+function renderVsBoard() {
+  if (!vs || !vs.w) return;
+  const sc = S.vsScore(vs.w), key = VS_ROWS.map(r => sc[r[2]]).join();
+  if (key === vs.bkey) return; vs.bkey = key;
+  $('vbTitle').textContent = TT('同じ星を育てよう', 'Grow the same planet');
+  $('vbRows').innerHTML = VS_ROWS.map(r => '<div class="gr"><span>' + TT(r[0], r[1]) + '</span><span class="gb" style="--p:' + clamp(sc[r[2]] / r[3], 0, 1).toFixed(3) + '"><i></i></span><b>' + nf(sc[r[2]]) + '</b></div>').join('');
+}
+function vsEnd(reason) {
+  if (!vs || !vs.playing) return;
+  const sc = vs.w ? S.vsScore(vs.w) : { total: 0, finds: 0 };
+  emit('play_end', { mode: vs.playing, score: sc.total, durationMs: Math.max(0, Math.min(vs.dur * 1000, Date.now() - vs.startAt)), reason, stats: { finds: vs.w ? vs.w.found.length : 0, stage: vs.w ? vs.w.life.st : 0 } });
+  vs.playing = null;
+}
+if (VS) {
+  KoboVersus.init({ sameText: TT('2〜4人で {t} のスコア勝負。全員が同じ星から始めて、育てた星の点を競います。', '2–4 players, {t} score battle. Everyone starts from the same planet and scores for what they grow.'),
+    game: GAME, title: T('わくせいシミュレーター'), duration: 180, unit: TT('点', 'pts'),
+    theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--p-btn)', accentInk: 'var(--p-btn-ink)', accentShadow: 'var(--p-btn-shadow)', card: 'var(--p-card)',
+      line: 'var(--p-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
+    hudCover: () => $('top'),
+    onOpen() { const g = KG(); if (g) g.pause('versus'); },
+    onStart({ seed, startAt, duration, practice }) {
+      if (!vs) {
+        // the solo state is set aside exactly as it is
+        const snap = { mode, world, sc, wonderId, lesson, spd, orb: Object.assign({}, orb), hourA, seasonA, coach, titleTab, ov: OVERLAYS.filter(id => !$(id).hidden), scLive: mode === 'scen' && !!sc && !sc.ended };
+        if (mode === 'free' && freeSession) emit('play_end', { mode: 'normal', score: 0, reason: 'quit' });
+        else if (snap.scLive) emit('play_end', { mode: 'normal', score: 0, reason: 'quit', stage: sc.i + 1 });
+        freeSession = false;
+        vs = { snap, w: null, k: 0, n: 0, startAt: 0, dur: duration, playing: null, practice: !!practice, bkey: '' };
+      } else vsEnd('quit');
+      vs.practice = !!practice; vs.seed = seed >>> 0; vs.startAt = startAt; vs.dur = duration; vs.n = Math.floor(duration / S.VS_CH); vs.k = 0; vs.bkey = ''; vs.over = false;
+      vs.w = S.vsWorld(vs.seed);
+      gesture = null; ptrs.clear(); keys.clear(); stick = { x: 0, y: 0, id: null }; jumpQ = false;
+      coach = null; renderCoach();
+      startPlanet(vs.w, 'vs'); running = false; orb.dist = 2.9; hourA = 0.3;
+      vs.playing = practice ? 'practice' : 'versus';
+      emit('play_start', { mode: vs.playing, seed: vs.seed });
+      renderHud(); renderVsBoard(); renderTime();
+    },
+    onGo() { lastInput = performance.now(); toast(TT('山・雨・いのちで星を育てて、降りて見つけよう', 'Grow it with mountains, rain and life, then dive down and find things'), 2600); },
+    getScore() {
+      if (!vs || !vs.w) return 0;
+      vsSync(Date.now() - vs.startAt >= vs.dur * 1000 ? null : 6);
+      return S.vsScore(vs.w).total;
+    },
+    onEnd() {
+      if (!vs) return;
+      vsSync(null); vs.over = true; vsEnd('over');
+      gesture = null; ptrs.clear(); keys.clear(); stick = { x: 0, y: 0, id: null }; tool = null; buildDock(); renderVsBoard();
+    },
+    onExit() {
+      if (!vs) { const g = KG(); if (g) g.resume('api'); return; }
+      vsEnd('quit');
+      const s = vs.snap; vs = null;
+      gesture = null; ptrs.clear(); keys.clear(); stick = { x: 0, y: 0, id: null }; jumpQ = false; clearCeleb(); $('toast').classList.remove('on');
+      save = readSave(); // nothing was written during the battle; drop the in-memory counters it bumped
+      if (s.mode === 'title') { world = s.world; if (glOk) { W.setPlanet(world); W.look(); } showTitle(s.titleTab); }
+      else {
+        startPlanet(s.world, s.mode, { sc: s.sc, wonder: s.wonderId, lesson: s.lesson });
+        spd = s.spd; s.ov.forEach(id => { $(id).hidden = false; });
+      }
+      Object.assign(orb, s.orb); hourA = s.hourA; seasonA = s.seasonA; applySun();
+      coach = s.coach; renderCoach(); buildDock(); renderTime(); renderHud();
+      if (s.scLive) emit('play_start', { mode: 'normal', stage: s.sc.i + 1, resumed: true });
+      const g = KG(); if (g) g.resume('api');
+    },
+  });
+  VS.button($('tVs'));
+}
 
 // ================= the loop =================
 let raf = 0, last = 0, hudT = 0, dangerT = 0, tSec = 0;
@@ -1356,6 +1472,7 @@ function loop(ts) {
   if (document.hidden) return;
   tSec += dt;
   if (running && !anyOverlay()) simTick(dt);
+  else if (mode === 'vs' && vsLive()) vsSync(14);
   if (lesson && lesson.phase === 'try' && (running || lesson.ch.try.k === 'tool')) { lesson.chk = (lesson.chk || 0) + dt; if (lesson.chk > 0.3) { lesson.chk = 0; lessonCheck(); } }
   if (glOk && world) {
     // sun: the planet turns (a day ≈ 50 s) and the seasons go round (a year ≈ 3 min), except in the seasons lesson
@@ -1374,13 +1491,13 @@ function loop(ts) {
     // refresh the world as the model changes
     recolorDue -= dt; cloudDue -= dt;
     if (world.geoV !== W.geoV) W.sync();
-    if (running && recolorDue <= 0) { recolorDue = view === 'orbit' ? 0.7 : 2.5; const key = S.sites(world).map(s => s.id + (s.found ? '+' : '')).join(); W.sync({ recolor: true, flora: true, marks: key !== sitesKey }); sitesKey = key; W.look(); }
+    if ((running || vsLive()) && recolorDue <= 0) { recolorDue = view === 'orbit' ? 0.7 : 2.5; const key = S.sites(world).map(s => s.id + (s.found ? '+' : '')).join(); W.sync({ recolor: true, flora: true, marks: key !== sitesKey }); sitesKey = key; W.look(); }
     if (cloudDue <= 0) { cloudDue = 15; W.sync({ clouds: true }); }
     W.tick(dt, tSec, camera);
     if (post) post.render(scene, camera); else renderer.render(scene, camera);
     watchFps(dt);
   }
-  hudT += dt; if (hudT > 0.25) { hudT = 0; if (world) { renderPlate(); if (sc) renderGoal(); } }
+  hudT += dt; if (hudT > 0.25) { hudT = 0; if (world) { renderPlate(); if (sc) renderGoal(); if (mode === 'vs') renderVsBoard(); } }
   dangerT += dt; if (dangerT > 0.5) { dangerT = 0; dangerCheck(); }
 }
 window.addEventListener('resize', () => resize());
@@ -1429,6 +1546,7 @@ if (DEBUG) {
         sites: w ? S.sites(w).map(s => ({ id: s.id, k: s.k, lat: s.lat, lon: s.lon, found: s.found })) : [], found: w ? w.found.slice() : [],
         explorer: glOk && view !== 'orbit' ? { ll: E.latLon(), walked: E.walked, r: E.r, ground: W.groundAt(E.p.x, E.p.y, E.p.z), alt: E.alt, swim: E.swim, jumped: E.jumped || 0 } : null,
         danger: dangerNow, dangerShown: !$('danger').hidden, celeb: $('celeb').classList.contains('on') ? $('celebT').textContent : null, eraCard: $('eraCard').classList.contains('on') ? $('eraT').textContent : null, hint: !$('hint').hidden ? $('hintT').textContent : null,
+        vs: vs ? { seed: vs.seed, k: vs.k, n: vs.n, playing: vs.playing, practice: vs.practice, over: !!vs.over, score: vs.w ? S.vsScore(vs.w) : null, board: $('vbRows').textContent } : null,
         sc: sc ? { id: sc.def.id, i: sc.i, ended: sc.ended, win: sc.win, used: S.scUsed(sc), actions: sc.actions, left: S.scLeft(sc), score: sc.score } : null,
         lesson: lesson ? { id: lesson.ch.id, phase: lesson.phase, hs: lesson.hs } : null, quiz: quiz ? { i: quiz.i, right: quiz.right } : null, coach: coach ? coach.step : null,
         save: JSON.parse(JSON.stringify(save)), overlays: OVERLAYS.filter(id => !$(id).hidden), shelf: shelf.length, wonder: wonderId,
@@ -1451,6 +1569,7 @@ if (DEBUG) {
     tool: useTool, play: () => setRunning(true), pause: () => setRunning(false), speed: setSpeed, pick: k => pickTool(k),
     scenario: i => showIntro(i), begin() { if (!$('ovIntro').hidden) startScenario(introI); }, strat(k) { if (sc && !sc.ended) sc.def.plan(k, uiApi, world); }, scenarios: () => S.SC_IDS,
     chapter: i => showChapter(i), lessonGo: () => $('lsGo').click(), wonder: visitWonder, title: showTitle, design: showDesign, shareUrl, readCode, dex: showDex, why: showWhy, info: showInfo, ending: showEnding, quiz: showQuiz,
+    vsSync: () => { vsSync(null); renderVsBoard(); }, vsScore: () => vs && vs.w ? S.vsScore(vs.w) : null,
     saveWorld, loadWorld: () => { const w = loadWorld(); if (w) startFree(w, false); return !!w; }, readSave, closeAll: hideOverlays, menu: openMenu, coach: () => coach && coach.step, finishCoach, hush: () => { clearCeleb(); $('eraCard').classList.remove('on'); $('toast').classList.remove('on'); },
     dive, ascend, quality: q => setQuality(q), orbit: (yaw, pitch, dist) => { if (yaw != null) orb.yaw = yaw; if (pitch != null) orb.pitch = pitch; if (dist != null) orb.dist = dist; orb.auto = false; },
     faceTo(lat, lon) { orb.yaw = (lon + 90) * Math.PI / 180; orb.pitch = clamp(lat * Math.PI / 180, -1.3, 1.3); orb.auto = false; orbitPose(camera, orb); },

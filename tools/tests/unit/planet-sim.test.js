@@ -150,4 +150,39 @@ test('old saves load: before the redesign (life everywhere, milestones rebuilt q
   eq(S.deserialize({ v: 2 }), null, 'unknown version');
 });
 
+test('online battle: the same seed gives the same planet and the same score, whatever the frame rate; a different seed gives another planet', () => {
+  const run = (seed, plan) => { const w = S.vsWorld(seed); for (let i = 0; i < 40; i++) { if (plan && i === 8) { S.tools.raise(w, 10, 20); for (let q = 0; q < 6; q++) S.tools.raise(w, 10 + q * 0.7, 20 + q, { cont: true }); S.tools.rain(w, 10, 22); S.tools.seed(w, -20, 100); } S.vsStep(w); } return w; };
+  const a = run(31337, true), b = run(31337, true), c = run(4242, true);
+  eq(hash(a), hash(b), 'same seed, same moves, same planet');
+  eq(JSON.stringify(S.vsScore(a)), JSON.stringify(S.vsScore(b)), 'same score');
+  ok(hash(a) !== hash(c), 'another seed is another planet');
+  const w0 = S.vsWorld(777), w1 = S.vsWorld(777); eq(hash(w0), hash(w1), 'the start is the same too');
+  eq(w0.life.st, 4, 'starts in the age of sea life'); ok(w0.noCiv && !w0.surp, 'no civilization, no surprises'); eq(w0.found.length, 0);
+  eq(w0.marks.filter(m => m.k === 'cry').length, 3, 'three crystals to find'); ok(S.sites(w0).length >= 4, 'something to find from the start');
+  ok(w0.marks.filter(m => m.k === 'cry').every(m => w0.lf[S.cellOf(m.lat, m.lon)] >= 0.5), 'crystals sit on land');
+});
+
+test('online battle: the score formula (variety x4, green % x3, finds x80, evolution 120 a stage, climate up to 150)', () => {
+  const w = S.vsWorld(99);
+  const f = st => { const L = st.life, d = st.d; return Math.round(L.div) * 4 + Math.round(S.landVeg(st) * 100) * 3 + st.found.length * 80 + Math.max(0, Math.min(L.st, 6) - 4) * 120 + (st.flags.snow ? 0 : Math.round(150 * S.clamp(1 - Math.abs(d.Tg - 15) / 25, 0, 1))); };
+  const sc = S.vsScore(w); eq(sc.total, f(w), 'total = the parts'); eq(sc.total, sc.div + sc.green + sc.finds + sc.evolve + sc.climate);
+  const before = sc.total, cry = S.sites(w).find(x => x.k === 'cry'); S.discover(w, cry.id);
+  eq(S.vsScore(w).total - before, 80, 'a find is worth 80'); eq(S.vsScore(w).finds, 80);
+  w.life.st = 6; eq(S.vsScore(w).evolve, 240, 'animals: 2 stages above the sea life'); w.life.st = 7; eq(S.vsScore(w).evolve, 240, 'capped at animals');
+  w.life.st = 4; eq(S.vsScore(w).evolve, 0);
+  w.d.Tg = 15; eq(S.vsScore(w).climate, 150, '15 degrees is best'); w.d.Tg = -10; eq(S.vsScore(w).climate, 0, 'frozen'); w.d.Tg = 55; eq(S.vsScore(w).climate, 0, 'boiling');
+  w.d.Tg = 15; w.flags.snow = 1; eq(S.vsScore(w).climate, 0, 'a snowball planet');
+});
+
+test('online battle: left alone for the whole match, every seed grows life onto land and scores 600–1100; the match clock is VS_RATE years a second', () => {
+  eq(S.VS_RATE * 180, 5.4e8, '3 minutes = 540 million years'); eq(180 / S.VS_CH, 720);
+  for (const seed of [1, 2, 3, 777, 424242, 4294967295]) {
+    const w = S.vsWorld(seed), t0 = w.t, s0 = S.vsScore(w).total;
+    for (let i = 0; i < 720; i++) S.vsStep(w);
+    ok(Math.abs(w.t - t0 - 5.4e8) < 1, 'the planet is 540 million years older: ' + (w.t - t0));
+    const sc = S.vsScore(w); ok(w.life.st >= 5 && sc.total >= 600 && sc.total <= 1100 && sc.total > s0 + 300, seed + ' ' + JSON.stringify(sc));
+    ok(isFinite(w.d.Tg) && w.d.Tg > 0 && w.d.Tg < 40, seed + ' climate ' + w.d.Tg);
+  }
+});
+
 run('planet-sim');

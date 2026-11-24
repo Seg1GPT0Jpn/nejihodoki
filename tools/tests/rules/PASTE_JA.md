@@ -181,3 +181,8 @@ Realtime Database：
 - **Realtime Database だけ**貼り直してください（上の「2. Realtime Database のルール」と同じ手順で、新しい `database.rules.json` の全文）。**貼り直さないと、ころがし工房ゴルフの「オンライン対戦」で相手が見つからず「準備中」になります。**
 - 変わったのは、対戦のゲームの一覧（3か所の `…|hitblow|fit|minigolf`）だけです。ころがし工房ゴルフのオンライン対戦は `vs/queue/minigolf` を使います。
 - **Firestore は貼り直し不要**です（`firestore.rules` は変えていません。対戦の記録はこの端末の `kusoge.vs.stats` だけ）。
+
+## 「わくせいシミュレーター」（planet）にオンライン対戦を足したとき
+- **Realtime Database だけ**貼り直してください（上の「2. Realtime Database のルール」と同じ手順で、新しい `database.rules.json` の全文）。**貼り直さないと、わくせいシミュレーターの「オンライン対戦」で相手が見つからず「準備中」になります。**
+- 変わったのは、対戦のゲームの一覧（3か所の `…|hitblow|fit|minigolf|planet`）だけです。わくせいシミュレーターのオンライン対戦は `vs/queue/planet` を使います。
+- **Firestore は貼り直し不要**です（`firestore.rules` は変えていません。対戦の記録はこの端末の `kusoge.vs.stats` だけ）。

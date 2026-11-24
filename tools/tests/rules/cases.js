@@ -329,6 +329,16 @@ async function runCases(T, opt = {}) {
     await check(g, 'minigolf: a look-alike id (minigolfx) is still unknown', 'deny', () => rtdb(T, 'PUT', `vs/queue/minigolfx/${A.uid}`, { n: 'x', t: TS, h: TS }, A));
     await check(g, 'minigolf: queue own remove', 'allow', () => rtdb(T, 'DELETE', `vs/queue/${golf}/${A.uid}`, undefined, A));
     await check(g, 'minigolf: room delete by the creator', 'allow', () => rtdb(T, 'DELETE', `vs/rooms/${roomGolf}`, undefined, A));
+
+    // planet (わくせいシミュレーター) joins the battle games: its queue and its rooms are accepted like any other game's
+    const planet = 'planet', roomPlanet = rid('-rulestest');
+    cleanup.push(() => rtdb(T, 'DELETE', `vs/queue/${planet}/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `vs/rooms/${roomPlanet}`, undefined, A));
+    await check(g, 'planet: queue own set { n, t, h }', 'allow', () => rtdb(T, 'PUT', `vs/queue/${planet}/${A.uid}`, { n: 'ライブA', t: TS, h: TS }, A));
+    await check(g, 'planet: read the game queue', 'allow', () => rtdb(T, 'GET', `vs/queue/${planet}`, undefined, C));
+    await check(g, 'planet: room create with g = planet', 'allow', () => rtdb(T, 'PUT', `vs/rooms/${roomPlanet}`, Object.assign(meta(A), { g: planet }), A));
+    await check(g, 'planet: a look-alike id (planetx) is still unknown', 'deny', () => rtdb(T, 'PUT', `vs/queue/planetx/${A.uid}`, { n: 'x', t: TS, h: TS }, A));
+    await check(g, 'planet: queue own remove', 'allow', () => rtdb(T, 'DELETE', `vs/queue/${planet}/${A.uid}`, undefined, A));
+    await check(g, 'planet: room delete by the creator', 'allow', () => rtdb(T, 'DELETE', `vs/rooms/${roomPlanet}`, undefined, A));
   }
 
   // ================================================================ RTDB: hole（hole/index.html）
