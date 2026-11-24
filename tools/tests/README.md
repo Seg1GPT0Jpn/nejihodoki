@@ -14,6 +14,8 @@ node tools/tests/run.js --list                  # 実行するタスクの一覧
 node tools/tests/hitsumabushi-play.js          # ひつまぶし工房の通しプレイ（チュートリアル・1営業日・採点・厳しさ・保存・デイリー・英語）
 node tools/tests/blocks-play.js                # ブロックはめの通し（本物のドラッグ・キー・CDP のタッチ・モード選び・ステージをクリア・星の保存と次が開く・もどす/入れかえ/ヒント・タイムアタック・古い保存・英語・全画面サイズ×明るい暗い）
 node tools/tests/drop-play.js                  # おちものタワーの通し（本物のキー・CDP のタッチ・保存とつづき・スタート画面のキー・ステージ一覧・ステージをクリア・★の保存と次が開く・ピースぎれ・岩・そろい消しのステージ・スプリント・古い保存・英語・全画面サイズ×明るい暗い）
+node tools/tests/raft-play.js                  # いかだ暮らしの通し（ふつうのいかだ・キーボード（1〜4・Space・矢印・Esc・V）・航海メニューと説明・ふつうのいかだは脇によけて戻る・ボットで航海1をクリア／施設を建てて航海2・★の保存と次が開く・8つの始まり方・日数ぎれと力尽き・CDP のタッチ・古い保存・英語・全画面サイズ×明るい暗い）
+node tools/tests/unit/raft-engine.test.js      # いかだ暮らしの航海の中身（8航海のねらい・上限・★・進み具合・kusoge.raft.x の読み込みと開く条件）
 node tools/tests/unit/drop-engine.test.js      # おちものタワーの中身（形と順番が変わらない・ライン判定・12ステージ・Sim・ボットが全ステージを解く・進み具合の読み込み）
 node tools/tests/unit/blocks-engine.test.js    # ブロックはめの中身（形と順番が変わらない・15ステージ・決まった結果・ボットが全ステージを解く・進み具合の読み込み）
 node tools/tests/hitblow-play.js               # ヒットアンドブローの通し（勝ち・負け・デイリーの答えが全員同じ・CPU対戦を最後まで・保存と再読み込み・英語）

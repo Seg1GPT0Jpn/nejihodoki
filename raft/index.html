@@ -326,6 +326,25 @@ html[lang="en"] .rc { padding: 3px 4px; letter-spacing: -.02em; } html[lang="en"
 #nogl b { display: block; font: 400 20px var(--font-display); margin-bottom: 8px; }
 #nogl p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--dim); font-weight: 800; }
 #nogl .btn { margin-top: 6px; }
+/* voyages (航海) */
+.vlist { display: flex; flex-direction: column; gap: 6px; text-align: left; margin: 0 0 8px; }
+.vitem { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 7px 10px; border-radius: 14px; background: var(--card); color: var(--ink);
+  border: 2px solid transparent; text-align: left; font: inherit; cursor: pointer; }
+.vitem.on { border-color: var(--coral); }
+.vitem:disabled { opacity: .55; cursor: default; }
+.vitem:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.vitem .vn { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--sun); color: var(--sun-ink); font: 400 13px/28px var(--font-display); text-align: center; }
+.vitem .vt { flex: 1; min-width: 0; }
+.vitem .vt b { display: block; font-size: 14px; }
+.vitem .vt small { display: block; font-size: 11.5px; color: var(--dim); font-weight: 800; line-height: 1.4; }
+.vstars { flex: none; font-size: 15px; letter-spacing: 1px; color: var(--sun-text); white-space: nowrap; }
+.vstars .off { color: var(--line); }
+.big .vstars { font-size: 40px; letter-spacing: 4px; }
+#xpBar.voy { background: #4fd18b; }
+#mission.voy .mtxt small { color: var(--hot); }
+#voyBtn svg { width: 22px; height: 22px; }
+@media (max-height: 460px) { #ovPanel .sub { margin-bottom: 6px; } #ovPanel li { padding-block: 3px; font-size: 12px; } #ovPanel h2 { font-size: 21px; } #ovPanel .vitem { min-height: 48px; padding-block: 4px; } }
+#ov .kbhint { margin: 8px 0 0; font-size: 11.5px; color: var(--dim); font-weight: 800; }
 @media (max-height: 660px) {
   #tabs button { min-height: 46px; } #tabs button svg { width: 18px; height: 18px; }
   .rc { padding: 2px 4px; }
@@ -351,12 +370,13 @@ html[lang="en"] .rc { padding: 3px 4px; letter-spacing: -.02em; } html[lang="en"
   <header>
     <a class="icon-btn" id="homeBtn" href="../" aria-label="ゲーム一覧に戻る" title="ゲーム一覧に戻る" data-i18n-attr="aria-label,title"></a>
     <h1 data-i18n-html>いかだ<span>暮らし</span></h1>
+    <button class="icon-btn" id="voyBtn" aria-label="航海（ねらいのある短い航海）" title="航海（V）" data-i18n-attr="aria-label,title"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5 L13.2 13.2 L8.5 15.5 L10.8 10.8 Z" fill="currentColor"/></svg></button>
     <button class="icon-btn" id="helpBtn" aria-label="遊び方" title="遊び方" data-i18n-attr="aria-label,title"></button>
     <button class="icon-btn" id="soundBtn" aria-label="音を消す" aria-pressed="true"></button>
     <button class="icon-btn" id="menuBtn" aria-label="一時停止とメニュー" title="一時停止とメニュー" data-i18n-attr="aria-label,title"></button>
   </header>
   <div id="hud">
-    <button id="mission" aria-label="現在の任務" data-i18n-attr="aria-label"><span id="lvBadge"><span data-i18n>船長Lv</span><b id="lvNum">1</b></span><span class="mtxt"><small data-i18n>メイン任務</small><b id="mText">…</b></span><span id="mProg"></span><i id="xpBar"></i></button>
+    <button id="mission" aria-label="現在の任務" data-i18n-attr="aria-label"><span id="lvBadge"><span data-i18n>船長Lv</span><b id="lvNum">1</b></span><span class="mtxt"><small id="mSmall" data-i18n>メイン任務</small><b id="mText">…</b></span><span id="mProg"></span><i id="xpBar"></i></button>
     <div id="stats">
       <div class="stat" id="stHp"><div class="lbl"><span data-i18n>体力</span><b>100</b></div><div class="bar"><i></i></div></div>
       <div class="stat" id="stWater"><div class="lbl"><span data-i18n>水分</span><b>100</b></div><div class="bar"><i></i></div></div>
@@ -393,6 +413,7 @@ html[lang="en"] .rc { padding: 3px 4px; letter-spacing: -.02em; } html[lang="en"
 <div id="loading" data-i18n>海を読み込み中…</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../common/game.js"></script>
+<script src="engine.js"></script>
 <script>
 KoboI18n.add({ en: {
   // static UI
@@ -542,6 +563,30 @@ KoboI18n.add({ en: {
   '襲撃中：シートを開いていても時間はゆっくり進む': 'Raid on: time keeps moving (slowly) while this is open',
   '画面が一時的に止まりました。少し待つと元に戻ります。': 'The screen stopped for a moment. It will come back shortly.',
 } });
+KoboI18n.add({ en: {
+  // voyages
+  '航海': 'Voyages', '航海（ねらいのある短い航海）': 'Voyages (short runs with a goal)', '航海（V）': 'Voyages (V)', '航海<span>成功</span>': 'Voyage <span>cleared</span>',
+  'ねらいのある短い航海。★をとると次が開く。ランキングには入りません': 'Short runs with a goal. Earn a star to open the next. They do not count for the ranking.',
+  'ふつうのいかだ': 'Normal raft', 'どこまで生き延びられる？ 最長 {n}日': 'How long can you last? Best {n} days', 'いまの航海': 'Current voyage', 'つづき（{d}日目）': 'Continue (day {d})',
+  '前の航海で★をとると開く': 'Earn a star on the previous voyage to open', '星{n}': 'Stars: {n}', '閉じる': 'Close',
+  '出航！': 'Set sail!', '航海えらび': 'Pick a voyage', '{d}日目までに': 'By day {d}', '期限なし。生き延びよう': 'No time limit. Just survive.',
+  '早く達成するほど★が多い': 'Finish sooner for more stars', '沈んだ床が少ないほど★が多い': 'Lose fewer tiles for more stars', '失ったクルーが少ないほど★が多い': 'Lose fewer crew for more stars',
+  'ねらい達成！': 'Goal reached!', '★{n} 記録更新！': 'Stars {n}: new record!', '日数': 'Days', '達成した日': 'Day cleared', '沈んだ床': 'Tiles lost', '失ったクルー': 'Crew lost',
+  '★3の目安：': '3 stars: ', '{n}日目まで': 'by day {n}', '{n}以下': '{n} or less', '次の航海': 'Next voyage', '日数<span>ぎれ</span>': 'Out of <span>time</span>',
+  '漂流物を拾う': 'Catch debris', 'サメを追い払う': 'Drive off sharks', '海賊を撃退する': 'Repel pirates', '遠征に成功する': 'Win expeditions', '漂流者を助ける': 'Rescue castaways',
+  'クルーの人数': 'Crew members', '床の枚数': 'Tiles', '船長Lv': 'Cap Lv', '{f}を建てる': 'Build: {f}', '{f}をLv{n}に': '{f} to Lv{n}',
+  'コンボ ×{n}': 'Combo ×{n}', '射程に漂流物がない': 'No debris in range',
+  'はじめての漂流': 'First Drift', 'フックで漂流物をどんどん拾って、いかだの暮らしになれよう。': 'Hook plenty of debris and get used to life on the raft.',
+  'くらしの土台': 'The Basics', '水・魚・料理。生きていくための3つの施設を建てよう。': 'Water, fish, cooking. Build the three facilities you need to live.',
+  'サメの海': 'Shark Waters', 'サメがたくさん寄ってくる海。砲台と射手で守りながら追い払おう。': 'Sharks keep coming. Defend with a ballista and archers and drive them off.',
+  '嵐の季節': 'Storm Season', '毎日のように嵐がくる。床をこまめに直して、8日目の朝をむかえよう。': 'Storms nearly every day. Keep the tiles repaired and reach the morning of day 8.',
+  '海賊の海': 'Pirate Waters', '1日目の夜から海賊が来る。陣形と砲台で3回撃退しよう。': 'Pirates come from the very first night. Repel them 3 times with formation and ballista.',
+  'にぎやかな船': 'A Busy Ship', '漂流者をたくさん助けて、床を広げ、5人のクルーの船にしよう。': 'Rescue many castaways, grow the raft and crew it with 5.',
+  '遠い島へ': 'To Far Islands', '帆を張って、島への遠征を2回成功させよう。メンバー選びが大事。': 'Raise the sail and win 2 expeditions. Choosing the party matters.',
+  '海の主': 'Lord of the Sea', '嵐も海賊もサメも。クルーを4人以上まもって、15日目の朝をむかえよう。': 'Storms, pirates and sharks. Keep 4+ crew alive and reach the morning of day 15.',
+  '上の<b>航海</b>ボタンで、ねらいのある短い航海に出られる（8つ。★をとると次が開く）。キーボードも使える：1〜4 で下のメニュー・Space でフック・矢印で視点・V で航海・Esc で一時停止。':
+    'The <b>Voyages</b> button at the top starts short runs with a goal (8 of them; a star opens the next). Keyboard: 1–4 bottom menu, Space hook, arrows turn the view, V voyages, Esc pause.',
+} });
 </script>
 <script>
 (() => {
@@ -560,7 +605,7 @@ let DAY_LEN = 150;           // game seconds per day (shorter in an online battl
 const DUSK = 0.72;           // day fraction where night starts
 // localStorage keys stay kusoge.raft.* (hub record, ranking and cloud sync read them). The sound setting is the shared kobo.audio
 // (common/audio.js migrates the old kusoge.sound). kusoge.raft.gfx is this device's graphics level (not synced).
-const LS_SAVE = 'kusoge.raft.save', LS_BEST = 'kusoge.raft.best', LS_SEEN = 'kusoge.raft.seen3', LS_GFX = 'kusoge.raft.gfx';
+const LS_SAVE = 'kusoge.raft.save', LS_BEST = 'kusoge.raft.best', LS_SEEN = 'kusoge.raft.seen3', LS_GFX = 'kusoge.raft.gfx', LS_VOY = 'kusoge.raft.voy', LS_X = 'kusoge.raft.x';
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 // removeItem (not an empty value): common/cloud.js syncs the delete as a tombstone, so a finished run never comes back (R3)
@@ -738,12 +783,12 @@ function newState() {
     weather: { rain: 0, storm: 0, until: 0, next: 200, warnAt: 0, kind: '' },
     raid: { state: 'none', at: 0, side: 0, warned: false },
     nextShark: 70, nextCast: 45, castN: 0, isles: [], exp: null, isleN: 0,
-    stats: { caught: 0, sharks: 0, rescued: 0, raidsWon: 0, raidsLost: 0, expWon: 0, lost: 0 }
+    stats: { caught: 0, sharks: 0, rescued: 0, raidsWon: 0, raidsLost: 0, expWon: 0, lost: 0, tilesLost: 0 }
   };
 }
-function loadSave() {
+function loadSave(k) {
   try {
-    const raw = localStorage.getItem(LS_SAVE);
+    const raw = localStorage.getItem(k || LS_SAVE);
     if (!raw) return null;
     const d = JSON.parse(raw);
     if (!d || d.v !== SAVE_V || !d.tiles || !Object.keys(d.tiles).length || !d.cap || !(d.cap.hp > 0)) return null; // old 2D saves are ignored
@@ -762,11 +807,11 @@ function loadSave() {
 // common/cloud.js only pushes keys whose value changed, batched to one write per 30 s (R2). Battles never save.
 function save() {
   if (!S || gameState !== 'play' || vs || !touchedRun) return;
-  lsSet(LS_SAVE, JSON.stringify(S));
+  lsSet(S.voy ? LS_VOY : LS_SAVE, JSON.stringify(S)); // a voyage has its own save; the normal run's save and the best are never touched by it
 }
 function bestDays() { return parseInt(lsGet(LS_BEST) || '0', 10) || 0; }
 function updateBest() {
-  if (!S || vs || S.day <= bestDays()) return false;
+  if (!S || vs || S.voy || S.day <= bestDays()) return false;
   lsSet(LS_BEST, String(S.day));
   if (sess && !sess.best && KG) { sess.best = true; KG.emit('best', { score: S.day, mode: 'normal' }); }
   return true;
@@ -841,6 +886,7 @@ const SFX = {
   throw() { noise(0.2, 0.12, 2200, 0, 0.7); tone(380, 0.16, 'triangle', 0.05, 760); },
   catch() { tone(660, 0.08, 'square', 0.05); tone(990, 0.12, 'square', 0.05, null, 0.06); },
   splash() { noise(0.25, 0.14, 900, 0, 0.8); },
+  combo(n) { const f = 660 * Math.pow(1.06, Math.min(n, 10)); tone(f, 0.08, 'square', 0.05); tone(f * 1.5, 0.12, 'square', 0.05, null, 0.06); },
   build() { noise(0.08, 0.2, 400); tone(392, 0.12, 'triangle', 0.1, null, 0.05); tone(523, 0.12, 'triangle', 0.1, null, 0.12); tone(659, 0.2, 'triangle', 0.1, null, 0.19); },
   bite() { noise(0.18, 0.35, 300, 0, 1.5); tone(110, 0.25, 'sawtooth', 0.12, 55); },
   hit() { noise(0.08, 0.22, 700); tone(220, 0.08, 'square', 0.05, 110); },
@@ -1518,7 +1564,7 @@ function crewGainXp(c, n) {
 function onDawn() {
   const prevBest = bestDays();
   toast(T('{d}日目の朝。', { d: S.day }) + (S.day >= 2 ? T('今夜も海賊に備えよう') : ''), '');
-  if (!vs && S.day > prevBest && prevBest >= 2) { banner(T('最長記録更新！'), T('{d}日目の朝を迎えた', { d: S.day }), 'good'); SFX.best(); vibrate([40, 40, 80]); }
+  if (!vs && !S.voy && S.day > prevBest && prevBest >= 2) { banner(T('最長記録更新！'), T('{d}日目の朝を迎えた', { d: S.day }), 'good'); SFX.best(); vibrate([40, 40, 80]); }
   else { banner(T('{d}日目', { d: S.day }), T('夜を生き延びた！'), ''); SFX.dawn(); vibrate(40); }
   feedCrew('朝');
   for (const c of S.crew) if (c.job && !c.away) crewGainXp(c, 8);
@@ -1526,16 +1572,18 @@ function onDawn() {
   if (vs && DEBUG) vs.log.push('D' + S.day + ':' + S.weather.kind + ':' + (S.raid.queue || []).map(t => t.toFixed(1)).join(','));
   if (facCount('sail') && !S.exp) genIsles();
   updateBest(); save();
+  if (S.voy) voyCheck();
 }
+const vmod = (k, d) => S && S.vm && S.vm[k] != null ? S.vm[k] : d; // voyage sea settings (undefined in a normal run → defaults)
 function dawnEvents() {
   // weather
-  const w = S.weather;
-  if (S.day >= 2 && rnd() < Math.min(0.8, 0.28 + 0.07 * S.day)) { w.kind = 'storm'; w.next = S.elapsed + rand(0.08, 0.62) * DAY_LEN; w.until = w.next + rand(32, 50) + S.day * 1.5; }
+  const w = S.weather, vst = vmod('storm', 0);
+  if ((S.day >= 2 || vst) && rnd() < Math.min(0.85, 0.28 + 0.07 * S.day + vst)) { w.kind = 'storm'; w.next = S.elapsed + rand(0.08, 0.62) * DAY_LEN; w.until = w.next + rand(32, 50) + S.day * 1.5; }
   else if (rnd() < 0.5) { w.kind = 'rain'; w.next = S.elapsed + rand(0.05, 0.7) * DAY_LEN; w.until = w.next + rand(25, 45); }
   else { w.kind = ''; w.next = 1e12; }
   w.warned = false;
   // raids: every night from day 2, extra daytime raids later
-  if (S.day >= 2) {
+  if (S.day >= vmod('raidFrom', 2)) {
     S.raid.queue = S.raid.queue || [];
     S.raid.queue.push(S.elapsed + (DUSK + rand(0.04, 0.14) - S.time) * DAY_LEN);
     if (S.day >= 5 && rnd() < Math.min(0.75, 0.3 + 0.08 * (S.day - 5))) S.raid.queue.push(S.elapsed + (rand(0.3, 0.5) - S.time) * DAY_LEN);
@@ -1567,7 +1615,7 @@ function updateWeather(dt) {
       if (t) damageTile(key(t.i, t.j), rand(5, 12) * w.storm * (1 + S.day * 0.04), '波');
     }
     thunderT -= dt;
-    if (thunderT <= 0) { thunderT = rand(4, 10); flashT = 0.35; SFX.thunder(); }
+    if (thunderT <= 0) { thunderT = rand(4, 10); flashT = 0.35; SFX.thunder(); if (!REDUCED) shake = Math.max(shake, 0.3); }
   }
 }
 function damageTile(k, dmg, src) {
@@ -1578,9 +1626,9 @@ function damageTile(k, dmg, src) {
 }
 function destroyTile(k, src) {
   const t = S.tiles[k]; if (!t) return;
-  delete S.tiles[k];
+  delete S.tiles[k]; S.stats.tilesLost = (S.stats.tilesLost || 0) + 1;
   for (const c of S.crew) if (c.job === k) c.job = null;
-  raftChanged(); crewChanged();
+  raftChanged(); crewChanged(); if (!REDUCED) shake = Math.max(shake, 0.8);
   SFX.crack(); vibrate([60, 40, 120]); splash(t.i * TS, 0.3, t.j * TS, 10);
   toast(t.f ? T('{f}ごと床が壊れて沈んだ！', { f: FAC[t.f.t].n }) : T('床が壊れて沈んだ！'), 'warn');
 }
@@ -1661,7 +1709,7 @@ function updateDebris(dt) {
   const iv = 2.4 / (1 + 0.35 * S.lane) * (night ? 1.5 : 1) * (S.weather.storm > 0.4 ? 0.6 : 1) * (transit ? 2 : 1);
   if (spawnAcc >= iv && debris.length < 40) { spawnAcc = 0; seaRoll(() => spawnDebris()); }
   if (S.elapsed >= S.nextCast) seaRoll(() => {
-    S.nextCast = S.elapsed + rand(0.5, 0.95) * DAY_LEN * (S.castN < 3 ? 0.8 : 1.15);
+    S.nextCast = S.elapsed + rand(0.5, 0.95) * DAY_LEN * (S.castN < 3 ? 0.8 : 1.15) / vmod('cast', 1);
     spawnDebris('castaway', rb.cx + rand(-1, 1) * Math.min(7, hookRange() - 2), rb.cz - 26);
   });
   const nets = netTiles();
@@ -1740,7 +1788,8 @@ function collect(d) {
   gainAll(l); vsGot(l);
   S.stats.caught++; addXp(1);
   popText(cp.x, 2.4, cp.z, lootText(l), 'gold');
-  SFX.catch();
+  combo = S.elapsed - lastCatchT < 7 ? combo + 1 : 1; lastCatchT = S.elapsed;
+  if (combo >= 3) { popText(cp.x, 3.3, cp.z, T('コンボ ×{n}', { n: combo }), 'gold'); splash(cp.x, 1.2, cp.z, Math.min(10, 2 + combo), 0xffc94a); SFX.combo(combo); } else SFX.catch();
   removeDebris(d);
 }
 
@@ -1756,8 +1805,8 @@ function spawnShark() {
 function updateSharks(dt) {
   if (S.elapsed >= S.nextShark) seaRoll(() => {
     const night = isNight(S.time);
-    S.nextShark = S.elapsed + rand(55, 85) * (night ? 0.6 : 1) / (1 + 0.15 * S.lane) * Math.max(0.55, 1 - 0.04 * S.day);
-    if (sharks.length < (S.day >= 5 ? 2 : 1)) spawnShark();
+    S.nextShark = S.elapsed + rand(55, 85) * (night ? 0.6 : 1) / (1 + 0.15 * S.lane) * Math.max(0.55, 1 - 0.04 * S.day) / vmod('shark', 1);
+    if (sharks.length < (S.day >= 5 || vmod('shark', 1) > 1 ? 2 : 1)) spawnShark();
   });
   const rb = raftBox();
   for (let i = sharks.length - 1; i >= 0; i--) {
@@ -1780,7 +1829,7 @@ function updateSharks(dt) {
         spd = 1; s.life -= dt; s.biteT -= dt;
         if (s.biteT <= 0) {
           s.biteT = 2.2;
-          SFX.bite(); vibrate(60); splash(tx, 0.3, tz, 4);
+          SFX.bite(); vibrate(60); splash(tx, 0.3, tz, 4); if (!REDUCED) shake = Math.max(shake, 0.35);
           damageTile(s.k, 9 + 0.9 * S.day + 2 * S.lane, 'サメ');
         }
         if (s.life <= 0) { s.st = 'flee'; }
@@ -1824,7 +1873,7 @@ function warnLead() {
 }
 function raidPower(d) {
   d = d || S.day;
-  const lm = 1 + 0.12 * S.lane;
+  const lm = (1 + 0.12 * S.lane) * vmod('raidMul', 1);
   return { n: Math.min(14, 1 + Math.floor(d * 0.62 + S.lane * 0.5)), hp: (20 + d * 6) * lm, atk: (3 + d * 0.9) * lm, ranged: d >= 3 };
 }
 function updateRaid(dt) {
@@ -2275,6 +2324,7 @@ function setRow(cid, row) { const c = S.crew.find(x => x.id === cid); if (!c) re
 
 // ---- missions ----
 function checkMission() {
+  if (S.voy) return; // voyages have their own goal instead of the main missions
   for (let guard = 0; guard < 5; guard++) {
     const m = missionAt(S.mission);
     if (m.v() < m.need) return;
@@ -2304,7 +2354,7 @@ function update(dt) {
   updateArchersVsSharks(dt);
   updateExpedition();
   updateLane(dt);
-  missionTick -= dt; if (missionTick <= 0) { missionTick = 0.5; checkMission(); }
+  missionTick -= dt; if (missionTick <= 0) { missionTick = 0.5; checkMission(); if (S.voy) voyCheck(); }
   if (crewDirty) placeCrewTargets();
   if (S.cap.hp <= 0) gameOver('dead');
   else if (!tileCount()) gameOver('sunk');
@@ -2326,12 +2376,19 @@ function resize() {
 window.addEventListener('resize', resize);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 if (window.ResizeObserver) try { new ResizeObserver(() => resize()).observe($('#stage')); } catch (e) {}
+let shake = 0, celebT = 0, combo = 0, lastCatchT = -99;
+const REDUCED = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
 function updateCamera(rdt) {
   const rb = raftBox();
   const k = 1 - Math.exp(-rdt * 3);
   camT.x += (rb.cx - camT.x) * k; camT.z += (rb.cz - camT.z) * k;
   const cp = Math.cos(cam.pitch);
   camera.position.set(camT.x + Math.sin(cam.yaw) * cp * cam.dist, Math.sin(cam.pitch) * cam.dist + 0.5, camT.z + Math.cos(cam.yaw) * cp * cam.dist);
+  if (shake > 0.01) {
+    const a = shake * 0.22, tt = performance.now() * 0.05;
+    camera.position.x += Math.sin(tt * 1.7) * a; camera.position.y += Math.cos(tt * 2.3) * a * 0.7; camera.position.z += Math.sin(tt * 1.1 + 1) * a;
+    shake = Math.max(0, shake - rdt * 1.8);
+  }
   camera.lookAt(camT.x, 0.6, camT.z);
 }
 function animPerson(m, rdt, faceX, faceZ, y) {
@@ -2575,7 +2632,7 @@ let hudAcc = 0;
 function updateHUD(rdt) {
   if (!S) return;
   hudAcc += rdt;
-  setText('dayText', T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time));
+  { const vv = S.voy ? voyOf() : null; setText('dayText', T('{d}日目', { d: S.day }) + (vv && vv.limit ? '/' + vv.limit : '') + ' ' + clockStr(S.time)); }
   if (vs) setText('vsChip', T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time));
   const night = isNight(S.time);
   if (hudC.night !== night) { hudC.night = night; $('#dayIcon').classList.toggle('night', night); }
@@ -2594,10 +2651,16 @@ function updateHUD(rdt) {
   }
   // mission
   const m = missionAt(S.mission);
-  setText('mText', m.t); setText('mProg', Math.min(m.v(), m.need) + '/' + m.need);
+  const vv = S.voy ? voyOf() : null;
+  if (vv) {
+    const pr = RE.progress(vv, voySnap()), cur = pr.find(p => !p.done) || pr[pr.length - 1];
+    setText('mText', condLabel(cur)); setText('mProg', cur.t === 'fac' ? (cur.done ? '✓' : '0/1') : Math.min(cur.cur, cur.need) + '/' + cur.need);
+    setText('mSmall', T(vv.name));
+  } else { setText('mText', m.t); setText('mProg', Math.min(m.v(), m.need) + '/' + m.need); setText('mSmall', T('メイン任務')); }
+  $('#mission').classList.toggle('voy', !!vv); $('#xpBar').classList.toggle('voy', !!vv);
   setText('lvNum', String(S.cap.lv));
   const a = XP_TABLE[S.cap.lv], b = XP_TABLE[S.cap.lv + 1] || (a + 600);
-  const xpw = Math.round(clamp((S.cap.xp - a) / (b - a), 0, 1) * 100) + '%';
+  const xpw = Math.round((vv ? RE.fraction(vv, voySnap()) : clamp((S.cap.xp - a) / (b - a), 0, 1)) * 100) + '%';
   if (hudC.xp !== xpw) { hudC.xp = xpw; $('#xpBar').style.width = xpw; }
   const here = crewHere().length;
   setText('crewChip', T('クルー') + ' ' + here + (S.crew.length !== here ? '(+' + (S.crew.length - here) + ')' : '') + '/' + crewCap());
@@ -3015,13 +3078,13 @@ function banner(title, sub, kind) {
 let sess = null, touchedRun = false;
 function beginPlay() {
   if (sess || vs || !S || gameState !== 'play') return;
-  sess = { ms: 0, best: false, bestAt: bestDays(), day0: S.day };
-  if (KG) KG.emit('play_start', { mode: 'normal', stage: S.day, resumed: S.elapsed > 1 });
+  sess = { ms: 0, best: false, bestAt: bestDays(), day0: S.day, voy: !!S.voy };
+  if (KG) KG.emit('play_start', { mode: S.voy ? 'practice' : 'normal', stage: S.voy ? (voyOf() ? voyOf().index + 1 : 1) : S.day, resumed: S.elapsed > 1 });
 }
 function endPlay(reason) {
   if (!sess) return;
   const s = sess; sess = null;
-  if (KG) KG.emit('play_end', { mode: 'normal', score: S ? S.day : 0, reason, durationMs: Math.round(s.ms), stage: S ? S.day : 0,
+  if (KG) KG.emit('play_end', { mode: s.voy ? 'practice' : 'normal', score: S ? (s.voy && S.voy && S.voy.won ? S.voy.won : S.day) : 0, reason, durationMs: Math.round(s.ms), stage: S ? (s.voy && voyOf() ? voyOf().index + 1 : S.day) : 0,
     stats: S ? { caught: S.stats.caught, raidsWon: S.stats.raidsWon, crew: S.crew.length, lv: S.cap.lv } : undefined });
 }
 
@@ -3036,7 +3099,8 @@ const HOWTO = [
   '下の<b>建設</b>で施設を置く。施設や床をタップで強化・修理・クルー配置。資源には上限があるので使い切ろう。',
   '<b>漂流者</b>を助けるとクルーに。得意な施設に配置すると生産が大きく上がる。クルーは毎日朝夕に<b>食事と水</b>をとり、足りないと弱って去っていく。',
   '2日目の夜から<b>海賊</b>が来る。配置していないクルーが自動で戦う。<b>陣形</b>が大事：戦士は前列、射手は後列。<b>見張り台</b>と<b>砲台</b>で備えよう。',
-  '<b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。'
+  '<b>サメ</b>はタップで突く。<b>嵐</b>は外周の床を傷める。上の<b>メイン任務</b>を進めると船長Lvが上がり、施設が解放される。',
+  '上の<b>航海</b>ボタンで、ねらいのある短い航海に出られる（8つ。★をとると次が開く）。キーボードも使える：1〜4 で下のメニュー・Space でフック・矢印で視点・V で航海・Esc で一時停止。'
 ];
 function showHowto(first) {
   if (vs) return;
@@ -3060,6 +3124,7 @@ const pauseInfo = document.createElement('p'); pauseInfo.className = 'kb-dim'; p
 const vsPauseWrap = document.createElement('div'); vsPauseWrap.style.cssText = 'display:flex;justify-content:center';
 function pauseText() {
   if (!S) return '';
+  if (S.voy && voyOf()) return T(voyOf().name) + T('・') + T('{d}日目', { d: S.day }) + T('・') + RE.progress(voyOf(), voySnap()).map(condShow).join(' ');
   return T('{d}日目', { d: S.day }) + ' ' + clockStr(S.time) + T('・') + T('船長') + ' Lv' + S.cap.lv + T('・') + T('最長記録') + ' ' + T('{n}日', { n: Math.max(bestDays(), S.day) });
 }
 function makePauseMenu(title) {
@@ -3091,6 +3156,7 @@ function resumePlay() {
 }
 function restartRun() {
   endPlay('quit');
+  if (S && S.voy) { startVoyage(S.voy.id); if (KG) KG.resume('api'); return; }
   startNew();
   if (KG) KG.resume('api');
 }
@@ -3099,6 +3165,7 @@ $('#menuBtn').addEventListener('click', () => { ensureAudio(); if (gameState ===
 function gameOver(why) {
   if (gameState === 'over') return;
   if (vs) return vsOver(why);
+  if (S.voy) return voyOver(why);
   const prevBest = bestDays();
   gameState = 'over'; updateBest(); endPlay('over');
   lsDel(LS_SAVE); // removeItem → tombstone in the cloud: this run never comes back (R3)
@@ -3155,6 +3222,177 @@ function startNew() {
   S = newState(); gameState = 'play'; paused = false; touchedRun = false;
   camT.set(0, 0, 0); prefill(); simT = 0;
 }
+// ---- voyages (raft/engine.js: 8 short runs with a goal; stars in kusoge.raft.x; the run itself in kusoge.raft.voy) ----
+// A voyage is a separate run (S.voy = { id }). It never touches the normal raft's save or the best-days record, and is reported to
+// KoboGame as 'practice' (no ranking, no achievements). Opening one sets the normal run aside (it is saved as usual and comes back).
+const RE = window.RaftEngine;
+const voyX = () => RE.loadX(lsGet(LS_X));
+function saveX(x) { lsSet(LS_X, JSON.stringify(x)); }
+function voyOf() { return S && S.voy ? RE.byId(S.voy.id) : null; }
+function voySnap() {
+  const fac = {};
+  for (const k in S.tiles) { const f = S.tiles[k].f; if (f && (fac[f.t] || 0) < f.lv) fac[f.t] = f.lv; }
+  return { day: S.day, caught: S.stats.caught, sharks: S.stats.sharks, raidsWon: S.stats.raidsWon, expWon: S.stats.expWon, rescued: S.stats.rescued,
+    crew: S.crew.length, tiles: tileCount(), capLv: S.cap.lv, fac, tilesLost: S.stats.tilesLost || 0, lost: S.stats.lost || 0 };
+}
+function condLabel(p) {
+  switch (p.t) {
+    case 'caught': return T('漂流物を拾う'); case 'sharks': return T('サメを追い払う'); case 'raidsWon': return T('海賊を撃退する');
+    case 'expWon': return T('遠征に成功する'); case 'rescued': return T('漂流者を助ける'); case 'crew': return T('クルーの人数');
+    case 'tiles': return T('床の枚数'); case 'capLv': return T('船長Lv'); case 'day': return T('{d}日目を迎える', { d: p.need });
+    case 'fac': return p.need <= 1 ? T('{f}を建てる', { f: FAC[p.f].n }) : T('{f}をLv{n}に', { f: FAC[p.f].n, n: p.need });
+  }
+  return '';
+}
+const condShow = p => condLabel(p) + (p.t === 'day' ? ' ' + Math.min(p.cur, p.need) + '/' + p.need : p.t === 'fac' ? (p.done ? ' ✓' : '') : ' ' + p.v + '/' + p.need);
+const METRIC_TXT = { day: '早く達成するほど★が多い', tilesLost: '沈んだ床が少ないほど★が多い', lost: '失ったクルーが少ないほど★が多い' };
+function starsHtml(n) { let h = ''; for (let i = 1; i <= 3; i++) h += '<span class="' + (i <= n ? '' : 'off') + '">★</span>'; return '<span class="vstars" aria-label="' + T('星{n}', { n }) + '">' + h + '</span>'; }
+function parkNormal() { if (S && !S.voy && gameState === 'play') save(); }
+function applyStart(v) {
+  const st = v.start || {};
+  if (st.lv) { S.cap.lv = st.lv; S.cap.xp = XP_TABLE[st.lv]; }
+  for (const r in st.res || {}) S.res[r] = (S.res[r] || 0) + st.res[r];
+  for (const u in st.up || {}) S.up[u] = st.up[u];
+  for (const [i, j] of st.tiles || []) S.tiles[key(i, j)] = { i, j, hp: 100, f: null };
+  for (const [t, lv, k] of st.facs || []) if (S.tiles[k]) S.tiles[k].f = { t, lv, acc: 0 };
+  for (const role of st.crew || []) S.crew.push(makeCrew(role));
+}
+function voyEnter(brief) {
+  clearWorld();
+  gameState = 'play'; touchedRun = false; camT.set(0, 0, 0); simT = S.elapsed;
+  for (const k in warnT) delete warnT[k];
+  const rb = raftBox(); camT.set(rb.cx, 0, rb.cz);
+  prefill(); if (S.voy && facCount('sail') && !S.exp && !S.isles.length) genIsles();
+  crewChanged(); raftChanged(); uiDirty = true; resDirty = true; redraw = true;
+  const v = voyOf();
+  if (brief && v) showVoyBrief(v); else paused = false;
+}
+function startVoyage(id) {
+  const v = RE.byId(id); if (!v || vs) return;
+  parkNormal(); endPlay('quit');
+  S = newState(); S.voy = { id: v.id }; S.vm = Object.assign({}, v.mods); S.tutOff = true; S.mission = TUT_STEPS;
+  applyStart(v);
+  const m = S.vm;
+  if (m.raidFrom === 1) S.raid.queue = [S.elapsed + (DUSK + 0.08 - S.time) * DAY_LEN];
+  if (m.storm) { const w = S.weather; w.kind = 'storm'; w.next = 70; w.until = 115; }
+  paused = true; voyEnter(true);
+}
+function resumeVoyage() {
+  const s = savedVoy();
+  if (!s) return false;
+  parkNormal(); endPlay('quit');
+  S = s; afterLoad(); paused = false; voyEnter(false); touchedRun = false;
+  return true;
+}
+function savedVoy() { const s = loadSave(LS_VOY); return s && s.voy && RE.byId(s.voy.id) ? s : null; }
+function backToNormal() {
+  if (S && S.voy && gameState === 'play') save();
+  endPlay('quit');
+  clearWorld();
+  const loaded = loadSave();
+  S = loaded || newState(); gameState = 'play'; paused = false; touchedRun = false;
+  if (loaded) afterLoad();
+  const rb = raftBox(); camT.set(rb.cx, 0, rb.cz); prefill(); simT = S.elapsed; last = performance.now();
+  uiDirty = true; resDirty = true; redraw = true; crewChanged(); raftChanged();
+}
+function showVoyBrief(v) {
+  paused = true;
+  const goals = RE.progress(v, voySnap());
+  showOv('<h2>' + T(v.name) + '</h2><p class="sub">' + T(v.desc) + '</p><ul>' +
+    goals.map(p => '<li><span class="n">✓</span><span>' + condLabel(p) + (p.t === 'day' || p.t === 'fac' && p.need <= 1 ? '' : ' <b>' + p.need + '</b>') + '</span></li>').join('') +
+    (v.limit ? '<li><span class="n">!</span><span>' + T('{d}日目までに', { d: v.limit }) + '</span></li>' : '<li><span class="n">!</span><span>' + T('期限なし。生き延びよう') + '</span></li>') +
+    '<li><span class="n">★</span><span>' + T(METRIC_TXT[v.metric]) + '</span></li></ul>' +
+    '<div class="row"><button class="btn" id="vbGo">' + T('出航！') + '</button><button class="btn sub2" id="vbMenu">' + T('航海えらび') + '</button></div>');
+  $('#vbGo').addEventListener('click', () => { hideOv(); paused = false; ensureAudio(); last = performance.now(); SFX.tap(); banner(T(v.name), T('出航！'), ''); });
+  $('#vbMenu').addEventListener('click', () => { hideOv(); showVoyMenu(); });
+  setTimeout(() => { const b = $('#vbGo'); if (b && !$('#ov').hidden) try { b.focus({ preventScroll: true }); } catch (e) {} }, 0);
+}
+function showVoyMenu() {
+  if (vs || KoboVersus.active()) return;
+  if (pm && pm.isOpen) pm.close(); if (pmWelcome && pmWelcome.isOpen) pmWelcome.close();
+  closeSheet(); if (place) endPlace();
+  paused = true; redraw = true;
+  const x = voyX(), sv = savedVoy(), cur = S && S.voy ? S.voy.id : null;
+  let h = '<h2>' + T('航海') + '</h2><p class="sub">' + T('ねらいのある短い航海。★をとると次が開く。ランキングには入りません') + '</p><div class="vlist">';
+  h += '<button class="vitem" data-v="normal"><span class="vn">∞</span><span class="vt"><b>' + T('ふつうのいかだ') + '</b><small>' + T('どこまで生き延びられる？ 最長 {n}日', { n: bestDays() }) + '</small></span></button>';
+  RE.VOYAGES.forEach((v, i) => {
+    const open = RE.unlocked(x, i), mine = cur === v.id, progress = sv && sv.voy.id === v.id && !mine;
+    h += '<button class="vitem' + (mine ? ' on' : '') + '" data-v="' + v.id + '"' + (open ? '' : ' disabled') + '><span class="vn">' + (i + 1) + '</span><span class="vt"><b>' + T(v.name) + '</b><small>' +
+      (open ? (mine ? T('いまの航海') : progress ? T('つづき（{d}日目）', { d: sv.day }) : T(v.desc)) : T('前の航海で★をとると開く')) + '</small></span>' + (open ? starsHtml(x.s[i]) : '<span class="vstars off" aria-hidden="true">🔒</span>') + '</button>';
+  });
+  h += '</div><div class="row"><button class="btn sub2" id="vmClose">' + T('閉じる') + '</button></div>';
+  showOv(h);
+  $('#vmClose').addEventListener('click', closeVoyMenu);
+  for (const b of document.querySelectorAll('#ovPanel .vitem')) b.addEventListener('click', () => {
+    const id = b.dataset.v; SFX.tap(); ensureAudio();
+    if (id === 'normal') { if (S && S.voy) { hideOv(); backToNormal(); } else closeVoyMenu(); return; }
+    if (id === cur) { closeVoyMenu(); return; }
+    hideOv();
+    if (sv && sv.voy.id === id && resumeVoyage()) { doPause('menu'); return; }
+    startVoyage(id);
+  });
+  setTimeout(() => { const b = document.querySelector('#ovPanel .vitem.on') || document.querySelector('#ovPanel .vitem:not([disabled])'); if (b && !$('#ov').hidden) try { b.focus({ preventScroll: true }); } catch (e) {} }, 0);
+}
+function closeVoyMenu() { hideOv(); if (S && gameState === 'play') { paused = false; last = performance.now(); } }
+function voyCheck() {
+  if (!S || !S.voy || gameState !== 'play' || vs) return;
+  const v = voyOf(); if (!v) return;
+  const snap = voySnap();
+  if (RE.expired(v, snap)) voyOver('time');
+  else if (RE.goalDone(v, snap)) voyWin(v, snap);
+}
+function celebrate() {
+  if (headless) return;
+  const rb = raftBox();
+  for (let i = 0; i < 6; i++) splash(rb.cx + rand(-rb.rad, rb.rad), 0.6 + rand(0, 1.2), rb.cz + rand(-rb.rad, rb.rad), 7, [0xffc94a, 0xffffff, 0x9fe8b4, 0xff9a6a][i % 4]);
+  celebT = 1.6;
+}
+function voyWin(v, snap) {
+  const stars = RE.starsFor(v, snap), x = voyX(), improved = RE.record(x, v.id, stars);
+  saveX(x);
+  gameState = 'over'; S.voy.won = stars; lsDel(LS_VOY);
+  endPlay('clear');
+  SFX.win(); SFX.best(); vibrate([40, 40, 40, 40, 120]);
+  if (place) endPlace(); closeSheet();
+  if (headless) return;
+  celebrate(); banner(T('ねらい達成！'), T(v.name), 'good');
+  const next = RE.VOYAGES[v.index + 1], nextOpen = next && RE.unlocked(x, v.index + 1);
+  const m = RE.metricValue(v, snap);
+  setTimeout(() => {
+    if (gameState !== 'over' || !S.voy || vs) return;
+    showOv('<h2>' + T('航海<span>成功</span>') + '</h2><p class="sub">' + T(v.name) + '</p><p class="big">' + starsHtml(stars) + '</p>' +
+      (improved ? '<p class="newbest">' + T('★{n} 記録更新！', { n: stars }) + '</p>' : '') +
+      '<div class="recs"><div>' + T('日数') + '<b>' + T('{n}日', { n: snap.day }) + '</b></div><div>' + T(v.metric === 'day' ? '達成した日' : v.metric === 'tilesLost' ? '沈んだ床' : '失ったクルー') + '<b>' + (v.metric === 'day' ? snap.day : m) + '</b></div><div>' + T('撃退') + '<b>' + snap.raidsWon + '</b></div><div>' + T('拾った物') + '<b>' + snap.caught + '</b></div></div>' +
+      '<p class="sub" style="margin-top:8px">' + T('★3の目安：') + (v.metric === 'day' ? T('{n}日目まで', { n: v.par[0] }) : T('{n}以下', { n: v.par[0] })) + '</p>' +
+      '<div class="row" style="flex-wrap:wrap">' + (nextOpen ? '<button class="btn" id="vrNext">' + T('次の航海') + '</button>' : '') + '<button class="btn' + (nextOpen ? ' sub2' : '') + '" id="vrRetry">' + T('もう一度') + '</button>' +
+      '<button class="btn sub2" id="vrMenu">' + T('航海えらび') + '</button><button class="btn sub2" id="vrHome">' + T('ふつうのいかだ') + '</button></div>');
+    if (nextOpen) $('#vrNext').addEventListener('click', () => { hideOv(); startVoyage(next.id); });
+    $('#vrRetry').addEventListener('click', () => { hideOv(); startVoyage(v.id); });
+    $('#vrMenu').addEventListener('click', () => { hideOv(); backToNormal(); showVoyMenu(); });
+    $('#vrHome').addEventListener('click', () => { hideOv(); backToNormal(); });
+    setTimeout(() => { const b = $('#vrNext') || $('#vrRetry'); if (b && !$('#ov').hidden) try { b.focus({ preventScroll: true }); } catch (e) {} }, 0);
+  }, 1500);
+}
+function voyOver(why) {
+  const v = voyOf(); if (!v || gameState === 'over') return;
+  const snap = voySnap(), prog = RE.progress(v, snap);
+  gameState = 'over'; lsDel(LS_VOY); endPlay('over');
+  SFX.over(); vibrate(200);
+  if (place) endPlace(); closeSheet();
+  if (headless) return;
+  setTimeout(() => {
+    if (gameState !== 'over' || !S.voy || vs) return;
+    const ttl = why === 'sunk' ? T('イカダが<span>沈んだ</span>') : why === 'time' ? T('日数<span>ぎれ</span>') : T('力<span>尽きた</span>');
+    showOv('<h2>' + ttl + '</h2><p class="sub">' + T(v.name) + '</p><ul>' + prog.map(p => '<li><span class="n">' + (p.done ? '✓' : '·') + '</span><span>' + condShow(p) + '</span></li>').join('') + '</ul>' +
+      '<div class="row" style="flex-wrap:wrap"><button class="btn" id="vrRetry">' + T('もう一度') + '</button><button class="btn sub2" id="vrMenu">' + T('航海えらび') + '</button><button class="btn sub2" id="vrHome">' + T('ふつうのいかだ') + '</button></div>');
+    $('#vrRetry').addEventListener('click', () => { hideOv(); startVoyage(v.id); });
+    $('#vrMenu').addEventListener('click', () => { hideOv(); backToNormal(); showVoyMenu(); });
+    $('#vrHome').addEventListener('click', () => { hideOv(); backToNormal(); });
+    setTimeout(() => { const b = $('#vrRetry'); if (b && !$('#ov').hidden) try { b.focus({ preventScroll: true }); } catch (e) {} }, 0);
+  }, 800);
+}
+$('#voyBtn').addEventListener('click', () => { ensureAudio(); if ($('#ov').hidden) showVoyMenu(); });
+
 if (!KG) document.addEventListener('visibilitychange', () => { if (document.hidden) doPause('hidden'); });
 window.addEventListener('pagehide', save);
 
@@ -3172,6 +3410,7 @@ function frame(now) {
   rafId = disposed ? 0 : requestAnimationFrame(frame);
   const rdt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
   const run = simRunning();
+  if (celebT > 0) { celebT -= rdt; redraw = true; }
   if (run) {
     if (!vs) { beginPlay(); touchedRun = true; if (sess) sess.ms += rdt * 1000; }
     let total = rdt * timeScale * (sheetOpen && !vs ? SHEET_BATTLE_SPEED : 1);
@@ -3221,6 +3460,51 @@ resize();
   rafId = requestAnimationFrame(frame);
   if (headless) $('#loading').hidden = true;
 }
+
+// ---- keyboard: 1-4 the bottom menu, Space = hook the nearest debris, arrows = turn / zoom the view, V = voyages, H = how to play, P / Esc = pause ----
+// (a focused button keeps Space / Enter; open overlays and the pause menu own the keys while they are up)
+function hookNearest() {
+  if (!S || gameState !== 'play' || hook || paused || sheetOpen || place) return false;
+  const cp = capPos(), r = hookRange();
+  let best = null, bd = 1e9;
+  for (const d of debris) {
+    if (d.hooked) continue;
+    const dist = Math.hypot(d.x - cp.x, d.z - cp.z) - (d.type === 'castaway' ? 4 : 0);
+    if (dist < r && dist < bd) { bd = dist; best = d; }
+  }
+  if (!best) { toastSoft(T('射程に漂流物がない')); return false; }
+  return throwHook(best);
+}
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  const k = e.key, tg = e.target, tag = tg && tg.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  const onBtn = tag === 'BUTTON' || tag === 'A';
+  if (!$('#ov').hidden) { // overlays: Esc closes the voyage menu (the how-to and results use their buttons)
+    if (k === 'Escape' && $('#ovPanel .vitem')) { e.preventDefault(); closeVoyMenu(); }
+    return;
+  }
+  if (document.querySelector('.kb-layer:not([hidden])')) return;
+  if (!S || gameState !== 'play') return;
+  if (vs ? !KoboVersus.canPlay() : KoboVersus.active()) return;
+  if (k === 'Escape') {
+    e.preventDefault();
+    if (place) endPlace(); else if (sheetOpen) closeSheet(); else doPause('menu');
+    return;
+  }
+  if (k === ' ' || k === 'Enter') { if (onBtn) return; e.preventDefault(); ensureAudio(); hookNearest(); return; }
+  const tabs = { '1': 'build', '2': 'crew', '3': 'mission', '4': 'exp' };
+  if (tabs[k]) { e.preventDefault(); ensureAudio(); const t = tabs[k]; if (sheetOpen && sheetOpen.kind === t) closeSheet(); else openSheet(t); return; }
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') { e.preventDefault(); cam.yaw += 0.12; redraw = true; return; }
+  if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); cam.yaw -= 0.12; redraw = true; return; }
+  if (k === 'ArrowUp' || k === 'w' || k === 'W') { e.preventDefault(); cam.dist = clamp(cam.dist * 0.92, 10, 44); redraw = true; return; }
+  if (k === 'ArrowDown' || k === 's' || k === 'S') { e.preventDefault(); cam.dist = clamp(cam.dist / 0.92, 10, 44); redraw = true; return; }
+  if (k === '+' || k === '=') { cam.dist = clamp(cam.dist * 0.92, 10, 44); redraw = true; return; }
+  if (k === '-') { cam.dist = clamp(cam.dist / 0.92, 10, 44); redraw = true; return; }
+  if (k === 'p' || k === 'P') { e.preventDefault(); doPause('menu'); return; }
+  if (k === 'v' || k === 'V') { if (vs) return; e.preventDefault(); showVoyMenu(); return; }
+  if (k === 'h' || k === 'H' || k === '?') { if (vs) return; e.preventDefault(); showHowto(false); return; }
+});
 
 if (UI && UI.theme) UI.theme.onChange(() => { redraw = true; });
 
@@ -3305,7 +3589,8 @@ if (DEBUG) {
     tilePos(k) { const t = S.tiles[k]; return t ? { x: t.i * TS, z: t.j * TS } : null; }, save, gameOver, endBattle, key, capPos, hookRange, crewCap, tileCount, maxTiles, cap,
     setTime(t) { S.time = t; }, camera: cam, addXp, resetRaft() { S.tiles = newState().tiles; raftChanged(); crewChanged(); }, storm(sec) { const w = S.weather; w.kind = 'storm'; w.next = S.elapsed; w.until = S.elapsed + (sec || 40); w.warned = true; w.rain = 1; w.storm = 1; }, openSheet, closeSheet, startExpand, startPlace, feedCrew, crewMaxHp,
     get gfx() { return { lv: gfx.lv, fps: gfx.fps, dropped: gfx.dropped, dpr: renderer.getPixelRatio(), seg: ocean.geometry.parameters.widthSegments }; }, setGfx,
-    get sess() { return sess; }, get touched() { return touchedRun; }, doPause, resumePlay, banner, tutTarget
+    get sess() { return sess; }, get touched() { return touchedRun; }, doPause, resumePlay, banner, tutTarget,
+    startVoyage, resumeVoyage, backToNormal, voyCheck, voySnap, showVoyMenu, hookNearest, voyOf, get shake() { return shake; }, get combo() { return combo; }
   };
   // window.__kb (GAME_QUALITY_STANDARDS.md): common/game.js makes it under ?debug; the game adds its own hooks
   // step(n): a small bot plays n seconds (hooks the nearest debris in range, then lets time run 1 s)
@@ -3318,13 +3603,13 @@ if (DEBUG) {
   window.__kb = Object.assign(window.__kb || {}, {
     ready: () => !!S && (headless || !firstFrame),
     state: () => ({
-      mode: vs ? (vs.practice ? 'practice' : 'versus') : 'normal',
+      mode: vs ? (vs.practice ? 'practice' : 'versus') : S && S.voy ? 'practice' : 'normal', voy: S && S.voy ? S.voy.id : null,
       score: S ? (vs ? (vs.over ? vs.overScore : vsScore()) : S.day) : 0,
       time: S ? S.elapsed : 0, over: gameState === 'over', stage: S ? S.day : 0, paused: paused || (KG ? KG.paused() : false),
       day: S ? S.day : 0, best: bestDays(), mission: S ? S.mission : 0, sheet: sheetOpen ? sheetOpen.kind : null, battle: !!B,
       frames: renderer.info.render.frame, rendering: simRunning() || redraw, playing: !!sess, gfx: gfx.lv, saved: lsGet(LS_SAVE) != null,
     }),
-    win() { if (S && gameState === 'play') { S.time = 0.999; update(0.05); } }, // survive to the next morning
+    win() { if (S && gameState === 'play') { S.time = 0.99999; update(0.05); } }, // survive to the next morning
     lose() { if (S && gameState === 'play') { S.cap.hp = -1; update(0.01); } },
     step(n = 1) { for (let i = 0; i < n && S && gameState === 'play'; i++) { bot(); for (let k = 0; k < 20 && gameState === 'play'; k++) update(0.05); } return S ? S.stats.caught : 0; },
     tutorial: () => ({ step: S ? Math.min(S.mission, TUT_STEPS) : 0, done: !S || S.mission >= TUT_STEPS || !!S.tutOff, total: TUT_STEPS, visible: !$('#coach').hidden, target: !!tutTarget() }),
