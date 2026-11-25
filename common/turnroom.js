@@ -1,6 +1,6 @@
 // common/turnroom.js — KoboTurnRoom：2〜4人のターン制ゲーム（カード・ボード）のオンライン対戦を、ゲームの外にまとめたもの。
 // ---------------------------------------------------------------------------------------------------------------------
-// 使うゲーム：colorcards（colorcards/online.js が「アダプター」）。cards（ババ抜き・七並べ・大富豪…）も同じアダプターの形で使える。
+// 使うゲーム：colorcards（colorcards/online.js が「アダプター」）・reversi（reversi/online.js。2人だけのゲーム）。cards（ババ抜き・七並べ・大富豪…）も同じアダプターの形で使える。
 // 設計：ホスト権限（host-authoritative）。部屋を作った人（ホスト）のページがゲームの中身（engine）を動かし、手をたしかめ、
 //       「みんなが見てよい状態 pub」と「その人だけが見てよい状態 priv/{uid}」を RTDB に書く。ゲストは「手」だけを act/{uid} に書く。
 //       手札など人に見せない情報はホストのメモリにだけあり、RTDB には priv/{uid}（本人だけが読める）としてしか出ていかない。
@@ -27,6 +27,12 @@
 //   pub(state) → pd,  priv(state, seat) → { h, d, … },  result(state) → { r: [順位], w },
 //   fallback(pd) → { r, w }（ホストがいなくなったときの結果。pd だけから）,  ser(state) → json,  de(json) → state }
 // ゲーム側の画面は onModel(model) を受け取って描く（ホストも同じ道を通る）。
+// 設定（create の cfg）：game, host, onModel …に加えて、2人だけのゲーム（リバーシなど。手札のような隠す情報がないもの）のために：
+//   seats: [2]         選べる人数（既定は [2,3,4]。1つだけにすると、ロビーの人数の選びが消えて、いつもその人数）
+//   alternate: true    2人のゲームで、もう一度のたびに席（先手・後手）を入れかえる（最初の1回は、どちらが先手かをくじで決める）
+//   dealMs: 600        最初の番を待つ時間（配るアニメーションがないゲームは短く。既定 2600。?debug の trdeal が優先）
+//   turnSec: 45        1手の秒数（既定 30）
+//   create には g（何ゲーム目か。1から）も渡す。
 (function (root) {
   'use strict';
   const SDK = 'https://cdn.jsdelivr.net/npm/firebase@10.12.2/';
@@ -70,13 +76,15 @@
     };
     const tim = cfg.timing || {};    // the tests shorten the waits (the pages use ?debug&trtm=…）
     const MAXN = cfg.seatsMax || 4;
+    const SEATS = (cfg.seats && cfg.seats.length ? cfg.seats : [2, 3, 4]).filter(n => n >= 2 && n <= MAXN);   // 選べる人数
+    const fitN = n => (SEATS.indexOf(n) >= 0 ? n : SEATS.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a), SEATS[0]));
     const TURN_S = clamp(tim.turnSec || qnum('trtm', cfg.turnSec || 30), 3, 180);
     const SEAT_GRACE = (tim.seatGrace || qnum('trgrace', 60)) * 1000;      // 切れた席がもどれる時間
     const HOST_GRACE = (tim.hostGrace || qnum('trhost', 25)) * 1000;       // ゲストがホストを待つ時間
     const QM_WAIT = (tim.qmWait || qnum('trqm', 8)) * 1000;             // クイック：2人以上いたら待つ時間
     const QM_FILL = (tim.qmFill || qnum('trfill', 12)) * 1000;          // クイック：CPUでうめてよい人だけのとき
     const CPU_MS = tim.cpuMs || qnum('trcpu', 1000);                 // CPU の手のあいだ
-    const DEAL_MS = tim.dealMs || qnum('trdeal', 2600);               // 配るアニメーションのあいだ（最初の番は待つ）
+    const DEAL_MS = tim.dealMs || qnum('trdeal', cfg.dealMs != null ? cfg.dealMs : 2600);               // 配るアニメーションのあいだ（最初の番は待つ）
     const AWAY_MS = tim.awayMs || 1200, DC_MS = tim.dcMs || 2500, LATE_MS = tim.lateMs || 1200;   // 離席・切断の席を CPU が打つまで／時間切れから打つまでの余裕
     const NET_IDLE_OFF = 20000;
     const KEY = 'kusoge.' + game + '.tr';                // この端末の「入っている部屋」（同期しない）
@@ -202,7 +210,7 @@
       o = o || {};
       reset(false, kind === 'resume');
       const gen = ++S.gen;
-      S.opts = Object.assign({}, S.opts, o);
+      S.opts = Object.assign({}, S.opts, o); S.opts.n = fitN(S.opts.n);
       S.nick = cleanNick(store.get('kobo.nick')) || cleanNick(o.nick) || 'Player';
       S.err = null;
       emitPhase('connecting');
@@ -411,9 +419,14 @@
     }
     function newGame() {
       const H = S.H, N = H.pu.length;
-      H.g++; H.evq = []; H.over = false; H.first = true; H.resetDl = true; H.miss = H.pu.map(() => 0);
+      H.g++; H.evq = []; H.over = false; H.first = true; H.resetDl = true;
+      // two-seat games with a first player: swap the seats every game (the first game is decided by a coin)
+      if (cfg.alternate && N === 2 && (H.g > 1 || Math.random() < 0.5)) {
+        H.pu = [H.pu[1], H.pu[0]]; H.sl = [H.sl[1], H.sl[0]]; H.uids = [H.uids[1], H.uids[0]]; H.dcAt = [H.dcAt[1], H.dcAt[0]];
+      }
+      H.miss = H.pu.map(() => 0);
       H.sl = H.sl.map((c, k) => (H.pu[k] < 0 ? 'c' : c === 'x' ? 'x' : 'p'));
-      H.st = A.create({ n: N, seed: (Math.floor(Math.random() * 4294967295) + 1) >>> 0, cp: S.meta.cp, humans: H.pu.map((i, k) => k).filter(k => H.pu[k] >= 0), first: Math.floor(Math.random() * N) });
+      H.st = A.create({ g: H.g, n: N, seed: (Math.floor(Math.random() * 4294967295) + 1) >>> 0, cp: S.meta.cp, humans: H.pu.map((i, k) => k).filter(k => H.pu[k] >= 0), first: Math.floor(Math.random() * N) });
       H.justStarted = true;
       publish(null, true);
     }
@@ -717,7 +730,7 @@
           const lv = cfg.getCpu ? cfg.getCpu() : 2;
           return { key: 'menu:' + o.n + ':' + o.fill + ':' + (S.err || '') + ':' + (r ? r.rid : ''), title: T('オンライン対戦'),
             body: (r ? '<button class="ktr-btn" type="button" data-ktr="resume">' + esc(T('試合にもどる')) + '</button>' : '') +
-              '<div class="ktr-lbl">' + esc(T('人数')) + '</div><div class="ktr-seg" role="group">' + [2, 3, 4].map(n => '<button class="ktr-opt" type="button" data-n="' + n + '" aria-pressed="' + (o.n === n) + '">' + esc(T('{n}人', { n })) + '</button>').join('') + '</div>' +
+              (SEATS.length > 1 ? '<div class="ktr-lbl">' + esc(T('人数')) + '</div><div class="ktr-seg" role="group">' + SEATS.map(n => '<button class="ktr-opt" type="button" data-n="' + n + '" aria-pressed="' + (o.n === n) + '">' + esc(T('{n}人', { n })) + '</button>').join('') + '</div>' : '') +
               '<button class="ktr-tog" type="button" role="switch" data-ktr="fill" aria-checked="' + !!o.fill + '"><span>' + esc(T('足りない席はCPUでうめる')) + '<small>' + esc(T('人がいないときも、CPUが入って始められます')) + (cfg.cpuLabel ? ' · CPU ' + esc(cfg.cpuLabel(lv)) : '') + '</small></span><i></i></button>' +
               '<button class="ktr-btn" type="button" data-ktr="quick" style="margin-top:12px">' + esc(T('クイックマッチ')) + '</button>' +
               '<button class="ktr-btn sub" type="button" data-ktr="make">' + esc(T('部屋をつくる')) + '</button>' +
@@ -796,6 +809,7 @@
         reset(false, true);
         S.opts = Object.assign({ n: 3, fill: store.get('kusoge.' + game + '.trfill') !== '0' }, S.opts, o || {});
         if (cfg.getOpts) { const g = cfg.getOpts(); if (g && g.n) S.opts.n = clamp(g.n, 2, MAXN); }
+        S.opts.n = fitN(S.opts.n);
         S.err = null;
         if (!cleanNick(store.get('kobo.nick'))) emitPhase('nick'); else emitPhase('menu');
       },

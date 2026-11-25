@@ -1,4 +1,4 @@
-// common/turnroom.js（colorcards のオンライン対戦）を、本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人の「ボット」で動かす。
+// common/turnroom.js（colorcards と reversi のオンライン対戦）を、本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人の「ボット」で動かす。
 // ボット1人 = node の vm 1つ（Firebase SDK 10.12.2・colorcards/engine.js・colorcards/online.js・common/turnroom.js を、ブラウザと同じファイルのまま読み込む）。
 // 画面（DOM）はないので、turnroom.js はロビーの絵を出さない（headless）。ボットは model を受け取って、見かけの状態（online.js の view）から
 // E.cpu で手を選び、submit する。書き込みは rules/clients.js の RECORDER で全部記録し、ルールで拒否されたものがないことも確かめる。
@@ -16,11 +16,13 @@ const { RECORDER } = require('./clients');
 const ROOT = path.resolve(__dirname, '../../..');
 const SDK_V = '10.12.2';
 const CACHE = path.join(__dirname, '..', '.cache', 'firebase-' + SDK_V);
-const SRC = ['colorcards/engine.js', 'colorcards/online.js', 'common/turnroom.js'].map(f => ({ f, code: fs.readFileSync(path.join(ROOT, f), 'utf8') }));
+const load = fl => fl.map(f => ({ f, code: fs.readFileSync(path.join(ROOT, f), 'utf8') }));
+const SRC = load(['colorcards/engine.js', 'colorcards/online.js', 'common/turnroom.js']);
+const SRC_RV = load(['reversi/engine.js', 'reversi/online.js', 'common/turnroom.js']);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const FAST = { turnSec: 3, seatGrace: 5, hostGrace: 5, qmWait: 2, qmFill: 3, cpuMs: 120, dealMs: 300, awayMs: 250, dcMs: 600, lateMs: 250 };
 
-function makeCtx() {
+function makeCtx(src) {
   const quiet = { log() {}, info() {}, debug() {}, warn() {}, error() {} };
   const ctx = { console: quiet, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, fetch, WebSocket, URL, URLSearchParams, TextEncoder, TextDecoder,
     Headers, Request, Response, AbortController, atob, btoa, crypto: globalThis.crypto, navigator: { userAgent: 'kobo-turnroom-bots', onLine: true } };
@@ -28,7 +30,7 @@ function makeCtx() {
   vm.runInContext('var window = this, self = this;', ctx);
   for (const f of ['app', 'auth', 'database']) vm.runInContext(fs.readFileSync(path.join(CACHE, `firebase-${f}-compat.js`), 'utf8'), ctx, { filename: `firebase-${f}-compat.js` });
   vm.runInContext(RECORDER, ctx);
-  for (const s of SRC) vm.runInContext(s.code, ctx, { filename: s.f });
+  for (const s of src || SRC) vm.runInContext(s.code, ctx, { filename: s.f });
   return ctx;
 }
 
@@ -95,6 +97,43 @@ class Bot {
   async close() { this.dead = true; try { await this.app.delete(); } catch (e) {} }
 }
 
+// リバーシのボット：2人・隠す情報なし。model.pd の盤から手を選んで submit する
+class RvBot extends Bot {
+  async init() {
+    const { ports, ns } = this.env;
+    const ctx = this.ctx = makeCtx(SRC_RV), fb = ctx.firebase;
+    this.app = fb.initializeApp({ apiKey: 'fake-api-key', projectId: 'demo-kobo', appId: '1:1:web:1', databaseURL: `http://127.0.0.1:${ports.database}/?ns=${ns}` });
+    this.app.auth().useEmulator(`http://127.0.0.1:${ports.auth}`, { disableWarnings: true });
+    this.uid = (await this.app.auth().signInAnonymously()).user.uid;
+    this.db = this.app.database();
+    this.E = ctx.ReversiEngine; this.O = ctx.ReversiOnline;
+    this.vctx = this.O.newCtx();
+    this.tr = ctx.KoboTurnRoom.create({ game: 'reversi', headless: true, net: { db: this.db, uid: this.uid, TS: fb.database.ServerValue.TIMESTAMP }, host: this.O.host, seats: [2], seatsMax: 2, alternate: true, timing: this.env.timing || FAST,
+      cpuNames: k => 'CPU' + (k + 1), getCpu: () => 2, onModel: m => this.onModel(m), onPhase: (ph, info) => this.phases.push(ph + (info && info.detail ? ':' + info.detail : '')) });
+    return this;
+  }
+  onModel(m) {
+    if (this.dead) return;
+    this.last = m; this.models.push({ gn: m.gn, v: m.v, ph: m.ph, tn: m.tn, sl: m.sl, why: m.why, rs: m.rs, me: m.me, n: m.n, fresh: m.fresh });
+    let v;
+    try { v = this.O.view(m, this.vctx); } catch (e) { this.issues.push('view threw: ' + e.message); return; }
+    const c = this.E.counts(v.st);
+    if (c.b !== (m.pd.bk | 0) || c.w !== (m.pd.wh | 0)) this.issues.push(`board counts ${c.b}/${c.w} differ from ${m.pd.bk}/${m.pd.wh} (v${m.v})`);
+    if (c.b + c.w !== 4 + (m.pd.mc | 0)) this.issues.push(`stones ${c.b + c.w} but ${m.pd.mc} moves (v${m.v})`);
+    if (m.ph !== 'play' || m.me < 0 || m.tn !== m.me || this.frozen || this.stall || m.replaced) return;
+    const key = m.gn + ':' + m.v;
+    if (this.actFor === key) return;
+    this.actFor = key;
+    setTimeout(() => {
+      if (this.dead || this.frozen || this.stall || !this.last || this.last.v !== m.v) return;
+      let c1;
+      try { c1 = this.E.cpu(v.st, 1 + (this.acts % 3)); } catch (e) { this.issues.push('cpu threw: ' + e.message); return; }
+      this.acts++;
+      this.tr.submit(this.O.toWire(c1));
+    }, 30 + Math.random() * 80);
+  }
+}
+
 async function until(fn, ms, what) {
   const end = Date.now() + ms;
   while (Date.now() < end) { let v; try { v = fn(); } catch (e) { v = false; } if (v) return v; await sleep(80); }
@@ -155,6 +194,78 @@ async function room4(env, rows, bots) {
   add('the room is gone after everybody left', !left.includes(rid), left.join());
   const codes = Object.keys(await ownerGet(env, 'tr/colorcards/codes', true));
   add('the code is gone', !codes.includes(code), codes.join());
+}
+
+// リバーシ：2人。コードの部屋で最後まで・もう一度（色が入れかわる）・ルールの穴・クイック・切れた席は CPU・時間切れ
+async function reversi(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'reversi: ' + name, pass: !!pass, detail });
+  const [A, B, X] = await Promise.all(['Ra', 'Rb', 'Rx'].map(n => new RvBot(env, n).init()));
+  bots.push(A, B, X);
+  await A.tr.begin('host', { n: 2, fill: false, nick: 'Ra' });
+  await until(() => A.tr._S.code, 8000, 'room code');
+  const code = A.tr._S.code;
+  await B.tr.begin('join', { code, nick: 'Rb' });
+  await until(() => [A, B].every(b => b.last && b.last.ph === 'play'), 20000, 'both see the game');
+  const ms = [A, B].map(b => b.last);
+  add('two seats, one room, game 1, different seats', ms.every(m => m.rid === ms[0].rid && m.n === 2 && m.gn === 1) && ms[0].me !== ms[1].me && ms[0].me >= 0 && ms[1].me >= 0, ms.map(m => m.me).join());
+  add('a third person cannot join a 2-seat room', await (async () => { await X.tr.begin('join', { code, nick: 'Rx' }); return X.tr.phase === 'menu' && !!X.tr._S.err; })(), X.tr.phase);
+  const rid = ms[0].rid, R = `tr/reversi/rooms/${rid}`;
+  const pr = [];
+  pr.push(await B.probe('a guest reads the whole room', db => db.ref(R).once('value')));
+  pr.push(await B.probe('a guest writes the public state', db => db.ref(`${R}/pub/ph`).set('over')));
+  pr.push(await B.probe('a guest moves for the host', db => db.ref(`${R}/act/${A.uid}`).set({ q: Date.now() + 5, v: 1, a: { t: 'mv', c: 19 } })));
+  pr.push(await X.probe('an outsider takes a seat after the start', db => db.ref(`${R}/seats/1`).set({ u: X.uid, n: 'Rx', j: X.ctx.firebase.database.ServerValue.TIMESTAMP })));
+  pr.push(await X.probe('an outsider reads the room list', db => db.ref('tr/reversi/rooms').once('value')));
+  for (const p of pr) add('probe: ' + p.name, p.pass, p.detail);
+  await until(() => [A, B].every(b => b.final(1)), 120000, 'game 1 over');
+  const fin = [A, B].map(b => b.final(1));
+  add('game 1 ends with the same result on both pages', fin.every(f => JSON.stringify(f.rs) === JSON.stringify(fin[0].rs)) && fin[0].why === 'w', JSON.stringify(fin[0].rs));
+  add('the ranks are a win and a loss, or a shared draw', ['[1,2]', '[2,1]', '[1,1]'].includes(JSON.stringify(Object.values(fin[0].rs.r))), JSON.stringify(fin[0].rs));
+  add('the board on every page matched the public counts all game, and both pages moved', [A, B].every(b => !b.issues.length && b.acts > 5), [A, B].map(b => b.issues.slice(0, 2).join('; ') + '/' + b.acts).join(' | '));
+  const first = [A.last.me, B.last.me];
+  for (const b of [A, B]) b.tr.rematch();
+  await until(() => [A, B].every(b => b.last && b.last.gn === 2 && b.last.ph === 'play'), 20000, 'rematch game 2');
+  add('rematch: game 2 in the same room with the colours swapped', A.last.rid === rid && A.last.me === first[1] && B.last.me === first[0], first.join() + ' -> ' + [A.last.me, B.last.me].join());
+  await until(() => [A, B].every(b => b.final(2)), 120000, 'game 2 over');
+  add('game 2 ends too', [A, B].every(b => b.final(2).why === 'w') && !A.issues.length && !B.issues.length, A.issues.concat(B.issues).slice(0, 2).join('; '));
+  for (const b of [B, A]) { b.tr.leave(); await sleep(150); }
+  await sleep(1800);
+  add('the room and the code are gone after everybody left', !Object.keys(await ownerGet(env, 'tr/reversi/rooms', true)).includes(rid) && !Object.keys(await ownerGet(env, 'tr/reversi/codes', true)).includes(code));
+  // quick match of two people (nobody fills): grouped at once
+  const [Q1, Q2] = await Promise.all(['Qa', 'Qb'].map(n => new RvBot(env, n).init()));
+  bots.push(Q1, Q2);
+  await Q1.tr.begin('quick', { n: 2, fill: false, nick: 'Qa' }); await sleep(200); await Q2.tr.begin('quick', { n: 2, fill: false, nick: 'Qb' });
+  await until(() => [Q1, Q2].every(b => b.last && b.last.ph === 'play'), 30000, 'quick match room');
+  add('quick match: two people, no CPU', Q1.last.rid === Q2.last.rid && !/c/.test(Q1.last.sl), Q1.last.sl);
+  // the second page drops for good: after the grace its seat is a CPU and the game finishes
+  const seatB = Q2.last.me;
+  await sleep(500); Q2.vanish();
+  await until(() => Q1.last.sl[seatB] === 'd', 8000, 'd');
+  await until(() => Q1.last.sl[seatB] === 'x', 20000, 'x');
+  add('a closed page: d, then after the grace the seat is a CPU (x)', true);
+  await until(() => Q1.final(1), 120000, 'game over against the CPU');
+  add('the game finishes with the CPU on the lost seat', Q1.final(1).why === 'w' && Q1.final(1).sl[seatB] === 'x' && !Q1.issues.length, Q1.issues.slice(0, 2).join('; '));
+  Q1.tr.leave();
+  // a seat that never acts: its turns are played for it, then it is away
+  const [T1, T2] = await Promise.all(['Ta', 'Tb'].map(n => new RvBot(env, n).init()));
+  bots.push(T1, T2);
+  await T1.tr.begin('host', { n: 2, fill: false, nick: 'Ta' });
+  await until(() => T1.tr._S.code, 8000, 'code');
+  await T2.tr.begin('join', { code: T1.tr._S.code, nick: 'Tb' });
+  await until(() => [T1, T2].every(b => b.last && b.last.ph === 'play'), 20000, 'start');
+  const seatT = T2.last.me; T2.stall = true;
+  await until(() => T1.models.some(m => m.sl[seatT] === 'a'), 60000, 'away');
+  add('a seat that lets the time run out twice becomes away (a), its turns are played for it', true);
+  await until(() => T1.final(1), 150000, 'game over');
+  add('the game ends even though one seat never acted', T1.final(1).why === 'w');
+  T1.tr.leave(); T2.tr.leave();
+  // a host who cancels the lobby
+  const H = await new RvBot(env, 'Rh').init(); bots.push(H);
+  await H.tr.begin('host', { n: 2, fill: true, nick: 'Rh' });
+  await until(() => H.tr._S.code, 8000, 'code');
+  const rid2 = H.tr._S.rid, code2 = H.tr._S.code;
+  H.tr.leave(); await sleep(1200);
+  add('a host who cancels the lobby removes the room and the code', !Object.keys(await ownerGet(env, 'tr/reversi/rooms', true)).includes(rid2) && !Object.keys(await ownerGet(env, 'tr/reversi/codes', true)).includes(code2));
 }
 
 async function quick(env, rows, bots) {
@@ -303,16 +414,17 @@ function normalize(bot) {
   const out = [];
   for (const e of bot.log) {
     let p = e.path.split(bot.uid).join('{me}');
-    p = p.replace(/^(tr\/colorcards\/rooms)\/[^/]+/, '$1/$room').replace(/\/codes\/\d{6}$/, '/codes/$code').replace(/\/seats\/\d$/, '/seats/$i').replace(/\/on\/[\w-]{20,}$/, '/on/{other}').replace(/\/priv\/[\w-]{20,}$/, '/priv/{other}');
+    p = p.replace(/^(tr\/(?:colorcards|reversi)\/rooms)\/[^/]+/, '$1/$room').replace(/\/codes\/\d{6}$/, '/codes/$code').replace(/\/seats\/\d$/, '/seats/$i').replace(/\/on\/[\w-]{20,}$/, '/on/{other}').replace(/\/priv\/[\w-]{20,}$/, '/priv/{other}');
+    p = p.replace(/^tr\/(?:colorcards|reversi)\//, 'tr/$game/');
     out.push({ op: e.op, path: p, res: e.res, err: e.err, key: e.op + ' ' + p, bot: bot.nick });
   }
   return out;
 }
 const REQUIRED = [
-  'onDisconnect.remove tr/colorcards/queue/{me}', 'set tr/colorcards/queue/{me}', 'update tr/colorcards/queue/{me}', 'remove tr/colorcards/queue/{me}',
-  'set tr/colorcards/rooms/$room', 'set tr/colorcards/codes/$code', 'onDisconnect.remove tr/colorcards/codes/$code', 'set tr/colorcards/rooms/$room/seats/$i',
-  'onDisconnect.remove tr/colorcards/rooms/$room/on/{me}', 'set tr/colorcards/rooms/$room/on/{me}', 'update tr/colorcards/rooms/$room', 'set tr/colorcards/rooms/$room/act/{me}',
-  'set tr/colorcards/rooms/$room/rm/{me}', 'remove tr/colorcards/rooms/$room', 'remove tr/colorcards/codes/$code',
+  'onDisconnect.remove tr/$game/queue/{me}', 'set tr/$game/queue/{me}', 'update tr/$game/queue/{me}', 'remove tr/$game/queue/{me}',
+  'set tr/$game/rooms/$room', 'set tr/$game/codes/$code', 'onDisconnect.remove tr/$game/codes/$code', 'set tr/$game/rooms/$room/seats/$i',
+  'onDisconnect.remove tr/$game/rooms/$room/on/{me}', 'set tr/$game/rooms/$room/on/{me}', 'update tr/$game/rooms/$room', 'set tr/$game/rooms/$room/act/{me}',
+  'set tr/$game/rooms/$room/rm/{me}', 'remove tr/$game/rooms/$room', 'remove tr/$game/codes/$code',
 ];
 
 async function runTurnroomBots(T, opt = {}) {
@@ -320,8 +432,8 @@ async function runTurnroomBots(T, opt = {}) {
   const env = { ports: T.ports, ns: T.ns, timing: FAST };
   const rows = [], bots = [];
   const info = { steps: [] };
-  const names = opt.only || ['room4', 'quick', 'disconnect', 'timeout', 'hostleave', 'guestleave'];
-  const fns = { room4, quick, disconnect, timeout, hostleave, guestleave };
+  const names = opt.only || ['room4', 'quick', 'disconnect', 'timeout', 'hostleave', 'guestleave', 'reversi'];
+  const fns = { room4, quick, disconnect, timeout, hostleave, guestleave, reversi };
   let error = null;
   for (const n of names) {
     if (opt.log) opt.log({ group: 'client', name: 'running turnroom bots: ' + n + '…' });
@@ -332,7 +444,7 @@ async function runTurnroomBots(T, opt = {}) {
   // two friends who come in at the same moment may pick the same free seat: the second one is refused (on purpose: the first write wins) and takes another
   const race = ops.filter(o => o.res === 'error' && o.op === 'set' && /\/seats\/\$i$/.test(o.path) && /PERMISSION_DENIED/.test(o.err || ''));
   // two guests who both find the host gone clean up: the second one writes into a room that is already gone (refused)
-  const race2 = ops.filter(o => o.res === 'error' && /PERMISSION_DENIED/.test(o.err || '') && ((o.op === 'remove' && /^tr\/colorcards\/rooms\/\$room$/.test(o.path)) || (o.op === 'set' && /\/on\/\{me\}$/.test(o.path))));
+  const race2 = ops.filter(o => o.res === 'error' && /PERMISSION_DENIED/.test(o.err || '') && ((o.op === 'remove' && /^tr\/\$game\/rooms\/\$room$/.test(o.path)) || (o.op === 'set' && /\/on\/\{me\}$/.test(o.path))));
   const bad = ops.filter(o => o.res === 'error' && !race.includes(o) && !race2.includes(o));
   const pend = ops.filter(o => o.res === 'pending' && !o.op.startsWith('onDisconnect'));
   const seen = new Set(ops.map(o => o.key));
@@ -343,8 +455,9 @@ async function runTurnroomBots(T, opt = {}) {
   out.push({ group: 'client:colorcards-bots', name: 'no write left unanswered (apart from the bots that vanished)', expect: '0', got: String(pend.length), pass: true, detail: pend.length ? pend.slice(0, 3).map(o => o.op + ' ' + o.path).join(' / ') : undefined });
   const inv = {}; for (const o of ops) { const k = o.key; inv[k] = inv[k] || { op: o.op, path: o.path, keys: '', n: 0, res: {} }; inv[k].n++; inv[k].res[o.res] = (inv[k].res[o.res] || 0) + 1; }
   // leftovers
-  const left = { rooms: Object.keys(await ownerGet(env, 'tr/colorcards/rooms', true)).length, queue: Object.keys(await ownerGet(env, 'tr/colorcards/queue', true)).length, codes: Object.keys(await ownerGet(env, 'tr/colorcards/codes', true)).length };
-  out.push({ group: 'client:colorcards-bots', name: 'nothing left in tr/colorcards/queue and codes', expect: '0', got: String(left.queue + left.codes), pass: left.queue + left.codes === 0, detail: JSON.stringify(left) });
+  const cnt = async k => (await Promise.all(['colorcards', 'reversi'].map(g => ownerGet(env, `tr/${g}/${k}`, true)))).reduce((a, o) => a + Object.keys(o).length, 0);
+  const left = { rooms: await cnt('rooms'), queue: await cnt('queue'), codes: await cnt('codes') };
+  out.push({ group: 'client:colorcards-bots', name: 'nothing left in tr/*/queue and codes', expect: '0', got: String(left.queue + left.codes), pass: left.queue + left.codes === 0, detail: JSON.stringify(left) });
   for (const b of bots) await b.close();
   return { client: 'colorcards-bots', info, rows: out, inventory: Object.values(inv), error };
 }

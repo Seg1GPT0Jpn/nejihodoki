@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>リバーシ工房</title>
+<meta name="theme-color" content="#14232b">
+<meta name="description" content="黒と白の石をはさんでひっくり返す、定番のボードゲーム。CPUと対戦（4段階）、ふたりで1台、毎日のパズル、友だちとオンライン対戦。6×6と8×8。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="リバーシ工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* リバーシ工房: a felt board in a wooden frame on a workshop bench. The stones keep their own colours in both themes (a gear on the dark ones, a screw head on the light ones);
+   the bench and the room follow the light / dark theme. --kb-* are the shared tokens re-tinted; --rv-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0f1a22; --kb-surface: #172732; --kb-surface-2: #1d3340; --kb-sunken: #0a131a; --kb-line: #2f4a5a;
+  --kb-ink: #f0f5f7; --kb-dim: #a9bfca;
+  --kb-accent: #f0c04f; --kb-accent-ink: #2b1f00; --kb-accent-text: #ffd57a; --kb-accent-soft: rgba(240, 192, 79, .16);
+  --kb-scrim: rgba(4, 10, 14, .8); --kb-toast-bg: rgba(8, 16, 22, .95); --kb-focus: #ffe08a;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --rv-felt: #1d6252; --rv-felt2: #164d41; --rv-grid: rgba(4, 22, 18, .55); --rv-frame: #6b4a2c; --rv-frame2: #4a3119; --rv-rim: rgba(255, 220, 160, .28);
+  --rv-panel: rgba(220, 240, 255, .06); --rv-line: rgba(180, 215, 235, .16); --rv-card: linear-gradient(#1b2f3c, #14242e);
+  --rv-go: linear-gradient(#ffd77d, #efa83a); --rv-go-ink: #2b1d00; --rv-go-shadow: #94620f;
+  --rv-key: linear-gradient(#26414f, #1b3340); --rv-key-shadow: #08121a;
+  --rv-title: linear-gradient(90deg, #ffd98a, #8fe0c8 55%, #f2f2f2);
+  --rv-bad: #ff8d7d; --rv-ok: #6fe3b0; --rv-dot: rgba(255, 244, 200, .55); --rv-lab: rgba(255, 255, 255, .42);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f1eee6; --kb-surface: #ffffff; --kb-surface-2: #f6f2e9; --kb-sunken: #e4ded0; --kb-line: #cfc6b2;
+    --kb-ink: #1f2a2e; --kb-dim: #566a72;
+    --kb-accent: #b8730a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5300; --kb-accent-soft: rgba(184, 115, 10, .12);
+    --kb-scrim: rgba(31, 42, 46, .45); --kb-toast-bg: rgba(31, 42, 46, .95); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(31, 42, 46, .2);
+    --rv-felt: #3f9482; --rv-felt2: #327f6f; --rv-grid: rgba(8, 40, 33, .45); --rv-frame: #a97c50; --rv-frame2: #8a6238; --rv-rim: rgba(255, 255, 255, .5);
+    --rv-panel: rgba(31, 42, 46, .05); --rv-line: #d8d0bd; --rv-card: linear-gradient(#ffffff, #f6f2e9);
+    --rv-go: linear-gradient(#e0a02f, #b8730a); --rv-go-ink: #ffffff; --rv-go-shadow: #7a4b05;
+    --rv-key: linear-gradient(#ffffff, #f1ece0); --rv-key-shadow: #c3b9a2;
+    --rv-title: linear-gradient(90deg, #8a5300, #1f6a58 55%, #3a3a3a);
+    --rv-bad: #c43b27; --rv-ok: #0f8a5c; --rv-dot: rgba(255, 255, 255, .8); --rv-lab: rgba(255, 255, 255, .7);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f1eee6; --kb-surface: #ffffff; --kb-surface-2: #f6f2e9; --kb-sunken: #e4ded0; --kb-line: #cfc6b2;
+  --kb-ink: #1f2a2e; --kb-dim: #566a72;
+  --kb-accent: #b8730a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5300; --kb-accent-soft: rgba(184, 115, 10, .12);
+  --kb-scrim: rgba(31, 42, 46, .45); --kb-toast-bg: rgba(31, 42, 46, .95); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(31, 42, 46, .2);
+  --rv-felt: #3f9482; --rv-felt2: #327f6f; --rv-grid: rgba(8, 40, 33, .45); --rv-frame: #a97c50; --rv-frame2: #8a6238; --rv-rim: rgba(255, 255, 255, .5);
+  --rv-panel: rgba(31, 42, 46, .05); --rv-line: #d8d0bd; --rv-card: linear-gradient(#ffffff, #f6f2e9);
+  --rv-go: linear-gradient(#e0a02f, #b8730a); --rv-go-ink: #ffffff; --rv-go-shadow: #7a4b05;
+  --rv-key: linear-gradient(#ffffff, #f1ece0); --rv-key-shadow: #c3b9a2;
+  --rv-title: linear-gradient(90deg, #8a5300, #1f6a58 55%, #3a3a3a);
+  --rv-bad: #c43b27; --rv-ok: #0f8a5c; --rv-dot: rgba(255, 255, 255, .8); --rv-lab: rgba(255, 255, 255, .7);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 62%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 8px 0; max-width: 1100px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400; font-size: clamp(15px, 4.7vw, 20px); letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--rv-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--rv-line); background: var(--rv-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.back:focus-visible, .icon:focus-visible, .btn:focus-visible, .opt:focus-visible, .tog:focus-visible, .act:focus-visible, .qm:focus-visible, #board:focus-visible, .cell:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.info { display: flex; align-items: center; gap: 4px; margin: 1px 0 3px; overflow: hidden; }
+.chip { flex: none; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--rv-panel); border: 1px solid var(--rv-line); color: var(--kb-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip.mode { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.turn { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.turn.you { background: var(--kb-accent-soft); border-color: var(--kb-accent); color: var(--kb-accent-text); }
+.chip.acc { margin-left: auto; color: var(--kb-accent-text); background: var(--kb-accent-soft); border-color: transparent; }
+
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; padding: 0 8px 6px; gap: 5px; }
+#bar { flex: none; display: flex; gap: 8px; justify-content: center; }
+.pl { flex: 1 1 0; min-width: 0; max-width: 240px; display: flex; align-items: center; gap: 7px; box-sizing: border-box; padding: 3px 9px 3px 6px; border-radius: 14px; border: 2px solid transparent; background: var(--rv-panel); transition: border-color .2s, background .2s; }
+.pl.on { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.pl .dk { flex: none; width: 24px; height: 24px; border-radius: 50%; background-size: 100% 100%; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.pl .nm { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 800; line-height: 1.15; overflow: hidden; }
+.pl .nm b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.pl .nm small { display: block; font-size: 10.5px; font-weight: 500; color: var(--kb-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl .n { flex: none; font: 400 24px/1 var(--kb-font-display); font-variant-numeric: tabular-nums; min-width: 1.2em; text-align: right; }
+.pl .bd { flex: none; padding: 0 6px; border-radius: 9px; background: rgba(128, 150, 160, .3); color: var(--kb-ink); font: 800 10px var(--kb-font-body); }
+.pl .bd.off { background: #ff8d7d; color: #2b0b06; } .pl .bd.away { background: #ffd078; color: #2b1d00; } .pl .bd.tm { background: var(--kb-accent); color: var(--kb-accent-ink); font-variant-numeric: tabular-nums; }
+#stage { position: relative; flex: 1 1 0; min-height: 120px; display: grid; place-items: center; }
+#board { position: relative; width: var(--bs, 300px); height: var(--bs, 300px); box-sizing: border-box; display: grid; grid-template-columns: repeat(var(--n, 8), 1fr); grid-template-rows: repeat(var(--n, 8), 1fr);
+  padding: clamp(3px, 1.6%, 9px); border-radius: clamp(8px, 3%, 16px); background: linear-gradient(145deg, var(--rv-frame), var(--rv-frame2)); box-shadow: 0 6px 18px rgba(0, 0, 0, .35), inset 0 0 0 1px var(--rv-rim); touch-action: manipulation; outline-offset: 3px; }
+#board .row { display: contents; }
+.cell { position: relative; box-sizing: border-box; background: var(--rv-felt); box-shadow: inset 0 0 0 .5px var(--rv-grid); cursor: default; display: grid; place-items: center; outline: none; -webkit-tap-highlight-color: transparent; }
+.cell:nth-child(odd) { background: var(--rv-felt2); }
+#board .row:nth-child(even) .cell:nth-child(odd) { background: var(--rv-felt); }
+#board .row:nth-child(even) .cell:nth-child(even) { background: var(--rv-felt2); }
+.cell[data-rl]::before { content: attr(data-rl); position: absolute; left: 2px; top: 0; font: 800 clamp(7px, 2.3vw, 10px) var(--kb-font-body); color: var(--rv-lab); pointer-events: none; }
+.cell[data-cl]::after { content: attr(data-cl); position: absolute; right: 2px; bottom: 0; font: 800 clamp(7px, 2.3vw, 10px) var(--kb-font-body); color: var(--rv-lab); pointer-events: none; }
+.cell .dot { position: absolute; width: 26%; height: 26%; border-radius: 50%; background: var(--rv-dot); opacity: 0; transform: scale(.4); transition: opacity .15s, transform .15s; pointer-events: none; }
+.cell.lg .dot { opacity: 1; transform: none; }
+.cell.lg { cursor: pointer; }
+.cell.ht .dot { opacity: 1; transform: none; width: 60%; height: 60%; background: transparent; box-shadow: 0 0 0 3px #ffd54a, 0 0 14px 3px rgba(255, 213, 74, .85); animation: glow 1s ease-in-out infinite; }
+.cell.sel .dot { opacity: 1; transform: none; width: 64%; height: 64%; background: rgba(255, 213, 74, .35); box-shadow: 0 0 0 3px #ffd54a; }
+.cell.bs .dot { opacity: 1; transform: none; width: 64%; height: 64%; background: rgba(111, 227, 176, .4); box-shadow: 0 0 0 3px #6fe3b0, 0 0 12px 2px rgba(111, 227, 176, .8); }
+.cell.bad .dot { opacity: 1; transform: none; width: 56%; height: 56%; background: rgba(255, 141, 125, .45); box-shadow: 0 0 0 3px #ff8d7d; }
+.cell.cur::after, .cell.cur::before { color: #fff; }
+body.kbd .cell.cur { box-shadow: inset 0 0 0 2.5px var(--kb-focus), inset 0 0 0 .5px var(--rv-grid); z-index: 2; }
+.cell.last .disc::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22%; height: 22%; margin: -11% 0 0 -11%; border-radius: 50%; background: #ff6f5f; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85); z-index: 3; transform: translateZ(1px); }
+.cell.shake { animation: shake .3s; }
+.disc { position: absolute; inset: 9%; perspective: 520px; pointer-events: none; }
+.disc .fl { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.4, .1, .3, 1); transition-delay: var(--dl, 0ms); }
+.disc.w .fl { transform: rotateY(180deg); }
+.disc .fc { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; background-size: 100% 100%; box-shadow: 0 2px 4px rgba(0, 0, 0, .45); }
+.disc .fw { transform: rotateY(180deg); }
+.disc.new { animation: drop .3s ease-out; }
+.disc.fp { animation: lift .5s ease-in-out; animation-delay: var(--dl, 0ms); }
+#board.inst .fl, #board.inst .disc { transition: none !important; animation: none !important; }
+#status { flex: none; min-height: 34px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 3px 10px; border-radius: 14px; background: var(--rv-panel); border: 1px solid var(--rv-line); font-size: 12.5px; font-weight: 800; text-align: center; line-height: 1.3; }
+#status.you { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+#ctl { flex: none; display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; min-height: 48px; }
+.act { flex: 1 1 0; min-width: 0; max-width: 190px; min-height: 48px; box-sizing: border-box; border-radius: 15px; border: 1px solid var(--rv-line); background: var(--rv-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--rv-key-shadow); font: 800 14px var(--kb-font-body); cursor: pointer; padding: 2px 4px; line-height: 1.15; touch-action: manipulation; }
+.act small { display: block; font-size: 10px; font-weight: 500; opacity: .8; }
+.act:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--rv-key-shadow); }
+.act.go { background: var(--rv-go); color: var(--rv-go-ink); border-color: transparent; box-shadow: 0 3px 0 var(--rv-go-shadow); font-size: 15px; }
+.act:disabled { opacity: .42; cursor: default; box-shadow: none; }
+
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .22s ease-out; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.panel { width: 100%; max-width: 440px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--rv-card); border: 1px solid var(--rv-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); animation: rise .25s ease-out; }
+.panel > * { flex: none; }
+.panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel h2.logo { background: var(--rv-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 25px; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--rv-go); color: var(--rv-go-ink); box-shadow: 0 3px 0 var(--rv-go-shadow); font: 800 16px var(--kb-font-body); text-decoration: none; line-height: 1.2; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--rv-go-shadow); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--rv-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--rv-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.opts { text-align: left; }
+.og { margin: 8px 0 0; }
+.og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--rv-panel); border: 1px solid var(--rv-line); }
+.opt { flex: 1; min-width: 0; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; line-height: 1.2; }
+.opt small { display: block; font-size: 10.5px; font-weight: 500; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.tog { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 6px; padding: 4px 10px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--rv-line); background: var(--rv-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); cursor: pointer; text-align: left; }
+.tog span { flex: 1; } .tog small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.tog i { flex: none; width: 40px; height: 24px; border-radius: 12px; background: var(--kb-line); position: relative; transition: background .15s; }
+.tog i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tog[aria-checked="true"] i { background: var(--kb-accent); } .tog[aria-checked="true"] i::after { transform: translateX(16px); }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; box-sizing: border-box; margin-top: 6px; padding: 6px 12px; border-radius: 16px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; text-align: left; }
+.qm:first-child { margin-top: 0; }
+.qm b { display: block; font-size: 15px; } .qm small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.gdesc { margin: 8px 0 0; font-size: 12.5px; font-weight: 500; color: var(--kb-ink); line-height: 1.5; }
+.gbest { margin: 4px 0 0; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
+.rank { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rank li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; background: var(--rv-panel); border: 1px solid var(--rv-line); font-size: 13.5px; font-weight: 800; text-align: left; }
+.rank li.me { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.rank li .no { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-surface); color: var(--kb-accent-text); font: 400 14px var(--kb-font-display); }
+.rank li .no.ok { color: var(--rv-ok); } .rank li .no.ng { color: var(--rv-bad); }
+.rank li .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank li .sc { flex: none; font-size: 12px; color: var(--kb-dim); font-variant-numeric: tabular-nums; }
+.big { font-family: var(--kb-font-display); font-size: 34px; line-height: 1.1; color: var(--kb-ink); }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.howto { max-width: 460px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); }
+.howto li { margin: 3px 0; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rv-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--rv-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.mv { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px 10px; text-align: left; font-variant-numeric: tabular-nums; }
+.mv li { display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 10px; background: var(--rv-panel); font-size: 13px; font-weight: 800; }
+.mv li .i { flex: none; width: 2em; color: var(--kb-dim); font-weight: 500; font-size: 11px; }
+.mv li .dk { flex: none; width: 14px; height: 14px; border-radius: 50%; background-size: 100% 100%; }
+.mv li.ps { color: var(--kb-dim); font-weight: 500; }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
+body.thumb h1, body.thumb .icon, body.thumb .back, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #ctl, body.thumb #status, body.thumb .info, body.thumb header { display: none !important; }
+
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 3px #ffd54a, 0 0 20px 6px rgba(255, 213, 74, .95); } }
+@keyframes drop { from { transform: scale(1.7); opacity: 0; } 70% { opacity: 1; } }
+@keyframes lift { 50% { transform: scale(1.16); } }
+@media (prefers-reduced-motion: reduce) { .disc .fl { transition-duration: .01s !important; } .disc, .panel, .overlay { animation: none !important; } .cell.ht .dot { animation: none; } }
+@media (max-height: 600px) { .panel { padding: 10px 12px 8px; } .panel h2.logo { font-size: 22px; } .btn { min-height: 46px; margin-top: 6px; } .og { margin-top: 5px; } }
+@media (max-width: 379px) { h1 { visibility: hidden; } .pl .nm small { display: none; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  header { padding-top: 0; } .info { margin: 0 0 2px; }
+  #main { display: grid; max-width: 1000px; grid-template-columns: minmax(0, 1fr) minmax(200px, 40%); grid-template-rows: auto auto 1fr; grid-template-areas: "stage bar" "stage status" "stage ctl"; align-content: stretch; column-gap: 8px; }
+  #stage { grid-area: stage; } #bar { grid-area: bar; flex-direction: column; align-items: stretch; } .pl { max-width: none; } #status { grid-area: status; } #ctl { grid-area: ctl; align-self: start; flex-wrap: wrap; }
+  .panel { max-width: 700px; } .howto { max-width: 720px; }
+  .act { min-height: 44px; } #ctl { min-height: 44px; } #status { min-height: 30px; padding: 1px 8px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <h1 data-i18n>リバーシ工房</h1>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="info">
+      <span class="chip mode" id="iGame"></span>
+      <span class="chip turn" id="iTurn"></span>
+      <span class="chip acc" id="iBest"></span>
+    </div>
+  </header>
+  <div id="main">
+    <div id="bar">
+      <div class="pl" id="plB"><span class="dk" id="dkB"></span><span class="nm"><b id="nB"></b><small id="sB"></small></span><span class="bd" id="bB" hidden></span><span class="n" id="cB">2</span></div>
+      <div class="pl" id="plW"><span class="dk" id="dkW"></span><span class="nm"><b id="nW"></b><small id="sW"></small></span><span class="bd" id="bW" hidden></span><span class="n" id="cW">2</span></div>
+    </div>
+    <div id="stage"><div id="board" role="grid" aria-label="リバーシの盤" data-i18n-attr="aria-label"></div></div>
+    <div id="status" role="status" aria-live="polite"></div>
+    <div id="ctl"></div>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="panel">
+    <h2 class="logo" id="tTitle" data-i18n>リバーシ工房</h2>
+    <div class="scroll opts">
+      <button class="qm" id="tDaily" type="button"><span><b data-i18n>今日のパズル</b><small id="tDailySub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <button class="qm" id="tOnline" type="button"><span><b data-i18n>オンライン対戦</b><small id="tOnlineSub" data-i18n>友だちとコードで・クイックマッチ</small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <button class="qm" id="tResume" type="button" hidden><span><b data-i18n>つづきから</b><small id="tResumeSub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <p class="gdesc" id="tDesc"></p>
+      <p class="gbest" id="tBest"></p>
+      <div id="tOpts"></div>
+    </div>
+    <div class="foot">
+      <button class="btn" id="tPlay" type="button" data-i18n>CPUとあそぶ</button>
+      <div class="row2"><button class="btn sub" id="tPass" type="button" data-i18n>ふたりで（1台）</button><button class="btn sub" id="tHow" type="button" data-i18n>ルール</button></div>
+      <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="panel">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <p id="rSub"></p>
+      <ol class="rank" id="rRank"></ol>
+      <div class="big" id="rBig"></div>
+      <div id="rNew" class="newrec" hidden></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rAgain" type="button" data-i18n>もう一度</button>
+    <div class="row2"><button class="btn sub" id="rMoves" type="button" data-i18n>棋譜</button><button class="btn sub" id="rTitleBtn" type="button" data-i18n>タイトルへ</button></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="ovMoves" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="panel">
+    <h2 id="mTitle" data-i18n>棋譜</h2>
+    <p id="mSub"></p>
+    <div class="scroll"><ol class="mv" id="mList"></ol></div>
+    <button class="btn" id="mClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle"></h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+<script src="art.js"></script>
+<script src="engine.js"></script>
+<script src="puzzles.js"></script>
+<script src="online.js"></script>
+<script src="../common/turnroom.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// リバーシ工房 — the classic disc game: flip rows of the other colour by closing them between two of yours.
+// The rules, the CPUs and the exact end-game solver live in engine.js (pure, runs in node too); the puzzle bank is puzzles.js (built and proven by tools/reversi-puzzle-gen.js);
+// online.js is the adapter for common/turnroom.js. This file is the table: the board, the flipping stones, the title, the daily puzzle, results and saves.
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  'リバーシ工房': 'Reversi Workshop', 'リバーシの盤': 'Reversi board', 'ゲーム一覧へ戻る': 'Back to all games', 'ゲーム一覧へ': 'All games', 'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '今日のパズル': 'Daily puzzle', 'オンライン対戦': 'Online match', '友だちとコードで・クイックマッチ': 'With friends by code · Quick match', 'つづきから': 'Continue', 'CPUとあそぶ': 'Play the CPU', 'ふたりで（1台）': 'Two players (1 device)', 'ルール': 'Rules',
+  '言語 / Language': '言語 / Language', 'とじる': 'Close', 'もう一度': 'Play again', '棋譜': 'Moves', 'タイトルへ': 'Title', 'あそびかた': 'How to play',
+  'くろ': 'Black', 'しろ': 'White', 'くろ（先手）': 'Black (first)', 'しろ（後手）': 'White (second)', '先手': 'First', '後手': 'Second', 'あなた': 'You', 'CPU': 'CPU', 'プレイヤー': 'Player',
+  'よわい': 'Easy', 'ふつう': 'Normal', 'つよい': 'Hard', 'とてもつよい': 'Expert', 'CPUの強さ': 'CPU strength', 'あなたの色': 'Your color', 'おまかせ': 'Random', '盤の大きさ': 'Board size', 'はじめの並び': 'Starting position', 'ななめ': 'Diagonal', 'たて・よこ': 'Parallel',
+  '置ける場所を見せる': 'Show where you can play', '小さな点でおしえます': 'Shown as small dots', 'CPUをはやく進める': 'Speed up the CPU', 'CPUの待ち時間を短くします': 'Shortens the CPU\'s waiting time',
+  '{p}回あそんで{w}回勝ち': 'Played {p}, won {w}', 'まだ記録がありません': 'No record yet', '★ {n}': '★ {n}',
+  '{n}×{n}': '{n}×{n}', '6×6': '6×6', '8×8': '8×8',
+  'あなたの番です': 'Your turn', 'CPUが考えています…': 'The CPU is thinking…', '{name}の番です': '{name}\'s turn', '{name}が考えています…': '{name} is thinking…', '相手の番です': 'Waiting for the opponent',
+  'パス': 'Pass', '{name}は置ける場所がないのでパスです': '{name} has no move and passes', '{name}は {m} に置きました（{n}枚）': '{name} played {m} ({n} flipped)', 'あなたは {m} に置きました（{n}枚）': 'You played {m} ({n} flipped)',
+  'そこには石があります': 'There is a stone there', 'そこには置けません（相手の石をはさめる場所だけ）': 'You cannot play there (only where you close in the other color)',
+  'おすすめ: {m}': 'Suggestion: {m}', 'おすすめ: {m}（最後まで読んだ答え）': 'Suggestion: {m} (proven by reading it to the end)', '考え中…': 'Thinking…', 'ヒント': 'Hint', 'もどす': 'Undo', '決める': 'Confirm', 'つぎへ': 'Next', '結果を見る': 'See results',
+  'あなたの勝ち！': 'You win!', 'あなたの負け': 'You lose', '引き分け': 'A draw', '{name}の勝ち': '{name} wins', '{name}の勝ち！': '{name} wins!', '{b} 対 {w}': '{b} to {w}',
+  '★ {n} をもらいました': 'You earned ★ {n}', '★はもらえません': 'No ★ this time', 'ヒントを使ったので、★はつきません': 'You used a hint, so no ★', 'もどすを使ったので、★はつきません': 'You used undo, so no ★', '6×6では★はつきません（8×8で勝つと★）': 'No ★ on 6×6 (win on 8×8 for ★)', 'CPUに勝つと★（よわい1・ふつう2・つよい3・とてもつよい4）': 'Beat the CPU for ★ (Easy 1, Normal 2, Hard 3, Expert 4)',
+  '石を {a} 個ふやして': 'by {a} stones', '角を {n} つとりました': 'You took {n} corners',
+  'ひとやすみ': 'Paused', 'あきらめる': 'Give up', '試合を出る': 'Leave the match', '出ると、あなたの席はCPUに代わります。出ますか？': 'If you leave, a CPU takes your seat. Leave?', '出る': 'Leave', 'やめる': 'Cancel',
+  '今日のパズル {n}/5': 'Daily puzzle {n}/5', '{c}の番です。いちばんよい手をえらぼう（空き {e}マス）': '{c} to move. Find the best move ({e} empty squares)', '正解！': 'Correct!', 'ざんねん…': 'Not quite…',
+  '最善は {m}（最後に {v}）。あなたの手 {y} は {u}': 'Best: {m} (final {v}). Your move {y} gives {u}', '最善は {m}': 'Best: {m}', '最後の石の差 {n}': 'final margin {n}', '+{n}': '+{n}', '空きマスは勝ったほうのものとして数えます': 'Empty squares count for the winner',
+  '今日は {a}/5 正解': 'Today: {a}/5 correct', '今日の5問': 'Today\'s five puzzles', '5問ぜんぶ正解！': 'All five correct!', '合計 {n} 点': '{n} points in total', '{n}点': '{n} pts', 'もう一度ためす（れんしゅう）': 'Try again (practice)', '同じ日のやり直しは記録に入りません': 'Playing it again does not count',
+  '5問・毎日ちがう': 'Five puzzles · new every day', '今日は {a}/5 正解（{p}点）': 'Today: {a}/5 correct ({p} pts)', '{n}問目': 'Puzzle {n}', 'くろ': 'Black',
+  'ひとつ前にもどしました': 'Went back one move', 'もどせません': 'Nothing to undo', 'ここから {m} 手': '{m} moves so far', '{n}手': '{n} moves', 'まだ手がありません': 'No moves yet', '{n}手目': 'Move {n}',
+  'おつかれさま': 'Good game', 'ゲームが終わりました': 'The game is over', 'とちゅうのゲームがあります': 'A game is in progress',
+  'CPU {lv}・{n}×{n}': 'CPU {lv} · {n}×{n}', 'ふたりで1台・{n}×{n}': 'Two players · {n}×{n}', 'オンライン対戦・8×8': 'Online match · 8×8', 'あなた：{c}': 'You: {c}',
+  'こんどは あなたが{c}です': 'This time you play {c}', 'オンライン対戦は★に数えません': 'Online matches do not count for ★', 'オンライン': 'Online', 'オンライン対戦が終わりました': 'The online match is over', '勝ちました！': 'You won!', '負けました': 'You lost',
+  '席がCPUに交代しました': 'Your seat was taken over by a CPU', 'ゲームに入れませんでした': 'You could not join this game', 'みんなの準備を待っています…': 'Waiting for the others…', 'もう一度（{a}/{b}人）': 'Rematch ({a}/{b})', 'もう一度を待っています（{a}/{b}人）': 'Waiting for a rematch ({a}/{b})',
+  'ホストが退出したので、ここで終了です': 'The host left, so the match ends here', 'ホストとの接続が切れたので、ここで終了です': 'Lost the host, so the match ends here', '通信がとぎれています…つながるのを待っています': 'The connection dropped… waiting to reconnect',
+  '切断': 'Offline', '離席': 'Away', '{n}人': '{n} players',
+  'あなたの番に、置ける場所の点がある場所をタップします。':'Tap one of the dots on your turn.',
+  '遊び方を見て、はじめましょう': 'Read the rules, then start', '{c}の番です': '{c} to move', '{m} をえらびました。「決める」か、もう一度タップ': '{m} selected. Press Confirm or tap it again', 'はじめる': 'Start', '空き': 'empty', '置けます': 'playable',
+} });
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.ReversiEngine, ART = window.ReversiArt, BANK = window.ReversiPuzzles;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'reversi';
+const SAVE_KEY = 'kusoge.reversi.save';   // records and settings (registry: per-field merge)
+const RUN_KEY = 'kusoge.reversi.game';    // the unfinished game on this device (not synced)
+const HOWTO_KEY = 'kusoge.reversi.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name, a) { if (A) A.sfx(name, a); }
+const rndSeed = () => (Math.floor(Math.random() * 4294967295) + 1) >>> 0;
+const LV_NAME = { 1: T('よわい'), 2: T('ふつう'), 3: T('つよい'), 4: T('とてもつよい') };
+const COLOR_NAME = k => (k === 2 ? T('しろ') : T('くろ'));
+const mName = (c, n) => E.name(c, n || 8);
+
+// ---------- save ----------
+function newSave() { return { v: 1, pts: 0, w: {}, stats: {}, set: { level: 2, me: 'b', n: 8, start: 'std', fast: 0, dots: 1 }, dl: { last: 0, pts: 0, r: [] }, tut: 0 }; }
+function readSave() {
+  let o = null;
+  try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = newSave();
+  if (o && typeof o === 'object') {
+    s.pts = Math.max(0, Math.floor(Number(o.pts) || 0));
+    if (o.w && typeof o.w === 'object') for (const k of Object.keys(o.w)) if (/^[68]-[1-4]$/.test(k) && o.w[k] && typeof o.w[k] === 'object') s.w[k] = { p: Math.max(0, Math.floor(Number(o.w[k].p) || 0)), w: Math.max(0, Math.floor(Number(o.w[k].w) || 0)) };
+    if (o.stats && typeof o.stats === 'object') for (const k of Object.keys(o.stats)) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0) s.stats[k] = v; }
+    if (o.set && typeof o.set === 'object') {
+      s.set.level = clamp(Math.round(o.set.level) || 2, 1, 4); s.set.me = ['b', 'w', 'r'].includes(o.set.me) ? o.set.me : 'b';
+      s.set.n = o.set.n === 6 ? 6 : 8; s.set.start = o.set.start === 'par' ? 'par' : 'std'; s.set.fast = o.set.fast ? 1 : 0; s.set.dots = o.set.dots === 0 ? 0 : 1;
+    }
+    if (o.dl && typeof o.dl === 'object') {
+      s.dl.last = Math.max(0, Math.floor(Number(o.dl.last) || 0)); s.dl.pts = Math.max(0, Math.floor(Number(o.dl.pts) || 0));
+      if (Array.isArray(o.dl.r)) s.dl.r = o.dl.r.slice(0, 5).filter(x => Array.isArray(x) && x.length >= 3).map(x => [x[0] | 0, x[1] ? 1 : 0, Math.max(0, x[2] | 0)]);
+    }
+    s.tut = o.tut ? 1 : 0;
+  }
+  return s;
+}
+let save = readSave();
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
+const wRec = k => (save.w[k] = save.w[k] || { p: 0, w: 0 });
+const stat = k => Number(save.stats[k]) || 0;
+function bump(k, n) { save.stats[k] = stat(k) + (n === undefined ? 1 : n); }
+
+// =====================================================================================
+// the board: 64 cells (div, not button: only the cursor cell is a tab stop) and one element per stone. A stone is two faces on a card that turns over.
+// =====================================================================================
+const boardEl = $('board');
+const B = { n: 0, cells: [], discs: [], bs: 300 };
+const SPD = { v: 1 };       // 1 = normal; 0 = no animation and no waiting (tests)
+document.querySelectorAll('.pl .dk').forEach(e => { e.style.backgroundImage = ART.faceURL(e.id === 'dkW' ? 2 : 1); });
+function buildBoard(n) {
+  if (B.n === n && B.cells.length === n * n) return;
+  B.n = n; B.cells = []; B.discs = [];
+  boardEl.innerHTML = ''; boardEl.style.setProperty('--n', n);
+  boardEl.style.setProperty('--fb', ART.faceURL(1)); boardEl.style.setProperty('--fw', ART.faceURL(2));
+  for (let r = 0; r < n; r++) {
+    const row = document.createElement('div'); row.className = 'row'; row.setAttribute('role', 'row');
+    for (let c = 0; c < n; c++) {
+      const el = document.createElement('div'); el.className = 'cell'; el.setAttribute('role', 'gridcell'); el.dataset.i = r * n + c; el.tabIndex = -1;
+      if (c === 0) el.dataset.rl = r + 1;
+      if (r === n - 1) el.dataset.cl = 'abcdefgh'[c];
+      el.innerHTML = '<span class="dot"></span>';
+      row.appendChild(el); B.cells.push(el); B.discs.push(null);
+    }
+    boardEl.appendChild(row);
+  }
+  fit();
+}
+function fit() {
+  const st = $('stage'), w = st.clientWidth, h = st.clientHeight;
+  B.bs = Math.max(120, Math.floor(Math.min(w, h)));
+  boardEl.style.setProperty('--bs', B.bs + 'px');
+}
+function mkDisc(color) {
+  const d = document.createElement('div'); d.className = 'disc ' + (color === 2 ? 'w' : 'b');
+  d.innerHTML = '<div class="fl"><i class="fc fb"></i><i class="fc fw"></i></div>';
+  const fb = d.querySelector('.fb'), fw = d.querySelector('.fw');
+  fb.style.backgroundImage = ART.faceURL(1); fw.style.backgroundImage = ART.faceURL(2);
+  return d;
+}
+const flipMs = () => Math.round(500 * SPD.v);
+// bring the stones on the screen in line with a board; origin = the square just played (the flips ripple out from it)
+function syncBoard(b, o) {
+  o = o || {}; const n = B.n, anim = !!o.anim && SPD.v > 0 && !reduceMotion.matches;
+  boardEl.classList.toggle('inst', !anim);
+  const or = o.origin >= 0 ? Math.floor(o.origin / n) : 0, oc = o.origin >= 0 ? o.origin % n : 0;
+  let maxD = 0;
+  for (let i = 0; i < n * n; i++) {
+    const v = b[i], d = B.discs[i];
+    if (!v) { if (d) { d.remove(); B.discs[i] = null; } continue; }
+    if (!d) { const nd = mkDisc(v); if (anim) nd.classList.add('new'); B.cells[i].appendChild(nd); B.discs[i] = nd; continue; }
+    const cur = d.classList.contains('w') ? 2 : 1;
+    if (cur !== v) {
+      const dist = Math.max(Math.abs(Math.floor(i / n) - or), Math.abs(i % n - oc)); if (dist > maxD) maxD = dist;
+      if (anim) { const delay = Math.round(dist * 85 * SPD.v); d.style.setProperty('--dl', delay + 'ms'); d.classList.remove('fp'); void d.offsetWidth; d.classList.add('fp'); }
+      d.classList.toggle('w', v === 2); d.classList.toggle('b', v === 1);
+    }
+  }
+  return anim ? Math.round(flipMs() + maxD * 85 * SPD.v + 80) : 0;
+}
+
+// =====================================================================================
+// the session: S is the game on the table (against the CPU, two on one device, a daily puzzle, or online)
+// =====================================================================================
+let S = null;
+const cpuWait = ms => Math.round(ms * SPD.v * (save.set.fast ? 0.4 : 1));
+const myColor = () => (S ? (S.mode === 'online' ? S.myc : S.mode === 'cpu' ? S.me : S.st.turn) : 1);
+function nameOf(k) {
+  if (!S) return k === 2 ? T('しろ') : T('くろ');
+  if (S.mode === 'online') return (S.names && S.names[k - 1]) || (k === 2 ? T('しろ') : T('くろ'));
+  if (S.mode === 'cpu') return k === S.me ? T('あなた') : T('CPU');
+  return k === 2 ? T('しろ') : T('くろ');
+}
+const canAct = () => !!S && !S.over && !S.busy && !S.menu && (S.mode === 'pass' || (S.mode === 'cpu' && S.st.turn === S.me) || (S.mode === 'online' && S.st.turn === S.myc && !S.sending && S.live));
+const legalSet = () => new Set(S && S.st && !S.st.over ? E.legal(S.st) : []);
+
+function markers() {
+  if (!S) return;
+  const n = B.n, st = S.st, puzzle = S.mode === 'puzzle';
+  const show = puzzle ? !S.pz.done : (save.set.dots && canAct());
+  const lg = show ? legalSet() : new Set();
+  const last = S.mode === 'puzzle' ? -1 : S.last;
+  for (let i = 0; i < n * n; i++) {
+    const el = B.cells[i], v = st.b[i];
+    el.classList.toggle('lg', lg.has(i)); el.classList.toggle('last', i === last && !!v);
+    el.classList.toggle('ht', i === S.hint); el.classList.toggle('sel', i === S.sel && !(S.pz && S.pz.done));
+    el.classList.toggle('bs', !!(S.pz && S.pz.done && i === S.pz.best)); el.classList.toggle('bad', !!(S.pz && S.pz.done && S.pz.bad === i));
+    el.classList.toggle('cur', i === S.cur); el.tabIndex = i === S.cur ? 0 : -1;
+    el.setAttribute('aria-label', mName(i, n) + ', ' + (v === 1 ? T('くろ') : v === 2 ? T('しろ') : T('空き')) + (lg.has(i) ? ', ' + T('置けます') : ''));
+  }
+}
+function announce(t) { $('live').textContent = ''; setTimeout(() => { $('live').textContent = t; }, 30); }
+function setStatus(text, you) { const el = $('status'); el.textContent = text; el.classList.toggle('you', !!you); }
+
+function hud() {
+  if (!S) return;
+  const st = S.st, c = E.counts(st), over = !!S.over || st.over;
+  $('cB').textContent = c.b; $('cW').textContent = c.w;
+  $('nB').textContent = nameOf(1); $('nW').textContent = nameOf(2);
+  $('sB').textContent = (S.mode === 'cpu' && S.me === 2 ? LV_NAME[S.level] + ' · ' : '') + T('先手'); $('sW').textContent = (S.mode === 'cpu' && S.me === 1 ? LV_NAME[S.level] + ' · ' : '') + T('後手');
+  const turnOn = !over && S.mode !== 'puzzle';
+  $('plB').classList.toggle('on', turnOn && st.turn === 1); $('plW').classList.toggle('on', turnOn && st.turn === 2);
+  for (const [k, id] of [[1, 'bB'], [2, 'bW']]) {
+    const bd = $(id); let txt = '', cls = 'bd';
+    if (S.mode === 'online' && S.sl) {
+      const ch = S.sl[k - 1];
+      if (ch === 'd') { txt = T('切断'); cls += ' off'; } else if (ch === 'a') { txt = T('離席'); cls += ' away'; } else if (ch === 'c' || ch === 'x') txt = 'CPU';
+      if (turnOn && st.turn === k && S.tsec > 0 && ch === 'p') { txt = '⏱' + S.tsec; cls = 'bd tm'; }
+    }
+    bd.hidden = !txt; bd.textContent = txt; bd.className = cls;
+  }
+  $('iGame').textContent = S.mode === 'cpu' ? T('CPU {lv}・{n}×{n}', { lv: LV_NAME[S.level], n: S.n }) : S.mode === 'pass' ? T('ふたりで1台・{n}×{n}', { n: S.n }) : S.mode === 'online' ? T('オンライン対戦・8×8') : T('今日のパズル {n}/5', { n: Math.min(5, S.pz.i + 1) });
+  const mine = canAct() || (S.mode === 'puzzle' && !S.pz.done);
+  $('iTurn').classList.toggle('you', mine);
+  $('iTurn').textContent = over ? T('ゲームが終わりました') : S.mode === 'puzzle' ? T('{c}の番です', { c: COLOR_NAME(st.turn) }) : S.mode === 'pass' ? T('{name}の番です', { name: nameOf(st.turn) }) : (mine ? T('あなたの番です') : S.mode === 'online' ? T('相手の番です') : T('CPUが考えています…'));
+  $('iBest').textContent = '★ ' + fmtN(save.pts);
+  renderCtl();
+}
+function turnText() {
+  if (!S) return '';
+  if (S.over || S.st.over) return T('ゲームが終わりました');
+  if (S.mode === 'cpu') return S.st.turn === S.me ? T('あなたの番です') : T('CPUが考えています…');
+  if (S.mode === 'pass') return T('{name}の番です', { name: nameOf(S.st.turn) });
+  if (S.mode === 'online') return S.st.turn === S.myc ? T('あなたの番です') : T('{name}が考えています…', { name: nameOf(S.st.turn) });
+  return '';
+}
+function refreshStatus() {
+  if (!S || S.mode === 'puzzle') return;
+  const you = canAct();
+  setStatus((S.note ? S.note + ' ' : '') + turnText(), you);
+}
+
+// ---------- the buttons under the board ----------
+function renderCtl() {
+  const ctl = $('ctl'); if (!S) { ctl.style.visibility = 'hidden'; return; }
+  ctl.style.visibility = '';
+  const key = S.mode + ':' + (S.mode === 'puzzle' ? (S.pz.done ? 'd' : 'q') : '') + ':' + EN;
+  if (ctl.dataset.key !== key) {
+    ctl.dataset.key = key; ctl.innerHTML = '';
+    const mk = (id, label, sub, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'act' + (cls ? ' ' + cls : ''); b.dataset.id = id; b.innerHTML = esc(label) + (sub ? '<small>' + esc(sub) + '</small>' : ''); b.addEventListener('click', () => ctlAct(id)); ctl.appendChild(b); };
+    if (S.mode === 'cpu' || S.mode === 'pass') { mk('hint', T('ヒント'), 'H'); mk('undo', T('もどす'), 'U'); mk('moves', T('棋譜'), 'L'); }
+    else if (S.mode === 'online') mk('moves', T('棋譜'), 'L');
+    else if (S.mode === 'puzzle') { if (S.pz.done) mk('next', S.pz.i >= 4 ? T('結果を見る') : T('つぎへ'), 'Enter', 'go'); else mk('ok', T('決める'), 'Enter', 'go'); }
+  }
+  const dis = (id, v) => { const b = ctl.querySelector('[data-id="' + id + '"]'); if (b) b.disabled = !!v; };
+  dis('hint', !(S.mode === 'cpu' || S.mode === 'pass') || !canAct() || !!S.thinking);
+  dis('undo', undoTarget() < 0);
+  dis('ok', !(S.pz && S.sel >= 0 && !S.pz.done));
+  dis('moves', false);
+  fit();
+}
+function ctlAct(id) {
+  if (id === 'hint') doHint(); else if (id === 'undo') doUndo(); else if (id === 'moves') showMoves();
+  else if (id === 'ok') { if (S && S.pz && S.sel >= 0) puzzleAnswer(S.sel); } else if (id === 'next') puzzleNext();
+}
+
+// ---------- starting, saving and resuming a game against the CPU or on one device ----------
+function mkSession(o) { return Object.assign({ mode: 'cpu', st: null, n: 8, start: 'std', level: 2, me: 1, seed: 0, over: false, busy: false, menu: false, timer: 0, hinted: 0, undone: 0, corners: 0, passed: 0, ms: 0, t0: Date.now(), hint: -1, sel: -1, cur: 0, last: -1, note: '' }, o); }
+function firstCur(st) { const lg = E.legal(st); return lg.length ? lg[0] : Math.floor(st.n * st.n / 2) + Math.floor(st.n / 2); }
+function hideOverlays() { for (const id of OVERLAYS) $(id).hidden = true; }
+function stopTimers() { if (S) { clearTimeout(S.timer); S.timer = 0; } }
+function startGame(o) {
+  o = o || {};
+  stopTimers(); if (S && S.mode === 'online' && TR && !S.over) { TR.leave(); }
+  hideOverlays();
+  const set = save.set, mode = o.mode === 'pass' ? 'pass' : 'cpu';
+  const n = o.n || set.n, start = o.start || set.start, level = o.level || set.level, pick = o.me || set.me;
+  const me = pick === 'w' ? 2 : pick === 'b' ? 1 : (Math.random() < 0.5 ? 1 : 2), seed = rndSeed();
+  const st = E.create({ n, start, seed });
+  S = mkSession({ mode, st, n, start, level, me: mode === 'cpu' ? me : 1, seed, cfg: { mode, level, me: pick, n, start } });
+  S.cur = firstCur(st);
+  buildBoard(n); syncBoard(st.b, {}); hud(); markers();
+  emit('play_start', { mode: mode === 'pass' ? 'practice' : 'normal', seed });
+  if (mode === 'cpu') setStatus(T('あなた：{c}', { c: me === 1 ? T('くろ（先手）') : T('しろ（後手）') }) + ' ' + turnText(), me === 1);
+  else refreshStatus();
+  persist(); loop();
+  return S;
+}
+const runOf = () => ({ v: 1, mode: S.mode, n: S.n, start: S.start, level: S.level, me: S.me, seed: S.seed, moves: S.st.moves, hinted: S.hinted, undone: S.undone, corners: S.corners, passed: S.passed, ms: Math.round(S.ms + (Date.now() - S.t0)), cfg: S.cfg, at: Date.now() });
+function persist() {
+  if (!S || S.over || (S.mode !== 'cpu' && S.mode !== 'pass')) return;
+  store.set(RUN_KEY, JSON.stringify(runOf()));
+}
+function clearRun() { store.del(RUN_KEY); }
+function readRun() {
+  let r = null;
+  try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) {}
+  if (!r || r.v !== 1 || !['cpu', 'pass'].includes(r.mode) || !Array.isArray(r.moves) || (r.n !== 6 && r.n !== 8)) return null;
+  const st = E.replay(r.n, r.start === 'par' ? 'par' : 'std', r.moves.filter(m => Array.isArray(m)), r.seed);
+  if (!st || st.over) return null;
+  return Object.assign(r, { st });
+}
+function resumeGame(r) {
+  stopTimers(); hideOverlays();
+  S = mkSession({ mode: r.mode, st: r.st, n: r.n, start: r.start === 'par' ? 'par' : 'std', level: clamp(r.level | 0 || 2, 1, 4), me: r.me === 2 ? 2 : 1, seed: r.seed >>> 0, hinted: r.hinted | 0, undone: r.undone | 0, corners: r.corners | 0, passed: r.passed | 0, ms: r.ms | 0,
+    cfg: r.cfg || { mode: r.mode, level: r.level, me: 'b', n: r.n, start: r.start } });
+  const lm = r.st.moves.filter(m => m[0] >= 0).slice(-1)[0]; S.last = lm ? lm[0] : -1; S.cur = firstCur(r.st);
+  buildBoard(r.n); syncBoard(r.st.b, {}); hud(); markers(); refreshStatus();
+  emit('play_start', { mode: r.mode === 'pass' ? 'practice' : 'normal', resumed: true });
+  loop();
+}
+
+// ---------- the turn loop ----------
+function loop() {
+  if (!S || S.over || S.menu || S.busy || S.mode === 'puzzle' || S.mode === 'online') return;
+  clearTimeout(S.timer);
+  if (S.mode === 'cpu' && S.st.turn !== S.me && !S.st.over) S.timer = setTimeout(cpuMove, cpuWait(450));
+}
+function cpuMove() {
+  if (!S || S.over || S.menu || S.busy || S.mode !== 'cpu' || S.st.turn === S.me || S.st.over) return;
+  const c = E.cpu(S.st, S.level);
+  if (c == null) return;
+  applyMove(c, false);
+}
+function applyMove(cell, byHuman) {
+  const st = S.st, k = st.turn, ev = E.play(st, cell);
+  if (!ev) { sfx('error'); return false; }
+  const mv = ev[0], pa = ev.find(e => e.t === 'pa');
+  S.hint = -1; S.sel = -1; S.last = cell; S.cur = cell; S.busy = true; S.thinking = false;
+  const wait = syncBoard(st.b, { origin: cell, anim: true });
+  sfx(mv.fl.length > 3 ? 'pop' : 'move');
+  if (S.mode === 'cpu' && byHuman && E.geo(S.n).corners.indexOf(cell) >= 0) S.corners++;
+  let note = S.mode === 'cpu' && !byHuman ? T('{name}は {m} に置きました（{n}枚）', { name: nameOf(k), m: mName(cell, S.n), n: mv.fl.length })
+    : S.mode === 'cpu' ? T('あなたは {m} に置きました（{n}枚）', { m: mName(cell, S.n), n: mv.fl.length }) : T('{name}は {m} に置きました（{n}枚）', { name: nameOf(k), m: mName(cell, S.n), n: mv.fl.length });
+  if (pa) { note += ' ' + T('{name}は置ける場所がないのでパスです', { name: nameOf(pa.k) }); if (S.mode === 'cpu' && pa.k !== S.me) S.passed++; bubble(T('パス')); }
+  S.note = note;
+  announce(note);
+  persist(); hud(); markers(); refreshStatus();
+  setTimeout(() => { if (!S) return; S.busy = false; afterMove(); }, wait);
+  return true;
+}
+function afterMove() {
+  if (!S) return;
+  if (S.st.over) { finish(); return; }
+  hud(); markers(); refreshStatus(); loop();
+}
+function bubble(text) {
+  const el = document.createElement('div'); el.className = 'sr'; el.textContent = text; document.body.appendChild(el); setTimeout(() => el.remove(), 800);
+  const f = document.createElement('div'); f.textContent = text;
+  f.style.cssText = 'position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:20;padding:4px 16px;border-radius:14px;background:var(--kb-accent);color:var(--kb-accent-ink);font:400 clamp(18px,6vw,28px) var(--kb-font-display);pointer-events:none;animation:fade .2s;box-shadow:0 4px 14px rgba(0,0,0,.4)';
+  $('stage').appendChild(f); setTimeout(() => f.remove(), Math.max(400, Math.round(900 * SPD.v)));
+}
+function onCell(i) {
+  if (!S || S.menu) return;
+  S.cur = i;
+  if (S.mode === 'puzzle') { puzzleCell(i); return; }
+  if (!canAct()) { markers(); return; }
+  if (!E.isLegal(S.st, i)) { illegal(i); return; }
+  if (S.mode === 'online') { sendOnline(i); return; }
+  applyMove(i, true);
+}
+function illegal(i) {
+  const el = B.cells[i]; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 350);
+  sfx('error'); setStatus(S.st.b[i] ? T('そこには石があります') : T('そこには置けません（相手の石をはさめる場所だけ）'), true);
+  markers();
+}
+
+// ---------- hint and undo ----------
+function doHint() {
+  if (!S || !canAct() || S.thinking || (S.mode !== 'cpu' && S.mode !== 'pass')) return;
+  S.thinking = true; setStatus(T('考え中…'), true); renderCtl();
+  setTimeout(() => {
+    if (!S) return; S.thinking = false;
+    const h = E.best(S.st, 4); if (!h) { refreshStatus(); return; }
+    S.hint = h.cell; S.hinted++; S.cur = h.cell; persist();
+    sfx('select'); markers(); renderCtl();
+    setStatus(h.exact ? T('おすすめ: {m}（最後まで読んだ答え）', { m: mName(h.cell, S.n) }) : T('おすすめ: {m}', { m: mName(h.cell, S.n) }), true);
+    announce($('status').textContent);
+  }, 20);
+}
+// the move number to go back to (before my last move; in two-player games before the last move), or -1
+function undoTarget() {
+  if (!S || S.over || S.busy || S.st.over || S.menu || (S.mode !== 'cpu' && S.mode !== 'pass')) return -1;
+  const mv = S.st.moves;
+  for (let j = mv.length - 1; j >= 0; j--) {
+    if (mv[j][0] < 0) continue;
+    if (S.mode === 'pass' || mv[j][1] === S.me) return j;
+  }
+  return -1;
+}
+function doUndo() {
+  const j = undoTarget(); if (j < 0) { sfx('error'); return; }
+  stopTimers();
+  const st = E.rewind(S.st, j); if (!st) return;
+  S.st = st; S.undone++; S.hint = -1; S.sel = -1; S.busy = false; S.thinking = false;
+  const lm = st.moves.filter(m => m[0] >= 0).slice(-1)[0]; S.last = lm ? lm[0] : -1; S.cur = firstCur(st);
+  syncBoard(st.b, {}); S.note = T('ひとつ前にもどしました');
+  sfx('tap'); persist(); hud(); markers(); refreshStatus(); loop();
+}
+
+// ---------- the move list ----------
+function showMoves() {
+  if (!S) return;
+  const st = S.st, list = $('mList'); list.innerHTML = '';
+  const mv = st.moves; let k = 0;
+  $('mSub').textContent = mv.filter(m => m[0] >= 0).length ? T('{n}手', { n: mv.filter(m => m[0] >= 0).length }) : T('まだ手がありません');
+  for (const m of mv) {
+    const li = document.createElement('li');
+    if (m[0] < 0) { li.className = 'ps'; li.innerHTML = '<span class="i"></span><span class="dk" style="background-image:' + ART.faceURL(m[1]) + '"></span>' + esc(T('パス')); }
+    else { k++; li.innerHTML = '<span class="i">' + k + '</span><span class="dk" style="background-image:' + ART.faceURL(m[1]) + '"></span>' + esc(mName(m[0], st.n)); }
+    list.appendChild(li);
+  }
+  S.menuWas = S.menu; S.menu = true;
+  $('ovMoves').hidden = false; $('mClose').focus({ preventScroll: true });
+  const sc = list.parentElement; sc.scrollTop = sc.scrollHeight;
+}
+function closeMoves() {
+  $('ovMoves').hidden = true;
+  if (!S) return;
+  S.menu = !!S.menuWas; S.menuWas = false;
+  if (S.over && S.showResultAgain) { S.showResultAgain = false; $('ovResult').hidden = false; return; }
+  if (!S.menu) { hud(); markers(); loop(); }
+}
+$('mClose').addEventListener('click', closeMoves);
+
+// ---------- the end of a game ----------
+function burst() {
+  if (reduceMotion.matches || SPD.v === 0) return;
+  const fx = $('fx'), c = fx.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cols = ['#f0c968', '#5a6aa3', '#f1e8d6', '#6fe3b0', '#ff8d7d'], parts = [];
+  for (let i = 0; i < 70; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 60, y: H * 0.4, vx: (Math.random() - 0.5) * 9, vy: -4 - Math.random() * 7, r: Math.random() * 3, vr: (Math.random() - 0.5) * 0.4, c: cols[i % cols.length], s: 5 + Math.random() * 5, t: 0 });
+  (function tick() {
+    c.clearRect(0, 0, W, H);
+    parts.forEach(p => { p.t++; p.vy += 0.28; p.x += p.vx; p.y += p.vy; p.r += p.vr; c.save(); c.globalAlpha = Math.max(0, 1 - p.t / 100); c.translate(p.x, p.y); c.rotate(p.r); c.fillStyle = p.c; c.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); c.restore(); });
+    if (parts[0].t < 100) requestAnimationFrame(tick); else c.clearRect(0, 0, W, H);
+  })();
+}
+function finish() {
+  if (!S || S.over) return;
+  S.over = true; stopTimers(); clearRun();
+  const st = S.st, r = E.result(st), cpuMode = S.mode === 'cpu', win = cpuMode && r.winner === S.me, draw = r.winner === 0;
+  let stars = 0, why = '';
+  if (cpuMode) {
+    if (win) {
+      if (S.n !== 8) why = T('6×6では★はつきません（8×8で勝つと★）'); else if (S.hinted) why = T('ヒントを使ったので、★はつきません'); else if (S.undone) why = T('もどすを使ったので、★はつきません'); else stars = S.level;
+    }
+    const w = wRec(S.n + '-' + S.level); w.p++; if (win) w.w++;
+    bump('plays'); if (win) { bump('wins'); if (S.level >= 3) bump('lv3'); if (S.level >= 4) bump('hard'); if (S.n === 6) bump('six'); if (r.diff * (S.me === 1 ? 1 : -1) >= 30) bump('big'); if ((S.me === 1 ? r.w : r.b) === 0) bump('wipe'); }
+    const g = E.geo(S.n); let own = 0; for (const c of g.corners) if (st.b[c] === S.me) own++;
+    if (own === 4 && win) bump('corner4');
+    if (S.corners) bump('corners', S.corners);
+    if (S.passed) bump('pass', S.passed);
+    save.pts += stars;
+  } else bump('twop');
+  writeSave();
+  const dur = Math.round(S.ms + (Date.now() - S.t0));
+  emit('play_end', { mode: cpuMode ? 'normal' : 'practice', score: stars, durationMs: dur, reason: win ? 'clear' : 'over' });
+  hud(); markers();
+  if (win) { sfx('win'); burst(); } else sfx(draw ? 'ok' : 'over');
+  setTimeout(() => showResult(r, win, draw, stars, why), Math.round(700 * SPD.v));
+}
+function showResult(r, win, draw, stars, why) {
+  if (!S || !S.over) return;
+  const cpuMode = S.mode === 'cpu';
+  $('rTitle').textContent = draw ? T('引き分け') : cpuMode ? (win ? T('あなたの勝ち！') : T('あなたの負け')) : T('{name}の勝ち！', { name: nameOf(r.winner) });
+  $('rSub').textContent = T('{b} 対 {w}', { b: r.b, w: r.w }) + ' · ' + (cpuMode ? T('CPU {lv}・{n}×{n}', { lv: LV_NAME[S.level], n: S.n }) : T('ふたりで1台・{n}×{n}', { n: S.n }));
+  fillScores($('rRank'), r);
+  $('rBig').textContent = stars ? '★'.repeat(Math.min(4, stars)) : '';
+  $('rNew').hidden = !stars; if (stars) $('rNew').textContent = T('★ {n} をもらいました', { n: stars });
+  $('rNote').textContent = cpuMode ? (stars ? '' : why || (win ? '' : T('CPUに勝つと★（よわい1・ふつう2・つよい3・とてもつよい4）'))) : '';
+  $('rAgain').disabled = false; $('rAgain').textContent = T('もう一度'); $('rMoves').hidden = false;
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+function fillScores(ol, r) {
+  ol.innerHTML = '';
+  const rows = [[1, r.b], [2, r.w]].sort((a, b) => b[1] - a[1]);
+  rows.forEach(([k, n], i) => {
+    const li = document.createElement('li'); if (S && ((S.mode === 'cpu' && k === S.me) || (S.mode === 'online' && k === S.myc))) li.className = 'me';
+    li.innerHTML = '<span class="no">' + (n === rows[0][1] ? 1 : 2) + '</span><span class="nm">' + esc(nameOf(k)) + ' · ' + esc(COLOR_NAME(k)) + '</span><span class="sc">' + esc(T('{n}点', { n })) + '</span>';
+    ol.appendChild(li);
+  });
+}
+function giveUp() {
+  if (!S || S.over) return;
+  S.over = true; stopTimers(); clearRun();
+  const dur = Math.round(S.ms + (Date.now() - S.t0));
+  if (S.mode === 'online') emit('play_end', { mode: 'versus', score: 0, durationMs: dur, reason: 'quit' });
+  else if (S.mode === 'puzzle') emit('play_end', { mode: S.pz.practice ? 'practice' : 'daily', dateKey: S.pz.practice ? undefined : S.pz.dk, score: 0, durationMs: dur, reason: 'quit' });
+  else emit('play_end', { mode: S.mode === 'pass' ? 'practice' : 'normal', score: 0, durationMs: dur, reason: 'quit' });
+}
+
+// =====================================================================================
+// the daily puzzle: five positions (easier first) with one proven best move each
+// =====================================================================================
+function dailyInfo(dk) {
+  if (!PF || !BANK) return null;
+  dk = dk && PF.isDateKey(dk) ? Number(dk) : PF.jstDateKey();
+  return { dk, seed: PF.dailySeed(GAME, dk) };
+}
+function startPuzzle(dk, practice) {
+  const d = dailyInfo(dk); if (!d) return;
+  stopTimers(); hideOverlays();
+  if (S && S.mode === 'online' && TR && !S.over) TR.leave();
+  const idx = E.dailySet(d.seed, BANK), same = save.dl.last === d.dk;
+  const done = same && !practice ? save.dl.r.length : 0;
+  S = mkSession({ mode: 'puzzle', n: 8, level: 4, pz: { dk: d.dk, idx, i: Math.min(done, 5), res: same && !practice ? save.dl.r.map(x => x.slice()) : [], practice: !!practice, done: false, best: -1, bad: -1 } });
+  buildBoard(8);
+  S.st = E.fromPuzzle(BANK.list[idx[Math.min(S.pz.i, 4)]]); S.cur = firstCur(S.st); syncBoard(S.st.b, {});
+  if (S.pz.i >= 5) { S.pz.i = 4; S.over = true; showPuzzleSummary(); return; }
+  emit('play_start', { mode: practice ? 'practice' : 'daily', dateKey: practice ? undefined : d.dk });
+  loadPuzzle();
+}
+function loadPuzzle() {
+  const p = BANK.list[S.pz.idx[S.pz.i]];
+  S.pz.p = p; S.pz.done = false; S.pz.best = -1; S.pz.bad = -1; S.sel = -1; S.hint = -1; S.last = -1;
+  S.st = E.fromPuzzle(p); S.cur = firstCur(S.st); S.t0 = Date.now();
+  syncBoard(S.st.b, {}); hud(); markers();
+  setStatus(T('{c}の番です。いちばんよい手をえらぼう（空き {e}マス）', { c: COLOR_NAME(S.st.turn), e: p.e }), true);
+  announce($('status').textContent);
+  $('ctl').dataset.key = ''; renderCtl();
+}
+function puzzleCell(i) {
+  if (!S.pz || S.pz.done) return;
+  if (!E.isLegal(S.st, i)) { illegal(i); return; }
+  if (S.sel === i) { puzzleAnswer(i); return; }
+  S.sel = i; sfx('select'); markers(); renderCtl();
+  setStatus(T('{m} をえらびました。「決める」か、もう一度タップ', { m: mName(i, 8) }), true);
+}
+function puzzleAnswer(cell) {
+  const pz = S.pz, p = pz.p; if (pz.done || !E.isLegal(S.st, cell)) return;
+  const val = (p.m.find(x => x[0] === cell) || [0, 0])[1], top = Math.max(...p.m.map(x => x[1])), bestCell = p.m.find(x => x[1] === top)[0];
+  const ok = val === top, pts = E.puzzlePoints(top, val);
+  pz.done = true; pz.best = bestCell; pz.bad = ok ? -1 : cell; pz.ok = ok; pz.pts = pts;
+  pz.res = pz.res.slice(0, pz.i); pz.res.push([cell, ok ? 1 : 0, pts]);
+  if (!pz.practice) { save.dl = { last: pz.dk, pts: pz.res.reduce((a, x) => a + x[2], 0), r: pz.res.map(x => x.slice()) }; if (ok) bump('pz'); writeSave(); }
+  const sgn = n => (n > 0 ? '+' + n : String(n));
+  setStatus((ok ? T('正解！') + ' ' + T('最善は {m}', { m: mName(bestCell, 8) }) : T('ざんねん…') + ' ' + T('最善は {m}（最後に {v}）。あなたの手 {y} は {u}', { m: mName(bestCell, 8), v: sgn(top), y: mName(cell, 8), u: sgn(val) })) + ' · +' + pts, true);
+  announce($('status').textContent);
+  sfx(ok ? 'ok' : 'fail'); S.sel = -1; S.cur = bestCell;
+  hud(); markers(); $('ctl').dataset.key = ''; renderCtl();
+}
+function puzzleNext() {
+  if (!S || !S.pz || !S.pz.done) return;
+  if (S.pz.i >= 4) { finishPuzzles(); return; }
+  S.pz.i++; loadPuzzle();
+}
+function finishPuzzles() {
+  const pz = S.pz, total = pz.res.reduce((a, x) => a + x[2], 0), okN = pz.res.filter(x => x[1]).length;
+  S.over = true;
+  if (!pz.practice) { if (okN === 5) bump('dperf'); bump('dplay'); writeSave(); }
+  emit('play_end', { mode: pz.practice ? 'practice' : 'daily', dateKey: pz.practice ? undefined : pz.dk, score: pz.practice ? 0 : total, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'clear' });
+  if (okN === 5) { sfx('win'); burst(); } else sfx('clear');
+  showPuzzleSummary();
+}
+function showPuzzleSummary() {
+  const pz = S.pz, res = pz.res, total = res.reduce((a, x) => a + x[2], 0), okN = res.filter(x => x[1]).length;
+  $('rTitle').textContent = okN === 5 ? T('5問ぜんぶ正解！') : T('今日の5問');
+  $('rSub').textContent = T('今日は {a}/5 正解', { a: okN });
+  const ol = $('rRank'); ol.innerHTML = '';
+  res.forEach((x, i) => { const li = document.createElement('li'); li.innerHTML = '<span class="no ' + (x[1] ? 'ok' : 'ng') + '">' + (x[1] ? '○' : '×') + '</span><span class="nm">' + esc(T('{n}問目', { n: i + 1 })) + ' · ' + esc(mName(x[0], 8)) + '</span><span class="sc">' + esc(T('{n}点', { n: x[2] })) + '</span>'; ol.appendChild(li); });
+  $('rBig').textContent = T('合計 {n} 点', { n: total });
+  $('rNew').hidden = true; $('rNote').textContent = pz.practice ? T('同じ日のやり直しは記録に入りません') : '';
+  $('rAgain').disabled = false; $('rAgain').textContent = T('もう一度ためす（れんしゅう）'); $('rMoves').hidden = true;
+  hideOverlays(); $('ovResult').hidden = false; S.over = true; S.mode = 'puzzle';
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+  hud(); setStatus(T('今日は {a}/5 正解（{p}点）', { a: okN, p: total }), false);
+}
+
+// =====================================================================================
+// rules page
+// =====================================================================================
+function rulesHTML() {
+  const li = a => '<ul>' + a.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>';
+  return '<p class="lead">' + esc(L('黒と白の石をおいて、相手の石をはさんでひっくり返そう。最後に石が多いほうの勝ちです。', 'Place black and white stones and flip the other color by closing it in. Whoever has more stones at the end wins.')) + '</p>' +
+    '<h3>' + esc(L('あそびかた', 'How to play')) + '</h3>' + li([
+      L('黒（先手）から交互に、盤の空きマスに石を1つ置きます。', 'Black (first) and white take turns placing one stone on an empty square.'),
+      L('置けるのは、縦・横・ななめのどこかで、相手の石をはさめる場所だけ。小さな点が、置ける場所です。', 'You may only play where you close in one or more of the other color along a row, column or diagonal. The small dots show where you can play.'),
+      L('はさんだ石は、ぜんぶ自分の色にひっくり返ります。', 'Every stone you closed in turns to your color.'),
+      L('置ける場所がないときは、自動でパスになります。2人とも置けなくなったら、おしまい。', 'If you have no move you pass automatically. When neither side can move, the game is over.'),
+    ]) +
+    '<h3>' + esc(L('こつ', 'Tips')) + '</h3>' + li([
+      L('四すみの「角」はひっくり返されません。角のとなりの3マスは、相手に角をあげやすいので気をつけて。', 'Corners can never be flipped. The three squares next to a corner can hand your opponent that corner, so be careful.'),
+      L('石をたくさん返すより、自分の置ける場所をふやし、相手の置ける場所をへらすほうが大事です。', 'Flipping many stones is not the point: keep your own options open and take away the other side\'s.'),
+    ]) +
+    '<h3>' + esc(L('このゲームのしくみ', 'In this game')) + '</h3>' + li([
+      L('CPUは4段階。よわい・ふつう・つよい・とてもつよい（先を6手読み、終盤は最後まで読み切ります）。', 'Four CPU levels: Easy, Normal, Hard and Expert (looks six moves ahead and reads the end of the game to the last stone).'),
+      L('「ヒント」（H）で、おすすめの手が光ります。「もどす」（U）で、自分の前の手にもどれます。使うと、その試合には★がつきません。', 'The Hint button (H) lights up a suggested move, and Undo (U) takes back your last move. Using either means no ★ for that game.'),
+      L('8×8でCPUに勝つと★（よわい1・ふつう2・つよい3・とてもつよい4）。★の合計がランキングです。6×6・ふたりで1台・オンラインは記録に入りません。', 'Beat the CPU on 8×8 to earn ★ (Easy 1, Normal 2, Hard 3, Expert 4). Your ★ total is the ranking. 6×6, two players on one device and online matches do not count.'),
+      L('「今日のパズル」は、やさしい順の5問。いちばんよい手を1つえらびます（空きマスは勝ったほうのものとして、最後の石の差で数えます）。', 'The daily puzzle is five positions, easiest first. Pick the one best move (the final margin counts the empty squares for the winner).'),
+      L('キーボード：矢印で動かして Enter か Space で置く。H ヒント・U もどす・L 棋譜・Esc メニュー。', 'Keyboard: arrows to move, Enter or Space to play. H hint, U undo, L move list, Esc menu.'),
+    ]);
+}
+function showHowto(first) {
+  $('howtoTitle').textContent = T('ルール');
+  const body = $('howBody'); body.innerHTML = rulesHTML();
+  $('howtoGo').textContent = first ? T('はじめる') : T('とじる');
+  if (S) { S.menuWas = S.menu; S.menu = true; }
+  const wasTitle = !$('ovTitle').hidden, wasResult = !$('ovResult').hidden;
+  $('howto').dataset.from = first ? 'first' : wasTitle ? 'title' : wasResult ? 'result' : 'game';
+  hideOverlays(); $('howto').hidden = false; body.scrollTop = 0;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1');
+  const from = $('howto').dataset.from; $('howto').hidden = true;
+  if (S) S.menu = !!S.menuWas;
+  if (from === 'result' && S && S.over) $('ovResult').hidden = false;
+  else if (from === 'game' && S && !S.over) { hud(); markers(); loop(); }
+  else showTitle();
+});
+
+// =====================================================================================
+// title
+// =====================================================================================
+const OVERLAYS = ['ovTitle', 'ovResult', 'ovMoves', 'howto'];
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden]), .ktr-ov:not([hidden])');
+const segHTML = (vals, cur, key) => vals.map(v => '<button class="opt" type="button" data-' + key + '="' + v[0] + '" aria-pressed="' + (String(v[0]) === String(cur)) + '">' + esc(v[1]) + '</button>').join('');
+function renderTitle() {
+  let tp = 0, tw = 0; for (const k of Object.keys(save.w)) { tp += save.w[k].p; tw += save.w[k].w; }
+  $('tDesc').textContent = L('黒と白の石をはさんでひっくり返す、定番のボードゲーム。CPUは4段階、毎日のパズルや友だちとのオンライン対戦も。', 'The classic disc game: close in the other color and flip it. Four CPU levels, a daily puzzle and online matches with friends.');
+  $('tBest').textContent = tp ? T('{p}回あそんで{w}回勝ち', { p: tp, w: tw }) : T('まだ記録がありません');
+  const o = $('tOpts');
+  let h = '<div class="og"><div class="ol">' + esc(T('CPUの強さ')) + '</div><div class="seg" id="optLv">' + segHTML([1, 2, 3, 4].map(n => [n, LV_NAME[n]]), save.set.level, 'lv') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('あなたの色')) + '</div><div class="seg" id="optMe">' + segHTML([['b', T('くろ（先手）')], ['w', T('しろ（後手）')], ['r', T('おまかせ')]], save.set.me, 'me') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('盤の大きさ')) + '</div><div class="seg" id="optN">' + segHTML([[8, '8×8'], [6, '6×6']], save.set.n, 'n') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('はじめの並び')) + '</div><div class="seg" id="optSt">' + segHTML([['std', T('ななめ')], ['par', T('たて・よこ')]], save.set.start, 'st') + '</div></div>';
+  h += '<button class="tog" type="button" role="switch" id="optDots" aria-checked="' + !!save.set.dots + '"><span>' + esc(T('置ける場所を見せる')) + '<small>' + esc(T('小さな点でおしえます')) + '</small></span><i></i></button>';
+  h += '<button class="tog" type="button" role="switch" id="optFast" aria-checked="' + !!save.set.fast + '"><span>' + esc(T('CPUをはやく進める')) + '<small>' + esc(T('CPUの待ち時間を短くします')) + '</small></span><i></i></button>';
+  o.innerHTML = h;
+  const set = (key, f) => o.querySelectorAll('[data-' + key + ']').forEach(b => b.addEventListener('click', () => { f(b.dataset[key]); writeSave(); sfx('tap'); renderTitle(); }));
+  set('lv', v => { save.set.level = +v; }); set('me', v => { save.set.me = v; }); set('n', v => { save.set.n = +v === 6 ? 6 : 8; }); set('st', v => { save.set.start = v === 'par' ? 'par' : 'std'; });
+  $('optDots').addEventListener('click', () => { save.set.dots = save.set.dots ? 0 : 1; writeSave(); sfx('tap'); renderTitle(); });
+  $('optFast').addEventListener('click', () => { save.set.fast = save.set.fast ? 0 : 1; writeSave(); sfx('tap'); renderTitle(); });
+  const d = dailyInfo(), db = $('tDaily');
+  db.hidden = !d;
+  if (d) { const same = save.dl.last === d.dk, okN = same ? save.dl.r.filter(x => x[1]).length : 0; $('tDailySub').textContent = same && save.dl.r.length >= 5 ? T('今日は {a}/5 正解（{p}点）', { a: okN, p: save.dl.pts }) : same && save.dl.r.length ? T('今日は {a}/5 正解', { a: okN }) + ' · ' + T('{n}問目', { n: save.dl.r.length + 1 }) : T('5問・毎日ちがう'); }
+  const run = readRun(); $('tResume').hidden = !run;
+  if (run) $('tResumeSub').textContent = (run.mode === 'pass' ? T('ふたりで（1台）') : T('CPU {lv}・{n}×{n}', { lv: LV_NAME[clamp(run.level | 0 || 2, 1, 4)], n: run.n })) + ' · ' + T('{n}手', { n: run.st.moves.filter(m => m[0] >= 0).length });
+  $('tPlay').textContent = T('CPUとあそぶ');
+}
+function showTitle() {
+  if (S) { S.menu = true; if (!S.over) persist(); }
+  hideOverlays(); renderTitle(); $('ovTitle').hidden = false;
+  try { $('tPlay').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tPlay').addEventListener('click', () => startGame({ mode: 'cpu' }));
+$('tPass').addEventListener('click', () => startGame({ mode: 'pass' }));
+$('tHow').addEventListener('click', () => showHowto(false));
+$('tOnline').addEventListener('click', () => openOnline());
+$('tDaily').addEventListener('click', () => startPuzzle());
+$('tResume').addEventListener('click', () => { const r = readRun(); if (r) resumeGame(r); });
+$('rAgain').addEventListener('click', () => {
+  if (S && S.mode === 'online') { onlineAgain(); return; }
+  if (S && S.mode === 'puzzle') { startPuzzle(S.pz.dk, true); return; }
+  const c = S && S.cfg; startGame(c ? { mode: c.mode, level: c.level, me: c.me, n: c.n, start: c.start } : {});
+});
+$('rTitleBtn').addEventListener('click', () => { if (S && S.mode === 'online') { leaveOnline(); return; } if (S) S.menu = true; showTitle(); });
+$('rMoves').addEventListener('click', () => { if (S) { S.showResultAgain = true; $('ovResult').hidden = true; showMoves(); } });
+
+// =====================================================================================
+// sound, menu, theme, resize, keyboard
+// =====================================================================================
+function renderSound() {
+  const b = $('sndBtn'), muted = A ? A.muted : true;
+  b.setAttribute('aria-pressed', String(!muted)); b.setAttribute('aria-label', T(muted ? 'サウンド オフ' : 'サウンド オン'));
+  b.innerHTML = !muted
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!A) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  m.setAttribute('content', UI && UI.theme && UI.theme.resolved() === 'light' ? '#f1eee6' : '#14232b');
+}
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = !!(S && !S.over);
+  const extra = [{ label: T('ルール'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (on && S.mode === 'online') extra.push({ label: T('試合を出る'), icon: 'close', onClick: () => { pm.close(); askLeaveOnline(); } });
+  else if (on) extra.push({ label: T('あきらめる'), icon: 'close', onClick: () => { pm.close(); giveUp(); showTitle(); } });
+  if (!(on && S.mode === 'online')) extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra,
+    onResume: () => { if (S) S.menu = false; const g = KG(); if (g) g.menuClosed(); if (S && !S.over) { hud(); markers(); loop(); } },
+    onRestart: on && (S.mode === 'cpu' || S.mode === 'pass') ? () => { const c = S.cfg; giveUp(); startGame({ mode: c.mode, level: c.level, me: c.me, n: c.n, start: c.start }); } : undefined,
+    onOpen: () => { if (S) S.menu = true; const g = KG(); if (g) g.menuOpened(); persist(); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+let rz = 0;
+function relayout() { clearTimeout(rz); rz = setTimeout(fit, 60); }
+window.addEventListener('resize', relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+
+// pointer and keyboard on the board
+boardEl.addEventListener('click', e => { const c = e.target.closest && e.target.closest('.cell'); if (c) { document.body.classList.remove('kbd'); onCell(+c.dataset.i); } });
+document.addEventListener('pointerdown', () => document.body.classList.remove('kbd'), true);
+function moveCursor(dr, dc) {
+  if (!S) return; const n = B.n; let r = Math.floor(S.cur / n) + dr, c = S.cur % n + dc;
+  r = clamp(r, 0, n - 1); c = clamp(c, 0, n - 1); S.cur = r * n + c;
+  markers(); try { B.cells[S.cur].focus({ preventScroll: true }); } catch (e) {}
+}
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === 'Escape') {
+    if (!$('ovMoves').hidden) { closeMoves(); e.preventDefault(); return; }
+    if (!$('howto').hidden) { $('howtoGo').click(); e.preventDefault(); return; }
+    return;
+  }
+  if (!S || S.menu || anyOverlay() || !$('ovTitle').hidden) return;
+  const t = e.target; if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+  const arrows = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
+  if (arrows[k]) { e.preventDefault(); document.body.classList.add('kbd'); moveCursor(arrows[k][0], arrows[k][1]); return; }
+  if (k === 'Enter' || k === ' ') {
+    if (t && t.closest && t.closest('button, a, summary')) return;     // a focused button does its own thing
+    e.preventDefault(); document.body.classList.add('kbd');
+    if (S.mode === 'puzzle' && S.pz.done) { puzzleNext(); return; }
+    if (S.mode === 'puzzle' && S.sel === S.cur) { puzzleAnswer(S.cur); return; }
+    onCell(S.cur); return;
+  }
+  const kk = k.toLowerCase();
+  if (kk === 'h') { doHint(); e.preventDefault(); } else if (kk === 'u') { doUndo(); e.preventDefault(); } else if (kk === 'l') { showMoves(); e.preventDefault(); }
+});
+
+// =====================================================================================
+// online: common/turnroom.js (the lobby, the room) + online.js (the game side). The host's page runs the game; every page, the host's too,
+// draws the model it gets. There is nothing hidden in this game, so the public state is the whole board.
+// =====================================================================================
+let TR = null, octx = null;
+const CPU_NAMES = [L('モカ', 'Mocha'), L('ココ', 'Coco')];
+function ensureTR() {
+  if (TR || !window.KoboTurnRoom || !window.ReversiOnline) return TR;
+  TR = KoboTurnRoom.create({
+    game: GAME, host: ReversiOnline.host, turnSec: 45, seats: [2], seatsMax: 2, alternate: true, dealMs: 500,
+    cpuNames: k => CPU_NAMES[k % 2],
+    getOpts: () => ({ n: 2 }),
+    getCpu: () => Math.min(3, save.set.level),
+    cpuLabel: lv => LV_NAME[lv],
+    onModel, onTick: onlineTick,
+    onClose: () => showTitle(),
+    onIdleClose: () => { if (S && S.mode === 'online') { S.over = true; } hideOverlays(); showTitle(); },
+  });
+  return TR;
+}
+function openOnline() {
+  if (!ensureTR()) { sfx('error'); return; }
+  if (S && !S.over && S.mode !== 'online') { S.menu = true; persist(); }
+  hideOverlays();
+  TR.open({ n: 2 });
+}
+function leaveOnline() {
+  if (S && S.mode === 'online' && !S.over) giveUp();
+  if (TR) TR.leave();
+  if (S) S.menu = true;
+  showTitle();
+}
+async function askLeaveOnline() {
+  const ok = UI ? await UI.confirm({ title: T('出ると、あなたの席はCPUに代わります。出ますか？'), ok: T('出る'), cancel: T('やめる'), danger: true }) : true;
+  if (ok) leaveOnline(); else if (S) S.menu = false;
+}
+function onlineAgain() {
+  if (!TR || !S) return;
+  const m = TR.model();
+  if (!m || (m.why && m.why !== 'w')) { leaveOnline(); return; }
+  if (TR.rematch()) { $('rAgain').disabled = true; sfx('tap'); onlineResultText(m); }
+}
+function sendOnline(cell) {
+  if (S.sending && Date.now() - S.sending < 2500) return false;
+  if (!TR || !TR.submit(ReversiOnline.toWire(cell))) { sfx('error'); return false; }
+  S.sending = Date.now(); S.hint = -1;
+  setTimeout(() => { if (S && S.mode === 'online' && S.sending && Date.now() - S.sending >= 2400) { S.sending = 0; hud(); markers(); refreshStatus(); } }, 2500);
+  hud(); markers();
+  return true;
+}
+function onModel(m) {
+  if (!ensureTR()) return;
+  if (m.me < 0 || (m.replaced && (!S || S.mode !== 'online'))) {   // not in this game (too late for the start), or the seat was already taken over while this page was away
+    if (UI) UI.toast(m.me < 0 ? T('ゲームに入れませんでした') : T('席がCPUに交代しました'), { type: 'danger' });
+    TR.leave(); if (S) S.menu = true; showTitle(); return;
+  }
+  const ctx = m.fresh || !octx ? (octx = ReversiOnline.newCtx()) : octx;
+  const v = ReversiOnline.view(m, ctx);
+  if (m.fresh || !S || S.mode !== 'online' || S.gn !== m.gn) { startOnline(m, v); return; }
+  const prevTurn = S.st.turn;
+  S.st = v.st; S.model = m; S.names = m.names; S.sl = m.sl; S.sending = 0; S.myc = v.color; S.hint = -1;
+  if (v.last >= 0) { S.last = v.last; S.cur = v.last; }
+  const origin = v.placed.length ? v.placed[v.placed.length - 1] : -1;
+  const wait = syncBoard(v.st.b, { origin, anim: true });
+  if (v.placed.length) sfx(v.flipped.length > 3 ? 'pop' : 'move');
+  const pas = v.evs.find(e => e.t === 'pa');
+  let note = '';
+  if (v.placed.length) note = T('{name}は {m} に置きました（{n}枚）', { name: nameOf(origin >= 0 && v.st.b[origin] ? v.st.b[origin] : prevTurn), m: mName(origin, 8), n: v.flipped.length });
+  if (pas) { note += ' ' + T('{name}は置ける場所がないのでパスです', { name: nameOf(pas.s + 1) }); bubble(T('パス')); }
+  S.note = note; if (note) announce(note);
+  if (m.replaced && !S.over) { S.over = true; if (UI) UI.toast(T('席がCPUに交代しました'), { type: 'danger' }); emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' }); TR.leave(); S.menu = true; showTitle(); return; }
+  hud(); markers(); refreshStatus();
+  if (m.ph === 'over' && !S.over) { S.busy = true; setTimeout(() => { if (S) { S.busy = false; finishOnline(m); } }, wait); }
+}
+function startOnline(m, v) {
+  stopTimers();
+  hideOverlays();
+  S = mkSession({ mode: 'online', st: v.st, n: 8, level: m.cpu || 2 });
+  S.gn = m.gn; S.model = m; S.names = m.names; S.sl = m.sl; S.myc = v.color; S.sending = 0; S.live = true; S.last = v.last; S.cur = v.last >= 0 ? v.last : firstCur(v.st);
+  S.cfg = { mode: 'online' };
+  $('rAgain').disabled = false;
+  buildBoard(8); syncBoard(v.st.b, {}); hud(); markers();
+  emit('play_start', { mode: 'versus' });
+  S.note = T('こんどは あなたが{c}です', { c: v.color === 1 ? T('くろ（先手）') : T('しろ（後手）') });
+  refreshStatus(); announce(S.note);
+  if (m.ph === 'over') { S.over = false; finishOnline(m); }
+}
+function onlineTick(m) {
+  if (!S || S.mode !== 'online' || !m) return;
+  const sec = Math.ceil(Math.max(0, m.dl ? m.left : 0) / 1000);
+  if (!S.over) { if (S.tsec !== sec) { S.tsec = sec; hud(); } }
+  else if (!$('ovResult').hidden) onlineResultText(m);
+}
+function onlineResultText(m) {
+  if (!m || (m.rs && m.rs.y !== 'w')) return;
+  const sl = String(m.sl || ''), pu = m.pu || [];
+  let total = 0; for (let k = 0; k < sl.length; k++) if (pu[k] >= 0 && sl[k] !== 'x') total++;
+  const wished = Math.min(total, Object.keys(m.rm || {}).length);
+  if ($('rAgain').disabled) $('rNote').textContent = T('もう一度を待っています（{a}/{b}人）', { a: wished, b: Math.max(1, total) });
+  else $('rAgain').textContent = wished ? T('もう一度（{a}/{b}人）', { a: wished, b: Math.max(1, total) }) : T('もう一度');
+}
+function finishOnline(m) {
+  if (!S || S.over) return;
+  S.over = true; stopTimers();
+  const rs = m.rs || { r: [], w: -1, y: 'w' }, ranks = ReversiOnline.arr(rs.r), me = m.me >= 0 ? m.me : 0;
+  const ok = rs.y === 'w', draw = ok && rs.w < 0, win = ok && ranks[me] === 1 && !draw;
+  if (ok) { bump('onl'); if (win) bump('onw'); writeSave(); }
+  emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: win ? 'clear' : 'over' });
+  if (win) { sfx('win'); burst(); } else sfx(draw ? 'ok' : 'over');
+  hud(); markers();
+  setTimeout(() => showOnlineResult(m, rs, win, draw), Math.round(700 * SPD.v));
+}
+function showOnlineResult(m, rs, win, draw) {
+  if (!S || S.mode !== 'online' || !S.over) return;
+  const r = E.result(S.st), ok = rs.y === 'w';
+  $('rTitle').textContent = !ok ? T('オンライン対戦が終わりました') : draw ? T('引き分け') : win ? T('勝ちました！') : T('負けました');
+  $('rSub').textContent = T('{b} 対 {w}', { b: r.b, w: r.w }) + ' · ' + T('オンライン');
+  fillScores($('rRank'), r);
+  $('rBig').textContent = ''; $('rNew').hidden = true;
+  $('rNote').textContent = rs.y === 'hl' ? T('ホストが退出したので、ここで終了です') : rs.y === 'hg' ? T('ホストとの接続が切れたので、ここで終了です') : T('オンライン対戦は★に数えません');
+  $('rAgain').disabled = !ok || !!m.replaced; $('rAgain').textContent = T('もう一度'); $('rMoves').hidden = false;
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').disabled ? $('rTitleBtn').focus({ preventScroll: true }) : $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+
+// ---------- boot ----------
+renderSound(); themeColor();
+KG() && KG().register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { persist(); },
+  isIdle: () => !S || S.over,
+  dispose() { if (S) clearTimeout(S.timer); },
+  daily: { start({ dateKey }) { startPuzzle(dateKey); } },
+});
+window.addEventListener('pagehide', () => { if (S) persist(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY && (!S || S.over)) { save = readSave(); if (!$('ovTitle').hidden) renderTitle(); } });
+{
+  buildBoard(save.set.n);
+  const launch = PF ? PF.launch() : { daily: null };
+  $('iGame').textContent = T('リバーシ工房'); $('iTurn').hidden = true; $('iBest').textContent = '★ ' + fmtN(save.pts); $('status').textContent = ''; $('ctl').style.visibility = 'hidden';
+  const st0 = E.create({ n: save.set.n, start: save.set.start }); syncBoard(st0.b, {});
+  const first = store.get(HOWTO_KEY) == null && !save.tut;
+  if (launch.daily && PF && !first) { /* KoboGame.register starts the daily puzzle */ }
+  else if (first) { save.tut = 1; writeSave(); showHowto(true); } else showTitle();
+}
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const sel = i => '.cell[data-i="' + i + '"]';
+  const api = {
+    ready: () => true,
+    state: () => {
+      const st = S && S.st, c = st ? E.counts(st) : { b: 0, w: 0, e: 0 };
+      return {
+        started: !!S, mode: S ? S.mode : '', over: !!(S && (S.over || (st && st.over))), n: S ? S.n : 0, level: S ? S.level : 0, me: S ? (S.mode === 'online' ? S.myc : S.me) : 0,
+        turn: st ? st.turn : 0, human: !!(S && canAct()), busy: !!(S && S.busy), black: c.b, white: c.w, empty: c.e, legal: st && !st.over ? E.legal(st) : [], moves: st ? st.moves.filter(m => m[0] >= 0).length : 0,
+        hinted: S ? S.hinted : 0, undone: S ? S.undone : 0, hint: S ? S.hint : -1, sel: S ? S.sel : -1, last: S ? S.last : -1, corners: S ? S.corners : 0, passed: S ? S.passed : 0,
+        title: !$('ovTitle').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, movesOv: !$('ovMoves').hidden, menu: !!(S && S.menu),
+        status: $('status').textContent, pts: save.pts, save: JSON.parse(JSON.stringify(save)), board: st ? st.b.slice() : [],
+        net: !!(S && S.mode === 'online'), sl: S && S.sl ? S.sl : '', names: S && S.names ? S.names.slice() : [],
+        pz: S && S.pz ? { i: S.pz.i, done: !!S.pz.done, ok: !!S.pz.ok, res: S.pz.res.map(x => x.slice()), best: S.pz.best, sel: S.sel, practice: !!S.pz.practice } : null,
+        discs: B.discs.filter(Boolean).length, dots: B.cells.filter(c => c.classList.contains('lg')).length,
+      };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__reversi = {
+    api, E, get S() { return S; }, get save() { return save; }, get tr() { return ensureTR(); }, openOnline, leaveOnline, ensureTR, BANK,
+    onlineState() {
+      const m = TR ? TR.model() : null, tr = TR ? TR._S : null;
+      return { phase: TR ? TR.phase : 'off', host: TR ? TR.isHost : false, code: tr ? tr.code : null, rid: tr ? tr.rid : null, uid: TR ? TR.uid : null, err: tr ? tr.err : null,
+        model: m ? { gn: m.gn, v: m.v, ph: m.ph, me: m.me, n: m.n, tn: m.tn, sl: m.sl, names: m.names, why: m.why, left: m.left, pd: m.pd, rs: m.rs } : null, lobby: !!document.querySelector('.ktr-ov:not([hidden])') };
+    },
+    start(o) { startGame(o || {}); return api.state(); },
+    puzzle(dk, practice) { startPuzzle(dk, practice); return api.state(); },
+    setSpeed(m) { SPD.v = m; },
+    // where to click: the cell of a good move for the human (level 4's choice). In a puzzle, plan(true) = the best move, plan(false) = a wrong one
+    plan(good) {
+      if (!S) return null;
+      if (S.mode === 'puzzle') { if (S.pz.done) return null; const p = S.pz.p, top = Math.max(...p.m.map(x => x[1])); const c = good === false ? p.m.find(x => x[1] < top)[0] : p.m.find(x => x[1] === top)[0]; return { cell: c, sel: sel(c) }; }
+      if (!canAct()) return null;
+      const lg = E.legal(S.st); if (!lg.length) return null;
+      const c = good === 'cpu' ? E.cpu(S.st, 2) : lg[0]; return { cell: c, sel: sel(c) };
+    },
+    cellPoint(i) { const r = B.cells[i].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
+    title: showTitle, finish() { if (S && !S.over) { S.st.over = true; finish(); } }, howto: showHowto, openMenu, relayout: fit,
+    resume() { const r = readRun(); if (r) resumeGame(r); return !!r; }, persist,
+    // set up a position (for tests): rows of '.', 'x' (black), 'o' (white); turn 1|2. In a game against the CPU / two players
+    rig(rows, turn) {
+      if (!S || !S.st) return null;
+      const n = S.st.n; const b = []; for (const row of rows) for (const ch of row) b.push(ch === 'x' ? 1 : ch === 'o' ? 2 : 0);
+      S.st.b = b; S.st.turn = turn || S.st.turn; S.st.moves = S.st.moves.length ? S.st.moves : []; S.st.over = false;
+      if (!E.legal(S.st).length && !E.legalFor(S.st, 3 - S.st.turn).length) S.st.over = true;
+      syncBoard(b, {}); hud(); markers(); refreshStatus(); loop(); return api.state(); void n;
+    },
+    thumbScene() { // a game in progress with the human to move, for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays();
+      const st = E.create({ n: 8, seed: 7 });
+      while (st.moves.length < 22 && !st.over) E.play(st, E.cpu(st, st.moves.length % 2 ? 3 : 2));
+      S = mkSession({ mode: 'cpu', st, n: 8, level: 3, me: st.turn, seed: 7 });
+      S.cfg = { mode: 'cpu', level: 3, me: 'b', n: 8, start: 'std' }; S.cur = firstCur(st);
+      const lm = st.moves.filter(m => m[0] >= 0).slice(-1)[0]; S.last = lm ? lm[0] : -1;
+      buildBoard(8); fit(); syncBoard(st.b, {}); hud(); markers(); return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.reversi.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

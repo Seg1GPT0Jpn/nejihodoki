@@ -785,6 +785,34 @@
         'kusoge.train.save': { fields: { total: 'max', stars: 'max', r: { each: { each: 'max' } }, un: { each: 'max' }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'reversi', order: 25, path: 'reversi/', added: '2026-11-25',
+      title: { ja: 'リバーシ工房', en: 'Reversi Workshop' },
+      short: { ja: 'リバーシ', en: 'Reversi' },
+      desc: { ja: '黒と白の石をはさんでひっくり返す、定番のボードゲーム。8×8と6×6の盤で、CPUと対戦（4段階。いちばん強いCPUは6手先まで読み、終盤は最後まで読み切ります）。ヒントともどす、ふたりで1台、やさしい順に5問の「今日のパズル」、友だちとのオンライン対戦（部屋のコード・クイックマッチ）もできます。', en: 'The classic disc game: close in the other color and flip it. Play the CPU on 8×8 or 6×6 at four levels (the strongest looks six moves ahead and reads the endgame to the last stone), use hints and undo, play two on one device, solve the five-position daily puzzle (easiest first), or play friends online with a room code or quick match.' },
+      label: { ja: 'ボードゲーム', en: 'Board game' },
+      genres: ['board'], tags: ['2d', 'turn', 'board', 'casual', 'daily', 'versus', 'online'],
+      keywords: { ja: ['リバーシ', '白黒', '石', 'ひっくり返す', 'ボード', 'CPU', 'ふたりで', 'パズル', 'オンライン対戦', '友だちと', '8×8', '6×6'], en: ['reversi', 'flip', 'discs', 'board game', 'two player', 'cpu', 'daily puzzle', 'endgame', 'online', 'multiplayer', '8x8', '6x6'] },
+      icon: 'img/icons/reversi.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#1c5a4e"/><g stroke="#0b2d27" stroke-width="1.6" stroke-opacity=".7"><path d="M6 24h60M6 40h60M6 56h60M24 8v56M40 8v56M56 8v56"/></g><circle cx="24" cy="24" r="10" fill="#27305b" stroke="#f0c968" stroke-width="1.6" stroke-dasharray="2.4 2.6"/><circle cx="24" cy="24" r="3.6" fill="#f0c968"/><circle cx="40" cy="24" r="10" fill="#f1e8d6" stroke="#7c8aa8" stroke-width="1.6"/><path d="M35 24h10" stroke="#5f6e8e" stroke-width="3" stroke-linecap="round" transform="rotate(35 40 24)"/><circle cx="40" cy="40" r="10" fill="#27305b" stroke="#f0c968" stroke-width="1.6" stroke-dasharray="2.4 2.6"/><circle cx="40" cy="40" r="3.6" fill="#f0c968"/><g transform="translate(24 40) scale(.62 1)"><circle r="10" fill="#f1e8d6" stroke="#7c8aa8" stroke-width="1.6"/></g><g transform="translate(56 40)"><circle r="10" fill="#27305b" stroke="#f0c968" stroke-width="1.6" stroke-dasharray="2.4 2.6"/><circle r="3.6" fill="#f0c968"/></g></svg>',
+      thumb: 'img/thumbs/reversi.webp', thumb2x: 'img/thumbs/reversi@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.reversi.game); online matches (2 players, host-authoritative) run on RTDB tr/reversi/* through common/turnroom.js (database.rules.json). Online results do not feed the ranking
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ★: a win on 8x8 against the CPU, 1 / 2 / 3 / 4 for Easy / Normal / Hard / Expert, with no hint and no undo (6x6, two players on one device, the daily puzzle and online count nothing). The cap leaves room for years of play
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.reversi.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.reversi.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.reversi.save': '{ v:1, pts（★の合計＝ランキング）, w:{ "<盤 6|8>-<強さ 1〜4>":{ p（遊んだ回数）, w（勝った回数） } }, stats:{ plays, wins, lv3（つよいCPUに勝った）, hard（とてもつよいCPUに勝った）, six（6×6で勝った）, big（30個以上の差で勝った）, wipe（相手の石を全部ひっくり返して勝った）, corner4（四隅をぜんぶとって勝った）, corners（角に置いた数）, pass（CPUをパスにした数）, twop（ふたりで1台で遊んだ）, pz（今日のパズルの正解数）, dperf（5問ぜんぶ正解した日）, dplay（今日のパズルを最後まで解いた日）, onl（オンラインで遊んだ回数）, onw（オンラインで勝った回数。★・ランキングには入らない） }, set:{ level, me（b|w|r）, n（6|8）, start（std|par）, fast, dots }, dl:{ last（日付 YYYYMMDD）, pts, r:[[選んだマス, 正解 0|1, 点]…] }, tut }',
+        'kusoge.reversi.game': 'とちゅうのゲーム（1手ごとに自動保存）{ v:1, mode（cpu|pass）, n, start, level, me, seed, moves:[[マス,色]…]（マス -1 はパス）, hinted, undone, corners, passed, ms, cfg, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.reversi.howto': 'ルールを見た（\'1\'）',
+      },
+      // counters only grow (max); the last settings and today's puzzle answers are whole values (newest)
+      sync: {
+        'kusoge.reversi.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', dl: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1093,6 +1121,25 @@
       { id: 'train.stars15', tier: 3, icon: 'trophy', title: { ja: '★15', en: 'Fifteen Stars' }, desc: { ja: '★を15個集める', en: 'Collect 15 stars' }, when: { rec: { key: 'kusoge.train.save', path: 'stars' }, gte: 15 } },
       { id: 'train.pts15k', tier: 4, icon: 'trophy', title: { ja: '合計15000点', en: 'Fifteen Thousand' }, desc: { ja: 'ルートのベスト得点の合計が15000点', en: 'Reach a 15,000-point total across your best routes' }, when: { rec: { key: 'kusoge.train.save', path: 'total' }, gte: 15000 } },
       { id: 'train.fog', tier: 4, icon: 'trophy', title: { ja: '霧の特急', en: 'Fog Express' }, desc: { ja: '「ひなた特急 ぜんせん」をクリアする', en: 'Clear Grand Limited' }, when: { rec: { key: 'kusoge.train.save', path: 'r.r9.s' }, gte: 1 }, grantsTitle: { ja: '名運転士', en: 'Master Driver' } },
+    ],
+    reversi: [
+      { id: 'reversi.first', tier: 1, icon: 'check', title: { ja: 'はじめの一勝', en: 'First Win' }, desc: { ja: 'CPUに勝つ', en: 'Beat the CPU' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.wins' }, gte: 1 } },
+      { id: 'reversi.corner', tier: 1, icon: 'star', title: { ja: '角をとった', en: 'Corner Taken' }, desc: { ja: '四隅のどれかに石を置く', en: 'Place a stone on a corner' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.corners' }, gte: 1 } },
+      { id: 'reversi.pass', tier: 1, icon: 'check', title: { ja: 'パスに追い込む', en: 'Forced Pass' }, desc: { ja: 'CPUが置けなくなってパスする', en: 'Leave the CPU with no move so it must pass' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.pass' }, gte: 1 } },
+      { id: 'reversi.twop', tier: 1, icon: 'check', title: { ja: 'ふたりで勝負', en: 'Head to Head' }, desc: { ja: '1台でふたりで最後まで遊ぶ', en: 'Finish a two-player game on one device' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.twop' }, gte: 1 } },
+      { id: 'reversi.pz1', tier: 1, icon: 'star', title: { ja: '最善手を見つけた', en: 'Best Move Found' }, desc: { ja: '今日のパズルで正解する', en: 'Solve a daily puzzle' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.pz' }, gte: 1 } },
+      { id: 'reversi.six', tier: 1, icon: 'check', title: { ja: '小さな盤の勝者', en: 'Small Board Winner' }, desc: { ja: '6×6の盤でCPUに勝つ', en: 'Beat the CPU on the 6x6 board' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.six' }, gte: 1 } },
+      { id: 'reversi.win10', tier: 2, icon: 'trophy', title: { ja: '十勝', en: 'Ten Wins' }, desc: { ja: '合わせて10回勝つ', en: 'Win 10 games in total' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.wins' }, gte: 10 } },
+      { id: 'reversi.lv3', tier: 2, icon: 'trophy', title: { ja: '強い相手に勝つ', en: 'Beat a Hard CPU' }, desc: { ja: '「つよい」以上のCPUに勝つ', en: 'Win against a Hard or Expert CPU' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.lv3' }, gte: 1 } },
+      { id: 'reversi.corner4', tier: 2, icon: 'star', title: { ja: '四隅をぜんぶ', en: 'All Four Corners' }, desc: { ja: '四隅をぜんぶとって勝つ', en: 'Win a game holding all four corners' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.corner4' }, gte: 1 } },
+      { id: 'reversi.big', tier: 2, icon: 'star', title: { ja: '大差で勝つ', en: 'Landslide' }, desc: { ja: '石の数で30個以上の差をつけて勝つ', en: 'Win by 30 stones or more' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.big' }, gte: 1 } },
+      { id: 'reversi.pz20', tier: 2, icon: 'trophy', title: { ja: 'パズルの常連', en: 'Puzzle Regular' }, desc: { ja: '今日のパズルに合わせて20問正解する', en: 'Solve 20 daily puzzles in total' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.pz' }, gte: 20 } },
+      { id: 'reversi.dperf', tier: 3, icon: 'trophy', title: { ja: '5問ぜんぶ正解', en: 'Perfect Day' }, desc: { ja: '今日のパズル5問をぜんぶ正解する', en: 'Solve all five of a day\'s puzzles' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.dperf' }, gte: 1 } },
+      { id: 'reversi.hard', tier: 3, icon: 'trophy', title: { ja: '最強に勝つ', en: 'Beat the Best' }, desc: { ja: '「とてもつよい」CPUに勝つ', en: 'Win against an Expert CPU' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.hard' }, gte: 1 } },
+      { id: 'reversi.onw', tier: 3, icon: 'star', title: { ja: 'オンラインで勝つ', en: 'Online Victory' }, desc: { ja: 'オンライン対戦で勝つ', en: 'Win an online match' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.onw' }, gte: 1 } },
+      { id: 'reversi.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.reversi.save', path: 'pts' }, gte: 30 } },
+      { id: 'reversi.hard5', tier: 4, icon: 'trophy', title: { ja: '最強のライバル', en: 'Expert Rival' }, desc: { ja: '「とてもつよい」CPUに5回勝つ', en: 'Beat an Expert CPU 5 times' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.hard' }, gte: 5 }, grantsTitle: { ja: 'リバーシの達人', en: 'Reversi Master' } },
+      { id: 'reversi.wipe', tier: 4, icon: 'trophy', hidden: true, title: { ja: '全部ひっくり返した', en: 'Total Wipe-out' }, desc: { ja: '相手の石を1つ残らずひっくり返して勝つ', en: 'Win by flipping every last stone of the opponent' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.wipe' }, gte: 1 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

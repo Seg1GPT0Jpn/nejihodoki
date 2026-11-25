@@ -197,3 +197,10 @@ Realtime Database：
 - **Firestore は貼り直し不要**です（`firestore.rules` は変えていません。ランキング・実績・同期のキーも増やしていません。オンラインの結果は★に入りません。端末の統計に `onl`・`onw` が増えるだけで、同期は今までの `stats` の形のままです）。
 - 貼る前の確認：`node tools/tests/rules/run.js`（エミュレーター。`rtdb:tr` の許可と拒否 120 件ほどと、ボット2〜4人の通し）。貼ったあと本番に対して `node tools/tests/rules/run.js --live` を流すと、`tr` の項目が全部そろいます（貼る前に流すと「拒否のはずが許可」ではなく「許可のはずが拒否」と出ます）。
 
+## 新作「リバーシ工房」（reversi）を足したとき（2026-11）
+- **Firestore と Realtime Database の両方**を貼り直してください（上の「1. Firestore のルール」「2. Realtime Database のルール」と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。**貼り直さないと、リバーシ工房だけが、ランキングに載らない・「オンライン対戦」が「つなげませんでした」になります**（CPU・ふたりで・今日のパズルは今までどおり遊べます）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'reversi': 100000`＝★の合計）、旧ランキングの点の確認 `okCap(…'reversi')`、プレイ回数の `plus1('reversi')`、同期する保存のキー `kusoge~reversi~save`（★・勝ち数・統計・今日のパズルの答え）の形の確認（`okEntAt` に1行）です（でんしゃでいこう・いろあわせカード工房のときと同じ4か所）。
+- Realtime Database で変わったのは、`"tr"` の許可するゲームの一覧 `^(colorcards)$` → `^(colorcards|reversi)$`（19か所）だけです。リバーシは `tr/reversi/…` を使い、2人だけ・隠す手札なし（盤は `pd.b` の64個の数、手は `{ t: 'mv', c: マス }`）。**ルールの形（席・pub・priv・act の検査）は colorcards と同じで、1文字も変えていません。**
+- 共通部品 `common/turnroom.js` には、2人だけのゲームのための設定（`seats`・`alternate`・`dealMs`）を後ろ向きに互換な形で足しました（colorcards の動きは変わりません）。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（一覧と上限が登録簿と同じ）、`node tools/tests/rules/run.js`（エミュレーター。`rtdb:tr-reversi` の許可と拒否・ボット2人のリバーシの通しを含む）。貼ったあと本番に対して `--live` を流してください。
+

@@ -31,6 +31,7 @@ const RECIPES = {
   colorcards: [{ query: '?debug', eval: 'window.__colorcards && __colorcards.thumbScene()' }],
   brawl: [{ query: '?debug', eval: 'window.__brawl && __brawl.thumbScene()' }],
   train: [{ query: '?debug', eval: 'window.__train && __train.thumbScene()' }],
+  reversi: [{ query: '?debug', eval: 'window.__reversi && __reversi.thumbScene()' }],
   town: [{ query: '?debug', eval: 'window.__town && __town.thumbScene()' }],
   trade: [{ query: '?debug&type=A', eval: 'window.__trade && __trade.thumbScene()' }],
 };
