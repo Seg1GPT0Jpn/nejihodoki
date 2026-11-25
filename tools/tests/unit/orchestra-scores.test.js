@@ -11,14 +11,15 @@ const rd = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const index = JSON.parse(rd('orchestra/scores/index.json'));
 
 test('every piece has a recorded licence (Public Domain, or CC BY-SA 3.0 with licence URL and credit), a Mutopia id, a source MIDI in the repo, and a row in CREDITS.md', () => {
-  ok(index.pieces.length >= 39, 'pieces: ' + index.pieces.length); const credits = rd('orchestra/CREDITS.md'), ids = new Set();
+  ok(index.pieces.length >= 44, 'pieces: ' + index.pieces.length); const credits = rd('orchestra/CREDITS.md'), ids = new Set();
   for (const p of index.pieces) {
-    ids.add(p.id); ok(['Public Domain', 'CC BY-SA 3.0', 'CC0 1.0', 'CC BY 4.0'].includes(p.src.licence), p.id + ' licence ' + p.src.licence); if (p.src.licence === 'CC BY-SA 3.0') { ok(/creativecommons\.org\/licenses\/by-sa\/3\.0/.test(p.src.licenceUrl) && /CC BY-SA 3\.0/.test(p.src.credit) && /Mutopia/.test(p.src.credit), p.id + ' share-alike credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.licence, 'CC BY-SA 3.0'); eq(sj.src.credit, p.src.credit, 'the derived score JSON carries the licence and the credit'); }
+    ids.add(p.id); ok(['Public Domain', 'CC BY-SA 3.0', 'CC0 1.0', 'CC BY 4.0'].includes(p.src.licence) || (p.src.author === 'Ben Boot' && /copyright-free/.test(p.src.licence)), p.id + ' licence ' + p.src.licence); if (p.src.licence === 'CC BY-SA 3.0') { ok(/creativecommons\.org\/licenses\/by-sa\/3\.0/.test(p.src.licenceUrl) && /CC BY-SA 3\.0/.test(p.src.credit) && /Mutopia/.test(p.src.credit), p.id + ' share-alike credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.licence, 'CC BY-SA 3.0'); eq(sj.src.credit, p.src.credit, 'the derived score JSON carries the licence and the credit'); }
+    if (p.src.author === 'Ben Boot') { ok(/Ben Boot/.test(p.src.credit) && /owner/i.test(p.src.credit), p.id + ' credit says the licence evidence is the owner\'s statement'); eq(JSON.parse(rd('orchestra/scores/' + p.id + '.json')).src.credit, p.src.credit); }
     if (p.src.licence === 'CC BY 4.0') { ok(/Paul De Bra/.test(p.src.credit) && /licenses\/by\/4\.0/.test(p.src.licenceUrl) && p.simplified, p.id + ' attribution credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.credit, p.src.credit); }
-    if (p.src.licence === 'CC0 1.0') { ok(p.src.musescore && /CC0/.test(p.src.credit) && /creativecommons\.org\/publicdomain\/zero/.test(p.src.licenceUrl), p.id + ' CC0 credit'); } ok((Number.isInteger(p.src.mutopia) && p.src.mutopia > 0) || (p.src.musescore && p.src.musescore.user > 0) || (p.src.imslp && /imslp\.org/.test(p.src.imslp)), p.id + ' source id');
+    if (p.src.licence === 'CC0 1.0') { ok(p.src.musescore && /CC0/.test(p.src.credit) && /creativecommons\.org\/publicdomain\/zero/.test(p.src.licenceUrl), p.id + ' CC0 credit'); } ok((Number.isInteger(p.src.mutopia) && p.src.mutopia > 0) || (p.src.musescore && p.src.musescore.user > 0) || (p.src.imslp && /imslp\.org/.test(p.src.imslp)) || p.src.author, p.id + ' source id');
     ok(credits.includes('| ' + p.id + ' |') && (!p.src.mutopia || credits.includes('piece-info.cgi?id=' + p.src.mutopia + ')')), p.id + ' in CREDITS.md');
     p.src.midi.forEach(f => { ok(fs.existsSync(path.join(ROOT, 'tools/orchestra-midi')) && JSON.stringify(fs.readdirSync(path.join(ROOT, 'tools/orchestra-midi'), { recursive: true })).includes(f), p.id + ' source midi ' + f); });
-    ok(p.title.ja && p.title.en && p.composer.ja && p.composer.en && p.mvt.ja && p.mvt.en && p.blurb.ja && p.blurb.en, p.id + ' texts'); ok(p.minutes > 1 && p.minutes < 16, p.id + ' minutes ' + p.minutes);
+    ok(p.title.ja && p.title.en && p.composer.ja && p.composer.en && p.mvt.ja && p.mvt.en && p.blurb.ja && p.blurb.en, p.id + ' texts'); ok(p.minutes > 1 && p.minutes < 20, p.id + ' minutes ' + p.minutes);
     ok(p.level >= 1 && p.level <= 3 && [1, 2, 3, 4].includes(p.pattern), p.id + ' level/pattern');
   }
   eq(ids.size, index.pieces.length); ok(/Public Domain/.test(credits) && /CC BY-SA 3\.0/.test(credits) && /ShareAlike|share-alike/i.test(credits), 'credits list the share-alike pieces with the licence');
@@ -29,11 +30,11 @@ test('every piece has a recorded licence (Public Domain, or CC BY-SA 3.0 with li
 test('score JSON: schema, ordered notes inside the piece, one dynamics digit per beat, cues sorted and inside the piece, compact', () => {
   for (const p of index.pieces) {
     const raw = rd('orchestra/scores/' + p.id + '.json'), j = JSON.parse(raw); ok(raw.length < 400 * 1024, p.id + ' size ' + raw.length);
-    eq(j.v, 1); eq(j.ppq, 96); eq(j.id, p.id); eq(j.dyn.length, j.nBeats); let beats = 0; j.grid.forEach(g => { eq(g.length, 4); beats += g[1] * g[2]; ok(g[2] >= 1 && g[2] <= 4 && g[3] >= 24, p.id + ' grid'); }); eq(beats, j.nBeats);
+    eq(j.v, 1); eq(j.ppq, 96); eq(j.id, p.id); eq(j.dyn.length, j.nBeats); let beats = 0; j.grid.forEach(g => { eq(g.length, 4); beats += g[1] * g[2]; ok(g[2] >= 1 && g[2] <= 5 && g[3] >= 24, p.id + ' grid'); }); eq(beats, j.nBeats);
     const last = j.grid[j.grid.length - 1], endTick = last[0] + last[1] * last[2] * last[3];
-    j.sec.forEach(s => { eq(s.n.length % 4, 0); let t = 0, count = 0; for (let i = 0; i < s.n.length; i += 4) { ok(s.n[i] >= 0, 'sorted'); t += s.n[i]; ok(t < endTick, p.id + ' ' + s.id + ' note inside'); ok(s.n[i + 1] >= 21 && s.n[i + 1] <= 108, 'pitch'); ok(Math.abs(s.n[i + 2]) >= 1 && t + Math.abs(s.n[i + 2]) <= endTick + 1, 'duration'); ok(s.n[i + 3] >= 1 && s.n[i + 3] <= 127, 'vel'); count++; } ok(count > 30 || (['timp', 'perc'].includes(s.id) && count >= 5), p.id + ' ' + s.id + ' notes'); });
+    j.sec.forEach(s => { eq(s.n.length % 4, 0); let t = 0, count = 0; for (let i = 0; i < s.n.length; i += 4) { ok(s.n[i] >= 0, 'sorted'); t += s.n[i]; ok(t < endTick, p.id + ' ' + s.id + ' note inside'); ok(s.n[i + 1] >= 21 && s.n[i + 1] <= 108, 'pitch'); ok(Math.abs(s.n[i + 2]) >= 1 && t + Math.abs(s.n[i + 2]) <= endTick + 1, 'duration'); ok(s.n[i + 3] >= 1 && s.n[i + 3] <= 127, 'vel'); count++; } ok(count > 30 || (['timp', 'perc', 'cym', 'harp'].includes(s.id) && count >= 5), p.id + ' ' + s.id + ' notes'); });
     let prev = -1; j.cues.forEach(c => { ok(c[0] >= prev && c[0] < j.nBeats && c[1].length >= 1, p.id + ' cue'); prev = c[0]; c[1].forEach(id => ok(j.sec.some(s => s.id === id), 'cue section')); });
-    j.bpm.forEach(r => ok(r[1] >= 36 && r[1] <= 160)); eq(j.bpm[0][0], 0);
+    j.bpm.forEach(r => ok(r[1] >= 24 && r[1] <= 180)); eq(j.bpm[0][0], 0);
     for (const inst of Object.keys(j.needs)) ok(j.sec.some(s => s.inst === inst), p.id + ' needs only what it uses');
   }
 });

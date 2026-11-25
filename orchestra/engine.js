@@ -35,10 +35,12 @@
     tp: { inst: 'tp', ja: 'トランペット', en: 'Trumpets', ab: { ja: 'Tp', en: 'Tp' }, x: 0.46, y: 0.19, pan: -0.05, back: 0.9, n: 2, hue: 52, mix: 0.95 },
     tb: { inst: 'tb', ja: 'トロンボーン', en: 'Trombones', ab: { ja: 'Tb', en: 'Tb' }, x: 0.62, y: 0.19, pan: 0.2, back: 0.9, n: 3, hue: 36, mix: 0.95 },
     tu: { inst: 'tu', ja: 'チューバ', en: 'Tuba', ab: { ja: 'Tu', en: 'Tu' }, x: 0.74, y: 0.27, pan: 0.5, back: 0.9, n: 1, hue: 24, mix: 0.95 },
+    harp: { inst: 'harp', ja: 'ハープ', en: 'Harp', ab: { ja: 'Hp', en: 'Hp' }, x: 0.08, y: 0.52, pan: -0.8, back: 0.35, n: 1, hue: 280, mix: 1.0 },
+    cym: { inst: 'cym', ja: 'シンバル', en: 'Cymbals', ab: { ja: 'Cym', en: 'Cym' }, x: 0.9, y: 0.3, pan: 0.6, back: 0.95, n: 1, hue: 60, mix: 0.9 },
     timp: { inst: 'timp', ja: 'ティンパニ', en: 'Timpani', ab: { ja: 'Timp', en: 'Timp' }, x: 0.80, y: 0.24, pan: 0.44, back: 0.95, n: 1, hue: 0, mix: 1.0 },
     perc: { inst: 'bd', ja: '大太鼓', en: 'Bass drum', ab: { ja: 'BD', en: 'BD' }, x: 0.12, y: 0.36, pan: -0.55, back: 0.9, n: 1, hue: 0, mix: 0.9 },
   };
-  const SECTION_ORDER = ['vln1', 'vln2', 'vla', 'vc', 'cb', 'fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'tu', 'timp', 'perc'];
+  const SECTION_ORDER = ['vln1', 'vln2', 'vla', 'vc', 'cb', 'fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'tu', 'timp', 'perc', 'cym', 'harp'];
   const DYN_MARKS = ['pp', 'pp', 'p', 'mp', 'mf', 'f', 'f', 'ff', 'ff']; // digit 0..8 of the score's dynamics guide
   const KEYS = '1234567890qwertyu'.split('');
 
@@ -268,7 +270,7 @@
       if (ses.kAcc >= S.nBeats - 1) this.done = true;
     }
   };
-  const GHOST_PATTERNS = { 1: [[0.5, 0.15], [0.5, 0.85]], 2: [[0.5, 0.15], [0.5, 0.88], [0.78, 0.4]], 3: [[0.5, 0.15], [0.5, 0.88], [0.86, 0.6], [0.78, 0.3]], 4: [[0.5, 0.15], [0.5, 0.88], [0.14, 0.62], [0.86, 0.62], [0.6, 0.25]] };
+  const GHOST_PATTERNS = { 1: [[0.5, 0.15], [0.5, 0.85]], 2: [[0.5, 0.15], [0.5, 0.88], [0.78, 0.4]], 3: [[0.5, 0.15], [0.5, 0.88], [0.86, 0.6], [0.78, 0.3]], 4: [[0.5, 0.15], [0.5, 0.88], [0.14, 0.62], [0.86, 0.62], [0.6, 0.25]], 5: [[0.5, 0.15], [0.5, 0.88], [0.18, 0.7], [0.4, 0.5], [0.8, 0.55], [0.62, 0.25]] };
   // beat in bar `bib` (0-based) of an n-beat pattern, phase f in [0,1) between this beat's ictus and the next: beat 1 is the low point, the last beat rebounds over the top
   function ghostPoint(n, bib, f) {
     const P = GHOST_PATTERNS[n] || GHOST_PATTERNS[2], i = clamp(bib, 0, n - 1), e = f * f * (3 - 2 * f), lerpP = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];

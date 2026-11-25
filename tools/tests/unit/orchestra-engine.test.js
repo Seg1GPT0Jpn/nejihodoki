@@ -42,7 +42,7 @@ test('score grid: bars, beats, ticks and beats convert both ways; the real piece
   for (const id of ids) {
     const sc = loadScore(id); ok(sc.nBeats > 150 && sc.nBeats < 1700, id + ' beats ' + sc.nBeats); eq(sc.dyn.length, sc.nBeats, id + ' dyn per beat'); ok(/^[0-8]+$/.test(sc.dyn));
     ok(sc.events.length === sc.noteCount * 2 && sc.noteCount > 500, id + ' notes'); const sec = sc.guideSeconds(); ok(sec > 140 && sec < 900, id + ' minutes ' + sec / 60);
-    for (let b = 0; b < sc.nBeats; b++) { const g = sc.bpmAt(b); if (!(g >= 36 && g <= 160)) throw new Error(id + ' guide bpm ' + g + ' at ' + b); }
+    for (let b = 0; b < sc.nBeats; b++) { const g = sc.bpmAt(b); if (!(g >= 24 && g <= 180)) throw new Error(id + ' guide bpm ' + g + ' at ' + b); }
   }
   const eg = loadScore('egmont'); ok(new Set(eg.patternOfBeat).size >= 2, 'Egmont changes meter');
   const rs = loadScore('rossini'); ok(rs.bpmAt(0) < 80 && rs.bpmAt(rs.nBeats - 1) > 100, 'Rossini speeds up: ' + rs.bpmAt(0) + ' -> ' + rs.bpmAt(rs.nBeats - 1));

@@ -22,8 +22,10 @@ const OUT = path.resolve(opt('out', path.join(__dirname, '..', 'orchestra', 'sco
 const PPQ = 96;
 const BPM_MIN = 36, BPM_MAX = 132; // the range one conducted beat may have at the guide tempo
 
+// playable pitch ranges (used with `pitchClamp`: stray notes outside them, e.g. keyswitch-like notes in performance MIDI, are dropped)
+const PITCH_RANGE = { fl: [59, 108], ob: [56, 95], cl: [48, 100], fg: [33, 80], hn: [33, 84], tp: [50, 90], tb: [34, 78], tu: [25, 62], timp: [36, 60], vln1: [55, 103], vln2: [55, 103], vla: [46, 88], vc: [34, 76], cb: [26, 60], harp: [21, 103] };
 // section id -> sample-bank instrument
-const SEC_INST = { fl: 'fl', ob: 'ob', cl: 'cl', fg: 'fg', hn: 'hn', tp: 'tp', tb: 'tb', tu: 'tu', timp: 'timp', perc: 'bd', vln1: 'vln', vln2: 'vln', vla: 'vla', vc: 'vc', cb: 'cb' };
+const SEC_INST = { fl: 'fl', ob: 'ob', cl: 'cl', fg: 'fg', hn: 'hn', tp: 'tp', tb: 'tb', tu: 'tu', timp: 'timp', perc: 'bd', cym: 'cym', harp: 'harp', vln1: 'vln', vln2: 'vln', vla: 'vla', vc: 'vc', cb: 'cb' };
 
 const NAMES = { flauti: 'fl', oboi: 'ob', clarinetti: 'cl', fagotti: 'fg', corni: 'hn', trombe: 'tp', trombone: 'tb', trombonebasso: 'tb', timpani: 'timp', violin1: 'vln1', violin2: 'vln2', flute: 'fl', oboe: 'ob', clarinet: 'cl', bassoon: 'fg', trombone: 'tb', corni_first: 'hn', corni_second: 'hn', corni: 'hn', trombe: 'tp', tenor_trombone: 'tb', bass_trombone: 'tb', violin_one: 'vln1', violin_two: 'vln2', violincello: 'vc', contrabass: 'cb', viole: 'vla', violoncellostaff: 'vc', contrabassostaff: 'cb', frenchhorna: 'hn', frenchhornb: 'hn', trumpet: 'tp', cello: 'vc', bass: 'cb', violino1: 'vln1', violinoi: 'vln1', violino2: 'vln2', violinoii: 'vln2', viola: 'vla', violoncello: 'vc', contrabasso: 'cb' };
 // Each piece: midi files (concatenated in order), tracks: { fileIndex: { trackIndex: section } }, tempo overrides, excerpt (in quarter notes of the merged timeline).
@@ -136,6 +138,27 @@ const PIECES = [
     midi: ['Dvorak8-mids/Dvorak8_Mvt3_DeBra_arr.mid'], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc', 5: 'cb' }],
     derive: [{ from: 'vln1', to: 'fl', transpose: 0 }, { from: 'vln2', to: 'ob', transpose: 0 }, { from: 'vln2', to: 'cl', transpose: 0 }, { from: 'vla', to: 'hn', transpose: 0 }, { from: 'vc', to: 'fg', transpose: 0 }],
     blurb: { ja: '優雅な3/8のワルツ。5声部に縮めた編曲（簡略版）を、オーケストラ全体に振り分けて鳴らします。1小節を1つ振りで。', en: 'The graceful 3/8 waltz, played from a 5-part arrangement spread over the whole orchestra (simplified version). One beat to the bar.' } },
+  // ---- Mahler 5 (HOLD: performance MIDI by 'Ben Boot', licence NOT confirmed; built into orchestra/scores-hold/ only, see tools/release-orchestra-hold.js) ----
+  { id: 'mahler5-1', hold: true, pitchClamp: true, author: 'Ben Boot', dynMode: 'density', level: 3, parts: 3, light: true, work: 'mahler5', tempoSmooth: 6, bpmMin: 24, bpmMax: 140, mvt: { ja: "第1楽章 葬送行進曲", en: "I. Trauermarsch. In gemessenem Schritt" },
+    title: { ja: '交響曲 第5番 嬰ハ短調', en: 'Symphony No. 5 in C-sharp minor' }, composer: { ja: 'マーラー', en: 'Mahler' }, year: 1902,
+    midi: ['Mahler5-HOLD/Mahler5_mvt1.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'ob', 4: 'cl', 5: 'fg', 6: 'hn', 7: 'tp', 8: 'tb', 9: 'tu', 10: { drum: { 35: 'perc', 36: 'perc', 49: 'cym', 51: 'cym', 52: 'cym', 55: 'cym', 57: 'cym', 59: 'cym' } }, 11: 'timp', 12: [[66, 'vln1'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 13: [[64, 'vln2'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 14: [[62, 'vln2'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 15: [[64, 'vln1'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 16: 'vla' }],
+    blurb: { ja: "トランペットのファンファーレで始まる葬送行進曲。", en: "A funeral march that opens with the trumpet fanfare." } },
+  { id: 'mahler5-2', hold: true, pitchClamp: true, author: 'Ben Boot', dynMode: 'density', level: 3, parts: 3, light: true, work: 'mahler5', tempoSmooth: 6, bpmMin: 24, bpmMax: 140, mvt: { ja: "第2楽章 嵐のように激しく", en: "II. Stürmisch bewegt, mit größter Vehemenz" },
+    title: { ja: '交響曲 第5番 嬰ハ短調', en: 'Symphony No. 5 in C-sharp minor' }, composer: { ja: 'マーラー', en: 'Mahler' }, year: 1902,
+    midi: ['Mahler5-HOLD/Mahler5_mvt2.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'ob', 4: 'cl', 5: 'fg', 6: 'hn', 7: 'tp', 8: 'tb', 9: 'tu', 10: { drum: { 35: 'perc', 36: 'perc', 49: 'cym', 51: 'cym', 52: 'cym', 55: 'cym', 57: 'cym', 59: 'cym' } }, 11: 'timp', 12: 'harp', 13: [[66, 'vln1'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 14: [[64, 'vln2'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 15: [[64, 'vln1'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 16: 'vln1' }],
+    blurb: { ja: "嵐のような第2楽章。", en: "The stormy second movement." } },
+  { id: 'mahler5-3', hold: true, pitchClamp: true, author: 'Ben Boot', dynMode: 'density', level: 3, parts: 4, light: true, work: 'mahler5', tempoSmooth: 6, bpmMin: 24, bpmMax: 140, mvt: { ja: "第3楽章 スケルツォ", en: "III. Scherzo" },
+    title: { ja: '交響曲 第5番 嬰ハ短調', en: 'Symphony No. 5 in C-sharp minor' }, composer: { ja: 'マーラー', en: 'Mahler' }, year: 1902,
+    midi: ['Mahler5-HOLD/Mahler5_mvt3.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'ob', 4: 'cl', 5: 'fg', 6: 'hn', 7: 'tp', 8: 'tb', 9: 'tu', 10: { drum: { 35: 'perc', 36: 'perc', 49: 'cym', 51: 'cym', 52: 'cym', 55: 'cym', 57: 'cym', 59: 'cym' } }, 11: 'timp', 13: [[66, 'vln1'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 14: [[64, 'vln2'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 15: [[62, 'vln2'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 16: [[64, 'vln1'], [52, 'vla'], [40, 'vc'], [0, 'cb']] }],
+    blurb: { ja: "ホルンが活躍する長いスケルツォ。", en: "A long scherzo with a starring horn." } },
+  { id: 'mahler5-4', hold: true, pitchClamp: true, author: 'Ben Boot', dynMode: 'density', level: 1, parts: 2, light: true, work: 'mahler5', tempoSmooth: 6, bpmMin: 24, bpmMax: 140, mvt: { ja: "第4楽章 アダージェット", en: "IV. Adagietto. Sehr langsam" },
+    title: { ja: '交響曲 第5番 嬰ハ短調', en: 'Symphony No. 5 in C-sharp minor' }, composer: { ja: 'マーラー', en: 'Mahler' }, year: 1902,
+    midi: ['Mahler5-HOLD/Mahler5_mvt4.mid'], tracks: [{ 1: 'harp', 2: 'vln1', 3: 'vln2', 4: 'vla', 5: 'vla', 6: 'vc', 7: 'vc', 8: 'cb', 9: 'cb' }],
+    blurb: { ja: "ハープと弦だけの、あまりにも有名なアダージェット。", en: "The famous Adagietto for harp and strings alone." } },
+  { id: 'mahler5-5', hold: true, pitchClamp: true, author: 'Ben Boot', dynMode: 'density', level: 3, parts: 3, light: true, work: 'mahler5', tempoSmooth: 6, bpmMin: 24, bpmMax: 140, mvt: { ja: "第5楽章 ロンド・フィナーレ", en: "V. Rondo-Finale. Allegro" },
+    title: { ja: '交響曲 第5番 嬰ハ短調', en: 'Symphony No. 5 in C-sharp minor' }, composer: { ja: 'マーラー', en: 'Mahler' }, year: 1902,
+    midi: ['Mahler5-HOLD/Mahler5_mvt5.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'tb', 8: 'tu', 9: 'harp', 10: { drum: { 35: 'perc', 36: 'perc', 49: 'cym', 51: 'cym', 52: 'cym', 55: 'cym', 57: 'cym', 59: 'cym' } }, 11: 'timp', 12: [[66, 'vln1'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 13: [[64, 'vln2'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 14: [[62, 'vln2'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 15: [[64, 'vln1'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 16: 'vla' }],
+    blurb: { ja: "輝かしいロンド・フィナーレ。", en: "The radiant rondo finale." } },
   { id: 'midsummer', mutopia: 80, level: 2, mvt: { ja: '間奏曲（No.5）', en: 'Intermezzo (No. 5)' },
     title: { ja: '劇音楽《真夏の夜の夢》 作品61', en: 'A Midsummer Night\'s Dream, Op. 61' }, composer: { ja: 'メンデルスゾーン', en: 'Mendelssohn' }, year: 1843,
     midi: ['Sommernachtstraum-mids/Sommernachtstraum.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'cb' }],
@@ -164,8 +187,10 @@ function build(P) {
   files.forEach((mf, fi) => {
     const map = P.tracks[fi] || P.tracks[0], k = PPQ / mf.division;
     mf.tracks.forEach((tr, ti) => {
-      const sec = P.byName ? NAMES[tr.name.toLowerCase().replace(/:.*$/, '').replace(/\s+/g, '')] : map[ti]; if (!sec) return;
-      M.notes(tr).forEach(n => notes.push({ sec, tick: Math.round(n.tick * k) + off, dur: Math.max(1, Math.round(n.dur * k)), pitch: n.note, vel: n.vel }));
+      const spec = P.byName ? NAMES[tr.name.toLowerCase().replace(/:.*$/, '').replace(/\s+/g, '')] : map[ti]; if (!spec) return;
+      // spec: a section id, or [[minPitch, section], ...] (a merged strings track split by register), or { drum: { gmNote: section } } (a GM drum track)
+      const pick = n => typeof spec === 'string' ? spec : Array.isArray(spec) ? (spec.find(r => n.note >= r[0]) || [0, null])[1] : spec.drum[n.note];
+      M.notes(tr).forEach(n => { const sec = pick(n); if (!sec) return; if (P.pitchClamp && PITCH_RANGE[sec] && (n.note < PITCH_RANGE[sec][0] || n.note > PITCH_RANGE[sec][1])) return; notes.push({ sec, tick: Math.round(n.tick * k) + off, dur: Math.max(1, Math.round(n.dur * k)), pitch: spec && spec.drum ? 60 : n.note, vel: n.vel }); });
     });
     mf.timeSigs.forEach(s => sigs.push({ tick: Math.round(s.tick * k) + off, num: s.num, den: s.den }));
     let last = -1; mf.tempos.forEach(t => { const tk = Math.round(t.tick * k) + off; if (t.tick === 0 && last === 0) tempos.pop(); tempos.push({ q: tk / PPQ, bpm: 6e7 / t.uspq }); last = t.tick; });
@@ -212,12 +237,15 @@ function build(P) {
   const beatTick = [], beatBpm = [], beatInBar = [];
   kept.forEach(b => { for (let i = 0; i < b.beats; i++) { beatTick.push(b.tick - t0 + Math.round(i * b.unit * PPQ)); beatBpm.push(b.bpm); beatInBar.push(i); } });
   const nBeats = beatTick.length;
+  if (P.tempoSmooth) { // performance-rendered MIDI: thousands of tempo events -> a median over a window of beats, whole beats per minute
+    const w = P.tempoSmooth, src = beatBpm.slice(); for (let i = 0; i < src.length; i++) { const a = src.slice(Math.max(0, i - w), Math.min(src.length, i + w + 1)).sort((x, y) => x - y); beatBpm[i] = Math.min(180, Math.max(P.bpmMin || 0, Math.round(a[a.length >> 1]))); }
+  }
   // run-length grid: [startTick, nBars, beatsPerBar, beatTicks]
   const grid = [];
   kept.forEach(b => { const bt = Math.round(b.unit * PPQ), last = grid[grid.length - 1]; if (last && last[2] === b.beats && last[3] === bt) last[1]++; else grid.push([b.tick - t0, 1, b.beats, bt]); });
 
   // ---- notes of the excerpt --------------------------------------------------------------------------------------------------------------
-  const secOrder = ['fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'tu', 'timp', 'perc', 'vln1', 'vln2', 'vla', 'vc', 'cb'];
+  const secOrder = ['fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'tu', 'timp', 'perc', 'cym', 'harp', 'vln1', 'vln2', 'vla', 'vc', 'cb'];
   const bySec = {};
   notes.forEach(n => {
     if (n.tick >= tEnd || n.tick + n.dur <= t0 || n.tick < t0 && n.tick + n.dur <= t0) return;
@@ -244,7 +272,7 @@ function build(P) {
   // ---- dynamics guide (one digit 0..8 per conductor beat) ----------------------------------------------------------------------------------
   const allNotes = []; sections.forEach(s => { let t = 0; for (let i = 0; i < s.n.length; i += 4) { t += s.n[i]; allNotes.push({ sec: s.id, tick: t, dur: Math.abs(s.n[i + 2]), vel: s.n[i + 3], pitch: s.n[i + 1] }); } });
   const vels = new Set(allNotes.map(n => n.vel));
-  const hasDyn = vels.size >= 6;
+  const hasDyn = P.dynMode ? P.dynMode === 'velocity' : vels.size >= 6; // `dynMode: 'density'` for performance MIDI whose velocities are flat
   const WEIGHT = { timp: 2.2, perc: 2.2, tp: 1.6, tb: 1.6, tu: 1.6, hn: 1.3 };
   const raw = new Array(nBeats).fill(0), cntV = new Array(nBeats).fill(0);
   const beatOfTick = tick => { let lo = 0, hi = nBeats - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (beatTick[m] <= tick) lo = m; else hi = m - 1; } return lo; };
@@ -292,7 +320,7 @@ function build(P) {
   const out = {
     v: 1, id: P.id, ppq: PPQ,
     title: P.title, composer: P.composer, mvt: P.mvt, year: P.year, blurb: P.blurb, level: P.level,
-    src: { ...(P.musescore ? { musescore: P.musescore } : P.imslp ? { imslp: P.imslp } : { mutopia: P.mutopia }), midi: P.midi.map(f => f.split('/').pop()), licence: P.licence || 'Public Domain' },
+    src: { ...(P.musescore ? { musescore: P.musescore } : P.imslp ? { imslp: P.imslp } : P.mutopia ? { mutopia: P.mutopia } : { author: P.author || 'unknown' }), midi: P.midi.map(f => f.split('/').pop()), licence: P.licence || 'Public Domain' },
     nBeats, grid, bpm, dyn, cues: cueOut, needs,
     sec: sections.map(s => ({ id: s.id, inst: s.inst, n: s.n })),
   };
@@ -314,15 +342,21 @@ function splitParts(out, n) {
   }
   return res;
 }
+const HOLD_OUT = path.resolve(opt('hold-out', path.join(__dirname, '..', 'orchestra', 'scores-hold')));
+const REL_FILE = path.join(__dirname, 'orchestra-hold-release.json'); // written by tools/release-orchestra-hold.js: { ids: [...], by: { id: { licence, licenceUrl, credit, url } } }
+const REL = fs.existsSync(REL_FILE) ? JSON.parse(fs.readFileSync(REL_FILE, 'utf8')) : { ids: [], by: {} };
+PIECES.forEach(P => { if (P.hold && REL.by[P.id]) { Object.assign(P, REL.by[P.id], { hold: false }); } }); // released: the owner's licence evidence is applied
 fs.mkdirSync(OUT, { recursive: true });
-const ERA = { Beethoven: 'classical', Mozart: 'classical', Haydn: 'classical', Gossec: 'classical', Mendelssohn: 'romantic', Rossini: 'romantic', 'Dvořák': 'romantic', Schubert: 'romantic', Grieg: 'romantic', Bach: 'baroque', Handel: 'baroque', Corelli: 'baroque', Vivaldi: 'baroque' };
+const ERA = { Mahler: 'romantic', Beethoven: 'classical', Mozart: 'classical', Haydn: 'classical', Gossec: 'classical', Mendelssohn: 'romantic', Rossini: 'romantic', 'Dvořák': 'romantic', Schubert: 'romantic', Grieg: 'romantic', Bach: 'baroque', Handel: 'baroque', Corelli: 'baroque', Vivaldi: 'baroque' };
 const index = [];
 let total = 0;
+const holdIndex = [];
 PIECES.forEach(P => {
   const { out, summary } = build(P);
   const json = JSON.stringify(out);
-  fs.writeFileSync(path.join(OUT, P.id + '.json'), json + '\n');
-  total += json.length;
+  const dest = P.hold ? HOLD_OUT : OUT; fs.mkdirSync(dest, { recursive: true }); fs.writeFileSync(path.join(dest, P.id + '.json'), json + '\n');
+  if (P.hold) { out.src.licence = 'UNCONFIRMED'; fs.writeFileSync(path.join(dest, P.id + '.json'), JSON.stringify(out) + '\n'); } else { try { fs.unlinkSync(path.join(HOLD_OUT, P.id + '.json')); } catch (e) {} }
+  total += P.hold ? 0 : json.length;
   console.log(JSON.stringify(summary), (json.length / 1024).toFixed(0) + ' KB');
   const cnt = {}; out.grid.forEach(g => { cnt[g[2]] = (cnt[g[2]] || 0) + g[1]; });
   const pattern = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
@@ -333,7 +367,10 @@ PIECES.forEach(P => {
   if (P.licence) { ix.src.licenceUrl = P.licenceUrl; ix.src.credit = P.credit; out.src.licenceUrl = P.licenceUrl; out.src.credit = P.credit; } // share-alike: the derived score carries the licence and the credit
   if (P.parts > 1) ix.parts = splitParts(out, P.parts);
   if (P.licence) fs.writeFileSync(path.join(OUT, P.id + '.json'), JSON.stringify(out) + '\n');
+  if (P.light) ix.light = true;
+  if (P.hold) { ix.hold = true; ix.src.licence = 'UNCONFIRMED'; holdIndex.push(index.pop()); }
 });
-const crypto = require('crypto'); const bh = crypto.createHash('sha1'); PIECES.forEach(P => bh.update(fs.readFileSync(path.join(OUT, P.id + '.json'))));
+const crypto = require('crypto'); const bh = crypto.createHash('sha1'); PIECES.filter(P => !P.hold).forEach(P => bh.update(fs.readFileSync(path.join(OUT, P.id + '.json'))));
+if (holdIndex.length) { fs.mkdirSync(HOLD_OUT, { recursive: true }); fs.writeFileSync(path.join(HOLD_OUT, 'hold-index.json'), JSON.stringify({ v: 1, hold: true, pieces: holdIndex }) + '\n'); }
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify({ v: 1, build: bh.digest('hex').slice(0, 10), pieces: index }) + '\n');
 console.log('total', (total / 1024).toFixed(0) + ' KB');
