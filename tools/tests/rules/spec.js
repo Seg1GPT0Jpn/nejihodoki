@@ -37,6 +37,16 @@ function checkSpec() {
   const trPages = REG.games.filter(g => { try { return /common\/turnroom\.js/.test(fs.readFileSync(path.join(ROOT, g.path, 'index.html'), 'utf8')); } catch (e) { return false; } }).map(g => g.id);
   add('database.rules.json tr game ids == pages that load common/turnroom.js', JSON.stringify(trRule.slice().sort()) === JSON.stringify(trPages.slice().sort()), trRule.join(',') + ' / ' + trPages.join(','));
   add('turnroom games are registered with versus: own', trPages.every(id => (REG.games.find(g => g.id === id) || {}).versus === 'own'));
+  // おもちゃ大乱闘のオンライン対戦（bw/）：パスが brawl/online.js の使うものとそろっている・ページが netcode.js と online.js を読み・登録簿で versus: 'own'
+  const bw = db.rules.bw || {};
+  add('database.rules.json has bw/{queue,codes,rooms}', !!(bw.queue && bw.codes && bw.rooms && bw.rooms.$room), Object.keys(bw).join(','));
+  const bwRoom = (bw.rooms && bw.rooms.$room) || {};
+  add('database.rules.json bw/rooms/$room has meta,cfg,seats,on,rd,pg,go,in,h,res', ['meta', 'cfg', 'seats', 'on', 'rd', 'pg', 'go', 'in', 'h', 'res'].every(k => bwRoom[k]), Object.keys(bwRoom).join(','));
+  let bwHtml = '', bwOnline = '';
+  try { bwHtml = fs.readFileSync(path.join(ROOT, 'brawl/index.html'), 'utf8'); bwOnline = fs.readFileSync(path.join(ROOT, 'brawl/online.js'), 'utf8'); } catch (e) { /* reported below */ }
+  add('brawl page loads brawl/netcode.js and brawl/online.js', /brawl\/netcode\.js/.test(bwHtml) || /netcode\.js/.test(bwHtml), 'index.html');
+  add('brawl/online.js only uses bw/ paths that the rules define', [...new Set([...bwOnline.matchAll(/'bw\/(\w+)/g)].map(m => m[1]))].every(k => bw[k]), [...new Set([...bwOnline.matchAll(/'bw\/(\w+)/g)].map(m => m[1]))].join(','));
+  add('brawl is registered with versus: own', (REG.games.find(g => g.id === 'brawl') || {}).versus === 'own');
   const all = JSON.stringify(db);
   const alts = all.match(/\^\((?:neji|blocks)[^)]*\)\$/g) || [];
   add('database.rules.json uses one game list everywhere', new Set(alts).size === 1, [...new Set(alts)].join(' / '));

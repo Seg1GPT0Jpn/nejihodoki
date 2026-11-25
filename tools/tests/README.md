@@ -60,11 +60,21 @@ node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特�
 node tools/tests/unit/manabi-build.test.js    # manabi/data の検査（全問に答え・型ごとの形・図の SVG が安全・index と chunk が合う・容量。`MANABI_SRC` があれば同じ入力から同じ出力）
 node tools/tests/studyguard-play.js           # 勉強ガードの通し（本物のクリック・入力で：オフでは何も読まない・ハブの「使いますか？」・設定・クイズ・お休み・PIN・テスト期間・隠れているあいだは数えない・画面サイズ・キー）
 node tools/tests/unit/studyguard.test.js      # 勉強ガードの純粋な部分（時計・二重に数えない・問題が増える・お休み・テスト期間・PIN・壊れた保存・platform.js のオプトイン）
+node tools/tests/orchestra-play.js [first,audio,conduct,cues,finish,keyboard,touch,pause,english,themes,saves,layouts]  # 指揮者ゲームの通し（12の節。本物のマウス・タッチ・キーでバトンとキュー・mp3 を本物のエンジンで書き出して音を数字で・一時停止・英語・ライト／ダーク・古い／こわれた保存・320px まで）。長いので2回に分けて流す（例：`first,audio,conduct,cues,finish,keyboard` と `touch,pause,english,themes,saves,layouts`）
+node tools/tests/unit/orchestra-midi.test.js     # 自作の標準 MIDI 読み取り（orchestra/midi.js）。手で作ったファイルと本物の Mutopia のファイル
+node tools/tests/unit/orchestra-engine.test.js   # 指揮者ゲームの中身（拍の検出・音楽の時計・先読みスケジューラー・ふつう／たのしむの動き・採点とキューの窓）
+node tools/tests/unit/orchestra-sampler.test.js  # サンプラーと音の束（音程の計算・強弱・ホールの残響・bank.json とファイルと全曲の音の対応・声部とループ）
+node tools/tests/unit/orchestra-scores.test.js   # 8曲の楽譜（パブリックドメインの出典と CREDITS.md・形・作り直しても同じ・ページの配線と英語）
+node tools/build-orchestra-scores.js            # MIDI（tools/orchestra-midi/）から orchestra/scores/*.json と index.json を作り直す（同じ入力なら同じバイト。ビルド番号 `build` が変わる）
+node tools/build-orchestra-samples.js --src <VSCO-2-CE の checkout>  # 音の束 orchestra/samples/ を作り直す（ffmpeg が要る。VSCO 2 CE は CC0。checkout の取り方は orchestra/samples/LICENSES.txt。同じ ffmpeg なら同じバイト）。出典：音は VSCO 2 Community Edition（CC0）、曲は Mutopia Project（パブリックドメイン）。orchestra/CREDITS.md
 node tools/tests/rules/turnroom-bots.js         # common/turnroom.js を本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人のボットが動かす（コードで4人・クイックマッチ（CPUでうめる／4人ぴったり）・切れて戻る／切れたまま・時間切れ・ホストが出る／消える・ゲストが出る。他人の手札が読めない・書けないことの確認つき）。`node tools/tests/rules/run.js --only bots` でも流せる（`rules/run.js` は全部で約13分なので `--only spec,rest`・`clients`・`bots` に分けて流すとよい）。シナリオ名を引数に（例：room4 quick）
 node tools/tests/train-play.js               # でんしゃでいこうの通し（本物のキーとタッチでノッチを操作・駅に止める・出発・ATS・結果と保存・ルートの開き方・一時停止・英語・全画面サイズ）
 node tools/tests/unit/train-engine.test.js    # でんしゃでいこうの中身（決まった結果・ブレーキの遅れと天気・停車位置の点数・信号と ATS・ダイヤ・自動運転が全ルートをクリア）
 node tools/tests/brawl-play.js               # おもちゃ大乱闘の通し（本物のキーとマルチタッチで試合・KO・ふたりで1台・ラダー8戦と開く内容・コンティニュー・れんしゅう（フレーム表示）・一時停止・保存と再開・英語・全画面サイズ・はじき／ダッシュ／ジャスト／つかみ／ふち／うけ身（キーボード）・にせのゲームパッド（navigator.getGamepads）でアナログ操作とメニュー・18人のえらぶ画面（320px の ja/en・矢印キー・2勝ごとに開く）・操作ページ（キー変更）・タッチのはじき。`node tools/tests/brawl-play.js controls,gamepad` のように選べる）
 node tools/tests/unit/brawl-engine.test.js    # おもちゃ大乱闘の中身（決まった結果・ふっとばしの計算・ブラストゾーン・全部の技が当たる・はじき／ダッシュ／ふりむき／しゃがみ／ジャンプ／空中よけ／オートキャンセル／ジャストガード／つかみ／れんぞくジャブ／うけ身／ふち／ワープ・はね返し・3000試合の CPU 対戦・つよい＞ふつう＞かんたん・18人の総当たり（ふつう・つよいは各人 25〜75%、かんたんは12〜90%））。BRAWL_MATCHES=400 BRAWL_ROUNDS=1 で短く。全部で3〜5分（単独で実行）
+node tools/tests/unit/brawl-netcode.test.js   # おもちゃ大乱闘のオンラインの土台（engine.js が決まった結果であること＝使ってはいけない関数がない・正解の指紋 `fixtures/brawl-golden-hashes.json`・もどして撃ち直しが通しと同じ／netcode.js を仮想の回線で：遅れ・ゆれ・取りこぼし・順番ちがい・重複・4人・切断・desync）。sim の動きを変えたら `NETV` を上げ、`BRAWL_RECORD=1 node tools/tests/unit/brawl-netcode.test.js` で正解の指紋を録りなおす
+node tools/tests/brawl-online-play.js [lobby,quick,room,devices,forfeit,desync,perf]  # おもちゃ大乱闘のオンライン1対1の通し（本物のブラウザ2ページ＋Firebase エミュレーター＋ bw/ のルール。ロビー・クイックマッチ・部屋のコード・キー／タッチ／パッド・切断の不戦勝・desync・遅れと取りこぼしでの重さ。約4分。Java とエミュレーターが要る。`?debug&netlat=…&netjit=…&netloss=…`）
+node tools/tests/rules/brawl-rules.js        # bw/ のルールの許可と拒否（エミュレーター。`node tools/tests/rules/run.js --only bw` でも同じ）
 node tools/tests/town-play.js                 # ひまつぶしタウンの通し（本物のタップで建てる・そだてる・旅人・るす番（?debug の時計）・町をひらきなおす・保存と再開・英語・全画面サイズ）
 node tools/tests/town-balance.js              # ひまつぶしタウンの経済のバランス（ボットが最適に近く遊ぶ：最初の目標・最初のひらきなおしの時間・行きづまらないこと）
 node tools/tests/fit-play.js                  # ぴったりパズル工房の通し（本物のドラッグとタップでステージを解く・ヒント・やり直し・今日のパズル・タイムアタック・オンライン対戦の練習（同じ seed → 同じ問題・点の式・保存しない・終了後に元へ戻る）・保存と再開・英語・全画面サイズ）

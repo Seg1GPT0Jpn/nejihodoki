@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>指揮者ゲーム</title>
+<meta name="theme-color" content="#1b1015">
+<meta name="description" content="マウスや指でバトンを振って、本物のオーケストラの音を指揮しよう。拍でテンポを決め、振りの大きさで強弱をつけ、入りのキューを出す。ベートーヴェン、モーツァルト、ドヴォルザークなど8曲。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="指揮者ゲーム">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  '指揮者ゲーム': 'Conductor', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '遊び方': 'How to play', '言語 / Language': 'Language', 'とじる': 'Close', 'もどる': 'Back', '一時停止': 'Pause', 'メニュー': 'Menu', 'やってみる': 'Try it', '説明だけでOK': 'Just the rules',
+  'バトンを振って、本物のオーケストラを指揮しよう。拍でテンポを決め、振りの大きさで強弱を、入りのキューで楽器を呼び込む。': 'Wave your baton and conduct a real orchestra. Your beats set the tempo, the size of your stroke sets the volume, and your cues bring the sections in.',
+  '曲をえらぶ': 'Choose a piece', 'むずかしさ': 'Difficulty', 'たのしむ': 'Enjoy', 'ふつう': 'Normal', 'マエストロ': 'Maestro',
+  'たのしむ：入りは自動、失敗なし。ゆったり指揮を楽しむ': 'Enjoy: cues are automatic, no failing. Just relax and conduct.',
+  'ふつう：入りのキューと強弱を見られる': 'Normal: your cues and dynamics are judged.', 'マエストロ：きびしい採点。振らないとオーケストラは待つ': 'Maestro: strict judging. If you stop, the orchestra waits.',
+  'クレジット': 'Credits', '設定': 'Settings', '音質': 'Sound quality', '自動': 'Auto', '高音質': 'High', '軽量': 'Light', 'スマホを傾けて指揮（動きセンサー）': 'Conduct by moving the phone (motion sensor)',
+  '音質を変えるときは、曲をえらび直してください': 'Pick a piece again for a quality change to take effect', '軽量：メモリを半分ほどにします（スマホ向け）': 'Light: about half the memory (for phones)',
+  '読み込み中…': 'Loading…', '楽器の音を読み込み中': 'Loading the instruments', '{a} / {b} 個（{m} MB）': '{a} / {b} files ({m} MB)', '読み込めませんでした。通信を確かめて、もう一度。': 'Could not load. Check your connection and try again.',
+  'この曲は {n} 分ほど': 'About {n} min', '{n} 分': '{n} min', '難しさ': 'Level', '拍の振り方 {n}': 'Pattern: {n}', '1つ振り': 'In one', '2つ振り': 'In two', '3つ振り': 'In three', '4つ振り': 'In four',
+  'ベスト {n} 点': 'Best {n}', 'まだ記録なし': 'No record yet', '合計 ★ {n}': 'Total ★ {n}', 'まだ記録はありません': 'No records yet',
+  '指揮台にあがる': 'Step onto the podium', 'はじめる': 'Start',
+  // in game
+  '2回振ってスタート\n1回目で構え、2回目でテンポが決まる': 'Two strokes to start\nThe first is the preparation, the second sets the tempo', 'もう1回': 'One more',
+  'つづけて振ってね': 'Keep conducting!', 'オーケストラが待っています': 'The orchestra is waiting for your beat', '強さ': 'Volume', 'めあて': 'Goal', 'テンポ': 'Tempo',
+  '入り！': 'Cue!', 'ばっちり！': 'Perfect!', 'ちょっと遅い': 'A bit late', 'ちょっと早い': 'A bit early', 'ちがう楽器': 'Wrong section', '入りそこねた': 'Missed entrance',
+  'ここで {n} の入り': 'Cue: {n}', 'ぜんいんの入り！': 'Everyone in!', '音が出ないときは画面をタップ': 'Tap the screen if there is no sound',
+  '一時停止中': 'Paused', 'つづける': 'Resume', 'この曲をやめる': 'Leave this piece', '曲えらびへ': 'Pieces',
+  // results
+  'フィナーレ！': 'Finale!', 'おつかれさま！': 'Well conducted!', 'とくてん': 'Score', 'テンポの安定': 'Steady tempo', '強弱': 'Dynamics', '入り（キュー）': 'Cues', '入り': 'Cues',
+  'ベスト更新！': 'New best!', 'もう一度': 'Again', '次の曲へ': 'Next piece', '振った拍の数': 'Beats given', '入りの成功': 'Cues given', '指揮の様子': 'How it went',
+  'テンポが速すぎ／遅すぎ': 'Tempo far from the guide', '強弱が全体に強め': 'Often too loud', '強弱が全体に弱め': 'Often too soft', 'もう少しはっきり振ると、拍が伝わります': 'Clearer strokes make your beat readable', '安定して振れました': 'Nicely steady',
+  '入りを忘れずに': 'Do not forget the entrances', 'たのしむモードは入りが自動です': 'In Enjoy mode the entrances are automatic',
+  // how to
+  '振り方': 'Conducting', 'マウスは動かすだけ、スマホは指でなぞります。下に振っては戻す動きが「1拍」。左右に振ってもOK。': 'Move the mouse (no click needed) or drag a finger. A stroke down and back up is one beat. Side-to-side works too.',
+  '最初の2回の拍でテンポが決まり、曲がはじまります。あとは拍の間隔がそのままテンポになります。': 'The first two beats set the tempo and the piece begins. After that your beat spacing is the tempo.',
+  '大きく速く振ると大きな音、小さく振ると小さな音。右の目盛りのしるし（めあて）に合わせよう。': 'Big, fast strokes are loud, small ones are soft. Match the marker on the meter at the right.',
+  '入り：光った楽器をタップ（指揮台からそちらへスワイプ、数字キーも）。少し前に出すのがコツ。': 'Cues: tap the glowing section (or swipe toward it, or press its number key). Give it a beat early.',
+  'キーボード：Space / Enter / ← → で拍、↑ ↓ で強弱、数字キーで入り、P で一時停止。': 'Keyboard: Space / Enter / ← → for beats, ↑ ↓ for volume, number keys for cues, P to pause.',
+  '拍をとりこぼすと、ふつう・マエストロではオーケストラが待ってしまいます。': 'In Normal and Maestro the orchestra waits if you miss a beat.',
+  '音は本物の楽器を録音したもの（VSCO 2 CE, CC0）。曲は著作権の切れた楽譜（Mutopia, パブリックドメイン）です。': 'The sound is recorded real instruments (VSCO 2 CE, CC0). The music is public-domain scores (Mutopia).',
+  // credits
+  '音源': 'Sounds', '楽譜': 'Scores', '作曲者': 'Composer', '曲': 'Work', 'ライセンス': 'Licence', 'パブリックドメイン': 'Public Domain', '出典': 'Source',
+  'オーケストラの音は VSCO 2 Community Edition（Sam Gossner / Versilian Studios、CC0 1.0）の録音を切り出して使っています。': 'The orchestra sound is cut from the VSCO 2 Community Edition recordings (Sam Gossner / Versilian Studios, CC0 1.0).',
+  '楽譜データは Mutopia Project の MIDI（パブリックドメイン。各曲のページで確認済み）から作っています。MIDI は楽譜の機械的な書き出しで、演奏の録音ではありません。': 'Note data comes from Mutopia Project MIDI files (Public Domain, checked on each piece page). The MIDI is a mechanical rendering of the engraved score, not a recording of a performance.',
+  '独自の絵・コードです。実在の人物の絵はありません。': 'All art and code are original. No real people are depicted.',
+  // pieces
+  '強弱の目安は楽譜の音の数や強さから自動で作った簡易版です。': 'The dynamics guide is a simplified one derived automatically from the notes.',
+  // section names are in engine.js
+  '入りのキュー': 'Cue buttons', '1拍': 'beat', 'テンポ {n}': 'Tempo {n}', '小節 {n}': 'Bar {n}',
+} });
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* 指揮者ゲーム: a velvet-and-gold concert hall around a full-bleed canvas. --kb-* are the shared tokens re-tinted; --or-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1b1015; --kb-surface: #2a1820; --kb-surface-2: #38222b; --kb-sunken: #140a0e; --kb-line: #5a3a44;
+  --kb-ink: #f6ecdf; --kb-dim: #cdb8b0;
+  --kb-accent: #ffcf6a; --kb-accent-ink: #2a1500; --kb-accent-text: #ffd98a; --kb-accent-soft: rgba(255, 207, 106, .16);
+  --kb-scrim: rgba(14, 6, 9, .74); --kb-focus: #9fe3ff;
+  --or-panel: rgba(255, 255, 255, .07); --or-line: rgba(255, 255, 255, .2); --or-card: linear-gradient(#37202a, #26151c);
+  --or-go: linear-gradient(#ffd86e, #eba02a); --or-go-shadow: #8a5a05; --or-good: #7be0a0; --or-bad: #ff8f80; --or-star: #ffcf6a;
+  --or-title: linear-gradient(90deg, #ffe6a5, #ffcf6a 50%, #ff9d7a);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f6ecdf; --kb-surface: #ffffff; --kb-surface-2: #efe0cc; --kb-sunken: #e2cfb6; --kb-line: #cdb090;
+    --kb-ink: #2c1a14; --kb-dim: #6b5046;
+    --kb-accent: #b8780a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5800; --kb-accent-soft: rgba(184, 120, 10, .12);
+    --kb-scrim: rgba(44, 26, 20, .45); --kb-focus: #1f6fbf;
+    --or-panel: rgba(44, 26, 20, .06); --or-line: #d4bb9c; --or-card: linear-gradient(#ffffff, #f3e6d3);
+    --or-go: linear-gradient(#d9962a, #b8780a); --or-go-shadow: #6e4500; --or-good: #2c8a52; --or-bad: #c2412a; --or-star: #b8780a;
+    --or-title: linear-gradient(90deg, #8a5800, #b8780a 50%, #a8494e);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f6ecdf; --kb-surface: #ffffff; --kb-surface-2: #efe0cc; --kb-sunken: #e2cfb6; --kb-line: #cdb090;
+  --kb-ink: #2c1a14; --kb-dim: #6b5046;
+  --kb-accent: #b8780a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5800; --kb-accent-soft: rgba(184, 120, 10, .12);
+  --kb-scrim: rgba(44, 26, 20, .45); --kb-focus: #1f6fbf;
+  --or-panel: rgba(44, 26, 20, .06); --or-line: #d4bb9c; --or-card: linear-gradient(#ffffff, #f3e6d3);
+  --or-go: linear-gradient(#d9962a, #b8780a); --or-go-shadow: #6e4500; --or-good: #2c8a52; --or-bad: #c2412a; --or-star: #b8780a;
+  --or-title: linear-gradient(90deg, #8a5800, #b8780a 50%, #a8494e);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+#stageWrap { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: var(--kb-sunken); }
+#board { position: absolute; left: 0; top: 0; display: block; touch-action: none; cursor: crosshair; }
+header { position: absolute; z-index: 6; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 4px; padding: 2px 4px; pointer-events: none; }
+header > * { pointer-events: auto; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--or-panel); border: 1px solid var(--or-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+.icon:active, .back:active { transform: scale(.94); }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: var(--or-panel); border: 1px solid var(--or-line); color: var(--kb-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+#pieceChip { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sp { flex: 1 1 auto; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+#hint { position: absolute; z-index: 7; left: 50%; top: 56px; transform: translateX(-50%); max-width: 92%; padding: 6px 12px; border-radius: 999px; background: var(--or-panel); backdrop-filter: blur(6px); border: 1px solid var(--or-line); color: var(--kb-ink); font: 800 12.5px var(--kb-font-body); text-align: center; pointer-events: none; }
+#toast { position: absolute; z-index: 7; left: 50%; top: 36%; transform: translate(-50%, -50%); max-width: 90%; padding: 8px 16px; border-radius: 16px; background: var(--kb-surface); border: 2px solid var(--kb-accent); color: var(--kb-ink); font: 800 clamp(15px, 4.4vmin, 22px) var(--kb-font-body); text-align: center; pointer-events: none; animation: pop .25s; }
+#toast.good { border-color: var(--or-good); } #toast.bad { border-color: var(--or-bad); }
+#chips { flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 5px 6px 5px; background: var(--kb-surface); border-top: 1px solid var(--or-line); min-height: 0; }
+.cuebtn { flex: 0 0 auto; position: relative; min-width: 42px; height: 42px; padding: 0 6px; border-radius: 12px; border: 2px solid var(--or-line); background: var(--or-panel); color: var(--kb-ink); font: 800 12px var(--kb-font-body); cursor: pointer; touch-action: manipulation; line-height: 1.05; }
+.cuebtn small { display: block; font-size: 9.5px; font-weight: 800; color: var(--kb-dim); }
+.cuebtn.cue { border-color: var(--kb-accent); background: var(--kb-accent-soft); animation: glow .6s infinite alternate; }
+.cuebtn.ok { border-color: var(--or-good); } .cuebtn.ng { border-color: var(--or-bad); }
+.cuebtn:active { transform: scale(.95); }
+@keyframes glow { to { box-shadow: 0 0 0 4px var(--kb-accent-soft); } }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.85); opacity: 0; } }
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; padding: calc(var(--kb-sat) + 6px) calc(var(--kb-sar) + 8px) calc(var(--kb-sab) + 6px) calc(var(--kb-sal) + 8px); overscroll-behavior: contain; animation: fade .2s; }
+.card { width: 100%; max-width: 480px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--or-card); border: 1px solid var(--or-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, .4); animation: rise .25s; color: var(--kb-ink); }
+.card.wide { max-width: 640px; }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 0 2px; }
+.card h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--or-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 30px; line-height: 1.25; }
+.card p { margin: 4px 0; font-size: 12.5px; line-height: 1.55; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 6px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--or-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 3px 0 var(--or-go-shadow); text-decoration: none; touch-action: manipulation; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--or-go-shadow); }
+.btn.sub { background: var(--or-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--or-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+@media (max-width: 380px) { .row2 { gap: 5px; } .row2 > .btn.sub { font-size: 12px; padding: 4px 3px; } }
+.diffs { display: flex; gap: 6px; margin: 6px 0 2px; }
+.dfb { flex: 1; min-width: 0; min-height: 44px; border-radius: 12px; border: 2px solid var(--or-line); background: var(--or-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); padding: 3px 4px; cursor: pointer; touch-action: manipulation; }
+.dfb.sel { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.rlist { display: grid; gap: 6px; margin: 6px 0; text-align: left; }
+.rc { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 58px; box-sizing: border-box; padding: 6px 10px; border-radius: 14px; border: 2px solid var(--or-line); background: var(--or-panel); color: var(--kb-ink); font-family: var(--kb-font-body); cursor: pointer; text-align: left; touch-action: manipulation; }
+.rc:active { transform: scale(.985); }
+.rc .no { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--lc, #a8494e); color: #fff; font-weight: 800; font-size: 13px; }
+.rc .tx { flex: 1; min-width: 0; } .rc .tx b { display: block; font-size: 13.5px; line-height: 1.3; } .rc .tx small { display: block; font-size: 11px; color: var(--kb-dim); line-height: 1.35; }
+.rc .sc { flex: none; text-align: right; font-size: 11px; color: var(--kb-dim); } .rc .sc .st { display: block; font-size: 15px; letter-spacing: 1px; color: var(--or-star); }
+.info { margin-top: 6px; padding: 8px; border-radius: 12px; background: var(--or-panel); border: 1px solid var(--or-line); text-align: left; font-size: 12px; line-height: 1.5; color: var(--kb-ink); }
+.stars { font-size: 34px; letter-spacing: 6px; color: var(--or-star); margin: 0; line-height: 1.2; }
+.stars i { font-style: normal; opacity: .28; } .stars i.on { opacity: 1; }
+.res { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0 2px; }
+.res div { padding: 6px 2px; border-radius: 12px; background: var(--or-panel); border: 1px solid var(--or-line); font-size: 10.5px; color: var(--kb-dim); font-weight: 800; }
+.res b { display: block; font-size: 18px; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.notes { margin: 6px 0; text-align: left; display: grid; gap: 4px; }
+.notes > div { padding: 6px 8px; border-radius: 10px; background: var(--or-panel); border: 1px solid var(--or-line); font-size: 12px; line-height: 1.4; }
+.big { font-size: 40px; font-weight: 800; color: var(--kb-ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.howto { max-width: 520px; text-align: left; } .howto h2 { text-align: center; }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); } .howto li { margin: 4px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--or-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--or-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.bar { height: 10px; border-radius: 6px; background: var(--or-panel); border: 1px solid var(--or-line); overflow: hidden; margin: 10px 0 4px; } .bar > i { display: block; height: 100%; width: 0; background: var(--or-go); transition: width .15s; }
+table.cr { width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: left; margin: 6px 0; } table.cr th { color: var(--kb-dim); font-weight: 800; padding: 3px 4px; border-bottom: 1px solid var(--or-line); }
+table.cr td { padding: 4px; border-bottom: 1px solid var(--or-line); vertical-align: top; } table.cr a { color: var(--kb-accent-text); }
+.setrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 2px; border-bottom: 1px solid var(--or-line); font-size: 13px; font-weight: 800; text-align: left; }
+.setrow small { display: block; color: var(--kb-dim); font-weight: 500; font-size: 11px; }
+.setrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--or-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+@keyframes rise { from { transform: translateY(12px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .card, .overlay, #toast, .cuebtn.cue { animation: none; } }
+@media (max-height: 560px) { #ovTitle .card > p:first-of-type { display: none; } .rlist { grid-template-columns: 1fr 1fr; } .card { padding: 10px 12px 8px; } .btn { min-height: 44px; margin-top: 6px; } .card h2.logo { font-size: 24px; } .rc { min-height: 52px; } }
+body.thumb header, body.thumb #chips, body.thumb #hint, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #toast { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stageWrap">
+    <canvas id="board" width="360" height="520" role="img" aria-label="指揮者ゲーム" data-i18n-attr="aria-label"></canvas>
+    <header>
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <span class="chip" id="pieceChip" data-i18n>指揮者ゲーム</span>
+      <span class="sp"></span>
+      <span class="chip" id="tempoChip" hidden>♩ 0</span>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド オン" aria-pressed="true"></button>
+      <button class="icon" id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg></button>
+    </header>
+    <div id="toast" hidden role="status"></div>
+    <div id="hint" hidden role="status"></div>
+  </div>
+  <div id="chips" role="group" aria-label="入りのキュー" data-i18n-attr="aria-label" hidden></div>
+</div>
+<div id="live" class="kb-sr" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-live="polite"></div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
+  <div class="card wide">
+    <h2 class="logo" id="tLogo" data-i18n>指揮者ゲーム</h2>
+    <p data-i18n>バトンを振って、本物のオーケストラを指揮しよう。拍でテンポを決め、振りの大きさで強弱を、入りのキューで楽器を呼び込む。</p>
+    <div class="diffs" id="diffs" role="radiogroup" aria-label="むずかしさ" data-i18n-attr="aria-label"></div>
+    <p id="diffInfo" style="min-height:2.6em"></p>
+    <div class="scroll"><div class="rlist" id="pList"></div></div>
+    <p id="tBest"></p>
+    <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><button class="btn sub" id="tCred" type="button" data-i18n>クレジット</button><button class="btn sub" id="tSet" type="button" data-i18n>設定</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovLoad" hidden role="dialog" aria-modal="true" aria-labelledby="lTitle">
+  <div class="card">
+    <h2 id="lTitle" data-i18n>読み込み中…</h2>
+    <p id="lPiece"></p>
+    <div class="bar"><i id="lBar"></i></div>
+    <p id="lInfo" data-i18n>楽器の音を読み込み中</p>
+    <button class="btn link" id="lCancel" type="button" data-i18n>もどる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card wide">
+    <h2 id="rTitle" data-i18n>フィナーレ！</h2>
+    <div class="scroll">
+      <p id="rPiece"></p>
+      <div class="big" id="rTotal">0</div>
+      <p class="stars" id="rStars" aria-hidden="true"></p>
+      <div id="rNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+      <div class="res" id="rRows"></div>
+      <div class="notes" id="rNotes"></div>
+    </div>
+    <button class="btn" id="rNext" type="button" data-i18n>次の曲へ</button>
+    <div class="row2"><button class="btn sub" id="rAgain" type="button" data-i18n>もう一度</button><button class="btn sub" id="rMenu" type="button" data-i18n>曲えらびへ</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovCred" hidden role="dialog" aria-modal="true" aria-labelledby="cTitle">
+  <div class="card wide">
+    <h2 id="cTitle" data-i18n>クレジット</h2>
+    <div class="scroll" id="cBody"></div>
+    <button class="btn" id="cClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovSet" hidden role="dialog" aria-modal="true" aria-labelledby="sTitle">
+  <div class="card">
+    <h2 id="sTitle" data-i18n>設定</h2>
+    <div class="scroll">
+      <div class="setrow"><label for="qualSel"><span data-i18n>音質</span><small data-i18n>軽量：メモリを半分ほどにします（スマホ向け）</small></label><select id="qualSel"><option value="auto" data-i18n>自動</option><option value="hi" data-i18n>高音質</option><option value="lo" data-i18n>軽量</option></select></div>
+      <div class="setrow"><label for="motionChk" data-i18n>スマホを傾けて指揮（動きセンサー）</label><input type="checkbox" id="motionChk" style="width:28px;height:28px"></div>
+      <p data-i18n>音質を変えるときは、曲をえらび直してください</p>
+    </div>
+    <button class="btn" id="sClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<script src="midi.js"></script>
+<script src="engine.js"></script>
+<script src="sampler.js"></script>
+<script src="art.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// 指揮者ゲーム — you conduct a sampled orchestra (VSCO 2 CE, CC0) playing public-domain scores (Mutopia). orchestra/engine.js is the headless rules and clock
+// (tested in tools/tests/unit/orchestra-*.test.js), sampler.js is the Web Audio sound, art.js draws the stage; this file is the chrome: input, menus, saving.
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const E = window.OrchEngine, S = window.OrchSampler, ART = window.OrchArt;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'orchestra';
+const SAVE_KEY = 'kusoge.orchestra.save', HOWTO_KEY = 'kusoge.orchestra.howto', PREF_KEY = 'kusoge.orchestra.prefs';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const L = o => (o ? (EN ? o.en : o.ja) : '');
+const clamp = E.clamp;
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const perfNow = () => performance.now() / 1000;
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+const dark = () => { try { return (UI && UI.theme ? UI.theme.resolved() : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark'; } catch (e) { return true; } };
+const DIFF_IDS = ['enjoy', 'normal', 'maestro'];
+const starsStr = n => '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n);
+
+// ---------- save ----------
+// { v:1, total (sum of the best score of every piece, best difficulty), stars, p:{ <piece>:{ b0,s0 (enjoy), b1,s1 (normal), b2,s2 (maestro), n (plays) } }, stats:{...}, set:{ diff, piece }, tut }
+function defSave() { return { v: 1, total: 0, stars: 0, p: {}, stats: { plays: 0, finishes: 0, cues: 0, perfect: 0, beats: 0, three: 0 }, set: { diff: 'normal', piece: '' }, tut: 0 }; }
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const d = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
+  const obj = x => x && typeof x === 'object' && !Array.isArray(x) ? x : {};
+  const out = Object.assign(d, s);
+  out.stats = Object.assign(defSave().stats, obj(s.stats)); out.set = Object.assign(defSave().set, obj(s.set));
+  if (!DIFF_IDS.includes(out.set.diff)) out.set.diff = 'normal';
+  out.p = {};
+  Object.keys(obj(s.p)).forEach(id => {
+    const q = obj(s.p[id]), r = { n: Math.max(0, Number(q.n) || 0) };
+    [0, 1, 2].forEach(i => { r['b' + i] = Math.max(0, Math.min(100, Number(q['b' + i]) || 0)); r['s' + i] = clamp(Math.round(Number(q['s' + i]) || 0), 0, 3); });
+    out.p[id] = r;
+  });
+  recount(out);
+  return out;
+}
+function bestOf(p) { return p ? Math.max(p.b1 || 0, p.b2 || 0, p.b0 || 0) : 0; }
+function recount(s) {
+  let t = 0, st = 0; for (const id in s.p) { const p = s.p[id]; t += bestOf(p); st += Math.max(p.s0, p.s1, p.s2); }
+  s.total = Math.max(t, Number(s.total) || 0); s.stars = Math.max(st, Number(s.stars) || 0);
+}
+let save = readSave();
+function writeSave() { recount(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+let prefs = (() => { try { const p = JSON.parse(store.get(PREF_KEY) || '{}'); return { quality: ['auto', 'hi', 'lo'].includes(p.quality) ? p.quality : 'auto', motion: !!p.motion }; } catch (e) { return { quality: 'auto', motion: false }; } })();
+function writePrefs() { store.set(PREF_KEY, JSON.stringify(prefs)); }
+
+// ---------- state ----------
+let INDEX = null, curDiff = save.set.diff, selPiece = save.set.piece || '';
+let G = null;            // the running piece: { id, score, session, player, bank, ctx, diff, ... }
+let loading = null;      // abort flag while loading
+let paused = false, menuOpen = false;
+const base = new URL('./', location.href).href;
+const tierOf = () => {
+  if (prefs.quality === 'hi') return 'hi'; if (prefs.quality === 'lo') return 'lo';
+  const ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const mem = navigator.deviceMemory || 8;
+  return ios || mem <= 2 || /Android/.test(ua) && mem <= 4 ? 'lo' : 'hi';
+};
+
+// ---------- canvas ----------
+const canvas = $('board'), wrap = $('stageWrap');
+const art = ART.create(canvas, { dark: dark(), en: EN, reduced: reduceMotion.matches, T });
+function fit() {
+  const r = wrap.getBoundingClientRect(); art.resize(r.width, r.height); if (G) art.layout(G.score.sections); if (detector) detector.setScale(art.scale); if (flick) flick.setScale(art.scale); needDraw = true;
+}
+let needDraw = true;
+if (window.ResizeObserver) new ResizeObserver(() => fit()).observe(wrap); addEventListener('resize', fit);
+
+// ---------- overlays ----------
+function showOv(id) { for (const o of document.querySelectorAll('.overlay')) o.hidden = o.id !== id; const f = $(id).querySelector('.btn:not(.sub):not(.link)'); try { if (f) f.focus({ preventScroll: true }); } catch (e) {} }
+function hideOv(id) { $(id).hidden = true; }
+function hideAll() { for (const o of document.querySelectorAll('.overlay')) o.hidden = true; }
+const anyOverlay = () => !!document.querySelector('.overlay:not([hidden])');
+function toast(msg, cls, ms) { const t = $('toast'); t.textContent = msg; t.className = cls || ''; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, ms || 1100); $('live').textContent = msg; }
+function hint(msg) { const h = $('hint'); if (msg) { h.textContent = msg; h.hidden = false; } else h.hidden = true; }
+
+// ---------- title ----------
+function pieceTitle(p) { return L(p.title); }
+function renderDiffs() {
+  const box = $('diffs'); box.innerHTML = '';
+  const names = { enjoy: T('たのしむ'), normal: T('ふつう'), maestro: T('マエストロ') };
+  DIFF_IDS.forEach(id => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'dfb' + (id === curDiff ? ' sel' : ''); b.textContent = names[id]; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', id === curDiff ? 'true' : 'false'); b.dataset.diff = id;
+    b.onclick = () => { curDiff = id; save.set.diff = id; writeSave(); renderDiffs(); renderPieces(); };
+    box.appendChild(b);
+  });
+  $('diffInfo').textContent = T({ enjoy: 'たのしむ：入りは自動、失敗なし。ゆったり指揮を楽しむ', normal: 'ふつう：入りのキューと強弱を見られる', maestro: 'マエストロ：きびしい採点。振らないとオーケストラは待つ' }[curDiff]);
+}
+const patName = n => T({ 1: '1つ振り', 2: '2つ振り', 3: '3つ振り', 4: '4つ振り' }[n] || '2つ振り');
+function renderPieces() {
+  const box = $('pList'); box.innerHTML = '';
+  if (!INDEX) { box.innerHTML = '<p>' + esc(T('読み込み中…')) + '</p>'; return; }
+  const di = DIFF_IDS.indexOf(curDiff);
+  INDEX.pieces.forEach((p, i) => {
+    const sv = save.p[p.id] || {}, st = sv['s' + di] || 0, b = sv['b' + di] || 0;
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'rc'; btn.dataset.piece = p.id; btn.style.setProperty('--lc', 'hsl(' + (350 + i * 38) % 360 + ',55%,42%)');
+    btn.innerHTML = '<span class="no">' + (i + 1) + '</span><span class="tx"><b>' + esc(L(p.title)) + '</b><small>' + esc(L(p.composer)) + ' · ' + esc(L(p.mvt)) + '</small><small>' + esc(T('{n} 分', { n: Math.round(p.minutes * 10) / 10 })) + ' · ' + esc(patName(p.pattern)) + ' · ' + '●'.repeat(p.level) + '○'.repeat(3 - p.level) + '</small></span>' +
+      '<span class="sc"><span class="st">' + starsStr(st) + '</span>' + (b ? esc(T('ベスト {n} 点', { n: b })) : esc(T('まだ記録なし'))) + '</span>';
+    btn.onclick = () => startPiece(p.id);
+    btn.setAttribute('aria-label', L(p.title) + ', ' + L(p.composer));
+    box.appendChild(btn);
+  });
+  $('tBest').textContent = save.stats.plays > 0 ? T('合計 ★ {n}', { n: save.stars }) : T('まだ記録はありません');
+}
+function showTitle() {
+  stopPlay(); layoutDemo(); hideAll(); $('pauseBtn').hidden = true; $('chips').hidden = true; $('tempoChip').hidden = true; hint(''); $('toast').hidden = true;
+  $('pieceChip').textContent = T('指揮者ゲーム'); renderDiffs(); renderPieces(); showOv('ovTitle'); fit();
+}
+async function loadIndex() {
+  try { const r = await fetch('scores/index.json'); INDEX = await r.json(); } catch (e) { INDEX = null; }
+  if (INDEX) INDEX.pieces.forEach(p => { p.pattern = p.pattern || 0; });
+  renderPieces();
+}
+
+// ---------- starting a piece ----------
+async function startPiece(id) {
+  if (loading) return;
+  if (AU) AU.ctx(); // inside the tap: creates and resumes the shared AudioContext
+  const meta = INDEX.pieces.find(p => p.id === id); if (!meta) return;
+  const tok = loading = { cancelled: false };
+  save.set.piece = id; selPiece = id; writeSave();
+  $('lPiece').textContent = L(meta.title) + ' — ' + L(meta.composer); $('lBar').style.width = '0%'; $('lInfo').textContent = T('楽器の音を読み込み中'); showOv('ovLoad');
+  $('lCancel').onclick = () => { tok.cancelled = true; };
+  try {
+    const r = await fetch('scores/' + id + '.json' + (INDEX.build ? '?b=' + INDEX.build : '')); if (!r.ok) throw new Error('score ' + r.status);
+    const json = await r.json(), score = new E.Score(json);
+    const ctx = AU ? AU.ctx() : null; if (!ctx) throw new Error('no audio');
+    const tier = tierOf(), bank = new S.Bank({ ctx, base: base + 'samples/', tier });
+    bank.onError = e => { if (DEBUG) console.warn('sample', e && e.message); };
+    await bank.load(json.needs, E.artFor, (a, b) => { if (tok.cancelled) return; $('lBar').style.width = Math.round(100 * a / b) + '%'; $('lInfo').textContent = T('{a} / {b} 個（{m} MB）', { a, b, m: (bank.bytes / 1048576).toFixed(0) }); });
+    if (tok.cancelled) { loading = null; showTitle(); return; }
+    loading = null;
+    beginPlay(id, score, ctx, bank, tier);
+  } catch (e) {
+    loading = null; if (DEBUG) console.warn(e);
+    $('lInfo').textContent = T('読み込めませんでした。通信を確かめて、もう一度。'); $('lCancel').textContent = T('もどる'); $('lCancel').onclick = () => { showTitle(); };
+  }
+}
+
+// ---------- the play loop ----------
+const secKeys = {};
+let detector = null, flick = null; let trail = [], hist = [], kbLevel = 0.5, actQ = [], lastAct = {}, flash = {}, cueSeen = new Set(), tickTimer = 0, raf = 0, lastTapAt = 0, pointer = null, motion = null, lvSmooth = 0.45;
+const nowT = () => (G && G.ctx ? G.ctx.currentTime : perfNow());
+const toCtx = ms => (G && G.ctx ? G.ctx.currentTime - (performance.now() - ms) / 1000 : ms / 1000);
+
+function beginPlay(id, score, ctx, bank, tier) {
+  stopPlay();
+  const out = AU && AU.se ? AU.se : ctx.destination;
+  const secs = score.sections.map(s => ({ id: s.id, inst: s.inst, pan: s.def.pan, back: s.def.back, mix: s.def.mix }));
+  const player = new S.Player({ ctx, out, bank, sections: secs, artFor: E.artFor, maxVoices: tier === 'lo' ? 48 : 72 });
+  const act = {}; // what to draw: note-on events as they come due
+  const sink = {
+    noteOn(t, si, p, sh, g, nid, vel, ev) { actQ.push([t, score.sections[si].id, sh]); return player.noteOn(t, si, p, sh, g, nid, vel); },
+    noteOff(t, nid) { return player.noteOff(t, nid); },
+    maintain(u) { return player.maintain(u); }, setLevel(l, t) { return player.setLevel(l, t); }, releaseAll(t, r) { return player.releaseAll(t, r); },
+  };
+  const diff = E.DIFFS[curDiff];
+  const session = new E.Session({ score, diff, sink, now: nowT });
+  G = { id, score, ctx, bank, player, session, diff, tier, meta: INDEX.pieces.find(p => p.id === id), reported: false, startedAt: perfNow(), ended: false, shown: false, beats: 0, hist: [] };
+  kbLevel = 0.5; lvSmooth = 0.45; session.level = 0.45; trail = []; hist = new Array(score.nBeats).fill(null); actQ = []; lastAct = {}; flash = {}; cueSeen = new Set(); paused = false; menuOpen = false;
+  detector = new E.BeatDetector({ scale: art.scale }); flick = new E.FlickDetector({ scale: art.scale });
+  art.layout(score.sections); buildChips(score); hideAll();
+  $('pieceChip').textContent = L(G.meta.title); $('pauseBtn').hidden = false; $('chips').hidden = false; $('tempoChip').hidden = false;
+  fit();
+  if (prefs.motion) enableMotion();
+  hint(T('音が出ないときは画面をタップ')); setTimeout(() => { if (G && G.session.state !== 'idle') hint(''); }, 4500);
+  emit('play_start', { mode: 'normal', stage: INDEX.pieces.findIndex(p => p.id === id) + 1, resumed: false });
+  save.stats.plays++; const sv = save.p[id] = save.p[id] || { n: 0, b0: 0, s0: 0, b1: 0, s1: 0, b2: 0, s2: 0 }; sv.n++; writeSave();
+  clearInterval(tickTimer); tickTimer = setInterval(tick, 25);
+  cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+  needDraw = true;
+}
+function stopPlay() {
+  clearInterval(tickTimer); cancelAnimationFrame(raf); tickTimer = 0;
+  if (G) {
+    if (!G.reported && G.session.state !== 'idle' && !G.ended) { G.reported = true; emit('play_end', { mode: 'normal', score: 0, durationMs: Math.round((perfNow() - G.startedAt) * 1000), reason: 'quit', stats: {} }); }
+    try { G.player.dispose(); } catch (e) {} disableMotion(); G = null;
+  }
+}
+function buildChips(score) {
+  const box = $('chips'); box.innerHTML = ''; Object.keys(secKeys).forEach(k => delete secKeys[k]);
+  score.sections.forEach((s, i) => {
+    secKeys[s.id] = E.KEYS[i];
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'cuebtn'; b.dataset.sec = s.id;
+    b.innerHTML = esc(E.KEYS[i].toUpperCase()) + '<small>' + esc(EN ? s.def.ab.en : s.def.ab.ja) + '</small>';
+    b.setAttribute('aria-label', (EN ? s.def.en : s.def.ja) + ' (' + E.KEYS[i].toUpperCase() + ')');
+    b.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); giveCue(s.id, toCtx(ev.timeStamp)); });
+    box.appendChild(b);
+  });
+  fitSoon();
+}
+let fitT = 0; function fitSoon() { clearTimeout(fitT); fitT = setTimeout(fit, 30); }
+
+function giveCue(secId, t) {
+  if (!G || paused) return;
+  if (AU) AU.ctx();
+  const r = G.session.cue(secId, t);
+  if (!r) { flash[secId] = { kind: 'bad', t: nowT() }; toast(T('ちがう楽器'), 'bad', 700); return; }
+  const secs = r.cue.secs; secs.forEach(s => { flash[s] = { kind: r.q >= 0.45 ? 'good' : 'bad', t: nowT() }; });
+  toast(r.q >= 0.85 ? T('ばっちり！') : r.rel > 2.6 ? T('ちょっと早い') : T('ちょっと遅い'), r.q >= 0.85 ? 'good' : '', 800);
+}
+function levelFromStroke(amp, speed) {
+  const size = clamp((amp - 0.06) / (0.42 - 0.06), 0, 1), spd = clamp((speed - 0.25) / (2.8 - 0.25), 0, 1);
+  return 0.05 + 0.95 * Math.pow(0.65 * size + 0.35 * spd, 0.9);
+}
+function onIctus(ev, viaKey) {
+  if (!G || paused || G.session.state === 'ended') return;
+  if (AU) AU.ctx();
+  let lv;
+  if (viaKey) lv = kbLevel; else lv = levelFromStroke(ev.amp, ev.speed || 0);
+  lvSmooth = viaKey ? lv : 0.45 * lvSmooth + 0.55 * lv;
+  const t = ev.t;
+  const r = G.session.ictus(t, { level: lvSmooth });
+  if (r.kind !== 'stray' && r.kind !== 'ignored') G.beats++;
+  if (r.kind === 'prep') hint(T('もう1回'));
+  if (r.kind === 'start') hint('');
+  needDraw = true;
+}
+
+// pointer = the baton
+function pt(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function pushPoint(e) {
+  const p = pt(e), t = toCtx(e.timeStamp);
+  trail.push({ x: p.x, y: p.y, t: nowT() }); if (trail.length > 60) trail.shift();
+  detector.push(p.x, p.y, t).forEach(ev => onIctus(ev, false)); flick.push(p.x, p.y, t);
+}
+canvas.addEventListener('pointermove', e => {
+  if (!G || paused || anyOverlay() || menuOpen) return;
+  if (e.pointerType !== 'mouse' && !pointer) return;
+  const list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+  if (list && list.length > 1) list.forEach(pushPoint); else pushPoint(e);
+});
+canvas.addEventListener('pointerdown', e => {
+  if (!G || paused || anyOverlay() || menuOpen) return;
+  if (AU) AU.ctx();
+  try { canvas.setPointerCapture(e.pointerId); } catch (x) {}
+  const p = pt(e); pointer = { id: e.pointerId, x: p.x, y: p.y, t: performance.now(), moved: 0 };
+  flick.reset(); flick.push(p.x, p.y, toCtx(e.timeStamp));
+  if (e.pointerType !== 'mouse') { detector.reset(); pushPoint(e); }
+  e.preventDefault();
+});
+canvas.addEventListener('pointerup', e => {
+  if (!G || !pointer) { pointer = null; return; }
+  const p = pt(e), dur = performance.now() - pointer.t, dist = Math.hypot(p.x - pointer.x, p.y - pointer.y); pointer = null;
+  if (paused || anyOverlay() || menuOpen) return;
+  if (dist < 12 && dur < 320) {
+    const sec = art.hit(p.x, p.y);
+    if (sec && G.session.state !== 'idle') { giveCue(sec, toCtx(e.timeStamp)); return; }
+    if (e.pointerType !== 'mouse') { onIctus({ t: toCtx(e.timeStamp), amp: 0.2, speed: 1 }, false); } // a tap on empty stage is a beat
+    return;
+  }
+  const fl = flick.check();
+  if (fl) { const prefer = new Set(); G.session.upcoming(nowT(), 5).forEach(u => { if (!u.done) u.secs.forEach(x => prefer.add(x)); });
+    const seat = E.aimedSeat(art.seatList().filter(s => G.score.secIndex[s.id] != null), fl, 15, prefer); if (seat) giveCue(seat.id, toCtx(e.timeStamp)); }
+});
+canvas.addEventListener('pointercancel', () => { pointer = null; });
+// keyboard: Space / Enter / ← → = beat, ↑ ↓ = volume, 1-9,0,Q… = cue, P / Esc = pause
+const BEAT_KEYS = ['Space', 'Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowRight'];
+addEventListener('keydown', e => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
+  if (!G || anyOverlay() || menuOpen) return;
+  const c = e.code;
+  if (c === 'KeyP' && !e.repeat) { e.preventDefault(); openMenu(); return; }
+  if (paused) return;
+  if (BEAT_KEYS.includes(c)) { e.preventDefault(); if (e.repeat) return; onIctus({ t: toCtx(e.timeStamp), amp: 0.2, speed: 1 }, true); return; }
+  if (c === 'ArrowUp' || c === 'ArrowDown') { e.preventDefault(); kbLevel = clamp(kbLevel + (c === 'ArrowUp' ? 0.07 : -0.07), 0.05, 1); lvSmooth = kbLevel; G.session.level = kbLevel; needDraw = true; return; }
+  const k = (e.key || '').toLowerCase(), i = E.KEYS.indexOf(k);
+  if (i >= 0 && i < G.score.sections.length && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); giveCue(G.score.sections[i].id, toCtx(e.timeStamp)); }
+}, { capture: true });
+
+// phone motion (optional, unverified on real devices: the tests feed synthetic samples)
+function enableMotion() {
+  if (motion || !window.DeviceMotionEvent) return;
+  const go = () => {
+    motion = { det: new E.MotionDetector(), h(ev) { const a = ev.accelerationIncludingGravity; if (!a || !G || paused) return; motion.det.push(a.x || 0, a.y || 0, a.z || 0, toCtx(ev.timeStamp)).forEach(x => onIctus(x, false)); } };
+    addEventListener('devicemotion', motion.h);
+  };
+  try {
+    if (typeof DeviceMotionEvent.requestPermission === 'function') DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') go(); }).catch(() => {});
+    else go();
+  } catch (e) {}
+}
+function disableMotion() { if (motion) { removeEventListener('devicemotion', motion.h); motion = null; } }
+
+function tick() {
+  if (!G) return;
+  const now = nowT();
+  if (G.ctx && G.ctx.state === 'suspended' && !paused && AU) { try { AU.resume(); } catch (e) {} }
+  G.session.tick(now);
+  if (G.session.state === 'ended' && !G.shown) finish();
+}
+function frame() {
+  raf = requestAnimationFrame(frame);
+  if (!G) return;
+  const now = nowT(), s = G.session, snap = s.snapshot(now), score = G.score;
+  // what to draw
+  while (actQ.length && actQ[0][0] <= now) { const a = actQ.shift(); lastAct[a[1]] = { t: now, strong: !a[2] }; }
+  const act = {}; for (const id in lastAct) { const k = Math.exp(-(now - lastAct[id].t) * 4.5); if (k > 0.03) act[id] = k; }
+  // cue glows
+  const glow = {}, ups = s.upcoming(now, 6.5), cueIds = new Set();
+  ups.forEach(u => { if (u.done) return; u.secs.forEach(sec => { glow[sec] = { kind: 'cue', k: clamp(u.rel / 4, 0, 1), rel: u.rel }; cueIds.add(sec); }); });
+  for (const id in flash) { const a = now - flash[id].t; if (a > 0.9) delete flash[id]; else glow[id] = { kind: flash[id].kind, k: 1 - a / 0.9 }; }
+  // missed entrances
+  s.scorer.cues.forEach((c, i) => { if (c.q == null && c.b - snap.pos < -0.4 && !cueSeen.has(i) && snap.state === 'playing' && !G.diff.autoCue) { cueSeen.add(i); c.secs.forEach(sec => { flash[sec] = { kind: 'bad', t: now }; }); toast(T('入りそこねた'), 'bad', 1300); } });
+  s.cueFlash.splice(0).forEach(f => { if (f.auto) f.secs.forEach(sec => { flash[sec] = { kind: 'good', t: now }; }); });
+  document.querySelectorAll('.cuebtn').forEach(b => { const id = b.dataset.sec; b.classList.toggle('cue', cueIds.has(id)); const f = flash[id]; b.classList.toggle('ok', !!f && f.kind === 'good'); b.classList.toggle('ng', !!f && f.kind === 'bad'); });
+  if (snap.state === 'playing' && snap.beat >= 0 && snap.beat < hist.length) hist[snap.beat] = s.level;
+  if (snap.state === 'playing') { if (snap.held && !G.heldHint) { G.heldHint = true; hint(T('オーケストラが待っています')); } else if (!snap.held && G.heldHint) { G.heldHint = false; hint(''); } }
+  const total = score.guideSeconds(), cur = snap.progress * total;
+  const mm = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+  const stt = {
+    now, dark: dark(), act, glow, keys: secKeys, level: s.level, target: snap.target, mark: snap.mark, pattern: snap.pattern, beatInBar: snap.beatInBar, tol: G.diff.tol,
+    trail, dyn: score.dyn, hist, cues: s.scorer.cues.map(c => ({ b: c.b, secs: c.secs, q: c.q })), pos: snap.pos, secHue: Object.fromEntries(score.sections.map(x => [x.id, x.def.hue])),
+    barText: T('小節 {n}', { n: snap.bar }) + ' · ' + snap.mark, timeText: mm(cur) + ' / ' + mm(total), silhouette: true,
+    msg: snap.state === 'idle' ? T('2回振ってスタート\n1回目で構え、2回目でテンポが決まる') : snap.state === 'armed' ? T('もう1回') : paused ? T('一時停止中') : '',
+  };
+  if (stt.msg && snap.state === 'armed') stt.msg = T('もう1回');
+  art.setCfg({ dark: stt.dark }); art.draw(stt);
+  $('tempoChip').textContent = '♩ ' + Math.round(snap.bpm || 0) + (snap.guideBpm ? ' / ' + Math.round(snap.guideBpm) : '');
+}
+
+// ---------- finishing ----------
+function finish() {
+  if (!G || G.shown) return; G.shown = true; G.ended = true;
+  const res = G.session.result(), id = G.id, di = DIFF_IDS.indexOf(G.diff.id);
+  const sv = save.p[id] = save.p[id] || { n: 0, b0: 0, s0: 0, b1: 0, s1: 0, b2: 0, s2: 0 };
+  const prevBest = bestOf(sv), isBest = res.total > prevBest;
+  if (res.total > sv['b' + di]) sv['b' + di] = res.total; if (res.stars > sv['s' + di]) sv['s' + di] = res.stars;
+  save.stats.finishes++; save.stats.cues += res.stats.cues; save.stats.perfect += res.stats.perfect; save.stats.beats += res.stats.ictus; if (res.stars === 3) save.stats.three++;
+  const beforeTotal = save.total; writeSave();
+  try { G.player.hall.fadeOut(1.6); } catch (e) {}
+  G.reported = true;
+  emit('stage_clear', { stage: INDEX.pieces.findIndex(p => p.id === id) + 1, stars: res.stars, timeMs: Math.round((perfNow() - G.startedAt) * 1000), mode: 'normal' });
+  if (isBest) emit('best', { score: save.total });
+  emit('progress', { key: 'stars', value: save.stars });
+  emit('play_end', { mode: 'normal', score: res.total, durationMs: Math.round((perfNow() - G.startedAt) * 1000), reason: 'clear', stage: INDEX.pieces.findIndex(p => p.id === id) + 1, stats: { stars: res.stars } });
+  G.result = res;
+  setTimeout(() => showResult(res, isBest), 1500);
+}
+function showResult(res, isBest) {
+  if (!G) return;
+  $('pauseBtn').hidden = true; hint('');
+  $('rTitle').textContent = res.stars >= 2 ? T('フィナーレ！') : T('おつかれさま！'); $('rPiece').textContent = L(G.meta.title) + ' · ' + L(G.meta.composer);
+  $('rTotal').textContent = String(res.total); $('rStars').innerHTML = [1, 2, 3].map(i => '<i class="' + (i <= res.stars ? 'on' : '') + '">★</i>').join('');
+  $('rNew').hidden = !isBest;
+  const cueTxt = res.cueCount && G.diff.cueWeight ? res.cues : '—';
+  $('rRows').innerHTML = '<div>' + esc(T('テンポの安定')) + '<b>' + res.tempo + '</b></div><div>' + esc(T('強弱')) + '<b>' + res.dynamics + '</b></div><div>' + esc(T('入り（キュー）')) + '<b>' + cueTxt + '</b></div>';
+  const notes = [];
+  if (res.avgRatio < 0.6 || res.avgRatio > 1.7) notes.push(T('テンポが速すぎ／遅すぎ'));
+  if (res.bias > 0.14) notes.push(T('強弱が全体に強め')); else if (res.bias < -0.14) notes.push(T('強弱が全体に弱め'));
+  if (res.coverage < 0.7) notes.push(T('もう少しはっきり振ると、拍が伝わります')); else if (res.steady >= 85) notes.push(T('安定して振れました'));
+  if (G.diff.autoCue) notes.push(T('たのしむモードは入りが自動です')); else if (res.cueCount && res.cues < 60) notes.push(T('入りを忘れずに'));
+  notes.push(T('入りの成功') + ': ' + res.stats.cues + ' / ' + res.cueCount + ' · ' + T('振った拍の数') + ': ' + res.stats.ictus);
+  $('rNotes').innerHTML = notes.map(n => '<div>' + esc(n) + '</div>').join('');
+  const i = INDEX.pieces.findIndex(p => p.id === G.id); $('rNext').hidden = i >= INDEX.pieces.length - 1;
+  showOv('ovResult');
+}
+$('rAgain').onclick = () => { const id = G ? G.id : selPiece; startPiece(id); };
+$('rMenu').onclick = () => showTitle();
+$('rNext').onclick = () => { const i = INDEX.pieces.findIndex(p => p.id === (G ? G.id : selPiece)); if (INDEX.pieces[i + 1]) startPiece(INDEX.pieces[i + 1].id); };
+
+// ---------- pause / menu ----------
+function doPause() { if (!G || paused) return; paused = true; G.session.pause(nowT()); pointer = null; needDraw = true; }
+function doResume() { if (!G || !paused) return; paused = false; G.session.resume(nowT()); if (G.ctx && G.ctx.state === 'suspended' && AU) AU.resume(); }
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); menuOpen = false; showHowto(false); } }];
+  extra.push({ label: T('この曲をやめる'), icon: 'menu', onClick: () => { pm.close(); menuOpen = false; const g = KG(); if (g) g.menuClosed(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T('一時停止'), home: '../', extra,
+    onResume: () => { menuOpen = false; const g = KG(); if (g) g.menuClosed(); doResume(); },
+    onRestart: () => { menuOpen = false; const id = G.id; const g = KG(); if (g) g.menuClosed(); startPiece(id); },
+    onOpen: () => { menuOpen = true; doPause(); const g = KG(); if (g) g.menuOpened(); },
+  });
+  pm.open();
+}
+$('pauseBtn').onclick = () => openMenu();
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause() { doPause(); },
+  resume(reason) { if (!paused) return; if (reason !== 'menu' && G && G.session.state !== 'ended' && !anyOverlay() && !menuOpen) { openMenu(); return; } if (!menuOpen) doResume(); },
+  isIdle: () => !G || G.session.state === 'idle' || G.session.state === 'ended',
+  dispose() { stopPlay(); },
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.session.state !== 'ended' && !paused) { /* KoboGame pauses; keep a fallback for pages without it */ if (!KG()) doPause(); } });
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(() => { art.setCfg({ dark: dark() }); const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark() ? '#1b1015' : '#f6ecdf'); needDraw = true; }, 0));
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) { save = readSave(); curDiff = save.set.diff; if (!$('ovTitle').hidden) { renderDiffs(); renderPieces(); } } });
+
+// ---------- how to, credits, settings ----------
+function renderHowto() {
+  const items = [
+    'マウスは動かすだけ、スマホは指でなぞります。下に振っては戻す動きが「1拍」。左右に振ってもOK。',
+    '最初の2回の拍でテンポが決まり、曲がはじまります。あとは拍の間隔がそのままテンポになります。',
+    '大きく速く振ると大きな音、小さく振ると小さな音。右の目盛りのしるし（めあて）に合わせよう。',
+    '入り：光った楽器をタップ（指揮台からそちらへスワイプ、数字キーも）。少し前に出すのがコツ。',
+    'キーボード：Space / Enter / ← → で拍、↑ ↓ で強弱、数字キーで入り、P で一時停止。',
+    '拍をとりこぼすと、ふつう・マエストロではオーケストラが待ってしまいます。',
+    '音は本物の楽器を録音したもの（VSCO 2 CE, CC0）。曲は著作権の切れた楽譜（Mutopia, パブリックドメイン）です。',
+  ];
+  $('howBody').innerHTML = '<ul>' + items.map(s => '<li>' + esc(T(s)) + '</li>').join('') + '</ul>';
+}
+let howtoFirst = false;
+function showHowto(first) { howtoFirst = !!first; renderHowto(); $('howtoGo').textContent = T(first ? 'やってみる' : 'とじる'); $('howtoAlt').hidden = !first; showOv('howto'); }
+$('howtoGo').onclick = () => { store.set(HOWTO_KEY, '1'); if (howtoFirst || !G) showTitle(); else hideOv('howto'); };
+$('howtoAlt').onclick = () => { store.set(HOWTO_KEY, '1'); showTitle(); };
+$('tHow').onclick = () => showHowto(false);
+{ const s2 = KoboI18n.picker($('langPick')); if (s2) s2.id = 'langSel'; }
+function showCredits() {
+  const rows = (INDEX ? INDEX.pieces : []).map(p => '<tr><td>' + esc(L(p.composer)) + '</td><td>' + esc(L(p.title)) + '<br><small>' + esc(L(p.mvt)) + '</small></td><td><a href="https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=' + p.src.mutopia + '" target="_blank" rel="noopener">Mutopia #' + p.src.mutopia + '</a><br><small>' + esc(T('パブリックドメイン')) + '</small></td></tr>').join('');
+  $('cBody').innerHTML = '<p><b>' + esc(T('音源')) + '</b><br>' + esc(T('オーケストラの音は VSCO 2 Community Edition（Sam Gossner / Versilian Studios、CC0 1.0）の録音を切り出して使っています。')) + ' <a href="https://github.com/sgossner/VSCO-2-CE" target="_blank" rel="noopener" style="color:var(--kb-accent-text)">github.com/sgossner/VSCO-2-CE</a></p>' +
+    '<p><b>' + esc(T('楽譜')) + '</b><br>' + esc(T('楽譜データは Mutopia Project の MIDI（パブリックドメイン。各曲のページで確認済み）から作っています。MIDI は楽譜の機械的な書き出しで、演奏の録音ではありません。')) + ' ' + esc(T('強弱の目安は楽譜の音の数や強さから自動で作った簡易版です。')) + '</p>' +
+    '<table class="cr"><thead><tr><th>' + esc(T('作曲者')) + '</th><th>' + esc(T('曲')) + '</th><th>' + esc(T('出典')) + ' / ' + esc(T('ライセンス')) + '</th></tr></thead><tbody>' + rows + '</tbody></table><p>' + esc(T('独自の絵・コードです。実在の人物の絵はありません。')) + '</p>';
+  showOv('ovCred');
+}
+$('tCred').onclick = showCredits; $('cClose').onclick = () => showTitle();
+$('tSet').onclick = () => { $('qualSel').value = prefs.quality; $('motionChk').checked = prefs.motion; $('motionChk').parentElement.hidden = !window.DeviceMotionEvent; showOv('ovSet'); };
+$('qualSel').onchange = e => { prefs.quality = e.target.value; writePrefs(); };
+$('motionChk').onchange = e => { prefs.motion = e.target.checked; writePrefs(); };
+$('sClose').onclick = () => showTitle();
+
+// sound button
+function renderSound() {
+  const b = $('sndBtn'), on = !(AU && AU.muted);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', T(on ? 'サウンド オン' : 'サウンド オフ'));
+  b.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!AU) b.hidden = true;
+}
+$('sndBtn').onclick = () => { if (AU) AU.toggleMute(); };
+if (AU) AU.onChange(renderSound);
+
+// ---------- boot ----------
+renderSound(); fit();
+let booted = false;
+const launch = PF ? PF.launch() : {};
+loadIndex().then(() => { if (store.get(HOWTO_KEY) == null && !save.stats.plays) showHowto(true); else showTitle(); booted = true; });
+// the empty stage behind the title (and the thumbnail scene): every section lively, a baton trail, two glowing cues
+let thumbMode = false;
+function demoState(now) {
+  const act = {}, glow = {}, ids = ['vln1', 'vln2', 'vla', 'vc', 'cb', 'fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'timp'];
+  ids.forEach((id, i) => { act[id] = thumbMode ? 0.55 + 0.35 * Math.sin(i * 1.7 + 1) : 0; });
+  if (thumbMode) { glow.ob = { kind: 'cue', k: 0.7 }; glow.hn = { kind: 'cue', k: 0.4 }; glow.vln1 = { kind: 'good', k: 0.8 }; }
+  const trail = [], cx = art.W * 0.5, cy = art.stageH * 0.62, sc = art.scale;
+  if (thumbMode) for (let i = 0; i < 40; i++) { const f = i / 39; trail.push({ x: cx + sc * 0.17 * Math.sin(f * 5.1 + 0.4), y: cy - sc * 0.1 + sc * 0.2 * Math.abs(Math.sin(f * 2.6)), t: now - (1 - f) * 0.7 }); }
+  let dyn = ''; for (let i = 0; i < 160; i++) dyn += String(Math.max(0, Math.min(8, Math.round(4 + 3.4 * Math.sin(i / 14) * Math.sin(i / 37 + 1)))));
+  const hist = dyn.split('').map((c, i) => (thumbMode && i < 70 ? Math.max(0, Math.min(1, (c.charCodeAt(0) - 48 + 0.5) / 9 + 0.05 * Math.sin(i))) : null));
+  return { now, dark: dark(), act, glow, keys: {}, level: 0.66, target: 0.72, mark: 'f', pattern: 2, beatInBar: 0, trail, dyn, hist, cues: thumbMode ? [{ b: 40, secs: ['ob'], q: null }, { b: 90, secs: ['hn'], q: null }, { b: 120, secs: ['tp'], q: 1 }] : [], pos: 70, barText: thumbMode ? T('小節 {n}', { n: 35 }) + ' · f' : '', timeText: thumbMode ? '1:24 / 3:57' : '', secHue: { ob: 160, hn: 48, tp: 52 }, tol: 1, silhouette: true, msg: '' };
+}
+const loopDraw = () => { if (!G) art.draw(demoState(perfNow())); requestAnimationFrame(loopDraw); };
+// the title shows a stage with a seating plan behind it
+function layoutDemo() { art.layout(['vln1', 'vln2', 'vla', 'vc', 'cb', 'fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'timp'].map((id, i) => ({ id, index: i, def: E.SECTIONS[id], inst: E.SECTIONS[id].inst }))); }
+layoutDemo(); if (!reduceMotion.matches) requestAnimationFrame(loopDraw); else art.draw(demoState(0));
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const api = {
+    ready: () => booted,
+    state: () => {
+      const s = G ? G.session : null, snap = s ? s.snapshot(nowT()) : null;
+      return {
+        playing: !!(G && G.session.state !== 'ended' && !G.shown), piece: G ? G.id : '', diff: curDiff, state: s ? s.state : 'none', paused, menuOpen,
+        title: !$('ovTitle').hidden, loading: !$('ovLoad').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, credits: !$('ovCred').hidden, settings: !$('ovSet').hidden,
+        pos: snap ? snap.pos : 0, bpm: snap ? snap.bpm : 0, level: s ? s.level : 0, mark: snap ? snap.mark : '', held: snap ? snap.held : false, beats: G ? G.beats : 0,
+        cues: s ? s.scorer.stats : null, save: JSON.parse(JSON.stringify(save)), pieces: INDEX ? INDEX.pieces.map(p => p.id) : [], tier: G ? G.tier : '',
+        bytes: G ? G.bank.bytes : 0, files: G ? G.bank.files : 0, voices: G ? G.player.voices.size : 0, ctxState: G && G.ctx ? G.ctx.state : '', res: G && G.result ? G.result : null,
+      };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__orch = {
+    api, E, S, ART, get G() { return G; }, get save() { return save; }, get art() { return art; },
+    start: (id, diff) => { if (diff) { curDiff = diff; } hideAll(); return startPiece(id); },
+    // jump near the end of the piece (the music that follows is still played for real)
+    seekTo(to) { const s = G.session; const now = nowT(); s.clock.horizon = -Infinity; s.clock.start(now + 0.2, to, s.clock.bpm() || 80, s.diff.slack === Infinity ? Infinity : to + 1 + s.diff.slack); let c = 0; const ev = G.score.events; while (c < ev.length && ev[c].b < to) c++; s.cursor = c; s.beatDone = Math.floor(to) - 1; s.kAcc = Math.floor(to) - 1; s.lastIct = now; s.scorer.cues.forEach(q => { if (q.b < to - 0.5 && q.q == null) q.q = 0; }); G.player.releaseAll(now, 0.1); return to; },
+    seekNearEnd(n) { return this.seekTo(Math.max(0, G.score.nBeats - (n || 4))); },
+    setSave(fn) { fn(save); writeSave(); }, showTitle, showCredits, showHowto, openMenu, fit,
+    thumbScene() { store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideAll(); $('chips').hidden = true; thumbMode = true; fit(); return true; },
+    tier: tierOf, flickInfo: () => ({ pts: flick ? flick.pts.length : -1, scale: flick ? flick.scale : 0, check: flick ? flick.pts.slice() : null }),
+  };
+
+  // ---- audio measurements for the tests ----
+  function fftMag(x, n) { // radix-2 FFT magnitude (x: Float32Array of length n, Hann window applied here)
+    const re = new Float64Array(n), im = new Float64Array(n);
+    for (let i = 0; i < n; i++) re[i] = x[i] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1)));
+    for (let i = 1, j = 0; i < n; i++) { let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { const t = re[i]; re[i] = re[j]; re[j] = t; } }
+    for (let len = 2; len <= n; len <<= 1) { const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang); for (let i = 0; i < n; i += len) { let cr = 1, ci = 0; for (let k = 0; k < len / 2; k++) { const a = i + k, b = i + k + len / 2, tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr; re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti; const nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr; } } }
+    const m = new Float64Array(n / 2); for (let i = 0; i < n / 2; i++) m[i] = Math.hypot(re[i], im[i]); return m;
+  }
+  function analyse(chans, sr) {
+    const x = chans[0], n = 4096, hop = 8192; let sq = 0, pk = 0; for (let c = 0; c < chans.length; c++) for (let i = 0; i < chans[c].length; i++) { const v = chans[c][i]; sq += v * v; if (Math.abs(v) > pk) pk = Math.abs(v); }
+    const rms = Math.sqrt(sq / (chans.length * chans[0].length)); const P = new Float64Array(n / 2); let frames = 0, domSum = 0, flatSum = 0, cenSum = 0, active = 0;
+    for (let s = 0; s + n <= x.length; s += hop) {
+      const seg = x.subarray(s, s + n); let e = 0; for (let i = 0; i < n; i++) e += seg[i] * seg[i]; if (e / n < 1e-7) continue; active++;
+      const m = fftMag(seg, n); let tot = 0, mx = 0, mi = 0, lg = 0, cen = 0, cnt = 0;
+      for (let i = 2; i < n / 2; i++) { const pw = m[i] * m[i]; P[i] += pw; tot += pw; if (pw > mx) { mx = pw; mi = i; } if (i * sr / n < 12000) { lg += Math.log(pw + 1e-18); cnt++; } cen += pw * i * sr / n; }
+      let dom = 0; for (let i = Math.max(2, mi - 3); i <= Math.min(n / 2 - 1, mi + 3); i++) dom += m[i] * m[i];
+      domSum += dom / tot; flatSum += Math.exp(lg / cnt) / (tot / (n / 2) + 1e-18); cenSum += cen / tot; frames++;
+    }
+    let lo = 0, mid = 0, hi = 0, all = 0; for (let i = 2; i < n / 2; i++) { const f = i * sr / n; all += P[i]; if (f < 250) lo += P[i]; else if (f < 2000) mid += P[i]; else hi += P[i]; }
+    // how many distinct spectral peaks (strongest 12 local maxima within 30 dB of the top) in the average spectrum
+    const pk2 = []; for (let i = 3; i < n / 2 - 3; i++) if (P[i] > P[i - 1] && P[i] >= P[i + 1] && P[i] > P[i - 2] && P[i] > P[i + 2]) pk2.push(P[i]); pk2.sort((a, b) => b - a); const top = pk2[0] || 1; const nPeaks = pk2.filter(v => v > top * 1e-3).length;
+    return { rmsDb: +(20 * Math.log10(rms + 1e-12)).toFixed(1), peakDb: +(20 * Math.log10(pk + 1e-12)).toFixed(1), centroidHz: Math.round(cenSum / Math.max(1, frames)), flatness: +(flatSum / Math.max(1, frames)).toFixed(4),
+      dominantPeakFrac: +(domSum / Math.max(1, frames)).toFixed(3), peaks30dB: nPeaks, bands: { low: +(lo / all).toFixed(3), mid: +(mid / all).toFixed(3), high: +(hi / all).toFixed(3) }, frames: active, seconds: +(x.length / sr).toFixed(1) };
+  }
+  window.__orch.analyse = analyse;
+  // render a stretch of a piece offline with the real engine and sampler (constant tempo, optional level ramp) and measure it
+  window.__orch.renderOffline = async function (id, seconds, o) {
+    o = o || {}; const json = await (await fetch('scores/' + id + '.json')).json(), score = new E.Score(json), sr = 44100;
+    const oc = new OfflineAudioContext(2, Math.ceil(seconds * sr), sr);
+    const bank = new S.Bank({ ctx: oc, base: base + 'samples/', tier: o.tier || 'hi' }); await bank.load(json.needs, E.artFor);
+    const secs = score.sections.map(s => ({ id: s.id, inst: s.inst, pan: s.def.pan, back: s.def.back, mix: s.def.mix }));
+    const player = new S.Player({ ctx: oc, out: oc.destination, bank, sections: secs, artFor: E.artFor });
+    const sink = { noteOn: (t, si, p, sh, g, nid, vel) => player.noteOn(t, si, p, sh, g, nid, vel), noteOff: (t, nid) => player.noteOff(t, nid), maintain: u => player.maintain(u), setLevel: () => {} };
+    const session = new E.Session({ score, diff: 'enjoy', sink, lookahead: 0.2 });
+    const bpm = o.bpm || score.bpmAt(0), I = 60 / bpm; session.ictus(0.1, {}); session.ictus(0.1 + I, {});
+    const lv = o.level != null ? o.level : 0.6; (o.levels || [[0, lv]]).forEach(a => player.hall.setLevel(a[1], a[0]));
+    session.level = lv; session.tick(0);
+    let peakVoices = 0; for (let t = 0.1; t < seconds; t += 0.1) oc.suspend(t).then(() => { session.tick(oc.currentTime); if (player.voices.size > peakVoices) peakVoices = player.voices.size; oc.resume(); });
+    const r0 = performance.now(); const buf = await oc.startRendering(), renderMs = performance.now() - r0, chans = [buf.getChannelData(0), buf.getChannelData(1)];
+    const stats = analyse(chans, sr); stats.piece = id; stats.peakVoices = peakVoices; stats.renderX = +(seconds / (renderMs / 1000)).toFixed(1); stats.notes = player.count; stats.bytes = bank.bytes; stats.voicesStolen = player.stolen;
+    if (o.wav) { const n = chans[0].length, out = new Int16Array(n * 2); for (let i = 0; i < n; i++) { out[2 * i] = Math.max(-32768, Math.min(32767, chans[0][i] * 32767)); out[2 * i + 1] = Math.max(-32768, Math.min(32767, chans[1][i] * 32767)); } stats.wav = Array.from(out); }
+    return stats;
+  };
+  // real-time capture from the live graph (the analyser listens to the limiter output, it does not change the sound)
+  window.__orch.liveStats = function (ms) {
+    return new Promise(res => {
+      const g = G; if (!g) return res(null);
+      const an = g.ctx.createAnalyser(); an.fftSize = 2048; g.player.hall.lim.connect(an);
+      const chunks = []; const buf = new Float32Array(2048); const t0 = performance.now();
+      const id = setInterval(() => { an.getFloatTimeDomainData(buf); chunks.push(buf.slice()); if (performance.now() - t0 > ms) { clearInterval(id); try { g.player.hall.lim.disconnect(an); } catch (e) {} const all = new Float32Array(chunks.length * 2048); chunks.forEach((c, i) => all.set(c, i * 2048)); res(analyse([all], g.ctx.sampleRate)); } }, 45);
+    });
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.orchestra.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

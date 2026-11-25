@@ -5,7 +5,7 @@
 //                                                 （REST の許可・拒否のテスト ＋ 本物のクライアントを2人で動かすテスト）
 //   node tools/tests/rules/run.js --live          本番（neji-5913a）に、公開されているルールのまま同じテストを流す
 //                                                 （匿名アカウントを作る。作った行と部屋は最後に消す）
-//   オプション：--only spec|rest|clients|bots（カンマで複数。bots＝common/turnroom.js のボット2〜4人の通し。全部で約13分なので、分けて流すとよい）    --verbose  --record（クライアントの書き込みの一覧を recorded-writes.<target>.json に書く）
+//   オプション：--only spec|rest|clients|bots|bw（カンマで複数。bw＝おもちゃ大乱闘のオンライン対戦（bw/）のルールの許可・拒否 brawl-rules.js。bots＝common/turnroom.js のボット2〜4人の通し。全部で約13分なので、分けて流すとよい）    --verbose  --record（クライアントの書き込みの一覧を recorded-writes.<target>.json に書く）
 //
 // エミュレーターには firebase-tools と Java が要る（emulator.js の先頭を参照。FIREBASE_TOOLS=<firebase のパス> で指定できる）。
 // 本番のテストで「拒否のはずが許可」になるのは、新しいルールを貼り付ける前なら正常（今のルールの穴の一覧になる）。
@@ -20,7 +20,7 @@ const { checkSpec } = require('./spec');
 const argv = process.argv.slice(2);
 const has = f => argv.includes(f);
 const val = f => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : null; };
-const only = (val('--only') || 'spec,rest,clients,bots').split(',');
+const only = (val('--only') || 'spec,rest,clients,bots,bw').split(',');
 const verbose = has('--verbose');
 const OUT = path.join(__dirname, 'out');
 
@@ -37,7 +37,7 @@ function log(row) {
   try {
     if (only.includes('spec')) { console.log('spec (rules ⇔ common/games.js)'); for (const r of checkSpec()) { rows.push(r); log(r); } }
     if (live) T = LIVE;
-    else if (only.includes('rest') || only.includes('clients') || only.includes('bots')) {
+    else if (only.includes('rest') || only.includes('clients') || only.includes('bots') || only.includes('bw')) {
       console.log('starting the Firebase emulators…');
       emu = await require('./emulator').start({ verbose });
       T = Object.assign(emulatorTarget(emu.ports), { emu: true, ports: emu.ports, ns: emu.ns });
@@ -45,6 +45,14 @@ function log(row) {
     if (only.includes('rest')) {
       console.log(`REST allow/deny (${T.name})`);
       for (const r of await runCases(T, { log, verbose })) rows.push(r);
+    }
+    if (only.includes('bw')) {
+      // おもちゃ大乱闘のオンライン対戦（RTDB の bw/）：許可と拒否（brawl-rules.js）
+      if (live) console.log('bw: emulator only (skipped with --live)');
+      else {
+        console.log(`REST allow/deny: brawl online bw/ (${T.name})`);
+        for (const r of await require('./brawl-rules').runBrawlCases(T, { log, verbose })) rows.push(r);
+      }
     }
     if (only.includes('clients')) {
       console.log(`clients: 2-player runs of common/versus.js (blocks), hole online and shogi online (${T.name})`);

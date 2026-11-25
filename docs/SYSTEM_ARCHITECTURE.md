@@ -196,10 +196,10 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isMe(uid) { return signedIn() && request.auth.uid == uid; }
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
-    function games() { return ['neji','blocks','drop','raft','gates','n59049','water','parking','hole','hitsumabushi','planet','hitblow','shogi','escape','td','physics','minigolf','trade','cards','fit','town','colorcards','brawl','train','reversi','manabi']; }
+    function games() { return ['neji','blocks','drop','raft','gates','n59049','water','parking','hole','hitsumabushi','planet','hitblow','shogi','escape','td','physics','minigolf','trade','cards','fit','town','colorcards','brawl','train','reversi','manabi','orchestra']; }
     // 仮の上限（P1-4 で決める）。ゲームを足すときはここにも足す
     function caps() { return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000,
-      'gates': 100000, 'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000 }; }
+      'gates': 100000, 'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 800 }; }
     function jst(t) { return t + duration.value(9, 'h'); }
     function dayKey(t) { return jst(t).year() * 10000 + jst(t).month() * 100 + jst(t).day(); }
     function weekKey(t) { return math.floor((t.toMillis() + 32400000 + 259200000) / 604800000); }
@@ -465,3 +465,7 @@ KoboAudio.onChange(f)           // 設定が変わったとき（ほかのタブ
 - 問題データ（`manabi/data/` 約16MB・`manabi/content/`）は `sw.js` の `CORE` にも `ENGINES` にも入れません。同じサイトの `manabi/data/`・`manabi/content/` への要求だけ、「保存した写しを先に返して、裏で確かめ直す」（なければ通信）で扱い、使った分だけ端末に残ります。
 - `common/studyguard.js`（勉強ガード）は、オプトインです。`platform.js` が、設定 `kobo.sg` が「オン」のときと、ハブで「使いますか？」を聞くときだけ読み込みます。設定・進み具合（`kobo.sg`・`kobo.sg.run`）はこの端末だけで、同期しません。出題は `manabi/engine.js` の `KoboManabi.getQuiz()`、まなびの工房の XP・連続日数・復習の箱は変えません。
 - 表示する出典：問題の著作権者は「かながわコネクト教材プロジェクト」（オリジナル作成。古典の原文はパブリックドメイン）。`manabi/data/index.json` の `credit` をそのまま画面に出します。地図（`manabi/content/map-jp.json`・`map-world.json`）は Natural Earth（パブリックドメイン）をもとに、`tools/build-manabi.js` が簡略化したものです。問題はAIが作ったもので、専門家の確認はまだです（画面にも出します）。
+
+## 16. おもちゃ大乱闘のオンライン1対1と指揮者ゲーム
+- **brawl のオンライン**：RTDB の `bw/`（`queue`・`codes`・`rooms/{room}/{meta,cfg,seats,on,rd,pg,go,in,h,res}`。`database.rules.json` の `bw`。Cloud Functions なし）。試合は `brawl/netcode.js`（ロックステップ＋ロールバック。入力ディレイ2〜5フレーム・予想で進めるのは12フレームまで・60フレームごとに指紋をくらべ、ちがえば desync＝結果なし・5秒届かなければ不戦勝）と `brawl/engine.js`（決まった結果。`NETV` を上げた版どうしだけが対戦する）。結果はランキング・点に入らず、端末の `stats.op`・`ow` と `kusoge.brawl.olroom`（端末だけ）に残るだけです。登録簿では `flags.versus: true`・`versus: 'own'`。
+- **orchestra（指揮者ゲーム）**：ランキング・対戦なし（`flags.ranking: false`。`score` は8曲のベスト得点の合計で、`caps()` の上限 `800` と合わせるためだけにあります）。同期するのは `kusoge.orchestra.save` の1キー（フィールドごとのマージ規則は登録簿の `sync`）、`prefs`・`howto` は端末だけ。音（`orchestra/samples/` 約11MB）と曲（`orchestra/scores/`）は `sw.js` の `CORE` にも `ENGINES` にも入れず、`?b=<ビルド番号>` つきの同じサイトへの要求だけ「保存した写しを先に」で扱います。出典は `orchestra/CREDITS.md`（音は VSCO 2 Community Edition・CC0、曲は Mutopia Project・パブリックドメイン）。

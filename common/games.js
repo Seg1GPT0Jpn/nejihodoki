@@ -60,6 +60,7 @@
     { id: 'simulation', ja: 'シミュレーション', en: 'Simulation' },
     { id: 'board', ja: 'ボード・テーブル', en: 'Board & table' },
     { id: 'study', ja: '学習', en: 'Study' },
+    { id: 'music', ja: '音楽', en: 'Music' },
   ];
 
   var GAMES = [
@@ -735,23 +736,24 @@
       id: 'brawl', order: 23, path: 'brawl/', added: '2026-11-24',
       title: { ja: 'おもちゃ大乱闘', en: 'Toy Brawl' },
       short: { ja: 'おもちゃ大乱闘', en: 'Toy Brawl' },
-      desc: { ja: '工房のおもちゃたちが、ステージの外へふっとばし合う大乱闘。ダメージがたまるほど遠くへ飛ぶ。ぜんまいロボ・アヒル騎士・折り紙ニンジャ・魔法使いパペット・戦車・キリン・カニ・ペンギン太鼓など18人のおもちゃ、5つのステージ。はじき・ダッシュ・ジャストガード・うけ身・ふち技まで、本格的な対戦アクションの操作（キーボード・ゲームパッド・タッチ、キーは変更できる）。CPU（3段階）と1〜3人で、ふたりで1台で、8戦のラダーで、れんしゅうで。', en: 'A brawl where workshop toys knock each other off the stage. The more damage a toy has taken, the farther it flies. Eighteen toys (a wind-up robot, a duck knight, a paper ninja, a puppet wizard, a tank, a block giraffe, a crab, a drum penguin and more) on five stages, with full platform-fighter controls: flicks, dashes, perfect shields, teching and ledge options (keyboard, gamepad and touch; the keys can be remapped). Fight 1-3 CPUs (three levels), play two on one device, climb the 8-fight ladder or train.' },
+      desc: { ja: '工房のおもちゃたちが、ステージの外へふっとばし合う大乱闘。ダメージがたまるほど遠くへ飛ぶ。ぜんまいロボ・アヒル騎士・折り紙ニンジャ・魔法使いパペット・戦車・キリン・カニ・ペンギン太鼓など18人のおもちゃ、5つのステージ。はじき・ダッシュ・ジャストガード・うけ身・ふち技まで、本格的な対戦アクションの操作（キーボード・ゲームパッド・タッチ、キーは変更できる）。CPU（3段階）と1〜3人で、ふたりで1台で、8戦のラダーで、れんしゅうで。友だちや知らない人とのオンライン1対1（部屋のコード・クイックマッチ）もできます。オンラインの結果はランキングや点には入りません。', en: 'A brawl where workshop toys knock each other off the stage. The more damage a toy has taken, the farther it flies. Eighteen toys (a wind-up robot, a duck knight, a paper ninja, a puppet wizard, a tank, a block giraffe, a crab, a drum penguin and more) on five stages, with full platform-fighter controls: flicks, dashes, perfect shields, teching and ledge options (keyboard, gamepad and touch; the keys can be remapped). Fight 1-3 CPUs (three levels), play two on one device, climb the 8-fight ladder or train. Online 1v1 (room code or quick match, rollback netcode) is built in; online results do not affect rankings or points.' },
       label: { ja: '対戦アクション', en: 'Platform fighter' },
       genres: ['action'], tags: ['2d', 'realtime', 'versus', 'stages', 'casual'],
-      keywords: { ja: ['格闘', '対戦', 'アクション', 'ふっとばし', '乱闘', 'おもちゃ', 'CPU', 'ふたりで', 'ラダー', '場外', 'はじき', 'ガード', '18人'], en: ['fighting', 'brawl', 'platform fighter', 'action', 'knockback', 'toys', 'cpu', 'two player', 'ladder', 'versus', 'flick', 'shield', 'roster'] },
+      keywords: { ja: ['格闘', '対戦', 'アクション', 'ふっとばし', '乱闘', 'おもちゃ', 'CPU', 'ふたりで', 'ラダー', 'オンライン', '場外', 'はじき', 'ガード', '18人'], en: ['fighting', 'brawl', 'platform fighter', 'action', 'knockback', 'toys', 'cpu', 'two player', 'ladder', 'online', 'multiplayer', 'versus', 'flick', 'shield', 'roster'] },
       icon: 'img/icons/brawl.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#3b3175"/><path d="M0 56h72v16H0z" fill="#8a5a2b"/><path d="M0 56h72v5H0z" fill="#e2b673"/><rect x="8" y="34" width="18" height="20" rx="3" fill="#e0613a" stroke="#2a1d17" stroke-width="2.4"/><rect x="10" y="22" width="14" height="12" rx="3" fill="#f08a63" stroke="#2a1d17" stroke-width="2.4"/><circle cx="14.5" cy="28" r="2.6" fill="#fff"/><circle cx="20.5" cy="28" r="2.6" fill="#fff"/><path d="M17 22v-5" stroke="#2a1d17" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="15.5" r="2.4" fill="#f3b441" stroke="#2a1d17" stroke-width="1.6"/><path d="M25 41l12-2" stroke="#2a1d17" stroke-width="9" stroke-linecap="round"/><path d="M25 41l12-2" stroke="#b9bdc6" stroke-width="5" stroke-linecap="round"/><circle cx="39" cy="38.5" r="5.6" fill="#d2d5dc" stroke="#2a1d17" stroke-width="2.4"/><path d="M47 30l3 4 5-1-2 4 4 3-5 1-1 5-3-4-5 1 2-4-4-3 5-1z" fill="#ffd23f" stroke="#2a1d17" stroke-width="1.8" stroke-linejoin="round"/><g transform="rotate(-28 56 24)"><ellipse cx="56" cy="26" rx="9" ry="10" fill="#f2d13c" stroke="#2a1d17" stroke-width="2.4"/><path d="M60 14l9 2-8 5z" fill="#f09a2d" stroke="#2a1d17" stroke-width="2" stroke-linejoin="round"/><circle cx="59" cy="12" r="5" fill="#f2d13c" stroke="#2a1d17" stroke-width="2.4"/><path d="M53 10a6 6 0 0 1 11 0z" fill="#8da0c9" stroke="#2a1d17" stroke-width="2"/></g></svg>',
       thumb: 'img/thumbs/brawl.webp', thumb2x: 'img/thumbs/brawl@2x.webp',
       tech: '2d',
-      // real time (60 Hz): hiding the page pauses the match and waits for "Resume"; no online battle (CPU, two players on one device, ladder, training)
-      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: false },
-      versus: null,
+      // real time (60 Hz): hiding the page pauses the match and waits for "Resume"; online 1v1 (room code / quick match, rollback netcode) runs on RTDB bw/* through brawl/netcode.js + brawl/online.js (database.rules.json); its results never feed the ranking or points (the stats op/ow are counters only). Offline: CPU, two players on one device, ladder, training
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: true, stages: false },
+      versus: 'own',
       // the best score of one ladder run (8 fights: win bonus + stocks left + KOs + speed, times the level; a continue costs 1000). A full run is about 12000-25000, so the cap leaves room
       score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 100000, maxRate: null },
       rankSource: { key: 'kusoge.brawl.save', paths: ['best'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.brawl.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best {n} pts' } },
       keys: {
-        'kusoge.brawl.save': '{ v:1, best（ラダー1周のベスト得点＝ランキング）, lw（ラダーで勝った試合の数）, cl（ラダーをクリアした回数）, un:{ c:{ <おもちゃ>:1 }（開いたおもちゃ。18人のうち、はじめは3人。ラダーで3人、あとは2勝ごとに1人、ラダー制覇で全員）, s:{ <ステージ>:1 }（開いたステージ） }, cp:{ <おもちゃ>:使った回数 }, stats:{ plays, wins, kos（ふっとばした数）, falls, maxCmb（最大コンボ）, perfect（残機を失わずに勝った）, hard（つよいCPUに勝った）, ffa（4人乱闘で勝った）, twop（ふたりで遊んだ）, smashKo（つよい攻撃でふっとばした）, spike, counter, ledge, grab, block, timed, boss, lad, train, pshield（ジャストガード）, tech（うけ身）, flick（はじき強攻撃）}, set:{ 最後に選んだ設定 }, ctl:{ tj（はじきジャンプ 1/0）, run（キーボードのはしり \'hold\'|\'tap\'）, keys:{ p1:{ <操作>:<KeyboardEvent.code> }, p2:{…} }（変えたキーだけ。操作は L R U D J A S H G M T CL CR CU CD） }, tut }',
+        'kusoge.brawl.save': '{ v:1, best（ラダー1周のベスト得点＝ランキング）, lw（ラダーで勝った試合の数）, cl（ラダーをクリアした回数）, un:{ c:{ <おもちゃ>:1 }（開いたおもちゃ。18人のうち、はじめは3人。ラダーで3人、あとは2勝ごとに1人、ラダー制覇で全員）, s:{ <ステージ>:1 }（開いたステージ） }, cp:{ <おもちゃ>:使った回数 }, stats:{ plays, wins, kos（ふっとばした数）, falls, maxCmb（最大コンボ）, perfect（残機を失わずに勝った）, hard（つよいCPUに勝った）, ffa（4人乱闘で勝った）, twop（ふたりで遊んだ）, smashKo（つよい攻撃でふっとばした）, spike, counter, ledge, grab, block, timed, boss, lad, train, pshield（ジャストガード）, tech（うけ身）, flick（はじき強攻撃）}, set:{ 最後に選んだ設定 }, ctl:{ tj（はじきジャンプ 1/0）, run（キーボードのはしり \'hold\'|\'tap\'）, keys:{ p1:{ <操作>:<KeyboardEvent.code> }, p2:{…} }（変えたキーだけ。操作は L R U D J A S H G M T CL CR CU CD） }, tut }（stats には op＝オンラインの試合数・ow＝オンラインで勝った数も入る。ランキングや点には入らない）',
         'kusoge.brawl.run': 'とちゅうのラダー（試合のあいだに自動保存）{ v:1, ch, diff（1〜3）, idx（次の試合 0〜7）, score, cont（のこりのコンティニュー）, seed, kos }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.brawl.olroom': 'オンラインの部屋をつくったまま閉じたときの目印 { rid（部屋の id）, host: 1, code（6けたのコード。なければ空）}、なければ \'null\'。次に開いたときに部屋をかたづける。この端末だけ（同期しない）',
         'kusoge.brawl.howto': '遊び方を見た（\'1\'）',
       },
       // counters and unlocks only grow (max); the last setup is a whole value (newest)
@@ -842,6 +844,34 @@
       // counters only grow (max); per-day maps and the day-bound quest state follow the newest device; the review boxes and settings are whole values (newest)
       sync: {
         'kusoge.manabi.save': { fields: { xp: 'max', d: 'union', g: { each: 'max' }, goal: 'newest', b: { each: 'newest' }, st: { each: 'max' }, mk: { each: 'max' }, set: 'newest', tut: 'max', gm: 'newest', fz: 'newest', hm: 'newest', hr: 'newest', cw: { each: 'max' }, mm: 'union', ds: 'newest', dq: 'newest', lg: 'newest', sk: 'newest' }, rest: 'newest' },
+      },
+    },
+    {
+      id: 'orchestra', order: 27, path: 'orchestra/', added: '2026-11-25',
+      title: { ja: '指揮者ゲーム', en: 'Conductor' },
+      short: { ja: '指揮者ゲーム', en: 'Conductor' },
+      desc: { ja: 'バトンを振って、本物の楽器を録音した音のオーケストラを指揮しよう。拍でテンポが決まり、振りの大きさで強弱がつく。光った楽器に入りのキューを出して、ベートーヴェン、モーツァルト、ドヴォルザークなど8曲を最後まで。', en: 'Wave the baton and conduct an orchestra made of real recorded instruments. Your beats set the tempo, the size of your stroke sets the volume, and you cue each glowing section in. Eight pieces from Beethoven, Mozart, Dvorak and more.' },
+      label: { ja: '音楽・指揮', en: 'Music' },
+      genres: ['music'], tags: ['2d', 'realtime', 'stages', 'casual'],
+      keywords: { ja: ['指揮', '指揮者', 'オーケストラ', '音楽', 'クラシック', 'バトン', 'タクト', 'ベートーヴェン', 'モーツァルト'], en: ['conductor', 'orchestra', 'music', 'classical', 'baton', 'beethoven', 'mozart', 'symphony'] },
+      icon: 'img/icons/orchestra.svg', iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#5b1d2b"/><ellipse cx="36" cy="78" rx="52" ry="40" fill="#8a3a45"/><ellipse cx="36" cy="78" rx="34" ry="24" fill="#a8494e"/><g fill="#f2c15e"><circle cx="14" cy="38" r="4.2"/><circle cx="26" cy="31" r="4.2"/><circle cx="46" cy="31" r="4.2"/><circle cx="58" cy="38" r="4.2"/><circle cx="20" cy="24" r="3.4"/><circle cx="36" cy="21" r="3.4"/><circle cx="52" cy="24" r="3.4"/></g><rect x="26" y="54" width="20" height="8" rx="3" fill="#2b0f16"/><circle cx="36" cy="49" r="4.4" fill="#2b0f16"/><path d="M36 45L52 14" stroke="#fff4dc" stroke-width="2.6" stroke-linecap="round"/><circle cx="52" cy="14" r="3.2" fill="#ffd36a"/><path d="M45 11c3-5 9-5 11 0M42 16c2-8 14-9 17 0" fill="none" stroke="#ffd36a" stroke-width="1.6" stroke-linecap="round" opacity=".7"/></svg>',
+      thumb: 'img/thumbs/orchestra.webp', thumb2x: 'img/thumbs/orchestra@2x.webp',
+      tech: '2d',
+      // real time: hiding the page pauses the piece and waits for "Resume"; no online play. No ranking (a personal toy): stars and best scores stay on the device and sync across it; score is only the sum of the 8 best scores, for the registry
+      flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      // total = sum over the 8 pieces of the best score (0-100, best of the three difficulties); ranking is off and nothing reads rankSource
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 800, maxRate: null },
+      rankSource: { key: 'kusoge.orchestra.save', paths: ['total'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.orchestra.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n} / 24', en: '★ {n} / 24' } },
+      keys: {
+        'kusoge.orchestra.save': '{ v:1, total（8曲のベスト得点の合計）, stars（曲ごとの最高の★の合計）, p:{ <曲 beethoven5|beethoven7|nachtmusik|zauberflote|dvorak7|midsummer|rossini|egmont>:{ b0,s0（たのしむのベスト点と★）, b1,s1（ふつう）, b2,s2（マエストロ）, n（遊んだ回数）} }, stats:{ plays, finishes, cues（出した入りの数）, perfect（ばっちりの入り）, beats（振った拍）, three（★3の数）}, set:{ diff（最後のむずかしさ）, piece }, tut }',
+        'kusoge.orchestra.prefs': '音質と動きセンサー { quality: auto|hi|lo, motion }。この端末だけ（同期しない）',
+        'kusoge.orchestra.howto': '遊び方を見た（\'1\'）',
+      },
+      // counters, best scores and stars only grow (max); the last difficulty and piece are whole values (newest)
+      sync: {
+        'kusoge.orchestra.save': { fields: { total: 'max', stars: 'max', p: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
   ];
@@ -1184,6 +1214,13 @@
       { id: 'manabi.league', tier: 3, icon: 'trophy', title: { ja: 'リーグしょうかく', en: 'League Promotion' }, desc: { ja: '週のリーグで上位に入って、次のリーグへ上がる', en: 'Finish near the top of the weekly league and move up' }, when: { rec: { key: 'kusoge.manabi.save', path: 'lg.t' }, gte: 1 } },
       { id: 'manabi.crown', tier: 3, icon: 'trophy', title: { ja: '王冠をゲット', en: 'Crowned' }, desc: { ja: '特別コースで王冠を1つ手に入れる', en: 'Earn a crown in a special course' }, when: { rec: { key: 'kusoge.manabi.save', path: 'cw', measure: 'countGte', min: 1 }, gte: 1 } },
       { id: 'manabi.ok1000', tier: 4, icon: 'trophy', title: { ja: '1000問せいかい', en: '1,000 Correct' }, desc: { ja: '合わせて1000問に正解する', en: 'Answer 1,000 questions correctly' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.ok' }, gte: 1000 }, grantsTitle: { ja: 'まなびの名人', en: 'Study Master' } },
+    ],
+    orchestra: [
+      { id: 'orchestra.fin1', tier: 1, icon: 'check', title: { ja: 'はじめての演奏', en: 'First Performance' }, desc: { ja: '曲を最後まで指揮する', en: 'Conduct a piece to the end' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.finishes' }, gte: 1 } },
+      { id: 'orchestra.three', tier: 2, icon: 'star', title: { ja: '星3つの演奏', en: 'Three-Star Concert' }, desc: { ja: 'どれかの曲で★3をとる', en: 'Earn three stars on any piece' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 1 } },
+      { id: 'orchestra.perfect20', tier: 2, icon: 'star', title: { ja: '入りの名人', en: 'Cue Master' }, desc: { ja: '「ばっちり」の入りを合わせて20回出す', en: 'Give 20 perfect cues in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.perfect' }, gte: 20 } },
+      { id: 'orchestra.tour', tier: 3, icon: 'trophy', title: { ja: '8曲を指揮した', en: 'All Eight Pieces' }, desc: { ja: '8曲ぜんぶを「ふつう」で最後まで指揮する', en: 'Conduct all eight pieces to the end on Normal' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'p', each: 's1', measure: 'countGte', min: 1 }, gte: 8 } },
+      { id: 'orchestra.three5', tier: 4, icon: 'trophy', title: { ja: '★3のコンサート', en: 'Standing Ovation' }, desc: { ja: '★3の演奏を合わせて5回する', en: 'Earn three stars five times in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 5 }, grantsTitle: { ja: 'マエストロ', en: 'Maestro' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

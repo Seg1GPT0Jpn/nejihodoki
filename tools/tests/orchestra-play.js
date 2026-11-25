@@ -1,0 +1,332 @@
+#!/usr/bin/env node
+// 指揮者ゲームの通しプレイ（Playwright。バトンはマウスと CDP のタッチ、キューはクリック・タップ・スワイプ・キー、拍はキーも。
+// ?debug の window.__orch は「結果を見るために終わり近くへ飛ぶ」「音を測る」ためだけで、操作は本物の入力）
+//   node tools/tests/orchestra-play.js [first,audio,conduct,cues,finish,keyboard,touch,pause,english,themes,saves,layouts]
+// 1. 初回：遊び方 → タイトル（8曲）・クレジット表（Mutopia 番号とパブリックドメイン）・設定
+// 2. 音：本物のブラウザで mp3 をデコード → 本物のエンジンで OfflineAudioContext に書き出して、無音でない・純音でない・強弱で大きさと明るさが変わる、を数字で
+// 3. 指揮：本物のマウスで2拍→曲がはじまる・テンポに追従・振りの大きさで強弱・止めるとオーケストラが待つ（ふつう）／そのまま続く（たのしむ）
+// 4. キュー：光った楽器へ、ボタン・数字キー・座席のクリック・スワイプで入りを出す→採点
+// 5. 終わりまで：終わり近くへ飛んで指揮 → 結果・ベスト・保存 → もう一度／次の曲
+// 6. キーボードだけ  7. タッチ（CDP）  8. 一時停止  9. 英語  10. ライト／ダーク  11. 古い／こわれた保存  12. 全画面サイズ × ja/en（320px）
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const server = require('./lib/server');
+const B = require('./lib/browser');
+const V = require('./lib/viewports');
+const { jpScan, layoutProbe } = require('./lib/layout');
+
+const OUT = path.join(__dirname, 'out', 'shots', 'orchestra-play');
+const results = [];
+const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + String(JSON.stringify(info)).slice(0, 700)}`); };
+const note = (s) => console.log('       ' + s);
+const SAVE = 'kusoge.orchestra.save', HOWTO = 'kusoge.orchestra.howto';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const audioNumbers = {};
+
+async function open(env, o = {}) {
+  const touch = !!o.touch;
+  const s = await B.newSession(env, { vp: V.get(o.vp || 'land'), lang: o.lang || 'ja', seed: o.seed || { [HOWTO]: '1' }, isMobile: touch, hasTouch: touch, timeout: 20000 });
+  if (o.scheme) await s.page.emulateMedia({ colorScheme: o.scheme });
+  await s.goto('/orchestra/?debug' + (o.query || ''));
+  await s.page.waitForFunction(() => window.__kb && __kb.ready() && window.__orch);
+  return s;
+}
+const st = p => p.evaluate(() => __kb.state());
+const stored = (p, k) => p.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), k);
+const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.png') }).catch(() => {});
+const wait = (p, f, arg, t) => p.waitForFunction(f, arg, { timeout: t || 20000 });
+async function startReal(p, id, diff) {
+  await p.evaluate(d => { if (d) document.querySelector(`.dfb[data-diff="${d}"]`).click(); }, diff || null);
+  await p.click(`.rc[data-piece="${id}"]`);
+  await wait(p, () => __kb.state().playing, null, 90000);
+}
+const stageBox = p => p.evaluate(() => { const r = document.getElementById('board').getBoundingClientRect(); const a = __orch.art; return { x: r.x, y: r.y, w: r.width, h: r.height, scale: a.scale, stageH: a.stageH }; });
+
+// one bounce of the baton lasting I seconds, driven by the wall clock so the tempo is right whatever the mouse call costs
+async function bounce(p, c, I, amp) {
+  const t0 = Date.now(); const cx = c.x + c.w * 0.5, cy = c.y + c.stageH * 0.55;
+  for (;;) {
+    const f = (Date.now() - t0) / 1000 / I; if (f >= 1) break;
+    await p.mouse.move(cx + amp * 0.18 * Math.sin(2 * Math.PI * f), cy - amp / 2 + amp * (0.5 - 0.5 * Math.cos(2 * Math.PI * f)));
+    await sleep(7);
+  }
+}
+async function conductBeats(p, c, n, bpm, amp, each) { for (let k = 0; k < n; k++) { await bounce(p, c, 60 / bpm, amp); if (each) await each(k); } }
+
+// ---- touch via CDP: a finger drawing the same bounce -------------------------------------------------------------------------------------------
+async function touchBounce(cdp, c, I, amp, o) {
+  o = o || {}; const t0 = Date.now(); const cx = c.x + c.w * 0.5, cy = c.y + c.stageH * 0.55; let started = false;
+  const pt = f => ({ x: cx + amp * 0.18 * Math.sin(2 * Math.PI * f), y: cy - amp / 2 + amp * (0.5 - 0.5 * Math.cos(2 * Math.PI * f)) });
+  for (;;) {
+    const f = (Date.now() - t0) / 1000 / I; if (f >= 1) break; const q = pt(f);
+    await cdp.send('Input.dispatchTouchEvent', { type: started ? 'touchMove' : 'touchStart', touchPoints: [{ x: q.x, y: q.y, id: 1 }] }); started = true; await sleep(8);
+  }
+  if (o.end) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+}
+
+async function first(env) {
+  console.log('1. first visit: the rules, then the title with the eight pieces, credits and settings');
+  const s = await open(env, { seed: {} }); const p = s.page;
+  check('rules show on the first visit', (await st(p)).howto, await st(p));
+  await shot(p, '01-howto'); await p.click('#howtoAlt');
+  let a = await st(p); check('title after "just the rules"', a.title && a.pieces.length === 8, a);
+  check('eight piece cards with composer and stars', (await p.locator('.rc').count()) === 8 && /ベートーヴェン/.test(await p.locator('.rc').first().innerText()), await p.locator('.rc').first().innerText());
+  check('three difficulty buttons, normal selected', (await p.locator('.dfb').count()) === 3 && (await p.locator('.dfb.sel').innerText()) === 'ふつう', null);
+  await shot(p, '01-title');
+  await p.click('#tCred'); a = await st(p); check('credits open', a.credits, a);
+  const rows = await p.locator('table.cr tbody tr').count(); const txt = await p.locator('#cBody').innerText(); const tabTxt = await p.locator('table.cr tbody').innerText();
+  check('credits table: 8 pieces, each with its Mutopia number and "パブリックドメイン"', rows === 8 && (tabTxt.match(/パブリックドメイン/g) || []).length === 8 && /Mutopia #941/.test(txt) && /Mutopia #1901/.test(txt), { rows, txt: txt.slice(0, 200) });
+  check('credits name VSCO 2 CE and CC0', /VSCO 2 Community Edition/.test(txt) && /CC0/.test(txt), txt.slice(0, 200));
+  const hrefs = await p.locator('#cBody a').evaluateAll(as => as.map(a => a.href)); check('credit links point at mutopiaproject.org and the VSCO repo', hrefs.filter(h => /^https:\/\/www\.mutopiaproject\.org\/cgibin\/piece-info\.cgi\?id=\d+$/.test(h)).length === 8 && hrefs.some(h => /github\.com\/sgossner\/VSCO-2-CE/.test(h)), hrefs);
+  await shot(p, '01-credits'); await p.click('#cClose');
+  await p.click('#tSet'); await p.selectOption('#qualSel', 'lo'); a = await st(p); check('settings open; quality saved', a.settings && (await p.evaluate(() => JSON.parse(localStorage.getItem('kusoge.orchestra.prefs')).quality)) === 'lo', a);
+  await p.click('#sClose'); a = await st(p); check('back at the title', a.title, a);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function audio(env) {
+  console.log('2. sound: real mp3 decoding in the browser, then the real engine rendered offline and measured');
+  const s = await open(env); const p = s.page;
+  await startReal(p, 'nachtmusik', 'normal'); let a = await st(p);
+  check('the piece loads through a real tap: ' + a.files + ' files decoded (' + (a.bytes / 1048576).toFixed(0) + ' MB of audio), tier ' + a.tier, a.files > 150 && a.bytes > 30e6 && a.ctxState === 'running' && a.tier === 'hi', a);
+  const dec = await p.evaluate(async () => { const r = await fetch('samples/vln-sus-069-l.mp3'); const ab = await r.arrayBuffer(); const ctx = new OfflineAudioContext(1, 44100, 44100); const b = await ctx.decodeAudioData(ab); const d = b.getChannelData(0); let pk = 0; for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i])); return { dur: +b.duration.toFixed(2), sr: b.sampleRate, ch: b.numberOfChannels, pk: +pk.toFixed(2), first: __orch.S.onsetOf(b) }; });
+  check('an mp3 sample decodes: ' + JSON.stringify(dec), dec.dur > 2.5 && dec.dur < 3.2 && dec.pk > 0.05 && dec.first < 0.06, dec);
+  // the contrast: a pure sine of the same loudness
+  const sine = await p.evaluate(() => { const sr = 44100, x = new Float32Array(sr * 6); for (let i = 0; i < x.length; i++) x[i] = 0.1 * Math.sin(2 * Math.PI * 440 * i / sr); return __orch.analyse([x, x], sr); });
+  audioNumbers.sine440 = sine; note('reference, a 440 Hz sine: ' + JSON.stringify({ rmsDb: sine.rmsDb, flatness: sine.flatness, dominantPeakFrac: sine.dominantPeakFrac, peaks30dB: sine.peaks30dB }));
+  await p.evaluate(() => __orch.showTitle()); await p.waitForFunction(() => __kb.state().title);
+  for (const [id, secs, lv] of [['nachtmusik', 24, 0.7], ['beethoven5', 24, 0.8], ['dvorak7', 30, 0.7], ['zauberflote', 30, 0.7]]) {
+    const r = await p.evaluate(([id, secs, lv]) => __orch.renderOffline(id, secs, { level: lv }), [id, secs, lv]); audioNumbers[id] = r;
+    note(`${id} (${secs}s at level ${lv}): ` + JSON.stringify({ rmsDb: r.rmsDb, peakDb: r.peakDb, centroidHz: r.centroidHz, flatness: r.flatness, dominantPeakFrac: r.dominantPeakFrac, peaks30dB: r.peaks30dB, bands: r.bands, notes: r.notes, peakVoices: r.peakVoices, renderX: r.renderX, stolen: r.voicesStolen, MB: +(r.bytes / 1048576).toFixed(0) }));
+    check(`${id}: not silent and not clipping (RMS ${r.rmsDb} dBFS, peak ${r.peakDb} dBFS)`, r.rmsDb > -32 && r.rmsDb < -9 && r.peakDb < -0.05 && r.frames > 5, r);
+    check(`${id}: not a pure tone (strongest peak holds ${(r.dominantPeakFrac * 100).toFixed(0)} % of the energy; sine: ${(sine.dominantPeakFrac * 100).toFixed(0)} %), ${r.peaks30dB} spectral peaks`, r.dominantPeakFrac < 0.6 && r.peaks30dB >= 15 && sine.dominantPeakFrac > 0.9 && sine.peaks30dB < 6, { r, sine });
+    check(`${id}: a full-band orchestral spectrum (centroid ${r.centroidHz} Hz; low/mid/high ${r.bands.low}/${r.bands.mid}/${r.bands.high})`, r.centroidHz > 450 && r.centroidHz < 3500 && r.bands.low > 0.01 && r.bands.mid > 0.3 && r.bands.high > 0.02 && r.flatness > 0.0003, r);
+    check(`${id}: no voices stolen in a normal stretch`, r.voicesStolen === 0, r);
+  }
+  const soft = await p.evaluate(() => __orch.renderOffline('beethoven5', 14, { level: 0.12 })), loud = await p.evaluate(() => __orch.renderOffline('beethoven5', 14, { level: 1 }));
+  note(`dynamics: pp ${soft.rmsDb} dB / centroid ${soft.centroidHz} Hz; ff ${loud.rmsDb} dB / centroid ${loud.centroidHz} Hz`); audioNumbers.dynamics = { pp: soft, ff: loud };
+  check('crescendo: ff is much louder than pp (' + (loud.rmsDb - soft.rmsDb).toFixed(1) + ' dB) and brighter (' + soft.centroidHz + ' -> ' + loud.centroidHz + ' Hz)', loud.rmsDb - soft.rmsDb > 14 && loud.centroidHz > soft.centroidHz * 1.12, { soft, loud });
+  const lo = await p.evaluate(() => __orch.renderOffline('nachtmusik', 12, { level: 0.6, tier: 'lo' })); note('light tier: ' + JSON.stringify({ rmsDb: lo.rmsDb, MB: +(lo.bytes / 1048576).toFixed(0), dom: lo.dominantPeakFrac }));
+  check('the light tier (one layer) is about half the memory and still sounds like the orchestra', lo.bytes < audioNumbers.nachtmusik.bytes * 0.62 && lo.dominantPeakFrac < 0.6 && lo.rmsDb > -34, { lo, hi: audioNumbers.nachtmusik });
+  fs.mkdirSync(OUT, { recursive: true }); fs.writeFileSync(path.join(OUT, 'audio-numbers.json'), JSON.stringify(audioNumbers, null, 1));
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function conduct(env) {
+  console.log('3. conducting with the real mouse: start, follow the tempo, volume from the size of the stroke, waiting when the baton stops');
+  const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'normal'); const c = await stageBox(p);
+  let a = await st(p); check('before the first stroke: nothing plays, the page waits', a.state === 'idle' && a.voices === 0, a);
+  await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 2, 66, 0.24 * c.scale);
+  await wait(p, () => __kb.state().state === 'playing', null, 5000); a = await st(p); check('two strokes start the piece', a.state === 'playing', a);
+  await conductBeats(p, c, 10, 66, 0.24 * c.scale); a = await st(p);
+  check(`the tempo follows the baton: ${Math.round(a.bpm)} bpm for 66`, Math.abs(a.bpm - 66) < 8, a); check('the position advances with the beats: ' + a.pos.toFixed(1), a.pos > 8 && a.pos < 13, a); check('voices are sounding (' + a.voices + ')', a.voices > 3, a);
+  const live = await p.evaluate(() => __orch.liveStats(900)); audioNumbers.live = live; note('live output while conducting: ' + JSON.stringify(live));
+  check('the live output is audible and not a pure tone', live && live.rmsDb > -50 && live.dominantPeakFrac < 0.7, live);
+  await shot(p, '03-conducting');
+  // volume
+  const levels = {}; await conductBeats(p, c, 6, 66, 0.07 * c.scale); levels.small = (await st(p)).level; await conductBeats(p, c, 6, 66, 0.4 * c.scale); levels.big = (await st(p)).level;
+  check(`a small stroke is soft (${levels.small.toFixed(2)}), a big one is loud (${levels.big.toFixed(2)})`, levels.small < 0.35 && levels.big > 0.65, levels);
+  // faster
+  await conductBeats(p, c, 8, 90, 0.24 * c.scale); a = await st(p); check(`conducting faster speeds the orchestra up: ${Math.round(a.bpm)} bpm for 90`, Math.abs(a.bpm - 90) < 12, a);
+  // stopping
+  await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.45); await sleep(3200); a = await st(p);
+  check('normal: the orchestra waits when the baton stops (held)', a.held, a); const posHeld = a.pos; await sleep(800); a = await st(p); check('...and does not creep on', Math.abs(a.pos - posHeld) < 0.05, { posHeld, a: a.pos });
+  await conductBeats(p, c, 3, 90, 0.24 * c.scale); a = await st(p); check('conducting again goes on from the same place', !a.held && a.pos > posHeld + 1.5, a);
+  const res = await p.evaluate(() => __orch.G.session.result()); check('the score so far is a number between 0 and 100', res.total >= 0 && res.total <= 100 && res.coverage > 0.05 && res.steady > 60, res);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // enjoy
+  const e = await open(env); const q = e.page; await startReal(q, 'nachtmusik', 'enjoy'); const c2 = await stageBox(q);
+  await q.mouse.move(c2.x + c2.w * 0.5, c2.y + c2.stageH * 0.3); await conductBeats(q, c2, 8, 66, 0.2 * c2.scale); const p1 = (await st(q)).pos; await q.mouse.move(c2.x + c2.w * 0.5, c2.y + c2.stageH * 0.45); await sleep(3000); const a2 = await st(q);
+  check('enjoy: the orchestra keeps playing at its tempo when the baton stops (' + p1.toFixed(1) + ' -> ' + a2.pos.toFixed(1) + ')', a2.pos > p1 + 2.5 && !a2.held, { p1, a2 }); check('no page errors', e.log.pageErrors.length === 0, e.log.pageErrors.slice(0, 3)); await e.close();
+}
+
+async function cues(env) {
+  console.log('4. cues: the glowing section is brought in with a button, a number key, a click on its seat and a swipe');
+  const s = await open(env); const p = s.page; await startReal(p, 'dvorak7', 'normal'); const c = await stageBox(p);
+  const info = await p.evaluate(() => __orch.G.score.cues.map((q, i) => ({ i, b: q.b, secs: q.secs })).filter(q => q.secs.length <= 2));
+  check('Dvořák has cue events with 1-2 sections (' + info.length + ')', info.length >= 8, info.length);
+  await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 2, 80, 0.22 * c.scale); await wait(p, () => __kb.state().state === 'playing');
+  const results = {};
+  for (const [k, method] of [[0, 'button'], [1, 'key'], [2, 'seat'], [3, 'swipe']]) {
+    const cue = info[k]; await p.evaluate(b => __orch.seekTo(b - 5.2), cue.b);
+    const sec = cue.secs[0]; let given = false, glow = false;
+    for (let beat = 0; beat < 6 && !given; beat++) {
+      await bounce(p, c, 60 / 80, 0.22 * c.scale);
+      const up = await p.evaluate(() => __orch.G.session.upcoming(__orch.G.ctx.currentTime, 6.5).filter(u => !u.done).map(u => ({ rel: u.rel, secs: u.secs })));
+      const mine = up.find(u => u.secs.includes(sec)); if (mine && !glow) { glow = await p.evaluate(sec => document.querySelector(`.cuebtn[data-sec="${sec}"]`).classList.contains('cue'), sec); }
+      if (mine && mine.rel < 2.3 && mine.rel > 0.9) {
+        if (method === 'button') await p.click(`.cuebtn[data-sec="${sec}"]`);
+        else if (method === 'key') { const key = await p.evaluate(sec => document.querySelector(`.cuebtn[data-sec="${sec}"]`).firstChild.textContent.toLowerCase(), sec); await p.keyboard.press(key); }
+        else if (method === 'seat') { const seat = await p.evaluate(sec => { const s = __orch.art.seats[sec]; return { x: s.x, y: s.y }; }, sec); await p.mouse.click(c.x + seat.x, c.y + seat.y); }
+        else { const seat = await p.evaluate(sec => { const s = __orch.art.seats[sec], pd = __orch.art.podium; return { x: s.x, y: s.y, px: pd.x, py: pd.y }; }, sec);
+          const dx = seat.x - seat.px, dy = seat.y - seat.py, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L; const sx = c.x + seat.px, sy = c.y + seat.py - 20; await p.mouse.move(sx, sy); await p.mouse.down();
+          for (let i = 1; i <= 8; i++) { await p.mouse.move(sx + ux * 0.045 * c.scale * i * 1.0 * 1.0 + 0, sy + uy * 0.045 * c.scale * i); await sleep(14); } await p.mouse.up(); }
+        given = true;
+      }
+    }
+    await sleep(150); const a = await st(p); results[method] = { given, glow, cues: a.cues };
+    check(`${method}: ${sec} glowed before its entrance, the cue was given and judged (${JSON.stringify(a.cues)})`, given && glow && a.cues.cues >= k + 1 && a.cues.wrong === 0, results[method]);
+  }
+  await shot(p, '04-cues'); const r = await p.evaluate(() => __orch.G.session.result()); check('cue score counts them: ' + r.stats.cues + ' given, ' + r.stats.perfect + ' perfect', r.stats.cues >= 4 && r.stats.perfect >= 3, r.stats);
+  const wrongBefore = (await st(p)).cues.wrong; await p.click('.cuebtn[data-sec="cb"]'); const wrong = (await st(p)).cues; check('a cue to a section that is not coming in counts as wrong', wrong.wrong === wrongBefore + 1, wrong);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // a missed entrance and the quiet entrance
+  const m = await open(env); const q = m.page; await startReal(q, 'dvorak7', 'normal'); const c2 = await stageBox(q); const cue = info[0];
+  await q.mouse.move(c2.x + c2.w * 0.5, c2.y + c2.stageH * 0.3); await conductBeats(q, c2, 2, 80, 0.22 * c2.scale); await wait(q, () => __kb.state().state === 'playing');
+  await q.evaluate(b => __orch.seekTo(b - 4), cue.b); let toastSeen = false, gain = 1;
+  for (let k = 0; k < 9 && !toastSeen; k++) { await bounce(q, c2, 60 / 80, 0.22 * c2.scale); toastSeen = await q.evaluate(() => /入りそこねた/.test(document.getElementById('toast').textContent) && !document.getElementById('toast').hidden); }
+  gain = await q.evaluate(c => { const g = __orch.G; return g.session.entranceGain(g.score.secIndex[c.secs[0]], c.b); }, cue);
+  check('an entrance nobody cued is flagged ("入りそこねた"), and that section comes in quietly (gain ' + gain + ')', toastSeen && gain < 0.5, { toastSeen, gain }); await m.close();
+}
+
+async function finish(env) {
+  console.log('5. to the end: results, best score, saving, again and next');
+  const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'normal'); const c = await stageBox(p);
+  await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 4, 66, 0.22 * c.scale); await wait(p, () => __kb.state().state === 'playing');
+  await p.evaluate(() => __orch.seekNearEnd(7)); let guard = 0;
+  while (!(await st(p)).result && guard++ < 40) { await bounce(p, c, 60 / 66, 0.22 * c.scale); }
+  await wait(p, () => __kb.state().result, null, 20000); const a = await st(p);
+  check('the finale shows the result overlay', a.result && a.res && a.res.total >= 0, a.res); await shot(p, '05-result');
+  const txt = await p.locator('#ovResult').innerText(); check('result shows the score, the three rows and stars', /テンポの安定/.test(txt) && /強弱/.test(txt) && /入り/.test(txt) && (await p.locator('#rStars i.on').count()) >= 1, txt.slice(0, 200));
+  const sv = await stored(p, SAVE); check('saved: best score and stars for this piece and difficulty (normal)', sv && sv.p.nachtmusik && sv.p.nachtmusik.b1 === a.res.total && sv.p.nachtmusik.s1 === a.res.stars && sv.p.nachtmusik.n === 1 && sv.stats.finishes === 1 && sv.v === 1, sv);
+  check('a new best is announced the first time', !(await p.locator('#rNew').isHidden()), null);
+  await p.click('#rAgain'); await wait(p, () => __kb.state().playing, null, 90000); await p.evaluate(() => __orch.showTitle());
+  const sv2 = await stored(p, SAVE); check('a second start counts a play but the best stays', sv2.p.nachtmusik.n === 2 && sv2.p.nachtmusik.b1 === a.res.total, sv2.p.nachtmusik);
+  await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); const stars = await p.locator('.rc[data-piece="nachtmusik"] .st').innerText();
+  check('the piece card shows the stars after a reload: ' + stars, /★/.test(stars) && stars.replace(/[^★]/g, '').length === sv.p.nachtmusik.s1, stars);
+  await p.click('.dfb[data-diff="enjoy"]'); const stars2 = await p.locator('.rc[data-piece="nachtmusik"] .st').innerText(); check('stars are kept per difficulty (enjoy has none yet)', !/★/.test(stars2), stars2);
+  check('the total counts the best of each piece', (await stored(p, SAVE)).total === sv.p.nachtmusik.b1, await stored(p, SAVE));
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function keyboard(env) {
+  console.log('6. the keyboard alone: Space for beats, arrows for volume, number keys for cues, P to pause');
+  const s = await open(env); const p = s.page; await startReal(p, 'dvorak7', 'normal');
+  const tap = async (k, n, bpm) => { for (let i = 0; i < n; i++) { const t0 = Date.now(); await p.keyboard.press(k); await sleep(Math.max(0, 60000 / bpm - (Date.now() - t0))); } };
+  await tap('Space', 2, 80); await wait(p, () => __kb.state().state === 'playing', null, 4000); await tap('Space', 6, 80); let a = await st(p);
+  check(`Space taps conduct: ${Math.round(a.bpm)} bpm for 80, ${a.pos.toFixed(1)} beats in`, Math.abs(a.bpm - 80) < 10 && a.pos > 5, a);
+  const l0 = a.level; await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowUp'); a = await st(p); check('ArrowUp raises the volume (' + l0.toFixed(2) + ' -> ' + a.level.toFixed(2) + ')', a.level > l0 + 0.1, a);
+  await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown'); const a2 = await st(p); check('ArrowDown lowers it', a2.level < a.level - 0.08, a2);
+  await tap('ArrowRight', 2, 80); await tap('Enter', 2, 80); a = await st(p); check('ArrowRight and Enter are beats too', a.pos > 9, a);
+  const keyBefore = (await st(p)).cues; await p.keyboard.press('2'); const keyAfter = (await st(p)).cues; check('a number key is a cue (wrong section now, so it counts as wrong, not a crash)', keyAfter.wrong === keyBefore.wrong + 1, { keyBefore, keyAfter });
+  await p.keyboard.press('p'); await wait(p, () => __kb.state().menuOpen, null, 3000); a = await st(p); check('P opens the pause menu and pauses', a.menuOpen && a.paused, a);
+  const posP = a.pos; await sleep(900); a = await st(p); check('paused: the music does not move', Math.abs(a.pos - posP) < 0.01, { posP, a: a.pos });
+  await p.keyboard.press('Escape'); await wait(p, () => !__kb.state().menuOpen, null, 3000); a = await st(p); check('Escape (the "continue" button) resumes', !a.paused, a);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function touch(env) {
+  console.log('7. a finger (CDP touch events) on a 320 px phone: conduct, tap a section button, tap the stage');
+  const s = await open(env, { vp: 'se1', touch: true }); const p = s.page; const cdp = await s.ctx.newCDPSession(p);
+  await p.tap('.rc[data-piece="midsummer"]'); await wait(p, () => __kb.state().playing, null, 90000); const c = await stageBox(p);
+  let a = await st(p); check('the piece started from a tap (memory tier ' + a.tier + ')', a.playing, a);
+  for (let k = 0; k < 3; k++) await touchBounce(cdp, c, 60 / 100, 0.25 * c.scale, { end: false });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  for (let k = 0; k < 8; k++) { await touchBounce(cdp, c, 60 / 100, 0.25 * c.scale, { end: false }); }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); a = await st(p);
+  check(`finger strokes start the piece and set the tempo: ${a.state}, ${Math.round(a.bpm)} bpm for 100`, a.state === 'playing' && Math.abs(a.bpm - 100) < 14, a);
+  await shot(p, '07-touch-se1');
+  const cb = await p.locator('.cuebtn').first().boundingBox(); check('section buttons are at least 40 px for a finger (' + Math.round(cb.width) + 'x' + Math.round(cb.height) + ')', cb.width >= 40 && cb.height >= 40, cb);
+  const wrong0 = (await st(p)).cues.wrong; await p.tap('.cuebtn[data-sec="cb"]'); check('tapping a section button gives a cue', (await st(p)).cues.wrong > wrong0 || (await st(p)).cues.cues > 0, await st(p));
+  const before = (await st(p)).beats; await p.touchscreen.tap(c.x + c.w * 0.5, c.y + c.stageH * 0.6); check('a tap on the empty stage is a beat', (await st(p)).beats >= before, await st(p));
+  const r = await p.evaluate(`(${layoutProbe})()`); check(`320 px while playing: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, r);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function pause(env) {
+  console.log('8. pause: the menu stops the clock and the sound, resuming re-enters, leaving goes back to the pieces');
+  const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'enjoy'); const c = await stageBox(p);
+  await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 6, 66, 0.22 * c.scale); let a = await st(p);
+  await p.click('#pauseBtn'); await wait(p, () => __kb.state().menuOpen); a = await st(p); const pos = a.pos; check('the pause button opens the menu and pauses', a.menuOpen && a.paused, a);
+  await sleep(1200); a = await st(p); check('enjoy mode does not run on while paused', Math.abs(a.pos - pos) < 0.01, { pos, a: a.pos });
+  const txt = await p.locator('.kb-layer').first().innerText(); check('the menu offers leaving the piece', /この曲をやめる/.test(txt), txt.slice(0, 120));
+  await p.getByText('つづける').first().click(); await wait(p, () => !__kb.state().menuOpen); await sleep(900); a = await st(p); check('continuing resumes the music', a.pos > pos + 0.5, { pos, a: a.pos });
+  // hiding the page pauses by itself (needs the registry entry: KoboGame.register only works for registered ids)
+  const registered = await p.evaluate(() => !!(window.KoboGame && KoboGame.info() && KoboGame.info().def));
+  if (registered) {
+    const pos2 = (await st(p)).pos; await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
+    await wait(p, () => __kb.state().paused, null, 3000); a = await st(p); check('hiding the page pauses the piece', a.paused, a);
+    await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' }); document.dispatchEvent(new Event('visibilitychange')); });
+    await wait(p, () => __kb.state().menuOpen, null, 3000); a = await st(p); check('coming back shows the pause menu instead of running on by itself', a.menuOpen && a.paused && Math.abs(a.pos - pos2) < 0.5, a); await p.getByText('つづける').first().click(); await wait(p, () => !__kb.state().menuOpen);
+  } else note('(not registered in common/games.js yet: the visibility pause is skipped)');
+  await p.click('#pauseBtn'); await wait(p, () => __kb.state().menuOpen); await p.getByText('この曲をやめる').first().click(); await wait(p, () => __kb.state().title, null, 5000); a = await st(p);
+  check('leaving goes back to the piece list and stops the audio', a.title && a.voices === 0, a); check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function english(env) {
+  console.log('9. English: no Japanese on any screen (title, credits, rules, loading, play, result)');
+  const s = await open(env, { lang: 'en', seed: {} }); const p = s.page;
+  check('html lang is en', (await p.evaluate(() => document.documentElement.lang)) === 'en', null);
+  const miss = async what => { const jp = await p.evaluate(`(${jpScan})(true)`); check(`${what}: no Japanese`, jp.length === 0, jp.slice(0, 6)); };
+  await miss('rules'); await p.click('#howtoAlt'); await miss('title'); await shot(p, '09-en-title');
+  check('titles are English', /Symphony No\. 5/.test(await p.locator('.rc').first().innerText()), await p.locator('.rc').first().innerText());
+  await p.click('#tCred'); await miss('credits'); await p.click('#cClose'); await p.click('#tSet'); await miss('settings'); await p.click('#sClose');
+  await p.evaluate(() => __orch.start('nachtmusik', 'normal')); await wait(p, () => __kb.state().playing, null, 90000); await p.waitForTimeout(300); await miss('play (waiting for the first stroke)');
+  const c = await stageBox(p); await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 4, 66, 0.22 * c.scale); await miss('play'); await shot(p, '09-en-play');
+  const chips = await p.locator('.cuebtn').allInnerTexts(); check('section buttons are English abbreviations: ' + chips.join(' | ').replace(/\n/g, ' '), chips.some(t => /Vn1/.test(t)) && chips.some(t => /Cb/.test(t)), chips);
+  await p.evaluate(() => __orch.seekNearEnd(5)); let g = 0; while (!(await st(p)).result && g++ < 30) await bounce(p, c, 60 / 66, 0.22 * c.scale); await wait(p, () => __kb.state().result, null, 20000); await miss('result'); await shot(p, '09-en-result');
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function themes(env) {
+  console.log('10. light and dark: both drawn, the canvas and the cards follow the theme');
+  const out = {};
+  for (const scheme of ['light', 'dark']) {
+    const s = await open(env, { scheme }); const p = s.page; await p.waitForTimeout(300);
+    out[scheme] = { bg: await p.evaluate(() => getComputedStyle(document.body).backgroundColor), canvas: await p.evaluate(() => { const c = document.getElementById('board'); const d = c.getContext('2d').getImageData(4, 4, 1, 1).data; return [d[0], d[1], d[2]]; }), card: await p.evaluate(() => getComputedStyle(document.querySelector('.card')).backgroundImage.slice(0, 40)) };
+    await shot(p, '10-title-' + scheme); await startReal(p, 'nachtmusik', 'normal'); await p.waitForTimeout(400); await shot(p, '10-play-' + scheme);
+    out[scheme].play = await p.evaluate(() => { const c = document.getElementById('board'); const d = c.getContext('2d').getImageData(c.width / 2, c.height * 0.2, 1, 1).data; return [d[0], d[1], d[2]]; });
+    check(`${scheme}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  const lum = c => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  check('the canvas hall is dark in dark mode and light in light mode (' + lum(out.dark.canvas).toFixed(0) + ' vs ' + lum(out.light.canvas).toFixed(0) + ')', lum(out.dark.canvas) < 80 && lum(out.light.canvas) > 160, out);
+  check('the stage while playing follows too', lum(out.dark.play) < 120 && lum(out.light.play) > 140, out);
+}
+
+async function saves(env) {
+  console.log('11. old, broken and odd saves');
+  const cases = { 'not json': '{{{', 'array': '[1,2]', 'wrong types': JSON.stringify({ v: 1, total: 'x', stars: null, p: { nachtmusik: { b1: 'abc', s1: 9, n: -4 }, ghost: 5 }, stats: 3, set: { diff: 'nightmare' } }), 'good': JSON.stringify({ v: 1, total: 88, stars: 3, p: { nachtmusik: { b1: 88, s1: 3, n: 4, b0: 0, s0: 0, b2: 0, s2: 0 } }, stats: { plays: 4, finishes: 4 }, set: { diff: 'maestro', piece: 'rossini' } }) };
+  for (const [name, val] of Object.entries(cases)) {
+    const s = await open(env, { seed: { [HOWTO]: '1', [SAVE]: val } }); const p = s.page; const a = await st(p);
+    check(`${name}: the page starts with sane values`, a.title && a.save.v === 1 && ['enjoy', 'normal', 'maestro'].includes(a.save.set.diff) && Object.values(a.save.p).every(x => x.s1 >= 0 && x.s1 <= 3 && x.n >= 0), a.save);
+    if (name === 'good') check('good: the stored difficulty and total are restored', a.diff === 'maestro' && a.save.total === 88 && a.save.p.nachtmusik.b1 === 88, a);
+    check(`${name}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  const s = await open(env); const p = s.page; await p.evaluate(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });
+  await p.evaluate(() => __orch.showTitle()); check('the page survives a throwing localStorage', (await st(p)).title, await st(p)); await s.close();
+}
+
+async function layouts(env) {
+  console.log('12. every screen size x ja/en: nothing off screen, no sideways scroll (320 px included)');
+  for (const vp of (process.env.OR_VPS || 'se1,ip12,land').split(',')) for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp, lang, touch: true }); const p = s.page; const tag = `${vp}/${lang}`;
+    const probe = async what => { const r = await p.evaluate(`(${layoutProbe})()`); check(`${tag} ${what}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0 && (!r.primary.length || r.primary.every(x => x.visible !== false)), r); };
+    await probe('title'); if (lang === 'ja') await shot(p, `12-${vp}-title`);
+    await p.click('#tCred'); await probe('credits'); await p.click('#cClose'); await p.click('#tHow'); await probe('rules'); await p.click('#howtoGo');
+    await p.evaluate(() => __orch.start('beethoven5', 'normal')); await wait(p, () => __kb.state().playing, null, 90000); await p.waitForTimeout(400); await probe('play (waiting)'); if (lang === 'ja') await shot(p, `12-${vp}-play`);
+    const c = await stageBox(p); const cdp = await s.ctx.newCDPSession(p); for (let k = 0; k < 5; k++) await touchBounce(cdp, c, 60 / 96, 0.24 * c.scale, {}); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await probe('play (conducting)'); if (lang === 'ja') await shot(p, `12-${vp}-conducting`);
+    const sc = await p.evaluate(() => ({ w: document.documentElement.clientWidth, chipsH: document.getElementById('chips').getBoundingClientRect().height, stageH: document.getElementById('stageWrap').getBoundingClientRect().height })); check(`${tag}: the stage keeps room (${Math.round(sc.stageH)} px) next to the cue buttons (${Math.round(sc.chipsH)} px)`, sc.stageH > 230 || vp === 'land' && sc.stageH > 150, sc);
+    await p.evaluate(() => __orch.seekNearEnd(5)); await p.waitForTimeout(100); let g = 0; while (!(await st(p)).result && g++ < 24) await touchBounce(cdp, c, 60 / 96, 0.24 * c.scale, {}); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await wait(p, () => __kb.state().result, null, 20000); await probe('result'); if (lang === 'ja') await shot(p, `12-${vp}-result`);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check(`${tag} result: no Japanese`, jp.length === 0, jp.slice(0, 5)); }
+    check(`${tag}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
+(async () => {
+  fs.mkdirSync(OUT, { recursive: true });
+  const srv = await server.start(); const browser = await B.launch();
+  const env = { server: srv, browser: () => browser };
+  const t0 = Date.now();
+  const only = process.argv[2] ? process.argv[2].split(',') : null;
+  for (const f of [first, audio, conduct, cues, finish, keyboard, touch, pause, english, themes, saves, layouts]) {
+    if (only && !only.includes(f.name)) continue;
+    try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
+  }
+  await browser.close(); await srv.close();
+  const fail = results.filter(r => !r.ok).length;
+  console.log(`\npass ${results.length - fail}  fail ${fail}  (${Math.round((Date.now() - t0) / 1000)}s)  shots: ${path.relative(process.cwd(), OUT)}`);
+  process.exit(fail ? 1 : 0);
+})();

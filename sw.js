@@ -5,7 +5,7 @@
 // 開いたことのないゲームは、オフラインでは offline.html。ゲームを足すときは games.js に足すだけでよい。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 77;
+const BUILD = 78;
 const PREFIX = 'kobo-v';
 const VERSION = PREFIX + BUILD + '.' + REG.version;
 const OFFLINE = './offline.html';
@@ -16,7 +16,7 @@ const CORE = ['./', './index.html', OFFLINE, './firebase-config.js', './manifest
   './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css',
   './common/studyguard.js', './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
 // ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
-const ENGINES = ['./trade/engine.js', './trade/en.js', './blocks/engine.js', './drop/engine.js', './raft/engine.js', './gates/engine.js', './n59049/engine.js', './train/engine.js', './train/art.js', './brawl/engine.js', './brawl/art.js', './colorcards/engine.js', './colorcards/art.js', './colorcards/online.js', './reversi/engine.js', './reversi/art.js', './reversi/puzzles.js', './reversi/online.js', './manabi/en.js', './manabi/engine.js', './manabi/gen.js', './manabi/fx.js', './manabi/app.js', './town/engine.js', './town/art.js', './fit/engine.js', './cards/engine.js', './cards/solitaire.js', './cards/art.js', './parking/engine.js', './planet/sim.js', './planet/world.js', './planet/explorer.js', './planet/learn.js', './water/engine.js', './shogi/engine.js', './shogi/puzzles.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './escape/room6.js', './escape/engine.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes-gen.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js', './hole/engine.js', './hitsumabushi/engine.js', './hitblow/engine.js',
+const ENGINES = ['./trade/engine.js', './trade/en.js', './blocks/engine.js', './drop/engine.js', './raft/engine.js', './gates/engine.js', './n59049/engine.js', './train/engine.js', './train/art.js', './orchestra/midi.js', './orchestra/engine.js', './orchestra/sampler.js', './orchestra/art.js', './brawl/engine.js', './brawl/art.js', './brawl/netcode.js', './brawl/online.js', './colorcards/engine.js', './colorcards/art.js', './colorcards/online.js', './reversi/engine.js', './reversi/art.js', './reversi/puzzles.js', './reversi/online.js', './manabi/en.js', './manabi/engine.js', './manabi/gen.js', './manabi/fx.js', './manabi/app.js', './town/engine.js', './town/art.js', './fit/engine.js', './cards/engine.js', './cards/solitaire.js', './cards/art.js', './parking/engine.js', './planet/sim.js', './planet/world.js', './planet/explorer.js', './planet/learn.js', './water/engine.js', './shogi/engine.js', './shogi/puzzles.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './escape/room6.js', './escape/engine.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes-gen.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js', './hole/engine.js', './hitsumabushi/engine.js', './hitblow/engine.js',
   './hole/cities/fujisawa.json', './hole/cities/shonandai.json', './hole/cities/kamiooka.json', './hole/cities/shonanhs.json',
   './hole/cities/shibuya.json', './hole/cities/asakusa.json', './hole/cities/shinjuku.json', './hole/cities/yokohama.json', './hole/cities/dotonbori.json', './hole/cities/osakajo.json', './hole/cities/kyoto.json', './hole/cities/nagoya.json', './hole/cities/sapporo.json', './hole/cities/fukuoka.json'];
 // ページ（オフラインで開けるのは、一度開いたものだけ）
@@ -25,6 +25,10 @@ const CACHE_FIRST_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.go
 const SCOPE = self.registration.scope;
 // まなびの工房の問題（data/ 約16MB と content/）は、はじめに保存しない。使った分だけ、保存した写しを先に返して、裏で確かめ直す
 const STALE_OK = ['manabi/data/', 'manabi/content/'];
+// 指揮者ゲームの音（samples/ 約11MB）と曲（scores/*.json）は、はじめに保存しない。URL に ?b=<ビルド番号> が付くので、中身が変わると URL も変わる＝保存した写しを先に返してよい（使った分だけ端末に残る）。
+// samples/bank.json と scores/index.json（?b= なし）は、いつもの「通信を先に、だめなら写し」（番号はこの2つが決める）
+const IMMUTABLE = ['orchestra/samples/', 'orchestra/scores/'];
+const isImmutable = url => url.searchParams.has('b') && !/\/(bank|index)\.json$/.test(url.pathname) && IMMUTABLE.some(p => url.pathname.startsWith(new URL(p, SCOPE).pathname));
 
 // 'no-cache'：HTTP キャッシュの写しを、サーバーに確かめてから使う（変わっていなければ 304 で、ほとんど転送しない）
 const fresh = u => new Request(u, { cache: 'no-cache' });
@@ -60,7 +64,8 @@ self.addEventListener('activate', e => {
       for (const req of await oc.keys()) {
         if (await c.match(req)) continue;
         let r = null;
-        if (sameSite(req.url)) r = await fetch(fresh(req.url)).then(x => (x.ok ? clean(x) : null), () => null);
+        if (isImmutable(new URL(req.url))) r = await oc.match(req); // 番号つきの音・曲は変わらない：写しをそのまま移す（11MB を取り直さない）
+        else if (sameSite(req.url)) r = await fetch(fresh(req.url)).then(x => (x.ok ? clean(x) : null), () => null);
         if (!r) r = await oc.match(req);
         if (r) await c.put(req, r).catch(() => {});
       }
@@ -156,6 +161,7 @@ self.addEventListener('fetch', e => {
   if (url.origin === location.origin) {
     // outside this site's folder, and Firebase Hosting's reserved URLs (/__/auth/…): the network, never the cache
     if (!req.url.startsWith(SCOPE) || url.pathname.includes('/__/')) return;
+    if (req.mode !== 'navigate' && isImmutable(url)) { e.respondWith(cacheFirst(req)); return; }
     if (req.mode !== 'navigate' && STALE_OK.some(p => url.pathname.startsWith(new URL(p, SCOPE).pathname))) e.respondWith(staleWhileRevalidate(e, req));
     else e.respondWith(req.mode === 'navigate' ? navigate(e, url) : sameOrigin(req));
   } else if (CACHE_FIRST_HOSTS.includes(url.hostname)) {

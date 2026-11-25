@@ -21,7 +21,7 @@ KoboI18n.add({ en: {
   'おもちゃ大乱闘': 'Toy Brawl', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'Back to games', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
   '遊び方': 'How to play', '言語 / Language': 'Language', 'とじる': 'Close', 'もどる': 'Back', 'メニュー': 'Menu', '一時停止': 'Pause', 'れんしゅう': 'Training', 'ラダー': 'Ladder',
   '工房のおもちゃたちの場外バトル！ ダメージがたまるほど遠くへ飛ぶ。相手をステージの外へふっとばそう。': 'A workshop brawl for toys! The more damage a toy takes, the farther it flies. Knock your rival off the stage.',
-  'ひとりで対戦': 'Solo Brawl', 'CPUと戦う': 'Fight the CPUs', 'ふたりで対戦': '2 Players', '1台でふたりで': 'Two on one device', 'ラダー（8戦）': 'Ladder (8 fights)', '勝ちぬいてボスへ・キャラとステージが開く': 'Climb to the boss. Unlocks toys and stages',
+  'オンライン対戦': 'Online match', '1対1・コードかクイックマッチ': '1v1 · room code or quick match', 'ひとりで対戦': 'Solo Brawl', 'CPUと戦う': 'Fight the CPUs', 'ふたりで対戦': '2 Players', '1台でふたりで': 'Two on one device', 'ラダー（8戦）': 'Ladder (8 fights)', '勝ちぬいてボスへ・キャラとステージが開く': 'Climb to the boss. Unlocks toys and stages',
   'れんしゅう（ダミーあいて）': 'Training (dummy)', 'ラダーのつづき（{n}戦目）': 'Continue ladder (fight {n})', 'ベスト {n} 点': 'Best {n} pts', 'ラダーのベストはまだありません': 'No ladder score yet', '{n} 人のおもちゃがそろった': '{n} toys unlocked',
   // setup
   'あなたのおもちゃ': 'Your toy', '1P のおもちゃ': 'P1 toy', '2P のおもちゃ': 'P2 toy', 'ダミーのおもちゃ': 'Dummy toy', 'CPU の数': 'CPUs', 'CPU の強さ': 'CPU level', 'かんたん': 'Easy', 'ふつう': 'Normal', 'つよい': 'Hard',
@@ -261,6 +261,7 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
         <button class="btn sub" id="mLad" type="button"><span class="stk"><span data-i18n>ラダー（8戦）</span><small data-i18n>勝ちぬいてボスへ・キャラとステージが開く</small></span></button>
         <button class="btn sub" id="mTrain" type="button"><span class="stk"><span data-i18n>れんしゅう（ダミーあいて）</span></span></button>
         <button class="btn sub" id="mCtl" type="button"><span class="stk"><span data-i18n>操作・設定</span></span></button>
+        <button class="btn sub" id="mOnline" type="button"><span class="stk"><span data-i18n>オンライン対戦</span><small data-i18n>1対1・コードかクイックマッチ</small></span></button>
       </div>
       <button class="btn sub" id="mCont" type="button" hidden></button>
     </div>
@@ -331,6 +332,8 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
 </div>
 <script src="engine.js"></script>
 <script src="art.js"></script>
+<script src="netcode.js"></script>
+<script src="online.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -603,10 +606,10 @@ function newSeed() { return (Math.floor(Math.random() * 0x7fffffff) ^ (Date.now(
 function startMatch(o) {
   if (G && G.mode !== 'demo' && !G.over) endPlay('quit');
   const fighters = o.fighters.map((f, i) => ({ ch: f.ch, lvl: f.lvl | 0, stk: f.stk, name: f.name || '', tj: ctl().tj ? 1 : 0 }));
-  const st = E.create({ seed: o.seed || newSeed(), stage: o.stage, fighters, mode: o.rule && o.rule.mode === 'time' ? 'time' : 'stock', stocks: o.rule ? o.rule.stk : 3, time: o.rule ? o.rule.tm * 60 : 180, training: !!o.training });
+  const st = o.st || E.create({ seed: o.seed || newSeed(), stage: o.stage, fighters, mode: o.rule && o.rule.mode === 'time' ? 'time' : 'stock', stocks: o.rule ? o.rule.stk : 3, time: o.rule ? o.rule.tm * 60 : 180, training: !!o.training });
   if (o.training) { st.dummy = o.dummy || 'stand'; }
   ART.setCfg({ dark: dark(), en: EN, reduced: reduceMotion.matches, T }); ART.reset(st);
-  G = { mode: o.mode, humans: o.humans || 1, st, o, count: o.demo ? 0 : 175, go: 0, over: false, endT: 0, acc: 0, t0: now(), labels: o.labels || null,
+  G = { mode: o.mode, humans: o.humans || 1, st, o, count: o.demo || o.mode === 'online' ? 0 : 175, go: 0, over: false, endT: 0, acc: 0, t0: now(), labels: o.labels || null,
     t: { kos: 0, smashKo: 0, counter: 0, ledge: 0, grab: 0, block: 0, spike: 0, pshield: 0, tech: 0, flick: 0, combo: 0, dmg: 0, last: 0, lostStock: false }, hintDone: false, lastCount: 0, stk0: st.stocks, sceneT: 0 };
   acc = 0; lastT = now();
   const play = o.mode !== 'demo';
@@ -620,7 +623,7 @@ function startMatch(o) {
   $('count').hidden = !play || !G.count;
   trainBoxes = false;
   layout();
-  if (play) { emit('play_start', { mode: 'normal', stage: o.ladder ? o.ladder.idx + 1 : undefined, resumed: false }); }
+  if (play && o.mode !== 'online') { emit('play_start', { mode: 'normal', stage: o.ladder ? o.ladder.idx + 1 : undefined, resumed: false }); }
   needDraw = true;
   return G;
 }
@@ -631,7 +634,7 @@ function setTimeChip() {
   if ($('timeChip').textContent !== txt) $('timeChip').textContent = txt;
 }
 function endPlay(reason) {
-  if (!G || G.mode === 'demo' || G.reported) return;
+  if (!G || G.mode === 'demo' || G.mode === 'online' || G.reported) return;
   G.reported = true;
   emit('play_end', { mode: 'normal', score: 0, durationMs: Math.round(G.st.f / 60 * 1000), reason: reason || 'quit', stats: {} });
 }
@@ -742,6 +745,7 @@ function loop(t) {
   const dt = Math.min(0.1, Math.max(0, (t - lastT) / 1000)); lastT = t;
   padNav();
   if (!G) return;
+  if (G.mode === 'online') { onlineFrame(dt); return; }
   const demo = G.mode === 'demo';
   const run = demo ? (!menuOpen && !document.hidden) : (!anyOverlay() && !menuOpen && !paused);
   if (run) {
@@ -1175,6 +1179,7 @@ if (AU) AU.onChange(renderSound);
 function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (!m) return; m.setAttribute('content', dark() ? '#1b1830' : '#f6f0e4'); ART.setCfg({ dark: dark() }); needDraw = true; }
 let pm = null;
 function openMenu() {
+  if (G && G.mode === 'online') { if (ON && !G.over) ON.askLeave($('stageWrap')); return; }   // online: the match never pauses — only ask whether to leave
   if (!UI) { showTitle(); return; }
   if (pm && pm.isOpen) return;
   const on = playing();
@@ -1189,18 +1194,96 @@ function openMenu() {
   pm.open();
 }
 $('pauseBtn').onclick = () => openMenu();
-addEventListener('keydown', e => { if (e.code === 'KeyP' && playing() && !anyOverlay() && !menuOpen) { e.preventDefault(); openMenu(); } });
+addEventListener('keydown', e => { if (e.code === 'Escape' && G && G.mode === 'online' && !G.over && !remapping) { e.preventDefault(); openMenu(); return; }
+  if (e.code === 'KeyP' && playing() && !anyOverlay() && !menuOpen) { e.preventDefault(); openMenu(); } });
 
 if (window.KoboGame) KoboGame.register({
   id: GAME,
   pause() { paused = true; down.clear(); touchBits[0] = touchBits[1] = 0; },
-  resume(reason) { if (!paused) return; paused = false; if (reason !== 'menu' && playing() && !anyOverlay() && !menuOpen) openMenu(); lastT = now(); acc = 0; },
+  resume(reason) { if (!paused) return; paused = false; if (G && G.mode === 'online') { lastT = now(); return; } if (reason !== 'menu' && playing() && !anyOverlay() && !menuOpen) openMenu(); lastT = now(); acc = 0; },
   isIdle: () => !playing(),
   dispose() { cancelAnimationFrame(raf); },
 });
 document.addEventListener('visibilitychange', () => { lastT = now(); down.clear(); touchBits[0] = touchBits[1] = 0; });
 if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
 window.addEventListener('storage', e => { if (e.key === SAVE_KEY) { save = readSave(); winUnlocks(); rebuildMaps(); } });
+
+
+// ---------- online (brawl/netcode.js = rollback core, brawl/online.js = lobby + RTDB; this page is the "host" that draws and reads the controls) ----------
+const ON = window.BrawlOnline || null;
+function onlineFrame(dt) {
+  const m = G.net;
+  if (m) m.update(dt);
+  if (m && !m.disposed) G.st = m.st();
+  if (G.st.over || (m && m.phase === 'count')) { G.acc += dt; let n = 0; while (G.acc >= E.DT && n++ < 5) { G.acc -= E.DT; ART.tick(G.st); if (G.st.over) G.endT++; } }
+  setTimeChip(); needDraw = true;
+  const inset = isTouchDevice && !view.portrait ? Math.round(view.W * 0.31) : 0;
+  ART.frame(ctx, G.st, view, { labels: G.labels, hudInset: inset, hudBottom: inset ? 6 : 8 });
+  needDraw = false;
+}
+function onlineCount(n) {
+  const el = $('count');
+  if (n < 0) { setTimeout(() => { if (G && G.mode === 'online') el.hidden = true; }, 700); return; }
+  el.textContent = n > 0 ? String(n) : T('GO!'); el.hidden = false; el.dataset.v = String(n); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  tone(n > 0 ? 520 : 880, n > 0 ? 0.08 : 0.2, { type: 'triangle', vol: 0.1, slide: n > 0 ? 0 : 1320 });
+}
+function showOnlineResult(out) {
+  const st = out.st, res = out.res, me = res && res[out.me], opp = out.names[1 - out.me] || '';
+  let title, sub = '';
+  if (out.why === 'desync' || out.why === 'abort') { title = T('ふたりの試合がずれたので、この試合は無効です。'); }
+  else if (out.why === 'lost') { title = T('あなたの通信が切れました。'); }
+  else if (out.why === 'forfeit') { title = out.won ? T('かち！') : T('まけ…'); sub = out.won ? T('相手の通信が切れました。あなたの勝ちです。') : ''; }
+  else { title = out.won ? T('かち！') : out.win < 0 ? T('ひきわけ') : T('まけ…'); }
+  const rows = me ? [[T('ふっとばした数'), me.kos], [T('やられた数'), me.falls], [T('あたえたダメージ'), Math.round(me.dealt) + '%'], [T('うけたダメージ'), Math.round(me.taken) + '%'], [T('最大コンボ'), me.maxCmb], [T('時間'), Math.floor(st.f / 3600) + ':' + String(Math.floor(st.f / 60) % 60).padStart(2, '0')]] : [[T('時間'), Math.floor(st.f / 3600) + ':' + String(Math.floor(st.f / 60) % 60).padStart(2, '0')]];
+  const so = save.stats, valid = out.why !== 'desync' && out.why !== 'abort' && out.why !== 'lost';
+  sub = (sub ? sub + ' ' : '') + (opp ? 'vs ' + opp + ' · ' : '') + T('オンライン {w}勝 / {p}戦', { w: so.ow | 0, p: so.op | 0 });
+  $('rTitle').textContent = title; $('rSub').textContent = sub; $('rSub').hidden = !sub;
+  $('rRows').innerHTML = rows.map(r => '<div>' + esc(r[0]) + '<b>' + esc(r[1]) + '</b></div>').join('');
+  $('rPts').hidden = true; $('rNew').hidden = true; $('rUnl').innerHTML = '';
+  const nx = $('rNext'), ag = $('rAgain'), mn = $('rMenu');
+  nx.disabled = !valid && out.why === 'lost'; nx.textContent = T('もう一度（席をいれかえ）'); nx.onclick = () => { if (ON && ON.rematch()) { nx.disabled = true; nx.textContent = T('あいてを待っています…'); sfx('tap'); } };
+  ag.hidden = false; ag.textContent = T('ロビーにもどる'); ag.onclick = () => { hideOv('ovResult'); ON.toRoom(); };
+  mn.textContent = T('やめる'); mn.onclick = () => { hideOv('ovResult'); ON.leave(); showTitle(); };
+  sfx(out.won ? 'win' : 'over');
+  showOv('ovResult');
+  clearInterval(onlineFrame.poll);
+  onlineFrame.poll = setInterval(() => {
+    if ($('ovResult').hidden || !ON) { clearInterval(onlineFrame.poll); return; }
+    const s = ON.state(), peer = out.peer;
+    if (peer && !s.on[peer] && !nx.disabled) { nx.disabled = true; nx.textContent = T('相手が出ました'); }
+    else if (peer && s.on[peer] && nx.disabled && nx.textContent === T('相手が出ました')) { nx.disabled = false; nx.textContent = T('もう一度（席をいれかえ）'); }
+  }, 500);
+}
+const onlineHost = {
+  hideAll, showOv, sfx: n => sfx(n === 'tap' ? 'tap' : n),
+  toTitle() { hideAll(); showTitle(); },
+  toMenu() { clearInterval(onlineFrame.poll); hideOv('ovResult'); if (!G || G.mode === 'online') startDemo(); },
+  chars: unlockedChars, stages: () => E.STAGE_IDS.filter(hasStage),
+  charName: id => L(E.CH[id].short), stageName: id => L(E.STAGES[id].name),
+  portrait: (c, id, o) => ART.portrait(c, id, o),
+  myChar: () => save.set.c1, setMyChar(id) { save.set.c1 = id; writeSave(); },
+  tj: () => !!ctl().tj,
+  bits: () => { if (DEBUG && window.__bwBot) { try { return window.__bwBot(G.st, G.me) | 0; } catch (e) {} } return humanBits(0); },   // __bwBot：?debug の試験用（キーボードの代わりに決まったボット）
+  beginMatch(m) {
+    hideAll();
+    startMatch({ mode: 'online', title: T('オンライン'), humans: 1, st: m.st(), fighters: m.create.fighters, stage: m.create.stage, labels: m.names.slice() });
+    G.net = m; G.me = m.me; $('pauseBtn').hidden = false; $('timeChip').hidden = false;
+    ON.showHud($('stageWrap')); needDraw = true;
+  },
+  matchPhase() {},
+  count: onlineCount,
+  events(evs, f, st) { for (const e of evs) { ART.event(e, st); onEvent(e, st); } },
+  step(st) { ART.tick(st); G.sceneT++; if (st.over && !G.endT) { G.endT = 1; ART.R.banner = { text: T('ゲーム！'), t: 90 }; sfx('clear'); } },
+  hud: i => ON.setHud(i),
+  bannerDone: () => true,
+  end(out) {
+    G.over = true; ON.hideHud(); ON.hideAsk();
+    if (out.why !== 'desync' && out.why !== 'abort' && out.why !== 'lost') { const S = save.stats; S.op = (S.op | 0) + 1; if (out.won) S.ow = (S.ow | 0) + 1; writeSave(); }
+    showOnlineResult(out);
+  },
+  confirmedLeave() { ON.leave(); hideAll(); showTitle(); },
+};
+if (ON) { ON.init(onlineHost); $('mOnline').onclick = () => ON.open(); } else $('mOnline').hidden = true;
 
 // ---------- boot ----------
 renderSound(); themeColor();
@@ -1226,7 +1309,7 @@ if (DEBUG) {
   };
   window.__kb = Object.assign(window.__kb || {}, api);
   window.__brawl = {
-    api, E, ART, get G() { return G; }, get save() { return save; },
+    api, E, ART, ON, get G() { return G; }, get save() { return save; },
     startVs: (o) => { hideAll(); const s = save.set; o = o || {}; return startMatch(Object.assign({ mode: 'vs', title: T('ひとりで対戦'), humans: 1, stage: 'bench', rule: { mode: 'stock', stk: 3, tm: 3 }, fighters: [{ ch: s.c1, lvl: 0 }, { ch: 'duck', lvl: 2 }], labels: [T('自分'), 'CPU'] }, o)); },
     freeze: (v) => { if (G) G.freeze = v !== false; },
     skipCount: () => { if (G) G.count = 0.01; },

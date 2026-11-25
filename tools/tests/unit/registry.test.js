@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -103,8 +103,8 @@ test('flags reflect what the pages have today', () => {
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
   eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit,reversi', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train,manabi', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,brawl,train,manabi', 'games without a match');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train,manabi,orchestra', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,train,manabi,orchestra', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -189,6 +189,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('reversi', k => null), 0, 'reversi: nothing saved');
   eq(P.rankValue('manabi', k => '{"v":1,"xp":1250,"st":{"ls":12}}'), 1250, 'manabi: total XP');
   eq(P.rankValue('manabi', k => null), 0, 'manabi: nothing saved');
+  eq(P.rankValue('orchestra', k => '{"v":1,"total":268,"stars":7,"stats":{"finishes":8}}'), 268, 'orchestra: total of the best scores');
+  eq(P.rankValue('orchestra', k => null), 0, 'orchestra: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {
