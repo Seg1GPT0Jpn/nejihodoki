@@ -4,7 +4,10 @@
 (function (root) {
   'use strict';
   const DT = 1 / 60;
-  const B = { L: 1, R: 2, U: 4, D: 8, J: 16, A: 32, S: 64, H: 128, G: 256, M: 512 }; // 左・右・上・下・ジャンプ・こうげき・とくぎ・まもり・つかみ・つよい
+  // 左・右・上・下・ジャンプ・こうげき・とくぎ・まもり・つかみ・つよい ／ F＝スティックを「いっぱいまで」たおしている ／ T＝あいさつ ／ CL..CD＝Cスティック（いつも強い攻撃・空中は向きの空中技）
+  const B = { L: 1, R: 2, U: 4, D: 8, J: 16, A: 32, S: 64, H: 128, G: 256, M: 512, F: 1024, T: 2048, CL: 4096, CR: 8192, CU: 16384, CD: 32768 };
+  const CMASK = B.CL | B.CR | B.CU | B.CD;
+  const FLICK_N = 4, FLICK_HOLD = 6, WALK = 0.62, DASH_F = 14, TECH_WIN = 20, TECH_LOCK = 40;
   const rd = v => Math.round(v * 1000) / 1000;
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   // 角度（度。0＝前、90＝上）→ 向き [dx, dy]（dy は上が負）
@@ -64,20 +67,31 @@
     fsmash: { s: 14, a: 4, t: 44, dmg: 15, bkb: 28, kbg: 40, ang: 38, hb: [[30, -34, 62, -26, 22]], sm: 1 },
     usmash: { s: 12, a: 5, t: 46, dmg: 14, bkb: 28, kbg: 38, ang: 88, hb: [[14, -40, -10, -86, 22]], sm: 1 },
     dsmash: { s: 10, a: 6, t: 44, dmg: 12, bkb: 25, kbg: 34, ang: 30, hb: [[40, -10, 40, -10, 17], [-40, -10, -40, -10, 17]], sm: 1 },
-    nair:   { s: 4, a: 10, t: 26, dmg: 7, bkb: 12, kbg: 16, ang: 50, hb: [[0, -30, 0, -30, 25]], ll: 8 },
-    fair:   { s: 8, a: 4, t: 28, dmg: 10, bkb: 20, kbg: 28, ang: 40, hb: [[28, -30, 44, -12, 18]], ll: 14 },
-    bair:   { s: 7, a: 4, t: 26, dmg: 11, bkb: 22, kbg: 32, ang: 145, hb: [[-34, -30, -46, -28, 17]], ll: 12 },
-    uair:   { s: 5, a: 5, t: 24, dmg: 8, bkb: 18, kbg: 24, ang: 88, hb: [[6, -62, -6, -80, 18]], ll: 10 },
-    dair:   { s: 11, a: 6, t: 34, dmg: 11, bkb: 22, kbg: 26, ang: -70, hb: [[6, 6, 12, -6, 17]], ll: 18 },
+    // ac＝オートキャンセル（[はやすぎる, おそい] のフレームに着地すれば、着地のすきなし）
+    nair:   { s: 4, a: 10, t: 26, dmg: 7, bkb: 12, kbg: 16, ang: 50, hb: [[0, -30, 0, -30, 25]], ll: 8, ac: [3, 19] },
+    fair:   { s: 8, a: 4, t: 28, dmg: 10, bkb: 20, kbg: 28, ang: 40, hb: [[28, -30, 44, -12, 18]], ll: 14, ac: [5, 22] },
+    bair:   { s: 7, a: 4, t: 26, dmg: 11, bkb: 22, kbg: 32, ang: 145, hb: [[-34, -30, -46, -28, 17]], ll: 12, ac: [5, 21] },
+    uair:   { s: 5, a: 5, t: 24, dmg: 8, bkb: 18, kbg: 24, ang: 88, hb: [[6, -62, -6, -80, 18]], ll: 10, ac: [4, 18] },
+    dair:   { s: 11, a: 6, t: 34, dmg: 11, bkb: 22, kbg: 26, ang: -70, hb: [[6, 6, 12, -6, 17]], ll: 18, ac: [6, 28] },
   };
   const NORMALS = Object.keys(BASE);
+  // ほかの地上の技（ダッシュこうげき・れんだ・れんだのしめ・ふちのぼり・おきあがりこうげき）。NORMALS には入れない
+  const EXTRA_BASE = {
+    dattack:  { kind: 'dash', v: 5.4, s: 7, a: 6, t: 32, dmg: 7, bkb: 16, kbg: 22, ang: 45, hb: [[26, -28, 46, -26, 17]] },
+    rjab:     { s: 2, a: 2, t: 6, dmg: 1.3, bkb: 5, kbg: 0, ang: 30, hb: [[30, -30, 40, -30, 14]] },
+    jabfin:   { s: 3, a: 4, t: 18, dmg: 3.5, bkb: 14, kbg: 12, ang: 40, hb: [[30, -30, 52, -30, 16]] },
+    ledgeatk: { s: 3, a: 5, t: 22, dmg: 6, bkb: 18, kbg: 18, ang: 50, hb: [[24, -24, 52, -24, 18]] },
+    getupatk: { s: 4, a: 5, t: 24, dmg: 6, bkb: 16, kbg: 16, ang: 60, hb: [[30, -12, 36, -12, 18], [-30, -12, -36, -12, 18]] },
+  };
+  const EXTRAS = Object.keys(EXTRA_BASE);
   // キャラごとの「くせ」：reach=横の長さ sp=はじまる・おわる速さ（小さいほど速い） pw=ちから rr=あたり判定の大きさ ov=技ごとの上書き
   function normals(k) {
     const out = {};
-    for (const key of NORMALS) {
-      const b = BASE[key], o = (k.ov && k.ov[key]) || {};
+    for (const key of NORMALS.concat(EXTRAS)) {
+      const b = BASE[key] || EXTRA_BASE[key], o = (k.ov && k.ov[key]) || {};
       const sp = o.sp || k.sp;
-      const m = { kind: 'melee', fx: o.fx || k.fx, sm: b.sm || 0, ll: b.ll || 0 };
+      const m = { kind: b.kind || 'melee', fx: o.fx || k.fx, sm: b.sm || 0, ll: b.ll || 0 };
+      if (b.v) m.v = b.v; if (b.ac) m.ac = b.ac.slice();
       m.s = Math.max(2, Math.round(b.s * sp)); m.a = o.a || b.a; m.t = Math.max(m.s + m.a + 4, Math.round(b.t * (0.5 + sp * 0.5) + (o.dt || 0)));
       m.dmg = rd(b.dmg * k.pw * (o.pw || 1)); m.bkb = rd(b.bkb * (0.85 + 0.15 * k.pw)); m.kbg = rd(b.kbg * k.pw * (o.pw || 1)); m.ang = o.ang != null ? o.ang : b.ang;
       if (o.bkb) m.bkb = o.bkb; if (o.kbg) m.kbg = o.kbg;
@@ -124,7 +138,7 @@
     bear: { id: 'bear', name: { ja: 'ぬいぐるみクマ モコ', en: 'Moko the Plush Bear' }, short: { ja: 'モコ', en: 'Moko' }, tag: { ja: '重くて一発が強い', en: 'Heavy hitter' },
       desc: { ja: '綿のつまった大きなクマ。のろいけれど、一発が重く、なかなか飛ばされない。「ぎゅっ」はつかみ技。', en: 'A big stuffed bear. Slow, but heavy hits and hard to launch. Its bear hug is a command grab.' },
       color: '#c98a52', color2: '#f2d7b0', w: 42, h: 66, weight: 138, run: 2.7, acc: 0.42, air: 2.3, aacc: 0.16, jump: 10.2, dj: 9.2, grav: 0.46, fall: 9.4, ff: 13.4, stats: { speed: 1, power: 5, weight: 5, reach: 3, recov: 1 },
-      kit: { reach: 1.1, sp: 1.2, pw: 1.35, rr: 1.28, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick', a: 8 }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
+      kit: { reach: 1.1, sp: 1.18, pw: 1.36, rr: 1.28, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick', a: 8 }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
       sp: {
         N: sp({ kind: 'cmdgrab', fx: 'hug', s: 9, a: 4, t: 44, dmg: 11, bkb: 30, kbg: 40, ang: 55, hb: [[34, -32, 40, -32, 28]] }),
         S: sp({ kind: 'melee', fx: 'punch', s: 18, a: 5, t: 54, dmg: 17, bkb: 30, kbg: 44, ang: 40, hb: [[20, -62, 56, -14, 32]] }),
@@ -133,8 +147,8 @@
       } },
     top: { id: 'top', name: { ja: 'こま クルリン', en: 'Whirlo the Spinning Top' }, short: { ja: 'クルリン', en: 'Whirlo' }, tag: { ja: '速くて軽い', en: 'Fast and light' },
       desc: { ja: '紐でまわる小さなこま。とても速くて動きまわるが、軽くてすぐ飛ぶ。「スピン」で連続ヒット。', en: 'A tiny top that zips around. Very fast, very light. Its spin hits many times.' },
-      color: '#9a59c9', color2: '#4fc0c2', w: 34, h: 46, weight: 84, run: 4.8, acc: 0.7, air: 3.4, aacc: 0.28, jump: 11.4, dj: 10.6, grav: 0.47, fall: 9.4, ff: 13.8, stats: { speed: 5, power: 2, weight: 1, reach: 2, recov: 4 },
-      kit: { reach: 1.05, sp: 0.85, pw: 1.02, rr: 1.05, fx: 'spin', ov: { jab: { fx: 'spin' }, ftilt: { fx: 'spin' }, utilt: { fx: 'spin' }, nair: { rr: 1.15, a: 14 } } },
+      color: '#9a59c9', color2: '#4fc0c2', w: 34, h: 46, weight: 84, run: 4.6, acc: 0.7, air: 3.4, aacc: 0.28, jump: 11.4, dj: 10.6, grav: 0.47, fall: 9.4, ff: 13.8, stats: { speed: 5, power: 2, weight: 1, reach: 2, recov: 4 },
+      kit: { reach: 1.05, sp: 0.88, pw: 0.95, rr: 1.05, fx: 'spin', ov: { jab: { fx: 'spin' }, ftilt: { fx: 'spin' }, utilt: { fx: 'spin' }, nair: { rr: 1.15, a: 14 } } },
       sp: {
         N: sp({ kind: 'spin', fx: 'spin', s: 6, a: 42, t: 66, rh: 7, dmg: 1.8, bkb: 7, kbg: 0, ang: 50, fin: { dmg: 5, bkb: 22, kbg: 24, ang: 50 }, hb: [[0, -24, 0, -24, 28]] }),
         S: sp({ kind: 'dash', fx: 'spin', s: 8, a: 14, t: 40, v: 8, dmg: 8, bkb: 18, kbg: 22, ang: 45, hb: [[0, -24, 8, -24, 24]] }),
@@ -151,6 +165,128 @@
         U: sp({ kind: 'rise', fx: 'springup', s: 5, a: 22, t: 46, rv: 13.4, dv: 2.4, ang: 85, dmg: 5, bkb: 22, kbg: 24, hb: [[0, -64, 0, -64, 22]] }),
         D: sp({ kind: 'melee', fx: 'lid', s: 6, a: 5, t: 48, arm: [6, 22], dmg: 10, bkb: 24, kbg: 30, ang: 60, hb: [[0, -28, 0, -28, 44]] }),
       } },
+    // ---- ここから、あとから増えたおもちゃ（12人）
+    ninja: { id: 'ninja', name: { ja: '折り紙ニンジャ オリガ', en: 'Origa the Paper Ninja' }, short: { ja: 'オリガ', en: 'Origa' }, tag: { ja: 'ワープと不意うち', en: 'Warping trickster' },
+      desc: { ja: '一枚の紙から折られた小さな忍者。手裏剣を投げ、ワープで相手の背中へまわりこむ。軽くて速い。', en: 'A tiny ninja folded from one sheet of paper. Throws stars and warps behind its rival. Light and quick.' },
+      color: '#c9374a', color2: '#f4efe2', w: 28, h: 54, weight: 88, run: 4.3, acc: 0.62, air: 3.2, aacc: 0.26, jump: 11.4, dj: 10.8, grav: 0.45, fall: 9.0, ff: 13.6, stats: { speed: 4, power: 2, weight: 1, reach: 2, recov: 4 },
+      kit: { reach: 1.05, sp: 0.92, pw: 1.0, rr: 1.0, fx: 'slash', ov: { jab: { sp: 0.8 }, nair: { fx: 'spin' }, dair: { fx: 'kick' }, bair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'proj', fx: 'cast', s: 9, a: 1, t: 28, proj: { sp: 10, vy: 0, g: 0, r: 7, life: 45, dmg: 4, bkb: 8, kbg: 8, ang: 15, kind: 'shuriken' } }),
+        S: sp({ kind: 'tele', fx: 'slash', s: 10, a: 5, t: 34, td: 150, dd: [1, 0], dmg: 7, bkb: 18, kbg: 22, ang: 40, hb: [[16, -30, 40, -30, 18]] }),
+        U: sp({ kind: 'tele', fx: 'cast', s: 9, a: 1, t: 36, td: 190, dd: [0, -1], help: true, dmg: 0, bkb: 0, kbg: 0, hb: [] }),
+        D: sp({ kind: 'tele', fx: 'ring', s: 8, a: 4, t: 32, td: 110, dd: [-1, 0], fixed: 1, dmg: 5, bkb: 14, kbg: 14, ang: 60, hb: [[0, -28, 0, -28, 26]] }),
+      } },
+    wiz: { id: 'wiz', name: { ja: '魔法使いパペット マジナ', en: 'Magina the Puppet Wizard' }, short: { ja: 'マジナ', en: 'Magina' }, tag: { ja: '遠くから魔法', en: 'Long-range zoner' },
+      desc: { ja: '糸であやつられる魔法使い。光の玉と大きな火の玉で遠くから攻める。「まほうのかべ」で飛び道具をはね返す。', en: 'A puppet wizard on strings. Orbs and a big fireball keep rivals at range, and a magic wall bounces shots back.' },
+      color: '#6b46c1', color2: '#f2d13c', w: 30, h: 60, weight: 86, run: 3.0, acc: 0.45, air: 2.6, aacc: 0.2, jump: 10.4, dj: 9.8, grav: 0.38, fall: 7.4, ff: 11.2, stats: { speed: 2, power: 2, weight: 1, reach: 2, recov: 4 },
+      kit: { reach: 1.0, sp: 1.02, pw: 1.02, rr: 1.0, fx: 'slash', ov: { jab: { fx: 'punch' }, nair: { fx: 'spin' }, dair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'proj', fx: 'cast', s: 12, a: 1, t: 34, proj: { sp: 6.2, vy: 0, g: 0, r: 11, life: 90, dmg: 6, bkb: 10, kbg: 12, ang: 22, kind: 'orb' } }),
+        S: sp({ kind: 'proj', fx: 'cast', s: 20, a: 1, t: 54, proj: { sp: 4.2, vy: -0.6, g: 0.02, r: 19, life: 80, dmg: 11, bkb: 22, kbg: 28, ang: 32, kind: 'fire' } }),
+        U: sp({ kind: 'tele', fx: 'cast', s: 10, a: 1, t: 44, td: 175, dd: [0, -1], help: true, dmg: 0, bkb: 0, kbg: 0, hb: [] }),
+        D: sp({ kind: 'reflect', fx: 'ring', s: 3, a: 20, t: 40, dmg: 3, bkb: 20, kbg: 6, ang: 30, hb: [[26, -30, 40, -30, 28]] }),
+      } },
+    cat: { id: 'cat', name: { ja: 'ぜんまいネコ タマ', en: 'Tama the Clockwork Cat' }, short: { ja: 'タマ', en: 'Tama' }, tag: { ja: 'すばやいラッシュ', en: 'Fast rushdown' },
+      desc: { ja: '背中のぜんまいで走りまわるブリキのネコ。リーチは短いが、速くて手数が多い。「ひっかきの嵐」で連続ヒット。', en: 'A tin cat that never stops running. Short reach, but very fast with lots of hits. Its claw flurry is a multi-hit.' },
+      color: '#e59a45', color2: '#fff3d6', w: 32, h: 44, weight: 86, run: 4.9, acc: 0.72, air: 3.3, aacc: 0.27, jump: 11.2, dj: 10.2, grav: 0.46, fall: 9.2, ff: 13.6, stats: { speed: 5, power: 2, weight: 1, reach: 1, recov: 3 },
+      kit: { reach: 0.95, sp: 0.8, pw: 0.97, rr: 1.05, fx: 'slash', ov: { jab: { sp: 0.7, fx: 'slash' }, nair: { fx: 'spin' }, dair: { fx: 'kick' }, utilt: { fx: 'slash' }, ftilt: { fx: 'slash' } } },
+      sp: {
+        N: sp({ kind: 'spin', fx: 'slash', s: 5, a: 36, t: 58, rh: 6, dmg: 1.5, bkb: 6, kbg: 0, ang: 55, fin: { dmg: 4, bkb: 20, kbg: 22, ang: 50 }, hb: [[16, -24, 26, -24, 24]] }),
+        S: sp({ kind: 'dash', fx: 'slash', s: 10, a: 10, t: 40, v: 8.4, dmg: 8, bkb: 18, kbg: 24, ang: 40, hb: [[26, -24, 46, -24, 16]] }),
+        U: sp({ kind: 'rise', fx: 'slash', s: 5, a: 20, t: 40, rv: 11.2, dv: 2.8, ang: 85, dmg: 5, bkb: 20, kbg: 22, hb: [[10, -40, 0, -66, 18]] }),
+        D: sp({ kind: 'melee', fx: 'kick', s: 6, a: 5, t: 30, dmg: 6, bkb: 18, kbg: 18, ang: 60, hb: [[34, -10, 40, -10, 16], [-34, -10, -40, -10, 16]] }),
+      } },
+    tank: { id: 'tank', name: { ja: 'プラモ戦車 ガッチョ', en: 'Gatcho the Model Tank' }, short: { ja: 'ガッチョ', en: 'Gatcho' }, tag: { ja: 'どっしり大砲', en: 'Heavy artillery' },
+      desc: { ja: 'プラスチックの小さな戦車。のろくて、ジャンプも低いが、とても重くて砲弾の一発が重い。ぶつかりは「ふんばり」つき。', en: 'A little plastic tank. Slow, with a low hop, but very heavy and its shells hit hard. The ram has armor.' },
+      color: '#5f7f4a', color2: '#c9b27a', w: 54, h: 50, weight: 132, run: 2.2, acc: 0.36, air: 2.0, aacc: 0.13, jump: 9.4, dj: 8.6, grav: 0.5, fall: 9.8, ff: 13.6, stats: { speed: 1, power: 5, weight: 5, reach: 3, recov: 1 },
+      kit: { reach: 1.0, sp: 1.2, pw: 1.24, rr: 1.3, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick', a: 8 }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'proj', fx: 'cast', s: 16, a: 1, t: 44, proj: { sp: 7.2, vy: -1.2, g: 0.16, r: 14, life: 100, dmg: 10, bkb: 20, kbg: 26, ang: 30, kind: 'shell' } }),
+        S: sp({ kind: 'dash', fx: 'shield', s: 14, a: 10, t: 50, v: 4.6, arm: [10, 26], dmg: 14, bkb: 26, kbg: 34, ang: 36, hb: [[30, -26, 52, -26, 26]] }),
+        U: sp({ kind: 'rise', fx: 'puff', s: 8, a: 16, t: 46, rv: 9.6, dv: 2.6, ang: 80, dmg: 5, bkb: 18, kbg: 20, hb: [[0, -26, 0, -26, 30]] }),
+        D: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 46, proj: { sp: 3.2, vy: -7.4, g: 0.34, r: 14, life: 110, dmg: 9, bkb: 18, kbg: 24, ang: 62, kind: 'shell' } }),
+      } },
+    giraffe: { id: 'giraffe', name: { ja: '積み木キリン ノッポ', en: 'Noppo the Block Giraffe' }, short: { ja: 'ノッポ', en: 'Noppo' }, tag: { ja: 'いちばん高くて長い', en: 'Tallest, longest reach' },
+      desc: { ja: '積み木を重ねてできたキリン。首が長く、攻撃がとても遠くまで届く。足もとは少し苦手。', en: 'A giraffe stacked from building blocks. Its long neck reaches far, though feet-level is a weak spot.' },
+      color: '#f0c24a', color2: '#8a5a2b', w: 30, h: 84, weight: 98, run: 3.1, acc: 0.5, air: 2.5, aacc: 0.19, jump: 10.6, dj: 9.6, grav: 0.43, fall: 8.4, ff: 12.4, stats: { speed: 2, power: 3, weight: 3, reach: 5, recov: 3 },
+      kit: { reach: 1.6, sp: 1.05, pw: 1.24, rr: 0.95, fx: 'spring', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick' }, dtilt: { fx: 'kick', reach: 1.0 }, jab: { fx: 'punch' } } },
+      sp: {
+        N: sp({ kind: 'melee', fx: 'spring', s: 14, a: 6, t: 44, dmg: 10, bkb: 22, kbg: 30, ang: 38, hb: [[30, -82, 100, -60, 18]] }),
+        S: sp({ kind: 'melee', fx: 'spring', s: 16, a: 6, t: 50, dmg: 13, bkb: 26, kbg: 34, ang: 35, hb: [[40, -70, 140, -50, 16]] }),
+        U: sp({ kind: 'rise', fx: 'spring', s: 6, a: 22, t: 46, rv: 11.2, dv: 2.4, ang: 85, dmg: 5, bkb: 20, kbg: 22, hb: [[0, -80, 0, -110, 22]] }),
+        D: sp({ kind: 'melee', fx: 'kick', s: 10, a: 6, t: 40, arm: [10, 20], dmg: 9, bkb: 22, kbg: 26, ang: 60, hb: [[36, -6, 44, -6, 20], [-36, -6, -44, -6, 20]] }),
+      } },
+    ball: { id: 'ball', name: { ja: 'ゴムまり ポンタ', en: 'Ponta the Rubber Ball' }, short: { ja: 'ポンタ', en: 'Ponta' }, tag: { ja: 'はずむトリッキー', en: 'Bouncy trickster' },
+      desc: { ja: 'よくはずむゴムのまり。ジャンプが高く、空中ジャンプが2回できる。丸まって転がり、地面にバウンドして落ちる。', en: 'A very bouncy rubber ball. Jumps high with two air jumps. Rolls up into a ball and slams down with a bounce.' },
+      color: '#3aa6e0', color2: '#ffd23f', w: 36, h: 40, weight: 90, run: 3.6, acc: 0.55, air: 3.0, aacc: 0.24, jump: 12.6, dj: 11.4, grav: 0.5, fall: 9.4, ff: 14, jmax: 2, stats: { speed: 3, power: 2, weight: 2, reach: 1, recov: 5 },
+      kit: { reach: 0.9, sp: 0.95, pw: 1.06, rr: 1.15, fx: 'spin', ov: { jab: { fx: 'punch' }, dair: { fx: 'spin' }, bair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'spin', fx: 'spin', s: 6, a: 30, t: 52, rh: 6, dmg: 1.6, bkb: 6, kbg: 0, ang: 60, fin: { dmg: 4.5, bkb: 22, kbg: 24, ang: 55 }, hb: [[0, -20, 0, -20, 26]] }),
+        S: sp({ kind: 'dash', fx: 'spin', s: 9, a: 12, t: 42, v: 7.6, dmg: 8, bkb: 18, kbg: 22, ang: 50, hb: [[0, -20, 10, -20, 24]] }),
+        U: sp({ kind: 'rise', fx: 'springup', s: 4, a: 20, t: 40, rv: 13.0, dv: 2.6, ang: 85, dmg: 4, bkb: 16, kbg: 18, hb: [[0, -26, 0, -26, 24]] }),
+        D: sp({ kind: 'pound', fx: 'body', s: 12, t: 54, fv: 13, dmg: 10, bkb: 18, kbg: 26, ang: -78, hb: [[0, 8, 0, 8, 28]], land: { a: 5, dmg: 7, bkb: 22, kbg: 24, ang: 55, hb: [[34, -6, 34, -6, 28], [-34, -6, -34, -6, 28]] } }),
+      } },
+    crab: { id: 'crab', name: { ja: 'ブリキのカニ チョキ', en: 'Chokki the Tin Crab' }, short: { ja: 'チョキ', en: 'Chokki' }, tag: { ja: 'つかみの名人', en: 'Grappler' },
+      desc: { ja: 'ハサミが自慢のブリキのカニ。つかみとなげがとても強い。「はさみつかみ」は、まもりも通りぬける。', en: 'A tin crab proud of its claws. Throws hit hardest here. The pincer grab reaches far and ignores shields.' },
+      color: '#d6483d', color2: '#f5d6a0', w: 40, h: 40, weight: 114, run: 3.0, acc: 0.5, air: 2.4, aacc: 0.18, jump: 10.0, dj: 9.0, grav: 0.46, fall: 9.0, ff: 13, stats: { speed: 2, power: 4, weight: 4, reach: 1, recov: 2 },
+      tw: { f: { dmg: 9, kbg: 60 }, b: { dmg: 10, kbg: 58 }, u: { dmg: 8, kbg: 52 }, d: { dmg: 7, kbg: 42 } },
+      kit: { reach: 0.9, sp: 1.1, pw: 1.0, rr: 1.2, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick' }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'cmdgrab', fx: 'hug', s: 8, a: 5, t: 46, dmg: 14, bkb: 32, kbg: 44, ang: 50, hb: [[34, -22, 52, -22, 30]] }),
+        S: sp({ kind: 'dash', fx: 'punch', s: 10, a: 8, t: 44, v: 5.2, dmg: 9, bkb: 22, kbg: 28, ang: 38, hb: [[30, -22, 48, -22, 20]] }),
+        U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 20, t: 46, rv: 9.8, dv: 2.6, ang: 82, dmg: 5, bkb: 18, kbg: 20, hb: [[0, -30, 0, -30, 28]] }),
+        D: sp({ kind: 'melee', fx: 'punch', s: 7, a: 5, t: 36, arm: [7, 18], dmg: 10, bkb: 24, kbg: 28, ang: 55, hb: [[30, -26, 46, -20, 24]] }),
+      } },
+    snail: { id: 'snail', name: { ja: 'オルゴールかたつむり ノロリン', en: 'Nororin the Music-Box Snail' }, short: { ja: 'ノロリン', en: 'Nororin' }, tag: { ja: 'しかけて待つ', en: 'Trap-setter' },
+      desc: { ja: '背中のからがオルゴールのかたつむり。遅いけれど、音符の地雷を3つまでしかけられる。からに入ればふんばれる。', en: 'A snail with a music box for a shell. Slow, but it can plant up to three note mines. Curl up in the shell to stand firm.' },
+      color: '#7fb069', color2: '#e8c07a', w: 40, h: 44, weight: 108, run: 2.5, acc: 0.42, air: 2.1, aacc: 0.15, jump: 9.2, dj: 8.4, grav: 0.44, fall: 7.8, ff: 12, stats: { speed: 1, power: 3, weight: 3, reach: 3, recov: 2 },
+      kit: { reach: 1.05, sp: 1.05, pw: 1.18, rr: 1.1, fx: 'punch', ov: { nair: { fx: 'ring' }, dair: { fx: 'kick' }, bair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'mine', fx: 'cast', s: 10, a: 1, t: 38, proj: { r: 20, life: 1100, arm: 36, dmg: 10, bkb: 24, kbg: 32, ang: 72, kind: 'mine', max: 3 } }),
+        S: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 44, proj: { sp: 3.6, vy: -3, g: 0.22, r: 13, life: 140, dmg: 7, bkb: 14, kbg: 16, ang: 40, kind: 'note', bounce: 1 } }),
+        U: sp({ kind: 'rise', fx: 'ring', s: 8, a: 22, t: 52, rv: 8.2, dv: 3.0, ang: 80, dmg: 6, bkb: 22, kbg: 24, hb: [[0, -26, 0, -26, 34]] }),
+        D: sp({ kind: 'melee', fx: 'ring', s: 5, a: 6, t: 44, arm: [5, 22], dmg: 7, bkb: 20, kbg: 24, ang: 70, hb: [[0, -26, 0, -26, 44]] }),
+      } },
+    kaiju: { id: 'kaiju', name: { ja: 'ソフビ怪獣 ガオロン', en: 'Gaoron the Vinyl Beast' }, short: { ja: 'ガオロン', en: 'Gaoron' }, tag: { ja: 'パワフルな暴れん坊', en: 'Power bruiser' },
+      desc: { ja: 'ビニールでできた怪獣のおもちゃ。力が強く、しっぽとかみつきが重い。炎は近くにしか届かない。', en: 'A vinyl monster toy. Strong, with a heavy tail and bite. Its flame only reaches up close.' },
+      color: '#2f9e8f', color2: '#f2e36b', w: 46, h: 72, weight: 116, run: 3.1, acc: 0.46, air: 2.4, aacc: 0.17, jump: 10.0, dj: 9.0, grav: 0.46, fall: 9.2, ff: 13.2, stats: { speed: 2, power: 5, weight: 4, reach: 3, recov: 2 },
+      kit: { reach: 1.15, sp: 1.14, pw: 1.14, rr: 1.2, fx: 'punch', ov: { nair: { fx: 'spin' }, bair: { fx: 'kick' }, dair: { fx: 'kick' }, dtilt: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'proj', fx: 'cast', s: 12, a: 1, t: 38, proj: { sp: 7, vy: 0, g: 0, r: 15, life: 22, dmg: 6, bkb: 12, kbg: 14, ang: 25, kind: 'flame' } }),
+        S: sp({ kind: 'dash', fx: 'punch', s: 12, a: 9, t: 46, v: 5.8, arm: [8, 20], dmg: 13, bkb: 26, kbg: 34, ang: 36, hb: [[34, -50, 52, -40, 26]] }),
+        U: sp({ kind: 'rise', fx: 'puff', s: 7, a: 18, t: 46, rv: 9.4, dv: 3.0, ang: 80, dmg: 6, bkb: 18, kbg: 22, hb: [[0, -50, 0, -50, 36]] }),
+        D: sp({ kind: 'melee', fx: 'spin', s: 8, a: 7, t: 40, dmg: 11, bkb: 24, kbg: 30, ang: 50, hb: [[44, -14, 60, -14, 20], [-44, -14, -60, -14, 20]] }),
+      } },
+    samurai: { id: 'samurai', name: { ja: 'こけし侍 コケマル', en: 'Kokemaru the Kokeshi Samurai' }, short: { ja: 'コケマル', en: 'Kokemaru' }, tag: { ja: '居合と見切り', en: 'Swordsman with parry' },
+      desc: { ja: '木のこけしの小さなお侍。刀のリーチが長く、居合ぎりで一気に間をつめる。「みきり」で技をはね返す。', en: 'A small samurai made from a wooden kokeshi doll. Long sword reach and a lunging draw-slash. Its parry turns hits around.' },
+      color: '#2b3a67', color2: '#f2e4cf', w: 28, h: 62, weight: 94, run: 4.0, acc: 0.58, air: 2.8, aacc: 0.21, jump: 10.8, dj: 9.8, grav: 0.44, fall: 8.8, ff: 13, stats: { speed: 4, power: 3, weight: 2, reach: 5, recov: 3 },
+      kit: { reach: 1.55, sp: 0.92, pw: 1.05, rr: 0.95, fx: 'slash', ov: { jab: { fx: 'slash', reach: 1.1 }, nair: { fx: 'spin' }, dair: { fx: 'slash' }, bair: { fx: 'kick' }, dtilt: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'dash', fx: 'slash', s: 11, a: 6, t: 38, v: 9.5, dmg: 10, bkb: 22, kbg: 30, ang: 38, hb: [[30, -30, 70, -30, 16]] }),
+        S: sp({ kind: 'melee', fx: 'slash', s: 12, a: 6, t: 40, dmg: 11, bkb: 24, kbg: 32, ang: 50, hb: [[24, -20, 80, -60, 16]] }),
+        U: sp({ kind: 'rise', fx: 'slash', s: 5, a: 20, t: 42, rv: 11.0, dv: 2.4, ang: 80, dmg: 7, bkb: 24, kbg: 28, hb: [[14, -50, 0, -86, 22]] }),
+        D: sp({ kind: 'counter', fx: 'slash', s: 4, a: 18, t: 50, cf: 22, cs: 4, ca: 4, dmg: 9, bkb: 26, kbg: 34, ang: 40, hb: [[34, -30, 66, -28, 22]] }),
+      } },
+    balloon: { id: 'balloon', name: { ja: 'ふうせんウサギ プカ', en: 'Puka the Balloon Bunny' }, short: { ja: 'プカ', en: 'Puka' }, tag: { ja: 'ふわふわ空中戦', en: 'Floaty air fighter' },
+      desc: { ja: 'ふうせんでできたウサギ。とても軽くてゆっくり落ち、空中ジャンプが3回。軽いので、すぐ飛ばされる。', en: 'A rabbit made of balloons. Very light, falls slowly and jumps three times in the air. Light enough to fly far.' },
+      color: '#f48fb1', color2: '#ffffff', w: 34, h: 56, weight: 84, run: 3.6, acc: 0.55, air: 3.1, aacc: 0.3, jump: 9.8, dj: 8.4, grav: 0.3, fall: 5.8, ff: 9.6, jmax: 3, stats: { speed: 3, power: 1, weight: 1, reach: 2, recov: 5 },
+      kit: { reach: 1.05, sp: 0.9, pw: 1.2, rr: 1.05, fx: 'kick', ov: { jab: { fx: 'punch' }, nair: { fx: 'spin' }, uair: { fx: 'kick' } } },
+      sp: {
+        N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 30, proj: { sp: 8.4, vy: 0, g: 0, r: 7, life: 50, dmg: 4, bkb: 8, kbg: 8, ang: 20, kind: 'dart' } }),
+        S: sp({ kind: 'melee', fx: 'kick', s: 11, a: 6, t: 38, dmg: 9, bkb: 22, kbg: 28, ang: 40, hb: [[28, -20, 56, -14, 18]] }),
+        U: sp({ kind: 'rise', fx: 'puff', s: 5, a: 24, t: 48, rv: 7.6, dv: 3.2, ang: 85, dmg: 3, bkb: 14, kbg: 14, hb: [[0, -50, 0, -50, 26]] }),
+        D: sp({ kind: 'melee', fx: 'ring', s: 6, a: 5, t: 34, dmg: 8, bkb: 20, kbg: 24, ang: 70, hb: [[0, -50, 0, -50, 40]] }),
+      } },
+    penguin: { id: 'penguin', name: { ja: 'ペンギン太鼓 ドンドコ', en: 'Dondoko the Drum Penguin' }, short: { ja: 'ドンドコ', en: 'Dondoko' }, tag: { ja: 'はね返しと衝撃波', en: 'Reflector, shockwaves' },
+      desc: { ja: '太鼓をたたくペンギンのおもちゃ。太鼓の音の波を飛ばし、「ドラムシールド」で飛び道具をはね返す。', en: 'A toy penguin with a drum. Sends out sound waves and its drum shield bounces projectiles back.' },
+      color: '#2c3e50', color2: '#f8f4ea', w: 38, h: 58, weight: 112, run: 3.0, acc: 0.5, air: 2.5, aacc: 0.19, jump: 10.2, dj: 9.2, grav: 0.45, fall: 8.8, ff: 12.8, stats: { speed: 2, power: 3, weight: 4, reach: 3, recov: 3 },
+      kit: { reach: 1.1, sp: 1.0, pw: 1.2, rr: 1.15, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick' }, bair: { fx: 'kick' }, ftilt: { fx: 'punch' } } },
+      sp: {
+        N: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 40, proj: { sp: 4.8, vy: 0, g: 0, r: 22, life: 60, dmg: 5, bkb: 14, kbg: 12, ang: 20, kind: 'wave' } }),
+        S: sp({ kind: 'melee', fx: 'punch', s: 14, a: 6, t: 46, dmg: 12, bkb: 25, kbg: 32, ang: 38, hb: [[26, -40, 66, -22, 20]] }),
+        U: sp({ kind: 'rise', fx: 'prop', s: 6, a: 20, t: 46, rv: 9.6, dv: 3.0, ang: 82, dmg: 6, bkb: 20, kbg: 22, hb: [[0, -40, 0, -40, 30]] }),
+        D: sp({ kind: 'reflect', fx: 'shield', s: 3, a: 22, t: 42, dmg: 5, bkb: 22, kbg: 14, ang: 40, hb: [[28, -30, 42, -30, 30]] }),
+      } },
     // ボス（ラダーの最後）。えらべない
     junk: { id: 'junk', boss: 1, name: { ja: 'ガラクタ大王', en: 'Junk King' }, short: { ja: 'ガラクタ大王', en: 'Junk King' }, tag: { ja: 'ラスボス', en: 'Final boss' },
       desc: { ja: 'こわれたおもちゃを積みあげた、工房の王さま。重くて大きい。', en: 'The king of the workshop, stacked from broken toys. Huge and heavy.' },
@@ -163,19 +299,19 @@
         D: sp({ kind: 'pound', fx: 'body', s: 16, t: 58, fv: 14, dmg: 13, bkb: 20, kbg: 28, ang: -78, hb: [[0, 8, 0, 8, 50]], land: { a: 7, dmg: 10, bkb: 26, kbg: 28, ang: 50, hb: [[60, -8, 60, -8, 46], [-60, -8, -60, -8, 46]] } }),
       } },
   };
-  const CHAR_IDS = ['robo', 'duck', 'tin', 'bear', 'top', 'jack'];
+  const CHAR_IDS = ['robo', 'duck', 'tin', 'bear', 'top', 'jack', 'ninja', 'wiz', 'cat', 'tank', 'giraffe', 'ball', 'crab', 'snail', 'kaiju', 'samurai', 'balloon', 'penguin'];
   const MOVES = {};
   for (const id of Object.keys(CH)) {
     const c = CH[id];
     const m = normals(c.kit);
     for (const k of ['N', 'S', 'U', 'D']) m['sp' + k] = Object.assign({}, c.sp[k], { key: 'sp' + k });
-    for (const k of NORMALS) m[k].key = k;
+    for (const k of NORMALS.concat(EXTRAS)) m[k].key = k;
     MOVES[id] = m;
   }
   // 共通の技：つかみ・なげ
   const GRAB = { s: 6, a: 3, t: 34, hb: [[30, -30, 42, -30, 20]] };
   const THROWS = { f: { dmg: 6, bkb: 36, kbg: 50, ang: 38 }, b: { dmg: 7, bkb: 36, kbg: 50, ang: 142 }, u: { dmg: 5, bkb: 40, kbg: 46, ang: 88 }, d: { dmg: 4, bkb: 30, kbg: 36, ang: 72 } };
-  const TM = { robo: 1, duck: 1, tin: 0.95, bear: 1.3, top: 0.85, jack: 0.95, junk: 1.3 };
+  const TM = { robo: 1, duck: 1, tin: 0.95, bear: 1.3, top: 0.85, jack: 0.95, junk: 1.3, ninja: 0.9, wiz: 0.9, cat: 0.9, tank: 1.2, giraffe: 1, ball: 0.95, crab: 1, snail: 1, kaiju: 1.2, samurai: 1, balloon: 0.8, penguin: 1.05 };
 
   // ------------------------------------------------------------------------------------------------ 試合の状態
   // create({ seed, stage, fighters:[{ ch, lvl（0＝人、1〜3＝CPU）}], mode:'stock'|'time', stocks, time（秒）, training })
@@ -193,9 +329,10 @@
       const c = CH[fl[i].ch] || CH.robo;
       const px = n === 2 ? (i === 0 ? sx[0] : sx[1]) : sx[0] + (sx[1] - sx[0]) * (i / (n - 1));
       const f = {
-        i, ch: c.id, lvl: fl[i].lvl | 0, name: fl[i].name || '', x: px, y: 0, vx: 0, vy: 0, face: px <= 0 ? 1 : -1, pct: 0, stk: clamp(fl[i].stk | 0 || st.stocks, 1, 9), s: 'free', sf: 0, mv: '', mf: 0, mh: [], hold: 0, gr: -1, jumps: 1,
+        i, ch: c.id, lvl: fl[i].lvl | 0, name: fl[i].name || '', opt: { tj: fl[i].tj === 0 ? 0 : 1, fl: clamp(fl[i].fl | 0 || FLICK_N, 2, 8) }, x: px, y: 0, vx: 0, vy: 0, face: px <= 0 ? 1 : -1, pct: 0, stk: clamp(fl[i].stk | 0 || st.stocks, 1, 9), s: 'free', sf: 0, mv: '', mf: 0, mh: [], hold: 0, gr: -1, jumps: c.jmax || 1,
         coy: 0, dropT: 0, inv: 0, arm: 0, hs: 0, shd: 100, help: false, adUsed: false, sbUsed: false, lg: -1, lcd: 0, pin: 0, bj: 0, ba: 0, bs: 0, chg: 0, by: -1, grabbing: -1, gt: 0,
         buff: 0, cmb: 0, cmbT: 0, recent: [], respT: 0, rez: 0, lv: null, last: -1, lastF: -9999, dealt: 0, taken: 0, kos: 0, falls: 0, maxCmb: 0, ndash: 0, sticky: 0, cdm: 0, ts: 0, pc: 0, sel: 0, mash: 0, thr: '', used: {}, lk: '', chain: 0, ss: 0, pum: 0, pf: 0, ffl: false, lag: 0, lastVy: 0, gt0: 0,
+        hx: 0, hy: 0, hxd: 0, hyd: 0, fkn: false, fkx: 0, fky: 0, fkt: 0, bc: 0, bcd: 0, bj: 0, jsrc: 0, mm: 0, dsh: 0, dd: 0, tn: 0, pv: 0, cr: 0, tq: 0, tl: 0, tw: 0, tdir: 0, sdi: 0, ssn: 0, pst: 0, psl: 0, rj: 0, rfl: 0, lgN: 0, gk: '', mdx: 0, mdy: 0, tau: 0, adl: 0,
       };
       if (o.hp) f.pct = o.hp[i] || 0;
       st.fighters.push(f); st.ai.push(newAI(f)); st.sc.push(0);
@@ -225,6 +362,7 @@
     return -1;
   }
   const stageOf = st => STAGES[st.stage];
+  const JM = f => CH[f.ch].jmax || 1; // 空中ジャンプの回数
   const info = f => CH[f.ch];
   const moveOf = (f, key) => MOVES[f.ch][key] || null;
   const alive = f => f.s !== 'out';
@@ -232,6 +370,8 @@
   // 共通のつかみの技（キャラごとに少しだけ大きさがちがう）
   for (const id of Object.keys(CH)) {
     const r = CH[id].kit.rr;
+    const gx = id === 'junk' ? 1.5 : 1;
+    MOVES[id].dgrab = { key: 'dgrab', kind: 'grab', fx: 'grab', s: 9, a: 4, t: 42, dmg: 0, bkb: 0, kbg: 0, ang: 0, sm: 0, ll: 0, hb: [[GRAB.hb[0][0] * gx * 1.12 + 6, -CH[id].h * 0.5, GRAB.hb[0][2] * gx * 1.3 + 8, -CH[id].h * 0.5, 20 * Math.max(1, r * 0.85)]] };
     MOVES[id].grab = { key: 'grab', kind: 'grab', fx: 'grab', s: GRAB.s, a: GRAB.a, t: GRAB.t, dmg: 0, bkb: 0, kbg: 0, ang: 0, sm: 0, ll: 0, hb: [[GRAB.hb[0][0] * (id === 'junk' ? 1.5 : 1), -CH[id].h * 0.5, GRAB.hb[0][2] * (id === 'junk' ? 1.5 : 1.04), -CH[id].h * 0.5, 20 * Math.max(1, r * 0.85)]] };
   }
 
@@ -251,7 +391,7 @@
         if (px + hw <= s.x1 + 0.5) f.x = s.x1 - hw;
         else if (px - hw >= s.x2 - 0.5) f.x = s.x2 + hw;
         else f.x = f.x < (s.x1 + s.x2) / 2 ? s.x1 - hw : s.x2 + hw;
-        if (hurt && Math.abs(f.vx) > 4) { ev(st, { t: 'bounce', i: f.i, x: f.x, y: f.y - h / 2, p: Math.abs(f.vx) }); f.vx = -f.vx * 0.55; } else f.vx = 0;
+        if (hurt && Math.abs(f.vx) > 4) { ev(st, { t: 'bounce', i: f.i, x: f.x, y: f.y - h / 2, p: Math.abs(f.vx) }); f.vx = -f.vx * 0.55; if (f.tq > 0) f.tw = 1; } else f.vx = 0;
       }
     }
     if (f.gr >= 0) {
@@ -268,7 +408,7 @@
       const s = S.solids[i];
       if (f.x >= s.x1 && f.x <= s.x2 && f.vy >= 0 && py <= s.y1 + 0.01 && f.y >= s.y1) { f.y = s.y1; landed = true; f.gr = i; break; }
       if (f.x + hw > s.x1 && f.x - hw < s.x2 && f.vy < 0 && py - h >= s.y2 - 0.5 && f.y - h < s.y2) {
-        f.y = s.y2 + h; if (hurt && f.vy < -3) { ev(st, { t: 'bounce', i: f.i, x: f.x, y: f.y - h, p: -f.vy }); f.vy = -f.vy * 0.4; } else f.vy = 0;
+        f.y = s.y2 + h; if (hurt && f.vy < -3) { ev(st, { t: 'bounce', i: f.i, x: f.x, y: f.y - h, p: -f.vy }); f.vy = -f.vy * 0.4; if (f.tq > 0) f.tw = 2; } else f.vy = 0;
       }
     }
     if (!landed && f.vy >= 0 && f.dropT <= 0) {
@@ -291,18 +431,22 @@
     return f.x >= s.x1 && f.x <= s.x2;
   }
   function onLand(st, f, C) {
-    f.jumps = 1; f.adUsed = false; f.sbUsed = false; f.help = false; f.ffl = false; f.coy = 0;
+    f.jumps = JM(f); f.adUsed = false; f.sbUsed = false; f.help = false; f.ffl = false; f.coy = 0; f.lgN = 0;
     if (f.s === 'hurt') {
+      if (f.hs > 6 && f.lastVy > 3 && f.tq > 0) { startTech(st, f, C, 'ground'); return; } // うけ身
       if (f.hs > 6 && f.lastVy > 4.5) { f.s = 'down'; f.sf = 0; f.inv = 0; f.vx *= 0.5; ev(st, { t: 'bounce', i: f.i, x: f.x, y: f.y, p: f.lastVy }); }
       return;
     }
-    if (f.s === 'adodge') { f.s = 'free'; f.inv = 0; return; }
+    if (f.s === 'adodge') { f.s = 'lag'; f.lag = 10; f.sf = 0; f.inv = 0; f.vx *= 0.5; return; } // 空中よけで着地：すきができる
     if (f.s === 'atk') {
       const m = MOVES[f.ch][f.mv];
       if (m.kind === 'pound' && f.pf) { f.pf = 0; f.mf = m.s + 1; f.mh = []; ev(st, { t: 'slam', i: f.i, x: f.x, y: f.y, p: 10 }); return; }
       if (m.kind === 'rise') { f.s = 'lag'; f.lag = 8; f.mv = ''; return; }
-      if (m.ll) { f.s = 'lag'; f.lag = m.ll; f.mv = ''; return; }
-      if (m.kind !== 'dash' && m.kind !== 'spin' && m.kind !== 'melee' && m.kind !== 'proj' && m.kind !== 'mine' && m.kind !== 'buff') { f.s = 'lag'; f.lag = 8; f.mv = ''; }
+      if (m.ll) {
+        if (m.ac && (f.mf < m.ac[0] || f.mf >= m.ac[1])) { f.s = 'free'; f.sf = 0; f.mv = ''; return; } // オートキャンセル
+        f.s = 'lag'; f.lag = m.ll; f.mv = ''; return;
+      }
+      if (m.kind !== 'dash' && m.kind !== 'spin' && m.kind !== 'melee' && m.kind !== 'proj' && m.kind !== 'mine' && m.kind !== 'buff' && m.kind !== 'tele' && m.kind !== 'reflect') { f.s = 'lag'; f.lag = 8; f.mv = ''; }
       return;
     }
     if (f.s === 'free' && f.lastVy > 7) ev(st, { t: 'land', i: f.i, x: f.x, y: f.y, p: f.lastVy });
@@ -310,18 +454,37 @@
 
   function newAI() { return { w: 0, tgt: -1, pl: '', pt: 0, inp: 0, hold: 0, sw: 0, mash: 0, stuck: 0, lx: 0, ly: 0, wl: 0 }; }
 
+  // はじき（フリック）：スティックが「ニュートラル → いっぱい」へ N フレーム以内に動いたら、はじき。キーボードはダブルタップ（F ビットはフロントが付ける）
+  function inputFlick(f, inp) {
+    const hx = axOf(inp), hy = ayOf(inp), full = (inp & B.F) !== 0, was = (f.pin & B.F) !== 0, N = f.opt.fl;
+    f.hx = hx ? (hx === f.hxd ? f.hx + 1 : 1) : 0; f.hxd = hx;
+    f.hy = hy ? (hy === f.hyd ? f.hy + 1 : 1) : 0; f.hyd = hy;
+    f.fkn = false; if (f.fkt > 0) f.fkt--;
+    let nx = 0, ny = 0;
+    if (hx && full && (f.hx === 1 || !was) && f.hx <= N) nx = hx;
+    if (hy && full && (f.hy === 1 || !was) && f.hy <= N) ny = hy;
+    if (nx || ny) { f.fkn = true; f.fkx = nx; f.fky = ny; f.fkt = FLICK_HOLD; } else if (f.fkt <= 0) { f.fkx = 0; f.fky = 0; }
+  }
+
   // 1人の1フレーム
   function updateFighter(st, f, inp) {
     const C = CH[f.ch], S = stageOf(st);
     const pr = inp & ~f.pin;
     f.lastVy = f.vy;
-    if (pr & B.J) f.bj = 7; else if (f.bj > 0) f.bj--;
+    if (pr & B.J) { f.bj = 7; f.jsrc = 0; } else if (f.bj > 0) f.bj--;
     if (pr & B.A) f.ba = 7; else if (f.ba > 0) f.ba--;
     if (pr & B.M) f.bm = 7; else if (f.bm > 0) f.bm--;
     if (pr & B.S) f.bs = 7; else if (f.bs > 0) f.bs--;
+    if (pr & CMASK) { f.bc = 7; f.bcd = pr & CMASK; } else if (f.bc > 0) f.bc--;
+    inputFlick(f, inp);
+    if (f.fkn && f.fky < 0 && f.opt.tj) { f.bj = 7; f.jsrc = 1; } // はじきジャンプ（上にはじく）
+    // ふっとばされている間：まもりボタンで受け身の先行入力
+    if ((pr & B.H) && (f.s === 'hurt' || f.lv) && f.tl <= 0 && f.tq <= 0) { f.tq = TECH_WIN; f.tl = TECH_LOCK; }
     if (f.s === 'out') { f.pin = inp; return; }
     if (f.hold > 0) {
       f.hold--;
+      // ずらし（SDI）：ヒットストップ中に方向を入れると、少しだけずれる
+      if (f.lv && f.sdi < 4 && (pr & (B.L | B.R | B.U | B.D))) { f.sdi++; f.x += axOf(pr) * 3; if (f.gr < 0) f.y += ayOf(pr) * 3; }
       if (f.hold === 0 && f.lv) applyLaunch(st, f, inp);
       f.pin = inp; return;
     }
@@ -330,16 +493,20 @@
     if (f.lcd > 0) f.lcd--;
     if (f.coy > 0) f.coy--;
     if (f.buff > 0) f.buff--;
+    if (f.tq > 0) f.tq--; if (f.tl > 0) f.tl--;
+    if (f.pst > 0) f.pst--; if (f.psl > 0) f.psl--;
     if (f.cmbT > 0) { f.cmbT--; if (f.cmbT === 0) f.cmb = 0; }
     const ax = axOf(inp), ay = ayOf(inp);
-    f.arm = 0;
+    f.tdir = ax;
+    f.arm = 0; f.rfl = 0;
     f.sf++;
+    if (f.s !== 'free') { f.mm = 0; f.cr = 0; }
     if (f.s !== 'shield' && f.s !== 'stun' && f.shd < 100) f.shd = Math.min(100, f.shd + 0.14);
     switch (f.s) {
       case 'dead': { if (--f.respT <= 0) respawn(st, f); break; }
       case 'rez': {
         const sp = S.spawn; f.x = sp[0]; f.y = sp[1]; f.vx = 0; f.vy = 0; f.gr = -1; f.rez--; if (f.inv < 3) f.inv = 3;
-        if (f.rez <= 0 || (f.rez < 160 && (pr & (B.J | B.A | B.S | B.M | B.D | B.U | B.L | B.R)))) { f.s = 'free'; f.inv = 70; f.jumps = 1; f.sf = 0; f.vy = 1; }
+        if (f.rez <= 0 || (f.rez < 160 && (pr & (B.J | B.A | B.S | B.M | B.D | B.U | B.L | B.R)))) { f.s = 'free'; f.inv = 70; f.jumps = JM(f); f.sf = 0; f.vy = 1; }
         break;
       }
       case 'lag': {
@@ -349,28 +516,55 @@
       }
       case 'jsq': {
         groundMove(f, C, ax, 0.5);
+        // ジャンプのしゃがみ中：上スマッシュ・上とくぎへ切りかえられる
+        if (f.sf <= 3 && f.gr >= 0) {
+          if (f.bs > 0 && ay < 0) { f.bs = 0; f.bj = 0; startMove(st, f, 'spU', ax, ay); break; }
+          if ((f.bm > 0 && ay < 0) || (f.ba > 0 && f.fkt > 0 && f.fky < 0) || (f.bc > 0 && (f.bcd & B.CU))) { f.ba = 0; f.bm = 0; f.bc = 0; f.bj = 0; startMove(st, f, 'usmash', ax, ay); break; }
+        }
         if (f.sf >= 4) {
-          const hop = (inp & B.J) ? C.jump : C.jump * 0.64;
-          f.vy = -hop; f.gr = -1; f.coy = 0; f.s = 'free'; f.sf = 0; f.vx += ax * 0.8; if (ax) f.face = ax; f.jumps = 1;
+          const hop = ((inp & B.J) || (f.jsrc && (inp & B.U))) ? C.jump : C.jump * 0.64;
+          f.vy = -hop; f.gr = -1; f.coy = 0; f.s = 'free'; f.sf = 0; f.vx += ax * 0.8; if (ax) f.face = ax; f.jumps = JM(f);
           ev(st, { t: 'jump', i: f.i, x: f.x, y: f.y, big: 0 });
         } else physics(st, f, C, { grav: C.grav });
         break;
       }
       case 'free': freeState(st, f, C, inp, pr, ax, ay); break;
       case 'atk': atkState(st, f, C, inp, pr, ax, ay); break;
+      case 'taunt': {
+        f.vx *= 0.8; physics(st, f, C, { grav: C.grav }) && onLand(st, f, C);
+        if (f.sf >= 56) { f.s = 'free'; f.sf = 0; }
+        break;
+      }
+      case 'tech': {
+        f.vx *= 0.8; f.inv = f.sf < 20 ? Math.max(f.inv, 2) : f.inv;
+        physics(st, f, C, { grav: C.grav }) && onLand(st, f, C);
+        if (f.sf >= 24) { f.s = 'free'; f.sf = 0; }
+        break;
+      }
       case 'hurt': {
         f.hs--;
+        // めいていキャンセル：まっさかさまに飛ばされても、ジャンプでたてなおせる
+        if (f.vy > 2.5 && f.hs > 3 && f.jumps > 0 && (pr & B.J) && !f.lv) {
+          f.s = 'free'; f.sf = 0; f.jumps--; f.vy = -C.dj * 0.8; f.vx *= 0.4; f.ffl = false; f.cmbT = 0;
+          ev(st, { t: 'mcancel', i: f.i, x: f.x, y: f.y - C.h / 2 }); break;
+        }
         if (f.gr >= 0) { f.vx *= 0.9; }
         else f.vx *= 0.99;
         if (f.hs <= 0) { f.s = 'free'; f.sf = 0; f.cmbT = Math.min(f.cmbT, 8); f.vx *= 0.8; }
         const lnd = physics(st, f, C, { grav: C.grav * 0.62, fall: 99 });
+        if (f.tw) { const w = f.tw; f.tw = 0; startTech(st, f, C, w === 1 ? 'wall' : 'ceil'); break; }
         if (lnd) onLand(st, f, C);
         break;
       }
       case 'down': {
         f.vx *= 0.88;
         physics(st, f, C, { grav: C.grav });
-        if (f.sf >= 26 || (f.sf > 10 && (pr & (B.J | B.A | B.S | B.M | B.H)))) { f.s = 'free'; f.sf = 0; f.inv = 14; }
+        if (f.sf >= 26 || (f.sf > 10 && (pr & (B.J | B.A | B.S | B.M | B.H | B.L | B.R | B.U | B.D)))) {
+          // おきあがり：こうげき・ころがり・その場
+          if (pr & B.A) { f.s = 'free'; f.sf = 0; f.inv = 12; f.ba = 0; startMove(st, f, 'getupatk'); }
+          else if (pr & (B.L | B.R)) { f.s = 'roll'; f.sf = 0; f.thr = (pr & B.R) ? 1 : -1; f.inv = 2; }
+          else { f.s = 'free'; f.sf = 0; f.inv = 14; }
+        }
         break;
       }
       case 'stun': {
@@ -383,12 +577,16 @@
         f.vx *= 0.7; f.shd = Math.max(0, f.shd - 0.3);
         physics(st, f, C, { grav: C.grav });
         if (f.gr < 0) { f.s = 'free'; break; }
-        if (f.shd <= 1) { f.s = 'lag'; f.lag = 14; f.sf = 0; break; }
+        if (f.shd <= 1) { f.s = 'lag'; f.lag = 14; f.sf = 0; f.psl = 30; break; }
+        if (f.ssn > 0) { f.ssn--; break; } // まもりのしびれ：その間は動けない（まもりの上から攻められる）
         if (pr & B.J) { f.s = 'jsq'; f.sf = 0; f.bj = 0; break; }
         if (pr & (B.A | B.G) && f.sf >= 3) { startMove(st, f, 'grab'); f.ba = 0; break; }
-        if (f.sf >= 4 && (pr & B.D)) { f.s = 'spot'; f.sf = 0; f.inv = 0; break; }
+        if (f.sf >= 4 && (pr & B.D || (f.fkn && f.fky > 0))) {
+          if (f.gr >= 100) { f.s = 'free'; f.sf = 0; f.dropT = 16; f.gr = -1; f.vy = 1.2; f.psl = 30; break; } // まもり降り：板をすりぬける
+          f.s = 'spot'; f.sf = 0; f.inv = 0; break;
+        }
         if (f.sf >= 3 && (pr & (B.L | B.R))) { f.s = 'roll'; f.sf = 0; f.thr = (pr & B.R) ? 1 : -1; break; }
-        if (!(inp & B.H)) { f.s = 'lag'; f.lag = 5; f.sf = 0; }
+        if (!(inp & B.H)) { f.s = 'lag'; f.lag = 5; f.sf = 0; f.psl = 30; }
         break;
       }
       case 'roll': {
@@ -423,9 +621,12 @@
       }
       case 'ledge': ledgeState(st, f, C, inp, pr, ax, ay); break;
       case 'getup': {
-        const t = Math.min(1, f.sf / 22);
+        const t = Math.min(1, f.sf / f.gn);
         f.x = f.gx0 + (f.gx1 - f.gx0) * t; f.y = f.gy0 + (f.gy1 - f.gy0) * (t < 0.5 ? t * 1.6 : 0.8 + (t - 0.5) * 0.4);
-        if (f.sf >= 22) { f.s = 'free'; f.sf = 0; f.x = f.gx1; f.y = f.gy1; f.gr = supportAt(st, f); if (f.gr < 0) { f.gr = 0; } f.inv = Math.max(f.inv, 28); f.vx = 0; f.vy = 0; }
+        if (f.sf >= f.gn) {
+          f.s = 'free'; f.sf = 0; f.x = f.gx1; f.y = f.gy1; f.gr = supportAt(st, f); if (f.gr < 0) { f.gr = 0; } f.inv = Math.max(f.inv, 28); f.vx = 0; f.vy = 0;
+          if (f.gk === 'atk') { f.gk = ''; startMove(st, f, 'ledgeatk'); }
+        }
         break;
       }
       default: break;
@@ -437,19 +638,60 @@
     if (ax) { f.vx += ax * C.acc * k; const m = C.run * (k > 0.6 ? 1 : 0.6); if (f.vx > m) f.vx = m; else if (f.vx < -m) f.vx = -m; } else f.vx *= 0.72;
     if (Math.abs(f.vx) < 0.08) f.vx = 0;
   }
+  // 地上のうごき：あるく（かるくたおす）・ダッシュ（はじく）・はしる（いっぱいにたおし続ける）・ふりむき（はしりながら逆にはじく）・ダッシュダンス・しゃがみ
+  function groundControl(st, f, C, inp, ax, ay) {
+    const full = (inp & B.F) !== 0, fl = f.fkn && f.fkx ? f.fkx : 0;
+    f.cr = ay > 0 ? f.cr + 1 : 0;
+    if (f.cr > 0 && !fl) { f.vx *= 0.78; if (Math.abs(f.vx) < 0.08) f.vx = 0; f.mm = 0; return; } // しゃがみ
+    if (fl) {
+      const vd = f.vx > 0 ? 1 : f.vx < 0 ? -1 : 0;
+      if (f.mm === 2 && vd && fl !== vd && Math.abs(f.vx) > 1.5) { f.mm = 3; f.tn = 9; f.pv = 8; f.face = fl; ev(st, { t: 'pivot', i: f.i, x: f.x, y: f.y }); }
+      else {
+        ev(st, { t: f.mm === 1 && f.dd !== fl ? 'dd' : 'dash', i: f.i, x: f.x, y: f.y, d: fl });
+        f.mm = 1; f.dsh = DASH_F; f.dd = fl; f.face = fl; f.vx = fl * C.run * 1.12;
+      }
+    }
+    if (f.mm === 3) { // ふりむき中（むきはもうかわっている：ここでのつかみ・こうげきが「ピボット」）
+      f.vx *= 0.9; f.tn--;
+      if (f.tn <= 0) { if (ax && full) { f.mm = 1; f.dsh = DASH_F; f.dd = ax; f.vx = ax * C.run; f.face = ax; } else f.mm = 0; }
+      return;
+    }
+    if (f.mm === 1) { // ダッシュ
+      if (ax === f.dd) f.vx = f.dd * C.run * 1.12; else f.vx *= 0.88;
+      if (--f.dsh <= 0) f.mm = ax && ax === f.dd && full ? 2 : 0;
+      return;
+    }
+    if (f.mm === 2) { // はしる
+      if (!ax) { f.vx *= 0.8; if (Math.abs(f.vx) < 1.2) f.mm = 0; return; }
+      if (!full) f.mm = 0;
+    }
+    if (ax) {
+      const run = full; if (run) f.mm = 2;
+      const mx = run ? C.run : C.run * WALK, same = (ax > 0) === (f.vx > 0) || f.vx === 0;
+      let nv = f.vx + ax * C.acc * (same ? 1 : 2.2);
+      if (Math.abs(nv) > mx) nv = Math.abs(f.vx) > mx ? f.vx - Math.sign(f.vx) * Math.min(0.35, Math.abs(f.vx) - mx) : Math.sign(nv) * mx;
+      f.vx = nv; f.face = ax;
+    } else { f.vx *= 0.74; if (Math.abs(f.vx) < 0.08) f.vx = 0; }
+  }
+  function startTech(st, f, C, how) {
+    f.tq = 0; f.tl = TECH_LOCK; f.lv = null; f.hs = 0; f.mm = 0;
+    if (how === 'ground' && f.tdir) { f.s = 'roll'; f.sf = 3; f.thr = f.tdir; f.vy = 0; f.inv = 2; }
+    else { f.s = 'tech'; f.sf = 0; f.inv = 20; if (how === 'ground') f.vx = 0; else { f.vx = 0; f.vy = how === 'ceil' ? 1 : 0; } }
+    ev(st, { t: 'tech', i: f.i, x: f.x, y: f.y - C.h / 2, how });
+  }
   function freeState(st, f, C, inp, pr, ax, ay) {
     const S = stageOf(st);
     let grounded = f.gr >= 0;
     // 動くゆかに乗っている
     if (grounded && f.gr >= 100) { const t = st.th[f.gr - 100]; f.x += t.vx; }
+    if (f.pv > 0) f.pv--;
     // 動き
-    if (grounded) {
-      if (ax) { const same = (ax > 0) === (f.vx > 0); f.vx += ax * C.acc * (same || f.vx === 0 ? 1 : 2.2); if (f.vx > C.run) f.vx = C.run; if (f.vx < -C.run) f.vx = -C.run; f.face = ax; }
-      else { f.vx *= 0.74; if (Math.abs(f.vx) < 0.08) f.vx = 0; }
-    } else {
+    if (grounded) groundControl(st, f, C, inp, ax, ay);
+    else {
+      f.mm = 0; f.cr = 0;
       if (ax) { if (!(Math.abs(f.vx) > C.air && (f.vx > 0) === (ax > 0))) f.vx += ax * C.aacc; if (Math.abs(f.vx) > C.air * 1.15) f.vx -= Math.sign(f.vx) * 0.12; }
       else f.vx *= 0.985;
-      if (f.vy > 0 && !f.ffl && (pr & B.D) && !f.help) { f.ffl = true; f.vy = C.ff; }
+      if (f.vy > 0 && !f.ffl && ((pr & B.D) || (f.fkn && f.fky > 0)) && !f.help) { f.ffl = true; f.vy = C.ff; } // はやおち
     }
     // ふち
     if (!grounded && f.lcd <= 0 && f.vy > -3 && !(ay > 0 && f.vy < 2) && tryLedge(st, f, C)) return;
@@ -459,20 +701,23 @@
       return;
     }
     // まもり・かわす・つかむ
-    if (grounded && (inp & B.H) && f.shd > 4) { f.s = 'shield'; f.sf = 0; f.ss = 0; ev(st, { t: 'shield', i: f.i, x: f.x, y: f.y - C.h / 2 }); return; }
+    if (grounded && (inp & B.H) && f.shd > 4) { f.s = 'shield'; f.sf = 0; f.ss = 0; f.ssn = 0; f.pst = f.psl > 0 ? 0 : 6; ev(st, { t: 'shield', i: f.i, x: f.x, y: f.y - C.h / 2 }); return; }
     if (!grounded && (pr & B.H) && !f.adUsed) {
       f.s = 'adodge'; f.sf = 0; f.adUsed = true; f.dvx = ax * 5.2; f.dvy = ay * 5.2; f.vx = f.dvx; f.vy = f.dvy; f.ffl = false; ev(st, { t: 'dodge', i: f.i, x: f.x, y: f.y - C.h / 2 }); return;
     }
-    if (grounded && (pr & B.G)) { startMove(st, f, 'grab'); return; }
+    if (grounded && (pr & B.G)) { // つかみ：その場・ダッシュつかみ・ふりむきつかみ（ふりむき中はむきがもうかわっている）
+      startMove(st, f, (f.mm === 1 || f.mm === 2) && Math.abs(f.vx) > 2 ? 'dgrab' : 'grab'); return;
+    }
+    if (grounded && (pr & B.T) && !(inp & B.H)) { f.s = 'taunt'; f.sf = 0; ev(st, { t: 'taunt', i: f.i, x: f.x, y: f.y - C.h }); return; }
     // こうげき・とくぎ
-    if (f.bs > 0 || f.bm > 0 || f.ba > 0) if (tryAttack(st, f, C, inp, ax, ay, grounded)) return;
+    if (f.bs > 0 || f.bm > 0 || f.ba > 0 || f.bc > 0) if (tryAttack(st, f, C, inp, ax, ay, grounded)) return;
     // ジャンプ
     if (f.bj > 0) {
       if (grounded || f.coy > 0) { f.s = 'jsq'; f.sf = 0; f.bj = 0; f.face = ax || f.face; return; }
       if (f.jumps > 0) { f.jumps--; f.vy = -C.dj; f.vx = ax ? ax * Math.max(C.air * 0.8, Math.abs(f.vx) * 0.5) : f.vx * 0.5; if (ax) f.face = ax; f.bj = 0; f.ffl = false; ev(st, { t: 'jump', i: f.i, x: f.x, y: f.y, big: 1 }); }
     }
-    // すり抜けて降りる
-    if (grounded && f.gr >= 100 && (pr & B.D)) { f.dropT = 16; f.gr = -1; f.vy = 1.2; grounded = false; }
+    // すり抜けて降りる：下にはじく、または下をおし続ける
+    if (grounded && f.gr >= 100 && ((f.fkn && f.fky > 0) || f.cr >= 8)) { f.dropT = 16; f.gr = -1; f.vy = 1.2; grounded = false; }
     const lnd = physics(st, f, C, { grav: C.grav });
     if (lnd) onLand(st, f, C);
   }
@@ -488,7 +733,7 @@
     return false;
   }
   function grabLedge(st, f, C, i, L, hx, hy) {
-    f.s = 'ledge'; f.sf = 0; f.lg = i; f.x = hx; f.y = hy; f.vx = 0; f.vy = 0; f.gr = -1; f.face = L.dir; f.inv = 40; f.jumps = 1; f.adUsed = false; f.sbUsed = false; f.help = false; f.ffl = false; f.mv = '';
+    f.s = 'ledge'; f.sf = 0; f.lg = i; f.x = hx; f.y = hy; f.vx = 0; f.vy = 0; f.gr = -1; f.face = L.dir; f.inv = Math.max(10, 40 - 7 * f.lgN); f.lgN++; f.jumps = JM(f); f.adUsed = false; f.sbUsed = false; f.help = false; f.ffl = false; f.mv = ''; f.gk = '';
     ev(st, { t: 'ledge', i: f.i, x: hx, y: hy });
   }
   function ledgeState(st, f, C, inp, pr) {
@@ -497,10 +742,14 @@
     if (f.sf > 30 && f.inv < 1) f.inv = 1;
     if (f.sf >= 30 && f.sf < 33) f.inv = 0;
     const toward = L.dir > 0 ? B.R : B.L, away = L.dir > 0 ? B.L : B.R;
-    if (f.sf >= 8 && (inp & (B.U | toward)) || f.sf >= 4 && (pr & (B.A | B.S | B.M))) {
-      f.s = 'getup'; f.sf = 0; f.gx0 = f.x; f.gy0 = f.y; f.gx1 = L.x + L.dir * (C.w / 2 + 4); f.gy1 = L.y; f.lg = -1; f.lcd = 30; f.inv = Math.max(f.inv, 36); f.mv = '';
-    } else if (f.sf >= 4 && (pr & B.J)) {
-      f.s = 'free'; f.sf = 0; f.vy = -C.jump * 0.95; f.vx = L.dir * 2.4; f.lg = -1; f.lcd = 24; f.jumps = 1; f.inv = Math.max(f.inv, 20);
+    // ふちのこうどう：のぼる（上・ふちがわ）／こうげき（A）／ころがってのぼる（まもり）／ジャンプ／おりる（下・はなれる）
+    const up = (kind, gn, far) => { f.s = 'getup'; f.sf = 0; f.gn = gn; f.gk = kind; f.gx0 = f.x; f.gy0 = f.y; f.gx1 = L.x + L.dir * (C.w / 2 + 4 + far); f.gy1 = L.y;
+      const sd = S.solids.find(q => Math.abs(q.y1 - L.y) < 1 && L.x >= q.x1 - 1 && L.x <= q.x2 + 1); if (sd) f.gx1 = clamp(f.gx1, sd.x1 + C.w / 2 + 2, sd.x2 - C.w / 2 - 2); f.lg = -1; f.lcd = 30; f.inv = Math.max(f.inv, kind === 'roll' ? 30 : 36); f.mv = ''; };
+    if (f.sf >= 4 && (pr & (B.A | B.M))) up('atk', 22, 0);
+    else if (f.sf >= 4 && (pr & B.H)) up('roll', 30, 78);
+    else if (f.sf >= 8 && (inp & (B.U | toward)) || f.sf >= 4 && (pr & B.S)) up('norm', 22, 0);
+    else if (f.sf >= 4 && (pr & B.J)) {
+      f.s = 'free'; f.sf = 0; f.vy = -C.jump * 0.95; f.vx = L.dir * 2.4; f.lg = -1; f.lcd = 24; f.jumps = JM(f); f.inv = Math.max(f.inv, 20);
     } else if (f.sf >= 8 && (inp & (B.D | away)) || f.sf > 230) {
       f.s = 'free'; f.sf = 0; f.lg = -1; f.lcd = 45; f.vx = -L.dir * 0.6; f.vy = 1; f.inv = 0;
     }
@@ -508,20 +757,26 @@
   function respawn(st, f) {
     const S = stageOf(st);
     f.s = 'rez'; f.sf = 0; f.rez = 190; f.x = S.spawn[0]; f.y = S.spawn[1]; f.vx = 0; f.vy = 0; f.gr = -1; f.inv = 220; f.pct = f.pct; f.face = f.x <= 0 ? 1 : -1;
-    f.mv = ''; f.shd = 100; f.buff = 0; f.help = false; f.adUsed = false; f.sbUsed = false; f.lg = -1; f.lv = null; f.hold = 0; f.hs = 0; f.cmb = 0; f.cmbT = 0; f.jumps = 1;
+    f.mv = ''; f.shd = 100; f.buff = 0; f.help = false; f.adUsed = false; f.sbUsed = false; f.lg = -1; f.lv = null; f.hold = 0; f.hs = 0; f.cmb = 0; f.cmbT = 0; f.jumps = JM(f); f.lgN = 0; f.tq = 0; f.tl = 0; f.mm = 0;
     ev(st, { t: 'respawn', i: f.i, x: f.x, y: f.y });
   }
 
   // こうげきを選ぶ
   function tryAttack(st, f, C, inp, ax, ay, grounded) {
     let key = null;
+    // Cスティック：地上はいつも強い攻撃、空中はその向きの空中技
+    if (f.bc > 0) {
+      const d = f.bcd, cx = (d & B.CR ? 1 : 0) - (d & B.CL ? 1 : 0), cy = (d & B.CD ? 1 : 0) - (d & B.CU ? 1 : 0);
+      if (grounded) { key = cx ? 'fsmash' : cy < 0 ? 'usmash' : 'dsmash'; if (cx) f.face = cx; }
+      else key = cx ? (cx === f.face ? 'fair' : 'bair') : cy < 0 ? 'uair' : 'dair';
+      f.bc = 0; f.ba = 0; f.bm = 0; startMove(st, f, key, ax, ay, 'cstick'); return true;
+    }
     if (f.bs > 0) {
       key = 'sp' + (ay < 0 ? 'U' : ay > 0 ? 'D' : ax ? 'S' : 'N');
       const m = MOVES[f.ch][key];
       if (!grounded && f.help) key = null;
       else if (!grounded && m.kind === 'dash' && f.sbUsed) key = null;
       else if (!grounded && m.kind === 'cmdgrab') key = null;
-      else if (!grounded && m.kind === 'mine' && false) key = null;
       if (key) { if (ax && (key === 'spS' || grounded)) f.face = ax; f.bs = 0; f.ba = 0; f.bm = 0; startMove(st, f, key, ax, ay); return true; }
     }
     if (f.bm > 0 && grounded) {
@@ -529,21 +784,30 @@
       if (ax && !ay) f.face = ax;
       f.bm = 0; f.ba = 0; startMove(st, f, key, ax, ay); return true;
     }
+    // はじき＋こうげき＝強い攻撃
+    if (f.ba > 0 && grounded && f.fkt > 0 && (f.fkx || f.fky)) {
+      key = f.fky < 0 ? 'usmash' : f.fky > 0 ? 'dsmash' : 'fsmash';
+      if (f.fkx && !f.fky) f.face = f.fkx;
+      f.ba = 0; f.bm = 0; startMove(st, f, key, ax, ay, 'flick'); return true;
+    }
     if (f.ba > 0 || f.bm > 0) {
-      if (grounded) { key = ay < 0 ? 'utilt' : ay > 0 ? 'dtilt' : ax ? 'ftilt' : 'jab'; if (ax && !ay) f.face = ax; }
+      if (grounded) {
+        if (!ay && (f.mm === 1 || f.mm === 2) && Math.abs(f.vx) > 1.6) key = 'dattack'; // はしりながら：ダッシュこうげき
+        else { key = ay < 0 ? 'utilt' : ay > 0 ? 'dtilt' : ax ? 'ftilt' : 'jab'; if (ax && !ay) f.face = ax; }
+      }
       else key = ay < 0 ? 'uair' : ay > 0 ? 'dair' : ax === f.face ? 'fair' : ax === -f.face ? 'bair' : 'nair';
       f.ba = 0; f.bm = 0; startMove(st, f, key, ax, ay); return true;
     }
     return false;
   }
-  function startMove(st, f, key) {
+  function startMove(st, f, key, ax, ay, how) {
     const C = CH[f.ch], m = MOVES[f.ch][key];
-    f.s = 'atk'; f.mv = key; f.mf = 0; f.sf = 0; f.mh = []; f.chg = 0; f.pf = 0; f.cdm = 0; f.sel = 0;
+    f.s = 'atk'; f.mv = key; f.mf = 0; f.sf = 0; f.mh = []; f.chg = 0; f.pf = 0; f.cdm = 0; f.sel = 0; f.mdx = ax | 0; f.mdy = ay | 0; f.rj = 0;
+    if (f.gr >= 0 && key !== 'dattack' && key !== 'dgrab') f.mm = 0;
     if (!f.used) f.used = {}; f.used[key] = (f.used[key] | 0) + 1;
-    if (key !== 'grab') { f.recent.push(key); if (f.recent.length > 8) f.recent.shift(); }
+    if (key !== 'grab' && key !== 'dgrab' && key !== 'ledgeatk' && key !== 'getupatk') { f.recent.push(key); if (f.recent.length > 8) f.recent.shift(); }
     if (f.gr < 0 && m.kind === 'dash') f.sbUsed = true;
-    if (f.gr >= 0 && m.kind === 'rise') { /* 地上からでも上がる */ }
-    ev(st, { t: 'move', i: f.i, k: key, x: f.x, y: f.y - C.h / 2 });
+    ev(st, { t: 'move', i: f.i, k: key, x: f.x, y: f.y - C.h / 2, how: how || '' });
   }
 
   function atkState(st, f, C, inp, pr, ax, ay) {
@@ -551,13 +815,16 @@
     const grounded = f.gr >= 0;
     let frozen = false;
     // ため（つよい攻撃）：はじまる前のところで、ボタンを押しているあいだ止まる
-    if (m.sm && f.mf === 3 && (inp & (B.M | B.A)) && f.chg < 45) { f.chg++; frozen = true; if (f.chg === 1) ev(st, { t: 'charge', i: f.i, x: f.x, y: f.y - C.h / 2 }); }
+    if (m.sm && f.mf === 3 && (inp & (B.M | B.A | CMASK)) && f.chg < 45) { f.chg++; frozen = true; if (f.chg === 1) ev(st, { t: 'charge', i: f.i, x: f.x, y: f.y - C.h / 2 }); }
     if (!frozen) f.mf++;
     const k = m.kind, fr = f.mf;
+    // れんだ：じゃぶがあたっているあいだ、ボタンを押し続けると「れんぞくジャブ」→ しめ
+    if (f.mv === 'jab' && fr >= m.s + m.a + 2 && fr < m.t && (inp & B.A) && f.mh.length > 0) { f.mv = 'rjab'; f.mf = 0; f.mh = []; f.rj = 0; return; }
     if (k === 'proj' && fr === m.s) spawnProj(st, f, C, m);
     else if (k === 'mine' && fr === m.s) spawnMine(st, f, C, m);
     else if (k === 'buff' && fr === m.s) { f.buff = m.buff; ev(st, { t: 'buff', i: f.i, x: f.x, y: f.y - C.h }); }
     if (m.arm && fr >= m.arm[0] && fr <= m.arm[1]) f.arm = 1;
+    if (k === 'reflect' && fr >= m.s && fr < m.s + m.a) f.rfl = 1;
     let grav = C.grav, aair = 0.45;
     if (k === 'dash') {
       if (fr >= m.s && fr < m.s + m.a) { f.vx = f.face * m.v; if (!grounded) { f.vy = 0; grav = 0; } }
@@ -580,17 +847,40 @@
       if (f.pf) { f.mf = m.s; grav = 0.9; f.vy = Math.max(f.vy, m.fv * 0.7); }
     } else if (k === 'counter') {
       if (fr >= m.s && fr < m.s + m.a) f.arm = 2;
+    } else if (k === 'tele') {
+      // ワープ：はじまるまでは消えている（よけ）。むきは、はじめに入れていた方向（なければ m.dd）
+      if (fr >= 2 && fr < m.s) { f.inv = 2; f.vx = 0; f.vy = 0; grav = 0; }
+      if (fr === m.s) teleport(st, f, C, m);
+      if (fr > m.s && fr < m.s + 3) { grav = 0.15; }
     }
     if (grounded) { if (k !== 'dash') f.vx *= 0.8; }
     else if (k !== 'dash' && k !== 'rise' && k !== 'spin') { if (ax) { f.vx += ax * C.aacc * aair; } f.vx *= 0.99; }
     const lnd = physics(st, f, C, { grav });
     if (lnd) onLand(st, f, C);
     if (f.s !== 'atk') return;
-    if (k === 'rise' && f.gr < 0 && f.lcd <= 0 && fr >= m.s + 4 && tryLedge(st, f, C)) return;
+    if ((k === 'rise' || (k === 'tele' && m.help)) && f.gr < 0 && f.lcd <= 0 && fr >= m.s + 4 && tryLedge(st, f, C)) return;
     if (f.mf >= m.t) {
+      if (f.mv === 'rjab') { // れんぞくジャブ：押し続けているあいだ。はなしたら、しめ
+        if ((inp & B.A) && f.rj < 10) { f.rj++; f.mf = 0; f.mh = []; return; }
+        if (f.rj >= 2) { f.mv = 'jabfin'; f.mf = 0; f.mh = []; ev(st, { t: 'move', i: f.i, k: 'jabfin', x: f.x, y: f.y - C.h / 2 }); return; }
+      }
       f.s = 'free'; f.sf = 0; f.mv = ''; f.pf = 0;
-      if (k === 'rise' && f.gr < 0) f.help = true;
+      if ((k === 'rise' || (k === 'tele' && m.help)) && f.gr < 0) f.help = true;
     }
+  }
+  // ワープ先：(mdx, mdy) の方向へ td の距離。ステージの中の壁にめりこまないように手前でとめる
+  function teleport(st, f, C, m) {
+    let dx = f.mdx, dy = f.mdy;
+    if (m.fixed || (!dx && !dy)) { dx = m.dd ? m.dd[0] * f.face : f.face; dy = m.dd ? m.dd[1] : 0; }
+    else if (dx) f.face = dx;
+    const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
+    const S = stageOf(st), bl = S.blast, hw = C.w / 2;
+    const free = (x, y) => { for (const s of S.solids) if (x + hw > s.x1 && x - hw < s.x2 && y > s.y1 + 0.5 && y - C.h < s.y2) return false; return true; };
+    let d = m.td;
+    for (; d > 0; d -= 10) { const x = f.x + dx * d, y = f.y + dy * d; if (x > bl.l + 30 && x < bl.r - 30 && y > bl.t + 30 && y < bl.b - 30 && free(x, y)) break; }
+    ev(st, { t: 'warp', i: f.i, x: f.x, y: f.y - C.h / 2, x2: f.x + dx * d, y2: f.y + dy * d - C.h / 2 });
+    f.x += dx * d; f.y += dy * d; f.gr = -1; f.vx = dx * 1.2; f.vy = Math.min(0, dy * 1.5); f.ffl = false;
+    f.mh = [];
   }
   function spawnProj(st, f, C, m) {
     const p = m.proj;
@@ -599,7 +889,8 @@
   }
   function spawnMine(st, f, C, m) {
     const p = m.proj;
-    for (let i = st.pr.length - 1; i >= 0; i--) if (st.pr[i].o === f.i && st.pr[i].k === 'mine') st.pr.splice(i, 1);
+    const mx = p.max || 1;
+    for (;;) { let first = -1, n = 0; for (let i = 0; i < st.pr.length; i++) if (st.pr[i].o === f.i && st.pr[i].k === 'mine') { if (first < 0) first = i; n++; } if (n < mx) break; st.pr.splice(first, 1); }
     st.pr.push({ o: f.i, k: 'mine', x: f.x + f.face * 28, y: f.y - 12, vx: 0, vy: 0, g: 0.5, r: p.r, life: p.life, arm: p.arm, dmg: p.dmg, bkb: p.bkb, kbg: p.kbg, ang: p.ang, bn: 0, t: 0, face: f.face, bf: 1, hbk: m.key });
     ev(st, { t: 'shoot', i: f.i, k: 'mine', x: f.x + f.face * 28, y: f.y });
   }
@@ -625,18 +916,18 @@
     g.s = 'lag'; g.lag = 14; g.grabbing = -1; d.s = 'free'; d.by = -1; d.inv = 14; d.vx = g.face * 1.2; d.sf = 0;
   }
   function throwFighter(st, A, D, dir) {
-    const T = THROWS[dir], tm = TM[A.ch] || 1;
+    const T = Object.assign({}, THROWS[dir], (CH[A.ch].tw || {})[dir]), tm = TM[A.ch] || 1;
     const p = { dmg: T.dmg * tm, bkb: T.bkb, kbg: T.kbg * tm, ang: dir === 'b' ? 142 : T.ang, throw: 1 };
     A.s = 'lag'; A.lag = 18; A.grabbing = -1; A.sf = 0;
     D.by = -1; D.s = 'free';
-    const face = dir === 'b' ? -A.face : A.face;
+    const face = A.face; // うしろなげは、角度（142度）のほうで後ろへ飛ぶ
     launch(st, A, D, p, face, D.x, D.y - 24, 'throw'); applyLaunch(st, D, 0); D.hold = 0;
     ev(st, { t: 'throw', i: A.i, d: D.i, dir });
   }
 
   // ------------------------------------------------------------------------------------------------ あたり判定
-  function hurtDist(f, C, cx, cy) { // 円の中心 (cx,cy) から、からだの四角までの近さ
-    const hw = C.w / 2, qx = clamp(cx, f.x - hw, f.x + hw), qy = clamp(cy, f.y - C.h, f.y);
+  function hurtDist(f, C, cx, cy) { // 円の中心 (cx,cy) から、からだの四角までの近さ（しゃがむと、低くなる）
+    const hw = C.w / 2, hh = f.cr > 2 && f.s === 'free' ? C.h * 0.66 : C.h, qx = clamp(cx, f.x - hw, f.x + hw), qy = clamp(cy, f.y - hh, f.y);
     return Math.hypot(cx - qx, cy - qy);
   }
   function boxesOf(st, A) {
@@ -651,7 +942,7 @@
       if (A.cdm > 0 && fr >= s0 && fr < s0 + m.ca) { hbs = m.hb; p = { dmg: Math.min(24, m.dmg + A.cdm * 1.2), bkb: m.bkb, kbg: m.kbg, ang: m.ang }; t = (fr - s0) / Math.max(1, m.ca - 1); }
     } else if (k === 'spin') {
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = fr >= m.s + m.a - m.rh ? m.fin : m; t = 0; }
-    } else if (k === 'melee' || k === 'dash' || k === 'rise') {
+    } else if (k === 'melee' || k === 'dash' || k === 'rise' || k === 'tele' || k === 'reflect') {
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = m; t = (fr - m.s) / Math.max(1, m.a - 1); }
     } else if (k === 'grab' || k === 'cmdgrab') {
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = m; t = (fr - m.s) / Math.max(1, m.a - 1); }
@@ -728,10 +1019,17 @@
     const face = h.face;
     // まもり
     if (D.s === 'shield') {
-      D.shd -= d * 1.3 + 1.5; const hs = 3 + Math.min(6, Math.floor(d / 3));
-      A.hold = hs; D.hold = hs; D.vx += face * (0.9 + d * 0.1); if (A.s === 'atk') A.vx -= face * (0.9 + d * 0.06);
+      const hs = 3 + Math.min(6, Math.floor(d / 3));
+      if (D.pst > 0) { // ジャストガード：まもりを出した直後。まもりはへらず、しびれもなく、攻めた側にすきができる
+        A.hold = hs + 6; D.hold = hs; D.ssn = 0; D.vx += face * 0.3; D.shd = Math.min(100, D.shd + 4);
+        if (A.s === 'atk') A.vx -= face * 1.4;
+        ev(st, { t: 'block', i: A.i, d: D.i, x: h.x, y: h.y, dmg: d, perfect: 1 }); ev(st, { t: 'pshield', i: A.i, d: D.i, x: h.x, y: h.y });
+        return;
+      }
+      D.shd -= d * 1.3 + 1.5;
+      A.hold = hs; D.hold = hs; D.ssn = hs + 2 + Math.floor(d * 0.3); D.vx += face * (0.9 + d * 0.1); if (A.s === 'atk') A.vx -= face * (0.9 + d * 0.06);
       ev(st, { t: 'block', i: A.i, d: D.i, x: h.x, y: h.y, dmg: d });
-      if (D.shd <= 0) { D.s = 'stun'; D.sf = 0; D.vy = -6; D.gr = -1; D.shd = 0; ev(st, { t: 'shbreak', d: D.i, x: D.x, y: D.y - DC.h * 0.6 }); }
+      if (D.shd <= 0) { D.s = 'stun'; D.sf = 0; D.vy = -6; D.gr = -1; D.shd = 0; D.ssn = 0; ev(st, { t: 'shbreak', d: D.i, x: D.x, y: D.y - DC.h * 0.6 }); }
       return;
     }
     // カウンター
@@ -759,12 +1057,14 @@
     const wm = 1 + (100 - DC.weight) * 0.006;
     const pAfter = D.pct;
     let v = (p.bkb + p.kbg * pAfter * 0.01) * 0.18 * wm;
+    if (D.cr > 2 && D.gr >= 0 && D.s === 'free') v *= 0.85; // しゃがみ（クラウチキャンセル）：飛びにくい
     if (how === 'hug' || how === 'throw') { D.pct = rd(D.pct + p.dmg); A.dealt = rd(A.dealt + p.dmg); D.taken = rd(D.taken + p.dmg); D.last = A.i; D.lastF = st.f; D.lk = how; v = (p.bkb + p.kbg * D.pct * 0.01) * 0.18 * wm; }
     const a = V(p.ang); let dx = a[0] * face, dy = a[1];
     if (D.gr >= 0 && dy > -0.25) { dy = 0; dx = face; }
     if (D.gr >= 0 && v < 2.4 && dy >= -0.1) dy = 0;
     D.chain = D.s === 'hurt' ? (D.chain | 0) + 1 : 0;
     D.s = 'hurt'; D.mv = ''; D.mf = 0; D.chg = 0; D.sf = 0; D.hs = clamp(Math.floor((Math.floor(v * 3.4) + 4) * Math.max(0.3, 1 - 0.12 * D.chain)), 6, 90); D.cmbT = D.hs + 6; D.lg = -1; D.help = false; D.pf = 0; D.ffl = false; D.arm = 0;
+    D.sdi = 0; D.mm = 0; D.cr = 0; D.tq = 0;
     D.lv = [rd(dx * v), rd(dy * v)]; D.by = -1; if (D.grabbing >= 0) { const g = st.fighters[D.grabbing]; if (g && g.s === 'held') { g.s = 'free'; g.by = -1; } D.grabbing = -1; }
     if (D.gr >= 0 && dy < 0) D.gr = -1;
     ev(st, { t: 'hit', i: A.i, d: D.i, x: hx, y: hy, dmg: p.dmg, p: v, pct: D.pct, how: how || 'melee', fx: dx, fy: dy });
@@ -785,6 +1085,14 @@
   function updateProjectiles(st) {
     const S = stageOf(st), bl = S.blast;
     for (const p of st.pr) {
+      // はね返し（リフレクター）：構えている前に飛んできた飛び道具は、持ち主がかわる
+      if (p.k !== 'mine') for (const F of st.fighters) {
+        if (!F.rfl || F.i === p.o || F.s !== 'atk') continue;
+        if ((p.x - F.x) * F.face > -8 && hurtDist(F, CH[F.ch], p.x, p.y) <= p.r + 34) {
+          p.vx = -p.vx * 1.15; p.vy = p.vy * 0.5; p.o = F.i; p.bf = 1.3; p.life = Math.max(p.life, 36); p.face = -p.face; p.t = 0;
+          ev(st, { t: 'reflect', i: F.i, x: p.x, y: p.y });
+        }
+      }
       p.t++; p.life--;
       p.vy += p.g; p.x += p.vx; p.y += p.vy;
       if (p.k === 'mine') {
@@ -811,7 +1119,8 @@
     const bl = stageOf(st).blast, C = CH[f.ch], cy = f.y - C.h / 2;
     if (f.x >= bl.l && f.x <= bl.r && cy >= bl.t && cy <= bl.b) return;
     const by = f.last >= 0 && st.f - f.lastF < 420 ? f.last : -1;
-    ev(st, { t: 'ko', i: f.i, by, mk: by >= 0 ? (f.lk || '') : '', x: clamp(f.x, bl.l, bl.r), y: clamp(cy, bl.t, bl.b), vx: f.vx, vy: f.vy, pct: f.pct });
+    const star = cy < bl.t && Math.hypot(f.vx, f.vy) > 13 && by >= 0; // 上へ強く飛んだ：お星さまになる
+    ev(st, { t: 'ko', i: f.i, by, mk: by >= 0 ? (f.lk || '') : '', x: clamp(f.x, bl.l, bl.r), y: clamp(cy, bl.t, bl.b), vx: f.vx, vy: f.vy, pct: f.pct, star });
     f.falls++; f.koPct = f.pct; f.koF = st.f;
     if (by >= 0) { st.fighters[by].kos++; st.sc[by]++; } st.sc[f.i]--;
     f.pct = st.training ? 0 : 0; f.last = -1; f.recent = []; f.lv = null; f.hold = 0; f.hs = 0; f.vx = 0; f.vy = 0; f.lg = -1; f.cmb = 0;
@@ -880,7 +1189,7 @@
     for (const p of tops(st)) if (x >= p.x1 && x <= p.x2 && p.y >= y - 4 && (best == null || p.y < best)) best = p.y;
     return best;
   }
-  function recoverReach(f) { const m = MOVES[f.ch].spU; return m.rv * m.a * 0.72; }
+  function recoverReach(f) { const m = MOVES[f.ch].spU; return m.kind === 'tele' ? m.td * 0.9 : m.rv * m.a * 0.72; }
   function nearestLedge(st, f) {
     const S = stageOf(st), C = CH[f.ch]; let best = -1, bd = 1e9;
     for (let i = 0; i < S.ledges.length; i++) {
@@ -916,7 +1225,15 @@
     }
     return false;
   }
+  // CPU の出力：走るときは「いっぱいまで」たおす（ダッシュ・はしり）。こうげきのじゅんびの間は、はじきにならないようにする
   function cpu(st, i) {
+    let o = cpuCore(st, i);
+    const ai = st.ai[i];
+    if ((o & (B.L | B.R)) && !(o & (B.U | B.D)) && /^(approach|chase|guard|retreat|wait|drift|jump|dashin|whiff)?$/.test(ai.pl || '')) o |= B.F;
+    if ((o & B.D) && ai.pl === 'drop') o |= B.F;
+    return o;
+  }
+  function cpuCore(st, i) {
     const F = st.fighters, f = F[i], ai = st.ai[i];
     if (f.s === 'out' || f.s === 'dead') return 0;
     const lvl = clamp(f.lvl || 2, 1, 3), C = CH[f.ch], S = stageOf(st);
@@ -925,11 +1242,12 @@
     // ---- 特別な状態
     if (f.s === 'held' || f.s === 'stun') { ai.mash++; const mb = [B.A, B.J, B.L, B.R, B.S][ai.mash % 5]; return (ai.mash % (lvl === 1 ? 5 : lvl === 2 ? 3 : 2) === 0) ? mb : 0; }
     if (f.s === 'rez') return f.rez < 150 ? B.D : 0;
-    if (f.s === 'getup') return 0;
+    if (f.s === 'getup' || f.s === 'tech' || f.s === 'taunt') return 0;
+    if (f.s === 'down') { if (f.sf < 12) return 0; const r = rnd(st); return r < 0.3 ? B.A : r < 0.55 ? (f.x < 0 ? B.R : B.L) : r < 0.8 ? B.J : 0; }
     if (f.s === 'ledge') {
       if (ai.wl <= 0) ai.wl = (lvl === 3 ? 14 : lvl === 2 ? 28 : 60) + Math.floor(rnd(st) * 30);
       ai.wl--;
-      if (ai.wl <= 0) { ai.wl = 0; return rnd(st) < 0.5 ? B.U : (rnd(st) < 0.5 ? (S.ledges[f.lg].dir > 0 ? B.R : B.L) : B.J); }
+      if (ai.wl <= 0) { ai.wl = 0; const r = rnd(st); const L = S.ledges[f.lg]; return r < 0.28 ? B.U : r < 0.5 ? (L.dir > 0 ? B.R : B.L) : r < 0.68 ? B.A : r < 0.82 ? B.H : B.J; }
       return 0;
     }
     const T = pickTarget(st, f);
@@ -966,7 +1284,10 @@
       if (f.jumps > 0 && below && (f.vy > 1 || ddy < -90) && (lvl > 1 || rnd(st) < 0.1) && f.s === 'free') return bits | pulse | B.J;
       // 2) 上へのとくぎ：ふちが届く範囲に入ったら
       const wantUp = below && Math.abs(ddx) < reach * 1.1 + 60 && (f.jumps === 0 || -ddy > 130 || f.vy > 4.5);
-      if (wantUp && f.s === 'free' && f.bs === 0 && (lvl > 1 || rnd(st) < 0.35)) { return (bits & ~B.U) | B.U | B.S; }
+      if (wantUp && f.s === 'free' && f.bs === 0 && (lvl > 1 || rnd(st) < 0.35)) {
+        const tele = MOVES[f.ch].spU.kind === 'tele'; // ワープは、ふちの真上をねらう（ななめだとステージの中へめりこむ）
+        return ((tele && Math.abs(ddx) < -ddy * 0.8 ? 0 : bits) & ~B.U) | B.U | B.S;
+      }
       // 3) 横にとくぎ（突進）で距離をかせぐ
       const sideM = MOVES[f.ch].spS;
       if (Math.abs(ddx) > 220 && !below && sideM.kind === 'dash' && !f.sbUsed && f.s === 'free' && lvl === 3 && ai.sw % 24 === 0) { ai.sw++; return bits | B.S | (ddx > 0 ? B.R : B.L); }
@@ -977,8 +1298,13 @@
     // ---- 空中でうく：降りるまでの動き
     if (f.s === 'adodge') return 0;
     if (f.s === 'hurt') {
-      // 生き残りのずらし（DI）：ステージの真ん中へ
-      if (lvl >= 2) { const c = f.x < 0 ? B.R : B.L; return c | (f.y > S.spawn[1] + 400 ? B.U : 0); }
+      // 生き残りのずらし（DI）：ステージの真ん中へ。ゆかの近くでは受け身
+      if (lvl >= 2) {
+        const c = f.x < 0 ? B.R : B.L, di = c | (f.y > S.spawn[1] + 400 ? B.U : 0);
+        if (f.tl <= 0 && lb != null && lb - f.y < 48 && f.vy > 2.5 && rnd(st) < (lvl === 3 ? 0.9 : 0.5)) return (rnd(st) < 0.5 ? 0 : di) | B.H;
+        if (f.vy > 3 && f.hs > 4 && f.jumps > 0 && f.y > S.spawn[1] + 100 && lvl === 3) return di | B.J; // めいていキャンセル
+        return di;
+      }
       return 0;
     }
     // ---- 考えなおす
@@ -1020,6 +1346,7 @@
       if (grounded && r < pBlock && f.shd > 25) { ai.hold = B.H; ai.pt = 18 + Math.floor(rnd(st) * 8); ai.pl = 'shield'; ai.shieldT = st.f; return; }
       if (!grounded && lvl === 3 && r < 0.2 && !f.adUsed) { ai.hold = B.H | (dx > 0 ? B.L : B.R); ai.pt = 4; ai.pl = 'adodge'; return; }
     }
+    if (lvl >= 2 && fm.spD.kind === 'reflect' && f.s === 'free' && st.pr.some(q => q.o !== f.i && q.k !== 'mine' && Math.abs(q.x - f.x) < 150 && Math.abs(q.y - (f.y - C.h / 2)) < 60 && (q.vx > 0) === (q.x < f.x))) { ai.hold = B.D; ai.pulse = B.S; ai.pt = 8; ai.pl = 'reflect'; return; }
     if (f.s === 'shield') {
       // まもりをやめるとき：相手が終わったらつかむ
       const tEnd = T.s !== 'atk' || (Tm && T.mf >= Tm.t - 6);
@@ -1083,7 +1410,11 @@
       if (wantSmash && r < 0.55) {
         const k = smashK[Math.floor(rnd(st) * smashK.length)];
         const dirb = k === 'usmash' ? B.U : k === 'dsmash' ? B.D : (faceT > 0 ? B.R : B.L);
-        ai.hold = dirb | ((f.pct > 120 || lvl === 1) ? 0 : 0); ai.pulse = B.M; ai.pt = 6 + (lvl === 3 ? Math.floor(rnd(st) * 18) : 0); ai.pl = 'smash'; ai.charge = ai.pt; ai.hold = dirb | B.M; ai.pt = 8 + Math.floor(rnd(st) * (lvl === 3 ? 22 : 8)); return;
+        ai.pl = 'smash'; const kind = lvl === 3 ? rnd(st) : 0.2;
+        if (kind < 0.3) { ai.hold = dirb | B.F; ai.pulse = B.A; ai.pt = 8; } // はじきスマッシュ（ためなし）
+        else if (kind < 0.6) { const cb = k === 'usmash' ? B.CU : k === 'dsmash' ? B.CD : (faceT > 0 ? B.CR : B.CL); ai.hold = cb; ai.pt = 8 + Math.floor(rnd(st) * (lvl === 3 ? 22 : 8)); } // Cスティックでため
+        else { ai.hold = dirb | B.M; ai.pt = 8 + Math.floor(rnd(st) * (lvl === 3 ? 22 : 8)); return; }
+        return;
       }
       if (cand.length) {
         // 強い技ほど選ばれやすい（同じ技のくりかえしは避ける）
@@ -1094,6 +1425,7 @@
         const isSp = k.slice(0, 2) === 'sp';
         const sdir = k === 'spS' ? (faceT > 0 ? B.R : B.L) : k === 'spD' ? B.D : 0;
         ai.hold = isSp ? sdir : (k === 'dsmash' ? B.D : dir); ai.pulse = isSp ? B.S : (k === 'dsmash' ? B.M : B.A); ai.pt = 7; ai.pl = 'atk-' + k;
+        if (k === 'jab' && lvl >= 2) { ai.hold |= B.A; ai.pt = 15 + Math.floor(rnd(st) * 12); } // れんぞくジャブ
         if (lvl === 1 && r < 0.4) { ai.hold = 0; ai.pulse = 0; ai.pl = 'whiff'; }
         return;
       }
@@ -1111,6 +1443,7 @@
     // 上にいる相手：ジャンプ。下にいる相手：板から降りる
     if (dy < -70 && adx < 200 + 30 * lvl) { ai.hold = toward; ai.pulse = B.J; ai.pt = 10; ai.pl = 'jump'; if (rnd(st) < 0.4) ai.pulse2 = 0; return; }
     if (dy > 70 && f.gr >= 100 && adx < 260) { ai.hold = toward; ai.pulse = B.D; ai.pt = 8; ai.pl = 'drop'; return; }
+    if (lvl >= 2 && adx > 50 && adx < 110 && ady < 50 && f.mm >= 1 && f.mm <= 2 && r < 0.35 && T.s !== 'shield') { ai.hold = toward; ai.pulse = B.A; ai.pt = 6; ai.pl = 'atk-dattack'; return; } // ダッシュこうげき
     if (adx > 36) {
       ai.hold = toward; ai.pt = 8 + Math.floor(rnd(st) * 8); ai.pl = 'approach';
       if (lvl === 1 && r < 0.35) ai.hold = 0;
@@ -1140,10 +1473,11 @@
     if (r < 0.3) b |= B.L; else if (r < 0.6) b |= B.R;
     if (rnd(st) < 0.1) b |= B.U; if (rnd(st) < 0.1) b |= B.D;
     if (rnd(st) < 0.08) b |= B.J; if (rnd(st) < 0.1) b |= B.A; if (rnd(st) < 0.06) b |= B.S; if (rnd(st) < 0.03) b |= B.H; if (rnd(st) < 0.02) b |= B.G; if (rnd(st) < 0.02) b |= B.M;
+    if (rnd(st) < 0.25) b |= B.F; if (rnd(st) < 0.015) b |= (B.CL << Math.floor(rnd(st) * 4)); if (rnd(st) < 0.004) b |= B.T;
     return b;
   }
   const api = {
-    DT, B, CH, CHAR_IDS, STAGES, STAGE_IDS, MOVES, NORMALS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
+    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
     sameJSON: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BrawlEngine = api;

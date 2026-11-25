@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 // おもちゃ大乱闘の通しプレイ（Playwright。キーボードとタッチは本物の入力。?debug の window.__brawl は「状態を読む」「試合を早く終わらせる」ためだけ）
-//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts]
+//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick]
 // 1. 初回：遊び方 → タイトル（うしろで CPU のデモが動く）  2. ひとりで対戦：本物のキーでいどう・ジャンプ・こうげき・つよい攻撃・まもり・つかみ・KO・結果と保存
 // 3. タッチ：左のスティックと右のボタンを同時におす（マルチタッチ）  4. ふたりで1台：1P と 2P のキーが別々に効く
 // 5. ラダー：8戦のながれ・おもちゃとステージが開く・負けてコンティニュー・クリア・ベスト  6. れんしゅう：ダミー・コンボ・KO でも終わらない
 // 7. 一時停止  8. 保存と再開（ラダー）  9. 英語  10. 全画面サイズ × ja/en（タイトル・設定・試合・結果）
+// 11. controls：本物のキーで ダッシュ・はじきジャンプ・はじき強攻撃・Cスティック・まもり・つかみ/なげ・空中よけ・ふち・うけ身・あいさつ
+// 12. gamepad：にせのゲームパッド（navigator.getGamepads）で アナログのはじき・ゆっくり押し・Cスティック・メニュー操作
+// 13. roster：18人のえらぶ画面（320px の ja/en・矢印キーで移動・勝ちで開く）  14. ctlpage：操作ページ（4つのタブ・キーの変更・オプション）  15. touchflick：スティックのはじき
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -99,7 +102,7 @@ async function touch(env) {
   check('the touch pad is visible in a match', await p.evaluate(() => !document.body.classList.contains('notouch') && document.querySelectorAll('#pad .tb').length === 6), null);
   const btn = k => p.evaluate(k => { const r = document.querySelector('#pad .tb[data-k="' + k + '"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }, k);
   const sizes = await Promise.all(['A', 'S', 'J', 'M', 'H', 'G'].map(btn)); check('every button is at least 46px (generous hit areas)', sizes.every(b => b.w >= 46 && b.h >= 46), sizes.map(b => b.w + 'x' + b.h));
-  await p.evaluate(() => { __brawl.place(0, -150, 0); __brawl.place(1, 300, 0); });
+  await p.evaluate(() => { __brawl.freeze(); __brawl.place(0, -200, 0); __brawl.place(1, 300, 0); });
   const vp = V.get('land'); const sx = 90, sy = vp.height - 90;
   const x0 = (await F(p, 0)).x; await T.down(1, sx, sy); await T.move(1, sx + 60, sy); await p.waitForTimeout(500); const x1 = (await F(p, 0)).x;
   check('dragging the stick right moves you right', x1 > x0 + 30, { x0, x1 });
@@ -171,6 +174,7 @@ async function training(env) {
   await p.evaluate(() => __brawl.place(1, 6000, 0)); await p.waitForTimeout(300); const a = await st(p);
   check('a KO does not end training or take a stock', a.playing && a.fighters[1].stk === 3 && !a.over, a.fighters[1]);
   await p.click('#trBtn'); await p.click('#trBoxes'); await p.waitForTimeout(100); await shot(p, '06-boxes');
+  await p.click('#trFrames'); await p.waitForTimeout(150); const fd = await p.textContent('#trData'); check('training can show frame data (state, move frame, inv, stun, inputs)', await p.isVisible('#trData') && /YOU/.test(fd) && /inv/.test(fd) && /in:/.test(fd), fd); await shot(p, '06-frames');
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
@@ -223,13 +227,217 @@ async function layouts(env) {
   }
 }
 
+// ---- 11. the platform-fighter controls with the real keyboard
+const poll = async (p, fn, ms = 600, step = 12) => { const src = `(function () { const fighter0 = () => __kb.state().fighters[0]; return (${fn.toString()})(); })()`; const t0 = Date.now(); let last = null; while (Date.now() - t0 < ms) { last = await p.evaluate(src); if (last) return last; await p.waitForTimeout(step); } return last; };
+const fighter0 = () => __kb.state().fighters[0]; // (used inside page functions through poll)
+async function controls(env) {
+  console.log('11. platform-fighter controls: dash, flick jump, flick smash, C-stick, shield, grab and throw, air dodge, ledge, tech, taunt');
+  const s = await open(env); const p = s.page; await startSolo(p);
+  const reset = (x = -200, cx = 300) => p.evaluate(([x, cx]) => { __brawl.freeze(); const G = __brawl.G; for (const f of G.st.fighters) { f.s = 'free'; f.mv = ''; f.hold = 0; f.inv = 0; f.vx = f.vy = 0; f.mm = 0; f.fkt = 0; f.lag = 0; f.jumps = 1; f.adUsed = false; f.pct = 0; f.hs = 0; } __brawl.place(0, x, 0); __brawl.place(1, cx, 0); G.st.fighters[0].face = 1; G.st.fighters[1].face = -1; }, [x, cx]);
+  await reset(); await p.waitForTimeout(150);
+  // walk (hold) vs dash (double tap)
+  await p.keyboard.down('KeyD'); const w = await poll(p, () => { const f = fighter0(); return f.mm === 1 ? 'dash' : null; }, 90); await p.keyboard.up('KeyD'); check('a single press is a walk, not a dash', w !== 'dash', w);
+  await p.waitForTimeout(400); await reset();
+  await p.keyboard.down('KeyD'); await p.waitForTimeout(30); await p.keyboard.up('KeyD'); await p.waitForTimeout(30); await p.keyboard.down('KeyD');
+  const dash = await poll(p, () => { const f = fighter0(); return f.mm === 1 ? f : null; }, 300); check('double-tapping D dashes (flick)', !!dash, dash);
+  const run = await poll(p, () => { const f = fighter0(); return f.mm === 2 ? f : null; }, 500); check('holding it on runs', !!run, run); await p.keyboard.up('KeyD');
+  await p.waitForTimeout(500); await reset();
+  // hold-to-run without a double tap
+  await p.keyboard.down('KeyD'); const hr = await poll(p, () => { const f = fighter0(); return f.mm === 2 ? f : null; }, 600); await p.keyboard.up('KeyD'); check('"hold to run" mode: holding a direction runs', !!hr, hr);
+  await p.waitForTimeout(400); await reset();
+  // flick jump = double-tap up
+  await p.keyboard.press('KeyW'); await p.waitForTimeout(250); const noj = await F(p, 0); check('a single up press does not jump', noj.y >= -2, noj);
+  await p.waitForTimeout(300);
+  await p.keyboard.down('KeyW'); await p.waitForTimeout(25); await p.keyboard.up('KeyW'); await p.waitForTimeout(25); await p.keyboard.down('KeyW');
+  const fj = await poll(p, () => { const f = fighter0(); return f.y < -12 ? f : null; }, 600); await p.keyboard.up('KeyW'); check('double-tapping up (a flick) jumps', !!fj, fj);
+  await p.waitForTimeout(1100); await reset();
+  // tilt vs flick smash vs C-stick vs smash key
+  await p.keyboard.down('KeyD'); await p.keyboard.down('KeyF'); const tl = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f.mv : null; }, 200); await p.keyboard.up('KeyF'); await p.keyboard.up('KeyD'); check('direction + attack pressed together is a tilt', tl === 'ftilt', tl);
+  await p.waitForTimeout(700); await reset();
+  await p.keyboard.down('KeyD'); await p.waitForTimeout(25); await p.keyboard.up('KeyD'); await p.waitForTimeout(25); await p.keyboard.down('KeyD'); await p.keyboard.down('KeyF');
+  const sm = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f.mv : null; }, 250); await p.keyboard.up('KeyF'); await p.keyboard.up('KeyD'); check('flick (double-tap) + attack is a forward smash', sm === 'fsmash', sm);
+  await p.waitForTimeout(800); await reset();
+  await p.keyboard.down('ArrowLeft'); const cs = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f : null; }, 250); await p.keyboard.up('ArrowLeft'); check('the C-stick (arrow key) smashes that way and turns you', cs && cs.mv === 'fsmash' && cs.face === -1, cs);
+  await p.waitForTimeout(800); await reset();
+  await p.keyboard.down('KeyW'); await p.waitForTimeout(40); await p.keyboard.down('KeyR'); const us = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f.mv : null; }, 250); await p.keyboard.up('KeyR'); await p.keyboard.up('KeyW'); check('smash key + up is an up smash', us === 'usmash', us);
+  await p.waitForTimeout(800); await reset();
+  // shield, perfect window, spot dodge, roll
+  await p.keyboard.down('KeyV'); const sh = await poll(p, () => { const f = fighter0(); return f.s === 'shield' ? f : null; }, 200); check('V shields, and the first frames are the perfect-shield window', sh && sh.pst >= 0, sh);
+  await p.waitForTimeout(120); await p.keyboard.press('KeyS'); const sp = await poll(p, () => { const f = fighter0(); return f.s === 'spot' ? f.s : null; }, 300); check('shield + down: spot dodge', sp === 'spot', sp); await p.keyboard.up('KeyV');
+  await p.waitForTimeout(500); await reset();
+  await p.keyboard.down('KeyV'); await p.waitForTimeout(120); await p.keyboard.press('KeyD'); const rl = await poll(p, () => { const f = fighter0(); return f.s === 'roll' ? f.s : null; }, 300); await p.keyboard.up('KeyV'); check('shield + a direction: roll', rl === 'roll', rl);
+  await p.waitForTimeout(700); await reset(-20, 22);
+  // grab and throw
+  await p.keyboard.press('KeyT'); const gr = await poll(p, () => { const a = __kb.state().fighters; return a[0].s === 'grab' && a[1].s === 'held' ? 1 : null; }, 500); check('T grabs the toy in front of you', gr === 1, [await F(p, 0), await F(p, 1)]);
+  const pm0 = (await F(p, 1)).pct; await p.keyboard.press('KeyF'); await p.waitForTimeout(80); check('attack while holding = pummel (damage)', (await F(p, 1)).pct > pm0, await F(p, 1));
+  await p.waitForTimeout(250); await p.keyboard.press('KeyA'); const th = await poll(p, () => { const f = __kb.state().fighters[1]; return f.s === 'hurt' ? 1 : null; }, 400); check('a direction throws (back throw)', th === 1, await F(p, 1));
+  await p.waitForTimeout(900); await reset();
+  // air dodge, fast fall
+  await p.keyboard.press('Space'); await poll(p, () => fighter0().y < -30, 600); await p.keyboard.down('KeyV'); const ad = await poll(p, () => { const f = fighter0(); return f.s === 'adodge' ? f.s : null; }, 250); await p.keyboard.up('KeyV'); check('shield in the air: air dodge', ad === 'adodge', await F(p, 0));
+  await p.waitForTimeout(1500); await reset();
+  // ledge: hang, then the get-up attack
+  const hang = async () => { await p.evaluate(() => { const E = __brawl.E, L = E.STAGES.bench.ledges[0], C = E.CH[__kb.state().fighters[0].ch]; const f = __brawl.G.st.fighters[0]; f.s = 'free'; f.x = L.x - 20; f.y = L.y + C.h * 0.9 + 10; f.gr = -1; f.vy = 2; f.vx = 0; f.lcd = 0; f.lgN = 0; }); return poll(p, () => fighter0().s === 'ledge' ? 1 : null, 400); };
+  check('falling beside the stage grabs the ledge', await hang() === 1, await F(p, 0)); await p.waitForTimeout(200);
+  await p.keyboard.press('KeyF'); const la = await poll(p, () => { const f = fighter0(); return f.s === 'getup' && f.gk === 'atk' ? 1 : null; }, 300); check('attack on the ledge: get-up attack', la === 1, await F(p, 0));
+  await p.waitForTimeout(800); await reset(); await hang(); await p.waitForTimeout(200); await p.keyboard.press('KeyV'); const lr = await poll(p, () => { const f = fighter0(); return f.s === 'getup' && f.gk === 'roll' ? 1 : null; }, 300); check('shield on the ledge: roll up', lr === 1, await F(p, 0));
+  await p.waitForTimeout(900); await reset(); await hang(); await p.waitForTimeout(200); await p.keyboard.press('Space'); const lj = await poll(p, () => { const f = fighter0(); return f.s === 'free' && f.vy < -3 ? 1 : null; }, 300); check('jump on the ledge: ledge jump', lj === 1, await F(p, 0));
+  await p.waitForTimeout(1200); await reset();
+  // tech: pressing shield just before landing
+  await p.evaluate(() => { const f = __brawl.G.st.fighters[0]; f.s = 'hurt'; f.hs = 70; f.y = -70; f.gr = -1; f.vy = 7; f.vx = 0; f.lv = null; });
+  await p.keyboard.press('KeyV'); const tc = await poll(p, () => { const f = fighter0(); return f.s === 'tech' || f.s === 'roll' ? f.s : null; }, 600); check('shield just before landing while launched: tech', tc === 'tech', await F(p, 0));
+  await p.waitForTimeout(700); await reset();
+  await p.evaluate(() => { const f = __brawl.G.st.fighters[0]; f.s = 'hurt'; f.hs = 70; f.y = -70; f.gr = -1; f.vy = 7; f.vx = 0; f.lv = null; f.tl = 0; f.tq = 0; });
+  await p.waitForTimeout(400); const ms = await F(p, 0); check('no tech press: the toy lies on the floor', ms.s === 'down' || ms.s === 'hurt' || ms.s === 'free', ms);
+  await p.waitForTimeout(700); await reset();
+  // taunt
+  await p.keyboard.press('KeyY'); const tn = await poll(p, () => fighter0().s === 'taunt' ? 1 : null, 300); check('Y taunts', tn === 1, await F(p, 0));
+  await shot(p, '11-controls'); check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+// ---- 12. a (fake) gamepad: analog stick, C-stick, buttons, menu navigation
+async function gamepad(env) {
+  console.log('12. gamepad: analog tilt vs full push, flick, C-stick, buttons, and moving through the menus');
+  const s = await B.newSession(env, { vp: V.get('land'), lang: 'ja', seed: { [HOWTO]: '1' } });
+  await s.ctx.addInitScript(() => { window.__pad = { connected: true, id: 'fake', index: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }; navigator.getGamepads = () => [window.__pad]; });
+  await s.goto('/brawl/?debug'); const p = s.page; await p.waitForFunction(() => window.__kb && __kb.ready() && window.__brawl);
+  const axes = (a) => p.evaluate(a => { __pad.axes = a; }, a), btn = (i, v) => p.evaluate(([i, v]) => { __pad.buttons[i] = { pressed: v, value: v ? 1 : 0 }; }, [i, v]);
+  // the menus: d-pad moves the focus, A presses, B goes back
+  check('the page sees the pad', (await st(p)).pads, null);
+  await p.evaluate(() => __brawl.showTitle()); await p.waitForTimeout(200);
+  const f0 = await p.evaluate(() => document.activeElement && document.activeElement.id); await btn(13, true); await p.waitForTimeout(80); await btn(13, false); await p.waitForTimeout(60); const f1 = await p.evaluate(() => document.activeElement && document.activeElement.id);
+  check('d-pad down moves the focus in the menu', !!f1 && f1 !== f0, [f0, f1]);
+  await btn(0, true); await p.waitForTimeout(80); await btn(0, false); await p.waitForTimeout(250); check('A presses the focused button (opens the next screen)', (await st(p)).setup, await st(p));
+  await btn(1, true); await p.waitForTimeout(80); await btn(1, false); await p.waitForTimeout(250); check('B goes back', (await st(p)).title, await st(p));
+  // a match: choose "solo" with the pad
+  await p.click('#mSolo'); await p.click('#sGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await wait(p, () => __kb.state().count === 0 && __kb.state().frame > 3);
+  const reset = (x = -200) => p.evaluate(x => { __brawl.freeze(); const G = __brawl.G; for (const f of G.st.fighters) { f.s = 'free'; f.mv = ''; f.hold = 0; f.inv = 0; f.vx = f.vy = 0; f.mm = 0; f.fkt = 0; f.lag = 0; f.jumps = 1; } __brawl.place(0, x, 0); __brawl.place(1, 300, 0); G.st.fighters[0].face = 1; }, x);
+  await reset(); await p.waitForTimeout(150);
+  await axes([0.55, 0, 0, 0]); const wk = await poll(p, () => { const f = fighter0(); return f.mm === 1 ? 'dash' : null; }, 250); const wv = await F(p, 0); check('a light stick tilt walks (no dash)', wk !== 'dash' && wv.vx > 0.5 && wv.vx < 2.8, wv);
+  await axes([1, 0, 0, 0]); const rn = await poll(p, () => { const f = fighter0(); return f.mm === 2 ? f : null; }, 600); check('then pushing it all the way slowly runs (not a flick)', !!rn, rn);
+  await axes([0, 0, 0, 0]); await p.waitForTimeout(500); await reset();
+  await axes([1, 0, 0, 0]); const fl = await poll(p, () => { const f = fighter0(); return f.mm === 1 ? f : null; }, 250); check('a sudden full push (flick) dashes', !!fl, fl);
+  await axes([0, 0, 0, 0]); await p.waitForTimeout(500); await reset();
+  await axes([1, 0, 0, 0]); await btn(2, true); const fs = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f.mv : null; }, 250); await btn(2, false); check('flick + the attack button: forward smash', fs === 'fsmash', fs);
+  await axes([0, 0, 0, 0]); await p.waitForTimeout(800); await reset();
+  await axes([0, 0, 0, -1]); const cu = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f.mv : null; }, 250); await axes([0, 0, 0, 0]); check('C-stick up (right stick): up smash', cu === 'usmash', cu);
+  await p.waitForTimeout(800); await reset();
+  await axes([0, -1, 0, 0]); const fj = await poll(p, () => { const f = fighter0(); return f.y < -12 ? f : null; }, 600); await axes([0, 0, 0, 0]); check('flicking the stick up jumps', !!fj, fj);
+  await p.waitForTimeout(1200); await reset();
+  await btn(0, true); await p.waitForTimeout(40); await btn(0, false); const jb = await poll(p, () => fighter0().y < -10 ? 1 : null, 400); check('A (bottom button) jumps', jb === 1, await F(p, 0));
+  await p.waitForTimeout(1000); await reset();
+  await btn(5, true); await p.waitForTimeout(30); await btn(5, false); await p.waitForTimeout(50); check('RB grabs (a grab starts)', (await F(p, 0)).mv === 'grab' || (await F(p, 0)).s === 'atk', await F(p, 0));
+  await p.waitForTimeout(600); await reset();
+  await btn(4, true); const sh = await poll(p, () => fighter0().s === 'shield' ? 1 : null, 250); await btn(4, false); check('LB shields', sh === 1, await F(p, 0));
+  await p.waitForTimeout(400); await btn(10, true); await p.waitForTimeout(40); await btn(10, false); const tn = await poll(p, () => fighter0().s === 'taunt' ? 1 : null, 300); check('stick click taunts', tn === 1, await F(p, 0));
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+// ---- 13. the roster screen: 18 toys, 320px, ja/en, keyboard navigation, wins unlock more
+async function roster(env) {
+  console.log('13. roster screen: 18 toys, fits at 320px (ja/en), arrow keys, locked toys and unlocking by wins');
+  const ALL = { v: 1, best: 0, lw: 0, cl: 1, un: { c: { robo: 1, duck: 1, bear: 1 }, s: { bench: 1, box: 1 } }, stats: { wins: 90, plays: 90 } };
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'se1', lang, touch: true, seed: { [HOWTO]: '1', [SAVE]: ALL } }); const p = s.page;
+    await p.click('#mSolo'); await p.waitForTimeout(250);
+    const chips = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].map(b => { const r = b.getBoundingClientRect(); return { dis: b.disabled, w: Math.round(r.width), h: Math.round(r.height), x: Math.round(r.left), nm: b.querySelector('.nm').textContent }; }));
+    check(`${lang}: 18 toys, all open once the ladder was cleared`, chips.length === 18 && chips.every(c => !c.dis), chips.length);
+    check(`${lang}: each tile is at least 44px at 320px wide`, chips.every(c => c.w >= 44 && c.h >= 44), chips.slice(0, 2));
+    const cols = new Set(chips.map(c => c.x)).size; check(`${lang}: several columns at 320px (${cols})`, cols >= 4, cols);
+    const r = await p.evaluate(`(${layoutProbe})()`); check(`${lang}: the roster fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0 && r.primary.every(x => x.problems.length === 0), { off: r.offscreen.slice(0, 4), pr: r.primary.filter(x => x.problems.length) });
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('en roster: no Japanese', jp.length === 0, jp.slice(0, 6)); }
+    // keyboard: focus one tile, arrows move along the grid, the focus shows the toy
+    await p.focus('#pickP1 .pk[data-id="robo"]'); await p.keyboard.press('ArrowRight'); const a1 = await p.evaluate(() => document.activeElement.dataset.id); check(`${lang}: arrow right moves to the next toy`, a1 === 'duck', a1);
+    await p.keyboard.press('ArrowDown'); const a2 = await p.evaluate(() => document.activeElement.dataset.id); check(`${lang}: arrow down moves a row down`, a2 && a2 !== 'duck' && E_ORDER.indexOf(a2) > 1 + 2, a2);
+    await p.keyboard.press('ArrowLeft'); await p.keyboard.press('ArrowUp'); const a3 = await p.evaluate(() => document.activeElement.dataset.id); check(`${lang}: arrow up and left move back`, a3 === 'robo' || a3 === 'duck', a3);
+    await p.focus('#pickP1 .pk[data-id="ninja"]'); const info = await p.textContent('#charInfo'); check(`${lang}: focusing a toy shows its name and description`, /Origa|オリガ/.test(info) && info.length > 40, info);
+    await p.click('#pickP1 .pk[data-id="penguin"]'); check(`${lang}: clicking selects (saved on start)`, await p.evaluate(() => document.querySelector('#pickP1 .pk.sel').dataset.id) === 'penguin', null);
+    await shot(p, `13-roster-${lang}`);
+    await p.click('#sGo'); await wait(p, () => __kb.state().playing); const ff = await F(p, 0); check(`${lang}: the chosen new toy plays`, ff.ch === 'penguin', ff);
+    check(`${lang}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  // locked toys and unlocking by wins
+  const s = await open(env, { vp: 'se1', touch: true }); const p = s.page;
+  await p.click('#mSolo'); await p.waitForTimeout(200);
+  const dis = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].map(b => b.disabled)); check('a new player has 3 toys open and 15 locked', dis.filter(x => !x).length === 3 && dis.length === 18, dis);
+  check('a note says how far the next toy is', /あと 2 勝/.test(await p.textContent('#rNote')), await p.textContent('#rNote'));
+  await p.click('#sGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await p.evaluate(() => __brawl.finish(0)); await wait(p, () => __kb.state().result, null, 6000);
+  let a = await st(p); check('one win: no new toy yet', Object.keys(a.save.un.c).length === 3, a.save.un.c);
+  await p.click('#rNext'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await p.evaluate(() => __brawl.finish(0)); await wait(p, () => __kb.state().result, null, 6000);
+  a = await st(p); check('the second win unlocks the next toy (ninja) and says so', a.save.un.c.ninja === 1 && /オリガ/.test(await p.textContent('#rUnl')), { c: a.save.un.c, u: await p.textContent('#rUnl') }); await shot(p, '13-unlock');
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+const E_ORDER = ['robo', 'duck', 'tin', 'bear', 'top', 'jack', 'ninja', 'wiz', 'cat', 'tank', 'giraffe', 'ball', 'crab', 'snail', 'kaiju', 'samurai', 'balloon', 'penguin'];
+
+// ---- 14. the controls page
+async function ctlpage(env) {
+  console.log('14. controls page: tabs, remapping keys, options (ja/en)');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { lang, vp: 'se1', touch: true }); const p = s.page;
+    await p.click('#mCtl'); await p.waitForTimeout(200);
+    check(`${lang}: the controls page opens from the title`, await p.isVisible('#ovCtl'), null);
+    check(`${lang}: four tabs`, await p.evaluate(() => document.querySelectorAll('#cTabs button').length) === 4, null);
+    check(`${lang}: a row per action (15) with a P1 and a P2 key`, await p.evaluate(() => document.querySelectorAll('#cBody .kbtn').length) === 30, null);
+    const rr = await p.evaluate(`(${layoutProbe})()`); check(`${lang}: fits at 320px`, rr.hscroll <= 1 && rr.offscreen.length === 0, { off: rr.offscreen.slice(0, 4) });
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('en keys tab: no Japanese', jp.length === 0, jp.slice(0, 6)); }
+    for (const tab of ['pad', 'touch', 'moves']) {
+      await p.click(`#cTabs button[data-tab="${tab}"]`); await p.waitForTimeout(100);
+      const txt = await p.textContent('#cBody'); check(`${lang}: ${tab} tab has text`, txt.length > 200, txt.length);
+      const r2 = await p.evaluate(`(${layoutProbe})()`); check(`${lang}: ${tab} tab fits`, r2.hscroll <= 1 && r2.offscreen.length === 0, { off: r2.offscreen.slice(0, 4) });
+      if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check(`en ${tab} tab: no Japanese`, jp.length === 0, jp.slice(0, 6)); }
+      if (tab === 'moves') { for (const w of lang === 'ja' ? ['はじき', 'ジャストガード', 'うけ身', 'ピボット', 'ダッシュダンス', 'オートキャンセル', 'ふち', 'あいさつ'] : ['flick', 'perfect shield', 'tech', 'pivot', 'dash dance', 'auto-cancel', 'Ledges', 'Taunt']) check(`${lang}: the moves guide covers "${w}"`, new RegExp(w, 'i').test(txt), null); }
+      if (tab === 'pad') { check(`${lang}: the gamepad tab covers the C-stick`, /Cスティック|C-stick/.test(txt), null); }
+    }
+    await shot(p, `14-ctl-${lang}`);
+    await p.click('#cTabs button[data-tab="keys"]');
+    // remap: Attack of P1 from F to H
+    const btn = '#cBody .kbtn[data-p="1"][data-a="A"]'; check(`${lang}: Attack is F by default`, (await p.textContent(btn)) === 'F', await p.textContent(btn));
+    await p.click(btn); await p.keyboard.press('KeyH'); await p.waitForTimeout(100);
+    check(`${lang}: pressing a key remaps it (saved)`, (await p.textContent(btn)) === 'H' && (await st(p)).ctl.keys.p1.A === 'KeyH', (await st(p)).ctl);
+    await p.click('#cBody .kbtn[data-p="1"][data-a="L"]'); await p.keyboard.press('Escape'); check(`${lang}: Esc cancels a remap`, (await p.textContent('#cBody .kbtn[data-p="1"][data-a="L"]')) === 'A', await p.textContent('#cBody .kbtn[data-p="1"][data-a="L"]'));
+    await p.click('#cBody .kbtn[data-p="1"][data-a="J"]'); await p.keyboard.press('KeyD'); await p.waitForTimeout(80);
+    const sw = await p.evaluate(() => [...document.querySelectorAll('#cBody .kbtn[data-p="1"]')].map(b => b.dataset.a + ':' + b.textContent).join(' ')); check(`${lang}: a key already in use is swapped, never duplicated`, /J:D/.test(sw) && /R:Space/.test(sw), sw);
+    // options
+    await p.click('#oTj button:nth-child(2)'); check(`${lang}: flick jump can be switched off`, (await st(p)).ctl.tj === 0, (await st(p)).ctl);
+    await p.click('#oRun button:nth-child(2)'); check(`${lang}: keyboard running can be set to double-tap`, (await st(p)).ctl.run === 'tap', (await st(p)).ctl);
+    await p.click('#cClose'); check(`${lang}: closing returns to the title`, (await st(p)).title, await st(p));
+    // the new binding works in a match, flick jump off reaches the engine
+    await p.evaluate(() => __brawl.showTitle()); await p.click('#mSolo'); await p.click('#sGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await wait(p, () => __kb.state().count === 0 && __kb.state().frame > 3);
+    check(`${lang}: the fighter has flick jump off`, await p.evaluate(() => __brawl.G.st.fighters[0].opt.tj) === 0, null);
+    await p.evaluate(() => { __brawl.freeze(); __brawl.place(0, -200, 0); __brawl.place(1, 300, 0); });
+    await p.keyboard.press('KeyF'); await p.waitForTimeout(60); check(`${lang}: the old attack key (F) does nothing now`, (await F(p, 0)).s !== 'atk', await F(p, 0));
+    await p.keyboard.press('KeyH'); await p.waitForTimeout(40); check(`${lang}: the new attack key (H) attacks`, (await F(p, 0)).s === 'atk', await F(p, 0));
+    // reset
+    await p.evaluate(() => __brawl.showTitle()); await p.click('#mCtl'); await p.click('#oReset'); check(`${lang}: reset restores the keys`, (await p.textContent('#cBody .kbtn[data-p="1"][data-a="A"]')) === 'F', null);
+    check(`${lang}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
+// ---- 15. touch flick
+async function touchflick(env) {
+  console.log('15. touch: a quick swipe on the stick is a flick (dash, flick jump); a slow drag walks');
+  const s = await open(env, { touch: true, vp: 'land' }); const p = s.page; const cdp = await s.ctx.newCDPSession(p); const T = touchApi(cdp);
+  await startSolo(p);
+  const reset = () => p.evaluate(() => { __brawl.freeze(); const G = __brawl.G; for (const f of G.st.fighters) { f.s = 'free'; f.mv = ''; f.hold = 0; f.inv = 0; f.vx = f.vy = 0; f.mm = 0; f.fkt = 0; f.lag = 0; f.jumps = 1; } __brawl.place(0, -200, 0); __brawl.place(1, 300, 0); G.st.fighters[0].face = 1; });
+  const vp = V.get('land'); const sx = 90, sy = vp.height - 90;
+  await reset(); await p.waitForTimeout(150);
+  await T.down(1, sx, sy); for (let i = 1; i <= 6; i++) { await T.move(1, sx + i * 6, sy); await p.waitForTimeout(40); } const wk = await F(p, 0); check('a slow drag (light tilt) walks, no dash', wk.mm !== 1 && wk.vx > 0.4, wk); await T.up(1);
+  await p.waitForTimeout(500); await reset(); await p.waitForTimeout(100);
+  await T.down(1, sx, sy); await T.move(1, sx + 80, sy); const fl = await poll(p, () => { const f = fighter0(); return f.mm === 1 ? f : null; }, 250); check('a quick swipe to the edge (flick) dashes', !!fl, fl); await T.up(1);
+  await p.waitForTimeout(500); await reset(); await p.waitForTimeout(100);
+  await T.down(1, sx, sy); await T.move(1, sx, sy - 80); const fj = await poll(p, () => { const f = fighter0(); return f.y < -12 ? f : null; }, 600); check('a quick swipe up (flick jump) jumps', !!fj, fj); await T.up(1);
+  await p.waitForTimeout(1200); await reset(); await p.waitForTimeout(100);
+  const a = await p.evaluate(() => { const r = document.querySelector('#pad .tb[data-k="A"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await T.down(1, sx, sy); await T.move(1, sx + 80, sy); await T.down(3, a.x, a.y); const sm = await poll(p, () => { const f = fighter0(); return f.s === 'atk' ? f.mv : null; }, 250); await T.up(3); await T.up(1); check('flick + the attack button: forward smash', sm === 'fsmash', sm);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts]) {
+  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

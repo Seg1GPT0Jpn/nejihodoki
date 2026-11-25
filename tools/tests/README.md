@@ -53,8 +53,8 @@ node tools/tests/unit/colorcards-online.test.js # いろあわせカードのオ
 node tools/tests/rules/turnroom-bots.js         # common/turnroom.js を本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人のボットが動かす（コードで4人・クイックマッチ（CPUでうめる／4人ぴったり）・切れて戻る／切れたまま・時間切れ・ホストが出る／消える・ゲストが出る。他人の手札が読めない・書けないことの確認つき）。`node tools/tests/rules/run.js --only bots` でも流せる（`rules/run.js` は全部で約13分なので `--only spec,rest`・`clients`・`bots` に分けて流すとよい）。シナリオ名を引数に（例：room4 quick）
 node tools/tests/train-play.js               # でんしゃでいこうの通し（本物のキーとタッチでノッチを操作・駅に止める・出発・ATS・結果と保存・ルートの開き方・一時停止・英語・全画面サイズ）
 node tools/tests/unit/train-engine.test.js    # でんしゃでいこうの中身（決まった結果・ブレーキの遅れと天気・停車位置の点数・信号と ATS・ダイヤ・自動運転が全ルートをクリア）
-node tools/tests/brawl-play.js               # おもちゃ大乱闘の通し（本物のキーとマルチタッチで試合・KO・ふたりで1台・ラダー8戦と開く内容・コンティニュー・れんしゅう・一時停止・保存と再開・英語・全画面サイズ）
-node tools/tests/unit/brawl-engine.test.js    # おもちゃ大乱闘の中身（決まった結果・ふっとばしの計算・ブラストゾーン・全部の技が当たる・3000試合の CPU 対戦・つよい＞ふつう＞かんたん）。BRAWL_MATCHES=400 で短く
+node tools/tests/brawl-play.js               # おもちゃ大乱闘の通し（本物のキーとマルチタッチで試合・KO・ふたりで1台・ラダー8戦と開く内容・コンティニュー・れんしゅう（フレーム表示）・一時停止・保存と再開・英語・全画面サイズ・はじき／ダッシュ／ジャスト／つかみ／ふち／うけ身（キーボード）・にせのゲームパッド（navigator.getGamepads）でアナログ操作とメニュー・18人のえらぶ画面（320px の ja/en・矢印キー・2勝ごとに開く）・操作ページ（キー変更）・タッチのはじき。`node tools/tests/brawl-play.js controls,gamepad` のように選べる）
+node tools/tests/unit/brawl-engine.test.js    # おもちゃ大乱闘の中身（決まった結果・ふっとばしの計算・ブラストゾーン・全部の技が当たる・はじき／ダッシュ／ふりむき／しゃがみ／ジャンプ／空中よけ／オートキャンセル／ジャストガード／つかみ／れんぞくジャブ／うけ身／ふち／ワープ・はね返し・3000試合の CPU 対戦・つよい＞ふつう＞かんたん・18人の総当たり（ふつう・つよいは各人 25〜75%、かんたんは12〜90%））。BRAWL_MATCHES=400 BRAWL_ROUNDS=1 で短く。全部で3〜5分（単独で実行）
 node tools/tests/town-play.js                 # ひまつぶしタウンの通し（本物のタップで建てる・そだてる・旅人・るす番（?debug の時計）・町をひらきなおす・保存と再開・英語・全画面サイズ）
 node tools/tests/town-balance.js              # ひまつぶしタウンの経済のバランス（ボットが最適に近く遊ぶ：最初の目標・最初のひらきなおしの時間・行きづまらないこと）
 node tools/tests/fit-play.js                  # ぴったりパズル工房の通し（本物のドラッグとタップでステージを解く・ヒント・やり直し・今日のパズル・タイムアタック・オンライン対戦の練習（同じ seed → 同じ問題・点の式・保存しない・終了後に元へ戻る）・保存と再開・英語・全画面サイズ）
