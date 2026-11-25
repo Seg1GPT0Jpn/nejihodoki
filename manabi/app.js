@@ -573,24 +573,134 @@ function reviewCount() {
 }
 
 // ================================================================ 復習
+const specialUnit = id => G.UNITS.map(u => Object.assign({ special: 1, sub: specialSub(u.course) }, u)).find(u => u.id === id);
+function collCard(id, ja, desc, fn, pill) { return h('button', { class: 'banner coll', type: 'button', 'data-coll': id, onclick: () => { Fx.sfx.tap(); fn(); } }, [h('span', { class: 't' }, [h('b', { text: T(ja) }), h('small', { text: T(desc) })]), pill != null ? h('span', { class: 'pill', text: String(pill) }) : null]); }
 function viewReview() {
   setTitle(T('練習')); $('app').dataset.sub = 'english';
   const rv = reviewCount(), main = h('div', { id: 'main' });
-  main.append(h('div', { style: 'text-align:center;padding:6px 0 10px' }, [h('span', { html: Fx.mascot(rv ? 'think' : 'happy', 120, save.sk) }), h('div', { class: 'note', text: rv ? T('まちがえた問題が待ってるよ。ゆっくりいこう！') : T('復習する問題はまだありません') })]));
+  main.append(h('div', { style: 'text-align:center;padding:6px 0 10px' }, [h('span', { html: Fx.mascot(rv ? 'think' : 'happy', 110, save.sk) }), h('div', { class: 'note', text: rv ? T('まちがえた問題が待ってるよ。ゆっくりいこう！') : T('好きな練習をえらぼう！') })]));
+  // 1. まちがえた問題
+  main.append(h('h3', { class: 'dom', id: 'collMistakes', text: T('間違えた問題') }));
   main.append(h('button', { class: 'banner review', id: 'btnReview', type: 'button', disabled: rv ? null : true, onclick: () => startReview() }, [
     h('span', { class: 't' }, [h('b', { text: T('ふくしゅう') }), h('small', { text: rv ? T('まちがえた問題や、そろそろ復習の時期の問題') : T('復習する問題はまだありません') })]),
     rv ? h('span', { class: 'pill', text: T('{n}問', { n: rv }) }) : null,
   ]));
   if (save.mm.length) main.append(h('button', { class: 'banner review', id: 'btnMockMiss', type: 'button', onclick: () => startMockMiss() }, [h('span', { class: 't' }, [h('b', { text: T('模試のまちがい') }), h('small', { text: T('模試でまちがえた問題をもう一度') })]), h('span', { class: 'pill', text: T('{n}問', { n: save.mm.length }) })]));
   const exams = index.exams;
-  main.append(h('button', { class: 'banner', id: 'btnMock', type: 'button', disabled: exams.length ? null : true, onclick: () => showMocks() }, [
-    h('span', { class: 't' }, [h('b', { text: T('模試・共通テスト形式') }), h('small', { text: T('制限時間つきの模試') })]),
-    h('span', { class: 'pill', text: String(exams.length) }),
-  ]));
+  main.append(h('button', { class: 'banner', id: 'btnMock', type: 'button', disabled: exams.length ? null : true, onclick: () => showMocks() }, [h('span', { class: 't' }, [h('b', { text: T('模試・共通テスト形式') }), h('small', { text: T('制限時間つきの模試') })]), h('span', { class: 'pill', text: String(exams.length) })]));
   if (save.hm) main.append(h('div', { class: 'card' }, [h('h3', { text: T('ハートモード') }), h('div', { class: 'hearts', 'aria-label': T('ハート') }, [h('span', { html: ICON.heart }), String(save.hr) + ' / 5']), h('p', { class: 'note', text: T('復習レッスンをクリアするとハートが2つ回復するよ。') })]));
-  const dh = h('div', { class: 'card', id: 'dlgHost', style: 'margin-top:12px' }, h('p', { class: 'note', text: '…' }));
-  main.append(dh); dialogueList(dh);
+  // 2. 単語練習
+  main.append(h('h3', { class: 'dom', id: 'collVocab', text: T('単語練習') }));
+  main.append(collCard('vocab-en', '英単語', '基本の英単語の意味をえらぶ', () => startSpecial(specialUnit('L2'))), collCard('vocab-irr', '不規則動詞', '過去形・過去分詞を覚える', () => startSpecial(specialUnit('L1'))), collCard('vocab-ko', '古語', '重要な古語と現代語を結ぶ', () => startSpecial(specialUnit('K2'))));
+  // 3. リスニング・ラジオ
+  main.append(h('h3', { class: 'dom', id: 'collListen', text: T('リスニング') }));
+  main.append(collCard('listen', '聞き取り', '英文を聞いて、同じ文をえらぶ', () => startSpecial(specialUnit('L7'))));
+  main.append(collCard('dict', 'ディクテーション', '英文を聞いて、語をならべる（Tatoeba・CC0）', () => startDictation()));
+  const radio = h('div', { id: 'radioList' }); main.append(h('h3', { class: 'dom', id: 'collRadio', text: T('ラジオ') }), h('p', { class: 'note', text: T('文章を耳だけで聞いて、あとで問題にこたえよう（声が出ないときは、文字を見られるよ）。') }), radio);
+  // 4. スピーキング
+  main.append(h('h3', { class: 'dom', id: 'collSpeak', text: T('スピーキング') }));
+  main.append(collCard('speak', '発音れんしゅう', 'お手本を聞いて、声に出して言う（点数が出るよ）', () => startSpeaking()));
+  // 5. ストーリー
+  const stories = h('div', { id: 'storyList' }); main.append(h('h3', { class: 'dom', id: 'collStory', text: T('ストーリー') }), stories);
+  // 6. 会話強化
+  main.append(h('h3', { class: 'dom', id: 'collConv', text: T('会話強化') }));
+  const dh = h('div', { class: 'card', id: 'dlgHost' }, h('p', { class: 'note', text: '…' })), vh = h('div', { class: 'card', id: 'videoHost', style: 'margin-top:12px' }, h('p', { class: 'note', text: '…' }));
+  main.append(dh, vh); dialogueList(dh); dialogueList(vh, true);
+  Promise.all([loadJson('stories'), loadJson('aozora').catch(() => ({ works: [] }))]).then(([d, ao]) => { const aoSt = ao.works.map(w => ({ id: w.id, title: w.title + '（' + w.author + '）', level: w.level, lang: 'ja', lines: w.lines, qs: w.qs, credit: '青空文庫「' + (w.workTitle || w.title) + '」' + w.author + '（' + w.died.slice(0, 4) + '年没・パブリックドメイン） ' + w.url })); d.stories.concat(aoSt).forEach(st => { stories.append(h('button', { class: 'banner', type: 'button', 'data-story': st.id, onclick: () => startStory(st, false) }, [h('span', { class: 't' }, [h('b', { lang: 'ja', text: st.title }), h('small', { text: T('Lv{n}・{q}問', { n: st.level, q: st.qs.length }) })]), h('span', { class: 'pill', text: T('読む') })])); radio.append(h('button', { class: 'banner', type: 'button', 'data-radio': st.id, onclick: () => startStory(st, true) }, [h('span', { class: 't' }, [h('b', { lang: 'ja', text: st.title }), h('small', { text: T('聞いて答える') })]), h('span', { class: 'pill', style: 'background:var(--pb);color:var(--pb-ink)', text: T('聞く') })])); }); }).catch(() => { stories.append(h('p', { class: 'note', text: T('読み込めませんでした。通信を確かめて、もう一度ためしてください。') })); });
   show(main, true);
+}
+
+// 出典とライセンス（content/licenses.json）
+function licenseEl() {
+  const box = h('details', { id: 'licList', class: 'lic' }, [h('summary', { text: T('出典とライセンス') })]); let done = false;
+  box.addEventListener('toggle', () => { if (!box.open || done) return; done = true; loadJson('licenses').then(d => { d.items.forEach(it => box.append(h('div', { class: 'licitem', lang: 'ja', 'data-lic': it.id }, [h('b', { text: it.name }), h('div', { text: it.by + ' / ' + it.licence }), it.note ? h('small', { text: it.note }) : null, it.url ? h('a', { href: it.url, target: '_blank', rel: 'noopener noreferrer', text: it.url }) : null]))); }).catch(() => { done = false; box.append(h('p', { class: 'note', text: T('読み込めませんでした。通信を確かめて、もう一度ためしてください。') })); }); });
+  return box;
+}
+
+// ディクテーション（Tatoeba の CC0 英文を聞いて、語をならべる）
+async function startDictation() {
+  if (L || DL || ST || SP) return;
+  try {
+    const d = await loadJson('tatoeba-en'), r = E.rng(E.seedOf('dict|' + today + '|' + save.st.ls)), pick = E.shuffle(d.sentences, r).slice(0, 6), all = d.sentences;
+    const qs = pick.map((s, k) => {
+      const words = s[1].replace(/[.!?]$/, '').split(/\s+/), other = E.shuffle(all, r).find(x => x[0] !== s[0]).slice(1, 2)[0].replace(/[.!?,]/g, '').split(/\s+/).filter(w => !words.includes(w)).slice(0, 2);
+      const tiles = words.map((t, i) => ({ id: 'w' + i, t })).concat(other.map((t, i) => ({ id: 'd' + i, t })));
+      return { t: 'wb', q: T('音声を聞いて、聞こえた英文を語をならべてつくろう。'), w: E.shuffle(tiles, r), a: words.map((_, i) => 'w' + i), alt: [], norm: 1, e: s[1] + '（Tatoeba #' + s[0] + ' CC0）', df: 2, i: 'dict:' + s[0], sp: s[1], lang: 'en', gen: 'dict' };
+    });
+    const eng = E.createLesson({ qs, boxes: '000'.repeat(qs.length), today, seed: 'dict|' + today + '|' + save.st.ls, size: qs.length });
+    beginLesson({ eng, pool: { items: [], qs, boxes: '000'.repeat(qs.length), noBoxes: true }, kind: 'special', unit: { special: 1, sub: 'english', id: 'dict', ti: T('ディクテーション'), story: 1 } });
+  } catch (e) { loadFail(e); }
+}
+
+// ================================================================ ストーリー・ラジオ（短い文章 → 理解の問題）
+let ST = null;
+async function startStory(st, radio) {
+  if (L || DL || ST) return;
+  ST = { st, radio, playing: false }; screen = 'story'; setBack(() => endStory()); setTitle(st.title, true);
+  const SL = st.lang === 'ja' ? 'ja' : 'en', lines = h('div', { class: 'storylines', id: 'storyLines' }), showTxt = !radio || !Fx.canSpeak();
+  st.lines.forEach((l, i) => {
+    const row = h('div', { class: 'sline', 'data-i': i }, [
+      Fx.canSpeak() ? h('button', { class: 'say-btn', type: 'button', 'aria-label': T('音声をきく'), onclick: () => Fx.speak(l[0], SL, 1) }, h('span', { html: ICON.speaker })) : null,
+      h('div', { class: 'sl-t' }, [h('span', { class: 'sl-en', lang: SL, text: l[0], hidden: !showTxt }), h('span', { class: 'sl-ja', lang: 'ja', text: l[1], hidden: true })]),
+      SL === 'ja' ? null : h('button', { class: 'ja-btn', type: 'button', onclick: e => { const x = e.currentTarget.parentNode.querySelector('.sl-ja'); x.hidden = !x.hidden; } }, T('訳'))]);
+    lines.append(row);
+  });
+  const play = h('button', { class: 'btn b', id: 'storyPlay', type: 'button', onclick: () => { if (!Fx.canSpeak()) return; ST.playing = !ST.playing; play.textContent = ST.playing ? T('とめる') : T('▶ 聞く'); if (ST.playing) speakAll(0); else speechSynthesis.cancel(); } }, T('▶ 聞く'));
+  const speakAll = i => { if (!ST || !ST.playing || i >= st.lines.length) { if (ST) { ST.playing = false; play.textContent = T('▶ 聞く'); } return; } const u = new SpeechSynthesisUtterance(st.lines[i][0]); u.lang = SL === 'ja' ? 'ja-JP' : 'en-US'; u.rate = 0.95; document.querySelectorAll('#storyLines .sline').forEach(r => r.classList.toggle('now', Number(r.dataset.i) === i)); u.onend = () => speakAll(i + 1); u.onerror = () => { if (ST) ST.playing = false; }; speechSynthesis.speak(u); };
+  const body = h('div', { class: 'q', id: 'storyBody' }, [
+    h('div', { class: 'hint', style: 'margin:0 0 8px', text: radio ? T('耳だけで聞いてみよう。聞きとれないときは「文を見る」。') : T('文をよんで、わからないところは「訳」をタップ。') }),
+    Fx.canSpeak() ? play : h('p', { class: 'note', text: T('音声が使えないので、文を表示しています。') }),
+    st.credit ? h('p', { class: 'note', id: 'storyCredit', lang: 'ja', text: st.credit }) : null,
+    radio && Fx.canSpeak() ? h('button', { class: 'btn sub', id: 'storyShow', type: 'button', style: 'margin-top:8px', onclick: () => { document.querySelectorAll('#storyLines .sl-en').forEach(x => { x.hidden = !x.hidden; }); } }, T('文を見る')) : null, lines]);
+  const go = h('div', { class: 'dock' }, h('button', { class: 'btn primary', id: 'storyQuiz', type: 'button', onclick: () => storyQuiz() }, T('もんだいへ')));
+  show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, [h('div', { class: 'lh' }, [h('button', { class: 'icon', type: 'button', id: 'btnQuit', 'aria-label': T('とじる'), onclick: () => endStory() }, h('span', { text: '✕', style: 'font-size:20px;font-weight:800' }))]), body, go]), false);
+}
+function endStory() { try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} ST = null; goHome(); }
+function storyQuestions(st) {
+  const labs = ['ア', 'イ', 'ウ'], r = E.rng(E.seedOf(st.id + '|' + today));
+  return st.qs.map((q, k) => {
+    if (q.t === 'tt') { const tk = st.lines[q.ln][0].replace(/[.,"!?]/g, '').split(/\s+/), kw = new Set(q.kw.map(x => x.toLowerCase())); return { t: 'tt', q: q.q, tk, a: tk.map((w, i) => (kw.has(w.toLowerCase()) ? i : -1)).filter(i => i >= 0), e: q.ev, df: 2, i: 'story:' + st.id + ':' + k, gen: 'story', ai: 1 }; }
+    const ch = E.shuffle(q.c, r); return { t: 'mc', q: q.q, c: ch.map((x, i) => [labs[i], x]), a: labs[ch.indexOf(q.a)], e: '“' + q.ev + '”', df: 2, i: 'story:' + st.id + ':' + k, gen: 'story', ai: 1, sp: ST && ST.radio ? undefined : undefined };
+  });
+}
+function storyQuiz() {
+  const st = ST.st, qs = storyQuestions(st), boxes = '000'.repeat(qs.length);
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  const eng = E.createLesson({ qs, boxes, today, seed: 'story|' + st.id + '|' + today + '|' + save.st.ls, size: qs.length });
+  ST = null; screen = 'home';
+  beginLesson({ eng, pool: { items: [], qs, boxes, noBoxes: true }, kind: 'special', unit: { special: 1, sub: 'english', id: st.id, ti: st.title, story: 1 } });
+}
+
+// ================================================================ 発音れんしゅう（お手本をきいて、声に出す。点数は ManabiDlg.scoreSpeech）
+let SP = null;
+async function startSpeaking() {
+  if (L || DL || ST || SP) return;
+  try {
+    const c = await loadJson('english'), r = E.rng(E.seedOf('speak|' + today + '|' + save.st.ls)), items = E.shuffle(c.sentences, r).slice(0, 5);
+    SP = { items, i: 0, scores: [], startedAt: Date.now() }; screen = 'speak'; setBack(() => endSpeaking()); setTitle(T('発音れんしゅう')); speakStep();
+  } catch (e) { loadFail(e); }
+}
+function endSpeaking() { SP = null; goHome(); }
+function speakStep() {
+  if (SP.i >= SP.items.length) return speakDone();
+  const it = SP.items[SP.i], res = h('div', { class: 'speakres', id: 'speakRes', role: 'status', 'aria-live': 'polite' });
+  const finish = heard => { const sc = ManabiDlg.scoreSpeech(it[0], heard, 'en'), ok = sc >= ManabiDlg.PASS; SP.scores[SP.i] = Math.max(SP.scores[SP.i] || 0, sc); res.replaceChildren(h('div', { class: 'score ' + (ok ? 'good' : 'bad') }, [T('ぴったり度') + '：', h('b', { id: 'speakScore', text: sc + '%' })]), h('div', { class: 'okline', lang: 'en', text: '“' + heard + '”' })); reactSfx(ok); if (ok) { next.hidden = false; next.textContent = SP.i + 1 >= SP.items.length ? T('おわり') : T('つぎへ'); } };
+  const next = h('button', { class: 'btn primary', id: 'speakNext', type: 'button', hidden: true, onclick: () => { SP.i++; speakStep(); } }, T('つぎへ'));
+  const inp = h('input', { class: 'ans', id: 'speakInput', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': T('答えを入力'), onkeydown: e => { if (e.key === 'Enter') { e.stopPropagation(); if (inp.value.trim()) finish(inp.value); } } });
+  const mic = Fx.canListen() ? h('button', { class: 'btn b', id: 'btnMic', type: 'button', onclick: () => { mic.disabled = true; res.replaceChildren(h('span', { text: T('聞いています…') })); Fx.listen('en', alts => { mic.disabled = false; finish(alts.reduce((a, b) => (ManabiDlg.scoreSpeech(it[0], b, 'en') > ManabiDlg.scoreSpeech(it[0], a, 'en') ? b : a))); }, () => { mic.disabled = false; res.replaceChildren(h('span', { text: T('聞きとれませんでした。もう一度か、入力で答えてね。') })); }); } }, [h('span', { html: ICON.speaker }), T('話す')]) : null;
+  const body = h('div', { class: 'q', id: 'speakBody' }, [
+    h('div', { class: 'pbar', style: 'margin:0 0 10px' }, h('i', { style: 'width:' + Math.round(100 * SP.i / SP.items.length) + '%' })),
+    h('div', { class: 'hint', text: T('お手本を聞いて、同じように言ってみよう') + '（' + (SP.i + 1) + '/' + SP.items.length + '）' }),
+    h('div', { class: 'speaktarget', id: 'speakTarget', lang: 'en', text: it[0] }), h('div', { class: 'note', lang: 'ja', text: it[1] }),
+    Fx.canSpeak() ? h('div', { class: 'speaker' }, [h('button', { class: 'btn b', id: 'btnSpeak', type: 'button', 'aria-label': T('音声をきく'), onclick: () => Fx.speak(it[0], 'en', 1) }, h('span', { html: ICON.speaker })), h('button', { class: 'btn b slow', id: 'btnSlow', type: 'button', 'aria-label': T('ゆっくりきく'), onclick: () => Fx.speak(it[0], 'en', 0.6) }, T('ゆっくり'))]) : h('p', { class: 'note', text: T('音声が使えないので、文を表示しています。') }),
+    mic || h('div', { class: 'hint', id: 'noMic', text: T('このブラウザでは声の入力が使えないので、文字で入力してね。') }), inp, h('div', { class: 'mini' }, [h('button', { type: 'button', id: 'speakSend', onclick: () => { if (inp.value.trim()) finish(inp.value); } }, T('おくる')), h('button', { type: 'button', id: 'speakSkip', onclick: () => { SP.i++; speakStep(); } }, T('とばす'))]), res, next]);
+  show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, [h('div', { class: 'lh' }, [h('button', { class: 'icon', type: 'button', id: 'btnQuit', 'aria-label': T('とじる'), onclick: () => endSpeaking() }, h('span', { text: '✕', style: 'font-size:20px;font-weight:800' }))]), body]), false);
+}
+function speakDone() {
+  const passed = SP.scores.filter(x => x >= ManabiDlg.PASS).length, xp = passed * 2 + 3, avg = SP.scores.length ? Math.round(SP.scores.reduce((a, b) => a + b, 0) / SP.items.length) : 0;
+  save.xp += xp; save.g[today] = (save.g[today] || 0) + xp; if (!save.d.includes(today)) save.d.push(today); save.gm += 3; save.st.ls++; bumpDay({ xp, ls: 1, sp: 1 }); persist(); renderChips(); Fx.sfx.done();
+  const main = h('div', { class: 'q', id: 'speakSummary' }, [h('div', { class: 'res' }, [h('span', { html: Fx.mascot(passed >= 4 ? 'cheer' : 'happy', 110, save.sk) }), h('h2', { text: T('発音れんしゅう おわり！') }), h('div', { class: 'stats' }, [h('div', null, [h('b', { text: '+' + xp }), h('small', { text: 'XP' })]), h('div', null, [h('b', { id: 'speakAvg', text: avg + '%' }), h('small', { text: T('平均') })]), h('div', null, [h('b', { text: passed + '/' + SP.items.length }), h('small', { text: T('合格') })])])]), h('div', { class: 'acts' }, [h('button', { class: 'btn primary', id: 'btnHome', type: 'button', onclick: () => endSpeaking() }, T('ホームへ'))])]);
+  SP = null; show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, main), false);
 }
 
 // ================================================================ クエスト
@@ -710,7 +820,7 @@ function viewProfile() {
     h('div', { class: 'set' }, [h('span', { text: T('テーマ・言語') }), h('button', { class: 'btn sub', style: 'width:auto', id: 'btnSettings', type: 'button', onclick: () => openMenu() }, T('ひらく'))]),
     h('div', { class: 'set' }, [h('span', { text: T('使い方') }), h('button', { class: 'btn sub', style: 'width:auto', type: 'button', onclick: () => showHowto() }, T('ひらく'))]),
   ]));
-  main.append(h('div', { class: 'foot' }, [h('p', { text: index.credit }), h('p', { text: T('問題はAIがつくったもので、まだ専門家の確認を受けていません。') }), h('p', { text: T('地図：Natural Earth（パブリックドメイン）をもとにした自作の簡略図。古文：著作権の保護期間が満了した古典。') })]));
+  main.append(h('div', { class: 'foot' }, [h('p', { text: index.credit }), h('p', { text: T('問題はAIがつくったもので、まだ専門家の確認を受けていません。') }), h('p', { text: T('地図：Natural Earth（パブリックドメイン）をもとにした自作の簡略図。古文：著作権の保護期間が満了した古典。') }), licenseEl()]));
   show(main, true);
 }
 
@@ -1202,7 +1312,7 @@ function finishLesson() {
   const gemGain = 5 + (sum.perfect ? 3 : 0); save.gm += gemGain;
   { const hr = nowDate().getHours(), dow = nowDate().getDay(); bumpDay({ early: hr < 8 ? 1 : 0, night: hr >= 22 ? 1 : 0, weekend: dow === 0 || dow === 6 ? 1 : 0 }); }
   bumpDay({ xp: bonus, ls: 1, perfect: sum.perfect ? 1 : 0, rev: kind === 'review' || kind === 'mockmiss' ? 1 : 0, sp: kind === 'special' ? 1 : 0 });
-  if (kind === 'special' && unit && sum.acc >= 0.7) save.cw[unit.id] = Math.min(5, (save.cw[unit.id] || 0) + 1);
+  if (kind === 'special' && unit && !unit.story && sum.acc >= 0.7) save.cw[unit.id] = Math.min(5, (save.cw[unit.id] || 0) + 1);
   if ((kind === 'review' || kind === 'mockmiss') && save.hm) save.hr = Math.min(5, save.hr + 2);
   persist(); renderChips();
   emit('play_end', { mode: 'normal', reason: 'clear', score: sum.xp });
@@ -1225,8 +1335,8 @@ function finishLesson() {
       sum.missed.length ? h('p', { class: 'hint', text: T('まちがえた問題は、あとで「ふくしゅう」に出ます。') }) : null,
     ]),
     h('div', { class: 'acts' }, [
-      kind === 'unit' || kind === 'special' ? h('button', { class: 'btn primary', id: 'btnAgain', type: 'button', onclick: () => { const u = unit; L = null; kind === 'special' ? startSpecial(u) : startLesson(u, si); } }, T('もう1レッスン')) : null,
-      h('button', { class: 'btn' + (kind === 'unit' || kind === 'special' ? '' : ' primary'), id: 'btnHome', type: 'button', onclick: () => goHome() }, T('ホームへ')),
+      (kind === 'unit' || kind === 'special') && !(unit && unit.story) ? h('button', { class: 'btn primary', id: 'btnAgain', type: 'button', onclick: () => { const u = unit; L = null; kind === 'special' ? startSpecial(u) : startLesson(u, si); } }, T('もう1レッスン')) : null,
+      h('button', { class: 'btn' + ((kind === 'unit' || kind === 'special') && !(unit && unit.story) ? '' : ' primary'), id: 'btnHome', type: 'button', onclick: () => goHome() }, T('ホームへ')),
     ]),
   ]);
   show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, main), false);
@@ -1242,33 +1352,35 @@ function finishLesson() {
 let DL = null; let dlgScenes = null;
 const DLG_LV = { 1: '入門', 2: '標準', 3: '発展' };
 async function loadDialogues() { if (!dlgScenes) dlgScenes = (await loadJson('dialogues')).scenes; return dlgScenes; }
-function dialogueList(host) {
+function dialogueList(host, video) {
   loadDialogues().then(scenes => {
-    host.replaceChildren(h('h3', { text: T('会話ロールプレイ') }), h('p', { class: 'note', text: T('相手のせりふを聞いて、あなたの返事をえらぼう。声・タイル・選択のどれでも答えられるよ。AI作成・未レビュー。') }));
+    host.replaceChildren(h('h3', { text: video ? T('ビデオ通話') : T('会話ロールプレイ') }), h('p', { class: 'note', text: video ? T('画面のなかの相手と、通話のように会話するよ。あらかじめ決められた台本で、AI との自由な会話ではありません。AI作成・未レビュー。') : T('相手のせりふを聞いて、あなたの返事をえらぼう。声・タイル・選択のどれでも答えられるよ。AI作成・未レビュー。') }));
     for (const [lang, name] of [['en', T('英語の会話')], ['ja', T('日本語の敬語の場面')]]) {
       const lv = lang === 'en' ? [1, 2, 3] : [2];
       for (const l of lv) {
         const list = scenes.filter(s => s.lang === lang && s.level === l); if (!list.length) continue;
         const d = h('details', { class: 'dgroup', open: l === 1 || lang === 'ja' ? true : null }, [h('summary', { text: name + ' ・ ' + T(DLG_LV[l]) + '（' + list.length + '）' })]);
-        list.forEach(sc => { const best = save.dl[sc.id]; d.append(h('button', { class: 'banner', type: 'button', 'data-scene': sc.id, onclick: () => startDialogue(sc) }, [h('span', { class: 't' }, [h('b', { lang: 'ja', text: sc.title }), h('small', { lang: 'ja', text: sc.partner.name + (sc.partner.who ? '（' + sc.partner.who + '）' : '') })]), best != null ? h('span', { class: 'pill', text: best + '%' }) : h('span', { class: 'pill', style: 'background:var(--kb-surface-2);color:var(--kb-ink)', text: T('新') })])); });
+        list.forEach(sc => { const best = save.dl[sc.id]; d.append(h('button', { class: 'banner', type: 'button', [video ? 'data-vscene' : 'data-scene']: sc.id, onclick: () => startDialogue(sc, video) }, [h('span', { class: 't' }, [h('b', { lang: 'ja', text: sc.title }), h('small', { lang: 'ja', text: sc.partner.name + (sc.partner.who ? '（' + sc.partner.who + '）' : '') })]), best != null ? h('span', { class: 'pill', text: best + '%' }) : h('span', { class: 'pill', style: 'background:var(--kb-surface-2);color:var(--kb-ink)', text: T('新') })])); });
         host.append(d);
       }
     }
   }).catch(() => host.replaceChildren(h('p', { class: 'note', text: T('読み込めませんでした。通信を確かめて、もう一度ためしてください。') })));
 }
 const dlgOk = n => n.choices.find(c => c.ok);
-async function startDialogue(sc) {
+async function startDialogue(sc, video) {
   if (L || DL) return;
   screen = 'dialogue'; setBack(() => quitDialogue()); setTitle(sc.title, true);
-  DL = { sc, node: sc.start, mistakes: [], first: {}, correct: 0, turns: 0, total: Math.max(1, ManabiDlg.maxTurns(sc)), xp: 0, startedAt: Date.now(), done: false };
+  DL = { video: !!video, sc, node: sc.start, mistakes: [], first: {}, correct: 0, turns: 0, total: Math.max(1, ManabiDlg.maxTurns(sc)), xp: 0, startedAt: Date.now(), done: false };
   emit('play_start', { mode: 'normal' });
   const chat = h('div', { class: 'chat', id: 'chat', role: 'log', 'aria-live': 'polite' }), reply = h('div', { class: 'reply', id: 'reply' });
   const bar = h('div', { class: 'lh' }, [h('button', { class: 'icon', type: 'button', id: 'btnQuit', 'aria-label': T('とじる'), onclick: () => quitDialogue() }, h('span', { text: '✕', style: 'font-size:20px;font-weight:800' })), h('div', { class: 'pbar' }, h('i', { id: 'dlgBar', style: 'width:0%' }))]);
-  show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, [bar, chat, reply]), false);
+  let avatar = null;
+  if (video) { avatar = h('div', { class: 'vcall', id: 'vcall' }, [h('span', { class: 'vav', id: 'vavatar', html: Fx.mascot('happy', 120, (sc.partner.name.length * 7) % 6) }), h('div', { class: 'vname' }, [h('b', { lang: 'ja', text: sc.partner.name }), h('small', { id: 'vtimer', text: '0:00' })]), h('div', { class: 'vnote', id: 'vnote', text: T('台本どおりの通話です。AI との自由な会話ではありません。') })]); DL.tmr = setInterval(() => { const t = $('vtimer'); if (!t || !DL) return clearInterval(DL && DL.tmr); const sec = Math.floor((Date.now() - DL.startedAt) / 1000); t.textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }, 1000); }
+  show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, [bar, avatar, chat, reply].filter(Boolean)), false);
   DL.chat = chat; DL.reply = reply; dlgAdvance();
 }
 function quitDialogue() { if (!DL) return; if (!UI || DL.done) { endDialogue(); return; } UI.confirm({ title: T('会話をやめますか？'), message: '', ok: T('やめる'), cancel: T('つづけて学ぶ') }).then(ok => { if (ok) endDialogue(); }); }
-function endDialogue() { DL = null; goHome(); }
+function endDialogue() { if (DL && DL.tmr) clearInterval(DL.tmr); DL = null; goHome(); }
 function bubble(who, text, ja, cls) {
   const sc = DL.sc, me = who === 'you';
   const b = h('div', { class: 'bub ' + (me ? 'me ' : 'her ') + (cls || '') }, [
@@ -1277,7 +1389,9 @@ function bubble(who, text, ja, cls) {
       (!me && sc.lang === 'en' && Fx.canSpeak()) ? h('button', { class: 'say-btn', type: 'button', 'aria-label': T('音声をきく'), onclick: () => Fx.speak(text, 'en', 1) }, h('span', { html: ICON.speaker })) : null,
       ja ? h('button', { class: 'ja-btn', type: 'button', onclick: e => { const x = e.currentTarget.nextSibling; x.hidden = !x.hidden; } }, T('訳')) : null, ja ? h('span', { class: 'ja', lang: 'ja', hidden: true, text: ja }) : null]),
   ]);
-  DL.chat.append(b); DL.chat.scrollTop = DL.chat.scrollHeight; return b;
+  DL.chat.append(b); DL.chat.scrollTop = DL.chat.scrollHeight;
+  if (DL.video && !me) { const av = $('vavatar'); if (av) { av.classList.add('talk'); setTimeout(() => av.classList.remove('talk'), Math.min(6000, 500 + text.length * 70)); } }
+  return b;
 }
 function dlgAdvance() {
   const sc = DL.sc;
@@ -1301,6 +1415,13 @@ function dlgChoices(n) {
   if (sc.lang === 'en') {
     tools.append(h('button', { type: 'button', id: 'btnTiles', onclick: () => dlgTiles(n) }, T('ことばタイルで答える')));
     tools.append(h('button', { type: 'button', id: 'btnSpeak2', onclick: () => dlgSpeak(n) }, T('声で答える')));
+  }
+  if (DL.video) {
+    const out = h('div', { class: 'speakres', id: 'voiceRes', role: 'status', 'aria-live': 'polite' });
+    const pickBy = heard => { let best = -1, bi = -1; n.choices.forEach((c, i) => { const v = ManabiDlg.scoreSpeech(c.text, heard, sc.lang); if (v > best) { best = v; bi = i; } }); if (best >= 60) { out.replaceChildren(h('span', { text: '“' + heard + '” → ' + best + '%' })); dlgPick(bi); } else out.replaceChildren(h('span', { text: T('どの返事か わかりませんでした。もう一度か、タップでえらんでね。') })); };
+    if (Fx.canListen()) tools.append(h('button', { type: 'button', id: 'btnVoiceAns', onclick: () => { out.replaceChildren(h('span', { text: T('聞いています…') })); Fx.listen(sc.lang, alts => pickBy(alts[0]), () => out.replaceChildren(h('span', { text: T('聞きとれませんでした。タップでえらんでね。') }))); } }, T('声で返事する')));
+    else tools.append(h('span', { class: 'hint', id: 'noMic2', text: T('このブラウザでは声の入力が使えないので、タップでえらんでね。') }));
+    r.append(tools, out); return;
   }
   r.append(tools);
 }

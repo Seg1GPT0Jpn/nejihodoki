@@ -72,4 +72,15 @@ test('English labs: answers come from the authored tables; distractors differ; s
   eq(new Set(C.english.words.map(w => w[0])).size, C.english.words.length);
 });
 test('generation is deterministic and all 21 new units count as lessons without end (new seed each lesson)', () => { for (const id of ['M1', 'M10', 'L6']) { eq(JSON.stringify(G.make(id, 'q', C, 8)), JSON.stringify(G.make(id, 'q', C, 8))); ok(JSON.stringify(G.make(id, 'q', C, 8)) !== JSON.stringify(G.make(id, 'r', C, 8))); } });
+test('stories: every answer is supported by quoted evidence from the story text; tap questions match their keywords', () => {
+  const D = require(path.join(ROOT, 'manabi/content/stories.json')); eq(D.ai, 1); ok(D.stories.length >= 6);
+  for (const st of D.stories) {
+    const text = st.lines.map(l => l[0]).join(' ').toLowerCase(); ok(st.lines.every(l => l[0] && l[1]), st.id);
+    for (const q of st.qs) {
+      ok(text.includes(q.ev.toLowerCase()), st.id + ' evidence not in text: ' + q.ev);
+      if (q.t === 'mc') { ok(q.c.includes(q.a) && new Set(q.c).size === q.c.length, st.id + ' ' + q.q); const core = q.a.toLowerCase().replace(/^(an?|the|his|her)\s+/, '').replace(/^(by|in|on|near)\s+/, ''); ok(q.ev.toLowerCase().includes(core.split(' ').pop()) || q.ev.toLowerCase().includes(core), st.id + ' answer ' + q.a + ' not in evidence ' + q.ev); }
+      else { const toks = st.lines[q.ln][0].replace(/[.,"!?]/g, '').toLowerCase().split(/\s+/); ok(q.kw.every(k => toks.includes(k.toLowerCase())), st.id + ' kw'); ok(st.lines[q.ln][0].toLowerCase().includes(q.ev.toLowerCase())); }
+    }
+  }
+});
 run('manabi-gen2');

@@ -412,7 +412,8 @@ async function resume3(env) {
   // 沖縄
   s = await open(env); p = s.page;
   await p.evaluate(() => { __manabi.goHome(); __manabi.startSpecial(__manabi.special('C4')); }); await wait(p, () => __kb.state().screen === 'lesson');
-  const hit = await p.evaluate(async () => { for (let i = 0; i < 20; i++) { const q = __manabi.L.ui.q; if (q.t === 'hs') { const r = document.querySelector('#hsbox svg rect[stroke-dasharray]').getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width * 0.5, r.top + r.height * 0.1); return e && e.closest('.rg') && e.closest('.rg').dataset.r; } break; } return null; });
+  for (let n = 0; n < 10 && (await p.evaluate(() => __manabi.peek().t)) !== 'hs'; n++) await answerOne(p, true);
+  const hit = await p.evaluate(() => { const r = document.querySelector('#hsbox svg rect[stroke-dasharray]').getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width * 0.5, r.top + r.height * 0.1); return e && e.closest('.rg') && e.closest('.rg').dataset.r; });
   check('tapping anywhere inside the Okinawa inset frame selects Okinawa (47)', hit === '47', hit);
   await s.close();
   // キーボードだけで1レッスン
@@ -600,6 +601,69 @@ async function power8(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+async function practice9(env) {
+  console.log('21. practice collections: mistakes / vocabulary / listening / radio / speaking / stories / conversation (role-play and video call)');
+  const FX = fs.readFileSync(path.join(__dirname, 'fixtures', 'manabi-dialogues-fixture.json'), 'utf8');
+  const FAKE_SR = `window.SpeechRecognition = window.webkitSpeechRecognition = class { start() { setTimeout(() => { const t = window.__heard || ''; if (!t) { this.onerror && this.onerror({ error: 'no-speech' }); return; } this.onresult && this.onresult({ results: [[{ transcript: t }]] }); this.onend && this.onend(); }, 30); } stop() {} };`;
+  const NO_SR = 'window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined;';
+  const openP = async (sr, o = {}) => { const s = await B.newSession(env, { vp: V.get(o.vp || 'ip12'), lang: o.lang || 'ja', seed: { [HOWTO]: '1', 'kobo.theme': o.theme || 'light' }, isMobile: !!o.touch, hasTouch: !!o.touch, initScripts: [sr ? FAKE_SR : NO_SR] }); await s.ctx.route(/content\/dialogues\.json/, r => r.fulfill({ status: 200, contentType: 'application/json', body: FX })); await s.goto('/manabi/?debug'); await s.page.waitForFunction(() => window.__kb && __kb.ready() && window.__manabi); await s.page.click('#tabs [data-tab="review"]'); await s.page.waitForSelector('#storyList [data-story]'); return s; };
+  let s = await openP(true); let p = s.page;
+  for (const id of ['collMistakes', 'collVocab', 'collListen', 'collRadio', 'collSpeak', 'collStory', 'collConv']) check(`collection "${id}" is on the practice tab`, await p.isVisible('#' + id), null);
+  check('9 stories and 9 radio items (6 original + 3 Aozora) are listed; role-play and video-call lists show the scenes', (await p.$$('#storyList [data-story]')).length === 9 && (await p.$$('#radioList [data-radio]')).length === 9 && await p.isVisible('[data-scene="en-test-1"]') && await p.isVisible('[data-vscene="en-test-1"]'), null);
+  await shot(p, '21-practice');
+  // 青空文庫（日本語の読み上げ・訳なし・出典表示）
+  await p.click('[data-story="ao-kumo"]'); await p.waitForSelector('#storyLines');
+  check('an Aozora story shows its credit with licence, and has no translation buttons', (await p.textContent('#storyCredit')).includes('パブリックドメイン') && !(await p.$('.ja-btn')), null);
+  await p.click('#btnQuit'); await p.click('#tabs [data-tab="review"]');
+  // ディクテーション（Tatoeba CC0）
+  await p.click('[data-coll="dict"]'); await wait(p, () => __kb.state().screen === 'lesson');
+  check('dictation is a word-order lesson of 6 sentences', (await st(p)).q.t === 'wb' && (await st(p)).lesson.size === 6, null);
+  await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); await p.click('#tabs [data-tab="profile"]');
+  await p.click('#licList summary'); await p.waitForSelector('[data-lic="tatoeba"]'); check('the profile shows the sources and licences list', (await p.$$('.licitem')).length >= 6 && (await p.textContent('[data-lic="tatoeba"]')).includes('CC0'), null);
+  await p.click('#tabs [data-tab="review"]'); await p.waitForSelector('#storyList [data-story]');
+  // ストーリー
+  await p.click('[data-story="st-bag"]'); await p.waitForSelector('#storyLines'); check('a story shows its sentences, and tapping 訳 shows the Japanese', (await p.$$('#storyLines .sline')).length === 4 && await p.isVisible('.sl-en >> nth=0'), null);
+  await p.click('.sline >> nth=0 >> .ja-btn'); check('the translation toggles', await p.isVisible('.sl-ja >> nth=0'), null);
+  await p.click('#storyQuiz'); await wait(p, () => __kb.state().screen === 'lesson'); check('the story quiz has 4 questions and includes a tap-the-words question', (await st(p)).lesson.size === 4, null);
+  const kinds = []; for (let n = 0; n < 8; n++) { if ((await st(p)).screen !== 'lesson') break; kinds.push((await st(p)).q.t); await answerOne(p, true); }
+  check('answering all correctly finishes without an "again" button, and tap questions were asked', (await st(p)).screen === 'result' && !(await p.$('#btnAgain')) && kinds.includes('tt'), kinds);
+  await p.click('#btnHome'); await p.click('#tabs [data-tab="review"]');
+  // ラジオ
+  await p.click('[data-radio="st-rain"]'); await p.waitForSelector('#storyLines');
+  const canSay = await p.evaluate(() => ManabiFx.canSpeak());
+  check(canSay ? 'radio hides the text until "Show text"' : 'no speech here: the radio shows the text', canSay ? !(await p.isVisible('.sl-en >> nth=0')) && await p.isVisible('#storyPlay') : await p.isVisible('.sl-en >> nth=0'), canSay);
+  if (canSay) { await p.click('#storyShow'); check('"Show text" reveals the sentences', await p.isVisible('.sl-en >> nth=0'), null); }
+  await p.click('#btnQuit'); await p.click('#tabs [data-tab="review"]');
+  // 発音れんしゅう（声：偽の SpeechRecognition）
+  await p.click('[data-coll="speak"]'); await p.waitForSelector('#speakTarget');
+  for (let n = 0; n < 5; n++) { const target = await p.textContent('#speakTarget'); await p.evaluate(t => { window.__heard = t.toLowerCase().replace(/[.,!?]/g, ''); }, target); await p.click('#btnMic'); await p.waitForSelector('#speakScore'); if (n === 0) check('a perfect repeat scores 100%', (await p.textContent('#speakScore')) === '100%', await p.textContent('#speakScore')); await p.click('#speakNext'); }
+  await p.waitForSelector('#speakSummary'); check('five passed sentences give a summary with an average', (await p.textContent('#speakAvg')) === '100%', null);
+  await p.click('#btnHome');
+  // ビデオ通話（声で返事）
+  await p.click('#tabs [data-tab="review"]'); await p.click('[data-vscene="en-test-1"]'); await p.waitForSelector('#vcall');
+  check('the video call shows an animated avatar, a timer and the honest "scripted, not AI" note', await p.isVisible('#vavatar svg') && await p.isVisible('#vtimer') && (await p.textContent('#vnote')).includes('AI'), null);
+  await p.waitForSelector('#choiceBubs'); await p.evaluate(() => { window.__heard = 'i would like a burger please'; }); await p.click('#btnVoiceAns'); await p.waitForSelector('#dlgNext');
+  check('answering by voice picks the matching reply (the correct one)', await p.isVisible('.bub.me.good'), null);
+  await shot(p, '21-video');
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // 声が使えない：入力で
+  s = await openP(false); p = s.page; await p.click('[data-coll="speak"]'); await p.waitForSelector('#speakTarget');
+  check('without SpeechRecognition the practice offers typing', await p.isVisible('#noMic') && !(await p.$('#btnMic')), null);
+  await p.fill('#speakInput', 'completely wrong words here'); await p.click('#speakSend'); await p.waitForSelector('#speakScore'); check('a wrong typed sentence gets a low score and no "next"', parseInt(await p.textContent('#speakScore')) < 50 && !(await p.isVisible('#speakNext')), null);
+  await p.click('#btnQuit'); await p.click('#tabs [data-tab="review"]'); await p.click('[data-vscene="en-test-1"]'); await p.waitForSelector('#noMic2'); check('video call falls back to tapping when voice input is missing', true, null);
+  await s.close();
+  // 320px・ダーク・英語
+  for (const [lang, theme] of [['ja', 'dark'], ['en', 'light']]) {
+    s = await openP(true, { vp: 'se1', touch: true, lang, theme }); p = s.page;
+    const probe = async w => { const r = await p.evaluate(`(${layoutProbe})()`); check(`se1/${theme}/${lang} ${w}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, { off: r.offscreen.slice(0, 4) }); };
+    await probe('practice tab');
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English practice tab: no Japanese in the UI', jp.length === 0, jp.slice(0, 6)); }
+    await p.click('[data-story="st-bag"]'); await p.waitForSelector('#storyLines'); await probe('story');
+    await p.click('#btnQuit'); await p.click('#tabs [data-tab="review"]'); await p.click('[data-coll="speak"]'); await p.waitForSelector('#speakTarget'); await probe('speaking');
+    check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
 async function layout(env) {
   console.log('10. 320px and other sizes, light and dark: nothing off screen, no sideways scroll');
   for (const [vp, dark] of [['se1', false], ['se1', true], ['a360s', false], ['ip12', true], ['land', false]]) {
@@ -622,8 +686,8 @@ async function layout(env) {
   HAVE_KATEX = ensureKatex();
   const srv = await server.start(); const browser = await B.launch(); const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const nm = f => (f.name === 'path_' ? 'path' : f.name === 'english3' ? 'english' : f.name === 'resume3' ? 'resume' : f.name === 'dialogue4' ? 'dialogue' : f.name === 'flow5' ? 'flow' : f.name === 'header6' ? 'header' : f.name === 'sound7' ? 'sound' : f.name === 'power8' ? 'power' : f.name);
-  for (const f of [home, lesson, types, review, reload, mock, keys, katex, api, special, path_, contrast, english3, resume3, dialogue4, flow5, header6, sound7, power8, layout]) {
+  const nm = f => (f.name === 'path_' ? 'path' : f.name === 'english3' ? 'english' : f.name === 'resume3' ? 'resume' : f.name === 'dialogue4' ? 'dialogue' : f.name === 'flow5' ? 'flow' : f.name === 'header6' ? 'header' : f.name === 'sound7' ? 'sound' : f.name === 'power8' ? 'power' : f.name === 'practice9' ? 'practice' : f.name);
+  for (const f of [home, lesson, types, review, reload, mock, keys, katex, api, special, path_, contrast, english3, resume3, dialogue4, flow5, header6, sound7, power8, practice9, layout]) {
     if (only && !only.includes(nm(f))) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }
