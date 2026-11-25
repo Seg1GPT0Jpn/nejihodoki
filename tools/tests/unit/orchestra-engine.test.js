@@ -356,4 +356,36 @@ test('DemoConductor follows the marked tempo: a piece with a tempo change keeps 
   ok(end > 0 && Math.abs(end - sc.guideSeconds() - 2.5) / sc.guideSeconds() < 0.08, 'ended at ' + end.toFixed(1) + ' s, guide ' + sc.guideSeconds().toFixed(1));
 });
 
+// --- phone motion v2: synthetic IMU streams modelled on real swings (5-25 m/s^2 peaks, gravity included, jitter, other orientations, walking) ---------------------
+const rngM = (seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)(5);
+function imuStream(o) { // a phone swung up/down: vertical accel a(t) = -H w^2 cos(w t) (+up); o: bpm, peak (m/s^2), rate (Hz), g (gravity vector), sec, noise, jitter, walk (m/s^2 amplitude at 1.9 Hz)
+  const T = 60 / o.bpm, w = 2 * Math.PI / T, H = o.peak / (w * w), g = o.g || [0, 0, 9.8], gm = Math.hypot(...g), u = g.map(v => v / gm), out = []; let t = 0;
+  while (t < o.sec) { const a = (o.peak ? -H * w * w * Math.cos(w * t) : 0) + (o.walk ? o.walk * Math.sin(2 * Math.PI * 1.9 * t) : 0) + (o.noise ? (rngM() - 0.5) * 2 * o.noise : 0); out.push({ t, a: [g[0] + u[0] * a, g[1] + u[1] * a, g[2] + u[2] * a] }); t += (1 / o.rate) * (1 + (o.jitter ? (rngM() - 0.5) * o.jitter : 0)); }
+  return out;
+}
+const runIMU = (st, det) => { det = det || new E.MotionDetector(); const ev = []; st.forEach(s => det.push(s.a[0], s.a[1], s.a[2], s.t).forEach(e => ev.push(e))); return ev; };
+test('MotionDetector v2: regular swings at 60-140 bpm, 5-25 m/s^2 peaks, 60/100/200 Hz, noise and timing jitter, any way round: one beat per swing, on the stop', () => {
+  for (const bpm of [60, 90, 120, 140]) for (const peak of [6, 12, 25]) for (const rate of [60, 100, 200]) for (const g of [[0, 0, 9.8], [0, 9.8, 0], [6.9, -6.9, 0], [-9.5, 0, 2.4]]) {
+    const sec = 10, ev = runIMU(imuStream({ bpm, peak, rate, g, sec, noise: 0.6, jitter: 0.3 })), T = 60 / bpm, expect = Math.floor((sec - 0.3) / T);
+    ok(ev.length >= expect - 2 && ev.length <= expect + 1, `${bpm} bpm peak ${peak} ${rate} Hz g=${g}: ${ev.length} beats, expected ~${expect}`);
+    ev.slice(3).forEach(e => { const ph = ((e.t % T) + T) % T; ok(Math.abs(ph - T / 2) < Math.max(0.07, 0.1 * T), `phase ${ph.toFixed(3)} of ${T.toFixed(3)} (${bpm}/${peak}/${rate})`); });
+  }
+});
+test('MotionDetector v2: walking (1.9 Hz bobbing, 2.5 m/s^2) and a phone lying still make no beats; strong swings on top of walking still do', () => {
+  eq(runIMU(imuStream({ bpm: 90, peak: 0, rate: 60, sec: 12, walk: 2.5, noise: 0.5 })).length, 0, 'walking');
+  eq(runIMU(imuStream({ bpm: 90, peak: 0, rate: 60, sec: 12, noise: 0.5 })).length, 0, 'at rest');
+  const ev = runIMU(imuStream({ bpm: 80, peak: 14, rate: 60, sec: 12, walk: 2.5, noise: 0.5 })); ok(ev.length >= 12 && ev.length <= 17, 'swings while walking: ' + ev.length);
+});
+test('MotionDetector v2: calibration scales to the player (a gentle swinger and a big swinger both get ~mp for their ordinary swing); linear-acceleration devices; the debug buffer', () => {
+  for (const peak of [4, 7, 20]) {
+    const cal = new E.MotionCalibrator(5), det = new E.MotionDetector(); runIMU(imuStream({ bpm: 80, peak, rate: 60, sec: 8 }), det).forEach(e => cal.add(e.peak)); ok(cal.ready(), 'ready after 5 swings'); const k = cal.scale();
+    const det2 = new E.MotionDetector({ scale: k }); const ev = runIMU(imuStream({ bpm: 80, peak, rate: 60, sec: 8 }), det2); ok(ev.length >= 8, 'still detected after scaling: ' + ev.length + ' (peak ' + peak + ', scale ' + k.toFixed(2) + ')');
+    const lv = E.Dynamics.level(ev[4].amp, 0, 'motion', 'mid'); ok(lv > 0.3 && lv < 0.55, 'an ordinary swing of this player is p..mf after calibration: ' + lv.toFixed(2) + ' (peak ' + peak + ')');
+  }
+  // linear acceleration without gravity: the magnitude peaks of one-flick swings (accelerate, stop 0.15 s later), one beat per swing
+  const lin = new E.MotionDetector(), evs = []; for (let k = 0; k < 8; k++) for (let t = 0; t < 0.6; t += 1 / 60) { const T = k * 0.6 + t, a = 10 * Math.exp(-Math.pow((t - 0.05) / 0.04, 2)) + 12 * Math.exp(-Math.pow((t - 0.2) / 0.04, 2)); lin.pushLinear(0.3 * a, a * 0.9, 0.1 * a, T).forEach(e => evs.push(e)); }
+  ok(evs.length >= 7 && evs.length <= 9, 'linear-acceleration devices: ' + evs.length);
+  const d = new E.MotionDetector(); runIMU(imuStream({ bpm: 90, peak: 12, rate: 60, sec: 3 }), d); ok(d.dbg.length > 100 && d.dbg.length <= 600 && d.dbg.some(x => x.b > 0), 'the debug buffer holds recent samples and marks the beats');
+});
+
 run('orchestra-engine');

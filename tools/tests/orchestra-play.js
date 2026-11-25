@@ -38,7 +38,7 @@ const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.png') }).
 const wait = (p, f, arg, t) => p.waitForFunction(f, arg, { timeout: t || 20000 });
 async function startReal(p, id, diff) {
   await p.evaluate(d => { if (d) document.querySelector(`.dfb[data-diff="${d}"]`).click(); }, diff || null);
-  if (!(await p.locator(`.rc[data-piece="${id}"]`).isVisible())) { await p.click('#filters summary'); await p.click('#expandAll'); }
+  if (!(await p.locator(`.rc[data-piece="${id}"]`).isVisible())) { await p.click('#filters summary'); await p.click('#expandAll'); await p.click('#filters summary'); }
   await p.click(`.rc[data-piece="${id}"]`);
   if (await p.locator('#partBox button[data-part="all"]').count()) await p.click('#partBox button[data-part="all"]'); // a long movement asks: whole or a part
   await wait(p, () => __kb.state().playing, null, 90000);
@@ -342,6 +342,38 @@ async function touch(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+async function phoneMotion(env) {
+  console.log('7b. swing the phone: injected DeviceMotionEvents (real Android/iPhone sensors are not available in the test browser)');
+  // a swinging phone: vertical acceleration -H w^2 cos(w t) on top of gravity, at 60 Hz, dispatched as real DeviceMotionEvents (gravity along z, or y for another way round)
+  const swing = (p, bpm, peak, g) => p.evaluate(([bpm, peak, g]) => { clearInterval(window.__sw); const T = 60 / bpm, w = 2 * Math.PI / T, t0 = performance.now(); window.__sw = setInterval(() => { const t = (performance.now() - t0) / 1000, a = -peak * Math.cos(w * t), v = { x: g === 'y' ? a : 0, y: g === 'y' ? 9.8 : 0, z: g === 'y' ? 0 : 9.8 + a }; if (g === 'y') { v.y = 9.8 + a; v.x = 0; } window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: v, interval: 16 })); }, 16); }, [bpm, peak, g]);
+  const stopSwing = p => p.evaluate(() => clearInterval(window.__sw));
+  // 1. out of the box on a touch phone: the toggle is visible on the title, on by default, and the swing starts and conducts the piece
+  let s = await open(env, { touch: true, vp: 'ip12' }); let p = s.page; await p.addInitScript(() => { try { delete DeviceMotionEvent.requestPermission; } catch (e) {} }); await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); // Android Chrome: no requestPermission
+  const row = await p.evaluate(() => ({ vis: !document.getElementById('motionRow').hidden, state: document.getElementById('tMotion').dataset.state, txt: document.getElementById('tMotion').innerText }));
+  check('the title has a visible swing-the-phone toggle: ' + row.txt.replace(/\n/g, ' '), row.vis, row);
+  await p.click('#tMotion'); await p.waitForTimeout(300); check('tapping it turns the sensor on (waiting for data)', (await p.evaluate(() => document.getElementById('tMotion').dataset.state)) === 'waiting', await p.evaluate(() => document.getElementById('tMotion').dataset.state));
+  await swing(p, 66, 12, 'z'); await p.waitForTimeout(800); check('data arrives: the state shows the sensor works', (await p.evaluate(() => document.getElementById('tMotion').dataset.state)) === 'on', await p.evaluate(() => document.getElementById('tMotion').dataset.state));
+  await stopSwing(p);
+  await p.click('#tSet'); await p.click('#tSensor'); await p.waitForSelector('#ovMotion:not([hidden])'); await swing(p, 80, 14, 'y'); await p.waitForTimeout(3500);
+  const info = await p.evaluate(() => ({ txt: document.getElementById('smInfo').textContent, st: document.getElementById('smState').textContent, px: (() => { const c = document.getElementById('smCv'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++; return n; })() }));
+  check('the sensor test shows live data and detected beats (' + info.txt + ')', /拍 [3-9]|拍 \d\d/.test(info.txt) && info.px > 300, info); await shot(p, '07b-sensor-test'); await stopSwing(p); await p.click('#smClose'); await wait(p, () => __kb.state().title, null, 5000);
+  await p.evaluate(() => document.querySelector('.dfb[data-diff="normal"]').click()); await p.evaluate(() => __orch.start('nachtmusik', 'normal')); await wait(p, () => __kb.state().playing, null, 90000);
+  await swing(p, 66, 12, 'z'); await wait(p, () => __kb.state().state === 'playing', null, 9000).catch(() => {}); await p.waitForTimeout(5000); let a = await st(p);
+  check('swinging the phone starts the piece and sets the tempo (' + a.state + ', ' + Math.round(a.bpm) + ' bpm for 66, pos ' + a.pos.toFixed(1) + ')', a.state === 'playing' && Math.abs(a.bpm - 66) < 16 && a.pos > 3, a);
+  const chip = await p.evaluate(() => ({ vis: !document.getElementById('motionChip').hidden, st: document.getElementById('motionChip').dataset.state })); check('a live indicator is in the play screen: ' + chip.st, chip.vis && chip.st === 'on', chip);
+  await stopSwing(p); await s.close();
+  // 2. no sensor data at all: after 1.5 s the page says so and tells how to fix it (Android)
+  s = await open(env, { touch: true, vp: 'ip12' }); p = s.page; await p.addInitScript(() => { try { delete DeviceMotionEvent.requestPermission; } catch (e) {} }); await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); await p.click('#tMotion'); await p.waitForTimeout(2200);
+  const un = await p.evaluate(() => ({ st: document.getElementById('tMotion').dataset.state, help: document.getElementById('motionHelp').textContent })); check('no readings: "sensor not responding" with the Android fix: ' + un.st, ['unavailable', 'nodata'].includes(un.st) && /モーションセンサー/.test(un.help), un); await s.close();
+  // 3. iPhone: requestPermission, denied then granted (only inside a tap)
+  s = await open(env, { touch: true, vp: 'ip12' }); p = s.page;
+  await p.addInitScript(() => { window.__perm = 'denied'; window.__asked = 0; DeviceMotionEvent.requestPermission = () => { window.__asked++; return Promise.resolve(window.__perm); }; });
+  await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready());
+  await p.click('#tMotion'); await p.waitForTimeout(300); const dn = await p.evaluate(() => ({ st: document.getElementById('tMotion').dataset.state, asked: window.__asked, help: document.getElementById('motionHelp').textContent })); check('iPhone permission denied: the page says so and shows the Settings > Safari fix', dn.st === 'denied' && dn.asked === 1 && /Safari/.test(dn.help), dn);
+  await p.evaluate(() => { window.__perm = 'granted'; }); await p.click('#tMotion'); await p.waitForTimeout(300); check('granted on the next tap: listening', ['waiting', 'on'].includes(await p.evaluate(() => document.getElementById('tMotion').dataset.state)), await p.evaluate(() => document.getElementById('tMotion').dataset.state));
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 async function pause(env) {
   console.log('8. pause: the menu stops the clock and the sound, resuming re-enters, leaving goes back to the pieces');
   const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'enjoy'); const c = await stageBox(p);
@@ -429,7 +461,7 @@ async function layouts(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, pause, english, themes, saves, layouts]) {
+  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, pause, english, themes, saves, layouts]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
   }

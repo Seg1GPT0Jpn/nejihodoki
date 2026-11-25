@@ -215,22 +215,46 @@
   // MotionDetector: accelerationIncludingGravity samples (m/s^2) -> ictus at the upward acceleration peak (the stop at the bottom of a down stroke).
   // The vertical direction comes from a slow low-pass of the reading itself, so the phone may be held any way round.
   // ------------------------------------------------------------------------------------------------------------------------------------------
-  function MotionDetector(o) { o = o || {}; this.th = o.threshold || 2.2; this.minGap = o.minGap || 0.24; this.alpha = o.alpha || 0.04; this.reset(); }
-  MotionDetector.prototype.reset = function () { this.g = null; this.pk = null; this.last = -1e9; this.prev = 0; this.prev2 = 0; this.pt = 0; this.armed = false; };
+  // v2: the low-pass runs on real time (works for 60 Hz phones and 200 Hz Joy-Con samples), the threshold follows a calibration (`scale`, learned from the player's own swings),
+  // slow rhythmic bobbing (walking: no abrupt stop that is also big enough) is ignored by a threshold of 3 m/s^2 after scaling, and a ring buffer of recent samples is kept for the
+  // debug overlay. Latency: the ictus is stamped at the peak sample, the detector reports it when the reading has dropped back under the threshold (about 30-60 ms later).
+  function MotionDetector(o) { o = o || {}; this.th = o.threshold || 3; this.minGap = o.minGap || 0.24; this.tau = o.tau || 2.0; this.scale = o.scale || 1; this.dbgN = o.debug === false ? 0 : (o.debug || 600); this.reset(); }
+  MotionDetector.prototype.reset = function () { this.g = null; this.pk = null; this.last = -1e9; this.lt = null; this.dbg = []; };
+  MotionDetector.prototype.setScale = function (k) { this.scale = clamp(k, 0.3, 4); };
   MotionDetector.prototype.push = function (ax, ay, az, t) {
     const out = [];
-    if (!this.g) { this.g = [ax, ay, az]; return out; }
-    const a = this.alpha; this.g[0] += a * (ax - this.g[0]); this.g[1] += a * (ay - this.g[1]); this.g[2] += a * (az - this.g[2]);
+    if (!this.g) { this.g = [ax, ay, az]; this.lt = t; this.t0 = t; return out; }
+    const dt = clamp(t - this.lt, 0.001, 0.1); this.lt = t; const a = 1 - Math.exp(-dt / Math.min(this.tau, 0.1 + 0.8 * (t - this.t0))); // the time constant grows from the start: gravity is learnt fast, then held steady
+    this.g[0] += a * (ax - this.g[0]); this.g[1] += a * (ay - this.g[1]); this.g[2] += a * (az - this.g[2]);
     const gm = Math.hypot(this.g[0], this.g[1], this.g[2]) || 1, ux = this.g[0] / gm, uy = this.g[1] / gm, uz = this.g[2] / gm;
-    const v = (ax - this.g[0]) * ux + (ay - this.g[1]) * uy + (az - this.g[2]) * uz; // + = accelerating upward
-    // peak detection: v rose above the threshold and has now turned over
-    if (v > this.th) { if (!this.pk || v > this.pk.v) this.pk = { v, t }; }
+    const v = ((ax - this.g[0]) * ux + (ay - this.g[1]) * uy + (az - this.g[2]) * uz) * this.scale; // + = accelerating upward (gravity removed), in "calibrated" m/s^2
+    let beat = 0;
+    if (v > this.th) { if (!this.pk) this.pk = { v, t, sw: 0, swt: 0 }; else if (v > this.pk.v) { this.pk.v = v; } this.pk.sw += v - this.th; this.pk.swt += (v - this.th) * t; } // the beat time is the centroid of the lobe above the threshold (steadier than the noisy argmax)
+    else if (this.pk && v >= this.th * 0.6) { /* still on the lobe: noise dipped under the threshold */ }
     else if (this.pk) {
-      if (this.pk.t - this.last >= this.minGap) { out.push({ type: 'ictus', t: this.pk.t, amp: clamp(this.pk.v / 14, 0, 1) * 0.5 + 0.04, speed: 0 }); this.last = this.pk.t; }
+      const pt = this.pk.sw > 0 ? this.pk.swt / this.pk.sw : this.pk.t;
+      if (pt - this.last >= this.minGap) { out.push({ type: 'ictus', t: pt, amp: clamp(this.pk.v / 14, 0, 1) * 0.5 + 0.04, speed: 0, peak: this.pk.v / this.scale, dev: 'motion' }); this.last = pt; beat = this.pk.v; }
       this.pk = null;
     }
+    if (this.dbgN) { this.dbg.push({ t, v, b: beat }); if (this.dbg.length > this.dbgN) this.dbg.shift(); }
     return out;
   };
+  // for devices that give only the linear acceleration (no gravity in it): the magnitude of the reading; the beat is its peak (the stop of a swing)
+  MotionDetector.prototype.pushLinear = function (ax, ay, az, t) {
+    const out = [], v = Math.hypot(ax, ay, az) * this.scale; let beat = 0;
+    if (v > this.th) { if (!this.pk || v > this.pk.v) this.pk = { v, t }; }
+    else if (this.pk) {
+      if (this.pk.t - this.last >= Math.max(this.minGap, 0.3)) { out.push({ type: 'ictus', t: this.pk.t, amp: clamp(this.pk.v / 14, 0, 1) * 0.5 + 0.04, speed: 0, peak: this.pk.v / this.scale, dev: 'motion' }); this.last = this.pk.t; beat = this.pk.v; }
+      this.pk = null;
+    }
+    if (this.dbgN) { this.dbg.push({ t, v, b: beat }); if (this.dbg.length > this.dbgN) this.dbg.shift(); }
+    return out;
+  };
+  // MotionCalibrator: the player swings a few times; their median peak becomes an "ordinary swing" (about mp). scale = 7 / median peak, within 0.4 .. 3.
+  function MotionCalibrator(n) { this.n = n || 5; this.peaks = []; }
+  MotionCalibrator.prototype.add = function (peak) { if (peak > 0) this.peaks.push(peak); return this.ready(); };
+  MotionCalibrator.prototype.ready = function () { return this.peaks.length >= this.n; };
+  MotionCalibrator.prototype.scale = function () { if (!this.peaks.length) return 1; const a = this.peaks.slice().sort((x, y) => x - y), m = a[a.length >> 1]; return clamp(7 / m, 0.4, 3); };
 
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // BeatClock: position (in conductor beats) as a function of time, in straight segments. The scheduler `commit`s a horizon, and a new segment (new tempo) can only
@@ -491,5 +515,5 @@
     return (inst === 'vln' || inst === 'vla' || inst === 'vc' || inst === 'cb') ? 'spic' : 'stac';
   }
 
-  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, DemoConductor, ghostPoint, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
+  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, DemoConductor, ghostPoint, MotionCalibrator, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
 });
