@@ -31,6 +31,12 @@ function checkSpec() {
   const re = /\^\(([^)]*)\)\$/.exec(db.rules.vs.queue.$game['.read']);
   const vsRule = re ? re[1].split('|') : [];
   add('database.rules.json vs game ids == games with versus: common', JSON.stringify(vsRule.slice().sort()) === JSON.stringify(VS_GAMES.slice().sort()), vsRule.join(','));
+  // common/turnroom.js を使うゲーム（tr/{game}/… に入るもの）：ページが turnroom.js を読んでいて、登録簿で versus: 'own'
+  const tm = db.rules.tr && db.rules.tr.$game && /\^\(([^)]*)\)\$/.exec(db.rules.tr.$game.queue['.read']);
+  const trRule = tm ? tm[1].split('|') : [];
+  const trPages = REG.games.filter(g => { try { return /common\/turnroom\.js/.test(fs.readFileSync(path.join(ROOT, g.path, 'index.html'), 'utf8')); } catch (e) { return false; } }).map(g => g.id);
+  add('database.rules.json tr game ids == pages that load common/turnroom.js', JSON.stringify(trRule.slice().sort()) === JSON.stringify(trPages.slice().sort()), trRule.join(',') + ' / ' + trPages.join(','));
+  add('turnroom games are registered with versus: own', trPages.every(id => (REG.games.find(g => g.id === id) || {}).versus === 'own'));
   const all = JSON.stringify(db);
   const alts = all.match(/\^\((?:neji|blocks)[^)]*\)\$/g) || [];
   add('database.rules.json uses one game list everywhere', new Set(alts).size === 1, [...new Set(alts)].join(' / '));

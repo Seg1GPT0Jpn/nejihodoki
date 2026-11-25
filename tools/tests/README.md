@@ -47,8 +47,10 @@ node tools/minigolf-gen.js --course 13 --cand 20 # コース4から先のホー�
 node tools/tests/minigolf-play.js              # ころがし工房ゴルフの通し（遊び方・チュートリアル・本物のドラッグで打つ・スコアカード・9ホール・保存と再開・練習・今日のホール・一時停止・オンライン対戦の練習（同じ seed → 同じホールの並び・点の式・保存しない・終了後に元へ戻る）・英語・全画面サイズ）
 node tools/tests/pwa-offline.js                # PWA の通し：/ と /nejihodoki/ の両方で、はじめに保存するのはハブと common/ だけ（はじめての転送量を測る）、開いたことのないゲームはオフラインで offline.html、全ゲームを1回開くとそのページと ENGINES が保存されて通信なしで開けること、オフラインのページ（日本語・英語）、マニフェストとインストールの条件（Chrome の判定 CDP Page.getInstallabilityErrors ＋ アイコン・shortcuts・screenshots の大きさ）、更新のトースト（遊んでいる最中は出ない・押したときだけ読み込み直す・古い保存の片付け）。--base /nejihodoki で片方だけ、--game blocks で選ぶ
 node tools/tests/load/run.js                   # 負荷テスト（エミュレーターだけ。本番にはつながない）：Firestore 200人（本物の common/*.js）＋ RTDB 50組（本物の Firebase SDK）。約5分。--quick で約2分。結果は tools/tests/load/out/results.json、まとめは docs/LOAD_TEST.md
-node tools/tests/colorcards-play.js            # いろあわせカード工房の通し（本物のクリックで1ゲーム・れんしゅうとヒント・ドラッグ・ラスト！とつかまえた！・10ラウンドマッチ・ふたりで・チュートリアル・保存と再開・英語・全画面サイズ）
+node tools/tests/colorcards-play.js            # いろあわせカード工房の通し（本物のクリックで1ゲーム・れんしゅうとヒント・ドラッグ・ラスト！とつかまえた！・10ラウンドマッチ・ふたりで・チュートリアル・保存と再開・英語・全画面サイズ・オンライン対戦（エミュレーターで本物のブラウザ3ページ：ロビー・部屋のコード・最後まで・もう一度・再読み込みで戻る・ホストの再読み込み・ページが消えるとCPUに交代・ホストが出る・英語と320px）。`--no-online` で省く、`online` だけも可）
 node tools/tests/unit/colorcards-engine.test.js # いろあわせカード工房の中身（デッキ・CPU 同士の多数の対局・反則の手なし・つよい ＞ よわい）
+node tools/tests/unit/colorcards-online.test.js # いろあわせカードのオンライン用アダプター（colorcards/online.js：公開される pub・priv・出来事に他の人の手札と山札が入らない・できない手や形のおかしい手を断る・見かけの状態の手札の枚数と伏せ札の番号・保存して続ける・ホストがいなくなったときの順位・ページと sw.js と登録簿の配線）
+node tools/tests/rules/turnroom-bots.js         # common/turnroom.js を本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人のボットが動かす（コードで4人・クイックマッチ（CPUでうめる／4人ぴったり）・切れて戻る／切れたまま・時間切れ・ホストが出る／消える・ゲストが出る。他人の手札が読めない・書けないことの確認つき）。`node tools/tests/rules/run.js --only bots` でも流せる（`rules/run.js` は全部で約13分なので `--only spec,rest`・`clients`・`bots` に分けて流すとよい）。シナリオ名を引数に（例：room4 quick）
 node tools/tests/train-play.js               # でんしゃでいこうの通し（本物のキーとタッチでノッチを操作・駅に止める・出発・ATS・結果と保存・ルートの開き方・一時停止・英語・全画面サイズ）
 node tools/tests/unit/train-engine.test.js    # でんしゃでいこうの中身（決まった結果・ブレーキの遅れと天気・停車位置の点数・信号と ATS・ダイヤ・自動運転が全ルートをクリア）
 node tools/tests/brawl-play.js               # おもちゃ大乱闘の通し（本物のキーとマルチタッチで試合・KO・ふたりで1台・ラダー8戦と開く内容・コンティニュー・れんしゅう・一時停止・保存と再開・英語・全画面サイズ）

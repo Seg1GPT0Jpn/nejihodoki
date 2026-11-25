@@ -386,4 +386,4 @@ async function runClients(T, opt = {}) {
   return out;
 }
 
-module.exports = { runClients, inventory, REQUIRED, newPage };
+module.exports = { runClients, inventory, REQUIRED, newPage, RECORDER };

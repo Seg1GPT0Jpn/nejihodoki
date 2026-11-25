@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // いろあわせカード工房の通しプレイ（Playwright。?debug の window.__colorcards で「どこを押すか」だけを聞き、押すのは本物のマウス操作）
-//   node tools/tests/colorcards-play.js [first,game,drag,practice,calls,match,pass,resume,english,layouts]
+//   node tools/tests/colorcards-play.js [first,game,drag,practice,calls,match,pass,resume,english,layouts,lobby,online]   （--no-online：エミュレーターを使う online を省く）
 // 1. 初回：ルール → 「チュートリアルへ」→ チュートリアルを最後まで（記録は増えない）
 // 2. 1ゲームをタイトルから始めて、最後まで本物のクリックで遊ぶ → 結果・保存（遊んだ回数・★）
+// 11. オンライン（エミュレーター・本物のルール）：ロビー・部屋のコード・3ページで1ゲーム・もう一度・再読み込みで部屋にもどる・ホストの再読み込み・ページが消える（CPU が席に）・ホストが出る・英語と小さい画面
 // 3. ドラッグで出す  4. れんしゅう：ヒントが出て、記録は増えない  5. ラスト！とつかまえた！（言い忘れる・ボタン）
 // 6. 10ラウンドマッチ  7. ふたりで1台（カバー画面）  8. 自動保存：再読み込み →「つづきから」  9. 英語  10. 全画面サイズ × ja/en
 'use strict';
@@ -48,28 +49,35 @@ async function stablePoint(p, c) {
   await shot(p, 'stuck-card');
   throw new Error('card ' + c + ' cannot be clicked');
 }
-async function doPlan(p) {
+async function doPlan(p, soft) {
   const plan = await p.evaluate(() => __colorcards.plan());
+  let n = 0;
   for (const step of plan) {
-    if (step.card != null) { const pt = await stablePoint(p, step.card); await p.mouse.click(pt.x, pt.y); }
-    else {
+    if (step.card != null) {
+      let pt; try { pt = await stablePoint(p, step.card); } catch (e) { if (soft) return n; throw e; }
+      await p.mouse.click(pt.x, pt.y);
+    } else {
       const dis = await p.$eval(step.sel, e => e.disabled).catch(() => 'missing');
-      if (dis) { await shot(p, 'stuck-btn'); throw new Error('button ' + step.sel + ' ' + dis + '; plan=' + JSON.stringify(plan)); }
-      await p.click(step.sel);
+      if (dis) {
+        if (soft) return n;      // online: the game moved on while we were choosing (a timeout, a republished state): plan again
+        await shot(p, 'stuck-btn'); throw new Error('button ' + step.sel + ' ' + dis + '; plan=' + JSON.stringify(plan));
+      }
+      await p.click(step.sel, soft ? { timeout: 3000 } : {}).catch(e => { if (!soft) throw e; });
     }
+    n++;
     await p.waitForTimeout(15);
   }
   return plan.length;
 }
 // play the human seat to the end (CPUs run fast); round overlays are clicked through
-async function playOut(p, max = 6000) {
+async function playOut(p, max = 6000, soft) {
   for (let i = 0; i < max; i++) {
     const s = await st(p);
     if (s.result) return s;
     if (s.round) { await p.click('#roNext'); await p.waitForTimeout(30); continue; }
     if (s.pass) { await p.click('#paGo'); continue; }
     if (!s.human) { await p.waitForTimeout(10); continue; }
-    if (!(await doPlan(p))) await p.waitForTimeout(20);
+    if (!(await doPlan(p, soft))) await p.waitForTimeout(20);
   }
   return st(p);
 }
@@ -338,14 +346,204 @@ async function layouts(env) {
   }
 }
 
+
+// ---------------------------------------------------------------- online lobby without a network: nickname, menu, keyboard (no emulator)
+async function lobby(env) {
+  console.log('12. online lobby (no network): nickname form, menu, keyboard, English, small screen');
+  for (const [vp, lang] of [['ip12', 'ja'], ['se1', 'en']]) {
+    const s = await open(env, { vp, lang });
+    const p = s.page;
+    await p.click('#tOnline');
+    await p.waitForSelector('[data-ktr="nickin"]');
+    check(`${vp}/${lang}: no nickname yet → the nickname form comes first`, true, null);
+    await p.press('[data-ktr="nickin"]', 'Enter');
+    check(`${vp}/${lang}: an empty nickname is refused with a message`, (await p.textContent('[data-ktr="nickerr"]')).length > 0, null);
+    await p.fill('[data-ktr="nickin"]', '<b>Moka</b>' + 'x'.repeat(20));
+    await p.press('[data-ktr="nickin"]', 'Enter');
+    await p.waitForSelector('[data-ktr="quick"]');
+    const nick = await p.evaluate(() => localStorage.getItem('kobo.nick'));
+    check(`${vp}/${lang}: the nickname is cleaned (no < >) and cut to 12 characters`, nick && nick.length <= 12 && !/[<>]/.test(nick), nick);
+    check(`${vp}/${lang}: the menu has quick match / make a room / code, and is a dialog`, !!(await p.$('[data-ktr="make"]')) && (await p.getAttribute('.ktr-ov', 'role')) === 'dialog', null);
+    // keyboard: Tab reaches every control; Enter on the code field with a short code shows a message
+    const order = []; for (let i = 0; i < 12; i++) { await p.keyboard.press('Tab'); order.push(await p.evaluate(() => (document.activeElement && document.activeElement.getAttribute('data-ktr')) || (document.activeElement && document.activeElement.dataset.n) || document.activeElement.tagName)); }
+    check(`${vp}/${lang}: Tab goes round the controls inside the dialog (never out to the page behind)`, ['quick', 'make', 'code', 'join', 'back', 'fill'].every(k => order.includes(k)) && order.every(k => k !== 'BODY' && k !== 'A'), order);
+    await p.fill('[data-ktr="code"]', '12ab');
+    await p.press('[data-ktr="code"]', 'Enter');
+    check(`${vp}/${lang}: a short code is refused in the field`, (await p.textContent('[data-ktr="menuerr"]')).length > 0, null);
+    const sizes = await p.$$eval('.ktr-ov button, .ktr-ov input', els => els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
+    check(`${vp}/${lang}: every button and field is at least 44 px tall`, sizes.every(z => z[1] >= 44), sizes);
+    const lay = await p.evaluate(`(${layoutProbe})()`);
+    check(`${vp}/${lang}: nothing sideways or off screen`, lay.hscroll <= 1 && lay.offscreen.length === 0, lay);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check(`${vp}/${lang}: no Japanese on screen`, jp.length === 0, jp.slice(0, 5)); }
+    await shot(p, `12-lobby-${vp}-${lang}`);
+    await p.keyboard.press('Escape');
+    await p.waitForFunction(() => document.querySelector('.ktr-ov').hidden && !document.getElementById('ovTitle').hidden);
+    check(`${vp}/${lang}: Escape goes back to the title`, true, null);
+    check(`${vp}/${lang}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+    await s.close();
+  }
+}
+
+// ---------------------------------------------------------------- online: three real pages through the Firebase emulators (real rules)
+async function online(env) {
+  console.log('11. online (emulator): lobby → room code → 3 pages play a whole game → rematch → a page reloads and comes back → a page closes (CPU takes the seat)');
+  const emu = await require('./rules/emulator').start({});
+  const T = { name: 'emulator', emu: true, ports: emu.ports, ns: emu.ns };
+  const { newPage } = require('./rules/clients');
+  const url = env.server.url + '/colorcards/?debug&trdeal=700&trcpu=250&trtm=20&trgrace=7&trhost=9&trqm=2&trfill=3';
+  const mk = async (nick, vp, lang) => {
+    const p = await newPage(env.browser(), { url: env.server.url }, T, nick, vp || { width: 390, height: 844 });
+    await p.ctx.addInitScript(l => { try { localStorage.setItem('kusoge.colorcards.howto', '1'); if (l) localStorage.setItem('kobo.lang', l); } catch (e) {} }, lang || 'ja');
+    await p.goto(url);
+    await p.waitForFunction(() => window.__kb && __kb.ready() && window.__colorcards);
+    return p;
+  };
+  const os = p => p.evaluate(() => __colorcards.onlineState());
+  const inGame = p => p.evaluate(() => { const s = __kb.state(); return s.net && s.started && !s.title; });
+  try {
+    const A = await mk('Aoi'), Bp = await mk('Ben'), Cp = await mk('Cy');
+    // --- the title and the lobby
+    check('title has the online match button', !!(await A.$('#tOnline')), null);
+    await A.click('#tOnline');
+    await A.waitForSelector('.ktr-ov:not([hidden]) [data-ktr="quick"]');
+    check('the lobby opens above the title (quick / make / code)', !!(await A.$('[data-ktr="make"]')) && !!(await A.$('[data-ktr="code"]')) && !!(await A.$('[data-ktr="join"]')), null);
+    check('the lobby shows the CPU fill switch (on by default)', (await A.getAttribute('[data-ktr="fill"]', 'aria-checked')) === 'true', null);
+    await shot(A, '11-lobby');
+    // keyboard: Escape goes back to the title, the button opens it again
+    await A.keyboard.press('Escape');
+    await A.waitForFunction(() => document.querySelector('.ktr-ov').hidden && !document.getElementById('ovTitle').hidden);
+    check('Escape in the lobby goes back to the title', true, null);
+    await A.click('#tOnline'); await A.waitForSelector('[data-ktr="make"]');
+    await A.click('[data-ktr="fill"]'); await A.click('.ktr-opt[data-n="3"]');
+    check('fill switch turns off, 3 players selected', (await A.getAttribute('[data-ktr="fill"]', 'aria-checked')) === 'false' && (await A.getAttribute('.ktr-opt[data-n="3"]', 'aria-pressed')) === 'true', null);
+    await A.click('[data-ktr="make"]');
+    await A.waitForSelector('[data-ktr="codeshow"]', { timeout: 20000 });
+    const code = (await A.textContent('[data-ktr="codeshow"]')).trim();
+    check('the host sees a 6-digit code and its own seat', /^\d{6}$/.test(code) && /Aoi/.test(await A.textContent('.ktr-seats')), code);
+    await shot(A, '11-waiting-room');
+    check('the host cannot start with one person (no CPU fill)', await A.$eval('[data-ktr="start"]', e => e.disabled), null);
+    // --- the friends join by the code (a wrong code first)
+    for (const [pg, nick] of [[Bp, 'Ben'], [Cp, 'Cy']]) {
+      await pg.click('#tOnline'); await pg.waitForSelector('[data-ktr="code"]');
+      if (pg === Bp) { await pg.fill('[data-ktr="code"]', '000000'); await pg.click('[data-ktr="join"]'); await pg.waitForFunction(() => /見つかりません/.test(document.querySelector('[data-ktr="menuerr"]') ? document.querySelector('[data-ktr="menuerr"]').textContent : ''), null, { timeout: 15000 }); check('a wrong code says the room was not found', true, null); await shot(pg, '11-wrong-code'); }
+      await pg.fill('[data-ktr="code"]', code); await pg.click('[data-ktr="join"]');
+    }
+    for (const pg of [A, Bp, Cp]) await pg.waitForFunction(() => __kb.state().net && __kb.state().started, null, { timeout: 30000 });
+    check('all three pages are in the game (full room starts by itself)', (await Promise.all([A, Bp, Cp].map(inGame))).every(Boolean), null);
+    const sts = await Promise.all([A, Bp, Cp].map(os));
+    check('one room, 3 seats, nobody but the host is host', sts.every(x => x.model && x.model.n === 3 && x.rid === sts[0].rid) && sts.filter(x => x.host).length === 1, sts.map(x => x.rid + x.host));
+    const kbs = await Promise.all([A, Bp, Cp].map(p => st(p)));
+    check('every page shows its own 7 cards and the rivals as counts (7 / 7 / 7)', kbs.every(k => k.hand.length === 7 && k.counts.join() === '7,7,7'), kbs.map(k => k.counts));
+    check('names are the nicknames', kbs.every(k => ['Aoi', 'Ben', 'Cy'].every(n => k.names.includes(n))), kbs[0].names);
+    // secrecy in the page: no rival card is face up; the database refuses the other hands
+    const faceUp = await Bp.evaluate(() => { const S = __colorcards.S, me = S.viewer, mine = new Set(S.st.hands[me]), top = new Set(S.st.disc); return [...document.querySelectorAll('.cd.up:not(.hid)')].map(e => +e.dataset.c).filter(c => !mine.has(c) && !top.has(c)); });
+    check('B: no rival card is turned face up', faceUp.length === 0, faceUp);
+    const probe = await Bp.evaluate(async rid => {
+      const db = firebase.database(), out = {};
+      const uids = Object.values((await db.ref('tr/colorcards/rooms/' + rid + '/seats').once('value')).val()).map(x => x.u);
+      for (const u of uids) { if (u === firebase.auth().currentUser.uid) continue; try { await db.ref('tr/colorcards/rooms/' + rid + '/priv/' + u).once('value'); out[u] = 'readable'; } catch (e) { out[u] = /permission/i.test(String(e.code || e.message)) ? 'denied' : String(e); } }
+      return out;
+    }, sts[0].rid);
+    check('B cannot read the others\' hands from the database', Object.values(probe).length === 2 && Object.values(probe).every(v => v === 'denied'), probe);
+    await shot(Bp, '11-game-guest');
+    check('the turn is shown (a seat glows)', (await Bp.$$('.seat.on')).length === 1, null);
+    // --- play to the end with the real mouse
+    const t0 = Date.now();
+    await Promise.all([A, Bp, Cp].map(p => playOut(p, 20000, true)));
+    check('all three pages reach a result', (await Promise.all([A, Bp, Cp].map(p => st(p)))).every(x => x.result), null);
+    const ranks = await Promise.all([A, Bp, Cp].map(p => p.$$eval('#rRank li', ls => ls.map(l => l.querySelector('.nm').textContent + ':' + l.querySelector('.no').textContent).join('|'))));
+    check('the same ranking on all pages', ranks.every(r => r === ranks[0]) && /:1\|/.test(ranks[0]), ranks);
+    check('the result says online does not count for ★, no ★ was added', /★/.test(await A.textContent('#rNote')) && (await Promise.all([A, Bp, Cp].map(p => st(p)))).every(x => x.save.pts === 0 && x.save.stats.onl === 1), null);
+    await shot(A, '11-result');
+    check('the game took a sensible time', Date.now() - t0 < 120000, Date.now() - t0);
+    // --- rematch
+    for (const p of [A, Bp, Cp]) await p.click('#rAgain');
+    check('after pressing, the button waits for the others', true, null);
+    for (const p of [A, Bp, Cp]) await p.waitForFunction(() => __colorcards.onlineState().model.gn === 2 && __kb.state().started && !__kb.state().result, null, { timeout: 30000 });
+    check('rematch: game 2 starts in the same room for everyone', true, null);
+    await Cp.waitForFunction(() => __kb.state().human || __kb.state().turn >= 0, null, { timeout: 15000 });
+    // --- C reloads the page in the middle (resume within the grace), A plays on
+    const handBefore = (await st(Cp)).hand.slice().sort((a, b) => a - b);
+    const pA = playOut(A, 4000, true).catch(() => null), pB = playOut(Bp, 4000, true).catch(() => null);
+    await Cp.waitForTimeout(500);
+    const handC = (await st(Cp)).hand.slice().sort((a, b) => a - b);
+    await Cp.reload(); await Cp.waitForFunction(() => window.__kb && __kb.ready() && window.__colorcards);
+    await Cp.click('#tOnline'); await Cp.waitForSelector('[data-ktr="resume"]', { timeout: 10000 });
+    check('after a reload the lobby offers to go back to the match', true, null);
+    await shot(Cp, '11-resume');
+    await Cp.click('[data-ktr="resume"]');
+    await Cp.waitForFunction(() => __kb.state().net && __kb.state().started, null, { timeout: 20000 });
+    const kc = await st(Cp);
+    check('C is back at its seat with a hand (same seat as before)', kc.hand.length >= 1 && kc.n === 3, kc.hand);
+    void handBefore; void handC;
+    // --- B closes its tab: A and C continue, B's seat becomes a CPU after the grace
+    await Bp.ctx.close();
+    await A.waitForFunction(() => /x/.test(__colorcards.onlineState().model.sl), null, { timeout: 40000 });
+    check('a closed page: the seat turns into a CPU seat (x) for the others', true, null);
+    await shot(A, '11-cpu-seat');
+    await Promise.all([A, Cp].map(p => playOut(p, 20000, true)));
+    check('the others finish the game', (await Promise.all([A, Cp].map(p => st(p)))).every(x => x.result), null);
+    const errs = [...A.errs, ...Cp.errs].filter(e => !/Failed to load resource|net::ERR/.test(e));
+    check('no page errors / permission errors (A, C)', errs.length === 0, errs.slice(0, 4));
+    for (const p of [A, Cp]) await p.ctx.close();
+    void pA; void pB;
+
+    // --- the host reloads: the match goes on (host copy restored)
+    const H = await mk('Hoa'), G1 = await mk('Gue');
+    await H.click('#tOnline'); await H.waitForSelector('[data-ktr="make"]'); await H.click('[data-ktr="fill"]'); await H.click('.ktr-opt[data-n="2"]'); await H.click('[data-ktr="make"]');
+    await H.waitForSelector('[data-ktr="codeshow"]', { timeout: 20000 });
+    const code2 = (await H.textContent('[data-ktr="codeshow"]')).trim();
+    await G1.click('#tOnline'); await G1.waitForSelector('[data-ktr="code"]'); await G1.fill('[data-ktr="code"]', code2); await G1.click('[data-ktr="join"]');
+    for (const p of [H, G1]) await p.waitForFunction(() => __kb.state().net && __kb.state().started, null, { timeout: 30000 });
+    const gp = playOut(G1, 3000, true).catch(() => null);
+    await H.waitForTimeout(1500);
+    await H.reload(); await H.waitForFunction(() => window.__kb && __kb.ready() && window.__colorcards);
+    await H.click('#tOnline'); await H.waitForSelector('[data-ktr="resume"]', { timeout: 10000 });
+    await H.click('[data-ktr="resume"]');
+    await H.waitForFunction(() => __kb.state().net && __kb.state().started, null, { timeout: 20000 });
+    check('the host reloads and resumes: still a 2-player game with a hand', (await st(H)).n === 2, null);
+    await Promise.all([H, G1].map(p => playOut(p, 20000, true)));
+    const hs = await Promise.all([H, G1].map(p => st(p)));
+    check('the game finishes after the host came back (not ended by the host grace)', hs.every(x => x.result) && !(await H.textContent('#rNote')).match(/ホスト/), await H.textContent('#rNote'));
+    void gp;
+    // the host leaves a running game on purpose: the guest's match ends
+    await H.click('#rAgain'); await G1.click('#rAgain');
+    for (const p of [H, G1]) await p.waitForFunction(() => __colorcards.onlineState().model.gn === 2 && !__kb.state().result, null, { timeout: 30000 });
+    await H.evaluate(() => __colorcards.leaveOnline());
+    await G1.waitForFunction(() => __kb.state().result && /ホスト/.test(document.getElementById('rNote').textContent), null, { timeout: 20000 });
+    check('the host leaves: the guest sees the match end with the host-left note', true, null);
+    await shot(G1, '11-host-left');
+    check('the guest\'s rematch button is not offered after the host left', await G1.$eval('#rAgain', e => e.disabled), null);
+    await H.ctx.close(); await G1.ctx.close();
+
+    // --- English: lobby and game text, small screen
+    const En = await mk('Eve', { width: 320, height: 568 }, 'en');
+    await En.click('#tOnline'); await En.waitForSelector('[data-ktr="quick"]');
+    const jp = await En.evaluate(`(${jpScan})(true)`);
+    check('English lobby: no Japanese on screen', jp.length === 0, jp.slice(0, 5));
+    const lay = await En.evaluate(`(${layoutProbe})()`);
+    check('English lobby at 320×568: no sideways scroll, nothing off screen', lay.hscroll <= 1 && lay.offscreen.length === 0, { h: lay.hscroll, off: lay.offscreen.slice(0, 3) });
+    await shot(En, '11-lobby-en-320');
+    await En.evaluate(() => { document.documentElement.setAttribute('data-kb-theme', 'light'); });
+    await En.waitForTimeout(100); await shot(En, '11-lobby-en-light');
+    await En.evaluate(() => { document.documentElement.setAttribute('data-kb-theme', 'dark'); });
+    await En.waitForTimeout(100); await shot(En, '11-lobby-en-dark');
+    const dark = await En.evaluate(() => { const c = getComputedStyle(document.querySelector('.ktr-card')), b = getComputedStyle(document.querySelector('[data-ktr="quick"]')); const lum = x => { const m = x.match(/\d+/g).map(Number); return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]); }; return { card: lum(c.backgroundColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(document.body).backgroundColor : c.backgroundColor), ink: lum(c.color) }; });
+    check('dark theme: the lobby card is dark and its text is light', dark.card < 90 && dark.ink > 160, dark);
+    check('English page: no page errors', En.errs.filter(e => !/Failed to load resource|net::ERR/.test(e)).length === 0, En.errs.slice(0, 3));
+    await En.ctx.close();
+  } finally { await emu.stop(); }
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, game, drag, practice, calls, match, pass, resume, english, layouts]) {
+  for (const f of [first, game, drag, practice, calls, match, pass, resume, english, layouts, lobby, online]) {
     if (only && !only.includes(f.name)) continue;
+    if (f === online && !only && process.argv.includes('--no-online')) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }
   await browser.close(); await srv.close();

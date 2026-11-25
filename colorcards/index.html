@@ -146,6 +146,10 @@ h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb
 .seat .n { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: #fff; color: #15233b; font: 800 11px var(--kb-font-body); text-align: center; font-variant-numeric: tabular-nums; }
 .seat .ward { flex: none; width: 15px; height: 15px; color: #8fe3ff; }
 .seat .last { flex: none; padding: 0 6px; border-radius: 9px; background: #ff6f86; color: #fff; font: 800 10px var(--kb-font-body); }
+.seat .bd { flex: none; padding: 0 6px; border-radius: 9px; background: rgba(255, 255, 255, .85); color: #15233b; font: 800 10px var(--kb-font-body); }
+.seat .bd.off { background: #ff8d7d; } .seat .bd.away { background: #ffd078; } .seat .bd.tm { background: #ffc14d; color: #2b1d00; font-variant-numeric: tabular-nums; }
+.seat .bd.think { background: transparent; color: #ffd078; padding: 0 2px; animation: pulse2 1s ease-in-out infinite; }
+.seat.dc { opacity: .72; }
 .seat .last.warn { background: #ffb02e; color: #2b1d00; animation: pulse2 .9s ease-in-out infinite; }
 .bubble { max-width: 70%; overflow: hidden; text-overflow: ellipsis; position: absolute; transform: translate(-50%, 0); padding: 2px 9px; border-radius: 10px; background: #fff; color: #15233b; font-size: 11.5px; font-weight: 800; white-space: nowrap; z-index: 62; pointer-events: none; animation: bub .25s ease-out; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
 .bubble.hot { background: #ffc14d; } .bubble.bad { background: #ff8d7d; } .bubble.ok { background: #8fe3b8; }
@@ -299,6 +303,7 @@ body.thumb h1, body.thumb .icon, body.thumb .hrow .back, body.thumb .kb-layer, b
     <h2 class="logo" id="tTitle" data-i18n>いろあわせカード工房</h2>
     <div class="scroll opts">
       <button class="qm" id="tQuick" type="button"><span><b data-i18n>クイックマッチ</b><small id="tQuickSub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <button class="qm" id="tOnline" type="button" style="margin-top:6px"><span><b data-i18n>オンライン対戦</b><small id="tOnlineSub" data-i18n>友だちとコードで・クイックマッチ・2〜4人</small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17"/></svg></span></button>
       <button class="qm" id="tResume" type="button" hidden style="margin-top:6px"><span><b data-i18n>つづきから</b><small id="tResumeSub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
       <p class="gdesc" id="tDesc"></p>
       <p class="gbest" id="tBest"></p>
@@ -358,6 +363,8 @@ body.thumb h1, body.thumb .icon, body.thumb .hrow .back, body.thumb .kb-layer, b
 </div>
 <script src="art.js"></script>
 <script src="engine.js"></script>
+<script src="online.js"></script>
+<script src="../common/turnroom.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -485,7 +492,15 @@ KoboI18n.add({ en: {
   "ヒント：出さずに終わる": "Hint: keep it and end your turn",
   "つよいCPUの手は、光っている札です": "The strong CPU would play the glowing card",
   "{n}枚": "{n} cards",
-  "あと{n}枚": "{n} left"
+  "あと{n}枚": "{n} left",
+  "友だちとコードで・クイックマッチ・2〜4人": "With friends by code · quick match · 2-4 players",
+  "オンライン": "Online", "オンライン対戦は★に数えません": "Online matches do not count for ★",
+  "{n}が考え中…": "{n} is thinking…", "{n}の接続が切れています…": "{n} is offline…", "{n}は離席中です（CPUが代わり）": "{n} is away (a CPU plays)", "{n}はCPUです…": "{n} (CPU) is playing…",
+  "切断": "Offline", "離席": "Away", "あなたの番：{t}": "Your turn: {t}",
+  "試合を出る": "Leave the match", "出ると、あなたの席はCPUに代わります。出ますか？": "If you leave, a CPU takes your seat. Leave?", "出る": "Leave",
+  "みんなの準備を待っています…": "Waiting for the others…", "もう一度（{a}/{b}人）": "Rematch ({a}/{b})", "もう一度を待っています（{a}/{b}人）": "Waiting for a rematch ({a}/{b})",
+  "ホストが退出したので、ここで終了です": "The host left, so the match ends here", "ホストとの接続が切れたので、ここで終了です": "Lost the host, so the match ends here",
+  "席がCPUに交代しました": "Your seat was taken over by a CPU", "ゲームに入れませんでした": "You could not join this game", "通信がとぎれています…つながるのを待っています": "The connection dropped… waiting to reconnect", "オンライン対戦が終わりました": "The online match is over"
 } });
 const EN = KoboI18n.lang === 'en';
 const L = (ja, en) => (EN ? en : ja);
@@ -598,6 +613,7 @@ const cpuWait = ms => Math.round(ms * cpuDelayMul * (save.set.fast ? 0.4 : 1));
 const isHuman = s => !!S && S.st.humans.indexOf(s) >= 0;
 const humanTurn = () => !!S && !S.over && !S.st.over && S.st.phase !== 'roundover' && isHuman(S.st.turn);
 function nameOf(s) {
+  if (S && S.net) return (S.names && S.names[s]) || ('CPU' + (s + 1));
   if (S && S.mode === 'pass') return s === 0 ? T('プレイヤー1') : T('プレイヤー2');
   return NAMES[s] || ('CPU' + s);
 }
@@ -692,7 +708,8 @@ function render(lay, o) {
     const c = +key, p = lay.cards[key], el = cardEl(c);
     seen.add(c);
     if (el.classList.contains('hid') && !o.instant) { // new on the table: start from the deck, face down
-      el.classList.add('nt'); el.style.transform = tf(lay.deck.x, lay.deck.y, cw, ch, 1, 0); el.classList.remove('up'); void el.offsetWidth;
+      const fr = o.from && o.from[c] != null && tb.pos[o.from[c]] ? tb.pos[o.from[c]] : null;   // online: a rival's card flies from that seat
+      el.classList.add('nt'); el.style.transform = fr ? tf(fr.x, fr.y, cw, ch, SO, 0) : tf(lay.deck.x, lay.deck.y, cw, ch, 1, 0); el.classList.remove('up'); void el.offsetWidth;
     }
     el.classList.remove('nt');
     const dl = o.delay && o.delay[c] != null ? o.delay[c] * stag : 0;
@@ -713,12 +730,13 @@ function render(lay, o) {
     let el = tb.seats.get(s);
     if (!el) { el = document.createElement('div'); tableEl.appendChild(el); tb.seats.set(s, el); }
     const on = !st.over && st.phase !== 'roundover' && st.turn === s, len = st.hands[s].length;
-    el.className = 'seat' + (on ? ' on' : '') + (sd.me ? ' me' : '');
+    const cs = S.net && S.sl ? S.sl[s] : 'p';
+    el.className = 'seat' + (on ? ' on' : '') + (sd.me ? ' me' : '') + (cs === 'd' ? ' dc' : '');
     el.style.left = Math.round(sd.x) + 'px'; el.style.top = Math.round(sd.y) + 'px';
     el.style.transform = sd.me ? 'none' : ''; if (sd.w) el.style.maxWidth = Math.round(sd.w) + 'px';
     const ward = st.ward[s] ? '<svg class="ward" viewBox="0 0 24 24" aria-label="' + esc(kindName('shield')) + '"><use href="#cc-i-shield"/></svg>' : '';
     const last = len === 1 ? '<span class="last' + (st.uncalled === s ? ' warn' : '') + '">' + (st.uncalled === s ? '!' : T('ラスト！')) + '</span>' : '';
-    el.innerHTML = '<span class="av" style="--c:' + AV[s % 4] + '">' + esc(sd.me && S.mode !== 'pass' ? L('あ', 'Y') : nameOf(s).charAt(0)) + '</span><b>' + esc(nameOf(s)) + '</b><span class="n">' + len + '</span>' + ward + last;
+    el.innerHTML = '<span class="av" style="--c:' + AV[s % 4] + '">' + esc(sd.me && S.mode !== 'pass' ? L('あ', 'Y') : nameOf(s).charAt(0)) + '</span><b>' + esc(nameOf(s)) + '</b><span class="n">' + len + '</span>' + ward + last + netBadges(s, cs, on, !!sd.me);
   });
   tb.seats.forEach((el, k) => { if (!keys.has(k)) { el.remove(); tb.seats.delete(k); } });
   tableEl.classList.toggle('mine', humanTurn() && S.viewer === st.turn && !S.dealing);
@@ -742,6 +760,11 @@ function statusInfo() {
   const st = S.st;
   if (S.note) return { text: S.note, you: false };
   if (st.over) return { text: T('おわり'), you: false };
+  if (S.net && TR && TR._S && TR._S.connected === false) return { text: T('通信がとぎれています…つながるのを待っています'), you: false };
+  if (S.net && st.turn !== viewerOf()) {
+    const w = st.turn, c = S.sl ? S.sl[w] : 'p', n = nameOf(w);
+    return { text: c === 'd' ? T('{n}の接続が切れています…', { n }) : c === 'a' ? T('{n}は離席中です（CPUが代わり）', { n }) : c === 'p' ? T('{n}が考え中…', { n }) : T('{n}の番です…', { n }), you: false };
+  }
   if (st.phase === 'roundover') return { text: T('ラウンド {r}/{m}', { r: st.round, m: st.match }), you: false };
   const w = st.turn;
   if (!isHuman(w)) return { text: T('{n}の番です…', { n: nameOf(w) }), you: false };
@@ -753,10 +776,12 @@ function statusInfo() {
   else base = t ? T('あなたの番：{c}か{t}の札を出そう', { c, t }) : T('あなたの番：{c}の札を出そう', { c });
   if (mv.some(m => m.t === 'call') && st.hands[w].length === 2) base = T('残り2枚。先に「ラスト！」を宣言しよう');
   if (S.mode === 'pass') base = T('{n}の番です', { n: nameOf(w) }) + ' — ' + base.replace(/^(あなたの番：|Your turn: )/, '');
+  if (S.net) { const sec = Math.ceil(Math.max(0, TR ? TR.timeLeft() : 0) / 1000); if (sec) base += ' ⏱' + sec; }
   return { text: base, you: true };
 }
 function modeLabel() {
   const st = S.st;
+  if (S.net) return T('オンライン') + ' · ' + T('{n}人', { n: st.n });
   if (S.mode === 'tutorial') return T('チュートリアル');
   if (S.mode === 'pass') return T('ふたりで') + (st.match ? ' · ' + T('ラウンド {r}/{m}', { r: st.round, m: st.match }) : '');
   return st.match ? T('ラウンド {r}/{m}', { r: st.round, m: st.match }) : T('1ゲーム');
@@ -841,9 +866,10 @@ function loop() {
   clearTimeout(S.timer);
   const st = S.st;
   if (S.menu || S.over) return;
-  if (st.over) { S.timer = setTimeout(finish, cpuWait(900)); return; }
+  if (st.over && !S.net) { S.timer = setTimeout(finish, cpuWait(900)); return; }
   if (st.phase === 'roundover') { showRound(); return; }
   hud();
+  if (S.net) return;      // online: the host moves the game; the next state arrives as a model
   if (isHuman(st.turn)) {
     if (S.mode === 'pass' && S.viewer !== st.turn) { coverPass(); return; }
     S.waiting = true;
@@ -877,6 +903,7 @@ function play(mv) {
   const st = S.st;
   if (!humanTurn() || S.viewer !== st.turn) return false;
   if (!E.legal(st).some(m => E.sameJSON(m, mv))) { sfx('error'); return false; }
+  if (S.net) return sendOnline(mv);
   clearTimeout(S.timer);
   step(mv);
   return true;
@@ -904,7 +931,7 @@ function onEvents(ev, mover) {
       flash(e.with, T('{a}と{b}が入れかえ', { a: nameOf(e.seat), b: nameOf(e.with) }).slice(0, 26), 'hot'); $('live').textContent = T('{a}と{b}が入れかえ', { a: nameOf(e.seat), b: nameOf(e.with) });
     } else if (e.t === 'peek') {
       sfx('select');
-      if (isHuman(e.seat) && (S.mode !== 'pass' || S.viewer === e.seat)) showReveal(e.target, e.cards);
+      if (isHuman(e.seat) && e.cards && (S.mode !== 'pass' || S.viewer === e.seat)) showReveal(e.target, e.cards);
       else flash(e.seat, T('{n}が{m}の手札をのぞいた', { n: nameOf(e.seat), m: nameOf(e.target) }), 'hot');
     } else if (e.t === 'block') {
       sfx('ok'); flash(e.seat, T('はね返した！'), 'ok');
@@ -1025,6 +1052,7 @@ deckEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '
 
 // ---------- saving the unfinished game ----------
 function persist() {
+  if (S && S.net) return;   // an online match is kept by the room (common/turnroom.js), not by this device
   if (!S || S.over) { store.del(RUN_KEY); return; }
   store.set(RUN_KEY, JSON.stringify({ v: 1, st: S.st, mode: S.mode, practice: S.practice ? 1 : 0, ms: Math.round(S.ms + (Date.now() - S.t0)), coached: S.coached ? 1 : 0, at: Date.now() }));
 }
@@ -1189,6 +1217,7 @@ function showRound() {
 $('roNext').addEventListener('click', () => { $('ovRound').hidden = true; if (S) { S.dealing = false; step({ t: 'next' }); } });
 function giveUp() {
   if (!S || S.over) return;
+  if (S.net) { S.over = true; clearTimeout(S.timer); emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' }); if (TR) TR.leave(); return; }
   S.over = true; clearTimeout(S.timer); store.del(RUN_KEY);
   emit('play_end', { mode: S.practice ? 'practice' : 'normal', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' });
 }
@@ -1262,7 +1291,7 @@ $('howtoGo').addEventListener('click', () => {
 // =====================================================================================
 const OVERLAYS = ['ovTitle', 'ovResult', 'ovRound', 'ovPass', 'howto'];
 const hideOverlays = () => OVERLAYS.forEach(id => { $(id).hidden = true; });
-const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden])');
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden]), .ktr-ov:not([hidden])');
 const segHTML = (vals, cur, key) => vals.map(v => '<button class="opt" type="button" data-' + key + '="' + v[0] + '" aria-pressed="' + (String(v[0]) === String(cur)) + '">' + esc(v[1]) + '</button>').join('');
 function renderTitle() {
   const w = save.w;
@@ -1295,9 +1324,10 @@ $('tPrac').addEventListener('click', () => startGame({ mode: 'quick', practice: 
 $('tPass').addEventListener('click', () => startGame({ mode: 'pass' }));
 $('tTut').addEventListener('click', () => startGame({ mode: 'tutorial', practice: true }));
 $('tHow').addEventListener('click', () => showHowto(false));
+$('tOnline').addEventListener('click', () => openOnline());
 $('tResume').addEventListener('click', () => { const r = readRun(); if (r) resumeGame(r); });
-$('rAgain').addEventListener('click', () => { const c = S && S.cfg; startGame(c ? { n: c.n, level: c.level, mode: c.mode === 'tutorial' ? 'quick' : c.mode, practice: c.mode === 'tutorial' ? false : c.practice, match: c.match } : {}); });
-$('rTitleBtn').addEventListener('click', () => { if (S) S.menu = true; showTitle(); });
+$('rAgain').addEventListener('click', () => { if (S && S.net) { onlineAgain(); return; } const c = S && S.cfg; startGame(c ? { n: c.n, level: c.level, mode: c.mode === 'tutorial' ? 'quick' : c.mode, practice: c.mode === 'tutorial' ? false : c.practice, match: c.match } : {}); });
+$('rTitleBtn').addEventListener('click', () => { if (S && S.net) { leaveOnline(); return; } if (S) S.menu = true; showTitle(); });
 $('rHow').addEventListener('click', () => showHowto(false));
 
 // =====================================================================================
@@ -1323,12 +1353,13 @@ function openMenu() {
   if (pm && pm.isOpen) return;
   const on = !!(S && !S.over);
   const extra = [{ label: T('ルール'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
-  if (on) extra.push({ label: T('あきらめる'), icon: 'close', onClick: () => { pm.close(); giveUp(); showTitle(); } });
-  extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  if (on && S.net) extra.push({ label: T('試合を出る'), icon: 'close', onClick: () => { pm.close(); askLeaveOnline(); } });
+  else if (on) extra.push({ label: T('あきらめる'), icon: 'close', onClick: () => { pm.close(); giveUp(); showTitle(); } });
+  if (!(on && S.net)) extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
   pm = UI.pauseMenu({
     title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra,
     onResume: () => { if (S) S.menu = false; const g = KG(); if (g) g.menuClosed(); if (S && !S.over) loop(); },
-    onRestart: on ? () => { const c = S.cfg; giveUp(); startGame({ n: c.n, level: c.level, mode: c.mode, practice: c.practice, match: c.match }); } : undefined,
+    onRestart: on && !S.net ? () => { const c = S.cfg; giveUp(); startGame({ n: c.n, level: c.level, mode: c.mode, practice: c.practice, match: c.match }); } : undefined,
     onOpen: () => { if (S) S.menu = true; const g = KG(); if (g) g.menuOpened(); persist(); },
   });
   pm.open();
@@ -1357,6 +1388,140 @@ if (KG()) KG().register({
 window.addEventListener('pagehide', () => { if (S) persist(); });
 window.addEventListener('storage', e => { if (e.key === SAVE_KEY && (!S || S.over)) { save = readSave(); if (!$('ovTitle').hidden) renderTitle(); } });
 
+// =====================================================================================
+// online: common/turnroom.js (the lobby, the room) + online.js (the game side). The host's page runs the game; every page, the host's too,
+// draws the model it gets: public things (hand sizes, the pile, whose turn) and only my own hand. A rival's hand is a row of face-down cards.
+// =====================================================================================
+let TR = null, octx = null;
+const CPU_NAMES = [L('モカ', 'Mocha'), L('ココ', 'Coco'), L('ハル', 'Haru'), L('ミント', 'Mint')];
+function ensureTR() {
+  if (TR || !window.KoboTurnRoom || !window.ColorCardsOnline) return TR;
+  TR = KoboTurnRoom.create({
+    game: GAME, host: ColorCardsOnline.host, turnSec: 30, seatsMax: 4,
+    cpuNames: k => CPU_NAMES[k % 4],
+    getOpts: () => ({ n: save.set.n }),
+    onOpts: o => { if (o.n) { save.set.n = clamp(o.n, 2, 4); writeSave(); } },
+    getCpu: () => save.set.level,
+    cpuLabel: lv => LV_NAME[lv],
+    onModel, onTick: onlineTick,
+    onClose: () => showTitle(),
+    onIdleClose: () => { if (S && S.net) { S.over = true; } hideOverlays(); showTitle(); },
+  });
+  return TR;
+}
+function openOnline() {
+  if (!ensureTR()) { sfx('error'); return; }
+  if (S && !S.over && !S.net) { S.menu = true; persist(); }
+  hideOverlays();
+  TR.open({ n: save.set.n });
+}
+function leaveOnline() {
+  if (S && S.net && !S.over) giveUp(); else if (TR) TR.leave();
+  if (S) S.menu = true;
+  showTitle();
+}
+async function askLeaveOnline() {
+  const ok = UI ? await UI.confirm({ title: T('出ると、あなたの席はCPUに代わります。出ますか？'), ok: T('出る'), cancel: T('やめる'), danger: true }) : true;
+  if (ok) leaveOnline(); else if (S) S.menu = false;
+}
+function onlineAgain() {
+  if (!TR || !S) return;
+  const m = TR.model();
+  if (!m || (m.why && m.why !== 'w')) { leaveOnline(); return; }
+  if (TR.rematch()) { $('rAgain').disabled = true; sfx('tap'); onlineResultText(m); }
+}
+function sendOnline(mv) {
+  if (S.sending && Date.now() - S.sending < 2500) return false;
+  if (!TR || !TR.submit(ColorCardsOnline.toWire(mv))) { sfx('error'); return false; }
+  S.sending = Date.now(); S.pend = null; S.hl = [];
+  setTimeout(() => { if (S && S.net && S.sending && Date.now() - S.sending >= 2400) { S.sending = 0; refresh(); } }, 2500);
+  return true;
+}
+function netBadges(s, c, on, me) {
+  let h = '';
+  if (c === 'd') h += '<span class="bd off">' + esc(T('切断')) + '</span>';
+  else if (c === 'a') h += '<span class="bd away">' + esc(T('離席')) + '</span>';
+  else if (c === 'c' || c === 'x') h += '<span class="bd">CPU</span>';
+  if (S.net && on && !me && c === 'p') h += '<span class="bd think" aria-hidden="true">…</span>';
+  if (S.net && on && (c === 'p')) h += '<span class="bd tm" data-tm="1"></span>';
+  return h;
+}
+function onModel(m) {
+  if (!ensureTR()) return;
+  if (m.me < 0 || (m.replaced && (!S || !S.net))) {   // not in this game (too late for the start), or the seat was already taken over while this page was away
+    if (UI) UI.toast(m.me < 0 ? T('ゲームに入れませんでした') : T('席がCPUに交代しました'), { type: 'danger' });
+    TR.leave(); if (S) S.menu = true; showTitle(); return;
+  }
+  const ctx = m.fresh || !octx ? (octx = ColorCardsOnline.newCtx()) : octx;
+  const v = ColorCardsOnline.view(m, ctx);
+  if (m.fresh || !S || !S.net || S.gn !== m.gn) { startOnline(m, v); return; }
+  const mine = viewerOf();
+  S.st = v.st; S.model = m; S.names = m.names; S.sl = m.sl; S.sending = 0;
+  if (S.pend && !(S.st.turn === mine && S.st.hands[mine].indexOf(S.pend.c) >= 0 && !S.st.over)) S.pend = null;
+  S.hl = [];
+  if (m.replaced && !S.over) { S.over = true; if (UI) UI.toast(T('席がCPUに交代しました'), { type: 'danger' }); emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' }); TR.leave(); S.menu = true; showTitle(); return; }
+  onEvents(v.evs, -1);
+  refresh({ from: v.from });
+  hud();
+  if (m.ph === 'over' && !S.over) finishOnline(m);
+}
+function startOnline(m, v) {
+  if (S) clearTimeout(S.timer);
+  clearTable(); hideOverlays(); { const pb = $('peekBox'); if (pb) pb.remove(); }
+  S = mkSession(v.st, 'online', false, 0);
+  S.net = true; S.gn = m.gn; S.model = m; S.names = m.names; S.sl = m.sl; S.viewer = v.me; S.base = v.me; S.sending = 0;
+  S.cfg = { n: m.n, level: m.cpu, mode: 'online', practice: false, match: 0 };
+  $('rAgain').disabled = false;
+  emit('play_start', { mode: 'versus' });
+  measure();
+  render(compute(S.st), dealOpts(S.st));
+  hud();
+  if (m.ph === 'over') { S.over = false; finishOnline(m); return; }
+  startDeal(S.st);
+}
+function onlineTick(m) {
+  if (!S || !S.net || !m) return;
+  const sec = Math.ceil(Math.max(0, m.dl ? m.left : 0) / 1000);
+  if (!S.over) {
+    if (S.tsec !== sec) { S.tsec = sec; hud(); }
+    const tmEl = tableEl.querySelector('.seat.on .bd.tm'); if (tmEl) tmEl.textContent = sec ? '⏱' + sec : '';
+  } else if (!$('ovResult').hidden) onlineResultText(m);
+}
+function onlineResultText(m) {
+  if (!m || (m.rs && m.rs.y !== 'w')) return;
+  const sl = String(m.sl || ''), pu = m.pu || [];
+  let total = 0; for (let k = 0; k < sl.length; k++) if (pu[k] >= 0 && sl[k] !== 'x') total++;
+  const wished = Math.min(total, Object.keys(m.rm || {}).length);
+  if ($('rAgain').disabled) $('rNote').textContent = T('もう一度を待っています（{a}/{b}人）', { a: wished, b: Math.max(1, total) });
+  else $('rAgain').textContent = wished ? T('もう一度（{a}/{b}人）', { a: wished, b: Math.max(1, total) }) : T('もう一度');
+}
+function finishOnline(m) {
+  if (!S || S.over) return;
+  S.over = true; clearTimeout(S.timer);
+  const rs = m.rs || { r: [], w: -1, y: 'w' }, ranks = ColorCardsOnline.arr(rs.r), me = m.me >= 0 ? m.me : 0;
+  const ok = rs.y === 'w', win = ok && ranks[me] === 1;
+  if (ok) { bump('onl'); if (win) bump('onw'); writeSave(); }
+  emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: win ? 'clear' : 'over' });
+  if (win && !reduceMotion.matches) burst();
+  sfx(win ? 'win' : 'over');
+  hud();
+  setTimeout(() => showOnlineResult(m, ranks, rs), 900);
+}
+function showOnlineResult(m, ranks, rs) {
+  if (!S || !S.net || !S.over) return;
+  const st = S.st, me = m.me >= 0 ? m.me : 0, ok = rs.y === 'w', rank = ranks[me] || 1;
+  const order = ranks.map((r, s) => s).sort((a, b) => ranks[a] - ranks[b]);
+  $('rTitle').textContent = !ok ? T('オンライン対戦が終わりました') : rank === 1 ? T('1位！おめでとう') : T('{n}位', { n: rank });
+  $('rSub').textContent = T('オンライン') + ' · ' + T('{n}人', { n: st.n }) + (m.replaced ? ' · ' + T('席がCPUに交代しました') : '');
+  fillRank($('rRank'), st, { order, rank: ranks, winner: rs.w, scores: [], points: [], gain: 0 });
+  $('rRank').querySelectorAll('li').forEach((li, i) => { li.classList.toggle('me', order[i] === me); });
+  $('rPts').textContent = ''; $('rNew').hidden = true;
+  $('rNote').textContent = rs.y === 'hl' ? T('ホストが退出したので、ここで終了です') : rs.y === 'hg' ? T('ホストとの接続が切れたので、ここで終了です') : T('オンライン対戦は★に数えません');
+  $('rAgain').disabled = !ok || !!m.replaced; $('rAgain').textContent = T('もう一度');
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').disabled ? $('rTitleBtn').focus({ preventScroll: true }) : $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+
 // ---------- boot ----------
 renderSound(); themeColor(); measure();
 {
@@ -1379,12 +1544,19 @@ if (DEBUG) {
         status: $('status').textContent, hand: st ? st.hands[viewerOf()].slice() : [], counts: st ? st.hands.map(h => h.length) : [], pend: !!(S && S.pend), roundNo: st ? st.round : 0, match: st ? st.match : 0,
         scores: st ? st.scores.slice() : [], pts: save.pts, hl: S ? S.hl.slice() : [], draw: st ? st.draw.length : 0, step: st ? st.step : 0, uncalled: st ? st.uncalled : -1, ward: st ? st.ward.slice() : [],
         save: JSON.parse(JSON.stringify(save)),
+        net: !!(S && S.net), sl: S && S.sl ? S.sl : '', names: S && S.names ? S.names.slice() : [], sending: !!(S && S.sending),
       };
     },
   };
   window.__kb = Object.assign(window.__kb || {}, api);
   window.__colorcards = {
     api, E, get S() { return S; }, get save() { return save; },
+    get tr() { return ensureTR(); }, openOnline, leaveOnline, ensureTR,
+    onlineState() {
+      const m = TR ? TR.model() : null, tr = TR ? TR._S : null;
+      return { phase: TR ? TR.phase : 'off', host: TR ? TR.isHost : false, code: tr ? tr.code : null, rid: tr ? tr.rid : null, uid: TR ? TR.uid : null, err: tr ? tr.err : null,
+        model: m ? { gn: m.gn, v: m.v, ph: m.ph, me: m.me, n: m.n, tn: m.tn, sl: m.sl, names: m.names, why: m.why, left: m.left, pd: m.pd } : null, lobby: !!document.querySelector('.ktr-ov:not([hidden])') };
+    },
     start(o) { startGame(o || {}); return api.state(); },
     setSpeed(m) { cpuDelayMul = m; },
     plan() { return S && !S.over && humanTurn() && !S.dealing ? (S.pend ? [] : planOf(hintMove())).map(s => Object.assign({ sel: sel(s) }, s)) : []; },

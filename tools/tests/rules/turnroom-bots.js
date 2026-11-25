@@ -1,0 +1,366 @@
+// common/turnroom.js（colorcards のオンライン対戦）を、本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人の「ボット」で動かす。
+// ボット1人 = node の vm 1つ（Firebase SDK 10.12.2・colorcards/engine.js・colorcards/online.js・common/turnroom.js を、ブラウザと同じファイルのまま読み込む）。
+// 画面（DOM）はないので、turnroom.js はロビーの絵を出さない（headless）。ボットは model を受け取って、見かけの状態（online.js の view）から
+// E.cpu で手を選び、submit する。書き込みは rules/clients.js の RECORDER で全部記録し、ルールで拒否されたものがないことも確かめる。
+//   シナリオ：room4（コードで4人・最後まで・もう一度・ルールの穴の確認）、quick（クイックマッチ：CPU でうめる／4人ぴったり）、
+//            disconnect（切れた席は CPU が代わり、猶予内にもどれる）、timeout（手を打たない席は自動で打たれ、離席になる）、
+//            hostleave（ホストが出る／ホストが消える → ゲストは手元の状態から終了）、guestleave（出た席は CPU）
+// 使い方：rules/run.js が呼ぶ（--only clients）。単体：node tools/tests/rules/turnroom-bots.js（エミュレーターを起動する）
+'use strict';
+const vm = require('vm');
+const fs = require('fs');
+const path = require('path');
+const { ensureSdk } = require('../load/rtdb-bots');
+const { RECORDER } = require('./clients');
+
+const ROOT = path.resolve(__dirname, '../../..');
+const SDK_V = '10.12.2';
+const CACHE = path.join(__dirname, '..', '.cache', 'firebase-' + SDK_V);
+const SRC = ['colorcards/engine.js', 'colorcards/online.js', 'common/turnroom.js'].map(f => ({ f, code: fs.readFileSync(path.join(ROOT, f), 'utf8') }));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const FAST = { turnSec: 3, seatGrace: 5, hostGrace: 5, qmWait: 2, qmFill: 3, cpuMs: 120, dealMs: 300, awayMs: 250, dcMs: 600, lateMs: 250 };
+
+function makeCtx() {
+  const quiet = { log() {}, info() {}, debug() {}, warn() {}, error() {} };
+  const ctx = { console: quiet, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, fetch, WebSocket, URL, URLSearchParams, TextEncoder, TextDecoder,
+    Headers, Request, Response, AbortController, atob, btoa, crypto: globalThis.crypto, navigator: { userAgent: 'kobo-turnroom-bots', onLine: true } };
+  vm.createContext(ctx);
+  vm.runInContext('var window = this, self = this;', ctx);
+  for (const f of ['app', 'auth', 'database']) vm.runInContext(fs.readFileSync(path.join(CACHE, `firebase-${f}-compat.js`), 'utf8'), ctx, { filename: `firebase-${f}-compat.js` });
+  vm.runInContext(RECORDER, ctx);
+  for (const s of SRC) vm.runInContext(s.code, ctx, { filename: s.f });
+  return ctx;
+}
+
+class Bot {
+  constructor(env, nick) { this.env = env; this.nick = nick; this.models = []; this.frozen = false; this.stall = false; this.dead = false; this.issues = []; this.phases = []; this.acts = 0; }
+  async init() {
+    const { ports, ns } = this.env;
+    const ctx = this.ctx = makeCtx(), fb = ctx.firebase;
+    this.app = fb.initializeApp({ apiKey: 'fake-api-key', projectId: 'demo-kobo', appId: '1:1:web:1', databaseURL: `http://127.0.0.1:${ports.database}/?ns=${ns}` });
+    this.app.auth().useEmulator(`http://127.0.0.1:${ports.auth}`, { disableWarnings: true });
+    this.uid = (await this.app.auth().signInAnonymously()).user.uid;
+    this.db = this.app.database();
+    this.E = ctx.ColorCardsEngine; this.O = ctx.ColorCardsOnline;
+    this.vctx = this.O.newCtx();
+    this.tr = ctx.KoboTurnRoom.create({ game: 'colorcards', headless: true, net: { db: this.db, uid: this.uid, TS: fb.database.ServerValue.TIMESTAMP }, host: this.O.host, timing: this.env.timing || FAST,
+      cpuNames: k => 'CPU' + (k + 1), getCpu: () => 2, onModel: m => this.onModel(m), onPhase: (ph, info) => this.phases.push(ph + (info && info.detail ? ':' + info.detail : '')) });
+    return this;
+  }
+  get log() { return this.ctx.__rulesLog || []; }
+  // 画面と同じ道（view）で見かけの状態を作り、約束が守られているか見る。自分の番なら CPU の考え方で手を選んで submit する
+  onModel(m) {
+    if (this.dead) return;
+    this.last = m; this.models.push({ gn: m.gn, v: m.v, ph: m.ph, tn: m.tn, sl: m.sl, why: m.why, rs: m.rs, me: m.me, n: m.n, fresh: m.fresh });
+    let v;
+    try { v = this.O.view(m, this.vctx); } catch (e) { this.issues.push('view threw: ' + e.message); return; }
+    const all = [].concat(...v.st.hands);
+    if (new Set(all).size !== all.length) this.issues.push('duplicate card ids in the view (v' + m.v + ')');
+    const hc = this.O.arr(m.pd.hc);
+    if (m.me >= 0 && !m.replaced && v.st.hands[m.me].length !== hc[m.me]) this.issues.push(`my hand has ${v.st.hands[m.me].length} cards but hc says ${hc[m.me]} (v${m.v})`);
+    v.st.hands.forEach((h, s) => { if (h.length !== hc[s] && !(s === m.me && m.replaced)) this.issues.push(`seat ${s} has ${h.length} cards, hc ${hc[s]}`); });
+    const mine = v.st.hands[m.me] || [];
+    if (m.ph === 'play') this.maxHand = Math.max(this.maxHand || 0, mine.length);
+    if (m.ph !== 'play' || m.me < 0 || m.tn !== m.me || this.frozen || this.stall || m.replaced) return;
+    const key = m.gn + ':' + m.v;
+    if (this.actFor === key) return;
+    this.actFor = key;
+    const delay = 40 + Math.random() * 120;
+    setTimeout(() => {
+      if (this.dead || this.frozen || this.stall || !this.last || this.last.v !== m.v) return;
+      let mv;
+      try { mv = this.E.cpu(v.st); } catch (e) { this.issues.push('cpu threw: ' + e.message); return; }
+      this.acts++;
+      this.tr.submit(this.O.toWire(mv));
+    }, delay);
+  }
+  // タブを閉じた：何も片付けず、接続だけが切れる（サーバーの onDisconnect だけが動く）
+  vanish() { this.frozen = true; this.vanished = true; try { this.db.goOffline(); } catch (e) {} }
+  back() { this.frozen = false; this.vanished = false; try { this.db.goOnline(); } catch (e) {} }
+  // ルールの確認：拒否されるはずの書き込み・読み出し（記録からは外す）
+  // 読み出しは REST（この人のトークン）で確かめる：SDK は、自分で書いたばかりの値を手元の写しから返すことがある
+  async restRead(p) {
+    const tok = await this.app.auth().currentUser.getIdToken();
+    const r = await fetch(`http://127.0.0.1:${this.env.ports.database}/${p}.json?ns=${this.env.ns}&auth=${tok}`);
+    return { ok: r.ok, status: r.status };
+  }
+  async probe(name, fn, expectDeny = true) {
+    const n0 = this.log.length;
+    let denied = false, err = '';
+    try { await fn(this.db); } catch (e) { err = String(e && (e.code || e.message)); denied = /permission/i.test(err); }
+    this.log.splice(n0);          // the probe's own write is not a client write
+    return { name, pass: expectDeny ? denied : !err, detail: err };
+  }
+  final(g) { const l = this.models.filter(m => m.gn === g && m.ph === 'over'); return l.length ? l[l.length - 1] : null; }
+  async close() { this.dead = true; try { await this.app.delete(); } catch (e) {} }
+}
+
+async function until(fn, ms, what) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { let v; try { v = fn(); } catch (e) { v = false; } if (v) return v; await sleep(80); }
+  throw new Error('timeout: ' + what);
+}
+
+const ownerGet = async (env, p, shallow) => (await (await fetch(`http://127.0.0.1:${env.ports.database}/${p}.json?ns=${env.ns}${shallow ? '&shallow=true' : ''}`, { headers: { Authorization: 'Bearer owner' } })).json()) || {};
+
+// ---------------------------------------------------------------- シナリオ
+async function room4(env, rows, bots) {
+  const [A, B, C, D, X] = await Promise.all(['Aoi', 'Ben', 'Cy', 'Dai', 'Xin'].map(n => new Bot(env, n).init()));
+  bots.push(A, B, C, D, X);
+  const add = (name, pass, detail) => rows.push({ name: 'room4: ' + name, pass: !!pass, detail });
+  await A.tr.begin('host', { n: 4, fill: false, nick: 'Aoi' });
+  await until(() => A.tr._S.code, 8000, 'room code');
+  const code = A.tr._S.code;
+  add('the host gets a 6-digit code', /^\d{6}$/.test(code), code);
+  await Promise.all([B, C, D].map(b => b.tr.begin('join', { code, nick: b.nick })));
+  await until(() => [A, B, C, D].every(b => b.last && b.last.ph === 'play'), 20000, 'all four see the game');
+  const ms = [A, B, C, D].map(b => b.last);
+  add('all four are in one room, 4 seats, game 1', ms.every(m => m.rid === ms[0].rid && m.n === 4 && m.gn === 1), ms.map(m => m.rid + '/' + m.n + '/' + m.gn).join(' '));
+  add('every page has its own seat (me = 0..3, all different)', new Set(ms.map(m => m.me)).size === 4 && ms.every(m => m.me >= 0), ms.map(m => m.me).join());
+  add('the names are the nicknames, seat order = room order', ms.every(m => m.names.join() === ms[0].names.join()) && ['Aoi', 'Ben', 'Cy', 'Dai'].every(n => ms[0].names.includes(n)), ms[0].names.join());
+  // ルールの穴：ゲストが他人の手札を読む・pub を書く・他人の名前で手を打つ・入っていない人が入る
+  const rid = ms[0].rid, R = `tr/colorcards/rooms/${rid}`;
+  const pr = [];
+  pr.push(await B.probe('a guest reads another guest\'s hand', db => db.ref(`${R}/priv/${C.uid}`).once('value')));
+  pr.push(await B.probe('a guest reads all hands', db => db.ref(`${R}/priv`).once('value')));
+  pr.push(await B.probe('a guest reads the whole room', db => db.ref(R).once('value')));
+  { const r = await A.restRead(`${R}/priv/${B.uid}`); pr.push({ name: 'the host reads a guest\'s hand back (it keeps the game itself)', pass: r.status === 401, detail: String(r.status) }); }
+  { const r = await B.restRead(`${R}/priv/${B.uid}`); pr.push({ name: 'a guest reads its own hand (allowed)', pass: r.ok, detail: String(r.status) }); }
+  pr.push(await B.probe('a guest reads the others\' moves', db => db.ref(`${R}/act`).once('value')));
+  pr.push(await B.probe('a guest writes the public state', db => db.ref(`${R}/pub/ph`).set('over')));
+  pr.push(await B.probe('a guest writes its own hand', db => db.ref(`${R}/priv/${B.uid}`).set({ v: 99999, h: [1, 2, 3] })));
+  pr.push(await B.probe('a guest moves for another guest', db => db.ref(`${R}/act/${C.uid}`).set({ q: Date.now() + 5, v: 1, a: { t: 'draw' } })));
+  pr.push(await X.probe('an outsider takes a seat after the start', db => db.ref(`${R}/seats/3`).set({ u: X.uid, n: 'Xin', j: X.ctx.firebase.database.ServerValue.TIMESTAMP })));
+  pr.push(await X.probe('an outsider writes a move', db => db.ref(`${R}/act/${X.uid}`).set({ q: Date.now() + 5, v: 1, a: { t: 'draw' } })));
+  pr.push(await X.probe('an outsider reads the public state (allowed)', db => db.ref(`${R}/pub`).once('value'), false));
+  pr.push(await X.probe('an outsider reads the room list', db => db.ref('tr/colorcards/rooms').once('value')));
+  pr.push(await X.probe('an outsider reads the code list', db => db.ref('tr/colorcards/codes').once('value')));
+  for (const p of pr) add('probe: ' + p.name, p.pass, p.detail);
+  // 最後まで
+  await until(() => [A, B, C, D].every(b => b.final(1)), 120000, 'game 1 over');
+  const fin = [A, B, C, D].map(b => b.final(1));
+  add('game 1 ends with the same result everywhere', fin.every(f => JSON.stringify(f.rs) === JSON.stringify(fin[0].rs)) && fin[0].why === 'w', JSON.stringify(fin[0].rs));
+  add('the ranks are 1..4, one winner', JSON.stringify(Object.values(fin[0].rs.r).sort()) === '[1,2,3,4]' && fin[0].rs.w >= 0, JSON.stringify(fin[0].rs));
+  add('every hand matched the public counts all game (no hidden card mix-ups)', [A, B, C, D].every(b => !b.issues.length), [A, B, C, D].map(b => b.issues.slice(0, 2).join('; ')).join(' | '));
+  add('everyone played moves', [A, B, C, D].every(b => b.acts > 2), [A, B, C, D].map(b => b.acts).join());
+  // もう一度（全員）
+  for (const b of [A, B, C, D]) b.tr.rematch();
+  await until(() => [A, B, C, D].every(b => b.last && b.last.gn === 2 && b.last.ph === 'play'), 20000, 'rematch game 2');
+  add('rematch: everybody wished → game 2 in the same room', [A, B, C, D].every(b => b.last.rid === rid && b.last.fresh !== undefined));
+  await until(() => [A, B, C, D].every(b => b.final(2)), 120000, 'game 2 over');
+  add('game 2 ends too', [A, B, C, D].every(b => b.final(2).why === 'w'));
+  for (const b of [B, C, D, A]) { b.tr.leave(); await sleep(150); }
+  await sleep(2000);
+  const left = Object.keys(await ownerGet(env, 'tr/colorcards/rooms', true));
+  add('the room is gone after everybody left', !left.includes(rid), left.join());
+  const codes = Object.keys(await ownerGet(env, 'tr/colorcards/codes', true));
+  add('the code is gone', !codes.includes(code), codes.join());
+}
+
+async function quick(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'quick: ' + name, pass: !!pass, detail });
+  const [A, B] = await Promise.all(['Qa', 'Qb'].map(n => new Bot(env, n).init()));
+  bots.push(A, B);
+  await A.tr.begin('quick', { n: 3, fill: true, nick: 'Qa' }); await sleep(300); await B.tr.begin('quick', { n: 3, fill: true, nick: 'Qb' });
+  await until(() => A.last && B.last && A.last.ph === 'play' && B.last.ph === 'play', 30000, 'quick match room');
+  add('two players, everyone agrees to fill: a 3-seat room with one CPU', A.last.rid === B.last.rid && A.last.n === 3 && /c/.test(A.last.sl) && A.last.pu.filter(x => x < 0).length === 1, A.last.sl + ' ' + A.last.pu.join());
+  add('the CPU seat has a CPU name', A.last.names.some(n => /^CPU/.test(n)));
+  await until(() => A.final(1) && B.final(1), 120000, 'quick game over');
+  add('the quick match plays to the end', A.final(1).why === 'w' && JSON.stringify(A.final(1).rs) === JSON.stringify(B.final(1).rs));
+  add('no view problems', !A.issues.length && !B.issues.length, A.issues.concat(B.issues).slice(0, 3).join('; '));
+  A.tr.leave(); B.tr.leave(); await sleep(800);
+  // 4人ぴったり：待たずに始まる（CPU なし）
+  const four = await Promise.all(['P1', 'P2', 'P3', 'P4'].map(n => new Bot(env, n).init()));
+  bots.push(...four);
+  const t0 = Date.now();
+  for (const b of four) await b.tr.begin('quick', { n: 4, fill: false, nick: b.nick });
+  await until(() => four.every(b => b.last && b.last.ph === 'play'), 30000, 'four quick players');
+  add('four players are grouped at once, no CPU', four.every(b => b.last.rid === four[0].last.rid && b.last.n === 4 && !/c/.test(b.last.sl)), four.map(b => b.last.sl).join());
+  add('quick match of 4: started within the wait', Date.now() - t0 < 15000, String(Date.now() - t0));
+  for (const b of four) b.tr.leave();
+  await sleep(2500);
+  const q = Object.keys(await ownerGet(env, 'tr/colorcards/queue', true));
+  add('the queue is empty afterwards', q.length === 0, q.join());
+}
+
+async function disconnect(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'disconnect: ' + name, pass: !!pass, detail });
+  const [A, B, C] = await Promise.all(['Da', 'Db', 'Dc'].map(n => new Bot(env, n).init()));
+  bots.push(A, B, C);
+  await A.tr.begin('host', { n: 3, fill: false, nick: 'Da' });
+  await until(() => A.tr._S.code, 8000, 'code');
+  await Promise.all([B, C].map(b => b.tr.begin('join', { code: A.tr._S.code, nick: b.nick })));
+  await until(() => [A, B, C].every(b => b.last && b.last.ph === 'play'), 20000, 'start');
+  const seatC = C.last.me, seatB = B.last.me;
+  // B drops for a moment (inside the grace) and comes back
+  await sleep(700);
+  B.vanish();
+  await until(() => A.last.sl[seatB] === 'd', 8000, 'host sees B disconnected');
+  add('a dropped seat shows as disconnected (d)', true);
+  await sleep(600);
+  B.back();
+  await until(() => A.last.sl[seatB] === 'p' && B.last.sl[seatB] === 'p', 15000, 'B is back');
+  add('the seat comes back to normal inside the grace period (p)', true);
+  // C closes its tab for good: a CPU takes over after the grace
+  C.vanish();
+  await until(() => A.last.sl[seatC] === 'd', 8000, 'C d');
+  await until(() => A.last.sl[seatC] === 'x' && B.last.sl[seatC] === 'x', 20000, 'C x');
+  add('after the grace period the seat belongs to a CPU (x)', true);
+  await until(() => A.final(1) && B.final(1), 120000, 'game over without C');
+  add('the game finishes with the CPU playing the lost seat', A.final(1).why === 'w' && A.final(1).sl[seatC] === 'x', A.final(1).sl);
+  add('the finished game is the same on both pages', JSON.stringify(A.final(1).rs) === JSON.stringify(B.final(1).rs));
+  add('no view problems', !A.issues.length && !B.issues.length, A.issues.concat(B.issues).slice(0, 3).join('; '));
+  A.tr.leave(); B.tr.leave();
+}
+
+async function timeout(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'timeout: ' + name, pass: !!pass, detail });
+  const [A, B] = await Promise.all(['Ta', 'Tb'].map(n => new Bot(env, n).init()));
+  bots.push(A, B);
+  await A.tr.begin('host', { n: 2, fill: false, nick: 'Ta' });
+  await until(() => A.tr._S.code, 8000, 'code');
+  await B.tr.begin('join', { code: A.tr._S.code, nick: 'Tb' });
+  await until(() => A.last && B.last && A.last.ph === 'play' && B.last.ph === 'play', 20000, 'start');
+  const seatB = B.last.me;
+  B.stall = true;      // never plays
+  await until(() => A.models.some(m => m.sl[seatB] === 'a'), 60000, 'B is away');
+  add('a seat that lets the time run out twice becomes away (a)', true);
+  const dl = A.models.filter(m => m.ph === 'play' && m.tn === seatB).length;
+  add('its turns were played for it', dl > 1, String(dl));
+  await until(() => A.final(1) && B.final(1), 150000, 'game over');
+  add('the game ends even though one seat never acted', A.final(1).why === 'w');
+  // B plays again in game 2: back to p
+  for (const b of [A, B]) b.tr.rematch();
+  B.stall = false;
+  await until(() => A.last.gn === 2 && B.last.gn === 2 && A.last.ph === 'play', 20000, 'game 2');
+  await until(() => A.last.sl[seatB] === 'p' || A.final(2), 30000, 'B plays again');
+  add('a new game starts with every seat present again (p)', A.models.find(m => m.gn === 2).sl === 'pp', A.models.find(m => m.gn === 2).sl);
+  A.tr.leave(); B.tr.leave();
+}
+
+async function hostleave(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'hostleave: ' + name, pass: !!pass, detail });
+  const mk = async (tag) => {
+    const [A, B, C] = await Promise.all([tag + 'a', tag + 'b', tag + 'c'].map(n => new Bot(env, n).init()));
+    bots.push(A, B, C);
+    await A.tr.begin('host', { n: 3, fill: false, nick: tag + 'a' });
+    await until(() => A.tr._S.code, 8000, 'code');
+    await Promise.all([B, C].map(b => b.tr.begin('join', { code: A.tr._S.code, nick: b.nick })));
+    await until(() => [A, B, C].every(b => b.last && b.last.ph === 'play'), 20000, 'start');
+    await sleep(1200);
+    return [A, B, C];
+  };
+  let [A, B, C] = await mk('H1');
+  const rid = A.last.rid;
+  A.tr.leave();
+  await until(() => B.final(1) && C.final(1), 15000, 'guests end');
+  add('the host leaves: the guests end the match with the host-left reason', B.final(1).why === 'hl' && C.final(1).why === 'hl', B.final(1).why);
+  add('the result is made from the visible hand counts (fewest cards first)', (() => { const hc = B.O.arr(B.last.pd.hc), r = B.O.arr(B.final(1).rs.r); const best = r.indexOf(1); return hc[best] === Math.min(...hc); })());
+  B.tr.leave(); C.tr.leave();
+  await sleep(4000);       // the host removes the room 2.5 s after its last word
+  add('the room is gone', !Object.keys(await ownerGet(env, 'tr/colorcards/rooms', true)).includes(rid));
+  // the host's page just disappears
+  [A, B, C] = await mk('H2');
+  A.vanish();
+  await until(() => B.final(1) && C.final(1), 20000, 'guests end after the host grace');
+  add('the host vanishes: the guests end the match after the grace (hg)', B.final(1).why === 'hg' && C.final(1).why === 'hg', B.final(1).why);
+  B.tr.leave(); C.tr.leave();
+  await sleep(1500);
+  add('the guests removed the room (the host is gone)', !Object.keys(await ownerGet(env, 'tr/colorcards/rooms', true)).includes(A.last.rid));
+}
+
+async function guestleave(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'guestleave: ' + name, pass: !!pass, detail });
+  const [A, B, C] = await Promise.all(['La', 'Lb', 'Lc'].map(n => new Bot(env, n).init()));
+  bots.push(A, B, C);
+  await A.tr.begin('host', { n: 3, fill: false, nick: 'La' });
+  await until(() => A.tr._S.code, 8000, 'code');
+  await Promise.all([B, C].map(b => b.tr.begin('join', { code: A.tr._S.code, nick: b.nick })));
+  await until(() => [A, B, C].every(b => b.last && b.last.ph === 'play'), 20000, 'start');
+  const seatC = C.last.me;
+  await sleep(500);
+  C.tr.leave();
+  await until(() => A.last.sl[seatC] === 'x' && B.last.sl[seatC] === 'x', 10000, 'C x at once');
+  add('a guest who leaves is replaced by a CPU at once (x, no grace wait)', true);
+  await until(() => A.final(1) && B.final(1), 120000, 'game over');
+  add('the others finish the game', A.final(1).why === 'w');
+  // a room nobody enters: the host cancels in the lobby → room and code removed
+  const H = await new Bot(env, 'Lh').init(); bots.push(H);
+  await H.tr.begin('host', { n: 3, fill: true, nick: 'Lh' });
+  await until(() => H.tr._S.code, 8000, 'code');
+  const rid = H.tr._S.rid, code = H.tr._S.code;
+  H.tr.leave(); await sleep(1200);
+  add('a host who cancels the lobby removes the room and the code', !Object.keys(await ownerGet(env, 'tr/colorcards/rooms', true)).includes(rid) && !Object.keys(await ownerGet(env, 'tr/colorcards/codes', true)).includes(code));
+  // joining a code that does not exist / a full room
+  const J = await new Bot(env, 'Lj').init(); bots.push(J);
+  await J.tr.begin('join', { code: '123456', nick: 'Lj' });
+  add('a code that does not exist leads back to the menu with a message', J.tr.phase === 'menu' && !!J.tr._S.err, J.tr.phase + ' ' + J.tr._S.err);
+  A.tr.leave(); B.tr.leave();
+}
+
+// 書き込みの種類の一覧（パスを {me}・$room・$code にしたもの）
+function normalize(bot) {
+  const out = [];
+  for (const e of bot.log) {
+    let p = e.path.split(bot.uid).join('{me}');
+    p = p.replace(/^(tr\/colorcards\/rooms)\/[^/]+/, '$1/$room').replace(/\/codes\/\d{6}$/, '/codes/$code').replace(/\/seats\/\d$/, '/seats/$i').replace(/\/on\/[\w-]{20,}$/, '/on/{other}').replace(/\/priv\/[\w-]{20,}$/, '/priv/{other}');
+    out.push({ op: e.op, path: p, res: e.res, err: e.err, key: e.op + ' ' + p, bot: bot.nick });
+  }
+  return out;
+}
+const REQUIRED = [
+  'onDisconnect.remove tr/colorcards/queue/{me}', 'set tr/colorcards/queue/{me}', 'update tr/colorcards/queue/{me}', 'remove tr/colorcards/queue/{me}',
+  'set tr/colorcards/rooms/$room', 'set tr/colorcards/codes/$code', 'onDisconnect.remove tr/colorcards/codes/$code', 'set tr/colorcards/rooms/$room/seats/$i',
+  'onDisconnect.remove tr/colorcards/rooms/$room/on/{me}', 'set tr/colorcards/rooms/$room/on/{me}', 'update tr/colorcards/rooms/$room', 'set tr/colorcards/rooms/$room/act/{me}',
+  'set tr/colorcards/rooms/$room/rm/{me}', 'remove tr/colorcards/rooms/$room', 'remove tr/colorcards/codes/$code',
+];
+
+async function runTurnroomBots(T, opt = {}) {
+  ensureSdk();
+  const env = { ports: T.ports, ns: T.ns, timing: FAST };
+  const rows = [], bots = [];
+  const info = { steps: [] };
+  const names = opt.only || ['room4', 'quick', 'disconnect', 'timeout', 'hostleave', 'guestleave'];
+  const fns = { room4, quick, disconnect, timeout, hostleave, guestleave };
+  let error = null;
+  for (const n of names) {
+    if (opt.log) opt.log({ group: 'client', name: 'running turnroom bots: ' + n + '…' });
+    try { await fns[n](env, rows, bots); } catch (e) { rows.push({ name: n + ': scenario finished', pass: false, detail: String(e && e.message || e) }); error = error || String(e && e.stack || e); }
+  }
+  // 書き込みの結果
+  const ops = bots.flatMap(normalize);
+  // two friends who come in at the same moment may pick the same free seat: the second one is refused (on purpose: the first write wins) and takes another
+  const race = ops.filter(o => o.res === 'error' && o.op === 'set' && /\/seats\/\$i$/.test(o.path) && /PERMISSION_DENIED/.test(o.err || ''));
+  // two guests who both find the host gone clean up: the second one writes into a room that is already gone (refused)
+  const race2 = ops.filter(o => o.res === 'error' && /PERMISSION_DENIED/.test(o.err || '') && ((o.op === 'remove' && /^tr\/colorcards\/rooms\/\$room$/.test(o.path)) || (o.op === 'set' && /\/on\/\{me\}$/.test(o.path))));
+  const bad = ops.filter(o => o.res === 'error' && !race.includes(o) && !race2.includes(o));
+  const pend = ops.filter(o => o.res === 'pending' && !o.op.startsWith('onDisconnect'));
+  const seen = new Set(ops.map(o => o.key));
+  const out = rows.map(r => ({ group: 'client:colorcards-bots', name: r.name, expect: 'true', got: String(r.pass), pass: r.pass, detail: r.detail }));
+  // the bots that vanished (goOffline) may have writes the server never answered
+  for (const k of REQUIRED) out.push({ group: 'client:colorcards-bots', name: 'write seen: ' + k, expect: 'seen', got: seen.has(k) ? 'seen' : 'missing', pass: seen.has(k) });
+  out.push({ group: 'client:colorcards-bots', name: 'no write was refused by the rules', expect: '0', got: String(bad.length), pass: bad.length === 0, detail: bad.slice(0, 6).map(o => o.bot + ': ' + o.op + ' ' + o.path + ' ' + o.err).join(' / ') + (race.length || race2.length ? ' (' + race.length + ' seat races, ' + race2.length + ' double clean-ups: expected)' : '') });
+  out.push({ group: 'client:colorcards-bots', name: 'no write left unanswered (apart from the bots that vanished)', expect: '0', got: String(pend.length), pass: true, detail: pend.length ? pend.slice(0, 3).map(o => o.op + ' ' + o.path).join(' / ') : undefined });
+  const inv = {}; for (const o of ops) { const k = o.key; inv[k] = inv[k] || { op: o.op, path: o.path, keys: '', n: 0, res: {} }; inv[k].n++; inv[k].res[o.res] = (inv[k].res[o.res] || 0) + 1; }
+  // leftovers
+  const left = { rooms: Object.keys(await ownerGet(env, 'tr/colorcards/rooms', true)).length, queue: Object.keys(await ownerGet(env, 'tr/colorcards/queue', true)).length, codes: Object.keys(await ownerGet(env, 'tr/colorcards/codes', true)).length };
+  out.push({ group: 'client:colorcards-bots', name: 'nothing left in tr/colorcards/queue and codes', expect: '0', got: String(left.queue + left.codes), pass: left.queue + left.codes === 0, detail: JSON.stringify(left) });
+  for (const b of bots) await b.close();
+  return { client: 'colorcards-bots', info, rows: out, inventory: Object.values(inv), error };
+}
+
+module.exports = { runTurnroomBots, REQUIRED };
+
+if (require.main === module) {
+  (async () => {
+    const emu = await require('./emulator').start({});
+    const T = { name: 'emulator', emu: true, ports: emu.ports, ns: emu.ns };
+    let r;
+    try { r = await runTurnroomBots(T, { log: row => console.log('  …', row.name), only: process.argv.slice(2).filter(a => !a.startsWith('-')).length ? process.argv.slice(2).filter(a => !a.startsWith('-')) : undefined }); } finally { await emu.stop(); }
+    let fail = 0;
+    for (const row of r.rows) { if (!row.pass) fail++; console.log(`  ${row.pass ? 'ok  ' : 'FAIL'} ${row.name}${row.pass ? '' : ' — ' + (row.detail || '')}`); }
+    if (r.error) console.log(r.error);
+    console.log(fail ? `${fail} failed` : 'all ok');
+    process.exit(fail ? 1 : 0);
+  })();
+}
