@@ -27,7 +27,7 @@ KoboI18n.add({ en: {
   'みんなで対戦': '2-4 Players', '1台で2〜4人': 'Two to four on one device', 'あそぶ人の数': 'Number of players', '{n}人': '{n}', '3P のおもちゃ': 'P3 toy', '4P のおもちゃ': 'P4 toy',
   'なまえ・タイプでさがす': 'Search by name or type', 'おもちゃをさがす': 'Search toys', 'しぼりこみ': 'Filter', 'すべて': 'All', 'お気に入り': 'Favorites', 'さいきん': 'Recent', '{n}人 / ぜんぶで {m}人': '{n} shown / {m} toys',
   'お気に入りはまだありません（おもちゃを選んで ☆ をおす）': 'No favorites yet (pick a toy and press the star)', 'まだ遊んだおもちゃがありません': 'No recently played toys yet', '見つかりませんでした': 'No toys found', 'いろ': 'Color',
-  'お気に入りをはずす': 'Remove from favorites', 'お気に入りにする': 'Add to favorites', 'キーボードは F キー': 'Keyboard: press F', 'つぎに開く：{t}': 'Next unlock: {t}', 'ロック中のおもちゃの開き方': 'How to unlock the locked toys',
+  'まえのページ': 'Previous page', 'つぎのページ': 'Next page', 'お気に入りをはずす': 'Remove from favorites', 'お気に入りにする': 'Add to favorites', 'キーボードは F キー': 'Keyboard: press F', 'つぎに開く：{t}': 'Next unlock: {t}', 'ロック中のおもちゃの開き方': 'How to unlock the locked toys',
   'ぜんぶのおもちゃをつかう（ひとりで・ふたりで・れんしゅうのみ。ラダーと、おもちゃが開く進み方は変わりません）': 'Use every toy (solo, multiplayer and practice only. The ladder and your unlock progress are not affected)',
   '3人め・4人めはゲームパッドであそびます（キーボードは1P・2P）。つないであるゲームパッド：{n}': 'Players 3 and 4 use gamepads (keyboard is P1 and P2). Gamepads connected: {n}', 'スマホは、画面を左右にわけて2人であそべます': 'On a phone, two players can share the screen (one on each side)',
   'ゲームパッドが足りないかもしれません': 'You may need more gamepads', 'よこ向きがおすすめ': 'Landscape works best',
@@ -250,6 +250,7 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
 .favrow small { color: var(--kb-dim); font-size: 11.5px; }
 details.ul { margin-top: 8px; text-align: left; font-size: 12px; color: var(--kb-ink); } details.ul summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-weight: 800; color: var(--kb-dim); }
 details.ul .urow { display: flex; justify-content: space-between; gap: 8px; padding: 4px 6px; border-bottom: 1px solid var(--bw-line); } details.ul .urow b { color: var(--kb-accent-text); }
+details.ul .upg { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 6px 0 2px; font-weight: 800; } details.ul .upg button { min-width: 48px; min-height: 44px; border-radius: 12px; border: 1px solid var(--bw-line); background: var(--bw-panel); color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; }
 label.chk { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; padding: 6px 8px; border-radius: 12px; border: 1px solid var(--bw-line); background: var(--bw-panel); text-align: left; font-size: 12px; line-height: 1.45; color: var(--kb-ink); cursor: pointer; }
 label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent-color: var(--kb-accent); }
 .pad4note { margin: 4px 2px 0; font-size: 11.5px; color: var(--kb-dim); text-align: left; }
@@ -1021,14 +1022,20 @@ const SKEY = { 1: 'c1', 2: 'c2', 3: 'c3', 4: 'c4' };
 const RS = { 1: { q: '', f: 'all' }, 2: { q: '', f: 'all' }, 3: { q: '', f: 'all' }, 4: { q: '', f: 'all' } };
 let infoId = null;
 const archLabel = id => { const a = K.ARCH.find(x => x.id === id); return a ? L(a) : ''; };
-function chipEl(kind, id, label, locked, pal) {
+// big rosters: a portrait is drawn only when its tile scrolls into view (the grid is its own scroll box)
+function drawLater(cv, root, fn) {
+  if (!root || typeof IntersectionObserver === 'undefined') { fn(); return; }
+  if (!root._io) root._io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { const f = e.target._draw; e.target._draw = null; root._io.unobserve(e.target); if (f) f(); } }, { root, rootMargin: '160px' });
+  cv._draw = fn; root._io.observe(cv);
+}
+function chipEl(kind, id, label, locked, pal, root) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'pk' + (kind === 'stage' ? ' stg' : ''); b.dataset.id = id; b.disabled = !!locked;
   if (!locked && kind === 'char') b.addEventListener('focus', () => charInfo(id)); // keyboard / gamepad: moving the focus shows the toy
   if (!locked && kind === 'stage' && id !== 'random') b.addEventListener('focus', () => stageInfo(id));
   const c = document.createElement('canvas'); b.appendChild(c);
   const n = document.createElement('span'); n.className = 'nm'; n.textContent = label; b.appendChild(n);
   b.setAttribute('aria-label', label);
-  if (kind === 'char') ART.portrait(c, id, { size: 54, locked, pal: pal | 0 }); else ART.stagePreview(c, id, { w: 112, h: 64 });
+  if (kind === 'char') { if (locked) ART.portrait(c, id, { size: 54, locked }); else drawLater(c, root, () => ART.portrait(c, id, { size: 54, pal: pal | 0 })); } else ART.stagePreview(c, id, { w: 112, h: 64 });
   return b;
 }
 // which player slots (1-4) the current setup shows
@@ -1098,9 +1105,10 @@ function renderBars() {
 }
 function renderRoster(n) {
   buildTool(n); $('pickP' + n).dataset.r = '1';
-  const el = $('pickP' + n), key = SKEY[n], s = save.set; el.innerHTML = '';
+  const el = $('pickP' + n), key = SKEY[n], s = save.set; if (el._io) { el._io.disconnect(); el._io = null; }
+  el.innerHTML = '';
   E.CHAR_IDS.forEach(id => {
-    const ok = pickable(id), b = chipEl('char', id, ok ? L(E.CH[id].short) : T('ロック中'), !ok, save.pal[id] | 0);
+    const ok = pickable(id), b = chipEl('char', id, ok ? L(E.CH[id].short) : T('ロック中'), !ok, save.pal[id] | 0, el);
     if (ok && save.fav.indexOf(id) >= 0) { const st = document.createElement('span'); st.className = 'star'; st.textContent = '★'; b.appendChild(st); }
     if (s[key] === id) b.classList.add('sel');
     b.onclick = () => { if (!ok) return; s[key] = id; for (const x of el.children) x.classList.toggle('sel', x === b); charInfo(id); renderPals(); renderBars(); AU && AU.sfx('tap'); };
@@ -1141,14 +1149,18 @@ function lockedList() {
   const pr = progOf();
   return E.CHAR_IDS.filter(id => !hasChar(id)).map(id => { const i = K.unlockInfo(id, pr); return { id, i, ratio: i.rule.t === 'ladder' ? 0 : i.have / Math.max(1, i.need), text: K.unlockText(id, pr, EN) }; }).sort((x, y) => (x.i.rule.t === 'ladder' ? 1e6 : x.i.need - x.i.have) - (y.i.rule.t === 'ladder' ? 1e6 : y.i.need - y.i.have));
 }
+let ulPage = 0;
+const UL_PER = 8;
 function renderUnlockList() {
   const L2 = lockedList(), box = $('ulBox');
   box.hidden = !L2.length; $('rNote').hidden = !L2.length;
   if (!L2.length) { $('rNote').textContent = ''; return; }
-  const near = L2.find(x => x.i.rule.t !== 'ladder') || L2[0];
+  const near = L2.find(x => x.i.rule.t !== 'ladder') || L2[0], pages = Math.ceil(L2.length / UL_PER); ulPage = E.clamp(ulPage, 0, pages - 1);
   $('rNote').textContent = T('つぎに開く：{t}', { t: near.text });
   box.querySelector('summary').textContent = T('ロック中のおもちゃの開き方') + ' (' + L2.length + ')';
-  $('ulBody').innerHTML = L2.map(x => '<div class="urow"><span>' + esc(T('ロック中')) + (x.i.rule.t === 'ladder' ? '' : ' · ？？？') + '</span><b>' + esc(x.text) + '</b></div>').join('');
+  $('ulBody').innerHTML = L2.slice(ulPage * UL_PER, ulPage * UL_PER + UL_PER).map(x => '<div class="urow"><span>' + esc(T('ロック中')) + (x.i.rule.t === 'ladder' ? '' : ' · ？？？') + '</span><b>' + esc(x.text) + '</b></div>').join('')
+    + (pages > 1 ? '<div class="upg"><button type="button" id="ulPrev" aria-label="' + esc(T('まえのページ')) + '">◀</button><span>' + (ulPage + 1) + ' / ' + pages + '</span><button type="button" id="ulNext" aria-label="' + esc(T('つぎのページ')) + '">▶</button></div>' : '');
+  if (pages > 1) { $('ulPrev').onclick = () => { ulPage = (ulPage + pages - 1) % pages; renderUnlockList(); AU && AU.sfx('tap'); }; $('ulNext').onclick = () => { ulPage = (ulPage + 1) % pages; renderUnlockList(); AU && AU.sfx('tap'); }; }
 }
 // arrow keys move between the tiles of a grid (the nearest tile in that direction)
 function arrowNav(e, box) {

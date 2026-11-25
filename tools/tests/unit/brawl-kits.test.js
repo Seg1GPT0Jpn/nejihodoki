@@ -127,7 +127,7 @@ test('unlock rules: the first 18 keep the old ladder (3 free, 3 from the ladder,
 });
 
 test('every newer toy has a composed sprite, an unlock rule, and at least one mechanic no other newer toy uses (a special kind, a projectile kind, or a data flag)', () => {
-  const nw = E.CHAR_IDS.filter(id => K.LEGACY.indexOf(id) < 0); ok(nw.length >= 16, 'at least 16 newer toys: ' + nw.length);
+  const nw = E.CHAR_IDS.filter(id => K.LEGACY.indexOf(id) < 0); ok(nw.length >= 32, 'at least 32 newer toys: ' + nw.length);
   const mech = {};
   for (const id of nw) {
     const c = E.CH[id], set = new Set();
@@ -135,7 +135,7 @@ test('every newer toy has a composed sprite, an unlock rule, and at least one me
     ok(c.ul && (c.ul.w || c.ul.s || c.ul.cl), id + ' has an unlock rule'); ok(K.unlockRule(id).t !== 'win' || K.unlockRule(id).n < 9999, id + ' rule is real');
     for (const sl of [c.sp, c.spb || {}]) for (const k of Object.keys(sl)) {
       const m = sl[k]; if (E.KINDS[m.kind] || ['glide'].indexOf(m.kind) >= 0) set.add('kind:' + m.kind);
-      if (m.proj) { if (E.PROJ[m.proj.kind]) set.add('proj:' + m.proj.kind); for (const f of ['pierce', 'bnc', 'nohit', 'slow', 'pw']) if (m.proj[f] !== undefined) set.add('flag:' + f); }
+      if (m.proj) { if (E.PROJ[m.proj.kind]) set.add('proj:' + m.proj.kind); for (const f of ['pierce', 'bnc', 'nohit', 'slow', 'pw', 'osc', 'stay', 'fz', 'max']) if (m.proj[f] !== undefined) set.add('flag:' + f); }
       if (m.kind === 'stance') set.add(m.dur ? 'stance:timed' : 'stance:toggle');
       if (m.sbk) set.add('flag:sbk'); if (m.arm) set.add('flag:arm');
     }

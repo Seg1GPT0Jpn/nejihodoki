@@ -259,7 +259,7 @@
   B1('dozer', { name: T2('ゴリゴリドーザー', 'Dozer Rumble'), short: T2('ドーザー', 'Dozer'), tag: T2('バリアをくだく重戦車', 'Shield crusher'),
     desc: T2('ブルドーザー。突進は強い当たりでも ひるまず、まもりを大きくけずる。ジャンプは1回で低い。', 'A bulldozer. Its rush shrugs off weak hits and chews shields up. One short jump only.'),
     color: '#e8b02a', color2: '#5a5148', w: 54, h: 52, weight: 142, run: 2.6, acc: 0.4, air: 2.1, aacc: 0.12, jump: 9.2, dj: 8.4, grav: 0.48, fall: 9.8, ff: 13.6, jmax: 1, stats: { speed: 1, power: 5, weight: 5, reach: 2, recov: 1 }, arch: 'power', sig: 'shield-crusher', ul: { w: 34 },
-    kit: { tpl: 'bulk', reach: 0.95, pw: 1.0, ov: { jab: { sp: 1.2, a: 4, hb: [[34, -26, 50, -26, 22]] }, ftilt: { hb: [[34, -24, 56, -24, 24]], dt: 4 }, utilt: { hb: [[20, -30, 10, -64, 24]] }, dtilt: { hb: [[40, -6, 60, -6, 22]] }, fsmash: { hb: [[34, -28, 66, -28, 30]], dt: 10, bkb: 34 }, nair: { rr: 1.15, a: 14 }, dair: { ll: 24, a: 8 } } },
+    kit: { tpl: 'bulk', reach: 0.95, pw: 1.28, ov: { jab: { sp: 1.2, a: 4, hb: [[34, -26, 50, -26, 22]] }, ftilt: { hb: [[34, -24, 56, -24, 24]], dt: 4 }, utilt: { hb: [[20, -30, 10, -64, 24]] }, dtilt: { hb: [[40, -6, 60, -6, 22]] }, fsmash: { hb: [[34, -28, 66, -28, 30]], dt: 10, bkb: 34 }, nair: { rr: 1.15, a: 14 }, dair: { ll: 24, a: 8 } } },
     sp: {
       N: sp({ kind: 'melee', fx: 'prop', s: 12, a: 6, t: 38, dmg: 10, bkb: 18, kbg: 24, ang: 70, hb: [[30, -30, 60, -58, 26]] }),
       S: sp({ kind: 'dash', fx: 'shield', s: 16, a: 22, t: 58, v: 4.6, arm: [8, 36], sbk: 16, dmg: 12, bkb: 24, kbg: 30, ang: 36, hb: [[26, -28, 58, -28, 30]] }),
@@ -300,7 +300,7 @@
   B1('reed', { name: T2('ハモニ', 'Reed Rascal'), short: T2('ハモニ', 'Hamoni'), tag: T2('ため吹きの音波', 'Charged breath'),
     desc: T2('ハーモニカのいたずらっこ。とくぎ横をおし続けると息をためて、はなすと大きな音波を出す。下とくぎで相手を吹きとばす風。', 'A harmonica rascal. Hold side-special to charge a breath, release for a big sound wave. Down-special is a blowing wind.'),
     color: '#cfd8dc', color2: '#e05a5a', w: 30, h: 44, weight: 76, run: 3.2, jump: 11.6, dj: 10.8, grav: 0.4, fall: 7.4, stats: { speed: 3, power: 2, weight: 2, reach: 4, recov: 3 }, arch: 'zone', sig: 'breath-charge', ul: { s: ['grab', 20] },
-    kit: { tpl: 'floaty', reach: 1.25, pw: 1.12, sp: 0.85, ov: { jab: { hb: [[26, -26, 38, -26, 12]], sp: 0.9 }, ftilt: { hb: [[26, -26, 56, -26, 12]] }, utilt: { hb: [[6, -36, 6, -62, 16]] }, dtilt: { hb: [[30, -6, 48, -6, 11]] }, fsmash: { hb: [[26, -30, 82, -30, 14]], a: 8 }, nair: { fx: 'kick' } } },
+    kit: { tpl: 'floaty', reach: 1.25, pw: 1.32, sp: 0.85, ov: { jab: { hb: [[26, -26, 38, -26, 12]], sp: 0.9 }, ftilt: { hb: [[26, -26, 56, -26, 12]] }, utilt: { hb: [[6, -36, 6, -62, 16]] }, dtilt: { hb: [[30, -6, 48, -6, 11]] }, fsmash: { hb: [[26, -30, 82, -30, 14]], a: 8 }, nair: { fx: 'kick' } } },
     sp: {
       N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 26, proj: { sp: 6.2, vy: 0, g: 0, r: 10, life: 56, dmg: 3.2, bkb: 7, kbg: 6, ang: 30, kind: 'note' } }),
       S: sp({ kind: 'charge', fx: 'cast', s: 10, a: 1, t: 36, cmax: 50, proj: { sp: 6, vy: 0, g: 0, r: 13, life: 70, dmg: 4, bkb: 8, kbg: 8, ang: 28, kind: 'wail' } }),
@@ -410,6 +410,204 @@
     },
     spr: { legs: { k: 'legs', c: 'k', w: 5 }, arms: { sx: 8, sy: -28, rx: 14, ry: -20, w: 4.4, c: 'b', hand: 'ball' }, back: [{ t: 'poly', pts: [-10, -40, -44, -46, -30, -34, -46, -26, -10, -30], c: 'a', anim: 'wag' }],
       body: [{ t: 'ell', x: 0, y: -20, w: 20, h: 22, c: 'a' }, { t: 'circ', x: 0, y: -40, r: 12, c: 'b' }, { t: 'star', x: 0, y: -56, r: 8, n: 5, c: 'b' }], eyes: [{ x: 5, y: -41, r: 3.4 }] } });
+
+  // ------------------------------------------------------------------------------------------------ 第3弾：さらに16人（Batch 2）
+  B1('mirror', { name: T2('てかがみ ミラ', 'Mira the Hand Mirror'), short: T2('ミラ', 'Mira'), tag: T2('飛び道具をはね返す鏡', 'Mirror wall'),
+    desc: T2('てかがみ。下とくぎで鏡のかべを立てると、相手の飛び道具が持ち主を変えてはね返る。光の線は相手をつらぬく。', 'A hand mirror. Down-special stands up a mirror wall that turns enemy projectiles back; her light ray pierces.'),
+    color: '#8ec9e8', color2: '#f4f4f6', w: 28, h: 56, weight: 78, run: 3.6, acc: 0.55, air: 3.1, aacc: 0.26, jump: 11.2, dj: 10.4, grav: 0.4, fall: 7.6, ff: 11.8, jmax: 2, stats: { speed: 3, power: 2, weight: 1, reach: 3, recov: 4 }, arch: 'zone', sig: 'mirror-wall', ul: { w: 58 },
+    kit: { tpl: 'zoner', pw: 1.55, sp: 0.95, reach: 1.1, ov: { jab: { hb: [[24, -30, 36, -30, 11]] }, ftilt: { hb: [[26, -32, 58, -36, 12]] }, utilt: { hb: [[8, -44, 6, -78, 14]] }, fsmash: { hb: [[26, -34, 64, -30, 20]], a: 5 }, nair: { rr: 1.2 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 9, a: 1, t: 26, proj: { sp: 13, vy: 0, g: 0, r: 5, life: 24, dmg: 3.2, bkb: 6, kbg: 4, ang: 15, kind: 'ray', pierce: 1, rh: 99 } }),
+      S: sp({ kind: 'melee', fx: 'shield', s: 12, a: 5, t: 38, dmg: 8, bkb: 20, kbg: 26, ang: 40, hb: [[28, -34, 56, -34, 18]] }),
+      U: sp({ kind: 'rise', fx: 'spin', s: 6, a: 18, t: 42, rv: 9.8, dv: 2.2, ang: 80, dmg: 4, bkb: 12, kbg: 12, hb: [[0, -34, 0, -34, 22]] }),
+      D: sp({ kind: 'zone', fx: 'cast', s: 12, a: 1, t: 38, proj: { kind: 'mirror', r: 14, rad: 52, life: 260, ox: 56, oy: 30, nohit: 1 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 4 }, arms: { sx: 8, sy: -30, rx: 13, ry: -22, w: 4, c: 'k', hand: 'ball' }, back: [],
+      body: [{ t: 'box', x: 0, y: -24, w: 5, h: 22, r: 2, c: 'b' }, { t: 'ell', x: 0, y: -46, w: 28, h: 34, c: 'b' }, { t: 'ell', x: 0, y: -46, w: 20, h: 26, c: 'a', lw: 1.4 }, { t: 'line', x0: -5, y0: -54, x1: 0, y1: -48, w: 2, c: 'w' }], eyes: [{ x: 3, y: -42, r: 3.2 }, { x: -5, y: -42, r: 2.8 }] } });
+  B1('sand', { name: T2('すなどけい サンディ', 'Sandy the Hourglass'), short: T2('サンディ', 'Sandy'), tag: T2('時間をおそくする', 'Time-slow zone'),
+    desc: T2('すなどけい。下とくぎの「すなの輪」の中では、相手も飛び道具もゆっくりになる。すなつぶに当たっても遅くなる。', 'An hourglass. Inside its sand ring, foes and projectiles slow right down; sand grains slow you too.'),
+    color: '#e8c878', color2: '#7a4a2a', w: 32, h: 60, weight: 100, run: 2.9, acc: 0.46, air: 2.5, aacc: 0.18, jump: 10.2, dj: 9.0, grav: 0.45, fall: 9.0, ff: 13, stats: { speed: 2, power: 3, weight: 3, reach: 3, recov: 2 }, arch: 'trap', sig: 'time-sand', ul: { s: ['hard', 8] },
+    kit: { tpl: 'zoner', pw: 1.4, sp: 1.1, ov: { jab: { hb: [[26, -34, 40, -34, 14]], sp: 1.0 }, ftilt: { hb: [[28, -34, 52, -34, 15]], a: 5 }, dtilt: { hb: [[32, -6, 52, -6, 14]] }, usmash: { hb: [[10, -44, -2, -96, 22]], dt: 4 }, dair: { a: 9 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 12, a: 1, t: 34, proj: { sp: 7, vy: -2, g: 0.22, r: 8, life: 60, dmg: 3.6, bkb: 6, kbg: 6, ang: 40, kind: 'grain' } }),
+      S: sp({ kind: 'melee', fx: 'prop', s: 14, a: 6, t: 44, dmg: 9, bkb: 22, kbg: 28, ang: 80, hb: [[18, -20, 44, -70, 20]] }),
+      U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 20, t: 44, rv: 9.2, dv: 2.0, ang: 80, dmg: 4, bkb: 12, kbg: 12, hb: [[0, -40, 0, -40, 24]] }),
+      D: sp({ kind: 'zone', fx: 'cast', s: 14, a: 1, t: 40, proj: { kind: 'sand', r: 50, rad: 120, life: 300, slow: 5, ox: 60, oy: 30, nohit: 1 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 5 }, arms: { sx: 10, sy: -34, rx: 15, ry: -24, w: 4, c: 'k', hand: 'ball' }, back: [],
+      body: [{ t: 'box', x: 0, y: -62, w: 26, h: 5, r: 2, c: 'b' }, { t: 'box', x: 0, y: -8, w: 26, h: 5, r: 2, c: 'b' }, { t: 'poly', pts: [-11, -58, 11, -58, 2, -34, 11, -12, -11, -12, -2, -34], c: '#d8ecf4', lw: 2 }, { t: 'poly', pts: [-9, -14, 9, -14, 4, -22, -4, -22], c: 'a', lw: 0 }, { t: 'poly', pts: [-8, -56, 8, -56, 1, -40, -1, -40], c: 'a', lw: 0 }], eyes: [{ x: 4, y: -30, r: 3.2 }, { x: -4, y: -30, r: 2.8 }] } });
+  B1('shroom', { name: T2('ドクキノコ キノコロ', 'Shroomo the Toadstool'), short: T2('キノコロ', 'Shroomo'), tag: T2('じわじわ毒', 'Poison over time'),
+    desc: T2('おもちゃのキノコ。胞子に当たった相手は、しばらくじわじわダメージを受ける。足もとの胞子ふくろも同じ。', 'A toy toadstool. Spores poison: the foe slowly takes damage for a while. Spore pods on the floor do the same.'),
+    color: '#c8392b', color2: '#f4efe0', w: 34, h: 48, weight: 88, run: 3.3, acc: 0.5, air: 2.9, aacc: 0.2, jump: 10.6, dj: 9.6, grav: 0.46, fall: 8.8, ff: 13, jmax: 1, stats: { speed: 3, power: 2, weight: 2, reach: 2, recov: 3 }, arch: 'trap', sig: 'poison-dot', ul: { w: 62 },
+    kit: { tpl: 'floaty', pw: 1.15, sp: 0.9, rr: 1.15, ov: { jab: { hb: [[22, -26, 34, -26, 13]] }, ftilt: { hb: [[24, -24, 46, -24, 15]], ang: 55 }, utilt: { hb: [[8, -44, 0, -64, 18]] }, fsmash: { hb: [[24, -30, 50, -26, 22]], a: 6 }, nair: { a: 12 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 32, proj: { sp: 5.5, vy: -1, g: 0.08, r: 11, life: 60, dmg: 2, bkb: 3, kbg: 0, ang: 60, kind: 'spore' } }),
+      S: sp({ kind: 'melee', fx: 'puff', s: 11, a: 6, t: 40, dmg: 8, bkb: 22, kbg: 26, ang: 88, hb: [[10, -60, 40, -70, 26]] }),
+      U: sp({ kind: 'rise', fx: 'springup', s: 5, a: 20, t: 42, rv: 10.4, dv: 2.4, ang: 85, dmg: 4, bkb: 12, kbg: 12, hb: [[0, -50, 0, -50, 26]] }),
+      D: sp({ kind: 'mine', fx: 'cast', s: 12, a: 1, t: 38, proj: { kind: 'pod', max: 2, r: 18, life: 900, arm: 30, dmg: 2, bkb: 4, kbg: 0, ang: 80 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'b', w: 7 }, arms: { sx: 9, sy: -20, rx: 14, ry: -14, w: 5, c: 'b', hand: 'none' }, back: [],
+      body: [{ t: 'box', x: 0, y: -20, w: 18, h: 22, r: 6, c: 'b' }, { t: 'ell', x: 0, y: -40, w: 44, h: 28, c: 'a' }, { t: 'circ', x: -9, y: -44, r: 4.4, c: 'w', lw: 0 }, { t: 'circ', x: 8, y: -46, r: 3.6, c: 'w', lw: 0 }, { t: 'circ', x: 1, y: -36, r: 3, c: 'w', lw: 0 }], eyes: [{ x: 4, y: -22, r: 3.4 }, { x: -4, y: -22, r: 3 }] } });
+  B1('camp', { name: T2('キャンプファイヤー ボンボ', 'Bonbo the Campfire'), short: T2('ボンボ', 'Bonbo'), tag: T2('たき火で強くなる', 'Fire aura'),
+    desc: T2('たき火の精。下とくぎでたき火を灯し、その近くにいるあいだ、自分の攻撃が強くなる。', 'A campfire sprite. Down-special lights a fire, and while standing near it your attacks hit harder.'),
+    color: '#ff8a2a', color2: '#6a4a2a', w: 38, h: 54, weight: 112, run: 3.0, acc: 0.46, air: 2.6, aacc: 0.18, jump: 10.0, dj: 9.2, grav: 0.46, fall: 9.0, ff: 13.2, stats: { speed: 2, power: 4, weight: 4, reach: 3, recov: 2 }, arch: 'power', sig: 'buff-aura', ul: { s: ['perfect', 5] },
+    kit: { tpl: 'bulk', pw: 1.5, sp: 1.0, ov: { jab: { sp: 0.95, hb: [[26, -28, 40, -28, 16]] }, ftilt: { hb: [[28, -28, 50, -28, 18]], dt: 0 }, utilt: { hb: [[12, -42, 0, -66, 18]], dt: 0 }, fsmash: { hb: [[28, -32, 62, -26, 24]], dt: 4 }, dair: { ll: 14 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 9, a: 1, t: 28, proj: { sp: 5, vy: 0, g: 0, r: 14, life: 22, dmg: 4.5, bkb: 8, kbg: 8, ang: 40, kind: 'flame' } }),
+      S: sp({ kind: 'melee', fx: 'slash', s: 13, a: 6, t: 42, dmg: 11, bkb: 24, kbg: 30, ang: 40, hb: [[26, -40, 66, -20, 22]] }),
+      U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 18, t: 42, rv: 9.6, dv: 2.4, ang: 80, dmg: 6, bkb: 16, kbg: 18, hb: [[0, -40, 0, -40, 28]] }),
+      D: sp({ kind: 'zone', fx: 'cast', s: 14, a: 1, t: 40, proj: { kind: 'camp', r: 30, rad: 80, life: 420, ox: 0, oy: 20, nohit: 1 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'b', w: 7 }, arms: { sx: 12, sy: -30, rx: 17, ry: -22, w: 6, c: 'a', hand: 'ball' }, back: [{ t: 'poly', pts: [-14, -6, 14, -6, 18, -2, -18, -2], c: 'b' }],
+      body: [{ t: 'poly', pts: [-16, -12, 0, -62, 16, -12, 8, -4, -8, -4], c: 'a' }, { t: 'poly', pts: [-8, -14, 0, -42, 8, -14], c: '#ffd23f', lw: 1.6 }, { t: 'line', x0: -18, y0: -4, x1: 18, y1: -12, w: 5, c: 'b' }, { t: 'line', x0: 18, y0: -4, x1: -18, y1: -12, w: 5, c: 'b' }], eyes: [{ x: 3, y: -26, r: 3.4 }, { x: -5, y: -26, r: 3 }] } });
+  B1('snow', { name: T2('ゆきだるま ユキダ', 'Yukida the Snowman'), short: T2('ユキダ', 'Yukida'), tag: T2('雪をまとって大きく', 'Grows bigger'),
+    desc: T2('ゆきだるま。下とくぎで雪をまとうたびに（3回まで）攻撃が強く、ふっとびにくくなる。時間がたつと少しずつ小さくなる。', 'A snowman. Each down-special (up to 3) packs on snow: stronger hits and harder to launch. It slowly melts back.'),
+    color: '#f2f6ff', color2: '#e8553a', w: 40, h: 56, weight: 104, run: 2.9, acc: 0.45, air: 2.5, aacc: 0.16, jump: 9.8, dj: 9.0, grav: 0.47, fall: 9.2, ff: 13.4, jmax: 1, stats: { speed: 2, power: 3, weight: 4, reach: 2, recov: 2 }, arch: 'power', sig: 'snow-grow', ul: { w: 66 },
+    kit: { tpl: 'brawler', pw: 1.05, sp: 1.05, rr: 1.2, ov: { jab: { hb: [[24, -30, 38, -30, 16]] }, ftilt: { hb: [[26, -32, 48, -32, 18]] }, usmash: { hb: [[10, -44, -2, -90, 24]] }, dsmash: { hb: [[44, -8, 44, -8, 22], [-44, -8, -44, -8, 22]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 11, a: 1, t: 34, proj: { sp: 6, vy: -1.5, g: 0.2, r: 10, life: 70, dmg: 4, bkb: 8, kbg: 8, ang: 40, kind: 'snowball' } }),
+      S: sp({ kind: 'dash', fx: 'body', s: 12, a: 14, t: 46, v: 5.5, dmg: 9, bkb: 20, kbg: 26, ang: 38, hb: [[0, -28, 26, -28, 26]] }),
+      U: sp({ kind: 'rise', fx: 'springup', s: 6, a: 18, t: 42, rv: 9.0, dv: 2.0, ang: 80, dmg: 4, bkb: 12, kbg: 14, hb: [[0, -40, 0, -40, 26]] }),
+      D: sp({ kind: 'grow', fx: 'puff', s: 12, a: 1, t: 38, hb: [] }),
+    },
+    spr: { legs: { k: 'none' }, arms: { sx: 14, sy: -36, rx: 22, ry: -30, w: 4, c: 'b', hand: 'none' }, back: [],
+      body: [{ t: 'circ', x: 0, y: -16, r: 17, c: 'a' }, { t: 'circ', x: 0, y: -42, r: 12, c: 'a' }, { t: 'box', x: 0, y: -31, w: 22, h: 5, r: 2, c: 'b' }, { t: 'poly', pts: [3, -42, 18, -40, 3, -38], c: '#f08a2a' }, { t: 'box', x: 0, y: -57, w: 14, h: 8, r: 1, c: 'k' }, { t: 'box', x: 0, y: -53, w: 20, h: 3, r: 1, c: 'k' }, { t: 'circ', x: 0, y: -22, r: 2, c: 'k', lw: 0 }, { t: 'circ', x: 0, y: -12, r: 2, c: 'k', lw: 0 }], eyes: [{ x: 4, y: -45, r: 2.6 }, { x: -4, y: -45, r: 2.6 }] } });
+  B1('kite', { name: T2('たこ カイト', 'Kai the Kite'), short: T2('カイト', 'Kai'), tag: T2('自由に飛べる', 'Free flight'),
+    desc: T2('たこ。とくぎ（横）をおし続けると、ねんりょうが切れるまで好きな方向へ飛べて、ぶつかった相手にダメージ。', 'A kite. Hold side-special to fly in any direction until the fuel runs out, hitting anyone you fly into.'),
+    color: '#ff6a7a', color2: '#ffd23f', w: 30, h: 56, weight: 64, run: 4.0, acc: 0.6, air: 3.8, aacc: 0.36, jump: 11.6, dj: 10.8, grav: 0.36, fall: 6.6, ff: 9.6, jmax: 3, stats: { speed: 4, power: 1, weight: 1, reach: 3, recov: 5 }, arch: 'air', sig: 'free-flight', ul: { w: 70 },
+    kit: { tpl: 'floaty', pw: 1.15, sp: 0.85, ov: { jab: { hb: [[22, -34, 32, -36, 11]] }, ftilt: { hb: [[24, -34, 52, -40, 12]] }, utilt: { hb: [[6, -44, -4, -84, 14]] }, fair: { hb: [[18, -34, 44, -44, 14]] }, dair: { hb: [[2, 4, 8, 16, 15]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 8, a: 1, t: 26, proj: { sp: 9, vy: 0.5, g: 0.04, r: 7, life: 50, dmg: 3.4, bkb: 6, kbg: 4, ang: 25, kind: 'dart' } }),
+      S: sp({ kind: 'flight', fx: 'spin', s: 6, a: 6, t: 28, fuel: 70, fv: 3.4, dmg: 5, bkb: 10, kbg: 12, ang: 40, hb: [[0, -30, 18, -30, 20]] }),
+      U: sp({ kind: 'rise', fx: 'springup', s: 6, a: 22, t: 46, rv: 11.0, dv: 3.4, ang: 85, dmg: 3, bkb: 10, kbg: 10, hb: [[0, -30, 0, -30, 18]] }),
+      D: sp({ kind: 'melee', fx: 'kick', s: 9, a: 5, t: 34, dmg: 7, bkb: 18, kbg: 22, ang: 140, hb: [[-20, -30, -60, -34, 14]] }),
+    },
+    spr: { legs: { k: 'none' }, arms: { none: 1, sx: 0, sy: 0, rx: 0, ry: 0, w: 0, c: 'a', hand: 'none' }, back: [{ t: 'poly', pts: [-4, -20, -22, -4, -12, -24, -26, -14, -10, -30, -28, -24], c: 'b', anim: 'wag', lw: 1.8 }],
+      body: [{ t: 'poly', pts: [0, -64, 15, -42, 0, -14, -15, -42], c: 'a' }, { t: 'line', x0: 0, y0: -64, x1: 0, y1: -14, w: 2, c: 'b' }, { t: 'line', x0: -15, y0: -42, x1: 15, y1: -42, w: 2, c: 'b' }, { t: 'poly', pts: [-5, -14, -12, 0, 12, 0, 5, -14], c: 'b', lw: 1.8 }], eyes: [{ x: 4, y: -38, r: 3 }, { x: -4, y: -38, r: 2.6 }] } });
+  B1('door', { name: T2('ツインドア トビラ', 'Tobira the Twin Door'), short: T2('トビラ', 'Tobira'), tag: T2('2つの扉でワープ', 'Portal pair'),
+    desc: T2('小さな扉。下とくぎで扉を2つ置くと、ふれた人も飛び道具も、もう一方の扉から出てくる（相手も自分も）。', 'A little door. Down-special places two doors; anything that touches one, foe, you or a projectile, comes out of the other.'),
+    color: '#8a5a3a', color2: '#f2c94c', w: 30, h: 58, weight: 92, run: 3.5, acc: 0.52, air: 2.9, aacc: 0.22, jump: 10.8, dj: 9.8, grav: 0.44, fall: 8.6, ff: 12.6, stats: { speed: 3, power: 3, weight: 2, reach: 2, recov: 3 }, arch: 'trick', sig: 'portal-pair', ul: { s: ['tech', 20] },
+    kit: { tpl: 'swift', pw: 1.45, sp: 0.95, ov: { jab: { hb: [[24, -34, 36, -34, 12]] }, ftilt: { hb: [[26, -34, 46, -34, 14]], ang: 40 }, utilt: { hb: [[10, -48, 2, -76, 15]] }, fsmash: { hb: [[26, -36, 58, -30, 19]] }, bair: { ang: 150 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 9, a: 1, t: 28, proj: { sp: 8, vy: 0, g: 0, r: 9, life: 40, dmg: 3.5, bkb: 7, kbg: 6, ang: 30, kind: 'knock' } }),
+      S: sp({ kind: 'melee', fx: 'lid', s: 14, a: 5, t: 40, dmg: 10, bkb: 24, kbg: 30, ang: 40, hb: [[24, -50, 50, -30, 26]] }),
+      U: sp({ kind: 'rise', fx: 'prop', s: 6, a: 18, t: 40, rv: 10.2, dv: 2.4, ang: 80, dmg: 4, bkb: 12, kbg: 12, hb: [[6, -62, 6, -62, 20]] }),
+      D: sp({ kind: 'zone', fx: 'cast', s: 12, a: 1, t: 36, proj: { kind: 'portal', max: 2, r: 22, rad: 30, life: 700, ox: 60, oy: 30, nohit: 1 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 5 }, arms: { sx: 11, sy: -34, rx: 16, ry: -24, w: 4.4, c: 'b', hand: 'ball' }, back: [],
+      body: [{ t: 'box', x: 0, y: -32, w: 26, h: 44, r: 4, c: 'a' }, { t: 'box', x: 0, y: -32, w: 20, h: 36, r: 3, c: 'B', lw: 1.4 }, { t: 'circ', x: 6, y: -30, r: 2.6, c: 'b' }, { t: 'box', x: 0, y: -58, w: 22, h: 6, r: 2, c: 'b' }], eyes: [{ x: 3, y: -42, r: 3.4 }, { x: -5, y: -42, r: 3 }] } });
+  B1('pinball', { name: T2('ピンボール ピンピ', 'Pinpi the Pinball'), short: T2('ピンピ', 'Pinpi'), tag: T2('はじくバンパー', 'Bumper post'),
+    desc: T2('ピンボールのたま。下とくぎでバンパーを置くと、さわった相手は強くはじき飛ばされる。はずむ玉も投げる。', 'A pinball. Down-special sets a bumper that flings anyone touching it away; it throws bouncing balls too.'),
+    color: '#4a5bd0', color2: '#ff4a8a', w: 34, h: 42, weight: 86, run: 3.8, acc: 0.58, air: 3.0, aacc: 0.26, jump: 11.8, dj: 10.8, grav: 0.46, fall: 9.0, ff: 13.4, jmax: 2, stats: { speed: 4, power: 2, weight: 2, reach: 2, recov: 4 }, arch: 'trick', sig: 'bumper-post', ul: { w: 74 },
+    kit: { tpl: 'brawler', pw: 1.05, sp: 0.9, rr: 1.1, ov: { jab: { hb: [[22, -22, 34, -22, 14]] }, ftilt: { hb: [[24, -22, 42, -22, 15]] }, fair: { rr: 1.15 }, nair: { a: 12, rr: 1.2 }, dair: { hb: [[2, 6, 8, -4, 18]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 9, a: 1, t: 30, proj: { sp: 8, vy: -1, g: 0.2, r: 8, life: 90, dmg: 3, bkb: 7, kbg: 6, ang: 40, kind: 'pinball', bounce: 1, bnc: 1 } }),
+      S: sp({ kind: 'dash', fx: 'kick', s: 8, a: 10, t: 38, v: 6.5, dmg: 8, bkb: 18, kbg: 22, ang: 36, hb: [[16, -26, 38, -34, 20]] }),
+      U: sp({ kind: 'rise', fx: 'springup', s: 5, a: 20, t: 40, rv: 11.8, dv: 2.4, ang: 85, dmg: 4, bkb: 10, kbg: 12, hb: [[0, -22, 0, -22, 22]] }),
+      D: sp({ kind: 'zone', fx: 'cast', s: 12, a: 1, t: 36, proj: { kind: 'bumper', r: 24, rad: 24, life: 300, dmg: 3, bkb: 14, kbg: 0, ang: 60, pierce: 1, rh: 36, stay: 1, ox: 70, oy: 24 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 5 }, arms: { sx: 12, sy: -26, rx: 17, ry: -18, w: 4.4, c: 'b', hand: 'ball' }, back: [],
+      body: [{ t: 'circ', x: 0, y: -26, r: 18, c: 'a' }, { t: 'poly', pts: [-14, -32, 14, -32, 10, -26, -10, -26], c: 'b', lw: 0 }, { t: 'star', x: -6, y: -20, r: 5, n: 5, c: 'b' }, { t: 'circ', x: 8, y: -16, r: 3, c: 'w', lw: 0 }], eyes: [{ x: 5, y: -30, r: 3.8 }, { x: -5, y: -30, r: 3.4 }] } });
+  B1('bomb', { name: T2('ばくだん ドカンタ', 'Dokanta the Bomb'), short: T2('ドカンタ', 'Dokanta'), tag: T2('時間差で大爆発', 'Fuse bomb'),
+    desc: T2('おもちゃの爆弾。投げた爆弾は転がって、ちょっとあとで大きく爆発する（それまでは当たらない）。', 'A toy bomb. Its thrown bombs bounce around and go off a moment later in a big blast (harmless until then).'),
+    color: '#303038', color2: '#ff5a2a', w: 36, h: 46, weight: 108, run: 3.2, acc: 0.5, air: 2.7, aacc: 0.2, jump: 10.4, dj: 9.4, grav: 0.46, fall: 9.0, ff: 13.2, stats: { speed: 3, power: 4, weight: 3, reach: 2, recov: 2 }, arch: 'zone', sig: 'fuse-bomb', ul: { s: ['spike', 3] },
+    kit: { tpl: 'bulk', pw: 1.8, sp: 1.0, rr: 1.1, ov: { jab: { hb: [[24, -26, 38, -26, 16]] }, ftilt: { hb: [[26, -26, 46, -26, 18]], dt: 0 }, fsmash: { hb: [[28, -28, 56, -24, 24]], dt: 4 }, dair: { a: 8 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 38, proj: { sp: 5.5, vy: -3.5, g: 0.32, r: 11, life: 120, dmg: 2, bkb: 8, kbg: 8, ang: 40, kind: 'bomb', bounce: 1, bnc: 1, nohit: 1, fz: 50, er: 62, ed: 11, ebk: 26, ekg: 34, ea: 55 } }),
+      S: sp({ kind: 'melee', fx: 'punch', s: 12, a: 5, t: 38, dmg: 9, bkb: 20, kbg: 26, ang: 38, hb: [[26, -30, 54, -26, 20]] }),
+      U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 18, t: 42, rv: 11.0, dv: 2.2, ang: 85, dmg: 7, bkb: 16, kbg: 18, hb: [[0, 10, 0, 10, 34]] }),
+      D: sp({ kind: 'melee', fx: 'kick', s: 10, a: 4, t: 32, dmg: 6, bkb: 14, kbg: 16, ang: 30, hb: [[26, -8, 50, -14, 20]] }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 6 }, arms: { sx: 14, sy: -26, rx: 19, ry: -18, w: 5, c: 'k', hand: 'ball' }, back: [],
+      body: [{ t: 'circ', x: 0, y: -24, r: 20, c: 'a' }, { t: 'box', x: 4, y: -46, w: 10, h: 7, r: 2, c: 'k' }, { t: 'line', x0: 6, y0: -48, x1: 14, y1: -58, w: 2.4, c: 'k' }, { t: 'star', x: 15, y: -60, r: 6, n: 5, c: 'b' }, { t: 'circ', x: -9, y: -32, r: 3.6, c: 'w', lw: 0 }], eyes: [{ x: 6, y: -26, r: 4 }, { x: -5, y: -26, r: 3.6 }] } });
+  B1('ghost', { name: T2('ちょうちんおばけ ボンヤ', 'Bonya the Lantern Ghost'), short: T2('ボンヤ', 'Bonya'), tag: T2('すりぬけて現れる', 'Phasing dash'),
+    desc: T2('ちょうちんのおばけ。とくぎ（横）で、すりぬけながら進み（その間は当たらない）、出てきたところで相手をはじく。', 'A paper-lantern ghost. Side-special glides through everything (untouchable) and bursts out at the end.'),
+    color: '#f2f2ff', color2: '#e8553a', w: 32, h: 52, weight: 74, run: 3.4, acc: 0.5, air: 3.4, aacc: 0.3, jump: 11.0, dj: 10.4, grav: 0.38, fall: 7.2, ff: 10.8, jmax: 2, stats: { speed: 3, power: 2, weight: 1, reach: 3, recov: 4 }, arch: 'trick', sig: 'phase-dash', ul: { w: 78 },
+    kit: { tpl: 'floaty', pw: 0.95, sp: 0.9, rr: 1.1, ov: { jab: { hb: [[22, -30, 34, -30, 13]] }, ftilt: { hb: [[24, -30, 50, -34, 14]], ang: 45 }, utilt: { hb: [[8, -44, 2, -76, 16]] }, nair: { a: 14, rr: 1.25 }, fair: { hb: [[20, -30, 44, -26, 16]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 11, a: 1, t: 32, proj: { sp: 3.8, vy: 0, g: 0, r: 12, life: 80, dmg: 3.5, bkb: 6, kbg: 4, ang: 60, kind: 'wisp' } }),
+      S: sp({ kind: 'phase', fx: 'ring', s: 6, a: 12, ha: 5, t: 44, v: 8, dmg: 9, bkb: 22, kbg: 28, ang: 45, hb: [[20, -30, 40, -30, 28]] }),
+      U: sp({ kind: 'rise', fx: 'spin', s: 6, a: 26, t: 50, rv: 8.4, dv: 3.2, ang: 85, dmg: 3, bkb: 10, kbg: 10, hb: [[0, -30, 0, -30, 20]] }),
+      D: sp({ kind: 'melee', fx: 'ring', s: 10, a: 5, t: 34, dmg: 7, bkb: 18, kbg: 22, ang: 60, hb: [[0, -34, 0, -34, 40]] }),
+    },
+    spr: { legs: { k: 'none' }, arms: { sx: 10, sy: -34, rx: 16, ry: -26, w: 4, c: 'A', hand: 'none' }, back: [{ t: 'poly', pts: [-8, -8, -14, 4, -6, -2, -2, 6, 4, -2, 10, 4, 12, -8], c: 'a', anim: 'wag', lw: 1.6 }],
+      body: [{ t: 'ell', x: 0, y: -30, w: 32, h: 44, c: 'a' }, { t: 'box', x: 0, y: -54, w: 12, h: 5, r: 1, c: 'k' }, { t: 'line', x0: -14, y0: -30, x1: 14, y1: -30, w: 1.4, c: 'b' }, { t: 'line', x0: -12, y0: -40, x1: 12, y1: -40, w: 1.4, c: 'b' }, { t: 'line', x0: -12, y0: -20, x1: 12, y1: -20, w: 1.4, c: 'b' }, { t: 'circ', x: 0, y: -13, r: 3.4, c: 'ff', lw: 0 }], eyes: [{ x: 5, y: -34, r: 4 }, { x: -5, y: -34, r: 3.6 }] } });
+  B1('thunder', { name: T2('かみなり太鼓 ゴロゴロ', 'Gorogoro the Thunder Drum'), short: T2('ゴロゴロ', 'Gorogoro'), tag: T2('3発でしびれる', 'Shock stun'),
+    desc: T2('かみなりさまの太鼓。電気の玉を同じ相手に3回当てると、相手がしびれて動けなくなる。', 'A thunder-god drum. Land three sparks on the same foe and they get shocked, stunned for a moment.'),
+    color: '#6a5ad0', color2: '#ffd23f', w: 36, h: 50, weight: 98, run: 3.9, acc: 0.6, air: 3.0, aacc: 0.24, jump: 11.0, dj: 10.0, grav: 0.45, fall: 8.8, ff: 13, stats: { speed: 4, power: 3, weight: 3, reach: 3, recov: 3 }, arch: 'rush', sig: 'shock-stun', ul: { s: ['ffa', 4] },
+    kit: { tpl: 'brawler', pw: 0.95, sp: 0.8, ov: { jab: { sp: 0.7, hb: [[24, -30, 36, -30, 13]] }, ftilt: { hb: [[26, -30, 48, -30, 15]], ang: 38 }, dtilt: { hb: [[30, -6, 50, -6, 13]] }, fsmash: { hb: [[26, -34, 56, -30, 20]], dt: -2 }, uair: { hb: [[4, -64, -4, -84, 20]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 30, proj: { sp: 10, vy: 0, g: 0, r: 8, life: 30, dmg: 2.6, bkb: 4, kbg: 0, ang: 20, kind: 'spark' } }),
+      S: sp({ kind: 'melee', fx: 'punch', s: 7, a: 4, t: 28, dmg: 5, bkb: 12, kbg: 14, ang: 40, hb: [[24, -30, 50, -30, 16]] }),
+      U: sp({ kind: 'rise', fx: 'drill', s: 5, a: 20, t: 40, rv: 10.8, dv: 2.4, ang: 85, dmg: 5, bkb: 14, kbg: 14, hb: [[0, -40, 0, -60, 22]] }),
+      D: sp({ kind: 'melee', fx: 'ring', s: 12, a: 4, t: 38, dmg: 8, bkb: 18, kbg: 22, ang: 70, hb: [[0, -40, 0, -40, 52]] }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 6 }, arms: { sx: 13, sy: -32, rx: 18, ry: -24, w: 5, c: 'b', hand: 'stick' }, back: [{ t: 'ringo', x: 0, y: -48, w: 44, h: 12, c: 'b' }],
+      body: [{ t: 'circ', x: 0, y: -28, r: 20, c: 'a' }, { t: 'circ', x: 0, y: -28, r: 13, c: 'w', lw: 1.4 }, { t: 'poly', pts: [3, -38, -4, -26, 1, -26, -3, -18, 6, -30, 1, -30], c: 'b', lw: 1.4 }, { t: 'poly', pts: [-6, -48, -3, -58, 0, -48], c: 'b' }, { t: 'poly', pts: [3, -48, 6, -58, 9, -48], c: 'b' }], eyes: [{ x: 6, y: -34, r: 3.4 }] } });
+  B1('cham', { name: T2('カメレオン カメレ', 'Kamere the Chameleon'), short: T2('カメレ', 'Kamere'), tag: T2('姿とダメージをかくす', 'Cloak: hidden %'),
+    desc: T2('カメレオンのぬいぐるみ。下とくぎで姿をかくす（自分のダメージ%も見えなくなる）。かくれて出す最初の攻撃は強い。', 'A plush chameleon. Down-special cloaks it (its damage % is hidden too); the first hit out of the cloak is stronger.'),
+    color: '#5ac86a', color2: '#ffd23f', w: 32, h: 46, weight: 82, run: 4.0, acc: 0.6, air: 3.2, aacc: 0.28, jump: 10.8, dj: 9.8, grav: 0.44, fall: 8.4, ff: 12.6, stats: { speed: 4, power: 2, weight: 2, reach: 4, recov: 3 }, arch: 'trick', sig: 'cloak-hidden', ul: { w: 82 },
+    kit: { tpl: 'swift', reach: 1.2, pw: 1.12, sp: 0.9, ov: { jab: { hb: [[28, -28, 42, -28, 10]] }, ftilt: { hb: [[30, -28, 76, -26, 10]], a: 5 }, utilt: { hb: [[12, -40, 6, -72, 12]] }, dtilt: { hb: [[34, -6, 64, -6, 10]] }, fsmash: { hb: [[30, -30, 84, -28, 14]], a: 6 } } },
+    sp: {
+      N: sp({ kind: 'melee', fx: 'spring', s: 9, a: 4, t: 30, dmg: 6, bkb: 12, kbg: 14, ang: 30, hb: [[30, -36, 92, -36, 10]] }),
+      S: sp({ kind: 'dash', fx: 'kick', s: 9, a: 10, t: 38, v: 7.4, dmg: 7, bkb: 16, kbg: 20, ang: 40, hb: [[16, -24, 36, -24, 16]] }),
+      U: sp({ kind: 'rise', fx: 'springup', s: 5, a: 20, t: 40, rv: 10.6, dv: 2.8, ang: 85, dmg: 3, bkb: 10, kbg: 10, hb: [[0, -26, 0, -26, 18]] }),
+      D: sp({ kind: 'cloak', fx: 'cast', s: 8, a: 1, t: 34, dur: 260, hb: [] }),
+    },
+    spr: { legs: { k: 'legs', c: 'a', w: 5 }, arms: { sx: 8, sy: -24, rx: 14, ry: -16, w: 4.4, c: 'A', hand: 'ball' }, back: [{ t: 'poly', pts: [-10, -16, -30, -22, -34, -10, -24, -4, -16, -10], c: 'a', anim: 'wag', lw: 1.8 }],
+      body: [{ t: 'ell', x: 0, y: -20, w: 30, h: 24, c: 'a' }, { t: 'ell', x: 6, y: -34, w: 24, h: 20, c: 'a' }, { t: 'circ', x: 10, y: -38, r: 6.4, c: 'w' }, { t: 'poly', pts: [2, -44, 8, -52, 12, -44], c: 'b' }, { t: 'circ', x: -6, y: -22, r: 3, c: 'b', lw: 0 }, { t: 'circ', x: 4, y: -16, r: 2.4, c: 'b', lw: 0 }], eyes: [{ x: 11, y: -38, r: 3.4 }] } });
+  B1('magnet', { name: T2('じしゃく ジシャク', 'Jishaku the Magnet'), short: T2('ジシャク', 'Jishaku'), tag: T2('引いて・おして', 'Pulsing field'),
+    desc: T2('U字のじしゃく。下とくぎの磁場は、引きよせては おしやるをくり返して、相手のリズムをくずす。', 'A horseshoe magnet. Its field alternates pulling and pushing, breaking the foe\'s rhythm.'),
+    color: '#d0453f', color2: '#4a6ad0', w: 34, h: 52, weight: 106, run: 3.0, acc: 0.48, air: 2.6, aacc: 0.2, jump: 10.0, dj: 9.0, grav: 0.46, fall: 9.2, ff: 13.4, stats: { speed: 2, power: 3, weight: 3, reach: 3, recov: 3 }, arch: 'zone', sig: 'polar-field', ul: { s: ['lad', 3] },
+    kit: { tpl: 'zoner', pw: 1.7, sp: 1.0, ov: { jab: { hb: [[24, -30, 38, -30, 15]] }, ftilt: { hb: [[26, -30, 54, -30, 16]], ang: 38 }, utilt: { hb: [[8, -44, 0, -72, 17]] }, dsmash: { hb: [[36, -8, 56, -8, 18], [-36, -8, -56, -8, 18]] }, fsmash: { hb: [[26, -34, 66, -30, 20]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 11, a: 1, t: 34, proj: { sp: 7, vy: 0, g: 0, r: 11, life: 56, dmg: 3.4, bkb: 8, kbg: 8, ang: 30, kind: 'bolt' } }),
+      S: sp({ kind: 'melee', fx: 'lid', s: 12, a: 5, t: 38, dmg: 9, bkb: 22, kbg: 28, ang: 40, hb: [[22, -30, 48, -30, 24]] }),
+      U: sp({ kind: 'rise', fx: 'horn', s: 6, a: 18, t: 42, rv: 9.8, dv: 2.4, ang: 80, dmg: 4, bkb: 12, kbg: 12, hb: [[0, -52, 0, -52, 24]] }),
+      D: sp({ kind: 'zone', fx: 'cast', s: 16, a: 1, t: 42, proj: { kind: 'mag', r: 40, rad: 150, life: 240, pw: 0.7, osc: 40, ox: 70, oy: 30, nohit: 1 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 6 }, arms: { sx: 11, sy: -30, rx: 16, ry: -22, w: 4.6, c: 'k', hand: 'ball' }, back: [],
+      body: [{ t: 'box', x: -11, y: -34, w: 12, h: 38, r: 3, c: 'a' }, { t: 'box', x: 11, y: -34, w: 12, h: 38, r: 3, c: 'a' }, { t: 'box', x: 0, y: -50, w: 34, h: 12, r: 5, c: 'a' }, { t: 'box', x: -11, y: -10, w: 12, h: 9, r: 1, c: 'w' }, { t: 'box', x: 11, y: -10, w: 12, h: 9, r: 1, c: 'w' }, { t: 'box', x: -11, y: -17, w: 12, h: 3, r: 0, c: 'b', lw: 0 }, { t: 'box', x: 11, y: -17, w: 12, h: 3, r: 0, c: 'b', lw: 0 }], eyes: [{ x: 4, y: -48, r: 3.2 }, { x: -4, y: -48, r: 2.8 }] } });
+  B1('stamp', { name: T2('ハンコ ポンス', 'Ponsu the Rubber Stamp'), short: T2('ポンス', 'Ponsu'), tag: T2('しるしをつけてドン', 'Mark, then slam'),
+    desc: T2('ゴムのハンコ。印を当てた相手に、あとで下とくぎを出すと、どこにいてもまとめてドンとはじく。', 'A rubber stamp. Tag a foe with its mark, then down-special slams every marked foe wherever they are.'),
+    color: '#c8282f', color2: '#f4efe0', w: 32, h: 54, weight: 96, run: 3.4, acc: 0.5, air: 2.8, aacc: 0.22, jump: 10.6, dj: 9.6, grav: 0.44, fall: 8.6, ff: 12.8, stats: { speed: 3, power: 3, weight: 2, reach: 3, recov: 3 }, arch: 'counter', sig: 'mark-stamp', ul: { w: 86 },
+    kit: { tpl: 'blade', pw: 1.05, reach: 1.0, ov: { jab: { hb: [[24, -34, 38, -34, 13]] }, ftilt: { hb: [[26, -34, 56, -34, 14]] }, utilt: { hb: [[10, -46, 4, -76, 15]] }, fsmash: { hb: [[24, -52, 60, -12, 22]], a: 5 }, dsmash: { hb: [[40, -6, 40, -6, 18], [-40, -6, -40, -6, 18]] } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 32, proj: { sp: 9, vy: 0, g: 0, r: 12, life: 34, dmg: 3, bkb: 6, kbg: 4, ang: 40, kind: 'tag' } }),
+      S: sp({ kind: 'melee', fx: 'lid', s: 14, a: 6, t: 44, dmg: 12, bkb: 26, kbg: 34, ang: 48, hb: [[22, -64, 52, -8, 24]] }),
+      U: sp({ kind: 'rise', fx: 'prop', s: 6, a: 18, t: 42, rv: 9.8, dv: 2.4, ang: 80, dmg: 5, bkb: 14, kbg: 14, hb: [[8, -58, 8, -58, 22]] }),
+      D: sp({ kind: 'detonate', fx: 'ring', s: 10, a: 1, t: 36, dmg: 14, bkb: 28, kbg: 36, ang: 60, hb: [] }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 6 }, arms: { sx: 12, sy: -30, rx: 17, ry: -22, w: 5, c: 'k', hand: 'ball' }, back: [],
+      body: [{ t: 'box', x: 0, y: -14, w: 30, h: 14, r: 3, c: 'b' }, { t: 'box', x: 0, y: -26, w: 18, h: 14, r: 4, c: 'a' }, { t: 'box', x: 0, y: -48, w: 14, h: 22, r: 5, c: 'a' }, { t: 'circ', x: 0, y: -62, r: 6.4, c: 'a' }, { t: 'box', x: 0, y: -14, w: 22, h: 4, r: 1, c: 'a', lw: 0 }], eyes: [{ x: 4, y: -26, r: 3.4 }, { x: -4, y: -26, r: 3 }] } });
+  B1('plaster', { name: T2('ばんそうこう バンコ', 'Banko the Plaster'), short: T2('バンコ', 'Banko'), tag: T2('じっとして治す', 'Channel heal'),
+    desc: T2('ばんそうこう。下とくぎをおし続けると、動けないかわりに、すこしずつダメージが治っていく。', 'An adhesive plaster. Hold down-special to stand still and slowly heal your damage, leaving yourself open.'),
+    color: '#f4c8a0', color2: '#6ac8e8', w: 30, h: 58, weight: 90, run: 3.7, acc: 0.54, air: 2.9, aacc: 0.22, jump: 10.6, dj: 9.8, grav: 0.43, fall: 8.4, ff: 12.4, stats: { speed: 3, power: 3, weight: 2, reach: 3, recov: 3 }, arch: 'allround', sig: 'channel-heal', ul: { s: ['pshield', 8] },
+    kit: { tpl: 'brawler', pw: 0.78, sp: 1.0, reach: 1.05, ov: { jab: { hb: [[24, -34, 38, -34, 13]] }, ftilt: { hb: [[26, -34, 52, -34, 14]] }, utilt: { hb: [[12, -48, 2, -74, 15]] }, dtilt: { hb: [[30, -6, 50, -6, 13]] }, fsmash: { hb: [[26, -38, 58, -32, 19]] } } },
+    sp: {
+      N: sp({ kind: 'melee', fx: 'punch', s: 6, a: 3, t: 24, dmg: 5, bkb: 12, kbg: 14, ang: 50, hb: [[24, -30, 44, -30, 14]] }),
+      S: sp({ kind: 'proj', fx: 'cast', s: 12, a: 1, t: 34, proj: { sp: 8, vy: 0, g: 0, r: 10, life: 40, dmg: 4.4, bkb: 8, kbg: 8, ang: 30, kind: 'patch' } }),
+      U: sp({ kind: 'rise', fx: 'prop', s: 6, a: 20, t: 44, rv: 10.0, dv: 2.4, ang: 80, dmg: 4, bkb: 12, kbg: 12, hb: [[0, -34, 0, -34, 22]] }),
+      D: sp({ kind: 'channel', fx: 'cast', s: 6, a: 1, t: 40, cmax: 60, hb: [] }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 5 }, arms: { sx: 9, sy: -34, rx: 14, ry: -26, w: 4.4, c: 'a', hand: 'ball' }, back: [],
+      body: [{ t: 'box', x: 0, y: -30, w: 24, h: 46, r: 8, c: 'a' }, { t: 'box', x: 0, y: -30, w: 24, h: 14, r: 0, c: 'b', lw: 0 }, { t: 'holes', x: -8, y: -30, n: 4, dx: 5 }, { t: 'box', x: 0, y: -30, w: 24, h: 46, r: 8, c: 'rgba(0,0,0,0)', lw: 2 }], eyes: [{ x: 4, y: -42, r: 3.2 }, { x: -5, y: -42, r: 2.8 }] } });
+  B1('prism', { name: T2('プリズム プリズ', 'Prizzy the Prism'), short: T2('プリズ', 'Prizzy'), tag: T2('光が3つに分かれる', 'Splitting beams'),
+    desc: T2('ガラスのプリズム。光の玉は途中で3つに分かれて広がる。下とくぎの光線は、長くてまっすぐ相手をつらぬく。', 'A glass prism. Its light orb splits into three on the way; down-special fires a long piercing beam.'),
+    color: '#cfe8ff', color2: '#ff5aa0', w: 30, h: 54, weight: 80, run: 3.5, acc: 0.52, air: 3.1, aacc: 0.26, jump: 11.2, dj: 10.2, grav: 0.4, fall: 7.8, ff: 12, jmax: 2, stats: { speed: 3, power: 2, weight: 1, reach: 4, recov: 4 }, arch: 'zone', sig: 'split-beam', ul: { w: 90 },
+    kit: { tpl: 'zoner', pw: 1.0, sp: 1.0, reach: 1.15, ov: { jab: { hb: [[24, -34, 38, -34, 10]] }, ftilt: { hb: [[26, -34, 62, -34, 10]], a: 5 }, utilt: { hb: [[8, -48, 0, -80, 12]] }, fsmash: { hb: [[26, -38, 74, -30, 14]], a: 6 }, bair: { ang: 150 } } },
+    sp: {
+      N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 30, proj: { sp: 7, vy: 0, g: 0, r: 9, life: 50, dmg: 3.2, bkb: 6, kbg: 5, ang: 35, kind: 'prism' } }),
+      S: sp({ kind: 'melee', fx: 'slash', s: 11, a: 5, t: 36, dmg: 8, bkb: 18, kbg: 24, ang: 36, hb: [[22, -40, 60, -40, 12]] }),
+      U: sp({ kind: 'rise', fx: 'spin', s: 6, a: 20, t: 44, rv: 10.2, dv: 2.6, ang: 80, dmg: 4, bkb: 12, kbg: 12, hb: [[0, -34, 0, -34, 20]] }),
+      D: sp({ kind: 'proj', fx: 'cast', s: 18, a: 1, t: 46, proj: { sp: 15, vy: 0, g: 0, r: 5, life: 26, dmg: 7, bkb: 12, kbg: 14, ang: 20, kind: 'beam', pierce: 1, rh: 99 } }),
+    },
+    spr: { legs: { k: 'legs', c: 'k', w: 4 }, arms: { sx: 8, sy: -30, rx: 13, ry: -22, w: 3.6, c: 'k', hand: 'ball' }, back: [{ t: 'poly', pts: [-8, -34, -34, -40, -34, -28], c: 'b', anim: 'wag', lw: 0 }],
+      body: [{ t: 'poly', pts: [0, -62, 15, -12, -15, -12], c: 'a' }, { t: 'poly', pts: [0, -62, 15, -12, 4, -12], c: 'w', lw: 0 }, { t: 'line', x0: 15, y0: -34, x1: 32, y1: -40, w: 3, c: 'b' }, { t: 'line', x0: 15, y0: -30, x1: 32, y1: -28, w: 3, c: '#ffd23f' }], eyes: [{ x: 2, y: -34, r: 3.4 }] } });
+
+  // 第3弾の体の数字（重さ・速さ・ジャンプ・重力 など）：ほかのどの子ともちがうように、スクリプトで散らして決めた値（ちがいの数字 E.dist が全員 9 以上になる）
+  const B2BODY = {"mirror": {"weight": 62, "run": 4.7, "jump": 12, "dj": 11.1, "grav": 0.5, "fall": 10, "air": 2.2, "acc": 0.66, "aacc": 0.14}, "sand": {"weight": 139, "run": 4.8, "jump": 9.5, "dj": 8.6, "grav": 0.5, "fall": 10.2, "air": 3.8, "acc": 0.42, "aacc": 0.34}, "shroom": {"weight": 129, "run": 3.3, "jump": 10.6, "dj": 9.7, "grav": 0.46, "fall": 10.2, "air": 3.2, "acc": 0.5, "aacc": 0.3}, "camp": {"weight": 70, "run": 3.3, "jump": 12.1, "dj": 11.2, "grav": 0.37, "fall": 6.8, "air": 3.3, "acc": 0.42, "aacc": 0.32}, "snow": {"weight": 132, "run": 4.4, "jump": 12.1, "dj": 11.2, "grav": 0.38, "fall": 6.6, "air": 2.3, "acc": 0.68, "aacc": 0.14}, "kite": {"weight": 102, "run": 4.3, "jump": 9.4, "dj": 8.5, "grav": 0.49, "fall": 8.4, "air": 3.8, "acc": 0.64, "aacc": 0.22}, "door": {"weight": 63, "run": 3.1, "jump": 12.1, "dj": 11.2, "grav": 0.46, "fall": 9.6, "air": 3.2, "acc": 0.68, "aacc": 0.34}, "pinball": {"weight": 67, "run": 4.6, "jump": 11.4, "dj": 10.5, "grav": 0.49, "fall": 9.8, "air": 3.8, "acc": 0.42, "aacc": 0.14}, "bomb": {"weight": 63, "run": 4.7, "jump": 9.2, "dj": 8.3, "grav": 0.37, "fall": 6.6, "air": 3.8, "acc": 0.7, "aacc": 0.14}, "ghost": {"weight": 136, "run": 3.4, "jump": 11.4, "dj": 10.5, "grav": 0.46, "fall": 7.2, "air": 2.5, "acc": 0.54, "aacc": 0.14}, "thunder": {"weight": 135, "run": 4.7, "jump": 12.2, "dj": 11.3, "grav": 0.48, "fall": 9.8, "air": 3.3, "acc": 0.66, "aacc": 0.34}, "cham": {"weight": 68, "run": 4.5, "jump": 11.5, "dj": 10.6, "grav": 0.45, "fall": 9.8, "air": 3.7, "acc": 0.54, "aacc": 0.28}, "magnet": {"weight": 65, "run": 4.1, "jump": 9.2, "dj": 8.3, "grav": 0.36, "fall": 6.6, "air": 2.2, "acc": 0.68, "aacc": 0.34}, "stamp": {"weight": 136, "run": 4.8, "jump": 9.5, "dj": 8.6, "grav": 0.37, "fall": 6.6, "air": 3.6, "acc": 0.66, "aacc": 0.32}, "plaster": {"weight": 129, "run": 4.7, "jump": 9.6, "dj": 8.7, "grav": 0.48, "fall": 6.6, "air": 3.5, "acc": 0.62, "aacc": 0.3}, "prism": {"weight": 139, "run": 3.6, "jump": 12.2, "dj": 11.3, "grav": 0.37, "fall": 6.6, "air": 3.7, "acc": 0.44, "aacc": 0.16}};
+  for (const id of Object.keys(B2BODY)) Object.assign(CH[id], B2BODY[id]);
 
   // ------------------------------------------------------------------------------------------------ あとから足す印
   // arch：タイプ（選ぶ画面の絞りこみ・CPU の考え方） sig：そのおもちゃだけの目玉（ほかのおもちゃと同じにしない）

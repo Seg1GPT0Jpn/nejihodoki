@@ -294,7 +294,8 @@
   const foeNear = (st, p) => { let best = null, bd = 1e9; for (const F of st.fighters) { if (F.i === p.o || F.s === 'dead' || F.s === 'out' || F.s === 'rez') continue; const d = hyp(F.x - p.x, F.y - CH[F.ch].h / 2 - p.y); if (d < bd) { bd = d; best = F; } } return best; };
   const projOf = (st, o, k) => { for (const p of st.pr) if (p.o === o && p.k === k && !p.dead) return p; return null; };
   const dropProj = (st, f, C, m, extra) => { // 足もと（少しまえ）に、とどまる飛び道具を1つ置く（同じ種類は1つだけ）
-    const p = m.proj, old = projOf(st, f.i, p.kind); if (old) old.dead = true;
+    const p = m.proj, mx = p.max || 1; let n = 0, first = null; for (const q of st.pr) if (q.o === f.i && q.k === p.kind && !q.dead) { n++; if (!first) first = q; }
+    if (n >= mx && first) first.dead = true;
     const o = { o: f.i, k: p.kind, x: f.x + f.face * (p.ox || 0), y: f.y - (p.oy !== undefined ? p.oy : C.h * 0.5), vx: 0, vy: 0, g: 0, r: p.r, life: p.life, dmg: p.dmg || 0, bkb: p.bkb || 0, kbg: p.kbg || 0, ang: p.ang || 0, bn: 0, t: 0, face: f.face, bf: 1, hbk: m.key };
     for (const k of PROJ_OPT) if (p[k] !== undefined) o[k] = p[k];
     st.pr.push(Object.assign(o, extra || {})); ev(st, { t: 'shoot', i: f.i, k: p.kind, x: o.x, y: o.y });
@@ -306,10 +307,10 @@
       const dx = p.x - F.x, dy = p.y - (F.y - CH[F.ch].h / 2), d = hyp(dx, dy);
       if (d >= p.rad) continue;
       if (p.slow) setSlow(F, p.slow);
-      if (p.pw) { const k = p.pw * (1 - d / p.rad) / (d || 1); F.vx = clamp(F.vx + dx * k, -9, 9); if (F.gr < 0) F.vy = clamp(F.vy + dy * k * 0.7, -9, 9); }
+      if (p.pw) { const k = p.pw * (p.osc && Math.floor(p.t / p.osc) % 2 ? -1 : 1) * (1 - d / p.rad) / (d || 1); F.vx = clamp(F.vx + dx * k, -9, 9); if (F.gr < 0) F.vy = clamp(F.vy + dy * k * 0.7, -9, 9); }
     }
   };
-  for (const n of ['pool', 'well', 'gale']) defineProj(n, { update: zoneUpdate });
+  for (const n of ['pool', 'well', 'gale', 'mag']) defineProj(n, { update: zoneUpdate });
   defineProj('missile', { update(st, p) { if (Math.abs(p.vx) < 13) p.vx *= 1.05; } });
   defineProj('jet', { hit(st, A, D) { setSlow(D, 45); } });
   defineProj('void', { hit(st, A, D) { setSlow(D, 70); } });
@@ -367,6 +368,58 @@
       if (cx.inp & B.S) { cx.grav = 0.08; f.vy = Math.min(f.vy, 0.7); f.vx = clamp(f.vx + cx.ax * 0.45, -m.dv, m.dv); } else f.mf = m.t; // はなしたら、おしまい
     }
   } });
+
+
+  // ---- 第3弾（Batch 2）の仕掛け
+  const stunHit = (D) => { D.lv = null; D.s = 'stun'; D.sf = 88; D.vx = 0; D.vy = -2; D.gr = -1; D.hs = 0; D.ssn = 0; };
+  defineProj('mirror', { update(st, p) { // かがみ：通りぬける相手の飛び道具を、持ち主のものにしてはね返す（1つにつき1回）
+    for (const q of st.pr) { if (q === p || q.o === p.o || q.dead || q.nohit || q.mr || isMine(q)) continue; if (Math.abs(q.x - p.x) < p.r + q.r && Math.abs(q.y - p.y) < p.rad) { q.vx = -q.vx * 1.1; q.o = p.o; q.mr = 1; q.face = -q.face; q.t = 0; ev(st, { t: 'reflect', i: p.o, x: q.x, y: q.y }); } }
+  } });
+  defineProj('sand', { update(st, p) { zoneUpdate(st, p); for (const q of st.pr) if (q !== p && q.o !== p.o && !isMine(q) && !q.nohit && hyp(q.x - p.x, q.y - p.y) < p.rad) { q.vx *= 0.9; q.vy *= 0.9; } } }); // すなどけい：中では、人も飛び道具もゆっくり
+  defineProj('grain', { hit(st, A, D) { setSlow(D, 40); } });
+  const dotHit = (n) => (st, A, D) => { const k = ksOf(D); k.dot = Math.max(k.dot | 0, n); k.dotBy = A.i; };
+  defineProj('spore', { hit: dotHit(240) });
+  defineProj('pod', { mine: true, hit: dotHit(320) });
+  defineProj('camp', { update(st, p) { const O = st.fighters[p.o]; if (O && O.s !== 'dead' && O.s !== 'out' && hyp(O.x - p.x, O.y - CH[O.ch].h / 2 - p.y) < p.rad) O.buff = Math.max(O.buff, 3); } }); // たき火：中にいるあいだ、自分の攻撃が強くなる
+  defineProj('portal', { update(st, p) { // とびら：2つ置くと、ふれた人も飛び道具も、もう一方へ出る
+    let q2 = null; for (const q of st.pr) if (q !== p && q.o === p.o && q.k === 'portal' && !q.dead) { q2 = q; break; }
+    if (!q2) return;
+    for (const F of st.fighters) { if (F.s === 'dead' || F.s === 'out' || F.s === 'rez' || F.s === 'held') continue; const k = F.ks; if (k && k.pc > 0) { k.pc--; continue; }
+      if (hyp(F.x - p.x, F.y - CH[F.ch].h / 2 - p.y) < p.r + 8) { const kk = ksOf(F); kk.pc = 40; ev(st, { t: 'warp', i: F.i, x: F.x, y: F.y - 20, x2: q2.x, y2: q2.y }); F.x = q2.x; F.y = q2.y + CH[F.ch].h / 2; F.gr = -1; } }
+    for (const q of st.pr) if (q !== p && q !== q2 && !q.nohit && !q.dead && !(q.pt && st.f - q.pt < 24) && hyp(q.x - p.x, q.y - p.y) < p.r + q.r) { q.x = q2.x; q.y = q2.y; q.pt = st.f; }
+  } });
+  defineProj('bumper', { hit(st, A, D, p) { if (D.lv) { const dx = D.x - p.x, dy = D.y - CH[D.ch].h / 2 - p.y, n = hyp(dx, dy) || 1; D.lv = [rd(dx / n * 7.5), rd(dy / n * 7.5 - 2)]; } ev(st, { t: 'tick', x: p.x, y: p.y }); } });
+  defineProj('bomb', { update(st, p) { if (p.t === p.fz) { p.nohit = 0; p.vx = 0; p.vy = 0; p.g = 0; p.r = p.er; p.dmg = p.ed; p.bkb = p.ebk; p.kbg = p.ekg; p.ang = p.ea; p.pierce = 1; p.rh = 99; p.life = 6; p.bn = 0; ev(st, { t: 'slam', i: p.o, x: p.x, y: p.y + p.r * 0.5, p: 10 }); } } });
+  defineProj('spark', { hit(st, A, D) { const k = ksOf(D); k.shk = (k.shk | 0) + 1; if (k.shk >= 3) { k.shk = 0; stunHit(D); ev(st, { t: 'shbreak', d: D.i, x: D.x, y: D.y - 30 }); } } });
+  defineProj('tag', { hit(st, A, D) { const k = ksOf(D); k.mk = 320; k.mkby = A.i; } });
+  defineProj('prism', { update(st, p) { if (p.t === 14 && !p.sp3) { for (const s of [-1, 1]) { const c = Object.assign({}, p, { vy: s * 3.4, sp3: 1, t: 15, dmg: rd(p.dmg * 0.8) }); delete c.hl; st.pr.push(c); } p.sp3 = 1; } } });
+  defineKind('grow', { tick(st, f, C, m, fr) { if (fr === m.s) { const k = ksOf(f); k.big = Math.min(3, (k.big | 0) + 1); k.bigT = 480; ev(st, { t: 'stance', i: f.i, x: f.x, y: f.y - C.h / 2, on: 3 }); } },
+    ai(st, f, m, T, c) { return (!f.ks || !(f.ks.big >= 2)) && c.adx < 420 && c.r < 0.22 ? { hold: B.D } : null; } });
+  defineKind('flight', { melee: true, tick(st, f, C, m, fr, cx) { // 凧：ボタンをおしているあいだ（ねんりょうが切れるまで）、ぶつかりながら自由に飛ぶ
+    const k = ksOf(f); cx.free = true;
+    if (fr === m.s && f.gr >= 0) { f.gr = -1; f.vy = -4; }
+    if (fr >= m.s && fr < m.s + m.a) {
+      if (k.fuel === undefined) k.fuel = m.fuel;
+      if ((cx.inp & B.S) && k.fuel > 0) { k.fl = 1; k.fuel--; f.mf = m.s + 1; cx.grav = 0; f.vx = cx.ax * m.fv; f.vy = cx.ay * m.fv; f.gr = -1; f.ffl = false; if (cx.ax) f.face = cx.ax; if (k.fuel % 16 === 0) f.mh = []; }
+      else if (k.fl) { k.fl = 0; f.mf = m.s + m.a; }
+    }
+  }, ai(st, f, m, T, c) { return c.lvl >= 2 && c.adx > 100 && c.adx < 460 && c.ady < 140 && c.r < 0.3 ? { hold: (c.faceT > 0 ? B.R : B.L) | B.S, pt: 18 } : null; } });
+  defineKind('phase', { tick(st, f, C, m, fr, cx) { // おばけ：すりぬけて進み（当たらない）、出てきたところで はじく
+    cx.free = true;
+    if (fr >= m.s && fr < m.s + m.a) { f.vx = f.face * m.v; f.inv = Math.max(f.inv, 2); if (f.gr < 0) { f.vy = 0; cx.grav = 0; } }
+    else if (fr === m.s + m.a) { f.vx *= 0.3; f.mh = []; }
+  }, boxes(A, m, fr) { return fr >= m.s + m.a && fr < m.s + m.a + m.ha ? { hbs: m.hb, p: m, t: 0 } : null; },
+    ai(st, f, m, T, c) { return c.adx > 90 && c.adx < 300 && c.ady < 70 && c.r < 0.4 ? { hold: c.faceT > 0 ? B.R : B.L } : null; } });
+  defineKind('cloak', { tick(st, f, C, m, fr) { if (fr === m.s) { const k = ksOf(f); k.cl = m.dur; k.pow = 12; ev(st, { t: 'stance', i: f.i, x: f.x, y: f.y - C.h / 2, on: 4 }); } },
+    ai(st, f, m, T, c) { return (!f.ks || !(f.ks.cl > 0)) && c.adx > 140 && c.r < 0.2 ? { hold: B.D } : null; } });
+  defineKind('detonate', { tick(st, f, C, m, fr) { // 「ハンコ」をおした相手に、まとめてドン
+    if (fr !== m.s) return;
+    for (const F of st.fighters) { if (F.i === f.i || !F.ks || !(F.ks.mk > 0) || F.ks.mkby !== f.i || F.s === 'dead' || F.s === 'out' || F.s === 'rez') continue; F.ks.mk = 0; hitFighter(st, { A: f, D: F, p: { dmg: m.dmg, bkb: m.bkb, kbg: m.kbg, ang: m.ang }, m: null, x: F.x, y: F.y - 24, kind: 'proj', face: F.x >= f.x ? 1 : -1 }); }
+  }, ai(st, f, m, T, c) { for (const F of st.fighters) if (F.i !== f.i && F.ks && F.ks.mk > 0 && F.ks.mkby === f.i && F.s !== 'out' && F.s !== 'dead') return { hold: B.D }; return null; } });
+  defineKind('channel', { tick(st, f, C, m, fr, cx) { // いやす：ボタンをおしているあいだ、すこしずつダメージが減る（うごけない）
+    const k = ksOf(f);
+    if (fr === m.s) { if ((cx.inp & B.S) && (k.ch | 0) < m.cmax) { k.ch = (k.ch | 0) + 1; f.mf = m.s - 1; f.vx *= 0.5; if (k.ch % 10 === 0) f.pct = Math.max(0, rd(f.pct - 1.0)); } else k.ch = 0; }
+  }, ai(st, f, m, T, c) { return f.pct > 35 && c.adx > 240 && c.r < 0.25 && c.lvl >= 2 ? { hold: B.D | B.S, pt: 70 } : null; } });
 
   for (const c of K.CH_LIST) defineChar(c);
 
@@ -885,7 +938,7 @@
     f.x += dx * d; f.y += dy * d; f.gr = -1; f.vx = dx * 1.2; f.vy = Math.min(0, dy * 1.5); f.ffl = false;
     f.mh = [];
   }
-  const PROJ_OPT = ['pierce', 'rh', 'bnc', 'nohit', 'rad', 'pw', 'slow', 'root', 'arm', 'dn'];
+  const PROJ_OPT = ['pierce', 'rh', 'bnc', 'nohit', 'rad', 'pw', 'slow', 'root', 'arm', 'dn', 'stay', 'osc', 'fz', 'er', 'ed', 'ebk', 'ekg', 'ea', 'sp3'];
   function spawnProj(st, f, C, m) {
     const p = m.proj;
     const o = { o: f.i, k: p.kind, x: f.x + f.face * (C.w / 2 + 8), y: f.y - C.h * 0.55, vx: f.face * p.sp, vy: p.vy, g: p.g, r: p.r, life: p.life, dmg: p.dmg, bkb: p.bkb, kbg: p.kbg, ang: p.ang, bn: p.bounce ? 3 : 0, t: 0, face: f.face, bf: f.buff > 0 ? 1.25 : 1, hbk: m.key };
@@ -1028,6 +1081,7 @@
     // 同じ技ばかり使うと弱くなる
     if (h.m) { let n = 0; for (const k of A.recent) if (k === h.m.key) n++; d *= Math.max(0.55, 1 - 0.06 * Math.max(0, n - 1)); if (A.buff > 0) d *= 1.25; }
     if (h.m && h.m.sm && A.chg > 0) d *= 1 + 0.4 * Math.min(1, A.chg / 45);
+    if (A.ks && A.ks.big > 0) d *= 1 + 0.16 * A.ks.big;
     if (h.m && A.ks && A.ks.pow > 0) { d *= 1 + Math.min(0.5, A.ks.pow * 0.03); A.ks.pow = 0; }
     d = rd(d);
     const face = h.face;
@@ -1073,6 +1127,7 @@
     const wm = 1 + (100 - DC.weight) * 0.006;
     const pAfter = D.pct;
     let v = (p.bkb + p.kbg * pAfter * 0.01) * 0.18 * wm;
+    if (D.ks && D.ks.big > 0) v *= 1 - 0.08 * D.ks.big;
     if (D.cr > 2 && D.gr >= 0 && D.s === 'free') v *= 0.85; // しゃがみ（クラウチキャンセル）：飛びにくい
     if (how === 'hug' || how === 'throw') { D.pct = rd(D.pct + p.dmg); A.dealt = rd(A.dealt + p.dmg); D.taken = rd(D.taken + p.dmg); D.last = A.i; D.lastF = st.f; D.lk = how; v = (p.bkb + p.kbg * D.pct * 0.01) * 0.18 * wm; }
     const a = V(p.ang); let dx = a[0] * face, dy = a[1];
@@ -1128,7 +1183,7 @@
         for (const t of st.th) if (!bounced && p.x >= t.x1 && p.x <= t.x2 && p.y + p.r >= t.y && p.y - p.vy + p.r <= t.y + 3 && p.vy > 0) { p.y = t.y - p.r; p.vy = -Math.abs(p.vy) * 0.85; bounced = true; }
         if (bounced) { p.bn--; if (p.bn < 0) p.dead = true; else ev(st, { t: 'tick', x: p.x, y: p.y }); }
         for (const s of S.solids) if (p.x + p.r > s.x1 && p.x - p.r < s.x2 && p.y > s.y1 + 6 && p.y < s.y2) p.vx = -p.vx;
-      } else if (!p.nohit) {
+      } else if (!p.nohit && !p.stay) {
         for (const s of S.solids) if (p.x + p.r > s.x1 && p.x - p.r < s.x2 && p.y + p.r > s.y1 + 2 && p.y - p.r < s.y2) { p.dead = true; break; }
       }
       if (p.life <= 0 || p.x < bl.l - 100 || p.x > bl.r + 100 || p.y < bl.t - 200 || p.y > bl.b + 100) p.dead = true;
@@ -1197,6 +1252,12 @@
       if (k.abs > 0) k.abs--;
       if (k.stT > 0 && --k.stT === 0) k.st = 0;
       if (k.cc && f.s !== 'atk') k.cc = 0;
+      if (k.ch && f.s !== 'atk') k.ch = 0;
+      if (k.dot > 0) { k.dot--; if (k.dot % 24 === 0) { f.pct = rd(f.pct + 1.0); f.taken = rd(f.taken + 1); f.last = k.dotBy; f.lastF = st.f; const A = st.fighters[k.dotBy]; if (A) A.dealt = rd(A.dealt + 1); } }
+      if (k.cl > 0) k.cl--;
+      if (k.bigT > 0 && --k.bigT === 0 && k.big > 0) { k.big--; k.bigT = k.big ? 420 : 0; }
+      if (k.mk > 0) k.mk--;
+      if (k.fuel !== undefined && f.gr >= 0 && f.s !== 'atk') delete k.fuel;
       if (f.s === 'dead' || f.s === 'out') { f.ks = null; }
     }
   }
@@ -1474,7 +1535,7 @@
     // 遠い：飛び道具・近づく・まつ
     if (adx > 150 && adx < 460 && ady < 80 && r < 0.2 + 0.13 * lvl) {
       const faceTo = faceT > 0 ? B.R : B.L;
-      if (fm.spD.kind === 'mine' && fm.spD.proj.kind === 'snare' && lvl > 1 && r < 0.3 && st.pr.filter(q => q.o === f.i && q.k === 'snare').length < 3) { ai.hold = B.D; ai.pulse = B.S; ai.pt = 8; ai.pl = 'mine'; return; }
+      if (fm.spD.kind === 'mine' && (fm.spD.proj.kind === 'snare' || fm.spD.proj.kind === 'pod') && lvl > 1 && r < 0.3 && st.pr.filter(q => q.o === f.i && q.k === fm.spD.proj.kind).length < (fm.spD.proj.max || 1)) { ai.hold = B.D; ai.pulse = B.S; ai.pt = 8; ai.pl = 'mine'; return; }
       for (const k of ['spN', 'spS']) { const m = fm[k]; if (m.kind === 'proj') { ai.hold = (k === 'spS' ? faceTo : 0) | faceTo; ai.pulse = B.S; ai.pt = 8; ai.pl = 'proj'; return; } }
       if (fm.spD.kind === 'mine' && lvl > 1 && r < 0.5) { ai.hold = B.D; ai.pulse = B.S; ai.pt = 8; ai.pl = 'mine'; return; }
       if (fm.spD.kind === 'buff' && f.buff <= 0 && lvl > 1) { ai.hold = B.D; ai.pulse = B.S; ai.pt = 8; ai.pl = 'buff'; return; }
@@ -1547,7 +1608,7 @@
   }
   const hashStr = st => { const h = hash(st); return h[0].toString(16).padStart(8, '0') + h[1].toString(16).padStart(8, '0'); };
   // NETV：決まった結果が変わる直しをしたら上げる。ちがう版どうしではオンライン対戦をしない（ずれてしまうので）
-  const NETV = 2;
+  const NETV = 3;
   // 種つきの入力（テスト用）：ランダムに押す
   function randInput(st, i) {
     const r = rnd(st); let b = 0;
@@ -1558,7 +1619,7 @@
     return b;
   }
   const api = {
-    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, defineKind, defineProj, KINDS, PROJ, sigOf, dist, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
+    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, defineKind, defineProj, KINDS, PROJ, sigOf, dist, sigReset: () => { for (const k of Object.keys(sigCache)) delete sigCache[k]; }, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
     sameJSON: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BrawlEngine = api;

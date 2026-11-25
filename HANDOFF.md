@@ -77,3 +77,5 @@
 - brawl/kits.js（新）: おもちゃ18体とボスの技データ（engine.js が buildChar で技表をつくる）。`defineChar` / `defineKind` / `defineProj` で足せる。色ちがい8色（見た目だけ）、`E.sigOf` / `E.dist` で技のちがいを数える。テスト: tools/tests/unit/brawl-kits.test.js、brawl-play.js の第16節（2〜4人・よこ向き）。シミュレーションの動きを変えたら `NETV` を上げてゴールデンハッシュを取りなおす。
 
 - brawl（第1弾 2026-11-26）: おもちゃ34人（新16人）。新しい特殊技の種類: glide / zone（slow・pull・push）/ hook / snare / sbk / boomerang / charge / ammo・reload / summon / roll / absorb / beacon / 成長するはねかえり / stance 各種。`kit.tpl` で技のひな形を選び、`defineKind` / `defineProj` で足せる。`NETV`=2（旧18人+ボスのゴールデンハッシュは変わらず、`E.K.LEGACY` に固定）。バランスの総当たりは抜き取り（`BRAWL_FULLRR=1` で全組）。テスト: brawl-kits.test.js、brawl-play.js 第16〜17節。
+
+- brawl（第2弾 2026-11-26）: おもちゃ50人（新16人の特殊技: 鏡・すなどけい・毒・たき火・巨大化・飛行・ワープドア・バンパー・爆弾・すりぬけ・かみなり・透明・磁力・ハンコ・回復・分裂。`B2BODY` で体の数値を調整、`PROJ_OPT`）。`NETV`=3（旧18人のゴールデンハッシュは固定）。顔絵は見えたときだけ描き、解放リストは8行ずつのページ。ストーリーモードの設計: brawl/STORY-DESIGN.md。

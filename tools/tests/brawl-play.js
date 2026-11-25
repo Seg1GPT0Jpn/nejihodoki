@@ -7,7 +7,7 @@
 // 7. 一時停止  8. 保存と再開（ラダー）  9. 英語  10. 全画面サイズ × ja/en（タイトル・設定・試合・結果）
 // 11. controls：本物のキーで ダッシュ・はじきジャンプ・はじき強攻撃・Cスティック・まもり・つかみ/なげ・空中よけ・ふち・うけ身・あいさつ
 // 12. gamepad：にせのゲームパッド（navigator.getGamepads）で アナログのはじき・ゆっくり押し・Cスティック・メニュー操作
-// 13. roster：34人のえらぶ画面（320px の ja/en・矢印キーで移動・勝ちで開く）  14. ctlpage：操作ページ（4つのタブ・キーの変更・オプション）  15. touchflick：スティックのはじき  16. multi：1台で2〜4人（HUD・カメラ・名前）・色ちがい・えらぶ画面の検索/絞りこみ/お気に入り・「よこ向きがおすすめ」
+// 13. roster：50人のえらぶ画面（320px の ja/en・矢印キーで移動・勝ちで開く）  14. ctlpage：操作ページ（4つのタブ・キーの変更・オプション）  15. touchflick：スティックのはじき  16. multi：1台で2〜4人（HUD・カメラ・名前）・色ちがい・えらぶ画面の検索/絞りこみ/お気に入り・「よこ向きがおすすめ」
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -332,15 +332,15 @@ async function gamepad(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
-// ---- 13. the roster screen: 34 toys, 320px, ja/en, keyboard navigation, wins unlock more
+// ---- 13. the roster screen: 50 toys, 320px, ja/en, keyboard navigation, wins unlock more
 async function roster(env) {
-  console.log('13. roster screen: 34 toys, fits at 320px (ja/en), arrow keys, locked toys and unlocking by wins');
-  const ALL = { v: 1, best: 0, lw: 0, cl: 1, un: { c: { robo: 1, duck: 1, bear: 1 }, s: { bench: 1, box: 1 } }, stats: { wins: 90, plays: 90, kos: 99, block: 99, ledge: 99, grab: 99, counter: 99, smashKo: 99, flick: 99, maxCmb: 99 } };
+  console.log('13. roster screen: 50 toys, fits at 320px (ja/en), arrow keys, locked toys and unlocking by wins');
+  const ALL = { v: 1, best: 0, lw: 0, cl: 1, un: { c: { robo: 1, duck: 1, bear: 1 }, s: { bench: 1, box: 1 } }, stats: { wins: 99, plays: 99, kos: 99, block: 99, ledge: 99, grab: 99, counter: 99, smashKo: 99, flick: 99, maxCmb: 99, hard: 99, perfect: 99, spike: 99, ffa: 99, tech: 99, lad: 99, pshield: 99 } };
   for (const lang of ['ja', 'en']) {
     const s = await open(env, { vp: 'se1', lang, touch: true, seed: { [HOWTO]: '1', [SAVE]: ALL } }); const p = s.page;
     await p.click('#mSolo'); await p.waitForTimeout(250);
     const chips = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].map(b => { const r = b.getBoundingClientRect(); return { dis: b.disabled, w: Math.round(r.width), h: Math.round(r.height), x: Math.round(r.left), nm: b.querySelector('.nm').textContent }; }));
-    check(`${lang}: 34 toys, all open once the ladder was cleared and the records are high`, chips.length === 34 && chips.every(c => !c.dis), chips.length);
+    check(`${lang}: 50 toys, all open once the ladder was cleared and the records are high`, chips.length === 50 && chips.every(c => !c.dis), chips.length);
     check(`${lang}: each tile is at least 44px at 320px wide`, chips.every(c => c.w >= 44 && c.h >= 44), chips.slice(0, 2));
     const cols = new Set(chips.map(c => c.x)).size; check(`${lang}: several columns at 320px (${cols})`, cols >= 4, cols);
     const r = await p.evaluate(`(${layoutProbe})()`); check(`${lang}: the roster fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0 && r.primary.every(x => x.problems.length === 0), { off: r.offscreen.slice(0, 4), pr: r.primary.filter(x => x.problems.length) });
@@ -358,7 +358,7 @@ async function roster(env) {
   // locked toys and unlocking by wins
   const s = await open(env, { vp: 'se1', touch: true }); const p = s.page;
   await p.click('#mSolo'); await p.waitForTimeout(200);
-  const dis = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].map(b => b.disabled)); check('a new player has 3 toys open and 31 locked', dis.filter(x => !x).length === 3 && dis.length === 34, dis);
+  const dis = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].map(b => b.disabled)); check('a new player has 3 toys open and 47 locked', dis.filter(x => !x).length === 3 && dis.length === 50, dis);
   check('a note says how far the next toy is', /あと 2 勝/.test(await p.textContent('#rNote')), await p.textContent('#rNote'));
   await p.click('#sGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await p.evaluate(() => __brawl.finish(0)); await wait(p, () => __kb.state().result, null, 6000);
   let a = await st(p); check('one win: no new toy yet', Object.keys(a.save.un.c).length === 3, a.save.un.c);
@@ -485,7 +485,7 @@ async function multi(env) {
     await p.click('#sGo'); await wait(p, () => __kb.state().playing);
     const pl = await p.evaluate(() => __brawl.G.pal.slice()); check('P1 keeps the wished colour, P2 (same toy) gets a different one automatically', pl[0] === 2 && pl[1] !== 2, pl);
     await p.evaluate(() => __brawl.showTitle()); await p.click('#mSolo'); await p.waitForTimeout(100);
-    check('the roster has a search box, type filters, a count', await p.evaluate(() => !!document.querySelector('#toolP1 .rq') && document.querySelectorAll('#toolP1 .fchips button').length === 13 && /34/.test(document.getElementById('rcount1').textContent)), null);
+    check('the roster has a search box, type filters, a count', await p.evaluate(() => !!document.querySelector('#toolP1 .rq') && document.querySelectorAll('#toolP1 .fchips button').length === 13 && /50/.test(document.getElementById('rcount1').textContent)), null);
     await p.fill('#toolP1 .rq', 'ギアン'); const v1 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('searching by name narrows the grid', v1.length === 1 && v1[0] === 'robo', v1);
     await p.fill('#toolP1 .rq', 'gearo'); const v2 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('searching in English works too', v2.length === 1 && v2[0] === 'robo', v2);
     await p.fill('#toolP1 .rq', 'ニンジャ'); const v3 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).length); check('a locked toy is not found by name', v3 === 0, v3);
@@ -496,7 +496,7 @@ async function multi(env) {
     await p.click('#toolP1 .fchips button[data-f="fav"]'); const v5 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('the Favorites filter shows it', v5.length === 1 && v5[0] === 'duck', v5);
     await p.click('#toolP1 .fchips button[data-f="all"]');
     await p.click('#uaChk'); const allOpen = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].every(b => !b.disabled) && __brawl.save.ua === 1 && Object.keys(__brawl.save.un.c).length === 3); check('"use every toy" opens all toys in the picker without touching the saved unlocks', allOpen, await p.evaluate(() => Object.keys(__brawl.save.un.c)));
-    await p.click('#sBack'); await p.click('#mLad'); const ladLocked = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => b.disabled).length); check('the ladder ignores that switch (still 31 locked)', ladLocked === 31, ladLocked);
+    await p.click('#sBack'); await p.click('#mLad'); const ladLocked = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => b.disabled).length); check('the ladder ignores that switch (still 47 locked)', ladLocked === 47, ladLocked);
     check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
   }
   // "landscape is nicer": portrait phones only, dismiss is remembered
@@ -523,7 +523,7 @@ async function newtoys(env) {
   V.VIEWPORTS.desk = { width: 1280, height: 720, dpr: 1, safe: { top: 0, bottom: 0, left: 0, right: 0 } };
   const s = await open(env, { vp: 'desk', touch: false, seed: { [HOWTO]: '1' } }); const p = s.page;
   const ids = await p.evaluate(() => __brawl.E.CHAR_IDS.filter(id => __brawl.E.K.LEGACY.indexOf(id) < 0));
-  check('16 newer toys', ids.length === 16, ids);
+  check('32 newer toys', ids.length === 32, ids);
   let drawn = 0;
   for (let i = 0; i < ids.length; i += 4) {
     const grp = ids.slice(i, i + 4);
@@ -541,21 +541,23 @@ async function newtoys(env) {
     check(`${grp.join('/')}: a 1500-frame match runs, nothing goes NaN, specials are used (${r.used.filter(u => /:sp/.test(u)).length})`, !r.nan && r.used.filter(u => /:sp/.test(u)).length >= 2, r);
     await p.waitForTimeout(150); await shot(p, '17-new-' + (i / 4));
   }
-  await p.evaluate(() => { __brawl.save.stats.wins = 99; __brawl.save.cl = 1; for (const k of ['kos', 'block', 'ledge', 'grab', 'counter', 'smashKo', 'flick', 'maxCmb']) __brawl.save.stats[k] = 99; __brawl.winUnlocks(); __brawl.showTitle(); });
+  await p.evaluate(() => { __brawl.save.stats.wins = 99; __brawl.save.cl = 1; for (const k of ['kos', 'block', 'ledge', 'grab', 'counter', 'smashKo', 'flick', 'maxCmb', 'hard', 'perfect', 'spike', 'ffa', 'tech', 'lad', 'pshield']) __brawl.save.stats[k] = 99; __brawl.winUnlocks(); __brawl.showTitle(); });
   await p.click('#mSolo'); await p.waitForTimeout(150);
   await p.fill('#toolP1 .rq', 'ドラム'); const f1 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('searching "ドラム" finds the snare drum toy', f1.length === 1 && f1[0] === 'drum', f1);
   await p.fill('#toolP1 .rq', 'dancer'); const f2 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('searching "dancer" finds Belle (descriptions are searched too? no: name/tag only)', f2.length === 1 || f2.length === 0, f2);
   await p.fill('#toolP1 .rq', 'ひろい'); await p.fill('#toolP1 .rq', '');
   await p.click('#toolP1 .fchips button[data-f="trick"]'); const f3 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).length); check('the type filter works for the newer toys (trickster has several)', f3 >= 3, f3);
-  const open1 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].length); check('34 tiles', open1 === 34, open1);
+  const open1 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].length); check('50 tiles', open1 === 50, open1);
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
   // unlock texts of a fresh player: wins and records, ja and en
   for (const lang of ['ja', 'en']) {
     const s2 = await open(env, { vp: 'se1', touch: true, lang }); const p2 = s2.page; await p2.click('#mSolo'); await p2.waitForTimeout(150);
     await p2.evaluate(() => { document.getElementById('ulBox').open = true; });
-    const t = await p2.textContent('#ulBody'); check(`${lang}: the unlock list names wins and records`, /26/.test(t) && (lang === 'ja' ? /KO した回数|ふちの|つかみ/.test(t) : /KOs|Ledge|Grabs/.test(t)), t.slice(0, 200));
+    const t = await p2.textContent('#ulBody'); check(`${lang}: the unlock list is paged (8 rows a page) and names wins and records`, (await p2.locator('#ulBody .urow').count()) === 8 && (await p2.locator('#ulNext').count()) === 1 && (lang === 'ja' ? /あと 2 勝/.test(t) && /KO|ノーダメージ|ラダー/.test(t) : /2 more wins/.test(t) && /Spikes|Flawless|Ladder/.test(t)), t.slice(0, 200));
     if (lang === 'en') { const jp = await p2.evaluate(`(${jpScan})(true)`); check('en: no Japanese in the setup with the new toys', jp.length === 0, jp.slice(0, 6)); }
-    const r = await p2.evaluate(`(${layoutProbe})()`); check(`${lang}: fits at 320px`, r.hscroll <= 1 && r.offscreen.length === 0, r.offscreen.slice(0, 3)); await s2.close();
+    const r = await p2.evaluate(`(${layoutProbe})()`); check(`${lang}: fits at 320px`, r.hscroll <= 1 && r.offscreen.length === 0, r.offscreen.slice(0, 3));
+    await p2.click('#ulNext'); const t2 = await p2.textContent('#ulBody'); check(`${lang}: the next page shows other rows (a toy that needs 26 wins is listed somewhere in 6 pages)`, t2 !== t && /\d+ \/ \d+/.test(await p2.textContent(".upg")), t2.slice(0, 120));
+    await s2.close();
   }
 }
 

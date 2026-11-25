@@ -678,7 +678,9 @@
     c.save();
     if (f.inv > 0 && f.inv % 4 < 2 && f.s !== 'dodge' && f.s !== 'roll' && f.s !== 'spot' && f.s !== 'adodge' && f.s !== 'ledge' && f.s !== 'getup') c.globalAlpha = 0.55;
     c.globalAlpha *= P.alpha;
+    if (f.ks && f.ks.cl > 0) c.globalAlpha *= 0.2 + 0.1 * Math.sin(R.t * 0.2);
     c.translate(f.x + P.ox, f.y + P.oy);
+    if (f.ks && f.ks.big > 0) c.scale(1 + 0.1 * f.ks.big, 1 + 0.1 * f.ks.big);
     if (f.s === 'hurt' || f.s === 'down' || f.s === 'roll' || f.s === 'adodge') { c.translate(0, -C.h * 0.45); c.rotate(P.rot); c.translate(0, C.h * 0.45); }
     else if (P.rot) c.rotate(P.rot);
     if (f.s === 'free' && f.gr >= 0 && Math.abs(f.vx) > 0.6) c.rotate(face * Math.min(0.12, Math.abs(f.vx) * 0.025));
@@ -705,6 +707,8 @@
       if (k.abs > 0) { c.globalAlpha = 0.5; c.fillStyle = '#c8d4ff'; c.beginPath(); c.ellipse(f.x, cy, C.w * 0.85, C.h * 0.62, 0, 0, TAU); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.stroke(); }
       if (k.st) { star(c, f.x, f.y - C.h - 14 - (C.tagY || 0) * 0 + Math.sin(R.t * 0.2) * 2, 6, 4, '#ffd23f', 1.4, R.t * 0.05); }
       if (k.slow > 0) { c.strokeStyle = 'rgba(127,216,255,.85)'; c.setLineDash([4, 5]); c.beginPath(); c.ellipse(f.x, cy, C.w * 0.7, C.h * 0.6, 0, 0, TAU); c.stroke(); c.setLineDash([]); }
+      if (k.dot > 0) { for (let i = 0; i < 3; i++) circ(c, f.x + (i - 1) * 10, cy - 6 - ((R.t * 0.6 + i * 9) % 26), 3, 'rgba(140,220,90,.85)', 0); }
+      if (k.mk > 0) { c.save(); c.translate(f.x, f.y - C.h - 20 - Math.sin(R.t * 0.2) * 2); circ(c, 0, 0, 9, '#c8282f', 2); c.fillStyle = '#fff'; c.fillRect(-1.8, -5, 3.6, 10); c.fillRect(-5, -1.8, 10, 3.6); c.restore(); }
       if (k.root > 0) { c.strokeStyle = '#d8dde3'; c.lineWidth = 4; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(f.x + (i - 1) * 8, f.y - 6, 5, 0, TAU); c.stroke(); } }
       c.restore();
     }
@@ -765,6 +769,27 @@
       case 'void': { const g = c.createRadialGradient(0, 0, 2, 0, 0, p.r + 8); g.addColorStop(0, '#0b0613'); g.addColorStop(0.7, '#2f2640'); g.addColorStop(1, 'rgba(154,107,240,0)'); c.fillStyle = g; c.beginPath(); c.arc(0, 0, p.r + 8, 0, TAU); c.fill(); c.strokeStyle = '#9a6bf0'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.stroke(); break; }
       case 'star': { star(c, 0, 0, 13 + Math.sin(R.t * 0.2) * 1.5, 5, '#ffd23f', 2, R.t * 0.04); break; }
       case 'tailstar': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); poly(c, [-p.r * 4, 0, -p.r, -p.r * 0.8, -p.r, p.r * 0.8], 'rgba(120,190,255,.85)', 0); star(c, 0, 0, p.r * 1.4, 5, '#ffd23f', 1.8, R.t * 0.3); break; }
+      case 'ray': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); limb(c, -26, 0, 4, 0, 4, 'rgba(255,255,255,.55)'); limb(c, -14, 0, 4, 0, 2, '#fff'); circ(c, 4, 0, 3, '#fff', 0); break; }
+      case 'mirror': { c.fillStyle = 'rgba(190,230,255,.45)'; box(c, -p.r, -p.rad, p.r * 2, p.rad * 2, 6, 'rgba(190,230,255,.5)', 2.4); limb(c, -p.r * 0.4, -p.rad * 0.7, p.r * 0.2, -p.rad * 0.2, 2, 'rgba(255,255,255,.9)'); break; }
+      case 'grain': { circ(c, 0, 0, p.r * 0.7, '#e8c878', 1.8); circ(c, -3, -2, 2, '#fff', 0); break; }
+      case 'sand': { c.fillStyle = 'rgba(232,200,120,.3)'; c.beginPath(); c.arc(0, 0, p.rad, 0, TAU); c.fill(); c.lineWidth = 2.4; c.strokeStyle = '#e8c878'; c.setLineDash([3, 9]); c.lineDashOffset = -R.t; c.stroke(); c.setLineDash([]); for (let i = 0; i < 6; i++) circ(c, Math.sin(R.t * 0.05 + i * 1.1) * p.rad * 0.6, ((R.t * 0.8 + i * 21) % 60) - 30, 2, '#e8c878', 0); break; }
+      case 'spore': { for (let i = 0; i < 3; i++) circ(c, Math.sin(R.t * 0.3 + i * 2) * 4, Math.cos(R.t * 0.25 + i * 2) * 4, p.r * (0.7 - i * 0.12), 'rgba(140,220,90,' + (0.8 - i * 0.2) + ')', i ? 0 : 1.6); break; }
+      case 'pod': { const armed = p.t >= p.arm; ell(c, 0, 3, p.r, p.r * 0.7, armed ? '#9acd4a' : '#8a9a6a', 2.2); circ(c, -4, 0, 2.6, '#f4efe0', 0); circ(c, 4, 2, 2, '#f4efe0', 0); break; }
+      case 'camp': { const rad = p.rad; c.fillStyle = 'rgba(255,170,60,.18)'; c.beginPath(); c.arc(0, 0, rad * (1 + Math.sin(R.t * 0.1) * 0.04), 0, TAU); c.fill(); c.lineWidth = 2; c.strokeStyle = 'rgba(255,200,90,.8)'; c.setLineDash([6, 8]); c.stroke(); c.setLineDash([]); poly(c, [-9, 14, 0, -20 - Math.sin(R.t * 0.4) * 5, 9, 14], '#ff7a2a', 1.8); poly(c, [-4, 14, 0, -6, 4, 14], '#ffd23f', 0); break; }
+      case 'snowball': { circ(c, 0, 0, p.r, '#f4f8ff', 2.2); circ(c, -3, -3, 3, '#dbe8ff', 0); break; }
+      case 'knock': { c.rotate(R.t * 0.2); box(c, -7, -7, 14, 14, 2, '#c88a4a', 2); circ(c, 3, 0, 1.6, '#f2c94c', 0); break; }
+      case 'portal': { const q = (R.t * 0.2) % TAU; ell(c, 0, 0, p.r * 0.7, p.r * 1.25, '#2a1d4a', 2.4); ell(c, 0, 0, p.r * 0.4, p.r * 0.85, '#7a5aff', 0); c.strokeStyle = '#ffd23f'; c.lineWidth = 2.4; c.beginPath(); c.ellipse(0, 0, p.r * 0.9, p.r * 1.45, 0, q, q + 2); c.stroke(); break; }
+      case 'bumper': { circ(c, 0, 0, p.r, '#ff4a8a', 2.6); circ(c, 0, 0, p.r * 0.62, '#ffd2e4', 1.8); const k = 1 + Math.sin(R.t * 0.3) * 0.08; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, p.r * 1.2 * k, 0, TAU); c.stroke(); break; }
+      case 'pinball': { circ(c, 0, 0, p.r, '#d8dde3', 2.2); circ(c, -3, -3, 3, '#fff', 0); break; }
+      case 'bomb': { const hot = p.fz && p.t > p.fz - 16 && Math.floor(R.t / 3) % 2, boom = p.t >= p.fz; if (boom) { const k = 1 - p.life / 6; circ(c, 0, 0, p.r * (0.6 + k * 0.5), '#ffb02a', 2.4); circ(c, 0, 0, p.r * 0.55, '#fff3b0', 0); break; } circ(c, 0, 0, p.r, hot ? '#e0453f' : '#303038', 2.2); limb(c, 3, -p.r + 2, 8, -p.r - 6, 2, '#a98'); star(c, 9, -p.r - 7, 3.6, 5, '#ffd23f', 0, R.t * 0.3); break; }
+      case 'wisp': { const w = Math.sin(R.t * 0.3) * 2; circ(c, 0, w, p.r, 'rgba(210,225,255,.9)', 1.8); circ(c, -p.r, w + 3, p.r * 0.5, 'rgba(210,225,255,.5)', 0); circ(c, 3, w - 2, 2, '#2a1d17', 0); break; }
+      case 'spark': { c.beginPath(); c.moveTo(-10, 0); for (let i = 1; i < 5; i++) c.lineTo(-10 + i * 5, (i % 2 ? -1 : 1) * (4 + Math.sin(R.t + i) * 2)); c.lineWidth = 3.4; c.strokeStyle = '#ffd23f'; c.stroke(); c.lineWidth = 1.2; c.strokeStyle = '#fff'; c.stroke(); break; }
+      case 'tag': { c.rotate(Math.sin(R.t * 0.2) * 0.3); circ(c, 0, 0, p.r, '#c8282f', 2); circ(c, 0, 0, p.r * 0.55, '#f4efe0', 0); c.fillStyle = '#c8282f'; c.fillRect(-1.6, -p.r * 0.4, 3.2, p.r * 0.8); c.fillRect(-p.r * 0.4, -1.6, p.r * 0.8, 3.2); break; }
+      case 'mag': { const sgn = Math.floor(p.t / (p.osc || 40)) % 2 ? -1 : 1, rad = p.rad; c.fillStyle = sgn > 0 ? 'rgba(220,70,70,.2)' : 'rgba(70,110,230,.2)'; c.beginPath(); c.arc(0, 0, rad, 0, TAU); c.fill(); c.lineWidth = 2.4; c.strokeStyle = sgn > 0 ? '#e0453f' : '#4a6ad0'; c.setLineDash([8, 8]); c.lineDashOffset = -R.t * sgn * 1.4; c.stroke(); c.setLineDash([]); c.font = '800 24px system-ui'; c.textAlign = 'center'; c.fillStyle = c.strokeStyle; c.fillText(sgn > 0 ? 'N' : 'S', 0, 8); break; }
+      case 'bolt': { c.rotate(Math.atan2(p.vy, p.vx)); box(c, -8, -5, 16, 10, 2, '#d0453f', 2); box(c, -8, -5, 6, 10, 1, '#f4f4f6', 1.4); break; }
+      case 'patch': { c.rotate(R.t * 0.2); box(c, -9, -5, 18, 10, 4, '#f4c8a0', 2); box(c, -3, -5, 6, 10, 0, '#6ac8e8', 0); break; }
+      case 'prism': { c.rotate(R.t * 0.25); poly(c, [0, -p.r - 2, p.r + 2, p.r, -p.r - 2, p.r], '#dff0ff', 2); break; }
+      case 'beam': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); const g = c.createLinearGradient(-90, 0, 4, 0); g.addColorStop(0, 'rgba(255,90,160,0)'); g.addColorStop(0.5, '#ffd23f'); g.addColorStop(1, '#fff'); c.fillStyle = g; c.fillRect(-90, -4, 94, 8); break; }
       default: circ(c, 0, 0, p.r, '#fff', 2);
     }
     c.restore();
@@ -842,7 +867,7 @@
   }
   function fitText(c, s, maxW) { if (c.measureText(s).width <= maxW) return s; while (s.length > 1 && c.measureText(s + '…').width > maxW) s = s.slice(0, -1); return s + '…'; }
   function pctText(c, f, x, y, px, align, scale) { // 数字だけ大きく、% は小さく。ふちどりで、どんな背景でも読める
-    const n = String(Math.floor(f.pct)), big = px, sm = Math.round(px * 0.55);
+    const hid = f.ks && f.ks.cl > 0, n = hid ? '??' : String(Math.floor(f.pct)), big = px, sm = Math.round(px * 0.55);
     c.save(); c.translate(x, y); c.scale(scale, scale); c.textBaseline = 'alphabetic'; c.lineJoin = 'round';
     c.font = '800 ' + big + 'px "Dela Gothic One",system-ui,sans-serif'; const wn = c.measureText(n).width;
     c.font = '800 ' + sm + 'px "Dela Gothic One",system-ui,sans-serif'; const wp = c.measureText('%').width;
@@ -915,7 +940,7 @@
         c.globalAlpha = 0.92; c.fillStyle = 'rgba(20,14,10,.7)'; rr(c, hx - tw / 2, ty, tw, 16, 8); c.fill(); c.lineWidth = 1.6; c.strokeStyle = pc; c.stroke(); c.globalAlpha = 1;
         glyph(c, PSHAPE[f.i % 4], hx - tw / 2 + 9, ty + 8, 4, pc);
         c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(lb, hx - tw / 2 + 17, ty + 12); c.textAlign = 'center';
-        if (showPct) { c.save(); c.translate(hx, ty + 30); c.font = '800 14px "Dela Gothic One",system-ui,sans-serif'; const t = Math.floor(f.pct) + '%'; c.lineWidth = 4; c.strokeStyle = INK; c.strokeText(t, 0, 0); c.fillStyle = pctColor(f.pct); c.fillText(t, 0, 0); c.restore(); }
+        if (showPct) { c.save(); c.translate(hx, ty + 30); c.font = '800 14px "Dela Gothic One",system-ui,sans-serif'; const t = (f.ks && f.ks.cl > 0 ? '??' : Math.floor(f.pct)) + '%'; c.lineWidth = 4; c.strokeStyle = INK; c.strokeText(t, 0, 0); c.fillStyle = pctColor(f.pct); c.fillText(t, 0, 0); c.restore(); }
         else { c.fillStyle = pc; c.beginPath(); c.moveTo(hx - 5, ty + 17); c.lineTo(hx + 5, ty + 17); c.lineTo(hx, ty + 23); c.closePath(); c.fill(); c.lineWidth = 1.4; c.strokeStyle = INK; c.stroke(); }
       } else {
         // 画面の外：ふちに丸い矢印（色・形・ダメージ）
@@ -927,7 +952,7 @@
         c.fillStyle = pc; c.beginPath(); c.moveTo(Math.cos(ang) * 22, Math.sin(ang) * 22); c.lineTo(Math.cos(ang + 2.5) * 14, Math.sin(ang + 2.5) * 14); c.lineTo(Math.cos(ang - 2.5) * 14, Math.sin(ang - 2.5) * 14); c.closePath(); c.fill(); c.lineWidth = 1.8; c.strokeStyle = INK; c.stroke();
         c.fillStyle = 'rgba(20,14,10,.82)'; c.beginPath(); c.arc(0, 0, 14, 0, TAU); c.fill(); c.lineWidth = 2; c.strokeStyle = pc; c.stroke();
         glyph(c, PSHAPE[f.i % 4], 0, -2, 4.5, pc);
-        c.font = '800 10px system-ui,sans-serif'; c.lineWidth = 3; c.strokeStyle = INK; c.fillStyle = pctColor(f.pct); const t = Math.floor(f.pct) + '%'; c.strokeText(t, 0, 10); c.fillText(t, 0, 10);
+        c.font = '800 10px system-ui,sans-serif'; c.lineWidth = 3; c.strokeStyle = INK; c.fillStyle = pctColor(f.pct); const t = (f.ks && f.ks.cl > 0 ? '??' : Math.floor(f.pct)) + '%'; c.strokeText(t, 0, 10); c.fillText(t, 0, 10);
         c.restore();
       }
     }
