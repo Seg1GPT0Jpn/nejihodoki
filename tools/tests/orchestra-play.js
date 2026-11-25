@@ -374,6 +374,36 @@ async function phoneMotion(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+async function joycon(env) {
+  console.log('7c. Joy-Con over WebHID with a fake HID device (no real controller was available)');
+  let s = await open(env); let p = s.page;
+  await p.addInitScript(() => {
+    const dev = { vendorId: 0x057e, productId: 0x2007, productName: 'Joy-Con (R)', opened: false, sent: [], ls: [], async open() { dev.opened = true; }, async close() { dev.opened = false; }, async sendReport(id, data) { dev.sent.push([id, Array.from(data)]); },
+      addEventListener(t, f) { dev.ls.push([t, f]); }, removeEventListener(t, f) { dev.ls = dev.ls.filter(x => x[1] !== f); } };
+    window.__dev = dev; const hl = []; Object.defineProperty(navigator, 'hid', { configurable: true, value: { async requestDevice(o) { window.__reqFilters = o.filters; return [dev]; }, async getDevices() { return [dev]; }, addEventListener(t, f) { hl.push([t, f]); } } });
+    window.__hidEvents = hl;
+    window.__sendReport = (samples, buttons) => { const b = new Uint8Array(48); const put = (i, v) => { v = Math.max(-32768, Math.min(32767, Math.round(v))); b[i] = v & 255; b[i + 1] = (v >> 8) & 255; }; if (buttons && buttons.A) b[2] |= 0x08;
+      samples.forEach((x, n) => { put(12 + n * 12, x[0]); put(14 + n * 12, x[1]); put(16 + n * 12, x[2]); }); dev.ls.filter(x => x[0] === 'inputreport').forEach(x => x[1]({ reportId: 0x30, data: new DataView(b.buffer) })); };
+    window.__swingJc = (bpm, peak) => { clearInterval(window.__sj); const T = 60 / bpm, w = 2 * Math.PI / T, t0 = performance.now(), lsb = v => v / (9.80665 / 4096); window.__sj = setInterval(() => { const t = (performance.now() - t0) / 1000, smp = []; for (let n = 0; n < 3; n++) { const a = -peak * Math.cos(w * (t + n * 0.005)); smp.push([0, 0, lsb(9.8 + a)]); } window.__sendReport(smp); }, 15); };
+  });
+  await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready());
+  await p.click('#tSet'); const before = await p.evaluate(() => ({ dis: document.getElementById('jcBtn').disabled, txt: document.getElementById('jcState').textContent })); check('the Joy-Con button is enabled in a browser with WebHID', before.dis === false, before);
+  await p.click('#jcBtn'); await p.waitForTimeout(600);
+  const c = await p.evaluate(() => ({ filters: window.__reqFilters, sent: window.__dev.sent, opened: window.__dev.opened, txt: document.getElementById('jcState').textContent }));
+  check('it asks for Nintendo devices (0x057e: Joy-Con L / R, Pro), opens the device, enables the IMU (0x40) and full mode (0x30)', c.opened && c.filters.every(f => f.vendorId === 0x057e) && c.sent.length === 2 && c.sent[0][1][9] === 0x40 && c.sent[1][1][9] === 0x03 && c.sent[1][1][10] === 0x30, c);
+  check('the status says connected: ' + c.txt, /つながりました/.test(c.txt), c);
+  await p.click('#sClose'); await p.evaluate(() => document.querySelector('.dfb[data-diff="normal"]').click()); await p.evaluate(() => __orch.start('nachtmusik', 'normal')); await wait(p, () => __kb.state().playing, null, 90000);
+  await p.evaluate(() => window.__swingJc(66, 15)); await p.waitForTimeout(5500); const a = await st(p);
+  check('swinging the Joy-Con starts the piece and sets the tempo (' + a.state + ', ' + Math.round(a.bpm) + ' bpm for 66, pos ' + a.pos.toFixed(1) + ')', a.state === 'playing' && Math.abs(a.bpm - 66) < 16 && a.pos > 3, a);
+  const cues0 = (await st(p)).cues; await p.evaluate(() => window.__sendReport([[0, 0, 4096], [0, 0, 4096], [0, 0, 4096]], { A: true })); await p.evaluate(() => window.__sendReport([[0, 0, 4096], [0, 0, 4096], [0, 0, 4096]], {})); const cues1 = (await st(p)).cues;
+  note('A button: cues ' + JSON.stringify(cues0) + ' -> ' + JSON.stringify(cues1)); check('the A button gives a cue (counted as wrong when nothing is due, no crash)', cues1.wrong + cues1.perfect + cues1.late >= cues0.wrong + cues0.perfect + cues0.late, { cues0, cues1 });
+  await p.evaluate(() => { clearInterval(window.__sj); window.__hidEvents.filter(x => x[0] === 'disconnect').forEach(x => x[1]({ device: window.__dev })); }); await p.waitForTimeout(200); await p.click('#tSet').catch(() => {});
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  s = await open(env); p = s.page; await p.addInitScript(() => { Object.defineProperty(navigator, 'hid', { configurable: true, value: undefined }); }); await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready());
+  await p.click('#tSet'); const un = await p.evaluate(() => ({ dis: document.getElementById('jcBtn').disabled, txt: document.getElementById('jcState').textContent })); check('Safari / Firefox / iOS: "not available in this browser" and the button is disabled', un.dis === true && /このブラウザでは使えません/.test(un.txt), un);
+  await s.close();
+}
+
 async function pause(env) {
   console.log('8. pause: the menu stops the clock and the sound, resuming re-enters, leaving goes back to the pieces');
   const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'enjoy'); const c = await stageBox(p);
@@ -461,7 +491,7 @@ async function layouts(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, pause, english, themes, saves, layouts]) {
+  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, pause, english, themes, saves, layouts]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
   }
