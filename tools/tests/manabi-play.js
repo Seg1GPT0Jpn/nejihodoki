@@ -13,6 +13,7 @@ const { layoutProbe, jpScan } = require('./lib/layout');
 
 const OUT = path.join(__dirname, 'out', 'shots', 'manabi-play');
 const results = [];
+const GONE = { state: 'detached', timeout: 8000 };
 const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + String(JSON.stringify(info)).slice(0, 600)}`); };
 const SAVE = 'kusoge.manabi.save', HOWTO = 'kusoge.manabi.howto', REP = 'kusoge.manabi.rep';
 const KV = '0.16.9', KDIR = path.join(__dirname, '.cache', 'katex-' + KV);
@@ -109,7 +110,8 @@ async function lesson(env) {
   console.log('2. a lesson of 8 with a wrong answer: it comes back; XP, accuracy, save, streak');
   const s = await open(env); const p = s.page;
   await p.click('.subs [data-sub="math"]'); await p.click('.grades [data-g="2"]');
-  await p.click('.unit[data-unit="JH-MATH-G2-U06"] .go'); await p.click('#popStart'); await wait(p, () => __kb.state().screen === 'lesson');
+  await p.evaluate(() => __manabi.unlockAll()); await p.click('.subs [data-sub="math"]'); await p.click('.grades [data-g="2"]');
+  await p.click('.unit[data-unit^="JH-MATH-G2-U06-"] .go'); await p.click('#popStart'); await wait(p, () => __kb.state().screen === 'lesson');
   let a = await st(p); check('a lesson has 8 questions', a.lesson.size === 8, a.lesson);
   check('the question and its math show (KaTeX or raw TeX)', await p.evaluate(() => document.querySelectorAll('#stem .m').length) >= 0, null);
   await shot(p, '02-question');
@@ -204,8 +206,8 @@ async function reload(env) {
   check('the save is unchanged by reload', JSON.stringify(before) === JSON.stringify(after), null);
   check('streak and XP show after reload', (await p.textContent('#nStreak')) === '1' && (await p.textContent('#nGoal')).startsWith(String(before.g[Object.keys(before.g)[0]])), await p.textContent('#nGoal'));
   await p.click('.subs [data-sub="math"]');
-  const prog = await p.$eval('.unit[data-unit="JH-MATH-G2-U06"]', e => e.textContent);
-  check('the node shows a crown after reload', await p.$eval('.unit[data-unit="JH-MATH-G2-U06"] .crowns', e => parseInt(e.textContent) >= 1), prog);
+  const prog = await p.$eval('.unit[data-unit^="JH-MATH-G2-U06-"]', e => e.textContent);
+  check('the node shows a crown after reload', await p.$eval('.unit[data-unit^="JH-MATH-G2-U06-"] .crowns', e => parseInt(e.textContent) >= 1), prog);
   await p.evaluate(() => { __manabi.setToday(__manabi.E.dayNum() + 3); __manabi.goHome(); });
   check('three days later the streak is 0, and lessons still start', (await p.textContent('#nStreak')) === '0', null);
   await startUnit(p, 'JH-MATH-G2-U06'); check('no lockout: a lesson starts', (await st(p)).screen === 'lesson', null);
@@ -288,7 +290,7 @@ async function special(env) {
   console.log('11. special courses (古文・理科ラボ・社会ラボ): every special unit plays through with real input, every new exercise type');
   const s = await open(env); const p = s.page; const seen = {};
   const ids = await p.evaluate(() => __manabi.api && __manabi.G.UNITS.map(u => u.id));
-  check('24 special units exist', ids.length === 24, ids.length);
+  check('45 special units exist (24 + 14 math lab + 7 English lab)', ids.length === 45, ids.length);
   for (const id of ids) {
     await p.evaluate(id => { __manabi.goHome(); __manabi.startSpecial(__manabi.special(id)); }, id);
     await wait(p, () => __kb.state().screen === 'lesson', null, 15000);
@@ -309,8 +311,9 @@ async function path_(env) {
   check('there is exactly one START bubble, on the current node', (await p.$$('.start')).length === 1 && await p.$eval('.unit.cur .start', e => e.textContent === 'START'), null);
   const xs = await p.$$eval('.unit', u => u.slice(0, 6).map(x => x.style.transform)); check('nodes zig-zag (different horizontal offsets)', new Set(xs).size >= 4, xs);
   check('locked nodes exist after the current one', (await p.$$('.unit.locked')).length > 3, null);
-  check('section banners have Japanese titles', (await p.$eval('.sect b', e => e.textContent)).includes('セクション'), null);
-  await p.click('.unit.locked .go'); check('tapping a node opens a popup with the topic and a start button; focus moves to Start', await p.isVisible('#popStart') && await p.evaluate(() => document.activeElement.id === 'popStart'), null);
+  check('section banners have Japanese titles', (await p.$eval('.sect small', e => e.textContent)).includes('セクション'), null);
+  await p.click('.unit.locked .go'); check('tapping a locked node opens a popup with a clear message and the jump-ahead test, but no start button', await p.isVisible('#lockMsg') && await p.isVisible('#popJump') && !(await p.$('#popStart')), null);
+  await p.keyboard.press('Escape'); await p.click('.unit.cur .go'); check('tapping the current node opens a popup with the start button; focus moves to Start', await p.isVisible('#popStart') && await p.evaluate(() => document.activeElement.id === 'popStart'), null);
   await shot(p, '12-pop'); await p.keyboard.press('Escape'); check('Escape closes the popup', !(await p.$('#popBg')), null);
   await p.evaluate(() => document.querySelector('#main').scrollTo(0, 99999)); await p.waitForTimeout(300); check('a jump-to-current button shows when the current node is off screen', await p.isVisible('#jumpCur'), null);
   await p.click('#jumpCur'); await p.waitForTimeout(800); check('and it scrolls back (the START bubble is visible again)', await p.isVisible('.unit.cur .start'), null);
@@ -318,7 +321,13 @@ async function path_(env) {
   await shot(p, '12-kobun');
   await p.click('#tabs [data-tab="quests"]'); check('three daily quests', (await p.$$('#questList .qrow')).length === 3, null);
   await p.evaluate(() => { const E = __manabi.E; __manabi.setSave(Object.assign({}, __manabi.save, { ds: { d: E.dayNum(), xp: 99, ls: 9, ok: 99, perfect: 1, rev: 1, sp: 1 } })); __manabi.tab('quests'); });
-  await p.click('[data-claim="0"]'); await p.waitForTimeout(200); check('claiming a quest gives 10 gems', (await stored(p, SAVE)).gm === 10, await stored(p, SAVE));
+  await p.click('[data-claim="0"]'); await p.click('#chestOpen'); await p.waitForSelector('#chestClaim', { timeout: 8000 }); await p.click('#chestClaim'); await p.waitForSelector('#chestOv', { state: 'detached', timeout: 8000 }); check('claiming a quest opens a chest and gives at least 10 gems', (await stored(p, SAVE)).gm >= 10 && (await stored(p, SAVE)).dq.c[0] === 1, await stored(p, SAVE));
+  await p.evaluate(() => { const E = __manabi.E, d = new Date(), first = E.dayNum(new Date(d.getFullYear(), d.getMonth(), 1)); __manabi.setSave(Object.assign({}, __manabi.save, { d: Array.from({ length: 15 }, (_, i) => first + i) })); __manabi.tab('quests'); });
+  check('the monthly quest shows 15 / 15 and can be claimed for a badge', (await p.textContent('#monthProg')).startsWith('15 / 15') && !(await p.isDisabled('#monthClaim')), await p.textContent('#monthProg'));
+  await p.click('#monthClaim'); await p.click('#chestOpen'); await p.waitForSelector('#chestClaim', { timeout: 8000 }); await p.click('#chestClaim'); await p.waitForSelector('#chestOv', { state: 'detached', timeout: 8000 });
+  check('the month badge is saved and shown on the shelf', (await stored(p, SAVE)).bd.length === 1 && (await p.$$('#badgeShelf .mbadge')).length === 1, null);
+  check('a friend quest with a clearly labelled bot friend and a friend code is shown', (await p.textContent('#friendCard')).includes('ボット') && /^[A-Z2-9]{6}$/.test(await p.textContent('#myCode')), await p.textContent('#myCode'));
+  await shot(p, '19-quests');
   await shot(p, '12-quests');
   await p.click('#tabs [data-tab="league"]'); check('the league shows 10 rows and says it is a local simulation', (await p.$$('#leagueList .lg')).length === 10 && (await p.textContent('#leagueNote')).includes('シミュレーション'), null);
   await shot(p, '12-league');
@@ -365,10 +374,10 @@ async function english3(env) {
   check('html lang is en', (await p.evaluate(() => document.documentElement.lang)) === 'en', null);
   await miss('how-to'); await p.click('#howtoGo'); await miss('learn path (JH english)');
   await p.click('.unit.cur .go'); await miss('node popup'); await p.click('#popClose');
-  await p.click('.seg [data-cr="kobun"]'); await miss('Classics course'); await p.click('.seg [data-cr="science"]'); await miss('Science lab'); await p.click('.seg [data-cr="social"]'); await miss('Social lab');
+  await p.click('.seg [data-cr="mathlab"]'); await miss('Math Lab'); await p.click('.seg [data-cr="englab"]'); await miss('English Lab'); await p.click('.seg [data-cr="kobun"]'); await miss('Classics course'); await p.click('.seg [data-cr="science"]'); await miss('Science lab'); await p.click('.seg [data-cr="social"]'); await miss('Social lab');
   for (const t of ['review', 'quests', 'league', 'profile']) { await p.click(`#tabs [data-tab="${t}"]`); await miss('tab ' + t); }
   await p.click('#tabs [data-tab="review"]'); await p.click('#btnMock'); await miss('mock list');
-  for (const id of ['K3', 'K7', 'K8', 'S4', 'S1', 'C4', 'C2', 'K10']) {
+  for (const id of ['K3', 'K7', 'K8', 'S4', 'S1', 'C4', 'C2', 'K10', 'M10', 'M13', 'L2', 'L6']) {
     await p.evaluate(id => { __manabi.goHome(); __manabi.startSpecial(__manabi.special(id)); }, id); await wait(p, () => __kb.state().screen === 'lesson');
     await miss('lesson ' + id); await p.evaluate(() => __manabi.goHome());
   }
@@ -426,6 +435,171 @@ async function resume3(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+async function dialogue4(env) {
+  console.log('16. conversation: choices, word tiles, speaking (fake SpeechRecognition and the typed fallback), summary, mistakes, keyboard, 320px, dark, English');
+  const FX = fs.readFileSync(path.join(__dirname, 'fixtures', 'manabi-dialogues-fixture.json'), 'utf8');
+  const withFixture = async (o, init) => {
+    const s = await open(env, Object.assign({ katex: false }, o, { initScripts: init }));
+    return s;
+  };
+  const route = async s => { await s.ctx.route(/content\/dialogues\.json/, r => r.fulfill({ status: 200, contentType: 'application/json', body: FX })); };
+  const FAKE_SR = `window.SpeechRecognition = window.webkitSpeechRecognition = class { start() { setTimeout(() => { const t = window.__heard || ''; if (!t) { this.onerror && this.onerror({ error: 'no-speech' }); return; } this.onresult && this.onresult({ results: [[{ transcript: t }]] }); this.onend && this.onend(); }, 30); } stop() {} };`;
+  const openD = async (o = {}, sr = true) => {
+    const s = await B.newSession(env, { vp: V.get(o.vp || 'ip12'), lang: o.lang || 'ja', seed: Object.assign({ [HOWTO]: '1' }, o.seed || {}), isMobile: !!o.touch, hasTouch: !!o.touch, initScripts: sr ? [FAKE_SR] : ['window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined;'] });
+    await route(s); await s.goto('/manabi/?debug'); await s.page.waitForFunction(() => window.__kb && __kb.ready() && window.__manabi); return s;
+  };
+  let s = await openD(); let p = s.page;
+  await p.click('#tabs [data-tab="review"]'); await p.waitForSelector('[data-scene="en-test-1"]');
+  check('the practice tab lists conversation scenes grouped by language and level', (await p.$$('#dlgHost .dgroup')).length >= 2 && await p.isVisible('[data-scene="ja-test-1"]'), null);
+  await p.click('[data-scene="en-test-1"]'); await p.waitForSelector('#choiceBubs');
+  check('the partner speaks first (a bubble with the greeting) and the reply choices show', (await p.textContent('#chat')).includes('Hello! Welcome.') && (await p.$$('#choiceBubs .cb')).length === 3, null);
+  await shot(p, '16-chat');
+  await p.click('#choiceBubs .cb[data-ok="0"]'); check('a wrong reply is marked, with a reason and the better answer shown', await p.isVisible('.fbnote') && (await p.textContent('.fbnote')).includes('I would like') || (await p.textContent('.fbnote')).includes('正しい答え'), null);
+  await p.click('#dlgNext'); await p.waitForSelector('#choiceBubs .cb:not([disabled])');
+  await p.click('#btnTiles'); for (const w of ['Water,', 'please.']) await p.click(`#dlgBank .tile:text-is("${w}")`); await p.click('#dlgCheck');
+  await p.waitForSelector('#dlgNext'); check('word tiles: building the right reply is accepted', (await p.textContent('#chat')).includes('Water, please.'), null);
+  await p.click('#dlgNext'); await p.waitForSelector('#choiceBubs .cb:not([disabled])');
+  await p.click('#btnSpeak2'); check('speaking mode shows the sentence to say and a microphone button', await p.isVisible('#btnMic'), null);
+  await p.evaluate(() => { window.__heard = 'i will pay by cart'; }); await p.click('#btnMic'); await p.waitForSelector('#speakScore');
+  const sc = parseInt(await p.textContent('#speakScore')); check('a near-miss transcript gets a fuzzy score and passes (>= 70)', sc >= 70 && sc < 100, sc);
+  await p.click('#dlgNext'); await p.waitForSelector('#dlgSummary');
+  check('the summary lists the mistake and the accuracy (2 of 3 right)', (await p.textContent('#dlgPct')) === '67%' && (await p.textContent('#dlgMist')).includes('I am burger') || (await p.textContent('#dlgMist')).includes('○'), await p.textContent('#dlgPct'));
+  const sv = await stored(p, SAVE); check('saved: best %, one dialogue mistake kept for review, XP and gems added', sv.dl['en-test-1'] === 67 && sv.dm.length === 1 && sv.gm >= 3 && sv.xp >= 7, { dl: sv.dl, dm: sv.dm });
+  await p.click('#dlgAgain'); await p.waitForSelector('#choiceBubs'); await p.click('#choiceBubs .cb[data-ok="1"]'); await p.click('#dlgNext'); await p.waitForSelector('#choiceBubs .cb:not([disabled])');
+  await p.keyboard.press('1'); await p.waitForSelector('#dlgNext'); check('keyboard: digits choose a reply, Enter continues', true, null); await p.keyboard.press('Enter'); await p.waitForSelector('#choiceBubs .cb:not([disabled])');
+  await p.keyboard.press('Escape'); await p.waitForSelector('.kb-layer'); check('Escape asks to leave the conversation', true, null); await p.click('.kb-layer .kb-btn--ghost');
+  await s.close();
+  // 声が使えないブラウザ：入力にきりかえる
+  s = await openD({}, false); p = s.page;
+  await p.click('#tabs [data-tab="review"]'); await p.click('[data-scene="en-test-1"]'); await p.waitForSelector('#choiceBubs'); await p.click('#choiceBubs .cb[data-ok="1"]'); await p.click('#dlgNext'); await p.waitForSelector('#choiceBubs .cb:not([disabled])');
+  await p.click('#btnSpeak2'); check('without SpeechRecognition the speaking mode says so and offers typing', await p.isVisible('#noMic') && !(await p.$('#btnMic')), null);
+  await p.fill('#speakInput', 'water please'); await p.click('#speakSend'); await p.waitForSelector('#speakScore'); check('the typed answer is scored with the same fuzzy matching and accepted', parseInt(await p.textContent('#speakScore')) >= 70, null);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // 日本語の敬語・320px・ダーク・英語
+  for (const [vp, theme, lang] of [['se1', 'dark', 'ja'], ['se1', 'light', 'en']]) {
+    s = await openD({ vp, lang, touch: true, seed: { 'kobo.theme': theme } }); p = s.page;
+    await p.click('#tabs [data-tab="review"]'); await p.click('[data-scene="ja-test-1"]'); await p.waitForSelector('#choiceBubs');
+    const probe = async w => { const r = await p.evaluate(`(${layoutProbe})()`); check(`${vp}/${theme}/${lang} ${w}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, { off: r.offscreen.slice(0, 4) }); };
+    await probe('keigo scene'); await shot(p, `16-${vp}-${theme}-${lang}`);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); const ui = jp.filter(x => !/^(div|span|button|p|b)\b.*(いらっしゃいませ|お名前|山田|待ち|ご用件|少々|課長|ありがとう|どうぞ|はい)/.test(x)); check('English UI around a Japanese-language scene has no Japanese chrome', ui.length === 0, ui.slice(0, 6)); }
+    await p.click('#choiceBubs .cb[data-ok="0"]'); await probe('wrong answer'); check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
+async function flow5(env) {
+  console.log('17. sections > units > levels, sequential unlock, jump-ahead test (pass / fail), treasure chest, migration of old saves');
+  let s = await open(env); let p = s.page;
+  check('the path has a section banner, a unit bar and level nodes; the first level is current, the next is locked with a lock icon', await p.isVisible('.sect') && await p.isVisible('.unitbar') && await p.isVisible('.unit.cur') && (await p.$$('.unit.locked .lockic')).length > 2, null);
+  check('each unit ends with a chest node (locked at first)', (await p.$$('.unit.chest .chestbtn.locked')).length >= 2, null);
+  await p.click('.unit.chest .chestbtn.locked >> nth=0'); await p.waitForSelector('.kb-toast'); check('tapping a locked chest explains how to open it', (await p.textContent('.kb-toasts')).includes('クリア'), null);
+  const ids0 = await p.$$eval('.unit[data-unit]', u => u.map(x => x.dataset.unit));
+  await p.click('.unit.locked >> nth=1'); await p.click('#popJump'); await wait(p, () => __kb.state().screen === 'lesson');
+  check('the jump-ahead test shows 3 chances', (await p.textContent('#jumpHearts')).trim() === '3', await p.textContent('#jumpHearts'));
+  let n = 0; for (; n < 12; n++) { if ((await st(p)).screen !== 'lesson') break; await answerOne(p, n !== 3 && n !== 6); }
+  check('with 2 mistakes the test is passed', (await p.textContent('#jumpTitle')).includes('合格'), await p.textContent('#jumpTitle'));
+  const sv = await stored(p, SAVE); check('every node up to the target is cleared (jp) and the path moved on', Object.keys(sv.jp).length === 3, Object.keys(sv.jp));
+  await p.click('#btnHome'); check('the first three nodes are now done and the 4th is current', (await p.$$('.unit.done')).length >= 3 && (await p.$eval('.unit.cur', e => e.dataset.unit)) === ids0[3], null);
+  await s.close();
+  s = await open(env); p = s.page;
+  await p.click('.unit.locked >> nth=0'); await p.click('#popJump'); await wait(p, () => __kb.state().screen === 'lesson');
+  await answerOne(p, false); check('one mistake leaves 2 chances', (await p.textContent('#jumpHearts')).trim() === '2', null);
+  await answerOne(p, false); await answerOne(p, false);
+  check('the third mistake ends the test immediately (not passed)', (await p.textContent('#jumpTitle')).includes('おしい') && (await p.$$('.unit.done')).length === 0, null);
+  check('nothing was unlocked by a failed test', Object.keys((await stored(p, SAVE)).jp || {}).length === 0, null);
+  await shot(p, '17-jumpfail'); await s.close();
+  s = await open(env); p = s.page; await p.evaluate(() => __manabi.unlockAll()); await p.waitForSelector('.chestbtn.ready');
+  const gm0 = (await stored(p, SAVE)).gm | 0; await p.click('.chestbtn.ready >> nth=0'); await p.waitForSelector('#chestOpen');
+  await shot(p, '17-chest-closed'); await p.click('#chestOpen'); await p.waitForSelector('#chestClaim', { timeout: 8000 }); check('the chest opens with an animation and lists rewards (gems, XP, maybe an item)', (await p.$$('#chestRewards .rw')).length >= 2, null);
+  await shot(p, '17-chest-open'); await p.click('#chestClaim'); await p.waitForSelector('#chestOv', { state: 'detached', timeout: 8000 });
+  const sv2 = await stored(p, SAVE); check('claiming adds gems and XP, remembers the chest and shows it as claimed', sv2.gm > gm0 && Object.keys(sv2.ch).length === 1 && (await p.$$('.chestbtn.claimed')).length === 1, sv2.ch);
+  await s.close();
+  s = await open(env, { seed: { [SAVE]: JSON.stringify({ v: 1, xp: 120, d: [20700], g: {}, b: {}, st: { q: 10, ok: 8, ls: 2, mk: 0, best: 1 }, goal: 20 }) } }); p = s.page;
+  const sv3 = await p.evaluate(() => __manabi.save); check('an old save without the new fields loads with defaults (xp kept)', sv3.xp === 120 && sv3.jp && sv3.ch && sv3.iv && sv3.gm === 0, sv3);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function header6(env) {
+  console.log('18. header: course badge + course sheet (subject score), streak sheet (calendar, freeze, repair, milestones), gem sheet (shop), no raw XP in the top bar');
+  let s = await open(env, { vp: 'se1', touch: true }); let p = s.page;
+  check('the top bar has a subject badge, a streak flame and gems, and no XP chip', await p.isVisible('#cBadge') && await p.isVisible('#cStreak') && await p.isVisible('#cGem') && !(await p.isVisible('#cGoal')) && !/XP/.test(await p.textContent('#top')), await p.textContent('#top'));
+  check('the badge is an original subject icon, not a flag (svg, data-sub=english)', (await p.getAttribute('#cBadge', 'data-sub')) === 'english' && (await p.$$('#cBadge svg')).length === 1, null);
+  await p.click('#cBadge'); await p.waitForSelector('#courseSheet'); check('the course sheet shows a 0-100 subject score and the level name', /^\d+$/.test(await p.textContent('#subjScore')) && (await p.textContent('#subjLabel')).length > 4, await p.textContent('#subjLabel'));
+  check('it lists every subject and lab so you can switch or start a new course', (await p.$$('#courseRows .crow')).length >= 14, (await p.$$('#courseRows .crow')).length);
+  { const r = await p.evaluate(`(${layoutProbe})()`); check(`320px course sheet fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, r.offscreen.slice(0, 3)); }
+  await shot(p, '18-course'); await p.click('#courseRows [data-cr="kobun"]'); await p.waitForSelector('.unit[data-unit="K1"]'); check('choosing a course switches the path and the badge', (await p.getAttribute('#cBadge', 'data-sub')) === 'kobun', null);
+  await p.click('#cBadge'); await p.click('#courseRows [data-cr="HS"][data-sub="math"]'); await p.waitForSelector('.unit[data-unit^="HS-MATH"]'); check('switching to HS math shows its units', true, null);
+  // ストリーク
+  await p.evaluate(() => { const t = __manabi.E.dayNum(); __manabi.setSave({ d: [t - 4, t - 3, t - 2], fd: [t - 3], gm: 100, fz: 1, st: { best: 9 } }); });
+  await p.click('#cStreak'); await p.waitForSelector('#streakSheet'); check('the streak sheet shows a month calendar with practised and freeze days', (await p.$$('#streakCal .cd.on')).length + (await p.$$('#streakCal .cd.fz')).length >= 1 && (await p.$$('#streakCal .cd.today')).length === 1, null);
+  check('milestones are marked (best streak 9 reaches 3 and 7)', (await p.$$('#streakMiles .ms.got')).length === 2, null);
+  check('equipped freezes are shown', (await p.textContent('#fzOwned')).includes('1 / 2'), await p.textContent('#fzOwned'));
+  await shot(p, '18-streak');
+  check('missing yesterday offers a repair for 50 gems', await p.isVisible('#repairBtn') && !(await p.isDisabled('#repairBtn')), null);
+  await p.click('#repairBtn'); await p.waitForTimeout(300); const sv = await stored(p, SAVE); check('repairing spends 50 gems and fills yesterday', sv.gm === 50 && sv.d.length === 4, sv);
+  await p.click('#cStreak'); await p.click('#calPrev'); check('the calendar can go to the previous month', (await p.textContent('#calMonth')).includes('/'), null); await p.click('#streakSheetX');
+  // ジェム・お店
+  await p.click('#cGem'); await p.waitForSelector('#gemSheet'); check('the gem sheet shows the balance and shop items', (await p.textContent('#gemBig')).includes('50') && (await p.$$('#shopList .qrow')).length === 5, await p.textContent('#gemBig'));
+  await p.click('[data-buy="heart"]'); await p.waitForTimeout(200); const sv2 = await stored(p, SAVE); check('buying an item spends gems and adds it to the inventory', sv2.gm === 30 && sv2.iv.heart === 1, sv2);
+  await p.click('[data-skin="2"]'); await p.waitForTimeout(200); check('a cosmetic skin costs 30 gems and is then owned and selected', (await stored(p, SAVE)).sk === 2 && (await stored(p, SAVE)).ow.includes(2) && (await stored(p, SAVE)).gm === 0, await stored(p, SAVE));
+  { const r = await p.evaluate(`(${layoutProbe})()`); check(`320px gem sheet fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, r.offscreen.slice(0, 3)); }
+  await p.keyboard.press('Escape'); check('Escape closes a sheet', !(await p.$('#sheetBg')), null);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // 英語：シートに日本語の画面ことばが残らない
+  s = await open(env, { lang: 'en' }); p = s.page;
+  for (const [sel, id] of [['#cBadge', '#courseSheet'], ['#cStreak', '#streakSheet'], ['#cGem', '#gemSheet']]) { await p.click(sel); await p.waitForSelector(id); const jp = await p.evaluate(`(${jpScan})(true)`); check(`${id} in English: no Japanese in the UI`, jp.filter(x => !/crow|data-cr/.test(x)).length === 0, jp.slice(0, 6)); await p.keyboard.press('Escape'); }
+  await s.close();
+}
+
+async function sound7(env) {
+  console.log('19. sounds and effects: every cue synthesizes, mute and volume work, floating XP / shake / reduced motion');
+  const COUNT = `(() => { const C = window.AudioContext || window.webkitAudioContext; window.__n = { osc: 0, buf: 0, gain: [] }; const co = C.prototype.createOscillator, cb = C.prototype.createBufferSource, cg = C.prototype.createGain; C.prototype.createOscillator = function () { window.__n.osc++; return co.call(this); }; C.prototype.createBufferSource = function () { window.__n.buf++; return cb.call(this); }; C.prototype.createGain = function () { const g = cg.call(this); window.__n.gain.push(g); return g; }; })();`;
+  const s = await B.newSession(env, { vp: V.get('ip12'), seed: { [HOWTO]: '1' }, initScripts: [COUNT] }); const p = s.page;
+  await s.goto('/manabi/?debug'); await p.waitForFunction(() => window.__kb && __kb.ready() && window.__manabi);
+  const names = await p.evaluate(() => Object.keys(ManabiFx.sfx)); check('all cues exist: tap ok ng pair combo done levelup chest coin quest streak tick', ['tap', 'ok', 'ng', 'pair', 'combo', 'done', 'levelup', 'chest', 'coin', 'quest', 'streak', 'tick'].every(n => names.includes(n)), names);
+  const run = async () => p.evaluate(() => { window.__n.osc = 0; window.__n.buf = 0; const res = {}; for (const k of Object.keys(ManabiFx.sfx)) { const a = window.__n.osc + window.__n.buf; ManabiFx.sfx[k](k === 'combo' ? 3 : 1); res[k] = window.__n.osc + window.__n.buf - a; } return res; });
+  const on = await run(); check('every cue builds audio nodes when sound is on (bell, marimba, brass, noise)', Object.values(on).every(n => n > 0), on);
+  check('a correct answer is a two-note bell chime; chest and fanfare are richer', on.ok >= 8 && on.chest > on.ok && on.levelup > on.ok, on);
+  await p.evaluate(() => ManabiFx.setPref('snd', 0)); const off = await run(); check('with sound off, no audio node is created at all', Object.values(off).every(n => n === 0), off);
+  await p.evaluate(() => { ManabiFx.setPref('snd', 1); ManabiFx.setPref('vol', 0.3); ManabiFx.sfx.ok(); }); const gv = await p.evaluate(() => { const gs = window.__n.gain; return gs[0] ? gs[0].gain.value : null; });
+  check('the volume setting sets the master gain (0.3)', gv != null && Math.abs(gv - 0.3) < 0.01, gv);
+  await p.evaluate(() => ManabiFx.setPref('vol', 0.8));
+  // 画面のこうか：まちがえると ゆれる、正解で +2 XP が浮かぶ
+  await p.evaluate(() => __manabi.unlockAll()); await startUnit(p, 'JH-MATH-G2-U06');
+  const k = await p.evaluate(() => __manabi.peek()); await answerOne(p, true, { beforeNext: async () => { check('a correct answer floats "+2 XP" up and shines the progress bar', (await p.$$('.floatxp')).length >= 1, null); } });
+  await p.evaluate(() => { __manabi.save.hm = 0; }); const k2 = await p.evaluate(() => __manabi.peek());
+  await answerOne(p, false, { beforeNext: async () => { check('a wrong answer shakes the question area', await p.evaluate(() => document.querySelector('#qbody').classList.contains('shake')), null); } });
+  check('the streak chip has a flame animation (test pages stop it with the noanim class)', await p.evaluate(() => { document.body.classList.remove('noanim'); return getComputedStyle(document.querySelector('#cStreak svg')).animationName !== 'none'; }), null);
+  await p.emulateMedia({ reducedMotion: 'reduce' }); await p.evaluate(() => __manabi.goHome()); await p.waitForTimeout(100);
+  check('with prefers-reduced-motion the flame stops animating', await p.evaluate(() => getComputedStyle(document.querySelector('#cStreak svg')).animationName === 'none'), null);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
+async function power8(env) {
+  console.log('20. timed chests (early / night / weekend / seasonal), inventory and power-ups (freeze, heart, XP boost, wager)');
+  const s = await open(env); const p = s.page;
+  const setNow = async iso => p.evaluate(iso => { window.__manabiNow = new Date(iso).getTime(); }, iso);
+  await setNow('2026-11-25T06:30:00'); await p.evaluate(() => { __manabi.unlockAll(); });
+  await startUnit(p, 'JH-MATH-G2-U06'); await finishLesson(p, {}); await p.click('#btnHome').catch(() => {});
+  await p.evaluate(() => __manabi.tab('quests')); await p.waitForSelector('#timedCard');
+  check('after a lesson at 6:30 the early-bird chest is ready; night-owl and weekend are not (Wednesday)', !(await p.isDisabled('[data-timed="early"]')) && await p.isDisabled('[data-timed="night"]') && await p.isDisabled('[data-timed="weekend"]'), null);
+  await p.click('[data-timed="early"]'); await p.click('#chestOpen'); await p.waitForSelector('#chestClaim', { timeout: 8000 }); await p.click('#chestClaim'); await p.waitForSelector('#chestOv', GONE);
+  check('claiming it is remembered for the day', (await stored(p, SAVE)).tc.some(x => x.startsWith('early-')) && await p.isDisabled('[data-timed="early"]'), null);
+  const se = await p.evaluate(() => { window.__manabiNow = new Date('2026-12-24T12:00:00').getTime(); __manabi.tab('review'); __manabi.tab('quests'); return !!document.querySelector('[data-tc^="season-winter"]'); }); check('the winter seasonal chest appears only during its dates', se, null);
+  const se2 = await p.evaluate(() => { window.__manabiNow = new Date('2026-05-15T12:00:00').getTime(); __manabi.tab('review'); __manabi.tab('quests'); return !!document.querySelector('[data-tc^="season-"]'); }); check('and not in mid May', !se2, null);
+  await p.evaluate(() => { window.__manabiNow = new Date('2026-11-25T12:00:00').getTime(); __manabi.save.iv = { freeze: 1, heart: 1, boost: 1, wager: 1, timer: 1 }; __manabi.save.gm = 100; __manabi.save.fz = 0; __manabi.save.hr = 2; });
+  await p.click('#cGem'); await p.waitForSelector('#invList'); await p.click('[data-use="boost"]'); await p.waitForSelector('#boostLeft');
+  const sv = await stored(p, SAVE); check('using an XP boost starts a 15-minute timer', sv.bx > Date.now() + 14 * 60000 && sv.iv.boost === undefined, sv.bx);
+  await p.click('[data-use="freeze"]'); await p.click('[data-use="heart"]'); await p.click('[data-use="wager"]');
+  const sv2 = await stored(p, SAVE); check('freeze is equipped, hearts refilled, the wager starts for 30 gems', sv2.fz === 1 && sv2.hr === 5 && sv2.wg && sv2.wg.bet === 30 && sv2.gm === 70, sv2);
+  await p.keyboard.press('Escape'); await startUnit(p, 'JH-MATH-G2-U06'); const xp0 = (await stored(p, SAVE)).xp; await answerOne(p, true);
+  check('with the boost on, a correct answer is worth 4 XP instead of 2', (await stored(p, SAVE)).xp - xp0 === 4, (await stored(p, SAVE)).xp - xp0);
+  await p.evaluate(() => { __manabi.goHome(); });
+  // かけに勝つ：7日ぶんの学習日をつくって8日め
+  await p.evaluate(() => { const t = __manabi.E.dayNum(); __manabi.save.wg = { s: t - 8, bet: 30 }; __manabi.save.d = Array.from({ length: 7 }, (_, i) => t - 7 + i); __manabi.save.gm = 0; __manabi.save.bx = 0; __manabi.goHome(); }); await p.waitForTimeout(900);
+  check('a 7-day streak wins the wager (30 bet returns 60 gems)', (await stored(p, SAVE)).gm === 60 && (await stored(p, SAVE)).wg === null, await stored(p, SAVE));
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 async function layout(env) {
   console.log('10. 320px and other sizes, light and dark: nothing off screen, no sideways scroll');
   for (const [vp, dark] of [['se1', false], ['se1', true], ['a360s', false], ['ip12', true], ['land', false]]) {
@@ -448,8 +622,8 @@ async function layout(env) {
   HAVE_KATEX = ensureKatex();
   const srv = await server.start(); const browser = await B.launch(); const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const nm = f => (f.name === 'path_' ? 'path' : f.name === 'english3' ? 'english' : f.name === 'resume3' ? 'resume' : f.name);
-  for (const f of [home, lesson, types, review, reload, mock, keys, katex, api, special, path_, contrast, english3, resume3, layout]) {
+  const nm = f => (f.name === 'path_' ? 'path' : f.name === 'english3' ? 'english' : f.name === 'resume3' ? 'resume' : f.name === 'dialogue4' ? 'dialogue' : f.name === 'flow5' ? 'flow' : f.name === 'header6' ? 'header' : f.name === 'sound7' ? 'sound' : f.name === 'power8' ? 'power' : f.name);
+  for (const f of [home, lesson, types, review, reload, mock, keys, katex, api, special, path_, contrast, english3, resume3, dialogue4, flow5, header6, sound7, power8, layout]) {
     if (only && !only.includes(nm(f))) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

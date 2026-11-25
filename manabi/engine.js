@@ -400,7 +400,7 @@
     let target = opts.target != null ? opts.target : ability(qs, boxes);
     const L = {
       qs, size, today, target, cand, r, boxes,
-      used: new Set(), picked: [], queue: [], retry: [], miss: {}, firstOk: {}, resolved: 0, selfCount: 0, results: [], streak: 0, cur: null, over: false, asked: 0,
+      maxRetry: opts.maxRetry == null ? null : opts.maxRetry, used: new Set(), picked: [], queue: [], retry: [], miss: {}, firstOk: {}, resolved: 0, selfCount: 0, results: [], streak: 0, cur: null, over: false, asked: 0,
     };
     L.mode = opts.mode || 'practice';
     return nextQuestion(L), L;
@@ -465,7 +465,7 @@
     if (!good && !soft) {
       if (firstTry) L.miss[e.i] = true;
       const tries = (c.tries || 0) + 1;
-      if (!isSelfGrade(e.q) && tries <= MAX_RETRY) { L.retry.push({ e, tries, wait: RETRY_GAP }); again = true; }
+      if (!isSelfGrade(e.q) && tries <= (L.maxRetry == null ? MAX_RETRY : L.maxRetry)) { L.retry.push({ e, tries, wait: RETRY_GAP }); again = true; }
     }
     if (!again) L.resolved++;
     const out = { kind, ok: good, xp, again, firstTry };
@@ -484,7 +484,7 @@
 
   // ================================================================= 保存・XP・ストリーク
   const KEEP_DAYS = 120, KEEP_XP_DAYS = 14;
-  function defSave() { return { v: 1, xp: 0, d: [], g: {}, goal: 20, b: {}, st: { q: 0, ok: 0, ls: 0, mk: 0, best: 0 }, mk: {}, set: {}, gm: 0, fz: 0, hm: 0, hr: 5, cw: {}, ds: { d: 0 }, dq: { d: 0, c: [0, 0, 0] }, lg: { w: 0, t: 0 }, sk: 0, mm: [] }; }
+  function defSave() { return { v: 1, xp: 0, d: [], g: {}, goal: 20, b: {}, st: { q: 0, ok: 0, ls: 0, mk: 0, best: 0 }, mk: {}, set: {}, gm: 0, fz: 0, hm: 0, hr: 5, cw: {}, ds: { d: 0 }, dq: { d: 0, c: [0, 0, 0] }, lg: { w: 0, t: 0 }, sk: 0, mm: [], dl: {}, dm: [], ch: {}, jp: {}, iv: {}, bx: 0, fd: [], ow: [0], bd: [], fq: 0, fc: '', tc: [], wg: null }; }
   const num = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);
   function normSave(raw) {
     const s = defSave();
@@ -501,10 +501,22 @@
     s.gm = Math.max(0, Math.min(1e6, Math.floor(num(raw.gm, 0)))); s.fz = Math.max(0, Math.min(2, Math.floor(num(raw.fz, 0))));
     s.hm = raw.hm ? 1 : 0; s.hr = Math.max(0, Math.min(5, Math.floor(num(raw.hr, 5))));
     if (raw.cw && typeof raw.cw === 'object') for (const k of Object.keys(raw.cw)) if (/^[A-Z]\d{1,2}$/.test(k)) s.cw[k] = Math.max(0, Math.min(5, Math.floor(num(raw.cw[k], 0))));
-    if (raw.ds && typeof raw.ds === 'object') { s.ds = { d: Math.floor(num(raw.ds.d, 0)) }; for (const k of ['xp', 'ls', 'ok', 'perfect', 'rev', 'sp']) if (raw.ds[k]) s.ds[k] = Math.max(0, Math.floor(num(raw.ds[k], 0))); }
+    if (raw.ds && typeof raw.ds === 'object') { s.ds = { d: Math.floor(num(raw.ds.d, 0)) }; for (const k of ['xp', 'ls', 'ok', 'perfect', 'rev', 'sp', 'early', 'night', 'weekend']) if (raw.ds[k]) s.ds[k] = Math.max(0, Math.floor(num(raw.ds[k], 0))); }
     if (raw.dq && typeof raw.dq === 'object') s.dq = { d: Math.floor(num(raw.dq.d, 0)), c: [0, 1, 2].map(i => (raw.dq.c && raw.dq.c[i] ? 1 : 0)) };
     if (raw.lg && typeof raw.lg === 'object') s.lg = { w: Math.floor(num(raw.lg.w, 0)), t: Math.max(0, Math.min(5, Math.floor(num(raw.lg.t, 0)))) };
     s.sk = Math.max(0, Math.min(5, Math.floor(num(raw.sk, 0))));
+    if (raw.dl && typeof raw.dl === 'object') { const ks = Object.keys(raw.dl).filter(k => /^[a-z0-9-]{3,40}$/.test(k) && num(raw.dl[k], -1) >= 0).sort().slice(0, 120); for (const k of ks) s.dl[k] = Math.min(100, Math.floor(raw.dl[k])); }
+    const idMap = (src, dst, cap) => { if (src && typeof src === 'object') for (const k of Object.keys(src).filter(k => /^[A-Za-z0-9._-]{1,60}$/.test(k) && src[k]).sort().slice(0, cap)) dst[k] = 1; };
+    idMap(raw.ch, s.ch, 600); idMap(raw.jp, s.jp, 2500);
+    if (raw.iv && typeof raw.iv === 'object') for (const k of ['freeze', 'heart', 'boost', 'wager', 'timer']) if (num(raw.iv[k], 0) > 0) s.iv[k] = Math.min(99, Math.floor(raw.iv[k]));
+    s.bx = Math.max(0, Math.floor(num(raw.bx, 0)));
+    if (Array.isArray(raw.bd)) s.bd = [...new Set(raw.bd.filter(x => typeof x === 'string' && /^\d{4}-\d{2}$/.test(x)))].sort().slice(-60);
+    s.fq = Math.max(0, Math.floor(num(raw.fq, 0))); s.fc = typeof raw.fc === 'string' && /^[A-Z2-9]{6,8}$/.test(raw.fc) ? raw.fc : '';
+    if (Array.isArray(raw.tc)) s.tc = raw.tc.filter(x => typeof x === 'string' && /^[a-z0-9-]{3,30}$/.test(x)).slice(-40);
+    if (raw.wg && typeof raw.wg === 'object' && Number.isInteger(raw.wg.s) && num(raw.wg.bet, 0) > 0) s.wg = { s: raw.wg.s, bet: Math.min(500, Math.floor(raw.wg.bet)) };
+    if (Array.isArray(raw.fd)) s.fd = [...new Set(raw.fd.filter(x => Number.isInteger(x) && x > 0))].sort((a, b) => a - b).slice(-60);
+    s.ow = [...new Set([0, s.sk].concat(Array.isArray(raw.ow) ? raw.ow.filter(x => Number.isInteger(x) && x >= 0 && x <= 5) : []))].sort();
+    if (Array.isArray(raw.dm)) s.dm = raw.dm.filter(x => Array.isArray(x) && typeof x[0] === 'string' && typeof x[1] === 'string' && x[0].length < 40 && x[1].length < 20).slice(-40).map(x => [x[0], x[1]]);
     if (Array.isArray(raw.mm)) s.mm = raw.mm.filter(x => Array.isArray(x) && typeof x[0] === 'string' && typeof x[1] === 'string' && x[0].length < 40 && x[1].length < 60).slice(-60).map(x => [x[0], x[1]]);
     // 古い日のXPを捨てる
     const keys = Object.keys(s.g).map(Number).sort((a, b) => a - b);
@@ -512,6 +524,8 @@
     return s;
   }
   const weekOf = d => Math.floor((d + 3) / 7); // 月曜はじまりの週番号（1970-01-01 は木曜）
+  // レベル：XP 0→Lv1、25→Lv2、100→Lv3、225→Lv4 …（25×(n-1)²）。次のレベルまでの進み具合も返す
+  function levelOf(xp) { xp = Math.max(0, xp | 0); let lv = Math.floor(Math.sqrt(xp / 25)) + 1; const lo = 25 * (lv - 1) * (lv - 1), hi = 25 * lv * lv; return { lv, xp, lo, hi, frac: (xp - lo) / (hi - lo) }; }
   const xpToday = (s, today) => s.g[today] || 0;
   const goalMet = (s, today) => xpToday(s, today) >= s.goal;
   // 連続日数：今日か昨日までつながっている日の数（今日まだなら昨日までを数える）
@@ -648,7 +662,7 @@
     // 乱数・レッスン
     rng, seedOf, shuffle, LESSON_SIZE, MAX_RETRY, RETRY_GAP, MAX_SELF, ability, createLesson, answer, lessonSummary, progressOf, nextQuestion,
     // 保存
-    defSave, normSave, weekOf, xpToday, goalMet, streakOf, recordLesson, reviewSummary, scoreExam,
+    defSave, normSave, weekOf, levelOf, xpToday, goalMet, streakOf, recordLesson, reviewSummary, scoreExam,
     // 窓口・読み込み
     getQuiz, loadIndex, loadChunk, _cache: cache,
   };

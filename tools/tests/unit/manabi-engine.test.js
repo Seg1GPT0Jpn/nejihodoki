@@ -162,4 +162,12 @@ test('getQuiz: n random questions with a check function (injected fetch)', async
   const hs = await E.getQuiz({ n: 3, subjects: ['english'], levels: ['HS'], base: 'http://x/data/', fetch: fetchFn, random: E.rng(1) }); eq(hs.questions.every(q => q.level === 'HS' && q.subject === 'english'), true);
   eq((await E.getQuiz({ n: 2, subjects: ['nothing'], base: 'http://x/data/', fetch: fetchFn })).questions.length, 0);
 });
+test('levels: XP thresholds 25×(n−1)², progress inside a level', () => {
+  eq(E.levelOf(0).lv, 1); eq(E.levelOf(24).lv, 1); eq(E.levelOf(25).lv, 2); eq(E.levelOf(99).lv, 2); eq(E.levelOf(100).lv, 3); eq(E.levelOf(225).lv, 4);
+  const l = E.levelOf(62); eq(l.lv, 2); eq(l.lo, 25); eq(l.hi, 100); ok(Math.abs(l.frac - 37 / 75) < 1e-9); eq(E.levelOf(-5).lv, 1);
+});
+test('save: new fields (gems, freeze, hearts, crowns, dialogues, mock mistakes) are normalized and bounded', () => {
+  const s = E.normSave({ gm: 99999999, fz: 9, hr: -3, hm: 1, cw: { K1: 9, bad: 1 }, dl: { 'en-a-1': 120, 'BAD!': 5 }, dm: [['en-a-1', 'n2'], ['x'], 'y'], mm: [['e', 'q']] });
+  eq(s.fz, 2); eq(s.hr, 0); eq(s.cw.K1, 5); ok(!('bad' in s.cw)); eq(s.dl['en-a-1'], 100); ok(!('BAD!' in s.dl)); deep(s.dm, [['en-a-1', 'n2']]); deep(s.mm, [['e', 'q']]); ok(s.gm <= 1e6);
+});
 run('manabi-engine');

@@ -113,6 +113,29 @@ if (fs.existsSync(KX)) test('audit: every distinct LaTeX fragment parses in KaTe
   ok(n > 10000, 'fragments ' + n);
 });
 
+test('sub-units: every question in exactly one sub-unit; 8+ questions each; counts add up; goals and titles present', () => {
+  let subs = 0;
+  for (const u of units) {
+    ok(u.subs && u.subs.length >= 1 && u.subs.length <= 9, u.id + ' subs ' + (u.subs && u.subs.length)); eq(u.sm.length, u.n, u.id + ' sm length');
+    const cnt = u.subs.map(() => 0); for (const ch of u.sm) { ok(Number(ch) < u.subs.length, u.id + ' bad sub index'); cnt[Number(ch)]++; }
+    u.subs.forEach((sb, i) => { eq(sb.n, cnt[i], u.id + ' sub count'); ok(sb.n >= 8, u.id + ' small sub ' + sb.n); ok(sb.n <= 30, u.id + ' large sub ' + sb.n); ok(sb.ti && sb.goal, u.id + ' label'); subs++; });
+    eq(cnt.reduce((a, b) => a + b, 0), u.n);
+  }
+  ok(subs >= 1000, 'sub-units ' + subs);
+});
+test('sub-unit mapping file: every variant_group appears once per unit; ids and labels are stable', () => {
+  const M = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/manabi-subunits.json'), 'utf8'));
+  eq(Object.keys(M).length >= 205, true);
+  for (const [uid, list] of Object.entries(M)) { const seen = new Set(); for (const s of list) { ok(s.ti && s.goal && s.groups.length, uid); for (const g of s.groups) { ok(!seen.has(g), uid + ' group twice ' + g); seen.add(g); } } }
+});
+test('migration: set ids, question order hashes and counts are identical to the pre-sub-unit data, so saved Leitner boxes still apply', () => {
+  const old = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/tests/fixtures/manabi-set-hashes.json'), 'utf8'));
+  eq(Object.keys(old).length, sets.length);
+  for (const st of sets) { ok(old[st.id], 'missing set ' + st.id); eq(old[st.id][0], st.h, st.id + ' hash'); eq(old[st.id][1], st.n, st.id + ' n'); }
+  const sv = EN.normSave({ v: 1, xp: 55, b: { [sets[0].id]: sets[0].h + ':' + '2AA'.repeat(sets[0].n) }, d: [20700, 20701] });
+  eq(EN.parseBoxes(sv.b[sets[0].id], sets[0].h, sets[0].n), '2AA'.repeat(sets[0].n)); eq(sv.xp, 55);
+});
+
 const SRC = process.env.MANABI_SRC || '/tmp/claude-0/-home-user/9cf827b1-24df-56d4-a31b-c782467d7b1d/scratchpad/qd';
 if (fs.existsSync(path.join(SRC, 'data'))) test('same source → byte-identical output (twice) and equals the committed data', () => {
   const a = fs.mkdtempSync(path.join(os.tmpdir(), 'mn-a-')), b = fs.mkdtempSync(path.join(os.tmpdir(), 'mn-b-'));

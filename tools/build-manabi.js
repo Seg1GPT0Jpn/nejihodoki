@@ -104,6 +104,26 @@ function compactStimulus(st) {
   return o;
 }
 
+// ---------------------------------------------------------------- 小単元（tools/manabi-subunits.json：variant_group → 小単元。コミットずみの対応表なので、ビルドはいつも同じ結果）
+const bigrams = t => { const m = new Map(); const s = String(t).replace(/[\s$\\{}()]/g, ''); for (let i = 0; i + 1 < s.length; i++) { const g = s.slice(i, i + 2); m.set(g, (m.get(g) || 0) + 1); } return m; };
+const cosine = (a, b) => { let d = 0, na = 0, nb = 0; a.forEach((v, k) => { na += v * v; if (b.has(k)) d += v * b.get(k); }); b.forEach(v => { nb += v * v; }); return na && nb ? d / Math.sqrt(na * nb) : 0; };
+// u.qs（id 順）の各問題に r.su（小単元の番号）をつけて、[{ id, ti, goal, n }] を返す。variant_group のない問題は、近い文面の小単元へ
+function assignSubs(qs, subs) {
+  if (!subs || !subs.length) { qs.forEach(r => { r.su = 0; }); return [{ id: 'a', ti: '', goal: '', n: qs.length }]; }
+  const g2s = {}; subs.forEach((s, i) => s.groups.forEach(g => { g2s[g] = i; }));
+  const vec = subs.map(() => new Map()), cnt = subs.map(() => 0), pending = [];
+  qs.forEach(r => { if (r.vg != null && g2s[r.vg] != null) { r.su = g2s[r.vg]; cnt[r.su]++; bigrams(r.q).forEach((v, k) => vec[r.su].set(k, (vec[r.su].get(k) || 0) + v)); } else pending.push(r); });
+  for (const r of pending) { const b = bigrams(r.q); let best = 0, bs = -1; vec.forEach((v, i) => { const c = cosine(b, v) * (cnt[i] ? 1 : 0); if (c > bs + 1e-12) { bs = c; best = i; } }); r.su = best; }
+  // 8 問に足りない小単元は、前（先頭なら次）にくっつける
+  const order = subs.map((s, i) => i); let n = subs.map((_, i) => qs.filter(r => r.su === i).length);
+  for (let guard = 0; guard < 20; guard++) {
+    const i = order.findIndex(k => n[k] < 8); if (i < 0 || order.length <= 1) break;
+    const to = order[i > 0 ? i - 1 : 1], from = order[i]; qs.forEach(r => { if (r.su === from) r.su = to; }); n[to] += n[from]; n[from] = 0; order.splice(i, 1);
+  }
+  const remap = {}; order.forEach((k, j) => { remap[k] = j; }); qs.forEach(r => { r.su = remap[r.su]; });
+  return order.map((k, j) => ({ id: subs[k].id, ti: subs[k].ti, goal: subs[k].goal, n: n[k] }));
+}
+
 // ---------------------------------------------------------------- 1問の変換（だめなら理由の文字列を返す）
 function convert(q, setStimuli, S, why) {
   const t = TYPE[q.question_type];
@@ -160,6 +180,7 @@ function convert(q, setStimuli, S, why) {
   }
   if (q.number) o.n = str(q.number);
   if (q.section) o.sec = str(q.section);
+  if (q.variant_group) o.vg = q.variant_group; // 小単元に分けるときだけ使う（出力には残さない）
   if (q.scoring && q.scoring.points != null) o.p = q.scoring.points;
   return o;
 }
@@ -237,11 +258,13 @@ function main(o) {
   }
 
   // 単元 → セット
+  const SUBS = fs.existsSync(path.join(__dirname, 'manabi-subunits.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'manabi-subunits.json'), 'utf8')) : {};
   const outFiles = {}; // 相対パス → オブジェクト
   const indexUnits = [];
   for (const uid of Object.keys(units).sort(cmpStr)) {
     const u = units[uid];
     u.qs.sort((a, b) => cmpStr(a.i, b.i));
+    const subInfo = assignSubs(u.qs, SUBS[uid]);
     const meta = u.meta || { title: uid, domain: '', course: '' };
     const sets = [];
     const nSets = Math.max(1, Math.ceil(u.qs.length / MAX_SET));
@@ -256,12 +279,13 @@ function main(o) {
       for (const r of part) dl[r.df <= 2 ? 0 : r.df === 3 ? 1 : 2]++;
       const tc = {}; for (const r of part) tc[r.t] = (tc[r.t] || 0) + 1;
       sets.push({ id: sid, f: file, n: part.length, dl, ty: tc, h: hash(part.map(r => r.i).join(',')) });
+      for (const r of part) delete r.vg;
     }
     const all = u.qs;
     const avg = all.reduce((x, r) => x + r.df, 0) / all.length;
     indexUnits.push({
       id: uid, ti: meta.title, cr: u.stage === 'junior_high' ? 'JH' : 'HS', sub: u.subject, g: Number(String(u.grade).replace(/\D/g, '')) || 1, gr: u.grade,
-      co: meta.course || '', dm: meta.domain || '', n: all.length, df: Math.round(avg * 10) / 10, sets,
+      co: meta.course || '', dm: meta.domain || '', n: all.length, df: Math.round(avg * 10) / 10, sets, subs: subInfo, sm: u.qs.map(r => String(r.su)).join(''),
     });
     rep.units++;
   }

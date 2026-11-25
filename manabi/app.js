@@ -36,6 +36,7 @@ let M = null;       // mock exam
 const reports = readReports();
 function readSave() { let raw = null; try { raw = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {} return E.normSave(raw); }
 function readReports() { try { const o = JSON.parse(store.get(REP_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+const nowDate = () => new Date(window.__manabiNow || Date.now());
 function persist() { store.set(SAVE_KEY, JSON.stringify(save)); }
 function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
 
@@ -113,14 +114,21 @@ function allSets() {
   return out;
 }
 function setStats(set) { return E.boxStats(E.parseBoxes(save.b[set.id], set.h, set.n), set.n, today); }
-function unitStats(u) {
+function unitStats(u, si) {
   const o = { n: u.n, fresh: 0, due: 0, learning: 0, mastered: 0 };
+  if (si != null && u.sm) { // 小単元 si の問題だけ数える（箱は単元のセットごとに保存）
+    o.n = 0; const s = u.sets[0], b = E.parseBoxes(save.b[s.id], s.h, s.n);
+    for (let i = 0; i < s.n; i++) { if (u.sm[i] !== String(si)) continue; o.n++; const c = E.card(b, i); if (!c.box) o.fresh++; else { if (c.box >= 4) o.mastered++; else o.learning++; if (E.isDue(c, today)) o.due++; } }
+    return o;
+  }
   for (const s of u.sets) { const x = setStats(s); for (const k of ['fresh', 'due', 'learning', 'mastered']) o[k] += x[k]; }
   return o;
 }
+const subIdx = (u, si) => { const o = []; for (let i = 0; i < u.sm.length; i++) if (u.sm[i] === String(si)) o.push(i); return o; };
 
 // ================================================================ header chips
 const ICON = {
+  lock: '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1.500A1.500 1.500 0 0 1 20 11.500v8a1.500 1.500 0 0 1-1.500 1.500h-13A1.500 1.500 0 0 1 4 19.500v-8A1.500 1.500 0 0 1 5.500 10zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>',
   learn: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10z"/></svg>',
   review: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.200M4 4v5h5"/></svg>',
   quests: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.900 6.100 6.600.8-4.900 4.600 1.300 6.600L12 16.800 6.100 20.100l1.300-6.600L2.500 8.900l6.600-.8z"/></svg>',
@@ -132,10 +140,14 @@ const ICON = {
   heart: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-8-5.300-8-11a4.500 4.500 0 0 1 8-2.800A4.500 4.500 0 0 1 20 10c0 5.700-8 11-8 11z"/></svg>',
 };
 const FLAME = '<svg viewBox="0 0 24 24" width="34" height="34" fill="#ff8a1f" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-1.8-1-2.6C16.5 9.5 19 11.5 19 15a7 7 0 0 1-14 0c0-5 5-6 7-13z"/></svg>';
-const TABS = [['learn', '学ぶ'], ['review', '復習'], ['quests', 'クエスト'], ['league', 'リーグ'], ['profile', 'プロフィール']];
+const TABS = [['learn', '学ぶ'], ['review', '練習'], ['quests', 'クエスト'], ['league', 'リーグ'], ['profile', 'プロフィール']];
 let tab = 'learn';
 const G = window.ManabiGen, Fx = window.ManabiFx;
+function renderBadge() {
+  const sub = courseSub(view.cr), b = $('cBadge'); b.setAttribute('data-sub', sub); b.innerHTML = badgeSvg(sub); b.setAttribute('aria-label', T('コース') + '：' + (specialSub(view.cr) ? (G.COURSES.find(c => c.id === view.cr)[EN ? 'en' : 'ja']) : subjectName(view.sub)));
+}
 function renderChips() {
+  try { renderBadge(); } catch (e) {}
   const st = E.streakOf(save.d, today), xp = E.xpToday(save, today);
   $('nStreak').textContent = st;
   $('cStreak').title = T('れんぞく {n}日', { n: st });
@@ -143,9 +155,9 @@ function renderChips() {
   $('nGoal').textContent = xp + '/' + save.goal;
   $('cGoal').classList.toggle('met', xp >= save.goal);
   $('cGoal').title = xp >= save.goal ? T('今日のもくひょうをたっせい！') : T('今日 {a}/{b}', { a: xp, b: save.goal });
-  $('cGem').title = T('ジェム'); $('nGem').textContent = save.gm; $('cHeart').hidden = !save.hm; $('nHeart').textContent = save.hr;
+  $('cGem').title = T('ジェム'); $('cGem').setAttribute('aria-label', T('ジェム') + ' ' + save.gm); $('nGem').textContent = save.gm; $('cHeart').hidden = !save.hm; $('nHeart').textContent = save.hr;
 }
-function setTitle(t) { $('ttl').textContent = t || T('まなびの工房'); }
+function setTitle(t, content) { const e = $('ttl'); e.textContent = t || T('まなびの工房'); if (content) e.setAttribute('lang', 'ja'); else e.removeAttribute('lang'); }
 function setBack(fn) { // fn: null → ゲーム一覧へ。関数 → その動作
   const a = $('backLink');
   if (!fn) { a.href = '../'; a.removeAttribute('role'); a.onclick = null; a.onkeydown = null; a.setAttribute('aria-label', T('ゲーム一覧へ戻る')); return; }
@@ -153,7 +165,7 @@ function setBack(fn) { // fn: null → ゲーム一覧へ。関数 → その動
   a.onclick = e => { e.preventDefault(); fn(); };
   a.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
 }
-function show(node, tabs) { $('view').replaceChildren(node); $('tabs').hidden = !tabs; }
+function show(node, tabs) { const v = $('view'); v.replaceChildren(node); $('tabs').hidden = !tabs; if (Fx.motion()) { node.classList.remove('enter'); void node.offsetWidth; node.classList.add('enter'); } }
 function drawTabs() {
   const nav = $('tabs'); nav.replaceChildren();
   for (const [id, ja] of TABS) {
@@ -162,11 +174,12 @@ function drawTabs() {
   }
 }
 function goTab(id) { tab = id; goHome(); }
-const COURSE_IDS = ['JH', 'HS', 'kobun', 'science', 'social'];
-const specialSub = cr => ({ kobun: 'kobun', science: 'science', social: 'social' }[cr] || null);
+const COURSE_IDS = ['JH', 'HS', 'mathlab', 'englab', 'kobun', 'science', 'social'];
+const specialSub = cr => ({ kobun: 'kobun', science: 'science', social: 'social', mathlab: 'math', englab: 'english' }[cr] || null);
 
 // ================================================================ prefs / day state / streak freeze
 function ensureDay() {
+  if (save.wg) { const r = settleWager(); if (r && UI) setTimeout(() => UI.toast(r === 'won' ? T('かけに勝った！ジェムが2倍でもどったよ') : T('かけは、おしくも失敗…'), { type: r === 'won' ? 'ok' : 'danger' }), 600); }
   if (save.ds.d !== today) save.ds = { d: today };
   if (save.dq.d !== today) save.dq = { d: today, c: [0, 0, 0] };
 }
@@ -176,11 +189,13 @@ function applyFreezes() { // 昨日が空いていて、フリーズがあれば
     const y = today - 1 - k;
     if (save.d.includes(y) || save.fz <= 0 || !save.d.some(x => x < y)) break;
     if (!save.d.includes(y - 1) && !save.d.includes(y + 1)) break; // つながっていないなら使わない
-    save.d.push(y); save.fz--; used++;
+    save.d.push(y); save.fd.push(y); save.fz--; used++;
   }
   if (used) { save.d.sort((a, b) => a - b); persist(); }
   return used;
 }
+const MOTIVE = ['ひとつずつ、すこしずつ。きょうも1レッスン！', 'まちがえた問題は、じつはいちばんのチャンス。', '5分だけでも、ちゃんと前に進んでるよ。', 'できなかった問題が、あしたのできるに変わる。', 'れんぞくは、むりのないペースで続けよう。', 'きょうの自分は、きのうより少し賢い！', '声に出して読むと、頭にのこりやすいよ。', 'むずかしいと感じたら、レベルが上がるサイン。', 'ゆっくりでも止まらなければ、ゴールに着く。', 'ほめ上手になろう。まずは自分から！'];
+const motive = () => T(MOTIVE[(today + save.st.ls) % MOTIVE.length]);
 const QDEF = [
   { id: 'xp', n: [20, 30, 40], ja: 'XPを{n}かせぐ', get: d => d.xp || 0 },
   { id: 'ls', n: [1, 2, 3], ja: 'レッスンを{n}回クリア', get: d => d.ls || 0 },
@@ -198,14 +213,17 @@ function questsClaimable() { ensureDay(); return questsFor(today).some((q, i) =>
 const bumpDay = o => { ensureDay(); for (const k of Object.keys(o)) save.ds[k] = (save.ds[k] || 0) + o[k]; };
 
 // ================================================================ 学ぶ
-const crownOf = u => { // 道の上の「王冠」0〜5（通常の単元は、やった問題と習得した問題から）
+const crownOf = u => { // 道の上の「王冠」0〜5（通常の小単元は、やった問題と習得した問題から）。飛び級で通ったところは、少なくとも1
+  const c = crownBase(u); return save.jp[u.id] ? Math.max(1, c) : c;
+};
+const crownBase = u => {
   if (u.special) return save.cw[u.id] || 0;
-  const st = unitStats(u), pr = st.n ? (st.n - st.fresh) / st.n : 0, ms = st.n ? st.mastered / st.n : 0;
+  const st = unitStats(u.unit, u.si), pr = st.n ? (st.n - st.fresh) / st.n : 0, ms = st.n ? st.mastered / st.n : 0;
   if (pr === 0) return 0;
   return Math.max(1, Math.min(5, Math.floor(7 * (0.6 * pr + 0.4 * ms))));
 };
 function goHome() {
-  screen = 'home'; L = null; M = null; ensureDay();
+  screen = 'home'; L = null; M = null; DL = null; ensureDay();
   setBack(null); renderChips(); drawTabs();
   if (!index) {
     show(indexErr ? h('div', { id: 'main' }, h('div', { class: 'err' }, [h('p', { text: T('読み込めませんでした。通信を確かめて、もう一度ためしてください。') }), h('button', { class: 'btn primary', type: 'button', onclick: () => { indexErr = false; goHome(); loadIndex().then(goHome); } }, T('もう一度よみこむ'))])) : h('div', { id: 'main' }, h('div', { class: 'err', text: '…' })), true);
@@ -223,7 +241,7 @@ function viewLearn() {
   let units = [], groups = [];
   const main0 = h('div', { id: 'main' }); main = main0;
   // コース
-  const names = { JH: T('中学'), HS: T('高校'), kobun: T('古文・漢文'), science: T('理科ラボ'), social: T('社会ラボ') };
+  const names = { JH: T('中学'), HS: T('高校'), mathlab: T('数学ラボ'), englab: T('英語ラボ'), kobun: T('古文・漢文'), science: T('理科ラボ'), social: T('社会ラボ') };
   main.append(h('div', { class: 'seg', role: 'group', 'aria-label': T('コース') }, COURSE_IDS.map(c => h('button', { type: 'button', 'data-cr': c, 'aria-pressed': String(c === view.cr), onclick: () => { Fx.sfx.tap(); view.cr = c; view.g = 0; saveView(); goHome(); } }, names[c]))));
   if (!special) {
     const course = index.courses.find(c => c.id === view.cr) || index.courses[0]; view.cr = course.id;
@@ -234,9 +252,15 @@ function viewLearn() {
     app.dataset.sub = view.sub;
     main.append(h('div', { class: 'subs', role: 'group' }, course.subjects.map(s => h('button', { type: 'button', 'data-sub': s.id, 'aria-pressed': String(s.id === view.sub), onclick: () => { view.sub = s.id; view.g = 0; saveView(); goHome(); } }, subjectName(s.id)))));
     main.append(h('div', { class: 'grades', role: 'group' }, [0, ...grades].map(g => h('button', { type: 'button', 'data-g': g, 'aria-pressed': String(g === view.g), onclick: () => { view.g = g; saveView(); goHome(); } }, g ? gradeLabel(view.cr, g) : T('すべて')))));
-    units = subj.units.filter(u => !view.g || u.g === view.g);
-    let last = null, sn = 0;
-    for (const u of units) { const key = u.g + '|' + u.co; if (key !== last) { last = key; sn++; groups.push({ title: T('セクション') + sn + '　' + gradeLabel(view.cr, u.g), co: u.co || '', sub: u.dm || '', ja: true, units: [] }); } groups[groups.length - 1].units.push(u); }
+    const us = subj.units.filter(u => !view.g || u.g === view.g);
+    let sn = 0;
+    for (const u of us) {
+      sn++;
+      const subs = u.subs && u.subs.length ? u.subs : [{ id: 'a', ti: u.ti, goal: u.dm || '', n: u.n }];
+      const nodes = subs.map((sb, si) => ({ id: u.id + '-' + sb.id, ti: sb.ti || u.ti, goal: sb.goal || u.dm || '', unit: u, si, sub: u.sub, n: sb.n, ja: true }));
+      groups.push({ title: T('セクション') + sn + '　' + gradeLabel(view.cr, u.g), co: u.co || '', sub: '', ja: true, unit: u, units: nodes });
+      units = units.concat(nodes);
+    }
   } else {
     app.dataset.sub = special;
     units = courseUnits; let last = null;
@@ -244,18 +268,26 @@ function viewLearn() {
     main.append(h('div', { class: 'hint', style: 'margin:0 0 6px', text: T('AI作成・未レビュー') + '：' + T('まちがいを見つけたら「まちがいを報告」を押してね。') }));
   }
   if (!units.length) main.append(h('div', { class: 'err', text: T('この学年にはまだ単元がありません') }));
+  main.insertBefore(h('div', { class: 'note', id: 'motive', style: 'margin:0 0 6px;text-align:center' }, motive()), main.firstChild.nextSibling);
   const run = readRun();
   if (run) main.insertBefore(h('button', { class: 'banner review', id: 'btnResume', type: 'button', onclick: () => resumeRun() }, [h('span', { class: 't' }, [h('b', { text: T('つづきから') }), h('small', { text: T('とちゅうのレッスンがあります') })]), h('span', { class: 'pill', text: T('再開') })]), main.firstChild.nextSibling);
+  { const xpT = E.xpToday(save, today); main.insertBefore(h('div', { class: 'goalstrip', id: 'goalStrip' }, [h('span', { text: T('今日の目標') }), h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.min(100, 100 * xpT / save.goal) + '%' })), h('b', { text: xpT >= save.goal ? '✓' : xpT + '/' + save.goal })]), main.firstChild); }
   const crowns = units.map(crownOf);
   let curIdx = crowns.findIndex(c => c === 0); if (curIdx < 0) curIdx = units.length - 1;
-  let idx = 0;
+  const stateOf = i => (i === curIdx && crowns[i] === 0 ? 'cur' : crowns[i] >= 1 ? 'done' : i === curIdx ? 'cur' : 'locked');
+  const allIds = units.map(u => u.id);
+  let idx = 0, lastSec = null, secN = 0;
   for (const g of groups) {
-    main.append(h('div', { class: 'sect' }, [h('b', null, [g.title, g.co ? h('span', { lang: 'ja', text: '　' + g.co }) : null]), g.sub ? h('small', { lang: g.ja ? 'ja' : null, text: g.sub }) : null]));
+    if (g.unit) { // 通常のコース：セクション（学年・コース）→ 単元 → レベル（小単元）
+      const key = g.unit.g + '|' + g.co;
+      if (key !== lastSec) { lastSec = key; secN++; main.append(h('div', { class: 'sect' }, [h('small', { text: T('セクション') + secN }), h('b', null, [gradeLabel(view.cr, g.unit.g), g.co ? h('span', { lang: 'ja', text: '　' + g.co }) : null])])); }
+      main.append(h('div', { class: 'unitbar' }, [h('b', { lang: 'ja' }, rich(g.unit.ti)), g.unit.dm && g.unit.dm !== g.unit.ti ? h('small', { lang: 'ja', text: g.unit.dm }) : null]));
+    } else main.append(h('div', { class: 'sect' }, [h('b', null, g.title)]));
     const path = h('div', { class: 'path' });
-    for (const u of g.units) {
-      const i = idx++, cl = crowns[i], st = i < curIdx || cl >= 1 ? (cl >= 1 ? 'done' : '') : i === curIdx ? 'cur' : 'locked';
-      path.append(nodeEl(u, i, cl, i === curIdx ? 'cur' : cl >= 1 ? 'done' : 'locked'));
-    }
+    let allDone = true;
+    for (const u of g.units) { const i = idx++; if (crowns[i] < 1) allDone = false; path.append(nodeEl(u, i, crowns[i], stateOf(i), allIds, i)); }
+    const ckey = g.unit ? 'c-' + g.unit.id : 'c-' + view.cr + '-' + (g.title || '').replace(/[^A-Za-z0-9\u3040-\u9fff]/g, '').length + '-' + idx;
+    path.append(chestEl(ckey.replace(/[^A-Za-z0-9._-]/g, '_'), allDone, idx));
     main.append(path);
   }
   const f = h('div', { class: 'foot' }, [
@@ -272,28 +304,267 @@ function viewLearn() {
   main.addEventListener('scroll', upd, { passive: true }); setTimeout(upd, 60);
   if (!view.scrolled) { view.scrolled = true; const el = main.querySelector('.unit.cur'); if (el) setTimeout(() => el.scrollIntoView({ block: 'center' }), 30); }
 }
-function nodeEl(u, i, cl, state) {
+function nodeEl(u, i, cl, state, allIds, pos) {
   const off = Math.round(Math.sin(i * 1.15) * 62);
   const R = 46, C = 2 * Math.PI * R, frac = cl / 5;
   const ring = h('span', { html: '<svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><ellipse cx="50" cy="50" rx="' + R + '" ry="' + R + '" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="6"/><ellipse cx="50" cy="50" rx="' + R + '" ry="' + R + '" fill="none" stroke="var(--py)" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' });
   const lid = 'lbl-' + u.id, cid = 'crw-' + u.id;
-  const btn = h('button', { class: 'go', type: 'button', 'aria-labelledby': lid + ' ' + cid, onclick: () => { Fx.sfx.tap(); openPop(u, cl, state); } }, [ring.firstChild, h('span', { text: String(i + 1) }), h('span', { class: 'sr', id: cid, text: T('王冠') + cl + (state === 'locked' ? '（' + T('まだロック中') + '）' : '') })]);
+  const btn = h('button', { class: 'go', type: 'button', 'aria-labelledby': lid + ' ' + cid, onclick: () => { Fx.sfx.tap(); openPop(u, cl, state, allIds, pos); } }, [ring.firstChild, state === 'locked' ? h('span', { class: 'lockic', html: ICON.lock }) : h('span', { text: String(i + 1) }), h('span', { class: 'sr', id: cid, text: T('王冠') + cl + (state === 'locked' ? '（' + T('まだロック中') + '）' : '') })]);
   const wrap = h('span', { class: 'nodewrap' }, [btn, cl ? h('span', { class: 'crowns', 'aria-hidden': 'true' }, [h('span', { html: ICON.crown }), String(cl)]) : null, state === 'cur' ? h('span', { class: 'start', text: T('START') }) : null]);
-  return h('div', { class: 'unit ' + state, 'data-unit': u.id, style: 'transform:translateX(' + off + 'px)' }, [wrap, h('div', { class: 'lbl', id: 'lbl-' + u.id }, [u.special ? h('span', { text: T(u.ti) }) : h('span', null, rich(u.ti)), h('small', { lang: u.special ? null : 'ja', text: u.special ? T(u.goal || '') : (u.dm || '') })])]);
+  return h('div', { class: 'unit ' + state, 'data-unit': u.id, style: 'transform:translateX(' + off + 'px)' }, [wrap, h('div', { class: 'lbl', id: 'lbl-' + u.id }, [u.special ? h('span', { text: T(u.ti) }) : h('span', { lang: 'ja', text: u.ti }), h('small', { lang: u.special ? null : 'ja', text: u.special ? T(u.goal || '') : (u.goal || '') })])]);
 }
-function openPop(u, cl, state) {
+function openPop(u, cl, state, allIds, pos) {
   closePop();
-  const st = u.special ? null : unitStats(u);
-  const bg = h('div', { class: 'sheetbg', id: 'popBg', onclick: e => { if (e.target === bg) closePop(); } }, h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'popT', 'data-sub': u.sub }, [
-    u.special ? h('h2', { id: 'popT', text: T(u.ti) }) : h('h2', { id: 'popT' }, rich(u.ti)),
-    h('p', null, [u.special ? T(u.goal || '') : h('span', { lang: 'ja', text: u.dm || '' }), st ? '　' + T('{n}問 ・ 習得 {m}', { n: u.n, m: st.mastered }) : '']),
-    h('div', { class: 'row' }, [h('span', { class: 'crowns', style: 'position:static;transform:none' }, [h('span', { html: ICON.crown }), String(cl)]), state === 'locked' ? h('span', { class: 'hint', text: T('前のレッスンからやるのがおすすめ。ここから始めてもOK！') }) : null]),
-    h('button', { class: 'btn sc', id: 'popStart', type: 'button', onclick: () => { closePop(); u.special ? startSpecial(u) : startLesson(u); } }, T('スタート')),
-    h('button', { class: 'btn sub', id: 'popClose', type: 'button', style: 'margin-top:10px', onclick: () => closePop() }, T('とじる')),
-  ]));
-  document.body.append(bg); $('popStart').focus();
+  const st = u.special ? null : unitStats(u.unit, u.si), locked = state === 'locked';
+  const kids = [
+    u.special ? h('h2', { id: 'popT', text: T(u.ti) }) : h('h2', { id: 'popT', lang: 'ja', text: u.ti }),
+    h('p', null, [u.special ? T(u.goal || '') : h('span', { lang: 'ja', text: u.goal || '' }), st ? '　' + T('{n}問 ・ 習得 {m}', { n: st.n, m: st.mastered }) : '']),
+    h('div', { class: 'row' }, [locked ? h('span', { class: 'lockic', style: 'color:var(--kb-dim)', html: ICON.lock }) : h('span', { class: 'crowns', style: 'position:static;transform:none' }, [h('span', { html: ICON.crown }), String(cl)])]),
+  ];
+  if (locked) {
+    kids.push(h('p', { id: 'lockMsg', class: 'lockmsg', text: T('このレッスンは、前のレッスンをクリアすると開きます。') }));
+    kids.push(h('button', { class: 'btn primary', id: 'popCur', type: 'button', onclick: () => { closePop(); const el = document.querySelector('.unit.cur'); if (el) el.scrollIntoView({ block: 'center' }); } }, T('いまのレッスンへ')));
+    kids.push(h('button', { class: 'btn b', id: 'popJump', type: 'button', style: 'margin-top:10px', onclick: () => { closePop(); startJump(u, allIds, pos); } }, T('飛び級テストにちょうせん')));
+    kids.push(h('p', { class: 'note', text: T('3回まちがえる前に、10問を解ききれば合格！ここまでのレッスンが ぜんぶクリアになるよ。') }));
+  } else kids.push(h('button', { class: 'btn sc', id: 'popStart', type: 'button', onclick: () => { closePop(); u.special ? startSpecial(u) : startLesson(u.unit, u.si); } }, T('スタート')));
+  kids.push(h('button', { class: 'btn sub', id: 'popClose', type: 'button', style: 'margin-top:10px', onclick: () => closePop() }, T('とじる')));
+  const bg = h('div', { class: 'sheetbg', id: 'popBg', onclick: e => { if (e.target === bg) closePop(); } }, h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'popT', 'data-sub': u.sub }, kids));
+  document.body.append(bg); const f = $('popStart') || $('popCur'); if (f) f.focus();
 }
 function closePop() { const p = $('popBg'); if (p) p.remove(); }
+
+// ================================================================ 宝箱（ユニットをクリアすると開く）とごほうび
+const ITEMS = { freeze: ['ストリーク・フリーズ', '❄'], heart: ['ハートかいふく', '♥'], boost: ['XPブースト（15分）', '⚡'], wager: ['れんぞくのかけ', '✦'], timer: ['タイマーのびる', '⏱'] };
+function chestSvg(open) {
+  return '<svg class="chestsvg' + (open ? ' open' : '') + '" viewBox="0 0 120 100" width="120" height="100" aria-hidden="true"><ellipse cx="60" cy="94" rx="40" ry="5" fill="rgba(0,0,0,.18)"/>'
+    + '<g class="lid"><path d="M16 46V34a8 8 0 0 1 8-8h72a8 8 0 0 1 8 8v12z" fill="#e9923a" stroke="#8a4b12" stroke-width="4" stroke-linejoin="round"/><rect x="52" y="30" width="16" height="16" rx="3" fill="#ffd23f" stroke="#8a4b12" stroke-width="3"/></g>'
+    + '<rect x="16" y="46" width="88" height="42" rx="6" fill="#c9701f" stroke="#8a4b12" stroke-width="4"/><rect x="16" y="56" width="88" height="6" fill="#8a4b12" opacity=".35"/><rect x="52" y="44" width="16" height="22" rx="3" fill="#ffd23f" stroke="#8a4b12" stroke-width="3"/><circle cx="60" cy="55" r="3" fill="#8a4b12"/>'
+    + (open ? '<g class="glow"><path d="M24 46h72l10-34H14z" fill="#fff6b0" opacity=".7"/></g>' : '') + '</svg>';
+}
+function chestEl(key, unlocked, pos) {
+  const claimed = !!save.ch[key], st = claimed ? 'claimed' : unlocked ? 'ready' : 'locked';
+  const off = Math.round(Math.sin((pos + 0.5) * 1.15) * 62);
+  const b = h('button', { class: 'chestbtn ' + st, id: 'chest-' + key, type: 'button', 'data-chest': key, 'aria-label': T('宝箱') + '：' + (claimed ? T('うけとりずみ') : unlocked ? T('あけられます') : T('まだロック中')), onclick: () => { Fx.sfx.tap(); if (claimed) { toast2(T('もううけとったよ')); return; } if (!unlocked) { toast2(T('このユニットをクリアすると、宝箱が開くよ！')); return; } openChestFlow(key); } }, [h('span', { html: chestSvg(claimed) }), !unlocked && !claimed ? h('span', { class: 'lockic sm', html: ICON.lock }) : null]);
+  return h('div', { class: 'unit chest ' + st, style: 'transform:translateX(' + off + 'px)' }, [b, h('div', { class: 'lbl' }, [h('span', { text: T('宝箱') })])]);
+}
+function toast2(m) { if (UI) UI.toast(m); }
+function chestRewards(key) {
+  const r = E.rng(E.seedOf('chest|' + key)), list = [{ k: 'gm', n: 8 + Math.floor(r() * 13) }, { k: 'xp', n: 10 }];
+  if (r() < 0.55) { const ids = Object.keys(ITEMS); list.push({ k: 'item', id: ids[Math.floor(r() * ids.length)], n: 1 }); }
+  return list;
+}
+function applyRewards(list) {
+  for (const x of list) {
+    if (x.k === 'gm') save.gm += x.n;
+    else if (x.k === 'xp') { save.xp += x.n; save.g[today] = (save.g[today] || 0) + x.n; if (!save.d.includes(today)) save.d.push(today); bumpDay({ xp: x.n }); }
+    else if (x.k === 'item') save.iv[x.id] = Math.min(99, (save.iv[x.id] || 0) + x.n);
+  }
+  persist(); renderChips();
+}
+// 宝箱をあける：ゆれる → ふたが開く → ごほうびがとびだす → かぞえる数に飛んでいく
+function showChest(o) {
+  closePop(); const rewards = o.rewards;
+  const ov = h('div', { class: 'overlay chestov', id: 'chestOv', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'chestT' });
+  const box = h('div', { class: 'card', style: 'text-align:center' });
+  const art = h('div', { class: 'chestart', html: chestSvg(false) });
+  const list = h('div', { class: 'rewards', id: 'chestRewards', 'aria-live': 'polite' });
+  const openBtn = h('button', { class: 'btn primary', id: 'chestOpen', type: 'button' }, T('あける！'));
+  box.append(h('h2', { id: 'chestT', text: o.title || T('宝箱') }), art, list, openBtn); ov.append(box); document.body.append(ov); openBtn.focus();
+  const reduce = !Fx.motion();
+  openBtn.onclick = () => {
+    openBtn.disabled = true; art.classList.add('wiggle'); Fx.sfx.tap();
+    setTimeout(() => {
+      art.classList.remove('wiggle'); art.innerHTML = chestSvg(true); art.classList.add('opened'); Fx.sfx.chest(); Fx.buzz([20, 30, 20]); Fx.confetti($('fx'), 30);
+      rewards.forEach((x, k) => setTimeout(() => { const label = x.k === 'gm' ? '+' + x.n + ' ' + T('ジェム') : x.k === 'xp' ? '+' + x.n + ' XP' : T(ITEMS[x.id][0]) + ' ×' + x.n; list.append(h('div', { class: 'rw ' + x.k, 'data-k': x.k }, [h('span', { class: 'ic', text: x.k === 'gm' ? '◆' : x.k === 'xp' ? '★' : ITEMS[x.id][1] }), label])); Fx.sfx.coin(k); }, reduce ? 0 : 350 + k * 260));
+      setTimeout(() => { const c = h('button', { class: 'btn primary', id: 'chestClaim', type: 'button', onclick: () => claim() }, T('うけとる')); box.append(c); c.focus(); }, reduce ? 10 : 400 + rewards.length * 260 + 200);
+    }, reduce ? 0 : 750);
+  };
+  const claim = () => {
+    $('chestClaim').disabled = true;
+    const done = () => { ov.remove(); applyRewards(rewards); o.onClaim && o.onClaim(); tick(); };
+    if (reduce) return done();
+    // ごほうびが、上の数に向かって飛ぶ
+    ov.querySelectorAll('.rw').forEach((el, k) => { const t = el.dataset.k === 'gm' ? $('cGem') : el.dataset.k === 'xp' ? $('cGoal') : $('tabs'); const a = el.getBoundingClientRect(), b = t.getBoundingClientRect(); const fly = el.cloneNode(true); fly.className = 'rw flyer'; fly.style.cssText = 'position:fixed;left:' + a.left + 'px;top:' + a.top + 'px;margin:0;z-index:90'; document.body.append(fly); el.style.visibility = 'hidden'; fly.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px) scale(.4)', opacity: .4 }], { duration: 650, delay: k * 90, easing: 'cubic-bezier(.5,-0.3,.7,1)', fill: 'forwards' }).onfinish = () => { fly.remove(); Fx.sfx.coin(k); }; });
+    setTimeout(done, 700 + rewards.length * 90);
+  };
+  const tick = () => { for (const id of ['cGem', 'cGoal']) { const e = $(id); e.classList.remove('tick'); void e.offsetWidth; e.classList.add('tick'); } };
+}
+function openChestFlow(key) {
+  const rewards = chestRewards(key);
+  showChest({ title: T('宝箱をゲット！'), rewards, onClaim: () => { save.ch[key] = 1; persist(); emit('progress', { chest: key }); goHome(); } });
+}
+
+// ================================================================ 飛び級テスト（3回まちがえたら不合格：2回までのまちがいなら合格）
+const JUMP_N = 10;
+async function startJump(u, allIds, pos) {
+  if (L) return;
+  try {
+    const skipIds = allIds.slice(0, pos + 1).filter(id => !save.jp[id]);
+    let eng, pool;
+    if (u.special) {
+      const c = await loadContent(u), qs = G.make(u.id, 'jump|' + today + '|' + save.st.ls, c, JUMP_N), boxes = '000'.repeat(qs.length);
+      pool = { items: [], qs, boxes, noBoxes: true }; eng = E.createLesson({ qs, boxes, today, seed: 'jump|' + u.id + '|' + save.st.ls, size: qs.length, maxRetry: 0 });
+    } else {
+      const set = pickSet(u.unit); pool = await buildPool([set]); const only = u.unit.sm ? subIdx(u.unit, u.si) : undefined;
+      eng = E.createLesson({ qs: pool.qs, boxes: pool.boxes, today, seed: 'jump|' + u.id + '|' + save.st.ls + '|' + today, size: Math.min(JUMP_N, only ? only.length : JUMP_N), only, maxRetry: 0 });
+    }
+    beginLesson({ eng, pool, kind: 'jump', unit: u.special ? u : u.unit, si: u.si, jumpIds: skipIds, jumpArgs: { u, allIds, pos } });
+  } catch (e) { loadFail(e); }
+}
+function jumpResult(pass) {
+  const ids = L.jumpIds || [], miss = L.miss; clearRun();
+  if (pass) { ids.forEach(id => { save.jp[id] = 1; }); save.gm += 5; persist(); renderChips(); Fx.sfx.done(); Fx.confetti($('fx'), 40); }
+  else { Fx.sfx.ng(); }
+  emit('play_end', { mode: 'normal', reason: pass ? 'clear' : 'over', score: pass ? 1 : 0 });
+  screen = 'result'; setBack(() => goHome()); setTitle(T('飛び級テスト'));
+  const body = h('div', { class: 'q', id: 'resBody' }, [h('div', { class: 'res' }, [
+    h('span', { html: Fx.mascot(pass ? 'cheer' : 'think', 132, save.sk) }),
+    h('h2', { id: 'jumpTitle', text: pass ? T('合格！飛び級だ！') : T('おしい！もう少し') }),
+    h('p', { id: 'jumpMsg', text: pass ? T('{n}コのレッスンが クリアになったよ。', { n: ids.length }) + '　' + T('まちがい {n} 回', { n: miss }) : T('3回まちがえたのでここまで。いまのレッスンで練習してから、またちょうせんしよう。') }),
+  ]), h('div', { class: 'acts' }, [h('button', { class: 'btn primary', id: 'btnHome', type: 'button', onclick: () => goHome() }, T('ホームへ')), pass ? null : h('button', { class: 'btn', id: 'btnJumpAgain', type: 'button', onclick: () => { const a = L.jumpArgs; L = null; startJump(a.u, a.allIds, a.pos); } }, T('もう一回'))])]);
+  show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, body), false);
+  L.over = true;
+}
+
+// ================================================================ ヘッダーのシート（コース・ストリーク・ジェム）
+const BADGE = {
+  english: '<path d="M5 6h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-6l-4 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="currentColor"/><text x="12" y="14.500" text-anchor="middle" font-size="7.500" font-weight="900" fill="var(--sc-ink,#000)" stroke="none">Aa</text>',
+  math: '<path d="M6 12h12M12 6v12" stroke="currentColor" stroke-width="3.200" stroke-linecap="round" fill="none"/><path d="M5 19h14" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" fill="none"/>',
+  japanese: '<path d="M4 18c4-1 6-5 8-12M9 12c3-1 7-1 10 0M13 15c1 3 4 4 7 3" stroke="currentColor" stroke-width="2.800" stroke-linecap="round" fill="none"/>',
+  kobun: '<rect x="5" y="4" width="14" height="16" rx="2" fill="currentColor"/><path d="M8 9h8M8 13h8M8 17h5" stroke="var(--sc-ink,#000)" stroke-width="1.800" stroke-linecap="round"/>',
+  science: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3" fill="none" stroke="currentColor" stroke-width="2.400" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 15h8" stroke="currentColor" stroke-width="2.400"/>',
+  social: '<circle cx="12" cy="12" r="8.500" fill="none" stroke="currentColor" stroke-width="2.400"/><path d="M3.500 12h17M12 3.500c3 3 3 14 0 17M12 3.500c-3 3-3 14 0 17" fill="none" stroke="currentColor" stroke-width="2"/>',
+  information: '<rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2.400"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3" stroke="currentColor" stroke-width="2.200" stroke-linecap="round"/>',
+};
+const badgeSvg = sub => '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">' + (BADGE[sub] || BADGE.information) + '</svg>';
+const courseSub = cr => specialSub(cr) || view.sub || 'english';
+function subjectScore(cr, sub) { // 0〜100：習得した問題（65%）ともう取り組んだ問題（35%）の割合。ラボ・古文は王冠の平均
+  if (specialSub(cr)) { const us = G.UNITS.filter(u => u.course === cr); return us.length ? Math.round(100 * us.reduce((a, u) => a + (save.cw[u.id] || 0) / 5, 0) / us.length) : 0; }
+  const course = index.courses.find(c => c.id === cr), sj = course && course.subjects.find(x => x.id === sub); if (!sj) return 0;
+  let n = 0, pr = 0, ms = 0; for (const u of sj.units) { const st = unitStats(u); n += st.n; pr += st.n - st.fresh; ms += st.mastered; }
+  return n ? Math.round(100 * (0.35 * pr / n + 0.65 * ms / n)) : 0;
+}
+const scoreLabel = sc => (sc < 8 ? 'はじめて' : sc < 25 ? 'ビギナー' : sc < 50 ? 'ちゅうきゅう' : sc < 75 ? 'じょうきゅう' : 'マスター');
+function closeSheet() { const b = $('sheetBg'); if (b) b.remove(); }
+function openSheet(id, title, kids) {
+  closePop(); closeSheet();
+  const bg = h('div', { class: 'sheetbg', id: 'sheetBg', onclick: e => { if (e.target === bg) closeSheet(); } }, h('div', { class: 'sheet tall', id, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': id + 'T' }, [
+    h('div', { class: 'sheethd' }, [h('h2', { id: id + 'T', text: title }), h('button', { class: 'icon', id: id + 'X', type: 'button', 'aria-label': T('とじる'), onclick: () => closeSheet() }, h('span', { text: '✕', style: 'font-size:20px;font-weight:800' }))]), ...kids]));
+  document.body.append(bg); const x = $(id + 'X'); if (x) x.focus(); return bg;
+}
+const COURSE_LIST = () => {
+  const l = [];
+  for (const cr of ['JH', 'HS']) { const c = index.courses.find(x => x.id === cr); for (const sj of c.subjects) l.push({ cr, sub: sj.id, name: (cr === 'JH' ? T('中学') : T('高校')) + ' ' + subjectName(sj.id) }); }
+  for (const c of G.COURSES) l.push({ cr: c.id, sub: c.sub, name: EN ? c.en : c.ja });
+  return l;
+};
+function openCourseSheet() {
+  const cur = COURSE_LIST().find(c => c.cr === view.cr && (specialSub(c.cr) || c.sub === view.sub)) || COURSE_LIST()[0];
+  const sc = subjectScore(cur.cr, cur.sub), R = 40, C = 2 * Math.PI * R;
+  const ring = h('div', { class: 'scorering', html: '<svg viewBox="0 0 100 100" width="108" height="108" aria-hidden="true"><circle cx="50" cy="50" r="' + R + '" fill="none" stroke="var(--kb-surface-2)" stroke-width="10"/><circle cx="50" cy="50" r="' + R + '" fill="none" stroke="var(--sc,var(--pb))" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + (C * sc / 100).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 50 50)"/></svg>' });
+  ring.append(h('span', { class: 'sv', id: 'subjScore', text: String(sc) }));
+  const rows = COURSE_LIST().map(c => { const s2 = subjectScore(c.cr, c.sub), on = c === cur; return h('button', { class: 'crow' + (on ? ' on' : ''), type: 'button', 'data-cr': c.cr, 'data-sub': c.sub, 'aria-current': on ? 'true' : null, onclick: () => { Fx.sfx.tap(); view.cr = c.cr; if (!specialSub(c.cr)) view.sub = c.sub; view.g = 0; view.scrolled = false; saveView(); closeSheet(); tab = 'learn'; goHome(); } }, [h('span', { class: 'badge sm', 'data-sub': c.sub, html: badgeSvg(c.sub) }), h('span', { class: 't' }, [h('b', { text: c.name }), h('small', { text: s2 ? T(scoreLabel(s2)) + ' ・ ' + s2 : T('新しいコース') })])]); });
+  openSheet('courseSheet', T('コース'), [h('div', { style: 'text-align:center' }, [ring, h('div', { class: 'note', id: 'subjLabel', text: T('{name} の実力：{lv}', { name: cur.name, lv: T(scoreLabel(sc)) }) })]), h('h3', { class: 'dom', text: T('コースをかえる・ふやす') }), h('div', { class: 'crows', id: 'courseRows' }, rows),
+    h('p', { class: 'note', text: T('実力スコアは、習得した問題とやった問題の割合からつくっています（0〜100）。') })]);
+}
+// ---- ストリークのカレンダー
+const DAYS = ['日', '月', '火', '水', '木', '金', '土'], DOWEN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+function dayToDate(d) { return new Date(d * 86400000 + new Date().getTimezoneOffset() * 60000); }
+function repairable() { // きのうだけ空いて、その前までつながっていた（フリーズなし）
+  const y = today - 1; if (save.d.includes(y) || save.d.includes(today)) return false;
+  return save.d.includes(y - 1);
+}
+function monthGrid(off) {
+  const t = dayToDate(today), first = new Date(t.getFullYear(), t.getMonth() + off, 1), dim = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  const base = E.dayNum(first), cells = [];
+  for (let i = 0; i < first.getDay(); i++) cells.push(null);
+  for (let d = 0; d < dim; d++) cells.push(base + d);
+  return { first, cells };
+}
+function openStreakSheet(off) {
+  off = off || 0; const st = E.streakOf(save.d, today), g = monthGrid(off), frozen = new Set(save.fd);
+  const cal = h('div', { class: 'cal', id: 'streakCal', role: 'grid' }, DAYS.map((d, i) => h('span', { class: 'dow', lang: EN ? null : 'ja', text: EN ? DOWEN[i] : d })));
+  g.cells.forEach(d => cal.append(d == null ? h('span') : h('span', { class: 'cd' + (save.d.includes(d) ? (frozen.has(d) ? ' fz' : ' on') : '') + (d === today ? ' today' : ''), 'data-day': d, role: 'gridcell', 'aria-label': (new Date(d * 86400000 + new Date().getTimezoneOffset() * 60000).getDate()) + (save.d.includes(d) ? (frozen.has(d) ? ' ' + T('フリーズ') : ' ' + T('学習した')) : '') }, String(new Date(d * 86400000 + new Date().getTimezoneOffset() * 60000).getDate()))));
+  const mil = [3, 7, 14, 30, 50, 100, 200, 365], best = Math.max(st, save.st.best);
+  const kids = [
+    h('div', { class: 'streakhd' }, [h('span', { html: FLAME }), h('b', { id: 'streakNum', text: String(st) }), h('span', { text: ' ' + T('日れんぞく') })]),
+    h('div', { class: 'calnav' }, [h('button', { class: 'icon', type: 'button', id: 'calPrev', 'aria-label': T('前の月'), onclick: () => openStreakSheet(off - 1) }, '‹'), h('b', { id: 'calMonth', text: g.first.getFullYear() + '/' + (g.first.getMonth() + 1) }), h('button', { class: 'icon', type: 'button', id: 'calNext', 'aria-label': T('次の月'), disabled: off >= 0 ? true : null, onclick: () => openStreakSheet(off + 1) }, '›')]),
+    cal,
+    h('div', { class: 'set' }, [h('span', { text: T('ストリーク・フリーズ') }), h('b', { id: 'fzOwned', text: save.fz + ' / 2 ' + T('そうび中') + (save.iv.freeze ? '　+' + save.iv.freeze + ' ' + T('もちもの') : '') })]),
+    h('div', { class: 'miles', id: 'streakMiles' }, mil.map(m => h('span', { class: 'ms' + (best >= m ? ' got' : ''), 'data-m': m }, [h('b', { text: String(m) }), h('small', { text: T('日間') })]))),
+  ];
+  if (repairable()) { const cost = 50; kids.push(h('button', { class: 'btn ng', id: 'repairBtn', type: 'button', disabled: save.gm >= cost ? null : true, onclick: () => { save.gm -= cost; save.d.push(today - 1); save.fd.push(today - 1); save.d.sort((a, b) => a - b); persist(); renderChips(); Fx.sfx.streak(); closeSheet(); goHome(); } }, T('きのうの分を直す') + '（' + cost + ' ' + T('ジェム') + '）'), h('p', { class: 'note', text: T('きのうやすんでも、れんぞくをもどせるよ。今日のうちだけ。') })); }
+  if (save.iv.freeze && save.fz < 2) kids.push(h('button', { class: 'btn b', id: 'equipFreeze', type: 'button', onclick: () => { save.iv.freeze--; if (!save.iv.freeze) delete save.iv.freeze; save.fz++; persist(); openStreakSheet(off); } }, T('フリーズをそうびする')));
+  openSheet('streakSheet', T('れんぞく'), kids);
+}
+// ---- ジェム・お店・もちもの
+const SHOP = [
+  { id: 'freeze', ja: 'ストリーク・フリーズ', cost: 50, desc: '休んだ日のれんぞくを守る（2つまでそうび）' },
+  { id: 'heart', ja: 'ハートかいふく', cost: 20, desc: 'ハートを5つにもどす' },
+  { id: 'boost', ja: 'XPブースト（15分）', cost: 30, desc: '15分のあいだ、もらえるXPが2倍' },
+  { id: 'wager', ja: 'れんぞくのかけ', cost: 40, desc: '7日れんぞくできたら、ジェムが2倍' },
+  { id: 'timer', ja: 'タイマーのびる', cost: 25, desc: '模試の制限時間を5分ふやす' },
+];
+const SKIN_COST = 30;
+function openGemSheet() {
+  const own = new Set(save.ow);
+  const items = SHOP.map(it => h('div', { class: 'qrow', 'data-item': it.id }, [h('div', { class: 't' }, [h('b', { text: T(it.ja) }), h('small', { class: 'note', text: T(it.desc) + (save.iv[it.id] ? '　' + T('もちもの') + ' ×' + save.iv[it.id] : '') })]), h('button', { class: 'btn b', type: 'button', 'data-buy': it.id, disabled: save.gm >= it.cost ? null : true, onclick: () => { save.gm -= it.cost; save.iv[it.id] = Math.min(99, (save.iv[it.id] || 0) + 1); persist(); renderChips(); Fx.sfx.coin(0); openGemSheet(); } }, '◆ ' + it.cost)]));
+  const skins = h('div', { class: 'skins' }, Fx.SKINS.map((c, i) => h('button', { type: 'button', 'data-skin': i, style: 'background:' + c, 'aria-label': T('色') + (i + 1) + (own.has(i) ? '' : '（' + SKIN_COST + '）'), 'aria-pressed': String(i === save.sk), onclick: () => { if (!own.has(i)) { if (save.gm < SKIN_COST) { toast2(T('ジェムがたりないよ')); return; } save.gm -= SKIN_COST; save.ow.push(i); } save.sk = i; persist(); renderChips(); openGemSheet(); } }, own.has(i) ? '' : '◆')));
+  openSheet('gemSheet', T('ジェムとお店'), [h('div', { class: 'gemhd' }, [h('b', { id: 'gemBig', text: '◆ ' + save.gm }), h('small', { text: T('レッスン・クエスト・宝箱でもらえるよ') })]), h('h3', { class: 'dom', text: T('アイテム') }), h('div', { id: 'shopList' }, items), h('h3', { class: 'dom', text: T('もちもの') }), inventoryEl(), h('h3', { class: 'dom', text: T('ねじまるの色（見た目だけ）') }), skins, h('p', { class: 'note', text: T('お店のものは、学習の点数には えいきょうしません。') })]);
+}
+
+// ================================================================ 時間・季節のチェスト、アイテムのつかいかた、れんぞくのかけ
+const TIMED = [
+  { id: 'early', ja: '早起きチェスト', cond: '朝8時前にレッスンをする', ok: ds => ds.early > 0, key: d => 'early-' + d },
+  { id: 'night', ja: 'よふかしチェスト', cond: '夜10時すぎにレッスンをする', ok: ds => ds.night > 0, key: d => 'night-' + d },
+  { id: 'weekend', ja: '週末チェスト', cond: '土曜か日曜にレッスンをする', ok: ds => ds.weekend > 0, key: () => 'weekend-' + E.weekOf(today) },
+];
+const SEASONS = [
+  { id: 'spring', ja: '春のさくらチェスト', from: [3, 20], to: [4, 10] }, { id: 'summer', ja: '夏のひまわりチェスト', from: [7, 20], to: [8, 31] },
+  { id: 'autumn', ja: '秋のつきみチェスト', from: [9, 10], to: [11, 15] }, { id: 'winter', ja: '冬のゆきチェスト', from: [12, 15], to: [1, 10] },
+];
+function seasonNow() {
+  const d = nowDate(), m = d.getMonth() + 1, day = d.getDate(), v = m * 100 + day;
+  for (const s of SEASONS) { const a = s.from[0] * 100 + s.from[1], b = s.to[0] * 100 + s.to[1]; if (a <= b ? v >= a && v <= b : v >= a || v <= b) return Object.assign({ year: d.getFullYear() - (a > b && v <= b ? 1 : 0) }, s); }
+  return null;
+}
+function timedList() {
+  ensureDay();
+  const l = TIMED.map(t => ({ id: t.id, ja: t.ja, cond: t.cond, ready: t.ok(save.ds), key: t.key(today), limited: false }));
+  const se = seasonNow(); if (se) l.push({ id: 'season-' + se.id, ja: se.ja, cond: 'きょう1回レッスンをする（{a}）', cp: se.from[0] + '/' + se.from[1] + '–' + se.to[0] + '/' + se.to[1], ready: (save.ds.ls || 0) > 0, key: 'season-' + se.id + '-' + se.year, limited: true });
+  return l.map(x => Object.assign(x, { claimed: save.tc.includes(x.key) }));
+}
+function claimTimed(x) {
+  if (x.claimed || !x.ready) return;
+  const r = E.rng(E.seedOf('tc|' + x.key)), rewards = [{ k: 'gm', n: x.limited ? 25 : 12 }, { k: 'xp', n: 10 }]; if (x.limited || r() < 0.5) rewards.push({ k: 'item', id: Object.keys(ITEMS)[Math.floor(r() * 5)], n: 1 });
+  showChest({ title: T(x.ja), rewards, onClaim: () => { save.tc.push(x.key); save.tc = save.tc.slice(-40); persist(); Fx.sfx.quest(); goHome(); } });
+}
+function useItem(id) {
+  if (!save.iv[id]) return;
+  if (id === 'freeze') { if (save.fz >= 2) { toast2(T('フリーズは2つまでそうびできるよ')); return; } save.fz++; }
+  else if (id === 'heart') { if (save.hr >= 5) { toast2(T('ハートはいっぱいだよ')); return; } save.hr = 5; }
+  else if (id === 'boost') { save.bx = Math.max(Date.now(), save.bx) + 15 * 60000; }
+  else if (id === 'wager') { if (save.wg) { toast2(T('もう、かけている最中だよ')); return; } if (save.gm < 30) { toast2(T('ジェムがたりないよ')); return; } save.gm -= 30; save.wg = { s: today, bet: 30 }; }
+  else if (id === 'timer') { if (M && !M.submitted) { M.t0 += 5 * 60000; } else { toast2(T('模試のとちゅうでつかえるよ')); return; } }
+  save.iv[id]--; if (!save.iv[id]) delete save.iv[id]; persist(); renderChips(); Fx.sfx.quest(); Fx.confetti($('fx'), 14);
+}
+function settleWager() { // かけ：7日つづけたら、かけたジェムが2倍でもどる。とぎれたら、かけたぶんは なくなる
+  const w = save.wg; if (!w) return null;
+  const days = [1, 2, 3, 4, 5, 6, 7].map(k => w.s + k);
+  if (today > w.s + 7 || days.slice(0, Math.max(0, today - w.s - 1)).some(d => !save.d.includes(d))) {
+    const won = days.every(d => save.d.includes(d)); save.wg = null; if (won) save.gm += w.bet * 2; persist(); return won ? 'won' : 'lost';
+  }
+  return null;
+}
+function inventoryEl() {
+  const rows = Object.keys(ITEMS).map(id => h('div', { class: 'qrow', 'data-inv': id }, [h('div', { class: 't' }, [h('b', { text: T(ITEMS[id][0]) + ' ×' + (save.iv[id] || 0) }), id === 'boost' && save.bx > Date.now() ? h('small', { class: 'note', id: 'boostLeft', text: T('のこり {m} 分', { m: Math.ceil((save.bx - Date.now()) / 60000) }) }) : id === 'wager' && save.wg ? h('small', { class: 'note', id: 'wagerInfo', text: T('かけ中：{n} 日め／7日', { n: Math.min(7, today - save.wg.s) }) }) : null]), h('button', { class: 'btn sub b', type: 'button', 'data-use': id, disabled: save.iv[id] ? null : true, onclick: () => { useItem(id); openGemSheet(); } }, T('つかう'))]));
+  return h('div', { id: 'invList' }, rows);
+}
+function timedCard() {
+  const c = h('div', { class: 'card', id: 'timedCard' }, [h('h3', { text: T('ひみつのチェスト') })]);
+  timedList().forEach(x => c.append(h('div', { class: 'qrow', 'data-tc': x.id }, [h('span', { html: chestSvg(x.claimed) , style: 'width:44px;flex:none;' + (x.ready || x.claimed ? '' : 'filter:grayscale(1) opacity(.5)') }), h('div', { class: 't' }, [h('b', { text: T(x.ja) + (x.limited ? ' ' + T('（期間げんてい）') : '') }), h('small', { class: 'note', text: T(x.cond, { a: x.cp }) })]), h('button', { class: 'btn ' + (x.ready && !x.claimed ? 'primary' : ''), type: 'button', 'data-timed': x.id, disabled: x.ready && !x.claimed ? null : true, onclick: () => claimTimed(x) }, x.claimed ? T('うけとりずみ') : x.ready ? T('宝箱をあける') : T('まだ'))])));
+  return c;
+}
 function saveView() { save.set = { cr: view.cr, sub: view.sub, g: view.g }; persist(); }
 function reviewCount() {
   let n = 0;
@@ -303,7 +574,7 @@ function reviewCount() {
 
 // ================================================================ 復習
 function viewReview() {
-  setTitle(T('復習')); $('app').dataset.sub = 'english';
+  setTitle(T('練習')); $('app').dataset.sub = 'english';
   const rv = reviewCount(), main = h('div', { id: 'main' });
   main.append(h('div', { style: 'text-align:center;padding:6px 0 10px' }, [h('span', { html: Fx.mascot(rv ? 'think' : 'happy', 120, save.sk) }), h('div', { class: 'note', text: rv ? T('まちがえた問題が待ってるよ。ゆっくりいこう！') : T('復習する問題はまだありません') })]));
   main.append(h('button', { class: 'banner review', id: 'btnReview', type: 'button', disabled: rv ? null : true, onclick: () => startReview() }, [
@@ -317,12 +588,27 @@ function viewReview() {
     h('span', { class: 'pill', text: String(exams.length) }),
   ]));
   if (save.hm) main.append(h('div', { class: 'card' }, [h('h3', { text: T('ハートモード') }), h('div', { class: 'hearts', 'aria-label': T('ハート') }, [h('span', { html: ICON.heart }), String(save.hr) + ' / 5']), h('p', { class: 'note', text: T('復習レッスンをクリアするとハートが2つ回復するよ。') })]));
+  const dh = h('div', { class: 'card', id: 'dlgHost', style: 'margin-top:12px' }, h('p', { class: 'note', text: '…' }));
+  main.append(dh); dialogueList(dh);
   show(main, true);
 }
 
 // ================================================================ クエスト
+// 月間クエスト：その月に学習した日が 15 日になったらバッジ（毎月ちがうデザイン）
+const MONTH_TARGET = 15;
+const monthKey = () => { const t = dayToDate(today); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0'); };
+const monthDays = () => { const t = dayToDate(today), y = t.getFullYear(), m = t.getMonth(); return save.d.filter(d => { const x = dayToDate(d); return x.getFullYear() === y && x.getMonth() === m; }).length; };
+const MONTH_COL = ['#7cd6ff', '#ff9ec4', '#9be564', '#ffd23f', '#6fd6a0', '#59b8ff', '#ff9a62', '#f5c04a', '#c3a0ff', '#ff8f4d', '#c89b6a', '#9fb4ff'];
+function monthBadge(key, size) {
+  const m = Number(key.slice(5)) - 1, c = MONTH_COL[m], dk = Fx.shade(c, 0.7);
+  return '<svg viewBox="0 0 64 64" width="' + (size || 56) + '" height="' + (size || 56) + '" role="img" aria-label="' + key + '"><path d="M32 4l22 12v26L32 60 10 42V16z" fill="' + c + '" stroke="' + dk + '" stroke-width="4" stroke-linejoin="round"/><path d="M32 12l15 8.500v18L32 52 17 38.500v-18z" fill="rgba(255,255,255,.28)"/><text x="32" y="39" text-anchor="middle" font-size="22" font-weight="900" fill="' + dk + '">' + (m + 1) + '</text></svg>';
+}
+// 友だちクエスト：ボットの友だち（ミカン）といっしょに、今週 150 XP。ほんもののユーザーではない（オンライン版は設計だけ：tools/proposed-manabi-social-rules.txt）
+const FRIEND_GOAL = 150;
+const friendBot = () => ({ name: 'ミカン', xp: rivalXp(E.weekOf(today), 0, 0, today) });
+function myCode() { if (!save.fc) { const r = E.rng(E.seedOf('fc|' + (store.get('kobo.dev') || '') + Date.now())), A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 6; i++) c += A[Math.floor(r() * A.length)]; save.fc = c; persist(); } return save.fc; }
 function viewQuests() {
-  setTitle(T('クエスト')); $('app').dataset.sub = 'math'; ensureDay();
+  setTitle(T('クエスト')); $('app').dataset.sub = 'math'; ensureDay(); settleLeague();
   const qs = questsFor(today), main = h('div', { id: 'main' });
   const goal = E.xpToday(save, today), met = goal >= save.goal;
   main.append(h('div', { class: 'card' }, [h('h3', { text: T('今日の目標') }), h('div', { class: 'bar', role: 'progressbar', 'aria-valuenow': String(Math.min(100, Math.round(100 * goal / save.goal))) }, h('i', { style: 'width:' + Math.min(100, 100 * goal / save.goal) + '%' })), h('p', { class: 'note', text: (met ? T('今日のもくひょうをたっせい！') : T('今日 {a}/{b}', { a: goal, b: save.goal })) + '　' + T('れんぞく {n}日', { n: E.streakOf(save.d, today) }) })]));
@@ -331,20 +617,40 @@ function viewQuests() {
     const v = Math.min(q.n, q.get(save.ds)), done = v >= q.n, claimed = save.dq.c[i];
     card.append(h('div', { class: 'qrow', 'data-q': q.id }, [
       h('div', { class: 't' }, [h('span', { text: q.text }), h('div', { class: 'bar' }, h('i', { style: 'width:' + (100 * v / q.n) + '%' })), h('small', { class: 'note', text: v + ' / ' + q.n })]),
-      h('button', { class: 'btn ' + (done && !claimed ? 'primary' : ''), type: 'button', 'data-claim': i, disabled: done && !claimed ? null : true, onclick: () => claimQuest(i) }, claimed ? T('うけとりずみ') : done ? T('+10 ジェム') : T('進行中')),
+      h('button', { class: 'btn ' + (done && !claimed ? 'primary' : ''), type: 'button', 'data-claim': i, disabled: done && !claimed ? null : true, onclick: () => claimQuest(i) }, claimed ? T('うけとりずみ') : done ? T('宝箱をあける') : T('進行中')),
     ]));
   });
   main.append(card);
-  main.append(h('div', { class: 'card' }, [
-    h('h3', { text: T('ジェムのお店（見た目だけ。学習にはえいきょうなし）') }),
-    h('div', { class: 'qrow' }, [h('div', { class: 't', text: T('ストリーク・フリーズ（休んだ日をカバー）') + ' ' + save.fz + '/2' }), h('button', { class: 'btn b', id: 'buyFreeze', type: 'button', disabled: save.gm >= 50 && save.fz < 2 ? null : true, onclick: () => { save.gm -= 50; save.fz++; persist(); renderChips(); goHome(); } }, '50')]),
-    h('div', { class: 'qrow' }, [h('div', { class: 't', text: T('ハートを1つ回復') }), h('button', { class: 'btn b', id: 'buyHeart', type: 'button', disabled: save.gm >= 20 && save.hr < 5 ? null : true, onclick: () => { save.gm -= 20; save.hr++; persist(); renderChips(); goHome(); } }, '20')]),
-  ]));
+  // 月間
+  const mk = monthKey(), md = monthDays(), mdone = md >= MONTH_TARGET, mclaimed = save.bd.includes(mk), dim = new Date(dayToDate(today).getFullYear(), dayToDate(today).getMonth() + 1, 0).getDate();
+  const mc = h('div', { class: 'card', id: 'monthCard' }, [h('h3', { text: T('月間クエスト') }),
+    h('div', { class: 'qrow' }, [h('span', { class: 'mbadge' + (mclaimed ? '' : ' dim'), html: monthBadge(mk, 64) }), h('div', { class: 't' }, [h('span', { text: T('この月に {n} 日、学習しよう', { n: MONTH_TARGET }) }), h('div', { class: 'bar', role: 'progressbar', 'aria-valuenow': String(Math.round(100 * Math.min(md, MONTH_TARGET) / MONTH_TARGET)) }, h('i', { style: 'width:' + 100 * Math.min(md, MONTH_TARGET) / MONTH_TARGET + '%' })), h('small', { class: 'note', id: 'monthProg', text: Math.min(md, MONTH_TARGET) + ' / ' + MONTH_TARGET + '（' + T('のこり{n}日', { n: dim - dayToDate(today).getDate() }) + '）' })]),
+      h('button', { class: 'btn ' + (mdone && !mclaimed ? 'primary' : ''), type: 'button', id: 'monthClaim', disabled: mdone && !mclaimed ? null : true, onclick: () => claimMonth(mk) }, mclaimed ? T('バッジ ゲット') : mdone ? T('宝箱をあける') : T('進行中'))]),
+    save.bd.length ? h('div', { class: 'badges', id: 'badgeShelf' }, save.bd.map(k => h('span', { class: 'mbadge', html: monthBadge(k, 44) }))) : h('p', { class: 'note', text: T('毎月、ちがうデザインのバッジがもらえるよ。') })]);
+  main.append(mc);
+  // 友だちクエスト（ボット）
+  const bot = friendBot(), mine = weekXp(today), tot = mine + bot.xp, fdone = tot >= FRIEND_GOAL, wk = E.weekOf(today), fclaimed = save.fq === wk;
+  main.append(h('div', { class: 'card', id: 'friendCard' }, [h('h3', { text: T('友だちクエスト') }),
+    h('div', { class: 'qrow' }, [h('span', { class: 'av', style: 'width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:' + Fx.SKINS[0] + ';color:#1b1b1b;font-weight:900;flex:none', text: T(bot.name)[0] }), h('div', { class: 't' }, [h('span', { text: T('{name}（ボット）と、今週ふたりで {n} XP', { name: T(bot.name), n: FRIEND_GOAL }) }), h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.min(100, 100 * tot / FRIEND_GOAL) + '%' })), h('small', { class: 'note', id: 'friendProg', text: T('あなた {a} + {name} {b} = {t} / {n}', { a: mine, name: T(bot.name), b: bot.xp, t: tot, n: FRIEND_GOAL }) })]),
+      h('button', { class: 'btn ' + (fdone && !fclaimed ? 'primary' : ''), type: 'button', id: 'friendClaim', disabled: fdone && !fclaimed ? null : true, onclick: () => claimFriend(wk) }, fclaimed ? T('うけとりずみ') : fdone ? T('宝箱をあける') : T('進行中'))]),
+    h('p', { class: 'note', text: T('これはボットの友だちです（ほんもののユーザーではありません）。本物の友だちとのクエストは、オンライン版で用意する予定です。') }),
+    h('div', { class: 'set' }, [h('span', { text: T('あなたのフレンドコード') }), h('b', { id: 'myCode', style: 'letter-spacing:.15em', text: myCode() })])]));
+  main.append(timedCard());
+  main.append(h('button', { class: 'banner', id: 'openShop', type: 'button', onclick: () => openGemSheet() }, [h('span', { class: 't' }, [h('b', { text: T('ジェムとお店') }), h('small', { text: T('フリーズ・ハート・ブースト・色') })]), h('span', { class: 'pill', style: 'background:var(--pp);color:var(--pp-ink)', text: '◆ ' + save.gm })]));
   show(main, true);
 }
 function claimQuest(i) {
   const qs = questsFor(today), q = qs[i]; if (!q || save.dq.c[i] || q.get(save.ds) < q.n) return;
-  save.dq.c[i] = 1; save.gm += 10; persist(); renderChips(); Fx.sfx.done(); Fx.buzz(20); Fx.confetti($('fx'), 24); goHome();
+  const r = E.rng(E.seedOf('qc|' + today + '|' + i)), rewards = [{ k: 'gm', n: 10 }]; if (r() < 0.3) rewards.push({ k: 'item', id: Object.keys(ITEMS)[Math.floor(r() * 5)], n: 1 });
+  showChest({ title: T('クエスト達成！'), rewards, onClaim: () => { save.dq.c[i] = 1; persist(); Fx.sfx.quest(); goHome(); } });
+}
+function claimMonth(mk) {
+  if (save.bd.includes(mk) || monthDays() < MONTH_TARGET) return;
+  showChest({ title: T('月間クエスト達成！'), rewards: [{ k: 'gm', n: 50 }, { k: 'xp', n: 20 }, { k: 'item', id: 'freeze', n: 1 }], onClaim: () => { save.bd.push(mk); save.bd.sort(); persist(); Fx.sfx.quest(); goHome(); } });
+}
+function claimFriend(wk) {
+  if (save.fq === wk || weekXp(today) + friendBot().xp < FRIEND_GOAL) return;
+  showChest({ title: T('友だちクエスト達成！'), rewards: [{ k: 'gm', n: 20 }, { k: 'xp', n: 10 }], onClaim: () => { save.fq = wk; persist(); Fx.sfx.quest(); goHome(); } });
 }
 
 // ================================================================ リーグ（ほんもののユーザーではない、この端末だけのシミュレーション）
@@ -385,14 +691,17 @@ function viewProfile() {
   setTitle(T('プロフィール')); $('app').dataset.sub = 'kobun';
   const main = h('div', { id: 'main' }), acc = save.st.q ? Math.round(100 * save.st.ok / save.st.q) : 0;
   main.append(h('div', { style: 'text-align:center;padding:4px 0' }, [h('span', { id: 'profMascot', html: Fx.mascot('happy', 128, save.sk) }), h('div', { style: 'font-weight:900;font-size:20px', text: T('ねじまる') })]));
+  const LV = E.levelOf(save.xp);
+  main.append(h('div', { class: 'card', id: 'profLevel' }, [h('h3', { text: T('レベル') + ' ' + LV.lv }), h('div', { class: 'bar', role: 'progressbar', 'aria-valuenow': String(Math.round(LV.frac * 100)) }, h('i', { style: 'width:' + Math.round(LV.frac * 100) + '%' })), h('p', { class: 'note', text: T('次のレベルまで {n} XP', { n: LV.hi - LV.xp }) })]));
   main.append(h('div', { class: 'stat4', id: 'profStats' }, [
     h('div', null, [h('b', { text: String(save.xp) }), h('small', { text: T('合計XP') })]), h('div', null, [h('b', { text: String(save.st.best) }), h('small', { text: T('最高のれんぞく') })]),
     h('div', null, [h('b', { text: String(save.st.ls) }), h('small', { text: T('レッスン') })]), h('div', null, [h('b', { text: acc + '%' }), h('small', { text: T('せいかい率') + '（' + save.st.q + '）' })]),
   ]));
-  main.append(h('div', { class: 'card' }, [h('h3', { text: T('ねじまるの色') }), h('div', { class: 'skins' }, Fx.SKINS.map((c, i) => h('button', { type: 'button', style: 'background:' + c, 'aria-label': T('色') + (i + 1), 'aria-pressed': String(i === save.sk), onclick: () => { save.sk = i; persist(); goHome(); } })))]));
+  main.append(h('div', { class: 'card' }, [h('h3', { text: T('ねじまるの色') }), h('div', { class: 'skins' }, Fx.SKINS.map((c, i) => h('button', { type: 'button', style: 'background:' + c, 'aria-label': T('色') + (i + 1) + (save.ow.includes(i) ? '' : '（' + SKIN_COST + '）'), 'aria-pressed': String(i === save.sk), disabled: save.ow.includes(i) ? null : true })))]));
   const sw = (id, label, on, fn) => h('div', { class: 'set' }, [h('span', { text: label }), h('span', { class: 'sw-wrap' }, h('button', { class: 'sw', id, type: 'button', role: 'switch', 'aria-label': label, 'aria-pressed': String(!!on), onclick: e => { const v = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(v)); fn(v); } }))]);
   main.append(h('div', { class: 'card' }, [h('h3', { text: T('せってい') }),
     sw('swSnd', T('効果音'), Fx.prefs.snd, v => { Fx.setPref('snd', v); if (v) Fx.sfx.ok(); }),
+    h('div', { class: 'set' }, [h('label', { for: 'volRange', text: T('音量') }), h('input', { id: 'volRange', type: 'range', min: '0', max: '100', value: String(Math.round((Fx.prefs.vol == null ? 0.8 : Fx.prefs.vol) * 100)), style: 'flex:1;max-width:180px;min-height:44px', oninput: e => Fx.setPref('vol', e.target.value / 100), onchange: () => Fx.sfx.ok() }), h('button', { class: 'btn sub', style: 'width:auto', id: 'btnTestSnd', type: 'button', onclick: () => { Fx.sfx.chest(); } }, T('ためす'))]),
     sw('swHap', T('しんどう（ハプティクス）'), Fx.prefs.hap, v => { Fx.setPref('hap', v); if (v) Fx.buzz(20); }),
     sw('swAnim', T('アニメーション'), Fx.prefs.anim, v => { Fx.setPref('anim', v); document.body.classList.toggle('noanim', !v); }),
     sw('swSay', T('読み上げ'), Fx.prefs.say, v => Fx.setPref('say', v)),
@@ -420,15 +729,17 @@ function pickSet(u) { // いちばん学ぶものが残っているセット
   sets.sort((a, b) => { const x = setStats(a), y = setStats(b); return (y.due + y.fresh) - (x.due + x.fresh); });
   return sets[0];
 }
-async function startLesson(u) {
+async function startLesson(u, si) {
   if (L) return;
   try {
     const set = pickSet(u);
     const pool = await buildPool([set]);
     const lessonNo = save.st.ls;
-    const seed = 'l|' + today + '|' + u.id + '|' + lessonNo;
-    const eng = E.createLesson({ qs: pool.qs, boxes: pool.boxes, today, seed, size: E.LESSON_SIZE });
-    beginLesson({ eng, pool, kind: 'unit', unit: u, desc: { k: 'unit', u: u.id, s: set.id, seed, today, b0: pool.boxes, size: E.LESSON_SIZE } });
+    if (si == null && u.sm && u.subs && u.subs.length) { si = u.subs.findIndex((x, i) => { const st = unitStats(u, i); return st.n && (st.n - st.fresh) / st.n < 0.5; }); if (si < 0) si = 0; }
+    const only = u.sm && si != null ? subIdx(u, si) : undefined;
+    const seed = 'l|' + today + '|' + u.id + '|' + (si == null ? '' : si) + '|' + lessonNo;
+    const eng = E.createLesson({ qs: pool.qs, boxes: pool.boxes, today, seed, size: E.LESSON_SIZE, only });
+    beginLesson({ eng, pool, kind: 'unit', unit: u, desc: { k: 'unit', u: u.id, s: set.id, seed, today, b0: pool.boxes, size: E.LESSON_SIZE, only }, si });
   } catch (e) { loadFail(e); }
 }
 async function startReview() {
@@ -550,7 +861,7 @@ function renderQuestion() {
   const bar = h('div', { class: 'lh' }, [
     h('button', { class: 'icon', type: 'button', id: 'btnQuit', 'aria-label': T('とじる'), onclick: () => askQuit() }, h('span', { text: '✕', style: 'font-size:20px;font-weight:800' })),
     h('div', { class: 'pbar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(E.progressOf(eng) * 100)) }, h('i', { id: 'pbarFill', style: 'width:' + (L.prevProg || 0) + '%' })),
-    save.hm ? h('span', { class: 'hearts', id: 'lessonHearts' }, [h('span', { html: ICON.heart }), String(save.hr)]) : null,
+    L.kind === 'jump' ? h('span', { class: 'hearts', id: 'jumpHearts', 'aria-label': T('のこりのチャンス') }, [h('span', { html: ICON.heart }), String(Math.max(0, 3 - L.miss))]) : save.hm ? h('span', { class: 'hearts', id: 'lessonHearts' }, [h('span', { html: ICON.heart }), String(save.hr)]) : null,
   ]);
   const prog = Math.round(E.progressOf(eng) * 100); L.prevProg = prog;
   requestAnimationFrame(() => requestAnimationFrame(() => { const f = $('pbarFill'); if (f) f.style.width = prog + '%'; }));
@@ -595,7 +906,7 @@ function answerArea(ui) {
     box.append(h('div', { class: 'hint', style: 'margin:0 0 6px', text: q.t === 'mc' ? T('記号をえらぼう') : T('当てはまるものをすべてえらぼう') }));
     const ul = h('div', { class: 'choices', role: q.t === 'mc' ? 'radiogroup' : 'group' });
     q.c.forEach((ch, i) => {
-      const b = h('button', { class: 'ch', type: 'button', 'data-label': ch[0], 'data-i': i, 'aria-pressed': 'false', onclick: () => pick(ch[0]) }, [h('span', { class: 'k', text: ch[0] }), h('span', { class: 'x' }, rich(ch[1]))]);
+      const b = h('button', { class: 'ch', type: 'button', 'data-label': ch[0], 'data-i': i, 'aria-pressed': 'false', onclick: () => pick(ch[0]) }, [h('span', { class: 'k', lang: 'ja', text: ch[0] }), h('span', { class: 'x' }, rich(ch[1]))]);
       ul.append(b);
     });
     box.append(ul);
@@ -675,7 +986,11 @@ function drawTiles() {
   ui.tiles.forEach((id, n) => { const w = q.w.find(x => x.id === id); row.append(h('button', { class: 'tile', type: 'button', 'data-id': id, disabled: ui.checked ? true : null, onclick: () => { if (ui.checked) return; ui.tiles.splice(n, 1); Fx.sfx.tap(); drawTiles(); drawDock(); } }, rich(w.t))); });
   q.w.forEach(w => { bank.append(h('button', { class: 'tile' + (ui.tiles.includes(w.id) ? ' used' : ''), type: 'button', 'data-id': w.id, tabindex: ui.tiles.includes(w.id) ? '-1' : null, disabled: ui.checked ? true : null, onclick: () => { if (ui.checked || ui.tiles.includes(w.id)) return; ui.tiles.push(w.id); Fx.sfx.tap(); drawTiles(); drawDock(); } }, rich(w.t))); });
 }
-function reactSfx(ok) { if (ok) { Fx.sfx.ok(); Fx.buzz(12); } else { Fx.sfx.ng(); Fx.buzz([30, 40, 30]); } }
+function reactSfx(ok) {
+  const combo = L && L.eng ? L.eng.streak : 0;
+  if (ok) { Fx.sfx.ok(combo); Fx.buzz(12); if (combo >= 3 && combo % 3 === 0) setTimeout(() => Fx.sfx.combo(combo), 220); const d = $('dock') || $('reply'); if (d) { Fx.floatText(d, '+' + (combo >= 1 ? 2 : 2) + ' XP', 'ok'); } const sh = document.querySelector('#pbarFill'); if (sh) { sh.classList.remove('shine'); void sh.offsetWidth; sh.classList.add('shine'); } }
+  else { Fx.sfx.ng(); Fx.buzz([30, 40, 30]); Fx.shake($('qbody') || $('chat')); }
+}
 function pick(label) {
   const ui = L.ui; if (ui.checked) return;
   const q = ui.q;
@@ -693,7 +1008,7 @@ function drawOrder() {
   });
   q.c.forEach((ch, i) => {
     if (ui.order.includes(ch[0])) return;
-    pool.append(h('button', { class: 'ch', type: 'button', 'data-label': ch[0], 'data-i': i, disabled: ui.checked ? true : null, onclick: () => orderAdd(ch[0]) }, [h('span', { class: 'k', text: ch[0] }), h('span', { class: 'x' }, rich(ch[1]))]));
+    pool.append(h('button', { class: 'ch', type: 'button', 'data-label': ch[0], 'data-i': i, disabled: ui.checked ? true : null, onclick: () => orderAdd(ch[0]) }, [h('span', { class: 'k', lang: 'ja', text: ch[0] }), h('span', { class: 'x' }, rich(ch[1]))]));
   });
 }
 function orderAdd(l) { const ui = L.ui; if (ui.checked || ui.order.includes(l)) return; ui.order.push(l); drawOrder(); drawDock(); }
@@ -832,6 +1147,7 @@ function commit() {
   const kind = ui.self ? ui.gradeKind : (ui.result.ok ? 'ok' : 'miss');
   ui.committed = true;
   const out = E.answer(eng, kind);
+  if (save.bx > Date.now() && out.xp) out.xp *= 2; // XPブースト中は2倍
   L.log.push(kind); L.xp += out.xp;
   if (firstTry) {
     const res = eng.results[eng.results.length - 1];
@@ -844,7 +1160,7 @@ function commit() {
   bumpDay({ xp: out.xp });
   if (firstTry) { save.st.q++; if (kind === 'ok' || kind === 'sg-ok') { save.st.ok++; bumpDay({ ok: 1 }); } else if (kind === 'miss') L.miss++; }
   if (L.kind === 'mockmiss' && firstTry && (kind === 'ok' || kind === 'sg-ok')) save.mm = save.mm.filter(x => x[1] !== L.ui.q.i);
-  if (save.hm && firstTry && kind === 'miss' && L.kind !== 'review' && L.kind !== 'mockmiss') save.hr = Math.max(0, save.hr - 1);
+  if (save.hm && firstTry && kind === 'miss' && L.kind !== 'review' && L.kind !== 'mockmiss' && L.kind !== 'jump') save.hr = Math.max(0, save.hr - 1);
   save.st.best = Math.max(save.st.best, E.streakOf(save.d, today));
   persist(); renderChips(); saveRun();
   return true;
@@ -852,7 +1168,8 @@ function commit() {
 function nextQuestion() {
   if (!L || !L.eng) return;
   commit();
-  if (!L.eng.cur) return finishLesson();
+  if (L.kind === 'jump' && L.miss >= 3) return jumpResult(false);
+  if (!L.eng.cur) return L.kind === 'jump' ? jumpResult(L.miss <= 2) : finishLesson();
   if (save.hm && save.hr === 0 && !L.heartOk && L.kind !== 'review' && L.kind !== 'mockmiss') return heartOverlay();
   renderQuestion();
 }
@@ -874,13 +1191,16 @@ function askQuit() {
   UI.confirm({ title: T('レッスンをやめますか？'), message: T('ここまでの進み具合は保存されています。'), ok: T('やめる'), cancel: T('つづけて学ぶ') }).then(ok => { if (ok) go(); });
 }
 function finishLesson() {
+  if (L.kind === 'jump') return jumpResult(L.miss <= 2);
   const eng = L.eng, sum = E.lessonSummary(eng, L.xp);
+  const lvBefore = E.levelOf(save.xp - L.xp).lv;
   const bonus = sum.bonus, secs = Math.max(1, Math.round((Date.now() - L.startedAt) / 1000));
-  const kind = L.kind, unit = L.unit, firstToday = L.firstToday; clearRun();
+  const kind = L.kind, unit = L.unit, firstToday = L.firstToday, si = L.si; clearRun();
   save.xp += bonus; save.g[today] = (save.g[today] || 0) + bonus; save.st.ls++;
   if (!save.d.includes(today)) save.d.push(today);
   save.st.best = Math.max(save.st.best, E.streakOf(save.d, today));
   const gemGain = 5 + (sum.perfect ? 3 : 0); save.gm += gemGain;
+  { const hr = nowDate().getHours(), dow = nowDate().getDay(); bumpDay({ early: hr < 8 ? 1 : 0, night: hr >= 22 ? 1 : 0, weekend: dow === 0 || dow === 6 ? 1 : 0 }); }
   bumpDay({ xp: bonus, ls: 1, perfect: sum.perfect ? 1 : 0, rev: kind === 'review' || kind === 'mockmiss' ? 1 : 0, sp: kind === 'special' ? 1 : 0 });
   if (kind === 'special' && unit && sum.acc >= 0.7) save.cw[unit.id] = Math.min(5, (save.cw[unit.id] || 0) + 1);
   if ((kind === 'review' || kind === 'mockmiss') && save.hm) save.hr = Math.min(5, save.hr + 2);
@@ -905,15 +1225,158 @@ function finishLesson() {
       sum.missed.length ? h('p', { class: 'hint', text: T('まちがえた問題は、あとで「ふくしゅう」に出ます。') }) : null,
     ]),
     h('div', { class: 'acts' }, [
-      kind === 'unit' || kind === 'special' ? h('button', { class: 'btn primary', id: 'btnAgain', type: 'button', onclick: () => { const u = unit; L = null; kind === 'special' ? startSpecial(u) : startLesson(u); } }, T('もう1レッスン')) : null,
+      kind === 'unit' || kind === 'special' ? h('button', { class: 'btn primary', id: 'btnAgain', type: 'button', onclick: () => { const u = unit; L = null; kind === 'special' ? startSpecial(u) : startLesson(u, si); } }, T('もう1レッスン')) : null,
       h('button', { class: 'btn' + (kind === 'unit' || kind === 'special' ? '' : ' primary'), id: 'btnHome', type: 'button', onclick: () => goHome() }, T('ホームへ')),
     ]),
   ]);
   show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, main), false);
   L.over = true;
   Fx.sfx.done(); Fx.buzz([20, 30, 20]);
+  if (E.levelOf(save.xp).lv > lvBefore) setTimeout(() => Fx.sfx.levelup(), 700);
+  if (E.levelOf(save.xp).lv > lvBefore && UI) UI.toast(T('レベルアップ！ Lv{n}', { n: E.levelOf(save.xp).lv }), { type: 'ok' });
   if (sum.perfect || goalNow || firstToday) Fx.confetti($('fx'), sum.perfect ? 40 : 24);
   if (firstToday) { setTimeout(() => Fx.sfx.streak(), 600); const f = $('cStreak'); f.classList.add('bump'); setTimeout(() => f.classList.remove('bump'), 1200); }
+}
+
+// ================================================================ 会話（ロールプレイ。サーバーも鍵もなし：台本どおりに分かれ道を進む）
+let DL = null; let dlgScenes = null;
+const DLG_LV = { 1: '入門', 2: '標準', 3: '発展' };
+async function loadDialogues() { if (!dlgScenes) dlgScenes = (await loadJson('dialogues')).scenes; return dlgScenes; }
+function dialogueList(host) {
+  loadDialogues().then(scenes => {
+    host.replaceChildren(h('h3', { text: T('会話ロールプレイ') }), h('p', { class: 'note', text: T('相手のせりふを聞いて、あなたの返事をえらぼう。声・タイル・選択のどれでも答えられるよ。AI作成・未レビュー。') }));
+    for (const [lang, name] of [['en', T('英語の会話')], ['ja', T('日本語の敬語の場面')]]) {
+      const lv = lang === 'en' ? [1, 2, 3] : [2];
+      for (const l of lv) {
+        const list = scenes.filter(s => s.lang === lang && s.level === l); if (!list.length) continue;
+        const d = h('details', { class: 'dgroup', open: l === 1 || lang === 'ja' ? true : null }, [h('summary', { text: name + ' ・ ' + T(DLG_LV[l]) + '（' + list.length + '）' })]);
+        list.forEach(sc => { const best = save.dl[sc.id]; d.append(h('button', { class: 'banner', type: 'button', 'data-scene': sc.id, onclick: () => startDialogue(sc) }, [h('span', { class: 't' }, [h('b', { lang: 'ja', text: sc.title }), h('small', { lang: 'ja', text: sc.partner.name + (sc.partner.who ? '（' + sc.partner.who + '）' : '') })]), best != null ? h('span', { class: 'pill', text: best + '%' }) : h('span', { class: 'pill', style: 'background:var(--kb-surface-2);color:var(--kb-ink)', text: T('新') })])); });
+        host.append(d);
+      }
+    }
+  }).catch(() => host.replaceChildren(h('p', { class: 'note', text: T('読み込めませんでした。通信を確かめて、もう一度ためしてください。') })));
+}
+const dlgOk = n => n.choices.find(c => c.ok);
+async function startDialogue(sc) {
+  if (L || DL) return;
+  screen = 'dialogue'; setBack(() => quitDialogue()); setTitle(sc.title, true);
+  DL = { sc, node: sc.start, mistakes: [], first: {}, correct: 0, turns: 0, total: Math.max(1, ManabiDlg.maxTurns(sc)), xp: 0, startedAt: Date.now(), done: false };
+  emit('play_start', { mode: 'normal' });
+  const chat = h('div', { class: 'chat', id: 'chat', role: 'log', 'aria-live': 'polite' }), reply = h('div', { class: 'reply', id: 'reply' });
+  const bar = h('div', { class: 'lh' }, [h('button', { class: 'icon', type: 'button', id: 'btnQuit', 'aria-label': T('とじる'), onclick: () => quitDialogue() }, h('span', { text: '✕', style: 'font-size:20px;font-weight:800' })), h('div', { class: 'pbar' }, h('i', { id: 'dlgBar', style: 'width:0%' }))]);
+  show(h('div', { style: 'display:flex;flex-direction:column;flex:1 1 auto;min-height:0' }, [bar, chat, reply]), false);
+  DL.chat = chat; DL.reply = reply; dlgAdvance();
+}
+function quitDialogue() { if (!DL) return; if (!UI || DL.done) { endDialogue(); return; } UI.confirm({ title: T('会話をやめますか？'), message: '', ok: T('やめる'), cancel: T('つづけて学ぶ') }).then(ok => { if (ok) endDialogue(); }); }
+function endDialogue() { DL = null; goHome(); }
+function bubble(who, text, ja, cls) {
+  const sc = DL.sc, me = who === 'you';
+  const b = h('div', { class: 'bub ' + (me ? 'me ' : 'her ') + (cls || '') }, [
+    me ? null : h('span', { class: 'av', html: Fx.mascot('happy', 40, (sc.partner.name.length * 7) % 6) }),
+    h('div', { class: 'tx' }, [h('span', { class: 'say', lang: sc.lang === 'en' && !me ? 'en' : 'ja', text }),
+      (!me && sc.lang === 'en' && Fx.canSpeak()) ? h('button', { class: 'say-btn', type: 'button', 'aria-label': T('音声をきく'), onclick: () => Fx.speak(text, 'en', 1) }, h('span', { html: ICON.speaker })) : null,
+      ja ? h('button', { class: 'ja-btn', type: 'button', onclick: e => { const x = e.currentTarget.nextSibling; x.hidden = !x.hidden; } }, T('訳')) : null, ja ? h('span', { class: 'ja', lang: 'ja', hidden: true, text: ja }) : null]),
+  ]);
+  DL.chat.append(b); DL.chat.scrollTop = DL.chat.scrollHeight; return b;
+}
+function dlgAdvance() {
+  const sc = DL.sc;
+  for (let guard = 0; guard < 50; guard++) {
+    const n = sc.nodes[DL.node];
+    if (n.end) { bubble('her', n.say, n.ja); if (sc.lang === 'en') Fx.speak(n.say, 'en', 1); return dlgFinish(); }
+    if (n.choices) { if (n.say) { bubble('her', n.say, n.ja); if (sc.lang === 'en') Fx.speak(n.say, 'en', 1); } return dlgChoices(n); }
+    bubble('her', n.say, n.ja); DL.node = n.next;
+    if (sc.lang === 'en' && !n.choices) { /* 続きの番まで読み上げは最後のせりふだけ */ const nx = sc.nodes[n.next]; if (nx && (nx.choices || nx.end) && n.say) Fx.speak(n.say, 'en', 1); }
+  }
+}
+function dlgChoices(n) {
+  const sc = DL.sc, r = DL.reply; r.replaceChildren();
+  DL.cur = { n, tried: false, mode: 'choice' };
+  r.append(h('div', { class: 'hint', style: 'margin:0 0 6px', text: T('あなたの返事は？') }));
+  const box = h('div', { class: 'choicebubs', id: 'choiceBubs' });
+  const order = E.shuffle(n.choices.map((c, i) => i), E.rng(E.seedOf(sc.id + '|' + DL.node)));
+  order.forEach((i, k) => { const c = n.choices[i]; box.append(h('button', { class: 'cb', type: 'button', 'data-i': i, 'data-ok': c.ok ? '1' : '0', onclick: () => dlgPick(i) }, [h('span', { class: 'k', text: String(k + 1) }), h('span', { lang: sc.lang === 'en' ? 'en' : 'ja', text: c.text })])); });
+  r.append(box);
+  const tools = h('div', { class: 'mini' });
+  if (sc.lang === 'en') {
+    tools.append(h('button', { type: 'button', id: 'btnTiles', onclick: () => dlgTiles(n) }, T('ことばタイルで答える')));
+    tools.append(h('button', { type: 'button', id: 'btnSpeak2', onclick: () => dlgSpeak(n) }, T('声で答える')));
+  }
+  r.append(tools);
+}
+function dlgMark(correct, firstTry, text, fb, okText) {
+  const cur = DL.cur; DL.turns += cur.tried ? 0 : 1;
+  if (correct) { if (!cur.tried) { DL.correct++; DL.xp += 2; } save.dm = save.dm.filter(x => !(x[0] === DL.sc.id && x[1] === DL.node)); }
+  else if (!cur.tried) { DL.mistakes.push({ node: DL.node, text, fb, ok: okText }); if (!save.dm.some(x => x[0] === DL.sc.id && x[1] === DL.node)) save.dm = save.dm.concat([[DL.sc.id, DL.node]]).slice(-40); }
+  cur.tried = true;
+}
+function dlgPick(i) {
+  const n = DL.cur.n, c = n.choices[i], ok = !!c.ok, okc = dlgOk(n);
+  const b = bubble('you', c.text, c.ja, ok ? 'good' : 'bad');
+  dlgMark(ok, !DL.cur.tried, c.text, c.fb || '', okc.text); reactSfx(ok);
+  document.querySelectorAll('#choiceBubs .cb').forEach(x => { x.disabled = true; if (x.dataset.ok === '1') x.classList.add('good'); else if (Number(x.dataset.i) === i) x.classList.add('bad'); });
+  if (!ok) { DL.chat.append(h('div', { class: 'fbnote', role: 'status' }, [h('b', { text: T('ちがうよ') + '：' }), h('span', { lang: 'ja', text: c.fb }), h('div', { class: 'okline' }, [T('正しい答え') + '：', h('span', { lang: DL.sc.lang === 'en' ? 'en' : 'ja', text: okc.text })])])); DL.chat.scrollTop = DL.chat.scrollHeight; }
+  dlgContinue(c.next, ok);
+}
+function dlgContinue(next, ok) {
+  const r = DL.reply; $('dlgBar').style.width = Math.min(100, Math.round(100 * DL.turns / DL.total)) + '%';
+  persist(); renderChips();
+  const go = () => { DL.node = next; dlgAdvance(); };
+  if (ok) { r.replaceChildren(h('button', { class: 'btn primary', id: 'dlgNext', type: 'button', onclick: go }, T('つづける'))); setTimeout(() => { const b = $('dlgNext'); if (b) b.focus(); }, 0); }
+  else r.replaceChildren(h('button', { class: 'btn ng', id: 'dlgNext', type: 'button', onclick: go }, T('つづける')));
+  const b = $('dlgNext'); if (b) b.focus({ preventScroll: true });
+}
+// ---- ことばタイル：正しい返事を、単語のタイルでならべる
+function dlgTiles(n) {
+  const okc = dlgOk(n), words = okc.text.split(/\s+/), r = DL.reply; r.replaceChildren();
+  const extra = E.shuffle(n.choices.filter(c => !c.ok).flatMap(c => c.text.replace(/[.?!,]/g, '').split(/\s+/)).filter(w => !okc.text.toLowerCase().includes(w.toLowerCase())), E.rng(7)).slice(0, 2);
+  const tiles = E.shuffle(words.map((t, i) => ({ id: 'w' + i, t })).concat(extra.map((t, i) => ({ id: 'd' + i, t }))), E.rng(E.seedOf(okc.text))); const picked = [];
+  const row = h('div', { class: 'wbrow', id: 'dlgRow' }), bank = h('div', { class: 'wbbank', id: 'dlgBank' });
+  const draw = () => { row.replaceChildren(...picked.map((id, k) => h('button', { class: 'tile', type: 'button', onclick: () => { picked.splice(k, 1); draw(); } }, tiles.find(x => x.id === id).t))); bank.replaceChildren(...tiles.map(t => h('button', { class: 'tile' + (picked.includes(t.id) ? ' used' : ''), type: 'button', 'data-id': t.id, tabindex: picked.includes(t.id) ? '-1' : null, onclick: () => { if (!picked.includes(t.id)) { picked.push(t.id); Fx.sfx.tap(); draw(); } } }, t.t))); chk.disabled = !picked.length; };
+  const chk = h('button', { class: 'btn primary', id: 'dlgCheck', type: 'button', onclick: () => {
+    const got = picked.map(id => tiles.find(x => x.id === id).t).join(' '), ok = got.toLowerCase().replace(/[.?!,]/g, '') === okc.text.toLowerCase().replace(/[.?!,]/g, '');
+    if (!ok) { dlgMark(false, !DL.cur.tried, got, T('語順や単語をもう一度たしかめよう'), okc.text); reactSfx(false); chk.textContent = T('もう一度'); picked.length = 0; draw(); return; }
+    bubble('you', okc.text, okc.ja, 'good'); dlgMark(true, !DL.cur.tried, okc.text, '', okc.text); reactSfx(true); dlgContinue(okc.next, true);
+  } }, T('こたえあわせ'));
+  r.append(h('div', { class: 'hint', text: T('下の単語をタップして、返事をつくろう') + '：' + (okc.ja || '') }), row, bank, chk, h('div', { class: 'mini' }, [h('button', { type: 'button', onclick: () => dlgChoices(n) }, T('えらぶにもどる'))]));
+  draw();
+}
+// ---- 声で答える：SpeechRecognition があれば声で、なければ入力。ゆるく比べて点数（70点以上でOK）
+function dlgSpeak(n) {
+  const okc = dlgOk(n), r = DL.reply, lang = DL.sc.lang; r.replaceChildren();
+  const result = h('div', { class: 'speakres', id: 'speakRes', role: 'status', 'aria-live': 'polite' });
+  const finish = (heard) => {
+    const sc = ManabiDlg.scoreSpeech(okc.text, heard, lang), ok = sc >= ManabiDlg.PASS;
+    result.replaceChildren(h('div', { class: 'score ' + (ok ? 'good' : 'bad') }, [T('ぴったり度') + '：', h('b', { id: 'speakScore', text: sc + '%' })]), h('div', { class: 'okline', lang: 'en' }, ['“' + heard + '”']));
+    if (ok) { bubble('you', okc.text, okc.ja, 'good'); DL.chat.append(h('div', { class: 'note', style: 'margin:-4px 0 10px 8px', 'aria-live': 'polite' }, [T('ぴったり度') + '：', h('b', { id: 'speakScore', text: sc + '%' }), ' ', '“' + heard + '”'])); dlgMark(true, !DL.cur.tried, okc.text, '', okc.text); reactSfx(true); dlgContinue(okc.next, true); }
+    else { dlgMark(false, !DL.cur.tried, heard, T('もう少し はっきり言ってみよう'), okc.text); reactSfx(false); }
+  };
+  const target = h('div', { class: 'speaktarget', lang: 'en', text: okc.text });
+  r.append(h('div', { class: 'hint', text: T('この文を声に出して言おう') + '：' + (okc.ja || '') }), target, result);
+  const row = h('div', { class: 'acts' });
+  if (Fx.canListen()) {
+    const mic = h('button', { class: 'btn b', id: 'btnMic', type: 'button', onclick: () => { mic.disabled = true; result.replaceChildren(h('span', { text: T('聞いています…') })); Fx.listen(lang, alts => { mic.disabled = false; finish(alts.reduce((a, b) => (ManabiDlg.scoreSpeech(okc.text, b, lang) > ManabiDlg.scoreSpeech(okc.text, a, lang) ? b : a))); }, err => { mic.disabled = false; result.replaceChildren(h('span', { text: T('聞きとれませんでした。もう一度か、入力で答えてね。') })); }); } }, [h('span', { html: ICON.speaker }), T('話す')]);
+    row.append(mic);
+  } else row.append(h('div', { class: 'hint', id: 'noMic', text: T('このブラウザでは声の入力が使えないので、文字で入力してね。') }));
+  const inp = h('input', { class: 'ans', id: 'speakInput', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': T('答えを入力'), onkeydown: e => { if (e.key === 'Enter') { e.stopPropagation(); if (inp.value.trim()) finish(inp.value); } } });
+  row.append(inp, h('button', { class: 'btn', id: 'speakSend', type: 'button', onclick: () => { if (inp.value.trim()) finish(inp.value); } }, T('おくる')), h('div', { class: 'mini' }, [h('button', { type: 'button', onclick: () => dlgChoices(n) }, T('えらぶにもどる'))]));
+  r.append(row);
+}
+function dlgFinish() {
+  const sc = DL.sc; DL.done = true;
+  const pct = DL.turns ? Math.round(100 * DL.correct / DL.turns) : 100, secs = Math.max(1, Math.round((Date.now() - DL.startedAt) / 1000)), xp = DL.xp + 3, gem = 3 + (pct === 100 ? 2 : 0);
+  save.xp += xp; save.g[today] = (save.g[today] || 0) + xp; if (!save.d.includes(today)) save.d.push(today); save.gm += gem; save.dl[sc.id] = Math.max(save.dl[sc.id] || 0, pct);
+  save.st.ls++; bumpDay({ xp, ls: 1, sp: 1, perfect: pct === 100 ? 1 : 0 }); save.st.best = Math.max(save.st.best, E.streakOf(save.d, today)); persist(); renderChips();
+  emit('play_end', { mode: 'normal', reason: 'clear', score: xp });
+  Fx.sfx.done(); if (pct === 100) Fx.confetti($('fx'), 36);
+  const r = DL.reply; r.replaceChildren();
+  const sum = h('div', { class: 'dsum', id: 'dlgSummary' }, [
+    h('div', { class: 'res' }, [h('span', { html: Fx.mascot(pct === 100 ? 'cheer' : pct >= 60 ? 'happy' : 'think', 96, save.sk) }), h('h2', { text: pct === 100 ? T('かんぺきな会話！') : T('会話おつかれさま！') }),
+      h('div', { class: 'stats' }, [h('div', null, [h('b', { text: '+' + xp }), h('small', { text: 'XP' })]), h('div', null, [h('b', { id: 'dlgPct', text: pct + '%' }), h('small', { text: T('正答率') })]), h('div', null, [h('b', { text: Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') }), h('small', { text: T('時間') })])])]),
+  ]);
+  if (DL.mistakes.length) { const ul = h('div', { class: 'card', id: 'dlgMist' }, [h('h3', { text: T('まちがえたところ') })]); DL.mistakes.forEach(m => ul.append(h('div', { class: 'row', style: 'margin:0 0 8px' }, [h('div', { lang: sc.lang === 'en' ? 'en' : 'ja', text: '× ' + m.text }), h('div', { lang: 'ja', class: 'note', text: m.fb }), h('div', { lang: sc.lang === 'en' ? 'en' : 'ja', style: 'font-weight:800', text: '○ ' + m.ok })]))); sum.append(ul); }
+  sum.append(h('div', { class: 'acts', style: 'margin-top:10px' }, [h('button', { class: 'btn primary', id: 'dlgAgain', type: 'button', onclick: () => { const s0 = DL.sc; DL = null; startDialogue(s0); } }, T('もういちど')), h('button', { class: 'btn', id: 'btnHome', type: 'button', onclick: () => endDialogue() }, T('ホームへ'))]));
+  DL.chat.append(sum); DL.chat.scrollTop = DL.chat.scrollHeight; $('dlgBar').style.width = '100%';
 }
 
 // ================================================================ mock exams
@@ -1087,8 +1550,9 @@ function openMenu() {
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (document.querySelector('.kb-layer:not([hidden])')) return;
-  if ($('heartOv')) return;
+  if ($('heartOv') || $('chestOv')) return;
   if (e.key === 'Escape' && $('popBg')) { closePop(); return; }
+  if (e.key === 'Escape' && $('sheetBg')) { closeSheet(); return; }
   const ov = $('howto'); if (ov) { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); ov.remove(); } return; }
   const inInput = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
   if (screen === 'lesson' && L && L.ui) {
@@ -1117,6 +1581,11 @@ document.addEventListener('keydown', e => {
       pick(q.c[(i < 0 ? (d > 0 ? 0 : q.c.length - 1) : (i + d + q.c.length) % q.c.length)][0]);
     } else if (e.key === 'Backspace' && q.t === 'or') { e.preventDefault(); orderUndo(); }
     else if (e.key === 'Backspace' && q.t === 'wb') { e.preventDefault(); ui.tiles.pop(); drawTiles(); drawDock(); }
+  } else if (screen === 'dialogue' && DL) {
+    if (e.key === 'Escape') { e.preventDefault(); quitDialogue(); return; }
+    if (inInput) return;
+    if (/^[1-4]$/.test(e.key)) { const b = document.querySelectorAll('#choiceBubs .cb:not([disabled])')[Number(e.key) - 1]; if (b) { e.preventDefault(); b.click(); } }
+    else if (e.key === 'Enter' && $('dlgNext') && !(e.target && e.target.tagName === 'BUTTON')) { e.preventDefault(); $('dlgNext').click(); }
   } else if (screen === 'mock' && M && !M.submitted && !inInput) {
     const ui = L.ui, q = ui.q;
     if (e.key === 'ArrowRight' && M.i < M.ch.q.length - 1) { saveMockInput(); M.i++; renderMock(); }
@@ -1126,6 +1595,9 @@ document.addEventListener('keydown', e => {
 });
 // 模試でも pick() は L.ui を使う（回答欄の部品は共通）
 $('btnMenu').addEventListener('click', openMenu);
+$('cBadge').addEventListener('click', () => { Fx.sfx.tap(); if (index) openCourseSheet(); });
+$('cStreak').addEventListener('click', () => { Fx.sfx.tap(); openStreakSheet(0); });
+$('cGem').addEventListener('click', () => { Fx.sfx.tap(); openGemSheet(); });
 $('cGoal').addEventListener('click', openMenu);
 
 // 他の端末の保存が届いたとき（cloud.js が localStorage を書き換える）
@@ -1135,7 +1607,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { co
 if (window.KoboGame) KoboGame.register({
   id: GAME,
   pause() { commit(); persist(); }, resume() {}, save() { commit(); persist(); },
-  isIdle: () => screen !== 'lesson' && screen !== 'mock',
+  isIdle: () => screen !== 'lesson' && screen !== 'mock' && screen !== 'dialogue',
   dispose() { if (M && M.timer) clearInterval(M.timer); },
 });
 
@@ -1177,7 +1649,8 @@ if (DEBUG) {
     },
     setToday(n) { today = n; renderChips(); },
     setSave(o) { save = E.normSave(o); persist(); renderChips(); },
-    goHome, startLesson, startReview, showMocks, reviewCount, openMenu, startSpecial, G, Fx, tab: id => goTab(id), get tabName() { return tab; }, questsFor, claimQuest, leagueRows, weekXp,
+    unlockAll() { for (const c of index.courses) for (const sb of c.subjects) for (const u of sb.units) for (const x of u.subs) save.jp[u.id + '-' + x.id] = 1; for (const u of G.UNITS) save.jp[u.id] = 1; persist(); goHome(); }, startJump, openChestFlow,
+    goHome, startLesson, startReview, startDialogue, loadDialogues, get DL() { return DL; }, showMocks, reviewCount, openMenu, startSpecial, G, Fx, tab: id => goTab(id), get tabName() { return tab; }, questsFor, claimQuest, leagueRows, weekXp,
     special(id) { return G.UNITS.map(u => Object.assign({ special: 1, sub: specialSub(u.course) }, u)).find(u => u.id === id); },
     unit(id) { for (const c of index.courses) for (const s of c.subjects) for (const u of s.units) if (u.id === id) return u; return null; },
     startMock,

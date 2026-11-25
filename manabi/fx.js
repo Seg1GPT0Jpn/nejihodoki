@@ -4,34 +4,70 @@
   'use strict';
   const PK = 'kusoge.manabi.prefs';
   const get = () => { try { return JSON.parse(localStorage.getItem(PK) || '{}') || {}; } catch (e) { return {}; } };
-  const prefs = Object.assign({ snd: 1, hap: 1, anim: 1, say: 1 }, get());
-  const setPref = (k, v) => { prefs[k] = v ? 1 : 0; try { localStorage.setItem(PK, JSON.stringify(prefs)); } catch (e) {} };
+  const prefs = Object.assign({ snd: 1, hap: 1, anim: 1, say: 1, vol: 0.8 }, get());
+  const setPref = (k, v) => { prefs[k] = k === 'vol' ? Math.max(0, Math.min(1, Number(v))) : (v ? 1 : 0); try { localStorage.setItem(PK, JSON.stringify(prefs)); } catch (e) {} };
   const mq = root.matchMedia ? root.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   const motion = () => !!prefs.anim && !mq.matches;
 
-  // ---------------------------------------------------------------- 音
-  let ctx = null;
+  // ---------------------------------------------------------------- 音（WebAudio でつくる、すべて自作の音。他のアプリの音源は使わない）
+  // ・鐘：いくつかの正弦波（1, 2.76, 5.4 倍の倍音）をそれぞれ減衰させる／マリンバ：基音＋4倍音がすぐ消える／ブラス：のこぎり波＋ローパスの開きかた
+  // ・全体に、短い残響（ノイズから作ったインパルス）と、音量（prefs.vol）をかける。音のオン・オフは prefs.snd と KoboAudio.muted
+  let ctx = null, master = null, verb = null, noiseBuf = null;
   function ac() {
-    if (!ctx) { const C = root.AudioContext || root.webkitAudioContext; if (!C) return null; try { ctx = new C(); } catch (e) { return null; } }
+    if (!ctx) {
+      const C = root.AudioContext || root.webkitAudioContext; if (!C) return null;
+      try {
+        ctx = new C(); master = ctx.createGain(); master.connect(ctx.destination);
+        verb = ctx.createConvolver(); const len = Math.floor(ctx.sampleRate * 0.45), buf = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+        verb.buffer = buf; const wet = ctx.createGain(); wet.gain.value = 0.22; verb.connect(wet); wet.connect(master);
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      } catch (e) { return null; }
+    }
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    master.gain.value = Math.max(0, Math.min(1, prefs.vol == null ? 0.8 : prefs.vol));
     return ctx;
   }
   const muted = () => !prefs.snd || !!(root.KoboAudio && root.KoboAudio.muted);
-  function tone(f, t0, d, type, g) {
-    const c = ac(); if (!c) return;
-    const o = c.createOscillator(), a = c.createGain(), t = c.currentTime + t0;
-    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
-    a.gain.setValueAtTime(0.0001, t); a.gain.exponentialRampToValueAtTime(g || 0.12, t + 0.015); a.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(a); a.connect(c.destination); o.start(t); o.stop(t + d + 0.02);
+  function out(node, c, t, send) { node.connect(master); if (send) { const g = c.createGain(); g.gain.value = send; node.connect(g); g.connect(verb); } }
+  function env(c, t, a, d, peak) { const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); return g; }
+  function bell(f, t0, dur, vel) { // 鐘（倍音がずれていて、きらきらする）
+    const c = ac(); if (!c) return; const t = c.currentTime + t0;
+    [[1, 1, 1], [2.76, 0.45, 0.6], [5.4, 0.22, 0.35], [8.9, 0.1, 0.2]].forEach(p => { const o = c.createOscillator(), g = env(c, t, 0.005, dur * p[2], (vel || 0.16) * p[1]); o.type = 'sine'; o.frequency.value = f * p[0]; o.connect(g); out(g, c, t, 0.9); o.start(t); o.stop(t + dur * p[2] + 0.05); });
   }
-  const seq = (notes, type, g) => { if (muted()) return; notes.forEach(n => tone(n[0], n[1], n[2], type, g)); };
+  function marimba(f, t0, dur, vel) { // マリンバ（丸くて短い）
+    const c = ac(); if (!c) return; const t = c.currentTime + t0;
+    [[1, 1, 1], [4, 0.28, 0.25]].forEach(p => { const o = c.createOscillator(), g = env(c, t, 0.004, dur * p[2], (vel || 0.2) * p[1]); o.type = 'sine'; o.frequency.value = f * p[0]; o.connect(g); out(g, c, t, 0.5); o.start(t); o.stop(t + dur * p[2] + 0.05); });
+  }
+  function brass(f, t0, dur, vel) { // ファンファーレ用のブラス
+    const c = ac(); if (!c) return; const t = c.currentTime + t0;
+    const o = c.createOscillator(), fl = c.createBiquadFilter(), g = env(c, t, 0.03, dur, vel || 0.09); o.type = 'sawtooth'; o.frequency.value = f; fl.type = 'lowpass'; fl.frequency.setValueAtTime(500, t); fl.frequency.exponentialRampToValueAtTime(3200, t + 0.12); fl.frequency.exponentialRampToValueAtTime(900, t + dur);
+    o.connect(fl); fl.connect(g); out(g, c, t, 0.6); o.start(t); o.stop(t + dur + 0.1);
+  }
+  function noise(t0, dur, f0, f1, vel, type) { // 風の音・クリック（ノイズをフィルターに通す）
+    const c = ac(); if (!c) return; const t = c.currentTime + t0, s = c.createBufferSource(), fl = c.createBiquadFilter(), g = env(c, t, 0.004, dur, vel);
+    s.buffer = noiseBuf; fl.type = type || 'bandpass'; fl.frequency.setValueAtTime(f0, t); fl.frequency.exponentialRampToValueAtTime(f1, t + dur); fl.Q.value = 1.2; s.connect(fl); fl.connect(g); out(g, c, t, 0.3); s.start(t); s.stop(t + dur + 0.05);
+  }
+  function thump(f0, f1, t0, dur, vel) { // 「ぽこっ」（ピッチが下がる丸い音。まちがいのやさしい音）
+    const c = ac(); if (!c) return; const t = c.currentTime + t0, o = c.createOscillator(), g = env(c, t, 0.006, dur, vel); o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur); o.connect(g); out(g, c, t, 0.15); o.start(t); o.stop(t + dur + 0.05);
+  }
+  const N = { C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392, A4: 440, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, B5: 987.77, C6: 1046.5, E6: 1318.5, G6: 1568 };
+  const semi = (f, n) => f * Math.pow(2, n / 12);
+  const play = f => { if (muted()) return; try { f(); } catch (e) {} };
   const sfx = {
-    tap() { seq([[520, 0, 0.05]], 'triangle', 0.06); },
-    ok() { seq([[660, 0, 0.1], [880, 0.09, 0.16]], 'triangle', 0.12); },
-    ng() { seq([[220, 0, 0.14], [165, 0.12, 0.2]], 'sawtooth', 0.06); },
-    pair() { seq([[740, 0, 0.08]], 'sine', 0.1); },
-    done() { seq([[523, 0, 0.12], [659, 0.11, 0.12], [784, 0.22, 0.12], [1047, 0.33, 0.28]], 'triangle', 0.12); },
-    streak() { seq([[392, 0, 0.1], [523, 0.1, 0.1], [659, 0.2, 0.1], [784, 0.3, 0.1], [1047, 0.4, 0.3]], 'square', 0.05); },
+    tap() { play(() => noise(0, 0.025, 3200, 1800, 0.07)); },
+    ok(combo) { play(() => { const k = Math.min(6, combo | 0); bell(semi(N.E5, k), 0, 0.5, 0.15); bell(semi(N.B5, k), 0.09, 0.7, 0.16); }); }, // 上がっていく明るい2音。れんぞくするほど高く
+    ng() { play(() => { thump(230, 140, 0, 0.22, 0.2); noise(0, 0.12, 700, 300, 0.05, 'lowpass'); }); },
+    pair() { play(() => marimba(N.G5, 0, 0.25, 0.22)); },
+    combo(n) { play(() => { [N.C5, N.E5, N.G5, N.C6].slice(0, Math.min(4, 1 + (n | 0) % 4 + 1)).forEach((f, i) => bell(f, i * 0.07, 0.5, 0.12)); }); },
+    done() { play(() => { [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => bell(f, i * 0.11, 0.9, 0.16)); bell(N.E6, 0.5, 1.2, 0.14); marimba(N.C5 / 2, 0, 0.5, 0.2); }); },
+    levelup() { play(() => { [[N.C5, N.E5, N.G5], [N.D5, N.G5, 1174.66 / 1], [N.E5, N.G5, N.C6]].forEach((ch, k) => ch.forEach(f => brass(f, k * 0.2, 0.55, 0.07))); [N.C6, N.E6, N.G6].forEach((f, i) => bell(f, 0.6 + i * 0.08, 1.1, 0.13)); }); },
+    chest() { play(() => { noise(0, 0.35, 400, 5000, 0.08); const r = [N.E5, N.G5, N.B5, N.E6, N.G6, N.B5, N.E6, N.G6]; r.forEach((f, i) => bell(f * (i > 4 ? 1.5 : 1) / (i > 4 ? 1.5 : 1), 0.18 + i * 0.065, 0.6, 0.11)); }); },
+    coin(k) { play(() => bell(semi(N.E6, (k | 0) * 2), 0, 0.18, 0.1)); },
+    quest() { play(() => { [N.G5, N.C6, N.E6].forEach((f, i) => bell(f, i * 0.09, 0.7, 0.14)); brass(N.C5, 0, 0.4, 0.05); brass(N.G4 * 2, 0.2, 0.5, 0.05); }); },
+    streak() { play(() => { noise(0, 0.45, 300, 2600, 0.06); [N.C5, N.D5, N.E5, N.G5, N.A5, N.C6].forEach((f, i) => marimba(f, 0.05 + i * 0.07, 0.25, 0.16)); bell(N.E6, 0.55, 1, 0.14); }); },
+    tick(k) { play(() => { noise(0, 0.03, k % 2 ? 2600 : 1900, k % 2 ? 2000 : 1500, 0.1); marimba(k % 2 ? 1568 : 1319, 0, 0.06, 0.07); }); }, // 時計のカチ・コチ
+    wrongSoft() { sfx.ng(); },
   };
   const buzz = ms => { if (prefs.hap && root.navigator && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} } };
 
@@ -87,7 +123,29 @@
       host.appendChild(p); setTimeout(() => p.remove(), 2400);
     }
   }
-  const api = { prefs, setPref, sfx, buzz, speak, canSpeak, mascot, confetti, motion, SKINS, shade };
+  // XP の数字がふわっと上がる／ゆれる
+  function floatText(host, text, cls) {
+    if (!motion() || !host) return; const r = host.getBoundingClientRect(), e = document.createElement('div'); e.className = 'floatxp ' + (cls || '');
+    e.textContent = text; e.style.cssText = 'left:' + (r.left + r.width / 2) + 'px;top:' + (r.top) + 'px'; document.body.appendChild(e); setTimeout(() => e.remove(), 1000);
+  }
+  function shake(el) { if (!motion() || !el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 450); }
+  const api = { prefs, setPref, sfx, buzz, speak, canSpeak, mascot, confetti, motion, floatText, shake, SKINS, shade };
   root.ManabiFx = api;
   if (typeof module === 'object' && module && module.exports) module.exports = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+// ---- 声で答える（ブラウザの SpeechRecognition。なければ false を返して、呼び出し側が入力欄にきりかえる）
+(function (root) {
+  const SR = () => root.SpeechRecognition || root.webkitSpeechRecognition || null;
+  root.ManabiFx.canListen = () => !!SR();
+  // listen('en', text => …, err => …) → { stop }
+  root.ManabiFx.listen = function (lang, onText, onErr) {
+    const C = SR(); if (!C) { onErr && onErr('unsupported'); return null; }
+    let done = false; const r = new C();
+    r.lang = lang === 'en' ? 'en-US' : 'ja-JP'; r.interimResults = false; r.maxAlternatives = 3; r.continuous = false;
+    r.onresult = e => { done = true; const alts = []; for (let i = 0; i < e.results[0].length; i++) alts.push(e.results[0][i].transcript); onText(alts); };
+    r.onerror = e => { if (!done) { done = true; onErr && onErr(e.error || 'error'); } };
+    r.onend = () => { if (!done) { done = true; onErr && onErr('nospeech'); } };
+    try { r.start(); } catch (e) { done = true; onErr && onErr('start'); return null; }
+    return { stop() { try { r.stop(); } catch (e) {} } };
+  };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
