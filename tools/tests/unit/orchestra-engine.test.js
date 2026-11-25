@@ -38,11 +38,11 @@ const regular = (t0, bpm, n) => Array.from({ length: n }, (_, k) => t0 + k * 60 
 test('score grid: bars, beats, ticks and beats convert both ways; the real pieces have sane meta', () => {
   const s = tiny(); eq(s.nBeats, 16); eq(s.nBars, 4); eq(s.patternOfBeat[0], 4); eq(s.beatInBar[5], 1); eq(s.barOf(5.2), 2);
   near(s.tickToBeat(96 * 2.5), 2.5, 1e-9); near(s.beatToTick(7.25), 96 * 7.25, 1e-9); near(s.tickToBeat(96 * 20), 20, 1e-9, 'beyond the end extrapolates');
-  const ids = ['beethoven5', 'beethoven7', 'nachtmusik', 'zauberflote', 'dvorak7', 'midsummer', 'rossini', 'egmont', 'dvorak7-1', 'dvorak7-2', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4'];
+  const ids = ['beethoven5', 'beethoven7', 'nachtmusik', 'zauberflote', 'dvorak7', 'midsummer', 'rossini', 'egmont', 'dvorak7-1', 'dvorak7-2', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4', 'dvorak8-1', 'dvorak8-4', 'coriolan', 'fidelio', 'mozart25-1', 'mozart25-2', 'beethoven5-2', 'beethoven7-1'];
   for (const id of ids) {
-    const sc = loadScore(id); ok(sc.nBeats > 150 && sc.nBeats < 950, id + ' beats ' + sc.nBeats); eq(sc.dyn.length, sc.nBeats, id + ' dyn per beat'); ok(/^[0-8]+$/.test(sc.dyn));
-    ok(sc.events.length === sc.noteCount * 2 && sc.noteCount > 500, id + ' notes'); const sec = sc.guideSeconds(); ok(sec > 140 && sec < 640, id + ' minutes ' + sec / 60);
-    for (let b = 0; b < sc.nBeats; b++) { const g = sc.bpmAt(b); if (!(g >= 36 && g <= 132)) throw new Error(id + ' guide bpm ' + g + ' at ' + b); }
+    const sc = loadScore(id); ok(sc.nBeats > 150 && sc.nBeats < 1700, id + ' beats ' + sc.nBeats); eq(sc.dyn.length, sc.nBeats, id + ' dyn per beat'); ok(/^[0-8]+$/.test(sc.dyn));
+    ok(sc.events.length === sc.noteCount * 2 && sc.noteCount > 500, id + ' notes'); const sec = sc.guideSeconds(); ok(sec > 140 && sec < 900, id + ' minutes ' + sec / 60);
+    for (let b = 0; b < sc.nBeats; b++) { const g = sc.bpmAt(b); if (!(g >= 36 && g <= 160)) throw new Error(id + ' guide bpm ' + g + ' at ' + b); }
   }
   const eg = loadScore('egmont'); ok(new Set(eg.patternOfBeat).size >= 2, 'Egmont changes meter');
   const rs = loadScore('rossini'); ok(rs.bpmAt(0) < 80 && rs.bpmAt(rs.nBeats - 1) > 100, 'Rossini speeds up: ' + rs.bpmAt(0) + ' -> ' + rs.bpmAt(rs.nBeats - 1));

@@ -25,7 +25,7 @@ const BPM_MIN = 36, BPM_MAX = 132; // the range one conducted beat may have at t
 // section id -> sample-bank instrument
 const SEC_INST = { fl: 'fl', ob: 'ob', cl: 'cl', fg: 'fg', hn: 'hn', tp: 'tp', tb: 'tb', tu: 'tu', timp: 'timp', perc: 'bd', vln1: 'vln', vln2: 'vln', vla: 'vla', vc: 'vc', cb: 'cb' };
 
-const NAMES = { flauti: 'fl', oboi: 'ob', clarinetti: 'cl', fagotti: 'fg', corni: 'hn', trombe: 'tp', trombone: 'tb', trombonebasso: 'tb', timpani: 'timp', violin1: 'vln1', violin2: 'vln2', flute: 'fl', oboe: 'ob', clarinet: 'cl', bassoon: 'fg', trombone: 'tb', frenchhorna: 'hn', frenchhornb: 'hn', trumpet: 'tp', cello: 'vc', bass: 'cb', violino1: 'vln1', violinoi: 'vln1', violino2: 'vln2', violinoii: 'vln2', viola: 'vla', violoncello: 'vc', contrabasso: 'cb' };
+const NAMES = { flauti: 'fl', oboi: 'ob', clarinetti: 'cl', fagotti: 'fg', corni: 'hn', trombe: 'tp', trombone: 'tb', trombonebasso: 'tb', timpani: 'timp', violin1: 'vln1', violin2: 'vln2', flute: 'fl', oboe: 'ob', clarinet: 'cl', bassoon: 'fg', trombone: 'tb', corni_first: 'hn', corni_second: 'hn', corni: 'hn', trombe: 'tp', tenor_trombone: 'tb', bass_trombone: 'tb', violin_one: 'vln1', violin_two: 'vln2', violincello: 'vc', contrabass: 'cb', viole: 'vla', violoncellostaff: 'vc', contrabassostaff: 'cb', frenchhorna: 'hn', frenchhornb: 'hn', trumpet: 'tp', cello: 'vc', bass: 'cb', violino1: 'vln1', violinoi: 'vln1', violino2: 'vln2', violinoii: 'vln2', viola: 'vla', violoncello: 'vc', contrabasso: 'cb' };
 // Each piece: midi files (concatenated in order), tracks: { fileIndex: { trackIndex: section } }, tempo overrides, excerpt (in quarter notes of the merged timeline).
 // `derive`: extra sections made from another one (e.g. double basses doubling the cellos an octave lower in a piece whose MIDI has no bass part).
 const PIECES = [
@@ -88,6 +88,29 @@ const PIECES = [
     midi: ['Dvorak8-mids/Dvorak8_Mvt4_Finale.mid'],
     tracks: [{ 0: 'fl', 1: 'fl', 2: 'ob', 3: 'ob', 4: 'cl', 5: 'cl', 6: 'fg', 7: 'fg', 8: 'hn', 9: 'hn', 10: 'hn', 11: 'hn', 12: 'tp', 13: 'tp', 14: 'tb', 15: 'tb', 16: 'tb', 17: 'tu', 18: 'timp', 20: 'vln1', 21: 'vln2', 22: 'vla', 23: 'vc', 24: 'cb' }],
     blurb: { ja: 'トランペットのファンファーレで始まる変奏曲形式のフィナーレ。テンポが細かく変わるので、拍を聴き合わせて。', en: 'A theme-and-variations finale that opens with a trumpet fanfare. The tempo shifts often: listen and follow.' } },
+  // ---- more Public Domain Mutopia orchestral pieces (licence checked on each piece page, 2026-11-25) ----
+  { id: 'coriolan', mutopia: 57, level: 3, bpmMax: 156, parts: 2, mvt: { ja: '序曲', en: 'Overture' }, byName: true, tracks: [{}], midi: ['Coriolan-mids/coriolan.mid'],
+    title: { ja: '《コリオラン》序曲 作品62', en: 'Coriolan Overture, Op. 62' }, composer: { ja: 'ベートーヴェン', en: 'Beethoven' }, year: 1807,
+    blurb: { ja: '力強い全奏の一撃から始まる、ハ短調の劇的な序曲。4つ振りで速いので、バトンをしっかり。', en: 'A dramatic C-minor overture that opens with hammer-blow chords. Fast in four: keep the baton firm.' } },
+  { id: 'fidelio', mutopia: 377, level: 3, bpmMax: 142, mvt: { ja: '序曲', en: 'Overture' }, byName: true, tracks: [{}], midi: ['Fidelio-mids/fidelio.mid'],
+    title: { ja: '歌劇《フィデリオ》序曲 作品72b', en: 'Fidelio Overture, Op. 72b' }, composer: { ja: 'ベートーヴェン', en: 'Beethoven' }, year: 1814,
+    blurb: { ja: 'ホルンの呼び声から駆けぬけるアレグロ。ティンパニと管の入りがたくさん。', en: 'A horn call, then a racing Allegro. Lots of timpani and wind entrances to cue.' } },
+  { id: 'mozart25-1', mutopia: 1380, level: 2, bpmMax: 156, mvt: { ja: '第1楽章 アレグロ・コン・ブリオ', en: 'I. Allegro con brio' }, parts: 2, work: 'mozart25',
+    title: { ja: '交響曲 第25番 ト短調 K.183', en: 'Symphony No. 25 in G minor, K.183' }, composer: { ja: 'モーツァルト', en: 'Mozart' }, year: 1773,
+    midi: ['Symphony25_1.mid'], tracks: [{ 1: 'ob', 2: 'hn', 3: 'hn', 4: 'vln1', 5: 'vln2', 6: 'vla', 7: 'vc' }], derive: [{ from: 'vc', to: 'cb', transpose: -12 }],
+    blurb: { ja: '「小ト短調」と呼ばれる、疾走するシンコペーション。速い4つ振りで。', en: 'The "little G minor": surging syncopations, in a fast four.' } },
+  { id: 'mozart25-2', mutopia: 1381, level: 1, mvt: { ja: '第2楽章 アンダンテ', en: 'II. Andante' }, work: 'mozart25',
+    title: { ja: '交響曲 第25番 ト短調 K.183', en: 'Symphony No. 25 in G minor, K.183' }, composer: { ja: 'モーツァルト', en: 'Mozart' }, year: 1773,
+    midi: ['Symphony25_2.mid'], tracks: [{ 1: 'ob', 2: 'fg', 3: 'hn', 4: 'vln1', 5: 'vln2', 6: 'vla', 7: 'vc' }], derive: [{ from: 'vc', to: 'cb', transpose: -12 }],
+    blurb: { ja: 'ゆったりしたアンダンテ。弱音器つきの弦のやさしい歌。', en: 'A gentle Andante: a soft song for the strings.' } },
+  { id: 'beethoven5-2', mutopia: 1437, level: 2, mvt: { ja: '第2楽章 アンダンテ・コン・モート', en: 'II. Andante con moto' }, parts: 2, work: 'beethoven5',
+    title: { ja: '交響曲 第5番 ハ短調 作品67', en: 'Symphony No. 5 in C minor, Op. 67' }, composer: { ja: 'ベートーヴェン', en: 'Beethoven' }, year: 1808,
+    midi: ['Symphony5_2.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'timp', 8: 'vln1', 9: 'vln2', 10: 'vla', 11: 'vc', 12: 'cb' }],
+    blurb: { ja: 'ヴィオラとチェロの歌ではじまる変奏曲。3つ振りの流れるテンポで。', en: 'Variations that begin with violas and cellos singing. A flowing three.' } },
+  { id: 'beethoven7-1', mutopia: 891, level: 3, mvt: { ja: '第1楽章 ポコ・ソステヌート ― ヴィヴァーチェ', en: 'I. Poco sostenuto - Vivace' }, parts: 3, work: 'beethoven7',
+    title: { ja: '交響曲 第7番 イ長調 作品92', en: 'Symphony No. 7 in A major, Op. 92' }, composer: { ja: 'ベートーヴェン', en: 'Beethoven' }, year: 1812,
+    midi: ['Symphony7_1.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'timp', 8: 'vln1', 9: 'vln2', 10: 'vla', 11: 'vc', 12: 'cb' }],
+    blurb: { ja: 'ゆっくりした4つ振りの序奏から、踊るような6/8のヴィヴァーチェへ。', en: 'A slow introduction in four, then the dancing 6/8 Vivace.' } },
   { id: 'midsummer', mutopia: 80, level: 2, mvt: { ja: '間奏曲（No.5）', en: 'Intermezzo (No. 5)' },
     title: { ja: '劇音楽《真夏の夜の夢》 作品61', en: 'A Midsummer Night\'s Dream, Op. 61' }, composer: { ja: 'メンデルスゾーン', en: 'Mendelssohn' }, year: 1843,
     midi: ['Sommernachtstraum-mids/Sommernachtstraum.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'cb' }],
@@ -147,8 +170,8 @@ function build(P) {
       const bpm = T / unit;
       if (beats > 4 && beats % 3 === 0) { unit *= beats / 3; beats = 3; continue; }
       if (beats > 4 && beats % 2 === 0) { unit *= 2; beats /= 2; continue; }
-      if (bpm > BPM_MAX && beats % 2 === 0) { unit *= 2; beats /= 2; continue; }
-      if (bpm > BPM_MAX && beats === 3) { unit *= 3; beats = 1; continue; }
+      if (bpm > (P.bpmMax || BPM_MAX) && beats % 2 === 0) { unit *= 2; beats /= 2; continue; }
+      if (bpm > (P.bpmMax || BPM_MAX) && beats === 3) { unit *= 3; beats = 1; continue; }
       if (bpm < BPM_MIN && unit >= 1 && beats * 2 <= 4) { unit /= 2; beats *= 2; continue; }
       break;
     }

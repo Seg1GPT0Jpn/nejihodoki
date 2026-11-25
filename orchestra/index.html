@@ -395,7 +395,7 @@ function renderPieces() {
   const box = $('pList'); box.innerHTML = '';
   if (!INDEX) { box.innerHTML = '<p>' + esc(T('読み込み中…')) + '</p>'; return; }
   const di = DIFF_IDS.indexOf(curDiff), fb = $('patFilter');
-  if (fb && !fb.children.length) [0, 2, 3, 4].forEach(n => { const b = document.createElement('button'); b.type = 'button'; b.dataset.n = n; b.onclick = () => { patFilter = n; renderPieces(); }; fb.appendChild(b); });
+  if (fb && !fb.children.length) [0, 1, 2, 3, 4].filter(n => !n || INDEX.pieces.some(q => q.pattern === n)).forEach(n => { const b = document.createElement('button'); b.type = 'button'; b.dataset.n = n; b.onclick = () => { patFilter = n; renderPieces(); }; fb.appendChild(b); });
   if (fb) [...fb.children].forEach(b => { const n = +b.dataset.n; b.textContent = n ? T('{n}拍', { n }) : T('すべて'); b.className = n === patFilter ? 'sel' : ''; b.setAttribute('aria-pressed', n === patFilter ? 'true' : 'false'); });
   const cnt = {}; INDEX.pieces.forEach(p => { const w = p.work || p.id; cnt[w] = (cnt[w] || 0) + 1; });
   const order = []; INDEX.pieces.forEach(p => { const w = p.work || p.id; if (!order.includes(w)) order.push(w); });
