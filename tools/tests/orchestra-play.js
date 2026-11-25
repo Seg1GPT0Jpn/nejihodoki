@@ -128,8 +128,8 @@ async function conduct(env) {
   check('the live output is audible and not a pure tone', live && live.rmsDb > -50 && live.dominantPeakFrac < 0.7, live);
   await shot(p, '03-conducting');
   // volume
-  const levels = {}; await conductBeats(p, c, 6, 66, 0.07 * c.scale); levels.small = (await st(p)).level; await conductBeats(p, c, 6, 66, 0.2 * c.scale); levels.ordinary = (await st(p)).level;
-  await conductBeats(p, c, 6, 66, 0.4 * c.scale); levels.moderate = (await st(p)).level; await conductBeats(p, c, 6, 110, 0.7 * c.scale); levels.huge = (await st(p)).level;
+  const med = async (bpm, amp) => { await conductBeats(p, c, 2, bpm, amp * c.scale); const ls = []; await conductBeats(p, c, 6, bpm, amp * c.scale, async () => { ls.push((await st(p)).level); }); ls.sort((x, y) => x - y); return ls[ls.length >> 1]; }; // the median of six beats: a loaded machine can spike one stroke
+  const levels = {}; levels.small = await med(66, 0.07); levels.ordinary = await med(66, 0.2); levels.moderate = await med(66, 0.4); levels.huge = await med(110, 0.7);
   check(`soft is easy: a small stroke is pp/p (${levels.small.toFixed(2)}), an ordinary one p..mp (${levels.ordinary.toFixed(2)})`, levels.small < 0.28 && levels.ordinary > 0.15 && levels.ordinary < 0.42, levels);
   check(`a medium stroke is still p/mp (${levels.moderate.toFixed(2)}), only a very big fast swing gets near f/ff (${levels.huge.toFixed(2)})`, levels.moderate > 0.2 && levels.moderate < 0.55 && levels.huge > 0.5 && levels.huge > levels.moderate + 0.12, levels);
   const dm = await p.evaluate(() => ({ mark: __orch.E.Dynamics.mark(__kb.state().level), sens: JSON.parse(localStorage.getItem('kusoge.orchestra.prefs') || '{}').sens })); note('meter mark after the big swing: ' + JSON.stringify(dm));
@@ -277,6 +277,20 @@ async function newPieces(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+async function modelDemo(env) {
+  console.log('5c. お手本: the model baton, listening to a piece conducted by the model (no scoring, saves unchanged)');
+  const s = await open(env); const p = s.page; const before = JSON.stringify(await stored(p, SAVE));
+  await p.click('#tSet'); const gOpts = await p.evaluate(() => [...document.querySelectorAll('#ghostSel option')].map(o => o.value)); check('settings offer the model baton: off / soft / bold', gOpts.join() === 'off,soft,bold', gOpts);
+  await p.selectOption('#ghostSel', 'bold'); check('the choice is saved', (await p.evaluate(() => JSON.parse(localStorage.getItem('kusoge.orchestra.prefs')).ghost)) === 'bold'); await p.click('#sClose');
+  await p.evaluate(() => document.querySelector('.rrow:has(.rc[data-piece="nachtmusik"]) .demo').click()); await wait(p, () => __kb.state().playing, null, 120000);
+  const a = await wait(p, () => __kb.state().state === 'playing' && __kb.state().pos > 3, null, 40000).then(() => st(p));
+  check('the model conducts by itself: it plays with no player input (pos ' + a.pos.toFixed(1) + ', ' + Math.round(a.bpm) + ' bpm, voices ' + a.voices + ')', a.state === 'playing' && a.voices > 2 && a.bpm > 40, a);
+  const gh = await p.evaluate(() => { const c = document.getElementById('board'); return { demo: __orch.G.demo, key: __orch.G.key }; }); check('it is flagged as a demonstration', gh.demo === true, gh); await shot(p, '05c-model');
+  await p.evaluate(() => __orch.seekNearEnd(6)); await wait(p, () => __kb.state().title, null, 60000);
+  const after = JSON.stringify(await stored(p, SAVE)); check('no scoring in the demonstration: no result screen, the save is unchanged', before === after && !(await st(p)).result, { before, after });
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 async function keyboard(env) {
   console.log('6. the keyboard alone: Space for beats, arrows for volume, number keys for cues, P to pause');
   const s = await open(env); const p = s.page; await startReal(p, 'dvorak7', 'normal');
@@ -398,7 +412,7 @@ async function layouts(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, keyboard, touch, pause, english, themes, saves, layouts]) {
+  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, pause, english, themes, saves, layouts]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
   }

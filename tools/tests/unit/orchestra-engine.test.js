@@ -340,4 +340,20 @@ test('BeatDetector: the refractory period follows the beat period; sliceScore cu
   ok(n <= w.noteCount && n > w.noteCount * 0.97, 'parts keep nearly every note: ' + n + ' of ' + w.noteCount);
 });
 
+// --- お手本: the virtual conductor and the model baton -------------------------------------------------------------------------------------------
+test('DemoConductor: plays a whole piece with no player input (every note, in order), never stalls, ends; the ghost baton stays in the path box and starts each beat low', () => {
+  for (const id of ['beethoven5', 'dvorak7', 'zauberflote', 'dvorak8-3']) {
+    const sc = loadScore(id), ses = new E.Session({ score: sc, diff: 'maestro', sink: {} }), o = { now: 0 }, log = drive(ses, o), dc = new E.DemoConductor(ses);
+    let guard = 0; for (let t = 0; t < sc.guideSeconds() * 1.15 + 20 && ses.state !== 'ended'; t += 0.025) { o.now = t; dc.tick(t); ses.tick(t); guard++; }
+    ok(ses.state === 'ended', id + ' ended by itself'); eq(log.on.length, sc.noteCount, id + ' every note was played'); ok(!ses.snapshot(1e6).held || ses.state === 'ended');
+  }
+  const none = new E.Session({ score: loadScore('nachtmusik'), diff: 'normal', sink: {} }); for (let t = 0; t < 30; t += 0.05) none.tick(t); ok(none.state === 'idle', 'without the demo conductor nothing plays');
+  [1, 2, 3, 4].forEach(n => { for (let b = 0; b < n; b++) for (let f = 0; f < 1; f += 0.05) { const p = E.ghostPoint(n, b, f); ok(p[0] >= 0 && p[0] <= 1 && p[1] >= 0 && p[1] <= 1, 'ghost inside the box'); } const low = E.ghostPoint(n, 0, 0); ok(low[1] > 0.8, n + ': beat 1 is the lowest point (' + low[1] + ')'); const top = E.ghostPoint(n, n - 1, 0.5); ok(top[1] < 0.2, n + ': the last beat rebounds over the top'); });
+});
+test('DemoConductor follows the marked tempo: a piece with a tempo change keeps the guide time within 8 %', () => {
+  const sc = loadScore('zauberflote'), ses = new E.Session({ score: sc, diff: 'enjoy', sink: {} }), o = { now: 0 }; drive(ses, o); const dc = new E.DemoConductor(ses); let end = 0;
+  for (let t = 0; t < sc.guideSeconds() * 1.3 + 20; t += 0.025) { o.now = t; dc.tick(t); ses.tick(t); if (ses.state === 'ended') { end = t; break; } }
+  ok(end > 0 && Math.abs(end - sc.guideSeconds() - 2.5) / sc.guideSeconds() < 0.08, 'ended at ' + end.toFixed(1) + ' s, guide ' + sc.guideSeconds().toFixed(1));
+});
+
 run('orchestra-engine');
