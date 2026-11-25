@@ -344,6 +344,63 @@
     limb(c, 12, -40 + bob, hx, hy, 6, shade(col, 0.08)); limb(c, hx, hy, hx + 8, hy - 9, 2.8, '#d8b45a'); circ(c, hx + 9, hy - 10, 3, '#f2e4cf', 1.4);
     limb(c, -14, -38 + bob, -20 - lk, -26, 6, shade(col, -0.1));
   };
+
+  function drawerOf(ch) { if (!DRAW[ch]) { const C = E.CH[ch]; DRAW[ch] = C && C.spr ? compose(C.spr) : DRAW.robo; } return DRAW[ch]; }
+  // ---- 組み立て絵：kits.js のおもちゃの spr（図形の並び）から、手で描かずに絵を作る。足もと (0,0)・右向き・上が -y。色は a＝メイン b＝サブ A＝うすい B＝こい w＝白 k＝ふち
+  function sc(s, f) { switch (s) { case 'a': return f.col; case 'b': return f.col2; case 'A': return shade(f.col, 0.35); case 'B': return shade(f.col, -0.3); case 'w': return '#fff'; case 'k': return INK; case 'ff': return '#ffb02a'; default: return s || f.col; } }
+  function prim(c, p, f, P) {
+    const col = sc(p.c, f), lw = p.lw;
+    c.save(); c.translate(p.x || 0, p.y || 0);
+    if (p.anim === 'wag') c.rotate(Math.sin(P.t * 0.3) * 0.18); else if (p.anim === 'spin') c.rotate(P.t * 0.2);
+    switch (p.t) {
+      case 'box': box(c, -p.w / 2, -p.h / 2, p.w, p.h, p.r || 0, col, lw); break;
+      case 'ell': ell(c, 0, 0, p.w / 2, p.h / 2, col, lw); break;
+      case 'circ': circ(c, 0, 0, p.r, col, lw); break;
+      case 'poly': c.translate(-(p.x || 0), -(p.y || 0)); poly(c, p.pts, col, lw); break;
+      case 'line': c.translate(-(p.x || 0), -(p.y || 0)); limb(c, p.x0, p.y0, p.x1, p.y1, p.w, col); break;
+      case 'star': star(c, 0, 0, p.r, p.n || 5, col, lw, -Math.PI / 2 + (p.anim ? 0 : 0)); break;
+      case 'flame': { const k = 0.7 + 0.3 * Math.sin(P.t * 0.9), L = p.len * (P.air || P.run ? 1.25 : 0.8) * k; poly(c, [-5, 0, 0, L, 5, 0], '#ff7a2a', 1.6); poly(c, [-2.6, 0, 0, L * 0.6, 2.6, 0], '#ffd23f', 0); break; }
+      case 'prop': { c.rotate(P.t * 0.6); ell(c, 0, 0, p.r, p.r * 0.2, col, 1.4); ell(c, 0, 0, p.r * 0.2, p.r, col, 1.4); break; }
+      case 'siren': { const on = Math.floor(P.t / 8) % 2; box(c, -5, -4, 10, 8, 3, on ? '#e0453f' : '#4a7be0', 1.8); break; }
+      case 'holes': for (let i = 0; i < p.n; i++) box(c, i * p.dx - 1.6, -3, 3.2, 6, 1, INK, 0); break;
+      case 'zig': { c.beginPath(); for (let i = 0; i <= 6; i++) c.lineTo(-p.w / 2 + i * p.w / 6, (i % 2 ? -1 : 1) * p.h / 2 * 0.9); c.lineWidth = 2; c.strokeStyle = sc('b', f); c.stroke(); break; }
+      case 'keysrow': { const n = 6, w = p.w / n; for (let i = 0; i < n; i++) box(c, -p.w / 2 + i * w, -2, w - 0.5, 10, 1, '#f4f4ee', 1.1); for (let i = 0; i < n - 1; i++) if (i !== 2) box(c, -p.w / 2 + (i + 1) * w - 2, -4, 4, 6, 1, INK, 0); break; }
+      case 'jaw': { const open = P.a >= 0 && P.a < 0.5 ? 10 : 3 + Math.sin(P.t * 0.12) * 1.2; c.save(); c.translate(-p.w / 2, p.h / 2); c.rotate(-open * 0.03); box(c, 0, -p.h, p.w, p.h, 4, col, lw); circ(c, p.w * 0.85, -p.h * 0.5, 2.2, INK, 0); c.restore(); break; }
+      case 'ringo': { c.save(); c.rotate(-0.3); ell(c, 0, 0, p.w / 2, p.h / 2, 'rgba(0,0,0,0)', 0); c.lineWidth = 3; c.strokeStyle = col; c.globalAlpha = 0.9; c.beginPath(); c.ellipse(0, 0, p.w / 2, p.h / 2, 0, 0, TAU); c.stroke(); c.restore(); break; }
+      case 'swirl': { c.beginPath(); for (let i = 0; i < 18; i++) { const r = p.r * i / 18, an = i * 0.7 + P.t * 0.08; c.lineTo(Math.cos(an) * r, Math.sin(an) * r); } c.lineWidth = 2; c.strokeStyle = sc('b', f); c.stroke(); break; }
+      default: break;
+    }
+    c.restore();
+  }
+  function handProp(c, kind, fx, fy, sx, sy, f) {
+    const an = Math.atan2(fy - sy, fx - sx);
+    c.save(); c.translate(fx, fy);
+    if (kind === 'ball') circ(c, 0, 0, 5.2, sc('A', f), 2);
+    else if (kind === 'nozzle') { c.rotate(an); box(c, -2, -3.6, 14, 7.2, 3, sc('b', f), 2); circ(c, 14, 0, 3, '#7fd8ff', 1.4); }
+    else if (kind === 'bucket') { c.rotate(an); poly(c, [0, -9, 16, -9, 20, 6, 0, 8], sc('b', f), 2.2); }
+    else if (kind === 'baton') { c.rotate(an); limb(c, 0, 0, 24, 0, 4, '#2a1d17'); }
+    else if (kind === 'stick') { c.rotate(an); limb(c, -2, 0, 20, 0, 2.6, '#e8d8b0'); circ(c, 21, 0, 3.2, '#e8d8b0', 1.4); }
+    else if (kind === 'sword') { c.rotate(an); box(c, -2, -2.4, 8, 4.8, 1, INK, 0); limb(c, 6, 0, 36, 0, 3.6, '#e8eaf2'); }
+    c.restore();
+  }
+  function compose(spr) {
+    return (c, P, f) => {
+      const bob = P.run ? 0 : Math.sin(P.t * 0.08) * 0.8, lk = Math.sin(P.ph) * (P.run ? 6 : 0) + (P.air ? -3 : 0);
+      const L = spr.legs || { k: 'none' };
+      if (L.k === 'legs') { limb(c, -6 + lk * 0.5, -12, -6 + lk * 0.5, -1, L.w || 6, sc(L.c || 'k', f)); limb(c, 6 - lk * 0.5, -12, 6 - lk * 0.5, -1, L.w || 6, sc(L.c || 'k', f)); box(c, -11 + lk * 0.5, -3, 11, 4, 2, INK, 0); box(c, 1 - lk * 0.5, -3, 11, 4, 2, INK, 0); }
+      else if (L.k === 'tread') { box(c, -L.w / 2, -10, L.w, 12, 6, sc(L.c || 'k', f), 2); for (let i = 0; i < 5; i++) circ(c, -L.w / 2 + 6 + i * (L.w - 12) / 4, -4, 3.4, '#8a8f98', 1.2); }
+      else if (L.k === 'wheels') { for (const wx of [-9, 9]) { c.save(); c.translate(wx, -6); c.rotate(P.ph * 0.8 + P.t * 0.02); circ(c, 0, 0, 6.4, sc('k', f), 2); line2(c, 5); c.restore(); } }
+      c.save(); c.translate(0, bob);
+      for (const p of spr.back || []) prim(c, p, f, P);
+      const A = spr.arms || {};
+      if (!A.none) armPair(c, P, A.sx, A.sy, A.rx, A.ry, A.w, sc(A.c || 'a', f), (c2, x, y) => handProp(c2, A.hand, x, y, A.sx, A.sy, f));
+      for (const p of spr.body || []) prim(c, p, f, P);
+      for (const e of spr.eyes || []) eye(c, e.x, e.y, e.r, 1);
+      c.restore();
+    };
+  }
+  function line2(c, r) { c.beginPath(); c.moveTo(-r, 0); c.lineTo(r, 0); c.moveTo(0, -r); c.lineTo(0, r); c.lineWidth = 1.6; c.strokeStyle = '#8a8f98'; c.stroke(); }
+
   const FX_LINES = { slash: 1, kick: 1, punch: 1, spin: 1, spring: 1, hug: 1, drill: 1, ring: 1, shield: 1, lid: 1, prop: 1, horn: 1 };
 
   // ------------------------------------------------------------------ 状態
@@ -628,7 +685,7 @@
     if (f.s === 'ledge') { c.translate(0, 0); }
     c.scale(face * P.sx, P.sy);
     const pl = palOf(f.ch, R.pal[f.i]);
-    DRAW[f.ch](c, P, { col: pl.col, col2: pl.col2 });
+    drawerOf(f.ch)(c, P, { col: pl.col, col2: pl.col2 });
     if (a.flashT > 0) { c.globalAlpha = 0.55 * a.flashT / 6; c.fillStyle = '#fff'; c.beginPath(); c.ellipse(0, -C.h * 0.5, C.w * 0.75, C.h * 0.55, 0, 0, TAU); c.fill(); c.globalAlpha = 1; }
     c.restore();
     // 攻撃エフェクト（軌跡）
@@ -642,6 +699,15 @@
     if (f.s === 'stun') { for (let i = 0; i < 3; i++) { const an = R.t * 0.2 + i * TAU / 3; star(c, f.x + Math.cos(an) * 16, f.y - C.h - 8 + Math.sin(an) * 4, 6, 5, '#ffd23f', 1.4, an); } }
     if (f.s === 'ledge') { /* 縁につかまっている手 */ const S = E.STAGES[st.stage], L = S.ledges[f.lg]; if (L) circ(c, L.x - L.dir * 4, L.y + 3, 5, '#fff', 2); }
     if (f.buff > 0) { c.save(); c.globalAlpha = 0.35 + 0.15 * Math.sin(R.t * 0.3); c.strokeStyle = '#ffd23f'; c.lineWidth = 3; c.beginPath(); c.ellipse(f.x, f.y - C.h * 0.5, C.w * 0.8, C.h * 0.62, 0, 0, TAU); c.stroke(); c.restore(); }
+    if (f.ks) { // 新しいとくぎの状態：ため・吸収・構え・遅い・動けない
+      const k = f.ks, cy = f.y - C.h * 0.5; c.save(); c.lineWidth = 3;
+      if (k.cc > 0) { c.strokeStyle = 'rgba(255,255,255,' + (0.4 + 0.5 * Math.min(1, k.cc / 40)) + ')'; c.beginPath(); c.arc(f.x + f.face * 18, cy, 8 + k.cc * 0.5 + Math.sin(R.t) * 1.5, 0, TAU); c.stroke(); }
+      if (k.abs > 0) { c.globalAlpha = 0.5; c.fillStyle = '#c8d4ff'; c.beginPath(); c.ellipse(f.x, cy, C.w * 0.85, C.h * 0.62, 0, 0, TAU); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.stroke(); }
+      if (k.st) { star(c, f.x, f.y - C.h - 14 - (C.tagY || 0) * 0 + Math.sin(R.t * 0.2) * 2, 6, 4, '#ffd23f', 1.4, R.t * 0.05); }
+      if (k.slow > 0) { c.strokeStyle = 'rgba(127,216,255,.85)'; c.setLineDash([4, 5]); c.beginPath(); c.ellipse(f.x, cy, C.w * 0.7, C.h * 0.6, 0, 0, TAU); c.stroke(); c.setLineDash([]); }
+      if (k.root > 0) { c.strokeStyle = '#d8dde3'; c.lineWidth = 4; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(f.x + (i - 1) * 8, f.y - 6, 5, 0, TAU); c.stroke(); } }
+      c.restore();
+    }
     if (f.chg > 0 && f.s === 'atk' && f.mf === 3) { const k = f.chg / 45; c.save(); c.strokeStyle = 'rgba(255,255,255,' + (0.4 + 0.5 * k) + ')'; c.lineWidth = 2 + 3 * k; c.beginPath(); c.arc(f.x, f.y - C.h * 0.5, C.h * 0.5 + k * 16 + Math.sin(R.t * 0.8) * 2, 0, TAU); c.stroke(); c.restore(); }
   }
   function drawSwoosh(c, st, f, C) {
@@ -679,6 +745,26 @@
       case 'flame': { const d = p.vx >= 0 ? 1 : -1, k = 1 - p.life / 22; c.scale(d, 1); for (let i = 0; i < 3; i++) { const r = p.r * (1.1 - i * 0.28) * (0.8 + 0.4 * Math.sin(R.t * 0.8 + i)); circ(c, -i * 4, 0, r, ['#e8452a', '#ff9a2a', '#ffe08a'][i], i === 0 ? 2 : 0); } break; }
       case 'dart': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); poly(c, [-10, -3, 4, -1.5, 9, 0, 4, 1.5, -10, 3], '#f4efe2', 1.8); poly(c, [-10, 0, -15, -5, -13, 0, -15, 5], '#f48fb1', 1.4); break; }
       case 'wave': { const d = p.vx >= 0 ? 1 : -1, k = p.t % 12 / 12; c.scale(d, 1); c.lineWidth = 3.4; for (let i = 0; i < 3; i++) { c.strokeStyle = 'rgba(255,255,255,' + (0.9 - i * 0.25) + ')'; c.beginPath(); c.arc(-i * 9, 0, p.r * (0.7 + i * 0.22), -1.1, 1.1); c.stroke(); } c.strokeStyle = INK; c.lineWidth = 1.2; c.beginPath(); c.arc(0, 0, p.r * 0.7, -1.1, 1.1); c.stroke(); break; }
+      case 'missile': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); poly(c, [-p.r * 2.4, 0, -p.r, -p.r * 0.7, -p.r, p.r * 0.7], '#ffb02a', 0); ell(c, 0, 0, p.r * 1.4, p.r * 0.8, '#e8eaf2', 2); poly(c, [p.r * 1.2, -p.r * 0.7, p.r * 2.2, 0, p.r * 1.2, p.r * 0.7], '#e0453f', 1.8); break; }
+      case 'jet': { for (let i = 0; i < 3; i++) circ(c, -i * 7, Math.sin(R.t * 0.5 + i) * 1.5, p.r * (1 - i * 0.22), 'rgba(127,216,255,' + (0.9 - i * 0.2) + ')', i ? 0 : 1.6); break; }
+      case 'pool': case 'well': case 'gale': {
+        const k = p.k === 'pool' ? ['rgba(90,170,255,.28)', '#7fd8ff'] : p.k === 'well' ? ['rgba(60,30,110,.36)', '#b48cff'] : ['rgba(255,255,255,.22)', '#fff'], rad = p.rad || 100, pulse = 1 + Math.sin(R.t * 0.15) * 0.05;
+        c.fillStyle = k[0]; c.beginPath(); c.arc(0, 0, rad * pulse, 0, TAU); c.fill(); c.lineWidth = 2.4; c.strokeStyle = k[1]; c.setLineDash([8, 8]); c.lineDashOffset = -R.t * (p.k === 'gale' ? -1 : 1.2); c.stroke(); c.setLineDash([]);
+        if (p.k === 'well') { circ(c, 0, 0, p.r * 0.6, '#12081f', 2); star(c, 0, 0, p.r, 4, 'rgba(180,140,255,.5)', 0, R.t * 0.12); } else circ(c, 0, 0, 8, k[1], 0); break; }
+      case 'hook': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); limb(c, -34, 0, 0, 0, 3, '#4a4f58'); c.lineWidth = 4; c.strokeStyle = '#e0a030'; c.beginPath(); c.arc(4, 0, p.r * 0.8, -2.4, 2.4); c.stroke(); circ(c, 0, 0, 3, INK, 0); break; }
+      case 'snare': { const armed = p.t >= p.arm; ell(c, 0, 4, p.r, p.r * 0.4, '#3a8fc4', 2.2); c.lineWidth = 2; c.strokeStyle = armed ? '#fff' : '#9ab'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(0, 2, p.r * (0.3 + i * 0.25) * (armed ? 1 + Math.sin(R.t * 0.2 + i) * 0.1 : 1), Math.PI, 0); c.stroke(); } break; }
+      case 'cuff': { c.rotate(R.t * 0.3); c.lineWidth = 3.4; c.strokeStyle = '#d8dde3'; c.beginPath(); c.arc(-4, 0, 6, 0, TAU); c.stroke(); c.beginPath(); c.arc(5, 0, 6, 0, TAU); c.stroke(); break; }
+      case 'plane': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); c.rotate(Math.sin(R.t * 0.25) * 0.15); poly(c, [-12, -2, 14, 0, -12, 7], '#f4f2ea', 1.8); poly(c, [-12, -2, 14, 0, -4, -9], '#dfe3ea', 1.6); break; }
+      case 'dancer': { const w = Math.sin(R.t * 0.3) * 3; poly(c, [-3, -12, -15 - w, 8, 15 + w, 8, 3, -12], '#f2a0c0', 2); circ(c, 0, -18, 6, '#f6d9c4', 1.8); circ(c, -2, -24, 3.4, '#a0486c', 0); break; }
+      case 'wail': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); c.lineWidth = 3.4; for (let i = 0; i < 3; i++) { c.strokeStyle = 'rgba(255,255,255,' + (0.95 - i * 0.28) + ')'; c.beginPath(); c.arc(-i * 11, 0, p.r * (0.6 + i * 0.25), -1.1, 1.1); c.stroke(); } break; }
+      case 'ping': { for (let i = 0; i < 3; i++) { c.strokeStyle = 'rgba(160,230,255,' + (0.9 - i * 0.28) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, p.r * (1 - i * 0.28) * (1 + Math.sin(R.t * 0.2) * 0.04), 0, TAU); c.stroke(); } break; }
+      case 'key': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); box(c, -9, -4, 18, 8, 2, '#f4f4ee', 2); box(c, -3, -6, 6, 5, 1, INK, 0); break; }
+      case 'staple': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); c.lineWidth = 2.6; c.strokeStyle = '#c8ccd2'; c.beginPath(); c.moveTo(-6, -4); c.lineTo(-6, 4); c.lineTo(6, 4); c.lineTo(6, -4); c.stroke(); break; }
+      case 'chord': { c.rotate(Math.sin(R.t * 0.2) * 0.3); ell(c, 0, 3, p.r * 0.75, p.r * 0.56, '#2a1d17', 1.8, -0.4); limb(c, p.r * 0.6, 2, p.r * 0.6, -p.r * 1.5, 2.4, '#2a1d17'); poly(c, [p.r * 0.6, -p.r * 1.5, p.r * 1.5, -p.r * 0.9, p.r * 0.6, -p.r * 0.8], '#f0d080', 1.6); break; }
+      case 'plate': { c.rotate(R.t * 0.3); ell(c, 0, 0, p.r, p.r * 0.45, '#f4efe0', 2.2); ell(c, 0, -3, p.r * 0.6, p.r * 0.3, '#f06a5a', 1.6); break; }
+      case 'void': { const g = c.createRadialGradient(0, 0, 2, 0, 0, p.r + 8); g.addColorStop(0, '#0b0613'); g.addColorStop(0.7, '#2f2640'); g.addColorStop(1, 'rgba(154,107,240,0)'); c.fillStyle = g; c.beginPath(); c.arc(0, 0, p.r + 8, 0, TAU); c.fill(); c.strokeStyle = '#9a6bf0'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.stroke(); break; }
+      case 'star': { star(c, 0, 0, 13 + Math.sin(R.t * 0.2) * 1.5, 5, '#ffd23f', 2, R.t * 0.04); break; }
+      case 'tailstar': { const d = p.vx >= 0 ? 1 : -1; c.scale(d, 1); poly(c, [-p.r * 4, 0, -p.r, -p.r * 0.8, -p.r, p.r * 0.8], 'rgba(120,190,255,.85)', 0); star(c, 0, 0, p.r * 1.4, 5, '#ffd23f', 1.8, R.t * 0.3); break; }
       default: circ(c, 0, 0, p.r, '#fff', 2);
     }
     c.restore();
@@ -854,10 +940,10 @@
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
     const C = E.CH[ch]; if (!C) return;
     if (opt.locked) { c.fillStyle = 'rgba(120,120,120,.5)'; c.beginPath(); c.arc(size / 2, size / 2, size * 0.46, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.font = '800 ' + size * 0.5 + 'px system-ui'; c.textAlign = 'center'; c.fillText('?', size / 2, size * 0.67); return; }
-    const sc = size / (C.h + 24) * (opt.zoom || 1);
+    const sc = size / (Math.max(C.h, C.w * 1.15) + 24) * (opt.zoom || 1);
     c.save(); c.translate(size / 2, size * 0.94 - (opt.lift || 0)); c.scale(sc, sc);
     const pl = palOf(ch, opt.pal | 0);
-    DRAW[ch](c, { t: opt.t || 0, ph: 0, a: -1, tx: null, ty: null, run: false, air: false, crouch: false, spin: false, buff: false }, { col: pl.col, col2: pl.col2 });
+    drawerOf(ch)(c, { t: opt.t || 0, ph: 0, a: -1, tx: null, ty: null, run: false, air: false, crouch: false, spin: false, buff: false }, { col: pl.col, col2: pl.col2 });
     c.restore();
   }
   // ステージの小さな絵

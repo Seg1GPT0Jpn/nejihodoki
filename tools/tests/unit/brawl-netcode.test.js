@@ -37,11 +37,18 @@ function script(seed, n, frames) {
 }
 // 台本の一覧：18人 × 5ステージを組み合わせて、4人の試合も入れる（ぜんぶ決まった種）
 function scenarios() {
-  const ids = E.CHAR_IDS.concat(['junk']), out = [];
+  const ids = E.K.LEGACY.concat(['junk']), out = []; // the first 18 + the boss stay pinned: their hashes must never change when the roster grows
   for (let i = 0; i < 20; i++) {
     const n = i % 7 === 6 ? 4 : i % 5 === 4 ? 3 : 2;
     const chars = []; for (let k = 0; k < n; k++) chars.push(ids[(i * 5 + k * 3) % ids.length]);
     out.push({ name: 'm' + i, seed: 100 + i * 17, stage: E.STAGE_IDS[i % 5], chars, mode: i % 6 === 5 ? 'time' : 'stock', stocks: 1 + (i % 3), frames: 2400 });
+  }
+  // the newer toys (every special kind and projectile): their own scripted matches, 2 to 4 players
+  const nw = E.CHAR_IDS.filter(id => E.K.LEGACY.indexOf(id) < 0);
+  for (let i = 0; i < nw.length; i++) {
+    const n = i % 4 === 3 ? 4 : i % 3 === 2 ? 3 : 2, chars = []; for (let k = 0; k < n; k++) chars.push(nw[(i + k * 5) % nw.length]);
+    if (i % 5 === 0) chars[n - 1] = E.K.LEGACY[(i * 3) % 18];
+    out.push({ name: 'n' + i, seed: 900 + i * 31, stage: E.STAGE_IDS[(i + 2) % 5], chars, mode: 'stock', stocks: 1 + (i % 3), frames: 2400 });
   }
   return out;
 }

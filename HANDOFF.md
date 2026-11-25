@@ -75,3 +75,5 @@
 - 全員が同時に切断すると部屋のデータが少し残る（クライアントは部屋の一覧を読めないため）。
 
 - brawl/kits.js（新）: おもちゃ18体とボスの技データ（engine.js が buildChar で技表をつくる）。`defineChar` / `defineKind` / `defineProj` で足せる。色ちがい8色（見た目だけ）、`E.sigOf` / `E.dist` で技のちがいを数える。テスト: tools/tests/unit/brawl-kits.test.js、brawl-play.js の第16節（2〜4人・よこ向き）。シミュレーションの動きを変えたら `NETV` を上げてゴールデンハッシュを取りなおす。
+
+- brawl（第1弾 2026-11-26）: おもちゃ34人（新16人）。新しい特殊技の種類: glide / zone（slow・pull・push）/ hook / snare / sbk / boomerang / charge / ammo・reload / summon / roll / absorb / beacon / 成長するはねかえり / stance 各種。`kit.tpl` で技のひな形を選び、`defineKind` / `defineProj` で足せる。`NETV`=2（旧18人+ボスのゴールデンハッシュは変わらず、`E.K.LEGACY` に固定）。バランスの総当たりは抜き取り（`BRAWL_FULLRR=1` で全組）。テスト: brawl-kits.test.js、brawl-play.js 第16〜17節。

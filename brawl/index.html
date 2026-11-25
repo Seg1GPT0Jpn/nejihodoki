@@ -1139,7 +1139,7 @@ $('favBtn').onclick = () => { if (infoId) toggleFav(infoId); };
 // locked toys: how far along each is (names stay secret), the nearest first
 function lockedList() {
   const pr = progOf();
-  return E.CHAR_IDS.filter(id => !hasChar(id)).map(id => { const i = K.unlockInfo(id, pr); return { id, i, ratio: i.rule.t === 'ladder' ? 0 : i.have / Math.max(1, i.need), text: K.unlockText(id, pr, EN) }; }).sort((x, y) => y.ratio - x.ratio);
+  return E.CHAR_IDS.filter(id => !hasChar(id)).map(id => { const i = K.unlockInfo(id, pr); return { id, i, ratio: i.rule.t === 'ladder' ? 0 : i.have / Math.max(1, i.need), text: K.unlockText(id, pr, EN) }; }).sort((x, y) => (x.i.rule.t === 'ladder' ? 1e6 : x.i.need - x.i.have) - (y.i.rule.t === 'ladder' ? 1e6 : y.i.need - y.i.have));
 }
 function renderUnlockList() {
   const L2 = lockedList(), box = $('ulBox');
@@ -1148,7 +1148,7 @@ function renderUnlockList() {
   const near = L2.find(x => x.i.rule.t !== 'ladder') || L2[0];
   $('rNote').textContent = T('つぎに開く：{t}', { t: near.text });
   box.querySelector('summary').textContent = T('ロック中のおもちゃの開き方') + ' (' + L2.length + ')';
-  $('ulBody').innerHTML = L2.slice(0, 14).map(x => '<div class="urow"><span>' + esc(T('ロック中')) + ' · ' + esc(x.i.rule.t === 'ladder' ? T('ラダーを勝ちぬくと開く') : '？？？') + '</span><b>' + esc(x.text) + '</b></div>').join('') + (L2.length > 14 ? '<div class="urow"><span>…</span><b>+' + (L2.length - 14) + '</b></div>' : '');
+  $('ulBody').innerHTML = L2.map(x => '<div class="urow"><span>' + esc(T('ロック中')) + (x.i.rule.t === 'ladder' ? '' : ' · ？？？') + '</span><b>' + esc(x.text) + '</b></div>').join('');
 }
 // arrow keys move between the tiles of a grid (the nearest tile in that direction)
 function arrowNav(e, box) {

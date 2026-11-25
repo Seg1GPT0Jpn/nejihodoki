@@ -23,8 +23,8 @@ function go(st, n, ia, ib) { const evs = []; for (let i = 0; i < n; i++) { const
 const hits = evs => evs.filter(e => e.t === 'hit');
 function idleAll(st) { go(st, 30, 0, 0); }
 
-test('the roster: 18 toys + a boss, 5 stages, original names, every toy has the 12 normals, the ground extras, 4 specials, a grab and a dash grab', () => {
-  eq(E.CHAR_IDS.length, 18); eq(E.STAGE_IDS.length, 5);
+test('the roster: 34 toys (18 + 16 newer) + a boss, 5 stages, original names, every toy has the 12 normals, the ground extras, 4 specials, a grab and a dash grab', () => {
+  eq(E.CHAR_IDS.length, 34); eq(E.STAGE_IDS.length, 5);
   const names = new Set();
   for (const id of E.CHAR_IDS.concat(['junk'])) {
     const c = E.CH[id]; ok(c.name.ja && c.name.en && c.short.ja && c.short.en && c.desc.ja && c.desc.en, id + ' text');
@@ -32,13 +32,13 @@ test('the roster: 18 toys + a boss, 5 stages, original names, every toy has the 
     const m = E.MOVES[id];
     for (const k of E.NORMALS.concat(E.EXTRAS, ['spN', 'spS', 'spU', 'spD', 'grab', 'dgrab'])) ok(m[k], id + ' has ' + k);
     ok(c.tag.ja && c.tag.en && c.stats.speed >= 1 && c.stats.recov <= 5, id + ' tag and stats');
-    ok(c.weight >= 70 && c.weight <= 170 && c.w >= 26 && c.h >= 38, id + ' body');
+    ok(c.weight >= 60 && c.weight <= 170 && c.w >= 26 && c.h >= 30, id + ' body');
   }
-  eq(names.size, 19, 'distinct names');
+  eq(names.size, 35, 'distinct names');
   // every toy has its own role: no two toys share the same (kit, weight, run speed, jump) fingerprint
-  const fp = new Set(E.CHAR_IDS.map(id => { const c = E.CH[id]; return [c.weight, c.run, c.jump, c.jmax || 1, c.kit.reach, c.sp.N.kind, c.sp.S.kind, c.sp.U.kind, c.sp.D.kind].join('/'); })); eq(fp.size, 18, 'distinct fingerprints');
+  const fp = new Set(E.CHAR_IDS.map(id => { const c = E.CH[id]; return [c.weight, c.run, c.jump, c.jmax || 1, c.kit.reach, c.sp.N.kind, c.sp.S.kind, c.sp.U.kind, c.sp.D.kind].join('/'); })); eq(fp.size, E.CHAR_IDS.length, 'distinct fingerprints');
   const kinds = new Set(); for (const id of E.CHAR_IDS) for (const k of ['N', 'S', 'U', 'D']) kinds.add(E.CH[id].sp[k].kind);
-  for (const k of ['proj', 'dash', 'rise', 'counter', 'spin', 'cmdgrab', 'pound', 'mine', 'buff', 'tele', 'reflect', 'melee']) ok(kinds.has(k), 'special kind in use: ' + k);
+  for (const k of ['proj', 'dash', 'rise', 'counter', 'spin', 'cmdgrab', 'pound', 'mine', 'buff', 'tele', 'reflect', 'melee', 'glide', 'zone', 'stance', 'charge', 'ammo', 'reload', 'summon', 'roll', 'absorb', 'beacon']) ok(kinds.has(k), 'special kind in use: ' + k);
   for (const s of E.STAGE_IDS) { const S = E.STAGES[s]; ok(S.name.ja && S.name.en && S.desc.ja && S.desc.en && S.solids.length && S.ledges.length, s); }
   ok(E.STAGE_IDS.some(s => E.STAGES[s].thins.some(t => t.mv)), 'a stage with moving platforms');
   ok(E.STAGE_IDS.some(s => E.STAGES[s].thins.some(t => t.wrap)), 'a stage with trains');
@@ -266,6 +266,16 @@ test('counter: the duck turns a hit around (no damage to it, damage back to the 
   go(s2, 1, 0, B.S | B.D); go(s2, 8, 0, 0); const ev2 = go(s2, 1, B.A, 0); go(s2, 6, 0, 0); ok(j.s === 'atk' || j.pct > 0, 'armor: still attacking after a hit ' + j.s + ' ' + j.pct);
 });
 
+// the new special kinds that do not (only) hit: check what they do instead
+function checkEffect(id, k, m, bit) {
+  const st = duel({ a: id, b: 'robo', bx: 400 }), a = st.fighters[0];
+  if (m.kind === 'glide') { a.y = -300; a.gr = -1; a.vy = 2; a.jumps = 0; let y0 = a.y, ymin = y0; go(st, 1, bit, 0); for (let i = 0; i < 30; i++) { go(st, 1, B.S, 0); ymin = Math.min(ymin, a.y); } ok(ymin < y0 - 60, id + ' glide rises'); return; }
+  go(st, 1, bit, 0); go(st, m.s + 6, bit & ~B.S ? 0 : 0, 0);
+  if (m.kind === 'stance') ok(a.ks && a.ks.st === 1, id + ' stance on');
+  if (m.kind === 'reload') { a.ks = a.ks || {}; a.ks.ammo = 0; const s2 = duel({ a: id, b: 'robo', bx: 400 }); s2.fighters[0].ks = { ammo: 0 }; go(s2, 1, bit, 0); go(s2, m.t, 0, 0); eq(s2.fighters[0].ks.ammo, m.mag, id + ' reload'); }
+  if (m.kind === 'absorb') ok(a.ks && a.ks.abs > 0, id + ' absorb window');
+  if (m.kind === 'zone' || m.kind === 'summon') ok(st.pr.some(p => p.o === 0 && p.k === m.proj.kind), id + ' ' + m.kind + ' places ' + m.proj.kind);
+}
 test('every move of every toy hits a toy standing where its hitbox is (and every projectile, mine and special does its job)', () => {
   const bits = { jab: B.A, ftilt: B.A | B.R, utilt: B.A | B.U, dtilt: B.A | B.D, fsmash: B.M | B.R, usmash: B.M | B.U, dsmash: B.M | B.D, nair: B.A, fair: B.A | B.R, bair: B.A | B.L, uair: B.A | B.U, dair: B.A | B.D, spN: B.S, spS: B.S | B.R, spU: B.S | B.U, spD: B.S | B.D };
   for (const id of E.CHAR_IDS.concat(['junk'])) {
@@ -275,7 +285,8 @@ test('every move of every toy hits a toy standing where its hitbox is (and every
       // try the dummy at a few distances in front of / around the attacker (the move's own hitbox decides)
       const cands = [];
       for (const h of m.kind === 'pound' ? m.land.hb : (m.hb || [])) cands.push([h[0] + (h[2] - h[0]) * 0.5, h[1] + (h[3] - h[1]) * 0.5]);
-      if (m.kind === 'proj') cands.push([160, -30], [90, -30]);
+      if (m.kind === 'proj' || m.kind === 'ammo' || m.kind === 'charge') cands.push([160, -30], [90, -30]);
+      if (E.KINDS[m.kind] && !m.hb.length && ['stance', 'reload', 'absorb', 'zone', 'summon', 'glide'].indexOf(m.kind) >= 0) { checkEffect(id, k, m, bits[k]); continue; }
       if (m.kind === 'mine') cands.push([30, -6]);
       if (m.kind === 'buff') { const st = duel({ a: id, b: 'robo', bx: 400 }); go(st, 1, bits[k], 0); go(st, 30, 0, 0); ok(st.fighters[0].buff > 0, id + ' buff'); continue; }
       if (m.kind === 'counter') continue;
@@ -571,7 +582,10 @@ function roundRobin(level, rounds) {
   const ids = E.CHAR_IDS, tot = {}, won = {}, pair = {};
   for (const c of ids) { tot[c] = 0; won[c] = 0; }
   let n = 0;
-  for (let i = 0; i < ids.length; i++) for (let j = 0; j < ids.length; j++) {
+  // every ordered pair for a small cast; for a big one, each toy meets SAMPLE other toys on each side (spread evenly over the roster) — BRAWL_FULLRR=1 runs every pair
+  const SAMPLE = process.env.BRAWL_FULLRR ? ids.length : 14;
+  for (let i = 0; i < ids.length; i++) for (let m = 1; m <= Math.min(SAMPLE, ids.length - 1); m++) {
+    const j = SAMPLE >= ids.length - 1 ? (m <= i ? m - 1 : m) : (i + 1 + Math.floor((m - 1) * (ids.length - 1) / SAMPLE)) % ids.length;
     if (i === j) continue;
     for (let r = 0; r < rounds; r++) {
       const st = cpuMatch({ seed: (E.hash32('rr' + i + ':' + j + ':' + r) | 1) >>> 0, stage: E.STAGE_IDS[(i * 3 + j + r) % E.STAGE_IDS.length], fighters: [{ ch: ids[i], lvl: level }, { ch: ids[j], lvl: level }], stocks: 3 });
@@ -583,7 +597,7 @@ function roundRobin(level, rounds) {
 }
 // Normal and Hard are held to 25-75%. Easy is only reported (the Easy CPU whiffs on purpose, so reach and speed matter more) and has a wide guard rail.
 for (const [level, name, lo, hi] of [[2, 'Normal', 0.25, 0.75], [3, 'Hard', 0.25, 0.75], [1, 'Easy', 0.12, 0.9]]) {
-  test(`balance (${name}): round-robin of all ${E.CHAR_IDS.length} toys (every ordered pair x ${ROUNDS}, fixed seeds): every toy wins between ${lo * 100}% and ${hi * 100}% overall`, () => {
+  test(`balance (${name}): sampled round-robin of all ${E.CHAR_IDS.length} toys (each toy meets 14 others ordered, x ${ROUNDS}, fixed seeds): every toy wins between ${lo * 100}% and ${hi * 100}% overall`, () => {
     const R = roundRobin(level, ROUNDS);
     console.log(`    ${name}: ${R.n} matches. overall win rate per toy: ` + R.rates.slice().sort((a, b) => b.r - a.r).map(x => x.c + ' ' + (x.r * 100).toFixed(0) + '%').join('  '));
     for (const x of R.rates) ok(x.r >= lo && x.r <= hi, `${name}: ${x.c} wins ${(x.r * 100).toFixed(0)}% (must stay within ${lo * 100}-${hi * 100}%)`);
