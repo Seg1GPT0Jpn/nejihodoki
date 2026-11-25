@@ -25,7 +25,7 @@ const BPM_MIN = 36, BPM_MAX = 132; // the range one conducted beat may have at t
 // section id -> sample-bank instrument
 const SEC_INST = { fl: 'fl', ob: 'ob', cl: 'cl', fg: 'fg', hn: 'hn', tp: 'tp', tb: 'tb', tu: 'tu', timp: 'timp', perc: 'bd', vln1: 'vln', vln2: 'vln', vla: 'vla', vc: 'vc', cb: 'cb' };
 
-const NAMES = { flauti: 'fl', oboi: 'ob', clarinetti: 'cl', fagotti: 'fg', corni: 'hn', trombe: 'tp', trombone: 'tb', trombonebasso: 'tb', timpani: 'timp', violino1: 'vln1', violinoi: 'vln1', violino2: 'vln2', violinoii: 'vln2', viola: 'vla', violoncello: 'vc', contrabasso: 'cb' };
+const NAMES = { flauti: 'fl', oboi: 'ob', clarinetti: 'cl', fagotti: 'fg', corni: 'hn', trombe: 'tp', trombone: 'tb', trombonebasso: 'tb', timpani: 'timp', violin1: 'vln1', violin2: 'vln2', flute: 'fl', oboe: 'ob', clarinet: 'cl', bassoon: 'fg', trombone: 'tb', frenchhorna: 'hn', frenchhornb: 'hn', trumpet: 'tp', cello: 'vc', bass: 'cb', violino1: 'vln1', violinoi: 'vln1', violino2: 'vln2', violinoii: 'vln2', viola: 'vla', violoncello: 'vc', contrabasso: 'cb' };
 // Each piece: midi files (concatenated in order), tracks: { fileIndex: { trackIndex: section } }, tempo overrides, excerpt (in quarter notes of the merged timeline).
 // `derive`: extra sections made from another one (e.g. double basses doubling the cellos an octave lower in a piece whose MIDI has no bass part).
 const PIECES = [
@@ -47,10 +47,47 @@ const PIECES = [
     tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'tb', 8: 'tb', 9: 'timp', 10: 'vln1', 11: 'vln2', 12: 'vla', 13: 'vc', 14: 'cb' }, { 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'tb', 8: 'tb', 9: 'timp', 10: 'vln1', 11: 'vln2', 12: 'vla', 13: 'vc', 14: 'cb' }],
     byName: true, excerpt: [0, 1000],
     blurb: { ja: '3つの和音ではじまるゆっくりした導入と、駆けぬける弦のアレグロ。入りのキューが多め。', en: 'Three solemn chords, then a racing string allegro. Lots of entrances to cue.' } },
-  { id: 'dvorak7', mutopia: 1901, level: 3, mvt: { ja: '第3楽章 スケルツォ', en: 'III. Scherzo (Vivace)' },
-    title: { ja: '交響曲 第7番 ニ短調 作品70', en: 'Symphony No. 7 in D minor, Op. 70' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1885,
+  // ---- Dvořák 7 (Mutopia 1901, Public Domain, all four movements; the files are the LilyPond MIDI of J.-F. Lucarelli's engraving) and Dvořák 9 (Mutopia 1793, CC BY-SA 3.0) ----
+  { id: 'dvorak7-1', mutopia: 1901, level: 3, mvt: { ja: '第1楽章 アレグロ・マエストーソ', en: 'I. Allegro maestoso' }, parts: 2,
+    title: { ja: '交響曲 第7番 ニ短調 作品70', en: 'Symphony No. 7 in D minor, Op. 70' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1885, work: 'dvorak7',
+    midi: ['DvorakSYMPH7-mids/DvorakSYMPH7_conductor.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tb', 7: 'tb', 8: 'timp', 9: 'vln1', 10: 'vln2', 11: 'vla', 12: 'vc', 13: 'cb', 14: 'hn', 15: 'tp' }],
+    blurb: { ja: '低弦とホルンの暗いささやきから、大きな嵐へ。長い楽章なので前半・後半に分けて指揮もできます。', en: 'From a dark murmur of low strings and horn to a great storm. A long movement: conduct it whole or in two halves.' } },
+  { id: 'dvorak7-2', mutopia: 1901, level: 2, mvt: { ja: '第2楽章 ポコ・アダージョ', en: 'II. Poco adagio' }, parts: 2,
+    title: { ja: '交響曲 第7番 ニ短調 作品70', en: 'Symphony No. 7 in D minor, Op. 70' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1885, work: 'dvorak7',
+    midi: ['DvorakSYMPH7-mids/DvorakSYMPH7_conductor-1.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'tb', 6: 'tb', 7: 'vln1', 8: 'vln2', 9: 'vla', 10: 'vc', 11: 'cb', 12: 'hn', 13: 'hn', 14: 'tp', 15: 'timp' }],
+    blurb: { ja: 'ゆっくり歌う、深く温かい緩徐楽章。4つ振りで息の長いクレッシェンドを。', en: 'A slow, warm and deeply felt movement in four. Long breaths and long crescendos.' } },
+  { id: 'dvorak7', mutopia: 1901, level: 3, mvt: { ja: '第3楽章 スケルツォ', en: 'III. Scherzo (Vivace)' }, parts: 2,
+    title: { ja: '交響曲 第7番 ニ短調 作品70', en: 'Symphony No. 7 in D minor, Op. 70' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1885, work: 'dvorak7',
     midi: ['DvorakSYMPH7-mids/DvorakSYMPH7_conductor-2.mid'], tracks: [{ 1: 'fl', 2: 'fl', 3: 'ob', 4: 'cl', 5: 'fg', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'vc', 11: 'cb', 12: 'hn', 13: 'hn', 14: 'tp', 15: 'timp' }],
-    excerpt: [0, 1002], blurb: { ja: '弾むリズムのスケルツォ。木管、金管が次々に入ってくるので、キューの腕の見せどころ。', en: 'A bouncing scherzo with winds and brass entering one after another: your cueing is the star.' } },
+    blurb: { ja: '弾むリズムのスケルツォ。木管、金管が次々に入ってくるので、キューの腕の見せどころ。', en: 'A bouncing scherzo with winds and brass entering one after another: your cueing is the star.' } },
+  { id: 'dvorak7-4', mutopia: 1901, level: 3, mvt: { ja: '第4楽章 フィナーレ', en: 'IV. Finale (Allegro)' }, parts: 2,
+    title: { ja: '交響曲 第7番 ニ短調 作品70', en: 'Symphony No. 7 in D minor, Op. 70' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1885, work: 'dvorak7',
+    midi: ['DvorakSYMPH7-mids/DvorakSYMPH7_conductor-3.mid'], tracks: [{ 1: 'fl', 2: 'fl', 3: 'ob', 4: 'cl', 5: 'fg', 6: 'hn', 7: 'tb', 8: 'tb', 9: 'vln1', 10: 'vln2', 11: 'vla', 12: 'vc', 13: 'cb', 14: 'hn', 15: 'timp', 16: 'tp' }],
+    blurb: { ja: '力強い主題で駆けぬけるフィナーレ。速い2つ振りで、最後の盛り上がりまで。', en: 'A driving finale in two. Keep the fast beat steady all the way to the blaze at the end.' } },
+  ...[['1', '第1楽章 アダージョ ― アレグロ・モルト', 'I. Adagio - Allegro molto', 3, 'Mvt1_Adagio.mid', 'ゆっくりした序奏のあと、一気に主部へ。テンポの切り替えが見せ場。', 'A slow introduction, then the Allegro bursts in. The tempo change is the highlight.'],
+    ['2', '第2楽章 ラルゴ', 'II. Largo', 1, 'Mvt2_Largo.mid', '「家路」の名で知られる、イングリッシュホルンの歌。静かな和音と長い息づかいを。（このMIDIにはコーラングレの専用パートがなく、旋律はオーボエ／クラリネットの音で鳴ります）', 'The famous "Going Home" melody. Hushed chords and long breaths. (The Mutopia MIDI has no separate English-horn part; the tune sounds on the oboe / clarinet samples.)'],
+    ['3', '第3楽章 スケルツォ（モルト・ヴィヴァーチェ）', 'III. Scherzo (Molto vivace)', 3, 'Mvt3_Scherzo.mid', '3拍子の速いスケルツォ。1小節を1つ振りで。（トライアングルは音源がないため省いています）', 'A fast scherzo in three, conducted one beat per bar. (The triangle is left out: no sample.)'],
+    ['4', '第4楽章 アレグロ・コン・フオーコ', 'IV. Allegro con fuoco', 3, 'Mvt4_conFuoco.mid', '「新世界」の大きな終楽章。4つ振りで、金管の主題を堂々と。（シンバルの1音は省いています）', 'The grand finale of the "New World", in four with the big brass theme. (The single cymbal crash is left out.)']].map(([n, ja, en, lvl, f, bj, be]) => ({
+    id: 'dvorak9-' + n, mutopia: 1793, level: lvl, mvt: { ja, en }, parts: n === '1' || n === '4' ? 2 : 0, work: 'dvorak9', licence: 'CC BY-SA 3.0', licenceUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+    credit: 'Mutopia Project, piece 1793 (typeset with LilyPond, maintainer Keith OHara; source: N. Simrock, 1894), CC BY-SA 3.0',
+    title: { ja: '交響曲 第9番 ホ短調 作品95「新世界より」', en: 'Symphony No. 9 in E minor, Op. 95 "From the New World"' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1893,
+    midi: ['Dvorak9-mids/' + f], byName: true, tracks: [{}], blurb: { ja: bj, en: be } })),
+  // ---- Dvořák 8 (MuseScore.com user 194052, set 5098438; supplied by the owner as a MIDI export; licence CC0 as read by the owner from the MuseScore page, see CREDITS.md) ----
+  { id: 'dvorak8-1', level: 3, mvt: { ja: '第1楽章 アレグロ・コン・ブリオ', en: 'I. Allegro con brio' }, parts: 2, work: 'dvorak8',
+    musescore: { user: 194052, set: 5098438, url: null }, licence: 'CC0 1.0', licenceUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    credit: 'MuseScore.com user 194052, set 5098438 (CC0), URL pending',
+    title: { ja: '交響曲 第8番 ト長調 作品88', en: 'Symphony No. 8 in G major, Op. 88' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1889,
+    midi: ['Dvorak8-mids/Dvorak8_Mvt1_AllegroConBrio.mid'],
+    // the file has no track names and non-GM program numbers: the order is the full-score order (see CREDITS.md for the evidence); track 19 is empty
+    tracks: [{ 0: 'fl', 1: 'fl', 2: 'ob', 3: 'ob', 4: 'cl', 5: 'cl', 6: 'fg', 7: 'fg', 8: 'hn', 9: 'hn', 10: 'hn', 11: 'hn', 12: 'tp', 13: 'tp', 14: 'tb', 15: 'tb', 16: 'tb', 17: 'tu', 18: 'timp', 20: 'vln1', 21: 'vln2', 22: 'vla', 23: 'vc', 24: 'cb' }],
+    blurb: { ja: 'チェロとホルンの暗い序奏から、フルートの鳥の歌へ。テンポがよく動く楽章なので、指揮の変化が見せ場。', en: 'A dark opening for cellos and horns, then the flute\'s bird-like song. The tempo moves a lot: a showcase for flexible conducting.' } },
+  { id: 'dvorak8-4', level: 3, mvt: { ja: '第4楽章 アレグロ・マ・ノン・トロッポ', en: 'IV. Allegro ma non troppo' }, parts: 2, work: 'dvorak8',
+    musescore: { user: 194052, urls: ['https://musescore.com/user/194052/scores/5379777', 'https://musescore.com/user/194052/scores/5379779', 'https://musescore.com/user/194052/scores/5379782'] }, licence: 'CC0 1.0', licenceUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    credit: 'MuseScore.com user 194052 (CC0): one of musescore.com/user/194052/scores/5379777, 5379779, 5379782 (movements II-IV; which page is which is not confirmed)',
+    title: { ja: '交響曲 第8番 ト長調 作品88', en: 'Symphony No. 8 in G major, Op. 88' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1889,
+    midi: ['Dvorak8-mids/Dvorak8_Mvt4_Finale.mid'],
+    tracks: [{ 0: 'fl', 1: 'fl', 2: 'ob', 3: 'ob', 4: 'cl', 5: 'cl', 6: 'fg', 7: 'fg', 8: 'hn', 9: 'hn', 10: 'hn', 11: 'hn', 12: 'tp', 13: 'tp', 14: 'tb', 15: 'tb', 16: 'tb', 17: 'tu', 18: 'timp', 20: 'vln1', 21: 'vln2', 22: 'vla', 23: 'vc', 24: 'cb' }],
+    blurb: { ja: 'トランペットのファンファーレで始まる変奏曲形式のフィナーレ。テンポが細かく変わるので、拍を聴き合わせて。', en: 'A theme-and-variations finale that opens with a trumpet fanfare. The tempo shifts often: listen and follow.' } },
   { id: 'midsummer', mutopia: 80, level: 2, mvt: { ja: '間奏曲（No.5）', en: 'Intermezzo (No. 5)' },
     title: { ja: '劇音楽《真夏の夜の夢》 作品61', en: 'A Midsummer Night\'s Dream, Op. 61' }, composer: { ja: 'メンデルスゾーン', en: 'Mendelssohn' }, year: 1843,
     midi: ['Sommernachtstraum-mids/Sommernachtstraum.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'cb' }],
@@ -96,7 +133,7 @@ function build(P) {
     if (notes.some(n => n.sec === d.to)) return; // the file has that part already
     src.forEach(n => notes.push({ sec: d.to, tick: n.tick, dur: n.dur, pitch: Math.max(28, n.pitch + d.transpose), vel: n.vel }));
   });
-  const from = Math.round(P.excerpt[0] * PPQ), to = Math.round(P.excerpt[1] * PPQ);
+  const from = P.excerpt ? Math.round(P.excerpt[0] * PPQ) : 0, to = P.excerpt ? Math.round(P.excerpt[1] * PPQ) : Infinity; // no excerpt = the whole movement
 
   // ---- bars -> conductor beats ---------------------------------------------------------------------------------------------------------
   const bars = []; // { tick, q, beats, unit(q), bpm }
@@ -206,7 +243,7 @@ function build(P) {
   const out = {
     v: 1, id: P.id, ppq: PPQ,
     title: P.title, composer: P.composer, mvt: P.mvt, year: P.year, blurb: P.blurb, level: P.level,
-    src: { mutopia: P.mutopia, midi: P.midi.map(f => f.split('/').pop()), licence: 'Public Domain' },
+    src: { ...(P.musescore ? { musescore: P.musescore } : { mutopia: P.mutopia }), midi: P.midi.map(f => f.split('/').pop()), licence: P.licence || 'Public Domain' },
     nBeats, grid, bpm, dyn, cues: cueOut, needs,
     sec: sections.map(s => ({ id: s.id, inst: s.inst, n: s.n })),
   };
@@ -217,6 +254,17 @@ function build(P) {
   return { out, summary };
 }
 
+// long movements: play the whole thing or one of `n` bar-aligned parts of about equal length (the game cuts them with sliceScore in engine.js)
+function splitParts(out, n) {
+  const bars = []; out.grid.forEach(g => { for (let b = 0; b < g[1]; b++) bars.push(g[2]); }); // beats per bar
+  const total = out.nBeats, res = []; let beat = 0, bi = 0;
+  for (let k = 0; k < n; k++) {
+    const target = Math.round(total * (k + 1) / n); let to = beat;
+    while (bi < bars.length && (to < target || k === n - 1) ) { to += bars[bi++]; if (k === n - 1 && bi >= bars.length) break; }
+    res.push({ id: String.fromCharCode(97 + k), from: beat, to: Math.min(to, total) }); beat = to;
+  }
+  return res;
+}
 fs.mkdirSync(OUT, { recursive: true });
 const index = [];
 let total = 0;
@@ -230,6 +278,11 @@ PIECES.forEach(P => {
   const pattern = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
   index.push({ id: P.id, pattern, title: P.title, composer: P.composer, mvt: P.mvt, year: P.year, level: P.level, blurb: P.blurb, minutes: summary.minutes, nBeats: out.nBeats, needs: out.needs,
     src: out.src, sections: out.sec.map(s => s.id) });
+  const ix = index[index.length - 1];
+  if (P.work) ix.work = P.work;
+  if (P.licence) { ix.src.licenceUrl = P.licenceUrl; ix.src.credit = P.credit; out.src.licenceUrl = P.licenceUrl; out.src.credit = P.credit; } // share-alike: the derived score carries the licence and the credit
+  if (P.parts > 1) ix.parts = splitParts(out, P.parts);
+  if (P.licence) fs.writeFileSync(path.join(OUT, P.id + '.json'), JSON.stringify(out) + '\n');
 });
 const crypto = require('crypto'); const bh = crypto.createHash('sha1'); PIECES.forEach(P => bh.update(fs.readFileSync(path.join(OUT, P.id + '.json'))));
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify({ v: 1, build: bh.digest('hex').slice(0, 10), pieces: index }) + '\n');

@@ -38,10 +38,10 @@ const regular = (t0, bpm, n) => Array.from({ length: n }, (_, k) => t0 + k * 60 
 test('score grid: bars, beats, ticks and beats convert both ways; the real pieces have sane meta', () => {
   const s = tiny(); eq(s.nBeats, 16); eq(s.nBars, 4); eq(s.patternOfBeat[0], 4); eq(s.beatInBar[5], 1); eq(s.barOf(5.2), 2);
   near(s.tickToBeat(96 * 2.5), 2.5, 1e-9); near(s.beatToTick(7.25), 96 * 7.25, 1e-9); near(s.tickToBeat(96 * 20), 20, 1e-9, 'beyond the end extrapolates');
-  const ids = ['beethoven5', 'beethoven7', 'nachtmusik', 'zauberflote', 'dvorak7', 'midsummer', 'rossini', 'egmont'];
+  const ids = ['beethoven5', 'beethoven7', 'nachtmusik', 'zauberflote', 'dvorak7', 'midsummer', 'rossini', 'egmont', 'dvorak7-1', 'dvorak7-2', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4'];
   for (const id of ids) {
-    const sc = loadScore(id); ok(sc.nBeats > 150 && sc.nBeats < 700, id + ' beats ' + sc.nBeats); eq(sc.dyn.length, sc.nBeats, id + ' dyn per beat'); ok(/^[0-8]+$/.test(sc.dyn));
-    ok(sc.events.length === sc.noteCount * 2 && sc.noteCount > 500, id + ' notes'); const sec = sc.guideSeconds(); ok(sec > 140 && sec < 330, id + ' minutes ' + sec / 60);
+    const sc = loadScore(id); ok(sc.nBeats > 150 && sc.nBeats < 950, id + ' beats ' + sc.nBeats); eq(sc.dyn.length, sc.nBeats, id + ' dyn per beat'); ok(/^[0-8]+$/.test(sc.dyn));
+    ok(sc.events.length === sc.noteCount * 2 && sc.noteCount > 500, id + ' notes'); const sec = sc.guideSeconds(); ok(sec > 140 && sec < 640, id + ' minutes ' + sec / 60);
     for (let b = 0; b < sc.nBeats; b++) { const g = sc.bpmAt(b); if (!(g >= 36 && g <= 132)) throw new Error(id + ' guide bpm ' + g + ' at ' + b); }
   }
   const eg = loadScore('egmont'); ok(new Set(eg.patternOfBeat).size >= 2, 'Egmont changes meter');
@@ -146,9 +146,9 @@ test('Session: two ictus start the piece; the first note sounds at the second ic
 
 test('Session: a tempo change reaches only notes not yet scheduled; ordering and counts stay intact', () => {
   const sc = tiny({ bars: 6 }); const ses = new E.Session({ score: sc, diff: 'enjoy', sink: {} }), o = { now: 0 }, log = drive(ses, o);
-  const slow = regular(1, 60, 6), fast = regular(slow[5] + 0.5, 120, 20); conduct(ses, log, slow.concat(fast), 30, o);
+  const slow = regular(1, 60, 6), fast = regular(slow[5] + 0.7, 80, 20); conduct(ses, log, slow.concat(fast), 30, o);
   eq(log.on.length, 24); const ts = log.on.map(n => n.t); for (let i = 1; i < ts.length; i++) ok(ts[i] >= ts[i - 1], 'monotonic');
-  const gaps = ts.slice(1).map((t, i) => t - ts[i]); ok(gaps[1] > 0.95 && gaps[1] < 1.05, 'slow part about 1 s: ' + gaps[1]); ok(gaps[gaps.length - 2] < 0.6 && gaps[gaps.length - 2] > 0.45, 'fast part about 0.5 s: ' + gaps[gaps.length - 2]);
+  const gaps = ts.slice(1).map((t, i) => t - ts[i]); ok(gaps[1] > 0.85 && gaps[1] < 1.05, 'slow part about 1 s: ' + gaps[1]); ok(gaps[gaps.length - 2] < 0.85 && gaps[gaps.length - 2] > 0.6, 'fast part about 0.75 s: ' + gaps[gaps.length - 2]);
   ok(ses.state === 'ended');
 });
 
@@ -166,10 +166,17 @@ test('Session (normal): when the conductor stops, the orchestra waits at the nex
   eq(log2.on.length, 24, 'no note lost'); ok(ses.scorer.result().tempo < 100, 'the hold costs tempo points');
 });
 
-test('Session (enjoy): the orchestra keeps its tempo when the conductor stops; maestro waits harder', () => {
-  const sc = tiny({ bars: 6 }); const run1 = diff => { const ses = new E.Session({ score: sc, diff, sink: {} }), o = { now: 0 }, log = drive(ses, o); conduct(ses, log, regular(1, 100, 6), 40, o); return { ses, log }; };
-  const en = run1('enjoy'); eq(en.log.on.length, 24, 'enjoy plays on alone'); ok(en.ses.state === 'ended');
-  const ma = run1('maestro'); ok(ma.log.on.length < 10, 'maestro stops: ' + ma.log.on.length); ok(ma.ses.snapshot(40).held);
+test('Session (all difficulties): the orchestra never plays on by itself - it holds at the next beat until the next stroke; strokes move it on', () => {
+  const sc = tiny({ bars: 6 });
+  ['enjoy', 'normal', 'maestro'].forEach(diff => {
+    const ses = new E.Session({ score: sc, diff, sink: {} }), o = { now: 0 }, log = drive(ses, o); const a = regular(1, 100, 6); conduct(ses, log, a, 40, o);
+    const snap = ses.snapshot(40); ok(snap.held, diff + ': waiting'); ok(snap.pos <= a.length - 1 + 1 + E.DIFFS[diff].slack + 1e-6, diff + ' stopped at the next beat: ' + snap.pos); ok(log.on.length < 12 && ses.state !== 'ended', diff + ' did not play on alone: ' + log.on.length);
+    const p1 = ses.snapshot(41).pos, p2 = ses.snapshot(60).pos; eq(p1, p2, diff + ': position does not advance without strokes');
+    // strokes again: it goes on
+    const b = regular(61, 100, 24); let i = 0; for (let now = 40.025; now < 85; now += 0.025) { o.now = now; while (i < b.length && b[i] <= now) ses.ictus(b[i++], {}); ses.tick(now); }
+    ok(ses.snapshot(85).pos > p2 + 5 || ses.state === 'ended', diff + ' resumed at the next stroke');
+  });
+  const en = new E.Session({ score: sc, diff: 'enjoy', sink: {} }); ok(E.DIFFS.enjoy.slack >= E.DIFFS.normal.slack, 'enjoy is forgiving about tempo accuracy, not about playing alone');
 });
 
 test('Session: pause stops everything and resume re-strikes what was sounding; a stray double hit does not move the tempo', () => {
@@ -290,6 +297,42 @@ test('Dynamics scoring: the scorer compares the same 0..1 scale as the guide (a 
   const off = (d, dl) => { const s = new E.Scorer(sc, E.DIFFS[d]); for (let b = 0; b < 40; b++) s.beat(b, Math.min(1, sc.dynAt(b + 0.5) + dl)); return s.dynSum / s.dynN; };
   ok(off('enjoy', 0.2) > off('normal', 0.2) && off('normal', 0.2) > off('maestro', 0.2), 'enjoy is the most forgiving');
   ok(off('enjoy', 0.2) > 0.6, 'enjoy forgives one mark of error');
+});
+
+// --- robust tempo: noisy / jittery / fast / slow stroke streams ---------------------------------------------------------------------------------
+const rngT = (seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)(11);
+function runStrokes(sc, times, until) { const ses = new E.Session({ score: sc, diff: 'normal', sink: {} }), o = { now: 0 }, log = drive(ses, o), bpms = []; let i = 0;
+  for (let now = 0; now < until; now += 0.025) { o.now = now; while (i < times.length && times[i] <= now) { ses.ictus(times[i++], {}); if (ses.clock.running) bpms.push(ses.clock.bpm()); } ses.tick(now); } return { ses, bpms }; }
+test('Tempo robustness: clamped to 0.6x..1.4x of the marked tempo, +-12 % per beat, double triggers and jitter ignored, recovers after a burst (mouse, touch, keys, phone)', () => {
+  const sc = tiny({ bars: 40 }), g = 100; // marked 100 bpm
+  // devices: jitter (sigma, s) and double-trigger probability
+  const dev = { mouse: [0.012, 0.0], touch: [0.02, 0.15], keys: [0.015, 0.0], motion: [0.03, 0.1] };
+  Object.keys(dev).forEach(d => {
+    const [sig, dbl] = dev[d]; let t = 1; const ts = [t]; for (let k = 1; k < 60; k++) { t += 0.6 + (rngT() - 0.5) * 2 * sig; ts.push(t); if (rngT() < dbl) ts.push(t + 0.05 + rngT() * 0.07); }
+    const r = runStrokes(sc, ts.sort((a, b) => a - b), t + 3); const mx = Math.max(...r.bpms), mn = Math.min(...r.bpms);
+    ok(mx <= g * 1.4 + 1e-6 && mn >= g * 0.6 - 1e-6, d + ' stays inside the clamp: ' + mn.toFixed(0) + '..' + mx.toFixed(0)); ok(mx < 118 && mn > 85, d + ' steady 100 bpm stays near 100: ' + mn.toFixed(0) + '..' + mx.toFixed(0));
+  });
+  // a burst of very fast strokes (4 per second for 3 s) cannot push the tempo past the clamp and does not run away; steady conducting afterwards recovers
+  let t = 1; const ts = []; for (let k = 0; k < 8; k++) { ts.push(t); t += 0.6; } for (let k = 0; k < 12; k++) { ts.push(t); t += 0.25; } for (let k = 0; k < 20; k++) { ts.push(t); t += 0.6; }
+  const r = runStrokes(sc, ts, t + 2); ok(Math.max(...r.bpms) <= 140.5, 'burst: never above 1.4x (' + Math.max(...r.bpms).toFixed(0) + ')'); ok(Math.abs(r.bpms[r.bpms.length - 1] - 100) < 8, 'recovers to 100: ' + r.bpms[r.bpms.length - 1].toFixed(0));
+  // per-beat change limit
+  const ts2 = []; t = 1; for (let k = 0; k < 8; k++) { ts2.push(t); t += 0.6; } for (let k = 0; k < 10; k++) { ts2.push(t); t += 0.45; }
+  const r2 = runStrokes(sc, ts2, t + 1); for (let i = 1; i < r2.bpms.length; i++) ok(r2.bpms[i] <= r2.bpms[i - 1] * 1.13 && r2.bpms[i] >= r2.bpms[i - 1] / 1.13, 'per-beat change <= 12 %: ' + r2.bpms[i - 1].toFixed(1) + ' -> ' + r2.bpms[i].toFixed(1));
+  // slow: strokes at 55 bpm (below the 0.6 floor would be 60): the tempo floors at 60
+  const ts3 = []; t = 1; for (let k = 0; k < 20; k++) { ts3.push(t); t += 60 / 50; } const r3 = runStrokes(sc, ts3, t + 1); ok(Math.min(...r3.bpms) >= 60 - 1e-6, 'floor 0.6x: ' + Math.min(...r3.bpms).toFixed(1));
+  // the first strokes set the start tempo from the marked tempo (count-in), not from a noisy first interval
+  const r4 = runStrokes(sc, [1, 1.9], 3); ok(r4.bpms[0] > 70 && r4.bpms[0] < 100, 'count-in leans on the marked tempo: ' + r4.bpms[0].toFixed(1));
+  // marked tempo changes in a piece are not mistaken for wild strokes
+  const zf = loadScore('zauberflote'); let tz = 1; const tzs = [tz]; for (let k = 1; k < zf.nBeats + 2; k++) { tz += 60 / zf.bpmAt(Math.max(0, k - 1)); tzs.push(tz); }
+  const rz = runStrokes(zf, tzs, tz + 8); ok(rz.ses.state === 'ended', 'a conductor who follows the marked Adagio -> Allegro change finishes the piece');
+});
+test('BeatDetector: the refractory period follows the beat period; sliceScore cuts a movement into parts', () => {
+  const det = new E.BeatDetector({ scale: 400 }); det.setPeriod(1.0);
+  const ev = bounce(det, { bpm: 150, amp: 100, beats: 12 }); ok(ev.length <= 6, 'strokes closer than 0.6 x the period are not beats: ' + ev.length);
+  const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'orchestra/scores/dvorak7-1.json'), 'utf8')), idx = JSON.parse(fs.readFileSync(path.join(ROOT, 'orchestra/scores/index.json'), 'utf8')).pieces.find(p => p.id === 'dvorak7-1');
+  ok(idx.parts.length === 2); const w = new E.Score(j); let n = 0;
+  idx.parts.forEach(p => { const s = new E.Score(E.sliceScore(j, p.from, p.to)); eq(s.nBeats, p.to - p.from); eq(s.dyn.length, s.nBeats); ok(s.nBars > 100); n += s.noteCount; ok(s.bpmAt(0) > 30); s.cues.forEach(c => ok(c.b >= 0 && c.b < s.nBeats)); });
+  ok(n <= w.noteCount && n > w.noteCount * 0.97, 'parts keep nearly every note: ' + n + ' of ' + w.noteCount);
 });
 
 run('orchestra-engine');

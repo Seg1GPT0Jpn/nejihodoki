@@ -193,6 +193,28 @@
       ctx.restore();
     }
 
+
+    // ---- baton-path guide (toggle) and the flash on every registered beat ------------------------------------------------------------------------
+    function drawGuide(st) {
+      if (!st.guide) return;
+      const pat = PATTERNS[st.pattern] || PATTERNS[2], w = A.scale * 0.46, h = A.scale * 0.5, bx = A.W / 2 - w / 2, by = A.stageH * 0.22;
+      const P = pat.map(p => [bx + p[0] * w, by + p[1] * h]);
+      ctx.save(); ctx.globalAlpha = 0.5; ctx.strokeStyle = st.pal.gold; ctx.lineWidth = 2.5; ctx.setLineDash([6, 6]); ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke(); ctx.setLineDash([]);
+      const fs = Math.max(11, Math.round(A.scale * 0.045)); ctx.font = '900 ' + fs + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let i = 0; i < st.pattern; i++) { const q = P[Math.min(P.length - 1, i + 1)], on = i === st.beatInBar, r = fs * (on ? 0.95 : 0.7);
+        ctx.globalAlpha = on ? 0.95 : 0.55; ctx.fillStyle = i === 0 ? st.pal.gold : st.pal.panel; ctx.strokeStyle = st.pal.gold; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = i === 0 ? '#2a1708' : st.pal.ink; ctx.fillText(String(i + 1), q[0], q[1] + 1); }
+      if (st.guideTip) { ctx.globalAlpha = 0.9; ctx.font = '800 ' + Math.max(10, Math.round(A.scale * 0.034)) + 'px system-ui, sans-serif'; ctx.fillStyle = st.pal.ink; ctx.textBaseline = 'top'; ctx.fillText(st.guideTip, A.W / 2, P[1][1] + fs * 1.1); }
+      ctx.restore();
+    }
+    function drawBeatFlash(st) {
+      const f = st.bflash; if (!f || f.k <= 0) return;
+      ctx.save(); const k = clamp(f.k, 0, 1), col = f.state === 'ok' ? st.pal.good : f.state === 'fast' || f.state === 'slow' ? st.pal.bad : st.pal.gold;
+      ctx.globalAlpha = k * 0.85; ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(f.x, f.y, 10 + (1 - k) * A.scale * 0.1, 0, TAU); ctx.stroke();
+      if (f.text) { ctx.globalAlpha = Math.min(1, k * 1.6); ctx.font = '900 ' + Math.max(12, Math.round(A.scale * 0.05)) + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillStyle = col; ctx.fillText(f.text, clamp(f.x, 60, A.W - 60), Math.max(24, f.y - 18 - (1 - k) * 10)); }
+      ctx.restore();
+    }
+
     // ---- everything -----------------------------------------------------------------------------------------------------------------------------------
     // st: see index.html (act, glow, keys, level, target, mark, pattern, beatInBar, trail, dyn, hist, cues, pos, barText, timeText, hint, ...)
     A.draw = function (st) {
@@ -212,7 +234,7 @@
       // podium
       const p = A.podium; c.fillStyle = st.pal.podium; roundRect(c, p.x - 34, p.y - 10, 68, 22, 8); c.fill(); c.fillStyle = st.pal.podiumTop; roundRect(c, p.x - 34, p.y - 14, 68, 12, 6); c.fill();
       if (st.silhouette) { c.fillStyle = st.dark ? '#120a0d' : '#3a2018'; c.beginPath(); c.arc(p.x, p.y - 38, 9, 0, TAU); c.fill(); c.beginPath(); c.ellipse(p.x, p.y - 17, 14, 14, 0, Math.PI, TAU); c.fill(); }
-      drawPattern(st, c); drawMeter(st); drawBaton(st);
+      drawPattern(st, c); drawMeter(st); drawGuide(st); drawBaton(st); drawBeatFlash(st);
       // centre message
       if (st.msg) {
         c.save(); c.font = '800 ' + Math.max(14, Math.round(A.scale * 0.045)) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';

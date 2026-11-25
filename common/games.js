@@ -861,12 +861,12 @@
       flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: true },
       versus: null,
       // total = sum over the 8 pieces of the best score (0-100, best of the three difficulties); ranking is off and nothing reads rankSource
-      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 800, maxRate: null },
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 3000, maxRate: null },
       rankSource: { key: 'kusoge.orchestra.save', paths: ['total'], agg: 'first', offset: 0 },
-      record: { key: 'kusoge.orchestra.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n} / 24', en: '★ {n} / 24' } },
+      record: { key: 'kusoge.orchestra.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
       keys: {
-        'kusoge.orchestra.save': '{ v:1, total（8曲のベスト得点の合計）, stars（曲ごとの最高の★の合計）, p:{ <曲 beethoven5|beethoven7|nachtmusik|zauberflote|dvorak7|midsummer|rossini|egmont>:{ b0,s0（たのしむのベスト点と★）, b1,s1（ふつう）, b2,s2（マエストロ）, n（遊んだ回数）} }, stats:{ plays, finishes, cues（出した入りの数）, perfect（ばっちりの入り）, beats（振った拍）, three（★3の数）}, set:{ diff（最後のむずかしさ）, piece }, tut }',
-        'kusoge.orchestra.prefs': '音質と動きセンサー { quality: auto|hi|lo, motion }。この端末だけ（同期しない）',
+        'kusoge.orchestra.save': '{ v:1, total（曲ごとのベスト得点の合計）, stars（曲ごとの最高の★の合計）, p:{ <曲ID（beethoven5, nachtmusik, dvorak7-1, dvorak9-4, dvorak8-1 など。長い楽章は <ID>~a / <ID>~b の前半・後半も）>:{ b0,s0（たのしむのベスト点と★）, b1,s1（ふつう）, b2,s2（マエストロ）, n（遊んだ回数）} }, stats:{ plays, finishes, cues（出した入りの数）, perfect（ばっちりの入り）, beats（振った拍）, three（★3の数）}, set:{ diff（最後のむずかしさ）, piece }, tut }',
+        'kusoge.orchestra.prefs': '音質・動きセンサー・振りの感度・振り方ガイド { quality: auto|hi|lo, motion, sens, guide }。この端末だけ（同期しない）',
         'kusoge.orchestra.howto': '遊び方を見た（\'1\'）',
       },
       // counters, best scores and stars only grow (max); the last difficulty and piece are whole values (newest)
@@ -1219,7 +1219,7 @@
       { id: 'orchestra.fin1', tier: 1, icon: 'check', title: { ja: 'はじめての演奏', en: 'First Performance' }, desc: { ja: '曲を最後まで指揮する', en: 'Conduct a piece to the end' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.finishes' }, gte: 1 } },
       { id: 'orchestra.three', tier: 2, icon: 'star', title: { ja: '星3つの演奏', en: 'Three-Star Concert' }, desc: { ja: 'どれかの曲で★3をとる', en: 'Earn three stars on any piece' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 1 } },
       { id: 'orchestra.perfect20', tier: 2, icon: 'star', title: { ja: '入りの名人', en: 'Cue Master' }, desc: { ja: '「ばっちり」の入りを合わせて20回出す', en: 'Give 20 perfect cues in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.perfect' }, gte: 20 } },
-      { id: 'orchestra.tour', tier: 3, icon: 'trophy', title: { ja: '8曲を指揮した', en: 'All Eight Pieces' }, desc: { ja: '8曲ぜんぶを「ふつう」で最後まで指揮する', en: 'Conduct all eight pieces to the end on Normal' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'p', each: 's1', measure: 'countGte', min: 1 }, gte: 8 } },
+      { id: 'orchestra.tour', tier: 3, icon: 'trophy', title: { ja: '8曲を指揮した', en: 'Eight Pieces' }, desc: { ja: 'どれでも8曲を「ふつう」で最後まで指揮する', en: 'Conduct any eight pieces to the end on Normal' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'p', each: 's1', measure: 'countGte', min: 1 }, gte: 8 } },
       { id: 'orchestra.three5', tier: 4, icon: 'trophy', title: { ja: '★3のコンサート', en: 'Standing Ovation' }, desc: { ja: '★3の演奏を合わせて5回する', en: 'Earn three stars five times in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 5 }, grantsTitle: { ja: 'マエストロ', en: 'Maestro' } },
     ],
   };

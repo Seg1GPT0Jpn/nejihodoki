@@ -34,10 +34,11 @@
     hn: { inst: 'hn', ja: 'ホルン', en: 'Horns', ab: { ja: 'Hn', en: 'Hn' }, x: 0.30, y: 0.25, pan: -0.34, back: 0.78, n: 4, hue: 48, mix: 1.0 },
     tp: { inst: 'tp', ja: 'トランペット', en: 'Trumpets', ab: { ja: 'Tp', en: 'Tp' }, x: 0.46, y: 0.19, pan: -0.05, back: 0.9, n: 2, hue: 52, mix: 0.95 },
     tb: { inst: 'tb', ja: 'トロンボーン', en: 'Trombones', ab: { ja: 'Tb', en: 'Tb' }, x: 0.62, y: 0.19, pan: 0.2, back: 0.9, n: 3, hue: 36, mix: 0.95 },
+    tu: { inst: 'tu', ja: 'チューバ', en: 'Tuba', ab: { ja: 'Tu', en: 'Tu' }, x: 0.74, y: 0.27, pan: 0.5, back: 0.9, n: 1, hue: 24, mix: 0.95 },
     timp: { inst: 'timp', ja: 'ティンパニ', en: 'Timpani', ab: { ja: 'Timp', en: 'Timp' }, x: 0.80, y: 0.24, pan: 0.44, back: 0.95, n: 1, hue: 0, mix: 1.0 },
     perc: { inst: 'bd', ja: '大太鼓', en: 'Bass drum', ab: { ja: 'BD', en: 'BD' }, x: 0.12, y: 0.36, pan: -0.55, back: 0.9, n: 1, hue: 0, mix: 0.9 },
   };
-  const SECTION_ORDER = ['vln1', 'vln2', 'vla', 'vc', 'cb', 'fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'timp', 'perc'];
+  const SECTION_ORDER = ['vln1', 'vln2', 'vla', 'vc', 'cb', 'fl', 'ob', 'cl', 'fg', 'hn', 'tp', 'tb', 'tu', 'timp', 'perc'];
   const DYN_MARKS = ['pp', 'pp', 'p', 'mp', 'mf', 'f', 'f', 'ff', 'ff']; // digit 0..8 of the score's dynamics guide
   const KEYS = '1234567890qwertyu'.split('');
 
@@ -70,7 +71,7 @@
   // Difficulty
   // ------------------------------------------------------------------------------------------------------------------------------------------
   const DIFFS = {
-    enjoy: { id: 'enjoy', slack: Infinity, wait: false, autoCue: true, uncued: 1, tol: 1.7, steady: 1.8, assist: 0.35, stars: [1, 60, 78], cueWeight: 0 },
+    enjoy: { id: 'enjoy', slack: 0.6, wait: true, autoCue: true, uncued: 1, tol: 1.7, steady: 1.8, assist: 0.35, stars: [1, 60, 78], cueWeight: 0 },
     normal: { id: 'normal', slack: 0.3, wait: true, autoCue: false, uncued: 0.42, tol: 1.0, steady: 1.0, assist: 0, stars: [50, 70, 85], cueWeight: 0.28 },
     maestro: { id: 'maestro', slack: 0.1, wait: true, autoCue: false, uncued: 0.15, tol: 0.72, steady: 0.7, assist: 0, stars: [55, 75, 88], cueWeight: 0.3 },
   };
@@ -128,6 +129,26 @@
   Score.prototype.barOf = function (b) { return this.barOfBeat[clamp(Math.floor(b), 0, this.nBeats - 1)] + 1; };
   Score.prototype.guideSeconds = function () { let s = 0; for (let b = 0; b < this.nBeats; b++) s += 60 / this.bpmAt(b); return s; };
 
+
+  // sliceScore(json, from, to): a copy of a score JSON that holds only the conductor beats [from, to) (both bar lines). Used for the "part" choice of long movements.
+  // Notes that start before `from` are dropped (like the build tool's excerpts), notes running past `to` are cut; cues, tempo and dynamics guide are shifted.
+  function sliceScore(j, from, to) {
+    const bt = [], bpbs = []; j.grid.forEach(g => { for (let b = 0; b < g[1]; b++) { for (let i = 0; i < g[2]; i++) bt.push(g[0] + (b * g[2] + i) * g[3]); bpbs.push([g[2], g[3]]); } });
+    const n = bt.length; from = clamp(Math.round(from), 0, n - 1); to = clamp(Math.round(to), from + 1, n);
+    const t0 = bt[from], lastTk = j.grid[j.grid.length - 1][3], t1 = to < n ? bt[to] : bt[n - 1] + lastTk;
+    // grid: walk bars, start a bar at beat index `from`
+    const grid = []; let bi = 0, beat = 0;
+    j.grid.forEach(g => { for (let b = 0; b < g[1]; b++) { const bs = beat, be = beat + g[2]; beat = be; if (bs < from || bs >= to) continue;
+      const last = grid[grid.length - 1]; if (last && last[2] === g[2] && last[3] === g[3]) last[1]++; else grid.push([bt[bs] - t0, 1, g[2], g[3]]); } });
+    const bpm = []; let cur = j.bpm[0][1]; j.bpm.forEach(r => { if (r[0] <= from) cur = r[1]; });
+    bpm.push([0, cur]); j.bpm.forEach(r => { if (r[0] > from && r[0] < to) bpm.push([r[0] - from, r[1]]); });
+    const sec = j.sec.map(sc => { const out = []; let t = 0, prev = 0;
+      for (let i = 0; i < sc.n.length; i += 4) { t += sc.n[i]; if (t < t0 || t >= t1) continue; const d = sc.n[i + 2], ad = Math.min(Math.abs(d), t1 - t); out.push(t - t0 - prev, sc.n[i + 1], d < 0 ? -ad : ad, sc.n[i + 3]); prev = t - t0; }
+      return { id: sc.id, inst: sc.inst, n: out }; }).filter(sc => sc.n.length);
+    const o = Object.assign({}, j, { id: j.id, grid, bpm, dyn: j.dyn.slice(from, to), cues: (j.cues || []).filter(c => c[0] >= from && c[0] < to).map(c => [c[0] - from, c[1]]), nBeats: to - from, sec });
+    return o;
+  }
+
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // BeatDetector: baton -> ictus.  A stroke runs from one turning point to the next. The turning point that ends a stroke which went down or sideways is an ictus;
   // the turning point at the top of a rebound (a stroke that went up) is not. Units: positions are in pixels, scale = min(stage width, height).
@@ -139,6 +160,8 @@
   }
   BeatDetector.prototype.reset = function () { this.s = null; this.last = -1e9; this.px = this.py = null; };
   BeatDetector.prototype.setScale = function (s) { this.scale = Math.max(50, s); };
+  // the current beat period (s): no second beat closer than 0.6 x period (and 180 ms)
+  BeatDetector.prototype.setPeriod = function (p) { this.period = p; };
   BeatDetector.prototype.push = function (x, y, t) {
     const out = [], S = this.scale;
     if (!this.s) { this.s = { x0: x, y0: y, t0: t, fx: x, fy: y, ft: t, fd: 0, pk: 0 }; this.px = x; this.py = y; return out; }
@@ -155,7 +178,7 @@
     if (back >= rev) {
       const dx = s.fx - s.x0, dy = s.fy - s.y0, len = Math.hypot(dx, dy) / S;
       const up = dy < -0.55 * Math.hypot(dx, dy);
-      if (len >= this.minStroke && !up && s.ft - this.last >= this.minGap) {
+      if (len >= this.minStroke && !up && s.ft - this.last >= Math.max(this.minGap, 0.18, 0.6 * (this.period || 0))) {
         out.push({ type: 'ictus', t: s.ft, amp: len, speed: s.pk, x: s.fx, y: s.fy, dir: Math.atan2(dy, dx) });
         this.last = s.ft;
       }
@@ -301,9 +324,22 @@
     this.t1 = 0; this.estI = 0; this.lastIct = null; this.lastK = -1; this.kAcc = -1; this.cursor = 0; this.level = o.level != null ? o.level : 0.45; this.sound = this.level;
     this.lastTick = null; this.beatDone = -1; this.endAt = null; this.log = []; this.heldNow = false; this.paused = false;
     this.minBpm = o.minBpm || 24; this.maxBpm = o.maxBpm || 190; this.cueFlash = [];
-    this.openNotes = new Map(); this.firstBpm = null;
+    this.openNotes = new Map(); this.firstBpm = null; this.ivs = []; this.estR = 1; this.tempoRange = (this.score.json && this.score.json.tempoRange) || [0.6, 1.4];
   }
   Session.prototype.guideBpm = function (b) { return this.score.bpmAt(b); };
+  // the tempo the conductor may reach at conducted beat b: 0.6x .. 1.4x of the marked tempo (per piece: `tempoRange` in the score json)
+  Session.prototype.bpmLimits = function (b) { const g = this.score.bpmAt(Math.max(0, b || 0)); return [Math.max(this.minBpm, g * this.tempoRange[0]), Math.min(this.maxBpm, g * this.tempoRange[1])]; };
+  // how far the current tempo is from the marked one: 'ok' | 'fast' | 'slow' (for the on-screen hint)
+  Session.prototype.tempoState = function (b) { if (!this.clock.running) return 'ok'; const r = this.clock.bpm() / this.score.bpmAt(Math.max(0, b != null ? b : this.clock.posAt(this.lastTick || 0))); return r > 1.18 ? 'fast' : r < 0.84 ? 'slow' : 'ok'; };
+  // The conductor's tempo is kept as a RATIO to the marked tempo (estR), so a marked tempo change (Adagio -> Allegro) is not mistaken for a wild stroke.
+  Session.prototype.periodAt = function (k) { return 60 / (this.estR * this.score.bpmAt(Math.max(0, k))); }; // expected seconds from beat k to k+1
+  Session.prototype.refractory = function () { return Math.max(0.18, 0.6 * this.periodAt(this.kAcc)); };
+  // tempo ratio from the recent beat intervals: median of the last 3-4, smoothed, at most +-12 % per beat, clamped to the piece's range
+  Session.prototype.nextRatio = function (I, k) {
+    const iv = this.ivs; iv.push(this.score.bpmAt(Math.max(0, k - 1)) * 0 + (60 / I) / this.score.bpmAt(Math.max(0, k - 1))); if (iv.length > 4) iv.shift();
+    const a = iv.slice().sort((x, y) => x - y), med = a.length % 2 ? a[(a.length - 1) >> 1] : 0.5 * (a[a.length / 2 - 1] + a[a.length / 2]);
+    const R = clamp(this.estR * 0.5 + med * 0.5, this.estR * 0.88, this.estR * 1.12); return clamp(R, this.tempoRange[0], this.tempoRange[1]);
+  };
   Session.prototype.pos = function (t) { return this.clock.posAt(t); };
   Session.prototype.bpm = function () { return this.clock.running ? this.clock.bpm() : 0; };
   // an ictus at time t: returns what it did
@@ -316,9 +352,10 @@
       const I = t - this.t1;
       if (I < 0.25) return { kind: 'stray' };
       if (I > 2.6) { this.t1 = t; this.lastIct = t; return { kind: 'prep' }; }
-      const bpm = clamp(60 / I, this.minBpm, this.maxBpm);
-      this.estI = 60 / bpm; this.state = 'playing';
-      this.clock.start(t + this.lag, 0, bpm, this.diff.slack === Infinity ? Infinity : 0 + this.diff.slack + 1);
+      // count-in: the starting tempo leans on the marked tempo, not only on the (noisy) first interval; the first interval is not trusted outside 0.6x..1.4x
+      const g0 = this.score.bpmAt(0), lim = this.bpmLimits(0), bpm = clamp(Math.sqrt(clamp(60 / I, lim[0], lim[1]) * g0), lim[0], lim[1]);
+      this.estR = bpm / g0; this.estI = 60 / bpm; this.state = 'playing'; this.ivs = [this.estR];
+      this.clock.start(t + this.lag, 0, bpm, this.diff.slack + 1);
       this.kAcc = 0; this.lastIct = t; this.lastTick = t; this.firstBpm = bpm; this.scorer.ictus(0, bpm, false);
       this.log.push({ t, k: 0, bpm, kind: 'start' });
       return { kind: 'start', bpm };
@@ -327,15 +364,16 @@
     // or behind can never lock the conductor out; the clock then speeds up or slows down a little to meet the player.
     const gap = t - this.lastIct;
     const held = this.clock.waiting(t + this.lag);
-    if (gap < 0.4 * this.estI || gap < 0.2) return { kind: 'stray' };
-    const n = held ? 1 : Math.max(1, Math.round(gap / this.estI)), k = this.kAcc + n;
-    const rawI = gap / n; let I = rawI; if (held || I < 0.45 * this.estI || I > 2.2 * this.estI) I = this.estI; // after a wait, or a wild jump: keep the tempo
-    this.estI = this.estI * 0.4 + I * 0.6;
+    if (gap < this.refractory()) return { kind: 'stray' }; // a second trigger of the same stroke, or jitter
+    const n = held ? 1 : Math.max(1, Math.round(gap / this.periodAt(this.kAcc))), k = this.kAcc + n;
+    const rawI = gap / n; let I = rawI; const exp = this.periodAt(this.kAcc), outlier = held || I < 0.5 * exp || I > 2 * exp; // after a wait, or a wild jump: not a tempo measurement
+    if (!outlier) this.estR = this.nextRatio(I, k);
+    this.estI = this.periodAt(k);
     const posHere = this.clock.posAt(t + this.lag), e = posHere - k; // e > 0: the clock is ahead of the player (the player is late)
-    const bpm = clamp(60 / this.estI, this.minBpm, this.maxBpm), rate = bpm * clamp(1 - 0.5 * e, 0.7, 1.15);
+    const bpm = this.estR * this.score.bpmAt(Math.max(0, k)), lim = this.bpmLimits(k), rate = clamp(bpm * clamp(1 - 0.5 * e, 0.7, 1.15), lim[0], lim[1]); // the catch-up never leaves the piece's tempo range
     this.kAcc = k; this.lastIct = t;
     // the last beat of the piece is the last one the orchestra waits for: after it the final bar plays out by itself
-    const slack = this.diff.slack === Infinity || k >= this.score.nBeats - 1 ? Infinity : k + 1 + this.diff.slack;
+    const slack = k >= this.score.nBeats - 1 ? Infinity : k + 1 + this.diff.slack; // never plays on by itself: it holds at the next beat until the next stroke
     this.clock.retune(t, rate, slack);
     this.scorer.ictus(k, 60 / rawI, held);
     this.log.push({ t, k, bpm, e, kind: held ? 'resume' : 'beat' });
@@ -396,7 +434,7 @@
     if (!this.paused) return; this.paused = false;
     if (this.clock.running) {
       const bpm = this.clock.bpm(); this.clock.horizon = -Infinity;
-      this.clock.start(now + 0.25, this.pausedPos, bpm, this.diff.slack === Infinity ? Infinity : this.pausedPos + 1 + this.diff.slack);
+      this.clock.start(now + 0.25, this.pausedPos, bpm, this.pausedPos + 1 + this.diff.slack);
       this.lastTick = now; this.lastIct = now + 0.25 + this.estI; this.kAcc = Math.max(this.kAcc, Math.floor(this.pausedPos) - 1);
       // re-strike what should be sounding
       const ev = this.score.events, B = this.pausedPos, on = new Map();
@@ -426,5 +464,5 @@
     return (inst === 'vln' || inst === 'vla' || inst === 'vc' || inst === 'cb') ? 'spic' : 'stac';
   }
 
-  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
+  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
 });

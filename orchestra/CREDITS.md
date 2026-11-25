@@ -4,9 +4,9 @@
 VSCO 2 Community Edition, Sam Gossner / Versilian Studios, **CC0 1.0**. https://github.com/sgossner/VSCO-2-CE
 Details, scope and the rebuild recipe: `orchestra/samples/LICENSES.txt`. Tool: `tools/build-orchestra-samples.js`.
 
-## Scores (all Public Domain)
+## Scores (Public Domain, except the Dvořák 9 pieces: CC BY-SA 3.0)
 The note data comes from the MIDI files of the Mutopia Project (https://www.mutopiaproject.org/). On 2026-11-25 each piece's own page
-(`cgibin/piece-info.cgi?id=N`) was opened and shows `Copyright: Public Domain`. The MIDI is a mechanical rendering of the LilyPond-engraved score
+(`cgibin/piece-info.cgi?id=N`) was opened and shows the licence given in the table (`Copyright: Public Domain`, or `Creative Commons Attribution-ShareAlike 3.0` for Mutopia 1793). The MIDI is a mechanical rendering of the LilyPond-engraved score
 (no performance data). The raw files are kept in `tools/orchestra-midi/`; `tools/build-orchestra-scores.js` converts them into `orchestra/scores/*.json`.
 
 | id | Composer | Work | Mutopia | MIDI file(s) used | Licence |
@@ -15,14 +15,48 @@ The note data comes from the MIDI files of the Mutopia Project (https://www.muto
 | beethoven7 | L. v. Beethoven | Symphony No. 7, Op. 92, II (Allegretto) | [595](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=595) | Symphony7_2.mid | Public Domain |
 | nachtmusik | W. A. Mozart | Eine kleine Nachtmusik, K.525, I | [2230](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=2230) | MozartWA-KV525-mov-01.mid | Public Domain |
 | zauberflote | W. A. Mozart | The Magic Flute, Overture, K.620 (Adagio, Allegro) | [248](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=248) | magicflute-00-overture-mids: adagioIscore.mid, allegroIscore.mid | Public Domain |
-| dvorak7 | A. Dvořák | Symphony No. 7, Op. 70, III (Scherzo), first part | [1901](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1901) | DvorakSYMPH7_conductor-2.mid | Public Domain |
+| dvorak7-1 | A. Dvořák | Symphony No. 7, Op. 70, I. Allegro maestoso | [1901](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1901) | DvorakSYMPH7_conductor.mid | Public Domain |
+| dvorak7-2 | A. Dvořák | Symphony No. 7, Op. 70, II. Poco adagio | [1901](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1901) | DvorakSYMPH7_conductor-1.mid | Public Domain |
+| dvorak7 | A. Dvořák | Symphony No. 7, Op. 70, III. Scherzo (Vivace), whole movement (earlier builds: first part only) | [1901](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1901) | DvorakSYMPH7_conductor-2.mid | Public Domain |
+| dvorak7-4 | A. Dvořák | Symphony No. 7, Op. 70, IV. Finale (Allegro) | [1901](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1901) | DvorakSYMPH7_conductor-3.mid | Public Domain |
+| dvorak9-1 | A. Dvořák | Symphony No. 9, Op. 95 "From the New World", I. Adagio - Allegro molto | [1793](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1793) | Mvt1_Adagio.mid | CC BY-SA 3.0 |
+| dvorak9-2 | A. Dvořák | Symphony No. 9, Op. 95 "From the New World", II. Largo | [1793](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1793) | Mvt2_Largo.mid | CC BY-SA 3.0 |
+| dvorak9-3 | A. Dvořák | Symphony No. 9, Op. 95 "From the New World", III. Scherzo (Molto vivace) | [1793](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1793) | Mvt3_Scherzo.mid | CC BY-SA 3.0 |
+| dvorak9-4 | A. Dvořák | Symphony No. 9, Op. 95 "From the New World", IV. Allegro con fuoco | [1793](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1793) | Mvt4_conFuoco.mid | CC BY-SA 3.0 |
+| dvorak8-1 | A. Dvořák | Symphony No. 8, Op. 88, I. Allegro con brio | MuseScore.com user 194052, set 5098438 (URL pending) | Dvorak8_Mvt1_AllegroConBrio.mid | CC0 1.0 (as read by the project owner from the MuseScore page; not verified by the build agent) |
+| dvorak8-4 | A. Dvořák | Symphony No. 8, Op. 88, IV. Allegro ma non troppo | MuseScore.com user 194052, one of [5379777](https://musescore.com/user/194052/scores/5379777), [5379779](https://musescore.com/user/194052/scores/5379779), [5379782](https://musescore.com/user/194052/scores/5379782) (movements II-IV; which is which is not confirmed) | Dvorak8_Mvt4_Finale.mid | CC0 1.0 (as read by the project owner; not verified by the build agent) |
 | midsummer | F. Mendelssohn | A Midsummer Night's Dream, Op. 61, No. 5 (Intermezzo) | [80](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=80) | Sommernachtstraum.mid | Public Domain |
 | rossini | G. Rossini | Eduardo e Cristina, Overture | [1634](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1634) | Eduardo_e_Cristina.mid | Public Domain |
 | egmont | L. v. Beethoven | Egmont Overture, Op. 84 | [547](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=547) | Egmont.mid | Public Domain |
 
 Excerpts are cut at bar lines (see `excerpt` in the tool). The "dynamics guide" and "tempo guide" shown in the game are derived by the tool (velocities where the
 MIDI carries dynamics, otherwise the number of sounding notes) and are a simplified aid, not the composer's markings. Some tempo marks in the MIDI were adjusted
-(Rossini's introduction), see `tempoOverride`. Pieces whose Mutopia licence was CC BY-SA (e.g. Beethoven Eroica, Dvořák 9) were left out.
+(Rossini's introduction), see `tempoOverride`. 
+### Share-alike pieces (Dvořák 9, `dvorak9-1` .. `dvorak9-4`)
+Mutopia piece 1793 (typeset with LilyPond 2.14.2, maintainer Keith OHara, source N. Simrock 1894, last updated 2011/Oct/03) is licensed **CC BY-SA 3.0**
+(https://creativecommons.org/licenses/by-sa/3.0/). The four score files `orchestra/scores/dvorak9-N.json` are derivative works of that MIDI and are
+therefore also licensed **CC BY-SA 3.0** (they carry `src.licence`, `src.licenceUrl` and `src.credit`, and the credit is shown in the app's credits table).
+Game code, art and the other pieces are unaffected. Changes: MIDI converted to the compact score format, conductor-beat grid, dynamics and tempo guide and cues derived by
+`tools/build-orchestra-scores.js`; the triangle (III) and the single cymbal note (IV) were left out (no sample); the cor anglais has no part of its own in the MIDI.
+
+### Dvořák 7 (Mutopia 1901, Public Domain)
+The Mutopia piece page shows `Copyright: Public Domain` and its zip holds all four movements (the conductor's score PDF states "typeset and placed in the public domain ... by J.F. Lucarelli",
+2014/01/18). Earlier builds used only the Scherzo; now all four movements are included.
+
+### Dvořák 8, I (`dvorak8-1`): licence status
+Source: a MIDI export of a MuseScore.com community score (user 194052, set 5098438), handed over by the project owner, who read the licence on the MuseScore page as CC0 (public-domain dedication).
+**I could not open musescore.com from the build environment (HTTP 403), so this licence is NOT verified by me; the page URL is still to be added** (credit text placeholder: "MuseScore.com user 194052, set 5098438 (CC0), URL pending").
+Please confirm the licence text on the page and replace the placeholder in `tools/build-orchestra-scores.js` (`credit`, `musescore.url`) before relying on it.
+Track mapping (the MIDI has empty track names and non-General-MIDI program numbers, so it was inferred from the full-score track order, the pitch ranges, the note onsets and the entrance bars; track 19 is empty):
+0,1 flutes (incl. piccolo) | 2,3 oboes | 4,5 clarinets | 6,7 bassoons | 8-11 horns | 12,13 trumpets | 14,15,16 trombones | 17 tuba | 18 timpani | 20 violins I | 21 violins II | 22 violas | 23 cellos | 24 basses.
+Evidence: monophonic parts with ranges inside each instrument's range (bassoons 35-76, horns 38-74, trumpets 58-79, tuba 31-55); clarinets, bassoons and horns enter at beat 0 and trumpets at beat 110 as in the opening of the movement; track 18 has only 5 distinct pitches (timpani); the pairs 0/1, 2/3, 4/5, 10/11 double each other (onset+pitch-class overlap 45-66 %); the five 20-24 tracks have the string ranges 55-100, 55-91, 48-83, 36-67, 26-56. Uncertain: tracks 0-3 (high woodwinds) could be assigned differently within the group (track 3 is polyphonic, so it may hold both oboes), and the viola track has 6746 notes (probably expanded tremolo/divisi). The tuba plays on the tuba samples (new `tu` seat in `engine.js`).
+The finale file (`dvorak8-4`, handed over later; its file name called it the first movement, but it is the Finale: it opens with the trumpets, 2/4, 24 tempo events, 116-126 beats/min) has the same 25-track layout and was mapped the same way; checks: trumpets (12,13) sound at beat 0, track 18 has 5 distinct pitches (timpani), ranges fit (tuba 31-43, trombone 3 36-55). Tracks 0,1 (flutes/piccolo up to MIDI 96) and the polyphonic tracks (track 5 here, track 3 in the first movement: two parts merged) are the least certain.
+Tempo (first movement): the file has 9 tempo events (138 quarter notes/min at the start, a ritardando to 97 around tick 238080 and back); the 4/4 bars are conducted in two beats per bar at the guide tempo (69-130 beats/min) and the game's 0.6x-1.4x tempo clamp is relative to these marked tempi.
+
+### Sources checked and not usable (2026-11-25)
+- Dvořák 8: not on Mutopia (the composer listing has only 5 pieces: Symphonies 7 and 9, Op. 4, String Quartet 12 and a song). IMSLP offers PDFs (scans, CC0/PD editions) and one accordion arrangement MuseScore file (not an orchestral score): no machine-readable orchestral file with a clear licence.
+- IMSLP Dvořák 7/9: PDFs only ("Source Files (0)"), no MusicXML/MIDI.
+- OpenScore / MuseScore.com / GitHub OpenScore: not reachable from the build environment (HTTP 403 from the proxy), so nothing could be verified there. Kunst der Fuge: not reachable. Nothing from these was used.
 
 ## Code and art
 All code, the procedural hall reverb and the stage art are original to this project. No real people are depicted.
