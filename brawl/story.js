@@ -41,7 +41,7 @@
     { id: 'r1b8', region: 1, at: [90, 30], name: T('ぼうしの ネコ', 'The Capped Cat'), say: T('はんでを あげるよ。それでも ぼくが かつけどね！', 'I will give you a handicap. I will win anyway!'),
       stage: 'house', foes: [{ ch: 'cat', lvl: 2, stk: 3 }], me: { stk: 3, hp: 40 }, rules: {}, reward: { bolts: 5, free: 'cat' } },
     { id: 'r1b9', region: 1, at: [74, 12], name: T('おおきな クマ', 'The Big Bear'), say: T('ぼくは ふとったんじゃない、サビで ふくらんだんだ！', 'I am not fat, the Rust puffed me up!'),
-      stage: 'bench', foes: [{ ch: 'bear', lvl: 2, stk: 3, size: 1.35, pal: 2 }], me: { stk: 3 }, rules: {}, reward: { bolts: 6, charm: 'j' } },
+      stage: 'bench', foes: [{ ch: 'bear', lvl: 1, stk: 3, size: 1.35, pal: 2 }], me: { stk: 3 }, rules: {}, reward: { bolts: 6, charm: 'j' } },
     { id: 'r1b10', region: 1, at: [52, 10], name: T('だなの サビ番', 'The Shelf Rust-Guard'), say: T('ここを通りたければ、わたしたちを たおしていけ！', 'If you want to pass, get through us!'),
       stage: 'shelf', foes: [{ ch: 'tank', lvl: 3, stk: 2 }, { ch: 'wiz', lvl: 2, stk: 2 }], me: { stk: 3 }, rules: {}, reward: { bolts: 8, free: 'ninja', charm: 'p' }, boss: 1 },
   ];

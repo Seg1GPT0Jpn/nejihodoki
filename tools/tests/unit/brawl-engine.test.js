@@ -47,7 +47,7 @@ test('the roster: 50 toys (18 + 32 newer) + a boss, 5 stages, original names, ev
 test('every move has bounded frames: startup >= 1, active window inside the move, total <= 90, damage and angles sane', () => {
   for (const id of E.CHAR_IDS.concat(['junk'])) for (const [k, m] of Object.entries(E.MOVES[id])) {
     const w = id + '.' + k;
-    ok(m.s >= 1 && m.s <= 30, w + ' startup ' + m.s); ok(m.a >= 1 && m.a <= 60, w + ' active ' + m.a);
+    ok(m.s >= 1 && m.s <= 30, w + ' startup ' + m.s); ok(m.a >= 1 && m.a <= 80, w + ' active ' + m.a);
     ok(m.t <= 90 && m.t >= m.s + 2, w + ' total ' + m.t); ok(m.s + m.a <= m.t + 1, w + ' window inside');
     if (m.kind === 'melee' || m.kind === 'dash' || m.kind === 'rise' || m.kind === 'grab' || m.kind === 'cmdgrab' || m.kind === 'spin') ok(m.hb.length >= 1 && m.hb.every(h => h.length === 5 && h[4] > 4 && h[4] < 90), w + ' hitboxes');
     if (m.kind !== 'grab' && m.kind !== 'buff') { ok(m.dmg >= 0 && m.dmg <= 30, w + ' dmg ' + m.dmg); ok(m.bkb >= 0 && m.bkb <= 60 && m.kbg >= 0 && m.kbg <= 80, w + ' kb'); }
@@ -299,6 +299,7 @@ test('every move of every toy hits a toy standing where its hitbox is (and every
         ok(evs.some(e => e.t === 'hit' && e.d === 1), id + ' the blast hits a toy at the bomb'); continue;
       }
       if (m.kind === 'counter') continue;
+      if (k === 'spU' && E.KINDS[m.kind] && E.KINDS[m.kind].recovery && !(m.hb && m.hb.length)) continue; // the new recoveries are checked in brawl-recovery.test.js
       if (m.kind === 'tele' && !m.hb.length) { const st = duel({ a: id, b: 'robo', bx: 400 }); const a = st.fighters[0], x0 = a.x, y0 = a.y; go(st, 1, bits[k], 0); let far = 0; for (let i = 0; i < m.t + 4; i++) { go(st, 1, 0, 0); far = Math.max(far, Math.hypot(a.x - x0, a.y - y0)); } ok(far > m.td * 0.5, id + ' warps ' + far.toFixed(0)); continue; }
       if (m.kind === 'reflect') { const st = duel({ a: id, b: 'tin', ax: 0, bx: 120 }); go(st, 1, bits[k], 0); const b = st.fighters[1]; b.face = -1; const evs = go(st, 40, (i) => i === 0 ? B.S : 0, 0); go(st, 1, 0, 0); continue; }
       if (m.kind === 'rise') for (const h of m.hb) cands.push([0, h[1] - 10]);
@@ -331,13 +332,14 @@ test('projectiles: a cork flies straight and disappears at the wall or after its
   s3.fighters[1].x = mine.x + 80; go(s3, 60, 0, 0); eq(s3.fighters[1].pct, 0, 'does not trigger far away'); s3.fighters[1].x = mine.x; s3.fighters[1].y = 0; s3.fighters[1].gr = 0; const e3 = go(s3, 5, 0, 0); ok(hits(e3).length === 1 && s3.pr.length === 0, 'goes off once');
 });
 
-test('the up special recovers: every toy gains height, and is helpless afterwards until it lands or grabs a ledge', () => {
+test('the up special recovers: every toy gains height or distance (or drops in above the stage), and is helpless afterwards unless its kind says otherwise', () => {
   for (const id of E.CHAR_IDS) {
+    const m = E.MOVES[id].spU, hold = E.KINDS[m.kind] && E.KINDS[m.kind].hold;
     const st = duel({ a: id }); const a = st.fighters[0]; a.y = -300; a.gr = -1; a.vy = 4; a.jumps = 0;
-    const y0 = a.y; let ymin = y0; go(st, 1, B.S | B.U, 0); for (let i = 0; i < 70; i++) { go(st, 1, 0, 0); ymin = Math.min(ymin, a.y); }
-    ok(ymin < y0 - 60, id + ' rises ' + (y0 - ymin).toFixed(0));
-    const s2 = duel({ a: id }); const b = s2.fighters[0]; b.y = -300; b.gr = -1; b.vy = 0; b.jumps = 0; go(s2, 1, B.S | B.U, 0); go(s2, 60, 0, 0); ok(b.help || b.gr >= 0, id + ' helpless after up special (or landed)');
-    go(s2, 1, B.A, 0); ok(b.s !== 'atk' || b.gr >= 0, 'cannot attack while helpless');
+    const y0 = a.y, x0 = a.x; let ymin = y0, dxm = 0; go(st, 1, B.S | B.U | B.R, 0); for (let i = 0; i < 70; i++) { go(st, 1, (hold && m.kind !== 'chargeleap' ? B.S : 0) | B.R, 0); ymin = Math.min(ymin, a.y); dxm = Math.max(dxm, Math.abs(a.x - x0)); }
+    ok(ymin < y0 - 50 || dxm > 100 || m.kind === 'dropin' || m.kind === 'magnet' || m.kind === 'tether', id + ' (' + m.kind + ') rises ' + (y0 - ymin).toFixed(0) + ' or travels ' + dxm.toFixed(0));
+    const s2 = duel({ a: id }); const b = s2.fighters[0]; b.y = -300; b.gr = -1; b.vy = 0; b.jumps = 0; go(s2, 1, B.S | B.U, 0); go(s2, 90, 0, 0); ok(m.nohelp || b.help || b.gr >= 0, id + ' helpless after up special (or landed)');
+    if (!m.nohelp) { go(s2, 1, B.A, 0); ok(b.s !== 'atk' || b.gr >= 0, 'cannot attack while helpless'); }
   }
 });
 

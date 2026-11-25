@@ -611,6 +611,33 @@
     c.restore();
   }
 
+
+  // 上とくぎ（もどる技）の見た目の目印：種類ごとに、ひと目でちがいがわかるように（炎・ローター・つな・ふうせん・あわ・雲・パラシュート…）
+  function drawRecFx(c, f, C, m) {
+    const k = f.ks || {}, x = f.x, y = f.y, cy = y - C.h * 0.5, t = R.t, fr = f.mf, T = fr - m.s;
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+    switch (m.kind) {
+      case 'rocket': { if (T >= 0 && T < m.d) { c.translate(Math.sin(t * 2) * 1.5, 0); c.fillStyle = 'rgba(255,200,80,' + (0.3 + 0.5 * T / m.d) + ')'; c.beginPath(); c.arc(x, y + 4, 8 + T * 0.6, 0, TAU); c.fill(); } else if (T >= m.d && T < m.d + m.a) { poly(c, [x - 8, y, x, y + 34 + Math.sin(t) * 6, x + 8, y], '#ff7a2a', 1.8); poly(c, [x - 4, y, x, y + 18, x + 4, y], '#ffd23f', 0); } break; }
+      case 'copter': { const w = Math.cos(t * 1.4) * 30; c.fillStyle = '#2a1d17'; c.fillRect(x - 3, y - C.h - 8, 6, 8); ell(c, x, y - C.h - 9, Math.abs(w) + 4, 3, '#d8dde3', 1.8); break; }
+      case 'jet': { for (let i = 0; i < 3; i++) circ(c, x - f.vx * (i + 1) * 1.4, cy - f.vy * (i + 1) * 1.4, 7 - i * 2, i ? 'rgba(127,216,255,.6)' : '#7fd8ff', 0); break; }
+      case 'tether': case 'magnet': { if (k.tt) { c.strokeStyle = m.kind === 'tether' ? '#e0a030' : '#d0453f'; c.lineWidth = m.kind === 'tether' ? 3 : 4; c.beginPath(); c.moveTo(x, cy); c.lineTo(k.tx, k.ty - C.h * 0.4); c.stroke(); circ(c, k.tx, k.ty - C.h * 0.4, 5, '#fff', 2); } break; }
+      case 'balloon': { c.strokeStyle = '#2a1d17'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x, y - C.h); c.lineTo(x, y - C.h - 22); c.stroke(); ell(c, x, y - C.h - 36, 18, 22, '#ff6a7a', 2.2); circ(c, x - 6, y - C.h - 42, 4, 'rgba(255,255,255,.6)', 0); break; }
+      case 'bubble': { c.fillStyle = 'rgba(190,230,255,.28)'; c.beginPath(); c.arc(x, cy, C.h * 0.75, 0, TAU); c.fill(); c.lineWidth = 2.4; c.strokeStyle = 'rgba(255,255,255,.85)'; c.stroke(); circ(c, x - 10, cy - 14, 4, 'rgba(255,255,255,.8)', 0); break; }
+      case 'lift': { box(c, x - 26, y + 2, 52, 9, 4, '#4a4f58', 2); for (let i = 0; i < 3; i++) limb(c, x - 20 + i * 20, y + 11, x - 20 + i * 20, y + 20 + Math.sin(t + i) * 3, 3, '#e0a030'); break; }
+      case 'cloudstep': { for (const [dx, r] of [[-14, 12], [0, 16], [14, 12]]) circ(c, x + dx, y + 8, r, 'rgba(255,255,255,.92)', 1.6); break; }
+      case 'parachute': { c.strokeStyle = '#2a1d17'; c.lineWidth = 1.4; for (const dx of [-24, 0, 24]) { c.beginPath(); c.moveTo(x, y - C.h * 0.8); c.lineTo(x + dx, y - C.h - 30); c.stroke(); } c.fillStyle = '#ffb02a'; c.beginPath(); c.ellipse(x, y - C.h - 34, 34, 20, 0, Math.PI, 0); c.fill(); c.lineWidth = 2.2; c.strokeStyle = '#2a1d17'; c.stroke(); break; }
+      case 'fold': { poly(c, [x, cy, x - 36 * f.face, cy - 14, x - 28 * f.face, cy + 10], 'rgba(255,255,255,.75)', 1.6); break; }
+      case 'gravflip': { for (let i = 0; i < 4; i++) { const yy = y + 6 - ((t * 3 + i * 14) % 56); c.strokeStyle = 'rgba(190,140,255,' + (0.8 - i * 0.15) + ')'; c.lineWidth = 3; c.beginPath(); c.moveTo(x - 10 + i * 7, yy + 6); c.lineTo(x - 10 + i * 7, yy - 6); c.stroke(); } break; }
+      case 'spring': { if (T >= 0) { c.strokeStyle = '#8a8f98'; c.lineWidth = 3; c.beginPath(); for (let i = 0; i < 6; i++) c.lineTo(x + (i % 2 ? 7 : -7), y + 2 + i * 4); c.stroke(); } break; }
+      case 'pogo': case 'drill': case 'spinup': { c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 2.4; c.beginPath(); c.ellipse(x, cy, 26, 10, t * 0.5, 0, TAU); c.stroke(); break; }
+      case 'ghostrise': { c.globalAlpha = 0.45; for (let i = 1; i < 4; i++) circ(c, x, cy + i * 14, 12 - i * 2, 'rgba(235,240,255,.7)', 0); break; }
+      case 'dropin': case 'blink': { if (f.inv > 0) { c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 2; c.beginPath(); c.arc(x, cy, 14 + (t % 10), 0, TAU); c.stroke(); } break; }
+      case 'slingshot': { if (T >= 0 && T < m.d) { c.strokeStyle = '#2a1d17'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x - f.face * 30, cy - 10); c.lineTo(x - f.face * 8, cy); c.lineTo(x - f.face * 30, cy + 10); c.stroke(); } break; }
+      case 'chargeleap': { if ((k.cc | 0) > 0) { c.strokeStyle = 'rgba(255,255,255,' + (0.4 + 0.5 * k.cc / m.cmax) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(x, y - 2, 12 + k.cc * 0.6, Math.PI, TAU); c.stroke(); } break; }
+      default: { for (let i = 0; i < 2; i++) circ(c, x - f.vx * i * 2, cy - f.vy * i * 2, 5 - i * 2, 'rgba(255,255,255,.6)', 0); }
+    }
+    c.restore();
+  }
   // ------------------------------------------------------------------ キャラクター
   function poseOf(f, st) {
     const C = E.CH[f.ch], a = R.fl[f.i] || {};
@@ -699,6 +726,7 @@
     c.restore();
     // 攻撃エフェクト（軌跡）
     if (f.s === 'atk') drawSwoosh(c, st, f, C);
+    if (f.s === 'atk') { const rm = E.MOVES[f.ch][f.mv]; if (rm && E.KINDS[rm.kind] && E.KINDS[rm.kind].recovery) drawRecFx(c, f, C, rm); }
     // まもり
     if (f.s === 'atk' && E.MOVES[f.ch][f.mv] && E.MOVES[f.ch][f.mv].kind === 'reflect' && f.rfl) { c.save(); c.globalAlpha = 0.45; c.fillStyle = '#ffd23f'; c.beginPath(); c.ellipse(f.x + f.face * 30, f.y - C.h * 0.5, 22, C.h * 0.55, 0, 0, TAU); c.fill(); c.globalAlpha = 0.9; c.lineWidth = 2.4; c.strokeStyle = '#fff'; c.stroke(); c.restore(); }
     if (f.s === 'shield') {

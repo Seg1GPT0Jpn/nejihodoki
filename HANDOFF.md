@@ -84,3 +84,5 @@
 - brawl（第2弾 2026-11-26）: おもちゃ50人（新16人の特殊技: 鏡・すなどけい・毒・たき火・巨大化・飛行・ワープドア・バンパー・爆弾・すりぬけ・かみなり・透明・磁力・ハンコ・回復・分裂。`B2BODY` で体の数値を調整、`PROJ_OPT`）。`NETV`=3（旧18人のゴールデンハッシュは固定）。顔絵は見えたときだけ描き、解放リストは8行ずつのページ。ストーリーモードの設計: brawl/STORY-DESIGN.md。
 
 - brawl ストーリー（第1段階 2026-11-26）: brawl/story.js、1章 10戦（おもちゃだな）、強化の盤（こうげき・ぼうぎょ・はやさ・もどり×10枠）、チャーム4種×2枠。保存は `sv`（rest:'newest'）。`NETV`=4。エンジンの追加キー（`mods.g` / `fighters[i].up,cm` / `E.makeVariant`）は、ストーリーの戦いでだけ入る。テスト: brawl-story.test.js、brawl-play 第18節。設計: brawl/STORY-DESIGN.md。
+
+- brawl リマスター第1弾（2026-11-26）: 全50人の上必殺技（復帰）を作りなおし。種類31（rocket・copter・blink・tether・balloon・spring・dashglide・drill・multihop・dropin・gravflip・arcreturn・lift・chargeleap・jet・cloudstep・pendulum・ripple・fold・magnet・wallbounce・spinup・slingshot・bubble・ghostrise・parachute・rebound・pogo ほか）。旗 `rr`（CPUの届く距離）/`hz`/`hold`/`nohelp`。復帰のちがいの距離（全組10以上）。`NETV`=5（ゴールデンハッシュ全て取りなおし）。テスト: brawl-recovery.test.js、brawl-play 第19節。通常技のリマスターは次。

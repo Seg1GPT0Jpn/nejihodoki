@@ -436,6 +436,121 @@
     if (fr === m.s) { if ((cx.inp & B.S) && (k.ch | 0) < m.cmax) { k.ch = (k.ch | 0) + 1; f.mf = m.s - 1; f.vx *= 0.5; if (k.ch % 10 === 0) f.pct = Math.max(0, rd(f.pct - 1.0)); } else k.ch = 0; }
   }, ai(st, f, m, T, c) { return f.pct > 35 && c.adx > 240 && c.r < 0.25 && c.lvl >= 2 ? { hold: B.D | B.S, pt: 70 } : null; } });
 
+
+  // ------------------------------------------------------------------------------------------------ 上とくぎ（もどる技）の種類：どれも recovery（おわったあと、着地かふちまで何もできない。nohelp なら できる）
+  // 動きは f.vx / f.vy で決める（物理は engine がやる）。ふちには、tryLedge が近づいたときにつかまらせる。m.hz＝横にとぶ（ふちより下でも使う）、m.rr＝CPU 用の「届く目安」
+  const ledgeAim = (st, f, C) => { const S = stageOf(st), i = nearestLedge(st, f), L = S.ledges[i]; return { i, L, hx: L.x - L.dir * (C.w / 2 + 3), hy: L.y + C.h * 0.9 }; };
+  const sgn = v => v > 0 ? 1 : v < 0 ? -1 : 0;
+  // 8方向：入力があればそのとおり。なければ、ふちのほうへ（CPU も人も、ねらわなくてよい）
+  function aim8(st, f, C, cx) {
+    let dx = cx.ax, dy = cx.ay;
+    if (!dx && !dy) { const t = ledgeAim(st, f, C); dx = Math.abs(t.hx - f.x) > 24 ? sgn(t.hx - f.x) : 0; dy = t.hy < f.y - 30 ? -1 : t.hy > f.y + 80 ? 1 : 0; if (!dx && !dy) dy = -1; }
+    const n = hyp(dx, dy) || 1; return [dx / n, dy / n];
+  }
+  const steer = (f, v, k) => { f.vx += (v - f.vx) * k; };
+  const RK = (name, o) => defineKind(name, Object.assign({ recovery: true }, o));
+  RK('rocket', { boxes(A, m, fr) { const e0 = m.s + m.d + m.a; return fr >= e0 && fr < e0 + 4 ? { hbs: m.hb, p: m, t: 0 } : null; }, tick(st, f, C, m, fr, cx) { // ためてから、まっすぐ上へ（横はほとんど動かせない）。おわりに爆発
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.d) { f.vx *= 0.8; f.vy = 0; cx.grav = 0; }
+    else if (fr >= m.s + m.d && fr < m.s + m.d + m.a) { f.vy = -m.rv * Math.min(1, 0.4 + (fr - m.s - m.d) * 0.12); f.vx = cx.ax * m.dv; cx.grav = 0; }
+    else if (fr === m.s + m.d + m.a) { f.vy = -1; f.mh = []; } } });
+  RK('copter', { hold: true, tick(st, f, C, m, fr, cx) { // ボタンをおしているあいだ、ゆっくり上がりながら、横は自由に（ねんりょうぎれまで）
+    cx.free = true; const k = ksOf(f); if (fr === m.s) { f.gr = -1; f.ffl = false; k.fu = m.fuel; }
+    if (fr >= m.s) { if ((cx.inp & B.S) && k.fu > 0) { k.fu--; f.mf = m.s + 1; cx.grav = 0; f.vy = -m.rv; steer(f, cx.ax * m.dv, 0.25); } else { f.vx *= 0.5; f.mf = m.t; } } } });
+  RK('blink', { tick(st, f, C, m, fr, cx) { // ランダムな方向（m.dirs のどれか）へワープ（その前は、すがたが消える）
+    cx.free = true;
+    if (fr >= 2 && fr < m.s) { f.inv = 2; f.vx = 0; f.vy = 0; cx.grav = 0; }
+    if (fr === m.s) { const t = ledgeAim(st, f, C); if (Math.abs(t.hx - f.x) > 20) f.face = sgn(t.hx - f.x); const d = m.dirs[Math.floor(rnd(st) * m.dirs.length)]; teleport(st, f, C, Object.assign({}, m, { dd: d, fixed: 1 })); } } });
+  RK('tether', { tick(st, f, C, m, fr, cx) { // フックを、いちばん近いふちへ。とどけば、ぐいっと引きよせられてつかまる。とどかなければ小さくとぶだけ
+    cx.free = true; const k = ksOf(f);
+    if (fr === m.s) { f.gr = -1; f.ffl = false; const t = ledgeAim(st, f, C); k.tx = t.hx; k.ty = t.hy; k.tt = hyp(t.hx - f.x, t.hy - f.y) <= m.range ? 1 : 0; if (!k.tt) { f.vy = -m.rv; } ev(st, { t: 'tether', i: f.i, x: f.x, y: f.y - 30, x2: t.hx, y2: t.hy, ok: k.tt }); }
+    if (fr > m.s && fr < m.s + m.a) { if (k.tt) { const dx = k.tx - f.x, dy = k.ty - f.y, d = hyp(dx, dy) || 1; cx.grav = 0; f.vx = dx / d * Math.min(m.sp, d); f.vy = dy / d * Math.min(m.sp, d); } }
+    if (fr === m.s + m.a) { if (k.tt) { f.vx *= 0.3; f.vy *= 0.3; } k.tt = 0; } }, range: 1 });
+  RK('balloon', { tick(st, f, C, m, fr, cx) { // ふわっと上がって、そのあと、ゆっくり落ちる（ずっと動かせる）。やられやすいが、長い
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.a) { const T = fr - m.s; cx.grav = 0; f.vy = T < m.b ? -m.rv : Math.min(f.vy + 0.06, m.sink); steer(f, cx.ax * m.dv, 0.15); } } });
+  RK('spring', { tick(st, f, C, m, fr, cx) { // 2だんジャンプ（1回めと2回めで、間をおく）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; f.vy = -m.rv; } if (fr === m.s + m.g) { f.vy = -m.rv2; ev(st, { t: 'tick', x: f.x, y: f.y }); }
+    if (fr > m.s) steer(f, cx.ax * m.dv, 0.2); } });
+  RK('dashglide', { hz: true, tick(st, f, C, m, fr, cx) { // 8方向のどこかへ、とんで、そのあとすべる（むきはとくぎを出した方向。入れなければ、ふちのほうへ）
+    cx.free = true; const k = ksOf(f);
+    if (fr === m.s) { f.gr = -1; f.ffl = false; const d = aim8(st, f, C, cx); k.dx = d[0]; k.dy = d[1]; if (d[0]) f.face = d[0] > 0 ? 1 : -1; }
+    if (fr >= m.s && fr < m.s + m.a) { f.vx = k.dx * m.sp; f.vy = k.dy * m.sp; cx.grav = 0; }
+    else if (fr >= m.s + m.a && fr < m.s + m.a + m.tail) { cx.grav = 0.12; f.vy = Math.min(f.vy, 0.9); f.vx *= 0.97; } } });
+  RK('drill', { melee: true, tick(st, f, C, m, fr, cx) { // らせんにのぼる（ゆれながら）。まわりに連続ヒット
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.a) { const T = fr - m.s; cx.grav = 0; f.vy = -m.rv; f.vx = sinT(T / m.per) * m.amp + cx.ax * m.dv; if (T % 6 === 0) f.mh = []; } } });
+  RK('multihop', { tick(st, f, C, m, fr, cx) { // m.n 回のジャンプ（m.g フレームおき）。横は自由
+    cx.free = true; const T = fr - m.s; if (T >= 0 && T % m.g === 0 && T / m.g < m.n) { f.gr = -1; f.ffl = false; f.vy = -m.rv; ev(st, { t: 'tick', x: f.x, y: f.y }); }
+    if (T > 0) steer(f, cx.ax * m.dv, 0.2); } });
+  RK('dropin', { tick(st, f, C, m, fr, cx) { // きえて、ステージの真ん中の上にあらわれる（どこにいても）。あらわれるまでは当たらない
+    cx.free = true; const S = stageOf(st);
+    if (fr >= 2 && fr < m.s + m.d) { f.inv = 3; f.vx = 0; f.vy = 0; cx.grav = 0; }
+    if (fr === m.s + m.d) { ev(st, { t: 'warp', i: f.i, x: f.x, y: f.y - C.h / 2, x2: S.spawn[0] + m.ox * (f.x < 0 ? -1 : 1), y2: S.spawn[1] + m.oy - C.h / 2 }); f.x = S.spawn[0] + m.ox * (f.x < 0 ? -1 : 1); f.y = S.spawn[1] + m.oy; f.vx = 0; f.vy = 0; f.gr = -1; f.inv = Math.max(f.inv, 10); } } });
+  RK('gravflip', { tick(st, f, C, m, fr, cx) { // しばらく、重力が上向きに。ぐんぐん上がる（横は自由）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.a) { cx.grav = -m.g; f.vy = Math.max(f.vy, -m.vmax); steer(f, cx.ax * m.dv, 0.15); } } });
+  RK('arcreturn', { tick(st, f, C, m, fr, cx) { // 自動でステージの真ん中へ弧をえがく（ねらわなくていい）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.a) { const q = (fr - m.s) / m.a; cx.grav = 0; f.vx = (f.x < 0 ? 1 : -1) * m.dv * (1.1 - 0.5 * q) + cx.ax * 0.4; f.vy = -m.rv * (1 - q) + m.sink * q; } } });
+  RK('lift', { tick(st, f, C, m, fr, cx) { // 助っ人にのって、まっすぐ上へ（ゆっくり・横はすこし）
+    cx.free = true; const k = ksOf(f); if (fr === m.s) { f.gr = -1; f.ffl = false; k.lift = 1; }
+    if (fr >= m.s && fr < m.s + m.a) { cx.grav = 0; f.vy = -m.rv; steer(f, cx.ax * m.dv, 0.12); } else if (fr === m.s + m.a) k.lift = 0; } });
+  RK('chargeleap', { hold: true, tick(st, f, C, m, fr, cx) { // ためて（おし続け）、はなすと、ためたぶん遠くへとぶ
+    cx.free = true; const k = ksOf(f);
+    if (fr === m.s) {
+      if ((cx.inp & B.S) && (k.cc | 0) < m.cmax) { k.cc = (k.cc | 0) + 1; f.mf = m.s - 1; cx.grav = 0.1; f.vy *= 0.85; steer(f, 0, 0.2); return; }
+      const q = Math.min(1, (k.cc | 0) / m.cmax), d = aim8(st, f, C, cx); k.cc = 0; k.sp = m.sp0 + q * m.sp1; k.dx = d[0]; k.dy = d[1]; f.gr = -1; f.ffl = false; if (d[0]) f.face = d[0] > 0 ? 1 : -1;
+    }
+    if (fr >= m.s && fr < m.s + m.a) { cx.grav = 0; f.vx = k.dx * k.sp; f.vy = k.dy * k.sp; } } });
+  RK('jet', { hold: true, tick(st, f, C, m, fr, cx) { // ボタンをおしているあいだ、ねんりょうが続くかぎり、好きな方向へ飛ぶ（ななめもOK）
+    cx.free = true; const k = ksOf(f); if (fr === m.s) { f.gr = -1; f.ffl = false; k.fu = m.fuel; }
+    if (fr >= m.s) { if ((cx.inp & B.S) && k.fu > 0) { k.fu--; f.mf = m.s + 1; cx.grav = 0; const d = aim8(st, f, C, cx); f.vx = d[0] * m.sp; f.vy = d[1] * m.sp; if (d[0]) f.face = d[0] > 0 ? 1 : -1; } else { f.vx *= 0.3; f.vy *= 0.3; f.mf = m.t; } } } });
+  RK('cloudstep', { nohelp: true, tick(st, f, C, m, fr, cx) { // 雲にのって、とどまる（高さは変わらない）。おわると、ジャンプが1回もどる。やられやすい
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; f.vy = -m.rv; }
+    if (fr > m.s && fr < m.s + m.a) { cx.grav = 0; f.vy = fr - m.s < (m.b || 0) ? -m.rv : 0; steer(f, cx.ax * m.dv, 0.1); } else if (fr === m.s + m.a) f.jumps = Math.max(f.jumps, 1); } });
+  RK('pendulum', { hz: true, tick(st, f, C, m, fr, cx) { // フックをかけて、ふりこのように、いったん下へ大きくゆれてから、前上へふりあがる（むきは入力、なければふちのほう）
+    cx.free = true; const k = ksOf(f), T = fr - m.s;
+    if (fr === m.s) { f.gr = -1; f.ffl = false; const t = ledgeAim(st, f, C); k.dx = cx.ax || (Math.abs(t.hx - f.x) > 20 ? sgn(t.hx - f.x) : (f.x < 0 ? 1 : -1)); k.px = f.x; k.py = f.y; k.lx = f.x; k.ly = f.y; f.face = k.dx; }
+    if (T >= 0 && T < m.a) { cx.grav = 0; const q = (T + 1) / m.a, sn = -V(360 * q)[1], nx = k.px + k.dx * m.L * q, ny = k.py + m.D * sn - m.U * q; f.vx = nx - k.lx; f.vy = ny - k.ly; k.lx = nx; k.ly = ny; } } });
+  RK('ripple', { hz: true, tick(st, f, C, m, fr, cx) { // 波うちながら、横へすべる（ほとんど上がらない）
+    cx.free = true; const k = ksOf(f); if (fr === m.s) { f.gr = -1; f.ffl = false; const t = ledgeAim(st, f, C); k.dx = cx.ax || (Math.abs(t.hx - f.x) > 20 ? sgn(t.hx - f.x) : f.face); f.face = k.dx; }
+    if (fr >= m.s && fr < m.s + m.a) { const T = fr - m.s; cx.grav = 0; f.vx = k.dx * m.sp; f.vy = sinT(T / m.per) * m.amp - m.lift; } } });
+  RK('fold', { tick(st, f, C, m, fr, cx) { // 紙のようにたたんで、ふんわり長くすべる（上がるのは最初だけ・左右はうごかせる）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; f.vy = -m.rv; }
+    if (fr > m.s && fr < m.s + m.a) { cx.grav = 0.05; f.vy = Math.min(f.vy + 0.18, m.sink); steer(f, (cx.ax || (f.vx >= 0 ? 1 : -1) * 0.6) * m.dv, 0.08); } } });
+  RK('magnet', { tick(st, f, C, m, fr, cx) { // いちばん近いふちに、じりじり加速しながら吸いよせられる（近くのふちだけ）
+    cx.free = true; const k = ksOf(f);
+    if (fr === m.s) { f.gr = -1; f.ffl = false; const t = ledgeAim(st, f, C); k.tx = t.hx; k.ty = t.hy; k.tt = hyp(t.hx - f.x, t.hy - f.y) <= m.range ? 1 : 0; k.mv = 1; if (!k.tt) f.vy = -m.rv; }
+    if (fr > m.s && fr < m.s + m.a && k.tt) { const dx = k.tx - f.x, dy = k.ty - f.y, d = hyp(dx, dy) || 1; cx.grav = 0; k.mv = Math.min(m.sp, k.mv + m.acc); f.vx = dx / d * Math.min(k.mv, d); f.vy = dy / d * Math.min(k.mv, d); } } });
+  RK('wallbounce', { hz: true, tick(st, f, C, m, fr, cx) { // 横へとんで、かべにぶつかると、かべをけって上へ（m.n 回まで）
+    cx.free = true; const k = ksOf(f);
+    if (fr === m.s) { f.gr = -1; f.ffl = false; const t = ledgeAim(st, f, C); k.dx = cx.ax || sgn(t.hx - f.x) || f.face; f.face = k.dx; k.nb = 0; k.lx = f.x; }
+    if (fr > m.s && fr < m.s + m.a) { if (k.nb < m.n && Math.abs(f.x - k.lx) < 0.4 * m.sp && fr > m.s + 3) { k.nb++; f.vy = -m.rv; k.dx = -k.dx * 0.4; f.vx = k.dx * 2; ev(st, { t: 'tick', x: f.x, y: f.y }); } else { f.vx = (k.dx > 0 ? 1 : -1) * (k.nb ? Math.max(1.6, m.sp * 0.5) : m.sp); if (!k.nb) f.vy = Math.min(f.vy, -1.6); } cx.grav = 0.1; k.lx = f.x; } } });
+  RK('spinup', { melee: true, tick(st, f, C, m, fr, cx) { // まわるはねで、ゆっくり上がる。まわりに連続ヒット（おそくて、やられやすい）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.a) { const T = fr - m.s; cx.grav = 0; f.vy = -m.rv; steer(f, cx.ax * m.dv, 0.1); if (T % 8 === 0) f.mh = []; } } });
+  RK('slingshot', { hz: true, tick(st, f, C, m, fr, cx) { // まず、うしろへ引いて（すきだらけ）、ななめ前へ、いきおいよく
+    cx.free = true; const k = ksOf(f);
+    if (fr === m.s) { f.gr = -1; f.ffl = false; const t = ledgeAim(st, f, C); k.dx = cx.ax || sgn(t.hx - f.x) || f.face; f.face = k.dx; }
+    if (fr >= m.s && fr < m.s + m.d) { cx.grav = 0.1; f.vx = -k.dx * m.back; f.vy = Math.min(f.vy, 0.5); }
+    else if (fr >= m.s + m.d && fr < m.s + m.d + m.a) { cx.grav = 0; f.vx = k.dx * m.sp; f.vy = -m.rv; } } });
+  RK('bubble', { boxes(A, m, fr) { const e0 = m.s + m.a; return fr >= e0 && fr < e0 + 4 ? { hbs: m.hb, p: m, t: 0 } : null; }, tick(st, f, C, m, fr, cx) { // あわの中でゆっくり上がる（そのあいだは当たらない）。おわると、はじける
+    cx.free = true; const k = ksOf(f); if (fr === m.s) { f.gr = -1; f.ffl = false; k.lift = 2; }
+    if (fr >= m.s && fr < m.s + m.a) { cx.grav = 0; f.inv = Math.max(f.inv, 2); f.vy = -m.rv; steer(f, cx.ax * m.dv, 0.1); } else if (fr === m.s + m.a) { k.lift = 0; f.mh = []; } } });
+  RK('ghostrise', { tick(st, f, C, m, fr, cx) { // すっとすり抜けて上がる（さいしょのあいだだけ、当たらない）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.a) { const T = fr - m.s; cx.grav = 0; if (T < m.i) f.inv = Math.max(f.inv, 2); f.vy = -m.rv * (1 - 0.4 * T / m.a); steer(f, cx.ax * m.dv, 0.3); } } });
+  RK('parachute', { nohelp: true, tick(st, f, C, m, fr, cx) { // パラシュート：上がらないが、ものすごくゆっくり落ちて、横に自由（おわっても動ける）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; f.vy = -(m.rv || 0); }
+    if (fr >= m.s && fr < m.s + m.a) { cx.grav = 0.03; f.vy = Math.min(f.vy + 0.05, m.sink); steer(f, cx.ax * m.dv, 0.12); } } });
+  RK('rebound', { tick(st, f, C, m, fr, cx) { // いったん、下へ急降下して、はねかえって、高く上がる（降りているときは、やられやすい）
+    cx.free = true; if (fr === m.s) { f.gr = -1; f.ffl = false; }
+    if (fr >= m.s && fr < m.s + m.d) { cx.grav = 0; f.vy = m.dive; steer(f, cx.ax * m.dv, 0.2); }
+    else if (fr >= m.s + m.d && fr < m.s + m.d + m.a) { const q = (fr - m.s - m.d) / m.a; cx.grav = 0; f.vy = -m.rv * (1 - 0.5 * q); steer(f, cx.ax * m.dv, 0.2); } } });
+  RK('pogo', { melee: true, tick(st, f, C, m, fr, cx) { // ぽんぽんはねる（下に当たり判定。はねるたびに、同じ相手にまた当たる）
+    cx.free = true; const T = fr - m.s; if (T >= 0 && T < m.a) { if (T % m.g === 0) { f.gr = -1; f.ffl = false; f.vy = -m.rv; f.mh = []; } steer(f, cx.ax * m.dv, 0.2); } } });
+
   for (const c of K.CH_LIST) defineChar(c);
 
   // ------------------------------------------------------------------------------------------------ 動き
@@ -944,7 +1059,7 @@
         if (f.rj >= 2) { f.mv = 'jabfin'; f.mf = 0; f.mh = []; ev(st, { t: 'move', i: f.i, k: 'jabfin', x: f.x, y: f.y - C.h / 2 }); return; }
       }
       f.s = 'free'; f.sf = 0; f.mv = ''; f.pf = 0;
-      if ((k === 'rise' || (k === 'tele' && m.help) || (KINDS[k] && KINDS[k].recovery)) && f.gr < 0) f.help = true;
+      if ((k === 'rise' || (k === 'tele' && m.help) || (KINDS[k] && KINDS[k].recovery && !m.nohelp)) && f.gr < 0) f.help = true;
     }
   }
   // ワープ先：(mdx, mdy) の方向へ td の距離。ステージの中の壁にめりこまないように手前でとめる
@@ -1313,7 +1428,7 @@
     for (const p of tops(st)) if (x >= p.x1 && x <= p.x2 && p.y >= y - 4 && (best == null || p.y < best)) best = p.y;
     return best;
   }
-  function recoverReach(f) { const m = MOVES[f.ch].spU; return m.kind === 'tele' ? m.td * 0.9 : m.rv * m.a * 0.72; }
+  function recoverReach(f) { const m = MOVES[f.ch].spU; return m.rr != null ? m.rr : m.kind === 'tele' ? m.td * 0.9 : m.rv * m.a * 0.72; }
   function nearestLedge(st, f) {
     const S = stageOf(st), C = CH[f.ch]; let best = -1, bd = 1e9;
     for (let i = 0; i < S.ledges.length; i++) {
@@ -1402,12 +1517,13 @@
       let bits = ddx > 4 ? B.R : ddx < -4 ? B.L : 0;
       if (lvl === 1 && ai.sw++ % 90 < 12) bits = 0;
       if (f.help) return bits;
+      if (f.s === 'atk') { const mm = MOVES[f.ch][f.mv]; if (mm && mm.kind === 'chargeleap') { const k = f.ks; return (k && (k.cc | 0) >= Math.ceil(mm.cmax * 0.7)) ? bits | (ddy < -30 ? B.U : 0) : bits | B.S | (ddy < -30 ? B.U : 0); } if (mm && KINDS[mm.kind] && KINDS[mm.kind].hold) return bits | B.S | (ddy < -24 ? B.U : ddy > 70 ? B.D : 0); if (mm && KINDS[mm.kind] && KINDS[mm.kind].recovery) return bits | (ddy < -24 ? B.U : ddy > 70 ? B.D : 0); }
       const below = ddy < -6;
       const reach = recoverReach(f);
       // 1) 空中ジャンプ：ふちより下で、もう落ちはじめているか、上がり切ったとき
       if (f.jumps > 0 && below && (f.vy > 1 || ddy < -90) && (lvl > 1 || rnd(st) < 0.1) && f.s === 'free') return bits | pulse | B.J;
       // 2) 上へのとくぎ：ふちが届く範囲に入ったら
-      const wantUp = below && Math.abs(ddx) < reach * 1.1 + 60 && (f.jumps === 0 || -ddy > 130 || f.vy > 4.5);
+      const um = MOVES[f.ch].spU, wantUp = (below || um.hz) && Math.abs(ddx) < reach * 1.1 + 60 && (f.jumps === 0 || -ddy > 130 || f.vy > 4.5 || um.hz);
       if (wantUp && f.s === 'free' && f.bs === 0 && (lvl > 1 || rnd(st) < 0.35)) {
         const tele = MOVES[f.ch].spU.kind === 'tele'; // ワープは、ふちの真上をねらう（ななめだとステージの中へめりこむ）
         return ((tele && Math.abs(ddx) < -ddy * 0.8 ? 0 : bits) & ~B.U) | B.U | B.S;
@@ -1635,7 +1751,7 @@
   }
   const hashStr = st => { const h = hash(st); return h[0].toString(16).padStart(8, '0') + h[1].toString(16).padStart(8, '0'); };
   // NETV：決まった結果が変わる直しをしたら上げる。ちがう版どうしではオンライン対戦をしない（ずれてしまうので）
-  const NETV = 4;
+  const NETV = 5;
   // 種つきの入力（テスト用）：ランダムに押す
   function randInput(st, i) {
     const r = rnd(st); let b = 0;

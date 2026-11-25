@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // おもちゃ大乱闘の通しプレイ（Playwright。キーボードとタッチは本物の入力。?debug の window.__brawl は「状態を読む」「試合を早く終わらせる」ためだけ）
-//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick,multi,newtoys,story]
+//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick,multi,newtoys,story,recoveries]
 // 1. 初回：遊び方 → タイトル（うしろで CPU のデモが動く）  2. ひとりで対戦：本物のキーでいどう・ジャンプ・こうげき・つよい攻撃・まもり・つかみ・KO・結果と保存
 // 3. タッチ：左のスティックと右のボタンを同時におす（マルチタッチ）  4. ふたりで1台：1P と 2P のキーが別々に効く
 // 5. ラダー：8戦のながれ・おもちゃとステージが開く・負けてコンティニュー・クリア・ベスト  6. れんしゅう：ダミー・コンボ・KO でも終わらない
@@ -623,13 +623,40 @@ async function story(env) {
   }
 }
 
+
+// ---- 19. the up specials (recoveries): every toy's recovery runs in the real page, is drawn (kind-specific marks) without errors, and the CPU uses it to come back
+async function recoveries(env) {
+  console.log('19. recoveries: all 50 up specials are drawn and used by the CPU in the real page');
+  V.VIEWPORTS.desk = { width: 1280, height: 720, dpr: 1, safe: { top: 0, bottom: 0, left: 0, right: 0 } };
+  const s = await open(env, { vp: 'desk', touch: false }); const p = s.page;
+  const ids = await p.evaluate(() => __brawl.E.CHAR_IDS.slice());
+  check('50 toys', ids.length === 50, ids.length);
+  let drawn = 0, back = 0;
+  for (const id of ids) {
+    const r = await p.evaluate((id) => {
+      const b = __brawl, E = b.E, B = E.B; b.startVs({ fighters: [{ ch: id, lvl: 0 }, { ch: 'robo', lvl: 0 }], labels: ['A', 'B'] }); b.skipCount(); b.freeze(true);
+      const st = b.G.st, a = st.fighters[0]; st.fighters[1].x = -250; a.x = 420; a.y = 130; a.gr = -1; a.vy = 0; a.jumps = 0; a.face = -1; let used = false;
+      E.step(st, [B.S | B.U | B.L, 0]);
+      for (let i = 0; i < 24; i++) { const evs = E.step(st, [B.S | B.L | (i > 6 ? B.U : 0), 0]); for (const e of evs) b.ART.event(e, st); b.ART.tick(st); if (a.s === 'atk') used = true; }
+      return { used, mv: a.mv, s: a.s };
+    }, id);
+    await p.waitForTimeout(40); drawn += r.used ? 1 : 0;
+    const cpu = await p.evaluate((id) => { const E = __brawl.E, L = E.STAGES.bench.ledges[1], st = E.create({ seed: 11, stage: 'bench', fighters: [{ ch: id, lvl: 3 }, { ch: 'robo' }] }), a = st.fighters[0]; st.fighters[1].x = -250; a.x = L.x + 100; a.y = L.y + E.CH[id].h * 0.9 + 100; a.gr = -1; a.vy = 0; a.s = 'free'; for (let i = 0; i < 320; i++) { E.step(st, [E.cpu(st, 0), 0]); if (a.s === 'ledge' || a.gr >= 0) return true; if (a.s === 'dead') break; } return false; }, id);
+    if (cpu) back++;
+  }
+  check('the up special starts for all 50 toys in the page (' + drawn + ')', drawn === 50, drawn);
+  check('the CPU gets back from 100 px below for at least 46 of 50 toys (' + back + ')', back >= 46, back);
+  await shot(p, '19-recovery');
+  check('no page errors while drawing every recovery', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi, newtoys, story]) {
+  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi, newtoys, story, recoveries]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }
