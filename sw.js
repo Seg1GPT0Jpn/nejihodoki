@@ -5,7 +5,7 @@
 // 開いたことのないゲームは、オフラインでは offline.html。ゲームを足すときは games.js に足すだけでよい。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 90;
+const BUILD = 91;
 const PREFIX = 'kobo-v';
 const VERSION = PREFIX + BUILD + '.' + REG.version;
 const OFFLINE = './offline.html';
