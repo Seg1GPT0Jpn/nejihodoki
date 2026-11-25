@@ -5,7 +5,7 @@
 // 開いたことのないゲームは、オフラインでは offline.html。ゲームを足すときは games.js に足すだけでよい。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 76;
+const BUILD = 77;
 const PREFIX = 'kobo-v';
 const VERSION = PREFIX + BUILD + '.' + REG.version;
 const OFFLINE = './offline.html';
@@ -14,15 +14,17 @@ const CORE = ['./', './index.html', OFFLINE, './firebase-config.js', './manifest
   './apple-touch-icon.png', './favicon-32.png', // (the manifest icons are fetched by the browser itself when it installs; not needed offline)
   './common/cloud.js', './common/i18n.js', './common/versus.js', './common/turnroom.js', './common/games.js', './common/platform.js', './common/achievements.js', './common/rank.js',
   './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css',
-  './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
+  './common/studyguard.js', './common/friends.js', './common/account.js', './common/news.js', './common/news.json'];
 // ゲームのページが読み込む、登録簿にないファイル（エンジン・データ）
-const ENGINES = ['./trade/engine.js', './trade/en.js', './blocks/engine.js', './drop/engine.js', './raft/engine.js', './gates/engine.js', './n59049/engine.js', './train/engine.js', './train/art.js', './brawl/engine.js', './brawl/art.js', './colorcards/engine.js', './colorcards/art.js', './colorcards/online.js', './reversi/engine.js', './reversi/art.js', './reversi/puzzles.js', './reversi/online.js', './town/engine.js', './town/art.js', './fit/engine.js', './cards/engine.js', './cards/solitaire.js', './cards/art.js', './parking/engine.js', './planet/sim.js', './planet/world.js', './planet/explorer.js', './planet/learn.js', './water/engine.js', './shogi/engine.js', './shogi/puzzles.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './escape/room6.js', './escape/engine.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes-gen.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js', './hole/engine.js', './hitsumabushi/engine.js', './hitblow/engine.js',
+const ENGINES = ['./trade/engine.js', './trade/en.js', './blocks/engine.js', './drop/engine.js', './raft/engine.js', './gates/engine.js', './n59049/engine.js', './train/engine.js', './train/art.js', './brawl/engine.js', './brawl/art.js', './colorcards/engine.js', './colorcards/art.js', './colorcards/online.js', './reversi/engine.js', './reversi/art.js', './reversi/puzzles.js', './reversi/online.js', './manabi/en.js', './manabi/engine.js', './manabi/gen.js', './manabi/fx.js', './manabi/app.js', './town/engine.js', './town/art.js', './fit/engine.js', './cards/engine.js', './cards/solitaire.js', './cards/art.js', './parking/engine.js', './planet/sim.js', './planet/world.js', './planet/explorer.js', './planet/learn.js', './water/engine.js', './shogi/engine.js', './shogi/puzzles.js', './escape/art.js', './escape/room1.js', './escape/room2.js', './escape/room3.js', './escape/room4.js', './escape/room5.js', './escape/room6.js', './escape/engine.js', './td/engine.js', './td/art.js', './physics/engine.js', './physics/levels.js', './physics/art.js', './physics/codec.js', './physics/editor.js', './minigolf/engine.js', './minigolf/holes-gen.js', './minigolf/holes.js', './minigolf/art.js', './hole/cities.js', './hole/realcity.js', './hole/engine.js', './hitsumabushi/engine.js', './hitblow/engine.js',
   './hole/cities/fujisawa.json', './hole/cities/shonandai.json', './hole/cities/kamiooka.json', './hole/cities/shonanhs.json',
   './hole/cities/shibuya.json', './hole/cities/asakusa.json', './hole/cities/shinjuku.json', './hole/cities/yokohama.json', './hole/cities/dotonbori.json', './hole/cities/osakajo.json', './hole/cities/kyoto.json', './hole/cities/nagoya.json', './hole/cities/sapporo.json', './hole/cities/fukuoka.json'];
 // ページ（オフラインで開けるのは、一度開いたものだけ）
 const PAGES = REG.games.map(g => './' + g.path).concat(['./ranking/', './about/', './profile/']);
 const CACHE_FIRST_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 const SCOPE = self.registration.scope;
+// まなびの工房の問題（data/ 約16MB と content/）は、はじめに保存しない。使った分だけ、保存した写しを先に返して、裏で確かめ直す
+const STALE_OK = ['manabi/data/', 'manabi/content/'];
 
 // 'no-cache'：HTTP キャッシュの写しを、サーバーに確かめてから使う（変わっていなければ 304 で、ほとんど転送しない）
 const fresh = u => new Request(u, { cache: 'no-cache' });
@@ -124,6 +126,14 @@ async function sameOrigin(req) {
     return Response.error();
   }
 }
+// saved copy first, checked again in the background (the next open gets the new one); the first time (or after the saved copy is gone) it is the network
+async function staleWhileRevalidate(e, req) {
+  const c = await caches.open(VERSION);
+  const net = fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) c.put(req, r.clone()); return r; });
+  const hit = await c.match(req, { ignoreSearch: true });
+  if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
+  return net.catch(() => Response.error());
+}
 async function cacheFirst(req) {
   const c = await caches.open(VERSION);
   const hit = await c.match(req);
@@ -146,7 +156,8 @@ self.addEventListener('fetch', e => {
   if (url.origin === location.origin) {
     // outside this site's folder, and Firebase Hosting's reserved URLs (/__/auth/…): the network, never the cache
     if (!req.url.startsWith(SCOPE) || url.pathname.includes('/__/')) return;
-    e.respondWith(req.mode === 'navigate' ? navigate(e, url) : sameOrigin(req));
+    if (req.mode !== 'navigate' && STALE_OK.some(p => url.pathname.startsWith(new URL(p, SCOPE).pathname))) e.respondWith(staleWhileRevalidate(e, req));
+    else e.respondWith(req.mode === 'navigate' ? navigate(e, url) : sameOrigin(req));
   } else if (CACHE_FIRST_HOSTS.includes(url.hostname)) {
     // versioned libraries and fonts never change: saved copy first
     e.respondWith(cacheFirst(req));

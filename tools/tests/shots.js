@@ -32,6 +32,8 @@ const RECIPES = {
   brawl: [{ query: '?debug', eval: 'window.__brawl && __brawl.thumbScene()' }],
   train: [{ query: '?debug', eval: 'window.__train && __train.thumbScene()' }],
   reversi: [{ query: '?debug', eval: 'window.__reversi && __reversi.thumbScene()' }],
+  // the home path with some progress: a streak, XP and crowns (the ?debug hook sets the save and redraws; no app code needed)
+  manabi: [{ query: '?debug', eval: "window.__manabi && (__manabi.setSave({ v: 1, xp: 1250, d: [20400, 20401, 20402, 20403, 20404, 20405, 20406, 20407], g: { 20407: 30 }, goal: 20, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, gm: 40, hr: 5 }), __manabi.setToday(20407), __manabi.goHome(), __manabi.tab('profile'))" }],
   town: [{ query: '?debug', eval: 'window.__town && __town.thumbScene()' }],
   trade: [{ query: '?debug&type=A', eval: 'window.__trade && __trade.thumbScene()' }],
 };
@@ -60,7 +62,7 @@ async function main() {
   const list = pagesLib.filter(pagesLib.games(), o.game);
   let bad = 0;
   for (const g of list) {
-    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1', 'kusoge.planet.howto': '1', 'kusoge.hitblow.howto': '1', 'kusoge.shogi.howto': '1', 'kusoge.escape.howto': '1', 'kusoge.td.howto': '1', 'kusoge.cards.howto': '1', 'kusoge.fit.howto': '1', 'kusoge.brawl.howto': '1', 'kusoge.town.howto': '1', 'kusoge.colorcards.howto': '1', 'kusoge.train.howto': '1', 'kusoge.physics.howto': '1', 'kusoge.minigolf.howto': '1' } });
+    const s = await browserLib.newSession(env, { vp: VP, lang: 'ja', isMobile: false, hasTouch: false, seed: { 'kusoge.raft.seen3': '1', 'nejihodoki3d.seenHelp': true, 'kusoge.hitsumabushi.howto': '1', 'kusoge.planet.howto': '1', 'kusoge.hitblow.howto': '1', 'kusoge.shogi.howto': '1', 'kusoge.escape.howto': '1', 'kusoge.td.howto': '1', 'kusoge.cards.howto': '1', 'kusoge.fit.howto': '1', 'kusoge.brawl.howto': '1', 'kusoge.town.howto': '1', 'kusoge.colorcards.howto': '1', 'kusoge.train.howto': '1', 'kusoge.physics.howto': '1', 'kusoge.minigolf.howto': '1', 'kusoge.manabi.howto': '1' } });
     try {
       const steps = RECIPES[g.id] || [];
       const q = steps.find(x => x && typeof x === 'object' && x.query);

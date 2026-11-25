@@ -957,4 +957,38 @@
       (doc.head || doc.documentElement).appendChild(sc);
     }
   } catch (e) {}
+
+  // 勉強ガード（common/studyguard.js。オプトイン・端末だけ）：設定 kobo.sg が「オン」のときと、ハブで「使いますか？」をまだ聞いていないときだけ読み込む
+  // （オフで答え済みなら、ファイルは読まない＝通信も増えない）。設定の画面からは KoboPlatform.studyGuard.open() で、その場で読み込んで開く
+  try {
+    var sgDoc = root.document, sgCur = sgDoc && sgDoc.currentScript, sgSrc = sgCur && sgCur.src && /platform\.js(\?|#|$)/.test(sgCur.src) ? sgCur.src.replace(/platform\.js(?=\?|#|$)/, 'studyguard.js') : '';
+    var sgWait = null;
+    var sgLoad = function (cb) {
+      if (root.KoboStudyGuard && root.KoboStudyGuard.open) { cb && cb(root.KoboStudyGuard); return true; }
+      if (!sgSrc || !sgDoc) return false;
+      if (!sgWait) {
+        sgWait = [];
+        var el = sgDoc.createElement('script'); el.src = sgSrc; el.async = true;
+        el.onload = function () { var w = sgWait || []; sgWait = null; w.forEach(function (f) { try { f(root.KoboStudyGuard); } catch (e) {} }); };
+        el.onerror = function () { sgWait = null; };
+        (sgDoc.head || sgDoc.documentElement).appendChild(el);
+      }
+      if (cb) sgWait.push(cb);
+      return true;
+    };
+    KoboPlatform.studyGuard = {
+      enabled: function () { var v = store.get('kobo.sg', null); return !!(v && v.on === true); },
+      available: function () { return !!sgSrc; },
+      load: sgLoad,
+      open: function () { return sgLoad(function (g) { g && g.open && g.open(); }); },
+    };
+    if (sgSrc && sgDoc && !root.KoboStudyGuard) {
+      var sgv = store.get('kobo.sg', null), sgAsk = sgv && sgv.ask && sgv.ask.s;
+      var sgAttr = sgDoc.currentScript && sgDoc.currentScript.getAttribute('src');
+      var sgHub = /^(\.\/)?common\/platform\.js/.test(sgAttr || '');
+      // はじめて（未回答）／「あとで」（7日あと・最大2回）はハブだけで聞く。オンなら、どのページでも読み込む
+      var sgNeedAsk = sgHub && (!sgAsk || (sgAsk === 'later' && (sgv.ask.n || 0) < 2 && now() - (Number(sgv.ask.t) || 0) > 7 * DAY));
+      if ((sgv && sgv.on === true) || sgNeedAsk) sgLoad();
+    }
+  } catch (e) {}
 })(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this);

@@ -204,3 +204,7 @@ Realtime Database：
 - 共通部品 `common/turnroom.js` には、2人だけのゲームのための設定（`seats`・`alternate`・`dealMs`）を後ろ向きに互換な形で足しました（colorcards の動きは変わりません）。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（一覧と上限が登録簿と同じ）、`node tools/tests/rules/run.js`（エミュレーター。`rtdb:tr-reversi` の許可と拒否・ボット2人のリバーシの通しを含む）。貼ったあと本番に対して `--live` を流してください。
 
+## 新作「まなびの工房」（manabi）を足したとき（2026-11）
+- **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文。`database.rules.json`＝Realtime Database は変わっていません）。**貼り直さないと、まなびの工房の記録（XP・連続日数・復習の箱）が端末をまたいで同期されず、週ごとのプレイ回数にも入りません**（遊ぶのは今までどおりできます）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'manabi': 10000000`＝XP の合計。ランキングはないので、登録簿とそろえるためだけの値）、旧ランキングの点の確認 `okCap(…'manabi')`、プレイ回数の `plus1('manabi')`、同期する保存のキー `kusoge~manabi~save`（XP・勉強した日・復習の箱・統計・クエスト・リーグ）の形の確認（`okEntAt` に1行）です（リバーシ工房のときと同じ4か所）。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（一覧と上限が登録簿と同じ）。貼ったあと本番に対して `--live` を流してください。

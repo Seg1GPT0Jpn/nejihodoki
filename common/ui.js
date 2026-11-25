@@ -17,6 +17,7 @@
     '全体の音量': 'Master volume', '効果音': 'Sound effects', 'BGM': 'Music', 'ミュート': 'Mute',
     'すべての音を止める（全ゲーム共通）': 'Silence all sounds (all games)',
     '音の設定は全ゲームで共通です': 'Sound settings are shared by all games',
+    '勉強ガード': 'Study guard', '遊んでいる間、ときどき問題が出ます（初期値はオフ）': 'Questions pop up now and then while you play (off by default)', '設定を開く': 'Open settings', 'オン': 'On', 'オフ': 'Off',
     '言語を変えるとページを読み込み直します': 'Changing the language reloads the page',
     '一時停止': 'Paused', 'つづける': 'Resume', 'はじめから': 'Restart', 'ホームへ戻る': 'Back to Home',
     'はじめからやり直しますか？': 'Start over from the beginning?', '今の進み具合は消えます。': 'Your current progress will be lost.',
@@ -429,6 +430,14 @@
       box.append(rows[0].r.row, rows[1].r.row, rows[2].r.row, rm.row);
       box.append(el('p', { class: 'kb-dim', style: 'margin:4px 0 0;font-size:var(--kb-fs-xs)', text: T('音の設定は全ゲームで共通です') }));
       cleanup.push(A.onChange(c => { mute.kb.checked = c.mute; rows.forEach(x => { x.sl.kb.value = c[x.key]; x.sl.kb.disabled = c.mute; }); }));
+    }
+    // 勉強ガード（オプトイン。common/studyguard.js は、押したときに読み込む）
+    const PL = window.KoboPlatform, SG = PL && PL.studyGuard;
+    if (o.studyGuard !== false && SG && SG.available && SG.available()) {
+      const st = SG.enabled() ? T('オン') : T('オフ');
+      const b = button({ label: T('設定を開く') + '（' + st + '）', variant: 'ghost', onClick: () => SG.open() });
+      const r = setRow(T('勉強ガード'), T('遊んでいる間、ときどき問題が出ます（初期値はオフ）'), b);
+      b.setAttribute('aria-labelledby', r.id + ' ' + (b.id = nid('sg'))); box.append(r.row);
     }
     for (const x of o.extra || []) box.append(x);
     box.kbDispose = () => cleanup.forEach(f => f());

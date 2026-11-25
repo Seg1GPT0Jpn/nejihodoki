@@ -31,6 +31,7 @@ const REG = require(path.join(ROOT, 'common/games.js'));
 const ONLY = val('--game') ? val('--game').split(',') : null;
 const GAMES = REG.games.filter(g => !ONLY || ONLY.includes(g.id));
 const THREE = path.join(__dirname, '.cache', 'three-r128.min.js');
+const KATEX_DIR = path.join(__dirname, '.cache', 'katex-0.16.9'); // manabi's formulas (a copy made by manabi-play.js; if it is missing the file is stubbed empty)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const firstVisit = {};
 
@@ -79,6 +80,7 @@ async function newContext(browser, env, o = {}) {
     const url = route.request().url();
     if (url.startsWith(env.origin + '/')) return route.continue();
     if (/^https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/r128\/three\.min\.js/.test(url)) return route.fulfill({ status: 200, contentType: 'text/javascript', body: fs.readFileSync(THREE), headers: { 'Access-Control-Allow-Origin': '*' } });
+    { const k = /^https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/KaTeX\/0\.16\.9\/(katex\.min\.(?:js|css))/.exec(url); if (k) { const fp = path.join(KATEX_DIR, k[1]), js = k[1].endsWith('.js'); return route.fulfill({ status: 200, contentType: js ? 'text/javascript' : 'text/css', body: fs.existsSync(fp) ? fs.readFileSync(fp) : '/* katex is stubbed in tests */', headers: { 'Access-Control-Allow-Origin': '*' } }); } }
     if (/^https:\/\/fonts\.googleapis\.com\//.test(url)) return route.fulfill({ status: 200, contentType: 'text/css', body: '/* fonts are stubbed in tests */', headers: { 'Access-Control-Allow-Origin': '*' } });
     blocked.push(url);
     return route.abort('blockedbyclient');

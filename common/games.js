@@ -59,6 +59,7 @@
     { id: 'cooking', ja: '料理・お店', en: 'Cooking & shop' },
     { id: 'simulation', ja: 'シミュレーション', en: 'Simulation' },
     { id: 'board', ja: 'ボード・テーブル', en: 'Board & table' },
+    { id: 'study', ja: '学習', en: 'Study' },
   ];
 
   var GAMES = [
@@ -813,6 +814,36 @@
         'kusoge.reversi.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', dl: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'manabi', order: 26, path: 'manabi/', added: '2026-11-25',
+      title: { ja: 'まなびの工房', en: 'Study Workshop' },
+      short: { ja: 'まなびの工房', en: 'Study Workshop' },
+      desc: { ja: '英語・数学・国語・古文・理科・社会・情報を、ゲームのように少しずつ。中学と高校の問題を1レッスン8問。まちがえた問題は何度でも戻ってくる。', en: 'Study English, math, Japanese, classical Japanese, science, social studies and information in short lessons. Missed questions keep coming back.' },
+      label: { ja: '学習', en: 'Study' },
+      genres: ['study'], tags: ['2d', 'casual', 'stages'],
+      keywords: { ja: ['勉強', '学習', '英語', '数学', '国語', '古文', '理科', '社会', '情報', '中学', '高校', '復習', 'テスト'], en: ['study', 'learning', 'english', 'math', 'japanese', 'classical japanese', 'science', 'social studies', 'information', 'junior high', 'high school', 'review', 'test', 'quiz'] },
+      icon: 'img/icons/manabi.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2f86d6"/><circle cx="58" cy="12" r="9" fill="#5ab0f0" opacity=".7"/><path d="M8 52q14-7 28 0 14-7 28 0v10q-14-7-28 0-14-7-28 0z" fill="#fff6e0" stroke="#d8a93a" stroke-width="1.6" stroke-linejoin="round"/><path d="M36 52v10" stroke="#d8a93a" stroke-width="1.6"/><circle cx="36" cy="33" r="20" fill="#ffc233" stroke="#c98a12" stroke-width="2.4"/><path d="M23 19L49 13" stroke="#c98a12" stroke-width="4" stroke-linecap="round"/><path d="M24 21q12-5 24-3" stroke="#fff" stroke-opacity=".55" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="29" cy="33" rx="3.4" ry="4.2" fill="#fff"/><ellipse cx="43" cy="33" rx="3.4" ry="4.2" fill="#fff"/><circle cx="29.6" cy="34.2" r="2.1" fill="#2b2118"/><circle cx="43.6" cy="34.2" r="2.1" fill="#2b2118"/><circle cx="23.5" cy="41" r="3.2" fill="#ff7a9a" opacity=".55"/><circle cx="48.5" cy="41" r="3.2" fill="#ff7a9a" opacity=".55"/><path d="M31 42q5 5.5 10 0" stroke="#2b2118" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M60 26l1.8 3.8 3.8 1.8-3.8 1.8L60 37l-1.8-3.8-3.8-1.8 3.8-1.8z" fill="#ffe14d"/></svg>', iconBg: '#2f86d6',
+      thumb: 'img/thumbs/manabi.webp', thumb2x: 'img/thumbs/manabi@2x.webp',
+      tech: '2d',
+      // lesson-based (8 questions each): no real-time clock, so no pause. No ranking and no versus: it is a study tool, not a contest.
+      // score is the total XP (only the registry needs a unit and a cap; ranking is off and nothing reads rankSource)
+      flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      score: { unit: { ja: 'XP', en: 'XP' }, fmt: { ja: '{n} XP', en: '{n} XP' }, order: 'desc', cap: 10000000, maxRate: null },
+      rankSource: { key: 'kusoge.manabi.save', paths: ['xp'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.manabi.save', paths: ['xp'], agg: 'first', min: 1, num: true, tpl: { ja: '{n} XP', en: '{n} XP' } },
+      keys: {
+        'kusoge.manabi.save': '{ v:1, xp（XPの合計）, d:[日番号…（勉強した日。直近120日）], g:{ 日番号: その日のXP（直近14日）}, goal（今日の目標XP 10|20|30|50）, b:{ <単元セットの id>: "<ハッシュ>:<箱の文字列>"（復習の箱 0〜5と最後にやった日。1問3文字） }, st:{ q（答えた数）, ok（正解）, ls（レッスン数）, mk（模試の数）, best（連続日数の最高）}, mk:{ <模試の id>: 最高の正答率% }, set:{ cr（JH|HS）, sub, g（最後に見ていた学年・科目）}, tut, gm（ジェム）, fz（ストリーク・フリーズ 0〜2）, hm（ハートモード 1/0）, hr（ハート 0〜5）, cw:{ <特別コースの id>: 王冠 0〜5 }, ds:{ d（日番号）, xp, ls, ok, perfect, rev, sp（今日のクエストの数え）}, dq:{ d, c:[3つのクエストの受け取りずみ 1/0] }, lg:{ w（週番号）, t（リーグ 0〜5）}, sk（ねじまるの色 0〜5）, mm:[[単元セットの id, 問題の id]…]（模試でまちがえた問題。最大60。「模試のまちがい」のレッスンで正解すると消える） }。同期する',
+        'kusoge.manabi.howto': '遊び方を見た（\'1\'）',
+        'kusoge.manabi.run': 'とちゅうのレッスン（1問ごとに自動保存）{ d, log, xp, t, ft, miss }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.manabi.rep': '「まちがいを報告」をした問題 { <問題の id>: 日番号 }。この端末だけ（同期しない）',
+        'kusoge.manabi.prefs': '効果音・しんどう・アニメーション・読み上げ・出題のバラエティ { snd, hap, anim, say, variety }。この端末だけ（同期しない）',
+      },
+      // counters only grow (max); per-day maps and the day-bound quest state follow the newest device; the review boxes and settings are whole values (newest)
+      sync: {
+        'kusoge.manabi.save': { fields: { xp: 'max', d: 'union', g: { each: 'max' }, goal: 'newest', b: { each: 'newest' }, st: { each: 'max' }, mk: { each: 'max' }, set: 'newest', tut: 'max', gm: 'newest', fz: 'newest', hm: 'newest', hr: 'newest', cw: { each: 'max' }, mm: 'union', ds: 'newest', dq: 'newest', lg: 'newest', sk: 'newest' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1140,6 +1171,19 @@
       { id: 'reversi.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.reversi.save', path: 'pts' }, gte: 30 } },
       { id: 'reversi.hard5', tier: 4, icon: 'trophy', title: { ja: '最強のライバル', en: 'Expert Rival' }, desc: { ja: '「とてもつよい」CPUに5回勝つ', en: 'Beat an Expert CPU 5 times' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.hard' }, gte: 5 }, grantsTitle: { ja: 'リバーシの達人', en: 'Reversi Master' } },
       { id: 'reversi.wipe', tier: 4, icon: 'trophy', hidden: true, title: { ja: '全部ひっくり返した', en: 'Total Wipe-out' }, desc: { ja: '相手の石を1つ残らずひっくり返して勝つ', en: 'Win by flipping every last stone of the opponent' }, when: { rec: { key: 'kusoge.reversi.save', path: 'stats.wipe' }, gte: 1 } },
+    ],
+    manabi: [
+      { id: 'manabi.first', tier: 1, icon: 'check', title: { ja: 'はじめのレッスン', en: 'First Lesson' }, desc: { ja: 'レッスンを1つ終える', en: 'Finish a lesson' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.ls' }, gte: 1 } },
+      { id: 'manabi.ls10', tier: 1, icon: 'check', title: { ja: '10レッスン', en: 'Ten Lessons' }, desc: { ja: 'レッスンを合わせて10回終える', en: 'Finish 10 lessons in total' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.ls' }, gte: 10 } },
+      { id: 'manabi.ok100', tier: 2, icon: 'star', title: { ja: '100問せいかい', en: '100 Correct' }, desc: { ja: '合わせて100問に正解する', en: 'Answer 100 questions correctly' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.ok' }, gte: 100 } },
+      { id: 'manabi.streak3', tier: 1, icon: 'star', title: { ja: '3日れんぞく', en: 'Three-Day Streak' }, desc: { ja: '3日つづけて勉強する', en: 'Study 3 days in a row' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.best' }, gte: 3 } },
+      { id: 'manabi.streak7', tier: 2, icon: 'trophy', title: { ja: '7日れんぞく', en: 'Week-Long Streak' }, desc: { ja: '7日つづけて勉強する', en: 'Study 7 days in a row' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.best' }, gte: 7 } },
+      { id: 'manabi.quest', tier: 1, icon: 'check', title: { ja: 'クエストたっせい', en: 'Quest Done' }, desc: { ja: '今日のクエストをクリアして、ごほうびを受け取る', en: 'Complete a daily quest and claim the reward' }, when: { rec: { key: 'kusoge.manabi.save', path: 'dq.c', measure: 'sum' }, gte: 1 } },
+      { id: 'manabi.mock', tier: 2, icon: 'check', title: { ja: 'はじめての模試', en: 'First Mock Exam' }, desc: { ja: '模試を1回さいごまで解く', en: 'Finish a mock exam' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.mk' }, gte: 1 } },
+      { id: 'manabi.xp1000', tier: 3, icon: 'trophy', title: { ja: '1000 XP', en: '1,000 XP' }, desc: { ja: 'XPを合わせて1000ためる', en: 'Earn 1,000 XP in total' }, when: { rec: { key: 'kusoge.manabi.save', path: 'xp' }, gte: 1000 } },
+      { id: 'manabi.league', tier: 3, icon: 'trophy', title: { ja: 'リーグしょうかく', en: 'League Promotion' }, desc: { ja: '週のリーグで上位に入って、次のリーグへ上がる', en: 'Finish near the top of the weekly league and move up' }, when: { rec: { key: 'kusoge.manabi.save', path: 'lg.t' }, gte: 1 } },
+      { id: 'manabi.crown', tier: 3, icon: 'trophy', title: { ja: '王冠をゲット', en: 'Crowned' }, desc: { ja: '特別コースで王冠を1つ手に入れる', en: 'Earn a crown in a special course' }, when: { rec: { key: 'kusoge.manabi.save', path: 'cw', measure: 'countGte', min: 1 }, gte: 1 } },
+      { id: 'manabi.ok1000', tier: 4, icon: 'trophy', title: { ja: '1000問せいかい', en: '1,000 Correct' }, desc: { ja: '合わせて1000問に正解する', en: 'Answer 1,000 questions correctly' }, when: { rec: { key: 'kusoge.manabi.save', path: 'st.ok' }, gte: 1000 }, grantsTitle: { ja: 'まなびの名人', en: 'Study Master' } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

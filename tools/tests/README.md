@@ -54,6 +54,12 @@ node tools/tests/reversi-play.js              # リバーシ工房の通し（�
 node tools/tests/unit/reversi-engine.test.js  # リバーシ工房の中身（置ける場所の数 perft・ひっくり返し・パス・おわり・CPU が反則の手を出さない・毎回同じ結果・読み切りが別のしくみの全探索と一致・今日のパズル120問の最善手の証明・強さの順。約40秒）
 node tools/tests/unit/reversi-online.test.js  # リバーシのオンライン用アダプター（reversi/online.js：形のおかしい手・順番でない席・公開する状態が database.rules.json の形に収まる・パスと終わり・画面側の view・ホストがいなくなったときの順位）
 node tools/reversi-puzzle-gen.js              # 今日のパズルの問題集 reversi/puzzles.js を作り直す（公開したあとは作り直さない。同じ seed なら同じ問題集。約30秒）
+node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
+node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
+node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）
+node tools/tests/unit/manabi-build.test.js    # manabi/data の検査（全問に答え・型ごとの形・図の SVG が安全・index と chunk が合う・容量。`MANABI_SRC` があれば同じ入力から同じ出力）
+node tools/tests/studyguard-play.js           # 勉強ガードの通し（本物のクリック・入力で：オフでは何も読まない・ハブの「使いますか？」・設定・クイズ・お休み・PIN・テスト期間・隠れているあいだは数えない・画面サイズ・キー）
+node tools/tests/unit/studyguard.test.js      # 勉強ガードの純粋な部分（時計・二重に数えない・問題が増える・お休み・テスト期間・PIN・壊れた保存・platform.js のオプトイン）
 node tools/tests/rules/turnroom-bots.js         # common/turnroom.js を本物の Firebase SDK ＋ エミュレーターの本物のルールで、2〜4人のボットが動かす（コードで4人・クイックマッチ（CPUでうめる／4人ぴったり）・切れて戻る／切れたまま・時間切れ・ホストが出る／消える・ゲストが出る。他人の手札が読めない・書けないことの確認つき）。`node tools/tests/rules/run.js --only bots` でも流せる（`rules/run.js` は全部で約13分なので `--only spec,rest`・`clients`・`bots` に分けて流すとよい）。シナリオ名を引数に（例：room4 quick）
 node tools/tests/train-play.js               # でんしゃでいこうの通し（本物のキーとタッチでノッチを操作・駅に止める・出発・ATS・結果と保存・ルートの開き方・一時停止・英語・全画面サイズ）
 node tools/tests/unit/train-engine.test.js    # でんしゃでいこうの中身（決まった結果・ブレーキの遅れと天気・停車位置の点数・信号と ATS・ダイヤ・自動運転が全ルートをクリア）
@@ -77,7 +83,7 @@ node tools/tests/shots.js --write               # サムネイルを img/thumbs/
 - `tools/tests/out/report.md`：スイート × ページの表、不合格の一覧（既知の不具合には「既知：R3」のように AUDIT.md の番号）、注意の一覧
 - `tools/tests/out/results.json`：全部の結果
 - `tools/tests/out/shots/viewport/<page>/<size>-<lang>.png`：画面サイズのスクリーンショット
-- `out/`・`load/out/` と `.cache/`（three.js r128 と、負荷テストの Firebase SDK 10.12.2 の写し。初回に curl で取る）は git に入れません
+- `out/`・`load/out/` と `.cache/`（three.js r128・負荷テストの Firebase SDK 10.12.2・まなびの工房の KaTeX 0.16.9（`.cache/katex-0.16.9/`）の写し。初回に curl で取る）は git に入れません
 
 ## スイート
 | 名前 | 中身 |

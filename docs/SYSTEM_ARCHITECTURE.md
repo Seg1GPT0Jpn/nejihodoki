@@ -18,6 +18,7 @@ common/
   rank.js       KoboRank：ランキングの送信と取得（通算・週間・日間・チャレンジ）
   i18n.js       既存：対象ゲームの一覧をレジストリから読むように変える
   versus.js     既存：オンライン対戦
+  studyguard.js 勉強ガード KoboStudyGuard（オプトイン・端末だけ。platform.js が「オン」のときだけ読み込む。まなびの工房の問題を出す）
   news.json     お知らせ（オーナーが git で編集する）
 tools/tests/    自動テスト（TEST_PLAN.md）
 docs/           この設計書（公開先からは除外する）
@@ -195,10 +196,10 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isMe(uid) { return signedIn() && request.auth.uid == uid; }
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
-    function games() { return ['neji','blocks','drop','raft','gates','n59049','water','parking','hole','hitsumabushi','planet','hitblow','shogi','escape','td','physics','minigolf','trade','cards','fit','town','colorcards','brawl','train','reversi']; }
+    function games() { return ['neji','blocks','drop','raft','gates','n59049','water','parking','hole','hitsumabushi','planet','hitblow','shogi','escape','td','physics','minigolf','trade','cards','fit','town','colorcards','brawl','train','reversi','manabi']; }
     // 仮の上限（P1-4 で決める）。ゲームを足すときはここにも足す
     function caps() { return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000,
-      'gates': 100000, 'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000 }; }
+      'gates': 100000, 'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000 }; }
     function jst(t) { return t + duration.value(9, 'h'); }
     function dayKey(t) { return jst(t).year() * 10000 + jst(t).month() * 100 + jst(t).day(); }
     function weekKey(t) { return math.floor((t.toMillis() + 32400000 + 259200000) / 604800000); }
@@ -458,3 +459,9 @@ KoboAudio.onChange(f)           // 設定が変わったとき（ほかのタブ
 - **お知らせ**：`common/news.json` は `[{ id, date, title:{ja,en}, body:{ja,en}, link? }]`。ハブで未読のバッジを出し、`kobo.news.read` で既読を管理します。プッシュ通知はしません。
 - **フレンド**：Google ログインのユーザーは、プロフィールを作ったときに `kbCodes/{8文字}` を作ります。相手のコードを入れると、`get` で uid を調べ、`kobo.friends` に足します（一方向）。フレンドのランキングは `kbBoards/{board}/e` を `where('u', 'in', [最大30人])` で読みます（読み取りは人数ぶん）。
 - **ステージの共有コード**：ステージの JSON → deflate（`CompressionStream`）→ base64url → 先頭に `game:v1:`、末尾にチェックサム。URL では `?code=` で受け渡します。解けるかどうかは、受け取った側でゲームのソルバーを使って確かめてから遊ばせます。サーバーには置きません。
+
+## 15. まなびの工房と勉強ガード（学習アプリ）
+- `manabi/` は、ランキング・対戦のない学習アプリです。登録簿では `genres: ['study']`、`flags.ranking: false`（`score` は XP の合計で、`caps()` の上限 `10000000` と合わせるためだけにあります）、同期するのは `kusoge.manabi.save` の1キーです（フィールドごとのマージ規則は登録簿の `sync`）。`kusoge.manabi.rep`・`kusoge.manabi.prefs`・`kusoge.manabi.howto` はこの端末だけです。
+- 問題データ（`manabi/data/` 約16MB・`manabi/content/`）は `sw.js` の `CORE` にも `ENGINES` にも入れません。同じサイトの `manabi/data/`・`manabi/content/` への要求だけ、「保存した写しを先に返して、裏で確かめ直す」（なければ通信）で扱い、使った分だけ端末に残ります。
+- `common/studyguard.js`（勉強ガード）は、オプトインです。`platform.js` が、設定 `kobo.sg` が「オン」のときと、ハブで「使いますか？」を聞くときだけ読み込みます。設定・進み具合（`kobo.sg`・`kobo.sg.run`）はこの端末だけで、同期しません。出題は `manabi/engine.js` の `KoboManabi.getQuiz()`、まなびの工房の XP・連続日数・復習の箱は変えません。
+- 表示する出典：問題の著作権者は「かながわコネクト教材プロジェクト」（オリジナル作成。古典の原文はパブリックドメイン）。`manabi/data/index.json` の `credit` をそのまま画面に出します。地図（`manabi/content/map-jp.json`・`map-world.json`）は Natural Earth（パブリックドメイン）をもとに、`tools/build-manabi.js` が簡略化したものです。問題はAIが作ったもので、専門家の確認はまだです（画面にも出します）。

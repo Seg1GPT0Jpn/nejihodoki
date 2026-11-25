@@ -89,6 +89,10 @@ async function runCases(T, opt = {}) {
     await check(g, 'own push reversi save (stars, per-level wins, stats, today\'s puzzle)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~reversi~save': { v: JSON.stringify({ v: 1, pts: 9, w: { '8-2': { p: 6, w: 4 } }, stats: { plays: 6, wins: 4, pz: 3 }, set: { level: 2, me: 'b', n: 8, start: 'std', fast: 0, dots: 1 }, dl: { last: 20261125, pts: 600, r: [[19, 1, 200]] }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'reversi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~reversi~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'reversi save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~reversi~save': 'x' } }, A, { merge: true }));
+    // まなびの工房（manabi）：記録 kusoge.manabi.save だけを同期する（設定 prefs・howto・rep はこの端末だけ）
+    await check(g, 'own push manabi save (xp, days, boxes, stats, quests, league)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: JSON.stringify({ v: 1, xp: 1250, d: [20406, 20407], g: { 20407: 30 }, goal: 20, b: { 'ct-eng-u01': 'ab12:0112' }, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, mk: { 'x-1': 62 }, set: { cr: 'JH', g: 0 }, tut: 1, gm: 40, fz: 1, hm: 0, hr: 5, cw: { S1: 2 }, ds: { d: 20407, xp: 30 }, dq: { d: 20407, c: [1, 0, 0] }, lg: { w: 2915, t: 1 }, sk: 0 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'manabi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'manabi save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': 'x' } }, A, { merge: true }));
     // 式の数の上限（1回の書き込みで1000）の確認。ルールは「この書き込みで変わるキー」だけを確かめる（firestore.rules の okEnt の上のコメント）。
     // 以前は、すでにあるキーも毎回ぜんぶ確かめていたので、キーが15個ほどになった人の書き込みが拒否されていた。
     {
@@ -237,6 +241,8 @@ async function runCases(T, opt = {}) {
     await check(g3, 'train +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { train: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'reversi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { reversi: 1 }, A, { merge: true }));
     await check(g3, 'reversi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { reversi: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'manabi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { manabi: 1 }, A, { merge: true }));
+    await check(g3, 'manabi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { manabi: 9 }, A, { merge: true }));
     await check(g3, 'td +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { td: 9 }, A, { merge: true }));
     await check(g3, 'escape +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { escape: 9 }, A, { merge: true }));
     await check(g3, 'update +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { blocks: 999999 }, B, { merge: true }));
