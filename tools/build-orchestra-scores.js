@@ -166,6 +166,14 @@ const PIECES = [
   { id: 'hall-tenth', mutopia: 2157, level: 2, mvt: { ja: '行進曲', en: 'March' }, title: { ja: '第十連隊行進曲', en: 'Tenth Regiment March' }, composer: { ja: 'ホール', en: 'R. B. Hall' }, year: 1895,
     midi: ['Band/TenthReg_ScoreTransposed.mid'], tracks: [{ 2: 'fl', 3: 'fl', 4: 'cl', 5: 'cl', 6: 'cl', 7: 'cl', 8: 'fg', 9: 'tp', 10: 'tp', 11: 'tp', 12: 'tp', 13: 'tb' }], derive: [{ from: 'tb', to: 'tu', transpose: -12 }], // the Mutopia score MIDI has flutes, clarinets, tenor sax, cornets/trumpets and trombones only (no horns, oboe or basses); the tuba doubles the trombone line an octave down
     blurb: { ja: '6/8の元気な吹奏楽の行進曲。コルネットとトロンボーンが歌います。', en: 'A bouncy 6/8 band march with cornets and trombones singing out.' } },
+  // ---- Dvořák 8, II: a SKETCH made for this site (structure, tempo map and dynamics follow the score; only bars 1-7 were read note by note), see CREDITS.md ----
+  { id: 'dvorak8-2', level: 2, work: 'dvorak8', sketch: true, unit: 0.5, licence: 'Public Domain', licenceUrl: '',
+    imslp: 'https://imslp.org/wiki/Symphony_No.8,_Op.88_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)',
+    credit: 'Composition: Dvořák (public domain). Score reading source: IMSLP #405841 (Novello 1892 / Dover, public domain). Sketch by this site. Sketch: structure, tempo and dynamics follow the original; the notes are approximate and not identical to the score.',
+    mvt: { ja: '第2楽章 アダージョ【スケッチ】', en: 'II. Adagio [SKETCH]' },
+    title: { ja: '交響曲 第8番 ト長調 作品88', en: 'Symphony No. 8 in G major, Op. 88' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1889,
+    midi: ['Dvorak8-mids/Dvorak8_Mvt2_sketch.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'tb', 8: 'tu', 9: 'timp', 10: 'vln1', 11: 'vln2', 12: 'vla', 13: 'vc', 14: 'cb' }],
+    blurb: { ja: '簡略スケッチ（原曲の構成・テンポ・強弱の流れにもとづく推定。音符は原曲と同じではありません）。ゆったりした4つ振りで、強弱の波を学ぶ練習向き。', en: 'Sketch: structure, tempo and dynamics follow the original; the notes are approximate and not identical to the score. A slow four, good for practising the dynamic swells.' } },
   { id: 'midsummer', mutopia: 80, level: 2, mvt: { ja: '間奏曲（No.5）', en: 'Intermezzo (No. 5)' },
     title: { ja: '劇音楽《真夏の夜の夢》 作品61', en: 'A Midsummer Night\'s Dream, Op. 61' }, composer: { ja: 'メンデルスゾーン', en: 'Mendelssohn' }, year: 1843,
     midi: ['Sommernachtstraum-mids/Sommernachtstraum.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'cb' }],
@@ -233,6 +241,7 @@ function build(P) {
       if (bpm < BPM_MIN && unit >= 1 && beats * 2 <= 4) { unit /= 2; beats *= 2; continue; }
       break;
     }
+    if (P.unit) { unit = P.unit; beats = Math.max(1, Math.round(barQ / unit)); } // a fixed beat unit (e.g. an Adagio in 2/4 conducted in eighth-note beats = four to the bar)
     bars.push({ tick, q, beats, unit, bpm: Math.max(T / unit, P.bpmMin || 0), barQ });
     tick += Math.round(barQ * PPQ);
   }
@@ -370,7 +379,7 @@ PIECES.forEach(P => {
   index.push({ id: P.id, pattern, title: P.title, composer: P.composer, mvt: P.mvt, year: P.year, level: P.level, blurb: P.blurb, minutes: summary.minutes, nBeats: out.nBeats, needs: out.needs,
     src: out.src, sections: out.sec.map(s => s.id) });
   const ix = index[index.length - 1]; ix.ck = P.composer.en; ix.era = ERA[P.composer.en] || 'classical';
-  if (P.work) ix.work = P.work; if (P.simplified) ix.simplified = true;
+  if (P.work) ix.work = P.work; if (P.simplified) ix.simplified = true; if (P.sketch) ix.sketch = true;
   if (P.licence) { ix.src.licenceUrl = P.licenceUrl; ix.src.credit = P.credit; out.src.licenceUrl = P.licenceUrl; out.src.credit = P.credit; } // share-alike: the derived score carries the licence and the credit
   if (P.parts > 1) ix.parts = splitParts(out, P.parts);
   if (P.licence) fs.writeFileSync(path.join(OUT, P.id + '.json'), JSON.stringify(out) + '\n');

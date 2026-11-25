@@ -237,12 +237,12 @@ async function finish(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
-const NEW_PIECES = ['sousa-fairest', 'hall-tenth', 'mahler5-4', 'mahler5-1', 'mahler5-2', 'mahler5-3', 'mahler5-5', 'dvorak8-3', 'mozart387-1', 'mozart387-3', 'beethoven-q59-3', 'haydn76-1-2', 'beethoven-q4-1', 'beethoven-q4-3', 'schubert-qs', 'grieg-aase', 'beethoven-marsch', 'haydn76-1-1', 'coriolan', 'fidelio', 'mozart25-1', 'mozart25-2', 'beethoven5-2', 'beethoven7-1', 'dvorak8-1', 'dvorak8-4', 'dvorak7-1', 'dvorak7-2', 'dvorak7', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4'];
+const NEW_PIECES = ['dvorak8-2', 'sousa-fairest', 'hall-tenth', 'mahler5-4', 'mahler5-1', 'mahler5-2', 'mahler5-3', 'mahler5-5', 'dvorak8-3', 'mozart387-1', 'mozart387-3', 'beethoven-q59-3', 'haydn76-1-2', 'beethoven-q4-1', 'beethoven-q4-3', 'schubert-qs', 'grieg-aase', 'beethoven-marsch', 'haydn76-1-1', 'coriolan', 'fidelio', 'mozart25-1', 'mozart25-2', 'beethoven5-2', 'beethoven7-1', 'dvorak8-1', 'dvorak8-4', 'dvorak7-1', 'dvorak7-2', 'dvorak7', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4'];
 async function newPieces(env) {
   console.log('5b. the Dvořák 7 and 9 movements: each starts, runs and finishes; parts; the beat filter; licence credits');
   const only = process.env.ORCH_PIECES ? process.env.ORCH_PIECES.split(',') : NEW_PIECES;
   const s = await open(env, { query: '' }); const p = s.page;
-  const ids = await p.evaluate(() => __kb.state().pieces); check('the new movements are in the index: ' + ids.length + ' pieces', NEW_PIECES.every(x => ids.includes(x)) && ids.length >= 46, ids);
+  const ids = await p.evaluate(() => __kb.state().pieces); check('the new movements are in the index: ' + ids.length + ' pieces', NEW_PIECES.every(x => ids.includes(x)) && ids.length >= 47, ids);
   await p.evaluate(() => { document.querySelector('.dfb[data-diff="enjoy"]').click(); document.getElementById('expandAll').click(); });
   const grp = await p.evaluate(() => [...document.querySelectorAll('#pList .grp')].map(g => g.textContent)); check('the list is grouped by symphony', grp.some(g => /Dvořák|ドヴォルザーク/.test(g)) && grp.length >= 2, grp);
   await p.click('#filters summary'); await p.click('#patFilter button[data-n="4"]'); const n4 = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => [b.dataset.piece, b.querySelector('.pat').textContent])); check('the 4-beat filter shows only 4-beat pieces: ' + n4.map(x => x[0]).join(','), n4.length >= 2 && n4.every(x => /4|四|four/i.test(x[1])), n4);
@@ -260,7 +260,8 @@ async function newPieces(env) {
     await p.evaluate(id => __orch.start(id, 'enjoy'), id); await wait(p, () => __kb.state().playing, null, 120000); const c = await stageBox(p);
     await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); const g = await p.evaluate(() => ({ g: __orch.G.score.bpmAt(0) })); const bpm = Math.min(120, Math.max(50, g.g));
     await conductBeats(p, c, 4, bpm, 0.22 * c.scale); await wait(p, () => __kb.state().state === 'playing', null, 5000); let a = await st(p);
-    check(id + ' starts and runs (' + Math.round(a.bpm) + ' bpm, pos ' + a.pos.toFixed(1) + ', voices ' + a.voices + ')', a.state === 'playing' && (a.voices >= 1 || /mahler/.test(id)) && a.bpm > 20, a);
+    check(id + ' starts and runs (' + Math.round(a.bpm) + ' bpm, pos ' + a.pos.toFixed(1) + ', voices ' + a.voices + ')', a.state === 'playing' && (a.voices >= 1 || /mahler|dvorak8-2/.test(id)) && a.bpm > 20, a);
+    if (id === 'dvorak8-2') { const lab = await p.evaluate(() => ({ chip: document.getElementById('pieceChip').textContent, pat: __orch.G.score.patternOfBeat[0], bpm: Math.round(__orch.G.score.bpmAt(0)), blurb: __orch.G.meta.blurb.ja })); check('the sketch is conducted in four at a playable tempo (' + lab.pat + ' beats, ' + lab.bpm + ' per minute) and labelled: ' + lab.chip, lab.pat === 4 && lab.bpm >= 60 && /スケッチ/.test(lab.chip + lab.blurb), lab); }
     if (/sousa|hall/.test(id)) { const seats = await p.evaluate(() => __orch.G.score.sections.map(s => [s.id, s.def.y.toFixed(2)])); const yOf = k => +(seats.find(x => x[0] === k) || [0, 1])[1]; check(id + ' uses the wind-band seating (clarinets in front of the brass): ' + JSON.stringify(seats), !seats.some(x => x[0] === 'tp' || x[0] === 'tb') ? seats.every(x => +x[1] > 0.5) : yOf('cl') > yOf('tp') || yOf('cl') > yOf('tb'), seats); }
     await p.evaluate(() => __orch.seekNearEnd(6)); let guard = 0; while (!(await st(p)).result && guard++ < 60) await bounce(p, c, 60 / bpm, 0.22 * c.scale);
     await wait(p, () => __kb.state().result, null, 30000); a = await st(p); const sv = await stored(p, SAVE);
