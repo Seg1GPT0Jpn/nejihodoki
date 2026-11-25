@@ -41,6 +41,31 @@
   const DYN_MARKS = ['pp', 'pp', 'p', 'mp', 'mf', 'f', 'f', 'ff', 'ff']; // digit 0..8 of the score's dynamics guide
   const KEYS = '1234567890qwertyu'.split('');
 
+
+  // ------------------------------------------------------------------------------------------------------------------------------------------
+  // Dynamics: baton stroke -> level (0.04..1), one perceptual curve for every input device. Soft is easy (an ordinary small, slow stroke gives p..mp, a mouse
+  // micro-movement pp, ppp with tiny strokes), mf needs a moderate stroke, f and ff need a really big, fast swing. Same scale as the score's dynamics guide.
+  //   exertion x = 0.55 * amplitude/ampRef + 0.45 * speed/spdRef   (amp: fraction of min(stage width, height); speed: stage-fractions per second)
+  //   level = piecewise-linear through ANCHORS (monotone), then *sensitivity* scales x (low 0.8, standard 1, high 1.25).
+  // ------------------------------------------------------------------------------------------------------------------------------------------
+  const DYN_ANCHORS = [[0, 0.04], [0.06, 0.09], [0.16, 0.19], [0.30, 0.30], [0.45, 0.40], [0.58, 0.50], [0.74, 0.65], [0.98, 0.85], [1.25, 1]];
+  const DYN_DEVICE = { mouse: { amp: 0.72, spd: 3.6 }, touch: { amp: 0.62, spd: 3.2 }, motion: { amp: 0.5, spd: 1 }, key: { amp: 1, spd: 1 } };
+  const DYN_SENS = { low: 0.8, mid: 1, high: 1.25 };
+  const Dynamics = {
+    ANCHORS: DYN_ANCHORS, SENS: DYN_SENS, DEVICES: DYN_DEVICE,
+    curve(x) { const A = DYN_ANCHORS; if (x <= 0) return A[0][1]; for (let i = 1; i < A.length; i++) if (x <= A[i][0]) { const a = A[i - 1], b = A[i]; return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return 1; },
+    exertion(amp, speed, device) { const d = DYN_DEVICE[device] || DYN_DEVICE.mouse; if (device === 'motion') return Math.max(0, amp - 0.04) / d.amp; return 0.55 * amp / d.amp + 0.45 * (speed || 0) / d.spd; },
+    // amp, speed as reported by BeatDetector ({amp, speed}); device 'mouse' | 'touch' | 'motion'; sens 'low' | 'mid' | 'high'
+    level(amp, speed, device, sens) { return Dynamics.curve(Dynamics.exertion(amp, speed, device) * (DYN_SENS[sens] || 1)); },
+    // keyboard Up/Down: step 0..10 -> level (ppp .. ff), not affected by sensitivity
+    keyLevel(step) { return Dynamics.curve(clamp(step, 0, 10) * 0.125); },
+    // short smoothing between strokes: dt seconds since the previous ictus; a jump is followed 65-75 % of the way
+    smooth(prev, lv, dt) { const a = 1 - Math.exp(-(dt > 0 ? dt : 0.5) / 0.28); return prev + (lv - prev) * clamp(a, 0.4, 0.85); },
+    // 0..1 -> mark name (ppp..ff), the thresholds sit at the mid-points of the marks' target levels
+    MARKS: [['ppp', 0.12], ['pp', 0.24], ['p', 0.34], ['mp', 0.45], ['mf', 0.57], ['f', 0.74], ['ff', 1.01]],
+    mark(lv) { for (const m of Dynamics.MARKS) if (lv < m[1]) return m[0]; return 'ff'; },
+  };
+
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // Difficulty
   // ------------------------------------------------------------------------------------------------------------------------------------------
@@ -401,5 +426,5 @@
     return (inst === 'vln' || inst === 'vla' || inst === 'vc' || inst === 'cb') ? 'spic' : 'stac';
   }
 
-  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
+  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
 });

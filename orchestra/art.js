@@ -128,14 +128,20 @@
     }
 
     // ---- level meter --------------------------------------------------------------------------------------------------------------------------------
+    const METER_MARKS = [['ppp', 0.07], ['pp', 0.19], ['p', 0.30], ['mp', 0.40], ['mf', 0.50], ['f', 0.65], ['ff', 0.88]]; // the levels the strokes map to (engine.js Dynamics)
     function drawMeter(st) {
       const w = 12, x = A.W - w - 8, h = Math.min(A.stageH * 0.34, 170), y = A.stageH * 0.56;
       ctx.save(); ctx.fillStyle = st.pal.panel; roundRect(ctx, x - 3, y - 3, w + 6, h + 6, 8); ctx.fill();
       const lv = clamp(st.level, 0, 1), tg = clamp(st.target, 0, 1);
       const near = Math.abs(lv - tg) < 0.14 * st.tol;
       ctx.fillStyle = near ? st.pal.good : st.pal.gold; const fh = h * lv; roundRect(ctx, x, y + h - fh, w, Math.max(2, fh), 4); ctx.fill();
+      // the scale ppp..ff (so players can learn the range), the current mark in bold
+      ctx.font = '700 9px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      METER_MARKS.forEach(m => { const my = y + h - h * m[1], cur = st.curMark === m[0]; ctx.fillStyle = st.pal.ink; ctx.globalAlpha = cur ? 1 : 0.5; ctx.fillRect(x + w - 3, my - 0.5, 3, 1); if (cur) { ctx.font = '900 10px system-ui, sans-serif'; } ctx.fillText(m[0], x + w + 4 > A.W - 20 ? x : x, my - (cur ? 0 : 0)); ctx.font = '700 9px system-ui, sans-serif'; });
+      ctx.globalAlpha = 1;
       ctx.strokeStyle = st.pal.ink; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - 6, y + h - h * tg); ctx.lineTo(x + w + 6, y + h - h * tg); ctx.stroke();
       ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = st.pal.ink; ctx.fillText(st.mark, x - 9, y + h - h * tg);
+      if (st.curMark) { ctx.font = '900 12px system-ui, sans-serif'; ctx.fillStyle = near ? st.pal.good : st.pal.gold; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(st.curMark, x + w / 2, y + h + 6); }
       ctx.restore();
     }
 

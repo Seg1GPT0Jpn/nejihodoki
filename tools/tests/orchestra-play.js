@@ -125,8 +125,17 @@ async function conduct(env) {
   check('the live output is audible and not a pure tone', live && live.rmsDb > -50 && live.dominantPeakFrac < 0.7, live);
   await shot(p, '03-conducting');
   // volume
-  const levels = {}; await conductBeats(p, c, 6, 66, 0.07 * c.scale); levels.small = (await st(p)).level; await conductBeats(p, c, 6, 66, 0.4 * c.scale); levels.big = (await st(p)).level;
-  check(`a small stroke is soft (${levels.small.toFixed(2)}), a big one is loud (${levels.big.toFixed(2)})`, levels.small < 0.35 && levels.big > 0.65, levels);
+  const levels = {}; await conductBeats(p, c, 6, 66, 0.07 * c.scale); levels.small = (await st(p)).level; await conductBeats(p, c, 6, 66, 0.2 * c.scale); levels.ordinary = (await st(p)).level;
+  await conductBeats(p, c, 6, 66, 0.4 * c.scale); levels.moderate = (await st(p)).level; await conductBeats(p, c, 6, 90, 0.7 * c.scale); levels.huge = (await st(p)).level;
+  check(`soft is easy: a small stroke is pp/p (${levels.small.toFixed(2)}), an ordinary one p..mp (${levels.ordinary.toFixed(2)})`, levels.small < 0.28 && levels.ordinary > 0.2 && levels.ordinary < 0.45, levels);
+  check(`mf is a moderate stroke (${levels.moderate.toFixed(2)}), f/ff needs a really big fast swing (${levels.huge.toFixed(2)})`, levels.moderate > 0.35 && levels.moderate < 0.62 && levels.huge > 0.7 && levels.huge > levels.moderate + 0.2, levels);
+  const dm = await p.evaluate(() => ({ mark: __orch.E.Dynamics.mark(__kb.state().level), sens: JSON.parse(localStorage.getItem('kusoge.orchestra.prefs') || '{}').sens })); note('meter mark after the big swing: ' + JSON.stringify(dm));
+  check('the meter names the level reached (f or ff after a huge swing)', dm.mark === 'f' || dm.mark === 'ff', dm);
+  await shot(p, '03-dynamics-meter');
+  // sensitivity: high makes the same stroke louder than low
+  const sensLv = async v => { await p.evaluate(v => { const e = document.getElementById('sensSel'); e.value = v; e.dispatchEvent(new Event('change')); }, v); await conductBeats(p, c, 5, 66, 0.4 * c.scale); return (await st(p)).level; };
+  const lowL = await sensLv('low'), highL = await sensLv('high'); await sensLv('mid');
+  check(`the sensitivity setting works (low ${lowL.toFixed(2)} < high ${highL.toFixed(2)}) and is saved`, lowL + 0.1 < highL && (await p.evaluate(() => JSON.parse(localStorage.getItem('kusoge.orchestra.prefs')).sens)) === 'mid', { lowL, highL });
   // faster
   await conductBeats(p, c, 8, 90, 0.24 * c.scale); a = await st(p); check(`conducting faster speeds the orchestra up: ${Math.round(a.bpm)} bpm for 90`, Math.abs(a.bpm - 90) < 12, a);
   // stopping

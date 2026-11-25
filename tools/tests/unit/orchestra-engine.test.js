@@ -240,4 +240,56 @@ test('section table: every section a piece uses has a seat, a pan and a bank ins
   eq(E.artFor('vln', false), 'sus'); eq(E.artFor('vln', true), 'spic'); eq(E.artFor('fl', true), 'stac'); eq(E.artFor('timp', false), 'hit');
 });
 
+// --- Dynamics: stroke -> level -------------------------------------------------------------------------------------------------------------------
+// synthetic strokes (amp = fraction of min(stage w,h), speed = stage fractions per second) as each input device produces them
+const STROKES = {
+  mouse: { micro: [0.03, 0.15], small: [0.12, 0.7], ordinary: [0.2, 1.0], moderate: [0.4, 2.0], big: [0.6, 3.0], huge: [0.85, 4.2] },
+  touch: { micro: [0.03, 0.15], small: [0.12, 0.7], ordinary: [0.2, 1.0], moderate: [0.36, 1.8], big: [0.55, 2.8], huge: [0.8, 4.0] },
+};
+test('Dynamics: the curve is monotone and spans ppp..ff for every device and sensitivity', () => {
+  const D = E.Dynamics; let prev = -1;
+  for (let x = 0; x <= 1.5; x += 0.01) { const l = D.curve(x); ok(l >= prev - 1e-12, 'monotone at ' + x); ok(l >= 0.04 && l <= 1); prev = l; }
+  ['mouse', 'touch'].forEach(dev => ['low', 'mid', 'high'].forEach(sens => {
+    let p = -1; for (let a = 0; a <= 1; a += 0.05) for (let sp = 0; sp <= 4; sp += 0.5) { const l = D.level(a, sp, dev, sens); ok(l >= 0.04 && l <= 1); }
+    for (let k = 0; k <= 20; k++) { const l = D.level(k * 0.05, k * 0.2, dev, sens); ok(l >= p - 1e-12, dev + ' ' + sens + ' monotone in stroke size'); p = l; }
+  }));
+  for (let k = 0; k <= 10; k++) { if (k) ok(D.keyLevel(k) > D.keyLevel(k - 1), 'keyboard steps rise'); }
+  ok(D.keyLevel(0) < 0.1 && D.keyLevel(10) > 0.95 && D.mark(D.keyLevel(0)) === 'ppp' && D.mark(D.keyLevel(10)) === 'ff');
+  let lastM = -1; const order = ['ppp', 'pp', 'p', 'mp', 'mf', 'f', 'ff']; for (let l = 0.04; l <= 1; l += 0.01) { const i = order.indexOf(D.mark(l)); ok(i >= lastM, 'marks never go back'); lastM = i; }
+});
+test('Dynamics: p is easy, mf is a moderate stroke, f and ff need a really big fast swing (mouse and touch)', () => {
+  const D = E.Dynamics;
+  ['mouse', 'touch'].forEach(dev => {
+    const S = STROKES[dev], L = k => D.level(S[k][0], S[k][1], dev, 'mid');
+    ok(D.mark(L('micro')) === 'ppp' || D.mark(L('micro')) === 'pp', dev + ' micro stroke is ppp/pp: ' + L('micro'));
+    ok(L('small') < 0.30 && L('small') >= 0.15, dev + ' small stroke is pp..p: ' + L('small'));
+    ok(L('ordinary') >= 0.22 && L('ordinary') <= 0.42, dev + ' an ordinary stroke is p..mp: ' + L('ordinary'));
+    ok(L('moderate') >= 0.42 && L('moderate') <= 0.62, dev + ' a moderate stroke is mp..mf: ' + L('moderate'));
+    ok(L('big') >= 0.62 && L('big') < 0.9, dev + ' a big swing is f: ' + L('big'));
+    ok(L('huge') >= 0.9, dev + ' only a huge swing is ff: ' + L('huge'));
+    ok(L('moderate') < 0.65, dev + ' a moderate stroke never reaches f');
+  });
+  // the old mapping reached ff with amp 0.42 / speed 2.8; now that must stay below f
+  ok(D.level(0.42, 2.8, 'mouse', 'mid') < 0.65, 'the old "loud" stroke is now only mf: ' + D.level(0.42, 2.8, 'mouse', 'mid'));
+});
+test('Dynamics: phone motion and keyboard, sensitivity low/standard/high, smoothing', () => {
+  const D = E.Dynamics, mo = pk => D.level(clamp01(pk / 14) * 0.5 + 0.04, 0, 'motion', 'mid'), clamp01 = v => Math.min(1, Math.max(0, v));
+  ok(mo(2.5) < 0.22 && mo(4.5) < 0.36 && mo(7) > 0.38 && mo(7) < 0.62 && mo(10) > 0.62 && mo(14) > 0.8, 'phone: ' + [2.5, 4.5, 7, 10, 14].map(mo).map(v => v.toFixed(2)).join(' '));
+  ok(D.level(0.4, 2, 'mouse', 'low') < D.level(0.4, 2, 'mouse', 'mid') && D.level(0.4, 2, 'mouse', 'mid') < D.level(0.4, 2, 'mouse', 'high'), 'sensitivity orders the levels');
+  ok(D.level(0.2, 1, 'mouse', 'high') < 0.45, 'even at high sensitivity an ordinary stroke is not loud');
+  ok(D.level(0.1, 0.5, 'mouse', 'low') >= 0.04);
+  // smoothing: follows a jump by 40..85 %, never overshoots, converges
+  let v = 0.2; const target = 0.8; for (let i = 0; i < 6; i++) { const nv = D.smooth(v, target, 0.5); ok(nv > v && nv <= target, 'moves toward the target'); v = nv; } ok(v > 0.78, 'converges ' + v);
+  const j = D.smooth(0.3, 0.9, 0.5); ok(j > 0.3 + 0.4 * 0.6 - 1e-9 && j < 0.3 + 0.85 * 0.6 + 1e-9, 'a jump is followed partway: ' + j);
+});
+test('Dynamics scoring: the scorer compares the same 0..1 scale as the guide (a right stroke scores, a wrong one does not; Enjoy is forgiving)', () => {
+  const sc = loadScore('beethoven7'); const D = E.Dynamics;
+  const t = ['p', 'mf', 'f'].map(m => ({ m, lv: { p: 0.30, mf: 0.50, f: 0.66 }[m] }));
+  t.forEach(x => { ok(D.mark(x.lv) === x.m, 'level for ' + x.m + ' maps back to ' + x.m); });
+  ['enjoy', 'normal', 'maestro'].forEach(d => { const s = new E.Scorer(sc, E.DIFFS[d]); for (let b = 0; b < 40; b++) s.beat(b, sc.dynAt(b + 0.5)); eq(Math.round(s.dynSum / s.dynN * 100), 100); });
+  const off = (d, dl) => { const s = new E.Scorer(sc, E.DIFFS[d]); for (let b = 0; b < 40; b++) s.beat(b, Math.min(1, sc.dynAt(b + 0.5) + dl)); return s.dynSum / s.dynN; };
+  ok(off('enjoy', 0.2) > off('normal', 0.2) && off('normal', 0.2) > off('maestro', 0.2), 'enjoy is the most forgiving');
+  ok(off('enjoy', 0.2) > 0.6, 'enjoy forgives one mark of error');
+});
+
 run('orchestra-engine');

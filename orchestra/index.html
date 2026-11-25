@@ -24,7 +24,7 @@ KoboI18n.add({ en: {
   '曲をえらぶ': 'Choose a piece', 'むずかしさ': 'Difficulty', 'たのしむ': 'Enjoy', 'ふつう': 'Normal', 'マエストロ': 'Maestro',
   'たのしむ：入りは自動、失敗なし。ゆったり指揮を楽しむ': 'Enjoy: cues are automatic, no failing. Just relax and conduct.',
   'ふつう：入りのキューと強弱を見られる': 'Normal: your cues and dynamics are judged.', 'マエストロ：きびしい採点。振らないとオーケストラは待つ': 'Maestro: strict judging. If you stop, the orchestra waits.',
-  'クレジット': 'Credits', '設定': 'Settings', '音質': 'Sound quality', '自動': 'Auto', '高音質': 'High', '軽量': 'Light', 'スマホを傾けて指揮（動きセンサー）': 'Conduct by moving the phone (motion sensor)',
+  'クレジット': 'Credits', '設定': 'Settings', '振りの感度': 'Stroke sensitivity', '高：小さな振りでも大きな音になりやすい': 'High: small strokes get loud more easily', '低': 'Low', '標準': 'Standard', '高': 'High', '音質': 'Sound quality', '自動': 'Auto', '高音質': 'High', '軽量': 'Light', 'スマホを傾けて指揮（動きセンサー）': 'Conduct by moving the phone (motion sensor)',
   '音質を変えるときは、曲をえらび直してください': 'Pick a piece again for a quality change to take effect', '軽量：メモリを半分ほどにします（スマホ向け）': 'Light: about half the memory (for phones)',
   '読み込み中…': 'Loading…', '楽器の音を読み込み中': 'Loading the instruments', '{a} / {b} 個（{m} MB）': '{a} / {b} files ({m} MB)', '読み込めませんでした。通信を確かめて、もう一度。': 'Could not load. Check your connection and try again.',
   'この曲は {n} 分ほど': 'About {n} min', '{n} 分': '{n} min', '難しさ': 'Level', '拍の振り方 {n}': 'Pattern: {n}', '1つ振り': 'In one', '2つ振り': 'In two', '3つ振り': 'In three', '4つ振り': 'In four',
@@ -44,7 +44,7 @@ KoboI18n.add({ en: {
   // how to
   '振り方': 'Conducting', 'マウスは動かすだけ、スマホは指でなぞります。下に振っては戻す動きが「1拍」。左右に振ってもOK。': 'Move the mouse (no click needed) or drag a finger. A stroke down and back up is one beat. Side-to-side works too.',
   '最初の2回の拍でテンポが決まり、曲がはじまります。あとは拍の間隔がそのままテンポになります。': 'The first two beats set the tempo and the piece begins. After that your beat spacing is the tempo.',
-  '大きく速く振ると大きな音、小さく振ると小さな音。右の目盛りのしるし（めあて）に合わせよう。': 'Big, fast strokes are loud, small ones are soft. Match the marker on the meter at the right.',
+  '大きく速く振ると大きな音、小さく振ると小さな音。右の目盛りのしるし（めあて）に合わせよう。': 'Small, easy strokes are soft; only a really big, fast swing reaches f and ff. Match the marker on the meter (ppp to ff) at the right. Settings has a sensitivity option.',
   '入り：光った楽器をタップ（指揮台からそちらへスワイプ、数字キーも）。少し前に出すのがコツ。': 'Cues: tap the glowing section (or swipe toward it, or press its number key). Give it a beat early.',
   'キーボード：Space / Enter / ← → で拍、↑ ↓ で強弱、数字キーで入り、P で一時停止。': 'Keyboard: Space / Enter / ← → for beats, ↑ ↓ for volume, number keys for cues, P to pause.',
   '拍をとりこぼすと、ふつう・マエストロではオーケストラが待ってしまいます。': 'In Normal and Maestro the orchestra waits if you miss a beat.',
@@ -246,6 +246,7 @@ body.thumb header, body.thumb #chips, body.thumb #hint, body.thumb .kb-layer, bo
   <div class="card">
     <h2 id="sTitle" data-i18n>設定</h2>
     <div class="scroll">
+      <div class="setrow"><label for="sensSel"><span data-i18n>振りの感度</span><small data-i18n>高：小さな振りでも大きな音になりやすい</small></label><select id="sensSel"><option value="low" data-i18n>低</option><option value="mid" data-i18n>標準</option><option value="high" data-i18n>高</option></select></div>
       <div class="setrow"><label for="qualSel"><span data-i18n>音質</span><small data-i18n>軽量：メモリを半分ほどにします（スマホ向け）</small></label><select id="qualSel"><option value="auto" data-i18n>自動</option><option value="hi" data-i18n>高音質</option><option value="lo" data-i18n>軽量</option></select></div>
       <div class="setrow"><label for="motionChk" data-i18n>スマホを傾けて指揮（動きセンサー）</label><input type="checkbox" id="motionChk" style="width:28px;height:28px"></div>
       <p data-i18n>音質を変えるときは、曲をえらび直してください</p>
@@ -329,7 +330,7 @@ function recount(s) {
 }
 let save = readSave();
 function writeSave() { recount(save); store.set(SAVE_KEY, JSON.stringify(save)); }
-let prefs = (() => { try { const p = JSON.parse(store.get(PREF_KEY) || '{}'); return { quality: ['auto', 'hi', 'lo'].includes(p.quality) ? p.quality : 'auto', motion: !!p.motion }; } catch (e) { return { quality: 'auto', motion: false }; } })();
+let prefs = (() => { try { const p = JSON.parse(store.get(PREF_KEY) || '{}'); return { quality: ['auto', 'hi', 'lo'].includes(p.quality) ? p.quality : 'auto', motion: !!p.motion, sens: ['low', 'mid', 'high'].includes(p.sens) ? p.sens : 'mid' }; } catch (e) { return { quality: 'auto', motion: false, sens: 'mid' }; } })();
 function writePrefs() { store.set(PREF_KEY, JSON.stringify(prefs)); }
 
 // ---------- state ----------
@@ -427,7 +428,7 @@ async function startPiece(id) {
 
 // ---------- the play loop ----------
 const secKeys = {};
-let detector = null, flick = null; let trail = [], hist = [], kbLevel = 0.5, actQ = [], lastAct = {}, flash = {}, cueSeen = new Set(), tickTimer = 0, raf = 0, lastTapAt = 0, pointer = null, motion = null, lvSmooth = 0.45;
+let detector = null, flick = null; let trail = [], hist = [], kbStep = 5, kbLevel = 0.53, lastDev = 'mouse', lastIctusT = null, actQ = [], lastAct = {}, flash = {}, cueSeen = new Set(), tickTimer = 0, raf = 0, lastTapAt = 0, pointer = null, motion = null, lvSmooth = 0.45;
 const nowT = () => (G && G.ctx ? G.ctx.currentTime : perfNow());
 const toCtx = ms => (G && G.ctx ? G.ctx.currentTime - (performance.now() - ms) / 1000 : ms / 1000);
 
@@ -445,7 +446,7 @@ function beginPlay(id, score, ctx, bank, tier) {
   const diff = E.DIFFS[curDiff];
   const session = new E.Session({ score, diff, sink, now: nowT });
   G = { id, score, ctx, bank, player, session, diff, tier, meta: INDEX.pieces.find(p => p.id === id), reported: false, startedAt: perfNow(), ended: false, shown: false, beats: 0, hist: [] };
-  kbLevel = 0.5; lvSmooth = 0.45; session.level = 0.45; trail = []; hist = new Array(score.nBeats).fill(null); actQ = []; lastAct = {}; flash = {}; cueSeen = new Set(); paused = false; menuOpen = false;
+  kbStep = 5; kbLevel = E.Dynamics.keyLevel(5); lvSmooth = 0.45; lastIctusT = null; session.level = 0.45; trail = []; hist = new Array(score.nBeats).fill(null); actQ = []; lastAct = {}; flash = {}; cueSeen = new Set(); paused = false; menuOpen = false;
   detector = new E.BeatDetector({ scale: art.scale }); flick = new E.FlickDetector({ scale: art.scale });
   art.layout(score.sections); buildChips(score); hideAll();
   $('pieceChip').textContent = L(G.meta.title); $('pauseBtn').hidden = false; $('chips').hidden = false; $('tempoChip').hidden = false;
@@ -487,16 +488,13 @@ function giveCue(secId, t) {
   const secs = r.cue.secs; secs.forEach(s => { flash[s] = { kind: r.q >= 0.45 ? 'good' : 'bad', t: nowT() }; });
   toast(r.q >= 0.85 ? T('ばっちり！') : r.rel > 2.6 ? T('ちょっと早い') : T('ちょっと遅い'), r.q >= 0.85 ? 'good' : '', 800);
 }
-function levelFromStroke(amp, speed) {
-  const size = clamp((amp - 0.06) / (0.42 - 0.06), 0, 1), spd = clamp((speed - 0.25) / (2.8 - 0.25), 0, 1);
-  return 0.05 + 0.95 * Math.pow(0.65 * size + 0.35 * spd, 0.9);
-}
+function levelFromStroke(amp, speed, dev) { return E.Dynamics.level(amp, speed, dev || lastDev, prefs.sens); }
 function onIctus(ev, viaKey) {
   if (!G || paused || G.session.state === 'ended') return;
   if (AU) AU.ctx();
   let lv;
-  if (viaKey) lv = kbLevel; else lv = levelFromStroke(ev.amp, ev.speed || 0);
-  lvSmooth = viaKey ? lv : 0.45 * lvSmooth + 0.55 * lv;
+  if (viaKey) lv = kbLevel; else lv = levelFromStroke(ev.amp, ev.speed || 0, ev.dev);
+  lvSmooth = viaKey ? lv : E.Dynamics.smooth(lvSmooth, lv, lastIctusT == null ? 0.5 : ev.t - lastIctusT); lastIctusT = ev.t;
   const t = ev.t;
   const r = G.session.ictus(t, { level: lvSmooth });
   if (r.kind !== 'stray' && r.kind !== 'ignored') G.beats++;
@@ -508,6 +506,7 @@ function onIctus(ev, viaKey) {
 // pointer = the baton
 function pt(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
 function pushPoint(e) {
+  lastDev = e.pointerType === 'mouse' ? 'mouse' : 'touch';
   const p = pt(e), t = toCtx(e.timeStamp);
   trail.push({ x: p.x, y: p.y, t: nowT() }); if (trail.length > 60) trail.shift();
   detector.push(p.x, p.y, t).forEach(ev => onIctus(ev, false)); flick.push(p.x, p.y, t);
@@ -551,7 +550,7 @@ addEventListener('keydown', e => {
   if (c === 'KeyP' && !e.repeat) { e.preventDefault(); openMenu(); return; }
   if (paused) return;
   if (BEAT_KEYS.includes(c)) { e.preventDefault(); if (e.repeat) return; onIctus({ t: toCtx(e.timeStamp), amp: 0.2, speed: 1 }, true); return; }
-  if (c === 'ArrowUp' || c === 'ArrowDown') { e.preventDefault(); kbLevel = clamp(kbLevel + (c === 'ArrowUp' ? 0.07 : -0.07), 0.05, 1); lvSmooth = kbLevel; G.session.level = kbLevel; needDraw = true; return; }
+  if (c === 'ArrowUp' || c === 'ArrowDown') { e.preventDefault(); kbStep = clamp(kbStep + (c === 'ArrowUp' ? 1 : -1), 0, 10); kbLevel = E.Dynamics.keyLevel(kbStep); lvSmooth = kbLevel; G.session.level = kbLevel; needDraw = true; return; }
   const k = (e.key || '').toLowerCase(), i = E.KEYS.indexOf(k);
   if (i >= 0 && i < G.score.sections.length && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); giveCue(G.score.sections[i].id, toCtx(e.timeStamp)); }
 }, { capture: true });
@@ -560,7 +559,7 @@ addEventListener('keydown', e => {
 function enableMotion() {
   if (motion || !window.DeviceMotionEvent) return;
   const go = () => {
-    motion = { det: new E.MotionDetector(), h(ev) { const a = ev.accelerationIncludingGravity; if (!a || !G || paused) return; motion.det.push(a.x || 0, a.y || 0, a.z || 0, toCtx(ev.timeStamp)).forEach(x => onIctus(x, false)); } };
+    motion = { det: new E.MotionDetector(), h(ev) { const a = ev.accelerationIncludingGravity; if (!a || !G || paused) return; motion.det.push(a.x || 0, a.y || 0, a.z || 0, toCtx(ev.timeStamp)).forEach(x => { x.dev = 'motion'; onIctus(x, false); }); } };
     addEventListener('devicemotion', motion.h);
   };
   try {
@@ -597,7 +596,7 @@ function frame() {
   const total = score.guideSeconds(), cur = snap.progress * total;
   const mm = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
   const stt = {
-    now, dark: dark(), act, glow, keys: secKeys, level: s.level, target: snap.target, mark: snap.mark, pattern: snap.pattern, beatInBar: snap.beatInBar, tol: G.diff.tol,
+    now, dark: dark(), act, glow, keys: secKeys, level: s.level, curMark: E.Dynamics.mark(s.level), target: snap.target, mark: snap.mark, pattern: snap.pattern, beatInBar: snap.beatInBar, tol: G.diff.tol,
     trail, dyn: score.dyn, hist, cues: s.scorer.cues.map(c => ({ b: c.b, secs: c.secs, q: c.q })), pos: snap.pos, secHue: Object.fromEntries(score.sections.map(x => [x.id, x.def.hue])),
     barText: T('小節 {n}', { n: snap.bar }) + ' · ' + snap.mark, timeText: mm(cur) + ' / ' + mm(total), silhouette: true,
     msg: snap.state === 'idle' ? T('2回振ってスタート\n1回目で構え、2回目でテンポが決まる') : snap.state === 'armed' ? T('もう1回') : paused ? T('一時停止中') : '',
@@ -703,7 +702,8 @@ function showCredits() {
   showOv('ovCred');
 }
 $('tCred').onclick = showCredits; $('cClose').onclick = () => showTitle();
-$('tSet').onclick = () => { $('qualSel').value = prefs.quality; $('motionChk').checked = prefs.motion; $('motionChk').parentElement.hidden = !window.DeviceMotionEvent; showOv('ovSet'); };
+$('tSet').onclick = () => { $('qualSel').value = prefs.quality; $('sensSel').value = prefs.sens; $('motionChk').checked = prefs.motion; $('motionChk').parentElement.hidden = !window.DeviceMotionEvent; showOv('ovSet'); };
+$('sensSel').onchange = e => { prefs.sens = e.target.value; writePrefs(); };
 $('qualSel').onchange = e => { prefs.quality = e.target.value; writePrefs(); };
 $('motionChk').onchange = e => { prefs.motion = e.target.checked; writePrefs(); };
 $('sClose').onclick = () => showTitle();
@@ -735,7 +735,7 @@ function demoState(now) {
   if (thumbMode) for (let i = 0; i < 40; i++) { const f = i / 39; trail.push({ x: cx + sc * 0.17 * Math.sin(f * 5.1 + 0.4), y: cy - sc * 0.1 + sc * 0.2 * Math.abs(Math.sin(f * 2.6)), t: now - (1 - f) * 0.7 }); }
   let dyn = ''; for (let i = 0; i < 160; i++) dyn += String(Math.max(0, Math.min(8, Math.round(4 + 3.4 * Math.sin(i / 14) * Math.sin(i / 37 + 1)))));
   const hist = dyn.split('').map((c, i) => (thumbMode && i < 70 ? Math.max(0, Math.min(1, (c.charCodeAt(0) - 48 + 0.5) / 9 + 0.05 * Math.sin(i))) : null));
-  return { now, dark: dark(), act, glow, keys: {}, level: 0.66, target: 0.72, mark: 'f', pattern: 2, beatInBar: 0, trail, dyn, hist, cues: thumbMode ? [{ b: 40, secs: ['ob'], q: null }, { b: 90, secs: ['hn'], q: null }, { b: 120, secs: ['tp'], q: 1 }] : [], pos: 70, barText: thumbMode ? T('小節 {n}', { n: 35 }) + ' · f' : '', timeText: thumbMode ? '1:24 / 3:57' : '', secHue: { ob: 160, hn: 48, tp: 52 }, tol: 1, silhouette: true, msg: '' };
+  return { now, dark: dark(), act, glow, keys: {}, level: 0.66, curMark: 'f', target: 0.72, mark: 'f', pattern: 2, beatInBar: 0, trail, dyn, hist, cues: thumbMode ? [{ b: 40, secs: ['ob'], q: null }, { b: 90, secs: ['hn'], q: null }, { b: 120, secs: ['tp'], q: 1 }] : [], pos: 70, barText: thumbMode ? T('小節 {n}', { n: 35 }) + ' · f' : '', timeText: thumbMode ? '1:24 / 3:57' : '', secHue: { ob: 160, hn: 48, tp: 52 }, tol: 1, silhouette: true, msg: '' };
 }
 const loopDraw = () => { if (!G) art.draw(demoState(perfNow())); requestAnimationFrame(loopDraw); };
 // the title shows a stage with a seating plan behind it
