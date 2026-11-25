@@ -221,5 +221,5 @@ Realtime Database：
 
 ## 新作「指揮者ゲーム」（orchestra）を足したとき（2026-11）
 - **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文。`database.rules.json`＝Realtime Database は、指揮者ゲームでは変えていません）。**貼り直さないと、指揮者ゲームの記録（★・ベスト得点）が端末をまたいで同期されず、週ごとのプレイ回数に指揮者ゲームが数えられません**（遊ぶこと自体はできます）。
-- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'orchestra': 3000`＝曲ごとのベスト得点の合計（曲が増えても足りる余裕）。ランキングはないので、登録簿とそろえるためだけの値）、旧ランキングの点の確認 `okCap(…'orchestra')`、プレイ回数の `plus1('orchestra')`、同期する保存のキー `kusoge~orchestra~save`（曲ごとのベスト・★・統計）の形の確認（`okEntAt` に1行）です。設定 `prefs`・`howto` は端末だけで同期しません。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'orchestra': 10000`＝曲ごとのベスト得点の合計（曲が増えても足りる余裕）。ランキングはないので、登録簿とそろえるためだけの値）、旧ランキングの点の確認 `okCap(…'orchestra')`、プレイ回数の `plus1('orchestra')`、同期する保存のキー `kusoge~orchestra~save`（曲ごとのベスト・★・統計）の形の確認（`okEntAt` に1行）です。設定 `prefs`・`howto` は端末だけで同期しません。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（一覧と上限が登録簿と同じ）。貼ったあと本番に対して `--live` を流してください。

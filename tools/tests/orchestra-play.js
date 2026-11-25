@@ -38,6 +38,7 @@ const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.png') }).
 const wait = (p, f, arg, t) => p.waitForFunction(f, arg, { timeout: t || 20000 });
 async function startReal(p, id, diff) {
   await p.evaluate(d => { if (d) document.querySelector(`.dfb[data-diff="${d}"]`).click(); }, diff || null);
+  if (!(await p.locator(`.rc[data-piece="${id}"]`).isVisible())) { await p.click('#filters summary'); await p.click('#expandAll'); }
   await p.click(`.rc[data-piece="${id}"]`);
   if (await p.locator('#partBox button[data-part="all"]').count()) await p.click('#partBox button[data-part="all"]'); // a long movement asks: whole or a part
   await wait(p, () => __kb.state().playing, null, 90000);
@@ -98,7 +99,7 @@ async function audio(env) {
   const sine = await p.evaluate(() => { const sr = 44100, x = new Float32Array(sr * 6); for (let i = 0; i < x.length; i++) x[i] = 0.1 * Math.sin(2 * Math.PI * 440 * i / sr); return __orch.analyse([x, x], sr); });
   audioNumbers.sine440 = sine; note('reference, a 440 Hz sine: ' + JSON.stringify({ rmsDb: sine.rmsDb, flatness: sine.flatness, dominantPeakFrac: sine.dominantPeakFrac, peaks30dB: sine.peaks30dB }));
   await p.evaluate(() => __orch.showTitle()); await p.waitForFunction(() => __kb.state().title);
-  for (const [id, secs, lv] of [['nachtmusik', 24, 0.7], ['beethoven5', 24, 0.8], ['dvorak7', 30, 0.7], ['zauberflote', 30, 0.7], ['dvorak9-4', 30, 0.7], ['dvorak7-1', 30, 0.6], ['dvorak8-1', 40, 0.7], ['coriolan', 30, 0.7]]) {
+  for (const [id, secs, lv] of [['nachtmusik', 24, 0.7], ['beethoven5', 24, 0.8], ['dvorak7', 30, 0.7], ['zauberflote', 30, 0.7], ['dvorak9-4', 30, 0.7], ['dvorak7-1', 30, 0.6], ['dvorak8-1', 40, 0.7], ['coriolan', 30, 0.7], ['dvorak8-3', 40, 0.7]]) {
     const r = await p.evaluate(([id, secs, lv]) => __orch.renderOffline(id, secs, { level: lv }), [id, secs, lv]); audioNumbers[id] = r;
     note(`${id} (${secs}s at level ${lv}): ` + JSON.stringify({ rmsDb: r.rmsDb, peakDb: r.peakDb, centroidHz: r.centroidHz, flatness: r.flatness, dominantPeakFrac: r.dominantPeakFrac, peaks30dB: r.peaks30dB, bands: r.bands, notes: r.notes, peakVoices: r.peakVoices, renderX: r.renderX, stolen: r.voicesStolen, MB: +(r.bytes / 1048576).toFixed(0) }));
     check(`${id}: not silent and not clipping (RMS ${r.rmsDb} dBFS, peak ${r.peakDb} dBFS)`, r.rmsDb > -32 && r.rmsDb < -9 && r.peakDb < -0.05 && r.frames > 5, r);
@@ -128,11 +129,11 @@ async function conduct(env) {
   await shot(p, '03-conducting');
   // volume
   const levels = {}; await conductBeats(p, c, 6, 66, 0.07 * c.scale); levels.small = (await st(p)).level; await conductBeats(p, c, 6, 66, 0.2 * c.scale); levels.ordinary = (await st(p)).level;
-  await conductBeats(p, c, 6, 66, 0.4 * c.scale); levels.moderate = (await st(p)).level; await conductBeats(p, c, 6, 90, 0.7 * c.scale); levels.huge = (await st(p)).level;
-  check(`soft is easy: a small stroke is pp/p (${levels.small.toFixed(2)}), an ordinary one p..mp (${levels.ordinary.toFixed(2)})`, levels.small < 0.28 && levels.ordinary > 0.2 && levels.ordinary < 0.45, levels);
-  check(`mf is a moderate stroke (${levels.moderate.toFixed(2)}), f/ff needs a really big fast swing (${levels.huge.toFixed(2)})`, levels.moderate > 0.35 && levels.moderate < 0.75 && levels.huge > 0.7 && levels.huge > levels.moderate + 0.15, levels);
+  await conductBeats(p, c, 6, 66, 0.4 * c.scale); levels.moderate = (await st(p)).level; await conductBeats(p, c, 6, 110, 0.7 * c.scale); levels.huge = (await st(p)).level;
+  check(`soft is easy: a small stroke is pp/p (${levels.small.toFixed(2)}), an ordinary one p..mp (${levels.ordinary.toFixed(2)})`, levels.small < 0.28 && levels.ordinary > 0.15 && levels.ordinary < 0.42, levels);
+  check(`a medium stroke is still p/mp (${levels.moderate.toFixed(2)}), only a very big fast swing gets near f/ff (${levels.huge.toFixed(2)})`, levels.moderate > 0.2 && levels.moderate < 0.55 && levels.huge > 0.5 && levels.huge > levels.moderate + 0.12, levels);
   const dm = await p.evaluate(() => ({ mark: __orch.E.Dynamics.mark(__kb.state().level), sens: JSON.parse(localStorage.getItem('kusoge.orchestra.prefs') || '{}').sens })); note('meter mark after the big swing: ' + JSON.stringify(dm));
-  check('the meter names the level reached (f or ff after a huge swing)', dm.mark === 'f' || dm.mark === 'ff', dm);
+  check('the meter names the level reached (mf, f or ff after a huge swing)', ['mf', 'f', 'ff'].includes(dm.mark), dm);
   await shot(p, '03-dynamics-meter');
   // sensitivity: high makes the same stroke louder than low
   const sensLv = async v => { await p.evaluate(v => { const e = document.getElementById('sensSel'); e.value = v; e.dispatchEvent(new Event('change')); }, v); await conductBeats(p, c, 2, 66, 0.4 * c.scale); const ls = []; await conductBeats(p, c, 6, 66, 0.4 * c.scale, async () => { ls.push((await st(p)).level); }); return ls.reduce((x, y) => x + y, 0) / ls.length; };
@@ -235,18 +236,25 @@ async function finish(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
-const NEW_PIECES = ['coriolan', 'fidelio', 'mozart25-1', 'mozart25-2', 'beethoven5-2', 'beethoven7-1', 'dvorak8-1', 'dvorak8-4', 'dvorak7-1', 'dvorak7-2', 'dvorak7', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4'];
+const NEW_PIECES = ['dvorak8-3', 'mozart387-1', 'mozart387-3', 'beethoven-q59-3', 'haydn76-1-2', 'beethoven-q4-1', 'beethoven-q4-3', 'schubert-qs', 'grieg-aase', 'beethoven-marsch', 'haydn76-1-1', 'coriolan', 'fidelio', 'mozart25-1', 'mozart25-2', 'beethoven5-2', 'beethoven7-1', 'dvorak8-1', 'dvorak8-4', 'dvorak7-1', 'dvorak7-2', 'dvorak7', 'dvorak7-4', 'dvorak9-1', 'dvorak9-2', 'dvorak9-3', 'dvorak9-4'];
 async function newPieces(env) {
   console.log('5b. the Dvořák 7 and 9 movements: each starts, runs and finishes; parts; the beat filter; licence credits');
   const only = process.env.ORCH_PIECES ? process.env.ORCH_PIECES.split(',') : NEW_PIECES;
   const s = await open(env, { query: '' }); const p = s.page;
-  const ids = await p.evaluate(() => __kb.state().pieces); check('the new movements are in the index: ' + ids.length + ' pieces', NEW_PIECES.every(x => ids.includes(x)) && ids.length >= 23, ids);
+  const ids = await p.evaluate(() => __kb.state().pieces); check('the new movements are in the index: ' + ids.length + ' pieces', NEW_PIECES.every(x => ids.includes(x)) && ids.length >= 39, ids);
   await p.evaluate(() => { document.querySelector('.dfb[data-diff="enjoy"]').click(); });
   const grp = await p.evaluate(() => [...document.querySelectorAll('#pList .grp')].map(g => g.textContent)); check('the list is grouped by symphony', grp.some(g => /Dvořák|ドヴォルザーク/.test(g)) && grp.length >= 2, grp);
-  await p.click('#patFilter button[data-n="4"]'); const n4 = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => [b.dataset.piece, b.querySelector('.pat').textContent])); check('the 4-beat filter shows only 4-beat pieces: ' + n4.map(x => x[0]).join(','), n4.length >= 2 && n4.every(x => /4|四|four/i.test(x[1])), n4);
+  await p.click('#filters summary'); await p.click('#patFilter button[data-n="4"]'); const n4 = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => [b.dataset.piece, b.querySelector('.pat').textContent])); check('the 4-beat filter shows only 4-beat pieces: ' + n4.map(x => x[0]).join(','), n4.length >= 2 && n4.every(x => /4|四|four/i.test(x[1])), n4);
   await p.click('#patFilter button[data-n="3"]'); const n3 = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => b.dataset.piece)); check('the 3-beat filter now shows 3-beat pieces: ' + n3.join(','), n3.includes('beethoven5-2'), n3);
   const pats = await p.evaluate(() => { const r = {}; document.querySelectorAll('#pList .rc').forEach(b => { r[b.dataset.piece] = b.querySelector('.pat').textContent; }); return r; }); check('every listed piece is tagged with its beat pattern', Object.values(pats).every(t => /[234]/.test(t) || /beat|拍/.test(t)), pats);
   await p.click('#patFilter button[data-n="0"]');
+  // search, composer, era, favourites, collapsible groups
+  await p.fill('#pSearch', 'haydn'); let vis = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => b.dataset.piece)); check('search finds the Haydn quartet movements: ' + vis.join(','), vis.length >= 2 && vis.every(x => /haydn/.test(x)), vis);
+  await p.fill('#pSearch', ''); await p.selectOption('#pComp', 'Schubert'); vis = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => b.dataset.piece)); check('the composer filter: ' + vis.join(','), vis.length === 1 && vis[0] === 'schubert-qs', vis);
+  await p.selectOption('#pComp', ''); await p.click('#eraFilter button[data-era="romantic"]'); vis = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => b.dataset.piece)); check('the era filter (romantic) keeps Dvořák, Schubert, Grieg and drops Haydn: ' + vis.length, vis.includes('schubert-qs') && vis.includes('dvorak9-1') && !vis.some(x => /haydn|mozart/.test(x)), vis);
+  await p.click('#eraFilter button[data-era=""]');
+  await p.evaluate(() => document.querySelector('.rrow:has(.rc[data-piece="grieg-aase"]) .fav').click()); await p.click('#favOnly'); vis = await p.evaluate(() => [...document.querySelectorAll('#pList .rc')].map(b => b.dataset.piece)); check('a favourite can be starred and filtered: ' + vis.join(','), vis.length === 1 && vis[0] === 'grieg-aase' && (await p.evaluate(() => JSON.parse(localStorage.getItem('kusoge.orchestra.prefs')).fav)).includes('grieg-aase'), vis);
+  await p.click('#favOnly'); const before = await p.locator('#pList .rc').count(); await p.evaluate(() => document.querySelector('#pList .grp').click()); const after = await p.locator('#pList .rc').count(); check('a group header collapses and reopens its pieces (' + before + ' -> ' + after + ')', after < before, { before, after }); await p.evaluate(() => document.querySelector('#pList .grp').click()); await p.click('#filters summary');
   for (const id of only) {
     await p.evaluate(id => __orch.start(id, 'enjoy'), id); await wait(p, () => __kb.state().playing, null, 120000); const c = await stageBox(p);
     await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); const g = await p.evaluate(() => ({ g: __orch.G.score.bpmAt(0) })); const bpm = Math.min(120, Math.max(50, g.g));

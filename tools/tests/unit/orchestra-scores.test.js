@@ -11,13 +11,14 @@ const rd = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const index = JSON.parse(rd('orchestra/scores/index.json'));
 
 test('every piece has a recorded licence (Public Domain, or CC BY-SA 3.0 with licence URL and credit), a Mutopia id, a source MIDI in the repo, and a row in CREDITS.md', () => {
-  ok(index.pieces.length >= 23, 'pieces: ' + index.pieces.length); const credits = rd('orchestra/CREDITS.md'), ids = new Set();
+  ok(index.pieces.length >= 39, 'pieces: ' + index.pieces.length); const credits = rd('orchestra/CREDITS.md'), ids = new Set();
   for (const p of index.pieces) {
-    ids.add(p.id); ok(['Public Domain', 'CC BY-SA 3.0', 'CC0 1.0'].includes(p.src.licence), p.id + ' licence ' + p.src.licence); if (p.src.licence === 'CC BY-SA 3.0') { ok(/creativecommons\.org\/licenses\/by-sa\/3\.0/.test(p.src.licenceUrl) && /CC BY-SA 3\.0/.test(p.src.credit) && /Mutopia/.test(p.src.credit), p.id + ' share-alike credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.licence, 'CC BY-SA 3.0'); eq(sj.src.credit, p.src.credit, 'the derived score JSON carries the licence and the credit'); }
-    if (p.src.licence === 'CC0 1.0') { ok(p.src.musescore && /CC0/.test(p.src.credit) && /creativecommons\.org\/publicdomain\/zero/.test(p.src.licenceUrl), p.id + ' CC0 credit'); } ok((Number.isInteger(p.src.mutopia) && p.src.mutopia > 0) || (p.src.musescore && p.src.musescore.user > 0), p.id + ' source id');
+    ids.add(p.id); ok(['Public Domain', 'CC BY-SA 3.0', 'CC0 1.0', 'CC BY 4.0'].includes(p.src.licence), p.id + ' licence ' + p.src.licence); if (p.src.licence === 'CC BY-SA 3.0') { ok(/creativecommons\.org\/licenses\/by-sa\/3\.0/.test(p.src.licenceUrl) && /CC BY-SA 3\.0/.test(p.src.credit) && /Mutopia/.test(p.src.credit), p.id + ' share-alike credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.licence, 'CC BY-SA 3.0'); eq(sj.src.credit, p.src.credit, 'the derived score JSON carries the licence and the credit'); }
+    if (p.src.licence === 'CC BY 4.0') { ok(/Paul De Bra/.test(p.src.credit) && /licenses\/by\/4\.0/.test(p.src.licenceUrl) && p.simplified, p.id + ' attribution credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.credit, p.src.credit); }
+    if (p.src.licence === 'CC0 1.0') { ok(p.src.musescore && /CC0/.test(p.src.credit) && /creativecommons\.org\/publicdomain\/zero/.test(p.src.licenceUrl), p.id + ' CC0 credit'); } ok((Number.isInteger(p.src.mutopia) && p.src.mutopia > 0) || (p.src.musescore && p.src.musescore.user > 0) || (p.src.imslp && /imslp\.org/.test(p.src.imslp)), p.id + ' source id');
     ok(credits.includes('| ' + p.id + ' |') && (!p.src.mutopia || credits.includes('piece-info.cgi?id=' + p.src.mutopia + ')')), p.id + ' in CREDITS.md');
     p.src.midi.forEach(f => { ok(fs.existsSync(path.join(ROOT, 'tools/orchestra-midi')) && JSON.stringify(fs.readdirSync(path.join(ROOT, 'tools/orchestra-midi'), { recursive: true })).includes(f), p.id + ' source midi ' + f); });
-    ok(p.title.ja && p.title.en && p.composer.ja && p.composer.en && p.mvt.ja && p.mvt.en && p.blurb.ja && p.blurb.en, p.id + ' texts'); ok(p.minutes > 2 && p.minutes < 16, p.id + ' minutes ' + p.minutes);
+    ok(p.title.ja && p.title.en && p.composer.ja && p.composer.en && p.mvt.ja && p.mvt.en && p.blurb.ja && p.blurb.en, p.id + ' texts'); ok(p.minutes > 1 && p.minutes < 16, p.id + ' minutes ' + p.minutes);
     ok(p.level >= 1 && p.level <= 3 && [1, 2, 3, 4].includes(p.pattern), p.id + ' level/pattern');
   }
   eq(ids.size, index.pieces.length); ok(/Public Domain/.test(credits) && /CC BY-SA 3\.0/.test(credits) && /ShareAlike|share-alike/i.test(credits), 'credits list the share-alike pieces with the licence');

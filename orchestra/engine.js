@@ -45,12 +45,12 @@
 
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // Dynamics: baton stroke -> level (0.04..1), one perceptual curve for every input device. Soft is easy (an ordinary small, slow stroke gives p..mp, a mouse
-  // micro-movement pp, ppp with tiny strokes), mf needs a moderate stroke, f and ff need a really big, fast swing. Same scale as the score's dynamics guide.
+  // micro-movement pp, ppp with tiny strokes), mf needs a large stroke, f a very large fast sweep, ff almost the biggest swing the stage allows. Same scale as the score's dynamics guide.
   //   exertion x = 0.55 * amplitude/ampRef + 0.45 * speed/spdRef   (amp: fraction of min(stage width, height); speed: stage-fractions per second)
   //   level = piecewise-linear through ANCHORS (monotone), then *sensitivity* scales x (low 0.8, standard 1, high 1.25).
   // ------------------------------------------------------------------------------------------------------------------------------------------
-  const DYN_ANCHORS = [[0, 0.04], [0.06, 0.09], [0.16, 0.19], [0.30, 0.30], [0.45, 0.40], [0.58, 0.50], [0.74, 0.65], [0.98, 0.85], [1.25, 1]];
-  const DYN_DEVICE = { mouse: { amp: 0.72, spd: 3.6 }, touch: { amp: 0.62, spd: 3.2 }, motion: { amp: 0.5, spd: 1 }, key: { amp: 1, spd: 1 } };
+  const DYN_ANCHORS = [[0, 0.04], [0.06, 0.08], [0.14, 0.19], [0.24, 0.30], [0.40, 0.40], [0.58, 0.50], [0.78, 0.65], [0.97, 0.88], [1.1, 1]];
+  const DYN_DEVICE = { mouse: { amp: 0.97, spd: 4.86 }, touch: { amp: 0.84, spd: 4.3 }, motion: { amp: 0.52, spd: 1 }, key: { amp: 1, spd: 1 } };
   const DYN_SENS = { low: 0.8, mid: 1, high: 1.25 };
   const Dynamics = {
     ANCHORS: DYN_ANCHORS, SENS: DYN_SENS, DEVICES: DYN_DEVICE,
@@ -59,7 +59,7 @@
     // amp, speed as reported by BeatDetector ({amp, speed}); device 'mouse' | 'touch' | 'motion'; sens 'low' | 'mid' | 'high'
     level(amp, speed, device, sens) { return Dynamics.curve(Dynamics.exertion(amp, speed, device) * (DYN_SENS[sens] || 1)); },
     // keyboard Up/Down: step 0..10 -> level (ppp .. ff), not affected by sensitivity
-    keyLevel(step) { return Dynamics.curve(clamp(step, 0, 10) * 0.125); },
+    keyLevel(step) { return Dynamics.curve(clamp(step, 0, 10) * 0.11); },
     // short smoothing between strokes: dt seconds since the previous ictus; a jump is followed 65-75 % of the way
     smooth(prev, lv, dt) { const a = 1 - Math.exp(-(dt > 0 ? dt : 0.5) / 0.28); return prev + (lv - prev) * clamp(a, 0.4, 0.85); },
     // 0..1 -> mark name (ppp..ff), the thresholds sit at the mid-points of the marks' target levels
@@ -250,6 +250,31 @@
     this.t0 = T; this.b0 = B; this.r = bpm / 60; if (ceil !== undefined) this.ceil = ceil;
   };
   BeatClock.prototype.waiting = function (t) { return this.running && this.ceil < Infinity && this.posAt(t) >= this.ceil - 1e-9; };
+
+
+  // ------------------------------------------------------------------------------------------------------------------------------------------
+  // DemoConductor (お手本): a virtual conductor that feeds a Session the strokes of a steady conductor at the marked tempo with the dynamics guide as
+  // the level (no player input). `ghostPoint` gives the model baton position (0..1 in the path box) for the beat phase.
+  // ------------------------------------------------------------------------------------------------------------------------------------------
+  function DemoConductor(session, o) { o = o || {}; this.ses = session; this.score = session.score; this.k = 0; this.next = null; this.lead = o.lead != null ? o.lead : 0.4; this.done = false; this.scale = o.scale || 1; }
+  DemoConductor.prototype.tick = function (now) {
+    const S = this.score, ses = this.ses; if (this.done || ses.paused || ses.state === 'ended') return;
+    if (this.next == null) { this.next = now + this.lead; }
+    while (this.next <= now + 0.02 && !this.done) {
+      const lv = clamp(S.dynAt(Math.max(0, this.k)) * 1.0, 0.1, 0.95), g = S.bpmAt(Math.min(Math.max(0, this.k), S.nBeats - 1)) * this.scale;
+      const r = ses.ictus(this.next, { level: lv });
+      if (r.kind === 'stray') { this.next += 0.05; continue; }
+      this.next += 60 / g; this.k = ses.state === 'armed' ? 0 : Math.max(this.k + 1, ses.kAcc + 1);
+      if (ses.kAcc >= S.nBeats - 1) this.done = true;
+    }
+  };
+  const GHOST_PATTERNS = { 1: [[0.5, 0.15], [0.5, 0.85]], 2: [[0.5, 0.15], [0.5, 0.88], [0.78, 0.4]], 3: [[0.5, 0.15], [0.5, 0.88], [0.86, 0.6], [0.78, 0.3]], 4: [[0.5, 0.15], [0.5, 0.88], [0.14, 0.62], [0.86, 0.62], [0.6, 0.25]] };
+  // beat in bar `bib` (0-based) of an n-beat pattern, phase f in [0,1) between this beat's ictus and the next: beat 1 is the low point, the last beat rebounds over the top
+  function ghostPoint(n, bib, f) {
+    const P = GHOST_PATTERNS[n] || GHOST_PATTERNS[2], i = clamp(bib, 0, n - 1), e = f * f * (3 - 2 * f), lerpP = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    if (i < n - 1) return lerpP(P[i + 1], P[i + 2], e);
+    return f < 0.5 ? lerpP(P[n], P[0], f * 2) : lerpP(P[0], P[1], (f - 0.5) * 2);
+  }
 
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // Scorer
@@ -464,5 +489,5 @@
     return (inst === 'vln' || inst === 'vla' || inst === 'vc' || inst === 'cb') ? 'spic' : 'stac';
   }
 
-  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
+  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, DemoConductor, ghostPoint, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
 });

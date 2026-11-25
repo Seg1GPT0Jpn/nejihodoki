@@ -207,6 +207,19 @@
       if (st.guideTip) { ctx.globalAlpha = 0.9; ctx.font = '800 ' + Math.max(10, Math.round(A.scale * 0.034)) + 'px system-ui, sans-serif'; ctx.fillStyle = st.pal.ink; ctx.textBaseline = 'top'; ctx.fillText(st.guideTip, A.W / 2, P[1][1] + fs * 1.1); }
       ctx.restore();
     }
+    // the model (お手本) baton: a translucent baton moving along the pattern in time with the music; its swing size follows the dynamics guide
+    const E_ghostPoint = (n, bib, f) => (window.OrchEngine && OrchEngine.ghostPoint ? OrchEngine.ghostPoint(n, bib, f) : [0.5, 0.5]);
+    function drawGhost(st) {
+      const g = st.ghost; if (!g || !g.alpha) return;
+      const w = A.scale * 0.46, h = A.scale * 0.5, bx = A.W / 2 - w / 2, by = A.stageH * 0.22, pt = E_ghostPoint(g.pattern, g.bib, g.f), k = 0.45 + 0.75 * clamp(g.level, 0, 1);
+      const cx = bx + 0.5 * w, cy = by + 0.55 * h, x = cx + (bx + pt[0] * w - cx) * k, y = cy + (by + pt[1] * h - cy) * k;
+      ctx.save(); ctx.globalAlpha = g.alpha; ctx.lineCap = 'round';
+      ctx.strokeStyle = st.dark ? '#bfe3ff' : '#2a5d9a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - 30 * (0.6 + 0.6 * k), y - 34 * (0.6 + 0.6 * k)); ctx.lineTo(x, y); ctx.stroke();
+      ctx.fillStyle = st.dark ? '#e8f4ff' : '#1f4a7d'; ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+      if (g.label) { ctx.globalAlpha = Math.min(1, g.alpha + 0.2); ctx.font = '900 ' + Math.max(11, Math.round(A.scale * 0.04)) + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = st.pal.ink; ctx.fillText(g.label, A.W / 2, by - 4); }
+      ctx.restore();
+    }
+
     function drawBeatFlash(st) {
       const f = st.bflash; if (!f || f.k <= 0) return;
       ctx.save(); const k = clamp(f.k, 0, 1), col = f.state === 'ok' ? st.pal.good : f.state === 'fast' || f.state === 'slow' ? st.pal.bad : st.pal.gold;
@@ -234,7 +247,7 @@
       // podium
       const p = A.podium; c.fillStyle = st.pal.podium; roundRect(c, p.x - 34, p.y - 10, 68, 22, 8); c.fill(); c.fillStyle = st.pal.podiumTop; roundRect(c, p.x - 34, p.y - 14, 68, 12, 6); c.fill();
       if (st.silhouette) { c.fillStyle = st.dark ? '#120a0d' : '#3a2018'; c.beginPath(); c.arc(p.x, p.y - 38, 9, 0, TAU); c.fill(); c.beginPath(); c.ellipse(p.x, p.y - 17, 14, 14, 0, Math.PI, TAU); c.fill(); }
-      drawPattern(st, c); drawMeter(st); drawGuide(st); drawBaton(st); drawBeatFlash(st);
+      drawPattern(st, c); drawMeter(st); drawGuide(st); drawGhost(st); drawBaton(st); drawBeatFlash(st);
       // centre message
       if (st.msg) {
         c.save(); c.font = '800 ' + Math.max(14, Math.round(A.scale * 0.045)) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';

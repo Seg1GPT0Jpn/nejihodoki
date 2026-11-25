@@ -862,7 +862,7 @@
       flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: true },
       versus: null,
       // total = sum over the 8 pieces of the best score (0-100, best of the three difficulties); ranking is off and nothing reads rankSource
-      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 3000, maxRate: null },
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 10000, maxRate: null },
       rankSource: { key: 'kusoge.orchestra.save', paths: ['total'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.orchestra.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
       keys: {

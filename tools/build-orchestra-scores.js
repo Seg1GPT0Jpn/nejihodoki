@@ -111,6 +111,31 @@ const PIECES = [
     title: { ja: '交響曲 第7番 イ長調 作品92', en: 'Symphony No. 7 in A major, Op. 92' }, composer: { ja: 'ベートーヴェン', en: 'Beethoven' }, year: 1812,
     midi: ['Symphony7_1.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'timp', 8: 'vln1', 9: 'vln2', 10: 'vla', 11: 'vc', 12: 'cb' }],
     blurb: { ja: 'ゆっくりした4つ振りの序奏から、踊るような6/8のヴィヴァーチェへ。', en: 'A slow introduction in four, then the dancing 6/8 Vivace.' } },
+  // ---- chamber and small-ensemble pieces from Mutopia (Public Domain, licence checked on each piece page 2026-11-25); the parts sit on the string / wind sections ----
+  { id: "beethoven-q4-1", mutopia: 790, level: 2, bpmMax: 142, mvt: { ja: "第1楽章 アレグロ・マ・ノン・タント", en: "I. Allegro ma non tanto" }, work: "beethoven-q4", title: { ja: "弦楽四重奏曲 第4番 ハ短調 作品18-4", en: "String Quartet No. 4 in C minor, Op. 18 No. 4" }, composer: { ja: "ベートーヴェン", en: "Beethoven" }, year: 1801, midi: ["Chamber/QuartetOpus18_No4_1.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "ハ短調の緊張感ある弦楽四重奏。四つの声部が順に入ってくるので、入りのキューを。", en: "A tense C-minor string quartet: the four voices enter one after another. Cue them in." } },
+  { id: "beethoven-q4-2", mutopia: 791, level: 1, mvt: { ja: "第2楽章 アンダンテ・スケルツォーソ", en: "II. Andante scherzoso quasi allegretto" }, work: "beethoven-q4", title: { ja: "弦楽四重奏曲 第4番 ハ短調 作品18-4", en: "String Quartet No. 4 in C minor, Op. 18 No. 4" }, composer: { ja: "ベートーヴェン", en: "Beethoven" }, year: 1801, midi: ["Chamber/QuartetOpus18_No4_2.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "軽やかなフーガ風の3つ振り。", en: "A light, fugal movement in three." } },
+  { id: "beethoven-q4-3", mutopia: 792, level: 1, mvt: { ja: "第3楽章 メヌエット", en: "III. Menuetto" }, work: "beethoven-q4", title: { ja: "弦楽四重奏曲 第4番 ハ短調 作品18-4", en: "String Quartet No. 4 in C minor, Op. 18 No. 4" }, composer: { ja: "ベートーヴェン", en: "Beethoven" }, year: 1801, midi: ["Chamber/QuartetOpus18_No4_3.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "速いメヌエット。1小節を1つ振りで。", en: "A brisk minuet, one beat to the bar." } },
+  { id: "beethoven-q4-4", mutopia: 793, level: 3, mvt: { ja: "第4楽章 アレグロ ― プレスティッシモ", en: "IV. Allegro - Prestissimo" }, work: "beethoven-q4", title: { ja: "弦楽四重奏曲 第4番 ハ短調 作品18-4", en: "String Quartet No. 4 in C minor, Op. 18 No. 4" }, composer: { ja: "ベートーヴェン", en: "Beethoven" }, year: 1801, midi: ["Chamber/QuartetOpus18_No4_4.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "ロンド形式のフィナーレ。最後は猛スピード。", en: "A rondo finale that ends at breakneck speed." } },
+  { id: "schubert-qs", mutopia: 1196, level: 2, mvt: { ja: "四重奏断章 ハ短調 D.703", en: "Quartettsatz in C minor, D.703" }, title: { ja: "弦楽四重奏曲 第12番《四重奏断章》", en: "String Quartet No. 12 \"Quartettsatz\"" }, composer: { ja: "シューベルト", en: "Schubert" }, year: 1820, midi: ["Chamber/SchubertF-D703-Quartettsatz.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "ざわめく刻みの上に歌がうたわれる名作。6/8は2つ振りで。", en: "Schubert's surging single movement: a song over restless pulses. Conduct the 6/8 in two." } },
+  { id: "grieg-aase", mutopia: 247, level: 1, mvt: { ja: "オーゼの死", en: "Aase's Death" }, title: { ja: "《ペール・ギュント》第1組曲 作品46", en: "Peer Gynt Suite No. 1, Op. 46" }, composer: { ja: "グリーグ", en: "Grieg" }, year: 1875, midi: ["Chamber/aasesdeath.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc', 5: 'cb' }], blurb: { ja: "悲しみに満ちたゆっくりした4つ振り。長いクレッシェンドが見せ場。", en: "A grieving slow four with a long, aching crescendo." } },
+  { id: "beethoven-marsch", mutopia: 991, level: 2, mvt: { ja: "行進曲 ハ長調 WoO 29", en: "March in C, WoO 29" }, title: { ja: "行進曲 WoO 29", en: "March, WoO 29" }, composer: { ja: "ベートーヴェン", en: "Beethoven" }, year: 1809, midi: ["Chamber/marsch_woo29.mid"], tracks: [{ 1: 'cl', 2: 'hn', 3: 'fg' }], blurb: { ja: "管楽器だけの小さな行進曲（クラリネット・ホルン・ファゴットの3声部）。", en: "A little march for winds only (clarinet, horn and bassoon parts of the Mutopia reduction)." } },
+  { id: "haydn76-1-1", mutopia: 383, level: 2, mvt: { ja: "第1楽章 アレグロ・コン・スピリート", en: "I. Allegro con spirito" }, work: "haydn76-1", title: { ja: "弦楽四重奏曲 ト長調 作品76-1", en: "String Quartet in G major, Op. 76 No. 1" }, composer: { ja: "ハイドン", en: "Haydn" }, year: 1797, midi: ["Chamber/Haydn_Op76_1_mvt1.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "エネルギッシュな2つ振り。", en: "An energetic two-in-a-bar." } },
+  { id: "haydn76-1-4", mutopia: 383, level: 3, mvt: { ja: "第4楽章 アレグロ・マ・ノン・トロッポ", en: "IV. Allegro ma non troppo" }, work: "haydn76-1", title: { ja: "弦楽四重奏曲 ト長調 作品76-1", en: "String Quartet in G major, Op. 76 No. 1" }, composer: { ja: "ハイドン", en: "Haydn" }, year: 1797, midi: ["Chamber/Haydn_Op76_1_mvt4.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "明るく駆けぬける終楽章。", en: "A bright, running finale." } },
+  { id: "haydn76-1-2", mutopia: 383, level: 1, mvt: { ja: "第2楽章 アダージョ・ソステヌート", en: "II. Adagio sostenuto" }, work: "haydn76-1", title: { ja: "弦楽四重奏曲 ト長調 作品76-1", en: "String Quartet in G major, Op. 76 No. 1" }, composer: { ja: "ハイドン", en: "Haydn" }, year: 1797, midi: ["Chamber/Haydn_Op76_1_mvt2.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "とてもゆっくりした祈りのような楽章。", en: "A very slow, prayer-like movement." } },
+  { id: "mozart387-1", mutopia: 245, level: 2, mvt: { ja: "第1楽章 アレグロ・ヴィヴァーチェ・アッサイ", en: "I. Allegro vivace assai" }, work: "mozart387", title: { ja: "弦楽四重奏曲 第14番 ト長調 K.387《春》", en: "String Quartet No. 14 in G major, K.387" }, composer: { ja: "モーツァルト", en: "Mozart" }, year: 1782, midi: ["Chamber/Mozart_K387_mvt1.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "ト長調の軽やかな4つ振り。", en: "A buoyant four in G major." } },
+  { id: "mozart387-2", mutopia: 245, level: 1, mvt: { ja: "第2楽章 メヌエット", en: "II. Menuetto: Allegro" }, work: "mozart387", title: { ja: "弦楽四重奏曲 第14番 ト長調 K.387《春》", en: "String Quartet No. 14 in G major, K.387" }, composer: { ja: "モーツァルト", en: "Mozart" }, year: 1782, midi: ["Chamber/Mozart_K387_mvt2.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "堂々としたメヌエット。", en: "A stately minuet." } },
+  { id: "mozart387-3", mutopia: 245, level: 1, mvt: { ja: "第3楽章 アンダンテ・カンタービレ", en: "III. Andante cantabile" }, work: "mozart387", title: { ja: "弦楽四重奏曲 第14番 ト長調 K.387《春》", en: "String Quartet No. 14 in G major, K.387" }, composer: { ja: "モーツァルト", en: "Mozart" }, year: 1782, midi: ["Chamber/Mozart_K387_mvt3.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "ゆっくり歌う緩徐楽章。", en: "A singing slow movement." } },
+  { id: "mozart387-4", mutopia: 245, level: 3, mvt: { ja: "第4楽章 モルト・アレグロ", en: "IV. Molto allegro" }, work: "mozart387", title: { ja: "弦楽四重奏曲 第14番 ト長調 K.387《春》", en: "String Quartet No. 14 in G major, K.387" }, composer: { ja: "モーツァルト", en: "Mozart" }, year: 1782, midi: ["Chamber/Mozart_K387_mvt4.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "フーガ風の主題で駆けぬける終楽章。", en: "A finale racing along with fugal themes." } },
+  { id: "beethoven-q59-3", mutopia: 1041, level: 2, mvt: { ja: "第2楽章 アンダンテ・コン・モート・クワジ・アレグレット", en: "II. Andante con moto quasi allegretto" }, title: { ja: "弦楽四重奏曲 第9番 ハ長調 作品59-3《ラズモフスキー第3番》", en: "String Quartet No. 9 in C major, Op. 59 No. 3" }, composer: { ja: "ベートーヴェン", en: "Beethoven" }, year: 1806, midi: ["Chamber/Beethoven_Op59_3_mvt2.mid"], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc' }], blurb: { ja: "ささやくようなピツィカートの上に哀しい旋律。6/8を2つ振りで。", en: "A sad melody over whispering pizzicato; the 6/8 in two." } },
+  // ---- Dvořák 8, III: a 5-part reduction (4 accordions + bass accordion) by Paul De Bra, IMSLP PMLP8825, CC BY 4.0; spread over the orchestra by doubling ----
+  { id: 'dvorak8-3', level: 2, tempoScale: 50 / 60, bpmMin: 36, work: 'dvorak8', simplified: true,
+    mvt: { ja: '第3楽章 アレグレット・グラツィオーソ（簡略版：5声部の編曲）', en: 'III. Allegretto grazioso (simplified: 5-part arrangement)' },
+    imslp: 'https://imslp.org/wiki/Symphony_No.8,_Op.88_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)', licence: 'CC BY 4.0', licenceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    credit: 'Arrangement: Paul De Bra, 2025, CC BY 4.0, IMSLP (composition: Dvořák, public domain)',
+    title: { ja: '交響曲 第8番 ト長調 作品88', en: 'Symphony No. 8 in G major, Op. 88' }, composer: { ja: 'ドヴォルザーク', en: 'Dvořák' }, year: 1889,
+    midi: ['Dvorak8-mids/Dvorak8_Mvt3_DeBra_arr.mid'], tracks: [{ 1: 'vln1', 2: 'vln2', 3: 'vla', 4: 'vc', 5: 'cb' }],
+    derive: [{ from: 'vln1', to: 'fl', transpose: 0 }, { from: 'vln2', to: 'ob', transpose: 0 }, { from: 'vln2', to: 'cl', transpose: 0 }, { from: 'vla', to: 'hn', transpose: 0 }, { from: 'vc', to: 'fg', transpose: 0 }],
+    blurb: { ja: '優雅な3/8のワルツ。5声部に縮めた編曲（簡略版）を、オーケストラ全体に振り分けて鳴らします。1小節を1つ振りで。', en: 'The graceful 3/8 waltz, played from a 5-part arrangement spread over the whole orchestra (simplified version). One beat to the bar.' } },
   { id: 'midsummer', mutopia: 80, level: 2, mvt: { ja: '間奏曲（No.5）', en: 'Intermezzo (No. 5)' },
     title: { ja: '劇音楽《真夏の夜の夢》 作品61', en: 'A Midsummer Night\'s Dream, Op. 61' }, composer: { ja: 'メンデルスゾーン', en: 'Mendelssohn' }, year: 1843,
     midi: ['Sommernachtstraum-mids/Sommernachtstraum.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'cb' }],
@@ -146,6 +171,7 @@ function build(P) {
     let last = -1; mf.tempos.forEach(t => { const tk = Math.round(t.tick * k) + off; if (t.tick === 0 && last === 0) tempos.pop(); tempos.push({ q: tk / PPQ, bpm: 6e7 / t.uspq }); last = t.tick; });
     off += Math.round(mf.endTick * k);
   });
+  if (P.tempoScale) tempos.forEach(t => { t.bpm *= P.tempoScale; }); // the written tempo is slower in the original score
   if (P.tempoOverride) { tempos.length = 0; P.tempoOverride.forEach(([q, bpm]) => tempos.push({ q, bpm })); }
   tempos.sort((a, b) => a.q - b.q);
   sigs.sort((a, b) => a.tick - b.tick);
@@ -175,7 +201,7 @@ function build(P) {
       if (bpm < BPM_MIN && unit >= 1 && beats * 2 <= 4) { unit /= 2; beats *= 2; continue; }
       break;
     }
-    bars.push({ tick, q, beats, unit, bpm: T / unit, barQ });
+    bars.push({ tick, q, beats, unit, bpm: Math.max(T / unit, P.bpmMin || 0), barQ });
     tick += Math.round(barQ * PPQ);
   }
   // keep only the bars of the excerpt; beat 0 = first beat of the first kept bar
@@ -266,7 +292,7 @@ function build(P) {
   const out = {
     v: 1, id: P.id, ppq: PPQ,
     title: P.title, composer: P.composer, mvt: P.mvt, year: P.year, blurb: P.blurb, level: P.level,
-    src: { ...(P.musescore ? { musescore: P.musescore } : { mutopia: P.mutopia }), midi: P.midi.map(f => f.split('/').pop()), licence: P.licence || 'Public Domain' },
+    src: { ...(P.musescore ? { musescore: P.musescore } : P.imslp ? { imslp: P.imslp } : { mutopia: P.mutopia }), midi: P.midi.map(f => f.split('/').pop()), licence: P.licence || 'Public Domain' },
     nBeats, grid, bpm, dyn, cues: cueOut, needs,
     sec: sections.map(s => ({ id: s.id, inst: s.inst, n: s.n })),
   };
@@ -289,6 +315,7 @@ function splitParts(out, n) {
   return res;
 }
 fs.mkdirSync(OUT, { recursive: true });
+const ERA = { Beethoven: 'classical', Mozart: 'classical', Haydn: 'classical', Gossec: 'classical', Mendelssohn: 'romantic', Rossini: 'romantic', 'Dvořák': 'romantic', Schubert: 'romantic', Grieg: 'romantic', Bach: 'baroque', Handel: 'baroque', Corelli: 'baroque', Vivaldi: 'baroque' };
 const index = [];
 let total = 0;
 PIECES.forEach(P => {
@@ -301,8 +328,8 @@ PIECES.forEach(P => {
   const pattern = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
   index.push({ id: P.id, pattern, title: P.title, composer: P.composer, mvt: P.mvt, year: P.year, level: P.level, blurb: P.blurb, minutes: summary.minutes, nBeats: out.nBeats, needs: out.needs,
     src: out.src, sections: out.sec.map(s => s.id) });
-  const ix = index[index.length - 1];
-  if (P.work) ix.work = P.work;
+  const ix = index[index.length - 1]; ix.ck = P.composer.en; ix.era = ERA[P.composer.en] || 'classical';
+  if (P.work) ix.work = P.work; if (P.simplified) ix.simplified = true;
   if (P.licence) { ix.src.licenceUrl = P.licenceUrl; ix.src.credit = P.credit; out.src.licenceUrl = P.licenceUrl; out.src.credit = P.credit; } // share-alike: the derived score carries the licence and the credit
   if (P.parts > 1) ix.parts = splitParts(out, P.parts);
   if (P.licence) fs.writeFileSync(path.join(OUT, P.id + '.json'), JSON.stringify(out) + '\n');
