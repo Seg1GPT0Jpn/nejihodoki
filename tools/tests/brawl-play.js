@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // おもちゃ大乱闘の通しプレイ（Playwright。キーボードとタッチは本物の入力。?debug の window.__brawl は「状態を読む」「試合を早く終わらせる」ためだけ）
-//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick,multi,newtoys]
+//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick,multi,newtoys,story]
 // 1. 初回：遊び方 → タイトル（うしろで CPU のデモが動く）  2. ひとりで対戦：本物のキーでいどう・ジャンプ・こうげき・つよい攻撃・まもり・つかみ・KO・結果と保存
 // 3. タッチ：左のスティックと右のボタンを同時におす（マルチタッチ）  4. ふたりで1台：1P と 2P のキーが別々に効く
 // 5. ラダー：8戦のながれ・おもちゃとステージが開く・負けてコンティニュー・クリア・ベスト  6. れんしゅう：ダミー・コンボ・KO でも終わらない
@@ -561,13 +561,75 @@ async function newtoys(env) {
   }
 }
 
+
+// ---- 18. story mode: hero pick, map, battle card, a won and a lost battle, bolts, the upgrade board, charms, save and resume, layouts (320px / landscape), English
+async function story(env) {
+  console.log('18. story mode: map, battles, bolts, board, charms, save/resume, layouts');
+  V.pick('844x390'); V.VIEWPORTS.desk = { width: 1280, height: 720, dpr: 1, safe: { top: 0, bottom: 0, left: 0, right: 0 } };
+  const s = await open(env, { vp: 'desk', touch: false }); const p = s.page;
+  await p.click('#mStory'); check('first time: the hero picker opens', (await st(p)).setup && /主役/.test(await p.textContent('#sTitle')), await p.textContent('#sTitle'));
+  await p.click('#sGo'); await p.waitForFunction(() => !document.getElementById('ovStory').hidden);
+  check('the map shows 10 nodes, only the first is open', await p.evaluate(() => { const n = [...document.querySelectorAll('#stMap .nd')]; return n.length === 10 && !n[0].disabled && n.slice(1).every(x => x.disabled); }), null);
+  check('the region intro and the bolt counter show', /夜の工房/.test(await p.textContent('#stIntro')) && /ねじ 0/.test(await p.textContent('#stSub')), await p.textContent('#stSub'));
+  check('the battle card shows the foe, the rules and the reward', /サビついた/.test(await p.textContent('#stCard')) && /残機 3/.test(await p.textContent('#stCard')) && /ねじ 3/.test(await p.textContent('#stCard')), await p.textContent('#stCard'));
+  await p.click('#stGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount());
+  let a = await st(p); check('a story match: 2 fighters on the workbench, the hero is a person', a.mode === 'story' && a.fighters.length === 2 && a.fighters[0].lvl === 0 && a.stage === 'bench', a);
+  await p.evaluate(() => __brawl.finish(0)); await wait(p, () => __kb.state().result, null, 6000);
+  check('won: the result shows +3 bolts and goes back to the map', /\+3/.test(await p.textContent('#rPts')) && /マップへ/.test(await p.textContent('#rNext')), await p.textContent('#rPts'));
+  const sv1 = await stored(p, SAVE); check('saved: bolts 3, the first battle is done (hex bitset), hero set', sv1 && sv1.sv.b === 3 && sv1.sv.d === '8' && sv1.sv.h === 'robo', sv1 && sv1.sv);
+  await p.click('#rNext'); await p.waitForFunction(() => !document.getElementById('ovStory').hidden);
+  check('the second node is open now and selected', await p.evaluate(() => { const n = [...document.querySelectorAll('#stMap .nd')]; return !n[1].disabled && n[1].classList.contains('sel') && n[0].classList.contains('done'); }), null);
+  // a lost battle: retry
+  await p.click('#stGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await p.evaluate(() => __brawl.lose()); await wait(p, () => __kb.state().result, null, 6000);
+  check('lost: "try again" and no bolts', /もういちど/.test(await p.textContent('#rNext')) && (await stored(p, SAVE)).sv.b === 3, await p.textContent('#rNext'));
+  await p.click('#rNext'); await wait(p, () => __kb.state().playing); check('try again restarts the same battle', (await st(p)).mode === 'story', null);
+  await p.evaluate(() => __brawl.showStory()); await p.waitForFunction(() => !document.getElementById('ovStory').hidden);
+  // the upgrade board
+  await p.click('#stBoard'); check('the board opens with 4 stats', await p.evaluate(() => document.querySelectorAll('#bdBody .bdrow').length === 4), null);
+  await p.click('#bdBody button[data-k="0"][data-d="1"]'); await p.click('#bdBody button[data-k="0"][data-d="1"]');
+  let sv = (await stored(p, SAVE)).sv; check('two raises cost 1 + 2 bolts (Lv 2 attack, 0 bolts left)', sv.u[0] === 2 && sv.b === 0, sv);
+  check('with 0 bolts every "+" is disabled', await p.evaluate(() => [...document.querySelectorAll('#bdBody button[data-d="1"]')].every(b => b.disabled)), null);
+  await p.click('#bdBody button[data-k="0"][data-d="-1"]'); sv = (await stored(p, SAVE)).sv; check('lowering refunds the bolts', sv.u[0] === 1 && sv.b === 2, sv);
+  await p.click('#bdClose'); await p.waitForFunction(() => !document.getElementById('ovStory').hidden);
+  // upgrades and charms go into the match
+  await p.evaluate(() => { const g = __brawl.save.sv; g.c = ['s', 'j']; g.e = ['s', 'j']; __brawl.writeSave(); }); await p.click('#stGo'); await wait(p, () => __kb.state().playing);
+  const fx = await p.evaluate(() => { const f = __brawl.G.st.fighters[0]; return { up: f.up, cm: f.cm }; }); check('the board and the equipped charms are on the hero', fx.up && fx.up[0] === 1 && fx.cm && fx.cm.s === 1 && fx.cm.j === 1, fx);
+  // rules: low gravity (battle 4), a time limit (battle 7), a giant foe (battle 9), a handicap (battle 8)
+  const rules = await p.evaluate(() => { const out = {}; for (const id of ['r1b4', 'r1b7', 'r1b9', 'r1b8', 'r1b6']) { __brawl.storyFight(__brawl.ST.BATTLES[__brawl.ST.index(id)]); const st = __brawl.G.st; out[id] = { g: st.mods && st.mods.g, mode: st.mode, ch: st.fighters.map(f => f.ch), pct: st.fighters[0].pct, n: st.fighters.length }; } return out; });
+  check('battle 4 has low gravity', rules.r1b4.g === 0.6, rules.r1b4); check('battle 7 is timed', rules.r1b7.mode === 'time', rules.r1b7); check('battle 9 has a giant bear', /~135/.test(rules.r1b9.ch[1]), rules.r1b9); check('battle 8 starts the hero at 40%', rules.r1b8.pct === 40, rules.r1b8); check('battle 6 is two foes', rules.r1b6.n === 3, rules.r1b6);
+  await p.waitForTimeout(300); check('no page errors so far (giant sprite, low gravity)', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+  // a freed toy and a charm on a first clear
+  await p.evaluate(() => { const g = __brawl.save.sv; g.d = 'f8'; g.c = []; g.e = []; __brawl.writeSave(); __brawl.storyFight(__brawl.ST.BATTLES[5]); }); await p.evaluate(() => __brawl.skipCount()); await p.evaluate(() => __brawl.finish(0)); await wait(p, () => __kb.state().result, null, 6000);
+  const un = await p.textContent('#rUnl'); check('battle 6 (first clear): a charm is found', /チャーム/.test(un), un);
+  await p.evaluate(() => { const g = __brawl.save.sv; g.d = 'c'; __brawl.writeSave(); __brawl.storyFight(__brawl.ST.BATTLES[2]); }); await p.evaluate(() => __brawl.skipCount()); await p.evaluate(() => __brawl.finish(0)); await wait(p, () => __kb.state().result, null, 6000);
+  const sv3 = (await stored(p, SAVE)); check('battle 3 (first clear) frees the tin captain: unlocked in the roster', sv3.un.c.tin === 1, sv3.un.c); check('the freed toy is shown', /ティンタ/.test(await p.textContent('#rUnl')), await p.textContent('#rUnl'));
+  // resume after a reload
+  await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); await p.waitForTimeout(300); await p.click('#mStory'); await p.waitForFunction(() => !document.getElementById('ovStory').hidden);
+  check('after a reload the map remembers the progress', await p.evaluate(() => document.querySelectorAll('#stMap .nd.done').length >= 3), null);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // layouts: 320px portrait, landscape phones, desktop; ja / en. nothing off screen, no sideways scroll, nodes and buttons >= 44px
+  for (const [vp, touch, lang] of [['se1', true, 'ja'], ['se1', true, 'en'], ['land', true, 'ja'], ['844x390', true, 'en'], ['se2', true, 'ja'], ['desk', false, 'en']]) {
+    const s2 = await open(env, { vp, touch, lang, seed: { [HOWTO]: '1', [SAVE]: { v: 1, best: 0, lw: 0, cl: 0, un: { c: { robo: 1, duck: 1, bear: 1 }, s: { bench: 1, box: 1 } }, stats: {}, sv: { v: 1, d: '3', b: 14, u: [1, 0, 0, 0], c: ['s', 'p'], e: ['s'], h: 'robo', r: 1 } } } }); const q = s2.page;
+    await q.click('#mStory'); await q.waitForFunction(() => !document.getElementById('ovStory').hidden); await q.waitForTimeout(200);
+    const r = await q.evaluate(`(${layoutProbe})()`); check(`${vp} ${lang}: the map fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, { off: r.offscreen.slice(0, 3) });
+    const nd = await q.evaluate(() => [...document.querySelectorAll('#stMap .nd')].map(b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), Math.round(r.left), Math.round(r.top)]; })); const box = await q.evaluate(() => { const r = document.getElementById('stMap').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+    check(`${vp} ${lang}: nodes are at least 44px and inside the map`, nd.every(n => n[0] >= 44 && n[1] >= 44 && n[2] >= box[0] - 1 && n[2] + n[0] <= box[2] + 1 && n[3] >= box[1] - 1 && n[3] + n[1] <= box[3] + 1), nd.slice(0, 3));
+    if (lang === 'en') { const jp = await q.evaluate(`(${jpScan})(true)`); check(`${vp} en: no Japanese on the map`, jp.length === 0, jp.slice(0, 6)); }
+    await shot(q, `18-story-map-${vp}-${lang}`);
+    await q.click('#stBoard'); await q.waitForTimeout(150); const r2 = await q.evaluate(`(${layoutProbe})()`); check(`${vp} ${lang}: the board fits`, r2.hscroll <= 1 && r2.offscreen.length === 0, { off: r2.offscreen.slice(0, 3) });
+    if (lang === 'en') { const jp = await q.evaluate(`(${jpScan})(true)`); check(`${vp} en: no Japanese on the board`, jp.length === 0, jp.slice(0, 6)); }
+    const small = await q.evaluate(() => [...document.querySelectorAll('#bdBody button')].filter(b => { const r = b.getBoundingClientRect(); return r.width < 43 || r.height < 43; }).length); check(`${vp} ${lang}: board buttons are at least 44px`, small === 0, small);
+    await shot(q, `18-story-board-${vp}-${lang}`); check(`${vp} ${lang}: no page errors`, s2.log.pageErrors.length === 0, s2.log.pageErrors.slice(0, 3)); await s2.close();
+  }
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi, newtoys]) {
+  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi, newtoys, story]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

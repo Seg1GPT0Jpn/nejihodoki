@@ -345,7 +345,14 @@
     limb(c, -14, -38 + bob, -20 - lk, -26, 6, shade(col, -0.1));
   };
 
-  function drawerOf(ch) { if (!DRAW[ch]) { const C = E.CH[ch]; DRAW[ch] = C && C.spr ? compose(C.spr) : DRAW.robo; } return DRAW[ch]; }
+  function drawerOf(ch) {
+    if (!DRAW[ch]) {
+      const C = E.CH[ch];
+      if (C && C.base) { const base = drawerOf(C.base), s = C.scale; DRAW[ch] = (c, P, f) => { c.save(); c.scale(s, s); base(c, Object.assign({}, P, { tx: P.tx != null ? P.tx / s : null, ty: P.ty != null ? P.ty / s : null }), f); c.restore(); }; } // 大きさちがい（ストーリー）：元の絵を s ばいに
+      else DRAW[ch] = C && C.spr ? compose(C.spr) : DRAW.robo;
+    }
+    return DRAW[ch];
+  }
   // ---- 組み立て絵：kits.js のおもちゃの spr（図形の並び）から、手で描かずに絵を作る。足もと (0,0)・右向き・上が -y。色は a＝メイン b＝サブ A＝うすい B＝こい w＝白 k＝ふち
   function sc(s, f) { switch (s) { case 'a': return f.col; case 'b': return f.col2; case 'A': return shade(f.col, 0.35); case 'B': return shade(f.col, -0.3); case 'w': return '#fff'; case 'k': return INK; case 'ff': return '#ffb02a'; default: return s || f.col; } }
   function prim(c, p, f, P) {

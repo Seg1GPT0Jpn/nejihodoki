@@ -23,6 +23,12 @@ KoboI18n.add({ en: {
   '工房のおもちゃたちの場外バトル！ ダメージがたまるほど遠くへ飛ぶ。相手をステージの外へふっとばそう。': 'A workshop brawl for toys! The more damage a toy takes, the farther it flies. Knock your rival off the stage.',
   'オンライン対戦': 'Online match', '1対1・コードかクイックマッチ': '1v1 · room code or quick match', 'ひとりで対戦': 'Solo Brawl', 'CPUと戦う': 'Fight the CPUs', 'ふたりで対戦': '2 Players', '1台でふたりで': 'Two on one device', 'ラダー（8戦）': 'Ladder (8 fights)', '勝ちぬいてボスへ・キャラとステージが開く': 'Climb to the boss. Unlocks toys and stages',
   'れんしゅう（ダミーあいて）': 'Training (dummy)', 'ラダーのつづき（{n}戦目）': 'Continue ladder (fight {n})', 'ベスト {n} 点': 'Best {n} pts', 'ラダーのベストはまだありません': 'No ladder score yet', '{n} 人のおもちゃがそろった': '{n} toys unlocked',
+  // story mode
+  'ストーリー': 'Story', 'サビの工房をたびして、おもちゃを助ける': 'Travel the rusty workshop and free the toys', '主役のおもちゃをえらぶ': 'Pick your hero toy', 'ストーリーへ': 'To the story', 'ボード・チャーム': 'Board & charms', '主役をかえる': 'Change hero',
+  'ぜんぶもどす（ねじが かえる）': 'Reset all (bolts come back)', 'ねじ {b} ・ 主役：{h} ・ {d}/{n} せん': 'Bolts {b} · Hero: {h} · {d}/{n} fights', 'ちかぢか': 'soon', '残機 {n}': 'Stocks {n}', '時間 {n}秒': '{n} s', 'ふわふわ重力': 'Floaty gravity', 'ずっしり重力': 'Heavy gravity',
+  'ハンデ：はじめから {n}%': 'Handicap: start at {n}%', '1 対 {n}': '1 vs {n}', '大きな相手': 'Giant foe', 'ごほうび': 'Reward', 'ねじ {n}': 'Bolts {n}', '助ける：{n}': 'Frees: {n}', 'たたかう！': 'Fight!', 'もういちど たたかう': 'Fight again', 'マップへ': 'To the map',
+  'ねじ': 'Bolts', '2回目から': 'replay', 'チャームを手に入れた！': 'Charm found!', 'ボードのわく': 'Board slots', 'ねじ {b} ・ ボードのわく {u}/{n}': 'Bolts {b} · Board slots {u}/{n}', 'へらす': 'Lower', 'ふやす（ねじ {n}）': 'Raise (bolts {n})', 'チャーム（{n}つまで）': 'Charms (up to {n})',
+  'チャームは、たたかいのごほうびで見つかる': 'Charms are found as battle rewards', 'チャームは {n}つまで': 'Only {n} charms at a time', 'つけている': 'Equipped', 'つける': 'Equip', 'もういちど': 'Try again', 'ロック中': 'Locked',
   // roster, same-device play, landscape prompt
   'みんなで対戦': '2-4 Players', '1台で2〜4人': 'Two to four on one device', 'あそぶ人の数': 'Number of players', '{n}人': '{n}', '3P のおもちゃ': 'P3 toy', '4P のおもちゃ': 'P4 toy',
   'なまえ・タイプでさがす': 'Search by name or type', 'おもちゃをさがす': 'Search toys', 'しぼりこみ': 'Filter', 'すべて': 'All', 'お気に入り': 'Favorites', 'さいきん': 'Recent', '{n}人 / ぜんぶで {m}人': '{n} shown / {m} toys',
@@ -227,6 +233,37 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
 #cTabs { margin: 6px 0; } #cTabs button { font-size: 12px; padding: 0 2px; }
 #trData { position: absolute; z-index: 6; left: 6px; top: calc(var(--kb-sat) + 84px); max-width: calc(100% - 12px); box-sizing: border-box; margin: 0; padding: 4px 6px; border-radius: 8px; background: rgba(0, 0, 0, .66); color: #fff; font: 600 9.5px/1.35 ui-monospace, Menlo, Consolas, monospace; white-space: pre; overflow: hidden; pointer-events: none; }
 
+
+/* story mode: the workshop map, the battle card, the upgrade board */
+.stintro { text-align: left; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); margin: 2px 2px 6px; }
+.smapbox { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.smap { position: relative; width: 100%; aspect-ratio: 2 / 1; min-height: 150px; border-radius: 16px; border: 1px solid var(--bw-line); background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .05) 0 2px, transparent 2px 46px), linear-gradient(#5a3f2a, #3e2a1c); overflow: hidden; }
+.smap svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.smap .nd { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 3px solid #2a1d17; background: #d9a441; color: #2a1d17; font: 800 15px var(--kb-font-body); cursor: pointer; display: grid; place-items: center; padding: 0; touch-action: manipulation; }
+.smap .nd.boss { background: #e0613a; border-color: #2a1d17; width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+.smap .nd.done { background: #8fe0a0; }
+.smap .nd:disabled { background: #6b5a4a; color: #a99; opacity: .7; cursor: default; }
+.smap .nd.sel { box-shadow: 0 0 0 4px var(--kb-focus); }
+.smap .nd:focus-visible { outline: 3px solid var(--kb-focus); outline-offset: 2px; }
+#stCard .chipsr { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; } #stCard .chipsr span { padding: 2px 8px; border-radius: 999px; background: var(--kb-accent-soft); border: 1px solid var(--kb-accent); font-size: 11.5px; font-weight: 800; }
+#stCard .foes { display: flex; gap: 6px; margin: 4px 0; } #stCard .foes canvas { width: 44px; height: 44px; }
+#stCard .btn { margin-top: 6px; position: sticky; bottom: 0; }
+.bdrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--bw-line); text-align: left; }
+.bdrow b { font-size: 13.5px; } .bdrow small { display: block; color: var(--kb-dim); font-size: 11.5px; }
+.bdrow .pips { display: flex; gap: 3px; margin-top: 3px; } .bdrow .pips i { width: 14px; height: 8px; border-radius: 3px; background: var(--bw-line); } .bdrow .pips i.on { background: var(--kb-accent); }
+.bdrow .pm { display: flex; gap: 6px; } .bdrow .pm button { min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid var(--bw-line); background: var(--bw-panel); color: var(--kb-ink); font: 800 18px var(--kb-font-body); cursor: pointer; touch-action: manipulation; }
+.bdrow .pm button:disabled { opacity: .35; cursor: default; }
+.bdrow .pm button.on { background: var(--kb-accent); color: var(--kb-accent-ink); }
+@media (orientation: landscape) and (max-height: 520px) {
+  #ovStory .card, #ovBoard .card { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; column-gap: 6px; }
+  #ovStory .card > h2, #ovStory .card > p, #ovStory .card > .seg, #ovStory .card > .scroll, #ovBoard .card > h2, #ovBoard .card > p, #ovBoard .card > .scroll { grid-column: 1 / -1; margin-top: 0; margin-bottom: 0; }
+  #ovStory .card > h2, #ovBoard .card > h2 { font-size: 17px; }
+  #ovStory .card > .row2 { grid-column: 1 / 3; } #ovStory .card > #stBack { grid-column: 3; margin-top: 6px; min-height: 44px; }
+  #ovBoard .card > .row2 { grid-column: 1 / -1; }
+  #ovStory .card > h2, #ovBoard .card > h2 { grid-row: 1; } #ovStory .card > #stSub, #ovBoard .card > #bdSub { grid-row: 2; } #ovStory .card > .seg { grid-row: 3; } #ovStory .card > .scroll, #ovBoard .card > .scroll { grid-row: 4; } #ovStory .card > .row2, #ovBoard .card > .row2, #ovStory .card > #stBack { grid-row: 5; }
+  .stintro { font-size: 11px; line-height: 1.4; margin-bottom: 4px; }
+}
+@media (orientation: landscape) and (max-height: 520px) { .smapbox { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .smap { aspect-ratio: auto; height: min(58vh, 232px); } #stCard { max-height: min(58vh, 232px); overflow: auto; } #ovStory .card .row2, #ovBoard .card .row2 { gap: 6px; } }
 /* roster for a big cast: search, type filter, favourites, recents, a scrolling grid; colour variants */
 .rtool { display: grid; gap: 5px; margin: 0 0 6px; }
 .rtool .rq { box-sizing: border-box; width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--bw-line); background: var(--kb-bg); color: var(--kb-ink); font: 600 14px var(--kb-font-body); padding: 0 12px; }
@@ -324,6 +361,7 @@ label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent
       <div class="menu">
         <button class="btn" id="mSolo" type="button"><span class="stk"><span data-i18n>ひとりで対戦</span><small data-i18n>CPUと戦う</small></span></button>
         <button class="btn sub" id="mTwo" type="button"><span class="stk"><span data-i18n>みんなで対戦</span><small data-i18n>1台で2〜4人</small></span></button>
+        <button class="btn sub" id="mStory" type="button"><span class="stk"><span data-i18n>ストーリー</span><small data-i18n>サビの工房をたびして、おもちゃを助ける</small></span></button>
         <button class="btn sub" id="mLad" type="button"><span class="stk"><span data-i18n>ラダー（8戦）</span><small data-i18n>勝ちぬいてボスへ・キャラとステージが開く</small></span></button>
         <button class="btn sub" id="mTrain" type="button"><span class="stk"><span data-i18n>れんしゅう（ダミーあいて）</span></span></button>
         <button class="btn sub" id="mCtl" type="button"><span class="stk"><span data-i18n>操作・設定</span></span></button>
@@ -368,6 +406,29 @@ label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent
   </div>
 </div>
 
+<div class="overlay" id="ovStory" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="card wide">
+    <h2 id="stTitle"></h2>
+    <p id="stSub" class="rnote" style="text-align:center"></p>
+    <div class="seg" id="stRegions" role="group"></div>
+    <div class="scroll">
+      <p id="stIntro" class="stintro"></p>
+      <div class="smapbox"><div class="smap" id="stMap"></div><div class="info" id="stCard"></div></div>
+    </div>
+    <div class="row2"><button class="btn sub" id="stBoard" type="button" data-i18n>ボード・チャーム</button><button class="btn sub" id="stHero" type="button" data-i18n>主役をかえる</button></div>
+    <button class="btn link" id="stBack" type="button" data-i18n>もどる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovBoard" hidden role="dialog" aria-modal="true" aria-labelledby="bdTitle">
+  <div class="card wide">
+    <h2 id="bdTitle" data-i18n>ボード・チャーム</h2>
+    <p id="bdSub" class="rnote" style="text-align:center"></p>
+    <div class="scroll"><div id="bdBody"></div></div>
+    <div class="row2"><button class="btn sub" id="bdReset" type="button" data-i18n>ぜんぶもどす（ねじが かえる）</button><button class="btn" id="bdClose" type="button" data-i18n>とじる</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
   <div class="card">
     <h2 id="rTitle"></h2>
@@ -403,6 +464,7 @@ label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent
 </div>
 <script src="kits.js"></script>
 <script src="engine.js"></script>
+<script src="story.js"></script>
 <script src="art.js"></script>
 <script src="netcode.js"></script>
 <script src="online.js"></script>
@@ -415,7 +477,7 @@ label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent
 // input (keyboard, touch, gamepad), menus, the ladder, saving, scoring, sound and the platform events.
 const T = KoboI18n.t;
 const EN = KoboI18n.lang === 'en';
-const E = window.BrawlEngine, ART = window.BrawlArt, K = window.BrawlKits;
+const E = window.BrawlEngine, ART = window.BrawlArt, K = window.BrawlKits, ST = window.BrawlStory;
 const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'brawl';
@@ -447,7 +509,7 @@ function defSave() {
   return { v: 1, best: 0, lw: 0, cl: 0, un: { c: { robo: 1, duck: 1, bear: 1 }, s: { bench: 1, box: 1 } }, cp: {},
     stats: { plays: 0, wins: 0, kos: 0, falls: 0, maxCmb: 0, perfect: 0, hard: 0, ffa: 0, twop: 0, smashKo: 0, counter: 0, ledge: 0, grab: 0, block: 0, timed: 0, boss: 0, lad: 0, train: 0, spike: 0, pshield: 0, tech: 0, flick: 0 },
     set: { n: 1, n2: 0, nh: 2, lvl: 2, stage: 'bench', mode: 'stock', stk: 3, tm: 3, c1: 'robo', c2: 'duck', c3: 'bear', c4: 'tin', diff: 2 }, ctl: { tj: 1, run: 'hold', keys: {} }, tut: 0,
-    fav: [], rc: [], pal: {}, ua: 0 };
+    fav: [], rc: [], pal: {}, ua: 0, sv: ST.defSv() };
 }
 function readSave() {
   let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
@@ -463,6 +525,7 @@ function readSave() {
   const ids = new Set(E.CHAR_IDS);
   out.fav = Array.isArray(s.fav) ? s.fav.filter(id => ids.has(id)).slice(0, 200) : []; out.rc = Array.isArray(s.rc) ? s.rc.filter(id => ids.has(id)).slice(0, 12) : [];
   out.pal = {}; for (const [id, v] of Object.entries(obj(s.pal))) if (ids.has(id) && Number.isInteger(v) && v >= 0 && v < K.PAL_N) out.pal[id] = v;
+  out.sv = ST.clean(s.sv, E.CHAR_IDS);
   out.ua = s.ua ? 1 : 0; out.set.nh = E.clamp(out.set.nh | 0 || 2, 2, 4);
   for (const k of ['c1', 'c2', 'c3', 'c4']) if (!ids.has(out.set[k])) out.set[k] = defSave().set[k];
   return out;
@@ -485,7 +548,7 @@ function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
 const hasChar = id => !!save.un.c[id], hasStage = id => !!save.un.s[id];
 const unlockedChars = () => E.CHAR_IDS.filter(hasChar);
 // what the pickers offer: with "use every toy" on, every toy in local (non-ladder) setups
-const pickable = id => hasChar(id) || (!!save.ua && setupMode !== 'ladder');
+const pickable = id => hasChar(id) || (!!save.ua && setupMode !== 'ladder' && setupMode !== 'story');
 function readRun() {
   let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) { r = null; }
   if (!r || r.v !== 1 || !E.CH[r.ch] || !(r.idx >= 0 && r.idx < 8)) return null;
@@ -711,7 +774,7 @@ function newSeed() { return (Math.floor(Math.random() * 0x7fffffff) ^ (Date.now(
 function startMatch(o) {
   if (G && G.mode !== 'demo' && !G.over) endPlay('quit');
   const fighters = o.fighters.map((f, i) => ({ ch: f.ch, lvl: f.lvl | 0, stk: f.stk, name: f.name || '', tj: ctl().tj ? 1 : 0 }));
-  const st = o.st || E.create({ seed: o.seed || newSeed(), stage: o.stage, fighters, mode: o.rule && o.rule.mode === 'time' ? 'time' : 'stock', stocks: o.rule ? o.rule.stk : 3, time: o.rule ? o.rule.tm * 60 : 180, training: !!o.training });
+  const st = o.st || (o.createOpts ? E.create(Object.assign({}, o.createOpts, { seed: o.seed || o.createOpts.seed })) : E.create({ seed: o.seed || newSeed(), stage: o.stage, fighters, mode: o.rule && o.rule.mode === 'time' ? 'time' : 'stock', stocks: o.rule ? o.rule.stk : 3, time: o.rule ? o.rule.tm * 60 : 180, training: !!o.training }));
   if (o.training) { st.dummy = o.dummy || 'stand'; }
   ART.setCfg({ dark: dark(), en: EN, reduced: reduceMotion.matches, T }); ART.reset(st);
   // colour variants (look only): a toy's favourite colour for the people at the device (never online: both sides must see the same), the rest are automatic
@@ -897,7 +960,7 @@ function unlockNote(rew, list) {
 }
 function showResult() {
   const st = G.st, o = G.o, res = st.res, me = res[0], won = st.win === 0;
-  const unl = [], two = G.humans >= 2;
+  const unl = [], two = G.humans >= 2; let stExtra = '';
   let title, sub = '', next = T('もう一度'), nextFn = () => { hideOv('ovResult'); rematch(); };
   const rows = [[T('ふっとばした数'), me.kos], [T('やられた数'), me.falls], [T('あたえたダメージ'), Math.round(me.dealt) + '%'], [T('うけたダメージ'), Math.round(me.taken) + '%'], [T('最大コンボ'), me.maxCmb], [T('時間'), Math.floor(st.f / 3600) + ':' + String(Math.floor(st.f / 60) % 60).padStart(2, '0')]];
   const S = save.stats; let ptsHtml = '', isBest = false;
@@ -948,6 +1011,17 @@ function showResult() {
     }
     rNewHidden = !isBest;
   }
+  if (o.story && !two) {
+    const b = ST.BATTLES[ST.index(o.story.id)], sv = save.sv;
+    if (won) {
+      const a = ST.award(sv, b); S.lad = S.lad | 0;
+      ptsHtml = '<div class="tot"><span>' + esc(T('ねじ')) + (a.first ? '' : ' (' + esc(T('2回目から')) + ')') + '</span><span>+' + a.bolts + '</span></div>';
+      if (a.free && !hasChar(a.free)) { save.un.c[a.free] = 1; unl.push({ c: a.free }); }
+      if (a.charm) { const c = ST.CHARMS.find(x => x.id === a.charm); stExtra += '<div class="unl"><span>' + esc(T('チャームを手に入れた！')) + ' ' + esc(L(c.name)) + '</span></div>'; }
+      if (a.region) { stExtra += '<div class="unl"><span>' + esc(L(ST.REGIONS[b.region - 1].outro[0])) + '</span></div>'; }
+      title = T('かち！'); sub = L(b.name); next = T('マップへ'); nextFn = () => { hideOv('ovResult'); stSel = null; showStory(); };
+    } else { title = T('まけ…'); sub = L(b.name); next = T('もういちど'); nextFn = () => { hideOv('ovResult'); storyFight(b); }; }
+  }
   if (!two) winUnlocks(unl);
   writeSave();
   emit('play_end', { mode: 'normal', score: lad && won ? lad.run.score : 0, durationMs: Math.round(st.f / 60 * 1000), reason: won ? 'clear' : 'over', stage: lad ? lad.idx + 1 : undefined, stats: { kos: me.kos, falls: me.falls, combo: me.maxCmb } });
@@ -956,15 +1030,15 @@ function showResult() {
   $('rTitle').textContent = title; $('rSub').textContent = sub; $('rSub').hidden = !sub;
   $('rRows').innerHTML = rows.map(r => '<div>' + esc(r[0]) + '<b>' + esc(r[1]) + '</b></div>').join('');
   $('rPts').innerHTML = ptsHtml; $('rPts').hidden = !ptsHtml; $('rNew').hidden = rNewHidden;
-  $('rUnl').innerHTML = (me.falls === 0 && won && !two ? '<div class="unl"><span>' + esc(T('ノーダメージ級！残機を失わずに勝った')) + '</span></div>' : '') + unl.map(u => '<div class="unl"><canvas width="44" height="44" data-c="' + (u.c || '') + '" data-s="' + (u.s || '') + '"></canvas><span>' + esc(u.c ? T('新しいおもちゃが開いた！') + ' ' + L(E.CH[u.c].short) : u.s ? T('新しいステージが開いた！') + ' ' + L(E.STAGES[u.s].name) : u.all ? T('全員のおもちゃが開いた！') : T('強さ「つよい」が開いた！')) + '</span></div>').join('');
+  $('rUnl').innerHTML = stExtra + (me.falls === 0 && won && !two ? '<div class="unl"><span>' + esc(T('ノーダメージ級！残機を失わずに勝った')) + '</span></div>' : '') + unl.map(u => '<div class="unl"><canvas width="44" height="44" data-c="' + (u.c || '') + '" data-s="' + (u.s || '') + '"></canvas><span>' + esc(u.c ? T('新しいおもちゃが開いた！') + ' ' + L(E.CH[u.c].short) : u.s ? T('新しいステージが開いた！') + ' ' + L(E.STAGES[u.s].name) : u.all ? T('全員のおもちゃが開いた！') : T('強さ「つよい」が開いた！')) + '</span></div>').join('');
   for (const c of $('rUnl').querySelectorAll('canvas')) { if (c.dataset.c) ART.portrait(c, c.dataset.c, { size: 44 }); else if (c.dataset.s) ART.stagePreview(c, c.dataset.s, { w: 44, h: 44 }); }
   $('rNext').textContent = next; $('rNext').onclick = nextFn;
   $('rAgain').hidden = true;
-  $('rMenu').onclick = () => { hideOv('ovResult'); showTitle(); };
+  $('rMenu').textContent = T(o.story ? 'マップへ' : 'メニューへ'); $('rMenu').onclick = () => { hideOv('ovResult'); if (o.story) showStory(); else showTitle(); };
   sfx(won ? 'win' : two ? 'ok' : 'over');
   showOv('ovResult');
 }
-function rematch() { const o = G && G.o; if (!o) return showTitle(); startMatch(Object.assign({}, o, { seed: newSeed() })); }
+function rematch() { const o = G && G.o; if (!o) return showTitle(); if (o.story) return storyFight(ST.BATTLES[ST.index(o.story.id)]); startMatch(Object.assign({}, o, { seed: newSeed() })); }
 
 // ladder screens
 function showLadder() {
@@ -995,6 +1069,84 @@ function ladderBegin(ch, diff) {
   const run = { v: 1, ch, diff, idx: 0, score: 0, cont: 2, seed: newSeed(), kos: 0 };
   writeRun(run); save.set.c1 = ch; save.set.diff = diff; writeSave(); hideOv('ovSetup'); showLadder();
 }
+
+// ---------- story mode: the workshop map, the battle card, the upgrade board ----------
+let stSel = null, stRegion = 1;
+const stEnt = () => { const sv = save.sv; return !!(sv.h && E.CH[sv.h] && hasChar(sv.h)); };
+function stRules(b) {
+  const out = [], r = b.rules || {}, me = b.me || {};
+  out.push(T('残機 {n}', { n: me.stk || 3 }));
+  if (r.time) out.push(T('時間 {n}秒', { n: r.time })); if (r.g && r.g < 1) out.push(T('ふわふわ重力')); if (r.g && r.g > 1) out.push(T('ずっしり重力'));
+  if (me.hp) out.push(T('ハンデ：はじめから {n}%', { n: me.hp })); if (b.foes.length > 1) out.push(T('1 対 {n}', { n: b.foes.length })); if (b.foes.some(f => f.size && f.size > 1)) out.push(T('大きな相手'));
+  return out;
+}
+function showStory() {
+  if (!stEnt()) { openSetup('story'); return; }
+  const sv = save.sv, reg = ST.REGIONS[stRegion - 1], bs = ST.BATTLES.filter(b => b.region === stRegion);
+  if (G && G.mode !== 'demo' && !G.over) endPlay('quit');
+  if (!G || G.mode !== 'demo' || G.st.over) startDemo();
+  $('stTitle').textContent = L(reg.name);
+  const n = ST.doneCount(sv, stRegion);
+  $('stSub').textContent = T('ねじ {b} ・ 主役：{h} ・ {d}/{n} せん', { b: sv.b, h: L(E.CH[sv.h].short), d: n, n: bs.length });
+  $('stRegions').hidden = sv.r < 2;
+  seg($('stRegions'), ST.REGIONS.map(r => [r.id, String(r.id) + (r.soon ? ' ' + T('ちかぢか') : ''), r.soon || r.id > sv.r]), stRegion, v => { stRegion = v; stSel = null; showStory(); });
+  $('stIntro').textContent = n === 0 ? reg.intro.map(L).join(' ') : ST.regionDone(sv, stRegion) ? L(reg.outro[0]) : '';
+  $('stIntro').hidden = !$('stIntro').textContent;
+  const map = $('stMap'); map.innerHTML = '';
+  // the path (an svg line through the nodes in order) and the nodes
+  const px = b => (7 + b.at[0] * 0.86).toFixed(1), py = b => (12 + b.at[1] * 0.76).toFixed(1), pts = bs.map(b => px(b) + ',' + py(b)).join(' ');
+  map.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="rgba(255,230,160,.55)" stroke-width="1.6" stroke-dasharray="3 2.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>');
+  if (!stSel || !bs.some(b => b.id === stSel)) { const cur = bs.find(b => ST.isOpen(sv, b) && !ST.isDone(sv, b.id)) || bs[bs.length - 1]; stSel = cur.id; }
+  bs.forEach((b, i) => {
+    const open = ST.isOpen(sv, b), done = ST.isDone(sv, b.id), btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'nd' + (b.boss ? ' boss' : '') + (done ? ' done' : '') + (stSel === b.id ? ' sel' : ''); btn.dataset.id = b.id; btn.disabled = !open;
+    btn.style.left = px(b) + '%'; btn.style.top = py(b) + '%'; btn.textContent = done ? '✓' : String(i + 1);
+    btn.setAttribute('aria-label', (i + 1) + '. ' + L(b.name) + (done ? ' ✓' : open ? '' : ' ' + T('ロック中')));
+    btn.onclick = () => { stSel = b.id; for (const x of map.querySelectorAll('.nd')) x.classList.toggle('sel', x === btn); stCard(b); AU && AU.sfx('tap'); };
+    btn.addEventListener('focus', () => { if (open) { stSel = b.id; for (const x of map.querySelectorAll('.nd')) x.classList.toggle('sel', x === btn); stCard(b); } });
+    map.appendChild(btn);
+  });
+  map.onkeydown = e => arrowNav(e, map);
+  stCard(ST.BATTLES[ST.index(stSel)]);
+  $('stBoard').onclick = () => { showBoard(); }; $('stHero').onclick = () => { hideOv('ovStory'); openSetup('story'); }; $('stBack').onclick = () => { hideOv('ovStory'); showTitle(); };
+  showOv('ovStory');
+  const f = map.querySelector('.nd.sel'); try { if (f && !f.disabled) f.focus({ preventScroll: true }); } catch (e) {}
+}
+function stCard(b) {
+  const sv = save.sv, done = ST.isDone(sv, b.id), c = $('stCard'), rw = b.reward || {};
+  c.innerHTML = '<b>' + esc(L(b.name)) + (b.boss ? ' ★' : '') + '</b><small>' + esc(L(E.STAGES[b.stage].name)) + '</small><div>“' + esc(L(b.say)) + '”</div>'
+    + '<div class="foes">' + b.foes.map((f, i) => '<canvas width="44" height="44" data-c="' + f.ch + '" data-p="' + (f.pal || 0) + '"></canvas>').join('') + '</div>'
+    + '<div class="chipsr">' + stRules(b).map(x => '<span>' + esc(x) + '</span>').join('') + '</div>'
+    + '<div>' + esc(T('ごほうび')) + '：' + esc(T('ねじ {n}', { n: done ? 1 : rw.bolts })) + (done ? '' : (rw.free ? ' ・ ' + esc(T('助ける：{n}', { n: L(E.CH[rw.free].short) })) : '') + (rw.charm ? ' ・ ' + esc(L(ST.CHARMS.find(x => x.id === rw.charm).name)) : '')) + '</div>'
+    + '<button class="btn" id="stGo" type="button">' + esc(done ? T('もういちど たたかう') : T('たたかう！')) + '</button>';
+  for (const cv of c.querySelectorAll('canvas')) ART.portrait(cv, cv.dataset.c, { size: 44, pal: +cv.dataset.p || 0 });
+  $('stGo').onclick = () => storyFight(b);
+}
+function storyFight(b) {
+  const sv = save.sv, seed = newSeed(), co = ST.matchOpts(E, b, sv, seed);
+  const chars = co.fighters.map(f => f.ch), prefs = chars.map((c, i) => i === 0 ? (save.pal[c] === undefined ? null : save.pal[c]) : (b.foes[i - 1].pal != null ? b.foes[i - 1].pal : null));
+  hideAll(); lastT = now();
+  startMatch({ mode: 'story', title: L(b.name), humans: 1, stage: co.stage, rule: { mode: co.mode, stk: co.stocks, tm: co.time / 60 }, fighters: co.fighters, createOpts: co, seed, pal: K.assignPalettes(chars, prefs), labels: makeLabels(co.fighters.length, 1, true), story: { id: b.id } });
+}
+// the upgrade board (4 stats, 10 slots) and the charms (2 slots): free to change, spent bolts come back
+function showBoard() {
+  const sv = save.sv; $('bdSub').textContent = T('ねじ {b} ・ ボードのわく {u}/{n}', { b: sv.b, u: ST.slotsUsed(sv.u), n: ST.BOARD.slots });
+  let h = '';
+  ST.BOARD.stats.forEach((k, i) => {
+    h += '<div class="bdrow"><div><b>' + esc(L(ST.BOARD.names[k])) + ' Lv ' + sv.u[i] + '</b><small>' + esc(L(ST.BOARD.desc[k])) + '</small><div class="pips">' + [1, 2, 3, 4, 5].map(n => '<i class="' + (n <= sv.u[i] ? 'on' : '') + '"></i>').join('') + '</div></div>'
+      + '<div class="pm"><button type="button" data-k="' + i + '" data-d="-1" aria-label="' + esc(T('へらす')) + '"' + (sv.u[i] <= 0 ? ' disabled' : '') + '>−</button><button type="button" data-k="' + i + '" data-d="1" aria-label="' + esc(T('ふやす（ねじ {n}）', { n: ST.cost(sv.u[i] + 1) })) + '"' + (ST.canUpgrade(sv, i) ? '' : ' disabled') + '>+</button></div></div>';
+  });
+  h += '<p class="rnote">' + esc(T('チャーム（{n}つまで）', { n: ST.CHARM_SLOTS })) + '</p>';
+  if (!sv.c.length) h += '<p class="rnote">' + esc(T('チャームは、たたかいのごほうびで見つかる')) + '</p>';
+  for (const c of ST.CHARMS) if (sv.c.indexOf(c.id) >= 0) h += '<div class="bdrow"><div><b>' + esc(L(c.name)) + '</b><small>' + esc(L(c.desc)) + '</small></div><div class="pm"><button type="button" data-c="' + c.id + '" class="' + (sv.e.indexOf(c.id) >= 0 ? 'on' : '') + '" aria-pressed="' + (sv.e.indexOf(c.id) >= 0 ? 'true' : 'false') + '" style="font-size:12.5px">' + esc(T(sv.e.indexOf(c.id) >= 0 ? 'つけている' : 'つける')) + '</button></div></div>';
+  $('bdBody').innerHTML = h;
+  for (const b of $('bdBody').querySelectorAll('button[data-k]')) b.onclick = () => { const k = +b.dataset.k; if (b.dataset.d === '1') ST.upgrade(sv, k); else ST.downgrade(sv, k); writeSave(); AU && AU.sfx('tap'); const at = document.activeElement && document.activeElement.dataset ? { k: document.activeElement.dataset.k, d: document.activeElement.dataset.d } : null; showBoard(); if (at) { const nb = $('bdBody').querySelector('button[data-k="' + at.k + '"][data-d="' + at.d + '"]:not(:disabled)') || $('bdBody').querySelector('button[data-k="' + at.k + '"]:not(:disabled)'); if (nb) nb.focus(); } };
+  for (const b of $('bdBody').querySelectorAll('button[data-c]')) b.onclick = () => { if (!ST.toggleCharm(sv, b.dataset.c)) toast(T('チャームは {n}つまで', { n: ST.CHARM_SLOTS })); writeSave(); AU && AU.sfx('tap'); showBoard(); const nb = $('bdBody').querySelector('button[data-c="' + b.dataset.c + '"]'); if (nb) nb.focus(); };
+  $('bdReset').onclick = () => { ST.resetBoard(sv); writeSave(); showBoard(); };
+  $('bdClose').onclick = () => { hideOv('ovBoard'); showStory(); };
+  showOv('ovBoard');
+}
+$('mStory').onclick = () => { if (stEnt()) showStory(); else openSetup('story'); };
 
 // ---------- overlays ----------
 function showOv(id) { for (const o of document.querySelectorAll('.overlay')) o.hidden = o.id !== id; const f = $(id).querySelector('.btn:not(.sub):not(.link)'); try { if (f) f.focus({ preventScroll: true }); } catch (e) {} landTip(); }
@@ -1204,10 +1356,10 @@ function openSetup(mode) {
   if (mode === 'ladder' && s.diff === 3 && save.cl < 1) s.diff = 2;
   for (const n of [1, 2, 3, 4]) { RS[n].q = ''; RS[n].f = 'all'; const t = $('toolP' + n); if (t.q) t.q.value = ''; }
   renderPickers();
-  const solo = mode === 'solo', two = mode === 'two', lad = mode === 'ladder', train = mode === 'train';
-  $('sTitle').textContent = solo ? T('ひとりで対戦') : two ? T('みんなで対戦') : lad ? T('ラダー（8戦）') : T('れんしゅう');
+  const solo = mode === 'solo', two = mode === 'two', lad = mode === 'ladder', train = mode === 'train', sto = mode === 'story';
+  $('sTitle').textContent = solo ? T('ひとりで対戦') : two ? T('みんなで対戦') : lad ? T('ラダー（8戦）') : sto ? T('主役のおもちゃをえらぶ') : T('れんしゅう');
   $('lbP1').textContent = two ? T('1P のおもちゃ') : T('あなたのおもちゃ'); $('lbP2').textContent = two ? T('2P のおもちゃ') : T('ダミーのおもちゃ'); $('lbP3').textContent = T('3P のおもちゃ'); $('lbP4').textContent = T('4P のおもちゃ');
-  $('secHum').hidden = !two; $('secCpu').hidden = !(solo || two); $('secLvl').hidden = !(solo || two || lad); $('secStage').hidden = lad; $('secRules').hidden = !(solo || two);
+  $('secHum').hidden = !two; $('secCpu').hidden = !(solo || two); $('secLvl').hidden = !(solo || two || lad); $('secStage').hidden = lad || sto; $('secRules').hidden = !(solo || two);
   $('lbLvl').textContent = lad ? T('強さ（ラダー）') : T('CPU の強さ');
   const drawHum = () => {
     seg($('segH'), [2, 3, 4].map(n => [n, T('{n}人', { n })]), s.nh, v => { s.nh = v; drawHum(); renderPickers(); });
@@ -1224,11 +1376,11 @@ function openSetup(mode) {
   seg($('segL'), lv, lad ? s.diff : s.lvl, v => { if (lad) s.diff = v; else s.lvl = v; });
   seg($('segR'), [['stock', T('残機')], ['time', T('時間')]], s.mode, v => { s.mode = v; fillRules(); });
   fillRules();
-  $('uaChk').checked = !!save.ua; $('uaRow').hidden = lad;
+  $('uaChk').checked = !!save.ua; $('uaRow').hidden = lad || sto;
   $('uaChk').onchange = () => { save.ua = $('uaChk').checked ? 1 : 0; writeSave(); renderPickers(); };
   charInfo(s.c1); stageInfo(s.stage);
   $('sNote').textContent = lad && save.cl < 1 ? T('「つよい」はラダーを1回クリアすると開く') : T('決めた設定は覚えています');
-  $('sGo').textContent = lad ? T('ラダーをはじめる') : T('はじめる');
+  $('sGo').textContent = lad ? T('ラダーをはじめる') : sto ? T('ストーリーへ') : T('はじめる');
   $('sGo').onclick = () => { writeSave(); startFromSetup(); };
   $('sBack').onclick = () => { writeSave(); showTitle(); };
   // show the picked character's info when hovering is not possible: tapping a chip updates it
@@ -1247,6 +1399,7 @@ function makeLabels(n, humans, solo) { const cpu = n - humans, out = []; for (le
 function startFromSetup() {
   const s = save.set, mode = setupMode;
   hideOv('ovSetup');
+  if (mode === 'story') { noteRecent([s.c1]); save.sv.h = s.c1; writeSave(); showStory(); return; }
   if (mode === 'ladder') { noteRecent([s.c1]); ladderBegin(s.c1, s.diff); return; }
   const stage = s.stage === 'random' ? E.STAGE_IDS.filter(hasStage)[Math.floor(Math.random() * E.STAGE_IDS.filter(hasStage).length)] : s.stage;
   const rule = { mode: s.mode, stk: s.stk, tm: s.tm };
@@ -1554,7 +1707,7 @@ if (DEBUG) {
     setPct: (i, p) => { G.st.fighters[i].pct = p; },
     put: (i, o) => { const f = G.st.fighters[i]; Object.assign(f, o); if (o.gr === undefined && (o.x !== undefined || o.y !== undefined)) f.gr = E.supportAt(G.st, f); },
     place: (i, x, y) => { const f = G.st.fighters[i]; f.x = x; f.y = y; f.vx = f.vy = 0; f.gr = E.supportAt(G.st, f); },
-    showTitle, showHowto, openSetup, showLadder, openMenu, startDemo, layout, showCtl, rebuildMaps, winUnlocks, hudOpts, K,
+    showTitle, showHowto, openSetup, showLadder, openMenu, startDemo, layout, showCtl, rebuildMaps, winUnlocks, hudOpts, K, ST, showStory, storyFight, writeSave,
     fps(ms) { return new Promise(res => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(Math.round(f * 1000 / (performance.now() - t0))); }; requestAnimationFrame(tick); }); },
     thumbScene() {
       store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideAll();

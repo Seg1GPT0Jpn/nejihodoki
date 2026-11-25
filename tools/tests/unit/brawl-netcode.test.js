@@ -50,10 +50,13 @@ function scenarios() {
     if (i % 5 === 0) chars[n - 1] = E.K.LEGACY[(i * 3) % 18];
     out.push({ name: 'n' + i, seed: 900 + i * 31, stage: E.STAGE_IDS[(i + 2) % 5], chars, mode: 'stock', stocks: 1 + (i % 3), frames: 2400 });
   }
+  // story rules (low gravity, board upgrades, charms, a giant foe, a handicap): flag-gated keys, so only these matches carry them
+  out.push({ name: 's0', seed: 4101, stage: 'shelf', chars: ['robo', 'bear'], mode: 'stock', stocks: 2, frames: 2400, mods: { g: 0.6 }, fx: [{ up: [2, 1, 3, 2], cm: { j: 1, s: 1, p: 1, h: 1 } }, {}], giant: 1 });
+  out.push({ name: 's1', seed: 4102, stage: 'bench', chars: ['duck', 'tank', 'cat'], mode: 'stock', stocks: 2, frames: 2400, hp: [40, 0, 0], fx: [{ up: [5, 5, 5, 0] }, {}, { cm: { h: 1 } }] });
   return out;
 }
 function runScript(sc, hooks) {
-  const st = E.create({ seed: sc.seed, stage: sc.stage, fighters: sc.chars.map(ch => ({ ch, lvl: 0 })), mode: sc.mode, stocks: sc.stocks, time: 25 });
+  const st = E.create({ seed: sc.seed, stage: sc.stage, fighters: sc.chars.map((ch, i) => Object.assign({ ch: sc.giant === i ? E.makeVariant(ch, 1.35) : ch, lvl: 0 }, sc.fx && sc.fx[i])), mode: sc.mode, stocks: sc.stocks, time: 25, mods: sc.mods, hp: sc.hp });
   const rows = script(sc.seed, sc.chars.length, sc.frames), marks = {};
   for (let f = 1; f <= sc.frames; f++) {
     if (hooks && hooks.before) hooks.before(st, f);

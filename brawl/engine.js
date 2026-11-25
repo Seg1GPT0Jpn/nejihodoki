@@ -163,6 +163,8 @@
       stocks: clamp(o.stocks | 0 || 3, 1, 9), timeMax: Math.round((o.time || 180) * 60), cap: Math.round((o.cap || 600) * 60), sudden: false,
       fighters: [], pr: [], th: [], ev: [], ai: [], sc: [], res: null, dummy: 'stand', shake: 0,
     };
+    // ストーリー用（なければ何も足さない：今までの試合の状態は変わらない）：mods.g＝重力のばいりつ
+    if (o.mods && o.mods.g && o.mods.g !== 1) st.mods = { g: clamp(+o.mods.g, 0.3, 2) };
     const n = fl.length, sx = stage.start;
     for (let i = 0; i < n; i++) {
       const c = CH[fl[i].ch] || CH.robo;
@@ -174,6 +176,9 @@
         hx: 0, hy: 0, hxd: 0, hyd: 0, fkn: false, fkx: 0, fky: 0, fkt: 0, bc: 0, bcd: 0, bj: 0, jsrc: 0, mm: 0, dsh: 0, dd: 0, tn: 0, pv: 0, cr: 0, tq: 0, tl: 0, tw: 0, tdir: 0, sdi: 0, ssn: 0, pst: 0, psl: 0, rj: 0, rfl: 0, lgN: 0, gk: '', mdx: 0, mdy: 0, tau: 0, adl: 0,
       };
       if (o.hp) f.pct = o.hp[i] || 0;
+      // up＝ボード [こうげき, ぼうぎょ, はやさ, もどり]（0〜5）、cm＝チャーム { s:まもり長持ち, j:ジャンプ+1, p:飛び道具に強い, h:ふっとびにくい }
+      const up = fl[i].up; if (up && up.some(v => v > 0)) { f.up = [0, 1, 2, 3].map(k => clamp(up[k] | 0, 0, 5)); if (f.up[2]) f.sp = rd(1 + 0.03 * f.up[2]); }
+      const cm = fl[i].cm; if (cm) { const o2 = {}; for (const k of ['s', 'j', 'p', 'h']) if (cm[k]) o2[k] = 1; if (Object.keys(o2).length) { f.cm = o2; if (o2.j) f.jumps++; } }
       st.fighters.push(f); st.ai.push(newAI(f)); st.sc.push(0);
     }
     st.th = thinsNow(st);
@@ -201,7 +206,7 @@
     return -1;
   }
   const stageOf = st => STAGES[st.stage];
-  const JM = f => CH[f.ch].jmax || 1; // 空中ジャンプの回数
+  const JM = f => (CH[f.ch].jmax || 1) + (f.cm && f.cm.j ? 1 : 0); // 空中ジャンプの回数
   const info = f => CH[f.ch];
   const moveOf = (f, key) => MOVES[f.ch][key] || null;
   const alive = f => f.s !== 'out';
@@ -232,6 +237,16 @@
   //   ai(st, f, m, T, cx)：CPU がこのとくぎを出したいとき { hold, pulse } を返す（cx＝距離・強さ・向きなど）。なければ「近ければ近接」と同じ
   const KINDS = {};
   const BUILTIN_KINDS = ['melee', 'proj', 'dash', 'rise', 'counter', 'spin', 'cmdgrab', 'pound', 'mine', 'buff', 'tele', 'reflect'];
+  // 大きな（小さな）相手：あたり判定・体・ちからをまとめて s ばいにした写しを、別の id（base~ぱーせんと）で登録する（ストーリー用。選べるおもちゃには入らない）
+  function makeVariant(base, s) {
+    const id = base + '~' + Math.round(s * 100); if (CH[id]) return id;
+    const c = JSON.parse(JSON.stringify(CH[base])), sc = v => rd(v * s), hbs = a => a.map(h => [sc(h[0]), sc(h[1]), sc(h[2]), sc(h[3]), sc(h[4])]);
+    c.id = id; c.boss = 1; c.base = base; c.scale = s; c.w = Math.round(c.w * s); c.h = Math.round(c.h * s); c.weight = Math.max(60, Math.min(170, Math.round(c.weight * (1 + (s - 1) * 1.2)))); c.run = rd(c.run * (s > 1 ? 0.92 : 1.05));
+    c.kit.reach = rd((c.kit.reach || 1) * s); c.kit.rr = rd((c.kit.rr || 1) * s);
+    const fix = m => { if (m.hb) m.hb = hbs(m.hb); if (m.land && m.land.hb) m.land.hb = hbs(m.land.hb); if (m.proj && m.proj.r) m.proj.r = sc(m.proj.r); };
+    for (const k of Object.keys(c.sp)) fix(c.sp[k]); if (c.spb) for (const k of Object.keys(c.spb)) fix(c.spb[k]);
+    defineChar(c); return id;
+  }
   function defineKind(name, h) { if (KINDS[name] || BUILTIN_KINDS.indexOf(name) >= 0) throw new Error('defineKind: duplicate ' + name); KINDS[name] = h || {}; return h; }
   // 飛び道具の種類（p.k）：{ update(st, p) } を足すと、毎フレーム動いたあとに呼ばれる（曲がる・分かれる・もどる など）。絵は art.js の DRAWPROJ
   const PROJ = {};
@@ -515,8 +530,16 @@
   }
 
   // 1人の1フレーム
+  // 足の速さ（ボード）や重力（ストーリーのルール）がかわっているときだけ、数をかえた写しを使う（キャッシュ。どちらもなければ元のまま）
+  const CCACHE = {};
+  function cOf(st, f) {
+    const c = CH[f.ch], g = st.mods ? st.mods.g : 1; if (!f.sp && g === 1) return c;
+    const key = f.ch + '|' + (f.sp || 1) + '|' + g; let d = CCACHE[key];
+    if (!d) { const s = f.sp || 1; d = CCACHE[key] = Object.assign({}, c, { run: rd(c.run * s), air: rd(c.air * s), acc: rd(c.acc * s), grav: rd(c.grav * g), fall: rd(c.fall * (0.6 + 0.4 * g)), ff: rd(c.ff * (0.6 + 0.4 * g)) }); }
+    return d;
+  }
   function updateFighter(st, f, inp) {
-    const C = CH[f.ch], S = stageOf(st);
+    const C = cOf(st, f), S = stageOf(st);
     const pr = inp & ~f.pin;
     f.lastVy = f.vy;
     if (pr & B.J) { f.bj = 7; f.jsrc = 0; } else if (f.bj > 0) f.bj--;
@@ -622,7 +645,7 @@
         break;
       }
       case 'shield': {
-        f.vx *= 0.7; f.shd = Math.max(0, f.shd - 0.3);
+        f.vx *= 0.7; f.shd = Math.max(0, f.shd - (f.cm && f.cm.s ? 0.18 : 0.3));
         physics(st, f, C, { grav: C.grav });
         if (f.gr < 0) { f.s = 'free'; break; }
         if (f.shd <= 1) { f.s = 'lag'; f.lag = 14; f.sf = 0; f.psl = 30; break; }
@@ -884,7 +907,7 @@
     } else if (k === 'rise') {
       if (fr === m.s && grounded) { f.gr = -1; }
       if (fr >= m.s && fr < m.s + m.a) {
-        const p = (fr - m.s) / m.a; f.gr = -1; f.vy = -m.rv * (1 - 0.45 * p); f.vx = ax ? ax * m.dv : f.vx * 0.9; grav = 0; f.ffl = false;
+        const p = (fr - m.s) / m.a; f.gr = -1; f.vy = -m.rv * (f.up && f.up[3] ? 1 + 0.05 * f.up[3] : 1) * (1 - 0.45 * p); f.vx = ax ? ax * m.dv : f.vx * 0.9; grav = 0; f.ffl = false;
         if (ax && fr === m.s) f.face = ax;
       }
       if (fr === m.s + m.a) { f.vy = -1; }
@@ -1082,6 +1105,8 @@
     if (h.m) { let n = 0; for (const k of A.recent) if (k === h.m.key) n++; d *= Math.max(0.55, 1 - 0.06 * Math.max(0, n - 1)); if (A.buff > 0) d *= 1.25; }
     if (h.m && h.m.sm && A.chg > 0) d *= 1 + 0.4 * Math.min(1, A.chg / 45);
     if (A.ks && A.ks.big > 0) d *= 1 + 0.16 * A.ks.big;
+    if (A.up && A.up[0]) d *= 1 + 0.04 * A.up[0];
+    if (h.pj && D.cm && D.cm.p) d *= 0.8;
     if (h.m && A.ks && A.ks.pow > 0) { d *= 1 + Math.min(0.5, A.ks.pow * 0.03); A.ks.pow = 0; }
     d = rd(d);
     const face = h.face;
@@ -1128,6 +1153,8 @@
     const pAfter = D.pct;
     let v = (p.bkb + p.kbg * pAfter * 0.01) * 0.18 * wm;
     if (D.ks && D.ks.big > 0) v *= 1 - 0.08 * D.ks.big;
+    if (D.up && D.up[1]) v *= 1 - 0.04 * D.up[1];
+    if (D.cm && D.cm.h) v *= 0.92;
     if (D.cr > 2 && D.gr >= 0 && D.s === 'free') v *= 0.85; // しゃがみ（クラウチキャンセル）：飛びにくい
     if (how === 'hug' || how === 'throw') { D.pct = rd(D.pct + p.dmg); A.dealt = rd(A.dealt + p.dmg); D.taken = rd(D.taken + p.dmg); D.last = A.i; D.lastF = st.f; D.lk = how; v = (p.bkb + p.kbg * D.pct * 0.01) * 0.18 * wm; }
     const a = V(p.ang); let dx = a[0] * face, dy = a[1];
@@ -1608,7 +1635,7 @@
   }
   const hashStr = st => { const h = hash(st); return h[0].toString(16).padStart(8, '0') + h[1].toString(16).padStart(8, '0'); };
   // NETV：決まった結果が変わる直しをしたら上げる。ちがう版どうしではオンライン対戦をしない（ずれてしまうので）
-  const NETV = 3;
+  const NETV = 4;
   // 種つきの入力（テスト用）：ランダムに押す
   function randInput(st, i) {
     const r = rnd(st); let b = 0;
@@ -1619,7 +1646,7 @@
     return b;
   }
   const api = {
-    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, defineKind, defineProj, KINDS, PROJ, sigOf, dist, sigReset: () => { for (const k of Object.keys(sigCache)) delete sigCache[k]; }, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
+    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, makeVariant, defineKind, defineProj, KINDS, PROJ, sigOf, dist, sigReset: () => { for (const k of Object.keys(sigCache)) delete sigCache[k]; }, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
     sameJSON: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BrawlEngine = api;
