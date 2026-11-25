@@ -283,7 +283,7 @@ async function modelDemo(env) {
   const s = await open(env); const p = s.page; const before = JSON.stringify(await stored(p, SAVE));
   await p.click('#tSet'); const gOpts = await p.evaluate(() => [...document.querySelectorAll('#ghostSel option')].map(o => o.value)); check('settings offer the model baton: off / soft / bold', gOpts.join() === 'off,soft,bold', gOpts);
   await p.selectOption('#ghostSel', 'bold'); check('the choice is saved', (await p.evaluate(() => JSON.parse(localStorage.getItem('kusoge.orchestra.prefs')).ghost)) === 'bold'); await p.click('#sClose');
-  await p.evaluate(() => document.querySelector('.rrow:has(.rc[data-piece="nachtmusik"]) .demo').click()); await wait(p, () => __kb.state().playing, null, 120000);
+  await p.evaluate(() => document.querySelector('.rrow:has(.rc[data-piece="nachtmusik"]) .demo').click()); await p.click('#partBox button[data-act="listen"]'); await wait(p, () => __kb.state().playing, null, 120000);
   const a = await wait(p, () => __kb.state().state === 'playing' && __kb.state().pos > 3, null, 40000).then(() => st(p));
   check('the model conducts by itself: it plays with no player input (pos ' + a.pos.toFixed(1) + ', ' + Math.round(a.bpm) + ' bpm, voices ' + a.voices + ')', a.state === 'playing' && a.voices > 2 && a.bpm > 40, a);
   const gh = await p.evaluate(() => { const c = document.getElementById('board'); return { demo: __orch.G.demo, key: __orch.G.key }; }); check('it is flagged as a demonstration', gh.demo === true, gh); await shot(p, '05c-model');
@@ -404,6 +404,24 @@ async function joycon(env) {
   await s.close();
 }
 
+async function lessonMode(env) {
+  console.log('5e. ついてこい: the model conducts a phrase, then you repeat it; graded against the model; no effect on the piece scores');
+  const s = await open(env); const p = s.page; const before = JSON.stringify((await stored(p, SAVE)));
+  await p.evaluate(() => document.querySelector('.rrow:has(.rc[data-piece="nachtmusik"]) .demo').click());
+  const acts = await p.evaluate(() => [...document.querySelectorAll('#partBox button')].map(b => b.dataset.act || b.textContent)); check('the ♪ menu offers listen / follow me with 2, 4 and 8 bars: ' + acts.join(','), ['listen', 'lesson2', 'lesson4', 'lesson8'].every(x => acts.includes(x)), acts);
+  await p.click('#partBox button[data-act="lesson2"]'); await wait(p, () => __kb.state().playing, null, 120000);
+  const ph0 = await p.evaluate(() => ({ phase: __orch.G.lesson.phase, n: __orch.G.lesson.phrases.length, demo: __orch.G.demo })); check('it starts with the model conducting the first phrase (' + ph0.n + ' phrases)', ph0.phase === 'model' && ph0.demo && ph0.n > 10, ph0);
+  await wait(p, () => __orch.G && __orch.G.lesson.phase === 'you', null, 40000); const ph1 = await p.evaluate(() => ({ phase: __orch.G.lesson.phase, demo: __orch.G.demo, beats: __orch.G.score.nBeats, hint: document.getElementById('hint').textContent })); check('then it is your turn on the same phrase (' + ph1.beats + ' beats): ' + ph1.hint, ph1.phase === 'you' && !ph1.demo && ph1.beats <= 10, ph1);
+  const c = await stageBox(p); await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 12, 66, 0.24 * c.scale);
+  await wait(p, () => !document.getElementById('ovLesson').hidden, null, 30000).catch(() => {}); const res = await p.evaluate(() => ({ shown: !document.getElementById('ovLesson').hidden, stars: document.querySelectorAll('#lsStars i.on').length, rows: document.getElementById('lsRows').innerText, next: !document.getElementById('lsNext').hidden }));
+  if (!res.shown) { await p.evaluate(() => __orch.seekNearEnd(1)); await conductBeats(p, c, 3, 66, 0.24 * c.scale); await wait(p, () => !document.getElementById('ovLesson').hidden, null, 20000); }
+  const r2 = await p.evaluate(() => ({ shown: !document.getElementById('ovLesson').hidden, rows: document.getElementById('lsRows').innerText.replace(/\n/g, ' '), next: !document.getElementById('lsNext').hidden })); check('a short result: tempo and dynamics against the model, stars (' + r2.rows + ')', r2.shown && /\d+/.test(r2.rows) && r2.next, r2); await shot(p, '05e-lesson-result');
+  const pr = await p.evaluate(() => JSON.parse(localStorage.getItem('kusoge.orchestra.prefs')).lessons.nachtmusik); check('the lesson is recorded on this device (prefs.lessons): ' + JSON.stringify(pr), pr && pr.n === 1, pr);
+  await p.click('#lsNext'); await wait(p, () => __orch.G && __orch.G.lesson.idx === 1 && __orch.G.lesson.phase === 'model', null, 10000); check('the next phrase starts with the model again', true);
+  const after = JSON.stringify(await stored(p, SAVE)); check('the piece scores, stars and totals are unchanged by the lesson', before === after, { before, after });
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 async function pause(env) {
   console.log('8. pause: the menu stops the clock and the sound, resuming re-enters, leaving goes back to the pieces');
   const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'enjoy'); const c = await stageBox(p);
@@ -491,7 +509,7 @@ async function layouts(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, pause, english, themes, saves, layouts]) {
+  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, lessonMode, pause, english, themes, saves, layouts]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
   }

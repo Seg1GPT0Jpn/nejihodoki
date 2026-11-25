@@ -388,4 +388,18 @@ test('MotionDetector v2: calibration scales to the player (a gentle swinger and 
   const d = new E.MotionDetector(); runIMU(imuStream({ bpm: 90, peak: 12, rate: 60, sec: 3 }), d); ok(d.dbg.length > 100 && d.dbg.length <= 600 && d.dbg.some(x => x.b > 0), 'the debug buffer holds recent samples and marks the beats');
 });
 
+// --- ついてこい: phrases, keeping all sections, the grade against the model ---------------------------------------------------------------------------
+test('lesson: phrases of 2/4/8 bars cover the piece without gaps, sliceScore(keepAll) keeps every section in order, and a model-then-player run of one phrase plays the same notes', () => {
+  for (const id of ['nachtmusik', 'dvorak7', 'mozart25-2']) {
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'orchestra/scores', id + '.json'), 'utf8'));
+    for (const bars of [2, 4, 8]) { const ph = E.lessonPhrases(j, bars); ok(ph.length >= 3, id + ' phrases'); eq(ph[0].from, 0); for (let i = 1; i < ph.length; i++) eq(ph[i].from, ph[i - 1].to, 'no gap'); ok(ph[ph.length - 1].to <= j.nBeats); ok(ph.every(p => p.to - p.from >= 2 && p.to - p.from <= bars * 4), 'size'); }
+    const ph = E.lessonPhrases(j, 4)[2], sl = E.sliceScore(j, ph.from, ph.to, true), whole = new E.Score(j); eq(sl.sec.map(s => s.id).join(), j.sec.map(s => s.id).join(), 'same sections, same order'); eq(new E.Score(sl).nBeats, ph.to - ph.from);
+    const run = kind => { const sc = new E.Score(sl), ses = new E.Session({ score: sc, diff: kind === 'model' ? 'enjoy' : 'normal', sink: {} }), o = { now: 0 }, log = drive(ses, o), dc = new E.DemoConductor(ses); for (let t = 0; t < 40 && ses.state !== 'ended'; t += 0.025) { o.now = t; dc.tick(t); ses.tick(t); } return { ses, log, sc }; };
+    const m = run('model'); ok(m.ses.state === 'ended', id + ' the model finishes the phrase'); eq(m.log.on.length, m.sc.noteCount);
+    // the "player" is the virtual conductor on Normal: a perfect repeat grades 3 stars; no strokes at all grades nothing
+    const g = E.lessonGrade(run('you').ses.result()); ok(g.stars >= 2 && g.tempo > 60 && g.dynamics > 60, id + ' a faithful repeat grades well: ' + JSON.stringify(g));
+  }
+  const bad = E.lessonGrade({ tempo: 10, dynamics: 20 }); eq(bad.stars, 0); eq(E.lessonGrade({ tempo: 95, dynamics: 90 }).stars, 3); eq(E.lessonGrade({ tempo: 80, dynamics: 70 }).stars, 2); eq(E.lessonGrade({}).total, 0);
+});
+
 run('orchestra-engine');

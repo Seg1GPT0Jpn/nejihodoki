@@ -134,7 +134,7 @@
 
   // sliceScore(json, from, to): a copy of a score JSON that holds only the conductor beats [from, to) (both bar lines). Used for the "part" choice of long movements.
   // Notes that start before `from` are dropped (like the build tool's excerpts), notes running past `to` are cut; cues, tempo and dynamics guide are shifted.
-  function sliceScore(j, from, to) {
+  function sliceScore(j, from, to, keepAll) {
     const bt = [], bpbs = []; j.grid.forEach(g => { for (let b = 0; b < g[1]; b++) { for (let i = 0; i < g[2]; i++) bt.push(g[0] + (b * g[2] + i) * g[3]); bpbs.push([g[2], g[3]]); } });
     const n = bt.length; from = clamp(Math.round(from), 0, n - 1); to = clamp(Math.round(to), from + 1, n);
     const t0 = bt[from], lastTk = j.grid[j.grid.length - 1][3], t1 = to < n ? bt[to] : bt[n - 1] + lastTk;
@@ -146,7 +146,7 @@
     bpm.push([0, cur]); j.bpm.forEach(r => { if (r[0] > from && r[0] < to) bpm.push([r[0] - from, r[1]]); });
     const sec = j.sec.map(sc => { const out = []; let t = 0, prev = 0;
       for (let i = 0; i < sc.n.length; i += 4) { t += sc.n[i]; if (t < t0 || t >= t1) continue; const d = sc.n[i + 2], ad = Math.min(Math.abs(d), t1 - t); out.push(t - t0 - prev, sc.n[i + 1], d < 0 ? -ad : ad, sc.n[i + 3]); prev = t - t0; }
-      return { id: sc.id, inst: sc.inst, n: out }; }).filter(sc => sc.n.length);
+      return { id: sc.id, inst: sc.inst, n: out }; }).filter(sc => keepAll || sc.n.length); // keepAll: the sections stay in the same order (a lesson reuses one set of players)
     const o = Object.assign({}, j, { id: j.id, grid, bpm, dyn: j.dyn.slice(from, to), cues: (j.cues || []).filter(c => c[0] >= from && c[0] < to).map(c => [c[0] - from, c[1]]), nBeats: to - from, sec });
     return o;
   }
@@ -301,6 +301,16 @@
     if (i < n - 1) return lerpP(P[i + 1], P[i + 2], e);
     return f < 0.5 ? lerpP(P[n], P[0], f * 2) : lerpP(P[0], P[1], (f - 0.5) * 2);
   }
+
+
+  // ついてこい (follow-me lesson): the piece is cut into phrases of N bars; the model conducts a phrase, then the player repeats it.
+  function lessonPhrases(j, bars) {
+    const starts = []; let beat = 0; j.grid.forEach(g => { for (let b = 0; b < g[1]; b++) { starts.push(beat); beat += g[2]; } }); const total = beat, out = [];
+    for (let i = 0; i < starts.length; i += bars) { const from = starts[i], to = i + bars < starts.length ? starts[i + bars] : total; if (to - from >= 2) out.push({ from, to, bar: i + 1 }); }
+    return out;
+  }
+  // the comparison with the model: tempo (steadiness against the model's tempo) and dynamics (match with the model's dynamics) -> 0..100 and stars (the Normal thresholds)
+  function lessonGrade(res) { const total = Math.round(0.5 * (res.tempo || 0) + 0.5 * (res.dynamics || 0)), st = DIFFS.normal.stars; return { total, stars: total >= st[2] ? 3 : total >= st[1] ? 2 : total >= st[0] ? 1 : 0, tempo: res.tempo || 0, dynamics: res.dynamics || 0 }; }
 
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // Scorer
@@ -515,5 +525,5 @@
     return (inst === 'vln' || inst === 'vla' || inst === 'vc' || inst === 'cb') ? 'spic' : 'stac';
   }
 
-  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, DemoConductor, ghostPoint, MotionCalibrator, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
+  return { PPQ: 96, SECTIONS, SECTION_ORDER, DYN_MARKS, Dynamics, sliceScore, DemoConductor, ghostPoint, MotionCalibrator, lessonPhrases, lessonGrade, KEYS, DIFFS, Score, BeatDetector, FlickDetector, aimedSeat, MotionDetector, BeatClock, Scorer, Session, artFor, clamp };
 });
