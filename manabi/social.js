@@ -1,6 +1,6 @@
 // まなびの工房：ソーシャル（ほんもののリーグ・できごとのフィード・友だちクエスト）。
 // Firestore の compat 形（db.collection(c).doc(id).get()/set()/update()）だけを使う。db は呼び出し側が渡す（テストでは偽物）。
-// ルールは tools/proposed-manabi-social-rules.txt（firestore.rules にマージされるまでは、書き込みが拒否されて「ひとり用」にもどる）。
+// ルールは firestore.rules（kbLg・kbFeed・kbPairs）（firestore.rules にマージされるまでは、書き込みが拒否されて「ひとり用」にもどる）。
 // ここのコードは「ゆるい上限」のルールに合わせてあるだけで、XP のごまかしを防ぐものではない（賞品などには結びつけない）。
 (function (root) {
   'use strict';
@@ -17,7 +17,7 @@
     let retried = false;
     for (let n = 1; n <= MAX_ROOMS; n++) {
       const ref = refOf(db, 'kbLg', roomId(o.week, o.tier, n)); let d;
-      try { d = snapData(await ref.get()); } catch (e) { return { ok: false, reason: 'read' }; }
+      try { d = snapData(await ref.get()); } catch (e) { return { ok: false, reason: e && e.code === 'permission-denied' ? 'denied' : 'read' }; }
       const entry = { n: nm(o.name), x: Math.max(0, Math.min(CAP, o.xp | 0)), t: o.ts() };
       if (d && d.m && d.m[o.uid]) return { ok: true, room: ref.id, n, existed: true };
       if (d && d.m && Object.keys(d.m).length >= MAX_MEMBERS) continue;
@@ -42,7 +42,7 @@
   }
 
   async function members(db, room) {
-    try { const d = snapData(await refOf(db, 'kbLg', room).get()); if (!d || !d.m) return { ok: true, rows: [] }; return { ok: true, rows: Object.keys(d.m).map(uid => ({ uid, n: String(d.m[uid].n || ''), xp: d.m[uid].x | 0, t: ms(d.m[uid].t) })) }; } catch (e) { return { ok: false, reason: 'read', rows: [] }; }
+    try { const d = snapData(await refOf(db, 'kbLg', room).get()); if (!d || !d.m) return { ok: true, rows: [] }; return { ok: true, rows: Object.keys(d.m).map(uid => ({ uid, n: String(d.m[uid].n || ''), xp: d.m[uid].x | 0, t: ms(d.m[uid].t) })) }; } catch (e) { return { ok: false, reason: e && e.code === 'permission-denied' ? 'denied' : 'read', rows: [] }; }
   }
 
   // 順位表：ほんもののプレイヤー＋足りない席をボットでうめる（size 人まで。ほんものが size 人以上ならボットなし）。

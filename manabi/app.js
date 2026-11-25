@@ -148,6 +148,7 @@ function renderBadge() {
 }
 function renderChips() {
   try { renderBadge(); } catch (e) {}
+  try { schedulePush(); } catch (e) {}
   const st = E.streakOf(save.d, today), xp = E.xpToday(save, today);
   $('nStreak').textContent = st;
   $('cStreak').title = T('れんぞく {n}日', { n: st });
@@ -713,7 +714,7 @@ function monthBadge(key, size) {
   const m = Number(key.slice(5)) - 1, c = MONTH_COL[m], dk = Fx.shade(c, 0.7);
   return '<svg viewBox="0 0 64 64" width="' + (size || 56) + '" height="' + (size || 56) + '" role="img" aria-label="' + key + '"><path d="M32 4l22 12v26L32 60 10 42V16z" fill="' + c + '" stroke="' + dk + '" stroke-width="4" stroke-linejoin="round"/><path d="M32 12l15 8.500v18L32 52 17 38.500v-18z" fill="rgba(255,255,255,.28)"/><text x="32" y="39" text-anchor="middle" font-size="22" font-weight="900" fill="' + dk + '">' + (m + 1) + '</text></svg>';
 }
-// 友だちクエスト：ボットの友だち（ミカン）といっしょに、今週 150 XP。ほんもののユーザーではない（オンライン版は設計だけ：tools/proposed-manabi-social-rules.txt）
+// 友だちクエスト：ボットの友だち（ミカン）といっしょに、今週 150 XP。ほんもののユーザーではない（オンライン版は設計だけ：firestore.rules（kbLg・kbFeed・kbPairs））
 const FRIEND_GOAL = 150;
 const friendBot = () => ({ name: 'ミカン', xp: rivalXp(E.weekOf(today), 0, 0, today) });
 function myCode() { if (!save.fc) { const r = E.rng(E.seedOf('fc|' + (store.get('kobo.dev') || '') + Date.now())), A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 6; i++) c += A[Math.floor(r() * A.length)]; save.fc = c; persist(); } return save.fc; }
@@ -740,11 +741,13 @@ function viewQuests() {
   main.append(mc);
   // 友だちクエスト（ボット）
   const bot = friendBot(), mine = weekXp(today), tot = mine + bot.xp, fdone = tot >= FRIEND_GOAL, wk = E.weekOf(today), fclaimed = save.fq === wk;
-  main.append(h('div', { class: 'card', id: 'friendCard' }, [h('h3', { text: T('友だちクエスト') }),
+  const fcard = h('div', { class: 'card', id: 'friendCard' }, [h('h3', { text: T('友だちクエスト') }),
     h('div', { class: 'qrow' }, [h('span', { class: 'av', style: 'width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:' + Fx.SKINS[0] + ';color:#1b1b1b;font-weight:900;flex:none', text: T(bot.name)[0] }), h('div', { class: 't' }, [h('span', { text: T('{name}（ボット）と、今週ふたりで {n} XP', { name: T(bot.name), n: FRIEND_GOAL }) }), h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.min(100, 100 * tot / FRIEND_GOAL) + '%' })), h('small', { class: 'note', id: 'friendProg', text: T('あなた {a} + {name} {b} = {t} / {n}', { a: mine, name: T(bot.name), b: bot.xp, t: tot, n: FRIEND_GOAL }) })]),
       h('button', { class: 'btn ' + (fdone && !fclaimed ? 'primary' : ''), type: 'button', id: 'friendClaim', disabled: fdone && !fclaimed ? null : true, onclick: () => claimFriend(wk) }, fclaimed ? T('うけとりずみ') : fdone ? T('宝箱をあける') : T('進行中'))]),
-    h('p', { class: 'note', text: T('これはボットの友だちです（ほんもののユーザーではありません）。本物の友だちとのクエストは、オンライン版で用意する予定です。') }),
-    h('div', { class: 'set' }, [h('span', { text: T('あなたのフレンドコード') }), h('b', { id: 'myCode', style: 'letter-spacing:.15em', text: myCode() })])]));
+    h('p', { class: 'note', id: 'friendNote', text: T('これはボットの友だちです（ほんもののユーザーではありません）。ログインして友だちを足すと、ほんものの友だちとできます。') }),
+    h('div', { class: 'set' }, [h('span', { text: T('あなたのフレンドコード') }), h('b', { id: 'myCode', style: 'letter-spacing:.15em', text: (FR() && FR().myCode && FR().myCode()) || myCode() })])]);
+  main.append(fcard); upgradeFriendCard(fcard, wk);
+  const feedList = h('div', { id: 'feedList' }, h('p', { class: 'note', text: '…' })); main.append(h('div', { class: 'card', id: 'feedCard' }, [h('h3', { text: T('友だちのできごと') }), feedList])); loadFeed(feedList).catch(() => {});
   main.append(timedCard());
   main.append(h('button', { class: 'banner', id: 'openShop', type: 'button', onclick: () => openGemSheet() }, [h('span', { class: 't' }, [h('b', { text: T('ジェムとお店') }), h('small', { text: T('フリーズ・ハート・ブースト・色') })]), h('span', { class: 'pill', style: 'background:var(--pp);color:var(--pp-ink)', text: '◆ ' + save.gm })]));
   show(main, true);
@@ -756,14 +759,123 @@ function claimQuest(i) {
 }
 function claimMonth(mk) {
   if (save.bd.includes(mk) || monthDays() < MONTH_TARGET) return;
-  showChest({ title: T('月間クエスト達成！'), rewards: [{ k: 'gm', n: 50 }, { k: 'xp', n: 20 }, { k: 'item', id: 'freeze', n: 1 }], onClaim: () => { save.bd.push(mk); save.bd.sort(); persist(); Fx.sfx.quest(); goHome(); } });
+  showChest({ title: T('月間クエスト達成！'), rewards: [{ k: 'gm', n: 50 }, { k: 'xp', n: 20 }, { k: 'item', id: 'freeze', n: 1 }], onClaim: () => { save.bd.push(mk); save.bd.sort(); persist(); feedEv('ach', T('{m}月のバッジをゲット！', { m: Number(mk.slice(5)) })); Fx.sfx.quest(); goHome(); } });
 }
 function claimFriend(wk) {
-  if (save.fq === wk || weekXp(today) + friendBot().xp < FRIEND_GOAL) return;
+  const other = NET.pairLive && NET.pair ? NET.pair.theirs : friendBot().xp, mine = NET.pairLive && NET.pair ? NET.pair.mine : weekXp(today);
+  if (save.fq === wk || mine + other < FRIEND_GOAL) return;
   showChest({ title: T('友だちクエスト達成！'), rewards: [{ k: 'gm', n: 20 }, { k: 'xp', n: 10 }], onClaim: () => { save.fq = wk; persist(); Fx.sfx.quest(); goHome(); } });
 }
 
-// ================================================================ リーグ（ほんもののユーザーではない、この端末だけのシミュレーション）
+
+// ================================================================ オンライン（ほんもののリーグ・フィード・友だちクエスト）
+// ログインしてニックネームを登録していて、Firestore のルール（firestore.rules（kbLg・kbFeed・kbPairs））が入っているときだけ動く。
+// どれかが欠けたら、いままでどおりのこの端末のシミュレーションにもどる（エラーは出さない）。
+const NET = { room: '', rows: null, state: 'idle', reason: '', sentT: 0, timer: 0, feed: null, feedAt: 0, pair: null, pairAt: 0 };
+const nowMs = () => (window.__manabiNow ? Number(window.__manabiNow) : Date.now());
+const dbg = () => /[?&]debug/.test(location.search);
+const FR = () => (dbg() && window.__manabiFriends) || window.KoboFriends;
+async function socialDb() {
+  if (dbg() && window.__manabiNet) return window.__manabiNet();
+  const C = window.KoboCloud, S = window.ManabiSocial;
+  if (!C || !S || !window.firebase) return { reason: 'nocloud' };
+  let uid = null; try { uid = C.me && C.me(); } catch (e) {}
+  if (!uid) return { reason: 'signin' };
+  const name = C.nickname && C.nickname(); if (!name) return { reason: 'nick' };
+  try { if (!(await C.ready()) || !window.firebase.firestore) return { reason: 'nocloud' }; return { db: window.firebase.firestore(), uid, name }; } catch (e) { return { reason: 'nocloud' }; }
+}
+const fsTs = () => { try { return window.firebase.firestore.FieldValue.serverTimestamp(); } catch (e) { return nowMs(); } };
+function botRows(week, tier, day) { return RIVALS.map((n, k) => ({ n, xp: rivalXp(week, tier, k, day), k })); }
+// 先週の本物の組で順位を決めて段を上下する（読めなければ段はそのまま）
+let settling = null;
+function settleReal() {
+  if (settling) return settling;
+  const w = E.weekOf(today);
+  if (!save.lg.rm || save.lg.w === w || save.lg.w <= 0) return Promise.resolve(false);
+  settling = (async () => {
+    try {
+      const ctx = await socialDb(); let moved = 0;
+      if (!ctx.db) return false;
+      const pw = save.lg.w, lastDay = pw * 7 - 3 + 6, r = await ManabiSocial.members(ctx.db, save.lg.rm);
+      if (!r.ok || !r.rows.length) { save.lg.rm = undefined; save.lg.sx = undefined; save.lg.w = w; persist(); return false; }
+      const rows = ManabiSocial.board(r.rows, ctx.uid, botRows(pw, save.lg.t, lastDay), 10), z = ManabiSocial.zones(rows.length), rank = rows.findIndex(x => x.me) + 1;
+      if (rank <= z.up && save.lg.t < TIERS.length - 1) { save.lg.t++; moved = 1; } else if (rank >= z.dnFrom && save.lg.t > 0) { save.lg.t--; moved = -1; }
+      save.lg.rm = undefined; save.lg.sx = undefined; save.lg.w = w; persist();
+      if (moved > 0) feedEv('promo', T('{t}リーグに上がった！', { t: T(TIERS[save.lg.t]) }));
+      return true;
+    } catch (e) { return false; } finally { settling = null; }
+  })();
+  return settling;
+}
+// 自分の組に入る（なければ作る）→ 順位表
+async function loadRealLeague() {
+  const w = E.weekOf(today); NET.state = 'loading';
+  const ctx = await socialDb(); if (!ctx.db) { NET.state = 'off'; NET.reason = ctx.reason; return null; }
+  if (save.lg.rm && save.lg.w !== w) await settleReal();
+  if (save.lg.w !== w) settleLeague();
+  let room = save.lg.rm; const wantPrefix = 'w' + w + '-t' + save.lg.t + '-';
+  if (!room || !room.startsWith(wantPrefix)) {
+    const j = await ManabiSocial.join(ctx.db, { uid: ctx.uid, name: ctx.name, week: w, tier: save.lg.t, xp: weekXp(today), ts: fsTs });
+    if (!j.ok) { NET.state = 'off'; NET.reason = j.reason === 'write' ? 'denied' : j.reason; return null; }
+    room = j.room; save.lg.rm = room; save.lg.sx = j.x != null ? j.x : save.lg.sx; persist();
+  }
+  const r = await ManabiSocial.members(ctx.db, room); if (!r.ok) { NET.state = 'off'; NET.reason = r.reason || 'read'; return null; }
+  NET.room = room; NET.state = 'on'; NET.reason = '';
+  const mine = weekXp(today); r.rows.forEach(x => { if (x.uid === ctx.uid) x.xp = Math.max(x.xp, Math.min(mine, 12000)); });
+  NET.rows = ManabiSocial.board(r.rows, ctx.uid, botRows(w, save.lg.t, today), 10);
+  return NET.rows;
+}
+// XP が増えたら、60 秒以上あけて自分の分だけ送る
+function schedulePush() {
+  if (!save.lg.rm || NET.timer || !window.ManabiSocial) return;
+  const wait = Math.max(1500, ManabiSocial.GAP_MS + 1000 - (nowMs() - NET.sentT));
+  NET.timer = setTimeout(async () => {
+    NET.timer = 0; const ctx = await socialDb(); if (!ctx.db || !save.lg.rm) return;
+    const xp = weekXp(today); if (xp <= (save.lg.sx || 0)) return;
+    const r = await ManabiSocial.push(ctx.db, { room: save.lg.rm, uid: ctx.uid, name: ctx.name, xp, prevX: save.lg.sx || 0, prevT: NET.sentT, now: nowMs(), ts: fsTs });
+    if (r.ok && r.x) { save.lg.sx = r.x; NET.sentT = nowMs(); persist(); if (xp > r.x) schedulePush(); }
+  }, wait);
+}
+// フィード：自分のできごとを送る（ログインしているときだけ。失敗しても何も起きない）
+async function feedEv(ty, tx) {
+  try { const ctx = await socialDb(); if (!ctx.db) return; await ManabiSocial.feedPush(ctx.db, { uid: ctx.uid, ev: { ty, tx: Array.from(tx).slice(0, 60).join(''), at: Math.floor(nowMs() / 1000) }, now: nowMs(), ts: fsTs }); } catch (e) {}
+}
+const palUid = () => { const L = FR() && FR().list ? FR().list() : []; let sel = ''; try { sel = store.get('kusoge.manabi.pal') || ''; } catch (e) {} return L.find(f => f.uid === sel) || L[0] || null; };
+async function loadFeed(box) {
+  const ctx = await socialDb(), L = FR() && FR().list ? FR().list() : [];
+  if (!ctx.db || !L.length) { box.replaceChildren(h('p', { class: 'note', text: ctx.db ? T('友だちを足すと、ここに友だちのできごとが出ます。') : T('ログインして友だちを足すと、ここに友だちのできごとが出ます。') })); return; }
+  if (!NET.feed || nowMs() - NET.feedAt > 300000) { NET.feed = await ManabiSocial.feedRead(ctx.db, L); NET.feedAt = nowMs(); }
+  box.replaceChildren(...(NET.feed.length ? NET.feed.map(e => h('div', { class: 'feedrow', 'data-ty': e.ty }, [h('b', { lang: 'ja', text: e.n || '' }), h('span', { lang: 'ja', text: ' ' + e.tx })])) : [h('p', { class: 'note', text: T('まだできごとがありません。') })]));
+}
+// 友だちクエスト（ほんものの友だち）
+async function loadPair() {
+  const ctx = await socialDb(), pal = palUid(); if (!ctx.db || !pal) return null;
+  if (NET.pair && NET.pair.other === pal.uid && nowMs() - NET.pairAt < 120000) return NET.pair;
+  const w = E.weekOf(today), r = await ManabiSocial.pairSync(ctx.db, { me: ctx.uid, other: pal.uid, week: w, xp: weekXp(today), ts: fsTs });
+  if (!r.ok) return null;
+  NET.pair = { other: pal.uid, name: pal.n, mine: r.mine, theirs: r.theirs }; NET.pairAt = nowMs(); return NET.pair;
+}
+
+// 友だちクエストのカードを、ほんものの友だち（フレンドコードで足した人）に切りかえる。足していなければ、ボットのまま＋コードを足す欄
+function upgradeFriendCard(card, wk) {
+  const add = h('div', { class: 'set', id: 'friendAdd' }, [h('input', { class: 'ans', id: 'friendCodeIn', type: 'text', maxlength: '8', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', placeholder: T('友だちのコード（8文字）'), 'aria-label': T('友だちのコード（8文字）'), style: 'flex:1;min-width:0' }),
+    h('button', { class: 'btn sub', style: 'width:auto', id: 'friendAddBtn', type: 'button', onclick: async () => { const K = FR(); if (!K) return; const msg = $('friendAddMsg'); const r = await K.add($('friendCodeIn').value); msg.textContent = r.ok ? T('友だちを足しました。') : T(FRIEND_ERR[r.reason] || FRIEND_ERR.error); if (r.ok) { NET.pair = null; NET.feed = null; goTab('quests'); } } }, T('足す'))]);
+  if (FR()) { card.append(add, h('p', { class: 'note', id: 'friendAddMsg', role: 'status' })); }
+  loadPair().then(p => {
+    if (!p || !card.isConnected) return;
+    NET.pairLive = true; const tot = p.mine + p.theirs, mine = p.mine;
+    card.querySelector('.t span').textContent = T('{name}と、今週ふたりで {n} XP', { name: p.name || T('友だち'), n: FRIEND_GOAL }); card.querySelector('.t span').lang = 'ja';
+    card.querySelector('.bar i').style.width = Math.min(100, 100 * tot / FRIEND_GOAL) + '%';
+    $('friendProg').textContent = T('あなた {a} + {name} {b} = {t} / {n}', { a: mine, name: p.name || T('友だち'), b: p.theirs, t: tot, n: FRIEND_GOAL });
+    const btn = $('friendClaim'), claimed = save.fq === wk, done = tot >= FRIEND_GOAL; btn.disabled = !(done && !claimed); btn.className = 'btn ' + (done && !claimed ? 'primary' : ''); btn.textContent = claimed ? T('うけとりずみ') : done ? T('宝箱をあける') : T('進行中');
+    $('friend' + 'Note').textContent = T('ほんものの友だちとのクエストです。相手が今週学習すると、ここの数字が増えます（数分ごとに更新）。');
+    card.querySelector('.av').textContent = Array.from(p.name || '友')[0];
+  }).catch(() => {});
+}
+const FRIEND_ERR = { 'bad-code': 'コードは8文字です。', notfound: 'そのコードの人が見つかりません。', self: '自分のコードです。', exists: 'もう友だちです。', full: '友だちがいっぱいです。', db: 'いまは接続できません。', denied: 'いまは足せません（準備中）。', signin: 'ログインしてください。', error: 'うまくいきませんでした。' };
+const NETWHY = { signin: 'ログインすると、ほんもののプレイヤーと競えます。いまはこの端末の中のシミュレーションです。', nick: 'ニックネームを登録すると、ほんもののプレイヤーと競えます（トップページのログイン欄）。いまはシミュレーションです。', nocloud: 'オンラインに接続できないので、いまはこの端末の中のシミュレーションです。', denied: 'オンラインのリーグはまだ準備中です。いまはこの端末の中のシミュレーションです。', read: 'オンラインのリーグを読み込めませんでした。いまはこの端末の中のシミュレーションです。', full: 'リーグの組がいっぱいでした。いまはシミュレーションです。' };
+
+// ================================================================ リーグ（ログインしていなければ、この端末だけのシミュレーション）
 const TIERS = ['ねじ', 'ボルト', 'ナット', 'はぐるま', 'ぜんまい', '金のはぐるま'];
 const RIVALS = ['ミカン', 'タクミ', 'ソラ', 'ハルカ', 'リク', 'ユイ', 'ダイチ', 'ノア', 'サクラ'];
 const rivalXp = (week, tier, k, day) => { // 1人ぶんの、その日までの今週のXP（日ごとの量は決まった乱数）
@@ -776,6 +888,7 @@ function leagueRows(week, tier, day, mine) { return RIVALS.map((n, k) => ({ n, x
 function settleLeague() { // 週がかわったら、先週の順位で段を上下する
   const w = E.weekOf(today);
   if (save.lg.w === w) return;
+  if (save.lg.rm && save.lg.w > 0) { settleReal(); return; } // 本物の組に入っていたら、その順位で（読めたとき）
   if (save.lg.w > 0) {
     const pw = save.lg.w, lastDay = pw * 7 - 3 + 6; // 先週の日曜
     const rows = leagueRows(pw, save.lg.t, lastDay, weekXp(lastDay)); const rank = rows.findIndex(r => r.me) + 1;
@@ -792,8 +905,16 @@ function viewLeague() {
   const list = h('div', { class: 'card', id: 'leagueList' });
   rows.forEach((r, i) => list.append(h('div', { class: 'lg' + (r.me ? ' me' : '') + (i < 3 ? ' up' : i >= 7 ? ' dn' : ''), 'data-me': r.me ? '1' : null }, [h('span', { class: 'rk', text: String(i + 1) }), h('span', { class: 'av', style: 'background:' + Fx.SKINS[(r.k == null ? save.sk : r.k) % 6], text: T(r.n)[0] }), h('span', { class: 'nm', text: T(r.n) }), h('span', { class: 'xp', text: T('{n} XP', { n: r.xp }) })])));
   main.append(list);
-  main.append(h('p', { class: 'note', id: 'leagueNote', text: T('これは、この端末の中だけのシミュレーションです。ほんもののユーザーではありません（ライバルは決まった数式で動きます）。') }));
+  const note = h('p', { class: 'note', id: 'leagueNote', text: T('これは、この端末の中だけのシミュレーションです。ほんもののユーザーではありません（ライバルは決まった数式で動きます）。') });
+  main.append(note);
   show(main, true);
+  loadRealLeague().then(real => {
+    if (tab !== 'league' || !$('leagueList')) return;
+    if (!real) { note.textContent = T(NETWHY[NET.reason] || NETWHY.nocloud); note.dataset.net = NET.reason || 'off'; return; }
+    const z = ManabiSocial.zones(real.length), nReal = real.filter(r => !r.bot).length; list.replaceChildren();
+    real.forEach((r, i) => list.append(h('div', { class: 'lg' + (r.me ? ' me' : '') + (i < z.up ? ' up' : i + 1 >= z.dnFrom ? ' dn' : ''), 'data-me': r.me ? '1' : null, 'data-bot': r.bot ? '1' : null }, [h('span', { class: 'rk', text: String(i + 1) }), h('span', { class: 'av', style: 'background:' + Fx.SKINS[(r.k == null ? save.sk : r.k) % 6], text: Array.from(r.bot ? T(r.n) : r.n)[0] || '?' }), h('span', { class: 'nm', lang: 'ja', text: r.me ? T('あなた') : r.bot ? T(r.n) + T('（ボット）') : r.n }), h('span', { class: 'xp', text: T('{n} XP', { n: r.xp }) })])));
+    note.dataset.net = 'on'; note.textContent = T('ほんもののプレイヤー {n} 人の組です。足りない席は（ボット）がうめています。XP はプレイヤーが自分で送るので、気楽な競争として楽しんでね。', { n: nReal });
+  }).catch(() => {});
 }
 
 // ================================================================ プロフィール
@@ -1319,6 +1440,7 @@ function finishLesson() {
   emit('progress', { xp: save.xp });
   screen = 'result'; setBack(() => goHome()); setTitle(T('レッスンかんりょう！'));
   const goalNow = E.goalMet(save, today), streak = E.streakOf(save.d, today);
+  if (goalNow && [3, 7, 14, 30, 50, 100, 200, 365].includes(streak) && NET.sf !== today + ':' + streak && (NET.sf = today + ':' + streak)) feedEv('streak', T('{n}日れんぞく！', { n: streak }));
   const expr = sum.perfect ? 'cheer' : sum.acc >= 0.6 ? 'happy' : 'think';
   const main = h('div', { class: 'q', id: 'resBody' }, [
     h('div', { class: 'res' }, [
@@ -1752,6 +1874,7 @@ if (DEBUG) {
   };
   window.__kb = Object.assign(window.__kb || {}, { ready: api.ready, state: api.state });
   window.__manabi = {
+    addXp(n) { save.xp += n; save.g[today] = (save.g[today] || 0) + n; persist(); renderChips(); },
     api, E, get L() { return L; }, get M() { return M; }, get save() { return save; },
     // いま出ている問題の「正しい入力」と「まちがった入力」（テストが本物のクリックで答えるため）
     peek() {

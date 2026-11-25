@@ -295,6 +295,75 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.u == request.auth.uid;
     }
 
+    // ── まなびの工房のソーシャル（週のリーグ kbLg・できごと kbFeed・ふたりクエスト kbPairs）──
+    function okLgRoom(room) { return room.matches('^w[0-9]{1,6}-t[0-5]-[0-9]{1,2}$'); }
+    function lgWeekOk(room) { return int(room.split('-')[0][1:]) in [weekNo(request.time), weekNo(graceT())]; }
+    function okLgMe(e, prev) {
+      return e.keys().hasOnly(['n', 'x', 't']) && okName(e.n) && e.x is int && e.x >= 0 && e.x <= 12000 && e.t == request.time
+        && (prev == null || (e.x >= prev.x && e.x - prev.x <= 2000 && request.time > prev.t + duration.value(60, 's')));
+    }
+    match /kbLg/{room} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && okLgRoom(room) && lgWeekOk(room)
+        && request.resource.data.keys().hasOnly(['wk', 'm']) && request.resource.data.wk == int(room.split('-')[0][1:])
+        && request.resource.data.m.keys().hasOnly([request.auth.uid])
+        && okLgMe(request.resource.data.m[request.auth.uid], null);
+      allow update: if signedIn() && okLgRoom(room) && lgWeekOk(room)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['m'])
+        && request.resource.data.m.size() <= 30
+        && request.resource.data.m.diff(resource.data.m).affectedKeys().hasOnly([request.auth.uid])
+        && okLgMe(request.resource.data.m[request.auth.uid], (request.auth.uid in resource.data.m) ? resource.data.m[request.auth.uid] : null);
+      allow delete: if isAdmin();
+    }
+
+    function okEv(v) {
+      return v is map && v.keys().hasOnly(['ty', 'tx', 'at']) && v.ty in ['ach', 'streak', 'promo', 'lesson', 'friend']
+        && v.tx is string && v.tx.size() >= 1 && v.tx.size() <= 60 && v.at is int && v.at > 0;
+    }
+    match /kbFeed/{uid} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if isMe(uid)
+        && request.resource.data.keys().hasOnly(['e', 't']) && request.resource.data.t == request.time
+        && request.resource.data.e is map && request.resource.data.e.size() <= 10
+        && request.resource.data.e.keys().hasOnly(['e0', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9'])
+        && (!('e0' in request.resource.data.e) || okEv(request.resource.data.e.e0)) && (!('e1' in request.resource.data.e) || okEv(request.resource.data.e.e1))
+        && (!('e2' in request.resource.data.e) || okEv(request.resource.data.e.e2)) && (!('e3' in request.resource.data.e) || okEv(request.resource.data.e.e3))
+        && (!('e4' in request.resource.data.e) || okEv(request.resource.data.e.e4)) && (!('e5' in request.resource.data.e) || okEv(request.resource.data.e.e5))
+        && (!('e6' in request.resource.data.e) || okEv(request.resource.data.e.e6)) && (!('e7' in request.resource.data.e) || okEv(request.resource.data.e.e7))
+        && (!('e8' in request.resource.data.e) || okEv(request.resource.data.e.e8)) && (!('e9' in request.resource.data.e) || okEv(request.resource.data.e.e9))
+        && (resource == null || request.time > resource.data.t + duration.value(20, 's'));
+      allow delete: if isMe(uid) || isAdmin();
+    }
+
+    function pairA(pid) { return pid.split('_')[0]; }
+    function pairB(pid) { return pid.split('_')[1]; }
+    match /kbPairs/{pid} {
+      allow get: if signedIn() && (request.auth.uid == pairA(pid) || request.auth.uid == pairB(pid));
+      allow list: if false;
+      allow create: if signedIn() && pid.matches('^[A-Za-z0-9]{20,40}_[A-Za-z0-9]{20,40}$') && pairA(pid) < pairB(pid)
+        && (request.auth.uid == pairA(pid) || request.auth.uid == pairB(pid))
+        && request.resource.data.keys().hasOnly(['a', 'b', 'wk', 'xa', 'xb'])
+        && request.resource.data.a == pairA(pid) && request.resource.data.b == pairB(pid)
+        && request.resource.data.wk == weekNo(request.time)
+        && request.resource.data.xa is int && request.resource.data.xb is int && request.resource.data.xa >= 0 && request.resource.data.xb >= 0
+        && request.resource.data.xa <= 12000 && request.resource.data.xb <= 12000
+        && (request.auth.uid == pairA(pid) ? request.resource.data.xb == 0 : request.resource.data.xa == 0);
+      allow update: if signedIn() && (request.auth.uid == pairA(pid) || request.auth.uid == pairB(pid))
+        && request.resource.data.wk == weekNo(request.time)
+        && request.resource.data.xa is int && request.resource.data.xb is int && request.resource.data.xa >= 0 && request.resource.data.xb >= 0
+        && request.resource.data.xa <= 12000 && request.resource.data.xb <= 12000
+        && ((request.resource.data.wk == resource.data.wk
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([request.auth.uid == pairA(pid) ? 'xa' : 'xb'])
+              && (request.auth.uid == pairA(pid) ? (request.resource.data.xa >= resource.data.xa && request.resource.data.xa - resource.data.xa <= 2000)
+                                                : (request.resource.data.xb >= resource.data.xb && request.resource.data.xb - resource.data.xb <= 2000)))
+            || (request.resource.data.wk > resource.data.wk
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['xa', 'xb', 'wk'])
+              && (request.auth.uid == pairA(pid) ? request.resource.data.xb == 0 : request.resource.data.xa == 0)));
+      allow delete: if isAdmin();
+    }
+
     // 匿名のプレイ回数：1週間に1件、ゲームごとに1つずつ増やすだけ
     function prevPlays() { return resource == null ? {} : resource.data; }
     function plus1(g) {

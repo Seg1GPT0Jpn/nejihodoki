@@ -1,31 +1,21 @@
 #!/usr/bin/env node
-// まなびのソーシャル用ルール案（tools/proposed-manabi-social-rules.txt）を、いまの firestore.rules に足してエミュレーターで試す。
-//   node tools/proposed-manabi-social-rules-run.js          （firebase-tools と Java が要る。tools/tests/rules/emulator.js と同じ）
-// firestore.rules は書きかえない。案をつないだルールを、エミュレーターにだけ読み込ませる。
+// まなびの工房のソーシャル（週のリーグ kbLg・できごと kbFeed・ふたりクエスト kbPairs）のルールの許可・拒否のテスト。
+// ルールはリポジトリの firestore.rules（エミュレーターが起動時に読み込むものをそのまま確かめる）。
+// tools/tests/rules/run.js の --only social（と、--only を付けない全部）から exports.runSocialCases(T, opt) が呼ばれる（cases.js の runCases と同じ形の行を返す）。
 'use strict';
-const fs = require('fs');
-const path = require('path');
-const ROOT = path.resolve(__dirname, '..');
-const { start, PORTS, PROJECT } = require('./tests/rules/emulator');
-const { emulatorTarget, signUp, fsSet, fsGet, fsList, fsDelete, SERVER_TIME } = require('./tests/rules/rest');
-
-function mergedRules() {
-  const base = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
-  const prop = fs.readFileSync(path.join(__dirname, 'proposed-manabi-social-rules.txt'), 'utf8').split('\n').filter(l => !/^\s*\/\/ ?(-|=)/.test(l) && !/^\/\/ /.test(l) && !/^\/\//.test(l)).join('\n');
-  const i = base.lastIndexOf('  }\n}'); // match /databases の閉じかっこの前
-  if (i < 0) throw new Error('could not find the end of firestore.rules');
-  return base.slice(0, i) + '\n' + prop + '\n' + base.slice(i);
-}
+const { signUp, fsSet, fsGet, fsList, SERVER_TIME } = require('./rest');
 const JST = 9 * 3600e3, weekNo = (ms = Date.now()) => Math.floor((ms + JST + 3 * 86400e3) / (7 * 86400e3));
 
-async function cases(T, put) {
+async function runSocialCases(T, opt = {}) {
   const rows = []; const owner = { token: 'owner' };
   const check = async (name, expect, fn) => {
     let r; try { r = await fn(); } catch (e) { r = { ok: false, status: 'ERR', body: String(e.message) }; }
     const denied = r.status === 403 || r.status === 401; const got = r.ok ? 'allow' : denied ? 'deny' : 'error';
-    rows.push({ name, expect, got, pass: got === expect, detail: got === expect ? '' : JSON.stringify(r.body).slice(0, 300) }); return r;
+    const row = { group: 'social', name, expect, got, pass: got === expect, status: r.status, detail: got === expect ? '' : JSON.stringify(r.body).slice(0, 300) }; rows.push(row); if (opt.log) opt.log(row); return r;
   };
-  const A = await signUp(T), B = await signUp(T), C = await signUp(T);
+  // fsSet の merge は uid を「ドットの経路」に使うので、数字ではじまる uid は REST が受け付けない。文字ではじまる uid が出るまで作りなおす
+  const mk = async () => { for (let i = 0; i < 40; i++) { const u = await signUp(T); if (/^[A-Za-z_]/.test(u.uid)) return u; } throw new Error('no uid starting with a letter'); };
+  const A = await mk(), B = await mk(), C = await mk();
   const wk = weekNo(), room = `w${wk}-t2-1`, now = () => ({ n: 'Taro', x: 40, t: SERVER_TIME });
   // --- リーグ
   await check('league: create a room with only myself', 'allow', () => fsSet(T, `kbLg/${room}`, { wk, m: { [A.uid]: now() } }, A));
@@ -46,6 +36,7 @@ async function cases(T, put) {
   await check('league: create with someone else in it', 'deny', () => fsSet(T, `kbLg/w${wk}-t3-1`, { wk, m: { [A.uid]: now(), [B.uid]: now() } }, A));
   // 30人
   const big = {}; for (let i = 0; i < 30; i++) big['u' + String(i).padStart(2, '0') + 'x'.repeat(24)] = { n: 'Bot' + i, x: i, t: new Date() };
+  const put = (p, data) => fsSet(T, p, data, owner);
   await put(`kbLg/w${wk}-t4-1`, { wk, m: big });
   await check('league: the 31st member is refused (room full)', 'deny', () => fsSet(T, `kbLg/w${wk}-t4-1`, { m: { [A.uid]: now() } }, A, { merge: true }));
   // --- フィード
@@ -66,25 +57,12 @@ async function cases(T, put) {
   await check('pair: the second member writes the other side’s xp', 'deny', () => fsSet(T, `kbPairs/${pid}`, { xa: 999 }, HI, { merge: true }));
   await check('pair: xp jumps by more than 2000', 'deny', () => fsSet(T, `kbPairs/${pid}`, { xb: 5000 }, HI, { merge: true }));
   await check('pair: an outsider creates a pair of two others', 'deny', () => fsSet(T, `kbPairs/${[B.uid, A.uid].sort().join('_')}x`, { a: lo, b: hi, wk, xa: 0, xb: 0 }, C));
+  await check('pair: the other side’s xp is not reset when the week changes by the same writer… (old week, owner-seeded)', 'allow', async () => { const pid2 = [A.uid, C.uid].sort().join('_'), [l2, h2] = pid2.split('_'); await fsSet(T, `kbPairs/${pid2}`, { a: l2, b: h2, wk: wk - 1, xa: 500, xb: 400 }, owner); return fsSet(T, `kbPairs/${pid2}`, { wk, xa: l2 === A.uid ? 30 : 0, xb: l2 === A.uid ? 0 : 30 }, A, { merge: true }); });
+  await check('pair: week change that keeps the other side’s old xp', 'deny', async () => { const pid2 = [B.uid, C.uid].sort().join('_'), [l2, h2] = pid2.split('_'); await fsSet(T, `kbPairs/${pid2}`, { a: l2, b: h2, wk: wk - 1, xa: 500, xb: 400 }, owner); return fsSet(T, `kbPairs/${pid2}`, { wk, xa: l2 === B.uid ? 30 : 400 + 100, xb: l2 === B.uid ? 400 : 30 }, B, { merge: true }); });
+  await check('pair: going back to an older week', 'deny', () => fsSet(T, `kbPairs/${pid}`, { wk: wk - 1, xb: 0 }, HI, { merge: true }));
   await check('pair: list', 'deny', () => fsList(T, '', 'kbPairs', A, { limit: 5 }));
   return rows;
 }
 
-(async () => {
-  const E = await start({});
-  let code = 0;
-  try {
-    const rules = mergedRules();
-    const r = await fetch(`http://127.0.0.1:${PORTS.firestore}/emulator/v1/projects/${PROJECT}:securityRules`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules: { files: [{ name: 'firestore.rules', content: rules }] } }) });
-    const body = await r.text(); let o = null; try { o = JSON.parse(body); } catch (e) {}
-    if (!r.ok || ((o && o.issues) || []).some(i => i.severity === 'ERROR')) throw new Error('proposed rules rejected: ' + body.slice(0, 1500));
-    const T = emulatorTarget(PORTS);
-    const put = async (p, data) => { const { fsReq } = require('./tests/rules/rest'); }; // placeholder replaced below
-    const rest = require('./tests/rules/rest');
-    const admin = { token: 'owner' };
-    const rows = await cases(T, (p, data) => rest.fsSet(T, p, data, admin));
-    for (const x of rows) console.log(`  ${x.pass ? 'ok  ' : 'FAIL'} ${x.name} — expect ${x.expect}, got ${x.got}${x.detail ? ' ' + x.detail : ''}`);
-    const bad = rows.filter(x => !x.pass).length; console.log(`\npass ${rows.length - bad}  fail ${bad}`); code = bad ? 1 : 0;
-  } catch (e) { console.error(e.message); code = 1; }
-  await E.stop(); process.exit(code);
-})();
+
+module.exports = { runSocialCases };

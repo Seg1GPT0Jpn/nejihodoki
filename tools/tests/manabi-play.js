@@ -664,6 +664,65 @@ async function practice9(env) {
   }
 }
 
+async function social10(env) {
+  console.log('22. online league / feed / friend quest (fake Firestore in the page) and the offline fallbacks');
+  // ページの中の偽 Firestore（compat と同じ形）。-t0-1 の組には、はじめから 6 人のほかのプレイヤーがいる。
+  const FAKE = `(() => {
+    const store = {}, log = []; window.__fsLog = log; window.__fsStore = store;
+    const seed = id => { const m = id.match(/^w(\\d+)-t0-1$/); if (!m || store['kbLg/' + id]) return; const o = {}; ['Aki', 'Bun', 'Chi', 'Dai', 'Eri', 'Fuu'].forEach((n, i) => { o['u' + i] = { n, x: 60 + i * 40, t: 1 }; }); store['kbLg/' + id] = { wk: Number(m[1]), m: o }; };
+    const setp = (obj, p, v) => { const k = p.split('.'); let c = obj; for (let i = 0; i < k.length - 1; i++) c = c[k[i]] = c[k[i]] || {}; c[k[k.length - 1]] = v; };
+    const deny = () => { const e = new Error('denied'); e.code = 'permission-denied'; throw e; };
+    window.__fakeDb = { collection: c => ({ doc: id => ({ id, async get() { if (c === 'kbLg') seed(id); if (window.__fsDeny) deny(); const d = store[c + '/' + id]; return { exists: !!d, data: () => JSON.parse(JSON.stringify(d)) }; },
+      async set(v) { log.push(['set', c, id]); if (window.__fsDeny) deny(); store[c + '/' + id] = JSON.parse(JSON.stringify(v)); },
+      async update(v) { log.push(['update', c, id, Object.keys(v)]); if (window.__fsDeny || !store[c + '/' + id]) deny(); for (const k of Object.keys(v)) setp(store[c + '/' + id], k, JSON.parse(JSON.stringify(v[k]))); } }) }) };
+    window.__fsDeny = false;
+    const wkNow = Math.floor((Math.floor((Date.now() + 9 * 3600e3) / 86400e3) + 3) / 7); store['kbFeed/f1'] = { e: { e0: { ty: 'streak', tx: '7日れんぞく！', at: 2000 }, e1: { ty: 'ach', tx: '3月のバッジをゲット！', at: 1000 } }, t: 1 }; store['kbPairs/f1_me1'] = { a: 'f1', b: 'me1', wk: wkNow, xa: 90, xb: 0 };
+    window.__manabiNet = () => window.__netOn === false ? { reason: window.__netWhy || 'signin' } : { db: window.__fakeDb, uid: 'me1', name: 'テスター' };
+    window.__friendList = [{ uid: 'f1', n: 'ハナ', code: 'ABCD2345', at: 1 }];
+    window.__manabiFriends = { list: () => window.__friendList, myCode: () => 'ZZ22YY33', add: async c => (c === 'GOODCODE' ? (window.__friendList.push({ uid: 'f2', n: 'ケン', code: c, at: 2 }), { ok: true }) : { ok: false, reason: 'notfound' }) };
+  })();`;
+  const openQ = async (o = {}) => { const s = await B.newSession(env, { vp: V.get(o.vp || 'ip12'), lang: o.lang || 'ja', seed: { [HOWTO]: '1', 'kobo.theme': o.theme || 'light' }, isMobile: !!o.touch, hasTouch: !!o.touch, initScripts: [FAKE + (o.pre || '')] }); await s.goto('/manabi/?debug'); await s.page.waitForFunction(() => window.__kb && __kb.ready() && window.__manabi); return s; };
+  // 1. サインイン済み：本物の組
+  let s = await openQ(); let p = s.page;
+  await p.click('#tabs [data-tab="league"]'); await p.waitForFunction(() => document.querySelector('#leagueNote') && document.querySelector('#leagueNote').dataset.net === 'on');
+  const rows = await p.$$eval('#leagueList .lg', els => els.map(e => ({ bot: e.dataset.bot, me: e.dataset.me, nm: e.querySelector('.nm').textContent })));
+  check('a real group: 6 other players + me + 3 bots fill the 10 seats; bots are labelled', rows.length === 10 && rows.filter(r => r.bot).length === 3 && rows.filter(r => r.bot).every(r => r.nm.includes('ボット')) && rows.some(r => r.nm === 'Aki') && rows.filter(r => r.me).length === 1, rows);
+  const joined = await p.evaluate(() => ({ room: JSON.parse(localStorage.getItem('kusoge.manabi.save')).lg.rm, store: Object.keys(window.__fsStore['kbLg/' + JSON.parse(localStorage.getItem('kusoge.manabi.save')).lg.rm].m) }));
+  check('I was added to the room and the room id is saved (lg.rm)', /^w\d+-t0-1$/.test(joined.room) && joined.store.includes('me1'), joined);
+  await shot(p, '22-league-real');
+  // 2. XP を足すと、あとで自分の分だけ書く（60 秒のあき）
+  await p.evaluate(() => { __fsLog.length = 0; window.__manabiNow = Date.now() + 120000; });
+  await p.click('#tabs [data-tab="learn"]'); await p.evaluate(() => __manabi.addXp ? __manabi.addXp(30) : null);
+  const hasAdd = await p.evaluate(() => !!__manabi.addXp);
+  if (hasAdd) { await p.waitForFunction(() => __fsLog.some(l => l[0] === 'update' && l[1] === 'kbLg'), null, { timeout: 8000 }).catch(() => {}); check('earning XP writes my entry only (one dotted update on kbLg)', await p.evaluate(() => __fsLog.some(l => l[0] === 'update' && l[1] === 'kbLg' && l[3].length === 1 && l[3][0] === 'm.me1')), await p.evaluate(() => __fsLog)); }
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+  // 3. フィード＋友だちクエスト
+  await p.click('#tabs [data-tab="quests"]'); await p.waitForSelector('#feedList .feedrow');
+  check('the friend feed shows the friend’s news newest first', await p.$$eval('#feedList .feedrow', e => e.map(x => x.textContent)).then(t => t.length === 2 && t[0].includes('ハナ') && t[0].includes('7日')), null);
+  await p.waitForFunction(() => document.querySelector('#friendNote').textContent.includes('ほんもの') && !document.querySelector('#friendNote').textContent.includes('ボットの友だち'));
+  check('the friend quest switches to the real friend (her 90 XP counts)', (await p.textContent('#friendProg')).includes('ハナ 90') && (await p.textContent('#myCode')) === 'ZZ22YY33', await p.textContent('#friendProg'));
+  await p.fill('#friendCodeIn', 'BADCODE2'); await p.click('#friendAddBtn'); await p.waitForFunction(() => document.querySelector('#friendAddMsg').textContent.length > 0);
+  check('adding a wrong code shows a clear message', (await p.textContent('#friendAddMsg')).includes('見つかりません'), null);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // 4. 状態ごとのフォールバック：ログインなし／ニックネームなし／ルールが拒否
+  for (const [why, pre, expect] of [['signin', 'window.__netOn = false; window.__netWhy = "signin";', 'ログインすると'], ['nick', 'window.__netOn = false; window.__netWhy = "nick";', 'ニックネームを登録'], ['denied', 'window.__fsDeny = true;', 'まだ準備中']]) {
+    s = await openQ({ pre }); p = s.page;
+    await p.click('#tabs [data-tab="league"]'); await p.waitForFunction(() => { const n = document.querySelector('#leagueNote'); return n && n.dataset.net && n.dataset.net !== 'on'; });
+    check(`fallback "${why}": the league is still shown (10 rows, simulation) with an honest note`, (await p.$$('#leagueList .lg')).length === 10 && (await p.textContent('#leagueNote')).includes(expect) && !(await p.$('#leagueList [data-bot]')), await p.textContent('#leagueNote'));
+    await p.click('#tabs [data-tab="quests"]'); await p.waitForSelector('#feedList'); check(`fallback "${why}": quests and the friend card still work`, await p.isVisible('#friendCard') && await p.isVisible('#feedCard'), null);
+    check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  // 5. 320px・ダーク・英語
+  for (const [lang, theme] of [['ja', 'dark'], ['en', 'light']]) {
+    s = await openQ({ vp: 'se1', touch: true, lang, theme }); p = s.page;
+    const probe = async w => { const r = await p.evaluate(`(${layoutProbe})()`); check(`se1/${theme}/${lang} ${w}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, { off: r.offscreen.slice(0, 4) }); };
+    await p.click('#tabs [data-tab="league"]'); await p.waitForFunction(() => document.querySelector('#leagueNote') && document.querySelector('#leagueNote').dataset.net === 'on'); await probe('league');
+    await p.click('#tabs [data-tab="quests"]'); await p.waitForSelector('#feedList .feedrow'); await p.waitForFunction(() => document.querySelector('#friendNote').textContent.length > 0); await probe('quests');
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English quests tab: no Japanese in the UI', jp.length === 0, jp.slice(0, 6)); }
+    check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
 async function layout(env) {
   console.log('10. 320px and other sizes, light and dark: nothing off screen, no sideways scroll');
   for (const [vp, dark] of [['se1', false], ['se1', true], ['a360s', false], ['ip12', true], ['land', false]]) {
@@ -686,8 +745,8 @@ async function layout(env) {
   HAVE_KATEX = ensureKatex();
   const srv = await server.start(); const browser = await B.launch(); const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const nm = f => (f.name === 'path_' ? 'path' : f.name === 'english3' ? 'english' : f.name === 'resume3' ? 'resume' : f.name === 'dialogue4' ? 'dialogue' : f.name === 'flow5' ? 'flow' : f.name === 'header6' ? 'header' : f.name === 'sound7' ? 'sound' : f.name === 'power8' ? 'power' : f.name === 'practice9' ? 'practice' : f.name);
-  for (const f of [home, lesson, types, review, reload, mock, keys, katex, api, special, path_, contrast, english3, resume3, dialogue4, flow5, header6, sound7, power8, practice9, layout]) {
+  const nm = f => (f.name === 'path_' ? 'path' : f.name === 'english3' ? 'english' : f.name === 'resume3' ? 'resume' : f.name === 'dialogue4' ? 'dialogue' : f.name === 'flow5' ? 'flow' : f.name === 'header6' ? 'header' : f.name === 'sound7' ? 'sound' : f.name === 'power8' ? 'power' : f.name === 'practice9' ? 'practice' : f.name === 'social10' ? 'social' : f.name);
+  for (const f of [home, lesson, types, review, reload, mock, keys, katex, api, special, path_, contrast, english3, resume3, dialogue4, flow5, header6, sound7, power8, practice9, social10, layout]) {
     if (only && !only.includes(nm(f))) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

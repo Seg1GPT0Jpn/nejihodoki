@@ -504,6 +504,8 @@
     if (raw.ds && typeof raw.ds === 'object') { s.ds = { d: Math.floor(num(raw.ds.d, 0)) }; for (const k of ['xp', 'ls', 'ok', 'perfect', 'rev', 'sp', 'early', 'night', 'weekend']) if (raw.ds[k]) s.ds[k] = Math.max(0, Math.floor(num(raw.ds[k], 0))); }
     if (raw.dq && typeof raw.dq === 'object') s.dq = { d: Math.floor(num(raw.dq.d, 0)), c: [0, 1, 2].map(i => (raw.dq.c && raw.dq.c[i] ? 1 : 0)) };
     if (raw.lg && typeof raw.lg === 'object') s.lg = { w: Math.floor(num(raw.lg.w, 0)), t: Math.max(0, Math.min(5, Math.floor(num(raw.lg.t, 0)))) };
+    if (raw.lg && typeof raw.lg === 'object' && typeof raw.lg.rm === 'string' && /^w[0-9]{1,6}-t[0-5]-[0-9]{1,2}$/.test(raw.lg.rm)) s.lg.rm = raw.lg.rm; // 参加中の本物のリーグの組
+    if (raw.lg && typeof raw.lg === 'object' && Number.isFinite(raw.lg.sx) && raw.lg.sx > 0) s.lg.sx = Math.min(12000, Math.floor(raw.lg.sx)); // その組に最後に送った今週の XP
     s.sk = Math.max(0, Math.min(5, Math.floor(num(raw.sk, 0))));
     if (raw.dl && typeof raw.dl === 'object') { const ks = Object.keys(raw.dl).filter(k => /^[a-z0-9-]{3,40}$/.test(k) && num(raw.dl[k], -1) >= 0).sort().slice(0, 120); for (const k of ks) s.dl[k] = Math.min(100, Math.floor(raw.dl[k])); }
     const idMap = (src, dst, cap) => { if (src && typeof src === 'object') for (const k of Object.keys(src).filter(k => /^[A-Za-z0-9._-]{1,60}$/.test(k) && src[k]).sort().slice(0, cap)) dst[k] = 1; };
