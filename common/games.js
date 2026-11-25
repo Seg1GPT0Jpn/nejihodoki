@@ -843,7 +843,7 @@
       },
       // counters only grow (max); per-day maps and the day-bound quest state follow the newest device; the review boxes and settings are whole values (newest)
       sync: {
-        'kusoge.manabi.save': { fields: { xp: 'max', d: 'union', g: { each: 'max' }, goal: 'newest', b: { each: 'newest' }, st: { each: 'max' }, mk: { each: 'max' }, set: 'newest', tut: 'max', gm: 'newest', fz: 'newest', hm: 'newest', hr: 'newest', cw: { each: 'max' }, mm: 'union', dl: { each: 'max' }, dm: 'union', ch: { each: 'max' }, jp: { each: 'max' }, iv: { each: 'max' }, bx: 'max', fd: 'union', ow: 'union', ds: 'newest', dq: 'newest', lg: 'newest', sk: 'newest' }, rest: 'newest' },
+        'kusoge.manabi.save': { fields: { xp: 'max', d: 'union', g: { each: 'max' }, goal: 'newest', b: { each: 'newest' }, st: { each: 'max' }, mk: { each: 'max' }, set: 'newest', tut: 'max', gm: 'newest', fz: 'newest', hm: 'newest', hr: 'newest', cw: { each: 'max' }, mm: 'union', dl: { each: 'max' }, dm: 'union', ch: { each: 'max' }, jp: { each: 'max' }, iv: 'newest', bx: 'max', fd: 'union', ow: 'union', bd: 'union', fq: 'max', fc: 'newest', tc: 'union', wg: 'newest', ds: 'newest', dq: 'newest', lg: 'newest', sk: 'newest' }, rest: 'newest' },
       },
     },
     {
