@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ナンバー工房</title>
+<meta name="theme-color" content="#0f1a2b">
+<meta name="description" content="数字を1つずつ並べるナンバープレース。入門から達人まで6つのむずかしさ、毎日の1問、メモ・ヒントの解説つき。4×4と6×6のこどもモードも。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ナンバー工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script>
+KoboI18n.add({ en: {
+  'ナンバー工房': 'Number Workshop', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'All games', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '遊び方': 'How to play', '言語 / Language': 'Language', 'とじる': 'Close', 'もどる': 'Back', 'メニュー': 'Menu', '一時停止': 'Paused', 'やめる': 'Cancel', 'はじめる': 'Start', '設定': 'Settings',
+  // header, toolbar, pad
+  '時間': 'Time', 'ひとつ戻す': 'Undo', 'やり直す': 'Redo', '戻す': 'Undo', 'やり直し': 'Redo', '進む': 'Redo', '自動': 'Auto', '消す': 'Erase', 'メモ': 'Notes', 'メモ モード': 'Notes mode', 'ヒント': 'Hint', '自動メモ': 'Auto notes',
+  '数字パッド': 'Number pad', '数字': 'Digit', 'ナンバープレースの盤': 'Number-place board', '{r}行{c}列': 'R{r}C{c}', '空': 'empty', '入力 {d}': 'Entered {d}',
+  // titles / modes
+  '{size}×{size}': '{size}×{size}', 'Xナンバー': 'X number-place', '{size}×{size} X': '{size}×{size} X', '今日の1問': "Today's puzzle", 'コード {code}': 'Code {code}', '{mode}・{time}': '{mode} · {time}',
+  '入門': 'Beginner', '初級': 'Easy', '中級': 'Medium', '上級': 'Hard', '難問': 'Expert', '達人': 'Master', 'かんたん': 'Easy', 'ふつう': 'Normal', 'むずかしい': 'Tricky',
+  // title screen
+  '1つずつ数字を並べて、たて・よこ・ブロックに同じ数字が入らないようにうめよう。': 'Fill the grid so no digit repeats in a row, column or box.',
+  'つづきから': 'Continue', 'あたらしいパズル': 'New puzzle', '盤の大きさ': 'Board', '9×9': '9×9', '9×9 X': '9×9 X', '6×6': '6×6', '4×4': '4×4', 'こども': 'Kids', 'むずかしさ': 'Level',
+  '解いた数 {n}': 'Solved {n}', 'ベスト {t}': 'Best {t}', 'まだ': 'None yet', '今日': 'Today', '今日は {t} で解いた': 'Solved today in {t}', 'まだ解いていない': 'Not solved yet', '連続 {n}日': '{n}-day streak', '連続': 'Streak', 'ベスト記録 {n}日連続': 'Best streak: {n} days', '{lv}の問題・まだ解いていない': '{lv} puzzle · not solved yet',
+  'コードで開く': 'Open by code', '記録': 'Stats', 'ゲームの記録': 'Statistics', '新しく始めますか？': 'Start a new puzzle?', 'とちゅうのパズルは消えます。': 'The puzzle in progress will be lost.',
+  // loading
+  'パズルをつくっています…': 'Making your puzzle…', 'ちょっと待ってね': 'Just a moment',
+  // result
+  'できた！': 'Solved!', '今日の1問 できた！': "Today's puzzle solved!", 'かかった時間': 'Time', 'ミス': 'Mistakes', 'ヒント': 'Hints', 'ベスト': 'Best', 'ベスト更新！': 'New best!', '今日のベスト': "Today's best", '必要なワザ': 'Hardest technique needed',
+  '次のパズル': 'Next puzzle', '同じむずかしさで': 'Same level', 'ひとつ上のむずかしさ': 'One level up', 'コードをコピー': 'Copy code', 'コードをコピーしました': 'Code copied', 'このパズルのコード': 'Code for this puzzle', 'タイトルへ': 'Title', 'もう一度': 'Again',
+  'ヒントなし': 'No hints', 'ミスなし': 'No mistakes', '{n}回': '{n}', 'なし': 'none',
+  // code
+  'パズルのコード': 'Puzzle code', 'コードを入れると、友だちと同じパズルを遊べます。': 'Enter a code to play the same puzzle as a friend.', '開く': 'Open', 'コードが正しくありません': 'That code is not valid', '例：SD9N3-0K2F9Z1': 'e.g. SD9N3-0K2F9Z1',
+  // settings
+  '入力と表示': 'Input and display', '数字を先にえらぶ': 'Pick the digit first', '数字をえらんでから、マスを次々にタップ（なぞってもOK）': 'Pick a digit, then tap cells one after another (dragging works too)', 'まちがいを赤く': 'Show mistakes', '答えとちがう数字・同じ数字のかぶりを赤く表示': 'Wrong digits and repeated digits turn red', '同じ数字をうかす': 'Highlight same digits', '自動メモ（候補を自動でそろえる）': 'Auto notes (fill in candidates)', '数字を入れると、同じ行・列・ブロックのメモを自動で消す': 'Placing a digit removes it from the notes of its row, column and box', '音': 'Sound',
+  // hint
+  'ヒントを見る': 'Show a hint', 'なぜ？': 'Why?', '実行する': 'Do it', '閉じる': 'Close', 'まちがいを消す': 'Erase the mistakes', 'ここを見て': 'Look here', 'ワザ': 'Technique', '次のヒント': 'Next hint', 'もう解けています': 'Already solved',
+  '解説': 'Explanation', 'ヒントが見つかりません': 'No hint available', '{cell} に {d} を入れる': 'Put {d} in {cell}', '{cells} から {digits} を消す': 'Remove {digits} from {cells}',
+  'ここまでに': 'So far', 'まちがい': 'Mistake', 'まちがっているマスがあります': 'Some cells are wrong',
+  // toasts
+  'どこかまちがっています': 'Something is not right yet', 'すべてうまったけれど、どこかちがうみたい': 'The grid is full, but some digits are wrong', '数字が決まったマスは動かせません': 'Given digits cannot be changed', 'マスをえらんでね': 'Select a cell first', 'コピーできませんでした': 'Could not copy', '前のパズルをつづけます': 'Continuing the puzzle in progress',
+  // menu
+  'このパズルを最初から': 'Restart this puzzle', 'タイトルへ戻る': 'Back to title', 'ゲームをやめてタイトルへ': 'Quit to title', '入力と表示の設定': 'Input and display settings', 'メモをぜんぶ消す': 'Clear all notes', 'メモをぜんぶ入れる': 'Fill all notes',
+  // stats
+  '合計': 'Total', '9×9 のむずかしさ別': '9×9 by level', '解いた': 'Solved', '一番速い': 'Best time', 'こどもモード': 'Kids mode', 'まだ記録がありません': 'No records yet', '遊んだ回数': 'Puzzles solved', 'ヒントなしで': 'Without hints', 'ミスなしで': 'Without mistakes', '今日のパズル': 'Daily puzzles', 'いちばん長い連続': 'Longest streak', '{n}日': '{n}', '入門〜達人': 'All levels',
+  // how to
+  '同じ行・同じ列・同じブロックに、同じ数字を2回入れてはいけません。1〜{n} を1つずつ入れてうめます。': 'Each row, column and box must contain every digit exactly once.',
+  'マスをタップして選び、数字ボタンで入れる。メモ（鉛筆）で候補を小さく書いておける': 'Tap a cell, then a digit. Use notes (pencil) to jot candidates',
+  '設定で「数字を先に選ぶ」にすると、数字を選んでからマスを次々にタップ・なぞって入れられる': 'In settings, "pick the digit first" lets you choose a digit and then tap or drag over many cells',
+  'ヒントは、どのワザで解けるかを理由つきで教えます。「なぜ？」で理由、「実行する」で反映': 'Hints teach the technique and why it works. "Why?" shows the reason, "Do it" applies it',
+  '戻す・やり直しは何回でも。まちがいを赤く出すかは設定でえらべる': 'Undo and redo are unlimited. Showing mistakes can be switched off',
+  '毎日の1問は、世界中のみんな同じパズル。その日のベストタイムと連続日数が残る': "The daily puzzle is the same for everyone. Your best time and streak are kept",
+  'パズルのコードを友だちに送ると、同じパズルを遊べる': 'Share a puzzle code to play the same puzzle',
+  'キーボード：数字・矢印・N（メモ）・Z（戻す）・Y（やり直し）・H（ヒント）・Backspace（消す）': 'Keys: digits, arrows, N (notes), Z (undo), Y (redo), H (hint), Backspace (erase)',
+  'やってみる': "Let's go", '説明だけでOK': 'Just the rules, thanks',
+  '1行・1列・1ブロックの中で、1〜{n}が1回ずつ': 'Every row, column and box holds each digit once', '（Xナンバーは、2本の対角線にも1〜9が1回ずつ入ります）': '(In X number-place, both diagonals also hold 1–9 once.)',
+  // techniques
+  '残り1マス': 'Last empty cell', '唯一の候補': 'Naked single', '隠れた1つ': 'Hidden single', 'ペア': 'Naked pair', 'トリプル': 'Naked triple', '隠れたペア': 'Hidden pair', '隠れたトリプル': 'Hidden triple',
+  'ポインティング': 'Pointing', 'クレイミング': 'Claiming', '固定の候補': 'Locked candidates', 'Xウィング': 'X-wing', 'XYウィング': 'XY-wing', 'ソードフィッシュ': 'Swordfish', 'XYZウィング': 'XYZ-wing', '仮置き（背理法）': 'Trial and error',
+  // houses
+  '{n}行目': 'row {n}', '{n}列目': 'column {n}', 'ブロック{n}': 'box {n}', '左上から右下の対角線': 'the main diagonal', '右上から左下の対角線': 'the other diagonal', '行{rows}': 'rows {rows}', '列{cols}': 'columns {cols}',
+  // explanations
+  '{house}は、あと1マスだけ空いています。': '{house} has just one empty cell left.',
+  '{house}で空いているのは {cell} だけ。足りない数字は {d} です。': 'The only empty cell in {house} is {cell}, and the missing digit is {d}.',
+  '{cell} に入る数字を数えてみよう。': 'Count what can still go in {cell}.',
+  '{cell} に残った候補は {d} だけ。ほかの数字は、ここまでの手順で消えています。': 'Only {d} is left as a candidate for {cell}; the other digits were removed by the steps so far.',
+  '{house}では、{d} が入れるマスは {cell} だけ。ほかのマスは、{d} の候補から消えています。': 'In {house}, {d} can only go in {cell}; the other cells no longer have {d} as a candidate.',
+  '{cell} は、同じ行・列・ブロックにほかの数字がすべてあるので、{d} しか入りません。': 'Every other digit already appears in the row, column or box of {cell}, so only {d} fits.',
+  '{house}の中で、{d} が入る場所を探そう。': 'In {house}, look for where {d} can go.',
+  '{house}では、{d} が入れるマスは {cell} だけ。ほかのマスは、同じ行・列・ブロックにすでに {d} があります。': 'In {house}, {d} can only go in {cell}. Every other cell there already sees a {d}.',
+  '{house}に、候補が同じ2つの数字だけのマスが2つあります。': 'In {house}, two cells share the same two candidates.',
+  '{cells} の候補は {digits} だけ。この2つの数字はこの2マスで使い切るので、{house}のほかのマスから {digits} を消せます。': '{cells} can only hold {digits}. Those two digits are used up by these two cells, so they can be removed from the rest of {house}.',
+  '{house}に、3つの数字だけを候補に持つ3マスがあります。': 'In {house}, three cells share just three candidates.',
+  '{cells} の候補は {digits} の中だけ。この3つの数字はこの3マスで使い切るので、{house}のほかのマスから {digits} を消せます。': '{cells} only use {digits}. Those three digits are used up by these cells, so they can be removed from the rest of {house}.',
+  '{house}の中で、{digits} が入れる場所に注目しよう。': 'In {house}, watch where {digits} can go.',
+  '{house}では、{digits} が入れるマスは {cells} だけ。この数字たちで決まるので、これらのマスのほかの候補を消せます。': 'In {house}, {digits} can only go in {cells}. Those cells must hold them, so their other candidates can be removed.',
+  '{house}の中で、{d} が入れる場所に注目しよう。': 'In {house}, watch where {d} can go.',
+  '{house}では、{d} が入れるのは {cells} だけ。どれも{house2}の上にあるので、{house2}のほかのマスから {d} を消せます。': 'In {house}, {d} can only go in {cells}, all on {house2}. So {d} can be removed from the rest of {house2}.',
+  '{house}では、{d} が入れるのは {cells} だけ。どれも{house2}の中にあるので、{house2}のほかのマスから {d} を消せます。': 'In {house}, {d} can only go in {cells}, all inside {house2}. So {d} can be removed from the rest of {house2}.',
+  '{d} の入れる場所が、長方形の形に4マスならんでいます。': 'The places for {d} form a rectangle of four cells.',
+  '{d} が入れるのは、{base}では {cells} だけ。どちらの{base2}でも2か所なので、{cover}のほかのマスには {d} が入りません。': 'In {base}, {d} can only go in {cells}. Each line has two spots, so {d} cannot be anywhere else in {cover}.',
+  '{d} の入れる場所が、3本の線にまたがって3列に集まっています。': 'The places for {d} spread over three lines and three crossing lines.',
+  '{d} が入れるのは、{base}では {cells} の中だけ。3本とも3つの{cover}の中に収まるので、{cover}のほかのマスには {d} が入りません。': 'In {base}, {d} can only go in {cells}. All of them sit inside the same three crossing lines, so {d} cannot be elsewhere in {cover}.',
+  '{pivot} は2つの候補を持ち、{wing1} と {wing2} につながっています。': '{pivot} has two candidates and is linked to {wing1} and {wing2}.',
+  '{pivot} は {pd} のどちらか。{pivotA} なら {wing1} は {w1}、{pivotB} なら {wing2} は {w2}。どちらでも {z} がどこかに入るので、{cells} から {z} を消せます。': '{pivot} is {pd}. If it is {pivotA}, {wing1} becomes {w1}; if it is {pivotB}, {wing2} becomes {w2}. Either way a {z} lands in one of the wings, so {z} can be removed from {cells}.',
+  '{pivot} は3つの候補を持ち、{wing1} と {wing2} につながっています。': '{pivot} has three candidates and is linked to {wing1} and {wing2}.',
+  '{pivot}・{wing1}・{wing2} のどれかに必ず {z} が入ります。この3つが両方から見えるマスから {z} を消せます。': 'One of {pivot}, {wing1} and {wing2} must be {z}. So {z} can be removed from cells that see all three.',
+  '行き詰まったら、「もしここが○○なら？」と仮に置いてみます。': 'When stuck, try a guess: "what if this cell is …?"',
+  '{cell} が {d} だと仮定すると…{why}。矛盾するので、{cell} は {d} ではありません。': 'Suppose {cell} is {d}… {why}. That is a contradiction, so {cell} is not {d}.',
+  '次々に数字が決まっていき、{where}': 'the digits fall into place one after another, and {where}', '{cell} に入る候補がなくなります': 'no candidate is left for {cell}', '{house}の中に {d} を入れる場所がなくなります': '{d} has nowhere to go in {house}', 'もっと先まで進めると矛盾します': 'going further leads to a contradiction',
+  '{cells} の数字がまちがっています。': '{cells} has a wrong digit.', '色のついたマスを消して、やり直そう。': 'Erase the highlighted cells and try again.',
+  '{a}と{b}': '{a} and {b}', ', ': ', ', '、': ', ', '・': ' / ',
+  // misc
+  '秒': 's', '分': 'm', '{n}マス': '{n} cells', 'ブロック': 'box', '行': 'row', '列': 'column', '完了': 'Done', 'つづける': 'Resume',
+  '最初のむずかしさ': 'Starting level',
+  // online battle (common/versus.js has the shared strings)
+  '2〜4人で {t} のスコア勝負。全員に同じパズルを解きます。完成が早いほど高得点。': '2–4 players, {t} battle. Everyone solves the same puzzle; finishing sooner scores more.',
+  'オンライン対戦': 'Online battle', '点': 'pts', '完成！ {n}点': 'Solved! {n} pts', 'オンライン対戦：2〜4人で同じ9×9（初級）を解く。正しく入れたマスが1つ10点、まちがいは−15点。完成すると5000点＋のこり時間ボーナス。ヒントはなし': 'Online battle: 2–4 players solve the same 9×9 (Easy). Each correct cell is 10 points, a mistake costs 15. Finishing gives 5000 + a time bonus. No hints',
+} });
+</script>
+<script src="../common/versus.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ナンバー工房: a drafting-table look — paper, ink and a pencil-blue accent. --kb-* are the shared tokens re-tinted; --sd-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0f1a2b; --kb-surface: #17263d; --kb-surface-2: #1d3150; --kb-sunken: #0a121f; --kb-line: #2f4a72;
+  --kb-ink: #eaf1fb; --kb-dim: #a9bad2;
+  --kb-accent: #5ec8b6; --kb-accent-ink: #052520; --kb-accent-text: #7fe0cf; --kb-accent-soft: rgba(94, 200, 182, .16);
+  --kb-scrim: rgba(5, 10, 18, .8); --kb-focus: #ffe08a;
+  --sd-panel: rgba(190, 215, 255, .07); --sd-line: rgba(170, 200, 245, .2); --sd-card: linear-gradient(#1b2d49, #14233a);
+  --sd-paper: #16253c; --sd-cell: #1b2d49; --sd-grid: #5b7aa8; --sd-box: #9fc0f0; --sd-given: #eaf1fb; --sd-mine: #6fd0ff; --sd-note: #9db4d6;
+  --sd-sel: #2d5a8f; --sd-peer: rgba(120, 170, 235, .13); --sd-same: rgba(94, 200, 182, .30); --sd-diag: rgba(255, 205, 110, .09);
+  --sd-bad: #ff7b6b; --sd-bad-bg: rgba(255, 110, 90, .22); --sd-good: #8fe39a;
+  --sd-h1: rgba(255, 214, 102, .30); --sd-h2: rgba(94, 200, 182, .38); --sd-h3: rgba(255, 140, 160, .30);
+  --sd-go: linear-gradient(#7fe0cf, #3cae9c); --sd-go-shadow: #1b6b5f; --sd-title: linear-gradient(90deg, #bff6ec, #5ec8b6 55%, #7fb2ff);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f1eee4; --kb-surface: #fffdf6; --kb-surface-2: #f6f1e2; --kb-sunken: #e3dcc7; --kb-line: #d3c9ac;
+    --kb-ink: #1f2b42; --kb-dim: #5b6781;
+    --kb-accent: #17806f; --kb-accent-ink: #ffffff; --kb-accent-text: #0f6a5b; --kb-accent-soft: rgba(23, 128, 111, .12);
+    --kb-scrim: rgba(31, 43, 66, .45); --kb-focus: #1f6fbf;
+    --sd-panel: rgba(31, 43, 66, .05); --sd-line: #d9cfb2; --sd-card: linear-gradient(#fffdf6, #f6f1e2);
+    --sd-paper: #fffdf6; --sd-cell: #fffdf6; --sd-grid: #b9b196; --sd-box: #2b3a5a; --sd-given: #1f2b42; --sd-mine: #1b5fb5; --sd-note: #5e6b86;
+    --sd-sel: #bfd8f7; --sd-peer: rgba(60, 100, 170, .09); --sd-same: rgba(23, 128, 111, .22); --sd-diag: rgba(220, 150, 30, .10);
+    --sd-bad: #c4321f; --sd-bad-bg: rgba(220, 70, 50, .16); --sd-good: #1f7a34;
+    --sd-h1: rgba(240, 180, 40, .38); --sd-h2: rgba(23, 128, 111, .30); --sd-h3: rgba(225, 80, 110, .22);
+    --sd-go: linear-gradient(#22a08b, #107565); --sd-go-shadow: #0a4b40; --sd-title: linear-gradient(90deg, #0f6a5b, #17806f 55%, #2b5fb5);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f1eee4; --kb-surface: #fffdf6; --kb-surface-2: #f6f1e2; --kb-sunken: #e3dcc7; --kb-line: #d3c9ac;
+  --kb-ink: #1f2b42; --kb-dim: #5b6781;
+  --kb-accent: #17806f; --kb-accent-ink: #ffffff; --kb-accent-text: #0f6a5b; --kb-accent-soft: rgba(23, 128, 111, .12);
+  --kb-scrim: rgba(31, 43, 66, .45); --kb-focus: #1f6fbf;
+  --sd-panel: rgba(31, 43, 66, .05); --sd-line: #d9cfb2; --sd-card: linear-gradient(#fffdf6, #f6f1e2);
+  --sd-paper: #fffdf6; --sd-cell: #fffdf6; --sd-grid: #b9b196; --sd-box: #2b3a5a; --sd-given: #1f2b42; --sd-mine: #1b5fb5; --sd-note: #5e6b86;
+  --sd-sel: #bfd8f7; --sd-peer: rgba(60, 100, 170, .09); --sd-same: rgba(23, 128, 111, .22); --sd-diag: rgba(220, 150, 30, .10);
+  --sd-bad: #c4321f; --sd-bad-bg: rgba(220, 70, 50, .16); --sd-good: #1f7a34;
+  --sd-h1: rgba(240, 180, 40, .38); --sd-h2: rgba(23, 128, 111, .30); --sd-h3: rgba(225, 80, 110, .22);
+  --sd-go: linear-gradient(#22a08b, #107565); --sd-go-shadow: #0a4b40; --sd-title: linear-gradient(90deg, #0f6a5b, #17806f 55%, #2b5fb5);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none;
+  background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 65%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 6px 0; width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; padding: 4px 9px; border-radius: 999px; background: var(--sd-panel); border: 1px solid var(--sd-line); color: var(--kb-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip svg { width: 15px; height: 15px; flex: none; }
+#modeChip { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; color: var(--kb-dim); background: transparent; border: 0; padding-left: 2px; font-size: 12.5px; }
+#timeChip { cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; min-height: 36px; }
+.icon { position: relative; flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--sd-line); background: var(--sd-panel); color: var(--kb-ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box; padding: 4px 8px 6px; gap: 6px; }
+#boardWrap { flex: 1 1 auto; min-height: 120px; position: relative; display: grid; place-items: center; }
+#board { --n: 9; --bs: 300px; --cs: calc(var(--bs) / var(--n)); position: relative; display: grid; grid-template-columns: repeat(var(--n), 1fr); grid-template-rows: repeat(var(--n), 1fr); width: var(--bs); height: var(--bs); box-sizing: border-box;
+  border: 2.5px solid var(--sd-box); border-radius: 6px; background: var(--sd-paper); touch-action: none; outline-offset: 3px; box-shadow: 0 6px 22px rgba(0, 0, 0, .22); overflow: hidden; }
+.c { position: relative; box-sizing: border-box; display: grid; place-items: center; background: var(--sd-cell); border: 0 solid var(--sd-grid); border-right-width: 1px; border-bottom-width: 1px; cursor: pointer; min-width: 0; min-height: 0; }
+.c.rb { border-right-width: 2.5px; border-right-color: var(--sd-box); }
+.c.bb { border-bottom-width: 2.5px; border-bottom-color: var(--sd-box); }
+.c.lastc { border-right-width: 0; }
+.c.lastr { border-bottom-width: 0; }
+.c.dg::before { content: ''; position: absolute; inset: 0; background: var(--sd-diag); pointer-events: none; }
+.c.pe { background: color-mix(in srgb, var(--sd-cell) 86%, var(--sd-sel)); }
+.c.same { background: color-mix(in srgb, var(--sd-cell) 55%, var(--kb-accent)); }
+.c.sel { background: var(--sd-sel); }
+.c.h1 { background: color-mix(in srgb, var(--sd-cell) 40%, #f0b429); box-shadow: inset 0 0 0 2px #f0b429; }
+.c.h2 { background: color-mix(in srgb, var(--sd-cell) 45%, var(--kb-accent)); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.c.h3 { background: color-mix(in srgb, var(--sd-cell) 70%, #ff7a94); }
+.c.hh { background: color-mix(in srgb, var(--sd-cell) 82%, #f0b429); }
+.c.wr { background: var(--sd-bad-bg); }
+.v { font-size: calc(var(--cs) * .62); font-weight: 800; line-height: 1; color: var(--sd-mine); font-variant-numeric: tabular-nums; pointer-events: none; }
+.c.g .v { color: var(--sd-given); }
+.c.wr .v, .c.bd .v { color: var(--sd-bad); }
+.c.bd:not(.wr) { background: var(--sd-bad-bg); }
+.gv { position: absolute; font-size: calc(var(--cs) * .62); font-weight: 800; color: var(--kb-accent-text); opacity: .75; pointer-events: none; line-height: 1; }
+.nt { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; padding: 1px; pointer-events: none; }
+#board[data-n="4"] .nt { grid-template-columns: repeat(2, 1fr); }
+.nt i { font-style: normal; display: grid; place-items: center; font-size: calc(var(--cs) * .27); line-height: 1; font-weight: 700; color: var(--sd-note); }
+#board[data-n="4"] .nt i { font-size: calc(var(--cs) * .33); }
+#board[data-n="6"] .nt i { font-size: calc(var(--cs) * .3); }
+.nt i.cn { color: var(--kb-accent-text); background: var(--kb-accent-soft); border-radius: 50%; font-weight: 800; }
+.nt i.gh { color: var(--kb-ink); font-weight: 800; background: var(--sd-h1); border-radius: 50%; }
+.nt i.ge { color: var(--sd-bad); font-weight: 800; text-decoration: line-through; background: var(--sd-bad-bg); border-radius: 50%; }
+#board.cover .v, #board.cover .nt, #board.cover .gv { visibility: hidden; }
+#board.win .c { animation: pop .5s ease-out backwards; animation-delay: calc(var(--d, 0) * 18ms); }
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.12); background: var(--kb-accent); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { #board.win .c { animation: none; } }
+#hintBox { flex: none; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--kb-accent); background: var(--sd-card); box-shadow: 0 3px 14px rgba(0, 0, 0, .25); max-height: 44vh; overflow-y: auto; overscroll-behavior: contain; }
+#hintBox .tag { align-self: flex-start; display: inline-block; font-size: 11.5px; font-weight: 800; padding: 1px 9px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); }
+#hintBox p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--kb-ink); font-weight: 500; }
+#hintBox .row2 { display: flex; gap: 6px; }
+#hintBox .btn { margin-top: 2px; }
+#bar { flex: none; display: flex; gap: 5px; align-items: stretch; }
+.tb { flex: 1 1 0; min-width: 44px; min-height: 50px; border-radius: 14px; border: 1px solid var(--sd-line); background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 3px 0 var(--kb-sunken); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font: 800 10.5px var(--kb-font-body); cursor: pointer; padding: 2px; }
+.tb svg { width: 22px; height: 22px; }
+.tb span { display: block; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
+.tb:disabled { opacity: .4; cursor: default; }
+.tb[aria-pressed="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.tb.hint { background: var(--sd-go); color: #04201b; border: 0; box-shadow: 0 3px 0 var(--sd-go-shadow); }
+#pad { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.pk { position: relative; min-height: 46px; border-radius: 12px; border: 1px solid var(--sd-line); background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 3px 0 var(--kb-sunken); font: 800 22px var(--kb-font-body); cursor: pointer; padding: 0; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.pk small { position: absolute; right: 5px; bottom: 2px; font-size: 10px; font-weight: 700; color: var(--kb-dim); }
+.pk:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--kb-sunken); }
+.pk.done { opacity: .35; }
+.pk.arm { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.pk.arm small { color: var(--kb-accent-ink); }
+.pk.er { font-size: 14px; }
+.pk.er svg { width: 22px; height: 22px; }
+@media (min-width: 440px) { #pad[data-n="9"] { grid-template-columns: repeat(9, 1fr); } .pk { min-height: 52px; } }
+#pad[data-n="4"] { grid-template-columns: repeat(4, 1fr); }
+#pad[data-n="6"] { grid-template-columns: repeat(6, 1fr); }
+body.hinting #pad { display: none; }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .2s ease-out; }
+.card { width: 100%; max-width: 440px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--sd-card); border: 1px solid var(--sd-line); border-radius: 22px; padding: 16px 16px 10px; text-align: center; box-shadow: 0 14px 44px rgba(0, 0, 0, .4); animation: rise .25s ease-out; }
+.card > * { flex: none; }
+.card .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.card h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--sd-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 28px; line-height: 1.2; }
+.card p { margin: 4px 0; font-size: 12.5px; line-height: 1.55; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 6px 10px; border-radius: 16px; border: 0; background: var(--sd-go); color: #04201b; font: 800 15px var(--kb-font-body); cursor: pointer; text-decoration: none; box-shadow: 0 4px 0 var(--sd-go-shadow); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--sd-go-shadow); }
+.btn.sub { background: var(--sd-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--sd-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.btn small { font-size: 11px; font-weight: 500; opacity: .85; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn .stk { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; margin: 4px 0; }
+.seg button { min-height: 44px; border-radius: 12px; border: 1px solid var(--sd-line); background: var(--sd-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 3px; }
+.seg button[aria-pressed="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.seg button small { display: block; font-weight: 500; font-size: 10px; opacity: .8; }
+.lvgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 4px 0; }
+.lvgrid button { min-height: 52px; border-radius: 12px; border: 1px solid var(--sd-line); background: var(--sd-panel); color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; padding: 2px; }
+.lvgrid button small { display: block; font-weight: 500; font-size: 10.5px; color: var(--kb-dim); }
+.lvgrid button[aria-pressed="true"] { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.lvgrid button[aria-pressed="true"] small { color: var(--kb-accent-ink); }
+.lab { text-align: left; font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 8px 2px 0; }
+.dcard { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; min-height: 54px; margin-top: 8px; padding: 6px 12px; border-radius: 16px; border: 1px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14.5px var(--kb-font-body); cursor: pointer; text-align: left; }
+.dcard .stk { flex: 1; display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.dcard small { font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.dcard .fl { font-size: 12px; color: var(--kb-accent-text); white-space: nowrap; }
+.res { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 2px; }
+.res div { padding: 6px 4px; border-radius: 12px; background: var(--sd-panel); border: 1px solid var(--sd-line); font-size: 11px; color: var(--kb-dim); font-weight: 800; }
+.res b { display: block; font-size: 17px; color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.codebox { display: inline-block; margin: 4px 0; padding: 4px 12px; border-radius: 10px; border: 1px dashed var(--sd-line); font: 800 15px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; color: var(--kb-ink); user-select: text; -webkit-user-select: text; }
+.howto { max-width: 460px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); }
+.howto li { margin: 4px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--sd-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--sd-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.codein { width: 100%; box-sizing: border-box; min-height: 48px; margin-top: 8px; border-radius: 14px; border: 1px solid var(--sd-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 17px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-align: center; padding: 6px 10px; text-transform: uppercase; user-select: text; -webkit-user-select: text; }
+.err { color: var(--sd-bad); font-weight: 800; min-height: 1.4em; }
+.sw { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; min-height: 52px; margin-top: 6px; padding: 6px 12px; border-radius: 14px; border: 1px solid var(--sd-line); background: var(--sd-panel); color: var(--kb-ink); font: 800 13.5px var(--kb-font-body); text-align: left; cursor: pointer; }
+.sw .stk { flex: 1; display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.sw small { font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.sw i { flex: none; width: 42px; height: 24px; border-radius: 99px; background: var(--kb-sunken); position: relative; transition: background .15s; border: 1px solid var(--sd-line); }
+.sw i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--kb-dim); transition: transform .15s; }
+.sw[aria-checked="true"] i { background: var(--kb-accent); }
+.sw[aria-checked="true"] i::after { transform: translateX(18px); background: var(--kb-accent-ink); }
+table.st { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0; }
+table.st th, table.st td { padding: 5px 4px; border-bottom: 1px solid var(--sd-line); text-align: right; font-variant-numeric: tabular-nums; }
+table.st th:first-child, table.st td:first-child { text-align: left; }
+table.st th { color: var(--kb-dim); font-weight: 800; font-size: 11px; }
+.kv { display: flex; justify-content: space-between; font-size: 12.5px; padding: 4px 2px; border-bottom: 1px solid var(--sd-line); }
+.kv b { font-variant-numeric: tabular-nums; }
+.spin { width: 40px; height: 40px; margin: 8px auto; border-radius: 50%; border: 4px solid var(--sd-line); border-top-color: var(--kb-accent); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rise { from { transform: translateY(12px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .card, .overlay { animation: none; } .spin { animation-duration: 3s; } }
+@media (max-width: 359px) { .chip { padding: 4px 6px; font-size: 12px; } .tb { min-width: 40px; } .pk { font-size: 20px; } }
+@media (max-height: 600px) { .card { padding: 12px 12px 8px; } .btn { min-height: 46px; margin-top: 6px; } .card h2.logo { font-size: 24px; } }
+/* online battle entry (common/versus.js) */
+.vs-slot { display: contents; }
+#vsSlot .kvs-entry { height: 44px; min-width: 44px; }
+.vs-wrap { display: block; }
+.vs-wrap .kvs-entry { margin-top: 8px; min-height: 48px; border-radius: 16px; background: var(--sd-panel); border-color: var(--sd-line); font-size: 13.5px; }
+@media (max-width: 400px) { #vsSlot .kvs-entry { width: 44px; padding: 0; } #vsSlot .kvs-entry span { display: none; } }
+@media (max-width: 359px) { #vsSlot .kvs-entry { display: none; } } /* narrow phones: the title screen has the entry button */
+body.thumb header, body.thumb #bar, body.thumb #pad, body.thumb .kb-layer, body.thumb .kb-toasts { display: none !important; }
+/* landscape phones: the board on the left, the tools in a column on the right */
+@media (orientation: landscape) and (max-height: 560px) {
+  header { padding-top: 0; max-width: none; }
+  #main { flex-direction: row; max-width: none; padding-top: 2px; align-items: stretch; }
+  #boardWrap { flex: 1 1 0; }
+  #side { display: flex; flex-direction: column; gap: 6px; width: min(46vw, 300px); justify-content: center; }
+  .card { max-width: 660px; }
+  .howto { max-width: 680px; }
+  #hintBox { max-height: 40vh; }
+}
+#side { display: contents; }
+@media (orientation: landscape) and (max-height: 560px) { #side { display: flex; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <span class="chip" id="modeChip" data-i18n>ナンバー工房</span>
+      <span id="vsSlot" class="vs-slot"></span>
+      <button class="chip" id="timeChip" type="button" aria-label="一時停止" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5"/></svg><span id="timeTxt">0:00</span></button>
+      <button class="icon" id="setBtn" type="button" aria-label="設定" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+      <button class="icon" id="pauseBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+  <div id="main">
+    <div id="boardWrap"><div id="board" role="grid" tabindex="0" aria-label="ナンバープレースの盤" data-i18n-attr="aria-label"></div></div>
+    <div id="side">
+      <div id="hintBox" hidden role="status" aria-live="polite"></div>
+      <div id="bar">
+        <button class="tb" id="btnUndo" type="button" aria-label="ひとつ戻す" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 8"/></svg><span data-i18n>戻す</span></button>
+        <button class="tb" id="btnRedo" type="button" aria-label="やり直す" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l5 5-5 5"/><path d="M20 12H10a6 6 0 0 0 0 8"/></svg><span data-i18n>進む</span></button>
+        <button class="tb" id="btnErase" type="button" aria-label="消す" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l8-9 6 6-6 7H8z"/><path d="M8 19h11"/></svg><span data-i18n>消す</span></button>
+        <button class="tb" id="btnNotes" type="button" aria-pressed="false" aria-label="メモ モード" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg><span data-i18n>メモ</span></button>
+        <button class="tb" id="btnAuto" type="button" aria-pressed="false" aria-label="自動メモ" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg><span data-i18n>自動</span></button>
+        <button class="tb hint" id="btnHint" type="button" aria-label="ヒント" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-i18n>ヒント</span></button>
+      </div>
+      <div id="pad" role="group" aria-label="数字パッド" data-i18n-attr="aria-label"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
+  <div class="card">
+    <h2 class="logo" id="tLogo" data-i18n>ナンバー工房</h2>
+    <div class="scroll">
+      <p data-i18n>1つずつ数字を並べて、たて・よこ・ブロックに同じ数字が入らないようにうめよう。</p>
+      <button class="dcard" id="tDaily" type="button"></button>
+      <div class="lab" data-i18n>盤の大きさ</div>
+      <div class="seg" id="tSize" role="group" aria-label="盤の大きさ" data-i18n-attr="aria-label"></div>
+      <div class="lab" data-i18n>むずかしさ</div>
+      <div class="lvgrid" id="tLevels" role="group" aria-label="むずかしさ" data-i18n-attr="aria-label"></div>
+      <span class="vs-wrap" id="tVs"></span>
+    </div>
+    <button class="btn" id="tStart" type="button"></button>
+    <button class="btn sub" id="tContinue" type="button" hidden></button>
+    <div class="row2"><button class="btn sub" id="tCode" type="button" data-i18n>コードで開く</button><button class="btn sub" id="tStats" type="button" data-i18n>記録</button></div>
+    <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><button class="btn sub" id="tSet" type="button" data-i18n>設定</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovLoading" hidden role="dialog" aria-modal="true" aria-labelledby="lTitle">
+  <div class="card"><div class="spin" aria-hidden="true"></div><h2 id="lTitle" data-i18n>パズルをつくっています…</h2><p data-i18n>ちょっと待ってね</p></div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <div id="rNew" class="newrec" hidden data-i18n>ベスト更新！</div>
+      <div class="res" id="rRows"></div>
+      <p id="rNote"></p>
+      <div class="lab" data-i18n>このパズルのコード</div>
+      <div class="codebox" id="rCode"></div>
+    </div>
+    <button class="btn" id="rNext" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rCopy" type="button" data-i18n>コードをコピー</button><button class="btn sub" id="rMenu" type="button" data-i18n>タイトルへ</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovCode" hidden role="dialog" aria-modal="true" aria-labelledby="cTitle">
+  <div class="card">
+    <h2 id="cTitle" data-i18n>パズルのコード</h2>
+    <p data-i18n>コードを入れると、友だちと同じパズルを遊べます。</p>
+    <input class="codein" id="codeIn" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="例：SD9N3-0K2F9Z1" data-i18n-attr="placeholder" aria-labelledby="cTitle">
+    <p class="err" id="codeErr" role="alert"></p>
+    <button class="btn" id="codeGo" type="button" data-i18n>開く</button>
+    <button class="btn link" id="codeBack" type="button" data-i18n>もどる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovSet" hidden role="dialog" aria-modal="true" aria-labelledby="sTitle">
+  <div class="card">
+    <h2 id="sTitle" data-i18n>入力と表示</h2>
+    <div class="scroll">
+      <button class="sw" id="swNum" type="button" role="switch" aria-checked="false"><span class="stk"><span data-i18n>数字を先にえらぶ</span><small data-i18n>数字をえらんでから、マスを次々にタップ（なぞってもOK）</small></span><i></i></button>
+      <button class="sw" id="swMis" type="button" role="switch" aria-checked="true"><span class="stk"><span data-i18n>まちがいを赤く</span><small data-i18n>答えとちがう数字・同じ数字のかぶりを赤く表示</small></span><i></i></button>
+      <button class="sw" id="swSame" type="button" role="switch" aria-checked="true"><span class="stk"><span data-i18n>同じ数字をうかす</span></span><i></i></button>
+      <button class="sw" id="swAuto" type="button" role="switch" aria-checked="false"><span class="stk"><span data-i18n>自動メモ（候補を自動でそろえる）</span><small data-i18n>数字を入れると、同じ行・列・ブロックのメモを自動で消す</small></span><i></i></button>
+      <button class="sw" id="swSnd" type="button" role="switch" aria-checked="true"><span class="stk"><span data-i18n>音</span></span><i></i></button>
+      <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    </div>
+    <button class="btn" id="setClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovStats" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="card">
+    <h2 id="stTitle" data-i18n>ゲームの記録</h2>
+    <div class="scroll" id="stBody"></div>
+    <button class="btn" id="stClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="card howto">
+    <h2 id="howtoTitle" data-i18n>遊び方</h2>
+    <div class="scroll" id="howBody"></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>やってみる</button>
+    <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
+  </div>
+</div>
+<script src="engine.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ナンバー工房 — number-place. sudoku/engine.js is the pure logic (seeded generator that guarantees a unique solution, technique-based
+// grader / hint solver, play session; also run in a Worker and headless by tools/tests/unit/sudoku-*.test.js); this file is the chrome:
+// the DOM board, input (cell-first and number-first), the clock, saving, daily puzzle, share codes and the platform events.
+const T = KoboI18n.t;
+const EN = KoboI18n.lang === 'en';
+const E = window.SudokuEngine;
+const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'sudoku';
+const SAVE_KEY = 'kusoge.sudoku.save', RUN_KEY = 'kusoge.sudoku.run', DC_KEY = 'kusoge.sudoku.dc', HOWTO_KEY = 'kusoge.sudoku.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const now = () => performance.now();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function tone(f, d, o) { if (AU) AU.tone(f, d, o); }
+function sfx(name, a) { if (AU) AU.sfx(name, a); }
+const snd = {
+  put() { tone(520, 0.04, { type: 'triangle', vol: 0.06 }); },
+  note() { tone(760, 0.025, { type: 'sine', vol: 0.04 }); },
+  erase() { tone(300, 0.05, { type: 'triangle', vol: 0.05, slide: 220 }); },
+  bad() { tone(170, 0.14, { type: 'sawtooth', vol: 0.035, slide: 120 }); },
+  done() { tone(660, 0.08, { type: 'sine', vol: 0.06 }); tone(880, 0.1, { type: 'sine', vol: 0.05, delay: 0.07 }); },
+  hint() { sfx('select'); },
+  win() { sfx('win'); },
+};
+const SEP = EN ? ', ' : '、';
+const todayKey = () => (PF ? PF.jstDateKey() : (() => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); })());
+
+// ---------- names ----------
+const KIDS_NAMES = ['', 'かんたん', 'ふつう', 'むずかしい'];
+const LV_NAMES = ['', '入門', '初級', '中級', '上級', '難問', '達人'];
+const lvName = (size, lv) => T(size === 9 ? LV_NAMES[lv] : KIDS_NAMES[lv]);
+const BOARDS = [
+  { id: '9n', size: 9, variant: 'n', name: '9×9' }, { id: '9x', size: 9, variant: 'x', name: '9×9 X' },
+  { id: '6n', size: 6, variant: 'n', name: '6×6' }, { id: '4n', size: 4, variant: 'n', name: '4×4' },
+];
+const boardOf = (size, variant) => BOARDS.find(b => b.size === size && b.variant === variant) || BOARDS[0];
+const boardId = (size, variant) => boardOf(size, variant).id;
+const modeName = spec => T('{mode}・{time}', { mode: boardOf(spec.size, spec.variant).name, time: lvName(spec.size, spec.level) });
+const TECH_NAMES = { lastCell: '残り1マス', nakedSingle: '唯一の候補', hiddenSingleBox: '隠れた1つ', hiddenSingle: '隠れた1つ', nakedPair: 'ペア', pointing: 'ポインティング', claiming: 'クレイミング', locked: '固定の候補',
+  nakedTriple: 'トリプル', hiddenPair: '隠れたペア', hiddenTriple: '隠れたトリプル', xwing: 'Xウィング', xywing: 'XYウィング', swordfish: 'ソードフィッシュ', xyzwing: 'XYZウィング', trial: '仮置き（背理法）', mistake: 'まちがい' };
+const techName = t => T(TECH_NAMES[t] || t);
+const fmtT = ms => { const s = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s % 60).padStart(2, '0'); };
+
+// ---------- save ----------
+function defSave() {
+  return { v: 1, pts: 0, st: {}, stats: { solved: 0, clean: 0, flawless: 0, daily: 0, kids: 0, xs: 0, fast: 0, learn: 0, codes: 0, nonotes: 0, l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, shared: 0 },
+    daily: { last: 0, streak: 0, max: 0, days: {} }, cfg: { size: 9, variant: 'n', level: 1, auto: 0, numfirst: 0, mis: 1, same: 1 }, tut: 0 };
+}
+function readSave() {
+  let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
+  const d = defSave();
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return d;
+  const out = Object.assign(d, s);
+  const obj = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+  out.st = obj(s.st); out.stats = Object.assign(defSave().stats, obj(s.stats)); out.cfg = Object.assign(defSave().cfg, obj(s.cfg));
+  out.daily = Object.assign(defSave().daily, obj(s.daily)); out.daily.days = obj(out.daily.days);
+  out.pts = Math.max(0, s.pts | 0);
+  return out;
+}
+let save = readSave();
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
+const cfg = () => save.cfg;
+function readRun() {
+  let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) { r = null; }
+  if (!r || r.v !== 1 || !r.spec || !r.puz || !r.g || !['normal', 'daily', 'code'].includes(r.mode)) return null;
+  try {
+    if (!E.decodeCode(E.encodeCode(r.spec))) return null;
+    if (typeof r.puz.g !== 'string' || typeof r.puz.s !== 'string' || !validPuz(r.spec, r.puz)) return null;
+  } catch (e) { return null; }
+  return r;
+}
+function clearRun() { store.del(RUN_KEY); }
+
+// ---------- puzzle generation (Worker, with a main-thread fallback) ----------
+const Gen = (() => {
+  let w = null, broken = false, seq = 0; const pend = new Map();
+  const local = spec => new Promise(res => setTimeout(() => { try { res(E.generate(spec)); } catch (e) { res(null); } }, 0));
+  function ensure() {
+    if (w) return true; if (broken || typeof Worker !== 'function') return false;
+    try {
+      w = new Worker('engine.js');
+      w.onmessage = e => { const m = e.data || {}, p = pend.get(m.id); if (!p) return; pend.delete(m.id); if (m.puzzle) p.res(m.puzzle); else local(p.spec).then(p.res); };
+      w.onerror = () => { broken = true; try { w.terminate(); } catch (e) {} w = null; const all = Array.from(pend.values()); pend.clear(); all.forEach(p => local(p.spec).then(p.res)); };
+    } catch (e) { broken = true; w = null; }
+    return !!w;
+  }
+  return { make(spec) { if (!ensure()) return local(spec); return new Promise(res => { const id = ++seq; pend.set(id, { res, spec }); try { w.postMessage({ id, spec }); } catch (e) { pend.delete(id); local(spec).then(res); } }); } };
+})();
+const packPuz = p => ({ g: p.givens.join(''), s: p.solution.join('') });
+const unpackPuz = (spec, pk) => ({ size: spec.size, variant: spec.variant, level: spec.level, seed: spec.seed, givens: Array.from(pk.g, Number), solution: Array.from(pk.s, Number), code: E.encodeCode(spec) });
+function validPuz(spec, pk) {
+  const geo = E.geometry(spec.size, spec.variant);
+  if (!pk || pk.g.length !== geo.NN || pk.s.length !== geo.NN) return false;
+  const g = Array.from(pk.g, Number), s = Array.from(pk.s, Number);
+  if (g.some(x => !(x >= 0 && x <= geo.N)) || s.some(x => !(x >= 1 && x <= geo.N))) return false;
+  if (g.some((x, i) => x && x !== s[i])) return false;
+  return E.conflictCells(geo, s).length === 0;
+}
+
+// ---------- state ----------
+let run = null;           // { mode, spec, dk, puz, g, ms, over, hr, startedAt, fresh }
+let geo = E.geometry(9, 'n');
+let sel = -1, armed = null, notesMode = false;
+let menuOpen = false, paused = false, lastT = now(), tick = 0, genToken = 0;
+let hint = null;          // { step, stage, cand }
+let lastResult = null;
+let cells = [], cellCache = [];
+const VS = window.KoboVersus || null;
+const playing = () => !!(run && !run.over && (run.mode !== 'vs' || (VS && VS.canPlay())));
+const anyOverlay = () => ['ovTitle', 'ovLoading', 'ovResult', 'ovCode', 'ovSet', 'ovStats', 'howto'].some(id => !$(id).hidden);
+const OVERLAYS = ['ovTitle', 'ovLoading', 'ovResult', 'ovCode', 'ovSet', 'ovStats', 'howto'];
+function hideOverlays() { OVERLAYS.forEach(id => { $(id).hidden = true; }); }
+const ticking = () => playing() && !paused && !menuOpen && !anyOverlay() && !document.hidden;
+
+// ---------- board DOM ----------
+const board = $('board');
+function buildBoard() {
+  board.innerHTML = ''; cells = []; cellCache = [];
+  board.style.setProperty('--n', geo.N); board.dataset.n = geo.N;
+  const bh = geo.bh, bw = geo.bw, N = geo.N;
+  for (let i = 0; i < geo.NN; i++) {
+    const r = Math.floor(i / N), c = i % N, d = document.createElement('div');
+    d.className = 'c' + ((c % bw === bw - 1 && c !== N - 1) ? ' rb' : '') + ((r % bh === bh - 1 && r !== N - 1) ? ' bb' : '') + (c === N - 1 ? ' lastc' : '') + (r === N - 1 ? ' lastr' : '');
+    if (geo.variant === 'x' && (r === c || r + c === N - 1)) d.classList.add('dg');
+    d.id = 'c' + i; d.dataset.i = i; d.setAttribute('role', 'gridcell');
+    d.innerHTML = '<span class="v"></span><span class="gv"></span><span class="nt"></span>';
+    d._base = d.className.replace(/^c ?/, ''); board.appendChild(d); cells.push(d);
+  }
+  buildPad(); layout();
+}
+function cellName(i) { return T('{r}行{c}列', { r: Math.floor(i / geo.N) + 1, c: (i % geo.N) + 1 }); }
+function houseName(u) {
+  const U = geo.units[u];
+  if (U.type === 'row') return T('{n}行目', { n: U.index + 1 });
+  if (U.type === 'col') return T('{n}列目', { n: U.index + 1 });
+  if (U.type === 'box') return T('ブロック{n}', { n: U.index + 1 });
+  return T(U.index === 0 ? '左上から右下の対角線' : '右上から左下の対角線');
+}
+function layout() {
+  const wrap = $('boardWrap'), w = wrap.clientWidth, h = wrap.clientHeight;
+  const bs = Math.max(90, Math.floor(Math.min(w, h)) - 2);
+  board.style.setProperty('--bs', bs + 'px');
+}
+try { new ResizeObserver(() => layout()).observe($('boardWrap')); } catch (e) {}
+window.addEventListener('resize', () => layout());
+
+function ghostFor(i) { return hint && hint.stage >= 1 && hint.ghost ? hint.ghost[i] : null; }
+function activeDigit() {
+  if (cfg().numfirst && armed) return armed;
+  if (sel >= 0 && run && run.g.vals[sel]) return run.g.vals[sel];
+  return 0;
+}
+function render() {
+  if (!run) return;
+  const g = run.g, N = geo.N, peers = sel >= 0 ? new Set(geo.peers[sel]) : null;
+  const D = cfg().same ? activeDigit() : 0, bad = cfg().mis ? new Set(g.conflicts()) : null;
+  const hl = hint && hint.hl ? hint.hl : null;
+  for (let i = 0; i < geo.NN; i++) {
+    const el = cells[i], v = g.vals[i], given = g.given[i] !== 0, gh = ghostFor(i);
+    let cls = 'c ' + el._base;
+    if (given) cls += ' g';
+    if (i === sel) cls += ' sel'; else if (peers && peers.has(i)) cls += ' pe';
+    if (D && v === D) cls += ' same';
+    if (cfg().mis && v && !given && v !== g.sol[i]) cls += ' wr';
+    else if (bad && bad.has(i)) cls += ' bd';
+    if (hl) { if (hl.tgt.has(i)) cls += ' h2'; else if (hl.blk.has(i)) cls += ' h3'; else if (hl.pat.has(i)) cls += ' h1'; else if (hl.house.has(i)) cls += ' hh'; }
+    if (el.className !== cls) el.className = cls;
+    const nm = g.notes[i], key = v + '|' + nm + '|' + (gh ? gh.show + ',' + gh.keep + ',' + gh.elim + ',' + gh.digit : '') + '|' + (D && !v ? D : 0);
+    if (cellCache[i] !== key) {
+      cellCache[i] = key;
+      el.firstChild.textContent = v ? v : '';
+      el.children[1].textContent = gh && gh.digit && !v ? gh.digit : '';
+      let h = '';
+      if (!v) {
+        const show = gh ? (gh.show | nm) : nm;
+        for (let d = 1; d <= N; d++) {
+          const b = 1 << (d - 1);
+          let c2 = '';
+          if (gh && (gh.elim & b)) c2 = ' class="ge"'; else if (gh && (gh.keep & b)) c2 = ' class="gh"'; else if (D === d && (nm & b)) c2 = ' class="cn"';
+          h += '<i' + c2 + '>' + ((show & b) ? d : '') + '</i>';
+        }
+      }
+      el.children[2].innerHTML = h;
+      el.setAttribute('aria-label', cellName(i) + ' ' + (v ? T('入力 {d}', { d: v }) : T('空')));
+    }
+  }
+  renderPad(); renderBar();
+  board.classList.toggle('cover', menuOpen || paused || !!run.idle);
+}
+function buildPad() {
+  const pad = $('pad'); pad.innerHTML = ''; pad.dataset.n = geo.N;
+  for (let d = 1; d <= geo.N; d++) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pk'; b.dataset.d = d; b.id = 'pk' + d;
+    b.innerHTML = d + '<small></small>'; b.setAttribute('aria-label', T('数字') + ' ' + d);
+    pad.appendChild(b);
+  }
+  // the erase key lives in the toolbar (and Backspace); the pad stays digits only
+}
+function renderPad() {
+  if (!run) return;
+  const g = run.g;
+  for (let d = 1; d <= geo.N; d++) {
+    const b = $('pk' + d); if (!b) continue;
+    const left = geo.N - g.count(d);
+    b.classList.toggle('done', left <= 0); b.classList.toggle('arm', !!(cfg().numfirst && armed === d));
+    b.querySelector('small').textContent = left > 0 ? left : '';
+    b.setAttribute('aria-pressed', cfg().numfirst ? String(armed === d) : 'false');
+  }
+}
+function renderBar() {
+  const g = run ? run.g : null;
+  $('btnUndo').disabled = !g || !g.canUndo() || !playing(); $('btnRedo').disabled = !g || !g.canRedo() || !playing();
+  $('btnErase').disabled = !playing(); $('btnHint').disabled = !playing() || run.mode === 'vs';
+  $('btnNotes').setAttribute('aria-pressed', String(notesMode)); $('btnErase').setAttribute('aria-pressed', String(!!(cfg().numfirst && armed === 0)));
+  $('btnAuto').setAttribute('aria-pressed', String(!!(g && g.auto)));
+}
+function renderChips() {
+  $('modeChip').textContent = run ? (run.mode === 'vs' ? T('オンライン対戦') + SEP.trim() + ' ' + lvName(run.spec.size, run.spec.level) : run.mode === 'daily' ? T('今日の1問') + SEP.trim() + ' ' + lvName(run.spec.size, run.spec.level) : modeName(run.spec)) : T('ナンバー工房');
+  $('timeTxt').textContent = fmtT(run ? run.ms : 0);
+}
+
+// ---------- the clock ----------
+function loop() {
+  const t = now(), dt = t - lastT; lastT = t;
+  if (ticking() && dt < 2000) { run.ms += dt; }
+  const txt = fmtT(run ? run.ms : 0); if ($('timeTxt').textContent !== txt) $('timeTxt').textContent = txt;
+  tick = requestAnimationFrame(loop);
+}
+
+// ---------- persistence of the puzzle in progress ----------
+let persistTimer = 0;
+function persist(now_) {
+  if (!playing() || run.mode === 'vs') return;
+  if (!now_) { if (persistTimer) return; persistTimer = setTimeout(() => { persistTimer = 0; persist(true); }, 250); return; }
+  clearTimeout(persistTimer); persistTimer = 0;
+  store.set(RUN_KEY, JSON.stringify({ v: 1, mode: run.mode, spec: run.spec, dk: run.dk || null, puz: run.pk, g: run.g.snapshot(), ms: Math.round(run.ms), hr: run.hr | 0, nm: notesMode ? 1 : 0, at: Date.now() }));
+}
+
+// ---------- starting a puzzle ----------
+let loadingTimer = 0;
+function showLoading() { clearTimeout(loadingTimer); loadingTimer = setTimeout(() => { hideOverlays(); $('ovLoading').hidden = false; }, 140); }
+function hideLoading() { clearTimeout(loadingTimer); $('ovLoading').hidden = true; }
+function cacheDaily(dk, puz) { store.set(DC_KEY, JSON.stringify({ dk, g: puz.givens.join(''), s: puz.solution.join('') })); }
+function cachedDaily(dk, spec) {
+  let c = null; try { c = JSON.parse(store.get(DC_KEY) || 'null'); } catch (e) { c = null; }
+  if (!c || c.dk !== dk || typeof c.g !== 'string' || !validPuz(spec, { g: c.g, s: c.s })) return null;
+  return unpackPuz(spec, { g: c.g, s: c.s });
+}
+async function startSpec(spec, mode, o) {
+  o = o || {};
+  const token = ++genToken;
+  if (run && playing()) endPlay('quit');
+  hint = null; closeHintBox();
+  let puz = o.puz || null;
+  if (!puz && mode === 'daily') puz = cachedDaily(o.dk, spec);
+  if (!puz) { showLoading(); puz = await Gen.make(spec); if (token !== genToken) return; hideLoading(); }
+  if (!puz) { showTitle(); return; }
+  if (mode === 'daily') cacheDaily(o.dk, puz);
+  setupRun(puz, spec, mode, o);
+}
+function setupRun(puz, spec, mode, o) {
+  o = o || {};
+  hideOverlays();
+  geo = E.geometry(spec.size, spec.variant);
+  const g = new E.Game(puz, { auto: false });
+  run = { mode, spec: { size: spec.size, variant: spec.variant, level: spec.level, seed: spec.seed >>> 0 }, dk: o.dk || null, puz, pk: packPuz(puz), g, ms: 0, over: false, hr: 0, fresh: !o.snap };
+  sel = -1; armed = null; notesMode = false; menuOpen = false; paused = false;
+  buildBoard();
+  if (o.snap) {
+    if (g.restore(o.snap.g)) { run.ms = o.snap.ms | 0; run.hr = o.snap.hr | 0; notesMode = !!o.snap.nm; }
+  } else if (cfg().auto) { g.auto = true; g.fillNotes(); g.undoStack.length = 0; g.moves = 0; }
+  lastT = now(); hint = null; $('hintBox').hidden = true;
+  renderChips(); render();
+  if (mode !== 'vs') {
+    emit('play_start', mode === 'daily' ? { mode: 'daily', dateKey: run.dk, resumed: !!o.snap } : { mode: 'normal', resumed: !!o.snap });
+    if (mode === 'code' && !o.snap) { save.stats.codes++; writeSave(); }
+    persist(true);
+  }
+  if (cfg().numfirst && !armed) armed = null;
+  try { board.focus({ preventScroll: true }); } catch (e) {}
+}
+function startDaily(dk) {
+  dk = dk || todayKey();
+  const spec = E.dailySpec(dk);
+  return startSpec(spec, 'daily', { dk });
+}
+function startNew(size, variant, level) {
+  const seed = ((Math.random() * 4294967296) >>> 0);
+  return startSpec({ size, variant, level, seed }, 'normal');
+}
+function resumeRun(r) {
+  const spec = r.spec;
+  if (!validPuz(spec, r.puz)) { clearRun(); showTitle(); return; }
+  const puz = unpackPuz(spec, r.puz);
+  setupRun(puz, spec, r.mode, { dk: r.dk, snap: r, puz });
+  if (r.mode === 'daily' && r.dk) run.dk = r.dk;
+}
+function endPlay(reason) {
+  if (!run || run.over || run.mode === 'vs') return; // a battle ends through KoboVersus (onEnd / onExit)
+  emit('play_end', { mode: run.mode === 'daily' ? 'daily' : 'normal', dateKey: run.mode === 'daily' ? run.dk : undefined, score: 0, durationMs: Math.round(run.ms), reason: reason || 'quit' });
+  run.over = true;
+}
+
+// ---------- input ----------
+function select(i) { sel = i; render(); }
+function afterChange(changed, kind) {
+  if (!playing()) return;
+  const g = run.g;
+  if (hint && hint.stage >= 1) { closeHint(); }
+  persist(false);
+  render();
+  if (g.solved()) { if (run.mode === 'vs') vsSolved(); else win(); return; }
+  if (g.filled() && !cfg().mis) { toast(T('すべてうまったけれど、どこかちがうみたい')); }
+  if (kind === 'wrong' && cfg().mis) snd.bad();
+}
+function toast(msg) { if (UI && UI.toast) UI.toast(msg, { ms: 2200 }); }
+function placeAt(i, d) { // d = 0 erase
+  const g = run.g;
+  if (g.isGiven(i)) { toast(T('数字が決まったマスは動かせません')); return; }
+  if (notesMode && d) {
+    if (g.vals[i]) return;
+    if (g.toggleNote(i, d)) { snd.note(); afterChange([i], 'note'); }
+    return;
+  }
+  const same = d && g.vals[i] === d;
+  const was = g.vals[i];
+  const ok = g.put(i, same ? 0 : d);
+  if (!ok) return;
+  const wrong = !same && d && g.sol[i] !== d;
+  if (same || !d) snd.erase(); else if (wrong && cfg().mis) { /* sound after render */ } else snd.put();
+  afterChange([i], wrong ? 'wrong' : 'put');
+  if (!same && d && !wrong && g.count(d) === geo.N) snd.done();
+  void was;
+}
+function tapCell(i, first) {
+  if (!playing() || anyOverlay() || menuOpen) return;
+  if (cfg().numfirst && armed !== null) {
+    if (armed === 0) { if (!run.g.isGiven(i)) { if (run.g.put(i, 0)) { snd.erase(); sel = i; afterChange([i], 'erase'); } else { sel = i; render(); } } else { sel = i; render(); } return; }
+    sel = i;
+    if (run.g.isGiven(i)) { render(); return; }
+    placeAt(i, armed);
+    return;
+  }
+  select(i);
+}
+function padDigit(d) {
+  if (!playing() || anyOverlay() || menuOpen) return;
+  if (cfg().numfirst) { armed = armed === d ? null : d; if (AU) snd.note(); render(); return; }
+  if (sel < 0) { toast(T('マスをえらんでね')); return; }
+  placeAt(sel, d);
+}
+function eraseKey(fromButton) {
+  if (!playing() || anyOverlay() || menuOpen) return;
+  if (fromButton && cfg().numfirst) { armed = armed === 0 ? null : 0; render(); return; }
+  if (sel < 0) { toast(T('マスをえらんでね')); return; }
+  const g = run.g;
+  if (g.isGiven(sel)) { toast(T('数字が決まったマスは動かせません')); return; }
+  if (g.vals[sel]) { if (g.put(sel, 0)) { snd.erase(); afterChange([sel], 'erase'); } }
+  else if (g.clearNotes(sel)) { snd.erase(); afterChange([sel], 'erase'); }
+}
+function undo() { if (!playing()) return; const r = run.g.undo(); if (r) { snd.erase(); afterChange(r, 'undo'); } }
+function redo() { if (!playing()) return; const r = run.g.redo(); if (r) { snd.put(); afterChange(r, 'redo'); } }
+function toggleNotes() { if (!playing()) return; notesMode = !notesMode; render(); persist(false); }
+function toggleAuto(force) {
+  const on = force == null ? !(run && run.g.auto) : !!force;
+  save.cfg.auto = on ? 1 : 0; writeSave();
+  if (run && playing()) {
+    run.g.auto = on;
+    if (on) run.g.fillNotes();
+    persist(false); render();
+  }
+  syncSettings();
+}
+board.addEventListener('pointerdown', e => {
+  const c = e.target.closest ? e.target.closest('.c') : null; if (!c) return;
+  e.preventDefault();
+  drag = { last: +c.dataset.i }; tapCell(+c.dataset.i, true);
+  try { board.setPointerCapture(e.pointerId); } catch (err) {}
+});
+let drag = null;
+board.addEventListener('pointermove', e => {
+  if (!drag || !cfg().numfirst || armed === null) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest ? el.closest('.c') : null;
+  if (!c || !board.contains(c)) return; const i = +c.dataset.i;
+  if (i !== drag.last) { drag.last = i; tapCell(i, false); }
+});
+const endDrag = () => { drag = null; };
+board.addEventListener('pointerup', endDrag); board.addEventListener('pointercancel', endDrag);
+$('pad').addEventListener('click', e => { const b = e.target.closest('.pk'); if (b) padDigit(+b.dataset.d); });
+$('btnUndo').addEventListener('click', undo);
+$('btnRedo').addEventListener('click', redo);
+$('btnErase').addEventListener('click', () => eraseKey(true));
+$('btnNotes').addEventListener('click', toggleNotes);
+$('btnAuto').addEventListener('click', () => toggleAuto());
+$('btnHint').addEventListener('click', () => hintPress());
+document.addEventListener('keydown', e => {
+  if (e.defaultPrevented || menuOpen) return; // the pause menu (common/ui.js) owns the keys while it is open
+  if (e.ctrlKey || e.metaKey || e.altKey) { if ((e.ctrlKey || e.metaKey) && !anyOverlay()) { const k = e.key.toLowerCase(); if (k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); } else if (k === 'y') { e.preventDefault(); redo(); } } return; }
+  const tg = e.target && e.target.tagName;
+  if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') { if (e.key === 'Enter' && tg === 'INPUT' && !$('ovCode').hidden) { e.preventDefault(); $('codeGo').click(); } return; }
+  if (e.key === 'Escape') { if (!$('ovSet').hidden) { closeSettings(); return; } if (hint && hint.stage >= 1) { closeHint(); return; } if (!anyOverlay() && playing()) openMenu(); return; }
+  if (!playing() || anyOverlay() || menuOpen) return;
+  const k = e.key;
+  if (/^[1-9]$/.test(k)) { const d = +k; if (d <= geo.N) { e.preventDefault(); padDigit(d); } return; }
+  const N = geo.N;
+  if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown') {
+    e.preventDefault();
+    if (sel < 0) { select(0); return; }
+    let r = Math.floor(sel / N), c = sel % N;
+    if (k === 'ArrowLeft') c = (c + N - 1) % N; else if (k === 'ArrowRight') c = (c + 1) % N; else if (k === 'ArrowUp') r = (r + N - 1) % N; else r = (r + 1) % N;
+    select(r * N + c); return;
+  }
+  const lk = k.toLowerCase();
+  if (k === 'Backspace' || k === 'Delete' || k === '0') { e.preventDefault(); eraseKey(); }
+  else if (lk === 'n') toggleNotes();
+  else if (lk === 'z') undo();
+  else if (lk === 'y') redo();
+  else if (lk === 'h') hintPress();
+  else if (lk === 'a') toggleAuto();
+  else if (lk === 'f') { save.cfg.numfirst = cfg().numfirst ? 0 : 1; armed = null; writeSave(); syncSettings(); render(); }
+  else if (k === 'Enter' && hint && hint.stage >= 1) hintPress();
+  else if (lk === 'p') openMenu();
+});
+
+// ---------- hints that explain why ----------
+function closeHintBox() { $('hintBox').hidden = true; $('hintBox').innerHTML = ''; document.body.classList.remove('hinting'); }
+function closeHint() { hint = null; closeHintBox(); if (run) render(); layout(); }
+const names = a => a.map(cellName).join(SEP);
+const digs = a => a.join(EN ? ', ' : '・');
+function lineName(dir, idx) { return T(dir === 'row' ? '{n}行目' : '{n}列目', { n: idx + 1 }); }
+function buildHint(step) {
+  const g = run.g, B = E.makeBoard(geo, g.vals, g.elim), set = a => new Set(a);
+  const hl = { pat: set([]), tgt: set([]), blk: set([]), house: set([]) };
+  const ghost = {};
+  const G = (c, o) => { const x = ghost[c] || (ghost[c] = { show: 0, keep: 0, elim: 0, digit: 0 }); for (const k in o) x[k] = k === 'digit' ? o[k] : (x[k] | o[k]); };
+  const house = u => { if (u != null) geo.units[u].cells.forEach(c => hl.house.add(c)); };
+  const t = step.tech;
+  if (t === 'mistake') { step.cells.forEach(c => hl.blk.add(c)); return { hl, ghost }; }
+  if (step.unit != null) house(step.unit);
+  if (step.place) { hl.tgt.add(step.place[0]); G(step.place[0], { digit: step.place[1] }); }
+  if (t === 'nakedSingle' || t === 'lastCell') { G(step.cells[0], { show: B.cand[step.cells[0]], keep: E.bit(step.digit) }); if (step.blockers) step.blockers.forEach(([, p]) => hl.blk.add(p)); }
+  else if (t === 'hiddenSingle' || t === 'hiddenSingleBox') { if (step.blockers) step.blockers.forEach(([, p]) => hl.blk.add(p)); G(step.cells[0], { show: E.bit(step.digit), keep: E.bit(step.digit) }); }
+  else if (step.elims) {
+    (step.cells || []).forEach(c => { hl.pat.add(c); });
+    if (step.digits && (t === 'nakedPair' || t === 'nakedTriple')) step.cells.forEach(c => G(c, { show: B.cand[c], keep: B.cand[c] }));
+    if (t === 'hiddenPair' || t === 'hiddenTriple') step.cells.forEach(c => G(c, { show: B.cand[c], keep: E.maskOf(step.digits) }));
+    if (step.digit && ['pointing', 'claiming', 'locked', 'xwing', 'swordfish'].includes(t)) step.cells.forEach(c => G(c, { show: E.bit(step.digit), keep: E.bit(step.digit) }));
+    if (t === 'xywing' || t === 'xyzwing') step.cells.forEach(c => G(c, { show: B.cand[c], keep: B.cand[c] }));
+    for (const [c, m] of step.elims) { hl.tgt.add(c); G(c, { show: B.cand[c] | m, elim: m }); if (t !== 'trial') G(c, {}); }
+    if (t === 'trial') { hl.pat.add(step.trial.cell); G(step.trial.cell, { show: B.cand[step.trial.cell], keep: B.cand[step.trial.cell] & ~E.bit(step.digit) }); }
+  }
+  return { hl, ghost };
+}
+function houseOfStep(s, key) { return houseName(s[key]); }
+function hintText(s, stage) {
+  const t = s.tech, cell = c => cellName(c);
+  if (t === 'mistake') return stage === 1 ? T('まちがっているマスがあります') + '：' + names(s.cells) + '。 ' + T('色のついたマスを消して、やり直そう。') : '';
+  const P = { house: s.unit != null ? houseName(s.unit) : '', d: s.digit, cell: s.cells ? cell(s.cells[0]) : '', cells: s.cells ? names(s.cells) : '', digits: s.digits ? digs(s.digits) : '' };
+  switch (t) {
+    case 'lastCell': return T(stage === 1 ? '{house}は、あと1マスだけ空いています。' : '{house}で空いているのは {cell} だけ。足りない数字は {d} です。', P);
+    case 'nakedSingle': return T(stage === 1 ? '{cell} に入る数字を数えてみよう。' : (s.blockers && s.blockers.length < geo.N - 1 ? '{cell} に残った候補は {d} だけ。ほかの数字は、ここまでの手順で消えています。' : '{cell} は、同じ行・列・ブロックにほかの数字がすべてあるので、{d} しか入りません。'), P);
+    case 'hiddenSingle': case 'hiddenSingleBox': {
+      const others = geo.units[s.unit].cells.filter(c => !run.g.vals[c] && c !== s.cells[0]).length;
+      return T(stage === 1 ? '{house}の中で、{d} が入る場所を探そう。' : (s.blockers && s.blockers.length < others ? '{house}では、{d} が入れるマスは {cell} だけ。ほかのマスは、{d} の候補から消えています。' : '{house}では、{d} が入れるマスは {cell} だけ。ほかのマスは、同じ行・列・ブロックにすでに {d} があります。'), P);
+    }
+    case 'nakedPair': return T(stage === 1 ? '{house}に、候補が同じ2つの数字だけのマスが2つあります。' : '{cells} の候補は {digits} だけ。この2つの数字はこの2マスで使い切るので、{house}のほかのマスから {digits} を消せます。', P);
+    case 'nakedTriple': return T(stage === 1 ? '{house}に、3つの数字だけを候補に持つ3マスがあります。' : '{cells} の候補は {digits} の中だけ。この3つの数字はこの3マスで使い切るので、{house}のほかのマスから {digits} を消せます。', P);
+    case 'hiddenPair': case 'hiddenTriple': return T(stage === 1 ? '{house}の中で、{digits} が入れる場所に注目しよう。' : '{house}では、{digits} が入れるマスは {cells} だけ。この数字たちで決まるので、これらのマスのほかの候補を消せます。', P);
+    case 'pointing': case 'claiming': case 'locked': {
+      P.house2 = houseName(s.target);
+      return stage === 1 ? T('{house}の中で、{d} が入れる場所に注目しよう。', P)
+        : T(t === 'claiming' ? '{house}では、{d} が入れるのは {cells} だけ。どれも{house2}の中にあるので、{house2}のほかのマスから {d} を消せます。' : '{house}では、{d} が入れるのは {cells} だけ。どれも{house2}の上にあるので、{house2}のほかのマスから {d} を消せます。', P);
+    }
+    case 'xwing': case 'swordfish': {
+      const base = s.base.map(i => lineName(s.dir, i)).join(SEP), cover = s.cover.map(i => lineName(s.dir === 'row' ? 'col' : 'row', i)).join(SEP);
+      Object.assign(P, { base, cover, base2: T(s.dir === 'row' ? '行' : '列') });
+      return stage === 1 ? T(t === 'xwing' ? '{d} の入れる場所が、長方形の形に4マスならんでいます。' : '{d} の入れる場所が、3本の線にまたがって3列に集まっています。', P)
+        : T(t === 'xwing' ? '{d} が入れるのは、{base}では {cells} だけ。どちらの{base2}でも2か所なので、{cover}のほかのマスには {d} が入りません。' : '{d} が入れるのは、{base}では {cells} の中だけ。3本とも3つの{cover}の中に収まるので、{cover}のほかのマスには {d} が入りません。', P);
+    }
+    case 'xywing': {
+      const B = E.makeBoard(geo, run.g.vals, run.g.elim), [a, b] = s.wings, mp = E.digitsOf(B.cand[s.pivot]);
+      const w1 = E.digitsOf(B.cand[a] & ~E.bit(s.digit))[0], w2 = E.digitsOf(B.cand[b] & ~E.bit(s.digit))[0];
+      Object.assign(P, { pivot: cell(s.pivot), wing1: cell(a), wing2: cell(b), pd: T('{a}と{b}', { a: mp[0], b: mp[1] }), pivotA: w1, pivotB: w2, w1: s.digit, w2: s.digit, z: s.digit, cells: names(s.elims.map(x => x[0])) });
+      return stage === 1 ? T('{pivot} は2つの候補を持ち、{wing1} と {wing2} につながっています。', P)
+        : T('{pivot} は {pd} のどちらか。{pivotA} なら {wing1} は {w1}、{pivotB} なら {wing2} は {w2}。どちらでも {z} がどこかに入るので、{cells} から {z} を消せます。', P);
+    }
+    case 'xyzwing': {
+      Object.assign(P, { pivot: cell(s.pivot), wing1: cell(s.wings[0]), wing2: cell(s.wings[1]), z: s.digit, cells: names(s.elims.map(x => x[0])) });
+      return stage === 1 ? T('{pivot} は3つの候補を持ち、{wing1} と {wing2} につながっています。', P)
+        : T('{pivot}・{wing1}・{wing2} のどれかに必ず {z} が入ります。この3つが両方から見えるマスから {z} を消せます。', P);
+    }
+    case 'trial': {
+      const tr = s.trial; let why = T('もっと先まで進めると矛盾します');
+      if (tr.fail && tr.fail.kind === 'empty') why = T('次々に数字が決まっていき、{where}', { where: T('{cell} に入る候補がなくなります', { cell: cell(tr.fail.cell) }) });
+      else if (tr.fail && tr.fail.kind === 'nowhere') why = T('次々に数字が決まっていき、{where}', { where: T('{house}の中に {d} を入れる場所がなくなります', { house: houseName(tr.fail.unit), d: tr.fail.digit }) });
+      return stage === 1 ? T('行き詰まったら、「もしここが○○なら？」と仮に置いてみます。', P) : T('{cell} が {d} だと仮定すると…{why}。矛盾するので、{cell} は {d} ではありません。', { cell: cell(tr.cell), d: tr.digit, why });
+    }
+  }
+  return '';
+}
+function actionText(s) {
+  if (s.place) return T('{cell} に {d} を入れる', { cell: cellName(s.place[0]), d: s.place[1] });
+  const byCell = {}; s.elims.forEach(([c, m]) => { byCell[m] = (byCell[m] || []).concat(c); });
+  return Object.keys(byCell).map(m => T('{cells} から {digits} を消す', { cells: names(byCell[m]), digits: digs(E.digitsOf(+m)) })).join(' / ');
+}
+function hintPress() {
+  if (!playing() || anyOverlay() || menuOpen || run.mode === 'vs') return;
+  if (hint && (hint.stage === 2 || hint.step.tech === 'mistake')) { applyHintStep(); return; }
+  if (hint && hint.stage === 1) { hint.stage = 2; if (hint.step.tech !== 'mistake') { if (!hint.counted) { hint.counted = true; run.hr++; save.stats.learn++; writeSave(); } } renderHint(); return; }
+  const s = run.g.hint();
+  if (!s) { if (run.g.solved()) toast(T('もう解けています')); else toast(T('ヒントが見つかりません')); return; }
+  snd.hint();
+  const b = buildHint(s);
+  hint = { step: s, stage: 1, hl: b.hl, ghost: b.ghost, counted: false };
+  renderHint();
+}
+function applyHintStep() {
+  const s = hint.step; if (!s) return;
+  if (s.tech === 'mistake') { const g = run.g; const diff = s.cells.slice(); diff.forEach(c => g.put(c, 0)); run.hr++; hint = null; closeHintBox(); persist(false); render(); return; }
+  const ok = run.g.applyHint(s);
+  hint = null; closeHintBox(); layout();
+  if (s.place && ok) snd.put(); else snd.note();
+  persist(false); render();
+  if (run.g.solved()) win();
+  void ok;
+}
+function renderHint() {
+  const s = hint.step, box = $('hintBox'), st = hint.stage;
+  box.hidden = false; document.body.classList.add('hinting');
+  const body = hintText(s, s.tech === 'mistake' ? 1 : st);
+  let html = '<span class="tag">' + esc(techName(s.tech)) + '</span><p>' + esc(body) + '</p>';
+  if (st === 2 && s.tech !== 'mistake') html += '<p><b>' + esc(actionText(s)) + '</b></p>';
+  html += '<div class="row2">';
+  html += '<button class="btn sub" id="hbClose" type="button">' + esc(T('閉じる')) + '</button>';
+  if (s.tech === 'mistake') html += '<button class="btn" id="hbGo" type="button">' + esc(T('まちがいを消す')) + '</button>';
+  else if (st === 1) html += '<button class="btn" id="hbGo" type="button">' + esc(T('なぜ？')) + '</button>';
+  else html += '<button class="btn" id="hbGo" type="button">' + esc(T('実行する')) + '</button>';
+  html += '</div>';
+  box.innerHTML = html;
+  $('hbClose').addEventListener('click', closeHint);
+  $('hbGo').addEventListener('click', () => { if (s.tech === 'mistake') applyHintStep(); else hintPress(); });
+  layout(); render();
+}
+
+// ---------- winning ----------
+function win() {
+  if (!playing()) return;
+  const g = run.g, r = run, sp = r.spec, ms = Math.round(r.ms);
+  r.over = true; hint = null; closeHintBox(); clearRun();
+  const clean = r.hr === 0, flawless = clean && g.mistakes === 0;
+  const bid = boardId(sp.size, sp.variant), key = bid + '-' + sp.level;
+  const rec = save.st[key] = Object.assign({ n: 0, b: 0, c: 0 }, save.st[key]);
+  const prevBest = rec.b | 0;
+  rec.n++; if (clean) rec.c++;
+  const newBest = clean ? (prevBest === 0 || ms < prevBest) : false;
+  if (clean && newBest) rec.b = ms;
+  const S = save.stats;
+  S.solved++; if (clean) S.clean++; if (flawless) S.flawless++;
+  if (sp.size === 9 && sp.level >= 1) S['l' + sp.level] = (S['l' + sp.level] | 0) + 1;
+  if (sp.size < 9) S.kids++; if (sp.variant === 'x') S.xs++;
+  if (clean && sp.size === 9 && sp.level >= 2 && ms <= 180000) S.fast++;
+  if (clean && g.usedNotes === 0 && sp.size === 9 && sp.level >= 3) S.nonotes++;
+  let pts = 0;
+  if (clean && sp.size === 9) { pts = sp.level; save.pts += pts; }
+  let dailyNote = null, dailyBest = false, streak = 0;
+  if (r.mode === 'daily' && r.dk) {
+    const dk = r.dk, d = save.daily, prev = d.days[dk] | 0;
+    if (!prev) { S.daily++; }
+    if (!prev || ms < prev) { d.days[dk] = ms; dailyBest = true; }
+    if (dk === todayKey()) {
+      if (d.last !== dk) { d.streak = d.last === E.addDays(dk, -1) ? (d.streak | 0) + 1 : 1; d.last = dk; }
+      d.max = Math.max(d.max | 0, d.streak | 0);
+    }
+    const keep = E.addDays(todayKey(), -60); Object.keys(d.days).forEach(k => { if (+k < keep) delete d.days[k]; });
+    streak = d.streak | 0; dailyNote = d;
+  }
+  writeSave();
+  const dailyScore = Math.max(1, 3600 - Math.round(ms / 1000));
+  emit('play_end', { mode: r.mode === 'daily' ? 'daily' : 'normal', dateKey: r.mode === 'daily' ? r.dk : undefined, score: r.mode === 'daily' ? dailyScore : pts, durationMs: ms, reason: 'clear',
+    stats: { level: sp.level, size: sp.size, hints: r.hr, mistakes: g.mistakes, clean: clean ? 1 : 0 } });
+  if (newBest) emit('best', { score: Math.max(1, 3600 - Math.round(ms / 1000)) });
+  emit('progress', { key: 'pts', value: save.pts });
+  const hardest = sp.size === 9 ? sp.level : 0;
+  lastResult = { mode: r.mode, spec: sp, ms, mistakes: g.mistakes, hints: r.hr, clean, flawless, newBest, pts, streak, dk: r.dk, dailyBest };
+  board.classList.add('win'); Array.from(cells).forEach((c, i) => c.style.setProperty('--d', String((i % geo.N) + Math.floor(i / geo.N)))); setTimeout(() => board.classList.remove('win'), 1600);
+  snd.win();
+  showResult(r, lastResult, hardest);
+  render();
+}
+function showResult(r, res, hardest) {
+  const sp = r.spec, size = sp.size;
+  const daily = r.mode === 'daily';
+  $('rTitle').textContent = T(daily ? '今日の1問 できた！' : 'できた！');
+  const rows = [[T('かかった時間'), fmtT(res.ms)], [T('ミス'), res.mistakes ? T('{n}回', { n: res.mistakes }) : T('なし')], [T('ヒント'), res.hints ? T('{n}回', { n: res.hints }) : T('なし')]];
+  const key = boardId(sp.size, sp.variant) + '-' + sp.level, best = save.st[key] && save.st[key].b;
+  if (daily) { rows.push([T('今日のベスト'), fmtT(save.daily.days[r.dk] || res.ms)]); rows.push([T('連続'), T('{n}日', { n: save.daily.streak | 0 })]); }
+  else rows.push([T('ベスト'), best ? fmtT(best) : '—']);
+  $('rRows').innerHTML = rows.map(x => '<div>' + esc(x[0]) + '<b>' + esc(x[1]) + '</b></div>').join('');
+  $('rNew').hidden = !(res.newBest || (daily && res.dailyBest && res.hints === 0));
+  const bits = [lvName(size, sp.level) + ' ' + boardOf(sp.size, sp.variant).name];
+  if (res.clean) bits.push(res.mistakes === 0 ? T('ヒントなし') + SEP + T('ミスなし') : T('ヒントなし'));
+  if (hardest) bits.push(T('必要なワザ') + '：' + hardestName(r.puz, hardest));
+  $('rNote').textContent = bits.join(' / ');
+  $('rCode').textContent = E.encodeCode(sp);
+  const next = $('rNext');
+  next.textContent = daily ? T('同じむずかしさで') : T('次のパズル'); next.dataset.act = daily ? 'again' : 'next';
+  hideOverlays(); $('ovResult').hidden = false;
+  try { next.focus({ preventScroll: true }); } catch (e) {}
+}
+function hardestName(puz, tier) {
+  if (puz.size < 9) return T('唯一の候補');
+  return T(['', '入門', '初級', '中級', '上級', '難問', '達人'][tier] || '入門');
+}
+$('rNext').addEventListener('click', () => { if (AU) AU.ctx(); sfx('ok'); const sp = lastResult.spec; startNew(sp.size, sp.variant, sp.level); });
+$('rCopy').addEventListener('click', () => copyCode(lastResult ? E.encodeCode(lastResult.spec) : ''));
+$('rMenu').addEventListener('click', () => { idleRun(); showTitle(); });
+
+// ---------- share / open by code ----------
+async function copyCode(code) {
+  if (!code) return;
+  let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(code); ok = true; } } catch (e) { ok = false; }
+  if (!ok) { try { const ta = document.createElement('textarea'); ta.value = code; ta.style.cssText = 'position:fixed;left:-999px;top:0;opacity:0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove(); } catch (e) { ok = false; } }
+  if (ok) { save.stats.shared++; writeSave(); }
+  toast(ok ? T('コードをコピーしました') + ': ' + code : T('コピーできませんでした') + ': ' + code);
+  return ok;
+}
+function openCodeDialog(prefill) {
+  hideOverlays(); $('codeIn').value = prefill || ''; $('codeErr').textContent = ''; $('ovCode').hidden = false;
+  try { $('codeIn').focus({ preventScroll: true }); } catch (e) {}
+}
+async function openByCode(str) {
+  const spec = E.decodeCode(str);
+  if (!spec) return false;
+  if (!(await confirmNew())) return true;
+  clearRun(); await startSpec(spec, 'code'); return true;
+}
+$('codeGo').addEventListener('click', async () => {
+  const ok = await openByCode($('codeIn').value);
+  if (!ok) { $('codeErr').textContent = T('コードが正しくありません'); try { $('codeIn').focus(); } catch (e) {} }
+});
+$('codeBack').addEventListener('click', showTitle);
+$('tCode').addEventListener('click', () => openCodeDialog(''));
+
+// ---------- title / new game ----------
+function idleRun() {
+  if (run && playing()) { persist(true); }
+  closeHintBox(); hint = null;
+}
+function showTitle() {
+  hideOverlays(); closeHintBox();
+  const c = cfg(); if (!BOARDS.some(b => b.size === c.size && b.variant === c.variant)) { c.size = 9; c.variant = 'n'; }
+  renderTitle();
+  $('ovTitle').hidden = false; if (run) render();
+}
+function renderTitle() {
+  const c = cfg(), dk = todayKey(), dspec = E.dailySpec(dk);
+  const tms = save.daily.days[dk] | 0;
+  $('tDaily').innerHTML = '<span class="stk"><span>' + esc(T('今日の1問')) + '</span><small>' + esc(tms ? T('今日は {t} で解いた', { t: fmtT(tms) }) : T('{lv}の問題・まだ解いていない', { lv: lvName(9, dspec.level) })) + '</small></span><span class="fl">' + esc((save.daily.streak | 0) > 0 && (save.daily.last === dk || save.daily.last === E.addDays(dk, -1)) ? T('連続 {n}日', { n: save.daily.streak | 0 }) : '') + '</span>';
+  const seg = $('tSize'); seg.innerHTML = '';
+  BOARDS.forEach(b => {
+    const bt = document.createElement('button'); bt.type = 'button'; bt.dataset.board = b.id; bt.setAttribute('aria-pressed', String(b.size === c.size && b.variant === c.variant));
+    bt.innerHTML = esc(b.name) + (b.size < 9 ? '<small>' + esc(T('こども')) + '</small>' : '<small>&nbsp;</small>');
+    bt.addEventListener('click', () => { c.size = b.size; c.variant = b.variant; c.level = Math.min(c.level, E.maxLevel(b.size)); writeSave(); renderTitle(); });
+    seg.appendChild(bt);
+  });
+  const lv = $('tLevels'); lv.innerHTML = '';
+  const maxL = E.maxLevel(c.size);
+  c.level = Math.max(1, Math.min(maxL, c.level | 0));
+  for (let L = 1; L <= maxL; L++) {
+    const rec = save.st[boardId(c.size, c.variant) + '-' + L] || {};
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.level = L; b.setAttribute('aria-pressed', String(L === c.level));
+    b.innerHTML = esc(lvName(c.size, L)) + '<small>' + esc(rec.n ? T('解いた数 {n}', { n: rec.n }) : '—') + '</small>';
+    b.addEventListener('click', () => { c.level = L; writeSave(); renderTitle(); });
+    lv.appendChild(b);
+  }
+  lv.style.gridTemplateColumns = 'repeat(' + (maxL === 3 ? 3 : 3) + ', minmax(0, 1fr))';
+  $('tStart').innerHTML = esc(T('はじめる')) + '<small>' + esc(boardOf(c.size, c.variant).name + SEP + lvName(c.size, c.level)) + '</small>';
+  const r = readRun(), cont = $('tContinue');
+  cont.hidden = !r;
+  if (r) cont.innerHTML = '<span class="stk">' + esc(T('つづきから')) + '<small>' + esc((r.mode === 'daily' ? T('今日の1問') : modeName(r.spec)) + SEP + fmtT(r.ms)) + '</small></span>';
+}
+async function confirmNew() {
+  const live = run && playing() && run.g.moves > 0, saved = !live && readRun();
+  if ((live || saved) && UI && UI.confirm) return UI.confirm({ title: T('新しく始めますか？'), message: T('とちゅうのパズルは消えます。'), ok: T('はじめる'), cancel: T('やめる') });
+  return true;
+}
+$('tStart').addEventListener('click', async () => { if (!(await confirmNew())) return; if (AU) AU.ctx(); sfx('ok'); clearRun(); const c = cfg(); startNew(c.size, c.variant, c.level); });
+$('tDaily').addEventListener('click', async () => { if (!(await confirmNew())) return; if (AU) AU.ctx(); sfx('ok'); clearRun(); startDaily(); });
+$('tContinue').addEventListener('click', () => {
+  if (run && playing()) { hideOverlays(); lastT = now(); render(); return; }
+  const r = readRun(); if (!r) return; if (AU) AU.ctx(); resumeRun(r);
+});
+$('tHow').addEventListener('click', () => showHowto(false));
+$('tSet').addEventListener('click', () => openSettings());
+$('tStats').addEventListener('click', showStats);
+
+// ---------- stats ----------
+function showStats() {
+  hideOverlays();
+  const S = save.stats, rows = [];
+  let h = '';
+  h += '<div class="kv"><span>' + esc(T('遊んだ回数')) + '</span><b>' + S.solved + '</b></div>';
+  h += '<div class="kv"><span>' + esc(T('ヒントなしで')) + '</span><b>' + S.clean + '</b></div>';
+  h += '<div class="kv"><span>' + esc(T('ミスなしで')) + '</span><b>' + S.flawless + '</b></div>';
+  h += '<div class="kv"><span>' + esc(T('今日のパズル')) + '</span><b>' + S.daily + '</b></div>';
+  h += '<div class="kv"><span>' + esc(T('連続 {n}日', { n: save.daily.streak | 0 })) + '</span><b>' + esc(T('いちばん長い連続') + ' ' + T('{n}日', { n: save.daily.max | 0 })) + '</b></div>';
+  for (const b of BOARDS) {
+    const lvs = E.maxLevel(b.size); let any = false, t = '<table class="st"><tr><th>' + esc(b.name) + '</th><th>' + esc(T('解いた')) + '</th><th>' + esc(T('一番速い')) + '</th></tr>';
+    for (let L = 1; L <= lvs; L++) { const rec = save.st[b.id + '-' + L]; if (rec && rec.n) any = true; t += '<tr><td>' + esc(lvName(b.size, L)) + '</td><td>' + (rec ? rec.n | 0 : 0) + '</td><td>' + (rec && rec.b ? fmtT(rec.b) : '—') + '</td></tr>'; }
+    t += '</table>'; h += t; void any;
+  }
+  $('stBody').innerHTML = h;
+  $('ovStats').hidden = false;
+}
+$('stClose').addEventListener('click', showTitle);
+
+// ---------- settings ----------
+function syncSettings() {
+  const set = (id, on) => $(id).setAttribute('aria-checked', String(!!on));
+  set('swNum', cfg().numfirst); set('swMis', cfg().mis); set('swSame', cfg().same); set('swAuto', playing() ? run.g.auto : cfg().auto); set('swSnd', !(AU && AU.muted));
+  $('swSnd').hidden = !AU;
+}
+let setFrom = 'game';
+function openSettings() { hint && closeHint(); setFrom = $('ovTitle').hidden ? 'game' : 'title'; syncSettings(); hideOverlays(); $('ovSet').hidden = false; }
+function closeSettings() { $('ovSet').hidden = true; if (setFrom === 'title' || !run || !playing()) showTitle(); else { lastT = now(); render(); } }
+$('setBtn').addEventListener('click', () => { if (!$('ovSet').hidden) closeSettings(); else if (!anyOverlay() && !menuOpen) openSettings(); });
+$('setClose').addEventListener('click', closeSettings);
+$('swNum').addEventListener('click', () => { cfg().numfirst = cfg().numfirst ? 0 : 1; armed = null; writeSave(); syncSettings(); });
+$('swMis').addEventListener('click', () => { cfg().mis = cfg().mis ? 0 : 1; writeSave(); syncSettings(); });
+$('swSame').addEventListener('click', () => { cfg().same = cfg().same ? 0 : 1; writeSave(); syncSettings(); });
+$('swAuto').addEventListener('click', () => { const on = playing() ? !run.g.auto : !cfg().auto; toggleAuto(on); });
+$('swSnd').addEventListener('click', () => { if (AU) { AU.toggleMute(); syncSettings(); } });
+{ const s2 = KoboI18n.picker($('langPick')); if (s2) s2.id = 'langSel'; }
+
+// ---------- how to ----------
+let howtoFirst = false;
+function showHowto(first) {
+  howtoFirst = !!first;
+  const li = a => '<ul>' + a.map(s => '<li>' + esc(T(s)) + '</li>').join('') + '</ul>';
+  $('howBody').innerHTML = '<p class="lead">' + esc(T('1行・1列・1ブロックの中で、1〜{n}が1回ずつ', { n: 9 })) + '</p><p>' + esc(T('（Xナンバーは、2本の対角線にも1〜9が1回ずつ入ります）')) + '</p>' + li([
+    'マスをタップして選び、数字ボタンで入れる。メモ（鉛筆）で候補を小さく書いておける',
+    '設定で「数字を先に選ぶ」にすると、数字を選んでからマスを次々にタップ・なぞって入れられる',
+    'ヒントは、どのワザで解けるかを理由つきで教えます。「なぜ？」で理由、「実行する」で反映',
+    '戻す・やり直しは何回でも。まちがいを赤く出すかは設定でえらべる',
+    '毎日の1問は、世界中のみんな同じパズル。その日のベストタイムと連続日数が残る',
+    'パズルのコードを友だちに送ると、同じパズルを遊べる',
+    'キーボード：数字・矢印・N（メモ）・Z（戻す）・Y（やり直し）・H（ヒント）・Backspace（消す）']);
+  $('howtoGo').textContent = first ? T('やってみる') : T('とじる'); $('howtoAlt').hidden = !first;
+  hideOverlays(); $('howto').hidden = false;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1'); $('howto').hidden = true;
+  if (howtoFirst) { if (AU) AU.ctx(); startNew(9, 'n', 1); return; }
+  if (!playing()) showTitle(); else { lastT = now(); render(); }
+});
+$('howtoAlt').addEventListener('click', () => { store.set(HOWTO_KEY, '1'); showTitle(); });
+
+// ---------- menu / pause ----------
+let pm = null;
+function openMenu() {
+  if (VS && VS.active()) return;
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = playing();
+  const extra = [];
+  if (on) extra.push({ label: T('コードをコピー') + ' ' + E.encodeCode(run.spec), icon: 'check', onClick: () => copyCode(E.encodeCode(run.spec)) });
+  if (on) extra.push({ label: run.g.notes.some(x => x) ? T('メモをぜんぶ消す') : T('メモをぜんぶ入れる'), icon: 'menu', onClick: () => { pm.close(); const g = run.g; if (g.notes.some(x => x)) g.clearAllNotes(); else g.fillNotes(); persist(false); render(); } });
+  extra.push({ label: T('入力と表示の設定'), icon: 'settings', onClick: () => { pm.close(); openSettings(); } });
+  extra.push({ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } });
+  extra.push({ label: on ? T('ゲームをやめてタイトルへ') : T('タイトルへ戻る'), icon: 'menu', onClick: () => { pm.close(); idleRun(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? '一時停止' : 'メニュー'), home: '../', extra, onSettings: false,
+    onResume: () => { menuOpen = false; lastT = now(); const g = KG(); if (g) g.menuClosed(); if (run) render(); },
+    onRestart: on ? () => { menuOpen = false; const r = run, sp = r.spec, m = r.mode, dk = r.dk; endPlay('quit'); clearRun(); startSpec(Object.assign({}, sp), m, { dk }); } : undefined,
+    onOpen: () => { menuOpen = true; const g = KG(); if (g) g.menuOpened(); persist(true); if (run) render(); },
+  });
+  pm.open();
+}
+$('pauseBtn').addEventListener('click', () => openMenu());
+$('timeChip').addEventListener('click', () => { if (playing() && !anyOverlay()) openMenu(); });
+
+// ---------- online battle (common/versus.js) ----------
+// Everyone gets the same 9x9 (Easy) from the match seed: E.generate({ size: 9, level: 2, seed }) never touches Math.random, so the same seed gives
+// the same puzzle. Score: 10 per correct cell, -15 per mistake (never below 0); finishing the grid scores 5000 + the time left in tenths of a
+// second, so a finisher always beats a non-finisher and an earlier finish beats a later one. No hints. Nothing is saved and no best is updated
+// during a battle (versus.js rule); the solo puzzle is set aside untouched and comes back on exit through the pause menu.
+const VS_LEVEL = 2, VS_SEC = 420, VS_CELL = 10, VS_WRONG = 15, VS_DONE = 5000;
+let vs = null;   // { snap: { run, ov, sel, armed, notes }, playing: 'versus' | 'practice' | null, practice } while a battle owns the board
+function vsScore() {
+  if (!run || run.mode !== 'vs') return 0;
+  if (run.vsDone) return run.vsDone;
+  const g = run.g; let ok = 0;
+  for (let c = 0; c < geo.NN; c++) if (!g.given[c] && g.vals[c] === g.sol[c]) ok++;
+  return Math.max(0, ok * VS_CELL - g.mistakes * VS_WRONG);
+}
+function vsSolved() {
+  if (!run || run.mode !== 'vs' || run.vsDone) return;
+  run.vsDone = VS_DONE + Math.max(0, Math.round((VS_SEC * 1000 - run.ms) / 100));
+  run.over = true; hint = null; closeHintBox();
+  if (VS) VS.reportScore(run.vsDone);
+  snd.win(); toast(T('完成！ {n}点', { n: run.vsDone }));
+  render();
+}
+function vsEnd(reason) {
+  if (!vs || !vs.playing) return;
+  emit('play_end', { mode: vs.playing, score: vsScore(), durationMs: run ? Math.round(run.ms) : 0, reason, stats: { solved: run && run.vsDone ? 1 : 0 } });
+  vs.playing = null;
+}
+if (VS) {
+  KoboVersus.init({ sameText: '2〜4人で {t} のスコア勝負。全員に同じパズルを解きます。完成が早いほど高得点。',
+    game: GAME, title: T('ナンバー工房'), duration: VS_SEC, unit: T('点'),
+    theme: { accent: 'var(--kb-accent-text)', accentBg: 'var(--sd-go)', accentInk: '#04201b', accentShadow: 'var(--sd-go-shadow)', card: 'var(--sd-card)',
+      line: 'var(--sd-line)', ink: 'var(--kb-ink)', dim: 'var(--kb-dim)', hud: 'var(--kb-bg)', display: 'var(--kb-font-display)' },
+    hudCover: () => document.querySelector('header'),
+    onOpen() {
+      hint = null; closeHintBox(); drag = null;
+      const g = KG(); if (g) g.pause('versus');
+      if (run) render();
+    },
+    onStart({ seed, practice }) {
+      if (!vs) {
+        // the solo puzzle (or the title / result card on top of it) is set aside exactly as it is
+        const solo = !!(run && playing());
+        if (solo) { persist(true); emit('play_end', { mode: run.mode === 'daily' ? 'daily' : 'normal', dateKey: run.mode === 'daily' ? run.dk : undefined, score: 0, durationMs: Math.round(run.ms), reason: 'quit' }); }
+        vs = { snap: { run, ov: OVERLAYS.filter(id => !$(id).hidden), sel, armed, notes: notesMode, geo, solo, idle: !!(run && run.idle) }, playing: null, practice: !!practice };
+      } else vsEnd('quit');
+      vs.practice = !!practice; seed = seed >>> 0;
+      const spec = { size: 9, variant: 'n', level: VS_LEVEL, seed };
+      const puz = E.generate(spec);
+      setupRun(puz, spec, 'vs', { puz });
+      vs.playing = practice ? 'practice' : 'versus';
+      paused = false; renderChips(); render();
+      emit('play_start', { mode: vs.playing, seed });
+    },
+    onGo() { lastT = now(); render(); },
+    getScore: () => vsScore(),
+    onEnd() { if (!run || run.mode !== 'vs') return; drag = null; hint = null; closeHintBox(); vsEnd('over'); run.over = true; render(); },
+    onExit() {
+      if (vs) {
+        vsEnd('quit');
+        const sn = vs.snap; vs = null;
+        drag = null; hint = null; closeHintBox();
+        hideOverlays();
+        geo = sn.geo; run = sn.run; sel = sn.sel; armed = sn.armed; notesMode = sn.notes;
+        buildBoard();
+        sn.ov.forEach(id => { $(id).hidden = false; });
+        renderChips(); render();
+        if (sn.solo) emit('play_start', { mode: run.mode === 'daily' ? 'daily' : 'normal', dateKey: run.mode === 'daily' ? run.dk : undefined, resumed: true });
+        if (!$('ovTitle').hidden) renderTitle();
+      }
+      // onOpen paused the game: a solo puzzle comes back through the pause menu (KoboGame.resume -> our resume hook), never running on its own
+      paused = true;
+      const g = KG(); if (g) g.resume('api');
+      paused = false; lastT = now(); if (run) render();
+    },
+  });
+  VS.button($('vsSlot'), { compact: true });
+  VS.button($('tVs'));
+}
+
+// ---------- KoboGame ----------
+if (window.KoboGame) KoboGame.register({
+  id: GAME,
+  pause(reason) { if (reason !== 'menu') paused = true; persist(true); if (run) render(); },
+  // coming back (tab shown): offer the pause menu; the menu's own "resume" must not open it again
+  resume(reason) { if (reason === 'menu') { lastT = now(); return; } if (!paused) return; paused = false; if (playing() && !anyOverlay() && !menuOpen) openMenu(); lastT = now(); if (run) render(); },
+  save() { persist(true); },
+  isIdle: () => !playing() && !vs,
+  dispose() { cancelAnimationFrame(tick); },
+  daily: { start({ dateKey }) { startDaily(dateKey); } },
+});
+window.addEventListener('pagehide', () => persist(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) persist(true); lastT = now(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY) { save = readSave(); if (!$('ovTitle').hidden) renderTitle(); } });
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (!m) return; const light = UI && UI.theme ? UI.theme.resolved() === 'light' : false; m.setAttribute('content', light ? '#f1eee4' : '#0f1a2b'); }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(() => themeColor(), 0));
+if (AU) AU.onChange(() => syncSettings());
+
+// ---------- boot ----------
+let booted = false;
+themeColor(); buildBoard();
+// an empty 9x9 behind the title
+run = { mode: 'normal', spec: { size: 9, variant: 'n', level: 1, seed: 0 }, dk: null, puz: { size: 9, variant: 'n', level: 1, seed: 0, givens: new Array(81).fill(0), solution: new Array(81).fill(1), code: '' }, pk: null, g: null, ms: 0, over: true, hr: 0, idle: true };
+run.g = new E.Game(run.puz); renderChips();
+const launch = PF ? PF.launch() : { daily: null, code: null };
+const firstVisit = store.get(HOWTO_KEY) == null && !save.tut && !readRun();
+(async () => {
+  if (launch.daily && PF) {
+    const def = window.KoboGame && KoboGame.info && KoboGame.info().def;
+    if (!(def && def.flags && def.flags.daily)) startDaily(launch.daily);
+  } else if (launch.code && E.decodeCode(launch.code)) {
+    startSpec(E.decodeCode(launch.code), 'code');
+  } else if (firstVisit) showHowto(true);
+  else showTitle();
+})();
+render(); lastT = now(); tick = requestAnimationFrame(loop);
+booted = true;
+// pre-make today's puzzle in the background while the title is up (cached for the day)
+setTimeout(() => { try { const dk = todayKey(), sp = E.dailySpec(dk); if (!cachedDaily(dk, sp)) Gen.make(sp).then(p => { if (p) cacheDaily(dk, p); }); } catch (e) {} }, 1200);
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const pt = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  const api = {
+    ready: () => booted,
+    state: () => ({
+      mode: run && run.mode === 'vs' && !run.idle ? 'vs' : (run && playing() ? run.mode : 'title'), size: run ? run.spec.size : 0, variant: run ? run.spec.variant : '', level: run ? run.spec.level : 0, seed: run ? run.spec.seed : 0, code: run ? E.encodeCode(run.spec) : '',
+      dk: run ? run.dk : null, ms: run ? Math.round(run.ms) : 0, over: !!(run && run.over), playing: playing(),
+      vals: run && run.g ? Array.from(run.g.vals).join('') : '', givens: run && run.g ? Array.from(run.g.given).join('') : '', solution: run && run.g ? Array.from(run.g.sol).join('') : '',
+      notes: run && run.g ? Array.from(run.g.notes) : [], sel, armed, notesMode, auto: !!(run && run.g && run.g.auto), mistakes: run && run.g ? run.g.mistakes : 0, hints: run && run.g ? run.g.hints : 0, hr: run ? run.hr : 0,
+      hint: hint ? { tech: hint.step.tech, stage: hint.stage, cells: hint.step.cells, place: hint.step.place, elims: hint.step.elims } : null,
+      undo: run && run.g ? run.g.undoStack.length : 0, redo: run && run.g ? run.g.redoStack.length : 0, menuOpen, paused,
+      vs: vs ? { playing: vs.playing, practice: vs.practice, solo: vs.snap.solo } : null, vsScore: run && run.mode === 'vs' ? vsScore() : null, vsDone: run && run.vsDone ? run.vsDone : 0, title: !$('ovTitle').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, loading: !$('ovLoading').hidden, code2: !$('ovCode').hidden, settings: !$('ovSet').hidden, stats: !$('ovStats').hidden,
+      save: JSON.parse(JSON.stringify(save)), last: lastResult, cfg: JSON.parse(JSON.stringify(cfg())), clues: run && run.puz ? run.puz.givens.filter(Boolean).length : 0, 
+    }),
+    cellPoint: i => pt(cells[i]), padPoint: d => pt($('pk' + d)),
+    advance(ms) { if (run) { run.ms += ms; $('timeTxt').textContent = fmtT(run.ms); } },
+    solveNow(leave) { if (!playing()) return false; const g = run.g; for (let c = 0; c < geo.NN; c++) if (!g.given[c] && c !== leave) g.put(c, g.sol[c]); afterChange([], 'put'); return true; },
+    fillCorrect(n) { const g = run.g; let k = 0; for (let c = 0; c < geo.NN && k < n; c++) if (!g.vals[c]) { g.put(c, g.sol[c]); k++; } afterChange([], 'put'); return k; },
+    empties: () => { const g = run.g, o = []; for (let c = 0; c < geo.NN; c++) if (!g.vals[c]) o.push(c); return o; },
+  };
+  window.__kb = Object.assign(window.__kb || {}, { ready: api.ready, state: api.state });
+  window.__sudoku = {
+    api, E, get run() { return run; }, get save() { return save; }, geo: () => geo,
+    start: (spec, mode) => { clearRun(); return startSpec(spec, mode || 'normal'); },
+    daily: dk => { clearRun(); return startDaily(dk); },
+    setSave(o) { save = Object.assign(defSave(), o); writeSave(); return save; },
+    persist: () => persist(true), readRun, title: showTitle, howto: () => showHowto(false), menu: openMenu, settings: openSettings, stats: showStats,
+    // a mid-solve Medium board (about 40% of the empty cells filled, one selected, a few notes) for the hub thumbnail
+    thumbScene() {
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb');
+      return startSpec({ size: 9, variant: 'n', level: 3, seed: 20261125 }, 'normal').then(() => {
+        const g = run.g; let k = 0;
+        for (let c = 0; c < geo.NN; c++) if (!g.given[c]) { if (k % 5 < 2) g.put(c, g.sol[c]); else if (k % 5 === 2) { g.toggleNote(c, g.sol[c]); g.toggleNote(c, (g.sol[c] % 9) + 1); } k++; }
+        sel = g.vals.findIndex(v => v === 0); persist(false); clearRun(); hideOverlays(); render(); return true;
+      });
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.sudoku.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

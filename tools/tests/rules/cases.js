@@ -93,6 +93,14 @@ async function runCases(T, opt = {}) {
     await check(g, 'own push gomoku save (stars, per-size wins, stats, settings, today\'s puzzle)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~gomoku~save': { v: JSON.stringify({ v: 1, pts: 9, w: { '15-2': { p: 6, w: 4 } }, stats: { plays: 6, wins: 4, pz: 3, fork: 2 }, set: { level: 2, me: 'b', n: 15, rule: 'renju', nums: 0, fbd: 1, conf: 2, fast: 0 }, dl: { last: 20261125, pts: 600, r: [[112, 1, 200]] }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'gomoku save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~gomoku~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'gomoku save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~gomoku~save': 'x' } }, A, { merge: true }));
+    // ナンバー工房（sudoku）：記録 kusoge.sudoku.save だけを同期する（とちゅうのパズル kusoge.sudoku.run・今日の1問のキャッシュ kusoge.sudoku.dc は端末だけ）
+    await check(g, 'own push sudoku save (points, per-board bests, stats, daily, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~sudoku~save': { v: JSON.stringify({ v: 1, pts: 47, st: { '9n-1': { n: 12, b: 161000, c: 10 } }, stats: { solved: 33, clean: 20, daily: 5, kids: 2 }, daily: { last: 20261125, streak: 3, max: 5, days: { 20261125: 241000 } }, cfg: { size: 9, variant: 'n', level: 2, auto: 1 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'sudoku save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~sudoku~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'sudoku save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~sudoku~save': 'x' } }, A, { merge: true }));
+    // はこはこ運送（crates）：記録 kusoge.crates.save だけを同期する（とちゅうのステージ .run・エディターの書きかけ .draft は端末だけ）
+    await check(g, 'own push crates save (stars, per-level bests, packs, stats, daily, editor codes)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~crates~save': { v: JSON.stringify({ v: 1, stars: 6, lv: { '1-1': { m: 3, p: 2, s: 3, pf: 1 }, '1-2': { m: 9, p: 2, s: 2 } }, pk: { 1: 3 }, stats: { plays: 5, clears: 3, pushes: 12, moves: 19 }, dl: { k: 20261125, m: 40, p: 12, s: 2, st: 1, bs: 1 }, ed: ['CR1:abc'], tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'crates save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~crates~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'crates save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~crates~save': 'x' } }, A, { merge: true }));
     // まなびの工房（manabi）：記録 kusoge.manabi.save だけを同期する（設定 prefs・howto・rep はこの端末だけ）
     await check(g, 'own push manabi save (xp, days, boxes, stats, quests, league)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: JSON.stringify({ v: 1, xp: 1250, d: [20406, 20407], g: { 20407: 30 }, goal: 20, b: { 'ct-eng-u01': 'ab12:0112' }, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, mk: { 'x-1': 62 }, set: { cr: 'JH', g: 0 }, tut: 1, gm: 40, fz: 1, hm: 0, hr: 5, cw: { S1: 2 }, ds: { d: 20407, xp: 30 }, dq: { d: 20407, c: [1, 0, 0] }, lg: { w: 2915, t: 1 }, sk: 0 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'manabi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: 7, t: now } } }, A, { merge: true }));
@@ -251,6 +259,10 @@ async function runCases(T, opt = {}) {
     await check(g3, 'reversi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { reversi: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'gomoku +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { gomoku: 1 }, A, { merge: true }));
     await check(g3, 'gomoku +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { gomoku: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'sudoku +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { sudoku: 1 }, A, { merge: true }));
+    await check(g3, 'sudoku +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { sudoku: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'crates +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { crates: 1 }, A, { merge: true }));
+    await check(g3, 'crates +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { crates: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'manabi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { manabi: 1 }, A, { merge: true }));
     await check(g3, 'manabi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { manabi: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'orchestra +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { orchestra: 1 }, A, { merge: true }));
@@ -353,6 +365,16 @@ async function runCases(T, opt = {}) {
     await check(g, 'minigolf: a look-alike id (minigolfx) is still unknown', 'deny', () => rtdb(T, 'PUT', `vs/queue/minigolfx/${A.uid}`, { n: 'x', t: TS, h: TS }, A));
     await check(g, 'minigolf: queue own remove', 'allow', () => rtdb(T, 'DELETE', `vs/queue/${golf}/${A.uid}`, undefined, A));
     await check(g, 'minigolf: room delete by the creator', 'allow', () => rtdb(T, 'DELETE', `vs/rooms/${roomGolf}`, undefined, A));
+
+    // sudoku (ナンバー工房) joins the battle games: its queue and its rooms are accepted like any other game's
+    const sdk = 'sudoku', roomSdk = rid('-rulestest');
+    cleanup.push(() => rtdb(T, 'DELETE', `vs/queue/${sdk}/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `vs/rooms/${roomSdk}`, undefined, A));
+    await check(g, 'sudoku: queue own set { n, t, h }', 'allow', () => rtdb(T, 'PUT', `vs/queue/${sdk}/${A.uid}`, { n: 'ライブA', t: TS, h: TS }, A));
+    await check(g, 'sudoku: read the game queue', 'allow', () => rtdb(T, 'GET', `vs/queue/${sdk}`, undefined, C));
+    await check(g, 'sudoku: room create with g = sudoku', 'allow', () => rtdb(T, 'PUT', `vs/rooms/${roomSdk}`, Object.assign(meta(A), { g: sdk }), A));
+    await check(g, 'sudoku: a look-alike id (sudokux) is still unknown', 'deny', () => rtdb(T, 'PUT', `vs/queue/sudokux/${A.uid}`, { n: 'x', t: TS, h: TS }, A));
+    await check(g, 'sudoku: queue own remove', 'allow', () => rtdb(T, 'DELETE', `vs/queue/${sdk}/${A.uid}`, undefined, A));
+    await check(g, 'sudoku: room delete by the creator', 'allow', () => rtdb(T, 'DELETE', `vs/rooms/${roomSdk}`, undefined, A));
 
     // planet (わくせいシミュレーター) joins the battle games: its queue and its rooms are accepted like any other game's
     const planet = 'planet', roomPlanet = rid('-rulestest');

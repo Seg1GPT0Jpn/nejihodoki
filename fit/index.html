@@ -1271,7 +1271,7 @@ if (VS) {
 if (window.KoboGame) KoboGame.register({
   id: GAME,
   pause() { paused = true; persist(true); },
-  resume() { if (!paused) return; if (!vs && playing() && !anyOverlay()) openMenu(); paused = false; lastT = now(); },
+  resume(reason) { if (reason === 'menu') { paused = false; lastT = now(); return; } if (!paused) return; if (!vs && playing() && !anyOverlay()) openMenu(); paused = false; lastT = now(); },
   save() { persist(true); },
   isIdle: () => !playing() && !vs,
   dispose() { cancelAnimationFrame(raf); },

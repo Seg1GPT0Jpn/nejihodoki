@@ -58,6 +58,11 @@ node tools/tests/gomoku-play.js               # 五目ならべ工房の通し�
 node tools/tests/unit/gomoku-engine.test.js    # 五目ならべ工房の中身（3つのルールの勝ち・黒の禁じ手・CPU が反則しない・毎回同じ手・強さの順・時間の上限・連続四の探索が別のしくみの全探索と一致・今日のパズル120問の最短と最初の手が1つの証明。約40秒）
 node tools/tests/unit/gomoku-online.test.js    # 五目ならべのオンライン用アダプター（gomoku/online.js：形のおかしい手・公開する状態が database.rules.json の形（行ごとの文字列）に収まる・盤と手順の文字列の往復・画面側の view・ホストがいなくなったときの順位）
 node tools/gomoku-puzzle-gen.js                # 今日のパズルの問題集 gomoku/puzzles.js を作り直す（公開したあとは作り直さない。同じ seed なら同じ問題集。約2分）
+node tools/tests/sudoku-play.js               # ナンバー工房の通し（本物のクリック・キーボード・メモ・戻す・ヒントの「なぜ？」・今日の1問・コード・Xとこども・途中保存・英語・画面サイズ×ライト/ダーク）
+node tools/tests/unit/sudoku-engine.test.js   # ナンバー工房の中身（解の数・むずかしさごとの採点・Xとこども盤・毎回同じ問題・コード・ヒントが全部正しい・戻す/やり直し・snapshot・Worker 用に純粋）
+node tools/tests/crates-play.js               # はこはこ運送の通し（本物のキー・タップで歩く/押す・戻す・ステージの選択・しかけ・きょうのステージ・合言葉・エディタ・途中保存・英語・画面サイズ×ライト/ダーク）
+node tools/tests/unit/crates-engine.test.js   # はこはこ運送の中身（ルール・すべる床・一方通行・ワープ台・戻す/やり直し・ソルバー・行き止まり検出・generator・合言葉・エディタの形・★）
+node tools/tests/unit/crates-levels.test.js   # はこはこ運送の80ステージ（全部解ける・最短の数が合う・別の幅優先探索と一致・しかけの出方・難しさの上がり方）
 node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
 node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
 node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）

@@ -239,3 +239,9 @@ Realtime Database：
 - Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'gomoku': 100000`＝★の合計）、旧ランキングの点の確認 `okCap(…'gomoku')`、プレイ回数の `plus1('gomoku')`、同期する保存のキー `kusoge~gomoku~save` の形の確認（`okEntAt` に1行）です。
 - Realtime Database で変わったのは、`"tr"` の許可するゲームの一覧 `^(colorcards|reversi)$` → `^(colorcards|reversi|gomoku)$`（19か所）だけです。五目ならべは `tr/gomoku/…` を使い、2人だけ・隠す手札なし。**盤は225マスで、`pd` の配列の添字（99まで）と文字列（24文字まで）の制限に収まるよう、「行ごとの文字列15個」で出します**（ルールの形は変えていません）。手は `{ t: 'mv', c: マス }`。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`、`node tools/tests/rules/run.js --only bots`（`rtdb:tr-gomoku` の許可と拒否・ボット2人の五目ならべの通しを含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「ナンバー工房」（sudoku）と「はこはこ運送」（crates）を足したとき（2026-11）
+- **Firestore と Realtime Database の両方**を貼り直してください（上の「1. Firestore のルール」「2. Realtime Database のルール」と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。**貼り直さないと、この2つのゲームはランキングに載りません。ナンバー工房の「オンライン対戦」は「つなげませんでした」になります**（ほかのゲームは今までどおり遊べます）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'sudoku': 100000`＝むずかしさの合計、`'crates': 240`＝★の合計）、旧ランキングの点の確認 `okCap(…'sudoku')` `okCap(…'crates')`、プレイ回数の `plus1('sudoku')` `plus1('crates')`、同期する保存のキー `kusoge~sudoku~save` `kusoge~crates~save` の形の確認（`okEntAt` に2行）です。
+- Realtime Database で変わったのは、`common/versus.js` の許可するゲームの一覧（`vs/queue`・`vs/rooms` の読み書きと `g` の確認の3か所）に `sudoku` が入っただけです（`…|minigolf|planet|sudoku`）。はこはこ運送はオンライン対戦がないので、Realtime Database は変わりません。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（ナンバー工房の保存・プレイ回数・対戦キュー／部屋、はこはこ運送の保存・プレイ回数を含む）、`node tools/tests/rules/run.js --only bots`。貼ったあと本番に対して `--live` を流してください。

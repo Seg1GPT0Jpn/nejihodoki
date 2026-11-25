@@ -1,0 +1,29 @@
+    {
+      id: 'crates', order: 29, path: 'crates/', added: '2026-11-25',
+      title: { ja: 'はこはこ運送', en: 'Crate Haul' },
+      short: { ja: 'はこはこ運送', en: 'Crate Haul' },
+      desc: { ja: '倉庫の箱を押して、ゴールの印にぴったり乗せる箱押しパズル。やさしい80ステージ（8つのパック）に、すべる床・一方通行・ワープ台のしかけ、毎日ひとつの「きょうのステージ」、合言葉でだれとでも同じステージが遊べる自動ステージ、自分でつくって合言葉で渡せるエディター。もどすは何回でも、ひとやすみ（ヒント）は次の一押しを教えてくれます。', en: 'Push the crates in a warehouse until each one sits on a goal mark. Eighty levels in eight packs with ice floors, one-way tiles and teleport pads, a new daily level every day, code levels anyone can replay (size-difficulty-number), and a level editor that checks your design with a solver. Undo is unlimited and a breather (hint) shows the next push.' },
+      label: { ja: '箱押しパズル', en: 'Crate-pushing puzzle' },
+      genres: ['puzzle'], tags: ['2d', 'stages', 'daily', 'endless', 'casual', 'relax'],
+      keywords: { ja: ['箱押し', '倉庫', '荷物', '運送', 'パズル', 'ステージ', 'もどす', 'すべる床', 'ワープ', '一方通行', 'エディター', 'きょうのステージ', '合言葉'], en: ['crate', 'box pushing', 'warehouse', 'puzzle', 'push', 'levels', 'undo', 'ice', 'teleport', 'one-way', 'level editor', 'daily level', 'code'] },
+      icon: 'img/icons/crates.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#e7d8bd"/><path d="M0 52h72v20H0z" fill="#8a93a8"/><path d="M0 52h72" stroke="#5a6278" stroke-width="3"/><g stroke="#8a93a8" stroke-width="1" opacity=".5"><path d="M0 62h72M18 52v20M36 52v20M54 52v20"/></g><rect x="8" y="30" width="24" height="24" rx="3" fill="#c98b45" stroke="#85522a" stroke-width="2.5"/><path d="M20 30v24M8 42h24" stroke="#6a4524" stroke-width="3"/><rect x="36" y="38" width="20" height="16" rx="3" fill="#7bbf6a" stroke="#3e8438" stroke-width="2.5"/><path d="M41 46l4 4 8-8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="36" y="14" width="22" height="22" rx="3" fill="#d79b57" stroke="#85522a" stroke-width="2.5"/><path d="M47 14v22" stroke="#6a4524" stroke-width="3"/><circle cx="62" cy="26" r="7" fill="#ff8a3d" stroke="#d4631d" stroke-width="2"/><path d="M56 22a7 6 0 0 1 12 0z" fill="#2f6fd0"/><path d="M4 20h14" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 4"/></svg>',
+      thumb: 'img/thumbs/crates.webp', thumb2x: 'img/thumbs/crates@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished level (kusoge.crates.run, this device only); no online battle
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: false, stages: true },
+      versus: null,
+      // ★: the best stars of the 80 hand-made levels (3 for the optimal move count +15%, 2 for +60%, 1 for any clear), so the most you can reach is 240. Daily, code and editor levels count nothing here
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 240, maxRate: null },
+      rankSource: { key: 'kusoge.crates.save', paths: ['stars'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.crates.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.crates.save': '{ v:1, stars（80ステージの★の合計＝ランキング。lv から毎回計算し直す）, lv:{ "<パック>-<番号>":{ m（最短の歩数）, p（最短の押した数）, s（★ 0〜3）, pf（押す回数が最短で解いた 1/0）} }, pk:{ "<パック 1〜8>":クリアしたステージの数 }, stats:{ plays, clears, pushes, moves, undos, resets, hints, three（★3の数）, perfect（押す回数が最短のステージの数）, daily（きょうのステージのクリア数）, rand（合言葉のステージのクリア数）, edit（エディターで解けると確かめた数）}, set:{ dead（行き止まりの警告 1/0）, pad（十字ボタン 1/0）, hand }, dl:{ k（最後にクリアした日 YYYYMMDD）, m, p, s（その日の記録）, st（連続日数）, bs（最長の連続日数）}, ed:[自分のステージの合言葉 CR1:…（12まで）], tut }',
+        'kusoge.crates.run': 'とちゅうのステージ { kind（campaign|daily|random）, id, name, log（手の列 urdl／押した手は大文字）, hints（ひとやすみの残り）, rows（campaign 以外の地図）, par, code, dk, t }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.crates.draft': 'エディターの書きかけ（合言葉 CR1:…）。この端末だけ（同期しない）',
+        'kusoge.crates.howto': 'ルールを見た（\'1\'）',
+      },
+      // stars, per-level bests (fewest moves/pushes: minPos), counters and the daily streak only grow (max); the saved editor codes are a union; the last setup is a whole value (newest)
+      sync: {
+        'kusoge.crates.save': { fields: { stars: 'max', lv: { each: { fields: { m: 'minPos', p: 'minPos', s: 'max', pf: 'max' }, rest: 'max' } }, pk: { each: 'max' }, stats: { each: 'max' }, set: 'newest', dl: { fields: { k: 'max', m: 'minPos', p: 'minPos', s: 'max', st: 'max', bs: 'max' }, rest: 'max' }, ed: 'union', tut: 'max' }, rest: 'newest' },
+      },
+    },

@@ -370,6 +370,10 @@ async function resume(env) {
   const b = await st(p);
   check('continue gives the same board, the same placed pieces and about the same time', b.id === '4-3' && b.placed === 2 && b.puzzle === a.puzzle && b.ms >= 12000 && b.ms < 30000, { a: a.ms, b: b.ms });
   check('the pieces are where they were', JSON.stringify(b.pieces.map(x => x.at)) === JSON.stringify(a.pieces.map(x => x.at)), null);
+  // regression: the pause menu's own "resume" (KoboGame resume reason 'menu') must not open the menu again
+  await p.evaluate(() => __fit.menu()); await p.waitForSelector('.kb-layer--pause .kb-btn--primary');
+  await p.click('.kb-layer--pause .kb-btn--primary'); await p.waitForTimeout(600);
+  check('"Resume" in the pause menu closes it for good (the menu does not reopen itself)', (await p.evaluate(() => document.querySelectorAll('.kb-layer--pause').length)) === 0, null);
   await solveByHand(p); await waitResult(p);
   check('and it can be finished', (await st(p)).last.stars >= 1, await st(p));
   check('the saved puzzle is cleared when it is solved', (await stored(p, RUN)) === null, null);

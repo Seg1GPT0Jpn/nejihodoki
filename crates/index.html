@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>はこはこ運送</title>
+<meta name="theme-color" content="#17181f">
+<meta name="description" content="倉庫の荷物を押して、ゴールの印にぴったり乗せる箱押しパズル。80ステージ、すべる床・一方通行・ワープ台、毎日のステージ、合言葉で遊ぶ自動ステージ、自分でつくるエディター。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="はこはこ運送">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* はこはこ運送: a warm warehouse chrome. --kb-* are the shared tokens re-tinted; --cr-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #17181f; --kb-surface: #232632; --kb-surface-2: #2d3140; --kb-sunken: #12131a; --kb-line: #43485c;
+  --kb-ink: #f3eddf; --kb-dim: #b9b4a5;
+  --kb-accent: #ffb93b; --kb-accent-ink: #2b1c00; --kb-accent-text: #ffcd6b; --kb-accent-soft: rgba(255, 185, 59, .16);
+  --kb-scrim: rgba(8, 9, 14, .74); --kb-focus: #8fd0ff;
+  --cr-panel: rgba(255, 255, 255, .06); --cr-card: linear-gradient(#2b2f3e, #222534); --cr-go: linear-gradient(#ffd070, #f0a21f); --cr-go-shadow: #8a5a05;
+  --cr-good: #7be0a0; --cr-bad: #ff8f80; --cr-star: #ffc83d; --cr-star-off: #4a4f63; --cr-key: #343a4d; --cr-key-shadow: #1b1e2a; --cr-title: linear-gradient(90deg, #ffe08a, #ffb93b 50%, #ff8a3d);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f1e9da; --kb-surface: #fffaf0; --kb-surface-2: #eadfca; --kb-sunken: #e0d3b8; --kb-line: #cdbf9f;
+    --kb-ink: #2b2418; --kb-dim: #6a5f48;
+    --kb-accent: #c27a00; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5600; --kb-accent-soft: rgba(194, 122, 0, .12);
+    --kb-scrim: rgba(43, 36, 24, .45); --kb-focus: #1f6fbf;
+    --cr-panel: rgba(43, 36, 24, .06); --cr-card: linear-gradient(#fffaf0, #f3e9d3); --cr-go: linear-gradient(#e8a02a, #c27a00); --cr-go-shadow: #7d4f00;
+    --cr-good: #2c8a52; --cr-bad: #c2412a; --cr-star: #d08a00; --cr-star-off: #cdbf9f; --cr-key: #efe3cb; --cr-key-shadow: #cdbf9f; --cr-title: linear-gradient(90deg, #9a6200, #c27a00 50%, #c2501a);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f1e9da; --kb-surface: #fffaf0; --kb-surface-2: #eadfca; --kb-sunken: #e0d3b8; --kb-line: #cdbf9f;
+  --kb-ink: #2b2418; --kb-dim: #6a5f48;
+  --kb-accent: #c27a00; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5600; --kb-accent-soft: rgba(194, 122, 0, .12);
+  --kb-scrim: rgba(43, 36, 24, .45); --kb-focus: #1f6fbf;
+  --cr-panel: rgba(43, 36, 24, .06); --cr-card: linear-gradient(#fffaf0, #f3e9d3); --cr-go: linear-gradient(#e8a02a, #c27a00); --cr-go-shadow: #7d4f00;
+  --cr-good: #2c8a52; --cr-bad: #c2412a; --cr-star: #d08a00; --cr-star-off: #cdbf9f; --cr-key: #efe3cb; --cr-key-shadow: #cdbf9f; --cr-title: linear-gradient(90deg, #9a6200, #c27a00 50%, #c2501a);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); max-width: 760px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+header { flex: none; display: flex; align-items: center; gap: 4px; padding: 4px 6px 0; }
+h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-display); background: var(--cr-title); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--cr-panel); border: 1px solid var(--kb-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+#hud { flex: none; display: flex; gap: 6px; padding: 4px 8px; justify-content: center; flex-wrap: nowrap; }
+.chip { flex: 0 1 auto; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 10px; min-height: 40px; border-radius: 12px; background: var(--cr-panel); border: 1px solid var(--kb-line); font-size: 11px; color: var(--kb-dim); white-space: nowrap; }
+.chip b { font: 800 16px var(--kb-font-body); color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.chip.lv { flex: 1 1 auto; align-items: flex-start; overflow: hidden; } .chip.lv b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+#stage { flex: 1 1 auto; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; padding: 4px 8px; }
+#board { display: block; touch-action: none; border-radius: 10px; box-shadow: 0 4px 18px rgba(0, 0, 0, .35); outline-offset: 3px; }
+#status { flex: none; min-height: 34px; box-sizing: border-box; padding: 5px 12px; margin: 0 8px; border-radius: 12px; font-size: 12.5px; font-weight: 800; line-height: 1.35; text-align: center; color: var(--kb-ink); background: var(--cr-panel); border: 1px solid var(--kb-line); display: flex; align-items: center; justify-content: center; }
+#status.warn { border-color: var(--cr-bad); color: var(--cr-bad); }
+#status.good { border-color: var(--cr-good); }
+#ctl { flex: none; display: flex; align-items: stretch; justify-content: space-between; gap: 8px; padding: 6px 8px 8px; }
+#acts { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: center; }
+.act { min-width: 0; min-height: 46px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--cr-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--cr-key-shadow); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 6px; display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+.act svg { width: 18px; height: 18px; flex: none; }
+.act:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--cr-key-shadow); }
+.act:disabled { opacity: .42; cursor: default; box-shadow: none; }
+.act small { font-weight: 500; opacity: .8; font-size: 10.5px; }
+#dpad { flex: none; display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
+#dpad button { border-radius: 14px; border: 1px solid var(--kb-line); background: var(--cr-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--cr-key-shadow); cursor: pointer; padding: 0; display: grid; place-items: center; touch-action: none; }
+#dpad button svg { width: 22px; height: 22px; }
+#dpad button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--cr-key-shadow); }
+#dpad .u { grid-area: 1 / 2; } #dpad .l { grid-area: 2 / 1; } #dpad .r { grid-area: 2 / 3; } #dpad .d { grid-area: 3 / 2; }
+body.nodpad #dpad { display: none; }
+#rp { flex: none; padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+#rp .rpb { display: flex; gap: 6px; justify-content: center; }
+#rp .act { flex: 1 1 0; max-width: 90px; } #rpRange { width: 100%; accent-color: var(--kb-accent); height: 28px; }
+#rpInfo { text-align: center; font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(224px, 250px); grid-template-rows: auto auto auto 1fr; grid-template-areas: "hd hd" "st hu" "st sa" "st ct"; column-gap: 8px; }
+  header { grid-area: hd; padding-top: 0; }
+  #hud { grid-area: hu; flex-wrap: wrap; padding: 2px 8px 2px 0; } .chip { min-height: 32px; padding: 1px 8px; } .chip b { font-size: 14px; } .chip.lv { flex: 1 1 100%; }
+  #stage { grid-area: st; padding: 2px 4px; } #status { grid-area: sa; margin: 0 8px 0 0; min-height: 28px; padding: 2px 8px; font-size: 12px; }
+  #ctl { grid-area: ct; padding: 4px 8px 4px 0; align-items: flex-start; } #rp { grid-area: ct; padding: 4px 8px 4px 0; }
+  #acts { flex: none; grid-template-columns: repeat(2, 44px); gap: 4px; align-content: start; } .act { min-height: 44px; font-size: 13px; padding: 2px; } .act span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .act svg { width: 20px; height: 20px; } #bHint::after { content: attr(data-n); font-weight: 800; }
+  #rp .act span { position: static; width: auto; height: auto; clip: auto; } #dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 2px; }
+  #rp .act { min-height: 40px; }
+}
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .2s ease-out; }
+.panel { width: 100%; max-width: 460px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--cr-card); border: 1px solid var(--kb-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); animation: rise .25s ease-out; }
+.panel > * { flex: none; }
+.panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font: 400 22px var(--kb-font-display); color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel h2.logo { background: var(--cr-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 26px; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--cr-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 4px 0 var(--cr-go-shadow); text-decoration: none; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--cr-go-shadow); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--cr-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--kb-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; box-sizing: border-box; margin-top: 6px; padding: 6px 12px; border-radius: 16px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); text-align: left; cursor: pointer; }
+.qm:first-child { margin-top: 0; }
+.qm b { display: block; font-size: 15px; } .qm small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.qm.plain { border-color: var(--kb-line); background: var(--cr-panel); }
+.og { margin: 8px 0 0; text-align: left; }
+.og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--cr-panel); border: 1px solid var(--kb-line); flex-wrap: wrap; }
+.opt { flex: 1 1 0; min-width: 40px; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.fld { display: flex; gap: 6px; } .fld input { flex: 1 1 auto; min-width: 0; min-height: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 15px var(--kb-font-body); padding: 4px 10px; user-select: text; -webkit-user-select: text; }
+.fld .btn { width: auto; margin-top: 0; flex: none; min-width: 52px; }
+.err { color: var(--cr-bad); font-size: 12px; font-weight: 800; min-height: 16px; margin: 4px 0 0; }
+.stars { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
+.stars svg { width: 44px; height: 44px; } .stars .on { fill: var(--cr-star); stroke: #8a5600; } .stars .off { fill: var(--cr-star-off); stroke: transparent; }
+.stars svg.pop { animation: starpop .5s ease-out both; }
+.big { font: 400 30px var(--kb-font-display); line-height: 1.15; color: var(--kb-ink); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6px 6px; text-align: left; font-size: 13px; font-weight: 800; }
+.kv span:nth-child(odd) { color: var(--kb-dim); font-weight: 500; } .kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.pk { margin: 8px 0 12px; text-align: left; }
+.pk .ph { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 4px; flex-wrap: wrap; }
+.pk .ph b { font: 400 16px var(--kb-font-display); color: var(--kb-accent-text); } .pk .ph small { color: var(--kb-dim); font-size: 11.5px; }
+.pk .ph .sum { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--cr-star); white-space: nowrap; }
+.pk .pd { margin: 0 2px 6px; font-size: 11.5px; color: var(--kb-dim); line-height: 1.4; }
+.pk.lock { opacity: .62; }
+.nodes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 8px; border-radius: 16px; background: var(--cr-panel); border: 1px solid var(--kb-line); position: relative; }
+.nd { position: relative; min-width: 0; min-height: 54px; padding: 4px 0 2px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--cr-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--cr-key-shadow); font: 800 16px var(--kb-font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.nd:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--cr-key-shadow); }
+.nd.done { border-color: var(--cr-good); } .nd.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent), 0 3px 0 var(--cr-key-shadow); }
+.nd:disabled { opacity: .5; cursor: default; box-shadow: none; }
+.nd .s { display: flex; gap: 1px; height: 11px; } .nd .s svg { width: 11px; height: 11px; } .nd .s .on { fill: var(--cr-star); } .nd .s .off { fill: var(--cr-star-off); }
+.nd svg.lk { width: 16px; height: 16px; }
+.howto { max-width: 480px; text-align: left; } .howto h2 { text-align: center; }
+.howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.code { font: 800 16px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; padding: 6px 10px; border-radius: 10px; background: var(--cr-panel); border: 1px dashed var(--kb-line); user-select: all; -webkit-user-select: all; word-break: break-all; }
+.toastbar { position: fixed; left: 50%; top: 20%; transform: translateX(-50%); z-index: 85; max-width: 90%; padding: 8px 16px; border-radius: 14px; background: rgba(20, 20, 28, .9); color: #fff; font-weight: 800; font-size: 14px; pointer-events: none; animation: rise .2s; text-align: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#editor { position: fixed; inset: 0; z-index: 70; background: var(--kb-bg); display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes starpop { from { transform: scale(.3) rotate(-30deg); opacity: 0; } 60% { transform: scale(1.25) rotate(8deg); opacity: 1; } }
+@keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+#board.shake { animation: shake .25s; }
+@media (prefers-reduced-motion: reduce) { .panel, .overlay, .stars svg.pop, #board.shake, .toastbar { animation: none !important; } }
+@media (max-width: 379px) { h1 { font-size: 15px; } .chip { padding: 2px 7px; } #acts { gap: 5px; } .act { font-size: 12.5px; gap: 3px; padding: 2px 3px; } }
+body.thumb header, body.thumb #hud, body.thumb #ctl, body.thumb #status, body.thumb #rp { display: none !important; }
+body.thumb #app { display: flex !important; flex-direction: column; max-width: none; } body.thumb #stage { flex: 1 1 auto; padding: 10px; } body.thumb #board { box-shadow: 0 6px 22px rgba(0, 0, 0, .3); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 data-i18n>はこはこ運送</h1>
+    <button class="icon" id="sndBtn" type="button" aria-label="サウンド" data-i18n-attr="aria-label" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <div id="hud">
+    <span class="chip lv"><span id="lLevel" data-i18n>ステージ</span><b id="vLevel">-</b></span>
+    <span class="chip"><span id="lMoves" data-i18n>歩数</span><b id="vMoves">0</b></span>
+    <span class="chip"><span id="lPushes" data-i18n>押した数</span><b id="vPushes">0</b></span>
+    <span class="chip"><span id="lBest" data-i18n>ベスト</span><b id="vBest">-</b></span>
+  </div>
+  <div id="stage"><canvas id="board" tabindex="0" role="application" aria-label="倉庫の盤" data-i18n-attr="aria-label"></canvas></div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="ctl">
+    <div id="acts">
+      <button class="act" id="bUndo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -6)"/></svg><span data-i18n>もどす</span></button>
+      <button class="act" id="bRedo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l5 5-5 5"/><path d="M20 12H10a6 6 0 0 0 0 12" transform="translate(0 -6)"/></svg><span data-i18n>やり直す</span></button>
+      <button class="act" id="bReset" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg><span data-i18n>最初から</span></button>
+      <button class="act" id="bHint" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11h9a3 3 0 0 1 0 6H7zM16 11V9M10 7c0-1.5 1-2 1-3.5M13 7c0-1.5 1-2 1-3.5"/></svg><span id="hintLbl" data-i18n>ひとやすみ</span></button>
+    </div>
+    <div id="dpad" role="group" aria-label="十字ボタン" data-i18n-attr="aria-label">
+      <button class="u" type="button" data-d="0" aria-label="上" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 6l8 10H4z"/></svg></button>
+      <button class="l" type="button" data-d="3" aria-label="左" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 12l10-8v16z"/></svg></button>
+      <button class="r" type="button" data-d="1" aria-label="右" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 12L8 4v16z"/></svg></button>
+      <button class="d" type="button" data-d="2" aria-label="下" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 18L4 8h16z"/></svg></button>
+    </div>
+  </div>
+  <div id="rp" hidden>
+    <div id="rpInfo"></div>
+    <input id="rpRange" type="range" min="0" max="0" value="0" aria-label="手順" data-i18n-attr="aria-label">
+    <div class="rpb">
+      <button class="act" id="rpFirst" type="button" aria-label="最初へ" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="act" id="rpPrev" type="button" aria-label="ひとつ前" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5v14L6 12z"/></svg></button>
+      <button class="act" id="rpPlay" type="button" aria-label="再生" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+      <button class="act" id="rpNext" type="button" aria-label="ひとつ先" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l10-7z"/></svg></button>
+      <button class="act" id="rpLast" type="button" aria-label="最後へ" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 5h-2v14h2zM4 5v14l11-7z"/></svg></button>
+      <button class="act" id="rpDone" type="button" data-i18n>とじる</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="panel">
+    <h2 class="logo" id="tTitle" data-i18n>はこはこ運送</h2>
+    <p id="tSub" data-i18n>荷物を押して、ゴールの印にぴったり乗せよう。</p>
+    <div class="scroll" id="tList"></div>
+    <div class="foot">
+      <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>あそびかた</button><a class="btn sub" href="../" data-i18n>ゲーム一覧へ</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovMap" hidden role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+  <div class="panel" style="max-width:520px">
+    <h2 id="mapTitle" data-i18n>ステージをえらぶ</h2>
+    <p id="mapSub"></p>
+    <div class="scroll" id="mapBody"></div>
+    <button class="btn sub" id="mapClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovRandom" hidden role="dialog" aria-modal="true" aria-labelledby="rdTitle">
+  <div class="panel">
+    <h2 id="rdTitle" data-i18n>合言葉でステージ</h2>
+    <p data-i18n>大きさ・むずかしさ・番号が同じなら、だれでも同じステージが出ます。</p>
+    <div class="scroll">
+      <div class="og"><div class="ol" data-i18n>大きさ</div><div class="seg" id="rdSize" role="group"></div></div>
+      <div class="og"><div class="ol" data-i18n>むずかしさ</div><div class="seg" id="rdDiff" role="group"></div></div>
+      <div class="og"><div class="ol" data-i18n>番号</div><div class="fld"><input id="rdSeed" inputmode="numeric" maxlength="10" autocomplete="off" aria-label="番号" data-i18n-attr="aria-label"><button class="btn sub" id="rdDice" type="button" aria-label="ランダム" data-i18n-attr="aria-label">&#9860;</button></div></div>
+      <div class="og"><div class="ol" data-i18n>合言葉（大きさ-むずかしさ-番号）</div><div class="fld"><input id="rdCode" autocomplete="off" maxlength="20" aria-label="合言葉" data-i18n-attr="aria-label" placeholder="8-2-12345"></div></div>
+      <p class="err" id="rdErr" role="alert"></p>
+    </div>
+    <button class="btn" id="rdGo" type="button" data-i18n>はじめる</button>
+    <button class="btn link" id="rdClose" type="button" data-i18n>もどる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="panel">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <div class="stars" id="rStars" aria-hidden="true"></div>
+      <div class="big" id="rBig"></div>
+      <div id="rNew" class="newrec" hidden></div>
+      <div class="kv" id="rKv"></div>
+      <div id="rCode"></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rNext" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rAgain" type="button" data-i18n>もう一度</button><button class="btn sub" id="rReplay" type="button" data-i18n>リプレイ</button></div>
+    <button class="btn link" id="rMap" type="button" data-i18n>ステージ一覧へ</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle" data-i18n>あそびかた</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>はじめる</button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+<div id="editor" hidden></div>
+
+<script src="art.js"></script>
+<script src="engine.js"></script>
+<script src="levels.js"></script>
+<script src="editor.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// はこはこ運送 — a warehouse crate-pushing puzzle. The rules, the solver and the level generator live in engine.js (pure, runs in node too);
+// the 80 hand-made levels are levels.js (every one verified by the solver, see tools/tests/unit/crates-levels.test.js); art.js draws the board.
+// This file is the table: the board canvas, input (keys, swipe, d-pad, tap-to-walk), the level map, the daily and code levels, results, replay and saves.
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  'はこはこ運送': 'Crate Haul', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'All games', 'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '言語 / Language': 'Language', 'とじる': 'Close', 'もどる': 'Back',
+  'ステージ': 'Level', '歩数': 'Moves', '押した数': 'Pushes', 'ベスト': 'Best', 'もどす': 'Undo', 'やり直す': 'Redo', '最初から': 'Restart', 'ひとやすみ': 'Breather', '倉庫の盤': 'Warehouse board', '十字ボタン': 'D-pad', '上': 'Up', '下': 'Down', '左': 'Left', '右': 'Right',
+  '手順': 'Step', '最初へ': 'To start', 'ひとつ前': 'Previous', '再生': 'Play', 'ひとつ先': 'Next', '最後へ': 'To end', '荷物を押して、ゴールの印にぴったり乗せよう。': 'Push the crates onto the goal marks.',
+  'あそびかた': 'How to play', 'ステージをえらぶ': 'Choose a level', '合言葉でステージ': 'Level by code', '大きさ・むずかしさ・番号が同じなら、だれでも同じステージが出ます。': 'The same size, difficulty and number always make the same level for everyone.',
+  '大きさ': 'Size', 'むずかしさ': 'Difficulty', '番号': 'Number', 'ランダム': 'Random', '合言葉': 'Code', '合言葉（大きさ-むずかしさ-番号）': 'Code (size-difficulty-number)', 'はじめる': 'Start',
+  'もう一度': 'Try again', 'リプレイ': 'Replay', 'ステージ一覧へ': 'Level list',
+}});
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.CratesEngine, ART = window.CratesArt, LV = window.CratesLevels, ED = window.CratesEditor || null;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'crates';
+const SAVE_KEY = 'kusoge.crates.save';   // records and settings (registry: per-field merge)
+const RUN_KEY = 'kusoge.crates.run';     // the unfinished level on this device (not synced)
+const HOWTO_KEY = 'kusoge.crates.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const coarse = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name) { if (A) A.sfx(name); }
+const DIRNAME = [L('上', 'up'), L('右', 'right'), L('下', 'down'), L('左', 'left')];
+const STAR = '<svg viewBox="0 0 24 24" class="%c" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8z" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+const star = on => STAR.replace('%c', on ? 'on' : 'off');
+const LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+// ---------- save ----------
+const PACKN = LV.PACKS.length;
+function newSave() { return { v: 1, stars: 0, lv: {}, pk: {}, stats: {}, set: { dead: 1, pad: coarse ? 1 : 0, hand: 0 }, dl: { k: 0, m: 0, p: 0, s: 0, st: 0, bs: 0 }, ed: [], tut: 0 }; }
+function readSave() {
+  let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = newSave(); if (!o || typeof o !== 'object') return s;
+  const n = (v, d) => (Number.isFinite(Number(v)) ? Math.max(0, Math.floor(Number(v))) : d);
+  if (o.lv && typeof o.lv === 'object') for (const id of Object.keys(o.lv)) if (LV.byId[id]) { const r = o.lv[id] || {}; s.lv[id] = { m: n(r.m, 0), p: n(r.p, 0), s: clamp(n(r.s, 0), 0, 3), pf: r.pf ? 1 : 0 }; }
+  if (o.stats && typeof o.stats === 'object') for (const k of Object.keys(o.stats)) s.stats[k] = n(o.stats[k], 0);
+  if (o.set && typeof o.set === 'object') { for (const k of ['dead', 'pad', 'hand']) if (k in o.set) s.set[k] = o.set[k] ? 1 : 0; }
+  if (o.dl && typeof o.dl === 'object') for (const k of ['k', 'm', 'p', 's', 'st', 'bs']) s.dl[k] = n(o.dl[k], 0);
+  if (Array.isArray(o.ed)) s.ed = o.ed.filter(c => typeof c === 'string' && E.decodeLevel(c)).slice(0, 12);
+  s.tut = n(o.tut, 0); derive(s); return s;
+}
+// totals that are always recomputed from the per-level records (so a merge from another device stays consistent)
+function derive(s) {
+  s.stars = 0; s.pk = {}; let three = 0, perfect = 0;
+  for (const p of LV.PACKS) { let c = 0; for (const l of p.levels) { const r = s.lv[l.id]; if (r && r.s > 0) { c++; s.stars += r.s; if (r.s === 3) three++; if (r.pf) perfect++; } } if (c) s.pk[p.id] = c; }
+  s.stats.three = three; s.stats.perfect = perfect;
+}
+let save = readSave();
+function writeSave() { derive(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+const bump = (k, n) => { save.stats[k] = (save.stats[k] || 0) + (n == null ? 1 : n); };
+const packCleared = id => save.pk[id] || 0;
+const packUnlocked = id => id <= 1 || packCleared(id - 1) >= 7 || DEBUGUNLOCK;
+const levelUnlocked = id => { const l = LV.byId[id]; if (!l) return false; if (!packUnlocked(l.pack)) return false; const r = save.lv[id]; if (r && r.s > 0) return true; return l.no <= 3 || packCleared(l.pack) >= l.no - 3 || DEBUGUNLOCK; };
+let DEBUGUNLOCK = false;
+const nextLevelId = id => { const l = LV.byId[id]; if (!l) return null; const p = LV.PACKS[l.pack - 1]; if (l.no < p.levels.length) return p.levels[l.no].id; return l.pack < PACKN ? LV.PACKS[l.pack].levels[0].id : null; };
+const levelCache = {};
+function getLevel(id) { const d = LV.byId[id]; if (!d) return null; if (!levelCache[id]) levelCache[id] = E.parse(d.rows, { id }); return levelCache[id]; }
+
+// ---------- the session ----------
+let S = null;            // the level on the table
+let V = { mv: null, t0: 0 };   // visual: the move being animated
+let BD = { s: 24, ox: 0, oy: 0, dpr: 1, w: 0, h: 0 };
+const cv = $('board'), ctx = cv.getContext('2d');
+let dark = true, deadSet = new Set(), padIdx = {};
+const dateKeyNow = () => (PF && PF.jstDateKey ? PF.jstDateKey() : (() => { const d = new Date(Date.now() + 9 * 3600e3); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); })());
+function mkSession(o) {
+  const L0 = o.L, g = o.log ? E.loadGame(L0, o.log) || E.newGame(L0) : E.newGame(L0);
+  const padOrder = []; for (let i = 0; i < L0.n; i++) if (L0.t[i] === E.T.PAD && L0.padTo[i] > i) padOrder.push(i);
+  padIdx = {}; padOrder.forEach((i, k) => { padIdx[i] = k; padIdx[L0.padTo[i]] = k; });
+  return Object.assign({ kind: 'campaign', id: '', name: '', par: null, hints: 3, hintsUsed: 0, undos: 0, restarts: 0, hint: null, prev: null, walk: null, rp: null, over: false, g, L: L0, dir: 2, menu: false, t0: Date.now(), ms: 0, shown: false, code: '', rows: null, dk: 0 }, o, { L: L0, g });
+}
+const cur = () => S.g.cur;
+function setStatus(txt, cls) { const el = $('status'); el.textContent = txt || ''; el.className = cls || ''; }
+function toast(msg, ms) {
+  const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 1600);
+}
+const TIPS = {
+  '1-1': ['矢印キーか、盤をなぞるか、十字ボタンで動こう。箱に当たると押せるよ。', 'Move with the arrow keys, a swipe or the D-pad. Walk into a crate to push it.'],
+  '1-2': ['箱は押すだけ。引けないから、壁ぎわに押し込みすぎないでね。', 'You can only push, never pull. Do not shove a crate into a corner.'],
+  '1-4': ['まちがえたら「もどす」（Uキー）。何回でももどせるよ。', 'Made a mistake? Undo (U key) as many times as you like.'],
+  '1-9': ['遠くのマスをタップすると道すじが出る。もう一度タップで歩く。', 'Tap a far cell to preview the path, then tap it again to walk there.'],
+  '5-1': ['氷（水色の床）にのった箱は、止まるまですべる。人は普通に歩けるよ。', 'A crate on ice (the pale blue floor) keeps sliding. You walk normally.'],
+  '6-1': ['矢印の床へは、矢印の向きにしか入れない（人も箱も）。', 'You can only enter an arrow tile along its arrow (you and crates).'],
+  '7-1': ['箱が数字の台で止まると、同じ数字の台へとぶ。人は台の上をそのまま歩ける。', 'A crate that stops on a numbered pad jumps to its twin. You can walk over pads.'],
+};
+
+// ---------- layout and drawing ----------
+function themeIsDark() { return !(UI && UI.theme && UI.theme.resolved && UI.theme.resolved() === 'light'); }
+function fit() {
+  if (!S) return;
+  const st = $('stage'), r = st.getBoundingClientRect(); const aw = Math.max(40, r.width - 16), ah = Math.max(40, r.height - 8);
+  const s = Math.floor(clamp(Math.min(aw / S.L.W, ah / S.L.H), 12, 64)), dpr = Math.min(window.devicePixelRatio || 1, 3);
+  BD = { s, ox: 0, oy: 0, dpr, w: s * S.L.W, h: s * S.L.H };
+  cv.style.width = BD.w + 'px'; cv.style.height = BD.h + 'px'; cv.width = Math.round(BD.w * dpr); cv.height = Math.round(BD.h * dpr);
+  kick();
+}
+var dirty = true, raf = 0;
+const cellXY = i => ({ x: (i % S.L.w) - 1, y: Math.floor(i / S.L.w) - 1 });
+function frame(now) {
+  raf = 0; if (!S) return;
+  const l = S.L, st = S.rp ? S.rp.steps[S.rp.i].st : cur().st;
+  const anim = V.mv && now - V.mv.t0 < V.mv.dur;
+  const need = anim || S.hint || S.prev || deadSet.size || dirty || padPulse(l);
+  if (need) {
+    dark = themeIsDark(); dirty = false;
+    ctx.setTransform(BD.dpr, 0, 0, BD.dpr, 0, 0);
+    let pl = null, boxes = null;
+    const pc = cellXY(st.p); pl = { x: pc.x, y: pc.y, dir: S.dir, step: 0 };
+    boxes = st.b.map(i => Object.assign(cellXY(i), { i }));
+    if (V.mv) {
+      const k = clamp((now - V.mv.t0) / V.mv.dur, 0, 1), e = reduceMotion.matches ? 1 : 1 - Math.pow(1 - k, 2);
+      pl.x = V.mv.p0.x + (V.mv.p1.x - V.mv.p0.x) * Math.min(1, e * 1.0); pl.y = V.mv.p0.y + (V.mv.p1.y - V.mv.p0.y) * Math.min(1, e); pl.step = k;
+      if (V.mv.box) { const b = boxes.find(q => q.i === V.mv.box.to); if (b) { b.x = V.mv.box.a.x + (V.mv.box.b.x - V.mv.box.a.x) * e; b.y = V.mv.box.a.y + (V.mv.box.b.y - V.mv.box.a.y) * e; if (V.mv.box.pop && k > 0.7) b.pop = (k - 0.7) / 0.3; } }
+      if (k >= 1) V.mv = null;
+    }
+    ART.draw(ctx, l, st, { s: BD.s, ox: 0, oy: 0, dark, t: now, pl, boxes, dead: S.rp ? null : deadSet, hint: S.hint && !S.rp ? S.hint.draw : null, prev: S.prev && !S.rp ? S.prev.draw : null, pads: padIdx });
+  }
+  if (S && (V.mv || S.hint || S.prev || deadSet.size || padPulse(l))) raf = requestAnimationFrame(frame);
+}
+const padPulse = l => !!l.special.pad || !!l.special.one;
+function kick() { dirty = true; if (!raf) raf = requestAnimationFrame(frame); }
+function hud() {
+  if (!S) return;
+  const c = S.rp ? { moves: S.rp.steps[S.rp.i].moves, pushes: S.rp.steps[S.rp.i].pushes } : cur();
+  $('vLevel').textContent = S.name || S.id; $('vMoves').textContent = c.moves; $('vPushes').textContent = c.pushes;
+  const b = S.best; $('vBest').textContent = b && b.m ? String(b.m) : '-';
+  $('bUndo').disabled = !!S.rp || !S.g.hist.length; $('bRedo').disabled = !!S.rp || !S.g.redo.length; $('bReset').disabled = !!S.rp || (!S.g.hist.length && !cur().log);
+  $('bHint').disabled = !!S.rp || S.over; $('bHint').dataset.n = S.hints > 0 ? S.hints : ''; $('hintLbl').textContent = S.hints > 0 ? T('ひとやすみ') + ' ' + S.hints : T('ひとやすみ');
+  $('ctl').hidden = !!S.rp; $('rp').hidden = !S.rp; $('hintLbl').parentNode.title = L('次の一押しを教えます（1ステージ3回まで）', 'Shows the next push (3 per level)');
+}
+function refreshWarn() {
+  deadSet = new Set(); if (!S || S.over || S.rp) return;
+  if (save.set.dead && E.isDeadlock(S.L, cur().st)) { E.deadBoxes(S.L, cur().st).forEach(i => deadSet.add(i)); }
+  if (deadSet.size) { setStatus(L('この箱はもう動かせないかも…「もどす」で戻ろう', 'A crate may be stuck for good… try Undo'), 'warn'); }
+  else if (!S.hint) setStatus(S.tip || '', '');
+}
+
+// ---------- moves ----------
+function stopWalk() { if (S && S.walk) { clearTimeout(S.walk.t); S.walk = null; } }
+function clearAids() { if (S) { S.hint = null; S.prev = null; } }
+function doStep(d, src) {
+  if (!S || S.over || S.rp || S.menu) return false;
+  if (src !== 'walk') stopWalk();
+  const before = cur(), pc = cellXY(before.st.p);
+  const r = E.play(S.g, d);
+  S.dir = d;
+  if (!r.ok) {
+    sfx('error'); if (!reduceMotion.matches) { cv.classList.remove('shake'); void cv.offsetWidth; cv.classList.add('shake'); }
+    V.mv = null; kick(); return false;
+  }
+  clearAids();
+  const nc = cellXY(cur().st.p), dur = reduceMotion.matches ? 1 : 85;
+  const mv = { t0: performance.now(), dur, p0: pc, p1: nc, box: null };
+  if (r.push) {
+    const a = cellXY(r.from), b = cellXY(r.to), dist = Math.abs(b.x - a.x) + Math.abs(b.y - a.y), straight = (a.x === b.x || a.y === b.y);
+    mv.box = { to: r.to, a, b: straight ? b : b, pop: !straight || (S.L.t[r.to] === E.T.PAD) };
+    mv.dur = reduceMotion.matches ? 1 : Math.min(300, 85 + Math.max(0, dist - 1) * 38);
+    if (!straight) mv.box.a = a;
+    sfx(S.L.t[r.to] === E.T.GOAL ? 'coin' : 'tap');
+  }
+  V.mv = mv; S.undone = false;
+  persist(); hud(); refreshWarn(); kick();
+  announce(r);
+  if (r.won) { S.over = true; setTimeout(onWin, Math.round(mv.dur + 180)); }
+  return true;
+}
+function announce(r) { const c = cur(); $('live').textContent = L(c.moves + '手め', 'Move ' + c.moves) + (r.push ? L('、押した', ', pushed') : ''); }
+function doUndo() {
+  if (!S || S.rp || S.menu) return; stopWalk();
+  if (E.undo(S.g)) { S.undos++; bump('undos'); S.over = false; clearAids(); V.mv = null; sfx('select'); persist(); hud(); refreshWarn(); kick(); writeSave(); }
+}
+function doRedo() {
+  if (!S || S.rp || S.menu) return; stopWalk();
+  if (E.redo(S.g)) { S.over = E.isWon(S.L, cur().st); clearAids(); V.mv = null; sfx('select'); persist(); hud(); refreshWarn(); kick(); if (S.over) setTimeout(onWin, 150); }
+}
+function doRestart() {
+  if (!S || S.rp || S.menu) return; stopWalk();
+  if (E.restart(S.g)) { S.restarts++; bump('resets'); S.over = false; clearAids(); V.mv = null; S.dir = 2; sfx('select'); persist(); hud(); refreshWarn(); kick(); writeSave(); }
+}
+function walkPath(path) {
+  stopWalk(); if (!path) return;
+  S.walk = { q: path, t: 0 };
+  const stepOnce = () => {
+    if (!S || !S.walk) return;
+    if (!S.walk.q) { S.walk = null; return; }
+    const d = E.dirOf(S.walk.q[0]); S.walk.q = S.walk.q.slice(1);
+    if (!doStep(d, 'walk')) { S.walk = null; return; }
+    if (S && S.walk) S.walk.t = setTimeout(stepOnce, reduceMotion.matches ? 10 : 70);
+  };
+  stepOnce();
+}
+function onTap(i) {
+  if (!S || S.over || S.rp || S.menu) return;
+  const st = cur().st, l = S.L;
+  if (l.t[i] === E.T.VOID) return;
+  S.hint = null; // the hint goes away
+  for (let d = 0; d < 4; d++) if (st.p + l.D[d] === i) { S.prev = null; doStep(d, 'tap'); return; }
+  if (i === st.p) { S.prev = null; kick(); return; }
+  if (S.prev && S.prev.target === i && S.prev.dirs) { const p = S.prev.dirs; S.prev = null; walkPath(p); kick(); return; }
+  const dirs = E.pathTo(l, st, i);
+  if (dirs === null) { S.prev = null; setStatus(L('そこへは歩いていけません', 'You cannot walk there'), 'warn'); sfx('error'); kick(); setTimeout(() => { if (S) refreshWarn(); }, 1200); return; }
+  const cells = [st.p]; let c = st.p; for (const ch of dirs) { c += l.D[E.dirOf(ch)]; cells.push(c); }
+  S.prev = { target: i, dirs, draw: { path: cells, target: i } };
+  setStatus(L('もう一度タップで歩きます（' + dirs.length + '歩）', 'Tap again to walk (' + dirs.length + ' steps)'), '');
+  sfx('tap'); kick();
+}
+function doHint() {
+  if (!S || S.over || S.rp || S.menu) return;
+  if (S.hints <= 0) { setStatus(L('ひとやすみは、このステージではもうありません', 'No breathers left on this level'), 'warn'); sfx('error'); return; }
+  setStatus(L('考え中…', 'Thinking…'), ''); stopWalk();
+  setTimeout(() => {
+    if (!S) return;
+    const h = E.hint(S.L, cur().st);
+    if (h.status === 'limit') { setStatus(L('むずかしすぎて、いまは見つかりませんでした', 'Too hard to figure out right now'), 'warn'); return; }
+    if (h.status !== 'solved') { setStatus(L('もう解けなくなっています。「もどす」か「最初から」を試そう', 'This one can no longer be solved. Try Undo or Restart'), 'warn'); sfx('fail'); return; }
+    if (h.done) return;
+    S.hints--; S.hintsUsed++; bump('hints');
+    const st = cur().st, cells = [st.p]; let c = st.p; for (const ch of h.walk) { c += S.L.D[E.dirOf(ch)]; cells.push(c); }
+    S.hint = { draw: { box: h.box, to: h.to, dir: h.dir, path: cells }, dir: h.dir };
+    setStatus(L('ひとやすみ：この箱を' + DIRNAME[h.dir] + 'へ押そう（あと' + h.left + '押し）', 'Breather: push this crate ' + DIRNAME[h.dir] + ' (' + h.left + ' pushes left)'), 'good');
+    sfx('ok'); hud(); kick(); writeSave();
+  }, 30);
+}
+
+// ---------- starting levels ----------
+function resetVisual() { V = { mv: null, t0: 0 }; deadSet = new Set(); }
+function endRun(reason) {
+  if (S && S.live) { S.live = false; emit('play_end', { mode: S.kind === 'daily' ? 'daily' : S.kind === 'campaign' ? 'normal' : 'practice', dateKey: S.kind === 'daily' ? S.dk : undefined, score: 0, durationMs: Date.now() - S.t0, reason: reason || 'quit', stage: S.id }); }
+}
+function begin(o, resume) {
+  endRun('quit'); stopWalk(); if (S && S.menu) S.menu = false;
+  S = mkSession(o); resetVisual(); hideOverlays();
+  S.tip = (TIPS[S.id] ? L(TIPS[S.id][0], TIPS[S.id][1]) : '');
+  const r = S.kind === 'campaign' ? save.lv[S.id] : null; S.best = r && r.m ? { m: r.m, p: r.p } : (S.kind === 'daily' && save.dl.k === S.dk && save.dl.m ? { m: save.dl.m, p: save.dl.p } : null);
+  fit(); hud(); setStatus(S.tip, ''); refreshWarn(); kick(); S.t0 = Date.now();
+  if (!resume) { bump('plays'); writeSave(); }
+  emit('play_start', { mode: S.kind === 'daily' ? 'daily' : S.kind === 'campaign' ? 'normal' : 'practice', dateKey: S.kind === 'daily' ? S.dk : undefined, stage: S.id }); S.live = true;
+  persist();
+  if (!resume && S.kind === 'campaign' && !save.tut) { /* the rules were shown at first launch */ }
+}
+function startCampaign(id, log, hintsLeft) {
+  const L0 = getLevel(id), d = LV.byId[id]; if (!L0) return false;
+  begin({ kind: 'campaign', id, name: id, L: L0, par: { pushes: d.par[0], moves: d.par[1], exact: true }, log: log || '', hints: hintsLeft == null ? 3 : hintsLeft }, !!log);
+  return true;
+}
+function startRows(kind, rows, meta, log) {
+  let L0; try { L0 = E.parse(rows); } catch (e) { return false; }
+  begin(Object.assign({ kind, L: L0, rows, log: log || '' }, meta), !!log);
+  return true;
+}
+// the daily level: the same for everyone on the same (JST) date
+function dailyFor(dk) {
+  const seed = PF && PF.dailySeed ? PF.dailySeed(GAME, dk) : E.hash32('kobo:' + GAME + ':' + dk);
+  const p = E.dailyParams(seed), g = E.generate(p);
+  return g ? { g, p } : null;
+}
+function startDaily(dk, log) {
+  dk = dk && /^\d{8}$/.test(String(dk)) ? Number(dk) : dateKeyNow();
+  busy(L('今日のステージをつくっています…', 'Building today’s level…'), () => {
+    const d = dailyFor(dk); if (!d) { toast(L('ステージを作れませんでした', 'Could not build the level')); return; }
+    startRows('daily', d.g.rows, { id: 'D' + dk, name: L('きょう ', 'Daily ') + String(dk).replace(/(\d{4})(\d\d)(\d\d)/, '$2/$3'), dk, code: d.g.code, par: { pushes: d.g.pushes, moves: d.g.moves, exact: d.g.exact }, hints: 3 }, log);
+  });
+}
+function startRandom(size, diff, seed) {
+  busy(L('ステージをつくっています…', 'Building the level…'), () => {
+    const g = E.generate({ size, diff, seed }); if (!g) { toast(L('ステージを作れませんでした', 'Could not build the level')); return; }
+    startRows('random', g.rows, { id: 'R' + g.code, name: g.code, code: g.code, par: { pushes: g.pushes, moves: g.moves, exact: g.exact }, hints: 3 });
+  });
+}
+function busy(msg, fn) {
+  hideOverlays(); setStatus(msg, ''); const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = msg; d.style.top = '40%'; document.body.appendChild(d);
+  setTimeout(() => { try { fn(); } finally { d.remove(); } }, 40);
+}
+
+// ---------- persistence of the level in progress ----------
+let persistT = 0;
+function persist() {
+  if (!S || S.kind === 'test') return;
+  if (S.over && !S.rp) { store.del(RUN_KEY); return; }
+  clearTimeout(persistT);
+  persistT = setTimeout(persistNow, 150);
+}
+function persistNow() {
+  if (!S || S.over || S.kind === 'test') return;
+  const c = cur(); if (!c.log && S.kind === 'campaign') { store.del(RUN_KEY); return; }
+  store.set(RUN_KEY, JSON.stringify({ kind: S.kind, id: S.id, name: S.name, log: c.log, hints: S.hints, rows: S.kind === 'campaign' ? null : S.rows, par: S.par, code: S.code, dk: S.dk, t: Date.now() }));
+}
+function readRun() {
+  let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) {}
+  if (!r || typeof r !== 'object' || !r.log && r.kind === 'campaign') return null;
+  if (r.kind === 'campaign' && !LV.byId[r.id]) return null;
+  if (r.kind !== 'campaign' && !Array.isArray(r.rows)) return null;
+  return r;
+}
+function resumeRun(r) {
+  if (r.kind === 'campaign') return startCampaign(r.id, r.log, r.hints);
+  return startRows(r.kind, r.rows, { id: r.id, name: r.name, par: r.par, code: r.code || '', dk: r.dk || 0, hints: r.hints == null ? 3 : r.hints }, r.log);
+}
+
+// ---------- winning ----------
+function onWin() {
+  if (!S || !S.over) return;
+  const c = cur(), par = S.par, st3 = par ? E.starsOf(par.moves, c.moves) : 1;
+  const stars = S.kind === 'test' ? 0 : st3, perfect = par && c.pushes <= par.pushes;
+  let newBest = false, firstClear = false;
+  if (S.kind === 'campaign') {
+    const old = save.lv[S.id] || { m: 0, p: 0, s: 0, pf: 0 }; firstClear = old.s === 0;
+    newBest = !old.m || c.moves < old.m;
+    save.lv[S.id] = { m: old.m ? Math.min(old.m, c.moves) : c.moves, p: old.p ? Math.min(old.p, c.pushes) : c.pushes, s: Math.max(old.s, stars), pf: old.pf || (perfect ? 1 : 0) };
+    bump('clears');
+  } else if (S.kind === 'daily') {
+    const d = save.dl; firstClear = d.k !== S.dk;
+    if (firstClear) { const y = prevKey(S.dk); d.st = d.k === y ? d.st + 1 : 1; d.bs = Math.max(d.bs, d.st); d.k = S.dk; d.m = c.moves; d.p = c.pushes; d.s = stars; bump('daily'); newBest = true; }
+    else if (c.moves < d.m) { d.m = c.moves; d.p = c.pushes; d.s = Math.max(d.s, stars); newBest = true; }
+  } else if (S.kind === 'random') { bump('rand'); }
+  bump('pushes', c.pushes); bump('moves', c.moves);
+  if (S.kind === 'test') { S.testWon = true; }
+  writeSave(); store.del(RUN_KEY);
+  sfx(stars === 3 ? 'win' : 'clear');
+  S.result = { stars, moves: c.moves, pushes: c.pushes, newBest, firstClear, perfect: !!perfect }; S.live = false;
+  emit('play_end', { mode: S.kind === 'daily' ? 'daily' : S.kind === 'campaign' ? 'normal' : 'practice', dateKey: S.kind === 'daily' ? S.dk : undefined, score: stars, durationMs: Date.now() - S.t0, reason: 'clear', stage: S.id });
+  if (S.kind === 'campaign') emit('stage_clear', { stage: S.id, stars, moves: c.moves });
+  if (S.kind === 'test' && ED) { ED.testDone(S); return; }
+  showResult();
+}
+function prevKey(k) { const y = Math.floor(k / 10000), m = Math.floor(k / 100) % 100, d = k % 100, t = new Date(Date.UTC(y, m - 1, d) - 864e5); return t.getUTCFullYear() * 10000 + (t.getUTCMonth() + 1) * 100 + t.getUTCDate(); }
+function showResult() {
+  const r = S.result, par = S.par, c = cur();
+  $('rTitle').textContent = L('クリア！', 'Level clear!');
+  $('rStars').innerHTML = [0, 1, 2].map(k => star(k < r.stars).replace('<svg ', '<svg style="animation-delay:' + (k * 0.18) + 's" ')).join('');
+  if (!reduceMotion.matches) $('rStars').querySelectorAll('svg.on').forEach(s => s.classList.add('pop'));
+  $('rBig').textContent = L(r.moves + '手', r.moves + ' moves');
+  $('rNew').hidden = !r.newBest || S.kind === 'random'; $('rNew').textContent = r.firstClear ? L('はじめてのクリア！', 'First clear!') : L('ベスト更新！', 'New best!');
+  const t = par ? E.thresholds(par.moves) : null;
+  const rows = [[L('歩数', 'Moves'), r.moves], [L('押した数', 'Pushes'), r.pushes]];
+  if (par) { rows.push([L('さいたん（歩数）', 'Optimal moves'), par.moves]); rows.push([L('さいたん（押した数）', 'Optimal pushes'), par.pushes]); }
+  if (t) { rows.push([L('★★★ の条件', '3 stars needs'), L(t[0] + '手以内', '≤ ' + t[0])]); rows.push([L('★★ の条件', '2 stars needs'), L(t[1] + '手以内', '≤ ' + t[1])]); }
+  if (S.hintsUsed) rows.push([L('ひとやすみ', 'Breathers used'), S.hintsUsed]);
+  $('rKv').innerHTML = rows.map(a => '<span>' + esc(a[0]) + '</span><span>' + esc(a[1]) + '</span>').join('');
+  $('rCode').innerHTML = S.code ? '<div class="code">' + esc(S.code) + '</div>' : '';
+  $('rNote').textContent = r.perfect ? L('押す回数も最短！おみごと', 'Fewest pushes possible! Superb') : S.kind === 'daily' ? L('あしたも新しいステージが出ます', 'A new level comes tomorrow') : '';
+  const nx = S.kind === 'campaign' ? nextLevelId(S.id) : null;
+  const rn = $('rNext');
+  if (S.kind === 'campaign') {
+    rn.hidden = false;
+    if (nx && levelUnlocked(nx)) { rn.textContent = L('つぎのステージ ' + nx, 'Next level ' + nx); rn.onclick = () => startCampaign(nx); }
+    else if (nx) { rn.textContent = L('ステージ一覧へ', 'Level list'); rn.onclick = () => showMap(); $('rNote').textContent = L('つぎの場所は、もう少しクリアすると開くよ', 'The next area opens after a few more clears'); }
+    else { rn.textContent = L('ステージ一覧へ', 'Level list'); rn.onclick = () => showMap(); $('rNote').textContent = L('ぜんぶのステージをクリア！ベテラン運送、おつかれさま', 'Every level done! You are a veteran now'); }
+  } else if (S.kind === 'random') { rn.hidden = false; rn.textContent = L('べつのステージ', 'Another level'); rn.onclick = () => { const g = S.code.split('-'); startRandom(+g[0], +g[1], (E.mulberry32((Date.now() >>> 0) ^ 5)() * 4294967295) >>> 0); }; }
+  else { rn.hidden = false; rn.textContent = L('タイトルへ', 'Title'); rn.onclick = () => showTitle(); }
+  $('rAgain').onclick = () => again(); $('rReplay').onclick = () => startReplay();
+  $('rMap').hidden = S.kind !== 'campaign'; $('rMap').onclick = () => showMap();
+  hideOverlays(); $('ovResult').hidden = false; hud(); try { rn.focus({ preventScroll: true }); } catch (e) {}
+}
+function again() {
+  if (!S) return; const k = S.kind;
+  if (k === 'campaign') startCampaign(S.id);
+  else begin(Object.assign({}, { kind: k, id: S.id, name: S.name, L: S.L, rows: S.rows, par: S.par, code: S.code, dk: S.dk, hints: 3 }));
+}
+
+// ---------- replay ----------
+function startReplay() {
+  if (!S) return; const rp = E.replay(S.L, cur().log); if (!rp) return;
+  S.rp = { steps: rp, i: 0, play: null }; hideOverlays(); clearAids(); deadSet = new Set(); stopWalk();
+  $('rpRange').max = rp.length - 1; $('rpRange').value = 0; rpShow(0); setStatus('', '');
+}
+function rpShow(i) {
+  const rp = S.rp; if (!rp) return; rp.i = clamp(i, 0, rp.steps.length - 1);
+  const stp = rp.steps[rp.i]; if (stp.dir != null) S.dir = stp.dir; $('rpRange').value = rp.i;
+  $('rpInfo').textContent = L((rp.i) + ' / ' + (rp.steps.length - 1) + ' 手', 'Step ' + rp.i + ' / ' + (rp.steps.length - 1));
+  V.mv = null; hud(); kick(); $('live').textContent = $('rpInfo').textContent;
+}
+function rpPlay(on) {
+  const rp = S.rp; if (!rp) return; clearInterval(rp.play); rp.play = null;
+  $('rpPlay').setAttribute('aria-pressed', on ? 'true' : 'false');
+  $('rpPlay').innerHTML = on ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>' : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  $('rpPlay').setAttribute('aria-label', on ? T('一時停止') : T('再生'));
+  if (!on) return; if (rp.i >= rp.steps.length - 1) rpShow(0);
+  rp.play = setInterval(() => { if (!S || !S.rp) return; if (rp.i >= rp.steps.length - 1) { rpPlay(false); return; } rpShow(rp.i + 1); }, 220);
+}
+function endReplay() { if (!S || !S.rp) return; clearInterval(S.rp.play); S.rp = null; hud(); showResult(); kick(); }
+$('rpFirst').onclick = () => { rpPlay(false); rpShow(0); }; $('rpLast').onclick = () => { rpPlay(false); rpShow(1e9); };
+$('rpPrev').onclick = () => { rpPlay(false); rpShow(S.rp.i - 1); }; $('rpNext').onclick = () => { rpPlay(false); rpShow(S.rp.i + 1); };
+$('rpPlay').onclick = () => rpPlay(!S.rp.play); $('rpDone').onclick = endReplay; $('rpRange').oninput = e => { rpPlay(false); rpShow(+e.target.value); };
+KoboI18n.add({ en: { '一時停止': 'Pause' } });
+
+// ---------- overlays ----------
+function hideOverlays() { for (const id of ['ovTitle', 'ovMap', 'ovResult', 'ovRandom', 'howto']) $(id).hidden = true; const ed = $('editor'); if (ed && !ed.hidden && ED && ED.hide) ED.hide(); }
+function anyOverlay() { return ['ovTitle', 'ovMap', 'ovResult', 'ovRandom', 'howto'].some(id => !$(id).hidden) || !$('editor').hidden; }
+function showTitle() {
+  if (S) { S.menu = false; stopWalk(); persistNow(); endRun('quit'); }
+  if (S && S.rp) { clearInterval(S.rp.play); S.rp = null; hud(); }
+  hideOverlays(); renderTitle(); $('ovTitle').hidden = false;
+  const f = $('tList').querySelector('button'); try { f && f.focus({ preventScroll: true }); } catch (e) {}
+}
+function renderTitle() {
+  const run = readRun(), dk = dateKeyNow(), dl = save.dl, doneToday = dl.k === dk;
+  const tot = LV.count * 3, items = [];
+  const qm = (id, ttl, sub, cls) => '<button class="qm' + (cls || '') + '" id="' + id + '" type="button"><span><b>' + esc(ttl) + '</b><small>' + esc(sub) + '</small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>';
+  if (run) items.push(qm('tResume', L('つづきから', 'Continue'), (run.kind === 'campaign' ? L('ステージ ', 'Level ') + run.id : run.name || '') + L('・' + run.log.length + '手', ' · ' + run.log.length + ' moves')));
+  items.push(qm('tMap', L('ステージをえらぶ', 'Choose a level'), '★ ' + save.stars + ' / ' + tot + L('・80ステージ', ' · 80 levels')));
+  items.push(qm('tDaily', L('きょうのステージ', 'Daily level'), doneToday ? L('クリア済み（' + dl.m + '手）・★' + dl.s, 'Cleared (' + dl.m + ' moves) · ★' + dl.s) : L('毎日ひとつ・みんな同じ', 'One a day · same for everyone')));
+  items.push(qm('tRandom', L('合言葉でステージ', 'Level by code'), L('大きさ・むずかしさを選んで自動でつくる', 'Pick size and difficulty')));
+  if (ED) items.push(qm('tEdit', L('ステージをつくる', 'Build a level'), L('描いて・解けるか調べて・合言葉で渡す', 'Draw, check it with the solver, share a code'), ' plain'));
+  $('tList').innerHTML = items.join('');
+  const on = (id, f) => { const b = $(id); if (b) b.onclick = f; };
+  on('tResume', () => { const r = readRun(); if (r) resumeRun(r); }); on('tMap', () => showMap()); on('tDaily', () => startDaily(dateKeyNow())); on('tRandom', () => showRandom()); on('tEdit', () => openEditor());
+}
+function showMap() {
+  hideOverlays(); renderMap(); $('ovMap').hidden = false;
+  const c = $('mapBody').querySelector('.nd.cur') || $('mapBody').querySelector('.nd:not(:disabled)'); if (c) { try { c.scrollIntoView({ block: 'center' }); c.focus({ preventScroll: true }); } catch (e) {} }
+}
+function renderMap() {
+  $('mapSub').textContent = L('★ ' + save.stars + ' / ' + LV.count * 3 + '　クリア ' + Object.values(save.pk).reduce((a, b) => a + b, 0) + ' / ' + LV.count, '★ ' + save.stars + ' / ' + LV.count * 3 + '   cleared ' + Object.values(save.pk).reduce((a, b) => a + b, 0) + ' / ' + LV.count);
+  const first = LV.ALL.find(l => levelUnlocked(l.id) && !(save.lv[l.id] && save.lv[l.id].s));
+  let h = '';
+  for (const p of LV.PACKS) {
+    const un = packUnlocked(p.id), cl = packCleared(p.id), sum = p.levels.reduce((a, l) => a + ((save.lv[l.id] || {}).s || 0), 0);
+    h += '<section class="pk' + (un ? '' : ' lock') + '" data-pack="' + p.id + '"><div class="ph"><b>' + p.id + '. ' + esc(L(p.name.ja, p.name.en)) + '</b><small>' + esc(L(p.tag.ja, p.tag.en)) + '</small><span class="sum">★ ' + sum + '/30</span></div>';
+    h += '<div class="pd">' + (un ? esc(L(p.desc.ja, p.desc.en)) : esc(L('前のパックを7ステージクリアすると開きます（いま ' + packCleared(p.id - 1) + '）', 'Clear 7 levels of the previous pack to open it (now ' + packCleared(p.id - 1) + ')'))) + '</div><div class="nodes">';
+    for (const l of p.levels) {
+      const r = save.lv[l.id], ok = levelUnlocked(l.id), s = r ? r.s : 0, cu = first && first.id === l.id;
+      h += '<button class="nd' + (s ? ' done' : '') + (cu ? ' cur' : '') + '" type="button" data-id="' + l.id + '"' + (ok ? '' : ' disabled') + ' aria-label="' + esc(L('ステージ ' + l.id + (s ? '・★' + s : ok ? '' : '・ロック中'), 'Level ' + l.id + (s ? ', ' + s + ' stars' : ok ? '' : ', locked'))) + '">' +
+        (ok ? l.no : LOCK) + '<span class="s">' + [0, 1, 2].map(k => star(k < s)).join('') + '</span></button>';
+    }
+    h += '</div></section>';
+  }
+  $('mapBody').innerHTML = h;
+  $('mapBody').querySelectorAll('.nd:not(:disabled)').forEach(b => { b.onclick = () => startCampaign(b.dataset.id); });
+}
+$('mapClose').onclick = () => showTitle();
+// the code level panel
+let RD = { size: 8, diff: 2 };
+function showRandom() {
+  hideOverlays(); $('rdErr').textContent = '';
+  const seg = (id, vals, key, fmt) => { $(id).innerHTML = vals.map(v => '<button class="opt" type="button" data-v="' + v + '" aria-pressed="' + (RD[key] === v) + '">' + esc(fmt(v)) + '</button>').join(''); $(id).querySelectorAll('.opt').forEach(b => { b.onclick = () => { RD[key] = +b.dataset.v; syncCode(); seg(id, vals, key, fmt); }; }); };
+  seg('rdSize', [5, 6, 7, 8, 9, 10, 11, 12], 'size', v => v + '×' + v);
+  seg('rdDiff', [1, 2, 3], 'diff', v => L(E.DIFFS[v].name.ja, E.DIFFS[v].name.en));
+  if (!$('rdSeed').value) $('rdSeed').value = String((Math.random() * 90000 + 10000) | 0);
+  syncCode(); $('ovRandom').hidden = false; try { $('rdGo').focus({ preventScroll: true }); } catch (e) {}
+}
+function syncCode() { const sd = ($('rdSeed').value || '').replace(/\D/g, ''); $('rdCode').value = RD.size + '-' + RD.diff + '-' + (sd || '0'); }
+$('rdSeed').oninput = () => { $('rdSeed').value = $('rdSeed').value.replace(/\D/g, ''); syncCode(); };
+$('rdDice').onclick = () => { $('rdSeed').value = String((Math.random() * 90000 + 10000) | 0); syncCode(); };
+$('rdCode').onchange = () => { const c = E.parseCode($('rdCode').value); if (c) { RD.size = c.size; RD.diff = c.diff; $('rdSeed').value = String(c.seed); showRandom(); } };
+$('rdGo').onclick = () => {
+  const c = E.parseCode($('rdCode').value) || (/^\d+$/.test($('rdSeed').value) ? { size: RD.size, diff: RD.diff, seed: Number($('rdSeed').value) } : null);
+  if (!c || c.seed > 4294967295) { $('rdErr').textContent = L('合言葉の形がちがいます。例：8-2-12345', 'That code does not look right. Example: 8-2-12345'); return; }
+  RD.size = c.size; RD.diff = c.diff; startRandom(c.size, c.diff, c.seed);
+};
+$('rdClose').onclick = () => showTitle();
+// how to play
+function showHowto(first) {
+  hideOverlays();
+  $('howBody').innerHTML = '<p class="lead" style="color:var(--kb-ink);font-weight:800;font-size:13px">' + esc(L('倉庫の荷物（箱）を押して、床の黄色い印（ゴール）にぜんぶ乗せたらクリア。', 'Push every crate onto a yellow goal mark to clear the level.')) + '</p>' +
+    '<h3>' + esc(L('うごかしかた', 'Controls')) + '</h3><ul><li>' + esc(L('矢印キー・WASD・盤をなぞる・十字ボタンで1マス歩く。箱に当たると押せる（2つ続きや壁ぎわは押せない）。', 'Arrow keys, WASD, swiping the board or the D-pad move one cell. Walk into a crate to push it (not two at once, not into a wall).')) + '</li>' +
+    '<li>' + esc(L('遠くのマスをタップすると道すじが出て、もう一度タップで歩く。', 'Tap a far cell to preview the path; tap it again to walk.')) + '</li>' +
+    '<li>' + esc(L('もどす：U・Ctrl+Z／やり直す：Y・Ctrl+Y／最初から：R／ひとやすみ（ヒント）：H／メニュー：Esc。何回でももどせる。', 'Undo: U or Ctrl+Z. Redo: Y or Ctrl+Y. Restart: R. Breather (hint): H. Menu: Esc. Undo is unlimited.')) + '</li></ul>' +
+    '<h3>' + esc(L('星のもらいかた', 'Stars')) + '</h3><ul><li>' + esc(L('クリアで★1。最短の歩数に近いほど★が増える（★3は最短+15%以内）。', 'Clearing gives ★1. The closer to the shortest solution, the more stars (★3 is within 15% of optimal).')) + '</li></ul>' +
+    '<h3>' + esc(L('しかけ', 'Gimmicks')) + '</h3><ul><li>' + esc(L('水色の氷：箱がすべって止まらない。', 'Pale blue ice: crates keep sliding.')) + '</li><li>' + esc(L('矢印の床：矢印の向きにだけ入れる。', 'Arrow tiles: enter only along the arrow.')) + '</li><li>' + esc(L('数字の渦：箱が止まると、同じ数字の渦へとぶ。', 'Numbered swirls: a stopped crate jumps to its twin.')) + '</li></ul>' +
+    '<p>' + esc(L('行き止まりになりそうな箱は赤くふちどられます（メニューで切りかえ）。', 'Crates that can no longer be saved get a red outline (toggle in the menu).')) + '</p>';
+  $('howtoGo').textContent = first ? L('はじめる', 'Start') : L('とじる', 'Close'); $('howtoGo').onclick = () => { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; if (first) showTitle(); else if (!S) showTitle(); };
+  $('howto').hidden = false; try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tHow').onclick = () => showHowto(false);
+function openEditor() { if (!ED) return; hideOverlays(); ED.open({ E, ART, L, T, esc, store, get save() { return save; }, writeSave, sfx, themeIsDark, toast, startTest: (rows) => { ED.hide(); const ok = startRows('test', rows, { id: 'T', name: L('ためし', 'Test'), hints: 3 }); if (ok) S.fromEditor = true; }, onClose: () => showTitle() }); }
+
+// ---------- sound, theme, menu ----------
+function renderSound() { const b = $('sndBtn'); if (!A) { b.hidden = true; return; } const m = A.muted; b.setAttribute('aria-pressed', String(!m)); b.setAttribute('aria-label', T(m ? 'サウンド オフ' : 'サウンド オン')); b.innerHTML = m ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'; }
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', themeIsDark() ? '#17181f' : '#f1e9da'); dirty = true; kick(); }
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = !!(S && !S.over && !anyOverlay());
+  const tog = (label, key) => ({ label: label + '：' + (save.set[key] ? T('オン') : T('オフ')), icon: 'settings', onClick: () => { save.set[key] = save.set[key] ? 0 : 1; writeSave(); applySettings(); pm.close(); openMenu(); } });
+  const extra = [{ label: T('ルール'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }, { label: T('ステージ一覧'), icon: 'menu', onClick: () => { pm.close(); showMap(); } },
+    tog(T('行き止まりの警告'), 'dead'), tog(T('十字ボタン'), 'pad')];
+  if (S && S.code) extra.push({ label: T('合言葉をコピー') + '（' + S.code + '）', icon: 'copy', onClick: () => { try { navigator.clipboard.writeText(S.code); } catch (e) {} toast(L('コピーしました', 'Copied')); } });
+  extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); persistNow(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra, onSettings: false,
+    onResume: () => { if (S) S.menu = false; const g = KG(); if (g) g.menuClosed(); kick(); },
+    onRestart: on ? () => { doRestart(); } : undefined, confirmRestart: false,
+    onOpen: () => { if (S) S.menu = true; const g = KG(); if (g) g.menuOpened(); persistNow(); },
+  });
+  pm.open();
+}
+KoboI18n.add({ en: { 'ルール': 'Rules', 'ステージ一覧': 'Level list', '行き止まりの警告': 'Stuck-crate warning', 'オン': 'On', 'オフ': 'Off', '合言葉をコピー': 'Copy code', 'タイトルへ': 'Title', 'メニュー': 'Menu', 'ひとやすみ': 'Breather' } });
+$('menuBtn').addEventListener('click', openMenu);
+function applySettings() { document.body.classList.toggle('nodpad', !save.set.pad); fit(); refreshWarn(); hud(); }
+
+// ---------- input ----------
+const KEYD = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.metaKey) return;
+  const tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.tagName === 'SELECT')) return;
+  const c = e.code;
+  if (!$('editor').hidden) return;
+  if (anyOverlay() || (pm && pm.isOpen)) { if (c === 'Escape' && !$('ovMap').hidden) { e.preventDefault(); showTitle(); } return; }
+  if (!S) return;
+  if (S.rp) {
+    if (c === 'ArrowLeft') { e.preventDefault(); rpPlay(false); rpShow(S.rp.i - 1); } else if (c === 'ArrowRight') { e.preventDefault(); rpPlay(false); rpShow(S.rp.i + 1); }
+    else if (c === 'Space') { e.preventDefault(); rpPlay(!S.rp.play); } else if (c === 'Escape') endReplay();
+    return;
+  }
+  if (c in KEYD && !e.ctrlKey) { e.preventDefault(); if (!e.repeat || true) doStep(KEYD[c], 'key'); return; }
+  if (c === 'KeyU' || (c === 'KeyZ' && (e.ctrlKey) && !e.shiftKey)) { e.preventDefault(); doUndo(); }
+  else if (c === 'KeyY' || (c === 'KeyZ' && e.ctrlKey && e.shiftKey)) { e.preventDefault(); doRedo(); }
+  else if (c === 'KeyR' && !e.ctrlKey) { e.preventDefault(); doRestart(); }
+  else if (c === 'KeyH') { e.preventDefault(); doHint(); }
+  else if (c === 'Escape' || c === 'KeyP') { e.preventDefault(); openMenu(); }
+  else if (c === 'Enter' && S.over && S.result) showResult();
+});
+$('bUndo').onclick = doUndo; $('bRedo').onclick = doRedo; $('bReset').onclick = doRestart; $('bHint').onclick = doHint;
+document.querySelectorAll('#dpad button').forEach(b => {
+  let iv = 0; const d = +b.dataset.d;
+  const go = () => doStep(d, 'dpad');
+  b.addEventListener('pointerdown', e => { e.preventDefault(); go(); clearInterval(iv); const t0 = setTimeout(() => { iv = setInterval(go, 120); }, 320); b._t0 = t0; });
+  const stop = () => { clearInterval(iv); clearTimeout(b._t0); };
+  b.addEventListener('pointerup', stop); b.addEventListener('pointercancel', stop); b.addEventListener('pointerleave', stop);
+  b.addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); go(); } });
+});
+// board: swipe = steps, tap = walk
+let PT = null;
+function cellAtEvent(e) {
+  const r = cv.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) / BD.s), y = Math.floor((e.clientY - r.top) / BD.s);
+  if (!S || x < 0 || y < 0 || x >= S.L.W || y >= S.L.H) return -1; return E.cellAt(S.L, x, y);
+}
+cv.addEventListener('pointerdown', e => {
+  if (!S || S.rp || S.menu) return; stopWalk();
+  PT = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ax: e.clientX, ay: e.clientY, swiped: false, t: Date.now() };
+  try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+});
+cv.addEventListener('pointermove', e => {
+  if (!PT || PT.id !== e.pointerId || !S) return;
+  const dx = e.clientX - PT.ax, dy = e.clientY - PT.ay, th = Math.max(16, BD.s * 0.75);
+  if (Math.abs(dx) < th && Math.abs(dy) < th) return;
+  const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+  PT.swiped = true; PT.ax = e.clientX; PT.ay = e.clientY; S.prev = null; doStep(d, 'swipe');
+});
+const endPt = e => {
+  if (!PT || PT.id !== e.pointerId) return; const p = PT; PT = null;
+  if (p.swiped || !S) return;
+  if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 10) return;
+  const i = cellAtEvent(e); if (i >= 0) onTap(i);
+};
+cv.addEventListener('pointerup', endPt); cv.addEventListener('pointercancel', e => { if (PT && PT.id === e.pointerId) PT = null; });
+cv.addEventListener('contextmenu', e => e.preventDefault());
+// gamepad (optional): d-pad / left stick to move, X undo, Y redo, B restart, Start menu
+(() => {
+  if (!navigator.getGamepads) return; let last = { b: [], t: 0 };
+  setInterval(() => {
+    let gp = null; try { gp = Array.from(navigator.getGamepads() || []).find(Boolean); } catch (e) {} if (!gp || !S || anyOverlay() || (pm && pm.isOpen)) return;
+    const b = gp.buttons.map(x => x.pressed), edge = i => b[i] && !last.b[i];
+    let d = -1; if (b[12]) d = 0; else if (b[15]) d = 1; else if (b[13]) d = 2; else if (b[14]) d = 3;
+    else { const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0; if (Math.abs(ax) > .6 || Math.abs(ay) > .6) d = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 1 : 3) : (ay > 0 ? 2 : 0); }
+    const now = Date.now(); if (d >= 0 && now - last.t > 140) { last.t = now; doStep(d, 'pad'); }
+    if (edge(2)) doUndo(); if (edge(3)) doRedo(); if (edge(1)) doRestart(); if (edge(0)) doHint(); if (edge(9)) openMenu();
+    last.b = b;
+  }, 40);
+})();
+
+// ---------- resize, theme ----------
+let rz = 0; const relayout = () => { clearTimeout(rz); rz = setTimeout(fit, 50); };
+window.addEventListener('resize', relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => themeColor()); } catch (e) {}
+document.addEventListener('visibilitychange', () => { if (document.hidden) persistNow(); else kick(); });
+window.addEventListener('pagehide', persistNow);
+
+// ---------- boot ----------
+renderSound(); themeColor(); applySettings();
+KG() && KG().register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { persistNow(); },
+  isIdle: () => !S || S.over,
+  dispose() { stopWalk(); cancelAnimationFrame(raf); },
+  daily: { start({ dateKey }) { startDaily(dateKey); } },
+});
+{
+  const first = store.get(HOWTO_KEY) == null && !save.tut, launch = PF && PF.launch ? PF.launch() : { daily: null };
+  const t0 = E.parse(LV.byId['1-1'].rows); S = mkSession({ kind: 'campaign', id: '1-1', name: '1-1', L: t0, par: null }); S.over = true; fit(); hud(); kick();
+  if (launch && launch.daily && !first) { /* KoboGame.register starts the daily level */ }
+  else if (first) { save.tut = 1; writeSave(); showHowto(true); } else showTitle();
+}
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const cellPoint = i => { const r = cv.getBoundingClientRect(), c = cellXY(i); return { x: r.left + (c.x + 0.5) * BD.s, y: r.top + (c.y + 0.5) * BD.s }; };
+  const api = {
+    ready: () => true,
+    state: () => {
+      const c = S ? cur() : null, cs = S && S.rp ? S.rp.steps[S.rp.i] : c;
+      return {
+        started: !!(S && !(S.over && !S.result && S.id === '1-1' && !c.log)), kind: S ? S.kind : '', id: S ? S.id : '', name: S ? S.name : '', over: !!(S && S.over), moves: cs ? cs.moves : 0, pushes: cs ? cs.pushes : 0, log: c ? c.log : '',
+        undos: S ? S.undos : 0, hist: S ? S.g.hist.length : 0, redo: S ? S.g.redo.length : 0, hints: S ? S.hints : 0, hintShown: !!(S && S.hint), prev: !!(S && S.prev), walking: !!(S && S.walk), replay: !!(S && S.rp), rpi: S && S.rp ? S.rp.i : -1, rpn: S && S.rp ? S.rp.steps.length : 0,
+        title: !$('ovTitle').hidden, map: !$('ovMap').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, random: !$('ovRandom').hidden, editor: !$('editor').hidden, menu: !!(S && S.menu),
+        stars: save.stars, save: JSON.parse(JSON.stringify(save)), dead: Array.from(deadSet), status: $('status').textContent, code: S ? S.code : '', par: S ? S.par : null, dk: S ? S.dk : 0,
+        player: S ? S.L && cellXY(cs.st.p) : null, boxes: cs ? cs.st.b.map(cellXY) : [], won: !!(S && S.L && cs && E.isWon(S.L, cs.st)), result_: S ? S.result : null, size: S ? [S.L.W, S.L.H] : null, cell: BD.s,
+      };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__crates = {
+    api, E, LV, ART, get S() { return S; }, get save() { return save; }, cellPoint, getLevel,
+    xy: (x, y) => { const r = cv.getBoundingClientRect(); return { x: r.left + (x + 0.5) * BD.s, y: r.top + (y + 0.5) * BD.s }; },
+    start: id => startCampaign(id), unlockAll() { DEBUGUNLOCK = true; }, startRows, startDaily, startRandom, showTitle, showMap, showRandom, showHowto, openMenu, resetSave() { store.del(SAVE_KEY); store.del(RUN_KEY); save = readSave(); },
+    solveSeq: () => E.solve(S.L, cur().st, { mode: 'moves', maxNodes: 400000 }),
+    hintDir: () => (S && S.hint ? S.hint.dir : -1), relayout: fit, persist: persistNow, readRun, resumeRun, renderTitle, writeSave, applySettings, dailyFor, onWin,
+    thumbScene() { store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays(); startCampaign('4-5'); const rp = E.replay(S.L, E.solve(S.L, S.L.start, { mode: 'pushes' }).seq); const k = Math.floor(rp.length * 0.6); S.g = E.loadGame(S.L, E.solve(S.L, S.L.start, { mode: 'pushes' }).seq.slice(0, k)); S.tip = ''; setStatus('', ''); setTimeout(() => { fit(); kick(); }, 30); fit(); kick(); return true; },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.crates.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>
