@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>五目ならべ工房</title>
+<meta name="theme-color" content="#1b1610">
+<meta name="description" content="黒と白の石を、先に5つならべたほうが勝ちの定番ボードゲーム。CPUと対戦（4段階）、ふたりで1台、毎日のパズル、友だちとオンライン対戦。15×15・13×13・9×9。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="五目ならべ工房">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* 五目ならべ工房: a wooden board on a workshop bench, lines etched in dark brown. The stones keep their own colours in both themes (a brass nut on the dark ones, a screw head on the light ones);
+   the bench and the room follow the light / dark theme. --kb-* are the shared tokens re-tinted; --gk-* are this game's own. */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #17130e; --kb-surface: #251e15; --kb-surface-2: #2d251a; --kb-sunken: #100d09; --kb-line: #4a3c28;
+  --kb-ink: #f6f1e6; --kb-dim: #c3b8a2;
+  --kb-accent: #f0c04f; --kb-accent-ink: #2b1f00; --kb-accent-text: #ffd57a; --kb-accent-soft: rgba(240, 192, 79, .16);
+  --kb-scrim: rgba(8, 6, 3, .8); --kb-toast-bg: rgba(14, 10, 5, .95); --kb-focus: #ffe08a;
+  --kb-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  --gk-wood: #c99a55; --gk-wood2: #bd8d49; --gk-ln: #4a3216; --gk-frame: #6b4a2c; --gk-frame2: #4a3119; --gk-rim: rgba(255, 220, 160, .28);
+  --gk-panel: rgba(255, 240, 210, .06); --gk-line: rgba(230, 210, 170, .16); --gk-card: linear-gradient(#2c2418, #211a10);
+  --gk-go: linear-gradient(#ffd77d, #efa83a); --gk-go-ink: #2b1d00; --gk-go-shadow: #94620f;
+  --gk-key: linear-gradient(#3a2f20, #2b2217); --gk-key-shadow: #0a0704;
+  --gk-title: linear-gradient(90deg, #ffd98a, #f0a566 55%, #f2f2f2);
+  --gk-bad: #ff8d7d; --gk-ok: #6fe3b0;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #f4efe3; --kb-surface: #ffffff; --kb-surface-2: #f8f2e5; --kb-sunken: #e8e0cc; --kb-line: #d3c8ae;
+    --kb-ink: #2a2418; --kb-dim: #6b6048;
+    --kb-accent: #b8730a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5300; --kb-accent-soft: rgba(184, 115, 10, .12);
+    --kb-scrim: rgba(42, 36, 24, .45); --kb-toast-bg: rgba(42, 36, 24, .95); --kb-focus: #1f6fbf;
+    --kb-shadow: 0 12px 32px rgba(42, 36, 24, .2);
+    --gk-wood: #e0b878; --gk-wood2: #d6ab68; --gk-ln: #5a3d1a; --gk-frame: #a97c50; --gk-frame2: #8a6238; --gk-rim: rgba(255, 255, 255, .5);
+    --gk-panel: rgba(42, 36, 24, .05); --gk-line: #dcd2ba; --gk-card: linear-gradient(#ffffff, #f8f2e5);
+    --gk-go: linear-gradient(#e0a02f, #b8730a); --gk-go-ink: #ffffff; --gk-go-shadow: #7a4b05;
+    --gk-key: linear-gradient(#ffffff, #f3ecdc); --gk-key-shadow: #c3b9a2;
+    --gk-title: linear-gradient(90deg, #8a5300, #a24a1c 55%, #3a3a3a);
+    --gk-bad: #c43b27; --gk-ok: #0f8a5c;
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #f4efe3; --kb-surface: #ffffff; --kb-surface-2: #f8f2e5; --kb-sunken: #e8e0cc; --kb-line: #d3c8ae;
+  --kb-ink: #2a2418; --kb-dim: #6b6048;
+  --kb-accent: #b8730a; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5300; --kb-accent-soft: rgba(184, 115, 10, .12);
+  --kb-scrim: rgba(42, 36, 24, .45); --kb-toast-bg: rgba(42, 36, 24, .95); --kb-focus: #1f6fbf;
+  --kb-shadow: 0 12px 32px rgba(42, 36, 24, .2);
+  --gk-wood: #e0b878; --gk-wood2: #d6ab68; --gk-ln: #5a3d1a; --gk-frame: #a97c50; --gk-frame2: #8a6238; --gk-rim: rgba(255, 255, 255, .5);
+  --gk-panel: rgba(42, 36, 24, .05); --gk-line: #dcd2ba; --gk-card: linear-gradient(#ffffff, #f8f2e5);
+  --gk-go: linear-gradient(#e0a02f, #b8730a); --gk-go-ink: #ffffff; --gk-go-shadow: #7a4b05;
+  --gk-key: linear-gradient(#ffffff, #f3ecdc); --gk-key-shadow: #c3b9a2;
+  --gk-title: linear-gradient(90deg, #8a5300, #a24a1c 55%, #3a3a3a);
+  --gk-bad: #c43b27; --gk-ok: #0f8a5c;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body {
+  position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: radial-gradient(120% 70% at 50% 0%, var(--kb-surface-2) 0%, var(--kb-bg) 62%) var(--kb-bg);
+  color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+header { flex: none; padding: 2px 8px 0; max-width: 1100px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.hrow { display: flex; align-items: center; gap: 4px; }
+.back { display: inline-grid; place-items: center; min-height: 44px; min-width: 44px; flex: none; box-sizing: border-box; color: var(--kb-dim); text-decoration: none; border-radius: 12px; margin-left: -4px; }
+.back svg { width: 24px; height: 24px; }
+h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb-font-display); font-weight: 400; font-size: clamp(15px, 4.7vw, 20px); letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--gk-title); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--gk-line); background: var(--gk-panel); color: var(--kb-ink); display: grid; place-items: center; padding: 0; cursor: pointer; touch-action: manipulation; font: 800 15px var(--kb-font-body); }
+.icon svg { width: 22px; height: 22px; }
+.icon:active { transform: scale(.94); }
+.icon[aria-pressed="true"] { border-color: var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-accent-text); }
+.back:focus-visible, .icon:focus-visible, .btn:focus-visible, .opt:focus-visible, .tog:focus-visible, .act:focus-visible, .qm:focus-visible, #board:focus-visible, .cell:focus-visible, summary:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+.info { display: flex; align-items: center; gap: 4px; margin: 1px 0 3px; overflow: hidden; }
+.chip { flex: none; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--gk-panel); border: 1px solid var(--gk-line); color: var(--kb-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip.mode { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.turn { color: var(--kb-ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chip.turn.you { background: var(--kb-accent-soft); border-color: var(--kb-accent); color: var(--kb-accent-text); }
+.chip.acc { margin-left: auto; color: var(--kb-accent-text); background: var(--kb-accent-soft); border-color: transparent; }
+
+#main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; padding: 0 8px 6px; gap: 5px; }
+#bar { flex: none; display: flex; gap: 8px; justify-content: center; }
+.pl { flex: 1 1 0; min-width: 0; max-width: 240px; display: flex; align-items: center; gap: 7px; box-sizing: border-box; padding: 3px 9px 3px 6px; border-radius: 14px; border: 2px solid transparent; background: var(--gk-panel); transition: border-color .2s, background .2s; }
+.pl.on { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.pl .dk { flex: none; width: 24px; height: 24px; border-radius: 50%; background-size: 100% 100%; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.pl .nm { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 800; line-height: 1.15; overflow: hidden; }
+.pl .nm b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.pl .nm small { display: block; font-size: 10.5px; font-weight: 500; color: var(--kb-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl .n { flex: none; font: 400 22px/1 var(--kb-font-display); font-variant-numeric: tabular-nums; min-width: 1.2em; text-align: right; }
+.pl .bd { flex: none; padding: 0 6px; border-radius: 9px; background: rgba(150, 140, 120, .3); color: var(--kb-ink); font: 800 10px var(--kb-font-body); }
+.pl .bd.off { background: #ff8d7d; color: #2b0b06; } .pl .bd.away { background: #ffd078; color: #2b1d00; } .pl .bd.tm { background: var(--kb-accent); color: var(--kb-accent-ink); font-variant-numeric: tabular-nums; }
+#stage { position: relative; flex: 1 1 0; min-height: 120px; display: grid; place-items: center; }
+#stage.zoom { display: block; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
+#stage.zoom #board { margin: 0 auto; touch-action: pan-x pan-y; }
+/* the board: n x n intersections. Each cell draws its own piece of the lines (the edge cells draw half of a line) */
+#board { position: relative; width: var(--bs, 300px); height: var(--bs, 300px); flex: none; box-sizing: border-box; display: grid; grid-template-columns: repeat(var(--n, 15), 1fr); grid-template-rows: repeat(var(--n, 15), 1fr);
+  padding: clamp(2px, 1%, 7px); border-radius: clamp(8px, 3%, 16px); background: linear-gradient(145deg, var(--gk-frame), var(--gk-frame2)); box-shadow: 0 6px 18px rgba(0, 0, 0, .35), inset 0 0 0 1px var(--gk-rim); touch-action: manipulation; outline-offset: 3px; }
+#board .row { display: contents; }
+.cell { --hp: 0%; --hw: 100%; --vp: 0%; --vh: 100%; position: relative; box-sizing: border-box; cursor: default; display: grid; place-items: center; outline: none; -webkit-tap-highlight-color: transparent;
+  background-color: var(--gk-wood);
+  background-image: linear-gradient(var(--gk-ln), var(--gk-ln)), linear-gradient(var(--gk-ln), var(--gk-ln));
+  background-repeat: no-repeat; background-position: var(--hp) 50%, 50% var(--vp); background-size: var(--hw) 1px, 1px var(--vh); }
+.cell.cl { --hp: 100%; --hw: 50%; } .cell.cr { --hp: 0%; --hw: 50%; } .cell.ct { --vp: 100%; --vh: 50%; } .cell.cb { --vp: 0%; --vh: 50%; }
+.cell.star::before { content: ""; position: absolute; width: 22%; height: 22%; border-radius: 50%; background: var(--gk-ln); }
+.cell.lg { cursor: pointer; }
+.gh { position: absolute; inset: 8%; border-radius: 50%; pointer-events: none; opacity: 0; box-sizing: border-box; transition: opacity .12s; }
+@media (hover: hover) { .cell.lg:not(.pv):hover .gh { opacity: .5; background: var(--gh, rgba(20, 30, 70, .6)); } }
+.cell.pv .gh { opacity: 1; background: var(--gh, rgba(20, 30, 70, .55)); border: 2px dashed var(--kb-accent); }
+.cell.ht .gh { opacity: 1; background: rgba(255, 213, 74, .3); box-shadow: 0 0 0 3px #ffd54a, 0 0 14px 3px rgba(255, 213, 74, .85); animation: glow 1s ease-in-out infinite; }
+.cell.fb .gh { opacity: 1; background: transparent; inset: 18%; }
+.cell.fb .gh::before, .cell.fb .gh::after { content: ""; position: absolute; left: 50%; top: 8%; width: max(2px, 12%); height: 84%; background: #e0412e; border-radius: 2px; transform: translateX(-50%) rotate(45deg); }
+.cell.fb .gh::after { transform: translateX(-50%) rotate(-45deg); }
+.cell.bad .gh { opacity: 1; background: rgba(255, 141, 125, .45); box-shadow: 0 0 0 3px #ff8d7d; }
+.cell.cur { z-index: 2; } body.kbd .cell.cur::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2.5px var(--kb-focus); pointer-events: none; }
+.cell.shake { animation: shake .3s; }
+.st { position: absolute; inset: 6%; border-radius: 50%; background-size: 100% 100%; box-shadow: 0 1.5px 3px rgba(0, 0, 0, .5); pointer-events: none; z-index: 1; display: grid; place-items: center; }
+.st.new { animation: drop .25s ease-out; }
+.st .nm { font: 800 calc(var(--bs, 300px) / var(--n, 15) * .42)/1 var(--kb-font-body); font-variant-numeric: tabular-nums; letter-spacing: -.04em; pointer-events: none; }
+.st.b .nm { color: #f0c968; } .st.w .nm { color: #27305b; }
+.st.sol { box-shadow: 0 0 0 2px #6fe3b0, 0 1.5px 3px rgba(0, 0, 0, .5); }
+.cell.last .st { box-shadow: 0 0 0 2px #ff6f5f, 0 1.5px 3px rgba(0, 0, 0, .5); }
+.cell.last .st:not(:has(.nm))::after { content: ""; width: 24%; height: 24%; border-radius: 50%; background: #ff6f5f; box-shadow: 0 0 0 1px rgba(255, 255, 255, .85); }
+.cell.win .st { box-shadow: 0 0 0 3px #ffd54a, 0 0 12px 3px rgba(255, 213, 74, .9); animation: pulse 1.1s ease-in-out infinite; z-index: 2; }
+#board.inst .st { animation: none !important; transition: none !important; }
+#status { flex: none; min-height: 34px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 3px 10px; border-radius: 14px; background: var(--gk-panel); border: 1px solid var(--gk-line); font-size: 12.5px; font-weight: 800; text-align: center; line-height: 1.3; }
+#status.you { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+#ctl { flex: none; display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; min-height: 48px; }
+.act { flex: 1 1 0; min-width: 0; max-width: 150px; min-height: 48px; box-sizing: border-box; border-radius: 15px; border: 1px solid var(--gk-line); background: var(--gk-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--gk-key-shadow); font: 800 14px var(--kb-font-body); cursor: pointer; padding: 2px 3px; line-height: 1.15; touch-action: manipulation; }
+.act small { display: block; font-size: 10px; font-weight: 500; opacity: .8; }
+.act:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gk-key-shadow); }
+.act.go { background: var(--gk-go); color: var(--gk-go-ink); border-color: transparent; box-shadow: 0 3px 0 var(--gk-go-shadow); font-size: 15px; }
+.act[aria-pressed="true"] { border-color: var(--kb-accent); box-shadow: inset 0 0 0 2px var(--kb-accent), 0 3px 0 var(--gk-key-shadow); }
+.act:disabled { opacity: .42; cursor: default; box-shadow: none; }
+
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; animation: fade .22s ease-out; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); }
+.panel { width: 100%; max-width: 440px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--gk-card); border: 1px solid var(--gk-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: var(--kb-shadow); animation: rise .25s ease-out; }
+.panel > * { flex: none; }
+.panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font-family: var(--kb-font-display); font-weight: 400; font-size: 22px; color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel h2.logo { background: var(--gk-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 25px; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--gk-go); color: var(--gk-go-ink); box-shadow: 0 3px 0 var(--gk-go-shadow); font: 800 16px var(--kb-font-body); text-decoration: none; line-height: 1.2; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gk-go-shadow); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--gk-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--gk-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; border: 0; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.opts { text-align: left; }
+.og { margin: 8px 0 0; }
+.og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--gk-panel); border: 1px solid var(--gk-line); }
+.opt { flex: 1; min-width: 0; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; line-height: 1.2; }
+.opt small { display: block; font-size: 10.5px; font-weight: 500; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.tog { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 6px; padding: 4px 10px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--gk-line); background: var(--gk-panel); color: var(--kb-ink); font: 800 13px var(--kb-font-body); cursor: pointer; text-align: left; }
+.tog span { flex: 1; } .tog small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.tog i { flex: none; width: 40px; height: 24px; border-radius: 12px; background: var(--kb-line); position: relative; transition: background .15s; }
+.tog i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tog[aria-checked="true"] i { background: var(--kb-accent); } .tog[aria-checked="true"] i::after { transform: translateX(16px); }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; box-sizing: border-box; margin-top: 6px; padding: 6px 12px; border-radius: 16px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; text-align: left; }
+.qm:first-child { margin-top: 0; }
+.qm b { display: block; font-size: 15px; } .qm small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.gdesc { margin: 8px 0 0; font-size: 12.5px; font-weight: 500; color: var(--kb-ink); line-height: 1.5; }
+.gbest { margin: 4px 0 0; font-size: 12px; font-weight: 800; color: var(--kb-accent-text); }
+.rank { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rank li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; background: var(--gk-panel); border: 1px solid var(--gk-line); font-size: 13.5px; font-weight: 800; text-align: left; }
+.rank li.me { border-color: var(--kb-accent); background: var(--kb-accent-soft); }
+.rank li .no { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-surface); color: var(--kb-accent-text); font: 400 14px var(--kb-font-display); }
+.rank li .no.ok { color: var(--gk-ok); } .rank li .no.ng { color: var(--gk-bad); }
+.rank li .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank li .sc { flex: none; font-size: 12px; color: var(--kb-dim); font-variant-numeric: tabular-nums; }
+.big { font-family: var(--kb-font-display); font-size: 34px; line-height: 1.1; color: var(--kb-ink); }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.howto { max-width: 460px; text-align: left; }
+.howto h2 { text-align: center; }
+.howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); }
+.howto li { margin: 3px 0; }
+.howto .lead { color: var(--kb-ink); font-weight: 800; font-size: 13px; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gk-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--gk-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.mv { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px 10px; text-align: left; font-variant-numeric: tabular-nums; }
+.mv li { display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 10px; background: var(--gk-panel); font-size: 13px; font-weight: 800; }
+.mv li .i { flex: none; width: 2.2em; color: var(--kb-dim); font-weight: 500; font-size: 11px; }
+.mv li .dk { flex: none; width: 14px; height: 14px; border-radius: 50%; background-size: 100% 100%; }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
+body.thumb h1, body.thumb .icon, body.thumb .back, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #ctl, body.thumb #status, body.thumb .info, body.thumb header { display: none !important; }
+
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes glow { 50% { box-shadow: 0 0 0 3px #ffd54a, 0 0 20px 6px rgba(255, 213, 74, .95); } }
+@keyframes pulse { 50% { box-shadow: 0 0 0 3px #ffd54a, 0 0 18px 6px rgba(255, 213, 74, 1); } }
+@keyframes drop { from { transform: scale(1.7); opacity: 0; } 70% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .st, .panel, .overlay { animation: none !important; } .cell.ht .gh, .cell.win .st { animation: none; } }
+@media (max-height: 600px) { .panel { padding: 10px 12px 8px; } .panel h2.logo { font-size: 22px; } .btn { min-height: 46px; margin-top: 6px; } .og { margin-top: 5px; } }
+@media (max-width: 379px) { h1 { visibility: hidden; } .pl .nm small { display: none; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  header { padding-top: 0; } .info { margin: 0 0 2px; }
+  #main { display: grid; max-width: 1000px; grid-template-columns: minmax(0, 1fr) minmax(200px, 40%); grid-template-rows: auto auto 1fr; grid-template-areas: "stage bar" "stage status" "stage ctl"; align-content: stretch; column-gap: 8px; }
+  #stage { grid-area: stage; } #bar { grid-area: bar; flex-direction: column; align-items: stretch; } .pl { max-width: none; } #status { grid-area: status; } #ctl { grid-area: ctl; align-self: start; flex-wrap: wrap; }
+  .panel { max-width: 700px; } .howto { max-width: 720px; }
+  .act { min-height: 44px; } #ctl { min-height: 44px; } #status { min-height: 30px; padding: 1px 8px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <h1 data-i18n>五目ならべ工房</h1>
+      <button class="icon" id="numBtn" type="button" aria-label="手の番号" data-i18n-attr="aria-label" aria-pressed="false">1</button>
+      <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+      <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="info">
+      <span class="chip mode" id="iGame"></span>
+      <span class="chip turn" id="iTurn"></span>
+      <span class="chip acc" id="iBest"></span>
+    </div>
+  </header>
+  <div id="main">
+    <div id="bar">
+      <div class="pl" id="plB"><span class="dk" id="dkB"></span><span class="nm"><b id="nB"></b><small id="sB"></small></span><span class="bd" id="bB" hidden></span><span class="n" id="cB">0</span></div>
+      <div class="pl" id="plW"><span class="dk" id="dkW"></span><span class="nm"><b id="nW"></b><small id="sW"></small></span><span class="bd" id="bW" hidden></span><span class="n" id="cW">0</span></div>
+    </div>
+    <div id="stage"><div id="board" role="grid" aria-label="五目ならべの盤" data-i18n-attr="aria-label"></div></div>
+    <div id="status" role="status" aria-live="polite"></div>
+    <div id="ctl"></div>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="panel">
+    <h2 class="logo" id="tTitle" data-i18n>五目ならべ工房</h2>
+    <div class="scroll opts">
+      <button class="qm" id="tDaily" type="button"><span><b data-i18n>今日のパズル</b><small id="tDailySub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <button class="qm" id="tOnline" type="button"><span><b data-i18n>オンライン対戦</b><small id="tOnlineSub" data-i18n>友だちとコードで・クイックマッチ</small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <button class="qm" id="tResume" type="button" hidden><span><b data-i18n>つづきから</b><small id="tResumeSub"></small></span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>
+      <p class="gdesc" id="tDesc"></p>
+      <p class="gbest" id="tBest"></p>
+      <div id="tOpts"></div>
+    </div>
+    <div class="foot">
+      <button class="btn" id="tPlay" type="button" data-i18n>CPUとあそぶ</button>
+      <div class="row2"><button class="btn sub" id="tPass" type="button" data-i18n>ふたりで（1台）</button><button class="btn sub" id="tHow" type="button" data-i18n>ルール</button></div>
+      <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="panel">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <p id="rSub"></p>
+      <ol class="rank" id="rRank"></ol>
+      <div class="big" id="rBig"></div>
+      <div id="rNew" class="newrec" hidden></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rAgain" type="button" data-i18n>もう一度</button>
+    <div class="row2"><button class="btn sub" id="rMoves" type="button" data-i18n>棋譜</button><button class="btn sub" id="rTitleBtn" type="button" data-i18n>タイトルへ</button></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="ovMoves" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="panel">
+    <h2 id="mTitle" data-i18n>棋譜</h2>
+    <p id="mSub"></p>
+    <div class="scroll"><ol class="mv" id="mList"></ol></div>
+    <button class="btn" id="mClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle"></h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+<script src="art.js"></script>
+<script src="engine.js"></script>
+<script src="puzzles.js"></script>
+<script src="online.js"></script>
+<script src="../common/turnroom.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// 五目ならべ工房 — the classic five-in-a-row game: place stones on the crossings and be first to line up five.
+// The rules, the CPUs and the continuous-fours solver live in engine.js (pure, runs in node too); the puzzle bank is puzzles.js (built and proven by tools/gomoku-puzzle-gen.js);
+// online.js is the adapter for common/turnroom.js. This file is the table: the board, the stones, the title, the daily puzzle, results and saves.
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  '五目ならべ工房': 'Gomoku Workshop', '五目ならべの盤': 'Gomoku board', 'ゲーム一覧へ戻る': 'Back to all games', 'ゲーム一覧へ': 'All games', 'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off',
+  '手の番号': 'Move numbers', '今日のパズル': 'Daily puzzle', 'オンライン対戦': 'Online match', '友だちとコードで・クイックマッチ': 'With friends by code · Quick match', 'つづきから': 'Continue', 'CPUとあそぶ': 'Play the CPU', 'ふたりで（1台）': 'Two players (1 device)', 'ルール': 'Rules',
+  '言語 / Language': '言語 / Language', 'とじる': 'Close', 'もう一度': 'Play again', '棋譜': 'Moves', 'タイトルへ': 'Title', 'あそびかた': 'How to play',
+  'くろ': 'Black', 'しろ': 'White', 'くろ（先手）': 'Black (first)', 'しろ（後手）': 'White (second)', '先手': 'First', '後手': 'Second', 'あなた': 'You', 'CPU': 'CPU', 'プレイヤー': 'Player',
+  'よわい': 'Easy', 'ふつう': 'Normal', 'つよい': 'Hard', 'とてもつよい': 'Expert', 'CPUの強さ': 'CPU strength', 'あなたの色': 'Your color', 'おまかせ': 'Random', '盤の大きさ': 'Board size', 'しかた（ルール）': 'Rule set',
+  '自由': 'Free', 'ちょうど5': 'Exactly 5', '連珠ふう': 'Renju-style', '自由（5つ以上で勝ち）': 'Free (5 or more wins)', 'ちょうど5つで勝ち（6つ以上は勝ちではない）': 'Exactly five wins (six or more does not)', '連珠ふう（黒に禁じ手）': 'Renju-style (forbidden moves for Black)',
+  '手の番号を見せる': 'Show move numbers', '石に置いた順の数字を書きます': 'Write the order of play on the stones', '禁じ手に×を出す': 'Mark forbidden points with ×', '連珠ふうのとき、黒が置けないマスに×が出ます': 'In Renju-style, points Black cannot play show a ×',
+  'タップで決める': 'Confirm taps', 'おまかせ（タッチ画面だけ）': 'Auto (touch screens only)', 'する': 'On', 'しない': 'Off', 'まず目印が出て、「おく」かもう一度タップで置きます': 'A marker appears first; press Place or tap again to play',
+  'CPUをはやく進める': 'Speed up the CPU', 'CPUの待ち時間を短くします': 'Shortens the CPU\'s waiting time',
+  '{p}回あそんで{w}回勝ち': 'Played {p}, won {w}', 'まだ記録がありません': 'No record yet', '★ {n}': '★ {n}',
+  '{n}×{n}': '{n}×{n}', 'あなたの番です': 'Your turn', 'CPUが考えています…': 'The CPU is thinking…', '{name}の番です': '{name}\'s turn', '{name}が考えています…': '{name} is thinking…', '相手の番です': 'Waiting for the opponent',
+  '{name}が {n} 手目を置きました': '{name} played move {n}', 'そこには石があります': 'There is a stone there', '禁じ手：三三（活三が2つできる）': 'Forbidden: double three', '禁じ手：四四（四が2つできる）': 'Forbidden: double four', '禁じ手：長連（6つ以上つながる）': 'Forbidden: overline (six or more)',
+  'おすすめ: {m}': 'Suggestion: {m}', 'おすすめ: {m}（連続四で勝てます）': 'Suggestion: {m} (wins by continuous fours)', 'おすすめ: {m}（相手の勝ちをふせぎます）': 'Suggestion: {m} (stops the opponent winning)', '考え中…': 'Thinking…', 'ヒント': 'Hint', 'もどす': 'Undo', 'おく': 'Place', '拡大': 'Zoom in', '全体': 'Zoom out', 'つぎへ': 'Next', '結果を見る': 'See results',
+  'ここに置きますか？「おく」か、同じ場所をもう一度タップ': 'Place here? Press Place, or tap the same spot again', '「おく」か、もう一度タップ': 'Press Place or tap again',
+  'あなたの勝ち！': 'You win!', 'あなたの負け': 'You lose', '引き分け': 'A draw', '{name}の勝ち': '{name} wins', '{name}の勝ち！': '{name} wins!', '{n}手で決着': 'Decided in {n} moves', '勝ち': 'Won', '負け': 'Lost', '盤がいっぱいになりました': 'The board is full',
+  '★ {n} をもらいました': 'You earned ★ {n}', '★はもらえません': 'No ★ this time', 'ヒントを使ったので、★はつきません': 'You used a hint, so no ★', 'もどすを使ったので、★はつきません': 'You used undo, so no ★', '15×15以外の盤では★はつきません（15×15で勝つと★）': 'No ★ on smaller boards (win on 15×15 for ★)', 'CPUに勝つと★（よわい1・ふつう2・つよい3・とてもつよい4）': 'Beat the CPU for ★ (Easy 1, Normal 2, Hard 3, Expert 4)',
+  'ひとやすみ': 'Paused', 'あきらめる': 'Give up', '試合を出る': 'Leave the match', '出ると、あなたの席はCPUに代わります。出ますか？': 'If you leave, a CPU takes your seat. Leave?', '出る': 'Leave', 'やめる': 'Cancel',
+  '今日のパズル {n}/5': 'Daily puzzle {n}/5', '黒番。四をつないで {m} 手で五をつくろう（あと {n} 手）': 'Black to move. Chain fours to make five in {m} moves ({n} left)', '黒番。四をつないで {m} 手で五をつくろう': 'Black to move. Chain fours to make five in {m} moves', '正解！': 'Correct!', 'ざんねん…': 'Not quite…',
+  '答えは {m}（{n}手）。番号の順に置きます': 'Answer: {m} ({n} moves). Stones are numbered in order', 'その調子。あと {n} 手': 'Good. {n} more', '五ができました！': 'Five in a row!', '{n}点': '{n} pts',
+  '今日は {a}/5 正解': 'Today: {a}/5 correct', '今日の5問': 'Today\'s five puzzles', '5問ぜんぶ正解！': 'All five correct!', '合計 {n} 点': '{n} points in total', 'もう一度ためす（れんしゅう）': 'Try again (practice)', '同じ日のやり直しは記録に入りません': 'Playing it again does not count',
+  '5問・毎日ちがう': 'Five puzzles · new every day', '今日は {a}/5 正解（{p}点）': 'Today: {a}/5 correct ({p} pts)', '{n}問目': 'Puzzle {n}', '{n}手の問題': '{n}-move puzzle',
+  'ひとつ前にもどしました': 'Went back one move', 'もどせません': 'Nothing to undo', '{n}手': '{n} moves', 'まだ手がありません': 'No moves yet', '{n}手目': 'Move {n}',
+  'おつかれさま': 'Good game', 'ゲームが終わりました': 'The game is over', 'とちゅうのゲームがあります': 'A game is in progress',
+  'CPU {lv}・{n}×{n}': 'CPU {lv} · {n}×{n}', 'ふたりで1台・{n}×{n}': 'Two players · {n}×{n}', 'オンライン対戦・{n}×{n}': 'Online match · {n}×{n}', 'あなた：{c}': 'You: {c}',
+  'こんどは あなたが{c}です': 'This time you play {c}', 'オンライン対戦は★に数えません': 'Online matches do not count for ★', 'オンライン': 'Online', 'オンライン対戦が終わりました': 'The online match is over', '勝ちました！': 'You won!', '負けました': 'You lost',
+  '席がCPUに交代しました': 'Your seat was taken over by a CPU', 'ゲームに入れませんでした': 'You could not join this game', 'みんなの準備を待っています…': 'Waiting for the others…', 'もう一度（{a}/{b}人）': 'Rematch ({a}/{b})', 'もう一度を待っています（{a}/{b}人）': 'Waiting for a rematch ({a}/{b})',
+  'ホストが退出したので、ここで終了です': 'The host left, so the match ends here', 'ホストとの接続が切れたので、ここで終了です': 'Lost the host, so the match ends here', '通信がとぎれています…つながるのを待っています': 'The connection dropped… waiting to reconnect',
+  '切断': 'Offline', '離席': 'Away', '{n}人': '{n} players', '遊び方を見て、はじめましょう': 'Read the rules, then start', '{c}の番です': '{c} to move', 'はじめる': 'Start', '{n}石': '{n} stones',
+  '赤い印が最後の手です': 'The red mark shows the last move', '黒の勝ちです': 'Black wins', '白の勝ちです': 'White wins',
+} });
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.GomokuEngine, ART = window.GomokuArt, BANK = window.GomokuPuzzles;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'gomoku';
+const SAVE_KEY = 'kusoge.gomoku.save';   // records and settings (registry: per-field merge)
+const RUN_KEY = 'kusoge.gomoku.game';    // the unfinished game on this device (not synced)
+const HOWTO_KEY = 'kusoge.gomoku.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString(EN ? 'en-US' : 'ja-JP');
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const coarse = () => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } };
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+function sfx(name, a) { if (A) A.sfx(name, a); }
+const rndSeed = () => (Math.floor(Math.random() * 4294967295) + 1) >>> 0;
+const LV_NAME = { 1: T('よわい'), 2: T('ふつう'), 3: T('つよい'), 4: T('とてもつよい') };
+const COLOR_NAME = k => (k === 2 ? T('しろ') : T('くろ'));
+const RULE_SHORT = { free: T('自由'), std: T('ちょうど5'), renju: T('連珠ふう') };
+const RULE_LONG = { free: T('自由（5つ以上で勝ち）'), std: T('ちょうど5つで勝ち（6つ以上は勝ちではない）'), renju: T('連珠ふう（黒に禁じ手）') };
+const SIZES = [15, 13, 9];
+const mName = (c, n) => E.name(c, n || 15);
+
+// ---------- save ----------
+function newSave() { return { v: 1, pts: 0, w: {}, stats: {}, set: { level: 2, me: 'b', n: 15, rule: 'free', nums: 0, fbd: 1, conf: 2, fast: 0 }, dl: { last: 0, pts: 0, r: [] }, tut: 0 }; }
+function readSave() {
+  let o = null;
+  try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = newSave();
+  if (o && typeof o === 'object') {
+    s.pts = Math.max(0, Math.floor(Number(o.pts) || 0));
+    if (o.w && typeof o.w === 'object') for (const k of Object.keys(o.w)) if (/^(9|13|15)-[1-4]$/.test(k) && o.w[k] && typeof o.w[k] === 'object') s.w[k] = { p: Math.max(0, Math.floor(Number(o.w[k].p) || 0)), w: Math.max(0, Math.floor(Number(o.w[k].w) || 0)) };
+    if (o.stats && typeof o.stats === 'object') for (const k of Object.keys(o.stats)) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0) s.stats[k] = v; }
+    if (o.set && typeof o.set === 'object') {
+      s.set.level = clamp(Math.round(o.set.level) || 2, 1, 4); s.set.me = ['b', 'w', 'r'].includes(o.set.me) ? o.set.me : 'b';
+      s.set.n = SIZES.includes(o.set.n) ? o.set.n : 15; s.set.rule = E.RULES.includes(o.set.rule) ? o.set.rule : 'free';
+      s.set.nums = o.set.nums ? 1 : 0; s.set.fbd = o.set.fbd === 0 ? 0 : 1; s.set.conf = [0, 1, 2].includes(o.set.conf) ? o.set.conf : 2; s.set.fast = o.set.fast ? 1 : 0;
+    }
+    if (o.dl && typeof o.dl === 'object') {
+      s.dl.last = Math.max(0, Math.floor(Number(o.dl.last) || 0)); s.dl.pts = Math.max(0, Math.floor(Number(o.dl.pts) || 0));
+      if (Array.isArray(o.dl.r)) s.dl.r = o.dl.r.slice(0, 5).filter(x => Array.isArray(x) && x.length >= 3).map(x => [x[0] | 0, x[1] ? 1 : 0, Math.max(0, x[2] | 0)]);
+    }
+    s.tut = o.tut ? 1 : 0;
+  }
+  return s;
+}
+let save = readSave();
+function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
+const wRec = k => (save.w[k] = save.w[k] || { p: 0, w: 0 });
+const stat = k => Number(save.stats[k]) || 0;
+function bump(k, n) { save.stats[k] = stat(k) + (n === undefined ? 1 : n); }
+
+// =====================================================================================
+// the board: n x n crossings (div, not button: only the cursor cell is a tab stop) and at most one stone element per crossing
+// =====================================================================================
+const boardEl = $('board');
+const B = { n: 0, cells: [], stones: [], lab: [], bs: 300 };
+const SPD = { v: 1 };       // 1 = normal; 0 = no animation and no waiting (tests)
+let zoomOn = false;
+document.querySelectorAll('.pl .dk').forEach(e => { e.style.backgroundImage = ART.faceURL(e.id === 'dkW' ? 2 : 1); });
+function buildBoard(n) {
+  if (B.n === n && B.cells.length === n * n) return;
+  B.n = n; B.cells = []; B.stones = []; B.lab = [];
+  boardEl.innerHTML = ''; boardEl.style.setProperty('--n', n);
+  const stars = new Set(E.geo(n).stars);
+  for (let r = 0; r < n; r++) {
+    const row = document.createElement('div'); row.className = 'row'; row.setAttribute('role', 'row');
+    for (let c = 0; c < n; c++) {
+      const el = document.createElement('div'); el.className = 'cell' + (c === 0 ? ' cl' : '') + (c === n - 1 ? ' cr' : '') + (r === 0 ? ' ct' : '') + (r === n - 1 ? ' cb' : '') + (stars.has(r * n + c) ? ' star' : '');
+      el.setAttribute('role', 'gridcell'); el.dataset.i = r * n + c; el.tabIndex = -1;
+      el.innerHTML = '<i class="gh"></i>';
+      row.appendChild(el); B.cells.push(el); B.stones.push(null); B.lab.push('');
+    }
+    boardEl.appendChild(row);
+  }
+  fit();
+}
+function fit() {
+  const st = $('stage'), w = st.clientWidth, h = st.clientHeight;
+  const base = Math.max(120, Math.floor(Math.min(w, h)));
+  B.bs = zoomOn ? Math.round(base * 1.75) : base;
+  boardEl.style.setProperty('--bs', B.bs + 'px');
+  st.classList.toggle('zoom', zoomOn);
+  if (!zoomOn) { st.scrollLeft = 0; st.scrollTop = 0; }
+}
+function mkStone(color) {
+  const d = document.createElement('div'); d.className = 'st ' + (color === 2 ? 'w' : 'b'); d.style.backgroundImage = ART.faceURL(color);
+  return d;
+}
+const stoneMs = () => Math.round(260 * SPD.v);
+// bring the stones on the screen in line with a board (numbers: Map cell -> move number to write on the stone, or null)
+function syncBoard(b, o) {
+  o = o || {}; const n = B.n, anim = !!o.anim && SPD.v > 0 && !reduceMotion.matches, nums = o.nums || null;
+  boardEl.classList.toggle('inst', !anim);
+  for (let i = 0; i < n * n; i++) {
+    const v = b[i], d = B.stones[i];
+    if (!v) { if (d) { d.remove(); B.stones[i] = null; } continue; }
+    let el = d;
+    if (!el || el.classList.contains('w') !== (v === 2)) {
+      if (el) el.remove();
+      el = mkStone(v); if (anim) el.classList.add('new'); B.cells[i].appendChild(el); B.stones[i] = el;
+    }
+    const num = nums ? nums.get(i) : 0;
+    let nm = el.firstChild;
+    if (num) { if (!nm) { nm = document.createElement('span'); nm.className = 'nm'; el.appendChild(nm); } if (nm.textContent !== String(num)) nm.textContent = num; }
+    else if (nm) nm.remove();
+    el.classList.toggle('sol', !!(o.sol && o.sol.has(i)));
+  }
+  return anim ? stoneMs() + 40 : 0;
+}
+function scrollToCell(i) {
+  if (!zoomOn || i == null || i < 0) return;
+  const st = $('stage'), c = B.cells[i]; if (!c) return;
+  const sr = st.getBoundingClientRect(), cr = c.getBoundingClientRect();
+  st.scrollLeft += cr.left + cr.width / 2 - (sr.left + sr.width / 2); st.scrollTop += cr.top + cr.height / 2 - (sr.top + sr.height / 2);
+}
+
+// =====================================================================================
+// the session: S is the game on the table (against the CPU, two on one device, a daily puzzle, or online)
+// =====================================================================================
+let S = null;
+const cpuWait = ms => Math.round(ms * SPD.v * (save.set.fast ? 0.4 : 1));
+const cpuOpts = () => (SPD.v === 0 ? { time: 60, nodes: 12000 } : {});
+const myColor = () => (S ? (S.mode === 'online' ? S.myc : S.mode === 'cpu' ? S.me : S.st.turn) : 1);
+function nameOf(k) {
+  if (!S) return k === 2 ? T('しろ') : T('くろ');
+  if (S.mode === 'online') return (S.names && S.names[k - 1]) || (k === 2 ? T('しろ') : T('くろ'));
+  if (S.mode === 'cpu') return k === S.me ? T('あなた') : T('CPU');
+  return k === 2 ? T('しろ') : T('くろ');
+}
+const canAct = () => !!S && !S.over && !S.busy && !S.menu && !(S.st && S.st.over) && (S.mode === 'pass' || (S.mode === 'cpu' && S.st.turn === S.me) || (S.mode === 'online' && S.st.turn === S.myc && !S.sending && S.live));
+const useConfirm = () => save.set.conf === 1 || (save.set.conf === 2 && coarse());
+const numMap = () => {
+  if (!S || !S.st) return null;
+  const puzzle = S.mode === 'puzzle';
+  if (!save.set.nums && !puzzle) return null;
+  const m = new Map(); S.st.moves.forEach((x, j) => m.set(x[0], j + 1)); return m;
+};
+function redraw(anim) {
+  const sol = S && S.pz && S.pz.solSet ? S.pz.solSet : null;
+  return syncBoard(S.st.b, { anim, nums: numMap(), sol });
+}
+const forbSet = () => {
+  if (!S || !S.st || S.st.over || S.st.rule !== 'renju' || !save.set.fbd) return new Set();
+  const showFor = S.mode === 'puzzle' ? false : (S.mode === 'pass' || (S.mode === 'cpu' && S.me === 1) || (S.mode === 'online' && S.myc === 1));
+  if (!showFor || S.st.turn !== 1) return new Set();
+  return new Set(E.forbiddenCells(S.st));
+};
+
+function markers() {
+  if (!S) return;
+  const n = B.n, st = S.st, puzzle = S.mode === 'puzzle';
+  const act = puzzle ? !(S.pz.done || S.busy) : canAct();
+  const fb = act ? forbSet() : new Set(), win = new Set(st.line || []);
+  const last = puzzle ? S.last : S.last;
+  const ghost = myColor() === 2 ? 'rgba(235, 228, 205, .75)' : 'rgba(20, 30, 70, .6)';
+  boardEl.style.setProperty('--gh', puzzle ? 'rgba(20, 30, 70, .6)' : ghost);
+  for (let i = 0; i < n * n; i++) {
+    const el = B.cells[i], v = st.b[i];
+    el.classList.toggle('lg', act && !v);
+    el.classList.toggle('last', i === last && !!v && !win.size);
+    el.classList.toggle('win', win.has(i));
+    el.classList.toggle('pv', i === S.pv && !v && act);
+    el.classList.toggle('ht', i === S.hint && !v);
+    el.classList.toggle('fb', fb.has(i));
+    el.classList.toggle('bad', !!(S.pz && S.pz.done && S.pz.bad === i && !v));
+    el.classList.toggle('cur', i === S.cur); el.tabIndex = i === S.cur ? 0 : -1;
+    const lab = mName(i, n) + ', ' + (v === 1 ? T('くろ') : v === 2 ? T('しろ') : '') + (fb.has(i) ? ', ×' : '');
+    if (B.lab[i] !== lab) { B.lab[i] = lab; el.setAttribute('aria-label', lab); }
+  }
+}
+function announce(t) { $('live').textContent = ''; setTimeout(() => { $('live').textContent = t; }, 30); }
+function setStatus(text, you) { const el = $('status'); el.textContent = text; el.classList.toggle('you', !!you); }
+
+function hud() {
+  if (!S) return;
+  const st = S.st, c = E.counts(st), over = !!S.over || st.over;
+  $('cB').textContent = c.b; $('cW').textContent = c.w;
+  $('nB').textContent = nameOf(1); $('nW').textContent = nameOf(2);
+  $('sB').textContent = (S.mode === 'cpu' && S.me === 2 ? LV_NAME[S.level] + ' · ' : '') + T('先手'); $('sW').textContent = (S.mode === 'cpu' && S.me === 1 ? LV_NAME[S.level] + ' · ' : '') + T('後手');
+  const turnOn = !over && S.mode !== 'puzzle';
+  $('plB').classList.toggle('on', turnOn && st.turn === 1); $('plW').classList.toggle('on', turnOn && st.turn === 2);
+  for (const [k, id] of [[1, 'bB'], [2, 'bW']]) {
+    const bd = $(id); let txt = '', cls = 'bd';
+    if (S.mode === 'online' && S.sl) {
+      const ch = S.sl[k - 1];
+      if (ch === 'd') { txt = T('切断'); cls += ' off'; } else if (ch === 'a') { txt = T('離席'); cls += ' away'; } else if (ch === 'c' || ch === 'x') txt = 'CPU';
+      if (turnOn && st.turn === k && S.tsec > 0 && ch === 'p') { txt = '⏱' + S.tsec; cls = 'bd tm'; }
+    }
+    bd.hidden = !txt; bd.textContent = txt; bd.className = cls;
+  }
+  const rs = RULE_SHORT[st.rule] || '';
+  $('iGame').textContent = S.mode === 'cpu' ? T('CPU {lv}・{n}×{n}', { lv: LV_NAME[S.level], n: st.n }) + ' · ' + rs : S.mode === 'pass' ? T('ふたりで1台・{n}×{n}', { n: st.n }) + ' · ' + rs : S.mode === 'online' ? T('オンライン対戦・{n}×{n}', { n: st.n }) + ' · ' + rs : T('今日のパズル {n}/5', { n: Math.min(5, S.pz.i + 1) });
+  const mine = canAct() || (S.mode === 'puzzle' && !S.pz.done && !S.busy);
+  $('iTurn').classList.toggle('you', mine);
+  $('iTurn').textContent = over ? T('ゲームが終わりました') : S.mode === 'puzzle' ? T('{n}手の問題', { n: S.pz.p ? S.pz.p.m : 0 }) : S.mode === 'pass' ? T('{name}の番です', { name: nameOf(st.turn) }) : (mine ? T('あなたの番です') : S.mode === 'online' ? T('相手の番です') : T('CPUが考えています…'));
+  $('iBest').textContent = '★ ' + fmtN(save.pts);
+  $('numBtn').setAttribute('aria-pressed', String(!!save.set.nums));
+  renderCtl();
+}
+function turnText() {
+  if (!S) return '';
+  if (S.over || S.st.over) return T('ゲームが終わりました');
+  if (S.mode === 'cpu') return S.st.turn === S.me ? T('あなたの番です') : T('CPUが考えています…');
+  if (S.mode === 'pass') return T('{name}の番です', { name: nameOf(S.st.turn) });
+  if (S.mode === 'online') return S.st.turn === S.myc ? T('あなたの番です') : T('{name}が考えています…', { name: nameOf(S.st.turn) });
+  return '';
+}
+function refreshStatus() {
+  if (!S || S.mode === 'puzzle') return;
+  const you = canAct();
+  setStatus((S.note ? S.note + ' ' : '') + turnText(), you);
+}
+
+// ---------- the buttons under the board ----------
+function renderCtl() {
+  const ctl = $('ctl'); if (!S) { ctl.style.visibility = 'hidden'; return; }
+  ctl.style.visibility = '';
+  const conf = useConfirm();
+  const key = S.mode + ':' + (S.mode === 'puzzle' ? (S.pz.done ? 'd' : 'q') : '') + ':' + EN + ':' + (conf ? 'c' : 'n') + ':' + (zoomOn ? 'z' : '');
+  if (ctl.dataset.key !== key) {
+    ctl.dataset.key = key; ctl.innerHTML = '';
+    const mk = (id, label, sub, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'act' + (cls ? ' ' + cls : ''); b.dataset.id = id; b.innerHTML = esc(label) + (sub ? '<small>' + esc(sub) + '</small>' : ''); b.addEventListener('click', () => ctlAct(id)); ctl.appendChild(b); return b; };
+    if (S.mode === 'cpu' || S.mode === 'pass') { mk('hint', T('ヒント'), 'H'); mk('undo', T('もどす'), 'U'); if (conf) mk('ok', T('おく'), 'Enter', 'go'); }
+    else if (S.mode === 'online') { if (conf) mk('ok', T('おく'), 'Enter', 'go'); }
+    else if (S.mode === 'puzzle') { if (S.pz.done) mk('next', S.pz.i >= 4 ? T('結果を見る') : T('つぎへ'), 'Enter', 'go'); else if (conf) mk('ok', T('おく'), 'Enter', 'go'); }
+    const z = mk('zoom', zoomOn ? T('全体') : T('拡大'), 'Z'); z.setAttribute('aria-pressed', String(zoomOn));
+  }
+  const dis = (id, v) => { const b = ctl.querySelector('[data-id="' + id + '"]'); if (b) b.disabled = !!v; };
+  dis('hint', !(S.mode === 'cpu' || S.mode === 'pass') || !canAct() || !!S.thinking);
+  dis('undo', undoTarget() < 0);
+  dis('ok', !(S.pv >= 0) || !(S.mode === 'puzzle' ? !S.pz.done && !S.busy : canAct()));
+  fit();
+}
+function ctlAct(id) {
+  if (id === 'hint') doHint(); else if (id === 'undo') doUndo(); else if (id === 'zoom') toggleZoom();
+  else if (id === 'ok') { if (S && S.pv >= 0) commit(S.pv); } else if (id === 'next') puzzleNext();
+}
+function toggleZoom() {
+  zoomOn = !zoomOn; fit(); const c = $('ctl'); c.dataset.key = ''; renderCtl();
+  if (S) { markers(); scrollToCell(S.pv >= 0 ? S.pv : S.last >= 0 ? S.last : S.cur); }
+  sfx('tap');
+}
+
+// ---------- starting, saving and resuming a game against the CPU or on one device ----------
+function mkSession(o) { return Object.assign({ mode: 'cpu', st: null, n: 15, rule: 'free', level: 2, me: 1, seed: 0, over: false, busy: false, menu: false, timer: 0, hinted: 0, undone: 0, fork: 0, ms: 0, t0: Date.now(), hint: -1, pv: -1, cur: 0, last: -1, note: '' }, o); }
+const centerCell = n => Math.floor(n / 2) * n + Math.floor(n / 2);
+function hideOverlays() { for (const id of OVERLAYS) $(id).hidden = true; }
+function stopTimers() { if (S) { clearTimeout(S.timer); S.timer = 0; } }
+function startGame(o) {
+  o = o || {};
+  stopTimers(); if (S && S.mode === 'online' && TR && !S.over) { TR.leave(); }
+  hideOverlays();
+  const set = save.set, mode = o.mode === 'pass' ? 'pass' : 'cpu';
+  const n = o.n || set.n, rule = o.rule || set.rule, level = o.level || set.level, pick = o.me || set.me;
+  const me = pick === 'w' ? 2 : pick === 'b' ? 1 : (Math.random() < 0.5 ? 1 : 2), seed = rndSeed();
+  const st = E.create({ n, rule, seed });
+  S = mkSession({ mode, st, n, rule, level, me: mode === 'cpu' ? me : 1, seed, cfg: { mode, level, me: pick, n, rule } });
+  S.cur = centerCell(n);
+  buildBoard(n); redraw(false); hud(); markers();
+  emit('play_start', { mode: mode === 'pass' ? 'practice' : 'normal', seed });
+  if (mode === 'cpu') setStatus(T('あなた：{c}', { c: me === 1 ? T('くろ（先手）') : T('しろ（後手）') }) + ' ' + turnText(), me === 1);
+  else refreshStatus();
+  persist(); loop();
+  return S;
+}
+const runOf = () => ({ v: 1, mode: S.mode, n: S.n, rule: S.rule, level: S.level, me: S.me, seed: S.seed, moves: S.st.moves, hinted: S.hinted, undone: S.undone, fork: S.fork, ms: Math.round(S.ms + (Date.now() - S.t0)), cfg: S.cfg, at: Date.now() });
+function persist() {
+  if (!S || S.over || (S.mode !== 'cpu' && S.mode !== 'pass')) return;
+  store.set(RUN_KEY, JSON.stringify(runOf()));
+}
+function clearRun() { store.del(RUN_KEY); }
+function readRun() {
+  let r = null;
+  try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) {}
+  if (!r || r.v !== 1 || !['cpu', 'pass'].includes(r.mode) || !Array.isArray(r.moves) || !SIZES.includes(r.n) || !E.RULES.includes(r.rule)) return null;
+  const st = E.replay(r.n, r.rule, r.moves.filter(m => Array.isArray(m)), r.seed);
+  if (!st || st.over) return null;
+  return Object.assign(r, { st });
+}
+function resumeGame(r) {
+  stopTimers(); hideOverlays();
+  S = mkSession({ mode: r.mode, st: r.st, n: r.n, rule: r.rule, level: clamp(r.level | 0 || 2, 1, 4), me: r.me === 2 ? 2 : 1, seed: r.seed >>> 0, hinted: r.hinted | 0, undone: r.undone | 0, fork: r.fork | 0, ms: r.ms | 0,
+    cfg: r.cfg || { mode: r.mode, level: r.level, me: 'b', n: r.n, rule: r.rule } });
+  const lm = r.st.moves.slice(-1)[0]; S.last = lm ? lm[0] : -1; S.cur = S.last >= 0 ? S.last : centerCell(r.n);
+  buildBoard(r.n); redraw(false); hud(); markers(); refreshStatus();
+  emit('play_start', { mode: r.mode === 'pass' ? 'practice' : 'normal', resumed: true });
+  loop();
+}
+
+// ---------- the turn loop ----------
+function loop() {
+  if (!S || S.over || S.menu || S.busy || S.mode === 'puzzle' || S.mode === 'online') return;
+  clearTimeout(S.timer);
+  if (S.mode === 'cpu' && S.st.turn !== S.me && !S.st.over) S.timer = setTimeout(cpuMove, cpuWait(450));
+}
+function cpuMove() {
+  if (!S || S.over || S.menu || S.busy || S.mode !== 'cpu' || S.st.turn === S.me || S.st.over) return;
+  const c = E.cpu(S.st, S.level, cpuOpts());
+  if (c == null) return;
+  applyMove(c, false);
+}
+function applyMove(cell, byHuman) {
+  const st = S.st, k = st.turn;
+  let tac = null;
+  if (S.mode === 'cpu' && byHuman) tac = E.analyzeMove(st.b.slice(), st.n, cell, k, st.rule);
+  const ev = E.play(st, cell);
+  if (!ev) { sfx('error'); return false; }
+  if (tac && (tac.open4 || tac.fours >= 2 || (tac.fours >= 1 && tac.threes >= 1))) S.fork++;
+  S.hint = -1; S.pv = -1; S.last = cell; S.cur = cell; S.busy = true; S.thinking = false;
+  const wait = redraw(true);
+  sfx('move');
+  S.note = T('{name}が {n} 手目を置きました', { name: nameOf(k), n: st.moves.length });
+  announce(S.note);
+  persist(); hud(); markers(); refreshStatus(); scrollToCell(cell);
+  setTimeout(() => { if (!S) return; S.busy = false; afterMove(); }, wait);
+  return true;
+}
+function afterMove() {
+  if (!S) return;
+  if (S.st.over) { finish(); return; }
+  hud(); markers(); refreshStatus(); loop();
+}
+function illegal(i, why) {
+  const el = B.cells[i]; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 350);
+  sfx('error'); setStatus(why || T('そこには石があります'), true);
+  markers();
+}
+const forbMsg = r => (r === 'three' ? T('禁じ手：三三（活三が2つできる）') : r === 'four' ? T('禁じ手：四四（四が2つできる）') : T('禁じ手：長連（6つ以上つながる）'));
+// a tap or click on a crossing: with "confirm taps" the first tap only puts a marker there
+function onCell(i) {
+  if (!S || S.menu) return;
+  S.cur = i;
+  const puzzle = S.mode === 'puzzle';
+  if (puzzle ? (S.pz.done || S.busy) : !canAct()) { markers(); return; }
+  if (S.st.b[i]) { illegal(i); return; }
+  if (!puzzle && S.st.rule === 'renju' && S.st.turn === 1) { const why = E.forbiddenReason(S.st, i); if (why) { illegal(i, forbMsg(why)); return; } }
+  if (useConfirm() && S.pv !== i) {
+    S.pv = i; sfx('select'); markers(); renderCtl(); scrollToCell(i);
+    setStatus(T('ここに置きますか？「おく」か、同じ場所をもう一度タップ'), true);
+    return;
+  }
+  commit(i);
+}
+function commit(i) {
+  if (!S) return;
+  S.pv = -1;
+  if (S.mode === 'puzzle') { puzzleMove(i); return; }
+  if (!canAct() || S.st.b[i]) { markers(); return; }
+  if (S.mode === 'online') { sendOnline(i); return; }
+  applyMove(i, true);
+}
+
+// ---------- hint and undo ----------
+function doHint() {
+  if (!S || !canAct() || S.thinking || (S.mode !== 'cpu' && S.mode !== 'pass')) return;
+  S.thinking = true; setStatus(T('考え中…'), true); renderCtl();
+  setTimeout(() => {
+    if (!S) return; S.thinking = false;
+    const h = E.best(S.st, 4, SPD.v === 0 ? { time: 120, nodes: 20000 } : { time: 600 }); if (!h) { refreshStatus(); return; }
+    S.hint = h.cell; S.hinted++; S.cur = h.cell; S.pv = -1; persist();
+    sfx('select'); markers(); renderCtl(); scrollToCell(h.cell);
+    setStatus(h.why === 'vcf' || h.why === 'vct' ? T('おすすめ: {m}（連続四で勝てます）', { m: mName(h.cell, S.st.n) }) : h.why === 'block' || h.why === 'kill' ? T('おすすめ: {m}（相手の勝ちをふせぎます）', { m: mName(h.cell, S.st.n) }) : T('おすすめ: {m}', { m: mName(h.cell, S.st.n) }), true);
+    announce($('status').textContent);
+  }, 20);
+}
+// the move number to go back to (before my last move; in two-player games before the last move), or -1
+function undoTarget() {
+  if (!S || S.over || S.busy || S.st.over || S.menu || (S.mode !== 'cpu' && S.mode !== 'pass')) return -1;
+  const mv = S.st.moves;
+  for (let j = mv.length - 1; j >= 0; j--) { if (S.mode === 'pass' || mv[j][1] === S.me) return j; }
+  return -1;
+}
+function doUndo() {
+  const j = undoTarget(); if (j < 0) { sfx('error'); return; }
+  stopTimers();
+  const st = E.rewind(S.st, j); if (!st) return;
+  S.st = st; S.undone++; S.hint = -1; S.pv = -1; S.busy = false; S.thinking = false;
+  const lm = st.moves.slice(-1)[0]; S.last = lm ? lm[0] : -1; S.cur = S.last >= 0 ? S.last : centerCell(st.n);
+  redraw(false); S.note = T('ひとつ前にもどしました');
+  sfx('tap'); persist(); hud(); markers(); refreshStatus(); loop();
+}
+
+// ---------- the move list ----------
+function showMoves() {
+  if (!S) return;
+  const st = S.st, list = $('mList'); list.innerHTML = '';
+  const mv = st.moves;
+  $('mSub').textContent = mv.length ? T('{n}手', { n: mv.length }) : T('まだ手がありません');
+  mv.forEach((m, k) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="dk"></span>' + esc(mName(m[0], st.n));
+    li.querySelector('.dk').style.backgroundImage = ART.faceURL(m[1]);
+    list.appendChild(li);
+  });
+  S.menuWas = S.menu; S.menu = true;
+  $('ovMoves').hidden = false; $('mClose').focus({ preventScroll: true });
+  const sc = list.parentElement; sc.scrollTop = sc.scrollHeight;
+}
+function closeMoves() {
+  $('ovMoves').hidden = true;
+  if (!S) return;
+  S.menu = !!S.menuWas; S.menuWas = false;
+  if (S.over && S.showResultAgain) { S.showResultAgain = false; $('ovResult').hidden = false; return; }
+  if (!S.menu) { hud(); markers(); loop(); }
+}
+$('mClose').addEventListener('click', closeMoves);
+
+// ---------- the end of a game ----------
+function burst() {
+  if (reduceMotion.matches || SPD.v === 0) return;
+  const fx = $('fx'), c = fx.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cols = ['#f0c968', '#5a6aa3', '#f1e8d6', '#6fe3b0', '#ff8d7d'], parts = [];
+  for (let i = 0; i < 70; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 60, y: H * 0.4, vx: (Math.random() - 0.5) * 9, vy: -4 - Math.random() * 7, r: Math.random() * 3, vr: (Math.random() - 0.5) * 0.4, c: cols[i % cols.length], s: 5 + Math.random() * 5, t: 0 });
+  (function tick() {
+    c.clearRect(0, 0, W, H);
+    parts.forEach(p => { p.t++; p.vy += 0.28; p.x += p.vx; p.y += p.vy; p.r += p.vr; c.save(); c.globalAlpha = Math.max(0, 1 - p.t / 100); c.translate(p.x, p.y); c.rotate(p.r); c.fillStyle = p.c; c.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); c.restore(); });
+    if (parts[0].t < 100) requestAnimationFrame(tick); else c.clearRect(0, 0, W, H);
+  })();
+}
+function finish() {
+  if (!S || S.over) return;
+  S.over = true; stopTimers(); clearRun();
+  const st = S.st, r = E.result(st), cpuMode = S.mode === 'cpu', win = cpuMode && r.winner === S.me, draw = !r.winner;
+  let stars = 0, why = '';
+  if (cpuMode) {
+    if (win) {
+      if (S.n !== 15) why = T('15×15以外の盤では★はつきません（15×15で勝つと★）'); else if (S.hinted) why = T('ヒントを使ったので、★はつきません'); else if (S.undone) why = T('もどすを使ったので、★はつきません'); else stars = S.level;
+    }
+    const w = wRec(S.n + '-' + S.level); w.p++; if (win) w.w++;
+    bump('plays'); if (win) {
+      bump('wins'); if (S.level >= 3) bump('lv3'); if (S.level >= 4) bump('hard'); if (S.n !== 15) bump('small'); if (S.rule === 'std') bump('std'); if (S.rule === 'renju') bump('renju');
+      const mine = st.moves.filter(m => m[1] === S.me).length; if (mine <= 12) bump('quick'); if (st.moves.length >= 60) bump('long');
+    }
+    if (S.fork) bump('fork', S.fork);
+    save.pts += stars;
+  } else bump('twop');
+  writeSave();
+  const dur = Math.round(S.ms + (Date.now() - S.t0));
+  emit('play_end', { mode: cpuMode ? 'normal' : 'practice', score: stars, durationMs: dur, reason: win ? 'clear' : 'over' });
+  hud(); markers();
+  if (win) { sfx('win'); burst(); } else sfx(draw ? 'ok' : 'over');
+  setTimeout(() => showResult(r, win, draw, stars, why), Math.round(900 * SPD.v));
+}
+function showResult(r, win, draw, stars, why) {
+  if (!S || !S.over) return;
+  const cpuMode = S.mode === 'cpu';
+  $('rTitle').textContent = draw ? T('引き分け') : cpuMode ? (win ? T('あなたの勝ち！') : T('あなたの負け')) : T('{name}の勝ち！', { name: nameOf(r.winner) });
+  $('rSub').textContent = (draw ? T('盤がいっぱいになりました') : T('{n}手で決着', { n: r.moves })) + ' · ' + (cpuMode ? T('CPU {lv}・{n}×{n}', { lv: LV_NAME[S.level], n: S.st.n }) : T('ふたりで1台・{n}×{n}', { n: S.st.n })) + ' · ' + RULE_SHORT[S.st.rule];
+  fillScores($('rRank'), r);
+  $('rBig').textContent = stars ? '★'.repeat(Math.min(4, stars)) : '';
+  $('rNew').hidden = !stars; if (stars) $('rNew').textContent = T('★ {n} をもらいました', { n: stars });
+  $('rNote').textContent = cpuMode ? (stars ? '' : why || (win ? '' : T('CPUに勝つと★（よわい1・ふつう2・つよい3・とてもつよい4）'))) : '';
+  $('rAgain').disabled = false; $('rAgain').textContent = T('もう一度'); $('rMoves').hidden = false;
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+function fillScores(ol, r) {
+  ol.innerHTML = '';
+  for (const k of [1, 2]) {
+    const li = document.createElement('li'); if (S && ((S.mode === 'cpu' && k === S.me) || (S.mode === 'online' && k === S.myc))) li.className = 'me';
+    const res = !r.winner ? T('引き分け') : r.winner === k ? T('勝ち') : T('負け');
+    li.innerHTML = '<span class="no' + (r.winner === k ? ' ok' : '') + '"><i class="dk" style="display:block;width:20px;height:20px;border-radius:50%;background-size:100% 100%"></i></span><span class="nm">' + esc(nameOf(k)) + ' · ' + esc(COLOR_NAME(k)) + '</span><span class="sc">' + esc(res) + '</span>';
+    li.querySelector('.dk').style.backgroundImage = ART.faceURL(k);
+    ol.appendChild(li);
+  }
+}
+function giveUp() {
+  if (!S || S.over) return;
+  S.over = true; stopTimers(); clearRun();
+  const dur = Math.round(S.ms + (Date.now() - S.t0));
+  if (S.mode === 'online') emit('play_end', { mode: 'versus', score: 0, durationMs: dur, reason: 'quit' });
+  else if (S.mode === 'puzzle') emit('play_end', { mode: S.pz.practice ? 'practice' : 'daily', dateKey: S.pz.practice ? undefined : S.pz.dk, score: 0, durationMs: dur, reason: 'quit' });
+  else emit('play_end', { mode: S.mode === 'pass' ? 'practice' : 'normal', score: 0, durationMs: dur, reason: 'quit' });
+}
+
+// =====================================================================================
+// the daily puzzle: five positions (easier first). "Black to move: chain fours and make five in m moves" — the first move is the only one that does it
+// =====================================================================================
+function dailyInfo(dk) {
+  if (!PF || !BANK) return null;
+  dk = dk && PF.isDateKey(dk) ? Number(dk) : PF.jstDateKey();
+  return { dk, seed: PF.dailySeed(GAME, dk) };
+}
+function startPuzzle(dk, practice) {
+  const d = dailyInfo(dk); if (!d) return;
+  stopTimers(); hideOverlays();
+  if (S && S.mode === 'online' && TR && !S.over) TR.leave();
+  const idx = E.dailySet(d.seed, BANK), same = save.dl.last === d.dk;
+  const done = same && !practice ? save.dl.r.length : 0;
+  S = mkSession({ mode: 'puzzle', n: 15, rule: 'free', level: 4, pz: { dk: d.dk, idx, i: Math.min(done, 5), res: same && !practice ? save.dl.r.map(x => x.slice()) : [], practice: !!practice, done: false, bad: -1, left: 0, p: null, solSet: null } });
+  buildBoard(15);
+  if (S.pz.i >= 5) { S.pz.i = 4; S.pz.p = BANK.list[idx[4]]; S.st = E.fromPuzzle(S.pz.p); S.over = true; redraw(false); showPuzzleSummary(); return; }
+  emit('play_start', { mode: practice ? 'practice' : 'daily', dateKey: practice ? undefined : d.dk });
+  loadPuzzle();
+}
+function loadPuzzle() {
+  const p = BANK.list[S.pz.idx[S.pz.i]];
+  S.pz.p = p; S.pz.done = false; S.pz.ok = false; S.pz.bad = -1; S.pz.left = p.m; S.pz.solSet = null; S.pv = -1; S.hint = -1; S.last = -1; S.busy = false;
+  S.st = E.fromPuzzle(p); S.cur = centerCell(15); S.t0 = Date.now();
+  redraw(false); hud(); markers();
+  setStatus(T('黒番。四をつないで {m} 手で五をつくろう', { m: p.m }), true);
+  announce($('status').textContent);
+  $('ctl').dataset.key = ''; renderCtl();
+}
+function puzzleMove(cell) {
+  const pz = S.pz; if (pz.done || S.busy || S.st.b[cell]) return;
+  const before = S.st.moves.length, r = E.puzzleStep(S.st, cell, pz.left);
+  if (!r.ok) { puzzleWrong(cell); return; }
+  S.last = r.won ? cell : (r.reply >= 0 ? r.reply : cell); S.cur = cell; S.busy = true; S.hint = -1;
+  const wait = redraw(true); sfx(r.won ? 'win' : 'move');
+  void before;
+  if (r.won) {
+    pz.done = true; pz.ok = true; pz.pts = E.puzzlePoints(true); pz.left = 0;
+    pz.firstCell = pz.firstCell == null ? cell : pz.firstCell;
+    recordPuzzle(pz.firstCell, 1, pz.pts);
+    setStatus(T('正解！') + ' ' + T('五ができました！') + ' · +' + pz.pts, true); announce($('status').textContent);
+    setTimeout(() => { if (!S) return; S.busy = false; hud(); markers(); $('ctl').dataset.key = ''; renderCtl(); }, wait);
+    hud(); markers();
+  } else {
+    if (pz.firstCell == null) pz.firstCell = cell;
+    pz.left = r.left;
+    setStatus(T('その調子。あと {n} 手', { n: pz.left }), true); announce($('status').textContent);
+    setTimeout(() => { if (!S) return; S.busy = false; hud(); markers(); renderCtl(); }, wait);
+    hud(); markers();
+  }
+  scrollToCell(cell);
+}
+function puzzleWrong(cell) {
+  const pz = S.pz, p = pz.p;
+  pz.done = true; pz.ok = false; pz.bad = cell; pz.pts = 0;
+  const first = pz.firstCell == null ? cell : pz.firstCell;
+  // show the answer: the position again, then the numbered line
+  const st = E.fromPuzzle(p), sol = new Set();
+  for (const c of p.s) { E.play(st, c); sol.add(c); }
+  S.st = st; pz.solSet = sol; S.last = p.s[p.s.length - 1]; S.hint = -1;
+  recordPuzzle(first, 0, 0);
+  redraw(false); sfx('fail'); hud(); markers(); $('ctl').dataset.key = ''; renderCtl();
+  setStatus(T('ざんねん…') + ' ' + T('答えは {m}（{n}手）。番号の順に置きます', { m: mName(p.s[0], 15), n: p.m }), true);
+  announce($('status').textContent);
+}
+function recordPuzzle(first, ok, pts) {
+  const pz = S.pz;
+  pz.res = pz.res.slice(0, pz.i); pz.res.push([first, ok, pts]);
+  if (!pz.practice) { save.dl = { last: pz.dk, pts: pz.res.reduce((a, x) => a + x[2], 0), r: pz.res.map(x => x.slice()) }; if (ok) bump('pz'); writeSave(); }
+}
+function puzzleNext() {
+  if (!S || !S.pz || !S.pz.done) return;
+  if (S.pz.i >= 4) { finishPuzzles(); return; }
+  S.pz.i++; S.pz.firstCell = null; loadPuzzle();
+}
+function finishPuzzles() {
+  const pz = S.pz, total = pz.res.reduce((a, x) => a + x[2], 0), okN = pz.res.filter(x => x[1]).length;
+  S.over = true;
+  if (!pz.practice) { if (okN === 5) bump('dperf'); bump('dplay'); writeSave(); }
+  emit('play_end', { mode: pz.practice ? 'practice' : 'daily', dateKey: pz.practice ? undefined : pz.dk, score: pz.practice ? 0 : total, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'clear' });
+  if (okN === 5) { sfx('win'); burst(); } else sfx('clear');
+  showPuzzleSummary();
+}
+function showPuzzleSummary() {
+  const pz = S.pz, res = pz.res, total = res.reduce((a, x) => a + x[2], 0), okN = res.filter(x => x[1]).length;
+  $('rTitle').textContent = okN === 5 ? T('5問ぜんぶ正解！') : T('今日の5問');
+  $('rSub').textContent = T('今日は {a}/5 正解', { a: okN });
+  const ol = $('rRank'); ol.innerHTML = '';
+  res.forEach((x, i) => { const li = document.createElement('li'); li.innerHTML = '<span class="no ' + (x[1] ? 'ok' : 'ng') + '">' + (x[1] ? '○' : '×') + '</span><span class="nm">' + esc(T('{n}問目', { n: i + 1 })) + ' · ' + esc(T('{n}手の問題', { n: BANK.list[pz.idx[i]].m })) + '</span><span class="sc">' + esc(T('{n}点', { n: x[2] })) + '</span>'; ol.appendChild(li); });
+  $('rBig').textContent = T('合計 {n} 点', { n: total });
+  $('rNew').hidden = true; $('rNote').textContent = pz.practice ? T('同じ日のやり直しは記録に入りません') : '';
+  $('rAgain').disabled = false; $('rAgain').textContent = T('もう一度ためす（れんしゅう）'); $('rMoves').hidden = true;
+  hideOverlays(); $('ovResult').hidden = false; S.over = true; S.mode = 'puzzle';
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+  hud(); setStatus(T('今日は {a}/5 正解（{p}点）', { a: okN, p: total }), false);
+}
+
+// =====================================================================================
+// rules page
+// =====================================================================================
+function rulesHTML() {
+  const li = a => '<ul>' + a.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>';
+  return '<p class="lead">' + esc(L('黒と白の石を交互に置いて、たて・よこ・ななめに、先に5つならべたほうの勝ちです。', 'Place black and white stones in turn. The first to line up five in a row, column or diagonal wins.')) + '</p>' +
+    '<h3>' + esc(L('あそびかた', 'How to play')) + '</h3>' + li([
+      L('黒（先手）から交互に、盤の線が交わる点（交点）に石を1つ置きます。置いた石は動かせません。', 'Black (first) and white take turns placing one stone on a crossing of the lines. Stones never move.'),
+      L('盤は15×15（ふつう）・13×13・9×9。最後の手には赤い印がつきます。勝った5つは金色に光ります。', 'The board is 15×15 (standard), 13×13 or 9×9. A red mark shows the last move and the winning five glows gold.'),
+      L('盤がいっぱいになっても決まらなければ、引き分けです。', 'If the board fills up with no five, it is a draw.'),
+    ]) +
+    '<h3>' + esc(L('3つのルール（タイトルで選びます）', 'Three rule sets (pick one on the title)')) + '</h3>' + li([
+      L('自由：5つ以上つながれば勝ち（6つでも勝ち）。禁じ手はありません。', 'Free: five or more in a row wins (six counts too). No forbidden moves.'),
+      L('ちょうど5：ちょうど5つで勝ち。6つ以上つながっても勝ちにはなりません（黒も白も）。', 'Exactly five: only a line of exactly five wins. Six or more does not win (for both colors).'),
+      L('連珠ふう：白は5つ以上で勝ち。黒は「ちょうど5つ」で勝ちで、次の手は置けません（置けないマスには×が出ます）。長連＝6つ以上つながる／四四＝四を2つ同時につくる／三三＝活三（あと1手で両はしが開いた四になる三）を2つ同時につくる。その手でちょうど5つできるなら、禁じ手ではなく勝ちです。', 'Renju-style: White wins with five or more. Black wins only with exactly five, and may not play these (points Black cannot play show a ×): overline = six or more in a row; double four = making two fours at once; double three = making two open threes at once (a three that becomes an open four with one more stone). A move that makes exactly five is not forbidden, it simply wins.'),
+    ]) +
+    '<h3>' + esc(L('こつ', 'Tips')) + '</h3>' + li([
+      L('四（あと1つで五になる形）は、相手がその場所をふさぐまで放っておけません。両はしが開いた四や、四を2つ同時につくる手は、ふせげません。', 'A four (one stone from five) must be blocked at once. An open four, or two fours at once, cannot be stopped.'),
+      L('三（両はしが開いた3つ）をつくると、次に「止められない四」をねらえます。四と三を同時につくる「四三」は強い形です。', 'An open three threatens an unstoppable open four next. Making a four and a three at once is a strong fork.'),
+    ]) +
+    '<h3>' + esc(L('このゲームのしくみ', 'In this game')) + '</h3>' + li([
+      L('CPUは4段階。よわい・ふつう・つよい・とてもつよい（深く読み、連続四も見つけます）。', 'Four CPU levels: Easy, Normal, Hard and Expert (reads deeper and finds continuous fours).'),
+      L('「ヒント」（H）で、おすすめの手が光ります。「もどす」（U）で、自分の前の手にもどれます。使うと、その試合には★がつきません。', 'The Hint button (H) lights up a suggested move, and Undo (U) takes back your last move. Using either means no ★ for that game.'),
+      L('15×15でCPUに勝つと★（よわい1・ふつう2・つよい3・とてもつよい4）。★の合計がランキングです。13×13・9×9・ふたりで1台・オンラインは記録に入りません。', 'Beat the CPU on 15×15 to earn ★ (Easy 1, Normal 2, Hard 3, Expert 4). Your ★ total is the ranking. 13×13, 9×9, two players on one device and online matches do not count.'),
+      L('「今日のパズル」は、やさしい順の5問。「黒番。四をつないで○手で五をつくれ」：四（相手がふせぐしかない形）だけをつないで勝つ手順を見つけます。いちばん短い手順の最初の手は1つだけです。まちがえると答えが出ます。', 'The daily puzzle is five positions, easiest first: "Black to move: chain fours and make five in N moves". Find the sequence of fours (each forces one reply) that wins. The first move of the shortest line is unique. A wrong move shows the answer.'),
+      L('スマホなどのタッチ画面では、まず目印が出て、「おく」かもう一度のタップで置きます（まちがいを防ぎます。タイトルで変えられます）。「拡大」で盤を大きくできます。', 'On touch screens a marker appears first; press Place or tap again to play (to avoid mis-taps; changeable on the title). Zoom enlarges the board.'),
+      L('キーボード：矢印で動かして Enter か Space で置く。H ヒント・U もどす・L 棋譜・N 番号・Z 拡大・Esc メニュー。', 'Keyboard: arrows to move, Enter or Space to play. H hint, U undo, L move list, N numbers, Z zoom, Esc menu.'),
+    ]);
+}
+function showHowto(first) {
+  $('howtoTitle').textContent = T('ルール');
+  const body = $('howBody'); body.innerHTML = rulesHTML();
+  $('howtoGo').textContent = first ? T('はじめる') : T('とじる');
+  if (S) { S.menuWas = S.menu; S.menu = true; }
+  const wasTitle = !$('ovTitle').hidden, wasResult = !$('ovResult').hidden;
+  $('howto').dataset.from = first ? 'first' : wasTitle ? 'title' : wasResult ? 'result' : 'game';
+  hideOverlays(); $('howto').hidden = false; body.scrollTop = 0;
+  try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('howtoGo').addEventListener('click', () => {
+  store.set(HOWTO_KEY, '1');
+  const from = $('howto').dataset.from; $('howto').hidden = true;
+  if (S) S.menu = !!S.menuWas;
+  if (from === 'result' && S && S.over) $('ovResult').hidden = false;
+  else if (from === 'game' && S && !S.over) { hud(); markers(); loop(); }
+  else showTitle();
+});
+
+// =====================================================================================
+// title
+// =====================================================================================
+const OVERLAYS = ['ovTitle', 'ovResult', 'ovMoves', 'howto'];
+const anyOverlay = () => OVERLAYS.some(id => !$(id).hidden) || !!document.querySelector('.kb-layer:not([hidden]), .ktr-ov:not([hidden])');
+const segHTML = (vals, cur, key) => vals.map(v => '<button class="opt" type="button" data-' + key + '="' + v[0] + '" aria-pressed="' + (String(v[0]) === String(cur)) + '">' + esc(v[1]) + '</button>').join('');
+function renderTitle() {
+  let tp = 0, tw = 0; for (const k of Object.keys(save.w)) { tp += save.w[k].p; tw += save.w[k].w; }
+  $('tDesc').textContent = L('黒と白の石を、先に5つならべたほうが勝ち。CPUは4段階、毎日のパズルや友だちとのオンライン対戦も。', 'Line up five stones before your opponent does. Four CPU levels, a daily puzzle and online matches with friends.');
+  $('tBest').textContent = tp ? T('{p}回あそんで{w}回勝ち', { p: tp, w: tw }) : T('まだ記録がありません');
+  const o = $('tOpts');
+  let h = '<div class="og"><div class="ol">' + esc(T('CPUの強さ')) + '</div><div class="seg" id="optLv">' + segHTML([1, 2, 3, 4].map(n => [n, LV_NAME[n]]), save.set.level, 'lv') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('あなたの色')) + '</div><div class="seg" id="optMe">' + segHTML([['b', T('くろ（先手）')], ['w', T('しろ（後手）')], ['r', T('おまかせ')]], save.set.me, 'me') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('盤の大きさ')) + '</div><div class="seg" id="optN">' + segHTML([[15, '15×15'], [13, '13×13'], [9, '9×9']], save.set.n, 'n') + '</div></div>';
+  h += '<div class="og"><div class="ol">' + esc(T('しかた（ルール）')) + '</div><div class="seg" id="optRu">' + segHTML([['free', T('自由')], ['std', T('ちょうど5')], ['renju', T('連珠ふう')]], save.set.rule, 'ru') + '</div><p>' + esc(RULE_LONG[save.set.rule]) + '</p></div>';
+  h += '<button class="tog" type="button" role="switch" id="optNums" aria-checked="' + !!save.set.nums + '"><span>' + esc(T('手の番号を見せる')) + '<small>' + esc(T('石に置いた順の数字を書きます')) + '</small></span><i></i></button>';
+  h += '<button class="tog" type="button" role="switch" id="optFbd" aria-checked="' + !!save.set.fbd + '"><span>' + esc(T('禁じ手に×を出す')) + '<small>' + esc(T('連珠ふうのとき、黒が置けないマスに×が出ます')) + '</small></span><i></i></button>';
+  h += '<div class="og"><div class="ol">' + esc(T('タップで決める')) + '</div><div class="seg" id="optCf">' + segHTML([[2, T('おまかせ（タッチ画面だけ）')], [1, T('する')], [0, T('しない')]], save.set.conf, 'cf') + '</div><p>' + esc(T('まず目印が出て、「おく」かもう一度タップで置きます')) + '</p></div>';
+  h += '<button class="tog" type="button" role="switch" id="optFast" aria-checked="' + !!save.set.fast + '"><span>' + esc(T('CPUをはやく進める')) + '<small>' + esc(T('CPUの待ち時間を短くします')) + '</small></span><i></i></button>';
+  o.innerHTML = h;
+  const set = (key, f) => o.querySelectorAll('[data-' + key + ']').forEach(b => b.addEventListener('click', () => { f(b.dataset[key]); writeSave(); sfx('tap'); renderTitle(); }));
+  set('lv', v => { save.set.level = +v; }); set('me', v => { save.set.me = v; }); set('n', v => { save.set.n = SIZES.includes(+v) ? +v : 15; }); set('ru', v => { save.set.rule = E.RULES.includes(v) ? v : 'free'; }); set('cf', v => { save.set.conf = [0, 1, 2].includes(+v) ? +v : 2; });
+  const tg = (id, k) => $(id).addEventListener('click', () => { save.set[k] = save.set[k] ? 0 : 1; writeSave(); sfx('tap'); renderTitle(); });
+  tg('optNums', 'nums'); tg('optFbd', 'fbd'); tg('optFast', 'fast');
+  const d = dailyInfo(), db = $('tDaily');
+  db.hidden = !d;
+  if (d) { const same = save.dl.last === d.dk, okN = same ? save.dl.r.filter(x => x[1]).length : 0; $('tDailySub').textContent = same && save.dl.r.length >= 5 ? T('今日は {a}/5 正解（{p}点）', { a: okN, p: save.dl.pts }) : same && save.dl.r.length ? T('今日は {a}/5 正解', { a: okN }) + ' · ' + T('{n}問目', { n: save.dl.r.length + 1 }) : T('5問・毎日ちがう'); }
+  const run = readRun(); $('tResume').hidden = !run;
+  if (run) $('tResumeSub').textContent = (run.mode === 'pass' ? T('ふたりで（1台）') : T('CPU {lv}・{n}×{n}', { lv: LV_NAME[clamp(run.level | 0 || 2, 1, 4)], n: run.n })) + ' · ' + T('{n}手', { n: run.st.moves.length });
+  $('tPlay').textContent = T('CPUとあそぶ');
+}
+function showTitle() {
+  if (S) { S.menu = true; if (!S.over) persist(); }
+  hideOverlays(); renderTitle(); $('ovTitle').hidden = false;
+  try { $('tPlay').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tPlay').addEventListener('click', () => startGame({ mode: 'cpu' }));
+$('tPass').addEventListener('click', () => startGame({ mode: 'pass' }));
+$('tHow').addEventListener('click', () => showHowto(false));
+$('tOnline').addEventListener('click', () => openOnline());
+$('tDaily').addEventListener('click', () => startPuzzle());
+$('tResume').addEventListener('click', () => { const r = readRun(); if (r) resumeGame(r); });
+$('rAgain').addEventListener('click', () => {
+  if (S && S.mode === 'online') { onlineAgain(); return; }
+  if (S && S.mode === 'puzzle') { startPuzzle(S.pz.dk, true); return; }
+  const c = S && S.cfg; startGame(c ? { mode: c.mode, level: c.level, me: c.me, n: c.n, rule: c.rule } : {});
+});
+$('rTitleBtn').addEventListener('click', () => { if (S && S.mode === 'online') { leaveOnline(); return; } if (S) S.menu = true; showTitle(); });
+$('rMoves').addEventListener('click', () => { if (S) { S.showResultAgain = true; $('ovResult').hidden = true; showMoves(); } });
+
+// =====================================================================================
+// sound, menu, theme, resize, keyboard
+// =====================================================================================
+function renderSound() {
+  const b = $('sndBtn'), muted = A ? A.muted : true;
+  b.setAttribute('aria-pressed', String(!muted)); b.setAttribute('aria-label', T(muted ? 'サウンド オフ' : 'サウンド オン'));
+  b.innerHTML = !muted
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  if (!A) b.hidden = true;
+}
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function toggleNums() { save.set.nums = save.set.nums ? 0 : 1; writeSave(); sfx('tap'); $('numBtn').setAttribute('aria-pressed', String(!!save.set.nums)); if (S && S.st) { redraw(false); markers(); } if (!$('ovTitle').hidden) renderTitle(); }
+$('numBtn').addEventListener('click', toggleNums);
+function themeColor() {
+  const m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+  m.setAttribute('content', UI && UI.theme && UI.theme.resolved() === 'light' ? '#f4efe3' : '#1b1610');
+}
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = !!(S && !S.over);
+  const extra = [{ label: T('ルール'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (S && S.st && S.st.moves.length && S.mode !== 'puzzle') extra.push({ label: T('棋譜'), icon: 'list', onClick: () => { pm.close(); if (S) { S.menu = false; showMoves(); } } });
+  if (on && S.mode === 'online') extra.push({ label: T('試合を出る'), icon: 'close', onClick: () => { pm.close(); askLeaveOnline(); } });
+  else if (on) extra.push({ label: T('あきらめる'), icon: 'close', onClick: () => { pm.close(); giveUp(); showTitle(); } });
+  if (!(on && S.mode === 'online')) extra.push({ label: T('タイトルへ'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: T(on ? 'ひとやすみ' : 'メニュー'), home: '../', extra,
+    onResume: () => { if (S) S.menu = false; const g = KG(); if (g) g.menuClosed(); if (S && !S.over) { hud(); markers(); loop(); } },
+    onRestart: on && (S.mode === 'cpu' || S.mode === 'pass') ? () => { const c = S.cfg; giveUp(); startGame({ mode: c.mode, level: c.level, me: c.me, n: c.n, rule: c.rule }); } : undefined,
+    onOpen: () => { if (S) S.menu = true; const g = KG(); if (g) g.menuOpened(); persist(); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+let rz = 0;
+function relayout() { clearTimeout(rz); rz = setTimeout(fit, 60); }
+window.addEventListener('resize', relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+
+// pointer and keyboard on the board
+boardEl.addEventListener('click', e => { const c = e.target.closest && e.target.closest('.cell'); if (c) { document.body.classList.remove('kbd'); onCell(+c.dataset.i); } });
+document.addEventListener('pointerdown', () => document.body.classList.remove('kbd'), true);
+function moveCursor(dr, dc) {
+  if (!S) return; const n = B.n; let r = Math.floor(S.cur / n) + dr, c = S.cur % n + dc;
+  r = clamp(r, 0, n - 1); c = clamp(c, 0, n - 1); S.cur = r * n + c;
+  markers(); try { B.cells[S.cur].focus({ preventScroll: true }); } catch (e) {}
+  scrollToCell(S.cur);
+}
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === 'Escape') {
+    if (!$('ovMoves').hidden) { closeMoves(); e.preventDefault(); return; }
+    if (!$('howto').hidden) { $('howtoGo').click(); e.preventDefault(); return; }
+    return;
+  }
+  if (!S || S.menu || anyOverlay() || !$('ovTitle').hidden) return;
+  const t = e.target; if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+  const arrows = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
+  if (arrows[k]) { e.preventDefault(); document.body.classList.add('kbd'); moveCursor(arrows[k][0], arrows[k][1]); return; }
+  if (k === 'Enter' || k === ' ') {
+    if (t && t.closest && t.closest('button, a, summary')) return;     // a focused button does its own thing
+    e.preventDefault(); document.body.classList.add('kbd');
+    if (S.mode === 'puzzle' && S.pz.done) { puzzleNext(); return; }
+    // the keyboard places at once (the confirm marker is for taps)
+    if (S.mode === 'puzzle' ? (S.pz.done || S.busy || S.st.b[S.cur]) : (!canAct() || S.st.b[S.cur])) { onCell(S.cur); return; }
+    if (S.mode !== 'puzzle' && S.st.rule === 'renju' && S.st.turn === 1) { const why = E.forbiddenReason(S.st, S.cur); if (why) { illegal(S.cur, forbMsg(why)); return; } }
+    commit(S.cur); return;
+  }
+  const kk = k.toLowerCase();
+  if (kk === 'h') { doHint(); e.preventDefault(); } else if (kk === 'u') { doUndo(); e.preventDefault(); } else if (kk === 'l') { showMoves(); e.preventDefault(); }
+  else if (kk === 'n') { toggleNums(); e.preventDefault(); } else if (kk === 'z') { toggleZoom(); e.preventDefault(); }
+});
+
+// =====================================================================================
+// online: common/turnroom.js (the lobby, the room) + online.js (the game side). The host's page runs the game; every page, the host's too,
+// draws the model it gets. There is nothing hidden in this game, so the public state is the whole board.
+// =====================================================================================
+let TR = null, octx = null;
+const CPU_NAMES = [L('モカ', 'Mocha'), L('ココ', 'Coco')];
+function ensureTR() {
+  if (TR || !window.KoboTurnRoom || !window.GomokuOnline) return TR;
+  TR = KoboTurnRoom.create({
+    game: GAME, host: GomokuOnline.host, turnSec: 45, seats: [2], seatsMax: 2, alternate: true, dealMs: 500,
+    cpuNames: k => CPU_NAMES[k % 2],
+    getOpts: () => ({ n: 2 }),
+    getCpu: () => Math.min(3, save.set.level),
+    cpuLabel: lv => LV_NAME[lv],
+    onModel, onTick: onlineTick,
+    onClose: () => showTitle(),
+    onIdleClose: () => { if (S && S.mode === 'online') { S.over = true; } hideOverlays(); showTitle(); },
+  });
+  return TR;
+}
+function openOnline() {
+  if (!ensureTR()) { sfx('error'); return; }
+  if (S && !S.over && S.mode !== 'online') { S.menu = true; persist(); }
+  hideOverlays();
+  GomokuOnline.setCfg({ n: save.set.n, rule: save.set.rule });     // used when this page makes the room
+  TR.open({ n: 2 });
+}
+function leaveOnline() {
+  if (S && S.mode === 'online' && !S.over) giveUp();
+  if (TR) TR.leave();
+  if (S) S.menu = true;
+  showTitle();
+}
+async function askLeaveOnline() {
+  const ok = UI ? await UI.confirm({ title: T('出ると、あなたの席はCPUに代わります。出ますか？'), ok: T('出る'), cancel: T('やめる'), danger: true }) : true;
+  if (ok) leaveOnline(); else if (S) S.menu = false;
+}
+function onlineAgain() {
+  if (!TR || !S) return;
+  const m = TR.model();
+  if (!m || (m.why && m.why !== 'w')) { leaveOnline(); return; }
+  if (TR.rematch()) { $('rAgain').disabled = true; sfx('tap'); onlineResultText(m); }
+}
+function sendOnline(cell) {
+  if (S.sending && Date.now() - S.sending < 2500) return false;
+  if (!TR || !TR.submit(GomokuOnline.toWire(cell))) { sfx('error'); return false; }
+  S.sending = Date.now(); S.hint = -1; S.pv = -1;
+  setTimeout(() => { if (S && S.mode === 'online' && S.sending && Date.now() - S.sending >= 2400) { S.sending = 0; hud(); markers(); refreshStatus(); } }, 2500);
+  hud(); markers();
+  return true;
+}
+function onModel(m) {
+  if (!ensureTR()) return;
+  if (m.me < 0 || (m.replaced && (!S || S.mode !== 'online'))) {   // not in this game (too late for the start), or the seat was already taken over while this page was away
+    if (UI) UI.toast(m.me < 0 ? T('ゲームに入れませんでした') : T('席がCPUに交代しました'), { type: 'danger' });
+    TR.leave(); if (S) S.menu = true; showTitle(); return;
+  }
+  const ctx = m.fresh || !octx ? (octx = GomokuOnline.newCtx()) : octx;
+  const v = GomokuOnline.view(m, ctx);
+  if (m.fresh || !S || S.mode !== 'online' || S.gn !== m.gn) { startOnline(m, v); return; }
+  const prevTurn = S.st.turn;
+  if (v.st.n !== B.n) buildBoard(v.st.n);
+  S.st = v.st; S.model = m; S.names = m.names; S.sl = m.sl; S.sending = 0; S.myc = v.color; S.hint = -1; S.pv = -1;
+  if (v.last >= 0) { S.last = v.last; S.cur = v.last; }
+  const wait = redraw(true);
+  if (v.placed.length) sfx('move');
+  let note = '';
+  if (v.placed.length) note = T('{name}が {n} 手目を置きました', { name: nameOf(v.last >= 0 && v.st.b[v.last] ? v.st.b[v.last] : prevTurn), n: v.st.moves.length });
+  S.note = note; if (note) announce(note);
+  if (m.replaced && !S.over) { S.over = true; if (UI) UI.toast(T('席がCPUに交代しました'), { type: 'danger' }); emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' }); TR.leave(); S.menu = true; showTitle(); return; }
+  hud(); markers(); refreshStatus(); scrollToCell(v.last);
+  if (m.ph === 'over' && !S.over) { S.busy = true; setTimeout(() => { if (S) { S.busy = false; finishOnline(m); } }, wait); }
+}
+function startOnline(m, v) {
+  stopTimers();
+  hideOverlays();
+  S = mkSession({ mode: 'online', st: v.st, n: v.st.n, rule: v.st.rule, level: m.cpu || 2 });
+  S.gn = m.gn; S.model = m; S.names = m.names; S.sl = m.sl; S.myc = v.color; S.sending = 0; S.live = true; S.last = v.last; S.cur = v.last >= 0 ? v.last : centerCell(v.st.n);
+  S.cfg = { mode: 'online' };
+  $('rAgain').disabled = false;
+  buildBoard(v.st.n); redraw(false); hud(); markers();
+  emit('play_start', { mode: 'versus' });
+  S.note = T('こんどは あなたが{c}です', { c: v.color === 1 ? T('くろ（先手）') : T('しろ（後手）') });
+  refreshStatus(); announce(S.note);
+  if (m.ph === 'over') { S.over = false; finishOnline(m); }
+}
+function onlineTick(m) {
+  if (!S || S.mode !== 'online' || !m) return;
+  const sec = Math.ceil(Math.max(0, m.dl ? m.left : 0) / 1000);
+  if (!S.over) { if (S.tsec !== sec) { S.tsec = sec; hud(); } }
+  else if (!$('ovResult').hidden) onlineResultText(m);
+}
+function onlineResultText(m) {
+  if (!m || (m.rs && m.rs.y !== 'w')) return;
+  const sl = String(m.sl || ''), pu = m.pu || [];
+  let total = 0; for (let k = 0; k < sl.length; k++) if (pu[k] >= 0 && sl[k] !== 'x') total++;
+  const wished = Math.min(total, Object.keys(m.rm || {}).length);
+  if ($('rAgain').disabled) $('rNote').textContent = T('もう一度を待っています（{a}/{b}人）', { a: wished, b: Math.max(1, total) });
+  else $('rAgain').textContent = wished ? T('もう一度（{a}/{b}人）', { a: wished, b: Math.max(1, total) }) : T('もう一度');
+}
+function finishOnline(m) {
+  if (!S || S.over) return;
+  S.over = true; stopTimers();
+  const rs = m.rs || { r: [], w: -1, y: 'w' }, ranks = GomokuOnline.arr(rs.r), me = m.me >= 0 ? m.me : 0;
+  const ok = rs.y === 'w', draw = ok && rs.w < 0, win = ok && ranks[me] === 1 && !draw;
+  if (ok) { bump('onl'); if (win) bump('onw'); writeSave(); }
+  emit('play_end', { mode: 'versus', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: win ? 'clear' : 'over' });
+  if (win) { sfx('win'); burst(); } else sfx(draw ? 'ok' : 'over');
+  hud(); markers();
+  setTimeout(() => showOnlineResult(m, rs, win, draw), Math.round(900 * SPD.v));
+}
+function showOnlineResult(m, rs, win, draw) {
+  if (!S || S.mode !== 'online' || !S.over) return;
+  const r = E.result(S.st), ok = rs.y === 'w';
+  $('rTitle').textContent = !ok ? T('オンライン対戦が終わりました') : draw ? T('引き分け') : win ? T('勝ちました！') : T('負けました');
+  $('rSub').textContent = (S.st.winner ? T('{n}手で決着', { n: r.moves }) : T('ゲームが終わりました')) + ' · ' + T('オンライン') + ' · ' + RULE_SHORT[S.st.rule];
+  fillScores($('rRank'), ok && !S.st.winner && !draw ? Object.assign({}, r, { winner: rs.w >= 0 ? rs.w + 1 : 0 }) : r);
+  $('rBig').textContent = ''; $('rNew').hidden = true;
+  $('rNote').textContent = rs.y === 'hl' ? T('ホストが退出したので、ここで終了です') : rs.y === 'hg' ? T('ホストとの接続が切れたので、ここで終了です') : T('オンライン対戦は★に数えません');
+  $('rAgain').disabled = !ok || !!m.replaced; $('rAgain').textContent = T('もう一度'); $('rMoves').hidden = false;
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').disabled ? $('rTitleBtn').focus({ preventScroll: true }) : $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+
+// ---------- boot ----------
+renderSound(); themeColor();
+KG() && KG().register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { persist(); },
+  isIdle: () => !S || S.over,
+  dispose() { if (S) clearTimeout(S.timer); },
+  daily: { start({ dateKey }) { startPuzzle(dateKey); } },
+});
+window.addEventListener('pagehide', () => { if (S) persist(); });
+window.addEventListener('storage', e => { if (e.key === SAVE_KEY && (!S || S.over)) { save = readSave(); if (!$('ovTitle').hidden) renderTitle(); } });
+{
+  buildBoard(save.set.n);
+  const launch = PF ? PF.launch() : { daily: null };
+  $('iGame').textContent = T('五目ならべ工房'); $('iTurn').hidden = true; $('iBest').textContent = '★ ' + fmtN(save.pts); $('status').textContent = ''; $('ctl').style.visibility = 'hidden';
+  $('numBtn').setAttribute('aria-pressed', String(!!save.set.nums));
+  syncBoard(new Array(save.set.n * save.set.n).fill(0), {});
+  const first = store.get(HOWTO_KEY) == null && !save.tut;
+  if (launch.daily && PF && !first) { /* KoboGame.register starts the daily puzzle */ }
+  else if (first) { save.tut = 1; writeSave(); showHowto(true); } else showTitle();
+}
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const sel = i => '.cell[data-i="' + i + '"]';
+  const api = {
+    ready: () => true,
+    state: () => {
+      const st = S && S.st, c = st ? E.counts(st) : { b: 0, w: 0, e: 0 };
+      return {
+        started: !!S, mode: S ? S.mode : '', over: !!(S && (S.over || (st && st.over))), n: S ? S.st ? S.st.n : S.n : 0, rule: st ? st.rule : '', level: S ? S.level : 0, me: S ? (S.mode === 'online' ? S.myc : S.me) : 0,
+        turn: st ? st.turn : 0, human: !!(S && canAct()), busy: !!(S && S.busy), black: c.b, white: c.w, empty: c.e, legal: st && !st.over ? E.legal(st) : [], moves: st ? st.moves.length : 0,
+        winner: st ? st.winner : 0, line: st ? st.line : [], forb: S && st ? E.forbiddenCells(st) : [],
+        hinted: S ? S.hinted : 0, undone: S ? S.undone : 0, hint: S ? S.hint : -1, pv: S ? S.pv : -1, last: S ? S.last : -1, fork: S ? S.fork : 0, zoom: zoomOn, confirm: useConfirm(),
+        title: !$('ovTitle').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, movesOv: !$('ovMoves').hidden, menu: !!(S && S.menu),
+        status: $('status').textContent, pts: save.pts, save: JSON.parse(JSON.stringify(save)), board: st ? st.b.slice() : [],
+        net: !!(S && S.mode === 'online'), sl: S && S.sl ? S.sl : '', names: S && S.names ? S.names.slice() : [],
+        pz: S && S.pz ? { i: S.pz.i, done: !!S.pz.done, ok: !!S.pz.ok, res: S.pz.res.map(x => x.slice()), left: S.pz.left, m: S.pz.p ? S.pz.p.m : 0, practice: !!S.pz.practice, bad: S.pz.bad } : null,
+        stones: B.stones.filter(Boolean).length, nums: B.cells.filter(c => c.querySelector('.nm')).length, marks: { win: B.cells.filter(c => c.classList.contains('win')).length, last: B.cells.filter(c => c.classList.contains('last')).length, fb: B.cells.filter(c => c.classList.contains('fb')).length, pv: B.cells.filter(c => c.classList.contains('pv')).length },
+      };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__gomoku = {
+    api, E, get S() { return S; }, get save() { return save; }, get tr() { return ensureTR(); }, openOnline, leaveOnline, ensureTR, BANK,
+    onlineState() {
+      const m = TR ? TR.model() : null, tr = TR ? TR._S : null;
+      return { phase: TR ? TR.phase : 'off', host: TR ? TR.isHost : false, code: tr ? tr.code : null, rid: tr ? tr.rid : null, uid: TR ? TR.uid : null, err: tr ? tr.err : null,
+        model: m ? { gn: m.gn, v: m.v, ph: m.ph, me: m.me, n: m.n, tn: m.tn, sl: m.sl, names: m.names, why: m.why, left: m.left, pd: m.pd, rs: m.rs } : null, lobby: !!document.querySelector('.ktr-ov:not([hidden])') };
+    },
+    start(o) { startGame(o || {}); return api.state(); },
+    puzzle(dk, practice) { startPuzzle(dk, practice); return api.state(); },
+    setSpeed(m) { SPD.v = m; },
+    set(k, v) { save.set[k] = v; writeSave(); if (S && S.st) { redraw(false); markers(); } const c = $('ctl'); c.dataset.key = ''; if (S) renderCtl(); },
+    // where to click: a sensible cell for the human. 'cpu' = the level-2 choice, 'first' = the first free cell near the middle.
+    // In a puzzle, plan(true) = the next move of a winning chain, plan(false) = a move that does not win
+    plan(good) {
+      if (!S) return null;
+      if (S.mode === 'puzzle') {
+        if (S.pz.done) return null;
+        const st = S.st, P = E.mkPos(st);
+        if (good === false) { const bad = []; for (let i = 0; i < st.n * st.n; i++) if (!st.b[i]) bad.push(i); const wrong = bad.find(c => !E.puzzleStep(E.clone(st), c, S.pz.left).ok); return { cell: wrong, sel: sel(wrong) }; }
+        const c0 = E.completions(P, 1);
+        const m = c0.length ? c0[0] : E.vcfRoot(P, 1, S.pz.left, { nodes: 0, cap: 1e6, cut: false }, false);
+        return { cell: m, sel: sel(m) };
+      }
+      if (!canAct()) return null;
+      const lg = E.legal(S.st); if (!lg.length) return null;
+      let c;
+      if (good === 'cpu') c = E.cpu(S.st, 2, { time: 0, nodes: 4000 });
+      else { const mid = centerCell(S.st.n); c = lg.slice().sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid) || a - b)[0]; }
+      return { cell: c, sel: sel(c) };
+    },
+    cellPoint(i) { const r = B.cells[i].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
+    title: showTitle, finish() { if (S && !S.over) { S.st.over = true; finish(); } }, howto: showHowto, openMenu, relayout: fit,
+    resume() { const r = readRun(); if (r) resumeGame(r); return !!r; }, persist,
+    // set up a position (for tests): rows of '.', 'x' (black), 'o' (white); turn 1|2. In a game against the CPU / two players
+    rig(rows, turn) {
+      if (!S || !S.st) return null;
+      const b = []; for (const row of rows) for (const ch of row) b.push(ch === 'x' ? 1 : ch === 'o' ? 2 : 0);
+      S.st.b = b; S.st.turn = turn || S.st.turn; S.st.over = false; S.st.winner = 0; S.st.line = [];
+      S.st.moves = []; let k = 0; for (let i = 0; i < b.length; i++) if (b[i]) { S.st.moves.push([i, b[i]]); k++; } void k;
+      redraw(false); hud(); markers(); refreshStatus(); loop(); return api.state();
+    },
+    thumbScene() { // a game in progress with the human to move, for the hub thumbnail
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays();
+      const st = E.create({ n: 15, seed: 7 });
+      while (st.moves.length < 27 && !st.over) E.play(st, E.cpu(st, st.moves.length % 2 ? 3 : 2, { time: 0, nodes: 3000 }));
+      S = mkSession({ mode: 'cpu', st, n: 15, rule: 'free', level: 3, me: st.turn, seed: 7 });
+      S.cfg = { mode: 'cpu', level: 3, me: 'b', n: 15, rule: 'free' }; S.cur = centerCell(15);
+      const lm = st.moves.slice(-1)[0]; S.last = lm ? lm[0] : -1;
+      buildBoard(15); fit(); redraw(false); hud(); markers(); return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.gomoku.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

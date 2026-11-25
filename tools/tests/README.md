@@ -54,6 +54,10 @@ node tools/tests/reversi-play.js              # リバーシ工房の通し（�
 node tools/tests/unit/reversi-engine.test.js  # リバーシ工房の中身（置ける場所の数 perft・ひっくり返し・パス・おわり・CPU が反則の手を出さない・毎回同じ結果・読み切りが別のしくみの全探索と一致・今日のパズル120問の最善手の証明・強さの順。約40秒）
 node tools/tests/unit/reversi-online.test.js  # リバーシのオンライン用アダプター（reversi/online.js：形のおかしい手・順番でない席・公開する状態が database.rules.json の形に収まる・パスと終わり・画面側の view・ホストがいなくなったときの順位）
 node tools/reversi-puzzle-gen.js              # 今日のパズルの問題集 reversi/puzzles.js を作り直す（公開したあとは作り直さない。同じ seed なら同じ問題集。約30秒）
+node tools/tests/gomoku-play.js               # 五目ならべ工房の通し（本物のクリック・キーボード（矢印・Enter・H・U・L・N・Z・Esc）・タッチ（目印→おく／もう一度タップ・拡大）・連珠ふうの禁じ手の×と理由・勝った5つの光り・ふたりで1台・今日のパズル（連続四を手順どおり・まちがい・保存・れんしゅう）・途中保存・英語・全画面サイズ×ライト/ダーク・ロビー・`online` はエミュレーターで本物のブラウザ2ページ：ホストの盤の大きさとルールにゲストが従う・もう一度で色が入れかわる・ページが消える・ホストが出る）
+node tools/tests/unit/gomoku-engine.test.js    # 五目ならべ工房の中身（3つのルールの勝ち・黒の禁じ手・CPU が反則しない・毎回同じ手・強さの順・時間の上限・連続四の探索が別のしくみの全探索と一致・今日のパズル120問の最短と最初の手が1つの証明。約40秒）
+node tools/tests/unit/gomoku-online.test.js    # 五目ならべのオンライン用アダプター（gomoku/online.js：形のおかしい手・公開する状態が database.rules.json の形（行ごとの文字列）に収まる・盤と手順の文字列の往復・画面側の view・ホストがいなくなったときの順位）
+node tools/gomoku-puzzle-gen.js                # 今日のパズルの問題集 gomoku/puzzles.js を作り直す（公開したあとは作り直さない。同じ seed なら同じ問題集。約2分）
 node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
 node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
 node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）

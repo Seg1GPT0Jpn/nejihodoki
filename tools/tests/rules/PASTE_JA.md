@@ -233,3 +233,9 @@ Realtime Database：
 - XP は端末が自分で書くので、ルールは「ありえない値」しか止められません（ごまかしを完全には防げません）。リーグは気楽な競争として使い、賞品とは結びつけません。
 - 貼る前でもまなびの工房は遊べます。リーグはこの端末のシミュレーションのままで、貼ったあとにログイン＋ニックネームを登録している人だけ、ほんもののプレイヤーとの組になります。
 - 確かめ方：`node tools/tests/rules/run.js --only social`（許可・拒否34件。エミュレーターで、リポジトリの `firestore.rules` を使います）。
+
+## 新作「五目ならべ工房」（gomoku）を足したとき（2026-11）
+- **Firestore と Realtime Database の両方**を貼り直してください（上の「1. Firestore のルール」「2. Realtime Database のルール」と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。**貼り直さないと、五目ならべ工房だけが、ランキングに載らない・「オンライン対戦」が「つなげませんでした」になります**（ほかのゲームは今までどおり遊べます）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'gomoku': 100000`＝★の合計）、旧ランキングの点の確認 `okCap(…'gomoku')`、プレイ回数の `plus1('gomoku')`、同期する保存のキー `kusoge~gomoku~save` の形の確認（`okEntAt` に1行）です。
+- Realtime Database で変わったのは、`"tr"` の許可するゲームの一覧 `^(colorcards|reversi)$` → `^(colorcards|reversi|gomoku)$`（19か所）だけです。五目ならべは `tr/gomoku/…` を使い、2人だけ・隠す手札なし。**盤は225マスで、`pd` の配列の添字（99まで）と文字列（24文字まで）の制限に収まるよう、「行ごとの文字列15個」で出します**（ルールの形は変えていません）。手は `{ t: 'mv', c: マス }`。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`、`node tools/tests/rules/run.js --only bots`（`rtdb:tr-gomoku` の許可と拒否・ボット2人の五目ならべの通しを含む）。貼ったあと本番に対して `--live` を流してください。

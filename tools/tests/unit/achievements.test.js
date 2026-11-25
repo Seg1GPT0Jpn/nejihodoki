@@ -108,6 +108,7 @@ const FIX = {
   'town-save.json': { has: ['town.first', 'town.pop10', 'town.build10', 'town.tap1', 'town.up10', 'town.pop50', 'town.kinds', 'town.back', 'town.new1', 'town.res5', 'town.pop200', 'town.rest'], not: ['town.gift7', 'town.tap100', 'town.new3', 'town.pop600'] },
   'colorcards-save.json': { has: ['colorcards.first', 'colorcards.swap', 'colorcards.peek', 'colorcards.call', 'colorcards.catch', 'colorcards.block', 'colorcards.hard', 'colorcards.win10'], not: ['colorcards.match', 'colorcards.nodraw', 'colorcards.comeback'] },
   'brawl-save.json': { has: ['brawl.first', 'brawl.ledge', 'brawl.grab', 'brawl.twop', 'brawl.ko10', 'brawl.smash', 'brawl.combo5', 'brawl.hard', 'brawl.lad4'], not: ['brawl.boss', 'brawl.clear', 'brawl.all', 'brawl.spike', 'brawl.score15k'] },
+  'gomoku-save.json': { has: ['gomoku.first', 'gomoku.fork', 'gomoku.twop', 'gomoku.pz1', 'gomoku.small', 'gomoku.lv3', 'gomoku.std', 'gomoku.quick'], not: ['gomoku.win10', 'gomoku.renju', 'gomoku.pz20', 'gomoku.dperf', 'gomoku.hard', 'gomoku.onw', 'gomoku.pts30', 'gomoku.long'] },
   'reversi-save.json': { has: ['reversi.first', 'reversi.corner', 'reversi.pass', 'reversi.twop', 'reversi.pz1', 'reversi.six', 'reversi.lv3', 'reversi.corner4'], not: ['reversi.win10', 'reversi.big', 'reversi.hard', 'reversi.dperf', 'reversi.onw', 'reversi.pts30', 'reversi.wipe'] },
   'manabi-save.json': { has: ['manabi.first', 'manabi.ls10', 'manabi.ok100', 'manabi.streak3', 'manabi.streak7', 'manabi.quest', 'manabi.mock', 'manabi.xp1000', 'manabi.league', 'manabi.crown'], not: ['manabi.ok1000'] },
   'orchestra-save.json': { has: ['orchestra.first', 'orchestra.fin1', 'orchestra.three', 'orchestra.perfect20'], not: ['orchestra.tour', 'orchestra.three5'] },
@@ -208,7 +209,7 @@ test('live: daily streak across JST days, all-dailies-in-one-day, level and meta
   for (let i = 0; i < 3; i++) { const dk = P.jstDateKey(t); play(P, 'blocks', { t, dur: MIN, mode: 'daily', dateKey: dk, score: 5 }); t += DAY; }
   ok(A.has('all.daily1')); ok(A.has('all.streak3')); ok(!A.has('all.streak7'));
   const dk = P.jstDateKey(t);
-  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf', 'fit', 'reversi']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
+  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf', 'fit', 'reversi', 'gomoku']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
   ok(A.has('all.dailyAll'));
   ok(A.has('all.ach10'), 'meta achievement after 10 unlocks');
   ok(P.xp.info(t).lv >= 2);

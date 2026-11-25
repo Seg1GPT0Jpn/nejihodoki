@@ -89,6 +89,10 @@ async function runCases(T, opt = {}) {
     await check(g, 'own push reversi save (stars, per-level wins, stats, today\'s puzzle)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~reversi~save': { v: JSON.stringify({ v: 1, pts: 9, w: { '8-2': { p: 6, w: 4 } }, stats: { plays: 6, wins: 4, pz: 3 }, set: { level: 2, me: 'b', n: 8, start: 'std', fast: 0, dots: 1 }, dl: { last: 20261125, pts: 600, r: [[19, 1, 200]] }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'reversi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~reversi~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'reversi save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~reversi~save': 'x' } }, A, { merge: true }));
+    // 五目ならべ工房（gomoku）：記録 kusoge.gomoku.save だけを同期する（とちゅうのゲーム kusoge.gomoku.game は端末だけ）
+    await check(g, 'own push gomoku save (stars, per-size wins, stats, settings, today\'s puzzle)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~gomoku~save': { v: JSON.stringify({ v: 1, pts: 9, w: { '15-2': { p: 6, w: 4 } }, stats: { plays: 6, wins: 4, pz: 3, fork: 2 }, set: { level: 2, me: 'b', n: 15, rule: 'renju', nums: 0, fbd: 1, conf: 2, fast: 0 }, dl: { last: 20261125, pts: 600, r: [[112, 1, 200]] }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'gomoku save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~gomoku~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'gomoku save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~gomoku~save': 'x' } }, A, { merge: true }));
     // まなびの工房（manabi）：記録 kusoge.manabi.save だけを同期する（設定 prefs・howto・rep はこの端末だけ）
     await check(g, 'own push manabi save (xp, days, boxes, stats, quests, league)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: JSON.stringify({ v: 1, xp: 1250, d: [20406, 20407], g: { 20407: 30 }, goal: 20, b: { 'ct-eng-u01': 'ab12:0112' }, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, mk: { 'x-1': 62 }, set: { cr: 'JH', g: 0 }, tut: 1, gm: 40, fz: 1, hm: 0, hr: 5, cw: { S1: 2 }, ds: { d: 20407, xp: 30 }, dq: { d: 20407, c: [1, 0, 0] }, lg: { w: 2915, t: 1 }, sk: 0 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'manabi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: 7, t: now } } }, A, { merge: true }));
@@ -245,6 +249,8 @@ async function runCases(T, opt = {}) {
     await check(g3, 'train +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { train: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'reversi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { reversi: 1 }, A, { merge: true }));
     await check(g3, 'reversi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { reversi: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'gomoku +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { gomoku: 1 }, A, { merge: true }));
+    await check(g3, 'gomoku +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { gomoku: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'manabi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { manabi: 1 }, A, { merge: true }));
     await check(g3, 'manabi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { manabi: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'orchestra +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { orchestra: 1 }, A, { merge: true }));
@@ -673,6 +679,41 @@ async function runCases(T, opt = {}) {
     await check(g, 'pub: the host publishes a draw result', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { ph: 'over', tn: -1, rs: { r: [1, 1], w: -1, y: 'w' } }), A));
     await check(g, 'act: a guest moves { t: mv, c: 19 }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 1, v: 3, a: { t: 'mv', c: 19 } }, B));
     await check(g, 'act: a move on someone else\'s account', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${A.uid}`, { q: 1, v: 3, a: { t: 'mv', c: 19 } }, B));
+    await check(g, 'act: a square over 255', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 2, v: 3, a: { t: 'mv', c: 900 } }, B));
+    await check(g, 'priv: the host writes the (empty) private part', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/priv/${B.uid}`, { v: 3 }, A));
+    await check(g, 'priv: another guest reads it', 'deny', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, C));
+    await check(g, 'room: list all rooms', 'deny', () => rtdb(T, 'GET', `${P}/rooms`, undefined, B));
+    await check(g, 'room: delete by the host', 'allow', () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A));
+    await check(g, 'code: the host removes it', 'allow', () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A));
+  }
+
+  // ================================================================ RTDB: tr/gomoku（2人だけ。盤は pd.b の「行ごとの文字列」n 個（225マスは配列の添字99・文字列24文字の制限を超えるため）、手は { t: 'mv', c }、隠す手札はない）
+  {
+    const g = 'rtdb:tr-gomoku';
+    const P = `tr/gomoku`, room = rid('-gktest'), code = String(100000 + Math.floor(Math.random() * 900000));
+    cleanup.push(() => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own set (2 players)', 'allow', () => rtdb(T, 'PUT', `${P}/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 2, f: 1 }, A));
+    await check(g, 'queue: someone else\'s entry', 'deny', () => rtdb(T, 'PATCH', `${P}/queue/${A.uid}`, { n: 'evil' }, B));
+    await check(g, 'queue: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/gomokus/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 2 }, A));
+    const meta = { at: TS, h: A.uid, n: 2, k: 'c', cp: 2, tm: 45, fl: 0 };
+    await check(g, 'room: create (2 seats, 45 s turns)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'room: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/gomokus/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'code: create (host)', 'allow', () => rtdb(T, 'PUT', `${P}/codes/${code}`, { h: A.uid, r: room, t: TS }, A));
+    await check(g, 'seat: guest takes seat 1', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/1`, { u: B.uid, n: 'Ben', j: TS }, B));
+    await check(g, 'seat: a third person (2 seats)', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/2`, { u: C.uid, n: 'Cy', j: TS }, C));
+    await check(g, 'on: both', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/on/${A.uid}`, 1, A));
+    const rowsOk = Array.from({ length: 15 }, (x, r) => (r === 7 ? '000000012000000' : '000000000000000'));
+    const pub = (v, o) => Object.assign({ v, g: 1, ph: 'play', tn: 0, dl: 0, sl: 'pp', pu: [0, 1], pd: { n: 15, ru: 'free', b: rowsOk, o: ['77'], lm: 112, mc: 1 }, ev: [{ i: 1, t: 'mv', s: 0, c: 112, n: 1 }] }, o || {});
+    await check(g, 'pub: a guest writes it', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1), B));
+    await check(g, 'pub: the host publishes a 15x15 board (15 row strings) with the move list', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1), A));
+    await check(g, 'pub: a board of 101 row strings (index over 99)', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { pd: { n: 15, ru: 'free', b: Array.from({ length: 101 }, () => '0'), lm: -1, mc: 0 } }), A));
+    await check(g, 'pub: a row string of 25 characters', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { pd: { n: 15, ru: 'free', b: ['0000000000000000000000000'], lm: -1, mc: 0 } }), A));
+    await check(g, 'pub: the next move with the allowed event fields', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { tn: 1 }), A));
+    await check(g, 'pub: a move event with a hidden field', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { ev: [{ i: 1, t: 'mv', s: 0, c: 112, flips: [1, 2] }] }), A));
+    await check(g, 'pub: the host publishes a draw result', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { ph: 'over', tn: -1, rs: { r: [1, 1], w: -1, y: 'w' } }), A));
+    await check(g, 'act: a guest moves { t: mv, c: 112 }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 1, v: 3, a: { t: 'mv', c: 112 } }, B));
+    await check(g, 'act: a move on someone else\'s account', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${A.uid}`, { q: 1, v: 3, a: { t: 'mv', c: 112 } }, B));
     await check(g, 'act: a square over 255', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 2, v: 3, a: { t: 'mv', c: 900 } }, B));
     await check(g, 'priv: the host writes the (empty) private part', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/priv/${B.uid}`, { v: 3 }, A));
     await check(g, 'priv: another guest reads it', 'deny', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, C));

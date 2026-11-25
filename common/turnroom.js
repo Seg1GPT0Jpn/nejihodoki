@@ -1,6 +1,6 @@
 // common/turnroom.js — KoboTurnRoom：2〜4人のターン制ゲーム（カード・ボード）のオンライン対戦を、ゲームの外にまとめたもの。
 // ---------------------------------------------------------------------------------------------------------------------
-// 使うゲーム：colorcards（colorcards/online.js が「アダプター」）・reversi（reversi/online.js。2人だけのゲーム）。cards（ババ抜き・七並べ・大富豪…）も同じアダプターの形で使える。
+// 使うゲーム：colorcards（colorcards/online.js が「アダプター」）・reversi（reversi/online.js。2人だけのゲーム）・gomoku（gomoku/online.js。2人だけ）。cards（ババ抜き・七並べ・大富豪…）も同じアダプターの形で使える。
 // 設計：ホスト権限（host-authoritative）。部屋を作った人（ホスト）のページがゲームの中身（engine）を動かし、手をたしかめ、
 //       「みんなが見てよい状態 pub」と「その人だけが見てよい状態 priv/{uid}」を RTDB に書く。ゲストは「手」だけを act/{uid} に書く。
 //       手札など人に見せない情報はホストのメモリにだけあり、RTDB には priv/{uid}（本人だけが読める）としてしか出ていかない。

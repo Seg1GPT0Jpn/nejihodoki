@@ -875,6 +875,34 @@
         'kusoge.orchestra.save': { fields: { total: 'max', stars: 'max', p: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'gomoku', order: 28, path: 'gomoku/', added: '2026-11-25',
+      title: { ja: '五目ならべ工房', en: 'Gomoku Workshop' },
+      short: { ja: '五目ならべ', en: 'Gomoku' },
+      desc: { ja: '黒と白の石を、先に5つならべたほうが勝ちの定番ボードゲーム。15×15・13×13・9×9の盤で、CPUと対戦（4段階。いちばん強いCPUは深く読み、連続四も見つけます）。ルールは「自由」「ちょうど5」「連珠ふう（黒に禁じ手）」から選べます。ヒントともどす、ふたりで1台、タップの確認つき（スマホでもまちがえにくい）、四をつないで勝つ「今日のパズル」5問、友だちとのオンライン対戦（部屋のコード・クイックマッチ）もできます。', en: 'The classic five-in-a-row game: place black and white stones and be first to line up five. Play the CPU on 15×15, 13×13 or 9×9 at four levels (the strongest reads deep and finds continuous fours). Choose Free, Exactly-five or Renju-style rules (forbidden moves for Black). Hints and undo, two players on one device, a confirm-tap that prevents mis-taps on phones, a five-position daily puzzle of chaining fours, and online play with friends (room code or quick match).' },
+      label: { ja: 'ボードゲーム', en: 'Board game' },
+      genres: ['board'], tags: ['2d', 'turn', 'board', 'casual', 'daily', 'versus', 'online'],
+      keywords: { ja: ['五目並べ', '五目ならべ', '連珠', '五目', 'ごもく', '碁盤', '石', 'ボード', 'CPU', 'ふたりで', 'パズル', 'オンライン対戦', '友だちと', '15×15'], en: ['gomoku', 'five in a row', 'renju', 'connect five', 'board game', 'two player', 'cpu', 'daily puzzle', 'online', 'multiplayer', '15x15', 'stones'] },
+      icon: 'img/icons/gomoku.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#c99a5b"/><g stroke="#5e3f1f" stroke-width="1.4" stroke-opacity=".75"><path d="M8 8h56M8 22h56M8 36h56M8 50h56M8 64h56M8 8v56M22 8v56M36 8v56M50 8v56M64 8v56"/></g><g fill="#27305b" stroke="#f0c968" stroke-width="1.4" stroke-dasharray="2.2 2.4"><circle cx="8" cy="36" r="6"/><circle cx="22" cy="36" r="6"/><circle cx="36" cy="36" r="6"/><circle cx="50" cy="36" r="6"/><circle cx="64" cy="36" r="6"/></g><g fill="#f0c968"><circle cx="8" cy="36" r="2"/><circle cx="22" cy="36" r="2"/><circle cx="36" cy="36" r="2"/><circle cx="50" cy="36" r="2"/><circle cx="64" cy="36" r="2"/></g><g fill="#f1e8d6" stroke="#7c8aa8" stroke-width="1.4"><circle cx="22" cy="22" r="6"/><circle cx="50" cy="50" r="6"/><circle cx="36" cy="50" r="6"/></g><g stroke="#5f6e8e" stroke-width="2.2" stroke-linecap="round"><path d="M19 22h6"/><path d="M47 50h6"/><path d="M33 50h6"/></g></svg>',
+      thumb: 'img/thumbs/gomoku.webp', thumb2x: 'img/thumbs/gomoku@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.gomoku.game); online matches (2 players, host-authoritative) run on RTDB tr/gomoku/* through common/turnroom.js (database.rules.json). Online results do not feed the ranking
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ★: a win on 15x15 against the CPU, 1 / 2 / 3 / 4 for Easy / Normal / Hard / Expert, with no hint and no undo (13x13, 9x9, two players on one device, the daily puzzle and online count nothing). The cap leaves room for years of play
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.gomoku.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.gomoku.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.gomoku.save': '{ v:1, pts（★の合計＝ランキング）, w:{ "<盤 9|13|15>-<強さ 1〜4>":{ p（遊んだ回数）, w（勝った回数） } }, stats:{ plays, wins, lv3（つよいCPUに勝った）, hard（とてもつよいCPUに勝った）, small（13×13か9×9で勝った）, std（ちょうど5のルールで勝った）, renju（連珠ふうで勝った）, quick（自分が12手以内で勝った）, long（60手以上かけて勝った）, fork（四四・四三・止められない四をつくった数）, twop（ふたりで1台で遊んだ）, pz（今日のパズルの正解数）, dperf（5問ぜんぶ正解した日）, dplay（今日のパズルを最後まで解いた日）, onl（オンラインで遊んだ回数）, onw（オンラインで勝った回数。★・ランキングには入らない） }, set:{ level, me（b|w|r）, n（9|13|15）, rule（free|std|renju）, nums（手の番号）, fbd（禁じ手の×）, conf（タップで決める 0|1|2）, fast }, dl:{ last（日付 YYYYMMDD）, pts, r:[[最初に選んだマス, 正解 0|1, 点]…] }, tut }',
+        'kusoge.gomoku.game': 'とちゅうのゲーム（1手ごとに自動保存）{ v:1, mode（cpu|pass）, n, rule, level, me, seed, moves:[[マス,色]…], hinted, undone, fork, ms, cfg, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.gomoku.howto': 'ルールを見た（\'1\'）',
+      },
+      // counters only grow (max); the last settings and today's puzzle answers are whole values (newest)
+      sync: {
+        'kusoge.gomoku.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', dl: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1222,6 +1250,25 @@
       { id: 'orchestra.perfect20', tier: 2, icon: 'star', title: { ja: '入りの名人', en: 'Cue Master' }, desc: { ja: '「ばっちり」の入りを合わせて20回出す', en: 'Give 20 perfect cues in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.perfect' }, gte: 20 } },
       { id: 'orchestra.tour', tier: 3, icon: 'trophy', title: { ja: '8曲を指揮した', en: 'Eight Pieces' }, desc: { ja: 'どれでも8曲を「ふつう」で最後まで指揮する', en: 'Conduct any eight pieces to the end on Normal' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'p', each: 's1', measure: 'countGte', min: 1 }, gte: 8 } },
       { id: 'orchestra.three5', tier: 4, icon: 'trophy', title: { ja: '★3のコンサート', en: 'Standing Ovation' }, desc: { ja: '★3の演奏を合わせて5回する', en: 'Earn three stars five times in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 5 }, grantsTitle: { ja: 'マエストロ', en: 'Maestro' } },
+    ],
+    gomoku: [
+      { id: 'gomoku.first', tier: 1, icon: 'check', title: { ja: 'はじめの一勝', en: 'First Win' }, desc: { ja: 'CPUに勝つ', en: 'Beat the CPU' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.wins' }, gte: 1 } },
+      { id: 'gomoku.fork', tier: 1, icon: 'star', title: { ja: '止められない形', en: 'Unstoppable Shape' }, desc: { ja: '四四・四三・両はしが開いた四のどれかをつくる', en: 'Make a double four, a four-three or an open four' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.fork' }, gte: 1 } },
+      { id: 'gomoku.twop', tier: 1, icon: 'check', title: { ja: 'ふたりで勝負', en: 'Head to Head' }, desc: { ja: '1台でふたりで最後まで遊ぶ', en: 'Finish a two-player game on one device' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.twop' }, gte: 1 } },
+      { id: 'gomoku.pz1', tier: 1, icon: 'star', title: { ja: '連続四を見つけた', en: 'Fours Found' }, desc: { ja: '今日のパズルで正解する', en: 'Solve a daily puzzle' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.pz' }, gte: 1 } },
+      { id: 'gomoku.small', tier: 1, icon: 'check', title: { ja: '小さな盤の勝者', en: 'Small Board Winner' }, desc: { ja: '13×13か9×9の盤でCPUに勝つ', en: 'Beat the CPU on a 13x13 or 9x9 board' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.small' }, gte: 1 } },
+      { id: 'gomoku.win10', tier: 2, icon: 'trophy', title: { ja: '十勝', en: 'Ten Wins' }, desc: { ja: '合わせて10回勝つ', en: 'Win 10 games in total' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.wins' }, gte: 10 } },
+      { id: 'gomoku.lv3', tier: 2, icon: 'trophy', title: { ja: '強い相手に勝つ', en: 'Beat a Hard CPU' }, desc: { ja: '「つよい」以上のCPUに勝つ', en: 'Win against a Hard or Expert CPU' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.lv3' }, gte: 1 } },
+      { id: 'gomoku.std', tier: 2, icon: 'star', title: { ja: 'ちょうど五つ', en: 'Exactly Five' }, desc: { ja: '「ちょうど5」のルールでCPUに勝つ', en: 'Beat the CPU under the Exactly-five rule' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.std' }, gte: 1 } },
+      { id: 'gomoku.renju', tier: 2, icon: 'star', title: { ja: '禁じ手のなかで', en: 'Under the Restrictions' }, desc: { ja: '連珠ふうのルールでCPUに勝つ', en: 'Beat the CPU under the Renju-style rule' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.renju' }, gte: 1 } },
+      { id: 'gomoku.quick', tier: 2, icon: 'star', title: { ja: '速攻', en: 'Quick Strike' }, desc: { ja: '自分の手が12手以内で勝つ', en: 'Win within 12 of your own moves' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.quick' }, gte: 1 } },
+      { id: 'gomoku.pz20', tier: 2, icon: 'trophy', title: { ja: 'パズルの常連', en: 'Puzzle Regular' }, desc: { ja: '今日のパズルに合わせて20問正解する', en: 'Solve 20 daily puzzles in total' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.pz' }, gte: 20 } },
+      { id: 'gomoku.dperf', tier: 3, icon: 'trophy', title: { ja: '5問ぜんぶ正解', en: 'Perfect Day' }, desc: { ja: '今日のパズル5問をぜんぶ正解する', en: 'Solve all five of a day\'s puzzles' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.dperf' }, gte: 1 } },
+      { id: 'gomoku.hard', tier: 3, icon: 'trophy', title: { ja: '最強に勝つ', en: 'Beat the Best' }, desc: { ja: '「とてもつよい」CPUに勝つ', en: 'Win against an Expert CPU' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.hard' }, gte: 1 } },
+      { id: 'gomoku.onw', tier: 3, icon: 'star', title: { ja: 'オンラインで勝つ', en: 'Online Victory' }, desc: { ja: 'オンライン対戦で勝つ', en: 'Win an online match' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.onw' }, gte: 1 } },
+      { id: 'gomoku.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'pts' }, gte: 30 } },
+      { id: 'gomoku.hard5', tier: 4, icon: 'trophy', title: { ja: '最強のライバル', en: 'Expert Rival' }, desc: { ja: '「とてもつよい」CPUに5回勝つ', en: 'Beat an Expert CPU 5 times' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.hard' }, gte: 5 }, grantsTitle: { ja: '五目の達人', en: 'Gomoku Master' } },
+      { id: 'gomoku.long', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ねばり勝ち', en: 'Long Haul' }, desc: { ja: '60手以上かけてCPUに勝つ', en: 'Beat the CPU in a game of 60 moves or more' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.long' }, gte: 1 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
