@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // トランプ広場の通しプレイ（Playwright。?debug の window.__cards で「どこを押すか」だけを聞き、押すのは本物のマウス操作）
-//   node tools/tests/cards-play.js [first,games,drag,practice,resume,english,layouts]   … 全部で約2分
+//   node tools/tests/cards-play.js [first,games,drag,practice,resume,english,layouts,solitaire,jiji]   … 全部で約2分
 // 1. 初回：はじめに → タイトル（6つのゲーム・クイックマッチ）
 // 2. 6つのゲームをタイトルから始めて、最後まで本物のクリックで遊ぶ（ヒント用の強いCPUの手をなぞる）→ 結果・保存（遊んだ回数・★）
 // 3. ドラッグで出す（七並べ・大富豪）
 // 4. れんしゅう：ヒントが出て、記録は増えない
 // 5. 自動保存：途中で再読み込み → 「つづきから」で同じ手数
 // 6. 英語：タイトル・遊び方・各ゲームの画面・結果に日本語が残らない
+// 8. ソリティア（クロンダイク1/3・フリーセル・スパイダー1/2/4）：クリック・ドラッグ・キーボードで動かす、戻す、ヒント、オート、デバッグ用の仕掛けで勝ち、記録、再開、ja/en、320px・ダークテーマ
+// 9. ジジ抜き：ババ抜きの画面で、ジョーカーなしの51枚で最後まで
 // 7. 全画面サイズ × ja/en：ボタンが画面内、横スクロールなし（スクリーンショットを out/shots/cards-play/ に）
 'use strict';
 const fs = require('fs');
@@ -20,8 +22,8 @@ const OUT = path.join(__dirname, 'out', 'shots', 'cards-play');
 const results = [];
 const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + JSON.stringify(info).slice(0, 600)}`); };
 const SAVE = 'kusoge.cards.save', RUN = 'kusoge.cards.game', HOWTO = 'kusoge.cards.howto';
-const GAMES = ['oldmaid', 'concentration', 'sevens', 'daifugo', 'poker', 'blackjack'];
-const KEY = { oldmaid: 'om', concentration: 'cn', sevens: 'sv', daifugo: 'dh', poker: 'pk', blackjack: 'bj' };
+const GAMES = ['oldmaid', 'jiji', 'concentration', 'sevens', 'daifugo', 'poker', 'blackjack'];
+const KEY = { oldmaid: 'om', jiji: 'jj', concentration: 'cn', sevens: 'sv', daifugo: 'dh', poker: 'pk', blackjack: 'bj' };
 
 async function open(env, o = {}) {
   const s = await B.newSession(env, { vp: V.get(o.vp || 'ip12'), lang: o.lang || 'ja', seed: o.seed || { [HOWTO]: '1' }, isMobile: false, hasTouch: false });
@@ -101,7 +103,7 @@ async function first(env) {
   await p.click('#howtoGo');
   x = await st(p);
   check('then the title', x.title && !x.howto, x);
-  check('six game tiles and quick match', (await p.$$('.gt')).length === 6 && !!(await p.$('#tQuick')), null);
+  check('eight game tiles (seven CPU games + solitaire) and quick match', (await p.$$('.gt')).length === 8 && !!(await p.$('#tQuick')), null);
   await shot(p, '1-title');
   await p.click('.gt[data-game="daifugo"]');
   check('daifugo shows its house-rule switches', (await p.$$('.tog[data-t]')).length === 7, null);
@@ -259,13 +261,208 @@ async function layouts(env) {
   }
 }
 
+
+const SOLV = [
+  { name: 'klondike1', key: 'k1', opts: { variant: 'klondike', draw: 1 }, click: ['sv', 'klondike'], sub: ['sd', 1] },
+  { name: 'klondike3', key: 'k3', opts: { variant: 'klondike', draw: 3 }, click: ['sv', 'klondike'], sub: ['sd', 3] },
+  { name: 'freecell', key: 'fc', opts: { variant: 'freecell' }, click: ['sv', 'freecell'] },
+  { name: 'spider1', key: 's1', opts: { variant: 'spider', suits: 1 }, click: ['sv', 'spider'], sub: ['ss', 1] },
+  { name: 'spider2', key: 's2', opts: { variant: 'spider', suits: 2 }, click: ['sv', 'spider'], sub: ['ss', 2] },
+  { name: 'spider4', key: 's4', opts: { variant: 'spider', suits: 4 }, click: ['sv', 'spider'], sub: ['ss', 4] },
+];
+const solSt = p => p.evaluate(() => __kb.state().sol);
+async function solStartFromTitle(p, v) {
+  await p.evaluate(() => __cards.title());
+  await p.click('.gt[data-game="solitaire"]');
+  await p.click(`#optSv [data-sv="${v.click[1]}"]`);
+  if (v.sub) await p.click(`.seg [data-${v.sub[0]}="${v.sub[1]}"]`);
+  await p.click('#tPlay');
+  await p.waitForFunction(() => __kb.state().started && !__kb.state().title);
+}
+async function clickId(p, id) {
+  for (let t = 0; t < 40; t++) {
+    const a = await p.evaluate(id => __cards.solPos(id), id); await p.waitForTimeout(50);
+    const b = await p.evaluate(id => __cards.solPos(id), id);
+    if (a && b && Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) < 0.6) { await p.mouse.click(b.x, b.y); return; }
+  }
+  throw new Error('cannot click card ' + id);
+}
+const topId = (x, k, i, n = 1) => { const c = x.p[k][i]; return c[c.length - n]; };
+async function solMoveByClick(p) { // the hint says what is good; click that card (or the stock)
+  const x0 = await solSt(p);
+  const h = await p.evaluate(() => __cards.solHint());
+  if (!h) return null;
+  const x1 = await solSt(p);
+  if (h.t === 'draw' || h.t === 'deal') await clickId(p, x1.p.S[0][x1.p.S[0].length - 1]);
+  else await clickId(p, topId(x1, h.f[0], h.f[1], h.n));
+  await p.waitForFunction(m => __kb.state().sol.moves > m, x0.moves, { timeout: 3000 }).catch(() => {});
+  return { h, before: x0 };
+}
+
+async function solitaire(env) {
+  console.log('8. solitaire: 6 variants (click, drag, keyboard, undo, hint, auto-finish, records, resume, en, 320px, dark)');
+  const s = await open(env);
+  const p = s.page;
+  await p.evaluate(() => { __cards.title(); });
+  check('the solitaire tile and its options (variant, daily, auto)', !!(await p.$('.gt[data-game="solitaire"]')), null);
+  await p.click('.gt[data-game="solitaire"]');
+  check('no CPU strength / player count for solitaire, no practice button', !(await p.$('#optLv')) && !(await p.$('#optN')) && (await p.$eval('#tPrac', e => e.hidden)), null);
+  check('three variants on the title', (await p.$$('#optSv [data-sv]')).length === 3, null);
+  for (const v of SOLV) {
+    const before = (await stored(p, SAVE)) || { g: {}, pts: 0 };
+    await solStartFromTitle(p, v);
+    let x = await solSt(p);
+    const tag = v.name;
+    check(`${tag}: starts as that variant`, x && x.variant === v.opts.variant && (v.opts.draw ? x.draw === v.opts.draw : true) && (v.opts.suits ? x.suits === v.opts.suits : true) && x.moves === 0 && x.legal > 0, x && { variant: x.variant, draw: x.draw, suits: x.suits });
+    await p.waitForTimeout(500);
+    await shot(p, `8-${tag}-start`);
+    // a move by a real click on the card the hint names
+    const r = await solMoveByClick(p);
+    x = await solSt(p);
+    check(`${tag}: a click makes a move (hint ${r && r.h.t})`, r && x.moves > r.before.moves, { r: r && r.h, moves: x.moves });
+    // undo (button) returns exactly to the earlier position
+    await p.click('#ctl [data-id="undo"]');
+    const y = await solSt(p);
+    check(`${tag}: undo brings the position back`, JSON.stringify(y.p) === JSON.stringify(r.before.p) && y.moves === r.before.moves, { moves: y.moves });
+    // hint text, and the hinted card glows
+    await p.click('#ctl [data-id="hint"]');
+    check(`${tag}: the hint says what to do and a card glows`, /💡/.test(await p.textContent('#status')) && (await p.$$('.cd.hl')).length >= 1, await p.textContent('#status'));
+    // drag by the hint: move the hinted card onto the destination
+    const hz = (await solSt(p)).hint;
+    if (hz && hz.t === 'mv') {
+      const x2 = await solSt(p), id = topId(x2, hz.f[0], hz.f[1], hz.n);
+      const a = await p.evaluate(id => __cards.solPos(id), id), z = await p.evaluate(h => __cards.solZone(h.to[0], h.to[1]), hz);
+      await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(a.x + 8, a.y + 8, { steps: 3 }); await p.mouse.move(z.x, z.y, { steps: 8 }); await p.mouse.up();
+      await p.waitForFunction(m => __kb.state().sol.moves > m, x2.moves, { timeout: 2000 }).catch(() => {});
+      const x3 = await solSt(p);
+      check(`${tag}: dragging the hinted card to its place moves it there`, x3.moves > x2.moves && x3.p[hz.to[0]][hz.to[1]].indexOf(id) >= 0, { hz, moves: x3.moves });
+    } else check(`${tag}: (hint was a stock move; drag checked in the other variants)`, true, null);
+    // keyboard: hint → cursor to the card → pick → cursor to the destination → place
+    const x4 = await solSt(p);
+    const hk = await p.evaluate(() => __cards.solHint());
+    if (hk && hk.t === 'mv') {
+      const x5 = await solSt(p), id = topId(x5, hk.f[0], hk.f[1], hk.n);
+      await p.keyboard.press('ArrowRight');
+      let ok = false;
+      for (let i = 0; i < 30 && !ok; i++) { const c = (await solSt(p)).cur; if (c && c.k === hk.f[0] && c.i === hk.f[1]) ok = true; else await p.keyboard.press('ArrowRight'); }
+      for (let i = 1; i < hk.n; i++) await p.keyboard.press('ArrowUp');
+      await p.keyboard.press('Enter');
+      check(`${tag}: keyboard: Enter picks the cards up`, !!(await solSt(p)).pick, await solSt(p).then(q => q.cur));
+      ok = false;
+      for (let i = 0; i < 30 && !ok; i++) { const c = (await solSt(p)).cur; if (c && c.k === hk.to[0] && (hk.to[0] !== 'T' || c.i === hk.to[1])) ok = true; else await p.keyboard.press('ArrowRight'); }
+      await p.keyboard.press('Enter');
+      const x6 = await solSt(p);
+      check(`${tag}: keyboard: Enter on the destination moves them`, x6.moves > x5.moves && x6.p[hk.to[0]].some(c => c.indexOf(id) >= 0), { hk, moves: x6.moves });
+      await p.keyboard.press('u');
+      check(`${tag}: keyboard: U undoes`, (await solSt(p)).moves === x5.moves, null);
+    }
+    void x4;
+    // Auto is disabled for Spider; others stay enabled
+    check(`${tag}: the Auto button ${v.opts.variant === 'spider' ? 'is off for Spider' : 'is there'}`, (await p.$eval('#ctl [data-id="auto"]', e => e.disabled)) === (v.opts.variant === 'spider'), null);
+    // the game restarts the same hist-free: win through the debug rig, then the finishing move with real clicks
+    await p.evaluate(() => __cards.solRig());
+    await p.waitForTimeout(400);
+    if (v.opts.variant === 'spider') { const x7 = await solSt(p); await clickId(p, x7.p.T[1][0]); }
+    else await p.click('#ctl [data-id="auto"]');
+    await p.waitForFunction(() => __kb.state().result, null, { timeout: 8000 }).catch(() => {});
+    x = await solSt(p);
+    check(`${tag}: finishing the game shows the win`, x.won && (await st(p)).result && /クリア/.test(await p.textContent('#rTitle')), { won: x.won });
+    await shot(p, `8-${tag}-result`);
+    const after = await stored(p, SAVE), rec = after.g[v.key] || {};
+    check(`${tag}: the win is recorded (wins, best time, fewest moves, ★)`, rec.w === (((before.g[v.key] || {}).w) || 0) + 1 && rec.bt >= 1 && rec.bm >= 1 && after.pts > before.pts, rec);
+    check(`${tag}: the unfinished-game save is gone`, (await stored(p, RUN)) === null, null);
+    check(`${tag}: result shows time and moves`, (await p.$$('#rRank li')).length === 2, null);
+    await p.click('#rTitleBtn');
+  }
+  check('no page errors', s.log.pageErrors.length === 0 && s.log.consoleErrors.length === 0, [...s.log.pageErrors, ...s.log.consoleErrors]);
+  await s.close();
+
+  // resume, daily deal, FreeCell numbered deals
+  const s2 = await open(env);
+  const q = s2.page;
+  await q.evaluate(() => __cards.start('solitaire', { opts: { variant: 'klondike', draw: 1 }, seed: 11 }));
+  await solMoveByClick(q); await solMoveByClick(q);
+  const a = await solSt(q);
+  check('autosave: the game is saved after every move', ((await stored(q, RUN)) || {}).st && (await stored(q, RUN)).st.moves === a.moves && a.moves >= 2, a.moves);
+  await s2.reload(); await q.waitForFunction(() => window.__cards);
+  check('after a reload the title offers resume', !(await q.$eval('#tResume', e => e.hidden)), null);
+  await q.click('#tResume');
+  const b = await solSt(q);
+  check('resume gives the same position, with undo history', JSON.stringify(b.p) === JSON.stringify(a.p) && b.hist === a.hist && b.moves === a.moves, { a: a.moves, b: b.moves });
+  await q.click('#ctl [data-id="undo"]'); await q.click('#ctl [data-id="undo"]');
+  check('unlimited undo walks back to the deal', (await solSt(q)).moves === 0 && (await q.$eval('#ctl [data-id="undo"]', e => e.disabled)), null);
+  await q.evaluate(() => __cards.start('solitaire', { opts: { variant: 'freecell', daily: 1 } }));
+  const f1 = await solSt(q);
+  await q.evaluate(() => __cards.start('solitaire', { opts: { variant: 'freecell', daily: 1 } }));
+  const f2 = await solSt(q);
+  check('the daily FreeCell deal is the same number again and within 1..32000', f1.seed === f2.seed && f1.seed >= 1 && f1.seed <= 32001, [f1.seed, f2.seed]);
+  check('the daily badge is shown', !(await q.$eval('#iPrac', e => e.hidden)), null);
+  check('no page errors', s2.log.pageErrors.length === 0 && s2.log.consoleErrors.length === 0, [...s2.log.pageErrors, ...s2.log.consoleErrors]);
+  await s2.close();
+}
+
+async function solLayouts(env) {
+  console.log('8b. solitaire at 320px / other sizes, ja/en, light/dark: no overflow, no Japanese in English');
+  for (const vp of (process.env.CARDS_VPS || 'se1,ip12,land').split(',')) for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp, lang });
+    const p = s.page;
+    for (const [vi, v] of SOLV.entries()) {
+      if (vi % 2 && vp !== 'se1') continue;
+      await p.evaluate(o => __cards.start('solitaire', { opts: o, seed: 21 }), v.opts);
+      await p.waitForTimeout(1300);
+      for (const theme of ['light', 'dark']) {
+        await p.evaluate(t => document.documentElement.setAttribute('data-kb-theme', t), theme);
+        await p.waitForTimeout(80);
+        const r = await p.evaluate(`(${layoutProbe})()`);
+        const off = await p.evaluate(() => { const t = document.getElementById('table').getBoundingClientRect(); return [...document.querySelectorAll('.cd:not(.hid)')].filter(e => { const b = e.getBoundingClientRect(); return b.left < t.left - 3 || b.right > t.right + 3 || b.top < t.top - 3 || b.bottom > t.bottom + 3; }).length; });
+        check(`${vp}/${lang}/${theme} ${v.name}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length}, cards outside ${off})`, r.hscroll <= 1 && r.offscreen.length === 0 && off === 0, { off: r.offscreen.slice(0, 3), cards: off });
+        if (theme === 'dark' && lang === 'ja' && (vp === 'se1' || vi === 0)) await shot(p, `8b-${vp}-${v.name}-dark`);
+      }
+      await p.evaluate(() => document.documentElement.removeAttribute('data-kb-theme'));
+      if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check(`${vp} en ${v.name}: no Japanese`, jp.length === 0, jp.slice(0, 5)); }
+    }
+    if (lang === 'en') {
+      await p.evaluate(() => __cards.title()); await p.click('.gt[data-game="solitaire"]');
+      let jp = await p.evaluate(`(${jpScan})(true)`); check(`${vp} en solitaire title: no Japanese`, jp.length === 0, jp.slice(0, 5));
+      await p.click('#tHow'); jp = await p.evaluate(`(${jpScan})(true)`); check(`${vp} en solitaire rules: no Japanese`, jp.length === 0, jp.slice(0, 5));
+      await p.click('#howtoGo');
+    }
+    check(`${vp}/${lang}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+    await s.close();
+  }
+}
+
+async function jiji(env) {
+  console.log('9. jiji-nuki: Old Maid screen, 51 cards, no joker, played to the end');
+  const s = await open(env);
+  const p = s.page;
+  await speed(p, 0);
+  for (const n of [2, 3, 4]) {
+    const before = (await stored(p, SAVE)) || { g: {}, pts: 0 };
+    await startFromTitle(p, 'jiji', { n, level: 2 });
+    const info = await p.evaluate(() => { const st = __cards.S.st; return { game: st.game, removed: st.removed, cards: [].concat(...st.dealt).length, joker: [].concat(...st.dealt).includes(52), table: document.querySelectorAll('.cd:not(.hid)').length }; });
+    check(`jiji ${n}p: starts with 51 cards, no joker, one removed`, info.game === 'jiji' && info.cards === 51 && !info.joker && info.removed >= 0 && info.removed < 52, info);
+    const x = await playOut(p);
+    check(`jiji ${n}p: ends with a loser holding the last card`, x.over && x.result, x.status);
+    const last = await p.evaluate(() => { const st = __cards.S.st; return { loser: st.loser, left: st.hands[st.loser].length, disc: st.disc.length }; });
+    check(`jiji ${n}p: one card is left over`, last.left === 1 && last.disc === 50, last);
+    const after = await stored(p, SAVE);
+    check(`jiji ${n}p: recorded under jj`, after.g.jj && after.g.jj.p === ((before.g.jj || {}).p || 0) + 1, after.g);
+    await shot(p, `9-jiji-${n}-result`);
+  }
+  await p.evaluate(() => __cards.title()); await p.click('.gt[data-game="jiji"]'); await p.click('#tHow');
+  check('jiji rules page', /ジジ/.test(await p.textContent('#howtoTitle')) && (await p.$$('#howBody li')).length >= 6, null);
+  check('no page errors', s.log.pageErrors.length === 0 && s.log.consoleErrors.length === 0, [...s.log.pageErrors, ...s.log.consoleErrors]);
+  await s.close();
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, games, drag, practice, resume, english, layouts]) {
+  for (const f of [first, games, drag, practice, resume, english, layouts, solitaire, solLayouts, jiji]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

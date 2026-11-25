@@ -622,10 +622,10 @@
       id: 'cards', order: 19, path: 'cards/', added: '2026-11-24',
       title: { ja: 'トランプ広場', en: 'Card Table' },
       short: { ja: 'トランプ広場', en: 'Card Table' },
-      desc: { ja: 'ババ抜き・神経衰弱・七並べ・大富豪・ポーカー・ブラックジャックの6つを、CPUと遊べるトランプ広場。2〜4人、強さは3段階。配る・めくる・出すの動きつき、遊び方と練習もあります。', en: 'Six classic card games against CPU players: Old Maid, Concentration, Sevens, Daifugo, Poker and Blackjack. 2 to 4 players, three strengths, smooth dealing and flipping, rules pages and a practice mode.' },
+      desc: { ja: 'ババ抜き・ジジ抜き・神経衰弱・七並べ・大富豪・ポーカー・ブラックジャックをCPUと、ソリティア（クロンダイク・フリーセル・スパイダー）をひとりで遊べるトランプ広場。ヒント・何度でも戻せる・今日の配りつき。', en: 'Seven card games against CPU players (Old Maid, Jiji-nuki, Concentration, Sevens, Daifugo, Poker, Blackjack) plus solo Solitaire: Klondike, FreeCell and Spider, with hints, unlimited undo and a daily deal.' },
       label: { ja: 'トランプ', en: 'Card games' },
       genres: ['board'], tags: ['2d', 'turn', 'cards', 'casual'],
-      keywords: { ja: ['トランプ', 'カード', 'ババ抜き', '神経衰弱', '七並べ', '大富豪', 'ポーカー', 'ブラックジャック', 'CPU'], en: ['playing cards', 'card games', 'old maid', 'concentration', 'memory', 'sevens', 'daifugo', 'president', 'poker', 'blackjack', 'cpu'] },
+      keywords: { ja: ['トランプ', 'カード', 'ババ抜き', '神経衰弱', '七並べ', '大富豪', 'ポーカー', 'ブラックジャック', 'ジジ抜き', 'ソリティア', 'クロンダイク', 'フリーセル', 'スパイダー', 'CPU'], en: ['solitaire', 'klondike', 'freecell', 'spider', 'jiji-nuki', 'playing cards', 'card games', 'old maid', 'concentration', 'memory', 'sevens', 'daifugo', 'president', 'poker', 'blackjack', 'cpu'] },
       icon: 'img/icons/cards.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#17614a"/><circle cx="36" cy="36" r="33" fill="#1d7358"/><g transform="rotate(-16 28 40)"><rect x="11" y="14" width="29" height="43" rx="4" fill="#243f86" stroke="#e7c36a" stroke-width="1.5"/><path d="M25.5 20l8 8-8 8-8-8zM25.5 36l8 8-8 8-8-8z" fill="none" stroke="#3a5cb0" stroke-width="1.3"/><circle cx="25.5" cy="35.5" r="3.2" fill="#e7c36a"/></g><g transform="rotate(11 44 36)"><rect x="28" y="10" width="32" height="46" rx="4" fill="#fffdf8" stroke="#c9b88a" stroke-width="1.2"/><text x="34" y="26" font-family="Georgia,serif" font-weight="700" font-size="14" fill="#1c2342">A</text><g transform="translate(35.5 26.5) scale(1.35)" fill="#1c2342"><path d="M12 1.8C9.4 5.6 3.6 8.4 3.6 13.4c0 2.7 2.1 4.6 4.5 4.6 1.5 0 2.7-.6 3.4-1.8-.1 2.7-.9 4.5-2.5 5.6h6c-1.6-1.1-2.4-2.9-2.5-5.6.7 1.2 1.9 1.8 3.4 1.8 2.4 0 4.5-1.9 4.5-4.6C20.4 8.4 14.6 5.6 12 1.8z"/></g></g></svg>', iconBg: '#17614a',
       thumb: 'img/thumbs/cards.webp', thumb2x: 'img/thumbs/cards@2x.webp',
       tech: '2d',
@@ -637,13 +637,13 @@
       rankSource: { key: 'kusoge.cards.save', paths: ['pts'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.cards.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
       keys: {
-        'kusoge.cards.save': '{ v:1, pts（★の合計＝ランキング）, g:{ om|cn|sv|dh|pk|bj:{ p（遊んだ回数）, w（1位の回数）, l（最下位の回数） } }, stats:{ plays, wins, hard（つよいCPUに勝った回数）, cnStreak（神経衰弱で続けて取った最高の組数）, rev（革命）, cut8（8切り）, pkHands（ポーカーで勝ったハンド）, pkFlush（フラッシュ以上で勝った試合）, royal, pkPot, pkDouble, pkChips, bj（ブラックジャック）, bjWon, bjDbl, bjDouble, bjChips }, set:{ game, n（人数）, level, fast, o:{ <ゲームid>:{ …ゲームごとの設定 } } }, tut }',
+        'kusoge.cards.save': '{ v:1, pts（★の合計＝ランキング）, g:{ om|jj|cn|sv|dh|pk|bj:{ p（遊んだ回数）, w（1位の回数）, l（最下位の回数） }, k1|k3|fc|s1|s2|s4（ソリティア。クロンダイク1枚/3枚・フリーセル・スパイダー1/2/4スート）:{ p（動かした回数）, w（クリア回数）, bt（最短秒。小さいほど良い）, bm（最少手数）} }, stats:{ plays, wins, hard（つよいCPUに勝った回数）, cnStreak（神経衰弱で続けて取った最高の組数）, rev（革命）, cut8（8切り）, pkHands（ポーカーで勝ったハンド）, pkFlush（フラッシュ以上で勝った試合）, royal, pkPot, pkDouble, pkChips, bj（ブラックジャック）, bjWon, bjDbl, bjDouble, bjChips }, set:{ game, n（人数）, level, fast, o:{ <ゲームid>:{ …ゲームごとの設定 } } }, tut }',
         'kusoge.cards.game': 'とちゅうのゲーム（毎手自動保存）{ v:1, id, st（cards/engine.js の状態そのまま）, practice, opts, n, level, ms, at }。この端末だけ（同期しない）。終わると消す',
         'kusoge.cards.howto': '遊び方を見た（\'1\'）',
       },
       // counters only grow (max); the last settings are a whole value (newest)
       sync: {
-        'kusoge.cards.save': { fields: { pts: 'max', g: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+        'kusoge.cards.save': { fields: { pts: 'max', g: { each: { fields: { bt: 'minPos', bm: 'minPos' }, rest: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
     {
@@ -990,7 +990,12 @@
       { id: 'cards.royal', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'ロイヤルな夜', en: 'Royal Night' }, desc: { ja: 'ポーカーでロイヤルフラッシュで勝つ', en: 'Win a poker hand with a royal flush' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.royal' }, gte: 1 }, grantsTitle: { ja: 'ロイヤル', en: 'Royal' } },
       { id: 'cards.bj', tier: 2, icon: 'star', title: { ja: 'ナチュラル21', en: 'Natural 21' }, desc: { ja: 'ブラックジャックを出す', en: 'Be dealt a Blackjack' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.bj' }, gte: 1 } },
       { id: 'cards.hard', tier: 3, icon: 'trophy', title: { ja: '強敵に勝つ', en: 'Beat the Best' }, desc: { ja: '「つよい」CPUに勝って1位になる', en: 'Finish first against Hard CPUs' }, when: { rec: { key: 'kusoge.cards.save', path: 'stats.hard' }, gte: 1 } },
-      { id: 'cards.all', tier: 4, icon: 'trophy', title: { ja: '広場の主', en: 'Master of the Table' }, desc: { ja: '6つのゲームすべてで1位になる', en: 'Finish first in all six games' }, when: { rec: { key: 'kusoge.cards.save', path: 'g', each: 'w', measure: 'countGte', min: 1 }, gte: 6 }, grantsTitle: { ja: '広場の主', en: 'Table Master' } },
+      { id: 'cards.all', tier: 4, icon: 'trophy', title: { ja: '広場の主', en: 'Master of the Table' }, desc: { ja: '6つのゲームすべてで1位になる', en: 'Finish first in all six games' }, when: { all: ['om', 'cn', 'sv', 'dh', 'pk', 'bj'].map(function (k) { return { rec: { key: 'kusoge.cards.save', path: 'g.' + k + '.w' }, gte: 1 }; }) }, grantsTitle: { ja: '広場の主', en: 'Table Master' } },
+      { id: 'cards.jj1', tier: 1, icon: 'check', title: { ja: 'ジジを避けた', en: 'Dodged the Jiji' }, desc: { ja: 'ジジ抜きで1位になる', en: 'Finish first in Jiji-nuki' }, when: { rec: { key: 'kusoge.cards.save', path: 'g.jj.w' }, gte: 1 } },
+      { id: 'cards.sl1', tier: 1, icon: 'check', title: { ja: 'ひとりで完成', en: 'Solo Clear' }, desc: { ja: 'ソリティアをクリアする（クロンダイク）', en: 'Clear a game of Klondike' }, when: { any: [{ rec: { key: 'kusoge.cards.save', path: 'g.k1.w' }, gte: 1 }, { rec: { key: 'kusoge.cards.save', path: 'g.k3.w' }, gte: 1 }] } },
+      { id: 'cards.fc1', tier: 2, icon: 'star', title: { ja: '4つのセル', en: 'Four Cells' }, desc: { ja: 'フリーセルをクリアする', en: 'Clear a game of FreeCell' }, when: { rec: { key: 'kusoge.cards.save', path: 'g.fc.w' }, gte: 1 } },
+      { id: 'cards.sp1', tier: 2, icon: 'star', title: { ja: '糸をたどる', en: 'Spinning Along' }, desc: { ja: 'スパイダーをクリアする', en: 'Clear a game of Spider' }, when: { any: [{ rec: { key: 'kusoge.cards.save', path: 'g.s1.w' }, gte: 1 }, { rec: { key: 'kusoge.cards.save', path: 'g.s2.w' }, gte: 1 }, { rec: { key: 'kusoge.cards.save', path: 'g.s4.w' }, gte: 1 }] } },
+      { id: 'cards.sp4', tier: 4, icon: 'trophy', hidden: true, title: { ja: '4スートの達人', en: 'Four-Suit Master' }, desc: { ja: 'スパイダーを4スートでクリアする', en: 'Clear Spider with 4 suits' }, when: { rec: { key: 'kusoge.cards.save', path: 'g.s4.w' }, gte: 1 } },
       { id: 'cards.pts30', tier: 3, icon: 'star', title: { ja: '星30', en: 'Thirty Stars' }, desc: { ja: '★を30個ためる', en: 'Collect 30 ★' }, when: { rec: { key: 'kusoge.cards.save', path: 'pts' }, gte: 30 } },
     ],
     fit: [

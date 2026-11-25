@@ -22,8 +22,8 @@ function playOut(id, o, hook) {
   return st;
 }
 
-test('six games are registered, each with the same interface', () => {
-  eq(GAMES.join(), 'oldmaid,concentration,sevens,daifugo,poker,blackjack');
+test('seven games are registered (Old Maid, Jiji-nuki, ...), each with the same interface', () => {
+  eq(GAMES.join(), 'oldmaid,jiji,concentration,sevens,daifugo,poker,blackjack');
   for (const id of GAMES) for (const f of ['create', 'legal', 'apply', 'cpu', 'who', 'done', 'result']) ok(typeof E.games[id][f] === 'function', id + '.' + f);
 });
 
@@ -196,6 +196,32 @@ test('CPU strength: Hard and Normal beat Easy; Hard is at least as good as Norma
   }
   const hvn = rate('daifugo', 3, 2, 200, 4);
   ok(hvn < 2.5, 'daifugo hard vs normal ' + hvn.toFixed(2));
+});
+
+test('Jiji-nuki: 52 cards without a joker, one random card removed, the last unmatched card decides the loser', () => {
+  const G = E.games.jiji;
+  const removedSeen = new Set();
+  for (let seed = 1; seed <= 60; seed++) for (const n of [2, 3, 4]) {
+    const st = G.create({ seed, n, level: 2, humans: [] });
+    ok(st.game === 'jiji' && st.removed >= 0 && st.removed < 52, 'removed card');
+    removedSeen.add(st.removed);
+    const dealt = [].concat(...st.dealt);
+    eq(dealt.length, 51, 'dealt 51'); ok(!dealt.includes(E.JOKER) && !dealt.includes(st.removed), 'no joker, removed card not dealt');
+    eq(new Set(dealt).size, 51, 'all different');
+    // after the first pair-off, exactly one card of the removed card's number is left over and everything else is paired
+    const left = [].concat(...st.hands), r = st.removed % 13;
+    ok((left.length + st.disc.length) === 51, 'cards conserved');
+    const fin = playOut('jiji', { seed, n, level: 2 });
+    ok(fin.over && fin.loser >= 0, 'has a loser');
+    eq(fin.hands[fin.loser].length, 1, 'the loser holds exactly the last card');
+    eq(fin.hands[fin.loser][0] % 13, r, 'the last card has the number of the removed card');
+    eq(fin.disc.length, 50, 'everything else was discarded in pairs');
+    const res = G.result(fin); eq(res.rank[fin.loser], n, 'the loser is last');
+  }
+  ok(removedSeen.size > 10, 'different cards are removed (' + removedSeen.size + ')');
+  ok(same(playOut('jiji', { seed: 9, n: 3, level: 2 }), playOut('jiji', { seed: 9, n: 3, level: 2 })), 'deterministic');
+  // Old Maid still has the joker
+  ok([].concat(...E.games.oldmaid.create({ seed: 3, n: 3, humans: [] }).dealt).includes(E.JOKER), 'old maid keeps the joker');
 });
 
 test('art: every card (and the joker) has a face', () => {

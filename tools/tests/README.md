@@ -58,7 +58,8 @@ node tools/tests/unit/brawl-engine.test.js    # おもちゃ大乱闘の中身�
 node tools/tests/town-play.js                 # ひまつぶしタウンの通し（本物のタップで建てる・そだてる・旅人・るす番（?debug の時計）・町をひらきなおす・保存と再開・英語・全画面サイズ）
 node tools/tests/town-balance.js              # ひまつぶしタウンの経済のバランス（ボットが最適に近く遊ぶ：最初の目標・最初のひらきなおしの時間・行きづまらないこと）
 node tools/tests/fit-play.js                  # ぴったりパズル工房の通し（本物のドラッグとタップでステージを解く・ヒント・やり直し・今日のパズル・タイムアタック・オンライン対戦の練習（同じ seed → 同じ問題・点の式・保存しない・終了後に元へ戻る）・保存と再開・英語・全画面サイズ）
-node tools/tests/cards-play.js                 # トランプ広場の通し（6ゲームを本物のクリックで最後まで・ドラッグ・れんしゅうとヒント・保存と再開・英語・全画面サイズ）
+node tools/tests/cards-play.js                 # トランプ広場の通し（7ゲームを本物のクリックで最後まで・ドラッグ・れんしゅうとヒント・保存と再開・英語・全画面サイズ・ソリティア6種（クリック・ドラッグ・キーボード・戻す・ヒント・オート・勝ちの記録・再開・今日の配り・320pxとダーク）・ジジ抜き）
+node tools/tests/unit/cards-solitaire.test.js # ソリティアの中身（配りが決まった結果・全カード1枚ずつ・全手が合法・何度でも戻す・ヒントは必ず合法・勝ち判定・FreeCell/Spider の決まり・FreeCell の番号つきの配りが解ける・記録のマージ）
 node tools/tests/trade-play.js                 # 貿易ゲームの通し（はじめる画面・本物のクリックで売る・ふつうは値下がりが前と同じ／かんたん／むずかしい・ミッション一覧と鍵・ボットが全8ミッションをクリア・★の保存（kusoge.trade.x）と次が開く・best に入らない・キーボード・5つのできごと・輸送費・ライト／ダーク・英語・古い保存）
 node tools/tests/unit/trade-engine.test.js     # 貿易ゲームの中身（値段の見直しがふつうなら前と同じ・できごとの計画・8ミッションの条件と★・kusoge.trade.x の読み込みと記録・英語の辞書が全部そろう・engine.js と sw.js）
 node tools/tests/shots.js                       # サムネイルを tools/tests/out/thumbs/ に試し撮り

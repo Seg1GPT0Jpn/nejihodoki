@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>トランプ広場</title>
 <meta name="theme-color" content="#0f2a24">
-<meta name="description" content="ババ抜き・神経衰弱・七並べ・大富豪・ポーカー・ブラックジャックを、CPUと遊べるトランプ広場。2〜4人、強さを選べて、遊び方つき。">
+<meta name="description" content="ババ抜き・ジジ抜き・神経衰弱・七並べ・大富豪・ポーカー・ブラックジャックをCPUと、ソリティアをひとりで遊べるトランプ広場。ヒント・遊び方つき。">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="icon" href="../favicon-32.png">
@@ -148,6 +148,11 @@ h1 { flex: 1; min-width: 0; margin: 0; text-align: center; font-family: var(--kb
 .cf.jk .jt { position: absolute; left: 22%; right: 22%; bottom: 9%; text-align: center; font: 700 calc(var(--cw) * .12) var(--kb-font-body); letter-spacing: .1em; color: #2f4ea2; }
 .slot { position: absolute; left: 0; top: 0; border-radius: calc(var(--cw) * .1); border: 1.5px dashed rgba(255, 255, 255, .22); box-sizing: border-box; transition: transform .3s; pointer-events: none; display: grid; place-items: center; font: 800 11px var(--kb-font-body); color: rgba(255, 255, 255, .32); }
 .slot.on { border-color: rgba(240, 193, 90, .75); background: rgba(240, 193, 90, .1); }
+.slot.cur { border: 2px solid var(--kb-focus); box-shadow: 0 0 10px var(--kb-focus); color: rgba(255, 255, 255, .8); }
+.cd.deep .fc { box-shadow: none; }
+.cd.cur .fc { outline: 3px solid var(--kb-focus); outline-offset: -1px; }
+.cd.drag { z-index: 300 !important; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .4)); }
+#table.sol .cd { cursor: pointer; }
 
 /* seats and labels on the felt */
 .seat { position: absolute; display: flex; align-items: center; gap: 6px; box-sizing: border-box; padding: 2px 8px 2px 3px; border-radius: 999px; background: rgba(6, 20, 15, .55); border: 1.5px solid transparent; color: #f1f5ee; font-size: 11.5px; font-weight: 800; line-height: 1.15; max-width: 100%; white-space: nowrap; transition: left .3s, top .3s, border-color .2s, background .2s; z-index: 60; }
@@ -314,6 +319,7 @@ body.thumb h1, body.thumb .icon, body.thumb .back, body.thumb .kb-layer, body.th
 </div>
 <script src="art.js"></script>
 <script src="engine.js"></script>
+<script src="solitaire.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -399,6 +405,16 @@ KoboI18n.add({ en: {
   "ヒント": "Hint",
   "引いた！": "Drew it!",
   "ペア！": "Pair!",
+  "ハイカード": "High card",
+  "ワンペア": "One pair",
+  "ツーペア": "Two pair",
+  "スリーカード": "Three of a kind",
+  "ストレート": "Straight",
+  "フラッシュ": "Flush",
+  "フルハウス": "Full house",
+  "フォーカード": "Four of a kind",
+  "ストレートフラッシュ": "Straight flush",
+  "ロイヤルフラッシュ": "Royal flush",
   "あがり！": "Out!",
   "パス {n}回": "Pass ×{n}",
   "革命！": "Revolution!",
@@ -413,6 +429,7 @@ KoboI18n.add({ en: {
   "光っているカードを出す": "Play the glowing cards",
   "光っているカード": "The glowing card",
   "ババを持っていた": "Held the Joker",
+  "ジジを持っていた": "Held the jiji",
   "1位！おめでとう": "1st place! Congratulations",
   "{n}位": "{n}",
   "{n}人": "{n} players",
@@ -458,7 +475,7 @@ KoboI18n.add({ en: {
 } });
 const EN = KoboI18n.lang === 'en';
 const L = (ja, en) => (EN ? en : ja);
-const E = window.CardsEngine, ART = window.CardsArt;
+const E = window.CardsEngine, ART = window.CardsArt, SOL = window.CardsSolitaire;
 const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'cards';
@@ -483,6 +500,8 @@ function tone(f, d, o) { if (A) A.tone(f, d, o); }
 // ---------- the games ----------
 const ICON = {
   oldmaid: '<svg viewBox="0 0 36 36" aria-hidden="true"><rect x="8" y="3" width="20" height="29" rx="3.5" fill="#fffdf8" stroke="#c9b88a"/><path d="M18 8l2 4.6 5 .6-3.7 3.4 1 5-4.3-2.5-4.3 2.5 1-5L11 13.2l5-.6z" fill="#d9a441"/><path d="M12 29l3-4 3 3 3-3 3 4z" fill="#2f4ea2"/></svg>',
+  jiji: '<svg viewBox="0 0 36 36" aria-hidden="true"><rect x="5" y="9" width="17" height="24" rx="3" fill="none" stroke="#e7c36a" stroke-width="1.6" stroke-dasharray="3 2.6"/><rect x="11" y="3" width="20" height="29" rx="3.5" fill="#fffdf8" stroke="#c9b88a"/><text x="21" y="23" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="14" fill="#1c2342">51</text></svg>',
+  solitaire: '<svg viewBox="0 0 36 36" aria-hidden="true"><rect x="2.5" y="12" width="9" height="13" rx="2" fill="#243f86" stroke="#e7c36a"/><rect x="2.5" y="17" width="9" height="13" rx="2" fill="#243f86" stroke="#e7c36a"/><rect x="13.5" y="6" width="9" height="13" rx="2" fill="#fffdf8" stroke="#c9b88a"/><rect x="13.5" y="12" width="9" height="13" rx="2" fill="#fffdf8" stroke="#c9b88a"/><rect x="13.5" y="18" width="9" height="13" rx="2" fill="#fffdf8" stroke="#c9b88a"/><path d="M18 22.2c-1.3 1.8-3.4 2.4-3.4 4.1 0 1 .8 1.7 1.7 1.7.6 0 1.1-.2 1.4-.7-.1 1-.3 1.6-.9 2.1h2.4c-.6-.5-.9-1.1-.9-2.1.3.5.8.7 1.4.7.9 0 1.7-.7 1.7-1.7 0-1.7-2.1-2.3-3.4-4.1z" fill="#1c2342"/><rect x="24.5" y="3" width="9" height="13" rx="2" fill="#fffdf8" stroke="#c9b88a"/><rect x="24.5" y="9" width="9" height="13" rx="2" fill="#fffdf8" stroke="#c9b88a"/><path d="M29 12.5l2.4 3.1L29 18.7l-2.4-3.1z" fill="#c42f48"/></svg>',
   concentration: '<svg viewBox="0 0 36 36" aria-hidden="true"><rect x="2.5" y="7" width="14" height="20" rx="2.5" fill="#243f86" stroke="#e7c36a"/><rect x="19.5" y="9" width="14" height="20" rx="2.5" fill="#fffdf8" stroke="#c9b88a"/><path d="M26.5 14c3 5 5 6.5 0 11-5-4.5-3-6 0-11z" fill="#c42f48" transform="translate(0 -1)"/><circle cx="9.5" cy="17" r="3" fill="none" stroke="#e7c36a"/></svg>',
   sevens: '<svg viewBox="0 0 36 36" aria-hidden="true"><rect x="5" y="3" width="20" height="29" rx="3.5" fill="#fffdf8" stroke="#c9b88a"/><text x="15" y="23" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="20" fill="#c42f48">7</text><rect x="20" y="9" width="12" height="17" rx="2.5" fill="#243f86" stroke="#e7c36a" opacity=".9"/></svg>',
   daifugo: '<svg viewBox="0 0 36 36" aria-hidden="true"><path d="M5 27L3 10l8 6 7-11 7 11 8-6-2 17z" fill="#f0c15a" stroke="#b8861a" stroke-linejoin="round"/><rect x="5" y="27" width="26" height="4.5" rx="1.5" fill="#d9a441"/><circle cx="18" cy="16" r="2.4" fill="#c42f48"/></svg>',
@@ -492,6 +511,8 @@ const ICON = {
 const CAT = [
   { id: 'oldmaid', k: 'om', ja: 'ババ抜き', en: 'Old Maid', min: 2, max: 4,
     d: L('同じ数字をそろえて捨て、となりの手札から1枚ずつ引く。最後にジョーカー（ババ）を持っていた人の負け。', 'Pair up matching numbers and discard them, drawing one card at a time from your neighbor. Whoever is left holding the Joker loses.') },
+  { id: 'jiji', k: 'jj', ja: 'ジジ抜き', en: 'Jiji-nuki', min: 2, max: 4,
+    d: L('ジョーカーなしの52枚から1枚を抜いて遊ぶ、ババ抜きの仲間。同じ数字をそろえて捨て、最後まで1枚だけ残った「ジジ」を持っていた人の負け。', 'Old Maid without a Joker: one random card is removed from a 52-card deck, so one card is left without a partner. Pair up and discard; whoever holds that last card (the "jiji") loses.') },
   { id: 'concentration', k: 'cn', ja: '神経衰弱', en: 'Concentration', min: 2, max: 4,
     d: L('伏せたカードを2枚めくって、同じ数字で同じ色なら取れる。たくさん取った人の勝ち。', 'Flip two face-down cards. A matching pair (same number, same color) is yours. Most pairs wins.') },
   { id: 'sevens', k: 'sv', ja: '七並べ', en: 'Sevens', min: 2, max: 4,
@@ -502,6 +523,8 @@ const CAT = [
     d: L('5枚の手札を1回交換して、役の強さで勝負。チップをかけて、いちばん多く持っている人の勝ち。', 'Five-card draw: swap cards once, then the best hand wins the pot. Whoever ends with the most chips wins.') },
   { id: 'blackjack', k: 'bj', ja: 'ブラックジャック', en: 'Blackjack', min: 2, max: 4,
     d: L('21を超えない範囲で、ディーラーより21に近づける。チップをかけて、最後にいちばん多く持っている人の勝ち。', 'Get closer to 21 than the dealer without going over. Place your bets; most chips at the end wins.') },
+  { id: 'solitaire', k: 'sl', ja: 'ソリティア', en: 'Solitaire', min: 1, max: 1, solo: true,
+    d: L('ひとりで遊ぶカードのパズル。クロンダイク（山札を1枚か3枚めくり）・フリーセル・スパイダー（1・2・4スート）。ヒント・何度でも戻す・自動で土台へ。', 'Solo card puzzles: Klondike (draw 1 or 3), FreeCell and Spider (1, 2 or 4 suits), with hints, unlimited undo and auto-move to the foundations.') },
 ];
 const BY = {}; CAT.forEach(g => { BY[g.id] = g; });
 const gName = g => L(g.ja, g.en);
@@ -513,7 +536,7 @@ const LV_PTS = { 1: 1, 2: 2, 3: 3 };
 
 // ---------- save ----------
 const DEF_OPTS = {
-  oldmaid: {}, concentration: { pairs: 18 }, sevens: { passes: 3 },
+  oldmaid: {}, jiji: {}, concentration: { pairs: 18 }, sevens: { passes: 3 }, solitaire: { variant: 'klondike', draw: 1, suits: 1, daily: 0, auto: 1 },
   daifugo: { rev: true, cut8: true, joker: true, lock: false, jback: false, s3: false, seq: false },
   poker: { stack: 1000, hands: 10 }, blackjack: { stack: 1000, hands: 10 },
 };
@@ -550,12 +573,13 @@ function optsFor(id) { return Object.assign({}, DEF_OPTS[id], save.set.o[id] || 
 const tableEl = $('table');
 const tb = { W: 0, H: 0, cw: 40, els: new Map(), seats: new Map(), pills: [], slots: [], lay: null, dealing: false };
 document.body.insertAdjacentHTML('afterbegin', ART.sprite());
+const faceId = c => (S && S.sol ? SOL.faceOf(S.st, c) : c);   // solitaire: Spider has two decks, so an element's number is not its face
 function cardEl(c) {
   let el = tb.els.get(c);
   if (el) return el;
   el = document.createElement('div');
   el.className = 'cd hid nt'; el.dataset.c = c; el.setAttribute('role', 'img');
-  el.innerHTML = '<div class="fl"><div class="fc back"></div><div class="fc face">' + ART.faceHTML(c) + '</div></div>';
+  el.innerHTML = '<div class="fl"><div class="fc back"></div><div class="fc face">' + ART.faceHTML(faceId(c)) + '</div></div>';
   el.querySelector('.back').style.backgroundImage = ART.backURL();
   tableEl.appendChild(el); tb.els.set(c, el);
   return el;
@@ -594,11 +618,11 @@ function render(lay, o) {
     el.classList.remove('hid');
     el.classList.toggle('up', !!p.up);
     const cls = p.cls || [];
-    for (const k of ['tap', 'sel', 'dim', 'hl', 'mark', 'pick']) el.classList.toggle(k, cls.indexOf(k) >= 0);
+    for (const k of ['tap', 'sel', 'dim', 'hl', 'mark', 'pick', 'cur', 'deep']) el.classList.toggle(k, cls.indexOf(k) >= 0);
     if (p.tap) { el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button'); } else { el.removeAttribute('tabindex'); el.setAttribute('role', 'img'); }
-    el.setAttribute('aria-label', p.up ? ART.label(c, EN ? 'en' : 'ja') : T('伏せたカード'));
+    el.setAttribute('aria-label', p.up ? ART.label(faceId(c), EN ? 'en' : 'ja') : T('伏せたカード'));
   }
-  tb.els.forEach((el, c) => { if (!seen.has(c)) { el.classList.add('hid'); el.classList.remove('tap', 'sel', 'hl', 'mark', 'pick'); el.removeAttribute('tabindex'); } });
+  tb.els.forEach((el, c) => { if (!seen.has(c)) { el.classList.add('hid'); el.classList.remove('tap', 'sel', 'hl', 'mark', 'pick', 'cur', 'deep'); el.removeAttribute('tabindex'); } });
   // seats
   const seatKeys = new Set();
   (lay.seats || []).forEach(s => {
@@ -622,7 +646,7 @@ function render(lay, o) {
   // empty slots (the sevens lanes)
   tb.slots.forEach(el => el.remove()); tb.slots = [];
   (lay.slots || []).forEach(p => {
-    const el = document.createElement('div'); el.className = 'slot' + (p.on ? ' on' : '');
+    const el = document.createElement('div'); el.className = 'slot' + (p.on ? ' on' : '') + (p.cur ? ' cur' : '');
     el.style.width = Math.round(p.w) + 'px'; el.style.height = Math.round(p.h) + 'px';
     el.style.transform = 'translate(' + Math.round(p.x - p.w / 2) + 'px,' + Math.round(p.y - p.h / 2) + 'px)'; el.textContent = p.label || '';
     tableEl.appendChild(el); tb.slots.push(el);
@@ -675,7 +699,7 @@ let S = null; // the game being played: { id, G, st, practice, opts, sel:Set, hl
 const mkLay = cw => ({ cw, cards: {}, seats: [], pills: [], slots: [], bubbles: [] });
 function put(lay, c, x, y, o) {
   o = o || {};
-  const cls = []; for (const k of ['tap', 'sel', 'dim', 'hl', 'mark', 'pick']) if (o[k]) cls.push(k);
+  const cls = []; for (const k of ['tap', 'sel', 'dim', 'hl', 'mark', 'pick', 'cur', 'deep']) if (o[k]) cls.push(k);
   lay.cards[c] = { x, y, s: o.s == null ? 1 : o.s, r: o.r || 0, up: !!o.up, z: o.z == null ? 1 : o.z, tap: !!o.tap, cls };
 }
 const dealer = () => S && S.G;
@@ -734,6 +758,7 @@ V.oldmaid = {
   },
   hint: () => null,
 };
+V.jiji = V.oldmaid;   // Jiji-nuki plays and looks exactly like Old Maid (the engine just deals 51 cards, no Joker)
 
 // ---------- Concentration ----------
 V.concentration = {
@@ -1048,6 +1073,7 @@ function refresh(o) {
   hud();
 }
 function hud() {
+  if (S.sol) { solHud(); return; }
   const st = S.st;
   $('iGame').textContent = gameName();
   $('iTurn').textContent = st.over ? T('おわり') : '';
@@ -1063,8 +1089,8 @@ function hud() {
 }
 function controls() {
   const el = $('ctl'); const st = S.st;
-  let list = st.over ? [] : V[S.id].controls(st);
-  if (S.practice && !st.over && S.id !== 'oldmaid' && humanTurn(st)) list = list.concat([{ id: 'hint', label: T('ヒント'), fn: () => showHint() }]);
+  let list = S.sol ? solControls() : st.over ? [] : V[S.id].controls(st);
+  if (!S.sol && S.practice && !st.over && S.id !== 'oldmaid' && S.id !== 'jiji' && humanTurn(st)) list = list.concat([{ id: 'hint', label: T('ヒント'), fn: () => showHint() }]);
   const key = list.map(b => b.id + '|' + b.label + '|' + (b.sub || '') + '|' + (b.dis ? 1 : 0) + '|' + (b.cls || '')).join(';');
   if (el.dataset.key === key) { el._list = list; return; }
   el.dataset.key = key; el._list = list;
@@ -1079,7 +1105,7 @@ function controls() {
 }
 
 function loop() {
-  if (!S) return;
+  if (!S || S.sol) return;
   clearTimeout(S.timer);
   const st = S.st, G = S.G;
   if (S.menu || S.over) return;
@@ -1131,7 +1157,7 @@ function flash(seat, text, cls) {
 function onEvents(ev, mv, turnBefore) {
   const id = S.id, st = S.st;
   for (const e of ev) {
-    if (id === 'oldmaid') {
+    if (id === 'oldmaid' || id === 'jiji') {
       if (e.t === 'draw') { sfx('move'); if (e.to === HUM) flash(HUM, T('引いた！')); }
       if (e.t === 'pair') { sfx('coin'); flash(e.seat, T('ペア！'), 'r'); }
       if (e.t === 'out') { sfx('ok'); if (e.seat === HUM) banner(T('あがり！')); }
@@ -1174,6 +1200,7 @@ function onEvents(ev, mv, turnBefore) {
 // ---------- persistence ----------
 function persist() {
   if (!S || S.over) { store.del(RUN_KEY); return; }
+  if (S.sol) { store.set(RUN_KEY, JSON.stringify({ v: 1, id: 'solitaire', st: S.st, practice: 0, opts: S.opts, n: 1, level: 2, ms: Math.round(S.ms), at: Date.now() })); return; }
   store.set(RUN_KEY, JSON.stringify({ v: 1, id: S.id, st: S.st, practice: S.practice ? 1 : 0, opts: S.opts, n: S.st.n, level: S.st.level, ms: Math.round(S.ms + (Date.now() - S.t0)), at: Date.now() }));
 }
 function readRun() {
@@ -1189,6 +1216,8 @@ function deckSpot() { return { x: tb.W / 2, y: tb.H / 2, s: 0.7 }; }
 function hideAllCards() { tb.els.forEach(el => { el.classList.add('hid'); }); }
 function startGame(id, o) {
   o = o || {};
+  if (id === 'solitaire') return startSol(o);
+  tableEl.classList.remove('sol');
   const g = BY[id], n = clamp(o.n || save.set.n, g.min, g.max), level = o.level || save.set.level, opts = Object.assign({}, optsFor(id), o.opts || {});
   clearTimeout(S && S.timer);
   clearTable(); hideOverlays();
@@ -1220,6 +1249,8 @@ function mkSession(id, st, practice, opts, ms) {
   return s;
 }
 function resumeGame(r) {
+  if (r.id === 'solitaire') { resumeSol(r); return; }
+  tableEl.classList.remove('sol');
   clearTimeout(S && S.timer);
   clearTable(); hideOverlays();
   S = mkSession(r.id, r.st, !!r.practice, r.opts || {}, r.ms || 0);
@@ -1241,7 +1272,7 @@ function hintMove() {
 function planOf(mv) {
   const st = S.st, id = S.id; if (!mv) return [];
   const steps = [];
-  if (id === 'oldmaid') { const tg = E.games.oldmaid.target(st); steps.push({ card: st.hands[tg][mv.i] }); }
+  if (id === 'oldmaid' || id === 'jiji') { const tg = E.games.oldmaid.target(st); steps.push({ card: st.hands[tg][mv.i] }); }
   else if (id === 'concentration') { if (mv.t === 'flip') steps.push({ card: st.cells[mv.i] }); }
   else if (id === 'sevens') { if (mv.t === 'play') steps.push({ card: mv.c }); else steps.push({ btn: 'pass' }); }
   else if (id === 'daifugo') { if (mv.t === 'play') { mv.cards.forEach(c => steps.push({ card: c })); steps.push({ btn: 'play' }); } else steps.push({ btn: 'pass' }); }
@@ -1282,6 +1313,7 @@ function burst() {
 function scoreText(st, s) {
   const id = S.id;
   if (id === 'oldmaid') return st.loser === s ? T('ババを持っていた') : '';
+  if (id === 'jiji') return st.loser === s ? T('ジジを持っていた') : '';
   if (id === 'concentration') return T('{n}組', { n: st.score[s] });
   if (id === 'sevens') return st.busted.indexOf(s) >= 0 ? T('脱落') : '';
   if (id === 'daifugo') { const i = st.out.indexOf(s); return i >= 0 ? rankTitle(st.n, i) : ''; }
@@ -1331,8 +1363,410 @@ function showResult(res, earned, firstWin) {
 function giveUp() {
   if (!S || S.over) return;
   S.over = true; clearTimeout(S.timer); store.del(RUN_KEY);
-  emit('play_end', { mode: S.practice ? 'practice' : 'normal', score: 0, durationMs: Math.round(S.ms + (Date.now() - S.t0)), reason: 'quit' });
+  emit('play_end', { mode: S.practice ? 'practice' : 'normal', score: 0, durationMs: Math.round(S.sol ? S.ms : S.ms + (Date.now() - S.t0)), reason: 'quit' });
 }
+
+// =====================================================================================
+// Solitaire (Klondike / FreeCell / Spider). The rules live in solitaire.js; here: the layout, tap-to-move, drag, keyboard cursor, hint, undo, records.
+// Cards are the same one-element-per-card DOM as the other games; no CPU and no turns.
+// =====================================================================================
+const SOL_PTS = { k1: 1, k3: 2, fc: 2, s1: 1, s2: 2, s4: 3 };
+const SOL_KEYS = ['k1', 'k3', 'fc', 's1', 's2', 's4'];
+function solOpts(o) {
+  o = o || {};
+  return { variant: o.variant === 'freecell' || o.variant === 'spider' ? o.variant : 'klondike', draw: o.draw === 3 ? 3 : 1, suits: [1, 2, 4].indexOf(o.suits) >= 0 ? o.suits : 1, daily: o.daily ? 1 : 0, auto: o.auto === 0 || o.auto === false ? 0 : 1 };
+}
+const solKeyOf = o => (o.variant === 'freecell' ? 'fc' : o.variant === 'spider' ? 's' + o.suits : (o.draw === 3 ? 'k3' : 'k1'));
+function solName(o) {
+  if (o.variant === 'freecell') return 'FreeCell';
+  if (o.variant === 'spider') return L('スパイダー（' + o.suits + 'スート）', 'Spider (' + o.suits + (o.suits === 1 ? ' suit)' : ' suits)'));
+  return L('クロンダイク（' + (o.draw === 3 ? 3 : 1) + '枚めくり）', 'Klondike (draw ' + (o.draw === 3 ? 3 : 1) + ')');
+}
+const fmtTime = sec => { sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
+const solMovesTxt = n => L(n + '手', n + (n === 1 ? ' move' : ' moves'));
+const solSum = () => SOL_KEYS.reduce((a, k) => { const r = save.g[k]; return { p: a.p + (r && r.p || 0), w: a.w + (r && r.w || 0) }; }, { p: 0, w: 0 });
+function today() { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }; }
+
+function solGeom(st, W, H) {
+  const v = st.variant, cols = v === 'klondike' ? 7 : v === 'freecell' ? 8 : 10;
+  const pad = 8, gx = clamp(W * 0.012, 2, 10), fH = v === 'klondike' ? 7.6 : v === 'freecell' ? 8.6 : 9.6;
+  const cw = Math.max(18, Math.min((W - 2 * pad - (cols - 1) * gx) / cols, (H - 8) / fH, 78)), ch = cw * 1.4;
+  const x0 = (W - (cols * cw + (cols - 1) * gx)) / 2 + cw / 2;
+  return { cols, pad, gx, cw, ch, topY: pad + ch / 2, tabTop: pad + ch + Math.max(5, cw * 0.2), colX: i => x0 + i * (cw + gx), W, H };
+}
+// the piles in keyboard order
+function solPiles(st) {
+  const a = [];
+  if (st.variant === 'klondike') { a.push(['S', 0], ['W', 0]); for (let s = 0; s < 4; s++) a.push(['F', s]); for (let i = 0; i < 7; i++) a.push(['T', i]); }
+  else if (st.variant === 'freecell') { for (let i = 0; i < 4; i++) a.push(['C', i]); for (let s = 0; s < 4; s++) a.push(['F', s]); for (let i = 0; i < 8; i++) a.push(['T', i]); }
+  else { a.push(['S', 0]); for (let i = 0; i < 10; i++) a.push(['T', i]); }
+  return a;
+}
+function solHintIds(st, mv) {
+  const out = { src: [], dst: null, dstPile: null };
+  if (!mv || mv.t !== 'mv') return out;
+  const sp = st.p[mv.f[0]][mv.f[1]]; out.src = sp.slice(sp.length - mv.n);
+  const dp = st.p[mv.to[0]][mv.to[1]]; out.dstPile = mv.to; out.dst = dp.length ? dp[dp.length - 1] : null;
+  return out;
+}
+V.solitaire = {
+  size: (W, H, st) => solGeom(st, W, H).cw,
+  layout(st, ctx) {
+    const g = solGeom(st, ctx.W, ctx.H), { cw, ch, gx, topY, tabTop } = g, lay = mkLay(cw), P = st.p, v = st.variant, H = ctx.H;
+    const hi = solHintIds(st, S && S.hintMv), hset = new Set(hi.src.concat(hi.dst == null ? [] : [hi.dst]));
+    const cur = S && S.kb && S.cur ? S.cur : null, pick = S && S.pick, sel = new Set();
+    if (pick) { const col = P[pick.k][pick.i]; col.slice(pick.p).forEach(c => sel.add(c)); }
+    const zones = [], loc = {};
+    const addTop = (k, i, col, x, o) => {
+      o = o || {};
+      const isCurPile = cur && cur.k === k && cur.i === i;
+      lay.slots.push({ x, y: topY, w: cw, h: ch, label: o.label || '', on: !!(hi.dstPile && hi.dstPile[0] === k && hi.dstPile[1] === i && !col.length), cur: !!(isCurPile && !col.length) });
+      zones.push({ k, i, x, y: topY, w: cw + gx, h: ch + 4, ax: x, ay: topY });
+      col.forEach((c, q) => {
+        const pp = o.place ? o.place(q, col.length) : { x, y: topY, s: o.s || 1 };
+        put(lay, c, pp.x, pp.y, { up: !!o.up, z: 1 + q, s: pp.s, hl: hset.has(c), sel: sel.has(c), deep: q < col.length - 3 && !o.place, cur: !!(isCurPile && col.length && q === col.length - 1) });
+        loc[c] = { k, i, p: q };
+      });
+    };
+    if (v === 'klondike') {
+      const sx = g.colX(0), wx = g.colX(1);
+      addTop('S', 0, P.S[0], sx, { label: P.W[0].length ? '↻' : '' });
+      addTop('W', 0, P.W[0], wx, { up: true, place: (q, n) => { const r = n - 1 - q, vis = Math.min(st.draw, n); return { x: wx + (r < vis ? (vis - 1 - r) * cw * 0.26 : 0), y: topY, s: 1 }; } });
+      for (let s = 0; s < 4; s++) addTop('F', s, P.F[s], g.colX(3 + s), { up: true, label: 'A' });
+      if (P.S[0].length) lay.pills.push({ x: sx, y: topY + ch * 0.36, html: String(P.S[0].length), cls: '' });
+    } else if (v === 'freecell') {
+      for (let i = 0; i < 4; i++) addTop('C', i, P.C[i], g.colX(i), { up: true });
+      for (let s = 0; s < 4; s++) addTop('F', s, P.F[s], g.colX(4 + s), { up: true, label: 'A' });
+    } else {
+      for (let i = 0; i < 8; i++) { const col = P.D[i]; col.forEach((c, q) => { put(lay, c, g.colX(i), topY, { up: true, z: 1 + q, s: 0.62, deep: q < col.length - 1 }); loc[c] = { k: 'D', i, p: q }; }); lay.slots.push({ x: g.colX(i), y: topY, w: cw * 0.62, h: ch * 0.62, label: '' }); }
+      addTop('S', 0, P.S[0], g.colX(9), {});
+      if (P.S[0].length) lay.pills.push({ x: g.colX(9), y: topY + ch * 0.36, html: '×' + Math.ceil(P.S[0].length / 10), cls: '' });
+    }
+    // the columns: the more cards, the closer they sit (down to a floor), so a long column still fits the table
+    const avail = H - tabTop - 4, dnI = cw * 0.17, upI = cw * 0.44, dnM = cw * 0.1, upM = cw * 0.27;
+    for (let i = 0; i < P.T.length; i++) {
+      const col = P.T[i], dn = st.dn[i], up = Math.max(0, col.length - dn - 1), x = g.colX(i);
+      const dnN = Math.min(dn, Math.max(0, col.length - 1));
+      let t = 1;
+      if (col.length > 1) {
+        const room = avail - ch - dnN * dnM - up * upM, span = dnN * (dnI - dnM) + up * (upI - upM);
+        t = span > 0 ? clamp(room / span, 0, 1) : 1;
+      }
+      const dyD = dnM + t * (dnI - dnM), dyU = upM + t * (upI - upM);
+      let y = tabTop + ch / 2;
+      const isCurPile = cur && cur.k === 'T' && cur.i === i;
+      const lastY = col.length ? y + Math.min(dn, col.length) * dyD + Math.max(0, col.length - dn - 1) * dyU : y;
+      col.forEach((c, q) => {
+        put(lay, c, x, y, { up: q >= dn, z: 10 + q, hl: hset.has(c), sel: sel.has(c), cur: !!(isCurPile && cur.p === q) });
+        loc[c] = { k: 'T', i, p: q };
+        y += q < dn ? dyD : dyU;
+      });
+      const isHintDst = hi.dstPile && hi.dstPile[0] === 'T' && hi.dstPile[1] === i;
+      lay.slots.push({ x, y: tabTop + ch / 2, w: cw, h: ch, label: '', on: !!(isHintDst && !col.length), cur: !!(isCurPile && !col.length) });
+      zones.push({ k: 'T', i, x, y: tabTop + (H - tabTop) / 2, w: cw + gx, h: H - tabTop, ax: x, ay: col.length ? lastY + dyU : tabTop + ch / 2 });
+    }
+    if (S) { S.zones = zones; S.loc = loc; S.geom = g; }
+    return lay;
+  },
+  status(st) {
+    if (st.over) return { text: L('クリア！おめでとう', 'Cleared! Congratulations') };
+    if (S && S.msg) return { text: S.msg };
+    if (S && S.pick) return { text: L('行き先をえらんで Enter（Esc でやめる）', 'Choose a destination and press Enter (Esc to cancel)'), you: true };
+    const prog = st.variant === 'spider' ? L('完成した列 ' + SOL.progress(st) / 13 + '/8', 'Runs done ' + SOL.progress(st) / 13 + '/8') : L('土台 ' + SOL.progress(st) + '/52', 'Foundations ' + SOL.progress(st) + '/52');
+    if (!SOL.legal(st).length) return { text: prog + ' · ' + L('動かせるカードがありません。戻すか、新しいゲームを', 'No moves left. Undo, or start a new game') };
+    return { text: prog + ' · ' + L('タップで自動で動かす・ドラッグで好きな場所へ', 'Tap to auto-move, drag to place') };
+  },
+};
+function solHintText(st, mv) {
+  const nm = id => ART.label(SOL.faceOf(st, id), EN ? 'en' : 'ja');
+  if (mv.t === 'draw') return st.p.S[0].length ? L('山札をめくる', 'Draw from the stock') : L('捨て札を山札にもどす', 'Turn the waste back over');
+  if (mv.t === 'deal') return L('山札から1列ずつ配る', 'Deal a new row from the stock');
+  const sp = st.p[mv.f[0]][mv.f[1]], c = sp[sp.length - mv.n], dp = st.p[mv.to[0]][mv.to[1]], top = dp.length ? dp[dp.length - 1] : null;
+  const dja = mv.to[0] === 'F' ? '土台へ' : mv.to[0] === 'C' ? 'セルへ' : top != null ? nm(top) + 'の上へ' : '空の列へ';
+  const den = mv.to[0] === 'F' ? 'to the foundation' : mv.to[0] === 'C' ? 'to a free cell' : top != null ? 'onto ' + nm(top) : 'to an empty column';
+  return L(nm(c) + (mv.n > 1 ? 'からの並び' : '') + 'を' + dja, nm(c) + (mv.n > 1 ? ' and the cards on it ' : ' ') + den);
+}
+function solControls() {
+  const st = S.st, v = st.variant, list = [];
+  list.push({ id: 'undo', label: L('戻す', 'Undo'), dis: !st.hist.length || st.over, fn: () => solUndo() });
+  list.push({ id: 'hint', label: L('ヒント', 'Hint'), dis: st.over, fn: () => solHint() });
+  list.push({ id: 'auto', label: L('オート', 'Auto'), dis: st.over || v === 'spider', cls: !st.over && SOL.canAutoFinish(st) ? 'go pulse' : '', fn: () => solAuto() });
+  if (v === 'klondike') list.push({ id: 'draw', label: L('山札', 'Stock'), sub: String(st.p.S[0].length), dis: st.over || !(st.p.S[0].length || st.p.W[0].length), fn: () => solStock() });
+  if (v === 'spider') list.push({ id: 'draw', label: L('配る', 'Deal'), sub: '×' + Math.ceil(st.p.S[0].length / 10), dis: st.over || !st.p.S[0].length, fn: () => solStock() });
+  return list;
+}
+function solHud() {
+  const st = S.st;
+  $('iGame').textContent = solName(S.opts);
+  $('iTurn').hidden = false; solChip();
+  $('iPrac').hidden = !S.opts.daily; $('iPrac').textContent = L('今日の配り', 'Daily deal');
+  $('iBest').textContent = '★ ' + fmtN(save.pts);
+  const sv = V.solitaire.status(st), stEl = $('status');
+  stEl.textContent = S.hintText ? '💡 ' + S.hintText : sv.text; stEl.classList.toggle('you', !!sv.you); stEl.hidden = false;
+  $('live').textContent = S.hintText ? S.hintText : sv.text;
+  controls();
+}
+function solChip() { if (S && S.sol) $('iTurn').textContent = fmtTime(S.ms / 1000) + ' · ' + solMovesTxt(S.st.moves); }
+function solTick() {
+  if (!S || !S.sol || S.over) return;
+  const now = Date.now(), dt = now - S.lastTick; S.lastTick = now;
+  if (S.menu || document.hidden || anyOverlay()) return;
+  S.ms += Math.min(dt, 2000); solChip();
+}
+setInterval(solTick, 500);
+
+function mkSolSession(st, opts, ms) {
+  const o = solOpts(opts);
+  const s = { id: 'solitaire', sol: true, G: SOL, st, practice: false, opts: o, sel: new Set(), marks: new Set(), hl: [], hintText: '', hintMv: null, msg: '', pick: null, cur: null, kb: false, zones: [], loc: {}, timer: 0, menu: false, over: !!st.over, ms: ms || 0, t0: Date.now(), lastTick: Date.now(), recorded: false, counted: st.moves > 0 };
+  s.cfg = { n: 1, level: 2, opts: o, practice: false };
+  return s;
+}
+function startSol(o) {
+  o = o || {};
+  const opts = solOpts(Object.assign({}, optsFor('solitaire'), o.opts || {}));
+  clearTimeout(S && S.timer); clearTable(); hideOverlays();
+  const d = today();
+  const seed = o.seed || (opts.daily ? SOL.dailySeed(opts.variant, d.y, d.m, d.d) : SOL.randomSeed(opts.variant));
+  const st = SOL.create({ variant: opts.variant, draw: opts.draw, suits: opts.suits, seed });
+  S = mkSolSession(st, opts, 0);
+  tableEl.classList.add('sol');
+  save.set.game = 'solitaire'; save.set.o.solitaire = Object.assign({}, save.set.o.solitaire, opts); writeSave();
+  emit('play_start', { mode: opts.daily ? 'daily' : 'normal', seed });
+  measure(); render(V.solitaire.layout(st, ctxNow()), { from: { x: S.geom.colX(0), y: S.geom.topY, s: 0.9 }, stagger: 7 });
+  hud(); sfx('tap'); persist();
+  return S;
+}
+function resumeSol(r) {
+  clearTimeout(S && S.timer); clearTable(); hideOverlays();
+  S = mkSolSession(r.st, r.opts, r.ms || 0);
+  tableEl.classList.add('sol');
+  save.set.game = 'solitaire'; writeSave();
+  emit('play_start', { mode: 'normal', resumed: true });
+  measure(); render(V.solitaire.layout(S.st, ctxNow()), { instant: true }); hud();
+}
+function solClearHint() { S.hintMv = null; S.hintText = ''; S.msg = ''; }
+function solPlay(mv) {
+  if (!S || !S.sol || S.over) return false;
+  const st = S.st, ev = SOL.apply(st, mv);
+  if (!ev) { sfx('error'); return false; }
+  solClearHint(); S.pick = null;
+  if (!S.counted) { S.counted = true; gRec(solKeyOf(S.opts)).p++; bump('plays'); writeSave(); }
+  const auto = S.opts.auto && st.variant !== 'spider' ? SOL.autoSafe(st, false) : 0;
+  if (ev.some(e => e.t === 'run')) sfx('clear');
+  else if (auto || (mv.t === 'mv' && mv.to[0] === 'F')) sfx('coin');
+  else if (ev.some(e => e.t === 'flip' || e.t === 'draw' || e.t === 'deal' || e.t === 'recycle')) sfx('tap');
+  else sfx('move');
+  refresh(); persist();
+  if (st.won) solWin();
+  return true;
+}
+function solUndo() {
+  if (!S || !S.sol || S.over) return false;
+  if (!SOL.undo(S.st)) { sfx('error'); return false; }
+  solClearHint(); S.pick = null; sfx('tap'); refresh(); persist(); return true;
+}
+function solHint() {
+  if (!S || !S.sol || S.over) return;
+  const mv = SOL.hint(S.st);
+  S.pick = null; S.msg = '';
+  if (!mv) { S.hintMv = null; S.hintText = ''; S.msg = L('動かせるカードがありません。戻すか、新しいゲームを', 'No moves left. Undo, or start a new game'); sfx('error'); refresh(); return; }
+  S.hintMv = mv; S.hintText = solHintText(S.st, mv); sfx('select'); refresh();
+}
+function solAuto() {
+  if (!S || !S.sol || S.over || S.st.variant === 'spider') return;
+  const st = S.st, fin = SOL.canAutoFinish(st);
+  const n = fin ? SOL.autoFinish(st, true) : SOL.autoSafe(st, true);
+  if (!n) { sfx('error'); S.msg = L('土台へ送れるカードはありません', 'Nothing can go to the foundations right now'); refresh(); return; }
+  solClearHint(); S.pick = null;
+  if (!S.counted) { S.counted = true; gRec(solKeyOf(S.opts)).p++; bump('plays'); writeSave(); }
+  sfx('coin'); refresh(); persist();
+  if (st.won) solWin();
+}
+function solStock() {
+  if (!S || !S.sol || S.over) return;
+  const st = S.st, mv = st.variant === 'klondike' ? { t: 'draw' } : st.variant === 'spider' ? { t: 'deal' } : null;
+  if (!mv) return;
+  if (!solPlay(mv)) {
+    if (st.variant === 'spider' && st.p.S[0].length) { S.msg = L('空の列があるときは配れません', 'Cannot deal while a column is empty'); refresh(); }
+  }
+}
+function solWin() {
+  if (!S || S.over && S.recorded) return;
+  S.over = true; S.recorded = true; clearTimeout(S.timer);
+  const st = S.st, key = solKeyOf(S.opts), r = gRec(key), sec = Math.max(1, Math.round(S.ms / 1000)), mvs = st.moves;
+  r.w++; const newT = !r.bt || sec < r.bt, newM = !r.bm || mvs < r.bm;
+  if (newT) r.bt = sec; if (newM) r.bm = mvs;
+  bump('wins'); bump('slWins'); if (S.opts.daily) bump('slDaily');
+  const earned = SOL_PTS[key] || 1; save.pts += earned; writeSave();
+  S.result = { key, sec, mvs, earned, newT, newM, first: r.w === 1, bt: r.bt, bm: r.bm };
+  store.del(RUN_KEY);
+  emit('play_end', { mode: S.opts.daily ? 'daily' : 'normal', score: earned, durationMs: Math.round(S.ms), reason: 'clear' });
+  sfx('win'); burst(); banner(L('クリア！', 'Cleared!'));
+  hud();
+  setTimeout(showSolResult, cpuWait(1100));
+}
+function showSolResult() {
+  if (!S || !S.sol || !S.result) return;
+  const x = S.result;
+  $('rTitle').textContent = L('クリア！おめでとう', 'Cleared! Congratulations');
+  $('rSub').textContent = solName(S.opts) + (S.opts.daily ? ' · ' + L('今日の配り', 'Daily deal') : '');
+  const ul = $('rRank'); ul.innerHTML = '';
+  [[L('かかった時間', 'Time'), fmtTime(x.sec) + '  (' + L('ベスト ', 'Best ') + fmtTime(x.bt) + ')'], [L('手数', 'Moves'), x.mvs + '  (' + L('ベスト ', 'Best ') + x.bm + ')']].forEach(a => {
+    const li = document.createElement('li'); li.innerHTML = '<span class="nm">' + esc(a[0]) + '</span><span class="sc">' + esc(a[1]) + '</span>'; ul.appendChild(li);
+  });
+  $('rPts').textContent = '★ +' + x.earned;
+  $('rNew').hidden = !(x.first || x.newT || x.newM);
+  $('rNew').textContent = x.first ? L('はじめてのクリア！', 'First clear!') : x.newT && x.newM ? L('ベストタイム・最少手数！', 'New best time and fewest moves!') : x.newT ? L('ベストタイム！', 'New best time!') : L('最少手数！', 'Fewest moves!');
+  $('rNote').textContent = L('クリアすると、ゲームの種類ごとに★がもらえます（むずかしいほど多く）', 'Each win earns ★ by game type (more for harder ones)');
+  hideOverlays(); $('ovResult').hidden = false;
+  try { $('rAgain').focus({ preventScroll: true }); } catch (e) {}
+}
+// ---- picking and moving
+function solRun(k, i, p) {
+  const st = S.st, P = st.p;
+  if (k === 'T') {
+    const col = P.T[i];
+    if (p < 0 || p >= col.length || p < st.dn[i]) return 0;
+    if (SOL.runStart(st, col, st.variant === 'freecell' ? 0 : st.dn[i]) > p) return 0;
+    const n = col.length - p;
+    return st.variant === 'freecell' && n > SOL.maxMove(st, false) ? 0 : n;
+  }
+  if (k === 'W' || k === 'C') return P[k][i].length && p === P[k][i].length - 1 ? 1 : 0;
+  if (k === 'F') return st.variant === 'klondike' && p === P.F[i].length - 1 ? 1 : 0;
+  return 0;
+}
+function solMovesFrom(k, i, n) { return SOL.legal(S.st).filter(m => m.t === 'mv' && m.f[0] === k && m.f[1] === i && m.n === n); }
+function solBest(k, i, n) {
+  const st = S.st, P = st.p, src = k === 'T' ? P.T[i] : null;
+  const c = P[k][i][P[k][i].length - n];
+  const ok = solMovesFrom(k, i, n).filter(m => !(src && m.to[0] === 'T' && !P.T[m.to[1]].length && n === src.length && (st.dn[i] === 0)));
+  if (!ok.length) return null;
+  const pr = m => (m.to[0] === 'F' ? 0 : m.to[0] === 'T' ? (P.T[m.to[1]].length ? (st.variant === 'spider' && SOL.suitOf(st, last2(P.T[m.to[1]])) === SOL.suitOf(st, c) ? 0.5 : 1) : 2) : 3);
+  ok.sort((a, b) => pr(a) - pr(b));
+  return ok[0];
+}
+const last2 = a => a[a.length - 1];
+function solTap(src) {
+  const st = S.st;
+  if (S.pick) { solPlace([src.k, src.i]); return; }
+  if (src.k === 'S') { solStock(); return; }
+  if (src.id == null) return;
+  const n = solRun(src.k, src.i, src.p);
+  const mv = n ? solBest(src.k, src.i, n) : null;
+  if (mv) solPlay(mv); else { reject(src.id); S.msg = ''; if (S.hintText) { S.hintText = ''; S.hintMv = null; refresh(); } }
+  void st;
+}
+function solPlace(dest) {
+  const pk = S.pick; S.pick = null;
+  if (!pk) return;
+  const mv = solMovesFrom(pk.k, pk.i, pk.n).find(m => m.to[0] === dest[0] && (dest[0] !== 'T' || m.to[1] === dest[1]));
+  if (mv && solPlay(mv)) return;
+  sfx('error'); refresh();
+}
+function solZoneAt(x, y) {
+  let best = null;
+  for (const z of S.zones) if (Math.abs(x - z.x) <= z.w / 2 && Math.abs(y - z.y) <= z.h / 2) { if (!best || z.w * z.h < best.w * best.h) best = z; }
+  return best;
+}
+let sd = null;
+const solPt = e => { const r = tableEl.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+function solDown(e) {
+  if (!S || !S.sol || S.over || anyOverlay() || (e.button && e.button !== 0)) return;
+  const pt = solPt(e), el = e.target.closest && e.target.closest('.cd');
+  let src = null;
+  if (el && !el.classList.contains('hid')) { const id = +el.dataset.c, l = S.loc[id]; if (l) src = { k: l.k, i: l.i, p: l.p, id }; }
+  if (!src) { const z = solZoneAt(pt.x, pt.y); if (z) src = { k: z.k, i: z.i, p: -1, id: null }; }
+  if (!src) return;
+  sd = { src, x0: e.clientX, y0: e.clientY, moved: false, pid: e.pointerId, els: [], n: src.id != null ? solRun(src.k, src.i, src.p) : 0 };
+  try { tableEl.setPointerCapture(e.pointerId); } catch (x) {}
+}
+function solMove(e) {
+  if (!sd || e.pointerId !== sd.pid) return;
+  const dx = e.clientX - sd.x0, dy = e.clientY - sd.y0;
+  if (!sd.moved && sd.n > 0 && Math.hypot(dx, dy) > 8) {
+    sd.moved = true;
+    const col = S.st.p[sd.src.k][sd.src.i];
+    col.slice(sd.src.p).forEach(c => { const el = tb.els.get(c); if (el) sd.els.push({ el, tr: el.style.transform }); });
+    sd.els.forEach(o => o.el.classList.add('nt', 'drag'));
+    solClearHint(); S.pick = null;
+  }
+  if (sd.moved) sd.els.forEach(o => { o.el.style.transform = o.tr + ' translate(' + dx + 'px,' + dy + 'px)'; });
+}
+function solDropMove(d, pt) {
+  const cands = solMovesFrom(d.src.k, d.src.i, d.n), cw = tb.lay ? tb.lay.cw : 40;
+  let best = null, bd = 1e9, inside = false;
+  for (const m of cands) {
+    for (const z of S.zones) {
+      if (z.k !== m.to[0] || (z.k === 'T' && z.i !== m.to[1])) continue;
+      const inn = Math.abs(pt.x - z.x) <= z.w / 2 && Math.abs(pt.y - z.y) <= z.h / 2, dd = Math.hypot(pt.x - z.ax, pt.y - z.ay);
+      if (inn && (!inside || dd < bd)) { inside = true; bd = dd; best = m; }
+      else if (!inside && dd < bd && dd < cw * 1.3) { bd = dd; best = m; }
+    }
+  }
+  return best;
+}
+function solUp(e, cancel) {
+  if (!sd || e.pointerId !== sd.pid) return;
+  const d = sd; sd = null;
+  try { tableEl.releasePointerCapture(d.pid); } catch (x) {}
+  if (d.moved) {
+    d.els.forEach(o => o.el.classList.remove('drag'));
+    const mv = cancel ? null : solDropMove(d, solPt(e));
+    d.els.forEach(o => o.el.classList.remove('nt'));
+    if (mv && solPlay(mv)) return;
+    if (!cancel) sfx('error');
+    d.els.forEach(o => { o.el.style.transform = o.tr; });
+    refresh();
+  } else if (!cancel) solTap(d.src);
+}
+tableEl.addEventListener('pointerdown', e => { if (S && S.sol) solDown(e); });
+tableEl.addEventListener('pointermove', e => { if (S && S.sol) solMove(e); });
+tableEl.addEventListener('pointerup', e => { if (S && S.sol) solUp(e, false); });
+tableEl.addEventListener('pointercancel', e => { if (S && S.sol) solUp(e, true); });
+// ---- keyboard: a cursor over the piles
+function solCurDefault(st, k, i) { const col = st.p[k][i]; return { k, i, p: Math.max(0, col.length - 1) }; }
+function solSay() {
+  if (!S || !S.sol || !S.cur) return;
+  const st = S.st, c = S.cur, col = st.p[c.k][c.i], nm = { T: L('列', 'Column'), F: L('土台', 'Foundation'), C: L('セル', 'Cell'), S: L('山札', 'Stock'), W: L('捨て札', 'Waste') }[c.k] + ' ' + (c.i + 1);
+  const card = col.length && (c.k !== 'T' || c.p >= st.dn[c.i]) && c.k !== 'S' ? ART.label(SOL.faceOf(st, col[Math.min(c.p, col.length - 1)]), EN ? 'en' : 'ja') : (col.length ? L('伏せたカード', 'face-down card') : L('空', 'empty'));
+  $('live').textContent = nm + ': ' + card;
+}
+function solKeydown(e) {
+  if (!S || !S.sol || S.over || anyOverlay() || e.altKey || e.metaKey && e.key !== 'z') return;
+  const k = e.key, tg = e.target, onBtn = tg && tg.closest && tg.closest('button, a, select, input, textarea');
+  const piles = solPiles(S.st), st = S.st;
+  const move = d => {
+    if (!S.cur) S.cur = solCurDefault(st, 'T', 0);
+    let ix = piles.findIndex(p => p[0] === S.cur.k && p[1] === S.cur.i); if (ix < 0) ix = 0;
+    ix = (ix + d + piles.length) % piles.length;
+    S.cur = solCurDefault(st, piles[ix][0], piles[ix][1]); S.kb = true; refresh(); solSay();
+  };
+  if (k === 'ArrowLeft') { e.preventDefault(); move(-1); }
+  else if (k === 'ArrowRight') { e.preventDefault(); move(1); }
+  else if (k === 'ArrowUp' || k === 'ArrowDown') {
+    e.preventDefault();
+    if (!S.cur) S.cur = solCurDefault(st, 'T', 0);
+    if (S.cur.k === 'T') { const col = st.p.T[S.cur.i]; S.cur.p = clamp(S.cur.p + (k === 'ArrowUp' ? -1 : 1), Math.min(st.dn[S.cur.i], Math.max(0, col.length - 1)), Math.max(0, col.length - 1)); }
+    S.kb = true; refresh(); solSay();
+  } else if (k === 'Enter' || (k === ' ' && !onBtn)) {
+    if (onBtn && k === 'Enter') return;
+    e.preventDefault();
+    if (!S.cur) { S.cur = solCurDefault(st, 'T', 0); S.kb = true; refresh(); solSay(); return; }
+    S.kb = true;
+    const c = S.cur, col = st.p[c.k][c.i];
+    if (S.pick) { solPlace([c.k, c.i]); return; }
+    if (c.k === 'S') { solStock(); return; }
+    const id = col.length ? col[Math.min(c.p, col.length - 1)] : null;
+    if (k === ' ') { if (id != null) solTap({ k: c.k, i: c.i, p: c.p, id }); return; }
+    const n = id != null ? solRun(c.k, c.i, c.p) : 0;
+    if (n) { S.pick = { k: c.k, i: c.i, p: c.p, n }; solClearHint(); sfx('select'); refresh(); } else { if (id != null) reject(id); else sfx('error'); }
+  } else if (k === 'Escape') { if (S.pick) { e.preventDefault(); S.pick = null; refresh(); } }
+  else if (k.toLowerCase() === 'u' || (k.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); solUndo(); }
+  else if (k.toLowerCase() === 'h' && !e.ctrlKey) { e.preventDefault(); solHint(); }
+  else if (k.toLowerCase() === 'a' && !e.ctrlKey) { e.preventDefault(); solAuto(); }
+  else if (k.toLowerCase() === 'd' && !e.ctrlKey) { e.preventDefault(); solStock(); }
+}
+document.addEventListener('keydown', solKeydown);
 
 // =====================================================================================
 // rules pages
@@ -1342,12 +1776,46 @@ const RULES = {
     h: L('はじめに', 'Welcome'),
     s: [
       { h: L('トランプ広場へようこそ', 'Welcome to Card Table'), li: [
-        L('6つのトランプゲームを、CPUといっしょに遊べます。2〜4人、CPUの強さは3段階。', 'Six classic card games against CPU players. 2 to 4 players, three CPU strengths.'),
+        L('ババ抜き・ジジ抜き・神経衰弱・七並べ・大富豪・ポーカー・ブラックジャックを、CPUといっしょに遊べます（2〜4人、CPUの強さは3段階）。ひとり用のソリティアもあります。', 'Seven card games against CPU players (2 to 4 players, three CPU strengths), plus solo Solitaire.'),
         L('タイトルでゲームをえらび、「あそぶ」で記録つきの対戦、「れんしゅう」でヒントつき・記録なしで遊べます。「クイックマッチ」は、前回の設定ですぐ始めます。', 'Pick a game on the title screen. "Play" is a recorded game; "Practice" gives hints and records nothing. "Quick match" starts right away with your last settings.') ] },
       { h: L('操作', 'Controls'), li: [
         L('カードをタップして選びます。ドラッグしてテーブルへ運んでも出せます（七並べ・大富豪）。', 'Tap a card to choose it. You can also drag it onto the table (Sevens, Daifugo).'),
         L('ゲームの途中で閉じても、次に開くと「つづきから」で再開できます。', 'Closing the page in the middle is fine: "Resume" picks the game up again.'),
         L('勝つと★がもらえます（CPUが強いほど多く）。★の合計がランキングに載ります。', 'Winning earns ★ (more against stronger CPUs). Your ★ total goes to the ranking.') ] },
+    ],
+  },
+  jiji: {
+    s: [
+      { h: L('めあて', 'Goal'), li: [L('手札を先になくすこと。最後まで1枚だけ残った「ジジ」を持っていた人が負けです。', 'Get rid of your hand. Whoever is left holding the one unpaired card (the "jiji") loses.')] },
+      { h: L('ババ抜きとのちがい', 'How it differs from Old Maid'), li: [
+        L('ジョーカーは使いません。52枚のトランプから、ランダムに1枚を抜いてから配ります（抜いたカードは見えません）。', 'There is no Joker. One random card is removed from the 52-card deck before dealing, and you are not told which.'),
+        L('抜いた数字のカードは3枚になるので、どう組んでも1枚だけ相手が見つからず余ります。それが「ジジ」です。最後までだれが持っているか分かりません。', 'The number of the removed card has three cards left, so one of them can never find a partner. That is the jiji, and nobody knows who holds it until the end.') ] },
+      { h: L('すすめかた', 'How it works'), li: [
+        L('配ったあと、同じ数字の2枚（マークは関係なし）は自動で捨てられます。', 'After dealing, pairs of the same number (any suits) are thrown away automatically.'),
+        L('自分の番には、となりの人の伏せた手札から1枚引きます。同じ数字がそろったら自動で捨てます。', 'On your turn, draw one face-down card from your neighbor. If it matches a number you hold, the pair is discarded.'),
+        L('手札がなくなった人は「あがり」。最後に残った人が負けです。「手札をまぜる」で並びを変えられます。', 'A player with no cards is out. The last one left loses. "Shuffle hand" mixes your cards.') ] },
+    ],
+  },
+  solitaire: {
+    s: [
+      { h: L('めあて', 'Goal'), li: [
+        L('クロンダイクとフリーセル：A から K まで、同じマークをそろえて4つの「土台」に積めば完成です。', 'Klondike and FreeCell: build each suit up from Ace to King on the four foundations to win.'),
+        L('スパイダー：同じマークの K から A までを1列そろえると取り除かれます。8列すべてで完成です。', 'Spider: every full King-to-Ace run of one suit is removed. Remove all 8 runs to win.') ] },
+      { h: L('クロンダイク', 'Klondike'), li: [
+        L('場札は、赤と黒を交互に、数字を1つずつ小さくして重ねます。空いた列には K（または K から続く並び）だけ置けます。', 'Stack tableau cards in descending order, alternating red and black. Only a King (or a run starting with a King) may go to an empty column.'),
+        L('山札をタップして、1枚（または3枚）ずつめくります。山札がなくなったら、もう一度タップすると捨て札が山札にもどります（何回でも）。', 'Tap the stock to draw 1 (or 3) cards. When it runs out, tap again to turn the waste back into the stock (as often as you like).') ] },
+      { h: L('フリーセル', 'FreeCell'), li: [
+        L('全部のカードが表向き。赤と黒を交互に、数字を1つずつ小さくして重ねます。', 'All cards are face up. Stack in descending order, alternating colors.'),
+        L('左上の4つの「セル」に、1枚ずつ一時的に置けます。空いたセルと空いた列の数に応じて、並びをまとめて動かせます。', 'The four cells hold one card each, temporarily. Runs move together as far as your free cells and empty columns allow.'),
+        L('配りには番号があります（1〜32000はほぼ全部解けます）。「今日の配り」は日付で決まります。', 'Each deal has a number (nearly all of 1 to 32000 are solvable). The daily deal is set by the date.') ] },
+      { h: L('スパイダー', 'Spider'), li: [
+        L('カードは、どのマークの上にも数字が1つ大きければ重ねられます。ただし、まとめて動かせるのは同じマークの並びだけです。', 'Any card may go on a card one rank higher, but only a run of one suit moves together.'),
+        L('山札をタップすると、全部の列に1枚ずつ配ります（空の列があると配れません）。1・2・4スートで難しさが変わります。', 'Tap the stock to deal one card onto every column (not allowed while a column is empty). 1, 2 or 4 suits set the difficulty.') ] },
+      { h: L('操作', 'Controls'), li: [
+        L('タップ：そのカード（と下に続く並び）を、行ける場所へ自動で動かします。ドラッグ：好きな場所へ運びます。', 'Tap: moves that card (and the run below it) to a place it can go. Drag: carry it anywhere you like.'),
+        L('キーボード：← → で山をえらび、↑ ↓ で列の中の位置をえらびます。Enter でえらんで、行き先で Enter。Space で自動で動かす。U で戻す、H でヒント、A でオート、D で山札。', 'Keyboard: ← → pick a pile, ↑ ↓ pick a card in a column. Enter to pick up, Enter again on the destination. Space auto-moves. U undo, H hint, A auto, D stock.'),
+        L('「戻す」は何回でも使えます。「オート」は土台へ送れるカードを送ります。すべて表向きで完成が見えたら、ボタンが光ります。', 'Undo works as many times as you like. "Auto" sends cards to the foundations; it glows when the game can be finished that way.'),
+        L('クリアすると、最短時間と最少手数が記録されます。', 'A win records your best time and fewest moves.') ] },
     ],
   },
   oldmaid: {
@@ -1488,34 +1956,52 @@ function renderTitle() {
   const g = BY[selGame];
   const tiles = $('tTiles'); tiles.innerHTML = '';
   CAT.forEach(c => {
-    const r = save.g[c.k] || {}, b = document.createElement('button');
+    const r = c.solo ? solSum() : (save.g[c.k] || {}), b = document.createElement('button');
     b.type = 'button'; b.className = 'gt'; b.dataset.game = c.id; b.setAttribute('aria-pressed', String(c.id === selGame));
     b.innerHTML = ICON[c.id] + '<span>' + esc(gName(c)) + '</span><small>' + (r.w ? '★ ' + T('{n}勝', { n: r.w }) : '&nbsp;') + '</small>';
     b.addEventListener('click', () => { selGame = c.id; sfx('tap'); renderTitle(); });
     tiles.appendChild(b);
   });
   $('tDesc').textContent = g.d;
-  const r = save.g[g.k];
-  $('tBest').textContent = r && r.p ? T('{p}回あそんで{w}回1位', { p: r.p, w: r.w || 0 }) : T('まだ記録がありません');
+  const solo = !!g.solo, so = solOpts(optsFor('solitaire'));
+  const r = solo ? save.g[solKeyOf(so)] : save.g[g.k];
+  if (solo) $('tBest').textContent = r && r.p ? L(r.p + '回あそんで' + (r.w || 0) + '回クリア' + (r.bt ? ' · 最短 ' + fmtTime(r.bt) : '') + (r.bm ? ' · 最少 ' + r.bm + '手' : ''), 'Played ' + r.p + ', cleared ' + (r.w || 0) + (r.bt ? ' · best ' + fmtTime(r.bt) : '') + (r.bm ? ' · fewest ' + r.bm + ' moves' : '')) : T('まだ記録がありません');
+  else $('tBest').textContent = r && r.p ? T('{p}回あそんで{w}回1位', { p: r.p, w: r.w || 0 }) : T('まだ記録がありません');
   const o = $('tOpts');
   const o2 = optsFor(selGame);
-  let h = '<div class="og"><div class="ol">' + esc(T('人数')) + '</div><div class="seg" id="optN">' + segHTML([2, 3, 4].map(n => [n, T('{n}人', { n })]), save.set.n, 'n') + '</div></div>';
-  h += '<div class="og"><div class="ol">' + esc(T('CPUの強さ')) + '</div><div class="seg" id="optLv">' + segHTML([1, 2, 3].map(n => [n, LV_NAME[n]]), save.set.level, 'lv') + '</div></div>';
+  let h = '';
+  if (!solo) {
+    h += '<div class="og"><div class="ol">' + esc(T('人数')) + '</div><div class="seg" id="optN">' + segHTML([2, 3, 4].map(n => [n, T('{n}人', { n })]), save.set.n, 'n') + '</div></div>';
+    h += '<div class="og"><div class="ol">' + esc(T('CPUの強さ')) + '</div><div class="seg" id="optLv">' + segHTML([1, 2, 3].map(n => [n, LV_NAME[n]]), save.set.level, 'lv') + '</div></div>';
+  } else {
+    h += '<div class="og"><div class="ol">' + esc(L('ゲームの種類', 'Game')) + '</div><div class="seg" id="optSv">' + segHTML([['klondike', L('クロンダイク', 'Klondike')], ['freecell', 'FreeCell'], ['spider', L('スパイダー', 'Spider')]], so.variant, 'sv') + '</div></div>';
+    if (so.variant === 'klondike') h += '<div class="og"><div class="ol">' + esc(L('山札のめくりかた', 'Draw')) + '</div><div class="seg" id="optSd">' + segHTML([[1, L('1枚', '1 card')], [3, L('3枚', '3 cards')]], so.draw, 'sd') + '</div></div>';
+    if (so.variant === 'spider') h += '<div class="og"><div class="ol">' + esc(L('スートの数（多いほどむずかしい）', 'Suits (more is harder)')) + '</div><div class="seg" id="optSs">' + segHTML([[1, L('1スート', '1 suit')], [2, L('2スート', '2 suits')], [4, L('4スート', '4 suits')]], so.suits, 'ss') + '</div></div>';
+    h += '<button class="tog" type="button" role="switch" id="optDaily" aria-checked="' + !!so.daily + '"><span>' + esc(L('今日の配り', 'Daily deal')) + '<small>' + esc(L('日付で決まる、みんな同じ配り', 'The same deal for everyone today')) + '</small></span><i></i></button>';
+    if (so.variant !== 'spider') h += '<button class="tog" type="button" role="switch" id="optAuto" aria-checked="' + !!so.auto + '"><span>' + esc(L('自動で土台へ', 'Auto-move to foundations')) + '<small>' + esc(L('安全なカードを自動で土台へ送る', 'Sends safe cards up by itself')) + '</small></span><i></i></button>';
+  }
   (OPT_DEFS[selGame] || []).forEach(d => { h += '<div class="og"><div class="ol">' + esc(d.label) + '</div><div class="seg" data-k="' + d.k + '">' + segHTML(d.vals, o2[d.k], 'v') + '</div></div>'; });
   if (selGame === 'daifugo') DF_TOGS.forEach(t => { h += '<button class="tog" type="button" role="switch" data-t="' + t[0] + '" aria-checked="' + !!o2[t[0]] + '"><span>' + esc(t[1]) + '<small>' + esc(t[2]) + '</small></span><i></i></button>'; });
-  h += '<button class="tog" type="button" role="switch" id="optFast" aria-checked="' + !!save.set.fast + '"><span>' + esc(T('CPUをはやく進める')) + '<small>' + esc(T('CPUの待ち時間を短くします')) + '</small></span><i></i></button>';
+  if (!solo) h += '<button class="tog" type="button" role="switch" id="optFast" aria-checked="' + !!save.set.fast + '"><span>' + esc(T('CPUをはやく進める')) + '<small>' + esc(T('CPUの待ち時間を短くします')) + '</small></span><i></i></button>';
   o.innerHTML = h;
+  const setSol = (k, v) => { save.set.o.solitaire = Object.assign({}, save.set.o.solitaire, { [k]: v }); writeSave(); sfx('tap'); renderTitle(); };
+  o.querySelectorAll('[data-sv]').forEach(b => b.addEventListener('click', () => setSol('variant', b.dataset.sv)));
+  o.querySelectorAll('[data-sd]').forEach(b => b.addEventListener('click', () => setSol('draw', +b.dataset.sd)));
+  o.querySelectorAll('[data-ss]').forEach(b => b.addEventListener('click', () => setSol('suits', +b.dataset.ss)));
+  if ($('optDaily')) $('optDaily').addEventListener('click', () => setSol('daily', so.daily ? 0 : 1));
+  if ($('optAuto')) $('optAuto').addEventListener('click', () => setSol('auto', so.auto ? 0 : 1));
   o.querySelectorAll('[data-n]').forEach(b => b.addEventListener('click', () => { save.set.n = +b.dataset.n; writeSave(); sfx('tap'); renderTitle(); }));
   o.querySelectorAll('[data-lv]').forEach(b => b.addEventListener('click', () => { save.set.level = +b.dataset.lv; writeSave(); sfx('tap'); renderTitle(); }));
   o.querySelectorAll('[data-k] [data-v]').forEach(b => b.addEventListener('click', () => { const k = b.parentNode.dataset.k; save.set.o[selGame] = Object.assign({}, save.set.o[selGame], { [k]: +b.dataset.v }); writeSave(); sfx('tap'); renderTitle(); }));
   o.querySelectorAll('[data-t]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.t; save.set.o.daifugo = Object.assign({}, save.set.o.daifugo, { [k]: !optsFor('daifugo')[k] }); writeSave(); sfx('tap'); renderTitle(); }));
-  $('optFast').addEventListener('click', () => { save.set.fast = save.set.fast ? 0 : 1; writeSave(); sfx('tap'); renderTitle(); });
+  if ($('optFast')) $('optFast').addEventListener('click', () => { save.set.fast = save.set.fast ? 0 : 1; writeSave(); sfx('tap'); renderTitle(); });
   const q = BY[save.set.game] || BY.oldmaid;
-  $('tQuickSub').textContent = gName(q) + ' · ' + T('{n}人', { n: save.set.n }) + ' · ' + LV_NAME[save.set.level];
+  $('tQuickSub').textContent = q.solo ? solName(so) : gName(q) + ' · ' + T('{n}人', { n: save.set.n }) + ' · ' + LV_NAME[save.set.level];
   const run = readRun();
   $('tResume').hidden = !run;
-  if (run) $('tResumeSub').textContent = gName(BY[run.id]) + ' · ' + T('{n}人', { n: run.n }) + (run.practice ? ' · ' + T('れんしゅう') : '');
-  $('tPlay').textContent = T('「{g}」をあそぶ', { g: gName(g) });
+  if (run) $('tResumeSub').textContent = run.id === 'solitaire' ? solName(solOpts(run.opts)) : gName(BY[run.id]) + ' · ' + T('{n}人', { n: run.n }) + (run.practice ? ' · ' + T('れんしゅう') : '');
+  $('tPlay').textContent = T('「{g}」をあそぶ', { g: solo ? solName(so) : gName(g) });
+  $('tPrac').hidden = solo;
   $('tBest').hidden = false;
 }
 function showTitle() {
@@ -1628,7 +2114,7 @@ if (DEBUG) {
   const api = {
     ready: () => true,
     state: () => {
-      const st = S && S.st, w = S && !S.over ? S.G.who(S.st) : null;
+      const st = S && S.st, w = S && !S.over && S.G.who ? S.G.who(S.st) : null;
       return {
         game: S ? S.id : null, started: !!S, over: !!(S && S.over), practice: !!(S && S.practice), n: st ? st.n : 0, level: st ? st.level : 0,
         turn: st ? st.turn : -1, human: !!(st && !S.over && humanTurn(st)), sys: !!(w && w.sys), phase: st ? (st.phase || '') : '',
@@ -1636,6 +2122,7 @@ if (DEBUG) {
         status: $('status').textContent, hand: st && st.hands ? st.hands[HUM].slice() : [], stacks: st && st.stacks ? st.stacks.slice() : null,
         out: st && st.out ? st.out.slice() : [], rev: st ? !!st.rev : false, step: st ? st.step : 0, pts: save.pts, sel: S ? [...S.sel] : [], dbg: S && S.dbg ? S.dbg.slice(-6) : [], marks: S ? [...S.marks] : [],
         save: JSON.parse(JSON.stringify(save)),
+        sol: S && S.sol ? { variant: st.variant, draw: st.draw, suits: st.suits, seed: st.seed, moves: st.moves, hist: st.hist.length, won: !!st.won, ms: Math.round(S.ms), canAuto: SOL.canAutoFinish(st), legal: SOL.legal(st).length, hint: S.hintMv ? JSON.parse(JSON.stringify(S.hintMv)) : null, hintText: S.hintText, pick: S.pick ? Object.assign({}, S.pick) : null, cur: S.cur ? Object.assign({}, S.cur) : null, key: solKeyOf(S.opts), p: JSON.parse(JSON.stringify(st.p)), dn: st.dn.slice() } : null,
       };
     },
   };
@@ -1648,7 +2135,13 @@ if (DEBUG) {
     move() { return hintMove(); },
     title: showTitle, finish() { if (S && !S.over) finish(); }, howto: showHowto, openMenu,
     resume() { const r = readRun(); if (r) resumeGame(r); return !!r; },
-    persist,
+    persist, SOL,
+    // solitaire: where to click (page coordinates), the hint as a pair of spots, and a debug rig that leaves one move to the win
+    solPos(id) { const el = document.querySelector('.cd[data-c="' + id + '"]'); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + r.width * 0.5, y: r.top + Math.min(r.height * 0.5, tb.lay ? tb.lay.cw * 0.2 : 8), w: r.width, h: r.height }; },
+    solZone(k, i) { const z = S && S.zones.find(q => q.k === k && q.i === i); if (!z) return null; const r = tableEl.getBoundingClientRect(); return { x: r.left + z.ax, y: r.top + z.ay + (k === 'T' ? tb.lay.cw * 0.5 : 0) }; },
+    solRig() { if (!S || !S.sol) return false; SOL.nearWin(S.st); S.hintMv = null; S.hintText = ''; S.pick = null; S.counted = true; refresh(); persist(); return true; },
+    solHint() { return S && S.sol ? (solHint(), S.hintMv) : null; },
+    solUndo, solAuto, solStock, solPlay,
     thumbScene() { // a poker hand with a full house, about to bet, for the hub thumbnail
       store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays(); clearTable();
       const G = E.games.poker; let st = null;

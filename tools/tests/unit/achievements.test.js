@@ -103,6 +103,7 @@ const FIX = {
   'minigolf-save2.json': { has: ['minigolf.first', 'minigolf.h1', 'minigolf.r1'], not: ['minigolf.all', 'minigolf.t2', 'minigolf.t5', 'minigolf.stars100', 'minigolf.under1', 'minigolf.ace'] },
   'trade-save.json': { has: ['trade.first', 'trade.p1', 'trade.deal', 'trade.x10'], not: ['trade.deal20', 'trade.types', 'trade.dtop'] },
   'cards-save.json': { has: ['cards.first', 'cards.om1', 'cards.rev', 'cards.dh1', 'cards.cut8', 'cards.hard'], not: ['cards.all', 'cards.royal', 'cards.pts30', 'cards.flush', 'cards.bj', 'cards.sv1', 'cards.cn4'] },
+  'cards-solitaire-save.json': { has: ['cards.jj1', 'cards.sl1', 'cards.fc1', 'cards.sp1', 'cards.sp4', 'cards.om1', 'cards.dh1'], not: ['cards.all'] },
   'fit-save.json': { has: ['fit.first', 'fit.snug', 'fit.star3', 'fit.daily', 'fit.w1', 'fit.swift', 'fit.ta10'], not: ['fit.decoy', 'fit.w4', 'fit.w8', 'fit.ta25', 'fit.stars150', 'fit.nohint'] },
   'town-save.json': { has: ['town.first', 'town.pop10', 'town.build10', 'town.tap1', 'town.up10', 'town.pop50', 'town.kinds', 'town.back', 'town.new1', 'town.res5', 'town.pop200', 'town.rest'], not: ['town.gift7', 'town.tap100', 'town.new3', 'town.pop600'] },
   'colorcards-save.json': { has: ['colorcards.first', 'colorcards.swap', 'colorcards.peek', 'colorcards.call', 'colorcards.catch', 'colorcards.block', 'colorcards.hard', 'colorcards.win10'], not: ['colorcards.match', 'colorcards.nodraw', 'colorcards.comeback'] },

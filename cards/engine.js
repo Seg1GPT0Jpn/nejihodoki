@@ -53,9 +53,11 @@
   // =================================================================================
   const OM = {
     id: 'oldmaid',
-    create(o) {
-      const st = base('oldmaid', o);
-      const d = shuffle(st, deck(true));
+    create(o, jiji) {
+      const st = base(jiji ? 'jiji' : 'oldmaid', o);
+      const d = shuffle(st, deck(!jiji));
+      // ジジ抜き：ジョーカーなしの52枚から、ランダムに1枚を抜く。その数字が1枚だけ余る（ペアにならない）ので、それが「ジジ」
+      if (jiji) st.removed = d.splice(ri(st, d.length), 1)[0];
       st.hands = Array.from({ length: st.n }, () => []);
       d.forEach((c, i) => st.hands[i % st.n].push(c));
       st.dealt = st.hands.map(h => h.slice());
@@ -115,6 +117,9 @@
     done: st => st.over,
     result(st) { return { order: st.out.slice(), rank: rankFromOrder(st.n, st.out), loser: st.loser }; },
   };
+
+  // ジジ抜き（jiji）：ババ抜きと同じ進めかた・同じ画面。ジョーカーなしの52枚から1枚を抜いて配る。最後まで残った1枚（ジジ）を持っていた人の負け。
+  const JJ = Object.assign({}, OM, { id: 'jiji', create: o => OM.create(o, true) });
 
   // =================================================================================
   // 神経衰弱（concentration）：同じ数字で同じ色（赤と赤・黒と黒）の2枚が1組。そろえたらもう1回。多く取った人の勝ち。
@@ -1051,7 +1056,7 @@
 
 
   const API = { JOKER, lvOf, suitOf, rankOf, isRed, clamp, last, mix, rnd, ri, shuffle, pick, deck, base, isHuman, nextActive, rankFromOrder, sameJSON,
-    games: { oldmaid: OM, concentration: CN, sevens: SV, daifugo: DF, poker: PK, blackjack: BJ } };
+    games: { oldmaid: OM, jiji: JJ, concentration: CN, sevens: SV, daifugo: DF, poker: PK, blackjack: BJ } };
   root.CardsEngine = API;
   if (typeof module === 'object' && module && module.exports) module.exports = API;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
