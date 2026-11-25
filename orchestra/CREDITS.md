@@ -52,6 +52,8 @@ The note data comes from the MIDI files of the Mutopia Project (https://www.muto
 | mahler5-3 | G. Mahler | Symphony No. 5, III. Scherzo | MIDI by Ben Boot (file names `mahler_symphony_5_3_cboot.mid`; source URL pending) | Mahler5_mvt3.mid | Owner-confirmed copyright-free (source URL pending) |
 | mahler5-4 | G. Mahler | Symphony No. 5, IV. Adagietto | MIDI by Ben Boot (file names `mahler_symphony_5_4_cboot.mid`; source URL pending) | Mahler5_mvt4.mid | Owner-confirmed copyright-free (source URL pending) |
 | mahler5-5 | G. Mahler | Symphony No. 5, V. Rondo-Finale | MIDI by Ben Boot (file names `mahler_symphony_5_5_cboot.mid`; source URL pending) | Mahler5_mvt5.mid | Owner-confirmed copyright-free (source URL pending) |
+| sousa-fairest | J. P. Sousa | The Fairest of the Fair (concert band; woodwind parts only in the MIDI) | [1643](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1643) | Sousa_FairestOfTheFair_conductor.mid (JPSFotFConductorTransposed.mid) | Public Domain |
+| hall-tenth | R. B. Hall | Tenth Regiment March (concert band, reduced score: flutes, clarinets, tenor sax, cornets/trumpets, trombones; the tuba doubles the trombone line) | [2157](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=2157) | TenthReg_ScoreTransposed.mid | Public Domain |
 | midsummer | F. Mendelssohn | A Midsummer Night's Dream, Op. 61, No. 5 (Intermezzo) | [80](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=80) | Sommernachtstraum.mid | Public Domain |
 | rossini | G. Rossini | Eduardo e Cristina, Overture | [1634](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1634) | Eduardo_e_Cristina.mid | Public Domain |
 | egmont | L. v. Beethoven | Egmont Overture, Op. 84 | [547](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=547) | Egmont.mid | Public Domain |
@@ -96,6 +98,10 @@ String quartets and the wind trio are played as small ensembles: the parts sit o
 
 ### Dvořák: what exists (2026-11-25)
 Mutopia has only 5 Dvořák pieces (Symphony 7 and 9, the Op. 4 violin pieces, a quartet movement and a song); IMSLP's work pages for Slavonic Dances, Serenade for Strings/Winds, Op. 96/97, Carnival/Othello/In Nature's Realm, Symphonies 1-6, Legends and others show no MIDI and no source files, apart from a few accordion/quintet MuseScore engravings by an arranger (not orchestral, no licence line shown) which were not used.
+
+### Wind band (2026-11-25)
+Found and added (Mutopia, `Copyright: Public Domain`): Sousa, The Fairest of the Fair (1643; the MIDI has woodwinds only) and R. B. Hall, Tenth Regiment March (2157; the score MIDI lacks horns, oboe and basses, the part files are written pitch and do not line up with the repeat-expanded score, so only the score file is used). Saxophones sit on the clarinet / bassoon samples, euphonium on the trombone samples. Pieces without strings use a small wind-band seating plan.
+Not found on Mutopia: Holst Suites 1 and 2, Fučík, Teike, Grainger, Mozart Gran Partita / K.375 / K.388, Beethoven Rondino, Mendelssohn Op. 24, Gounod Petite Symphonie, Dvořák Op. 44, Wagner Huldigungsmarsch, Colonel Bogey; Sousa's other marches there are piano scores. Mutopia's Washington Post (1321) is CC BY-SA 3.0 and a piano score.
 
 ### Sources checked and not usable (2026-11-25)
 - Dvořák 8: not on Mutopia (the composer listing has only 5 pieces: Symphonies 7 and 9, Op. 4, String Quartet 12 and a song). IMSLP offers PDFs (scans, CC0/PD editions) and one accordion arrangement MuseScore file (not an orchestral score): no machine-readable orchestral file with a clear licence.

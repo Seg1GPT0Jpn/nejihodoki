@@ -69,6 +69,12 @@
     mark(lv) { for (const m of Dynamics.MARKS) if (lv < m[1]) return m[0]; return 'ff'; },
   };
 
+  // Wind band (no strings in the piece): the winds move to the front and the brass and percussion sit behind, instead of the orchestral plan
+  const BAND_SEATS = {
+    fl: { x: 0.30, y: 0.62, pan: -0.5, back: 0.25 }, ob: { x: 0.42, y: 0.57, pan: -0.25, back: 0.3 }, cl: { x: 0.56, y: 0.62, pan: 0.05, back: 0.2, n: 8 }, fg: { x: 0.72, y: 0.58, pan: 0.4, back: 0.3, ja: 'サックス・ファゴット', en: 'Saxes / bassoon' },
+    hn: { x: 0.80, y: 0.40, pan: 0.55, back: 0.6 }, tp: { x: 0.36, y: 0.36, pan: -0.3, back: 0.7 }, tb: { x: 0.58, y: 0.34, pan: 0.15, back: 0.7 }, tu: { x: 0.80, y: 0.26, pan: 0.5, back: 0.8 }, timp: { x: 0.20, y: 0.28, pan: -0.5, back: 0.85 }, perc: { x: 0.48, y: 0.2, pan: 0, back: 0.9 },
+  };
+
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // Difficulty
   // ------------------------------------------------------------------------------------------------------------------------------------------
@@ -90,7 +96,8 @@
     const last = j.grid[j.grid.length - 1]; this.lastBeatTicks = last[3];
     this.endTick = bt[bt.length - 1] + this.lastBeatTicks;
     this.bpmRuns = j.bpm; this.dyn = j.dyn;
-    this.sections = j.sec.map((s, i) => ({ index: i, id: s.id, inst: s.inst, def: SECTIONS[s.id] }));
+    this.isBand = j.sec.length >= 4 && !j.sec.some(s => /^(vln|vla|vc|cb)/.test(s.id)); // no strings: the wind band seating
+    this.sections = j.sec.map((s, i) => ({ index: i, id: s.id, inst: s.inst, def: this.isBand && BAND_SEATS[s.id] ? Object.assign({}, SECTIONS[s.id], BAND_SEATS[s.id]) : SECTIONS[s.id] }));
     this.secIndex = {}; this.sections.forEach(s => { this.secIndex[s.id] = s.index; });
     this.cues = (j.cues || []).map(c => ({ b: c[0], secs: c[1].slice(), tutti: c[1].length >= 5 }));
     // events: note-on / note-off in beats, offs before ons at the same beat

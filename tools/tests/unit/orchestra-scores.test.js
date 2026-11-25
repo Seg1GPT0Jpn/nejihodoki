@@ -11,7 +11,7 @@ const rd = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const index = JSON.parse(rd('orchestra/scores/index.json'));
 
 test('every piece has a recorded licence (Public Domain, or CC BY-SA 3.0 with licence URL and credit), a Mutopia id, a source MIDI in the repo, and a row in CREDITS.md', () => {
-  ok(index.pieces.length >= 44, 'pieces: ' + index.pieces.length); const credits = rd('orchestra/CREDITS.md'), ids = new Set();
+  ok(index.pieces.length >= 46, 'pieces: ' + index.pieces.length); const credits = rd('orchestra/CREDITS.md'), ids = new Set();
   for (const p of index.pieces) {
     ids.add(p.id); ok(['Public Domain', 'CC BY-SA 3.0', 'CC0 1.0', 'CC BY 4.0'].includes(p.src.licence) || (p.src.author === 'Ben Boot' && /copyright-free/.test(p.src.licence)), p.id + ' licence ' + p.src.licence); if (p.src.licence === 'CC BY-SA 3.0') { ok(/creativecommons\.org\/licenses\/by-sa\/3\.0/.test(p.src.licenceUrl) && /CC BY-SA 3\.0/.test(p.src.credit) && /Mutopia/.test(p.src.credit), p.id + ' share-alike credit'); const sj = JSON.parse(rd('orchestra/scores/' + p.id + '.json')); eq(sj.src.licence, 'CC BY-SA 3.0'); eq(sj.src.credit, p.src.credit, 'the derived score JSON carries the licence and the credit'); }
     if (p.src.author === 'Ben Boot') { ok(/Ben Boot/.test(p.src.credit) && /owner/i.test(p.src.credit), p.id + ' credit says the licence evidence is the owner\'s statement'); eq(JSON.parse(rd('orchestra/scores/' + p.id + '.json')).src.credit, p.src.credit); }

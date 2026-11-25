@@ -159,6 +159,13 @@ const PIECES = [
     title: { ja: '交響曲 第5番 嬰ハ短調', en: 'Symphony No. 5 in C-sharp minor' }, composer: { ja: 'マーラー', en: 'Mahler' }, year: 1902,
     midi: ['Mahler5-HOLD/Mahler5_mvt5.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'tp', 7: 'tb', 8: 'tu', 9: 'harp', 10: { drum: { 35: 'perc', 36: 'perc', 49: 'cym', 51: 'cym', 52: 'cym', 55: 'cym', 57: 'cym', 59: 'cym' } }, 11: 'timp', 12: [[66, 'vln1'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 13: [[64, 'vln2'], [54, 'vla'], [42, 'vc'], [0, 'cb']], 14: [[62, 'vln2'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 15: [[64, 'vln1'], [52, 'vla'], [40, 'vc'], [0, 'cb']], 16: 'vla' }],
     blurb: { ja: "輝かしいロンド・フィナーレ。", en: "The radiant rondo finale." } },
+  // ---- wind band (Public Domain on the Mutopia piece pages 1643 and 2157, checked 2026-11-25): the saxophones sit on the clarinet / bassoon samples, euphonium on trombone ----
+  { id: 'sousa-fairest', mutopia: 1643, level: 2, mvt: { ja: '行進曲', en: 'March' }, title: { ja: '行進曲《美しき人》', en: 'The Fairest of the Fair (march)' }, composer: { ja: 'スーザ', en: 'Sousa' }, year: 1908,
+    midi: ['Band/Sousa_FairestOfTheFair_conductor.mid'], tracks: [{ 1: 'fl', 2: 'fl', 3: 'ob', 4: 'fg', 5: 'cl', 6: 'cl', 7: 'cl', 8: 'cl', 9: 'cl', 10: 'cl', 11: 'cl', 12: 'fg', 13: 'fg' }],
+    blurb: { ja: '木管バンドだけで演奏される、スーザの軽やかな行進曲。2拍子でテンポよく。', en: "Sousa's lilting march for woodwinds (the Mutopia band score has no brass). Two in a bar, steady." } },
+  { id: 'hall-tenth', mutopia: 2157, level: 2, mvt: { ja: '行進曲', en: 'March' }, title: { ja: '第十連隊行進曲', en: 'Tenth Regiment March' }, composer: { ja: 'ホール', en: 'R. B. Hall' }, year: 1895,
+    midi: ['Band/TenthReg_ScoreTransposed.mid'], tracks: [{ 2: 'fl', 3: 'fl', 4: 'cl', 5: 'cl', 6: 'cl', 7: 'cl', 8: 'fg', 9: 'tp', 10: 'tp', 11: 'tp', 12: 'tp', 13: 'tb' }], derive: [{ from: 'tb', to: 'tu', transpose: -12 }], // the Mutopia score MIDI has flutes, clarinets, tenor sax, cornets/trumpets and trombones only (no horns, oboe or basses); the tuba doubles the trombone line an octave down
+    blurb: { ja: '6/8の元気な吹奏楽の行進曲。コルネットとトロンボーンが歌います。', en: 'A bouncy 6/8 band march with cornets and trombones singing out.' } },
   { id: 'midsummer', mutopia: 80, level: 2, mvt: { ja: '間奏曲（No.5）', en: 'Intermezzo (No. 5)' },
     title: { ja: '劇音楽《真夏の夜の夢》 作品61', en: 'A Midsummer Night\'s Dream, Op. 61' }, composer: { ja: 'メンデルスゾーン', en: 'Mendelssohn' }, year: 1843,
     midi: ['Sommernachtstraum-mids/Sommernachtstraum.mid'], tracks: [{ 1: 'fl', 2: 'ob', 3: 'cl', 4: 'fg', 5: 'hn', 6: 'vln1', 7: 'vln2', 8: 'vla', 9: 'vc', 10: 'cb' }],
@@ -189,12 +196,12 @@ function build(P) {
     mf.tracks.forEach((tr, ti) => {
       const spec = P.byName ? NAMES[tr.name.toLowerCase().replace(/:.*$/, '').replace(/\s+/g, '')] : map[ti]; if (!spec) return;
       // spec: a section id, or [[minPitch, section], ...] (a merged strings track split by register), or { drum: { gmNote: section } } (a GM drum track)
-      const pick = n => typeof spec === 'string' ? spec : Array.isArray(spec) ? (spec.find(r => n.note >= r[0]) || [0, null])[1] : spec.drum[n.note];
-      M.notes(tr).forEach(n => { const sec = pick(n); if (!sec) return; if (P.pitchClamp && PITCH_RANGE[sec] && (n.note < PITCH_RANGE[sec][0] || n.note > PITCH_RANGE[sec][1])) return; notes.push({ sec, tick: Math.round(n.tick * k) + off, dur: Math.max(1, Math.round(n.dur * k)), pitch: spec && spec.drum ? 60 : n.note, vel: n.vel }); });
+      const pick = n => typeof spec === 'string' ? spec : spec.sec ? spec.sec : Array.isArray(spec) ? (spec.find(r => n.note >= r[0]) || [0, null])[1] : spec.drum[n.note];
+      M.notes(tr).forEach(n => { const sec = pick(n); if (!sec) return; if (P.pitchClamp && PITCH_RANGE[sec] && (n.note < PITCH_RANGE[sec][0] || n.note > PITCH_RANGE[sec][1])) return; notes.push({ sec, tick: Math.round(n.tick * k) + off, dur: Math.max(1, Math.round(n.dur * k)), pitch: spec && spec.drum ? 60 : n.note + (spec && spec.transpose || 0), vel: n.vel }); });
     });
-    mf.timeSigs.forEach(s => sigs.push({ tick: Math.round(s.tick * k) + off, num: s.num, den: s.den }));
-    let last = -1; mf.tempos.forEach(t => { const tk = Math.round(t.tick * k) + off; if (t.tick === 0 && last === 0) tempos.pop(); tempos.push({ q: tk / PPQ, bpm: 6e7 / t.uspq }); last = t.tick; });
-    off += Math.round(mf.endTick * k);
+    if (!(P.parallel && fi > 0)) mf.timeSigs.forEach(s => sigs.push({ tick: Math.round(s.tick * k) + off, num: s.num, den: s.den }));
+    let last = -1; if (!(P.parallel && fi > 0)) mf.tempos.forEach(t => { const tk = Math.round(t.tick * k) + off; if (t.tick === 0 && last === 0) tempos.pop(); tempos.push({ q: tk / PPQ, bpm: 6e7 / t.uspq }); last = t.tick; });
+    if (P.parallel) off = Math.max(off, Math.round(mf.endTick * k)); else off += Math.round(mf.endTick * k); // parallel: the files are parts of one score, laid over each other
   });
   if (P.tempoScale) tempos.forEach(t => { t.bpm *= P.tempoScale; }); // the written tempo is slower in the original score
   if (P.tempoOverride) { tempos.length = 0; P.tempoOverride.forEach(([q, bpm]) => tempos.push({ q, bpm })); }
@@ -347,7 +354,7 @@ const REL_FILE = path.join(__dirname, 'orchestra-hold-release.json'); // written
 const REL = fs.existsSync(REL_FILE) ? JSON.parse(fs.readFileSync(REL_FILE, 'utf8')) : { ids: [], by: {} };
 PIECES.forEach(P => { if (P.hold && REL.by[P.id]) { Object.assign(P, REL.by[P.id], { hold: false }); } }); // released: the owner's licence evidence is applied
 fs.mkdirSync(OUT, { recursive: true });
-const ERA = { Mahler: 'romantic', Beethoven: 'classical', Mozart: 'classical', Haydn: 'classical', Gossec: 'classical', Mendelssohn: 'romantic', Rossini: 'romantic', 'Dvořák': 'romantic', Schubert: 'romantic', Grieg: 'romantic', Bach: 'baroque', Handel: 'baroque', Corelli: 'baroque', Vivaldi: 'baroque' };
+const ERA = { Sousa: 'romantic', 'R. B. Hall': 'romantic', Mahler: 'romantic', Beethoven: 'classical', Mozart: 'classical', Haydn: 'classical', Gossec: 'classical', Mendelssohn: 'romantic', Rossini: 'romantic', 'Dvořák': 'romantic', Schubert: 'romantic', Grieg: 'romantic', Bach: 'baroque', Handel: 'baroque', Corelli: 'baroque', Vivaldi: 'baroque' };
 const index = [];
 let total = 0;
 const holdIndex = [];
