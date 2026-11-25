@@ -120,15 +120,19 @@
   };
   const EXTRAS = Object.keys(EXTRA_BASE);
   // キャラごとの「くせ」：reach=横の長さ sp=はじまる・おわる速さ（小さいほど速い） pw=ちから rr=あたり判定の大きさ ov=技ごとの上書き
-  function normals(k) {
+  // kit.tpl があれば、kits.js の TPL[tpl] を土台にする（base の数 → kit の数、ov はひな形 → kit.ov の順に重ねる）。tpl がなければ、kit だけ（今までと同じ）
+  function normals(k0) {
+    const tpl = k0.tpl && K.TPL[k0.tpl];
+    if (k0.tpl && !tpl) throw new Error('unknown move template ' + k0.tpl);
+    const k = tpl ? Object.assign({}, tpl.base, k0) : k0;
     const out = {};
     for (const key of NORMALS.concat(EXTRAS)) {
-      const b = BASE[key] || EXTRA_BASE[key], o = (k.ov && k.ov[key]) || {};
+      const b = BASE[key] || EXTRA_BASE[key], o = tpl ? Object.assign({}, tpl.ov && tpl.ov[key], k0.ov && k0.ov[key]) : ((k.ov && k.ov[key]) || {});
       const sp = o.sp || k.sp;
       const m = { kind: b.kind || 'melee', fx: o.fx || k.fx, sm: b.sm || 0, ll: b.ll || 0 };
-      if (b.v) m.v = b.v; if (b.ac) m.ac = b.ac.slice();
-      m.s = Math.max(2, Math.round(b.s * sp)); m.a = o.a || b.a; m.t = Math.max(m.s + m.a + 4, Math.round(b.t * (0.5 + sp * 0.5) + (o.dt || 0)));
-      m.dmg = rd(b.dmg * k.pw * (o.pw || 1)); m.bkb = rd(b.bkb * (0.85 + 0.15 * k.pw)); m.kbg = rd(b.kbg * k.pw * (o.pw || 1)); m.ang = o.ang != null ? o.ang : b.ang;
+      if (b.v) m.v = o.v || b.v; if (b.ac) m.ac = o.ac === 0 ? [0, 0] : b.ac.slice();
+      m.s = o.s || Math.max(2, Math.round(b.s * sp)); m.a = o.a || b.a; m.t = o.t || Math.max(m.s + m.a + 4, Math.round(b.t * (0.5 + sp * 0.5) + (o.dt || 0)));
+      m.dmg = o.dmg || rd(b.dmg * k.pw * (o.pw || 1)); m.bkb = rd(b.bkb * (0.85 + 0.15 * k.pw)); m.kbg = rd(b.kbg * k.pw * (o.pw || 1)); m.ang = o.ang != null ? o.ang : b.ang;
       if (o.bkb) m.bkb = o.bkb; if (o.kbg) m.kbg = o.kbg;
       const reach = o.reach || k.reach, rr = o.rr || k.rr;
       m.hb = (o.hb || b.hb).map(h => [rd(h[0] * (h[0] > 0 && key !== 'nair' ? reach : 1)), h[1], rd(h[2] * (h[2] > 0 && key !== 'nair' ? reach : 1)), h[3], rd(h[4] * rr)]);
@@ -137,216 +141,16 @@
     }
     return out;
   }
-  // とくぎ：kind は melee（ふつうの当たり判定）/ proj（飛び道具）/ dash（前へ突進）/ rise（上へ・もどる技）/ counter / spin / cmdgrab / pound / mine / buff
-  const sp = (o) => Object.assign({ kind: 'melee', fx: 'body', sm: 0, ll: 0, s: 8, a: 4, t: 36, dmg: 5, bkb: 10, kbg: 10, ang: 40, hb: [] }, o);
-  const CH = {
-    robo: { id: 'robo', name: { ja: 'ぜんまいロボ ギアン', en: 'Gearo the Wind-up Robot' }, short: { ja: 'ギアン', en: 'Gearo' }, tag: { ja: 'バランスがよい', en: 'All-rounder' },
-      desc: { ja: '背中のぜんまいで動くブリキのロボ。クセがなく、飛び道具とパンチで戦う。「ねじまき」で一時的に強くなる。', en: 'A tin robot driven by the key on its back. No quirks: gears, rocket fists, and a "wind-up" power-up.' },
-      color: '#e0613a', color2: '#f3b441', w: 30, h: 56, weight: 100, run: 3.7, acc: 0.55, air: 2.9, aacc: 0.2, jump: 11.0, dj: 10.0, grav: 0.44, fall: 8.6, ff: 12.8, stats: { speed: 3, power: 3, weight: 3, reach: 3, recov: 3 },
-      kit: { reach: 0.95, sp: 1.05, pw: 0.92, rr: 1, fx: 'punch', ov: { jab: { sp: 0.85 }, ftilt: { fx: 'punch' }, nair: { fx: 'spin' }, dair: { fx: 'kick' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 30, proj: { sp: 7.6, vy: 0, g: 0, r: 9, life: 70, dmg: 5, bkb: 10, kbg: 10, ang: 20, kind: 'gear' } }),
-        S: sp({ kind: 'proj', fx: 'cast', s: 18, a: 1, t: 52, proj: { sp: 6.2, vy: 0, g: 0, r: 15, life: 50, dmg: 10, bkb: 22, kbg: 28, ang: 30, kind: 'fist' } }),
-        U: sp({ kind: 'rise', fx: 'prop', s: 6, a: 24, t: 44, rv: 11.2, dv: 2.6, ang: 80, dmg: 5, bkb: 22, kbg: 22, hb: [[0, -64, 0, -64, 20]] }),
-        D: sp({ kind: 'buff', fx: 'key', s: 10, a: 1, t: 40, buff: 480 }),
-      } },
-    duck: { id: 'duck', name: { ja: 'アヒル騎士 サー・クワック', en: 'Sir Quack, Duck Knight' }, short: { ja: 'クワック', en: 'Sir Quack' }, tag: { ja: 'リーチと反撃', en: 'Long reach, counters' },
-      desc: { ja: 'ゴムのアヒルの騎士。剣のリーチが長く、盾で押し込む。「カウンター」で相手の技をはね返す。', en: 'A rubber-duck knight. Long sword reach, a shield bash with armor, and a counter that turns hits around.' },
-      color: '#f2d13c', color2: '#5b7fc9', w: 32, h: 58, weight: 108, run: 3.4, acc: 0.5, air: 2.7, aacc: 0.2, jump: 10.8, dj: 9.7, grav: 0.45, fall: 8.8, ff: 13, stats: { speed: 2, power: 3, weight: 4, reach: 5, recov: 3 },
-      kit: { reach: 1.4, sp: 1.08, pw: 1.1, rr: 1.05, fx: 'slash', ov: { jab: { fx: 'slash', reach: 1.1 }, utilt: { fx: 'slash' }, dtilt: { fx: 'kick' }, nair: { fx: 'spin' }, dair: { fx: 'slash' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'dash', fx: 'slash', s: 8, a: 6, t: 32, v: 7, dmg: 8, bkb: 18, kbg: 24, ang: 40, hb: [[30, -30, 62, -28, 15]] }),
-        S: sp({ kind: 'dash', fx: 'shield', s: 14, a: 8, t: 46, v: 5.5, dmg: 13, bkb: 24, kbg: 34, ang: 38, arm: [8, 22], hb: [[26, -28, 40, -28, 26]] }),
-        U: sp({ kind: 'rise', fx: 'slash', s: 5, a: 20, t: 42, rv: 10.8, dv: 2.2, ang: 80, dmg: 9, bkb: 28, kbg: 30, hb: [[16, -50, 0, -88, 24]] }),
-        D: sp({ kind: 'counter', fx: 'shield', s: 4, a: 20, t: 54, cf: 24, cs: 4, ca: 4, dmg: 8, bkb: 26, kbg: 34, ang: 40, hb: [[34, -30, 62, -28, 24]] }),
-      } },
-    tin: { id: 'tin', name: { ja: 'ブリキ兵 ティンタ', en: 'Private Tinta' }, short: { ja: 'ティンタ', en: 'Tinta' }, tag: { ja: '飛び道具と地雷', en: 'Ranged, with mines' },
-      desc: { ja: 'ラッパとコルク銃のブリキの兵隊。遠くから撃ち、地雷でじゃまをする。近づかれると少しこまる。', en: 'A tin soldier with a cork gun and a bugle. Shoots from afar and lays mines, but dislikes being rushed.' },
-      color: '#3f6fb5', color2: '#d0453f', w: 28, h: 62, weight: 104, run: 3.6, acc: 0.5, air: 2.8, aacc: 0.2, jump: 10.7, dj: 9.6, grav: 0.44, fall: 8.4, ff: 12.4, stats: { speed: 2, power: 2, weight: 2, reach: 4, recov: 4 },
-      kit: { reach: 1.3, sp: 1.0, pw: 1.18, rr: 1.05, fx: 'slash', ov: { jab: { fx: 'punch' }, ftilt: { fx: 'slash', reach: 1.3 }, nair: { fx: 'spin' }, dair: { fx: 'kick' }, bair: { fx: 'slash' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'gun', s: 14, a: 1, t: 34, proj: { sp: 12, vy: 0, g: 0, r: 8, life: 50, dmg: 6, bkb: 12, kbg: 12, ang: 15, kind: 'cork' } }),
-        S: sp({ kind: 'dash', fx: 'slash', s: 12, a: 10, t: 48, v: 6.2, dmg: 11, bkb: 22, kbg: 30, ang: 35, hb: [[36, -32, 52, -32, 14]] }),
-        U: sp({ kind: 'rise', fx: 'horn', s: 6, a: 18, t: 42, rv: 11, dv: 3.2, ang: 75, dmg: 6, bkb: 20, kbg: 24, hb: [[0, -24, 0, -24, 32]] }),
-        D: sp({ kind: 'mine', fx: 'cast', s: 10, a: 1, t: 38, proj: { r: 20, life: 900, arm: 40, dmg: 12, bkb: 26, kbg: 34, ang: 70, kind: 'mine' } }),
-      } },
-    bear: { id: 'bear', name: { ja: 'ぬいぐるみクマ モコ', en: 'Moko the Plush Bear' }, short: { ja: 'モコ', en: 'Moko' }, tag: { ja: '重くて一発が強い', en: 'Heavy hitter' },
-      desc: { ja: '綿のつまった大きなクマ。のろいけれど、一発が重く、なかなか飛ばされない。「ぎゅっ」はつかみ技。', en: 'A big stuffed bear. Slow, but heavy hits and hard to launch. Its bear hug is a command grab.' },
-      color: '#c98a52', color2: '#f2d7b0', w: 42, h: 66, weight: 138, run: 2.7, acc: 0.42, air: 2.3, aacc: 0.16, jump: 10.2, dj: 9.2, grav: 0.46, fall: 9.4, ff: 13.4, stats: { speed: 1, power: 5, weight: 5, reach: 3, recov: 1 },
-      kit: { reach: 1.1, sp: 1.18, pw: 1.36, rr: 1.28, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick', a: 8 }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'cmdgrab', fx: 'hug', s: 9, a: 4, t: 44, dmg: 11, bkb: 30, kbg: 40, ang: 55, hb: [[34, -32, 40, -32, 28]] }),
-        S: sp({ kind: 'melee', fx: 'punch', s: 18, a: 5, t: 54, dmg: 17, bkb: 30, kbg: 44, ang: 40, hb: [[20, -62, 56, -14, 32]] }),
-        U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 16, t: 42, rv: 9.2, dv: 2.0, ang: 80, dmg: 5, bkb: 18, kbg: 20, hb: [[0, -42, 0, -42, 32]] }),
-        D: sp({ kind: 'pound', fx: 'body', s: 14, t: 56, fv: 14, dmg: 11, bkb: 18, kbg: 26, ang: -78, hb: [[0, 8, 0, 8, 34]], land: { a: 6, dmg: 8, bkb: 24, kbg: 26, ang: 50, hb: [[40, -8, 40, -8, 34], [-40, -8, -40, -8, 34]] } }),
-      } },
-    top: { id: 'top', name: { ja: 'こま クルリン', en: 'Whirlo the Spinning Top' }, short: { ja: 'クルリン', en: 'Whirlo' }, tag: { ja: '速くて軽い', en: 'Fast and light' },
-      desc: { ja: '紐でまわる小さなこま。とても速くて動きまわるが、軽くてすぐ飛ぶ。「スピン」で連続ヒット。', en: 'A tiny top that zips around. Very fast, very light. Its spin hits many times.' },
-      color: '#9a59c9', color2: '#4fc0c2', w: 34, h: 46, weight: 84, run: 4.6, acc: 0.7, air: 3.4, aacc: 0.28, jump: 11.4, dj: 10.6, grav: 0.47, fall: 9.4, ff: 13.8, stats: { speed: 5, power: 2, weight: 1, reach: 2, recov: 4 },
-      kit: { reach: 1.05, sp: 0.88, pw: 0.95, rr: 1.05, fx: 'spin', ov: { jab: { fx: 'spin' }, ftilt: { fx: 'spin' }, utilt: { fx: 'spin' }, nair: { rr: 1.15, a: 14 } } },
-      sp: {
-        N: sp({ kind: 'spin', fx: 'spin', s: 6, a: 42, t: 66, rh: 7, dmg: 1.8, bkb: 7, kbg: 0, ang: 50, fin: { dmg: 5, bkb: 22, kbg: 24, ang: 50 }, hb: [[0, -24, 0, -24, 28]] }),
-        S: sp({ kind: 'dash', fx: 'spin', s: 8, a: 14, t: 40, v: 8, dmg: 8, bkb: 18, kbg: 22, ang: 45, hb: [[0, -24, 8, -24, 24]] }),
-        U: sp({ kind: 'rise', fx: 'drill', s: 4, a: 22, t: 40, rv: 11.6, dv: 2.6, ang: 85, dmg: 7, bkb: 14, kbg: 16, hb: [[0, -34, 0, -60, 22]] }),
-        D: sp({ kind: 'melee', fx: 'ring', s: 7, a: 5, t: 34, dmg: 8, bkb: 22, kbg: 24, ang: 55, hb: [[0, -24, 0, -24, 54]] }),
-      } },
-    jack: { id: 'jack', name: { ja: 'びっくり箱 ポップ', en: 'Popper the Jack-in-the-box' }, short: { ja: 'ポップ', en: 'Popper' }, tag: { ja: 'ばねで遠くまで届く', en: 'Springy long reach' },
-      desc: { ja: 'ふたをあけると飛び出す、ばねのピエロ。手足が長くびよーんと届き、ばねの高いジャンプでもどる。', en: 'A clown on a spring. Attacks stretch far, and the spring launches it high to recover.' },
-      color: '#d64b8c', color2: '#4cb2d6', w: 30, h: 58, weight: 86, run: 3.4, acc: 0.5, air: 3.0, aacc: 0.22, jump: 11.8, dj: 11.0, grav: 0.4, fall: 7.9, ff: 12, stats: { speed: 3, power: 3, weight: 2, reach: 5, recov: 5 },
-      kit: { reach: 1.45, sp: 1.05, pw: 0.97, rr: 0.92, fx: 'spring', ov: { nair: { fx: 'spin', rr: 1.1 }, dair: { fx: 'spring' }, utilt: { fx: 'spring' }, dtilt: { fx: 'spring' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 16, a: 1, t: 40, proj: { sp: 4.4, vy: -3.4, g: 0.34, r: 12, life: 150, dmg: 7, bkb: 16, kbg: 16, ang: 40, kind: 'ball', bounce: 1 } }),
-        S: sp({ kind: 'melee', fx: 'spring', s: 16, a: 6, t: 50, dmg: 13, bkb: 26, kbg: 32, ang: 35, hb: [[30, -50, 135, -48, 16]] }),
-        U: sp({ kind: 'rise', fx: 'springup', s: 5, a: 22, t: 46, rv: 13.4, dv: 2.4, ang: 85, dmg: 5, bkb: 22, kbg: 24, hb: [[0, -64, 0, -64, 22]] }),
-        D: sp({ kind: 'melee', fx: 'lid', s: 6, a: 5, t: 48, arm: [6, 22], dmg: 10, bkb: 24, kbg: 30, ang: 60, hb: [[0, -28, 0, -28, 44]] }),
-      } },
-    // ---- ここから、あとから増えたおもちゃ（12人）
-    ninja: { id: 'ninja', name: { ja: '折り紙ニンジャ オリガ', en: 'Origa the Paper Ninja' }, short: { ja: 'オリガ', en: 'Origa' }, tag: { ja: 'ワープと不意うち', en: 'Warping trickster' },
-      desc: { ja: '一枚の紙から折られた小さな忍者。手裏剣を投げ、ワープで相手の背中へまわりこむ。軽くて速い。', en: 'A tiny ninja folded from one sheet of paper. Throws stars and warps behind its rival. Light and quick.' },
-      color: '#c9374a', color2: '#f4efe2', w: 28, h: 54, weight: 88, run: 4.3, acc: 0.62, air: 3.2, aacc: 0.26, jump: 11.4, dj: 10.8, grav: 0.45, fall: 9.0, ff: 13.6, stats: { speed: 4, power: 2, weight: 1, reach: 2, recov: 4 },
-      kit: { reach: 1.05, sp: 0.92, pw: 1.0, rr: 1.0, fx: 'slash', ov: { jab: { sp: 0.8 }, nair: { fx: 'spin' }, dair: { fx: 'kick' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 9, a: 1, t: 28, proj: { sp: 10, vy: 0, g: 0, r: 7, life: 45, dmg: 4, bkb: 8, kbg: 8, ang: 15, kind: 'shuriken' } }),
-        S: sp({ kind: 'tele', fx: 'slash', s: 10, a: 5, t: 34, td: 150, dd: [1, 0], dmg: 7, bkb: 18, kbg: 22, ang: 40, hb: [[16, -30, 40, -30, 18]] }),
-        U: sp({ kind: 'tele', fx: 'cast', s: 9, a: 1, t: 36, td: 190, dd: [0, -1], help: true, dmg: 0, bkb: 0, kbg: 0, hb: [] }),
-        D: sp({ kind: 'tele', fx: 'ring', s: 8, a: 4, t: 32, td: 110, dd: [-1, 0], fixed: 1, dmg: 5, bkb: 14, kbg: 14, ang: 60, hb: [[0, -28, 0, -28, 26]] }),
-      } },
-    wiz: { id: 'wiz', name: { ja: '魔法使いパペット マジナ', en: 'Magina the Puppet Wizard' }, short: { ja: 'マジナ', en: 'Magina' }, tag: { ja: '遠くから魔法', en: 'Long-range zoner' },
-      desc: { ja: '糸であやつられる魔法使い。光の玉と大きな火の玉で遠くから攻める。「まほうのかべ」で飛び道具をはね返す。', en: 'A puppet wizard on strings. Orbs and a big fireball keep rivals at range, and a magic wall bounces shots back.' },
-      color: '#6b46c1', color2: '#f2d13c', w: 30, h: 60, weight: 86, run: 3.0, acc: 0.45, air: 2.6, aacc: 0.2, jump: 10.4, dj: 9.8, grav: 0.38, fall: 7.4, ff: 11.2, stats: { speed: 2, power: 2, weight: 1, reach: 2, recov: 4 },
-      kit: { reach: 1.0, sp: 1.02, pw: 1.02, rr: 1.0, fx: 'slash', ov: { jab: { fx: 'punch' }, nair: { fx: 'spin' }, dair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 12, a: 1, t: 34, proj: { sp: 6.2, vy: 0, g: 0, r: 11, life: 90, dmg: 6, bkb: 10, kbg: 12, ang: 22, kind: 'orb' } }),
-        S: sp({ kind: 'proj', fx: 'cast', s: 20, a: 1, t: 54, proj: { sp: 4.2, vy: -0.6, g: 0.02, r: 19, life: 80, dmg: 11, bkb: 22, kbg: 28, ang: 32, kind: 'fire' } }),
-        U: sp({ kind: 'tele', fx: 'cast', s: 10, a: 1, t: 44, td: 175, dd: [0, -1], help: true, dmg: 0, bkb: 0, kbg: 0, hb: [] }),
-        D: sp({ kind: 'reflect', fx: 'ring', s: 3, a: 20, t: 40, dmg: 3, bkb: 20, kbg: 6, ang: 30, hb: [[26, -30, 40, -30, 28]] }),
-      } },
-    cat: { id: 'cat', name: { ja: 'ぜんまいネコ タマ', en: 'Tama the Clockwork Cat' }, short: { ja: 'タマ', en: 'Tama' }, tag: { ja: 'すばやいラッシュ', en: 'Fast rushdown' },
-      desc: { ja: '背中のぜんまいで走りまわるブリキのネコ。リーチは短いが、速くて手数が多い。「ひっかきの嵐」で連続ヒット。', en: 'A tin cat that never stops running. Short reach, but very fast with lots of hits. Its claw flurry is a multi-hit.' },
-      color: '#e59a45', color2: '#fff3d6', w: 32, h: 44, weight: 86, run: 4.9, acc: 0.72, air: 3.3, aacc: 0.27, jump: 11.2, dj: 10.2, grav: 0.46, fall: 9.2, ff: 13.6, stats: { speed: 5, power: 2, weight: 1, reach: 1, recov: 3 },
-      kit: { reach: 0.95, sp: 0.8, pw: 0.97, rr: 1.05, fx: 'slash', ov: { jab: { sp: 0.7, fx: 'slash' }, nair: { fx: 'spin' }, dair: { fx: 'kick' }, utilt: { fx: 'slash' }, ftilt: { fx: 'slash' } } },
-      sp: {
-        N: sp({ kind: 'spin', fx: 'slash', s: 5, a: 36, t: 58, rh: 6, dmg: 1.5, bkb: 6, kbg: 0, ang: 55, fin: { dmg: 4, bkb: 20, kbg: 22, ang: 50 }, hb: [[16, -24, 26, -24, 24]] }),
-        S: sp({ kind: 'dash', fx: 'slash', s: 10, a: 10, t: 40, v: 8.4, dmg: 8, bkb: 18, kbg: 24, ang: 40, hb: [[26, -24, 46, -24, 16]] }),
-        U: sp({ kind: 'rise', fx: 'slash', s: 5, a: 20, t: 40, rv: 11.2, dv: 2.8, ang: 85, dmg: 5, bkb: 20, kbg: 22, hb: [[10, -40, 0, -66, 18]] }),
-        D: sp({ kind: 'melee', fx: 'kick', s: 6, a: 5, t: 30, dmg: 6, bkb: 18, kbg: 18, ang: 60, hb: [[34, -10, 40, -10, 16], [-34, -10, -40, -10, 16]] }),
-      } },
-    tank: { id: 'tank', name: { ja: 'プラモ戦車 ガッチョ', en: 'Gatcho the Model Tank' }, short: { ja: 'ガッチョ', en: 'Gatcho' }, tag: { ja: 'どっしり大砲', en: 'Heavy artillery' },
-      desc: { ja: 'プラスチックの小さな戦車。のろくて、ジャンプも低いが、とても重くて砲弾の一発が重い。ぶつかりは「ふんばり」つき。', en: 'A little plastic tank. Slow, with a low hop, but very heavy and its shells hit hard. The ram has armor.' },
-      color: '#5f7f4a', color2: '#c9b27a', w: 54, h: 50, weight: 132, run: 2.2, acc: 0.36, air: 2.0, aacc: 0.13, jump: 9.4, dj: 8.6, grav: 0.5, fall: 9.8, ff: 13.6, stats: { speed: 1, power: 5, weight: 5, reach: 3, recov: 1 },
-      kit: { reach: 1.0, sp: 1.2, pw: 1.24, rr: 1.3, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick', a: 8 }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 16, a: 1, t: 44, proj: { sp: 7.2, vy: -1.2, g: 0.16, r: 14, life: 100, dmg: 10, bkb: 20, kbg: 26, ang: 30, kind: 'shell' } }),
-        S: sp({ kind: 'dash', fx: 'shield', s: 14, a: 10, t: 50, v: 4.6, arm: [10, 26], dmg: 14, bkb: 26, kbg: 34, ang: 36, hb: [[30, -26, 52, -26, 26]] }),
-        U: sp({ kind: 'rise', fx: 'puff', s: 8, a: 16, t: 46, rv: 9.6, dv: 2.6, ang: 80, dmg: 5, bkb: 18, kbg: 20, hb: [[0, -26, 0, -26, 30]] }),
-        D: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 46, proj: { sp: 3.2, vy: -7.4, g: 0.34, r: 14, life: 110, dmg: 9, bkb: 18, kbg: 24, ang: 62, kind: 'shell' } }),
-      } },
-    giraffe: { id: 'giraffe', name: { ja: '積み木キリン ノッポ', en: 'Noppo the Block Giraffe' }, short: { ja: 'ノッポ', en: 'Noppo' }, tag: { ja: 'いちばん高くて長い', en: 'Tallest, longest reach' },
-      desc: { ja: '積み木を重ねてできたキリン。首が長く、攻撃がとても遠くまで届く。足もとは少し苦手。', en: 'A giraffe stacked from building blocks. Its long neck reaches far, though feet-level is a weak spot.' },
-      color: '#f0c24a', color2: '#8a5a2b', w: 30, h: 84, weight: 98, run: 3.1, acc: 0.5, air: 2.5, aacc: 0.19, jump: 10.6, dj: 9.6, grav: 0.43, fall: 8.4, ff: 12.4, stats: { speed: 2, power: 3, weight: 3, reach: 5, recov: 3 },
-      kit: { reach: 1.6, sp: 1.05, pw: 1.24, rr: 0.95, fx: 'spring', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick' }, dtilt: { fx: 'kick', reach: 1.0 }, jab: { fx: 'punch' } } },
-      sp: {
-        N: sp({ kind: 'melee', fx: 'spring', s: 14, a: 6, t: 44, dmg: 10, bkb: 22, kbg: 30, ang: 38, hb: [[30, -82, 100, -60, 18]] }),
-        S: sp({ kind: 'melee', fx: 'spring', s: 16, a: 6, t: 50, dmg: 13, bkb: 26, kbg: 34, ang: 35, hb: [[40, -70, 140, -50, 16]] }),
-        U: sp({ kind: 'rise', fx: 'spring', s: 6, a: 22, t: 46, rv: 11.2, dv: 2.4, ang: 85, dmg: 5, bkb: 20, kbg: 22, hb: [[0, -80, 0, -110, 22]] }),
-        D: sp({ kind: 'melee', fx: 'kick', s: 10, a: 6, t: 40, arm: [10, 20], dmg: 9, bkb: 22, kbg: 26, ang: 60, hb: [[36, -6, 44, -6, 20], [-36, -6, -44, -6, 20]] }),
-      } },
-    ball: { id: 'ball', name: { ja: 'ゴムまり ポンタ', en: 'Ponta the Rubber Ball' }, short: { ja: 'ポンタ', en: 'Ponta' }, tag: { ja: 'はずむトリッキー', en: 'Bouncy trickster' },
-      desc: { ja: 'よくはずむゴムのまり。ジャンプが高く、空中ジャンプが2回できる。丸まって転がり、地面にバウンドして落ちる。', en: 'A very bouncy rubber ball. Jumps high with two air jumps. Rolls up into a ball and slams down with a bounce.' },
-      color: '#3aa6e0', color2: '#ffd23f', w: 36, h: 40, weight: 90, run: 3.6, acc: 0.55, air: 3.0, aacc: 0.24, jump: 12.6, dj: 11.4, grav: 0.5, fall: 9.4, ff: 14, jmax: 2, stats: { speed: 3, power: 2, weight: 2, reach: 1, recov: 5 },
-      kit: { reach: 0.9, sp: 0.95, pw: 1.06, rr: 1.15, fx: 'spin', ov: { jab: { fx: 'punch' }, dair: { fx: 'spin' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'spin', fx: 'spin', s: 6, a: 30, t: 52, rh: 6, dmg: 1.6, bkb: 6, kbg: 0, ang: 60, fin: { dmg: 4.5, bkb: 22, kbg: 24, ang: 55 }, hb: [[0, -20, 0, -20, 26]] }),
-        S: sp({ kind: 'dash', fx: 'spin', s: 9, a: 12, t: 42, v: 7.6, dmg: 8, bkb: 18, kbg: 22, ang: 50, hb: [[0, -20, 10, -20, 24]] }),
-        U: sp({ kind: 'rise', fx: 'springup', s: 4, a: 20, t: 40, rv: 13.0, dv: 2.6, ang: 85, dmg: 4, bkb: 16, kbg: 18, hb: [[0, -26, 0, -26, 24]] }),
-        D: sp({ kind: 'pound', fx: 'body', s: 12, t: 54, fv: 13, dmg: 10, bkb: 18, kbg: 26, ang: -78, hb: [[0, 8, 0, 8, 28]], land: { a: 5, dmg: 7, bkb: 22, kbg: 24, ang: 55, hb: [[34, -6, 34, -6, 28], [-34, -6, -34, -6, 28]] } }),
-      } },
-    crab: { id: 'crab', name: { ja: 'ブリキのカニ チョキ', en: 'Chokki the Tin Crab' }, short: { ja: 'チョキ', en: 'Chokki' }, tag: { ja: 'つかみの名人', en: 'Grappler' },
-      desc: { ja: 'ハサミが自慢のブリキのカニ。つかみとなげがとても強い。「はさみつかみ」は、まもりも通りぬける。', en: 'A tin crab proud of its claws. Throws hit hardest here. The pincer grab reaches far and ignores shields.' },
-      color: '#d6483d', color2: '#f5d6a0', w: 40, h: 40, weight: 114, run: 3.0, acc: 0.5, air: 2.4, aacc: 0.18, jump: 10.0, dj: 9.0, grav: 0.46, fall: 9.0, ff: 13, stats: { speed: 2, power: 4, weight: 4, reach: 1, recov: 2 },
-      tw: { f: { dmg: 9, kbg: 60 }, b: { dmg: 10, kbg: 58 }, u: { dmg: 8, kbg: 52 }, d: { dmg: 7, kbg: 42 } },
-      kit: { reach: 0.9, sp: 1.1, pw: 1.0, rr: 1.2, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick' }, dtilt: { fx: 'kick' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'cmdgrab', fx: 'hug', s: 8, a: 5, t: 46, dmg: 14, bkb: 32, kbg: 44, ang: 50, hb: [[34, -22, 52, -22, 30]] }),
-        S: sp({ kind: 'dash', fx: 'punch', s: 10, a: 8, t: 44, v: 5.2, dmg: 9, bkb: 22, kbg: 28, ang: 38, hb: [[30, -22, 48, -22, 20]] }),
-        U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 20, t: 46, rv: 9.8, dv: 2.6, ang: 82, dmg: 5, bkb: 18, kbg: 20, hb: [[0, -30, 0, -30, 28]] }),
-        D: sp({ kind: 'melee', fx: 'punch', s: 7, a: 5, t: 36, arm: [7, 18], dmg: 10, bkb: 24, kbg: 28, ang: 55, hb: [[30, -26, 46, -20, 24]] }),
-      } },
-    snail: { id: 'snail', name: { ja: 'オルゴールかたつむり ノロリン', en: 'Nororin the Music-Box Snail' }, short: { ja: 'ノロリン', en: 'Nororin' }, tag: { ja: 'しかけて待つ', en: 'Trap-setter' },
-      desc: { ja: '背中のからがオルゴールのかたつむり。遅いけれど、音符の地雷を3つまでしかけられる。からに入ればふんばれる。', en: 'A snail with a music box for a shell. Slow, but it can plant up to three note mines. Curl up in the shell to stand firm.' },
-      color: '#7fb069', color2: '#e8c07a', w: 40, h: 44, weight: 108, run: 2.5, acc: 0.42, air: 2.1, aacc: 0.15, jump: 9.2, dj: 8.4, grav: 0.44, fall: 7.8, ff: 12, stats: { speed: 1, power: 3, weight: 3, reach: 3, recov: 2 },
-      kit: { reach: 1.05, sp: 1.05, pw: 1.18, rr: 1.1, fx: 'punch', ov: { nair: { fx: 'ring' }, dair: { fx: 'kick' }, bair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'mine', fx: 'cast', s: 10, a: 1, t: 38, proj: { r: 20, life: 1100, arm: 36, dmg: 10, bkb: 24, kbg: 32, ang: 72, kind: 'mine', max: 3 } }),
-        S: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 44, proj: { sp: 3.6, vy: -3, g: 0.22, r: 13, life: 140, dmg: 7, bkb: 14, kbg: 16, ang: 40, kind: 'note', bounce: 1 } }),
-        U: sp({ kind: 'rise', fx: 'ring', s: 8, a: 22, t: 52, rv: 8.2, dv: 3.0, ang: 80, dmg: 6, bkb: 22, kbg: 24, hb: [[0, -26, 0, -26, 34]] }),
-        D: sp({ kind: 'melee', fx: 'ring', s: 5, a: 6, t: 44, arm: [5, 22], dmg: 7, bkb: 20, kbg: 24, ang: 70, hb: [[0, -26, 0, -26, 44]] }),
-      } },
-    kaiju: { id: 'kaiju', name: { ja: 'ソフビ怪獣 ガオロン', en: 'Gaoron the Vinyl Beast' }, short: { ja: 'ガオロン', en: 'Gaoron' }, tag: { ja: 'パワフルな暴れん坊', en: 'Power bruiser' },
-      desc: { ja: 'ビニールでできた怪獣のおもちゃ。力が強く、しっぽとかみつきが重い。炎は近くにしか届かない。', en: 'A vinyl monster toy. Strong, with a heavy tail and bite. Its flame only reaches up close.' },
-      color: '#2f9e8f', color2: '#f2e36b', w: 46, h: 72, weight: 116, run: 3.1, acc: 0.46, air: 2.4, aacc: 0.17, jump: 10.0, dj: 9.0, grav: 0.46, fall: 9.2, ff: 13.2, stats: { speed: 2, power: 5, weight: 4, reach: 3, recov: 2 },
-      kit: { reach: 1.15, sp: 1.14, pw: 1.14, rr: 1.2, fx: 'punch', ov: { nair: { fx: 'spin' }, bair: { fx: 'kick' }, dair: { fx: 'kick' }, dtilt: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 12, a: 1, t: 38, proj: { sp: 7, vy: 0, g: 0, r: 15, life: 22, dmg: 6, bkb: 12, kbg: 14, ang: 25, kind: 'flame' } }),
-        S: sp({ kind: 'dash', fx: 'punch', s: 12, a: 9, t: 46, v: 5.8, arm: [8, 20], dmg: 13, bkb: 26, kbg: 34, ang: 36, hb: [[34, -50, 52, -40, 26]] }),
-        U: sp({ kind: 'rise', fx: 'puff', s: 7, a: 18, t: 46, rv: 9.4, dv: 3.0, ang: 80, dmg: 6, bkb: 18, kbg: 22, hb: [[0, -50, 0, -50, 36]] }),
-        D: sp({ kind: 'melee', fx: 'spin', s: 8, a: 7, t: 40, dmg: 11, bkb: 24, kbg: 30, ang: 50, hb: [[44, -14, 60, -14, 20], [-44, -14, -60, -14, 20]] }),
-      } },
-    samurai: { id: 'samurai', name: { ja: 'こけし侍 コケマル', en: 'Kokemaru the Kokeshi Samurai' }, short: { ja: 'コケマル', en: 'Kokemaru' }, tag: { ja: '居合と見切り', en: 'Swordsman with parry' },
-      desc: { ja: '木のこけしの小さなお侍。刀のリーチが長く、居合ぎりで一気に間をつめる。「みきり」で技をはね返す。', en: 'A small samurai made from a wooden kokeshi doll. Long sword reach and a lunging draw-slash. Its parry turns hits around.' },
-      color: '#2b3a67', color2: '#f2e4cf', w: 28, h: 62, weight: 94, run: 4.0, acc: 0.58, air: 2.8, aacc: 0.21, jump: 10.8, dj: 9.8, grav: 0.44, fall: 8.8, ff: 13, stats: { speed: 4, power: 3, weight: 2, reach: 5, recov: 3 },
-      kit: { reach: 1.55, sp: 0.92, pw: 1.05, rr: 0.95, fx: 'slash', ov: { jab: { fx: 'slash', reach: 1.1 }, nair: { fx: 'spin' }, dair: { fx: 'slash' }, bair: { fx: 'kick' }, dtilt: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'dash', fx: 'slash', s: 11, a: 6, t: 38, v: 9.5, dmg: 10, bkb: 22, kbg: 30, ang: 38, hb: [[30, -30, 70, -30, 16]] }),
-        S: sp({ kind: 'melee', fx: 'slash', s: 12, a: 6, t: 40, dmg: 11, bkb: 24, kbg: 32, ang: 50, hb: [[24, -20, 80, -60, 16]] }),
-        U: sp({ kind: 'rise', fx: 'slash', s: 5, a: 20, t: 42, rv: 11.0, dv: 2.4, ang: 80, dmg: 7, bkb: 24, kbg: 28, hb: [[14, -50, 0, -86, 22]] }),
-        D: sp({ kind: 'counter', fx: 'slash', s: 4, a: 18, t: 50, cf: 22, cs: 4, ca: 4, dmg: 9, bkb: 26, kbg: 34, ang: 40, hb: [[34, -30, 66, -28, 22]] }),
-      } },
-    balloon: { id: 'balloon', name: { ja: 'ふうせんウサギ プカ', en: 'Puka the Balloon Bunny' }, short: { ja: 'プカ', en: 'Puka' }, tag: { ja: 'ふわふわ空中戦', en: 'Floaty air fighter' },
-      desc: { ja: 'ふうせんでできたウサギ。とても軽くてゆっくり落ち、空中ジャンプが3回。軽いので、すぐ飛ばされる。', en: 'A rabbit made of balloons. Very light, falls slowly and jumps three times in the air. Light enough to fly far.' },
-      color: '#f48fb1', color2: '#ffffff', w: 34, h: 56, weight: 84, run: 3.6, acc: 0.55, air: 3.1, aacc: 0.3, jump: 9.8, dj: 8.4, grav: 0.3, fall: 5.8, ff: 9.6, jmax: 3, stats: { speed: 3, power: 1, weight: 1, reach: 2, recov: 5 },
-      kit: { reach: 1.05, sp: 0.9, pw: 1.2, rr: 1.05, fx: 'kick', ov: { jab: { fx: 'punch' }, nair: { fx: 'spin' }, uair: { fx: 'kick' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 10, a: 1, t: 30, proj: { sp: 8.4, vy: 0, g: 0, r: 7, life: 50, dmg: 4, bkb: 8, kbg: 8, ang: 20, kind: 'dart' } }),
-        S: sp({ kind: 'melee', fx: 'kick', s: 11, a: 6, t: 38, dmg: 9, bkb: 22, kbg: 28, ang: 40, hb: [[28, -20, 56, -14, 18]] }),
-        U: sp({ kind: 'rise', fx: 'puff', s: 5, a: 24, t: 48, rv: 7.6, dv: 3.2, ang: 85, dmg: 3, bkb: 14, kbg: 14, hb: [[0, -50, 0, -50, 26]] }),
-        D: sp({ kind: 'melee', fx: 'ring', s: 6, a: 5, t: 34, dmg: 8, bkb: 20, kbg: 24, ang: 70, hb: [[0, -50, 0, -50, 40]] }),
-      } },
-    penguin: { id: 'penguin', name: { ja: 'ペンギン太鼓 ドンドコ', en: 'Dondoko the Drum Penguin' }, short: { ja: 'ドンドコ', en: 'Dondoko' }, tag: { ja: 'はね返しと衝撃波', en: 'Reflector, shockwaves' },
-      desc: { ja: '太鼓をたたくペンギンのおもちゃ。太鼓の音の波を飛ばし、「ドラムシールド」で飛び道具をはね返す。', en: 'A toy penguin with a drum. Sends out sound waves and its drum shield bounces projectiles back.' },
-      color: '#2c3e50', color2: '#f8f4ea', w: 38, h: 58, weight: 112, run: 3.0, acc: 0.5, air: 2.5, aacc: 0.19, jump: 10.2, dj: 9.2, grav: 0.45, fall: 8.8, ff: 12.8, stats: { speed: 2, power: 3, weight: 4, reach: 3, recov: 3 },
-      kit: { reach: 1.1, sp: 1.0, pw: 1.2, rr: 1.15, fx: 'punch', ov: { nair: { fx: 'spin' }, dair: { fx: 'kick' }, bair: { fx: 'kick' }, ftilt: { fx: 'punch' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 14, a: 1, t: 40, proj: { sp: 4.8, vy: 0, g: 0, r: 22, life: 60, dmg: 5, bkb: 14, kbg: 12, ang: 20, kind: 'wave' } }),
-        S: sp({ kind: 'melee', fx: 'punch', s: 14, a: 6, t: 46, dmg: 12, bkb: 25, kbg: 32, ang: 38, hb: [[26, -40, 66, -22, 20]] }),
-        U: sp({ kind: 'rise', fx: 'prop', s: 6, a: 20, t: 46, rv: 9.6, dv: 3.0, ang: 82, dmg: 6, bkb: 20, kbg: 22, hb: [[0, -40, 0, -40, 30]] }),
-        D: sp({ kind: 'reflect', fx: 'shield', s: 3, a: 22, t: 42, dmg: 5, bkb: 22, kbg: 14, ang: 40, hb: [[28, -30, 42, -30, 30]] }),
-      } },
-    // ボス（ラダーの最後）。えらべない
-    junk: { id: 'junk', boss: 1, name: { ja: 'ガラクタ大王', en: 'Junk King' }, short: { ja: 'ガラクタ大王', en: 'Junk King' }, tag: { ja: 'ラスボス', en: 'Final boss' },
-      desc: { ja: 'こわれたおもちゃを積みあげた、工房の王さま。重くて大きい。', en: 'The king of the workshop, stacked from broken toys. Huge and heavy.' },
-      color: '#7a6a58', color2: '#e8b73a', w: 64, h: 92, weight: 160, run: 2.5, acc: 0.4, air: 2.2, aacc: 0.14, jump: 10.0, dj: 9.2, grav: 0.46, fall: 9.8, ff: 13.4, stats: { speed: 1, power: 5, weight: 5, reach: 4, recov: 2 },
-      kit: { reach: 1.2, sp: 1.2, pw: 1.45, rr: 1.55, fx: 'punch', ov: { nair: { fx: 'spin' } } },
-      sp: {
-        N: sp({ kind: 'proj', fx: 'cast', s: 16, a: 1, t: 40, proj: { sp: 6.5, vy: 0, g: 0, r: 20, life: 80, dmg: 9, bkb: 18, kbg: 20, ang: 25, kind: 'gear' } }),
-        S: sp({ kind: 'melee', fx: 'punch', s: 20, a: 6, t: 58, dmg: 19, bkb: 32, kbg: 44, ang: 38, hb: [[30, -80, 90, -20, 42]] }),
-        U: sp({ kind: 'rise', fx: 'puff', s: 6, a: 16, t: 42, rv: 9.8, dv: 2.4, ang: 80, dmg: 6, bkb: 18, kbg: 20, hb: [[0, -60, 0, -60, 44]] }),
-        D: sp({ kind: 'pound', fx: 'body', s: 16, t: 58, fv: 14, dmg: 13, bkb: 20, kbg: 28, ang: -78, hb: [[0, 8, 0, 8, 50]], land: { a: 7, dmg: 10, bkb: 26, kbg: 28, ang: 50, hb: [[60, -8, 60, -8, 46], [-60, -8, -60, -8, 46]] } }),
-      } },
-  };
-  const CHAR_IDS = ['robo', 'duck', 'tin', 'bear', 'top', 'jack', 'ninja', 'wiz', 'cat', 'tank', 'giraffe', 'ball', 'crab', 'snail', 'kaiju', 'samurai', 'balloon', 'penguin'];
+  // おもちゃのデータ（技の数値・色・名前）は brawl/kits.js。ここは、それを読んで動かす。
+  const K = root.BrawlKits || (typeof require === 'function' ? require('./kits.js') : null);
+  if (!K) throw new Error('brawl/kits.js must be loaded before engine.js');
+  const CH = {};
+  const CHAR_IDS = [];
   const MOVES = {};
-  for (const id of Object.keys(CH)) {
-    const c = CH[id];
-    const m = normals(c.kit);
-    for (const k of ['N', 'S', 'U', 'D']) m['sp' + k] = Object.assign({}, c.sp[k], { key: 'sp' + k });
-    for (const k of NORMALS.concat(EXTRAS)) m[k].key = k;
-    MOVES[id] = m;
-  }
+  const sp = K.sp;
   // 共通の技：つかみ・なげ
   const GRAB = { s: 6, a: 3, t: 34, hb: [[30, -30, 42, -30, 20]] };
   const THROWS = { f: { dmg: 6, bkb: 36, kbg: 50, ang: 38 }, b: { dmg: 7, bkb: 36, kbg: 50, ang: 142 }, u: { dmg: 5, bkb: 40, kbg: 46, ang: 88 }, d: { dmg: 4, bkb: 30, kbg: 36, ang: 72 } };
-  const TM = { robo: 1, duck: 1, tin: 0.95, bear: 1.3, top: 0.85, jack: 0.95, junk: 1.3, ninja: 0.9, wiz: 0.9, cat: 0.9, tank: 1.2, giraffe: 1, ball: 0.95, crab: 1, snail: 1, kaiju: 1.2, samurai: 1, balloon: 0.8, penguin: 1.05 };
 
   // ------------------------------------------------------------------------------------------------ 試合の状態
   // create({ seed, stage, fighters:[{ ch, lvl（0＝人、1〜3＝CPU）}], mode:'stock'|'time', stocks, time（秒）, training })
@@ -402,13 +206,82 @@
   const moveOf = (f, key) => MOVES[f.ch][key] || null;
   const alive = f => f.s !== 'out';
 
-  // 共通のつかみの技（キャラごとに少しだけ大きさがちがう）
-  for (const id of Object.keys(CH)) {
-    const r = CH[id].kit.rr;
-    const gx = id === 'junk' ? 1.5 : 1;
-    MOVES[id].dgrab = { key: 'dgrab', kind: 'grab', fx: 'grab', s: 9, a: 4, t: 42, dmg: 0, bkb: 0, kbg: 0, ang: 0, sm: 0, ll: 0, hb: [[GRAB.hb[0][0] * gx * 1.12 + 6, -CH[id].h * 0.5, GRAB.hb[0][2] * gx * 1.3 + 8, -CH[id].h * 0.5, 20 * Math.max(1, r * 0.85)]] };
-    MOVES[id].grab = { key: 'grab', kind: 'grab', fx: 'grab', s: GRAB.s, a: GRAB.a, t: GRAB.t, dmg: 0, bkb: 0, kbg: 0, ang: 0, sm: 0, ll: 0, hb: [[GRAB.hb[0][0] * (id === 'junk' ? 1.5 : 1), -CH[id].h * 0.5, GRAB.hb[0][2] * (id === 'junk' ? 1.5 : 1.04), -CH[id].h * 0.5, 20 * Math.max(1, r * 0.85)]] };
+  // おもちゃ1人ぶんの技の表（MOVES）を作る。つかみは、キャラごとに少しだけ大きさがちがう（c.gx）。データから作るだけで、状態は持たない
+  function buildChar(c) {
+    const id = c.id, m = normals(c.kit);
+    for (const k of ['N', 'S', 'U', 'D']) m['sp' + k] = Object.assign({}, c.sp[k], { key: 'sp' + k });
+    for (const k of NORMALS.concat(EXTRAS)) m[k].key = k;
+    const r = c.kit.rr, gx = c.gx || 1;
+    m.dgrab = { key: 'dgrab', kind: 'grab', fx: 'grab', s: 9, a: 4, t: 42, dmg: 0, bkb: 0, kbg: 0, ang: 0, sm: 0, ll: 0, hb: [[GRAB.hb[0][0] * gx * 1.12 + 6, -c.h * 0.5, GRAB.hb[0][2] * gx * 1.3 + 8, -c.h * 0.5, 20 * Math.max(1, r * 0.85)]] };
+    m.grab = { key: 'grab', kind: 'grab', fx: 'grab', s: GRAB.s, a: GRAB.a, t: GRAB.t, dmg: 0, bkb: 0, kbg: 0, ang: 0, sm: 0, ll: 0, hb: [[GRAB.hb[0][0] * gx, -c.h * 0.5, GRAB.hb[0][2] * (gx === 1 ? 1.04 : gx), -c.h * 0.5, 20 * Math.max(1, r * 0.85)]] };
+    MOVES[id] = m;
   }
+  // おもちゃを足す（kits.js の CH と、テストや後から足すもの）。同じ id は足せない。boss:1 は CHAR_IDS（選べるおもちゃ）に入らない
+  function defineChar(c) {
+    if (!c || !c.id || CH[c.id]) throw new Error('defineChar: bad or duplicate id ' + (c && c.id));
+    for (const k of ['N', 'S', 'U', 'D']) { const m = c.sp && c.sp[k]; if (!m) throw new Error('defineChar ' + c.id + ': missing special ' + k); if (m.kind !== 'melee' && !KINDS[m.kind] && BUILTIN_KINDS.indexOf(m.kind) < 0) throw new Error('defineChar ' + c.id + ': unknown special kind ' + m.kind); }
+    CH[c.id] = c; buildChar(c); if (!c.boss) CHAR_IDS.push(c.id);
+    return c;
+  }
+  // とくぎの種類を足す。ここに書いた kind は、とくぎ sp({ kind: 名前 }) で使える。すべて任意：
+  //   melee：true なら、ふつうの近接と同じ（s〜s+a フレームに hb が出る）。boxes(A, m, fr)：自分で当たり判定を返す { hbs, p, t }（p＝ダメージの表）
+  //   canUse(st, f, m, grounded)：false なら、いまは出せない（空中で使えない・回数ぎれ など）
+  //   tick(st, f, C, m, fr, cx)：とくぎが出ているあいだ毎フレーム。cx.grav（重力）・cx.free（true なら、ふつうの摩擦と空中の操作をしない）・cx.ax / cx.ay / cx.inp / cx.grounded
+  //   onHit(st, A, D, h)：この技が当たってダメージが入った後（h.m＝この技、h.p＝当たりの表）
+  //   ai(st, f, m, T, cx)：CPU がこのとくぎを出したいとき { hold, pulse } を返す（cx＝距離・強さ・向きなど）。なければ「近ければ近接」と同じ
+  const KINDS = {};
+  const BUILTIN_KINDS = ['melee', 'proj', 'dash', 'rise', 'counter', 'spin', 'cmdgrab', 'pound', 'mine', 'buff', 'tele', 'reflect'];
+  function defineKind(name, h) { if (KINDS[name] || BUILTIN_KINDS.indexOf(name) >= 0) throw new Error('defineKind: duplicate ' + name); KINDS[name] = h || {}; return h; }
+  // 飛び道具の種類（p.k）：{ update(st, p) } を足すと、毎フレーム動いたあとに呼ばれる（曲がる・分かれる・もどる など）。絵は art.js の DRAWPROJ
+  const PROJ = {};
+  function defineProj(name, h) { if (PROJ[name]) throw new Error('defineProj: duplicate ' + name); PROJ[name] = h || {}; return h; }
+
+  // ------------------------------------------------------------------------------------------------ ちがいの数字（おもちゃどうしが似すぎていないかを測る）
+  // sigOf(id)：そのおもちゃの技ぜんぶを、0〜1 にそろえた数の列にしたもの（あたり判定の長さ・高さ・大きさ・数、はじまる／おわるフレーム、ダメージ、ふっとばし、
+  // 飛び道具の速さ・大きさ、とくぎの動き、体）と、種類の名前（kind・fx）。dist(a, b)：2人の「ちがい」を 0〜100 で（ぜんぶの技で平均）。テストが、どの2人でも下限を超えることを調べる。
+  const SIG_NUM = [['s', 40], ['a', 30], ['t', 90], ['dmg', 22], ['bkb', 40], ['kbg', 60], ['v', 12], ['rv', 14], ['dv', 4], ['fv', 16], ['td', 260], ['rh', 12], ['buff', 600], ['cf', 40], ['ca', 10], ['arm', 40]];
+  const SIG_PROJ = [['sp', 14], ['vy', 8], ['g', 0.6], ['r', 36], ['life', 200], ['dmg', 22], ['bkb', 40], ['kbg', 60], ['arm', 80], ['max', 4]];
+  const sg = (a, b) => Math.min(1, Math.abs(a - b));
+  function moveSig(x) {
+    const num = [], cat = [x.kind, x.fx];
+    for (const [k, sc] of SIG_NUM) num.push((Array.isArray(x[k]) ? x[k][1] - x[k][0] : x[k] || 0) / sc);
+    const hb = (x.kind === 'pound' && x.land ? x.hb.concat(x.land.hb) : x.hb) || [];
+    let fx0 = 0, bx0 = 0, ty = 0, by = 0, rm = 0;
+    for (const h of hb) { fx0 = Math.max(fx0, h[0], h[2]); bx0 = Math.min(bx0, h[0], h[2]); ty = Math.min(ty, h[1] - h[4], h[3] - h[4]); by = Math.max(by, h[1] + h[4], h[3] + h[4]); rm = Math.max(rm, h[4]); }
+    num.push(fx0 / 150, -bx0 / 150, -ty / 140, by / 140 + 0.2, rm / 60, hb.length / 3);
+    const an = V(x.ang || 0); num.push(an[0], an[1]);
+    num.push(x.ll / 24, x.sm ? 1 : 0);
+    if (x.kind === 'pound' && x.land) num.push(x.land.a / 10, x.land.dmg / 22); else num.push(0, 0);
+    const p = x.proj || {}; for (const [k, sc] of SIG_PROJ) num.push((p[k] || 0) / sc);
+    cat.push(p.kind || '');
+    return { num, cat };
+  }
+  const sigCache = {};
+  function sigOf(id) {
+    if (sigCache[id]) return sigCache[id];
+    const m = MOVES[id], c = CH[id], parts = [];
+    for (const k of NORMALS) parts.push({ w: 1, s: moveSig(m[k]) });
+    for (const k of EXTRAS) parts.push({ w: 0.5, s: moveSig(m[k]) });
+    for (const k of ['spN', 'spS', 'spU', 'spD']) parts.push({ w: 3.5, s: moveSig(m[k]) });
+    const body = { num: [c.weight / 170, c.run / 5, c.jump / 13, c.dj / 12, (c.jmax || 1) / 4, c.w / 70, c.h / 100, c.grav / 0.5, c.fall / 10, c.air / 3.6], cat: [] };
+    parts.push({ w: 6, s: body });
+    return (sigCache[id] = parts);
+  }
+  // 2人のちがい（0〜100）。技ごとに「数の差の平均」と「種類が同じか」を混ぜて、重みつきで平均する
+  function dist(a, b) {
+    const A = sigOf(a), B = sigOf(b); let tot = 0, wt = 0;
+    for (let i = 0; i < A.length; i++) {
+      const x = A[i].s, y = B[i].s; let d = 0;
+      for (let k = 0; k < x.num.length; k++) d += sg(x.num[k], y.num[k]);
+      d = x.num.length ? d / x.num.length : 0;
+      let cd = 0; for (let k = 0; k < x.cat.length; k++) if (x.cat[k] !== y.cat[k]) cd++;
+      const c = x.cat.length ? cd / x.cat.length : 0;
+      tot += A[i].w * (d * 0.75 + c * 0.25); wt += A[i].w;
+    }
+    return Math.round(tot / wt * 10000) / 100;
+  }
+  const throwMul = id => CH[id].tm || 1;
+  for (const c of K.CH_LIST) defineChar(c);
 
   // ------------------------------------------------------------------------------------------------ 動き
   function ev(st, o) { st.ev.push(o); return o; }
@@ -812,6 +685,7 @@
       if (!grounded && f.help) key = null;
       else if (!grounded && m.kind === 'dash' && f.sbUsed) key = null;
       else if (!grounded && m.kind === 'cmdgrab') key = null;
+      else if (KINDS[m.kind] && KINDS[m.kind].canUse && !KINDS[m.kind].canUse(st, f, m, grounded)) key = null;
       if (key) { if (ax && (key === 'spS' || grounded)) f.face = ax; f.bs = 0; f.ba = 0; f.bm = 0; startMove(st, f, key, ax, ay); return true; }
     }
     if (f.bm > 0 && grounded) {
@@ -861,6 +735,7 @@
     if (m.arm && fr >= m.arm[0] && fr <= m.arm[1]) f.arm = 1;
     if (k === 'reflect' && fr >= m.s && fr < m.s + m.a) f.rfl = 1;
     let grav = C.grav, aair = 0.45;
+    const cx = { grav, free: false, ax, ay, inp, grounded };
     if (k === 'dash') {
       if (fr >= m.s && fr < m.s + m.a) { f.vx = f.face * m.v; if (!grounded) { f.vy = 0; grav = 0; } }
       else if (fr === m.s + m.a) f.vx *= 0.35;
@@ -882,13 +757,17 @@
       if (f.pf) { f.mf = m.s; grav = 0.9; f.vy = Math.max(f.vy, m.fv * 0.7); }
     } else if (k === 'counter') {
       if (fr >= m.s && fr < m.s + m.a) f.arm = 2;
+    } else if (KINDS[k] && KINDS[k].tick) {
+      KINDS[k].tick(st, f, C, m, fr, cx);
+      grav = cx.grav;
     } else if (k === 'tele') {
       // ワープ：はじまるまでは消えている（よけ）。むきは、はじめに入れていた方向（なければ m.dd）
       if (fr >= 2 && fr < m.s) { f.inv = 2; f.vx = 0; f.vy = 0; grav = 0; }
       if (fr === m.s) teleport(st, f, C, m);
       if (fr > m.s && fr < m.s + 3) { grav = 0.15; }
     }
-    if (grounded) { if (k !== 'dash') f.vx *= 0.8; }
+    if (cx.free) { /* 新しい種類のとくぎが、動きを自分で決めている */ }
+    else if (grounded) { if (k !== 'dash') f.vx *= 0.8; }
     else if (k !== 'dash' && k !== 'rise' && k !== 'spin') { if (ax) { f.vx += ax * C.aacc * aair; } f.vx *= 0.99; }
     const lnd = physics(st, f, C, { grav });
     if (lnd) onLand(st, f, C);
@@ -951,7 +830,7 @@
     g.s = 'lag'; g.lag = 14; g.grabbing = -1; d.s = 'free'; d.by = -1; d.inv = 14; d.vx = g.face * 1.2; d.sf = 0;
   }
   function throwFighter(st, A, D, dir) {
-    const T = Object.assign({}, THROWS[dir], (CH[A.ch].tw || {})[dir]), tm = TM[A.ch] || 1;
+    const T = Object.assign({}, THROWS[dir], (CH[A.ch].tw || {})[dir]), tm = throwMul(A.ch);
     const p = { dmg: T.dmg * tm, bkb: T.bkb, kbg: T.kbg * tm, ang: dir === 'b' ? 142 : T.ang, throw: 1 };
     A.s = 'lag'; A.lag = 18; A.grabbing = -1; A.sf = 0;
     D.by = -1; D.s = 'free';
@@ -981,6 +860,10 @@
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = m; t = (fr - m.s) / Math.max(1, m.a - 1); }
     } else if (k === 'grab' || k === 'cmdgrab') {
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = m; t = (fr - m.s) / Math.max(1, m.a - 1); }
+    } else if (KINDS[k]) {
+      const KH = KINDS[k];
+      if (KH.boxes) { const r = KH.boxes(A, m, fr); if (r) { hbs = r.hbs; p = r.p; t = r.t || 0; } }
+      else if (KH.melee && fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = m; t = (fr - m.s) / Math.max(1, m.a - 1); }
     }
     if (!hbs) return null;
     const out = [];
@@ -1085,6 +968,7 @@
     launch(st, A, D, Object.assign({}, p, { dmg: d }), face, h.x, h.y, h.kind);
     A.hold = Math.max(A.hold, hs); D.hold = hs + 1;
     if (h.pj) { /* 飛び道具：持ち主は止まらない */ A.hold = Math.max(0, A.hold - hs); }
+    if (h.m && KINDS[h.m.kind] && KINDS[h.m.kind].onHit) KINDS[h.m.kind].onHit(st, A, D, h);
   }
   // 吹っ飛ばし：ダメージが大きいほど、強く飛ぶ
   function launch(st, A, D, p, face, hx, hy, how) {
@@ -1130,6 +1014,7 @@
       }
       p.t++; p.life--;
       p.vy += p.g; p.x += p.vx; p.y += p.vy;
+      { const PK = PROJ[p.k]; if (PK && PK.update) PK.update(st, p); }
       if (p.k === 'mine') {
         // 床に落ちたら止まる
         for (const s of S.solids) if (p.x >= s.x1 && p.x <= s.x2 && p.y >= s.y1 - p.r * 0.5 && p.y <= s.y1 + 14 && p.vy >= 0) { p.y = s.y1 - p.r * 0.5; p.vy = 0; p.g = 0; }
@@ -1429,6 +1314,11 @@
     }
     // つかみ：まもっている相手
     if (T.s === 'shield' && adx < 60 && ady < 40 && lvl >= 2 && r < 0.8) { ai.hold = faceT > 0 ? B.R : B.L; ai.pulse = B.G; ai.pt = 8; ai.pl = 'grab'; return; }
+    // 新しい種類のとくぎ：kits の kind が ai() を持っていれば、CPU はそれを聞いてみる
+    for (const k of ['spN', 'spS', 'spU', 'spD']) {
+      const m = fm[k], KH = KINDS[m.kind];
+      if (KH && KH.ai) { const w = KH.ai(st, f, m, T, { lvl, dx, dy, adx, ady, faceT, grounded, r, key: k }); if (w) { ai.hold = w.hold | 0; ai.pulse = B.S; ai.pt = w.pt || 8; ai.pl = 'kind-' + m.kind; return; } }
+    }
     // 近い：地上の技
     const ground = ['jab', 'ftilt', 'utilt', 'dtilt', 'dsmash'];
     let hitK = null;
@@ -1437,7 +1327,7 @@
     const cand = [];
     for (const k of ground) if (wouldHit(f, k, T, slack, lead)) cand.push(k);
     const smashK = ['fsmash', 'usmash', 'dsmash'].filter(k => wouldHit(f, k, T, slack - 2, lead + 8));
-    for (const k of ['spN', 'spS', 'spD']) { const m = fm[k]; if ((m.kind === 'melee' || m.kind === 'dash' || m.kind === 'cmdgrab' || m.kind === 'spin') && wouldHit(f, k, T, slack, lead + 4)) cand.push(k); }
+    for (const k of ['spN', 'spS', 'spD']) { const m = fm[k]; if ((m.kind === 'melee' || m.kind === 'dash' || m.kind === 'cmdgrab' || m.kind === 'spin' || (KINDS[m.kind] && KINDS[m.kind].melee)) && wouldHit(f, k, T, slack, lead + 4)) cand.push(k); }
     if (fm.spD.kind === 'counter' && lvl === 3 && Tm && adx < 130 && T.mf < Tm.s + 2) cand.push('spD');
     f.face = saveFace;
     if (cand.length || smashK.length) {
@@ -1551,7 +1441,7 @@
     return b;
   }
   const api = {
-    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
+    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, defineKind, defineProj, KINDS, PROJ, sigOf, dist, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
     sameJSON: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BrawlEngine = api;

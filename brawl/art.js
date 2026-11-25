@@ -5,6 +5,13 @@
   const TAU = Math.PI * 2, INK = '#2a1d17';
   let E = null, CFG = { reduced: false, dark: false, T: s => s, en: false };
   const PCOL = ['#ff5a5a', '#4aa3ff', '#4fcf6a', '#ffd23f'];
+  const PSHAPE = ['tri', 'circle', 'square', 'diamond']; // 色だけに頼らない：スロットごとの形のしるし
+  // 色ちがい（見た目だけ）：R.pal[スロット] が brawl/kits.js の palettes(おもちゃ) の何番か
+  function palOf(ch, idx) {
+    const C = E.CH[ch], K = root.BrawlKits;
+    if (!K || !C) return { col: C ? C.color : '#888', col2: C ? C.color2 : '#fff' };
+    const P = K.palettes(C); return P[((idx | 0) % P.length + P.length) % P.length] || P[0];
+  }
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -340,7 +347,7 @@
   const FX_LINES = { slash: 1, kick: 1, punch: 1, spin: 1, spring: 1, hug: 1, drill: 1, ring: 1, shield: 1, lid: 1, prop: 1, horn: 1 };
 
   // ------------------------------------------------------------------ 状態
-  const R = { parts: [], cam: { x: 0, y: -80, z: 1, tx: 0, ty: -80, tz: 1 }, shake: 0, flash: 0, fl: [], t: 0, pops: [], W: 800, H: 450, dpr: 1, banner: null, slow: 0 };
+  const R = { pal: [], safeT: 0, safeB: 0, parts: [], cam: { x: 0, y: -80, z: 1, tx: 0, ty: -80, tz: 1 }, shake: 0, flash: 0, fl: [], t: 0, pops: [], W: 800, H: 450, dpr: 1, banner: null, slow: 0 };
   function reset(st) {
     R.parts.length = 0; R.pops.length = 0; R.shake = 0; R.flash = 0; R.t = 0; R.banner = null; R.slow = 0;
     R.fl = st.fighters.map(f => ({ ph: 0, land: 0, hit: 0, sq: 0, tumble: 0, face: f.face, trail: [], blink: 0, show: 0, flashT: 0, jx: 0 }));
@@ -377,7 +384,7 @@
         const c = E.CH[st.fighters[e.i].ch];
         const a = Math.atan2(e.vy, e.vx);
         for (let i = 0; i < 5; i++) addPart({ k: 'star', x: e.x, y: e.y, vx: Math.cos(a + (i - 2) * 0.35) * 5, vy: Math.sin(a + (i - 2) * 0.35) * 5, g: 0, life: 40, max: 40, size: 14 + i % 2 * 8, col: i % 2 ? c.color : '#fff', rot: i });
-        addPart({ k: 'ring', x: e.x, y: e.y, life: 28, max: 28, size: 120, col: c.color });
+        addPart({ k: 'ring', x: e.x, y: e.y, life: 28, max: 28, size: 120, col: palOf(c.id, R.pal[e.i]).col });
         addPart({ k: 'ray', x: e.x, y: e.y, life: 22, max: 22, size: 260, rot: Math.atan2(e.vy, e.vx), col: '#fff' });
         R.shake = Math.max(R.shake, 12); R.flash = 0.55; R.slow = 28;
         if (e.star) { for (let i = 0; i < 9; i++) addPart({ k: 'star', x: e.x, y: e.y, vx: Math.cos(i * TAU / 9) * 6, vy: Math.sin(i * TAU / 9) * 6, g: 0, life: 50, max: 50, size: 12 + i % 3 * 6, col: i % 2 ? '#ffd23f' : '#fff', rot: i }); R.slow = 40; R.flash = 0.8; }
@@ -433,24 +440,31 @@
     }
     camTarget(st, false);
   }
+  // カメラ：生きているみんなが画面に入るように、はなれたら引いて、近づいたら寄る。速く飛んでいる子は、行く先を少し先取りする。
+  // HUD（上か下の帯）とヘッダーにかくれないように、使える帯の中に全員を入れる（R.safeT / R.safeB）。小さい画面ほど、寄りぎみ（読めるように）。
   function camTarget(st, snap) {
     const S = E.STAGES[st.stage], cam = R.cam, bl = S.blast;
     let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, n = 0;
     for (const f of st.fighters) {
       if (f.s === 'out' || f.s === 'dead') continue;
       const C = E.CH[f.ch], cy = f.y - C.h / 2; n++;
-      const px = clamp(f.x, bl.l + 60, bl.r - 60), py = clamp(cy, bl.t + 40, bl.b - 40);
+      const look = f.s === 'hurt' ? 4 : 9; // 飛ばされているときは先を見すぎない
+      const px = clamp(f.x + clamp(f.vx * look, -110, 110), bl.l + 60, bl.r - 60), py = clamp(cy + clamp(f.vy * look * 0.5, -60, 60), bl.t + 40, bl.b - 40);
       x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
     }
     if (!n) { x0 = x1 = 0; y0 = y1 = -80; }
-    const asp = R.W / R.H, padX = 230, padY = 170;
-    let w = Math.max(x1 - x0 + padX * 2, 780), h = Math.max(y1 - y0 + padY * 2, 780 / asp);
+    const sT = R.safeT || 0, sB = R.safeB || 0, bandH = Math.max(80, R.H - sT - sB);
+    const asp = R.W / bandH, padX = 230, padY = 170;
+    const minW = R.W >= 700 ? 780 : 780 - (700 - Math.max(360, R.W)) * 0.55; // せまい画面では、すこし寄って、おもちゃを読みやすく
+    let w = Math.max(x1 - x0 + padX * 2, minW), h = Math.max(y1 - y0 + padY * 2, minW / asp);
     if (w / h > asp) h = w / asp; else w = h * asp;
     w = Math.min(w, (bl.r - bl.l) + 300); h = w / asp;
+    const z = R.W / w, vh = R.H / z; // 画面ぜんぶの高さ（ワールド）
     let cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 - 20 + h * 0.07;
     cx = clamp(cx, bl.l + 80 + w / 2 - 300, bl.r - 80 - w / 2 + 300); cy = clamp(cy, bl.t + h / 2 - 260, bl.b + 120 - h / 2);
     if (w >= (bl.r - bl.l) + 300 - 1) cx = (bl.l + bl.r) / 2;
-    cam.tx = cx; cam.ty = cy; cam.tz = R.W / w;
+    cy -= (sT - sB) / (2 * z); // 使える帯の真ん中に、みんなの真ん中がくる
+    cam.tx = cx; cam.ty = cy; cam.tz = z;
     if (snap) { cam.x = cx; cam.y = cy; cam.z = cam.tz; return; }
     const k = 0.1;
     cam.x += (cam.tx - cam.x) * k; cam.y += (cam.ty - cam.y) * k; cam.z += (cam.tz - cam.z) * (cam.tz < cam.z ? 0.14 : 0.07);
@@ -613,8 +627,8 @@
     if (f.s === 'free' && f.gr >= 0 && Math.abs(f.vx) > 0.6) c.rotate(face * Math.min(0.12, Math.abs(f.vx) * 0.025));
     if (f.s === 'ledge') { c.translate(0, 0); }
     c.scale(face * P.sx, P.sy);
-    const col = C.color;
-    DRAW[f.ch](c, P, { col, col2: C.color2 });
+    const pl = palOf(f.ch, R.pal[f.i]);
+    DRAW[f.ch](c, P, { col: pl.col, col2: pl.col2 });
     if (a.flashT > 0) { c.globalAlpha = 0.55 * a.flashT / 6; c.fillStyle = '#fff'; c.beginPath(); c.ellipse(0, -C.h * 0.5, C.w * 0.75, C.h * 0.55, 0, 0, TAU); c.fill(); c.globalAlpha = 1; }
     c.restore();
     // 攻撃エフェクト（軌跡）
@@ -692,6 +706,10 @@
   function frame(c, st, view, opt) {
     opt = opt || {};
     const W = view.W, H = view.H, dpr = view.dpr; R.W = W; R.H = H; R.dpr = dpr;
+    { // HUD とヘッダーがおおう帯（カメラは、この帯の外に出ないように、みんなを入れる）
+      const M = hudMetrics(view, st.fighters.length, opt), hd = opt.headerH || 0;
+      if (opt.nohud) { R.safeT = hd; R.safeB = 0; } else if (M.top) { R.safeT = Math.max(hd, M.y + M.ph + 4); R.safeB = 0; } else { R.safeT = hd; R.safeB = Math.max(0, H - M.y + 4); }
+    }
     const S = E.STAGES[st.stage], th = TH[S.theme], cam = R.cam;
     c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
     const z = cam.z;
@@ -709,21 +727,13 @@
     for (const f of st.fighters) if (f.s !== 'atk' || true) drawFighter(c, st, f, opt);
     for (const p of st.pr) drawProj(c, p);
     drawParts(c);
-    // 名前のしるし
-    for (const f of st.fighters) {
-      if (f.s === 'dead' || f.s === 'out') continue;
-      const C = E.CH[f.ch], pc = PCOL[f.i % 4];
-      c.save(); c.translate(f.x, f.y - C.h - 22 - (f.ch === 'jack' ? 20 : 0) - (f.ch === 'tin' ? 8 : 0));
-      c.fillStyle = pc; c.beginPath(); c.moveTo(-6, -4); c.lineTo(6, -4); c.lineTo(0, 5); c.closePath(); c.fill(); c.lineWidth = 1.6; c.strokeStyle = INK; c.stroke();
-      c.font = '800 11px system-ui,sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = INK; const lb = labelOf(f, st, opt); c.strokeText(lb, 0, -9); c.fillStyle = pc; c.fillText(lb, 0, -9);
-      c.restore();
-    }
     if (opt.boxes) {
       c.save(); c.lineWidth = 1.6;
       for (const f of st.fighters) { const C = E.CH[f.ch]; c.strokeStyle = 'rgba(80,160,255,.9)'; c.strokeRect(f.x - C.w / 2, f.y - C.h, C.w, C.h); const b = E.activeBoxes(st, f.i); if (b) { c.strokeStyle = 'rgba(255,60,60,.95)'; c.fillStyle = 'rgba(255,60,60,.25)'; for (const bx of b.boxes) { c.beginPath(); c.arc(bx.x, bx.y, bx.r, 0, TAU); c.fill(); c.stroke(); } } }
       c.restore();
     }
     c.restore();
+    drawTags(c, st, view, opt, shx, shy);
     if (R.flash > 0) { c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = 'rgba(255,255,255,' + R.flash * 0.5 + ')'; c.fillRect(0, 0, W, H); }
     if (CFG.dark) { c.setTransform(dpr, 0, 0, dpr, 0, 0); }
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -735,29 +745,107 @@
     if (k < 0.5) { const t = k / 0.5; return 'rgb(255,' + Math.round(255 - 40 * t) + ',' + Math.round(255 - 180 * t) + ')'; }
     const t = (k - 0.5) / 0.5; return 'rgb(255,' + Math.round(215 - 170 * t) + ',' + Math.round(75 - 40 * t) + ')';
   }
+  // ---- 同じ画面で2〜4人：スロットごとの色＋形のしるし・名前・ダメージ%・残機。HUD は下の帯（タッチの横向きでは上の帯）。
+  function glyph(c, kind, x, y, r, fill) {
+    c.beginPath();
+    if (kind === 'circle') c.arc(x, y, r, 0, TAU);
+    else if (kind === 'square') { c.rect(x - r * 0.85, y - r * 0.85, r * 1.7, r * 1.7); }
+    else if (kind === 'diamond') { c.moveTo(x, y - r * 1.15); c.lineTo(x + r * 1.05, y); c.lineTo(x, y + r * 1.15); c.lineTo(x - r * 1.05, y); c.closePath(); }
+    else { c.moveTo(x, y - r * 1.05); c.lineTo(x + r * 1.1, y + r * 0.85); c.lineTo(x - r * 1.1, y + r * 0.85); c.closePath(); }
+    c.fillStyle = fill; c.fill(); c.lineWidth = 1.6; c.lineJoin = 'round'; c.strokeStyle = INK; c.stroke();
+  }
+  function fitText(c, s, maxW) { if (c.measureText(s).width <= maxW) return s; while (s.length > 1 && c.measureText(s + '…').width > maxW) s = s.slice(0, -1); return s + '…'; }
+  function pctText(c, f, x, y, px, align, scale) { // 数字だけ大きく、% は小さく。ふちどりで、どんな背景でも読める
+    const n = String(Math.floor(f.pct)), big = px, sm = Math.round(px * 0.55);
+    c.save(); c.translate(x, y); c.scale(scale, scale); c.textBaseline = 'alphabetic'; c.lineJoin = 'round';
+    c.font = '800 ' + big + 'px "Dela Gothic One",system-ui,sans-serif'; const wn = c.measureText(n).width;
+    c.font = '800 ' + sm + 'px "Dela Gothic One",system-ui,sans-serif'; const wp = c.measureText('%').width;
+    const x0 = align === 'right' ? -(wn + wp) : 0;
+    c.lineWidth = Math.max(3, px * 0.16); c.strokeStyle = INK; c.fillStyle = pctColor(f.pct);
+    c.font = '800 ' + big + 'px "Dela Gothic One",system-ui,sans-serif'; c.textAlign = 'left'; c.strokeText(n, x0, 0); c.fillText(n, x0, 0);
+    c.font = '800 ' + sm + 'px "Dela Gothic One",system-ui,sans-serif'; c.strokeText('%', x0 + wn + 1, 0); c.fillText('%', x0 + wn + 1, 0);
+    c.restore();
+  }
+  function hudMetrics(view, n, opt) {
+    const W = view.W, H = view.H, gap = 6;
+    const iL = opt.hudInsetL != null ? opt.hudInsetL : (opt.hudInset || 0), iR = opt.hudInsetR != null ? opt.hudInsetR : (opt.hudInset || 0);
+    const avail = W - iL - iR - 12;
+    const pw = clamp((avail - gap * (n - 1)) / n, 56, 156);
+    const small = pw < 104 || H < 430, ph = small ? 44 : 58, total = pw * n + gap * (n - 1);
+    const top = opt.hudTop != null && opt.hudTop >= 0;
+    return { pw, ph, small, gap, x0: iL + 6 + Math.max(0, (avail - total) / 2), y: top ? opt.hudTop : H - ph - (opt.hudBottom != null ? opt.hudBottom : 8), top, n };
+  }
   function drawHud(c, st, view, opt) {
-    const W = view.W, H = view.H, n = st.fighters.length;
-    const pw = clamp(Math.min(130, (W - (opt.hudInset || 0) * 2 - 16) / n - 6), 66, 130), ph = pw > 100 ? 54 : 46, y = H - ph - (opt.hudBottom || 8), small = pw < 100;
-    const total = pw * n + 8 * (n - 1), x0 = (W - total) / 2;
+    const n = st.fighters.length, M = hudMetrics(view, n, opt), { pw, ph, small } = M;
+    const fs0 = small ? 10 : 11.5;
     for (let i = 0; i < n; i++) {
-      const f = st.fighters[i], C = E.CH[f.ch], x = x0 + i * (pw + 8), a = R.fl[i] || { hit: 0 };
-      const pc = PCOL[i % 4], out = f.s === 'out';
-      c.save(); c.globalAlpha = out ? 0.4 : 1;
-      c.fillStyle = 'rgba(20,14,10,.62)'; rr(c, x, y, pw, ph, 10); c.fill(); c.lineWidth = 2; c.strokeStyle = pc; c.stroke();
-      // 顔
-      const r = small ? 11 : 13; c.fillStyle = C.color; c.beginPath(); c.arc(x + 8 + r, y + 8 + r, r, 0, TAU); c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
-      c.fillStyle = '#fff'; c.font = '800 ' + (small ? 11 : 13) + 'px system-ui,sans-serif'; c.textAlign = 'center'; c.fillText(C.short[CFG.en ? 'en' : 'ja'].slice(0, 1), x + 8 + r, y + 8 + r + 4.5);
-      // ダメージ%
-      const sc = 1 + a.hit * 0.03; c.save(); c.translate(x + pw - 6, y + ph - 12); c.scale(sc, sc);
-      c.font = '800 ' + (small ? 22 : 28) + 'px "Dela Gothic One",system-ui,sans-serif'; c.textAlign = 'right'; c.lineWidth = 4; c.strokeStyle = INK; const t = Math.floor(f.pct) + '%'; c.strokeText(t, 0, 0); c.fillStyle = pctColor(f.pct); c.fillText(t, 0, 0); c.restore();
-      // 残機・スコア
-      if (st.mode === 'time' && !st.sudden) { c.fillStyle = '#fff'; c.font = '800 ' + (small ? 11 : 13) + 'px system-ui,sans-serif'; c.textAlign = 'left'; c.fillText((st.sc[i] >= 0 ? '+' : '') + st.sc[i], x + 8 + r * 2 + 6, y + 8 + r + 4.5); }
-      else if (st.training) { /* 練習：残機なし */ }
-      else { const mx = Math.min(f.stk, 5); for (let k = 0; k < mx; k++) { c.fillStyle = C.color; c.beginPath(); c.arc(x + 8 + r * 2 + 8 + k * 9, y + 8 + r, 3.6, 0, TAU); c.fill(); c.lineWidth = 1.4; c.strokeStyle = INK; c.stroke(); } if (f.stk > 5) { c.fillStyle = '#fff'; c.font = '700 10px system-ui'; c.textAlign = 'left'; c.fillText('+', x + 8 + r * 2 + 8 + 5 * 9, y + 8 + r + 3); } }
-      // 名前
-      if (!small) { c.fillStyle = 'rgba(255,255,255,.85)'; c.font = '700 10.5px system-ui,sans-serif'; c.textAlign = 'left'; c.fillText(opt.labels && opt.labels[i] ? opt.labels[i] : (f.lvl ? 'CPU' : 'P' + (i + 1)), x + 8, y + ph - 6); }
+      const f = st.fighters[i], C = E.CH[f.ch], x = M.x0 + i * (pw + M.gap), y = M.y, a = R.fl[i] || { hit: 0 };
+      const pc = PCOL[i % 4], out = f.s === 'out', pl = palOf(f.ch, R.pal[i]), name = labelOf(f, st, opt);
+      c.save(); c.globalAlpha = out ? 0.42 : 1;
+      c.fillStyle = 'rgba(20,14,10,.72)'; rr(c, x, y, pw, ph, 11); c.fill(); c.lineWidth = 2.4; c.strokeStyle = pc; c.stroke();
+      c.fillStyle = pc; c.globalAlpha = (out ? 0.42 : 1) * 0.9; rr(c, x + 3, y + 3, pw - 6, 4, 2); c.fill(); c.globalAlpha = out ? 0.42 : 1; // 上の細い帯＝スロットの色
+      // 顔（おもちゃの色ちがい）
+      const r = small ? 10.5 : 14, fx = x + 7 + r, fy = y + ph / 2 + 2;
+      c.fillStyle = pl.col; c.beginPath(); c.arc(fx, fy, r, 0, TAU); c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+      c.fillStyle = pl.col2; c.beginPath(); c.arc(fx, fy + r * 0.2, r * 0.5, 0, TAU); c.fill();
+      c.fillStyle = '#fff'; c.font = '800 ' + (small ? 11 : 13) + 'px system-ui,sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = INK; const ini = C.short[CFG.en ? 'en' : 'ja'].slice(0, 1); c.strokeText(ini, fx, fy + r * 0.2 + 4.5); c.fillText(ini, fx, fy + r * 0.2 + 4.5);
+      const tx = x + 7 + r * 2 + 6, tw = x + pw - 6 - tx;
+      // 名前の行：形のしるし＋ラベル（＋おもちゃの名前）
+      glyph(c, PSHAPE[i % 4], tx + 5, y + 16, 4.6, pc);
+      c.font = '800 ' + fs0 + 'px system-ui,sans-serif'; c.textAlign = 'left'; c.fillStyle = '#fff';
+      const nm = small ? name : name + ' · ' + C.short[CFG.en ? 'en' : 'ja'];
+      c.fillText(fitText(c, nm, tw - 14 - (st.mode === 'time' && !st.sudden ? 26 : st.training ? 0 : small ? 24 : 0)), tx + 14, y + 19.5);
+      // 残機（または時間制のスコア）
+      if (st.mode === 'time' && !st.sudden) { c.fillStyle = '#fff'; c.font = '800 ' + fs0 + 'px system-ui,sans-serif'; c.textAlign = 'right'; c.fillText((st.sc[i] >= 0 ? '+' : '') + st.sc[i], x + pw - 7, y + 19.5); }
+      else if (!st.training) {
+        if (small) { // せまいカード：● の右に数字（残機）
+          c.fillStyle = pl.col; c.beginPath(); c.arc(x + pw - 21, y + 15.5, 4, 0, TAU); c.fill(); c.lineWidth = 1.3; c.strokeStyle = INK; c.stroke();
+          c.fillStyle = '#fff'; c.font = '800 ' + fs0 + 'px system-ui,sans-serif'; c.textAlign = 'left'; c.fillText('×' + f.stk, x + pw - 15, y + 19.5);
+        } else {
+          const mx = Math.min(f.stk, 5), pr = 3.4, py = y + ph - 9;
+          for (let k = 0; k < mx; k++) { c.fillStyle = pl.col; c.beginPath(); c.arc(tx + 4 + k * (pr * 2 + 3), py, pr, 0, TAU); c.fill(); c.lineWidth = 1.2; c.strokeStyle = INK; c.stroke(); }
+          if (f.stk > mx) { c.fillStyle = '#fff'; c.font = '700 10px system-ui'; c.textAlign = 'left'; c.fillText('+' + (f.stk - mx), tx + 4 + mx * (pr * 2 + 3) - 2, py + 3.5); }
+        }
+      }
+      // ダメージ%（右下、大きく）
+      if (out) { c.fillStyle = '#fff'; c.font = '800 ' + (small ? 14 : 18) + 'px system-ui,sans-serif'; c.textAlign = 'right'; c.fillText('OUT', x + pw - 8, y + ph - 9); }
+      else pctText(c, f, x + pw - 7, y + ph - (small ? 8 : 9), small ? 20 : 27, 'right', 1 + a.hit * 0.03);
       c.restore();
     }
+  }
+  // 名前のしるし（頭の上。画面の大きさで描く＝ひいても小さくならない）と、画面の外にいる子の矢印
+  function drawTags(c, st, view, opt, shx, shy) {
+    const W = view.W, H = view.H, cam = R.cam, z = cam.z, n = st.fighters.length;
+    const toX = x => W / 2 + (x - cam.x) * z + shx, toY = y => H / 2 + (y - cam.y) * z + shy;
+    const sT = R.safeT || 0, sB = R.safeB || 0, m = 20, showPct = n >= 3 || W < 520;
+    c.save(); c.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); c.lineJoin = 'round'; c.textAlign = 'center';
+    for (const f of st.fighters) {
+      if (f.s === 'dead' || f.s === 'out') continue;
+      const C = E.CH[f.ch], pc = PCOL[f.i % 4], lb = labelOf(f, st, opt);
+      const hx = toX(f.x), hy = toY(f.y - C.h - (C.tagY || 0)) - 6 - Math.max(0, (z - 0.7)) * 6;
+      const inside = hx > -4 && hx < W + 4 && toY(f.y) > -4 && toY(f.y - C.h) < H + 4;
+      if (inside) {
+        c.font = '800 11px system-ui,sans-serif'; const tw = c.measureText(lb).width + 22, ty = Math.max(sT + 4, hy - (showPct ? 30 : 18));
+        c.globalAlpha = 0.92; c.fillStyle = 'rgba(20,14,10,.7)'; rr(c, hx - tw / 2, ty, tw, 16, 8); c.fill(); c.lineWidth = 1.6; c.strokeStyle = pc; c.stroke(); c.globalAlpha = 1;
+        glyph(c, PSHAPE[f.i % 4], hx - tw / 2 + 9, ty + 8, 4, pc);
+        c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(lb, hx - tw / 2 + 17, ty + 12); c.textAlign = 'center';
+        if (showPct) { c.save(); c.translate(hx, ty + 30); c.font = '800 14px "Dela Gothic One",system-ui,sans-serif'; const t = Math.floor(f.pct) + '%'; c.lineWidth = 4; c.strokeStyle = INK; c.strokeText(t, 0, 0); c.fillStyle = pctColor(f.pct); c.fillText(t, 0, 0); c.restore(); }
+        else { c.fillStyle = pc; c.beginPath(); c.moveTo(hx - 5, ty + 17); c.lineTo(hx + 5, ty + 17); c.lineTo(hx, ty + 23); c.closePath(); c.fill(); c.lineWidth = 1.4; c.strokeStyle = INK; c.stroke(); }
+      } else {
+        // 画面の外：ふちに丸い矢印（色・形・ダメージ）
+        const sx = toX(f.x), sy = toY(f.y - C.h / 2), cx0 = W / 2, cy0 = (sT + (H - sB)) / 2;
+        const dx = sx - cx0, dy = sy - cy0, ex = W / 2 - m, ey = (H - sT - sB) / 2 - m;
+        const k = Math.min(Math.abs(dx) > 1e-3 ? ex / Math.abs(dx) : 1e9, Math.abs(dy) > 1e-3 ? ey / Math.abs(dy) : 1e9, 1);
+        const bx = cx0 + dx * k, by = cy0 + dy * k, ang = Math.atan2(dy, dx);
+        c.save(); c.translate(bx, by);
+        c.fillStyle = pc; c.beginPath(); c.moveTo(Math.cos(ang) * 22, Math.sin(ang) * 22); c.lineTo(Math.cos(ang + 2.5) * 14, Math.sin(ang + 2.5) * 14); c.lineTo(Math.cos(ang - 2.5) * 14, Math.sin(ang - 2.5) * 14); c.closePath(); c.fill(); c.lineWidth = 1.8; c.strokeStyle = INK; c.stroke();
+        c.fillStyle = 'rgba(20,14,10,.82)'; c.beginPath(); c.arc(0, 0, 14, 0, TAU); c.fill(); c.lineWidth = 2; c.strokeStyle = pc; c.stroke();
+        glyph(c, PSHAPE[f.i % 4], 0, -2, 4.5, pc);
+        c.font = '800 10px system-ui,sans-serif'; c.lineWidth = 3; c.strokeStyle = INK; c.fillStyle = pctColor(f.pct); const t = Math.floor(f.pct) + '%'; c.strokeText(t, 0, 10); c.fillText(t, 0, 10);
+        c.restore();
+      }
+    }
+    c.restore();
   }
   // 選ぶ画面の小さな絵（canvas にキャラを描く）
   function portrait(cv, ch, opt) {
@@ -768,7 +856,8 @@
     if (opt.locked) { c.fillStyle = 'rgba(120,120,120,.5)'; c.beginPath(); c.arc(size / 2, size / 2, size * 0.46, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.font = '800 ' + size * 0.5 + 'px system-ui'; c.textAlign = 'center'; c.fillText('?', size / 2, size * 0.67); return; }
     const sc = size / (C.h + 24) * (opt.zoom || 1);
     c.save(); c.translate(size / 2, size * 0.94 - (opt.lift || 0)); c.scale(sc, sc);
-    DRAW[ch](c, { t: opt.t || 0, ph: 0, a: -1, tx: null, ty: null, run: false, air: false, crouch: false, spin: false, buff: false }, { col: C.color, col2: C.color2 });
+    const pl = palOf(ch, opt.pal | 0);
+    DRAW[ch](c, { t: opt.t || 0, ph: 0, a: -1, tx: null, ty: null, run: false, air: false, crouch: false, spin: false, buff: false }, { col: pl.col, col2: pl.col2 });
     c.restore();
   }
   // ステージの小さな絵
@@ -789,6 +878,7 @@
   const API = {
     init(o) { E = o.E; CFG = Object.assign(CFG, o.cfg || {}); }, setCfg, reset, event, tick, frame, portrait, stagePreview, PCOL, R, DRAW,
     resize(W, H) { R.W = W; R.H = H; },
+    setPal(arr) { R.pal = (arr || []).slice(); }, palOf, hudMetrics, PSHAPE, glyph,
     get cam() { return R.cam; },
     get shake() { return R.shake; }, get slow() { return R.slow; },
     busy() { return R.parts.length > 0 || R.shake > 0.3 || R.flash > 0; },

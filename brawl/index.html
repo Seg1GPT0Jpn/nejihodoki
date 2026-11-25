@@ -23,6 +23,14 @@ KoboI18n.add({ en: {
   '工房のおもちゃたちの場外バトル！ ダメージがたまるほど遠くへ飛ぶ。相手をステージの外へふっとばそう。': 'A workshop brawl for toys! The more damage a toy takes, the farther it flies. Knock your rival off the stage.',
   'オンライン対戦': 'Online match', '1対1・コードかクイックマッチ': '1v1 · room code or quick match', 'ひとりで対戦': 'Solo Brawl', 'CPUと戦う': 'Fight the CPUs', 'ふたりで対戦': '2 Players', '1台でふたりで': 'Two on one device', 'ラダー（8戦）': 'Ladder (8 fights)', '勝ちぬいてボスへ・キャラとステージが開く': 'Climb to the boss. Unlocks toys and stages',
   'れんしゅう（ダミーあいて）': 'Training (dummy)', 'ラダーのつづき（{n}戦目）': 'Continue ladder (fight {n})', 'ベスト {n} 点': 'Best {n} pts', 'ラダーのベストはまだありません': 'No ladder score yet', '{n} 人のおもちゃがそろった': '{n} toys unlocked',
+  // roster, same-device play, landscape prompt
+  'みんなで対戦': '2-4 Players', '1台で2〜4人': 'Two to four on one device', 'あそぶ人の数': 'Number of players', '{n}人': '{n}', '3P のおもちゃ': 'P3 toy', '4P のおもちゃ': 'P4 toy',
+  'なまえ・タイプでさがす': 'Search by name or type', 'おもちゃをさがす': 'Search toys', 'しぼりこみ': 'Filter', 'すべて': 'All', 'お気に入り': 'Favorites', 'さいきん': 'Recent', '{n}人 / ぜんぶで {m}人': '{n} shown / {m} toys',
+  'お気に入りはまだありません（おもちゃを選んで ☆ をおす）': 'No favorites yet (pick a toy and press the star)', 'まだ遊んだおもちゃがありません': 'No recently played toys yet', '見つかりませんでした': 'No toys found', 'いろ': 'Color',
+  'お気に入りをはずす': 'Remove from favorites', 'お気に入りにする': 'Add to favorites', 'キーボードは F キー': 'Keyboard: press F', 'つぎに開く：{t}': 'Next unlock: {t}', 'ロック中のおもちゃの開き方': 'How to unlock the locked toys',
+  'ぜんぶのおもちゃをつかう（ひとりで・ふたりで・れんしゅうのみ。ラダーと、おもちゃが開く進み方は変わりません）': 'Use every toy (solo, multiplayer and practice only. The ladder and your unlock progress are not affected)',
+  '3人め・4人めはゲームパッドであそびます（キーボードは1P・2P）。つないであるゲームパッド：{n}': 'Players 3 and 4 use gamepads (keyboard is P1 and P2). Gamepads connected: {n}', 'スマホは、画面を左右にわけて2人であそべます': 'On a phone, two players can share the screen (one on each side)',
+  'ゲームパッドが足りないかもしれません': 'You may need more gamepads', 'よこ向きがおすすめ': 'Landscape works best',
   // setup
   'あなたのおもちゃ': 'Your toy', '1P のおもちゃ': 'P1 toy', '2P のおもちゃ': 'P2 toy', 'ダミーのおもちゃ': 'Dummy toy', 'CPU の数': 'CPUs', 'CPU の強さ': 'CPU level', 'かんたん': 'Easy', 'ふつう': 'Normal', 'つよい': 'Hard',
   'ステージ': 'Stage', 'ランダム': 'Random', 'ルール': 'Rules', '残機': 'Stocks', '時間': 'Timed', '{n}機': '{n} stocks', '{n}分': '{n} min', 'はじめる': 'Start', 'ラダーをはじめる': 'Start the ladder', '強さ（ラダー）': 'Ladder level',
@@ -218,6 +226,61 @@ body.thumb header, body.thumb #pad, body.thumb .kb-layer, body.thumb .kb-toasts 
 dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; font-size: 12.5px; color: var(--kb-accent-text); margin-top: 8px; } dl.guide dd { margin: 2px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-ink); }
 #cTabs { margin: 6px 0; } #cTabs button { font-size: 12px; padding: 0 2px; }
 #trData { position: absolute; z-index: 6; left: 6px; top: calc(var(--kb-sat) + 84px); max-width: calc(100% - 12px); box-sizing: border-box; margin: 0; padding: 4px 6px; border-radius: 8px; background: rgba(0, 0, 0, .66); color: #fff; font: 600 9.5px/1.35 ui-monospace, Menlo, Consolas, monospace; white-space: pre; overflow: hidden; pointer-events: none; }
+
+/* roster for a big cast: search, type filter, favourites, recents, a scrolling grid; colour variants */
+.rtool { display: grid; gap: 5px; margin: 0 0 6px; }
+.rtool .rq { box-sizing: border-box; width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--bw-line); background: var(--kb-bg); color: var(--kb-ink); font: 600 14px var(--kb-font-body); padding: 0 12px; }
+.rtool .rq::placeholder { color: var(--kb-dim); opacity: .8; }
+.fchips { display: flex; gap: 5px; overflow-x: auto; padding: 1px 1px 4px; scrollbar-width: thin; overscroll-behavior-x: contain; touch-action: pan-x; }
+.fchips button { flex: none; min-height: 40px; min-width: 44px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--bw-line); background: var(--bw-panel); color: var(--kb-ink); font: 800 12.5px var(--kb-font-body); cursor: pointer; white-space: nowrap; touch-action: manipulation; }
+.fchips button.sel { background: var(--kb-accent); color: var(--kb-accent-ink); border-color: var(--kb-accent); }
+.rcount { font-size: 11.5px; color: var(--kb-dim); text-align: left; padding: 0 2px; }
+.chips.roster { max-height: min(40dvh, 330px); max-height: min(40vh, 330px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 2px; scroll-padding: 8px; }
+.chips.roster .pk[hidden] { display: none; }
+.pk .star { position: absolute; top: 1px; right: 3px; font-size: 11px; line-height: 1; color: #ffd23f; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); pointer-events: none; }
+.pk .rcl { position: absolute; left: 3px; top: 2px; width: 9px; height: 9px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .55); pointer-events: none; }
+.pals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; align-items: center; }
+.pals .pl { font-size: 11.5px; color: var(--kb-dim); margin-right: 2px; }
+.pals button { position: relative; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--bw-line); padding: 0; cursor: pointer; touch-action: manipulation; background-clip: padding-box; }
+.pals button::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: linear-gradient(135deg, var(--c1) 0 50%, var(--c2) 50% 100%); border: 1.5px solid #2a1d17; }
+.pals button.sel { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent-soft); }
+.pals button.eff:not(.sel) { border-color: var(--kb-focus); border-style: dashed; }
+.favrow { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.favrow .btn { margin: 0; width: auto; min-width: 44px; padding: 0 12px; }
+.favrow small { color: var(--kb-dim); font-size: 11.5px; }
+details.ul { margin-top: 8px; text-align: left; font-size: 12px; color: var(--kb-ink); } details.ul summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-weight: 800; color: var(--kb-dim); }
+details.ul .urow { display: flex; justify-content: space-between; gap: 8px; padding: 4px 6px; border-bottom: 1px solid var(--bw-line); } details.ul .urow b { color: var(--kb-accent-text); }
+label.chk { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; padding: 6px 8px; border-radius: 12px; border: 1px solid var(--bw-line); background: var(--bw-panel); text-align: left; font-size: 12px; line-height: 1.45; color: var(--kb-ink); cursor: pointer; }
+label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent-color: var(--kb-accent); }
+.pad4note { margin: 4px 2px 0; font-size: 11.5px; color: var(--kb-dim); text-align: left; }
+/* two to four players: one picker open at a time; the others fold into a bar showing the pick */
+.slotbar { display: none; width: 100%; box-sizing: border-box; align-items: center; gap: 8px; min-height: 48px; padding: 4px 10px; border-radius: 14px; border: 2px solid var(--bw-line); background: var(--bw-panel); color: var(--kb-ink); font: 800 13.5px var(--kb-font-body); cursor: pointer; text-align: left; touch-action: manipulation; }
+.slotbar canvas { width: 38px; height: 38px; flex: none; } .slotbar .sn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .slotbar .sw { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #2a1d17; flex: none; background: linear-gradient(135deg, var(--c1) 0 50%, var(--c2) 50% 100%); } .slotbar .ch { flex: none; color: var(--kb-dim); }
+.sec.multi > .slotbar { display: flex; } .sec.multi:not(.open) > .rtool, .sec.multi:not(.open) > .chips.roster, .sec.multi:not(.open) > .pals { display: none; } .sec.multi.open > .slotbar { border-color: var(--kb-accent); }
+.sec.multi > label { margin-bottom: 4px; }
+/* "landscape is nicer" prompt: gentle, at the top, with a dismiss button; only for portrait phones */
+#landTip { position: fixed; z-index: 60; left: 50%; top: calc(var(--kb-sat) + 52px); transform: translateX(-50%); width: max-content; max-width: min(94vw, 420px); display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 999px; background: rgba(15, 12, 30, .92); border: 1px solid rgba(255, 255, 255, .3); color: #fff; font-size: 12.5px; font-weight: 800; box-shadow: 0 6px 20px rgba(0, 0, 0, .4); animation: fade .3s ease-out; }
+#landTip svg { width: 22px; height: 22px; flex: none; animation: tilt 2.4s ease-in-out infinite; } #landTip span { min-width: 0; white-space: nowrap; }
+#landTip button { flex: none; min-height: 44px; min-width: 44px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .16); color: #fff; font: 800 12px var(--kb-font-body); padding: 0 12px; cursor: pointer; touch-action: manipulation; }
+#landTip.over { top: calc(var(--kb-sat) + 6px); }
+#landTip[hidden] { display: none; }
+@keyframes tilt { 0%, 40% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { #landTip, #landTip svg { animation: none; } }
+/* landscape phones (667x375, 844x390): short and wide. The cards use the width, and the lists scroll inside the card */
+@media (orientation: landscape) and (max-height: 520px) {
+  .chips.roster { max-height: none; overflow: visible; }
+  .card.wide { max-width: min(860px, 100%); } .card { padding: 8px 12px 6px; }
+  .card h2 { font-size: 19px; } .card h2.logo { font-size: 22px; }
+  #secP1, #secP2, #secP3, #secP4 { margin-top: 6px; }
+  .info { padding: 6px 8px; }
+  .chips.roster { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+  #landTip { top: calc(var(--kb-sat) + 4px); }
+  #ovSetup .card { display: grid; grid-template-columns: minmax(0, 1fr) 120px; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 8px; }
+  #ovSetup .card > h2, #ovSetup .card > .scroll { grid-column: 1 / -1; }
+  #ovSetup .card > .btn { margin-top: 4px; min-height: 40px; }
+  .rtool { grid-template-columns: minmax(140px, 34%) minmax(0, 1fr); align-items: center; gap: 6px; margin-bottom: 4px; } .rtool .rq { min-height: 40px; } .rtool .rcount { grid-column: 1 / -1; }
+  .fchips button { min-height: 40px; } .pals button { width: 36px; height: 36px; }
+}
 </style>
 </head>
 <body class="notouch">
@@ -249,6 +312,8 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
   <div id="pad" aria-hidden="false"></div>
 </div>
 
+<div id="landTip" hidden role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M11 18.5h2"/></svg><span data-i18n>よこ向きがおすすめ</span><button type="button" id="landX" data-i18n>とじる</button></div>
+
 <div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
   <div class="card">
     <h2 class="logo" id="tLogo" data-i18n>おもちゃ大乱闘</h2>
@@ -257,7 +322,7 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
       <p id="tBest"></p>
       <div class="menu">
         <button class="btn" id="mSolo" type="button"><span class="stk"><span data-i18n>ひとりで対戦</span><small data-i18n>CPUと戦う</small></span></button>
-        <button class="btn sub" id="mTwo" type="button"><span class="stk"><span data-i18n>ふたりで対戦</span><small data-i18n>1台でふたりで</small></span></button>
+        <button class="btn sub" id="mTwo" type="button"><span class="stk"><span data-i18n>みんなで対戦</span><small data-i18n>1台で2〜4人</small></span></button>
         <button class="btn sub" id="mLad" type="button"><span class="stk"><span data-i18n>ラダー（8戦）</span><small data-i18n>勝ちぬいてボスへ・キャラとステージが開く</small></span></button>
         <button class="btn sub" id="mTrain" type="button"><span class="stk"><span data-i18n>れんしゅう（ダミーあいて）</span></span></button>
         <button class="btn sub" id="mCtl" type="button"><span class="stk"><span data-i18n>操作・設定</span></span></button>
@@ -273,13 +338,18 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
   <div class="card wide">
     <h2 id="sTitle"></h2>
     <div class="scroll">
-      <div class="sec" id="secP1"><label id="lbP1"></label><div class="chips roster" id="pickP1"></div></div>
-      <div class="sec" id="secP2"><label id="lbP2"></label><div class="chips roster" id="pickP2"></div></div>
-      <div class="info" id="charInfo"></div><p class="rnote" id="rNote"></p>
+      <div class="sec" id="secHum"><label data-i18n>あそぶ人の数</label><div class="seg" id="segH"></div><p class="pad4note" id="padNote"></p></div>
+      <div class="sec" id="secP1"><label id="lbP1"></label><button type="button" class="slotbar" id="barP1"></button><div class="rtool" id="toolP1"></div><div class="chips roster" id="pickP1" role="group"></div><div class="pals" id="palP1"></div></div>
+      <div class="sec" id="secP2"><label id="lbP2"></label><button type="button" class="slotbar" id="barP2"></button><div class="rtool" id="toolP2"></div><div class="chips roster" id="pickP2" role="group"></div><div class="pals" id="palP2"></div></div>
+      <div class="sec" id="secP3"><label id="lbP3"></label><button type="button" class="slotbar" id="barP3"></button><div class="rtool" id="toolP3"></div><div class="chips roster" id="pickP3" role="group"></div><div class="pals" id="palP3"></div></div>
+      <div class="sec" id="secP4"><label id="lbP4"></label><button type="button" class="slotbar" id="barP4"></button><div class="rtool" id="toolP4"></div><div class="chips roster" id="pickP4" role="group"></div><div class="pals" id="palP4"></div></div>
+      <div class="info" id="charInfo"></div><div class="favrow"><button class="btn sub" id="favBtn" type="button"></button><small id="favNote"></small></div><p class="rnote" id="rNote"></p>
+      <details class="ul" id="ulBox"><summary data-i18n>ロック中のおもちゃの開き方</summary><div id="ulBody"></div></details>
       <div class="sec" id="secCpu"><label data-i18n>CPU の数</label><div class="seg" id="segN"></div></div>
       <div class="sec" id="secLvl"><label id="lbLvl" data-i18n>CPU の強さ</label><div class="seg" id="segL"></div></div>
       <div class="sec" id="secStage"><label data-i18n>ステージ</label><div class="chips" id="pickStage"></div><div class="info" id="stageInfo"></div></div>
       <div class="sec" id="secRules"><label data-i18n>ルール</label><div class="seg" id="segR"></div><div class="seg" id="segR2" style="margin-top:6px"></div></div>
+      <label class="chk" id="uaRow"><input type="checkbox" id="uaChk"><span data-i18n>ぜんぶのおもちゃをつかう（ひとりで・ふたりで・れんしゅうのみ。ラダーと、おもちゃが開く進み方は変わりません）</span></label>
       <p id="sNote"></p>
     </div>
     <button class="btn" id="sGo" type="button"></button>
@@ -330,6 +400,7 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
     <button class="btn sub" id="howtoAlt" type="button" data-i18n>説明だけでOK</button>
   </div>
 </div>
+<script src="kits.js"></script>
 <script src="engine.js"></script>
 <script src="art.js"></script>
 <script src="netcode.js"></script>
@@ -343,7 +414,7 @@ dl.guide { margin: 4px 0; text-align: left; } dl.guide dt { font-weight: 800; fo
 // input (keyboard, touch, gamepad), menus, the ladder, saving, scoring, sound and the platform events.
 const T = KoboI18n.t;
 const EN = KoboI18n.lang === 'en';
-const E = window.BrawlEngine, ART = window.BrawlArt;
+const E = window.BrawlEngine, ART = window.BrawlArt, K = window.BrawlKits;
 const PF = window.KoboPlatform || null, AU = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'brawl';
@@ -374,7 +445,8 @@ const DEF_CH = ['robo', 'duck', 'bear'], DEF_ST = ['bench', 'box'];
 function defSave() {
   return { v: 1, best: 0, lw: 0, cl: 0, un: { c: { robo: 1, duck: 1, bear: 1 }, s: { bench: 1, box: 1 } }, cp: {},
     stats: { plays: 0, wins: 0, kos: 0, falls: 0, maxCmb: 0, perfect: 0, hard: 0, ffa: 0, twop: 0, smashKo: 0, counter: 0, ledge: 0, grab: 0, block: 0, timed: 0, boss: 0, lad: 0, train: 0, spike: 0, pshield: 0, tech: 0, flick: 0 },
-    set: { n: 1, n2: 0, lvl: 2, stage: 'bench', mode: 'stock', stk: 3, tm: 3, c1: 'robo', c2: 'duck', diff: 2 }, ctl: { tj: 1, run: 'hold', keys: {} }, tut: 0 };
+    set: { n: 1, n2: 0, nh: 2, lvl: 2, stage: 'bench', mode: 'stock', stk: 3, tm: 3, c1: 'robo', c2: 'duck', c3: 'bear', c4: 'tin', diff: 2 }, ctl: { tj: 1, run: 'hold', keys: {} }, tut: 0,
+    fav: [], rc: [], pal: {}, ua: 0 };
 }
 function readSave() {
   let s = null; try { s = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) { s = null; }
@@ -386,21 +458,33 @@ function readSave() {
   out.stats = Object.assign(d.stats, obj(s.stats)); out.set = Object.assign(defSave().set, obj(s.set)); out.cp = obj(s.cp);
   out.ctl = Object.assign(defSave().ctl, obj(s.ctl)); out.ctl.keys = obj(out.ctl.keys); for (const k of ['p1', 'p2']) out.ctl.keys[k] = obj(out.ctl.keys[k]); out.ctl.tj = out.ctl.tj ? 1 : 0; if (out.ctl.run !== 'tap') out.ctl.run = 'hold';
   for (const k of ['best', 'lw', 'cl']) out[k] = Math.max(0, Number(out[k]) || 0);
+  // roster extras: favourites, recently used (newest first), a favourite colour per toy, "use every toy" (local play only)
+  const ids = new Set(E.CHAR_IDS);
+  out.fav = Array.isArray(s.fav) ? s.fav.filter(id => ids.has(id)).slice(0, 200) : []; out.rc = Array.isArray(s.rc) ? s.rc.filter(id => ids.has(id)).slice(0, 12) : [];
+  out.pal = {}; for (const [id, v] of Object.entries(obj(s.pal))) if (ids.has(id) && Number.isInteger(v) && v >= 0 && v < K.PAL_N) out.pal[id] = v;
+  out.ua = s.ua ? 1 : 0; out.set.nh = E.clamp(out.set.nh | 0 || 2, 2, 4);
+  for (const k of ['c1', 'c2', 'c3', 'c4']) if (!ids.has(out.set[k])) out.set[k] = defSave().set[k];
   return out;
 }
 let save = readSave();
-// the first three toys are free, tin / top / jack come from the ladder, the other twelve open with wins (every 2 wins one more), and clearing the ladder opens all
-const WIN_ORDER = E.CHAR_IDS.slice(6), winsNeed = i => (i + 1) * 2;
+// the first three toys are free, tin / top / jack come from the ladder, the rest open with wins or challenges (rules in brawl/kits.js: unlockRule);
+// clearing the ladder opens the first 18 for good. "Use every toy" (save.ua, local play only) only changes what the pickers offer: the saved progress is never touched.
+const progOf = () => ({ wins: save.stats.wins | 0, cl: save.cl | 0, stats: save.stats });
 function winUnlocks(list) {
-  const w = save.stats.wins | 0; let n = 0;
-  WIN_ORDER.forEach((id, i) => { if (!save.un.c[id] && w >= winsNeed(i)) { save.un.c[id] = 1; n++; if (list) list.push({ c: id }); } });
-  if (save.cl >= 1) { let m = 0; for (const id of E.CHAR_IDS) if (!save.un.c[id]) { save.un.c[id] = 1; m++; } if (m && list) list.push({ all: 1 }); n += m; }
+  let n = 0; const pr = progOf();
+  for (const id of E.CHAR_IDS) {
+    if (save.un.c[id]) continue; const r = K.unlockRule(id);
+    if (r.t !== 'ladder' && r.t !== 'start' && K.unlockInfo(id, pr).done) { save.un.c[id] = 1; n++; if (list) list.push({ c: id }); }
+  }
+  if (save.cl >= 1) { let m = 0; for (const id of K.LEGACY) if (!save.un.c[id]) { save.un.c[id] = 1; m++; } if (m && list) list.push({ all: 1 }); n += m; }
   return n;
 }
 winUnlocks();
 function writeSave() { store.set(SAVE_KEY, JSON.stringify(save)); }
 const hasChar = id => !!save.un.c[id], hasStage = id => !!save.un.s[id];
 const unlockedChars = () => E.CHAR_IDS.filter(hasChar);
+// what the pickers offer: with "use every toy" on, every toy in local (non-ladder) setups
+const pickable = id => hasChar(id) || (!!save.ua && setupMode !== 'ladder');
 function readRun() {
   let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) { r = null; }
   if (!r || r.v !== 1 || !E.CH[r.ch] || !(r.idx >= 0 && r.idx < 8)) return null;
@@ -449,9 +533,10 @@ function rebuildMaps() {
   Object.assign(MAP_SOLO, MAP_P1);
   for (const [code, a] of Object.entries(SOLO_EXTRA)) if (!(code in MAP_SOLO)) MAP_SOLO[code] = B[a];
 }
-const mapFor = p => G && G.humans === 2 ? (p === 0 ? MAP_P1 : MAP_P2) : MAP_SOLO;
+const NOKEYS = {};
+const mapFor = p => G && G.humans >= 2 ? (p === 0 ? MAP_P1 : p === 1 ? MAP_P2 : NOKEYS) : MAP_SOLO; // players 3 and 4: gamepads only
 const down = new Set();
-const touchBits = [0, 0], latch = [0, 0]; // latch: a press shorter than one 1/60 s step is still seen once
+const touchBits = [0, 0, 0, 0], latch = [0, 0, 0, 0]; // latch: a press shorter than one 1/60 s step is still seen once
 const keyBits = map => { let b = 0; for (const code of down) if (map[code]) b |= map[code]; return b; };
 // the gamepad: analog stick = tilt (walk, tilt attacks) or full push (dash, run, flick); right stick = C-stick; d-pad = digital
 function padRead(k) {
@@ -469,7 +554,7 @@ function padRead(k) {
 }
 // keyboard / d-pad "pushed all the way": a double tap (second press within TAP_GAP frames) is full for as long as it is held (a flick for the engine);
 // in "hold to run" mode, holding a side key for RUN_HOLD frames also becomes full (a run, not a flick)
-const kd = [0, 1].map(() => ({ x: { dir: 0, held: 0, gap: 99, last: 0, full: false }, y: { dir: 0, held: 0, gap: 99, last: 0, full: false } }));
+const kd = [0, 1, 2, 3].map(() => ({ x: { dir: 0, held: 0, gap: 99, last: 0, full: false }, y: { dir: 0, held: 0, gap: 99, last: 0, full: false } }));
 function axisF(a, v, runHold) {
   if (v !== a.dir) {
     if (v !== 0) { a.full = v === a.last && a.gap <= TAP_GAP; a.held = 0; } else { a.last = a.dir; a.gap = 0; a.full = false; }
@@ -483,7 +568,7 @@ function digitalF(p, dir) {
   const fx = axisF(S.x, x, ctl().run !== 'tap'), fy = axisF(S.y, y, false);
   return (x && fx && !y) || (y && fy) ? B.F : 0;
 }
-const lastIn = [0, 0];
+const lastIn = [0, 0, 0, 0];
 function humanBits(p) {
   const kb = keyBits(mapFor(p)), pd = padRead(p);
   const dig = (kb | pd.dig) & DIRS;
@@ -500,14 +585,14 @@ addEventListener('keydown', e => {
   if (remapping) { e.preventDefault(); e.stopPropagation(); finishRemap(e.code); return; }
   if (/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
   if (!G || !inMatch()) return;
-  const two = G.humans === 2, m1 = two ? MAP_P1[e.code] : MAP_SOLO[e.code], m2 = two ? MAP_P2[e.code] : 0;
+  const two = G.humans >= 2, m1 = two ? MAP_P1[e.code] : MAP_SOLO[e.code], m2 = two ? MAP_P2[e.code] : 0;
   if (!m1 && !m2) return;
   if (!anyOverlay() && ['Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Slash', 'Quote'].indexOf(e.code) >= 0) e.preventDefault();
   down.add(e.code); if (AU) AU.ctx();
   if (!e.repeat) { if (m1) latch[0] |= m1; if (m2) latch[1] |= m2; }
 }, { capture: true });
 addEventListener('keyup', e => { down.delete(e.code); });
-addEventListener('blur', () => { down.clear(); touchBits[0] = touchBits[1] = 0; });
+addEventListener('blur', () => { down.clear(); touchBits.fill(0); });
 addEventListener('gamepadconnected', () => { gpSeen = true; });
 let gpSeen = false;
 rebuildMaps();
@@ -517,7 +602,8 @@ const BTN = [['M', B.M, 'm', '強', '強攻撃'], ['S', B.S, 's', '特', 'とく
 const isTouchDevice = (() => { try { return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window || navigator.maxTouchPoints > 0; } catch (e) { return false; } })() || /[?&]touch\b/.test(location.search);
 const sticks = [];
 function buildPad(n) {
-  const box = $('pad'); box.innerHTML = ''; sticks.length = 0; touchBits[0] = touchBits[1] = 0;
+  const box = $('pad'); box.innerHTML = ''; sticks.length = 0; touchBits.fill(0);
+  if (n > 2) return; // 3 or 4 players: gamepads / keyboard only (the touch pad has room for two)
   document.body.classList.toggle('p2', n === 2);
   $('app').classList.toggle('hasPad', document.body.classList.contains('notouch') === false);
   for (let p = 0; p < n; p++) {
@@ -565,7 +651,7 @@ function buildPad(n) {
 }
 const stickR = () => { const e = $('pad'); const u = parseFloat(getComputedStyle(e).getPropertyValue('--u')) || 60; return u * 1.1; };
 function setStickRest(st) {
-  const r = st.zone.getBoundingClientRect(), R0 = stickR(); st.el.style.left = (G && G.humans === 2 ? Math.min(r.width / 2, R0 * 1.2) : Math.min(r.width / 2, R0 * 1.5)) + 'px'; st.el.style.top = (r.height - R0 * 1.3 - 12) + 'px'; st.el.style.opacity = 0.7;
+  const r = st.zone.getBoundingClientRect(), R0 = stickR(); st.el.style.left = (G && G.humans >= 2 ? Math.min(r.width / 2, R0 * 1.2) : Math.min(r.width / 2, R0 * 1.5)) + 'px'; st.el.style.top = (r.height - R0 * 1.3 - 12) + 'px'; st.el.style.opacity = 0.7;
 }
 function moveStick(st, e) {
   const r = st.zone.getBoundingClientRect(), R0 = stickR();
@@ -590,11 +676,29 @@ function layout() {
   ART.resize(W, H);
   const portrait = H > W * 1.05 || (innerHeight > innerWidth);
   view.portrait = innerHeight > innerWidth;
-  $('hint').hidden = !(view.portrait && inMatch() && !G.hintDone && isTouchDevice);
+  $('hint').hidden = true;
+  view.hdr = Math.max(0, Math.round($('stageWrap').querySelector('header').getBoundingClientRect().bottom - r.top));
+  landTip();
   needDraw = true;
 }
+// where the player cards go: the bottom strip, except on a landscape touch screen (the thumbs own the bottom corners) where they sit in a strip under the header.
+// headerH: the header buttons cover the top of the picture, so the camera keeps everyone below it.
+function hudOpts() {
+  const hd = view.hdr | 0, thumbs = isTouchDevice && !view.portrait && !document.body.classList.contains('notouch');
+  return thumbs ? { hudTop: hd + 3, headerH: hd } : { hudBottom: 8, headerH: hd };
+}
+// "turn it sideways" prompt: only for portrait phones, never blocks, remembered when dismissed
+const LAND_KEY = 'kusoge.brawl.land';
+function landTip() {
+  const el = $('landTip'); if (!el) return;
+  const want = isTouchDevice && view.portrait && innerWidth < 700 && store.get(LAND_KEY) !== '1';
+  const ov = anyOverlay(), show = want && (!ov || !$('ovTitle').hidden);
+  el.hidden = !show; el.classList.toggle('over', ov);
+}
+$('landX').onclick = () => { store.set(LAND_KEY, '1'); $('landTip').hidden = true; };
 let needDraw = true;
 window.addEventListener('resize', layout);
+window.addEventListener('orientationchange', () => setTimeout(layout, 120));
 try { new ResizeObserver(layout).observe(wrap); } catch (e) {}
 
 // ---------- the match ----------
@@ -609,11 +713,14 @@ function startMatch(o) {
   const st = o.st || E.create({ seed: o.seed || newSeed(), stage: o.stage, fighters, mode: o.rule && o.rule.mode === 'time' ? 'time' : 'stock', stocks: o.rule ? o.rule.stk : 3, time: o.rule ? o.rule.tm * 60 : 180, training: !!o.training });
   if (o.training) { st.dummy = o.dummy || 'stand'; }
   ART.setCfg({ dark: dark(), en: EN, reduced: reduceMotion.matches, T }); ART.reset(st);
+  // colour variants (look only): a toy's favourite colour for the people at the device (never online: both sides must see the same), the rest are automatic
+  const hum = o.humans || 0, pal = o.pal || K.assignPalettes(st.fighters.map(f => f.ch), st.fighters.map((f, i) => o.mode === 'online' || o.demo || i >= hum || save.pal[f.ch] === undefined ? null : save.pal[f.ch]));
+  ART.setPal(pal);
   G = { mode: o.mode, humans: o.humans || 1, st, o, count: o.demo || o.mode === 'online' ? 0 : 175, go: 0, over: false, endT: 0, acc: 0, t0: now(), labels: o.labels || null,
-    t: { kos: 0, smashKo: 0, counter: 0, ledge: 0, grab: 0, block: 0, spike: 0, pshield: 0, tech: 0, flick: 0, combo: 0, dmg: 0, last: 0, lostStock: false }, hintDone: false, lastCount: 0, stk0: st.stocks, sceneT: 0 };
+    t: { kos: 0, smashKo: 0, counter: 0, ledge: 0, grab: 0, block: 0, spike: 0, pshield: 0, tech: 0, flick: 0, combo: 0, dmg: 0, last: 0, lostStock: false }, hintDone: false, lastCount: 0, stk0: st.stocks, sceneT: 0, pal };
   acc = 0; lastT = now();
   const play = o.mode !== 'demo';
-  document.body.classList.toggle('notouch', !(isTouchDevice && play));
+  document.body.classList.toggle('notouch', !(isTouchDevice && play && G.humans <= 2));
   buildPad(G.humans);
   $('trBtn').hidden = o.mode !== 'train'; $('train').hidden = true; $('combo').hidden = o.mode !== 'train';
   trainFrames = false; $('trData').hidden = true; $('trFrames').style.outline = '';
@@ -770,8 +877,7 @@ function loop(t) {
     }
   }
   if (needDraw || ART.busy() || !run) {
-    const inset = isTouchDevice && !view.portrait && playing() ? Math.round(view.W * 0.31) : 0;
-    ART.frame(ctx, G.st, view, { boxes: trainBoxes, labels: G.labels, hudInset: inset, hudBottom: inset ? 6 : 8, nohud: demo && false });
+    ART.frame(ctx, G.st, view, Object.assign({ boxes: trainBoxes, labels: G.labels }, hudOpts()));
     needDraw = false;
   }
 }
@@ -790,7 +896,7 @@ function unlockNote(rew, list) {
 }
 function showResult() {
   const st = G.st, o = G.o, res = st.res, me = res[0], won = st.win === 0;
-  const unl = [], two = G.humans === 2;
+  const unl = [], two = G.humans >= 2;
   let title, sub = '', next = T('もう一度'), nextFn = () => { hideOv('ovResult'); rematch(); };
   const rows = [[T('ふっとばした数'), me.kos], [T('やられた数'), me.falls], [T('あたえたダメージ'), Math.round(me.dealt) + '%'], [T('うけたダメージ'), Math.round(me.taken) + '%'], [T('最大コンボ'), me.maxCmb], [T('時間'), Math.floor(st.f / 3600) + ':' + String(Math.floor(st.f / 60) % 60).padStart(2, '0')]];
   const S = save.stats; let ptsHtml = '', isBest = false;
@@ -882,7 +988,7 @@ function ladderFight() {
   const run = readRun(); if (!run) return showTitle();
   const M = LADDER[run.idx], foes = ladderFoes(run, run.idx);
   startMatch({ mode: 'ladder', title: (M.boss ? T('ボス戦') : T('{n}戦目', { n: run.idx + 1 })), humans: 1, stage: M.stage, rule: { mode: 'stock', stk: M.pst, tm: 3 }, seed: E.hash32('lf' + run.seed + ':' + run.idx + ':' + run.cont) || 1,
-    fighters: [{ ch: run.ch, lvl: 0, stk: M.pst }].concat(foes.map(f => ({ ch: f.ch, lvl: f.lvl, stk: f.stk }))), ladder: { run, idx: run.idx }, labels: [T('自分')].concat(foes.map(() => 'CPU')) });
+    fighters: [{ ch: run.ch, lvl: 0, stk: M.pst }].concat(foes.map(f => ({ ch: f.ch, lvl: f.lvl, stk: f.stk }))), ladder: { run, idx: run.idx }, labels: makeLabels(foes.length + 1, 1, true) });
 }
 function ladderBegin(ch, diff) {
   const run = { v: 1, ch, diff, idx: 0, score: 0, cont: 2, seed: newSeed(), kos: 0 };
@@ -890,9 +996,9 @@ function ladderBegin(ch, diff) {
 }
 
 // ---------- overlays ----------
-function showOv(id) { for (const o of document.querySelectorAll('.overlay')) o.hidden = o.id !== id; const f = $(id).querySelector('.btn:not(.sub):not(.link)'); try { if (f) f.focus({ preventScroll: true }); } catch (e) {} }
-function hideOv(id) { $(id).hidden = true; lastT = now(); }
-function hideAll() { for (const o of document.querySelectorAll('.overlay')) o.hidden = true; }
+function showOv(id) { for (const o of document.querySelectorAll('.overlay')) o.hidden = o.id !== id; const f = $(id).querySelector('.btn:not(.sub):not(.link)'); try { if (f) f.focus({ preventScroll: true }); } catch (e) {} landTip(); }
+function hideOv(id) { $(id).hidden = true; lastT = now(); landTip(); }
+function hideAll() { for (const o of document.querySelectorAll('.overlay')) o.hidden = true; landTip(); }
 function showTitle() {
   if (G && G.mode !== 'demo' && !G.over) endPlay('quit');
   if (!G || G.mode !== 'demo' || G.st.over) startDemo();
@@ -911,35 +1017,36 @@ $('tHow').onclick = () => showHowto(false);
 // setup
 let setupMode = 'solo';
 const SETUP_BUILT = {};
-function chipEl(kind, id, label, locked) {
+const SKEY = { 1: 'c1', 2: 'c2', 3: 'c3', 4: 'c4' };
+const RS = { 1: { q: '', f: 'all' }, 2: { q: '', f: 'all' }, 3: { q: '', f: 'all' }, 4: { q: '', f: 'all' } };
+let infoId = null;
+const archLabel = id => { const a = K.ARCH.find(x => x.id === id); return a ? L(a) : ''; };
+function chipEl(kind, id, label, locked, pal) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'pk' + (kind === 'stage' ? ' stg' : ''); b.dataset.id = id; b.disabled = !!locked;
   if (!locked && kind === 'char') b.addEventListener('focus', () => charInfo(id)); // keyboard / gamepad: moving the focus shows the toy
   if (!locked && kind === 'stage' && id !== 'random') b.addEventListener('focus', () => stageInfo(id));
   const c = document.createElement('canvas'); b.appendChild(c);
   const n = document.createElement('span'); n.className = 'nm'; n.textContent = label; b.appendChild(n);
   b.setAttribute('aria-label', label);
-  if (kind === 'char') ART.portrait(c, id, { size: 54, locked }); else ART.stagePreview(c, id, { w: 112, h: 64 });
+  if (kind === 'char') ART.portrait(c, id, { size: 54, locked, pal: pal | 0 }); else ART.stagePreview(c, id, { w: 112, h: 64 });
   return b;
 }
+// which player slots (1-4) the current setup shows
+function activeSlots() { const s = save.set; return setupMode === 'two' ? [1, 2, 3, 4].slice(0, s.nh) : setupMode === 'train' ? [1, 2] : [1]; }
+// the colour each shown slot will really get (a wish wins; the same toy twice gets different colours)
+function effPals() { const sl = activeSlots(), ch = sl.map(n => save.set[SKEY[n]]); return K.assignPalettes(ch, ch.map(id => (save.pal[id] === undefined ? null : save.pal[id]))); }
+let openSlot = 1;
 function renderPickers() {
-  const s = save.set;
-  for (const [box, key] of [['pickP1', 'c1'], ['pickP2', 'c2']]) {
-    const el = $(box); el.innerHTML = '';
-    for (const id of E.CHAR_IDS) {
-      const lock = !hasChar(id);
-      const b = chipEl('char', id, lock ? T('ロック中') : L(E.CH[id].short), lock);
-      if (s[key] === id) b.classList.add('sel');
-      b.onclick = () => { if (lock) return; s[key] = id; for (const x of el.children) x.classList.toggle('sel', x === b); charInfo(id); AU && AU.sfx('tap'); };
-      el.appendChild(b);
-    }
-    el.onkeydown = e => arrowNav(e, el);
+  const sl = activeSlots(), multi = sl.length > 1; if (sl.indexOf(openSlot) < 0) openSlot = 1;
+  for (const n of [1, 2, 3, 4]) {
+    const sec = $('secP' + n), on = sl.indexOf(n) >= 0;
+    sec.hidden = !on; sec.classList.toggle('multi', multi); sec.classList.toggle('open', !multi || openSlot === n); $('pickP' + n).dataset.r = '';
+    if (on && (!multi || openSlot === n)) renderRoster(n);
   }
-  { // how far the next unlock is
-    const next = WIN_ORDER.findIndex(id => !hasChar(id)), w = save.stats.wins | 0;
-    $('rNote').textContent = next >= 0 ? T('あと {n} 勝で、新しいおもちゃが開く', { n: Math.max(1, winsNeed(next) - w) }) : '';
-    $('rNote').hidden = next < 0;
-  }
+  renderBars();
+  renderUnlockList();
   const st = $('pickStage'); st.innerHTML = '';
+  const s = save.set;
   for (const id of ['random'].concat(E.STAGE_IDS)) {
     const lock = id !== 'random' && !hasStage(id);
     const b = chipEl('stage', id, id === 'random' ? T('ランダム') : lock ? T('ロック中') : L(E.STAGES[id].name), lock);
@@ -948,6 +1055,100 @@ function renderPickers() {
     st.appendChild(b);
   }
   st.onkeydown = e => arrowNav(e, st);
+}
+// search box + type filter + count above each picker (built once per slot)
+function buildTool(n) {
+  const box = $('toolP' + n); if (box.dataset.built) return; box.dataset.built = '1';
+  const q = document.createElement('input'); q.type = 'search'; q.className = 'rq'; q.placeholder = T('なまえ・タイプでさがす'); q.setAttribute('aria-label', T('おもちゃをさがす')); q.autocomplete = 'off'; q.enterKeyHint = 'search';
+  q.addEventListener('input', () => { RS[n].q = q.value; applyFilter(n); });
+  q.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { q.blur(); } });
+  const fc = document.createElement('div'); fc.className = 'fchips'; fc.setAttribute('role', 'group'); fc.setAttribute('aria-label', T('しぼりこみ'));
+  const defs = [['all', T('すべて')], ['fav', '★ ' + T('お気に入り')], ['rec', T('さいきん')]].concat(K.ARCH.map(a => [a.id, L(a)]));
+  for (const [f, label] of defs) { const b = document.createElement('button'); b.type = 'button'; b.dataset.f = f; b.textContent = label; b.onclick = () => { RS[n].f = f; applyFilter(n); AU && AU.sfx('tap'); }; fc.appendChild(b); }
+  const ct = document.createElement('div'); ct.className = 'rcount'; ct.id = 'rcount' + n; ct.setAttribute('role', 'status');
+  box.appendChild(q); box.appendChild(fc); box.appendChild(ct); box.q = q;
+}
+function matchChar(C, q) {
+  const A = K.ARCH.find(x => x.id === C.arch) || {};
+  return [C.id, C.name.ja, C.name.en, C.short.ja, C.short.en, C.tag.ja, C.tag.en, A.ja, A.en].join(' ').toLowerCase().indexOf(q) >= 0;
+}
+function applyFilter(n) {
+  const R = RS[n], el = $('pickP' + n), q = R.q.trim().toLowerCase(); let shown = 0, total = 0;
+  for (const b of el.querySelectorAll('.pk')) {
+    const id = b.dataset.id, C = E.CH[id], ok = pickable(id), ri = save.rc.indexOf(id); let vis = true;
+    if (ok) total++;
+    if (R.f === 'fav') vis = ok && save.fav.indexOf(id) >= 0; else if (R.f === 'rec') vis = ok && ri >= 0; else if (R.f !== 'all') vis = C.arch === R.f;
+    if (vis && q) vis = ok && matchChar(C, q);
+    b.hidden = !vis; b.style.order = R.f === 'rec' && ri >= 0 ? ri : ''; if (vis) shown++;
+  }
+  for (const b of $('toolP' + n).querySelectorAll('.fchips button')) b.classList.toggle('sel', b.dataset.f === R.f);
+  $('rcount' + n).textContent = shown ? T('{n}人 / ぜんぶで {m}人', { n: shown, m: E.CHAR_IDS.length }) : (R.f === 'fav' ? T('お気に入りはまだありません（おもちゃを選んで ☆ をおす）') : R.f === 'rec' ? T('まだ遊んだおもちゃがありません') : T('見つかりませんでした'));
+}
+// the folded bar of each slot: the portrait, the name and the colour of the pick
+function renderBars() {
+  const sl = activeSlots(), eff = effPals();
+  sl.forEach((n, k) => {
+    const id = save.set[SKEY[n]], bar = $('barP' + n), P = K.palettes(id), p = P[eff[k]] || P[0];
+    bar.innerHTML = '<canvas></canvas><span class="sn"></span><span class="sw"></span><span class="ch" aria-hidden="true">▾</span>';
+    ART.portrait(bar.querySelector('canvas'), id, { size: 38, pal: eff[k] }); bar.querySelector('.sn').textContent = L(E.CH[id].short);
+    bar.querySelector('.sw').style.setProperty('--c1', p.col); bar.querySelector('.sw').style.setProperty('--c2', p.col2);
+    bar.setAttribute('aria-expanded', openSlot === n ? 'true' : 'false'); bar.setAttribute('aria-label', $('lbP' + n).textContent + ': ' + L(E.CH[id].short));
+    bar.onclick = () => { openSlot = openSlot === n ? 0 : n; for (const m of [1, 2, 3, 4]) $('secP' + m).classList.toggle('open', openSlot === m); if (openSlot === n) { if (!$('pickP' + n).dataset.r) renderRoster(n); try { $('secP' + n).scrollIntoView({ block: 'nearest' }); } catch (e) {} } renderBars(); };
+  });
+}
+function renderRoster(n) {
+  buildTool(n); $('pickP' + n).dataset.r = '1';
+  const el = $('pickP' + n), key = SKEY[n], s = save.set; el.innerHTML = '';
+  E.CHAR_IDS.forEach(id => {
+    const ok = pickable(id), b = chipEl('char', id, ok ? L(E.CH[id].short) : T('ロック中'), !ok, save.pal[id] | 0);
+    if (ok && save.fav.indexOf(id) >= 0) { const st = document.createElement('span'); st.className = 'star'; st.textContent = '★'; b.appendChild(st); }
+    if (s[key] === id) b.classList.add('sel');
+    b.onclick = () => { if (!ok) return; s[key] = id; for (const x of el.children) x.classList.toggle('sel', x === b); charInfo(id); renderPals(); renderBars(); AU && AU.sfx('tap'); };
+    el.appendChild(b);
+  });
+  el.onkeydown = e => { arrowNav(e, el); if ((e.key === 'f' || e.key === 'F') && document.activeElement && document.activeElement.dataset.id) { toggleFav(document.activeElement.dataset.id); e.preventDefault(); } };
+  applyFilter(n); renderPals();
+}
+// colour variants of the toy picked in each shown slot; dashed ring = the colour the toy will really get (when the same toy is picked twice)
+function renderPals() {
+  const sl = activeSlots(), eff = effPals();
+  sl.forEach((n, k) => {
+    const id = save.set[SKEY[n]], P = K.palettes(id), box = $('palP' + n), want = save.pal[id] === undefined ? 0 : save.pal[id]; if (!P.length) return;
+    box.innerHTML = '<span class="pl">' + esc(T('いろ')) + '</span>';
+    P.forEach((p, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.style.setProperty('--c1', p.col); b.style.setProperty('--c2', p.col2); b.dataset.i = i;
+      b.setAttribute('aria-label', L(p.name) + (i === eff[k] ? '' : '')); b.title = L(p.name); b.setAttribute('aria-pressed', i === eff[k] ? 'true' : 'false');
+      if (i === want) b.classList.add('sel'); if (i === eff[k] && i !== want) b.classList.add('eff');
+      b.onclick = () => {
+        save.pal[id] = i; AU && AU.sfx('tap');
+        for (const c of document.querySelectorAll('.chips.roster .pk[data-id="' + id + '"]')) ART.portrait(c.querySelector('canvas'), id, { size: 54, pal: i });
+        renderPals(); renderBars();
+      };
+      box.appendChild(b);
+    });
+  });
+}
+function toggleFav(id) {
+  if (!id || !pickable(id)) return; const i = save.fav.indexOf(id);
+  if (i >= 0) save.fav.splice(i, 1); else save.fav.push(id);
+  writeSave(); AU && AU.sfx('tap');
+  for (const n of activeSlots()) { const b = $('pickP' + n).querySelector('.pk[data-id="' + id + '"]'); if (!b) continue; const st = b.querySelector('.star'); if (i >= 0 && st) st.remove(); else if (i < 0 && !st) { const e = document.createElement('span'); e.className = 'star'; e.textContent = '★'; b.appendChild(e); } applyFilter(n); }
+  charInfo(id);
+}
+$('favBtn').onclick = () => { if (infoId) toggleFav(infoId); };
+// locked toys: how far along each is (names stay secret), the nearest first
+function lockedList() {
+  const pr = progOf();
+  return E.CHAR_IDS.filter(id => !hasChar(id)).map(id => { const i = K.unlockInfo(id, pr); return { id, i, ratio: i.rule.t === 'ladder' ? 0 : i.have / Math.max(1, i.need), text: K.unlockText(id, pr, EN) }; }).sort((x, y) => y.ratio - x.ratio);
+}
+function renderUnlockList() {
+  const L2 = lockedList(), box = $('ulBox');
+  box.hidden = !L2.length; $('rNote').hidden = !L2.length;
+  if (!L2.length) { $('rNote').textContent = ''; return; }
+  const near = L2.find(x => x.i.rule.t !== 'ladder') || L2[0];
+  $('rNote').textContent = T('つぎに開く：{t}', { t: near.text });
+  box.querySelector('summary').textContent = T('ロック中のおもちゃの開き方') + ' (' + L2.length + ')';
+  $('ulBody').innerHTML = L2.slice(0, 14).map(x => '<div class="urow"><span>' + esc(T('ロック中')) + ' · ' + esc(x.i.rule.t === 'ladder' ? T('ラダーを勝ちぬくと開く') : '？？？') + '</span><b>' + esc(x.text) + '</b></div>').join('') + (L2.length > 14 ? '<div class="urow"><span>…</span><b>+' + (L2.length - 14) + '</b></div>' : '');
 }
 // arrow keys move between the tiles of a grid (the nearest tile in that direction)
 function arrowNav(e, box) {
@@ -967,9 +1168,13 @@ function nearestIn(items, cur, dx, dy) {
   return best;
 }
 function charInfo(id) {
-  const C = E.CH[id]; if (!C) return;
+  const C = E.CH[id]; if (!C) return; infoId = id;
   const bars = [['はやさ', C.stats.speed], ['ちから', C.stats.power], ['おもさ', C.stats.weight], ['リーチ', C.stats.reach], ['もどり', C.stats.recov]];
-  $('charInfo').innerHTML = '<b>' + esc(L(C.name)) + '</b><small>' + esc(L(C.tag)) + '</small><div>' + esc(L(C.desc)) + '</div><div class="bars">' + bars.map(b => '<span>' + esc(T(b[0])) + '</span><i style="--w:' + b[1] * 20 + '%"></i>').join('') + '</div>';
+  const A = K.ARCH.find(x => x.id === C.arch);
+  $('charInfo').innerHTML = '<b>' + esc(L(C.name)) + '</b><small>' + (A ? esc(L(A)) + ' · ' : '') + esc(L(C.tag)) + '</small><div>' + esc(L(C.desc)) + '</div><div class="bars">' + bars.map(b => '<span>' + esc(T(b[0])) + '</span><i style="--w:' + b[1] * 20 + '%"></i>').join('') + '</div>';
+  const fav = save.fav.indexOf(id) >= 0;
+  $('favBtn').textContent = (fav ? '★ ' : '☆ ') + T(fav ? 'お気に入りをはずす' : 'お気に入りにする'); $('favBtn').setAttribute('aria-pressed', fav ? 'true' : 'false'); $('favBtn').hidden = false;
+  $('favNote').textContent = T('キーボードは F キー');
 }
 function stageInfo(id) {
   const S = E.STAGES[id];
@@ -981,21 +1186,34 @@ function seg(el, items, cur, on) {
 }
 function openSetup(mode) {
   setupMode = mode; const s = save.set;
-  if (!hasChar(s.c1)) s.c1 = 'robo'; if (!hasChar(s.c2)) s.c2 = 'duck'; if (s.stage !== 'random' && !hasStage(s.stage)) s.stage = 'bench';
+  s.nh = E.clamp(s.nh | 0 || 2, 2, 4);
+  for (const k of ['c1', 'c2', 'c3', 'c4']) if (!pickable(s[k])) s[k] = { c1: 'robo', c2: 'duck', c3: 'bear', c4: 'tin' }[k];
+  if (s.stage !== 'random' && !hasStage(s.stage)) s.stage = 'bench';
   if (mode === 'ladder' && s.diff === 3 && save.cl < 1) s.diff = 2;
+  for (const n of [1, 2, 3, 4]) { RS[n].q = ''; RS[n].f = 'all'; const t = $('toolP' + n); if (t.q) t.q.value = ''; }
   renderPickers();
   const solo = mode === 'solo', two = mode === 'two', lad = mode === 'ladder', train = mode === 'train';
-  $('sTitle').textContent = solo ? T('ひとりで対戦') : two ? T('ふたりで対戦') : lad ? T('ラダー（8戦）') : T('れんしゅう');
-  $('lbP1').textContent = two ? T('1P のおもちゃ') : T('あなたのおもちゃ'); $('secP2').hidden = !(two || train); $('lbP2').textContent = two ? T('2P のおもちゃ') : T('ダミーのおもちゃ');
-  $('secCpu').hidden = !(solo || two); $('secLvl').hidden = !(solo || two || lad); $('secStage').hidden = lad; $('secRules').hidden = !(solo || two);
+  $('sTitle').textContent = solo ? T('ひとりで対戦') : two ? T('みんなで対戦') : lad ? T('ラダー（8戦）') : T('れんしゅう');
+  $('lbP1').textContent = two ? T('1P のおもちゃ') : T('あなたのおもちゃ'); $('lbP2').textContent = two ? T('2P のおもちゃ') : T('ダミーのおもちゃ'); $('lbP3').textContent = T('3P のおもちゃ'); $('lbP4').textContent = T('4P のおもちゃ');
+  $('secHum').hidden = !two; $('secCpu').hidden = !(solo || two); $('secLvl').hidden = !(solo || two || lad); $('secStage').hidden = lad; $('secRules').hidden = !(solo || two);
   $('lbLvl').textContent = lad ? T('強さ（ラダー）') : T('CPU の強さ');
-  const nMin = solo ? 1 : 0, nMax = solo ? 3 : 2, nk = two ? 'n2' : 'n'; s[nk] = E.clamp(s[nk] | 0, nMin, nMax);
-  const ns = []; for (let n = nMin; n <= nMax; n++) ns.push([n, String(n)]);
-  seg($('segN'), ns, s[nk], v => { s[nk] = v; });
+  const drawHum = () => {
+    seg($('segH'), [2, 3, 4].map(n => [n, T('{n}人', { n })]), s.nh, v => { s.nh = v; drawHum(); renderPickers(); });
+    $('padNote').textContent = s.nh >= 3 ? T('3人め・4人めはゲームパッドであそびます（キーボードは1P・2P）。つないであるゲームパッド：{n}', { n: padCount() }) : (isTouchDevice ? T('スマホは、画面を左右にわけて2人であそべます') : '');
+    drawCpu();
+  };
+  const drawCpu = () => {
+    const nMin = solo ? 1 : 0, nMax = solo ? 3 : 4 - s.nh, nk = two ? 'n2' : 'n'; s[nk] = E.clamp(s[nk] | 0, nMin, nMax);
+    const ns = []; for (let n = nMin; n <= nMax; n++) ns.push([n, String(n)]);
+    seg($('segN'), ns, s[nk], v => { s[nk] = v; });
+  };
+  drawHum(); if (!two) drawCpu();
   const lv = [[1, T('かんたん')], [2, T('ふつう')], [3, T('つよい'), lad && save.cl < 1]];
   seg($('segL'), lv, lad ? s.diff : s.lvl, v => { if (lad) s.diff = v; else s.lvl = v; });
   seg($('segR'), [['stock', T('残機')], ['time', T('時間')]], s.mode, v => { s.mode = v; fillRules(); });
   fillRules();
+  $('uaChk').checked = !!save.ua; $('uaRow').hidden = lad;
+  $('uaChk').onchange = () => { save.ua = $('uaChk').checked ? 1 : 0; writeSave(); renderPickers(); };
   charInfo(s.c1); stageInfo(s.stage);
   $('sNote').textContent = lad && save.cl < 1 ? T('「つよい」はラダーを1回クリアすると開く') : T('決めた設定は覚えています');
   $('sGo').textContent = lad ? T('ラダーをはじめる') : T('はじめる');
@@ -1004,27 +1222,32 @@ function openSetup(mode) {
   // show the picked character's info when hovering is not possible: tapping a chip updates it
   showOv('ovSetup');
 }
+function padCount() { try { const l = navigator.getGamepads ? navigator.getGamepads() : []; let n = 0; for (const g of l) if (g && g.connected) n++; return n; } catch (e) { return 0; } }
 function fillRules() {
   const s = save.set;
   if (s.mode === 'time') seg($('segR2'), [2, 3, 5].map(n => [n, T('{n}分', { n })]), s.tm, v => { s.tm = v; });
   else seg($('segR2'), [1, 2, 3, 4, 5].map(n => [n, T('{n}機', { n })]), s.stk, v => { s.stk = v; });
 }
+// recently used toys, newest first (the "Recent" filter)
+function noteRecent(list) { for (const id of list.slice().reverse()) { const i = save.rc.indexOf(id); if (i >= 0) save.rc.splice(i, 1); save.rc.unshift(id); } save.rc.length = Math.min(save.rc.length, 12); }
+// names above the heads and on the cards: P1.. for people, CPU (numbered when there are several) for the computer
+function makeLabels(n, humans, solo) { const cpu = n - humans, out = []; for (let i = 0; i < n; i++) out.push(i < humans ? (solo ? T('自分') : 'P' + (i + 1)) : (cpu > 1 ? 'CPU' + (i - humans + 1) : 'CPU')); return out; }
 function startFromSetup() {
   const s = save.set, mode = setupMode;
   hideOv('ovSetup');
-  if (mode === 'ladder') { ladderBegin(s.c1, s.diff); return; }
+  if (mode === 'ladder') { noteRecent([s.c1]); ladderBegin(s.c1, s.diff); return; }
   const stage = s.stage === 'random' ? E.STAGE_IDS.filter(hasStage)[Math.floor(Math.random() * E.STAGE_IDS.filter(hasStage).length)] : s.stage;
-  const pool = E.CHAR_IDS.filter(c => c !== s.c1);
   const rule = { mode: s.mode, stk: s.stk, tm: s.tm };
-  if (mode === 'train') { startMatch({ mode: 'train', title: T('れんしゅう'), humans: 1, training: true, dummy: 'stand', stage, fighters: [{ ch: s.c1, lvl: 0 }, { ch: s.c2, lvl: 2 }], labels: [T('自分'), T('ダミー')] }); G.o.setup = 1; showTrain(); save.stats.train++; writeSave(); return; }
-  const fighters = [{ ch: s.c1, lvl: 0 }], labels = [];
-  const humans = mode === 'two' ? 2 : 1;
-  if (mode === 'two') fighters.push({ ch: s.c2, lvl: 0 });
+  if (mode === 'train') { noteRecent([s.c2, s.c1]); startMatch({ mode: 'train', title: T('れんしゅう'), humans: 1, training: true, dummy: 'stand', stage, fighters: [{ ch: s.c1, lvl: 0 }, { ch: s.c2, lvl: 2 }], labels: [T('自分'), T('ダミー')] }); G.o.setup = 1; showTrain(); save.stats.train++; writeSave(); return; }
+  const humans = mode === 'two' ? s.nh : 1, fighters = [];
+  for (let i = 0; i < humans; i++) fighters.push({ ch: s[SKEY[i + 1]], lvl: 0 });
+  noteRecent(fighters.map(f => f.ch));
   const nc = mode === 'two' ? s.n2 : s.n;
   for (let k = 0; k < nc; k++) { const pc = E.CHAR_IDS[(E.hash32('c' + Date.now() + k) + k) % E.CHAR_IDS.length]; fighters.push({ ch: pc, lvl: s.lvl }); }
-  fighters.forEach((f, i) => labels.push(i < humans ? (humans === 2 ? 'P' + (i + 1) : T('自分')) : 'CPU'));
-  startMatch({ mode: mode === 'two' ? '2p' : 'vs', title: mode === 'two' ? T('ふたりで対戦') : T('ひとりで対戦'), humans, stage, rule, fighters, labels });
-  if (mode === 'two' && isTouchDevice && innerWidth < 560) toast(T('ふたりで遊ぶときは、横向きの画面がおすすめ'));
+  const labels = makeLabels(fighters.length, humans, humans === 1);
+  writeSave();
+  startMatch({ mode: mode === 'two' ? '2p' : 'vs', title: mode === 'two' ? T('みんなで対戦') : T('ひとりで対戦'), humans, stage, rule, fighters, labels });
+  if (humans >= 3 && padCount() < humans - 1) toast(T('ゲームパッドが足りないかもしれません'));
 }
 function toast(msg) { if (UI && UI.toast) UI.toast(msg); }
 
@@ -1199,12 +1422,12 @@ addEventListener('keydown', e => { if (e.code === 'Escape' && G && G.mode === 'o
 
 if (window.KoboGame) KoboGame.register({
   id: GAME,
-  pause() { paused = true; down.clear(); touchBits[0] = touchBits[1] = 0; },
+  pause() { paused = true; down.clear(); touchBits.fill(0); },
   resume(reason) { if (!paused) return; paused = false; if (G && G.mode === 'online') { lastT = now(); return; } if (reason !== 'menu' && playing() && !anyOverlay() && !menuOpen) openMenu(); lastT = now(); acc = 0; },
   isIdle: () => !playing(),
   dispose() { cancelAnimationFrame(raf); },
 });
-document.addEventListener('visibilitychange', () => { lastT = now(); down.clear(); touchBits[0] = touchBits[1] = 0; });
+document.addEventListener('visibilitychange', () => { lastT = now(); down.clear(); touchBits.fill(0); });
 if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
 window.addEventListener('storage', e => { if (e.key === SAVE_KEY) { save = readSave(); winUnlocks(); rebuildMaps(); } });
 
@@ -1217,8 +1440,7 @@ function onlineFrame(dt) {
   if (m && !m.disposed) G.st = m.st();
   if (G.st.over || (m && m.phase === 'count')) { G.acc += dt; let n = 0; while (G.acc >= E.DT && n++ < 5) { G.acc -= E.DT; ART.tick(G.st); if (G.st.over) G.endT++; } }
   setTimeChip(); needDraw = true;
-  const inset = isTouchDevice && !view.portrait ? Math.round(view.W * 0.31) : 0;
-  ART.frame(ctx, G.st, view, { labels: G.labels, hudInset: inset, hudBottom: inset ? 6 : 8 });
+  ART.frame(ctx, G.st, view, Object.assign({ labels: G.labels }, hudOpts()));
   needDraw = false;
 }
 function onlineCount(n) {
@@ -1320,7 +1542,7 @@ if (DEBUG) {
     setPct: (i, p) => { G.st.fighters[i].pct = p; },
     put: (i, o) => { const f = G.st.fighters[i]; Object.assign(f, o); if (o.gr === undefined && (o.x !== undefined || o.y !== undefined)) f.gr = E.supportAt(G.st, f); },
     place: (i, x, y) => { const f = G.st.fighters[i]; f.x = x; f.y = y; f.vx = f.vy = 0; f.gr = E.supportAt(G.st, f); },
-    showTitle, showHowto, openSetup, showLadder, openMenu, startDemo, layout, showCtl, rebuildMaps, winUnlocks,
+    showTitle, showHowto, openSetup, showLadder, openMenu, startDemo, layout, showCtl, rebuildMaps, winUnlocks, hudOpts, K,
     fps(ms) { return new Promise(res => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(Math.round(f * 1000 / (performance.now() - t0))); }; requestAnimationFrame(tick); }); },
     thumbScene() {
       store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideAll();

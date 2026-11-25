@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // おもちゃ大乱闘の通しプレイ（Playwright。キーボードとタッチは本物の入力。?debug の window.__brawl は「状態を読む」「試合を早く終わらせる」ためだけ）
-//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick]
+//   node tools/tests/brawl-play.js [first,solo,touch,twop,ladder,training,pause,resume,english,layouts,controls,gamepad,roster,ctlpage,touchflick,multi]
 // 1. 初回：遊び方 → タイトル（うしろで CPU のデモが動く）  2. ひとりで対戦：本物のキーでいどう・ジャンプ・こうげき・つよい攻撃・まもり・つかみ・KO・結果と保存
 // 3. タッチ：左のスティックと右のボタンを同時におす（マルチタッチ）  4. ふたりで1台：1P と 2P のキーが別々に効く
 // 5. ラダー：8戦のながれ・おもちゃとステージが開く・負けてコンティニュー・クリア・ベスト  6. れんしゅう：ダミー・コンボ・KO でも終わらない
 // 7. 一時停止  8. 保存と再開（ラダー）  9. 英語  10. 全画面サイズ × ja/en（タイトル・設定・試合・結果）
 // 11. controls：本物のキーで ダッシュ・はじきジャンプ・はじき強攻撃・Cスティック・まもり・つかみ/なげ・空中よけ・ふち・うけ身・あいさつ
 // 12. gamepad：にせのゲームパッド（navigator.getGamepads）で アナログのはじき・ゆっくり押し・Cスティック・メニュー操作
-// 13. roster：18人のえらぶ画面（320px の ja/en・矢印キーで移動・勝ちで開く）  14. ctlpage：操作ページ（4つのタブ・キーの変更・オプション）  15. touchflick：スティックのはじき
+// 13. roster：18人のえらぶ画面（320px の ja/en・矢印キーで移動・勝ちで開く）  14. ctlpage：操作ページ（4つのタブ・キーの変更・オプション）  15. touchflick：スティックのはじき  16. multi：1台で2〜4人（HUD・カメラ・名前）・色ちがい・えらぶ画面の検索/絞りこみ/お気に入り・「よこ向きがおすすめ」
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -431,13 +431,98 @@ async function touchflick(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+
+// ---- 16. same-device multiplayer display, colour variants, roster tools, the landscape prompt
+async function multi(env) {
+  console.log('16. 2-4 players on one screen (HUD, camera, tags), colour variants, roster tools, "landscape is nicer" prompt');
+  V.pick('844x390');
+  const cases = [['land', true, 'landscape 667x375 touch'], ['844x390', true, 'landscape 844x390 touch'], ['se2', true, 'portrait 375x667 touch'], ['se1', true, 'portrait 320x568 touch'], ['desk', false, 'desktop 1280x720']];
+  V.VIEWPORTS.desk = { width: 1280, height: 720, dpr: 1, safe: { top: 0, bottom: 0, left: 0, right: 0 } };
+  for (const [vp, touch, label] of cases) {
+    for (const n of [2, 3, 4]) {
+      const s = await open(env, { vp, touch }); const p = s.page;
+      await p.evaluate(n => { const q = __brawl.save.set; q.nh = n; q.n2 = Math.min(1, 4 - n); q.c1 = 'robo'; q.c2 = 'robo'; q.c3 = 'bear'; q.c4 = 'duck'; }, n);
+      await p.click('#mTwo'); await p.waitForTimeout(150);
+      const r = await p.evaluate(`(${layoutProbe})()`); check(`${label}, ${n} humans: the setup fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0, { off: r.offscreen.slice(0, 3) });
+      const secs = await p.evaluate(() => [1, 2, 3, 4].map(k => !document.getElementById('secP' + k).hidden)); check(`${label}, ${n} humans: ${n} picker slots shown`, secs.filter(Boolean).length === n, secs);
+      await p.click('#sGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await wait(p, () => __kb.state().count === 0);
+      const a = await st(p); check(`${label}, ${n} humans: ${n + (n < 4 ? 1 : 0)} fighters, ${n} people`, a.fighters.length === n + (n < 4 ? 1 : 0) && a.humans === n, { f: a.fighters.length, h: a.humans });
+      // same toy twice: different colours (P1 and P2 both Gearo)
+      const pal = await p.evaluate(() => __brawl.G.pal.slice()); check(`${label}, ${n} humans: the same toy gets different colours (${pal})`, pal[0] !== pal[1] && pal.every(v => v >= 0 && v < 8), pal);
+      // spread everyone out: the camera must keep them all on screen, below the header and outside the HUD strip
+      await p.evaluate(() => { const G = __brawl.G, k = G.st.fighters.length; __brawl.freeze(true); G.st.fighters.forEach((f, i) => __brawl.place(i, -520 + i * (1040 / Math.max(1, k - 1)), i % 2 ? -120 : 0)); __brawl.put(0, { y: -220 }); for (let i = 0; i < 160; i++) { __brawl.step(1, G.st.fighters.map(() => 0)); } });
+      await p.waitForTimeout(500);
+      const vis = await p.evaluate(() => {
+        const G = __brawl.G, A = __brawl.ART, cam = A.cam, cv = document.getElementById('board').getBoundingClientRect(), W = cv.width, H = cv.height, z = cam.z;
+        const hdr = Math.round(document.querySelector('header').getBoundingClientRect().bottom - cv.top);
+        return { W, H, z, hdr, pts: G.st.fighters.map(f => { const C = __brawl.E.CH[f.ch]; return { sx: W / 2 + (f.x - cam.x) * z, sy: H / 2 + (f.y - C.h / 2 - cam.y) * z, s: f.s }; }), R: { sT: A.R.safeT, sB: A.R.safeB } };
+      });
+      const bad = vis.pts.filter(q => q.s !== 'out' && (q.sx < 4 || q.sx > vis.W - 4 || q.sy < vis.R.sT - 2 || q.sy > vis.H - vis.R.sB + 2));
+      check(`${label}, ${n} humans: the camera keeps every fighter in the free band (z ${vis.z.toFixed(2)}, band ${vis.R.sT}..${vis.H - vis.R.sB})`, bad.length === 0, { bad, vis: { W: vis.W, H: vis.H, R: vis.R } });
+      const hud = await p.evaluate(() => { const A = __brawl.ART, cv = document.getElementById('board').getBoundingClientRect(), k = __brawl.G.st.fighters.length; const hb = document.body.classList.contains('notouch'); return { k, W: cv.width, H: cv.height, hb, M: A.hudMetrics({ W: cv.width, H: cv.height }, k, __brawl.hudOpts()) }; });
+      check(`${label}, ${n} humans: the HUD cards fit the width (card ${Math.round(hud.M.pw)}px)`, hud.M.x0 >= 0 && hud.M.x0 + hud.M.pw * hud.k + hud.M.gap * (hud.k - 1) <= hud.W + 1 && hud.M.pw >= 56, hud.M);
+      if (n === 4 || n === 2) await shot(p, `16-multi-${vp}-${n}p`);
+      check(`${label}, ${n} humans: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+    }
+  }
+  // one human on a landscape touch screen: the cards sit in a strip under the header, above nothing the thumbs use
+  for (const vp of ['land', '844x390']) {
+    const s = await open(env, { vp, touch: true }); const p = s.page;
+    await p.evaluate(() => { __brawl.save.set.n = 3; }); await p.click('#mSolo'); await p.click('#sGo'); await wait(p, () => __kb.state().playing); await p.evaluate(() => __brawl.skipCount()); await p.waitForTimeout(400);
+    const h = await p.evaluate(() => { const R = __brawl.ART.R; const cv = document.getElementById('board').getBoundingClientRect(); return { sT: R.safeT, sB: R.safeB, H: cv.height, hdr: Math.round(document.querySelector('header').getBoundingClientRect().bottom - cv.top) }; });
+    check(`${vp} touch, 1 human + 3 CPU: the cards are in the top strip (safe top ${h.sT} > header ${h.hdr}, bottom band ${h.sB})`, h.sT > h.hdr && h.sB === 0, h);
+    await shot(p, `16-solo4-${vp}`); check(`${vp} touch: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  // colour variants + roster tools (desktop)
+  {
+    const s = await open(env, { vp: 'desk', touch: false }); const p = s.page;
+    await p.click('#mTwo'); await p.waitForTimeout(150);
+    const pals = await p.evaluate(() => [...document.querySelectorAll('#palP1 button')].length); check('a toy has 8 colour variants to pick from', pals === 8, pals);
+    await p.click('#palP1 button:nth-of-type(3)'); const sv1 = await p.evaluate(() => __brawl.save.pal.robo); check('picking a colour is remembered for that toy', sv1 === 2, sv1);
+    // P2 picks the same toy: the second player gets another colour automatically (dashed ring)
+    await p.evaluate(() => { __brawl.save.set.c2 = 'robo'; }); await p.click('#mTwo').catch(() => {}); await p.evaluate(() => __brawl.openSetup('two'));
+    await p.waitForTimeout(150);
+    await p.click('#sGo'); await wait(p, () => __kb.state().playing);
+    const pl = await p.evaluate(() => __brawl.G.pal.slice()); check('P1 keeps the wished colour, P2 (same toy) gets a different one automatically', pl[0] === 2 && pl[1] !== 2, pl);
+    await p.evaluate(() => __brawl.showTitle()); await p.click('#mSolo'); await p.waitForTimeout(100);
+    check('the roster has a search box, type filters, a count', await p.evaluate(() => !!document.querySelector('#toolP1 .rq') && document.querySelectorAll('#toolP1 .fchips button').length === 13 && /18/.test(document.getElementById('rcount1').textContent)), null);
+    await p.fill('#toolP1 .rq', 'ギアン'); const v1 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('searching by name narrows the grid', v1.length === 1 && v1[0] === 'robo', v1);
+    await p.fill('#toolP1 .rq', 'gearo'); const v2 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('searching in English works too', v2.length === 1 && v2[0] === 'robo', v2);
+    await p.fill('#toolP1 .rq', 'ニンジャ'); const v3 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).length); check('a locked toy is not found by name', v3 === 0, v3);
+    await p.fill('#toolP1 .rq', '');
+    await p.click('#toolP1 .fchips button[data-f="counter"]'); const v4 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id + ':' + __brawl.E.CH[b.dataset.id].arch)); check('the type filter keeps only that type (counter: duck)', v4.includes('duck:counter') && v4.every(x => /:counter$/.test(x)), v4);
+    await p.click('#toolP1 .fchips button[data-f="all"]');
+    await p.focus('#pickP1 .pk[data-id="duck"]'); await p.keyboard.press('f'); const fav = await p.evaluate(() => __brawl.save.fav.slice()); check('F marks a favourite (star), saved', fav.length === 1 && fav[0] === 'duck', fav);
+    await p.click('#toolP1 .fchips button[data-f="fav"]'); const v5 = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => !b.hidden).map(b => b.dataset.id)); check('the Favorites filter shows it', v5.length === 1 && v5[0] === 'duck', v5);
+    await p.click('#toolP1 .fchips button[data-f="all"]');
+    await p.click('#uaChk'); const allOpen = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].every(b => !b.disabled) && __brawl.save.ua === 1 && Object.keys(__brawl.save.un.c).length === 3); check('"use every toy" opens all toys in the picker without touching the saved unlocks', allOpen, await p.evaluate(() => Object.keys(__brawl.save.un.c)));
+    await p.click('#sBack'); await p.click('#mLad'); const ladLocked = await p.evaluate(() => [...document.querySelectorAll('#pickP1 .pk')].filter(b => b.disabled).length); check('the ladder ignores that switch (still 15 locked)', ladLocked === 15, ladLocked);
+    check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  // "landscape is nicer": portrait phones only, dismiss is remembered
+  {
+    const s = await open(env, { vp: 'se2', touch: true, seed: { [HOWTO]: '1' } }); const p = s.page;
+    const vis = () => p.evaluate(() => { const e = document.getElementById('landTip'); return !e.hidden && e.getBoundingClientRect().height > 0; });
+    check('portrait phone: the "landscape is nicer" prompt shows on the title', await vis(), null);
+    const tt = await p.textContent('#landTip'); check('the prompt says so (ja)', /よこ向き/.test(tt), tt);
+    const box = await p.evaluate(() => { const r = document.getElementById('landTip').getBoundingClientRect(), b = document.getElementById('landX').getBoundingClientRect(); return { r: [r.left, r.right, innerWidth], bh: b.height, bw: b.width }; }); check('the prompt fits and its dismiss button is at least 44px', box.r[0] >= 0 && box.r[1] <= box.r[2] && box.bh >= 44 && box.bw >= 44, box);
+    await shot(p, '16-landtip-ja');
+    await p.click('#landX'); check('dismissed: hidden', !(await vis()), null);
+    await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); await p.waitForTimeout(300); check('the dismissal is remembered after a reload', !(await vis()), null);
+    await s.close();
+    const s2 = await open(env, { vp: 'land', touch: true }); check('landscape: no prompt', !(await s2.page.evaluate(() => { const e = document.getElementById('landTip'); return !e.hidden; })), null); await s2.close();
+    const s3 = await open(env, { vp: 'se2', touch: true, lang: 'en' }); const te = await s3.page.textContent('#landTip'); check('the prompt in English', /Landscape/.test(te) && !/[ぁ-んァ-ン一-龥]/.test(te), te); await s3.close();
+    const s4 = await open(env, { vp: 'desk', touch: false }); check('desktop: no prompt', !(await s4.page.evaluate(() => !document.getElementById('landTip').hidden)), null); await s4.close();
+  }
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick]) {
+  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }
