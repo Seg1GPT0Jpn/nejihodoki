@@ -38,6 +38,7 @@
 //   それ以外（文字列か、オブジェクト）  フィールドごとのマージの宣言。KoboPlatform.merge.make() で関数になる
 //     'max' 'min' 'minPos'（0 より大きい中で小さい方。順位など） 'newest' 'or' 'union'（配列の和集合）
 //     'arrMax'（配列の位置ごとに大きい方） 'mapMax'（= { each: 'max' }）
+//     'bor'（ビットの和集合。数値） 'arrBor'（配列の位置ごとに bor。クリア・メダルを1ビットずつ持つ配列用）
 //     { each: 規則 }                              オブジェクトのキーごとに同じ規則
 //     { fields: { 名前: 規則 }, rest: 規則, version: 'v', groups: [{ keys: [...], cmp: [...] }] }
 //        fields にない名前は rest（省略時 'newest'）。version の値が違うときは大きい方をまるごと使う。
@@ -961,6 +962,65 @@
         'kusoge.crates.save': { fields: { stars: 'max', lv: { each: { fields: { m: 'minPos', p: 'minPos', s: 'max', pf: 'max' }, rest: 'max' } }, pk: { each: 'max' }, stats: { each: 'max' }, set: 'newest', dl: { fields: { k: 'max', m: 'minPos', p: 'minPos', s: 'max', st: 'max', bs: 'max' }, rest: 'max' }, ed: 'union', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'hop', order: 31, path: 'hop/', added: '2026-11-26',
+      title: { ja: 'ぴょんぴょん冒険', en: 'Hop Hop Adventure' },
+      short: { ja: 'ぴょんぴょん冒険', en: 'Hop Hop Adventure' },
+      desc: { ja: 'ぬいぐるみのうさぎ「ぴょんた」を走らせてジャンプ！ 敵をふんで、コインと5このかくしメダルを集めて、ゴールの旗へ。2つの世界・8ステージ（パッチワークの野原・ぜんまい工場。ほかの世界は順次ふえます）、ばね靴・マント・リボンの3つのどうぐ、ステージごとのしかけとボス、最短タイムを競うタイムアタック（ゴースト付き）、毎日ひとつの「きょうのステージ」、自分でつくって合言葉でわたせるエディター。ハートがなくなってもチェックポイントから何度でもやり直せます。キーボード・タッチ・ゲームパッドで遊べます。', en: 'Run and jump with Pyonta, a toy rabbit! Stomp enemies, grab coins and five hidden medals in every level and reach the goal flag. Two worlds and 8 levels so far (a patchwork meadow and a windup toy factory; more worlds are coming), three gadgets (spring boots, a glide cape and a swinging ribbon), a new gimmick in every level, bosses, time attack with a ghost of your best run, a new daily level every day and a level editor that shares by code. Run out of hearts and you simply restart from the checkpoint, as often as you like. Keyboard, touch and gamepad.' },
+      label: { ja: '横スクロールアクション', en: 'Side-scrolling action' },
+      genres: ['action'], tags: ['2d', 'stages', 'daily', 'casual'],
+      keywords: { ja: ['エディター', 'タイムアタック', 'きょうのステージ', 'アクション', 'ジャンプ', '横スクロール', 'ぴょんた', 'うさぎ', 'ぬいぐるみ', 'おもちゃ', 'ステージ', 'ボス', 'メダル', 'コイン', 'ゴール', 'タッチ', 'ゲームパッド'], en: ['action', 'platformer', 'jump', 'run', 'side scroller', 'rabbit', 'toy', 'levels', 'boss', 'medals', 'coins', 'goal flag', 'touch', 'gamepad'] },
+      icon: 'img/icons/hop.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#8fd3ff"/><circle cx="58" cy="14" r="8" fill="#ffe27a"/><path d="M6 22q4-6 10-2q4-5 10 0q-2 4-8 3q-4 3-12-1z" fill="#fff"/><path d="M0 50q18-14 36-4t36-6v32H0z" fill="#6fcf7a"/><path d="M0 58h72v14H0z" fill="#c98b57"/><path d="M0 58h72" stroke="#58b25f" stroke-width="3"/><ellipse cx="26" cy="12" rx="3.2" ry="9" transform="rotate(-8 26 12)" fill="#fff4e6" stroke="#4a3326" stroke-width="1.4"/><ellipse cx="33" cy="12" rx="3.2" ry="9" transform="rotate(10 33 12)" fill="#fff4e6" stroke="#4a3326" stroke-width="1.4"/><ellipse cx="29.5" cy="38" rx="11" ry="13" fill="#fff4e6" stroke="#4a3326" stroke-width="1.6"/><path d="M18 36h22" stroke="#e85d75" stroke-width="3.4"/><circle cx="35" cy="32" r="1.8" fill="#2a2018"/><ellipse cx="38.5" cy="36" rx="2.4" ry="1.7" fill="#ffb3c6"/><circle cx="54" cy="36" r="6" fill="#ffd23f" stroke="#b07a00" stroke-width="1.6"/><path d="M54 32v8" stroke="#b07a00" stroke-width="1.6"/><path d="M42 52h8v6h-8z" fill="#e8836b" stroke="#4a3326" stroke-width="1.2"/></svg>', iconBg: '#8fd3ff',
+      thumb: 'img/thumbs/hop.webp', thumb2x: 'img/thumbs/hop@2x.webp',
+      tech: '2d',
+      // real time: hiding the page pauses the run (flags.pause); progress is saved when a level is cleared and when the page is hidden. No online battle (RTDB unchanged)
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // points: per level 1 (cleared) + 0-5 (medals) + 1 (par-time star), at most 7 x 24 levels = 168
+      score: { unit: { ja: 'ポイント', en: 'points' }, fmt: { ja: '{n} ポイント', en: '{n} points' }, order: 'desc', cap: 168, maxRate: null },
+      rankSource: { key: 'kusoge.hop.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.hop.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '{n} ポイント', en: '{n} pts' } },
+      keys: {
+        'kusoge.hop.save': '{ v:1, pts（クリア1＋メダル0〜5＋タイム★1 を24ステージ分。lv から毎回計算し直す＝ランキング）, lv:[24ステージの整数。ビット0＝クリア, ビット1〜5＝メダル1〜5, ビット6＝めやすタイム★, ビット7＝ダメージなしクリア], bt:{ "<ワールド>-<番号>":最短フレーム数 }, coins, stats:{ plays, clears, deaths, stomps, coins, medals, pounds, ribbon, glide（0.5秒単位）, burrow, swim, nohurt, combo（最大）, daily（きょうのステージのクリア数）, edit（エディターでクリアした数）}, cl（クリアしたステージ数）, md（メダルの数）, all5（メダル5こ全部のステージ数）, par（タイム★の数）, wc:{ "<ワールド>":クリアしたステージ数 }, set:{ slow, hearts, auto, tc（タッチボタン auto|on|off）, keys:{ L,R,U,D,J,RUN,ACT: 足すキー（KeyboardEvent.code）}}, dl:{ k（最後にクリアした日 YYYYMMDD）, t（その日の最短フレーム）, st（連続日数）, bs（最長の連続日数）, n（クリアした日数）}, tut }',
+        'kusoge.hop.howto': 'あそびかたを見た（\'1\'）',
+        'kusoge.hop.ghost': '{ "<ワールド>-<番号>": 最速の走りの入力の記録（rle。毎フレームのビット列）}。タイムアタックのゴースト。この端末だけ（同期しない）',
+        'kusoge.hop.ed': 'エディター { slots:[合言葉 HP1:… ×3], cur }。この端末だけ（同期しない）',
+      },
+      // pts and every counter only grow (max); cleared levels, medals and stars are bit sets (OR); best times are the fewest frames (minPos); the last switches are whole values (newest)
+      sync: {
+        'kusoge.hop.save': { fields: { pts: 'max', lv: 'arrBor', bt: { each: 'minPos' }, coins: 'max', stats: { each: 'max' }, cl: 'max', md: 'max', all5: 'max', par: 'max', wc: { each: 'max' }, set: 'newest', dl: { fields: { n: 'max', bs: 'max' }, groups: [{ keys: ['k', 't', 'st'], cmp: ['max', 'minPos', 'max'] }], rest: 'max' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
+    {
+      // NOTE for the integrator: `order` is a placeholder (use the next free number after the other new games); `added` = the day of wiring
+      id: 'maze', order: 32, path: 'maze/', added: '2026-11-26',
+      title: { ja: 'めいろ探検', en: 'Maze Quest' },
+      short: { ja: 'めいろ探検', en: 'Maze Quest' },
+      desc: { ja: '上から見るクラシック、まわりしか見えないきりのランタン、3Dの一人称、かぎとびら、歩くたびに開閉する動くかべの5つのめいろ。毎日ひとつの「きょうのめいろ」、階ごとに大きくなる「どこまでも下へ」、合言葉で同じめいろ。最短（par）の道を確かめ、ヒントや「もどる」も使えます。40のせかいを集めて、めいろの見た目を着がえよう。', en: 'Five kinds of maze: a top-down classic, a lantern in the fog, first-person 3D, keys and doors, and shifting walls that toggle with every step. A new daily maze every day, a Descend mode that grows each floor, and codes that open the same maze for anyone. Every maze is verified solvable with a shortest-path par, plus hints and a back-to-the-last-junction button. Collect 40 worlds to re-skin your mazes.' },
+      label: { ja: 'めいろ探検', en: 'Maze adventure' },
+      genres: ['puzzle'], tags: ['2d', 'stages', 'daily', 'endless', 'relax', 'logic', 'explore'],
+      keywords: { ja: ['めいろ', '迷路', '3D', '一人称', 'きり', 'ランタン', 'かぎ', 'とびら', '動くかべ', '毎日', '合言葉', 'ずかん', 'ゴースト', '最短'], en: ['maze', 'labyrinth', '3d', 'first person', 'fog', 'lantern', 'keys', 'doors', 'shifting walls', 'daily', 'code', 'collection', 'ghost', 'shortest path'] },
+      icon: 'img/icons/maze.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#dfe9c8"/><path d="M10 10H62V62H10Z" fill="#f4f0d8" stroke="#2f7d4f" stroke-width="6" stroke-linejoin="round"/><path d="M10 26H38M26 42H62M42 26V50M26 54H50M50 42V62M26 10V26" fill="none" stroke="#2f7d4f" stroke-width="6" stroke-linecap="round"/><path d="M18 18V34M18 34H34M34 34V47M34 47H34" fill="none" stroke="#f2b632" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 6"/><path d="M12 36Q12 29 18 29Q24 29 24 36Z" fill="#ffb93b" stroke="#a86a00" stroke-width="2"/><circle cx="16" cy="33" r="1.2" fill="#222"/><circle cx="20.5" cy="33" r="1.2" fill="#222"/><path d="M54 30V18" stroke="#444" stroke-width="2" stroke-linecap="round"/><path d="M54 18L63 21.5L54 25Z" fill="#e5484d" stroke="#8c1e24" stroke-width="1.5" stroke-linejoin="round"/><circle cx="54" cy="52" r="3.4" fill="#f5c242" stroke="#a56a08" stroke-width="1.5"/></svg>',
+      thumb: 'img/thumbs/maze.webp', thumb2x: 'img/thumbs/maze@2x.webp',
+      tech: '2d',
+      // the clock runs while you play (pausing on hide/menu), so pause: true; no online battle. The 3D view is a 2D-canvas raycaster (no three.js), hence tech '2d'
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // ★: the best stars of each mode x size slot (5 modes x 5 sizes x up to 3 = 75), plus up to 5 for the deepest Descend floor (5/10/15/20/30) and up to 5 for daily mazes cleared (1/3/7/14/30 days): at most 85
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 85, maxRate: null },
+      rankSource: { key: 'kusoge.maze.save', paths: ['stars'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.maze.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.maze.save': '{ v:1, stars（★の合計＝ランキング。b・en・dl から毎回計算し直す）, b:{ "<モード>.<大きさ>":{ s（★ 0〜3）, t（最短の時間 ms）, m（最短の歩数）, n（クリア回数）} モード=classic|fog|d3|keys|timed 大きさ=XS|S|M|L|XL }, en:{ best（どこまでも下への最深階）, score（最高点）, runs }, dl:{ k（最後にクリアした日 YYYYMMDD）, t, m, s（その日の記録）, st（連続日数）, bs（最長の連続日数）, n（クリアした日の数）}, coins, gems（集めた数。ずかんをひらく）, wz:{ "<せかい>":1（ひらいたと知らせた）}, world（いま使うせかいの id）, stats:{ clears, moves, hints, reveals, undos, three（★3の数）, xl（L/XLのクリア数）, codes, coinsGot, floors, worlds（ひらいたせかいの数）, classic, fog, d3, keys, timed（モードごとのクリア数）}, set:{ trail, pad, mini, gyro }, tut }',
+        'kusoge.maze.run': 'とちゅうのめいろ { code, kind（free|daily|endless）, dk, log（手の列 urdl／待つ w）, ms, hints, hu, ru, en:{ seed, level, lives, score } }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.maze.ghost': '自己ベストのゴースト { o:[合言葉（新しい順に最大16）], g:{ "<合言葉>":{ l（手の列）, t（ms）} } }。この端末だけ（同期しない）',
+        'kusoge.maze.howto': 'ルールを見た（\'1\'）',
+      },
+      // stars, per-slot bests (fastest time / fewest moves: minPos), counters, coins/gems and the daily streak only grow (max); the look in use and settings are whole values (newest)
+      sync: {
+        'kusoge.maze.save': { fields: { stars: 'max', b: { each: { fields: { s: 'max', t: 'minPos', m: 'minPos', n: 'max' }, rest: 'max' } }, en: { fields: { best: 'max', score: 'max', runs: 'max' }, rest: 'max' }, dl: { fields: { k: 'max', t: 'minPos', m: 'minPos', s: 'max', st: 'max', bs: 'max', n: 'max' }, rest: 'max' }, coins: 'max', gems: 'max', wz: { each: 'max' }, world: 'newest', stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1349,6 +1409,35 @@
       { id: 'sudoku.pts30', tier: 3, icon: 'star', title: { ja: '30点', en: 'Thirty Points' }, desc: { ja: 'ランキングの点を30点ためる', en: 'Collect 30 ranking points' }, when: { rec: { key: 'kusoge.sudoku.save', path: 'pts' }, gte: 30 } },
       { id: 'sudoku.nonotes', tier: 3, icon: 'star', hidden: true, title: { ja: '暗算で解く', en: 'In Your Head' }, desc: { ja: 'メモを使わずに中級以上を解く', en: 'Solve a Medium or harder puzzle without notes' }, when: { rec: { key: 'kusoge.sudoku.save', path: 'stats.nonotes' }, gte: 1 } },
     ],
+    hop: [
+      { id: 'hop.first', tier: 1, icon: 'check', title: { ja: 'はじめのゴール', en: 'First Goal' }, desc: { ja: 'どれかのステージをクリアする', en: 'Clear any level' }, when: { rec: { key: 'kusoge.hop.save', path: 'cl' }, gte: 1 } },
+      { id: 'hop.stomp10', tier: 1, icon: 'check', title: { ja: 'ぴょんと一歩', en: 'Stomp Stomp' }, desc: { ja: '敵を合わせて10体ふむ', en: 'Stomp 10 enemies in total' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.stomps' }, gte: 10 } },
+      { id: 'hop.coin100', tier: 1, icon: 'star', title: { ja: 'コイン100', en: 'A Hundred Coins' }, desc: { ja: 'コインを合わせて100こ集める', en: 'Collect 100 coins in total' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.coins' }, gte: 100 } },
+      { id: 'hop.medal1', tier: 1, icon: 'star', title: { ja: 'はじめてのメダル', en: 'First Medal' }, desc: { ja: 'メダルを1こ見つける', en: 'Find a medal' }, when: { rec: { key: 'kusoge.hop.save', path: 'md' }, gte: 1 } },
+      { id: 'hop.burrow', tier: 1, icon: 'check', title: { ja: 'かくしあなの発見', en: 'Secret Burrow' }, desc: { ja: 'かくしあなに入る', en: 'Enter a hidden burrow' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.burrow' }, gte: 1 } },
+      { id: 'hop.pound', tier: 1, icon: 'check', title: { ja: 'ドスン！', en: 'Ground Pound' }, desc: { ja: '空中で「ドスン」を合わせて5回決める', en: 'Ground-pound 5 times' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.pounds' }, gte: 5 } },
+      { id: 'hop.glide', tier: 2, icon: 'star', title: { ja: 'マントでふわり', en: 'Cape Glide' }, desc: { ja: 'マントで合わせて5秒すべる', en: 'Glide for 5 seconds in total with the cape' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.glide' }, gte: 10 } },
+      { id: 'hop.ribbon', tier: 2, icon: 'star', title: { ja: 'リボンでゆらゆら', en: 'Ribbon Swing' }, desc: { ja: 'リボンを5回使う（わっか・かさはがし）', en: 'Use the ribbon 5 times' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.ribbon' }, gte: 5 } },
+      { id: 'hop.combo3', tier: 2, icon: 'star', title: { ja: '3れんぞくふみ', en: 'Triple Stomp' }, desc: { ja: '地面につかずに敵を3体つづけてふむ', en: 'Stomp 3 enemies in a row without touching the ground' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.combo' }, gte: 3 } },
+      { id: 'hop.nohurt', tier: 2, icon: 'trophy', title: { ja: 'かすり傷なし', en: 'Not a Scratch' }, desc: { ja: 'ダメージも落下もなしでステージをクリアする', en: 'Clear a level without being hit or falling' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.nohurt' }, gte: 1 } },
+      { id: 'hop.bear', tier: 2, icon: 'trophy', title: { ja: 'ツギハギぐまにかつ', en: 'Patchbear Defeated' }, desc: { ja: 'ワールド1をクリアする', en: 'Clear World 1' }, when: { rec: { key: 'kusoge.hop.save', path: 'wc.1' }, gte: 4 } },
+      { id: 'hop.general', tier: 2, icon: 'trophy', title: { ja: 'ぜんまいたいしょうにかつ', en: 'Windup General Defeated' }, desc: { ja: 'ワールド2をクリアする', en: 'Clear World 2' }, when: { rec: { key: 'kusoge.hop.save', path: 'wc.2' }, gte: 4 } },
+      { id: 'hop.medal30', tier: 3, icon: 'trophy', title: { ja: 'メダル30こ', en: 'Thirty Medals' }, desc: { ja: 'メダルを30こ集める', en: 'Collect 30 medals' }, when: { rec: { key: 'kusoge.hop.save', path: 'md' }, gte: 30 } },
+      { id: 'hop.par5', tier: 3, icon: 'trophy', title: { ja: 'タイムのめやす', en: 'Quick Hops' }, desc: { ja: '5つのステージで、めやすのタイム以内にクリアする', en: 'Beat the par time in 5 levels' }, when: { rec: { key: 'kusoge.hop.save', path: 'par' }, gte: 5 } },
+      { id: 'hop.pts60', tier: 3, icon: 'trophy', title: { ja: '60ポイント', en: 'Sixty Points' }, desc: { ja: 'ポイントを合わせて60ためる', en: 'Reach 60 points' }, when: { rec: { key: 'kusoge.hop.save', path: 'pts' }, gte: 60 } },
+      { id: 'hop.deaths30', tier: 1, icon: 'check', title: { ja: 'ころんでも大丈夫', en: 'Bouncing Back' }, desc: { ja: 'チェックポイントから合わせて30回やり直す', en: 'Restart from a checkpoint 30 times' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.deaths' }, gte: 30 } },
+      { id: 'hop.swim', tier: 2, icon: 'star', title: { ja: 'およぎ上手', en: 'Good Swimmer' }, desc: { ja: '水の中で合わせて20かきする', en: 'Take 20 swim strokes in total' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.swim' }, gte: 20 } },
+      { id: 'hop.duck', tier: 3, icon: 'trophy', title: { ja: 'ゴムあひるにかつ', en: 'Rubber Duck Defeated' }, desc: { ja: 'ワールド3をクリアする', en: 'Clear World 3' }, when: { rec: { key: 'kusoge.hop.save', path: 'wc.3' }, gte: 4 } },
+      { id: 'hop.owl', tier: 3, icon: 'trophy', title: { ja: 'ふぶきフクロウにかつ', en: 'Blizzard Owl Defeated' }, desc: { ja: 'ワールド4をクリアする', en: 'Clear World 4' }, when: { rec: { key: 'kusoge.hop.save', path: 'wc.4' }, gte: 4 } },
+      { id: 'hop.mouse', tier: 3, icon: 'trophy', title: { ja: 'とけいネズミにかつ', en: 'Clock Mouse Defeated' }, desc: { ja: 'ワールド5をクリアする', en: 'Clear World 5' }, when: { rec: { key: 'kusoge.hop.save', path: 'wc.5' }, gte: 4 } },
+      { id: 'hop.golem', tier: 4, icon: 'trophy', title: { ja: 'ネジまわしゴーレムにかつ', en: 'Golem Defeated' }, desc: { ja: 'ワールド6をクリアする（おもちゃの世界を救った！）', en: 'Clear World 6 and save the toy world' }, when: { rec: { key: 'kusoge.hop.save', path: 'wc.6' }, gte: 4 } },
+      { id: 'hop.daily1', tier: 1, icon: 'star', title: { ja: 'きょうのステージ', en: 'Today\'s Level' }, desc: { ja: '「きょうのステージ」をクリアする', en: 'Clear a daily level' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.daily' }, gte: 1 } },
+      { id: 'hop.daily7', tier: 2, icon: 'trophy', title: { ja: '一週間つづけて', en: 'A Week Streak' }, desc: { ja: '「きょうのステージ」を7日つづけてクリアする', en: 'Clear the daily level 7 days in a row' }, when: { rec: { key: 'kusoge.hop.save', path: 'dl.bs' }, gte: 7 } },
+      { id: 'hop.editor', tier: 2, icon: 'check', title: { ja: 'ステージ職人', en: 'Level Maker' }, desc: { ja: 'エディターでつくったステージをクリアする', en: 'Clear a level you made in the editor' }, when: { rec: { key: 'kusoge.hop.save', path: 'stats.edit' }, gte: 1 } },
+      { id: 'hop.all5x5', tier: 3, icon: 'star', title: { ja: 'メダルコンプリート', en: 'Medal Collector' }, desc: { ja: '5つのステージでメダルを5こぜんぶ集める', en: 'Collect all five medals in 5 levels' }, when: { rec: { key: 'kusoge.hop.save', path: 'all5' }, gte: 5 } },
+      { id: 'hop.par12', tier: 4, icon: 'trophy', title: { ja: 'タイムの達人', en: 'Par Master' }, desc: { ja: '12のステージで、めやすのタイム以内にクリアする', en: 'Beat the par time in 12 levels' }, when: { rec: { key: 'kusoge.hop.save', path: 'par' }, gte: 12 } },
+      { id: 'hop.pts120', tier: 4, icon: 'trophy', title: { ja: '120ポイント', en: 'One Twenty Points' }, desc: { ja: 'ポイントを合わせて120ためる', en: 'Reach 120 points' }, when: { rec: { key: 'kusoge.hop.save', path: 'pts' }, gte: 120 } },
+    ],
     crates: [
       { id: 'crates.first', tier: 1, icon: 'check', title: { ja: 'はじめの荷物', en: 'First Delivery' }, desc: { ja: 'どれかのステージをクリアする', en: 'Clear any level' }, when: { rec: { key: 'kusoge.crates.save', path: 'stats.clears' }, gte: 1 } },
       { id: 'crates.pack1', tier: 1, icon: 'check', title: { ja: '見習い卒業', en: 'Off Probation' }, desc: { ja: '「はじめての倉庫」の10ステージを全部クリアする', en: 'Clear all 10 levels of the first pack' }, when: { rec: { key: 'kusoge.crates.save', path: 'pk.1' }, gte: 10 } },
@@ -1367,6 +1456,27 @@
       { id: 'crates.pack8', tier: 3, icon: 'trophy', title: { ja: 'ベテラン運送', en: 'Veteran Freight' }, desc: { ja: '「ベテラン運送」の10ステージを全部クリアする', en: 'Clear all 10 levels of Veteran Freight' }, when: { rec: { key: 'kusoge.crates.save', path: 'pk.8' }, gte: 10 } },
       { id: 'crates.perfect20', tier: 3, icon: 'trophy', title: { ja: '最短の名人', en: 'Master of Fewest Pushes' }, desc: { ja: '押す回数が最短のクリアを20ステージで出す', en: 'Clear 20 levels with the fewest possible pushes' }, when: { rec: { key: 'kusoge.crates.save', path: 'stats.perfect' }, gte: 20 } },
       { id: 'crates.stars200', tier: 4, icon: 'trophy', title: { ja: '運送王', en: 'Freight King' }, desc: { ja: '★を合わせて200こ集める', en: 'Collect 200 stars' }, when: { rec: { key: 'kusoge.crates.save', path: 'stars' }, gte: 200 } },
+    ],
+    maze: [
+      { id: 'maze.first', tier: 1, icon: 'check', title: { ja: 'はじめの一歩', en: 'First Steps' }, desc: { ja: 'どれかのめいろをクリアする', en: 'Clear any maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.clears' }, gte: 1 } },
+      { id: 'maze.hint', tier: 1, icon: 'check', title: { ja: 'ちょっとだけヒント', en: 'A Little Nudge' }, desc: { ja: 'ヒントを使う', en: 'Use a hint' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.hints' }, gte: 1 } },
+      { id: 'maze.fog', tier: 1, icon: 'check', title: { ja: 'ランタンの旅', en: 'Lantern Trek' }, desc: { ja: '「きりのランタン」をクリアする', en: 'Clear a Lantern in the Fog maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.fog' }, gte: 1 } },
+      { id: 'maze.d3', tier: 1, icon: 'check', title: { ja: '一人称の探検家', en: 'First-Person Explorer' }, desc: { ja: '「3Dめいろ」をクリアする', en: 'Clear a first-person 3D maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.d3' }, gte: 1 } },
+      { id: 'maze.keys', tier: 1, icon: 'check', title: { ja: 'かぎ開け名人', en: 'Locksmith' }, desc: { ja: '「かぎとびら」をクリアする', en: 'Clear a Keys & Doors maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.keys' }, gte: 1 } },
+      { id: 'maze.timed', tier: 1, icon: 'check', title: { ja: 'タイミングの達人', en: 'Perfect Timing' }, desc: { ja: '「動くかべ」をクリアする', en: 'Clear a Shifting Walls maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.timed' }, gte: 1 } },
+      { id: 'maze.daily', tier: 1, icon: 'star', title: { ja: '毎日のおさんぽ', en: 'Daily Stroll' }, desc: { ja: '「きょうのめいろ」をクリアする', en: 'Clear a daily maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'dl.n' }, gte: 1 } },
+      { id: 'maze.undo', tier: 2, icon: 'check', title: { ja: '分かれ道へ戻ろう', en: 'Back to the Fork' }, desc: { ja: '「もどる」を合わせて20回使う', en: 'Use Back up 20 times in total' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.undos' }, gte: 20 } },
+      { id: 'maze.coins', tier: 2, icon: 'star', title: { ja: 'コイン50まい', en: 'Fifty Coins' }, desc: { ja: 'コインを合わせて50まい集める', en: 'Collect 50 coins' }, when: { rec: { key: 'kusoge.maze.save', path: 'coins' }, gte: 50 } },
+      { id: 'maze.gem', tier: 2, icon: 'star', title: { ja: '宝石ハンター', en: 'Gem Hunter' }, desc: { ja: '宝石を5こ集める', en: 'Collect 5 gems' }, when: { rec: { key: 'kusoge.maze.save', path: 'gems' }, gte: 5 } },
+      { id: 'maze.three', tier: 2, icon: 'star', title: { ja: '近道の名人', en: 'Shortcut Master' }, desc: { ja: '★3でクリアする', en: 'Clear a maze with 3 stars' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.three' }, gte: 1 } },
+      { id: 'maze.big', tier: 2, icon: 'star', title: { ja: '大きなめいろ', en: 'The Big One' }, desc: { ja: 'LかXLのめいろをクリアする', en: 'Clear an L or XL maze' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.xl' }, gte: 1 } },
+      { id: 'maze.worlds', tier: 2, icon: 'star', title: { ja: 'せかいあつめ', en: 'World Collector' }, desc: { ja: 'ずかんのせかいを10こひらく', en: 'Unlock 10 worlds in the collection' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.worlds' }, gte: 10 } },
+      { id: 'maze.stars30', tier: 3, icon: 'trophy', title: { ja: '★30こ', en: 'Thirty Stars' }, desc: { ja: '★を合わせて30こ集める', en: 'Collect 30 stars' }, when: { rec: { key: 'kusoge.maze.save', path: 'stars' }, gte: 30 } },
+      { id: 'maze.descend', tier: 3, icon: 'trophy', title: { ja: '10階までもぐる', en: 'Ten Floors Down' }, desc: { ja: '「どこまでも下へ」で10階をクリアする', en: 'Clear floor 10 in Descend' }, when: { rec: { key: 'kusoge.maze.save', path: 'en.best' }, gte: 10 } },
+      { id: 'maze.daily7', tier: 3, icon: 'trophy', title: { ja: '一週間のさんぽ', en: 'A Week of Strolls' }, desc: { ja: '「きょうのめいろ」を7日つづけてクリアする', en: 'Clear the daily maze 7 days in a row' }, when: { rec: { key: 'kusoge.maze.save', path: 'dl.bs' }, gte: 7 } },
+      { id: 'maze.three20', tier: 3, icon: 'trophy', title: { ja: '最短の旅人', en: 'Traveller of the Shortest Way' }, desc: { ja: '★3のクリアを20回出す', en: 'Earn 3 stars 20 times' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.three' }, gte: 20 } },
+      { id: 'maze.stars60', tier: 4, icon: 'trophy', title: { ja: '★60こ', en: 'Sixty Stars' }, desc: { ja: '★を合わせて60こ集める', en: 'Collect 60 stars' }, when: { rec: { key: 'kusoge.maze.save', path: 'stars' }, gte: 60 } },
+      { id: 'maze.worlds40', tier: 4, icon: 'trophy', title: { ja: 'ずかんコンプリート', en: 'Complete Collection' }, desc: { ja: '40のせかいをぜんぶひらく', en: 'Unlock all 40 worlds' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.worlds' }, gte: 40 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

@@ -245,3 +245,13 @@ Realtime Database：
 - Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'sudoku': 100000`＝むずかしさの合計、`'crates': 240`＝★の合計）、旧ランキングの点の確認 `okCap(…'sudoku')` `okCap(…'crates')`、プレイ回数の `plus1('sudoku')` `plus1('crates')`、同期する保存のキー `kusoge~sudoku~save` `kusoge~crates~save` の形の確認（`okEntAt` に2行）です。
 - Realtime Database で変わったのは、`common/versus.js` の許可するゲームの一覧（`vs/queue`・`vs/rooms` の読み書きと `g` の確認の3か所）に `sudoku` が入っただけです（`…|minigolf|planet|sudoku`）。はこはこ運送はオンライン対戦がないので、Realtime Database は変わりません。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（ナンバー工房の保存・プレイ回数・対戦キュー／部屋、はこはこ運送の保存・プレイ回数を含む）、`node tools/tests/rules/run.js --only bots`。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「ぴょんぴょん冒険」（hop）を足したとき（2026-11）
+- **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、このゲームはランキングに載らず、プレイ回数も数えられません**（ほかのゲームは今までどおり遊べます）。Realtime Database（`database.rules.json`）は変わりません（オンライン対戦なし）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'hop': 168`＝24ステージ×（クリア1＋メダル5＋タイム★1）の合計）、旧ランキングの点の確認 `okCap(…'hop')`、プレイ回数の `plus1('hop')`、同期する保存のキー `kusoge~hop~save` の形の確認（`okEntAt` に1行）です。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（ぴょんぴょん冒険の保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「めいろ探検」（maze）を足したとき（2026-11）
+- **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、このゲームはランキングに載らず、プレイ回数も数えられません**（ほかのゲームは今までどおり遊べます）。Realtime Database（`database.rules.json`）は変わりません（オンライン対戦なし）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'maze': 85`＝★の合計）、旧ランキングの点の確認 `okCap(…'maze')`、プレイ回数の `plus1('maze')`、同期する保存のキー `kusoge~maze~save` の形の確認（`okEntAt` に1行）です。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（めいろ探検の保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。

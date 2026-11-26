@@ -101,6 +101,14 @@ async function runCases(T, opt = {}) {
     await check(g, 'own push crates save (stars, per-level bests, packs, stats, daily, editor codes)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~crates~save': { v: JSON.stringify({ v: 1, stars: 6, lv: { '1-1': { m: 3, p: 2, s: 3, pf: 1 }, '1-2': { m: 9, p: 2, s: 2 } }, pk: { 1: 3 }, stats: { plays: 5, clears: 3, pushes: 12, moves: 19 }, dl: { k: 20261125, m: 40, p: 12, s: 2, st: 1, bs: 1 }, ed: ['CR1:abc'], tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'crates save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~crates~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'crates save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~crates~save': 'x' } }, A, { merge: true }));
+    // ぴょんぴょん冒険（hop）：記録 kusoge.hop.save だけを同期する（あそびかた kusoge.hop.howto は端末だけ）
+    await check(g, 'own push hop save (levels as bit sets, medals, best frames, stats, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~hop~save': { v: JSON.stringify({ v: 1, pts: 12, lv: [79, 63, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], bt: { '1-1': 1500 }, coins: 150, stats: { plays: 9, clears: 3, deaths: 12, stomps: 14 }, cl: 3, md: 8, all5: 1, par: 1, wc: { 1: 3 }, set: { slow: 0, hearts: 0, auto: 0, tc: 'auto' }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'hop save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~hop~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'hop save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~hop~save': 'x' } }, A, { merge: true }));
+    // めいろ探検（maze）：記録 kusoge.maze.save だけを同期する（とちゅうのめいろ .run・ゴースト .ghost・あそびかた .howto は端末だけ）
+    await check(g, 'own push maze save (stars, per-slot bests, descend, daily, stats, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~maze~save': { v: JSON.stringify({ v: 1, stars: 9, b: { 'classic.S': { s: 3, t: 41000, m: 52, n: 2 }, 'fog.M': { s: 2, t: 90000, m: 80, n: 1 } }, en: { best: 4, score: 120, runs: 2 }, dl: { k: 20261126, t: 30000, m: 40, s: 3, st: 2, bs: 2, n: 3 }, coins: 12, gems: 1, wz: { forest: 1 }, world: 'forest', stats: { clears: 5, hints: 1, three: 1 }, set: { trail: 1 }, tut: 1 }), t: now } } }, A, { merge: true }));
+    await check(g, 'maze save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~maze~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'maze save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~maze~save': 'x' } }, A, { merge: true }));
     // まなびの工房（manabi）：記録 kusoge.manabi.save だけを同期する（設定 prefs・howto・rep はこの端末だけ）
     await check(g, 'own push manabi save (xp, days, boxes, stats, quests, league)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: JSON.stringify({ v: 1, xp: 1250, d: [20406, 20407], g: { 20407: 30 }, goal: 20, b: { 'ct-eng-u01': 'ab12:0112' }, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, mk: { 'x-1': 62 }, set: { cr: 'JH', g: 0 }, tut: 1, gm: 40, fz: 1, hm: 0, hr: 5, cw: { S1: 2 }, ds: { d: 20407, xp: 30 }, dq: { d: 20407, c: [1, 0, 0] }, lg: { w: 2915, t: 1 }, sk: 0 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'manabi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: 7, t: now } } }, A, { merge: true }));
@@ -263,6 +271,10 @@ async function runCases(T, opt = {}) {
     await check(g3, 'sudoku +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { sudoku: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'crates +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { crates: 1 }, A, { merge: true }));
     await check(g3, 'crates +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { crates: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'hop +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { hop: 1 }, A, { merge: true }));
+    await check(g3, 'hop +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { hop: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'maze +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { maze: 1 }, A, { merge: true }));
+    await check(g3, 'maze +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { maze: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'manabi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { manabi: 1 }, A, { merge: true }));
     await check(g3, 'manabi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { manabi: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'orchestra +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { orchestra: 1 }, A, { merge: true }));

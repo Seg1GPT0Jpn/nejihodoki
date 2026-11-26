@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>めいろ探検</title>
+<meta name="theme-color" content="#10171d">
+<meta name="description" content="上から見るクラシック、きりのランタン、3Dの一人称、かぎとびら、動くかべ。毎日のめいろ、どこまでも下へ、合言葉で同じめいろ。40のせかいを集めよう。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="めいろ探検">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* めいろ探検：ランタンのあかりとコケいろ。--kb-* は共通のトークンを塗りなおしたもの、--mz-* はこのゲームだけ */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #10171d; --kb-surface: #1a242c; --kb-surface-2: #243039; --kb-sunken: #0b1015; --kb-line: #3a4b57;
+  --kb-ink: #eef3ee; --kb-dim: #a9b8b4;
+  --kb-accent: #4fd1a5; --kb-accent-ink: #052b1f; --kb-accent-text: #7fe6c2; --kb-accent-soft: rgba(79, 209, 165, .16);
+  --kb-scrim: rgba(5, 9, 12, .76); --kb-focus: #ffd166;
+  --mz-panel: rgba(255, 255, 255, .06); --mz-card: linear-gradient(#222f38, #1a242c); --mz-go: linear-gradient(#6ee7bd, #2fb68a); --mz-go-shadow: #146a4e;
+  --mz-good: #7be0a0; --mz-bad: #ff8f80; --mz-star: #ffc83d; --mz-star-off: #44525c; --mz-key: #2f3e48; --mz-key-shadow: #151d23; --mz-title: linear-gradient(90deg, #b9ffd9, #4fd1a5 55%, #ffd166);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #eef2e6; --kb-surface: #fbfdf6; --kb-surface-2: #e1e8d3; --kb-sunken: #d3ddc0; --kb-line: #b9c6a4;
+    --kb-ink: #1c2a22; --kb-dim: #556458;
+    --kb-accent: #1f8f69; --kb-accent-ink: #ffffff; --kb-accent-text: #146a4e; --kb-accent-soft: rgba(31, 143, 105, .12);
+    --kb-scrim: rgba(28, 42, 34, .45); --kb-focus: #b36a00;
+    --mz-panel: rgba(28, 42, 34, .06); --mz-card: linear-gradient(#fbfdf6, #e9f0da); --mz-go: linear-gradient(#34b88d, #1f8f69); --mz-go-shadow: #0f5a40;
+    --mz-good: #1f7a46; --mz-bad: #b83a26; --mz-star: #d08a00; --mz-star-off: #c3cdb0; --mz-key: #e6edd6; --mz-key-shadow: #b9c6a4; --mz-title: linear-gradient(90deg, #146a4e, #1f8f69 55%, #b36a00);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #eef2e6; --kb-surface: #fbfdf6; --kb-surface-2: #e1e8d3; --kb-sunken: #d3ddc0; --kb-line: #b9c6a4;
+  --kb-ink: #1c2a22; --kb-dim: #556458;
+  --kb-accent: #1f8f69; --kb-accent-ink: #ffffff; --kb-accent-text: #146a4e; --kb-accent-soft: rgba(31, 143, 105, .12);
+  --kb-scrim: rgba(28, 42, 34, .45); --kb-focus: #b36a00;
+  --mz-panel: rgba(28, 42, 34, .06); --mz-card: linear-gradient(#fbfdf6, #e9f0da); --mz-go: linear-gradient(#34b88d, #1f8f69); --mz-go-shadow: #0f5a40;
+  --mz-good: #1f7a46; --mz-bad: #b83a26; --mz-star: #d08a00; --mz-star-off: #c3cdb0; --mz-key: #e6edd6; --mz-key-shadow: #b9c6a4; --mz-title: linear-gradient(90deg, #146a4e, #1f8f69 55%, #b36a00);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); max-width: 760px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+header { flex: none; display: flex; align-items: center; gap: 4px; padding: 4px 6px 0; }
+h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-display); background: var(--mz-title); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--mz-panel); border: 1px solid var(--kb-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+#hud { flex: none; display: flex; gap: 6px; padding: 4px 8px; justify-content: center; flex-wrap: nowrap; }
+.chip { flex: 0 1 auto; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 9px; min-height: 40px; border-radius: 12px; background: var(--mz-panel); border: 1px solid var(--kb-line); font-size: 11px; color: var(--kb-dim); white-space: nowrap; }
+.chip b { font: 800 16px var(--kb-font-body); color: var(--kb-ink); font-variant-numeric: tabular-nums; }
+.chip.lv { flex: 1 1 auto; align-items: flex-start; overflow: hidden; } .chip.lv b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+#stage { flex: 1 1 auto; min-height: 0; position: relative; padding: 4px 8px; }
+#board { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; touch-action: none; border-radius: 10px; box-shadow: 0 4px 18px rgba(0, 0, 0, .35); outline-offset: 3px; }
+#status { flex: none; min-height: 34px; box-sizing: border-box; padding: 5px 12px; margin: 0 8px; border-radius: 12px; font-size: 12.5px; font-weight: 800; line-height: 1.35; text-align: center; color: var(--kb-ink); background: var(--mz-panel); border: 1px solid var(--kb-line); display: flex; align-items: center; justify-content: center; }
+#status.warn { border-color: var(--mz-bad); color: var(--mz-bad); } #status.good { border-color: var(--mz-good); }
+#ctl { flex: none; display: flex; align-items: stretch; justify-content: space-between; gap: 8px; padding: 6px 8px 8px; }
+#acts { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: center; }
+.act { min-width: 0; min-height: 42px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--mz-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--mz-key-shadow); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 6px; display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+.act svg { width: 18px; height: 18px; flex: none; }
+.act:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--mz-key-shadow); }
+.act:disabled { opacity: .42; cursor: default; box-shadow: none; } .act[aria-pressed="true"] { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent), 0 3px 0 var(--mz-key-shadow); }
+#dpad { flex: none; display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
+#dpad button { border-radius: 14px; border: 1px solid var(--kb-line); background: var(--mz-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--mz-key-shadow); cursor: pointer; padding: 0; display: grid; place-items: center; touch-action: none; }
+#dpad button svg { width: 22px; height: 22px; } #dpad button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--mz-key-shadow); }
+#dpad .u { grid-area: 1 / 2; } #dpad .l { grid-area: 2 / 1; } #dpad .r { grid-area: 2 / 3; } #dpad .d { grid-area: 3 / 2; }
+body.nodpad #dpad { display: none; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) 296px; grid-template-rows: auto auto auto 1fr; grid-template-areas: "hd hd" "st hu" "st sa" "st ct"; column-gap: 8px; }
+  header { grid-area: hd; padding-top: 0; }
+  #hud { grid-area: hu; flex-wrap: wrap; padding: 2px 8px 2px 0; } .chip { min-height: 32px; padding: 1px 8px; } .chip b { font-size: 14px; } .chip.lv { flex: 1 1 100%; }
+  #stage { grid-area: st; padding: 2px 4px; } #status { grid-area: sa; margin: 0 8px 0 0; min-height: 28px; padding: 2px 8px; font-size: 11.5px; line-height: 1.25; }
+  #ctl { grid-area: ct; padding: 4px 8px 4px 0; align-items: flex-start; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; }
+  #acts { flex: none; grid-template-columns: repeat(3, 44px); gap: 4px; align-content: start; } .act { min-height: 44px; font-size: 13px; padding: 2px; } .act span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .act svg { width: 20px; height: 20px; } #bHint::after { content: attr(data-n); font-weight: 800; }
+  #dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 2px; }
+}
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .2s ease-out; }
+.panel { width: 100%; max-width: 460px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--mz-card); border: 1px solid var(--kb-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); animation: rise .25s ease-out; }
+.panel > * { flex: none; }
+.panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font: 400 22px var(--kb-font-display); color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel h2.logo { background: var(--mz-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 26px; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--mz-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 4px 0 var(--mz-go-shadow); text-decoration: none; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--mz-go-shadow); } .btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--mz-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--kb-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; box-sizing: border-box; margin-top: 6px; padding: 6px 12px; border-radius: 16px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); text-align: left; cursor: pointer; }
+.qm:first-child { margin-top: 0; } .qm b { display: block; font-size: 15px; } .qm small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.qm.plain { border-color: var(--kb-line); background: var(--mz-panel); }
+.og { margin: 8px 0 0; text-align: left; } .og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--mz-panel); border: 1px solid var(--kb-line); flex-wrap: wrap; }
+.opt { flex: 1 1 0; min-width: 40px; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.opt small { font-weight: 500; font-size: 9.5px; opacity: .85; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.fld { display: flex; gap: 6px; } .fld input { flex: 1 1 auto; min-width: 0; min-height: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 15px var(--kb-font-body); padding: 4px 10px; user-select: text; -webkit-user-select: text; }
+.fld .btn { width: auto; margin-top: 0; flex: none; min-width: 52px; }
+.err { color: var(--mz-bad); font-size: 12px; font-weight: 800; min-height: 16px; margin: 4px 0 0; }
+.stars { display: flex; gap: 6px; justify-content: center; margin: 4px 0; } .stars svg { width: 44px; height: 44px; } .stars .on { fill: var(--mz-star); stroke: #8a5600; } .stars .off { fill: var(--mz-star-off); stroke: transparent; } .stars svg.pop { animation: starpop .5s ease-out both; }
+.big { font: 400 30px var(--kb-font-display); line-height: 1.15; color: var(--kb-ink); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6px 6px; text-align: left; font-size: 13px; font-weight: 800; }
+.kv span:nth-child(odd) { color: var(--kb-dim); font-weight: 500; } .kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin: 2px 2px; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.howto { max-width: 480px; text-align: left; } .howto h2 { text-align: center; } .howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.code { font: 800 16px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; padding: 6px 10px; border-radius: 10px; background: var(--mz-panel); border: 1px dashed var(--kb-line); user-select: all; -webkit-user-select: all; word-break: break-all; }
+.worlds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 4px 2px 8px; }
+.wd { position: relative; min-width: 0; padding: 6px 4px 6px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--mz-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--mz-key-shadow); font: 800 11.5px/1.25 var(--kb-font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.wd canvas { width: 64px; height: 64px; border-radius: 8px; } .wd small { font-weight: 500; font-size: 10px; color: var(--kb-dim); min-height: 24px; display: block; } .wd.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent), 0 3px 0 var(--mz-key-shadow); }
+.wd.lock canvas { filter: grayscale(1) brightness(.5); } .wd.lock { opacity: .85; } .wd .lk { position: absolute; top: 28px; left: 50%; margin-left: -10px; width: 20px; height: 20px; color: #fff; filter: drop-shadow(0 1px 2px #000); }
+.toastbar { position: fixed; left: 50%; top: 20%; transform: translateX(-50%); z-index: 85; max-width: 90%; padding: 8px 16px; border-radius: 14px; background: rgba(20, 20, 28, .9); color: #fff; font-weight: 800; font-size: 14px; pointer-events: none; animation: rise .2s; text-align: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } } @keyframes fade { from { opacity: 0; } }
+@keyframes starpop { from { transform: scale(.3) rotate(-30deg); opacity: 0; } 60% { transform: scale(1.25) rotate(8deg); opacity: 1; } }
+@keyframes shake { 20%, 60% { transform: translate(calc(-50% - 4px), -50%); } 40%, 80% { transform: translate(calc(-50% + 4px), -50%); } }
+#board.shake { animation: shake .25s; }
+@media (prefers-reduced-motion: reduce) { .panel, .overlay, .stars svg.pop, #board.shake, .toastbar { animation: none !important; } }
+@media (max-width: 379px) { h1 { font-size: 15px; } .chip { padding: 2px 6px; } #acts { gap: 5px; } .act { font-size: 12px; gap: 3px; padding: 2px 3px; } }
+body.thumb header, body.thumb #hud, body.thumb #ctl, body.thumb #status { display: none !important; }
+body.thumb #app { display: flex !important; flex-direction: column; max-width: none; } body.thumb #stage { flex: 1 1 auto; padding: 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../" id="backLink" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 id="h1">めいろ探検</h1>
+    <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <div id="hud">
+    <span class="chip lv"><span id="lLevel">めいろ</span><b id="vLevel">-</b></span>
+    <span class="chip"><span id="lTime">時間</span><b id="vTime">0:00</b></span>
+    <span class="chip"><span id="lMoves">歩数</span><b id="vMoves">0</b></span>
+    <span class="chip"><span id="lPar">最短</span><b id="vPar">-</b></span>
+  </div>
+  <div id="stage"><canvas id="board" tabindex="0" role="application" aria-label="めいろの盤"></canvas></div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="ctl">
+    <div id="acts">
+      <button class="act" id="bUndo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -6)"/></svg><span id="tUndo">もどる</span></button>
+      <button class="act" id="bHint" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg><span id="hintLbl">ヒント</span></button>
+      <button class="act" id="bReveal" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="tReveal">こたえ</span></button>
+      <button class="act" id="bView" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="tView">ぜんたい</span></button>
+      <button class="act" id="bWait" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="tWait">まつ</span></button>
+    </div>
+    <div id="dpad" role="group" aria-label="十字ボタン">
+      <button class="u" type="button" data-d="0" aria-label="上"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 6l8 10H4z"/></svg></button>
+      <button class="l" type="button" data-d="3" aria-label="左"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 12l10-8v16z"/></svg></button>
+      <button class="r" type="button" data-d="1" aria-label="右"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 12L8 4v16z"/></svg></button>
+      <button class="d" type="button" data-d="2" aria-label="下"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 18L4 8h16z"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="panel">
+    <h2 class="logo" id="tTitle">めいろ探検</h2>
+    <p id="tSub"></p>
+    <div class="scroll" id="tList"></div>
+    <div class="foot"><div class="row2"><button class="btn sub" id="tHow" type="button"></button><a class="btn sub" href="../" id="tHome"></a></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovSetup" hidden role="dialog" aria-modal="true" aria-labelledby="suTitle">
+  <div class="panel">
+    <h2 id="suTitle"></h2>
+    <p id="suDesc"></p>
+    <div class="scroll">
+      <div class="og"><div class="ol" id="olMode"></div><div class="seg" id="suMode" role="group"></div></div>
+      <div class="og"><div class="ol" id="olSize"></div><div class="seg" id="suSize" role="group"></div></div>
+      <div class="og"><div class="ol" id="olDiff"></div><div class="seg" id="suDiff" role="group"></div></div>
+      <div class="og"><div class="ol" id="olSeed"></div><div class="fld"><input id="suSeed" inputmode="numeric" maxlength="9" autocomplete="off" aria-label="番号"><button class="btn sub" id="suDice" type="button" aria-label="ランダム">&#9860;</button></div></div>
+      <div class="og"><div class="ol" id="olCode"></div><div class="fld"><input id="suCode" autocomplete="off" maxlength="24" aria-label="合言葉" placeholder="c-M-2-12345"></div></div>
+      <p class="err" id="suErr" role="alert"></p>
+      <p id="suBest"></p>
+    </div>
+    <button class="btn" id="suGo" type="button"></button>
+    <button class="btn link" id="suClose" type="button"></button>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="panel">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <div class="stars" id="rStars" aria-hidden="true"></div>
+      <div class="big" id="rBig"></div>
+      <div id="rNew"></div>
+      <div class="kv" id="rKv"></div>
+      <div id="rCode"></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rNext" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rAgain" type="button"></button><button class="btn sub" id="rCopy" type="button"></button></div>
+    <button class="btn link" id="rTitleBtn" type="button"></button>
+  </div>
+</div>
+
+<div class="overlay" id="ovWorld" hidden role="dialog" aria-modal="true" aria-labelledby="wzTitle">
+  <div class="panel" style="max-width:520px">
+    <h2 id="wzTitle"></h2>
+    <p id="wzSub"></p>
+    <div class="scroll"><div class="worlds" id="wzGrid"></div></div>
+    <button class="btn sub" id="wzClose" type="button"></button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle"></h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel">言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button"></button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<script src="engine.js"></script>
+<script src="art.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// めいろ探検：engine.js が迷路づくり・歩く・解く・採点（pure）、art.js が絵（2D・3Dレイキャスト）。このファイルは机の上：入力・時間・結果・保存・ずかん。
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.MazeEngine, ART = window.MazeArt;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'maze';
+const SAVE_KEY = 'kusoge.maze.save', RUN_KEY = 'kusoge.maze.run', GHOST_KEY = 'kusoge.maze.ghost', HOWTO_KEY = 'kusoge.maze.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const coarse = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
+const sfx = (name, a) => { if (A) A.sfx(name, a); };
+const emit = (type, p) => { const g = KG(); if (g) g.emit(type, p); };
+const STAR = '<svg viewBox="0 0 24 24" class="%c" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8z" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+const star = on => STAR.replace('%c', on ? 'on' : 'off');
+const LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const MODE = {
+  classic: { ja: 'クラシック', en: 'Classic', dj: '上から見たふつうのめいろ。最短の道をさがしてゴールの旗へ。', de: 'A top-down maze. Find the shortest way to the flag.' },
+  fog: { ja: 'きりのランタン', en: 'Lantern in the Fog', dj: 'まわりしか見えないきりの中。ランタンの光で道をさぐろう。', de: 'Only the lantern light shows the way. Feel out the paths in the fog.' },
+  d3: { ja: '3Dめいろ', en: 'First-person 3D', dj: '一人称の3D。曲がり角を数えてゴールをさがそう。ミニマップもあるよ。', de: 'A first-person 3D maze. Count your turns; a minimap can help.' },
+  keys: { ja: 'かぎとびら', en: 'Keys & Doors', dj: 'いろつきのかぎを集めて、同じ色のとびらをひらこう。', de: 'Collect coloured keys to open the matching doors.' },
+  timed: { ja: '動くかべ', en: 'Shifting Walls', dj: '縦じまのかべは歩くたびに開いたり閉じたり。「まつ」も使おう。', de: 'Striped walls open and close with every step. You may wait a beat.' },
+};
+const mname = k => (MODE[k] ? L(MODE[k].ja, MODE[k].en) : k);
+const DIFFN = d => L(E.DIFFS[d].ja, E.DIFFS[d].en);
+const fmtT = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const fmtT1 = ms => { const s = Math.max(0, ms) / 1000; return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60).toFixed(1); };
+
+// ---------- save ----------
+function newSave() { return { v: 1, stars: 0, b: {}, en: { best: 0, score: 0, runs: 0 }, dl: { k: 0, t: 0, m: 0, s: 0, st: 0, bs: 0, n: 0 }, coins: 0, gems: 0, wz: {}, world: 'forest', stats: {}, set: { trail: 1, pad: coarse ? 1 : 0, mini: 1, gyro: 0 }, tut: 0 }; }
+function readSave() {
+  let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = newSave(); if (!o || typeof o !== 'object') { for (const w of E.WORLDS) if (E.worldUnlocked(s, w)) s.wz[w.id] = 1; return s; }
+  const n = (v, d) => (Number.isFinite(Number(v)) ? Math.max(0, Math.floor(Number(v))) : d);
+  if (o.b && typeof o.b === 'object') for (const md of E.MODES) for (const z of E.SIZES) { const r = o.b[E.slotKey(md, z.id)]; if (r && typeof r === 'object') s.b[E.slotKey(md, z.id)] = { s: clamp(n(r.s, 0), 0, 3), t: n(r.t, 0), m: n(r.m, 0), n: n(r.n, 0) }; }
+  if (o.en && typeof o.en === 'object') for (const k of ['best', 'score', 'runs']) s.en[k] = n(o.en[k], 0);
+  if (o.dl && typeof o.dl === 'object') for (const k of ['k', 't', 'm', 's', 'st', 'bs', 'n']) s.dl[k] = n(o.dl[k], 0);
+  s.coins = n(o.coins, 0); s.gems = n(o.gems, 0);
+  if (o.wz && typeof o.wz === 'object') for (const w of E.WORLDS) if (o.wz[w.id]) s.wz[w.id] = 1;
+  if (typeof o.world === 'string' && E.WORLD_BY_ID[o.world]) s.world = o.world;
+  if (o.stats && typeof o.stats === 'object') for (const k of Object.keys(o.stats)) s.stats[k] = n(o.stats[k], 0);
+  if (o.set && typeof o.set === 'object') for (const k of ['trail', 'pad', 'mini', 'gyro']) if (k in o.set) s.set[k] = o.set[k] ? 1 : 0;
+  s.tut = n(o.tut, 0); derive(s); return s;
+}
+function derive(s) { s.stars = E.totalStars(s); s.stats.worlds = E.WORLDS.filter(w => E.worldUnlocked(s, w)).length; if (!E.worldUnlocked(s, E.WORLD_BY_ID[s.world])) s.world = 'forest'; }
+let save = readSave();
+function writeSave() { derive(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+const bump = (k, n) => { save.stats[k] = (save.stats[k] || 0) + (n == null ? 1 : n); };
+const dateKeyNow = () => (PF && PF.jstDateKey ? PF.jstDateKey() : (() => { const d = new Date(Date.now() + 9 * 3600e3); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); })());
+const prevKey = k => { const y = Math.floor(k / 10000), m = Math.floor(k / 100) % 100, d = k % 100, t = new Date(Date.UTC(y, m - 1, d) - 864e5); return t.getUTCFullYear() * 10000 + (t.getUTCMonth() + 1) * 100 + t.getUTCDate(); };
+const dailySeed = dk => (PF && PF.dailySeed ? PF.dailySeed(GAME, dk) : E.hash32('kobo:' + GAME + ':' + dk));
+// ghosts: this device only, the best run of the last 16 mazes
+function readGhosts() { let o = null; try { o = JSON.parse(store.get(GHOST_KEY) || 'null'); } catch (e) {} if (!o || typeof o !== 'object' || !Array.isArray(o.o) || !o.g) return { o: [], g: {} }; return o; }
+function putGhost(code, log, ms) { const gh = readGhosts(); gh.o = gh.o.filter(c => c !== code); gh.o.push(code); gh.g[code] = { l: log, t: Math.round(ms) }; while (gh.o.length > 16) { delete gh.g[gh.o.shift()]; } store.set(GHOST_KEY, JSON.stringify(gh)); }
+function getGhost(code) { const g = readGhosts().g[code]; return g && typeof g.l === 'string' && g.t > 0 ? g : null; }
+
+// ---------- the session ----------
+let S = null;
+const cv = $('board'), ctx = cv.getContext('2d');
+let VW = { w: 300, h: 300, dpr: 1 };
+const V = { pl: { x: 0, y: 0, dx: 0, dy: 0 }, cam: { x: 0, y: 0, a: 0 }, ts: 20, cx: 0, cy: 0, vis: null, last: 0, dirty: true };
+let raf = 0, lastT = 0, lastDraw = 0, walkT = 0, persistT = 0;
+const setStatus = (txt, cls) => { const el = $('status'); el.textContent = txt || ''; el.className = cls || ''; };
+function toast(msg, ms) { const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 1600); }
+const dark = () => !(UI && UI.theme && UI.theme.resolved && UI.theme.resolved() === 'light');
+const worldNow = () => save.world;
+const overlays = ['ovTitle', 'ovSetup', 'ovResult', 'ovWorld', 'howto'];
+const anyOverlay = () => overlays.some(id => !$(id).hidden);
+function hideOverlays() { for (const id of overlays) $(id).hidden = true; }
+const tile = i => ({ x: i % S.m.w, y: (i / S.m.w) | 0 });
+const is3 = () => !!S && S.m.mode === 'd3';
+const playing = () => !!S && !S.over && !S.menu && !anyOverlay();
+
+function begin(o) {
+  stopWalk(); const m = o.m;
+  const run = o.log ? E.replay(m, o.log) : E.newRun(m);
+  const gh = getGhost(m.code);
+  S = { kind: o.kind || 'free', m, run, code: m.code, ms: o.ms || 0, started: run.moves > 0, over: false, menu: false, hints: o.hints == null ? 3 : o.hints, hintsUsed: o.hintsUsed || 0, revealUsed: !!o.revealUsed, reveal: !!o.revealUsed && !!o.reveal, undos: 0,
+    hint: null, hintDir: -1, walk: null, dk: o.dk || 0, en: o.en || null, limit: o.limit || 0, face: o.face == null ? 0 : o.face, zoomAll: false, mini: !!save.set.mini, result: null, live: false, ghost: gh ? { path: E.ghostPath(m, gh.l), ms: gh.t } : null, t0: Date.now() };
+  if (m.mode === 'd3') S.face = initialFace(m);
+  const p = tile(run.pos); V.pl.x = p.x; V.pl.y = p.y; V.pl.dx = 0; V.pl.dy = 0; V.vis = null; V.last = -1; V.dirty = true;
+  V.cam.x = p.x + 0.5; V.cam.y = p.y + 0.5; V.cam.a = (S.face - 1) * Math.PI / 2;
+  if (S.limit === 0 && S.en) S.limit = E.endlessLimitMs(S.en.level, m.par);
+  if (S.reveal) refreshReveal();
+  hideOverlays(); applyMode(); fit(); hud(); kick();
+  setStatus(tipFor(), '');
+  if (!o.quiet) { emit('play_start', { mode: S.kind === 'daily' ? 'daily' : 'practice', dateKey: S.kind === 'daily' ? S.dk : undefined, stage: m.code }); S.live = true; }
+  persist();
+  try { cv.focus({ preventScroll: true }); } catch (e) {}
+  return S;
+}
+function initialFace(m) { for (let d = 0; d < 4; d++) if (E.move(m, m.start, 0, 0, d)) return d; return 0; }
+function tipFor() {
+  const k = S.m.mode;
+  const T = {
+    classic: L('ゴールの旗まで歩こう。矢印キー・スワイプ・十字ボタン・タップで動けるよ。', 'Walk to the flag. Arrow keys, swipe, the D-pad or a tap all work.'),
+    fog: L('見えるのはランタンの光のまわりだけ。歩いたところはおぼえているよ。', 'You only see around your lantern. Visited places are remembered.'),
+    d3: L('↑すすむ ↓さがる ←→まわる。ミニマップで場所を確かめよう。', 'Up = forward, down = back, left/right = turn. Check the minimap.'),
+    keys: L('かぎを取ると同じ色のとびらが開く。', 'Pick up a key to open the door of the same colour.'),
+    timed: L('縞のかべは歩くたびに開閉。緑の枠は「つぎに開く」。まつ（Space）も使える。', 'Striped walls toggle every step. A green frame opens next step. Waiting (Space) is allowed.'),
+  }[k];
+  return S.en ? L(S.en.level + '階。', 'Floor ' + S.en.level + '. ') + T : T;
+}
+function applyMode() {
+  const m = S.m, k = m.mode;
+  $('bWait').hidden = k !== 'timed'; $('bView').hidden = false; $('tView').textContent = k === 'd3' ? L('ミニマップ', 'Minimap') : L('ぜんたい', 'Overview'); $('bView').setAttribute('aria-pressed', String(k === 'd3' ? S.mini : S.zoomAll));
+  $('bView').hidden = k === 'fog' && false;
+  document.body.classList.toggle('nodpad', !save.set.pad);
+  const rl = $('dpad'); const ar = ['上', '右', '下', '左'], ae = ['Up', 'Right', 'Down', 'Left'], ar3 = ['すすむ', '右をむく', 'さがる', '左をむく'], ae3 = ['Forward', 'Turn right', 'Back', 'Turn left'];
+  rl.querySelectorAll('button').forEach(b => { const d = +b.dataset.d; b.setAttribute('aria-label', k === 'd3' ? L(ar3[d], ae3[d]) : L(ar[d], ae[d])); });
+}
+
+// ---------- layout ----------
+function fit() {
+  const st = $('stage'), r = st.getBoundingClientRect(); const w = Math.max(60, Math.floor(r.width - 16)), h = Math.max(60, Math.floor(r.height - 8));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  VW = { w, h, dpr };
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  const k = is3() ? Math.min(1, 560 / (w * dpr)) : 1;
+  cv.width = Math.round(w * dpr * k); cv.height = Math.round(h * dpr * k); VW.k = k;
+  V.dirty = true; kick();
+}
+function hud() {
+  if (!S) return; const m = S.m;
+  $('lLevel').textContent = S.en ? L('どこまでも下へ', 'Descend') : S.kind === 'daily' ? L('きょうのめいろ', 'Daily maze') : L('めいろ', 'Maze');
+  $('vLevel').textContent = S.en ? L(S.en.level + '階 ', 'F' + S.en.level + ' ') + '♥'.repeat(S.en.lives) : mname(m.mode) + ' ' + (m.size.length <= 2 && /^[A-Z]+$/.test(m.size) ? m.size : m.n + '²');
+  $('lTime').textContent = S.limit ? L('のこり', 'Left') : L('時間', 'Time'); $('lMoves').textContent = m.mode === 'timed' ? L('ティック', 'Ticks') : L('歩数', 'Moves'); $('lPar').textContent = L('最短', 'Par');
+  $('vTime').textContent = S.limit ? fmtT(S.limit - S.ms) : fmtT(S.ms); $('vMoves').textContent = S.run.moves; $('vPar').textContent = m.par;
+  const left = S.hints; $('hintLbl').textContent = L('ヒント ' + left, 'Hint ' + left); $('bHint').dataset.n = String(left); $('bHint').disabled = !playing() || left <= 0;
+  $('tUndo').textContent = L('もどる', 'Back up'); $('tReveal').textContent = L('こたえ', 'Solve'); $('tWait').textContent = L('まつ', 'Wait');
+  $('bUndo').disabled = !playing() || S.run.route.length < 2; $('bReveal').disabled = !playing() || S.revealUsed && S.reveal; $('bWait').disabled = !playing();
+}
+function persistTick() { if (S && S.started && !S.over) { const tm = $('vTime'); tm.textContent = S.limit ? fmtT(S.limit - S.ms) : fmtT(S.ms); } }
+
+// ---------- movement ----------
+const DIRNAME = [L('上', 'up'), L('右', 'right'), L('下', 'down'), L('左', 'left')];
+const REL = [L('まっすぐ', 'straight ahead'), L('右', 'to the right'), L('うしろ', 'behind you'), L('左', 'to the left')];
+function stopWalk() { clearInterval(walkT); walkT = 0; if (S) S.walk = null; }
+function doStep(d, src) {
+  if (!S || S.over || S.menu || anyOverlay()) return false;
+  if (src !== 'walk' && src !== 'undo') stopWalk();
+  const run = S.run, m = S.m, from = run.pos, r = E.step(run, d);
+  if (!r.ok) {
+    if (r.reason === 'door') { setStatus(L('とびらがしまっている。同じ色のかぎをさがそう', 'The door is locked. Find the key of the same colour.'), 'warn'); sfx('error'); }
+    else if (r.reason === 'gate') { setStatus(L('かべがいま閉じている。「まつ」か、ほかの道を', 'That wall is closed right now. Wait a beat or go another way.'), 'warn'); sfx('error'); }
+    else sfx('tap');
+    if (!reduceMotion.matches) { cv.classList.remove('shake'); void cv.offsetWidth; cv.classList.add('shake'); }
+    stopWalk(); return false;
+  }
+  if (!S.started) { S.started = true; }
+  S.hint = null; S.hintDir = -1;
+  if (d < 4) { const dx = [0, 1, 0, -1][d], dy = [-1, 0, 1, 0][d]; V.pl.dx = dx; V.pl.dy = dy; }
+  V.vis = null; V.dirty = true;
+  if (r.key) { sfx('select'); setStatus(L('かぎを手に入れた！', 'Got a key!'), 'good'); }
+  else if (r.gem) { sfx('combo', 4); setStatus(L('宝石を見つけた！', 'A gem!'), 'good'); }
+  else if (r.coin) { sfx('coin'); }
+  else if (r.wait) sfx('tap'); else sfx('move');
+  if (m.doorAt[run.pos] && !r.key) sfx('pop');
+  if (S.reveal) refreshReveal();
+  if (m.mode === 'timed' && !r.done) setStatus(L('いま ' + (run.tk % m.P) + '／' + m.P + ' ティック', 'Tick ' + (run.tk % m.P) + ' of ' + m.P), '');
+  hud(); persist();
+  if (r.done) { stopWalk(); setTimeout(onWin, reduceMotion.matches ? 0 : 160); }
+  kick(); return true;
+}
+// 3D の操作：0 すすむ 1 右をむく 2 さがる 3 左をむく
+function do3D(a, src) {
+  if (!S || S.over || S.menu || anyOverlay()) return false;
+  if (src !== 'walk') stopWalk();
+  if (a === 1) { S.face = (S.face + 1) % 4; sfx('tap'); V.dirty = true; kick(); return true; }
+  if (a === 3) { S.face = (S.face + 3) % 4; sfx('tap'); V.dirty = true; kick(); return true; }
+  return doStep(a === 0 ? S.face : (S.face + 2) % 4, src);
+}
+const act = (d, src) => (is3() ? do3D(d, src) : doStep(d, src));
+function startWalk(dirs, fast) {
+  if (!S || !dirs || !dirs.length) return false;
+  stopWalk(); S.walk = { dirs: dirs.slice(), i: 0 };
+  const tick = () => { if (!S || !S.walk || S.over) return stopWalk(); const d = S.walk.dirs[S.walk.i++]; if (d == null) return stopWalk(); const w = S.walk; if (!doStep(d, 'walk')) return stopWalk(); if (S && S.walk === w && w.i >= w.dirs.length) stopWalk(); V.dirty = true; };
+  walkT = setInterval(tick, reduceMotion.matches ? 16 : clamp((fast ? 45 : 70) - dirs.length * 0.6, 20, fast ? 45 : 70)); tick(); return true;
+}
+function tapAt(clientX, clientY) {
+  if (!S || S.over || anyOverlay() || S.menu) return;
+  const r = cv.getBoundingClientRect(), x = clientX - r.left, y = clientY - r.top;
+  if (is3()) {
+    if (S.walk) return stopWalk();
+    if (x < r.width * 0.3) do3D(3); else if (x > r.width * 0.7) do3D(1); else if (y > r.height * 0.75) do3D(2); else do3D(0); return;
+  }
+  const tx = Math.floor(V.cx + x / V.ts), ty = Math.floor(V.cy + y / V.ts), m = S.m;
+  if (tx < 0 || ty < 0 || tx >= m.w || ty >= m.h) return;
+  const i = ty * m.w + tx; if (!m.t[i] || i === S.run.pos) return;
+  stopWalk();
+  const dirs = E.routeTo(m, S.run.pos, S.run.mask, i, S.run.seen);
+  if (!dirs) { setStatus(L('そこへは行けません', 'You cannot walk there'), 'warn'); sfx('error'); return; }
+  startWalk(dirs);
+}
+function doUndo() {
+  if (!playing()) return; stopWalk();
+  const dirs = E.undoJunction(S.run);
+  if (!dirs.length) { setStatus(L('もう、はじまりの場所です', 'You are already at the start'), 'warn'); sfx('error'); return; }
+  S.undos++; bump('undos'); sfx('select'); setStatus(L('ひとつ前の分かれ道まで戻ります', 'Walking back to the last junction'), '');
+  startWalk(dirs, true);
+}
+function doWait() { if (S && S.m.mode === 'timed') doStep(4); }
+function pathTiles(run, dirs, n) {
+  const m = run.m, out = []; let s = { pos: run.pos, mask: run.mask, tm: run.tk % m.P };
+  for (let i = 0; i < dirs.length && i < n; i++) { const ns = E.move(m, s.pos, s.mask, s.tm, dirs[i]); if (!ns) break; s = ns; if (dirs[i] < 4) out.push(s.pos); }
+  return out;
+}
+function doHint() {
+  if (!playing()) return; stopWalk();
+  if (S.hints <= 0) { setStatus(L('ヒントはこのめいろではもうありません', 'No hints left on this maze'), 'warn'); sfx('error'); return; }
+  const h = E.hintPath(S.run); if (!h) { setStatus(L('ゴールへの道が見つかりません', 'No route found'), 'warn'); return; }
+  S.hints--; S.hintsUsed++; bump('hints'); S.hintDir = h.dirs[0]; S.hint = pathTiles(S.run, h.dirs, 10); S.hintLen = h.len;
+  const d = h.dirs[0];
+  let word = d === 4 ? L('まつ', 'wait') : is3() ? REL[(d - S.face + 4) % 4] : DIRNAME[d];
+  setStatus(L('ヒント：つぎは ' + word + '。ゴールまであと ' + h.len + ' 手', 'Hint: next ' + word + '. ' + h.len + ' moves to the goal'), 'good'); sfx('ok');
+  if (is3()) { S.hintSet = new Set(S.hint); if (!S.mini) { S.mini = true; applyMode(); } }
+  hud(); V.dirty = true; kick();
+}
+function refreshReveal() { const h = E.hintPath(S.run); S.revealPath = h ? pathTiles(S.run, h.dirs, 99999) : []; S.revealSet = new Set(S.revealPath); V.dirty = true; }
+function doReveal() {
+  if (!playing()) return; stopWalk();
+  S.revealUsed = true; S.reveal = true; bump('reveals'); refreshReveal(); if (is3() && !S.mini) { S.mini = true; applyMode(); }
+  setStatus(L('こたえの道すじを表示中（★は1つまで）', 'Showing the full route (1 star at most)'), 'good'); sfx('ok'); hud(); kick();
+}
+function toggleView() {
+  if (!S) return;
+  if (is3()) { S.mini = !S.mini; save.set.mini = S.mini ? 1 : 0; writeSave(); } else S.zoomAll = !S.zoomAll;
+  applyMode(); V.dirty = true; kick();
+}
+
+// ---------- drawing ----------
+function kick() { V.dirty = true; if (!raf) { lastT = performance.now(); raf = requestAnimationFrame(frame); } }
+function frame(now) {
+  raf = 0; if (!S) return;
+  const dt = Math.min(100, now - lastT); lastT = now;
+  if (S.started && !S.over && !S.menu && !anyOverlay() && !document.hidden) { S.ms += dt; if (S.limit && S.ms >= S.limit) { loseLife(); } persistTick(); }
+  // the tile under the player eases toward the run's position
+  const tp = tile(S.run.pos); let moving = false;
+  const sp = reduceMotion.matches ? 99 : 15 * dt / 1000;
+  for (const [k, t] of [['x', tp.x], ['y', tp.y]]) { const df = t - V.pl[k]; if (Math.abs(df) > 1e-3) { V.pl[k] += Math.abs(df) <= sp ? df : Math.sign(df) * sp; moving = true; } else V.pl[k] = t; }
+  if (is3()) {
+    const ta = (S.face - 1) * Math.PI / 2; let da = ta - V.cam.a; da = Math.atan2(Math.sin(da), Math.cos(da));
+    const ra = reduceMotion.matches ? 9 : 6.5 * dt / 1000; if (Math.abs(da) > 1e-3) { V.cam.a += Math.abs(da) <= ra ? da : Math.sign(da) * ra; moving = true; } else V.cam.a = ta;
+    V.cam.x += (V.pl.x + 0.5 - V.cam.x) * 1; V.cam.y += (V.pl.y + 0.5 - V.cam.y) * 1;
+  }
+  if (now - lastDraw > 90 || moving || V.dirty) { lastDraw = now; V.dirty = false; draw(now); }
+  if (!document.hidden) raf = requestAnimationFrame(frame);
+}
+function draw(now) {
+  const m = S.m, run = S.run, sk = ART.skin(worldNow(), dark());
+  if (is3()) { draw3(now, sk); return; }
+  const W = m.w, H = m.h, vw = VW.w, vh = VW.h, tsFit = Math.floor(Math.min(vw / W, vh / H));
+  let ts, cx, cy;
+  if (S.zoomAll || tsFit >= 16) { ts = clamp(tsFit, 3, 56); cx = -(vw / ts - W) / 2; cy = -(vh / ts - H) / 2; }
+  else { ts = vw >= 400 ? 28 : 22; cx = V.pl.x + 0.5 - vw / ts / 2; cy = V.pl.y + 0.5 - vh / ts / 2; cx = W > vw / ts ? clamp(cx, 0, W - vw / ts) : -(vw / ts - W) / 2; cy = H > vh / ts ? clamp(cy, 0, H - vh / ts) : -(vh / ts - H) / 2; }
+  V.ts = ts; V.cx = cx; V.cy = cy;
+  if (m.mode === 'fog' && !V.vis) { V.vis = new Uint8Array(W * H); for (const i of E.visible(m, run.pos, m.radius)) V.vis[i] = 1; }
+  let ghost = null; if (S.ghost && S.started && !S.over) { const p = S.ghost.path, k = Math.min(p.length - 1, Math.floor((p.length - 1) * S.ms / S.ghost.ms)); ghost = tile(p[k]); }
+  ART.draw2D(ctx, m, run, { w: vw, h: vh, dpr: VW.dpr, ts, cx, cy, skin: sk, t: now, pl: V.pl, ghost, vis: V.vis, hint: S.hint, reveal: S.revealPath && S.reveal ? S.revealPath : null, walk: S.walk ? pathTiles(run, S.walk.dirs.slice(S.walk.i), 60) : null, opts: { trail: !!save.set.trail } });
+}
+function draw3(now, sk) {
+  const m = S.m, run = S.run, W = m.w, k = VW.k || 1, cw = cv.width, ch = cv.height;
+  const solid = i => (!m.t[i] ? 1 : m.doorAt[i] && !((run.mask >> (m.doorAt[i] - 1)) & 1) ? 1 + m.doorAt[i] : m.gateAt[i] && !E.gateOpen(m.gates[m.gateAt[i] - 1], run.tk % m.P) ? 5 : 0);
+  const sp = [{ x: tile(m.goal).x + 0.5, y: tile(m.goal).y + 0.5, kind: 'goal', sc: 0.9, lift: -0.05, bob: true }];
+  for (const c of m.coins) if (!run.coins.has(c)) sp.push({ x: tile(c).x + 0.5, y: tile(c).y + 0.5, kind: 'coin', sc: 0.35, lift: 0.22, bob: true });
+  for (const c of m.gems) if (!run.gems.has(c)) sp.push({ x: tile(c).x + 0.5, y: tile(c).y + 0.5, kind: 'gem', sc: 0.4, lift: 0.2, bob: true });
+  for (const kk of m.keys) if (!((run.mask >> kk.k) & 1)) sp.push({ x: tile(kk.i).x + 0.5, y: tile(kk.i).y + 0.5, kind: 'key' + kk.k, sc: 0.4, lift: 0.2, bob: true });
+  if (S.ghost && S.started && !S.over) { const p = S.ghost.path, q = Math.min(p.length - 1, Math.floor((p.length - 1) * S.ms / S.ghost.ms)); if (p[q] !== run.pos) sp.push({ x: tile(p[q]).x + 0.5, y: tile(p[q]).y + 0.5, kind: 'ghost', sc: 0.5, lift: 0.1 }); }
+  ART.render3D(ctx, cw, ch, m, V.cam, sk, solid, sp, now);
+  if (S.mini) { const size = Math.round(Math.min(cw, ch) * 0.34), r = m.w <= 19 ? 9 : 8; ART.drawMini(ctx, m, run, sk, cw - size - 6, 6, size, (S.face - 1) * Math.PI / 2, r, S.reveal ? S.revealSet : S.hint ? S.hintSet : null); }
+  void W; void k;
+}
+
+// ---------- starting games ----------
+function startFree(p, kind, dk) {
+  let m; try { m = E.generate(Object.assign({}, p)); } catch (e) { toast(L('めいろをつくれませんでした', 'Could not build the maze')); return null; }
+  return begin({ m, kind: kind || 'free', dk: dk || 0 });
+}
+function startCode(code, kind) { const c = E.parseCode(code); if (!c) return null; if (c.endless) return startEndlessLevel({ seed: c.seed, level: c.level, lives: 3, score: 0 }); return begin({ m: E.fromCode(c), kind: kind || 'free' }); }
+function dailyFor(dk) { return E.dailyParams(dailySeed(dk)); }
+function startDaily(dk) { dk = dk || dateKeyNow(); const p = dailyFor(dk); return begin({ m: E.fromCode(p.code), kind: 'daily', dk }); }
+function startEndless() { const seed = (Math.random() * 899999 + 100000) | 0; save.en.runs++; bump('endlessRuns'); writeSave(); return startEndlessLevel({ seed, level: 1, lives: 3, score: 0 }); }
+function startEndlessLevel(en) { const m = E.fromCode('e-' + en.level + '-' + en.seed); return begin({ m, kind: 'endless', en, hints: 1 }); }
+function loseLife() {
+  if (!S || !S.en || S.over) return;
+  S.en.lives--; sfx('fail');
+  if (S.en.lives <= 0) { S.over = true; return endlessOver(); }
+  const en = S.en; toast(L('じかん切れ！ のこり♥' + en.lives, 'Time is up! ' + en.lives + ' lives left'), 1500);
+  begin({ m: S.m, kind: 'endless', en, hints: 1, quiet: true });
+  setStatus(L('じかん切れ。同じ階にもう一度', 'Out of time. Same floor again.'), 'warn');
+}
+function endlessOver() {
+  const en = S.en, ms = S.ms; stopWalk();
+  save.en.best = Math.max(save.en.best, en.level - 1); save.en.score = Math.max(save.en.score, en.score);
+  const newb = en.score >= save.en.score && en.score > 0; bump('moves', S.run.moves); writeSave(); store.del(RUN_KEY);
+  emit('play_end', { mode: 'practice', score: en.score, durationMs: Date.now() - S.t0, reason: 'over' }); S.live = false;
+  $('rTitle').textContent = L('ゲームオーバー', 'Game over'); $('rStars').innerHTML = ''; $('rBig').textContent = L(Math.max(0, en.level - 1) + '階まで', 'Reached floor ' + Math.max(0, en.level - 1));
+  $('rNew').innerHTML = newb ? '<span class="newrec">' + esc(L('ベスト更新！', 'New best!')) + '</span>' : '';
+  $('rKv').innerHTML = rows([[L('点数', 'Score'), en.score], [L('さいこうの階', 'Best floor'), save.en.best], [L('さいこうの点数', 'Best score'), save.en.score]]);
+  $('rCode').innerHTML = ''; $('rNote').textContent = unlockNote(); void ms;
+  $('rNext').textContent = L('もういちど、下へ', 'Descend again'); $('rNext').onclick = () => startEndless(); $('rAgain').hidden = true; $('rCopy').hidden = true;
+  $('rTitleBtn').textContent = L('タイトルへ', 'Title'); $('rTitleBtn').onclick = () => showTitle();
+  hideOverlays(); $('ovResult').hidden = false; hud(); try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
+}
+const rows = a => a.map(r => '<span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span>').join('');
+function unlockNote() {
+  const out = []; for (const w of E.WORLDS) if (E.worldUnlocked(save, w) && !save.wz[w.id]) { save.wz[w.id] = 1; out.push(L(w.ja, w.en)); }
+  if (out.length) { writeSave(); S && (S.newWorlds = out); sfx('combo', 6); return L('あたらしいせかい：', 'New world: ') + out.join(L('、', ', ')); }
+  return '';
+}
+
+// ---------- winning ----------
+function onWin() {
+  if (!S || S.over || !S.run.done) return;
+  const m = S.m, run = S.run; S.over = true; stopWalk();
+  if (S.en) return endlessLevelDone();
+  const stars = E.starsFor(m, run.moves, { hints: S.hintsUsed > 0, reveal: S.revealUsed });
+  const key = E.slotKey(m.mode, E.sizeById(m.size) ? m.size : 'M'), slot = E.sizeById(m.size) ? key : null;
+  let newTime = false, newMoves = false, firstClear = false, prevBest = null;
+  if (slot) { const old = save.b[slot]; prevBest = old ? { t: old.t, m: old.m, s: old.s } : null; firstClear = !old || old.s === 0; newTime = !old || !old.t || S.ms < old.t; newMoves = !old || !old.m || run.moves < old.m;
+    save.b[slot] = { s: Math.max(old ? old.s : 0, stars), t: old && old.t ? Math.min(old.t, Math.round(S.ms)) : Math.round(S.ms), m: old && old.m ? Math.min(old.m, run.moves) : run.moves, n: (old ? old.n : 0) + 1 }; }
+  bump('clears'); bump(m.mode); bump('moves', run.moves); if (stars === 3) bump('three'); if (m.n >= 41) bump('xl');
+  save.coins += run.coins.size; save.gems += run.gems.size; bump('coinsGot', run.coins.size);
+  let dayNew = false, streak = 0;
+  if (S.kind === 'daily') { const d = save.dl; if (d.k !== S.dk) { dayNew = true; d.st = d.k === prevKey(S.dk) ? d.st + 1 : 1; d.bs = Math.max(d.bs, d.st); d.n++; d.k = S.dk; d.t = Math.round(S.ms); d.m = run.moves; d.s = stars; } else { if (!d.t || S.ms < d.t) d.t = Math.round(S.ms); if (!d.m || run.moves < d.m) d.m = run.moves; d.s = Math.max(d.s, stars); } streak = d.st; }
+  if (S.kind === 'free') bump('codes');
+  // ghost: keep the faster run of this maze
+  const gh = getGhost(m.code); if (!S.revealUsed && (!gh || S.ms < gh.t)) putGhost(m.code, run.log, S.ms);
+  const note = unlockNote();
+  writeSave(); store.del(RUN_KEY);
+  sfx(stars === 3 ? 'win' : 'clear');
+  S.result = { stars, moves: run.moves, ms: Math.round(S.ms), newTime, newMoves, firstClear, dayNew, streak, note, prevBest, coins: run.coins.size, gems: run.gems.size };
+  emit('play_end', { mode: S.kind === 'daily' ? 'daily' : 'practice', dateKey: S.kind === 'daily' ? S.dk : undefined, score: stars, durationMs: Math.round(S.ms), reason: 'clear', stage: m.code }); S.live = false;
+  emit('stage_clear', { stage: m.code, stars, moves: run.moves });
+  showResult();
+}
+function endlessLevelDone() {
+  const en = S.en, m = S.m, run = S.run, left = Math.max(0, S.limit - S.ms), pts = E.endlessScore(en.level, left, run.coins.size);
+  en.score += pts; save.coins += run.coins.size; save.gems += run.gems.size; bump('moves', run.moves); bump('clears'); bump('floors');
+  save.en.best = Math.max(save.en.best, en.level); save.en.score = Math.max(save.en.score, en.score);
+  if (en.level % 5 === 0 && en.lives < 5) en.lives++;
+  const note = unlockNote(); writeSave(); sfx('clear'); emit('stage_clear', { stage: m.code, stars: 0, moves: run.moves });
+  toast(L(en.level + '階クリア！ +' + pts + '点', 'Floor ' + en.level + ' clear! +' + pts), 1400); if (note) setTimeout(() => toast(note, 1800), 300);
+  const next = { seed: en.seed, level: en.level + 1, lives: en.lives, score: en.score };
+  setTimeout(() => { if (S && S.en === en) startEndlessLevel(next); }, reduceMotion.matches ? 50 : 900);
+}
+function showResult() {
+  const r = S.result, m = S.m, [l3, l2] = E.starLimits(m);
+  $('rTitle').textContent = S.kind === 'daily' ? L('きょうのめいろ クリア！', 'Daily maze clear!') : L('クリア！', 'Maze clear!');
+  $('rStars').innerHTML = [0, 1, 2].map(k => star(k < r.stars).replace('<svg ', '<svg style="animation-delay:' + (k * 0.18) + 's" ')).join('');
+  if (!reduceMotion.matches) $('rStars').querySelectorAll('svg.on').forEach(s => s.classList.add('pop'));
+  $('rBig').textContent = fmtT1(r.ms);
+  const tags = []; if (r.firstClear) tags.push(L('はじめてのクリア！', 'First clear!')); else if (r.newTime) tags.push(L('ベストタイム！', 'Best time!')); if (r.newMoves && !r.firstClear) tags.push(L('さいたん更新！', 'Fewest moves!'));
+  if (S.kind === 'daily' && r.dayNew) tags.push(L(r.streak + '日れんぞく', r.streak + '-day streak'));
+  $('rNew').innerHTML = tags.map(t => '<span class="newrec">' + esc(t) + '</span>').join('');
+  const rw = [[m.mode === 'timed' ? L('ティック', 'Ticks') : L('歩数', 'Moves'), r.moves], [L('最短（par）', 'Par (shortest)'), m.par], [L('★3の条件', '3 stars needs'), L(l3 + '手以内', '≤ ' + l3)], [L('★2の条件', '2 stars needs'), L(l2 + '手以内', '≤ ' + l2)]];
+  rw.push([L('コイン', 'Coins'), r.coins + ' / ' + m.coins.length]); if (m.gems.length) rw.push([L('宝石', 'Gems'), r.gems + ' / ' + m.gems.length]);
+  if (S.hintsUsed) rw.push([L('ヒントを使った', 'Hints used'), S.hintsUsed]); if (S.revealUsed) rw.push([L('こたえを見た', 'Solution shown'), L('はい', 'Yes')]);
+  $('rKv').innerHTML = rows(rw);
+  $('rCode').innerHTML = '<div class="code">' + esc(m.code) + '</div>';
+  $('rNote').textContent = r.note || (S.ghost ? L('次回はゴースト（いちばん速い自分）と競争できます', 'Next time you can race your ghost.') : L('同じ合言葉で、いつでもこのめいろにもどれます', 'This code always opens this same maze.'));
+  const rn = $('rNext'); rn.textContent = S.kind === 'daily' ? L('タイトルへ', 'Title') : L('つぎのめいろ', 'Next maze');
+  rn.onclick = () => { if (S.kind === 'daily') return showTitle(); const p = { mode: m.mode, size: m.size, diff: m.diff, seed: (E.hash32(m.code + Date.now()) % E.SEED_MAX) }; startFree(p); };
+  $('rAgain').hidden = false; $('rCopy').hidden = false; $('rAgain').textContent = L('もう一度（ゴースト）', 'Again (ghost)'); $('rAgain').onclick = () => again(); $('rCopy').textContent = L('合言葉コピー', 'Copy code'); $('rCopy').onclick = copyCode;
+  $('rTitleBtn').textContent = L('タイトルへ', 'Title'); $('rTitleBtn').onclick = () => showTitle();
+  hideOverlays(); $('ovResult').hidden = false; hud(); try { rn.focus({ preventScroll: true }); } catch (e) {}
+}
+function again() { if (!S) return; begin({ m: S.m, kind: S.kind, dk: S.dk }); }
+function copyCode() { if (!S) return; try { navigator.clipboard.writeText(S.code); } catch (e) {} toast(L('コピーしました', 'Copied')); }
+
+// ---------- persistence (this device only) ----------
+function persist() { if (!S) return; if (S.over) { store.del(RUN_KEY); return; } clearTimeout(persistT); persistT = setTimeout(persistNow, 150); }
+function persistNow() {
+  if (!S || S.over) return; if (S.run.moves === 0 && !S.en) { store.del(RUN_KEY); return; }
+  store.set(RUN_KEY, JSON.stringify({ code: S.code, kind: S.kind, dk: S.dk, log: S.run.log, ms: Math.round(S.ms), hints: S.hints, hu: S.hintsUsed, ru: S.revealUsed ? 1 : 0, en: S.en, t: Date.now() }));
+}
+function readRun() {
+  let r = null; try { r = JSON.parse(store.get(RUN_KEY) || 'null'); } catch (e) {}
+  if (!r || typeof r !== 'object' || typeof r.code !== 'string' || typeof r.log !== 'string' || !E.parseCode(r.code)) return null; return r;
+}
+function resumeRun(r) {
+  const c = E.parseCode(r.code); let m; try { m = c.endless ? E.fromCode(c) : E.fromCode(c); } catch (e) { return null; }
+  const s = begin({ m, kind: r.kind || 'free', dk: r.dk || 0, log: r.log, ms: r.ms || 0, hints: r.hints, hintsUsed: r.hu || 0, revealUsed: !!r.ru, reveal: !!r.ru, en: r.en || null, quiet: false });
+  return s;
+}
+
+// ---------- screens ----------
+function showTitle() {
+  if (S && !S.over) { persistNow(); if (S.live) { emit('play_end', { mode: S.kind === 'daily' ? 'daily' : 'practice', score: 0, durationMs: Math.round(S.ms), reason: 'quit' }); S.live = false; } }
+  if (S) { S.menu = false; stopWalk(); }
+  hideOverlays(); renderTitle(); $('ovTitle').hidden = false; hud();
+  const f = $('tList').querySelector('button'); try { f && f.focus({ preventScroll: true }); } catch (e) {}
+}
+function renderTitle() {
+  $('tTitle').textContent = L('めいろ探検', 'Maze Quest'); $('h1').textContent = L('めいろ探検', 'Maze Quest');
+  $('tSub').textContent = L('★ ' + save.stars + ' / ' + E.MAX_STARS + '　せかい ' + unlockedWorlds() + ' / 40', '★ ' + save.stars + ' / ' + E.MAX_STARS + '   Worlds ' + unlockedWorlds() + ' / 40');
+  $('tHow').textContent = L('あそびかた', 'How to play'); $('tHome').textContent = L('ゲーム一覧へ', 'All games');
+  const run = readRun(), dk = dateKeyNow(), dl = save.dl, doneToday = dl.k === dk, dp = dailyFor(dk);
+  const go = '<span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M9 5l9 7-9 7z"/></svg></span>';
+  const qm = (id, ttl, sub, cls) => '<button class="qm' + (cls || '') + '" id="' + id + '" type="button"><span><b>' + esc(ttl) + '</b><small>' + esc(sub) + '</small></span>' + go + '</button>';
+  const it = [];
+  if (run) it.push(qm('tResume', L('つづきから', 'Continue'), L(mname((E.parseCode(run.code) || {}).mode || 'classic') + '・' + run.log.length + '手', mname((E.parseCode(run.code) || {}).mode || 'classic') + ' · ' + run.log.length + ' moves')));
+  it.push(qm('tDaily', L('きょうのめいろ', 'Daily maze'), (doneToday ? L('クリア済み・★' + dl.s + '・' + dl.st + '日れんぞく', 'Cleared · ★' + dl.s + ' · ' + dl.st + '-day streak') : L('毎日ひとつ・みんな同じ（' + mname(dp.mode) + '）', 'One a day, the same for everyone (' + mname(dp.mode) + ')')) ));
+  for (const k of E.MODES) { const best = E.SIZES.reduce((a, z) => a + ((save.b[E.slotKey(k, z.id)] || {}).s || 0), 0); it.push(qm('tm-' + k, mname(k), L(MODE[k].dj, MODE[k].de).slice(0, 38) + (L(MODE[k].dj, MODE[k].de).length > 38 ? '…' : '') + '  ★' + best + '/15', k === 'classic' ? '' : '')); }
+  it.push(qm('tEndless', L('どこまでも下へ', 'Descend forever'), L('階ごとに大きくなる・ライフ3・さいこう ' + save.en.best + '階', 'Bigger every floor · 3 lives · best floor ' + save.en.best)));
+  it.push(qm('tCode', L('合言葉でひらく', 'Open by code'), L('モード-大きさ-むずかしさ-番号', 'mode-size-difficulty-number'), ' plain'));
+  it.push(qm('tWorld', L('せかいずかん', 'World collection'), L(unlockedWorlds() + ' / 40 ひらいた・もようがえ', unlockedWorlds() + ' / 40 unlocked · change the look'), ' plain'));
+  $('tList').innerHTML = it.join('');
+  const on = (id, f) => { const b = $(id); if (b) b.onclick = f; };
+  on('tResume', () => { const r = readRun(); if (r) resumeRun(r); }); on('tDaily', () => startDaily(dateKeyNow()));
+  for (const k of E.MODES) on('tm-' + k, () => showSetup(k)); on('tEndless', () => startEndless()); on('tCode', () => { showSetup(SU.mode, true); }); on('tWorld', () => showWorlds());
+}
+const unlockedWorlds = () => E.WORLDS.filter(w => E.worldUnlocked(save, w)).length;
+// the set-up panel
+const SU = { mode: 'classic', size: 'M', diff: 2 };
+function showSetup(mode, focusCode) {
+  if (mode) SU.mode = mode; hideOverlays(); $('suErr').textContent = '';
+  $('suTitle').textContent = L('めいろをえらぶ', 'New maze'); $('olMode').textContent = L('モード', 'Mode'); $('olSize').textContent = L('大きさ', 'Size'); $('olDiff').textContent = L('むずかしさ', 'Difficulty'); $('olSeed').textContent = L('番号', 'Number'); $('olCode').textContent = L('合言葉（モード-大きさ-むずかしさ-番号）', 'Code (mode-size-difficulty-number)');
+  $('suGo').textContent = L('はじめる', 'Start'); $('suClose').textContent = L('もどる', 'Back');
+  const seg = (id, vals, key, fmt) => { $(id).innerHTML = vals.map(v => '<button class="opt" type="button" data-v="' + v + '" aria-pressed="' + (SU[key] === v) + '">' + fmt(v) + '</button>').join(''); $(id).querySelectorAll('.opt').forEach(b => { b.onclick = () => { SU[key] = key === 'diff' ? +b.dataset.v : b.dataset.v; showSetup(); }; }); };
+  seg('suMode', E.MODES, 'mode', v => esc(mname(v)));
+  seg('suSize', E.SIZES.map(z => z.id), 'size', v => '<b>' + v + '</b><small>' + E.sizeById(v).n + '×' + E.sizeById(v).n + '</small>');
+  seg('suDiff', [1, 2, 3], 'diff', v => esc(DIFFN(v)));
+  $('suDesc').textContent = L(MODE[SU.mode].dj, MODE[SU.mode].de);
+  if (!$('suSeed').value) $('suSeed').value = String((Math.random() * 90000 + 10000) | 0);
+  syncCode();
+  const b = save.b[E.slotKey(SU.mode, SU.size)]; $('suBest').textContent = b ? L('このモード・大きさのベスト：★' + b.s + '・' + fmtT1(b.t) + '・' + b.m + '手', 'Best here: ★' + b.s + ' · ' + fmtT1(b.t) + ' · ' + b.m + ' moves') : L('このモード・大きさはまだ未クリア', 'Not cleared yet at this mode and size');
+  $('ovSetup').hidden = false; try { (focusCode ? $('suCode') : $('suGo')).focus({ preventScroll: true }); } catch (e) {}
+}
+function syncCode() { const sd = ($('suSeed').value || '').replace(/\D/g, ''); $('suCode').value = E.MCH[SU.mode] + '-' + SU.size + '-' + SU.diff + '-' + (sd || '0'); }
+$('suSeed').oninput = () => { $('suSeed').value = $('suSeed').value.replace(/\D/g, ''); syncCode(); };
+$('suDice').onclick = () => { $('suSeed').value = String((Math.random() * 900000 + 10000) | 0); syncCode(); };
+$('suCode').onchange = () => { const c = E.parseCode($('suCode').value); if (c && !c.endless) { SU.mode = c.mode; SU.size = c.size; SU.diff = c.diff; $('suSeed').value = String(c.seed); showSetup(); } };
+$('suGo').onclick = () => {
+  const c = E.parseCode($('suCode').value);
+  if (!c) { $('suErr').textContent = L('合言葉の形がちがいます。例：c-M-2-12345', 'That code does not look right. Example: c-M-2-12345'); return; }
+  if (c.endless) { startCode(c.code); return; }
+  if (c.mode !== SU.mode) SU.mode = c.mode; SU.size = c.size; SU.diff = c.diff; startCode(E.codeOf({ mode: c.mode, size: c.size, diff: c.diff, seed: c.seed }));
+};
+$('suClose').onclick = () => showTitle();
+function showWorlds() {
+  hideOverlays(); $('wzTitle').textContent = L('せかいずかん', 'World collection'); $('wzSub').textContent = L(unlockedWorlds() + ' / 40 ひらいた。さわるとめいろの見た目が変わります。', unlockedWorlds() + ' / 40 unlocked. Tap one to change the look of your mazes.'); $('wzClose').textContent = L('とじる', 'Close');
+  const reqText = r => ({ stars: L('★を' + r[1] + 'こ', 'Collect ' + r[1] + ' stars'), clears: L(r[1] + 'めいろクリア', 'Clear ' + r[1] + ' mazes'), coins: L('コイン' + r[1] + 'まい', r[1] + ' coins'), gems: L('宝石' + r[1] + 'こ', r[1] + ' gems'), daily: L('毎日を' + r[1] + '日クリア', 'Clear ' + r[1] + ' daily mazes'), streak: L(r[1] + '日れんぞく', r[1] + '-day streak'), depth: L('どこまでも' + r[1] + '階', 'Descend to floor ' + r[1]), three: L('★3を' + r[1] + 'こ', r[1] + ' three-star clears') }[r[0]] || (r[0].indexOf('mode:') === 0 ? L(mname(r[0].slice(5)) + 'を' + r[1] + '回クリア', 'Clear ' + mname(r[0].slice(5)) + ' ' + r[1] + ' times') : ''));
+  $('wzGrid').innerHTML = E.WORLDS.map(w => { const un = E.worldUnlocked(save, w); return '<button class="wd' + (un ? '' : ' lock') + (save.world === w.id ? ' cur' : '') + '" type="button" data-id="' + w.id + '" aria-pressed="' + (save.world === w.id) + '"><canvas width="128" height="128" aria-hidden="true"></canvas>' + (un ? '' : LOCK) + '<span>' + esc(L(w.ja, w.en)) + '</span><small>' + esc(un ? (save.world === w.id ? L('つかっている', 'In use') : L('ひらいた', 'Unlocked')) : reqText(w.req)) + '</small></button>'; }).join('');
+  $('wzGrid').querySelectorAll('.wd').forEach(b => { const w = E.WORLD_BY_ID[b.dataset.id]; ART.preview(b.querySelector('canvas').getContext('2d'), w, 128, 128, dark());
+    b.onclick = () => { if (!E.worldUnlocked(save, w)) { toast(reqText(w.req), 1800); sfx('error'); return; } save.world = w.id; writeSave(); sfx('ok'); V.dirty = true; showWorlds(); }; });
+  $('ovWorld').hidden = false; try { $('wzGrid').querySelector('.cur').focus({ preventScroll: true }); } catch (e) {}
+}
+$('wzClose').onclick = () => { if (S && !S.over && S.run.moves > 0) { hideOverlays(); hud(); kick(); } else showTitle(); };
+function showHowto(first) {
+  hideOverlays(); $('howtoTitle').textContent = L('あそびかた', 'How to play');
+  const li = a => a.map(x => '<li>' + esc(x) + '</li>').join('');
+  $('howBody').innerHTML = '<p style="color:var(--kb-ink);font-weight:800;font-size:13px">' + esc(L('めいろの出口（旗）までの道をさがそう。どのめいろも、ちゃんとゴールまで行けることをコンピューターが確かめてあります。', 'Find the way to the flag. Every maze is checked by the computer to be solvable.')) + '</p>' +
+    '<h3>' + esc(L('うごかしかた', 'Controls')) + '</h3><ul>' + li([L('矢印キー・WASD・十字ボタン・盤をなぞる（スワイプ）・ゲームパッド。', 'Arrow keys, WASD, the D-pad, a swipe on the board, or a gamepad.'), L('行きたい場所をタップすると、最短の道で歩いていきます（もう一度タップで止まる）。', 'Tap a spot and you walk there by the shortest path (tap again to stop).'), L('3Dめいろ：↑すすむ ↓さがる ←→まわる。ミニマップは「ミニマップ」ボタン。ジャイロはメニューで。', '3D: up = forward, down = back, left/right = turn. The Minimap button toggles the minimap; gyro turning is in the menu.'), L('「もどる」は、ひとつ前の分かれ道まで歩いて戻ります（歩数に数えます）。U キー。', '"Back up" walks you to the previous junction (it counts as moves). Key: U.'), L('ヒント（H）は最短の道を10歩ぶん見せます。1めいろに3回まで。「こたえ」（G）は全部を見せます。', 'Hint (H) shows the next 10 steps of the shortest way, 3 times per maze. Solve (G) shows everything.')]) + '</ul>' +
+    '<h3>' + esc(L('星のもらいかた', 'Stars')) + '</h3><ul>' + li([L('クリアで★1。最短（par）に近いほど増えます。ヒントを使うと★2まで、こたえを見ると★1まで。', 'Clearing gives 1 star; the closer to par, the more. Hints cap you at 2 stars, viewing the solution at 1.'), L('モード×大きさごとの最高の★が合計に数えられます（ランキング）。毎日・どこまでもの記録も★になります。', 'The best stars per mode and size add up (ranking). Daily and Descend progress give stars too.')]) + '</ul>' +
+    '<h3>' + esc(L('モード', 'Modes')) + '</h3><ul>' + li(E.MODES.map(k => mname(k) + '：' + L(MODE[k].dj, MODE[k].de)).concat([L('きょうのめいろ：毎日ひとつ。みんな同じ。ベストタイムとれんぞく日数。', 'Daily maze: one a day, the same for everyone. Best time and streak.'), L('どこまでも下へ：階ごとに大きくなる。時間切れでライフが減る。', 'Descend: bigger every floor. Running out of time costs a life.'), L('合言葉：同じ合言葉なら、だれでも同じめいろ。', 'Codes: the same code is the same maze for everyone.')])) + '</ul>' +
+    '<h3>' + esc(L('あつめるもの', 'Collect')) + '</h3><ul>' + li([L('コインと宝石を集めて、40のせかい（めいろの見た目）をひらこう。', 'Collect coins and gems and clear mazes to unlock 40 worlds (looks for your mazes).'), L('同じめいろをもう一度遊ぶと、自己ベストのゴーストと競走できます。', 'Replay a maze and race the ghost of your best run.')]) + '</ul>';
+  $('howtoGo').textContent = first ? L('はじめる', 'Start') : L('とじる', 'Close');
+  $('howtoGo').onclick = () => { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; if (first || !S || S.over) showTitle(); else { hud(); kick(); } };
+  $('howto').hidden = false; try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tHow').onclick = () => showHowto(false);
+
+// ---------- menu, sound, settings ----------
+function renderSound() { const b = $('sndBtn'); if (!A) { b.hidden = true; return; } const m = A.muted; b.setAttribute('aria-pressed', String(!m)); b.setAttribute('aria-label', m ? L('サウンド オフ', 'Sound off') : L('サウンド オン', 'Sound on')); b.innerHTML = m ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'; }
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark() ? '#10171d' : '#eef2e6'); V.dirty = true; kick(); }
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; }
+  if (pm && pm.isOpen) return;
+  const on = !!(S && !S.over && !anyOverlay());
+  const tog = (label, key, after) => ({ label: label + '：' + (save.set[key] ? L('オン', 'On') : L('オフ', 'Off')), icon: 'settings', onClick: () => { save.set[key] = save.set[key] ? 0 : 1; writeSave(); if (after) after(); pm.close(); openMenu(); } });
+  const extra = [{ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }, { label: L('せかいずかん', 'World collection'), icon: 'menu', onClick: () => { pm.close(); showWorlds(); } },
+    tog(L('あしあと', 'Breadcrumbs'), 'trail', () => { V.dirty = true; }), tog(L('十字ボタン', 'D-pad'), 'pad', () => applyMode()), tog(L('ジャイロでまわる（3D）', 'Gyro turning (3D)'), 'gyro', () => enableGyro())];
+  if (S && S.code) extra.push({ label: L('合言葉をコピー', 'Copy code') + '（' + S.code + '）', icon: 'copy', onClick: () => { copyCode(); } });
+  extra.push({ label: L('タイトルへ', 'Title'), icon: 'menu', onClick: () => { pm.close(); persistNow(); showTitle(); } });
+  pm = UI.pauseMenu({
+    title: on ? L('ひとやすみ', 'Paused') : L('メニュー', 'Menu'), home: '../', extra, onSettings: false,
+    onResume: () => { if (S) S.menu = false; const g = KG(); if (g) g.menuClosed(); kick(); },
+    onRestart: on ? () => { again(); } : undefined, confirmRestart: false,
+    onOpen: () => { if (S) S.menu = true; const g = KG(); if (g) g.menuOpened(); persistNow(); },
+  });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+function enableGyro() { if (!save.set.gyro) return; try { const D = window.DeviceOrientationEvent; if (D && typeof D.requestPermission === 'function') D.requestPermission().catch(() => {}); } catch (e) {} }
+let gy = { armed: true, t: 0 };
+window.addEventListener('deviceorientation', e => { if (!save.set.gyro || !is3() || !playing() || e.gamma == null) return; const g = e.gamma, now = Date.now(); if (Math.abs(g) < 12) { gy.armed = true; return; } if (gy.armed && Math.abs(g) > 28 && now - gy.t > 350) { gy.armed = false; gy.t = now; do3D(g > 0 ? 1 : 3); } });
+
+// ---------- input ----------
+const KEYD = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
+let lastKey = 0;
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.metaKey || e.ctrlKey) return;
+  const tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.tagName === 'SELECT')) return;
+  if (e.code === 'Escape') { if (!anyOverlay()) { openMenu(); e.preventDefault(); } return; }
+  if (!playing()) return;
+  const d = KEYD[e.code];
+  if (d !== undefined) { e.preventDefault(); const now = performance.now(); if (e.repeat && now - lastKey < 55) return; lastKey = now; act(d); return; }
+  if (e.code === 'KeyU' || e.code === 'Backspace') { e.preventDefault(); doUndo(); } else if (e.code === 'KeyH') doHint(); else if (e.code === 'KeyG') doReveal(); else if (e.code === 'KeyM' || e.code === 'KeyV') toggleView();
+  else if (e.code === 'Space' || e.code === 'KeyX') { e.preventDefault(); doWait(); }
+});
+document.querySelectorAll('#dpad button').forEach(b => { b.addEventListener('click', e => { if (!playing()) return; act(+b.dataset.d); }); });
+$('bUndo').onclick = doUndo; $('bHint').onclick = doHint; $('bReveal').onclick = doReveal; $('bView').onclick = toggleView; $('bWait').onclick = doWait;
+// pointer: swipe (touch) or tap (any) on the board
+{
+  let p0 = null;
+  cv.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button !== 0) return; p0 = { x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY, t: performance.now(), moved: false, id: e.pointerId, touch: e.pointerType !== 'mouse' }; try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
+  cv.addEventListener('pointermove', e => {
+    if (!p0 || p0.id !== e.pointerId || !p0.touch || !playing()) return;
+    const dx = e.clientX - p0.ox, dy = e.clientY - p0.oy, th = is3() ? 38 : Math.max(18, V.ts * 0.9);
+    if (Math.abs(dx) < th && Math.abs(dy) < th) return;
+    p0.moved = true; p0.ox = e.clientX; p0.oy = e.clientY;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0); act(d);
+  });
+  const up = e => { if (!p0 || p0.id !== e.pointerId) return; const q = p0; p0 = null; const far = Math.hypot(e.clientX - q.x, e.clientY - q.y); if (!q.moved && far < 14 && performance.now() - q.t < 600) tapAt(e.clientX, e.clientY); };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { p0 = null; });
+}
+// gamepad
+(() => {
+  const last = { b: [], t: 0 }; let seen = false;
+  setInterval(() => {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : []; const gp = [...pads].find(Boolean); if (!gp) return;
+    const b = gp.buttons.map(x => x.pressed), edge = i => b[i] && !last.b[i];
+    if (!seen) { seen = true; } if (!playing()) { last.b = b; if (edge(9)) openMenu(); return; }
+    let d = -1; if (b[12]) d = 0; else if (b[15]) d = 1; else if (b[13]) d = 2; else if (b[14]) d = 3;
+    else { const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0; if (Math.abs(ax) > .6 || Math.abs(ay) > .6) d = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 1 : 3) : (ay > 0 ? 2 : 0); }
+    const now = Date.now(); if (d >= 0 && now - last.t > 150) { last.t = now; act(d); }
+    if (edge(1)) doUndo(); if (edge(0)) doHint(); if (edge(2)) doWait(); if (edge(3)) toggleView(); if (edge(9)) openMenu();
+    last.b = b;
+  }, 40);
+})();
+
+// ---------- resize, theme, lifecycle ----------
+let rz = 0; const relayout = () => { clearTimeout(rz); rz = setTimeout(fit, 50); };
+window.addEventListener('resize', relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => themeColor()); } catch (e) {}
+document.addEventListener('visibilitychange', () => { if (document.hidden) persistNow(); else kick(); });
+window.addEventListener('pagehide', persistNow);
+
+// ---------- boot ----------
+document.title = L('めいろ探検', 'Maze Quest'); $('h1').textContent = L('めいろ探検', 'Maze Quest');
+$('backLink').setAttribute('aria-label', L('ゲーム一覧へ戻る', 'Back to games')); $('menuBtn').setAttribute('aria-label', L('メニュー', 'Menu')); cv.setAttribute('aria-label', L('めいろの盤', 'Maze board'));
+$('dpad').setAttribute('aria-label', L('十字ボタン', 'D-pad')); $('suSeed').setAttribute('aria-label', L('番号', 'Number')); $('suDice').setAttribute('aria-label', L('ランダム', 'Random')); $('suCode').setAttribute('aria-label', L('合言葉', 'Code'));
+renderSound(); themeColor();
+KG() && KG().register({
+  id: GAME,
+  pause() {}, resume() {},
+  save() { persistNow(); },
+  isIdle: () => !S || S.over,
+  dispose() { stopWalk(); cancelAnimationFrame(raf); },
+  daily: { start({ dateKey }) { startDaily(dateKey); } },
+});
+{
+  const first = store.get(HOWTO_KEY) == null && !save.tut, launch = PF && PF.launch ? PF.launch() : { daily: null };
+  const m0 = E.fromCode('c-S-2-1'); S = null; begin({ m: m0, kind: 'free', quiet: true }); S.over = true; hud(); fit(); kick();
+  if (launch && launch.daily && !first) { /* KoboGame.register starts the daily maze */ }
+  else if (first) { save.tut = 1; writeSave(); showHowto(true); } else showTitle();
+}
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const api = {
+    ready: () => true,
+    state: () => {
+      const run = S ? S.run : null, m = S ? S.m : null, p = run ? tile(run.pos) : null;
+      return {
+        started: !!(S && S.started), kind: S ? S.kind : '', mode: m ? m.mode : '', code: S ? S.code : '', log: run ? run.log : '', over: !!(S && S.over), moves: run ? run.moves : 0, tk: run ? run.tk : 0, ms: S ? Math.round(S.ms) : 0, par: m ? m.par : 0,
+        hints: S ? S.hints : 0, hintShown: !!(S && S.hint), hintDir: S ? S.hintDir : -1, hintLen: S ? S.hintLen || 0 : 0, reveal: !!(S && S.reveal), revealUsed: !!(S && S.revealUsed), undos: S ? S.undos : 0, walking: !!(S && S.walk),
+        pos: p, goal: m ? tile(m.goal) : null, size: m ? [m.w, m.h] : null, mask: run ? run.mask : 0, coins: run ? run.coins.size : 0, gems: run ? run.gems.size : 0, face: S ? S.face : 0, mini: !!(S && S.mini), zoomAll: !!(S && S.zoomAll), ts: V.ts, route: run ? run.route.length : 0,
+        title: !$('ovTitle').hidden, setup: !$('ovSetup').hidden, result: !$('ovResult').hidden, howto: !$('howto').hidden, world: !$('ovWorld').hidden, menu: !!(S && S.menu),
+        en: S && S.en ? { level: S.en.level, lives: S.en.lives, score: S.en.score, limit: S.limit } : null, status: $('status').textContent, stars: save.stars, save: JSON.parse(JSON.stringify(save)), result_: S ? S.result : null, ghost: !!(S && S.ghost),
+        skin: save.world, seen: run && run.seen ? run.seen.reduce((a, b) => a + b, 0) : 0, dk: S ? S.dk : 0, vis: run && run.vis ? run.vis.reduce((a, b) => a + b, 0) : 0, gates: m ? m.gates.length : 0, doors: m ? m.doors.length : 0,
+      };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__maze = {
+    api, E, ART, get S() { return S; }, get save() { return save; }, tile,
+    start: (code) => startCode(code), startFree, startDaily, dailyFor, startEndless, startEndlessLevel, showTitle, showSetup, showWorlds, showHowto, openMenu, resetSave() { store.del(SAVE_KEY); store.del(RUN_KEY); store.del(GHOST_KEY); save = readSave(); },
+    setSave(o) { save = Object.assign(newSave(), o); writeSave(); return save; }, writeSave, readRun, resumeRun, persist: persistNow,
+    solve: () => E.search(S.m, S.run.pos, S.run.mask, S.run.tk % S.m.P), advance(ms) { if (S) { S.ms += ms; if (S.limit && S.ms >= S.limit) loseLife(); hud(); } }, onWin, relayout: fit,
+    xy: (x, y) => { const r = cv.getBoundingClientRect(); return { x: r.left + (x - V.cx + 0.5) * V.ts, y: r.top + (y - V.cy + 0.5) * V.ts }; },
+    pixels: () => { const d = ctx.getImageData(0, 0, cv.width, cv.height).data; let s = 0, s2 = 0, n = 0; const seen = new Set(); for (let i = 0; i < d.length; i += 4 * 61) { const v = d[i] + d[i + 1] + d[i + 2]; s += v; s2 += v * v; n++; seen.add((d[i] >> 4) * 256 + (d[i + 1] >> 4) * 16 + (d[i + 2] >> 4)); } return { mean: s / n / 3, variance: s2 / n - (s / n) * (s / n), colors: seen.size }; },
+    thumbScene() {
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays();
+      const m = E.fromCode('c-M-2-1204'); begin({ m, kind: 'free', quiet: true }); S.zoomAll = true;
+      const sol = E.search(m, m.start, 0, 0).dirs; const k = Math.floor(sol.length * 0.55); for (let i = 0; i < k; i++) E.step(S.run, sol[i]);
+      const p = tile(S.run.pos); V.pl.x = p.x; V.pl.y = p.y; S.hint = null; setStatus('', ''); fit(); V.dirty = true; kick(); return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.maze.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

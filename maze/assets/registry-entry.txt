@@ -1,0 +1,30 @@
+    {
+      // NOTE for the integrator: `order` is a placeholder (use the next free number after the other new games); `added` = the day of wiring
+      id: 'maze', order: 30, path: 'maze/', added: '2026-11-26',
+      title: { ja: 'めいろ探検', en: 'Maze Quest' },
+      short: { ja: 'めいろ探検', en: 'Maze Quest' },
+      desc: { ja: '上から見るクラシック、まわりしか見えないきりのランタン、3Dの一人称、かぎとびら、歩くたびに開閉する動くかべの5つのめいろ。毎日ひとつの「きょうのめいろ」、階ごとに大きくなる「どこまでも下へ」、合言葉で同じめいろ。最短（par）の道を確かめ、ヒントや「もどる」も使えます。40のせかいを集めて、めいろの見た目を着がえよう。', en: 'Five kinds of maze: a top-down classic, a lantern in the fog, first-person 3D, keys and doors, and shifting walls that toggle with every step. A new daily maze every day, a Descend mode that grows each floor, and codes that open the same maze for anyone. Every maze is verified solvable with a shortest-path par, plus hints and a back-to-the-last-junction button. Collect 40 worlds to re-skin your mazes.' },
+      label: { ja: 'めいろ探検', en: 'Maze adventure' },
+      genres: ['puzzle'], tags: ['2d', 'stages', 'daily', 'endless', 'relax', 'logic', 'explore'],
+      keywords: { ja: ['めいろ', '迷路', '3D', '一人称', 'きり', 'ランタン', 'かぎ', 'とびら', '動くかべ', '毎日', '合言葉', 'ずかん', 'ゴースト', '最短'], en: ['maze', 'labyrinth', '3d', 'first person', 'fog', 'lantern', 'keys', 'doors', 'shifting walls', 'daily', 'code', 'collection', 'ghost', 'shortest path'] },
+      icon: 'img/icons/maze.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#dfe9c8"/><path d="M10 10H62V62H10Z" fill="#f4f0d8" stroke="#2f7d4f" stroke-width="6" stroke-linejoin="round"/><path d="M10 26H38M26 42H62M42 26V50M26 54H50M50 42V62M26 10V26" fill="none" stroke="#2f7d4f" stroke-width="6" stroke-linecap="round"/><path d="M18 18V34M18 34H34M34 34V47M34 47H34" fill="none" stroke="#f2b632" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 6"/><path d="M12 36Q12 29 18 29Q24 29 24 36Z" fill="#ffb93b" stroke="#a86a00" stroke-width="2"/><circle cx="16" cy="33" r="1.2" fill="#222"/><circle cx="20.5" cy="33" r="1.2" fill="#222"/><path d="M54 30V18" stroke="#444" stroke-width="2" stroke-linecap="round"/><path d="M54 18L63 21.5L54 25Z" fill="#e5484d" stroke="#8c1e24" stroke-width="1.5" stroke-linejoin="round"/><circle cx="54" cy="52" r="3.4" fill="#f5c242" stroke="#a56a08" stroke-width="1.5"/></svg>',
+      thumb: 'img/thumbs/maze.webp', thumb2x: 'img/thumbs/maze@2x.webp',
+      tech: '2d',
+      // the clock runs while you play (pausing on hide/menu), so pause: true; no online battle. The 3D view is a 2D-canvas raycaster (no three.js), hence tech '2d'
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // ★: the best stars of each mode x size slot (5 modes x 5 sizes x up to 3 = 75), plus up to 5 for the deepest Descend floor (5/10/15/20/30) and up to 5 for daily mazes cleared (1/3/7/14/30 days): at most 85
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 85, maxRate: null },
+      rankSource: { key: 'kusoge.maze.save', paths: ['stars'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.maze.save', paths: ['stars'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.maze.save': '{ v:1, stars（★の合計＝ランキング。b・en・dl から毎回計算し直す）, b:{ "<モード>.<大きさ>":{ s（★ 0〜3）, t（最短の時間 ms）, m（最短の歩数）, n（クリア回数）} モード=classic|fog|d3|keys|timed 大きさ=XS|S|M|L|XL }, en:{ best（どこまでも下への最深階）, score（最高点）, runs }, dl:{ k（最後にクリアした日 YYYYMMDD）, t, m, s（その日の記録）, st（連続日数）, bs（最長の連続日数）, n（クリアした日の数）}, coins, gems（集めた数。ずかんをひらく）, wz:{ "<せかい>":1（ひらいたと知らせた）}, world（いま使うせかいの id）, stats:{ clears, moves, hints, reveals, undos, three（★3の数）, xl（L/XLのクリア数）, codes, coinsGot, floors, worlds（ひらいたせかいの数）, classic, fog, d3, keys, timed（モードごとのクリア数）}, set:{ trail, pad, mini, gyro }, tut }',
+        'kusoge.maze.run': 'とちゅうのめいろ { code, kind（free|daily|endless）, dk, log（手の列 urdl／待つ w）, ms, hints, hu, ru, en:{ seed, level, lives, score } }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.maze.ghost': '自己ベストのゴースト { o:[合言葉（新しい順に最大16）], g:{ "<合言葉>":{ l（手の列）, t（ms）} } }。この端末だけ（同期しない）',
+        'kusoge.maze.howto': 'ルールを見た（\'1\'）',
+      },
+      // stars, per-slot bests (fastest time / fewest moves: minPos), counters, coins/gems and the daily streak only grow (max); the look in use and settings are whole values (newest)
+      sync: {
+        'kusoge.maze.save': { fields: { stars: 'max', b: { each: { fields: { s: 'max', t: 'minPos', m: 'minPos', n: 'max' }, rest: 'max' } }, en: { fields: { best: 'max', score: 'max', runs: 'max' }, rest: 'max' }, dl: { fields: { k: 'max', t: 'minPos', m: 'minPos', s: 'max', st: 'max', bs: 'max', n: 'max' }, rest: 'max' }, coins: 'max', gems: 'max', wz: { each: 'max' }, world: 'newest', stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },

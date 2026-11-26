@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -102,9 +102,9 @@ test('flags reflect what the pages have today', () => {
     if (g.flags.versus) eq(g.versus, /KoboVersus\.init/.test(page) ? 'common' : 'own', g.id + ' versus impl');
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
-  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit,reversi,gomoku,sudoku,crates', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train,manabi,orchestra,sudoku', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,train,manabi,orchestra,crates', 'games without a match');
+  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit,reversi,gomoku,sudoku,crates,hop,maze', 'games with a daily today');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train,manabi,orchestra,sudoku,hop,maze', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,train,manabi,orchestra,crates,hop,maze', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -197,6 +197,10 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('sudoku', k => null), 0, 'sudoku: nothing saved');
   eq(P.rankValue('crates', k => '{"v":1,"stars":6,"stats":{"clears":3}}'), 6, 'crates: total stars');
   eq(P.rankValue('crates', k => null), 0, 'crates: nothing saved');
+  eq(P.rankValue('hop', k => '{"v":1,"pts":23,"cl":4,"stats":{"clears":4}}'), 23, 'hop: points');
+  eq(P.rankValue('hop', k => null), 0, 'hop: nothing saved');
+  eq(P.rankValue('maze', k => '{"v":1,"stars":9,"stats":{"clears":4}}'), 9, 'maze: total stars');
+  eq(P.rankValue('maze', k => null), 0, 'maze: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

@@ -1,0 +1,123 @@
+#!/usr/bin/env node
+// ぴょんぴょん冒険 solver: a beam search over input macros that plays the real engine. Used to PROVE every level can be finished
+// (the found input recording is stored in hop/proofs.js and replayed by tools/tests/unit/hop-levels.test.js), and to view levels as ASCII.
+//   node tools/hop-solve.js 1-1            solve one level, print the result
+//   node tools/hop-solve.js --all --write  solve all levels and write hop/proofs.js
+//   node tools/hop-solve.js --show 1-2     print the ASCII map
+//   node tools/hop-solve.js 1-1 1-2 --json=out.json   solve some levels and write {id: recording}; `--merge a.json b.json ...` writes hop/proofs.js from such files (parallel runs)
+'use strict';
+const path = require('path');
+const E = require('../hop/engine.js');
+const LV = require('../hop/levels.js');
+const B = E.B;
+
+const BLOCK = 5;
+const MACROS = [B.R | B.RUN, B.R | B.RUN | B.J, B.R | B.J, B.R, 0, B.J, B.L | B.RUN, B.L | B.RUN | B.J, B.L, B.R | B.RUN | B.D, B.D, B.L | B.J, B.R | B.RUN | B.J | B.D, B.R | B.RUN | B.ACT, B.R | B.RUN | B.U | B.ACT, B.R | B.RUN | B.J | B.D];
+
+function score(S, o) {
+  const p = S.p;
+  let s = p.x * 1.0 - S.hurts * 260 - S.deaths * 3000 + S.cpIdx * 40 + (p.gear ? 60 : 0) + (S.bossDead ? 4000 : 0) + (o.medBonus ? S.med.toString(2).replace(/0/g, '').length * 120 : 0);
+  for (const e of S.en) if (e.k === 'boss') s += (e.bk && E.BOSS_HP[e.bk] - e.hp) * 700;
+  if (o.target) s = -Math.hypot(p.x - o.target.x, p.y - o.target.y) - S.hurts * 120;
+  return s;
+}
+// returns { inputs: [..masks], frames } or null
+function solve(L, opts) {
+  opts = opts || {};
+  const beamMax = opts.beam || 260, maxLayers = opts.layers || 1600;
+  let start = opts.start || E.newState(L, opts.state || {});
+  let layer = [{ S: start, par: null, m: -1, key: 0 }];
+  const seen = new Set();
+  let best = layer[0];
+  for (let depth = 0; depth < maxLayers; depth++) {
+    const next = [];
+    for (const n of layer) {
+      for (let mi = 0; mi < MACROS.length; mi++) {
+        if (opts.macros && opts.macros.indexOf(mi) < 0) continue;
+        const S = E.clone(n.S); const m = MACROS[mi];
+        let ok = true;
+        for (let k = 0; k < BLOCK; k++) { E.step(S, m); S.ev.length = 0; if (S.res) break; if (S.p.dead) { ok = false; break; } }
+        if (!ok || S.deaths > n.S.deaths) continue;
+        if (opts.maxHurts !== undefined && S.hurts > opts.maxHurts) continue;
+        const h = E.hash(S);
+        if (seen.has(h)) continue; seen.add(h);
+        const sc = score(S, opts);
+        const nd = { S, par: n, m: mi, sc };
+        if (S.res || (opts.goal && opts.goal(S))) return finish(nd);
+        next.push(nd);
+      }
+    }
+    if (!next.length) { if (opts.info) opts.info.x = best.S.p.x; return null; }
+    // keep a diverse beam: best two per 24x16 cell, then the top beamMax
+    const cell = new Map();
+    next.sort((a, b) => b.sc - a.sc);
+    const kept = [];
+    for (const n of next) {
+      const key = ((n.S.p.x / 24) | 0) + ':' + ((n.S.p.y / 16) | 0) + ':' + (n.S.p.on ? 1 : 0);
+      const c = cell.get(key) || 0; if (c >= 2) continue; cell.set(key, c + 1); kept.push(n);
+      if (kept.length >= beamMax) break;
+    }
+    layer = kept;
+    if (layer[0].S.p.x > best.S.p.x) best = layer[0];
+    if (opts.info) { opts.info.x = Math.max(opts.info.x || 0, layer[0].S.p.x); opts.info.depth = depth; }
+    if (opts.verbose && depth % 50 === 0) console.error('layer', depth, 'x', Math.round(layer[0].S.p.x), 'n', layer.length);
+  }
+  return null;
+}
+function finish(n) {
+  const ms = []; for (let c = n; c && c.par; c = c.par) ms.push(c.m);
+  ms.reverse();
+  const inputs = []; for (const m of ms) for (let k = 0; k < BLOCK; k++) inputs.push(MACROS[m]);
+  return { inputs, frames: inputs.length, S: n.S };
+}
+// verify a recording: replay it from scratch
+function verify(L, inputs, opts) { const S = E.runReplay(L, inputs, opts); return S; }
+
+function show(id) {
+  const lv = LV.get(id); const L = E.parse(lv);
+  console.log(id, lv.name.ja, 'W', L.W, 'medals', L.medals.length, 'coins', L.nCoin, 'cps', L.cps.length, 'ents', L.ents.length);
+  for (let i = 0; i < lv.rows.length; i += 1) console.log(String(i).padStart(2) + ' ' + lv.rows[i]);
+}
+module.exports = { solve, verify, MACROS, BLOCK, show };
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  if (args[0] === '--chunks') {   // prove every daily-generator chunk on its own: start2 + chunk + plain + goal
+    const G = require('../hop/gen.js'), fs = require('fs'); const out = {};
+    for (const n of G.pool()) {
+      const def = LV.assemble({ id: 'C-' + n, theme: 'meadow', parts: ['start2', n, 'plain', 'goal'] }), L = E.parse(def);
+      let r = solve(L, { beam: 260 }); if (!r) r = solve(L, { beam: 700 });
+      const S = r && verify(L, r.inputs); console.log(n, S && S.res ? 'ok ' + r.frames : 'NO SOLUTION');
+      if (S && S.res) out[n] = E.rle(r.inputs);
+    }
+    fs.writeFileSync(path.join(__dirname, '..', 'hop', 'genproofs.js'), '// generated by tools/hop-solve.js --chunks : one input recording per daily-generator chunk (start2 + chunk + plain + goal)\n(function (root) {\n  var P = ' + JSON.stringify(out, null, 1) + ';\n  if (typeof module === "object" && module && module.exports) module.exports = { P: P };\n  root.HopGenProofs = P;\n})(typeof globalThis !== "undefined" ? globalThis : this);\n');
+    process.exit(0);
+  }
+  if (args[0] === '--merge') {
+    const fs = require('fs'), o = {}; for (const f of args.slice(1)) Object.assign(o, JSON.parse(fs.readFileSync(f, 'utf8')));
+    let old = {}; try { old = require(path.join(__dirname, '..', 'hop', 'proofs.js')).P; } catch (e) {} Object.assign(old, o);
+    const ids = LV.allIds().filter(i => old[i]); const out = {}; for (const i of ids) out[i] = old[i];
+    fs.writeFileSync(path.join(__dirname, '..', 'hop', 'proofs.js'), '// generated by tools/hop-solve.js : an input recording (run-length, base 36) that finishes each level; replayed by the unit tests\n(function (root) {\n  var P = ' + JSON.stringify(out, null, 1) + ';\n  if (typeof module === "object" && module && module.exports) module.exports = { P: P };\n  root.HopProofs = P;\n})(typeof globalThis !== "undefined" ? globalThis : this);\n');
+    console.log('wrote proofs for', ids.join(' ')); process.exit(0);
+  }
+  const write = args.includes('--write'), all = args.includes('--all'), sh = args.indexOf('--show');
+  if (sh >= 0) { show(args[sh + 1]); process.exit(0); }
+  const ids = all ? LV.ids() : args.includes('--pending') ? LV.PENDING.map(l => l.id) : args.filter(a => /^\d+-\d+$/.test(a));
+  const fs = require('fs');
+  const pf = path.join(__dirname, '..', 'hop', 'proofs.js');
+  let proofs = {};
+  try { proofs = require(pf).P || {}; } catch (e) {}
+  for (const id of ids) {
+    const lv = LV.get(id), L = E.parse(lv), t0 = Date.now();
+    const info = {};
+    let r = solve(L, { info, verbose: args.includes('-v'), beam: +(args.find(a => /^--beam=/.test(a)) || '--beam=260').slice(7) });
+    if (!r) r = solve(L, { info, beam: 800 });
+    if (!r) { console.log(id, 'NO SOLUTION', 'furthest x', Math.round(info.x), '(col ' + Math.round(info.x / 16) + ')', Date.now() - t0, 'ms'); continue; }
+    const S = verify(L, r.inputs);
+    console.log(id, S.res ? 'ok' : 'FAIL', r.frames, 'frames', (r.frames / 60).toFixed(1) + 's', 'hurts', S.res && S.res.hurts, 'med', S.res && S.res.med, Date.now() - t0, 'ms');
+    if (S.res) proofs[id] = E.rle(r.inputs);
+  }
+  const jo = (args.find(a => /^--json=/.test(a)) || '').slice(7);
+  if (jo) { const o = {}; for (const id of ids) if (proofs[id]) o[id] = proofs[id]; fs.writeFileSync(jo, JSON.stringify(o)); }
+  if (write) fs.writeFileSync(pf, '// generated by tools/hop-solve.js --all --write : an input recording (run-length, base 36) that finishes each level; replayed by the unit tests\n(function (root) {\n  var P = ' + JSON.stringify(proofs, null, 1) + ';\n  if (typeof module === "object" && module && module.exports) module.exports = { P: P };\n  root.HopProofs = P;\n})(typeof globalThis !== "undefined" ? globalThis : this);\n');
+}

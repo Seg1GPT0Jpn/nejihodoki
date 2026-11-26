@@ -110,6 +110,8 @@ const FIX = {
   'brawl-save.json': { has: ['brawl.first', 'brawl.ledge', 'brawl.grab', 'brawl.twop', 'brawl.ko10', 'brawl.smash', 'brawl.combo5', 'brawl.hard', 'brawl.lad4'], not: ['brawl.boss', 'brawl.clear', 'brawl.all', 'brawl.spike', 'brawl.score15k'] },
   'gomoku-save.json': { has: ['gomoku.first', 'gomoku.fork', 'gomoku.twop', 'gomoku.pz1', 'gomoku.small', 'gomoku.lv3', 'gomoku.std', 'gomoku.quick'], not: ['gomoku.win10', 'gomoku.renju', 'gomoku.pz20', 'gomoku.dperf', 'gomoku.hard', 'gomoku.onw', 'gomoku.pts30', 'gomoku.long'] },
   'sudoku-save.json': { has: ['sudoku.first', 'sudoku.solve10', 'sudoku.clean', 'sudoku.flawless', 'sudoku.l3', 'sudoku.daily1', 'sudoku.streak5', 'sudoku.kids', 'sudoku.x', 'sudoku.fast', 'sudoku.learn', 'sudoku.code', 'sudoku.nonotes', 'sudoku.pts30'], not: ['sudoku.solve50', 'sudoku.solve200', 'sudoku.l5', 'sudoku.l6', 'sudoku.daily7'] },
+  'hop-save.json': { has: ['hop.first', 'hop.stomp10', 'hop.coin100', 'hop.medal1', 'hop.burrow', 'hop.pound'], not: ['hop.glide', 'hop.ribbon', 'hop.combo3', 'hop.nohurt', 'hop.bear', 'hop.general', 'hop.medal30', 'hop.par5', 'hop.pts60', 'hop.deaths30'] },
+  'maze-save.json': { has: ['maze.first', 'maze.hint', 'maze.fog', 'maze.daily', 'maze.three', 'maze.worlds'], not: ['maze.d3', 'maze.keys', 'maze.timed', 'maze.undo', 'maze.coins', 'maze.gem', 'maze.big', 'maze.stars30', 'maze.descend', 'maze.daily7', 'maze.three20', 'maze.stars60', 'maze.worlds40'] },
   'crates-save.json': { has: ['crates.first'], not: ['crates.pack1', 'crates.undo', 'crates.hint', 'crates.daily', 'crates.stars30', 'crates.stars100'] },
   'reversi-save.json': { has: ['reversi.first', 'reversi.corner', 'reversi.pass', 'reversi.twop', 'reversi.pz1', 'reversi.six', 'reversi.lv3', 'reversi.corner4'], not: ['reversi.win10', 'reversi.big', 'reversi.hard', 'reversi.dperf', 'reversi.onw', 'reversi.pts30', 'reversi.wipe'] },
   'manabi-save.json': { has: ['manabi.first', 'manabi.ls10', 'manabi.ok100', 'manabi.streak3', 'manabi.streak7', 'manabi.quest', 'manabi.mock', 'manabi.xp1000', 'manabi.league', 'manabi.crown'], not: ['manabi.ok1000'] },
@@ -211,7 +213,7 @@ test('live: daily streak across JST days, all-dailies-in-one-day, level and meta
   for (let i = 0; i < 3; i++) { const dk = P.jstDateKey(t); play(P, 'blocks', { t, dur: MIN, mode: 'daily', dateKey: dk, score: 5 }); t += DAY; }
   ok(A.has('all.daily1')); ok(A.has('all.streak3')); ok(!A.has('all.streak7'));
   const dk = P.jstDateKey(t);
-  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf', 'fit', 'reversi', 'gomoku', 'sudoku', 'crates']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
+  for (const g of ['neji', 'blocks', 'drop', 'n59049', 'water', 'parking', 'hitsumabushi', 'hitblow', 'td', 'minigolf', 'fit', 'reversi', 'gomoku', 'sudoku', 'crates', 'hop', 'maze']) play(P, g, { t: t += MIN, dur: MIN, mode: 'daily', dateKey: dk, score: 5, reason: 'clear' });
   ok(A.has('all.dailyAll'));
   ok(A.has('all.ach10'), 'meta achievement after 10 unlocks');
   ok(P.xp.info(t).lv >= 2);

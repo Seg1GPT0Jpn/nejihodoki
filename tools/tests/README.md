@@ -63,6 +63,13 @@ node tools/tests/unit/sudoku-engine.test.js   # ナンバー工房の中身（�
 node tools/tests/crates-play.js               # はこはこ運送の通し（本物のキー・タップで歩く/押す・戻す・ステージの選択・しかけ・きょうのステージ・合言葉・エディタ・途中保存・英語・画面サイズ×ライト/ダーク）
 node tools/tests/unit/crates-engine.test.js   # はこはこ運送の中身（ルール・すべる床・一方通行・ワープ台・戻す/やり直し・ソルバー・行き止まり検出・generator・合言葉・エディタの形・★）
 node tools/tests/unit/crates-levels.test.js   # はこはこ運送の80ステージ（全部解ける・最短の数が合う・別の幅優先探索と一致・しかけの出方・難しさの上がり方）
+node tools/tests/hop-play.js                  # ぴょんぴょん冒険の通し（本物のキー・タッチ・ゲームパッドで走る・ジャンプの高さ・保存した証明の入力を全ステージ再生してクリア・ふむ/コイン/チェックポイント/やられて復活・一時停止・メダルの保存・英語・ライト/ダーク・画面サイズ×ja/en・速さ）
+node tools/tests/unit/hop-engine.test.js     # ぴょんぴょん冒険の中身（毎回同じ・ジャンプの高さ・コヨーテ/先行入力・当たり・敵ごとの動き・ブロック・ばね/氷/ベルト/水/上昇風・とげと穴・復活・かくしあな・足場・どうぐ・ボス・入力の記録）
+node tools/tests/unit/hop-levels.test.js     # ぴょんぴょん冒険のステージ（形・チャンク・全ステージの検査と物理の届く範囲・壊れたステージを見つける・**全ステージの証明の入力を再生してゴールにつく**）
+node tools/hop-solve.js --all --write         # 証明（hop/proofs.js）を作り直す（ステージやエンジンを変えたとき。約3分。`--show 1-2` で地図を表示）
+node tools/tests/maze-play.js                 # めいろ探検の通し（本物のキー・タップで歩く・5つの型・もどる・ヒント・きょうのめいろ・どこまでも下へ・合言葉・ずかん・保存）
+node tools/tests/unit/maze-engine.test.js    # めいろ探検の中身（めいろの生成・全部解ける・最短の数・型ごとのルール・★の計算）
+node tools/tests/unit/maze-entries.test.js   # めいろ探検の登録の貼り付け原稿と common/games.js が合っているか
 node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
 node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
 node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）

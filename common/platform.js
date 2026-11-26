@@ -210,6 +210,13 @@
           first.concat(second).forEach(function (x) { var k = JSON.stringify(x); if (!seen[k]) { seen[k] = 1; out.push(clone(x)); } });
           return out;
         }
+        case 'bor': return (numOr(a) | 0) | (numOr(b) | 0);      // bit sets (levels cleared / medals as bits): union of the bits
+        case 'arrBor': {
+          if (!Array.isArray(a) || !Array.isArray(b)) return side();
+          var nb = Math.max(a.length, b.length), rb = [];
+          for (var ib = 0; ib < nb; ib++) rb.push((numOr(a[ib]) | 0) | (numOr(b[ib]) | 0));
+          return rb;
+        }
         case 'arrMax': {
           if (!Array.isArray(a) || !Array.isArray(b)) return side();
           var n = Math.max(a.length, b.length), r = [];

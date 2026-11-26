@@ -35,6 +35,8 @@ const RECIPES = {
   gomoku: [{ query: '?debug', eval: 'window.__gomoku && __gomoku.thumbScene()' }],
   sudoku: [{ query: '?debug', eval: 'window.__sudoku && __sudoku.thumbScene()' }],
   crates: [{ query: '?debug', eval: 'window.__crates && __crates.thumbScene()' }],
+  hop: [{ query: '?debug', eval: 'window.__hop && __hop.thumbScene()' }],
+  maze: [{ query: '?debug', eval: 'window.__maze && __maze.thumbScene()' }],
   // the home path with some progress: a streak, XP and crowns (the ?debug hook sets the save and redraws; no app code needed)
   manabi: [{ query: '?debug', eval: "window.__manabi && (__manabi.setSave({ v: 1, xp: 1250, d: [20400, 20401, 20402, 20403, 20404, 20405, 20406, 20407], g: { 20407: 30 }, goal: 20, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, gm: 40, hr: 5 }), __manabi.setToday(20407), __manabi.goHome(), __manabi.tab('profile'))" }],
   orchestra: [{ query: '?debug', eval: 'window.__orch && __orch.thumbScene()' }],

@@ -315,6 +315,8 @@ test('merge engine: primitives', () => {
   deep(m.value('union', ['kuro', 'a'], ['kuro', 'b'], { localT: 1, remoteT: 2 }), ['kuro', 'b', 'a']);
   deep(m.value('arrMax', [1, 5, 0], [2, 1, 0, 3]), [2, 5, 0, 3]);
   deep(m.value('mapMax', { 1: 3, 2: 1 }, { 2: 2, 3: 1 }), { 1: 3, 2: 2, 3: 1 });
+  eq(m.value('bor', 5, 10), 15); eq(m.value('bor', 7, 7), 7); eq(m.value('bor', 3, undefined), 3);
+  deep(m.value('arrBor', [1, 6, 0], [2, 1, 0, 8]), [3, 7, 0, 8], 'bit sets are merged by OR (levels cleared and medals as bits)');
   eq(m.value('max', 'x', 3), 3, 'non-number loses to number');
 });
 
