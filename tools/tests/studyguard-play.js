@@ -10,6 +10,7 @@
 // 7. until    テスト期間を過ぎていると、自動でオフになる
 // 8. hidden   タブが隠れているあいだは、たまる時間が増えない
 // 9. layout   320px・ライト／ダーク：クイズ・お休み・設定が画面の中、横スクロールなし、44px 以上、ずれなし（CLS）
+// 11. protect  スマホだけの軽い対策：コピー・選択・長押しメニューを止める／隠れたとき・blur のとき黒く隠してすぐ戻す／普通の操作では隠れない／パソコンでは何もしない
 // 10. keys    キーボード：Tab が中に閉じこめられる・Esc でクイズは閉じない・Enter でこたえあわせ・フォーカスが戻る
 'use strict';
 const fs = require('fs');
@@ -360,11 +361,90 @@ async function keysTest(env) {
   await s.close();
 }
 
+async function protectTest(env) {
+  console.log('11. protect: light anti-copy / black-out on phones only (best effort), nothing on desktop or outside the modal');
+  const seed = { [KEY]: ON({ min: 3, q: 2, thr: 0 }) };
+  const s = await open(env, GAME, { touch: true, seed }); const p = s.page;
+  await p.waitForFunction(() => window.__sg);
+  check('phone: before the quiz nothing is switched off on the game page', await p.evaluate(() => !document.querySelector('.sg-prot') && !document.querySelector('.sg-cover')));
+  const evBefore = await p.evaluate(() => { const e = new Event('copy', { cancelable: true, bubbles: true }); document.body.dispatchEvent(e); return e.defaultPrevented; });
+  check('phone: copy outside the modal is untouched', evBefore === false);
+  await p.evaluate(() => __sg.advance(181000)); await waitQuiz(p);
+  check('phone: protection is on in the quiz modal', await p.evaluate(() => __sg.touch() === true && __sg.prot() && __sg.prot().blank === false && document.querySelector('.sg-ov').classList.contains('sg-prot')));
+  const blocked = await p.evaluate(() => {
+    const t = document.getElementById('sg-stem'), r = {};
+    for (const n of ['copy', 'cut', 'paste', 'contextmenu', 'dragstart', 'selectstart']) { const e = new Event(n, { cancelable: true, bubbles: true }); t.dispatchEvent(e); r[n] = e.defaultPrevented; }
+    r.sel = getComputedStyle(t).userSelect; r.callout = getComputedStyle(t).webkitTouchCallout; return r;
+  });
+  check('phone: copy / cut / paste / contextmenu / drag / selectstart are blocked in the modal', ['copy', 'cut', 'paste', 'contextmenu', 'dragstart', 'selectstart'].every(n => blocked[n]) && blocked.sel === 'none', blocked);
+  await p.click('#sg-stem', { clickCount: 3 }).catch(() => {});
+  check('phone: triple-tap selects nothing', await p.evaluate(() => String(getSelection()) === ''));
+  const k = await p.evaluate(() => __sg.peek());
+  if (k.t === 'nu' || k.t === 'sa') {
+    const inp = await p.evaluate(() => { const i = document.getElementById('sg-input'); i.focus(); const e = new Event('paste', { cancelable: true, bubbles: true }); i.dispatchEvent(e); return { sel: getComputedStyle(i).userSelect, paste: e.defaultPrevented }; });
+    check('phone: the answer box is still typeable (user-select:text) but paste is blocked', inp.sel === 'text' && inp.paste, inp);
+    await p.fill('#sg-input', 'abc'); check('typing works', (await p.inputValue('#sg-input')) === 'abc');
+  }
+  // 普通の操作では隠れない：タップ・キーボードの出し入れ（resize）・向きの変更
+  const before = await p.evaluate(() => __sg.prot().n);
+  const ch = await p.$('#sg-ans .sg-ch'); if (ch) await ch.tap().catch(() => ch.click());
+  await p.setViewportSize({ width: 390, height: 500 }); await p.waitForTimeout(150); await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(150);
+  await p.setViewportSize({ width: 844, height: 390 }); await p.waitForTimeout(250);
+  check('phone: taps, keyboard-sized resizes and rotation never black it out', await p.evaluate(b => __sg.prot().n === b && !document.querySelector('.sg-blank'), before));
+  const fits = await p.evaluate(() => { const r = document.querySelector('.sg-panel').getBoundingClientRect(); return r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1; });
+  check('phone: the modal still fits after rotating', fits);
+  await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(150);
+  // 隠れたら黒く隠し、戻ったらすぐ戻す
+  const hide = h => p.evaluate(h => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => h ? 'hidden' : 'visible' }); Object.defineProperty(document, 'hidden', { configurable: true, get: () => h }); document.dispatchEvent(new Event('visibilitychange')); }, h);
+  const blankNow = () => p.evaluate(() => { const c = document.querySelector('.sg-cover'); return { cls: document.querySelector('.sg-ov').classList.contains('sg-blank'), disp: getComputedStyle(c).display, bg: getComputedStyle(c).backgroundColor, covers: (() => { const r = c.getBoundingClientRect(), q = document.querySelector('.sg-panel').getBoundingClientRect(); return r.left <= q.left && r.top <= q.top && r.right >= q.right && r.bottom >= q.bottom; })() }; });
+  await hide(true); let b = await blankNow();
+  check('hidden tab: black cover over the whole modal', b.cls && b.disp !== 'none' && b.bg === 'rgb(0, 0, 0)' && b.covers, b);
+  await shot(p, '11-cover');
+  await hide(false); b = await blankNow(); check('visible again: cover is gone at once', !b.cls && b.disp === 'none', b);
+  await p.evaluate(() => dispatchEvent(new Event('blur'))); b = await blankNow(); check('window blur: covered', b.cls, b);
+  await p.evaluate(() => dispatchEvent(new Event('focus'))); b = await blankNow(); check('window focus: restored at once', !b.cls, b);
+  await p.evaluate(() => dispatchEvent(new Event('pagehide'))); b = await blankNow(); check('pagehide: covered', b.cls, b);
+  await p.evaluate(() => dispatchEvent(new Event('pageshow'))); b = await blankNow(); check('pageshow: restored', !b.cls, b);
+  await p.evaluate(() => dispatchEvent(new Event('blur'))); await p.mouse.click(200, 300);
+  b = await blankNow(); check('never stuck: touching the screen clears a stray cover (and a click works under it)', !b.cls, b);
+  // element focus changes (tabbing between buttons) are not a window blur
+  await p.evaluate(() => { document.querySelector('.sg-ov button').focus(); document.querySelector('.sg-ov').querySelectorAll('button')[1] && document.querySelector('.sg-ov').querySelectorAll('button')[1].focus(); });
+  check('moving focus between buttons does not cover', !(await blankNow()).cls);
+  const done = await finishQuiz(p); await p.click('#sg-done').catch(() => {});
+  check('after the quiz the protection is gone: selectable page, copy untouched, no cover node', await p.evaluate(() => { const e = new Event('copy', { cancelable: true, bubbles: true }); document.body.dispatchEvent(e); return !e.defaultPrevented && !document.querySelector('.sg-prot,.sg-cover'); }));
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors); await s.close();
+
+  // お休みの画面も同じ
+  const l = await open(env, GAME, { touch: true, seed: { [KEY]: ON({ min: 3, q: 1, thr: 3, lock: 5 }) } }); const q = l.page;
+  await q.waitForFunction(() => window.__sg); await q.evaluate(() => { const r = __sg.run(); r.lockUntil = Date.now() + 300000; localStorage.setItem('kobo.sg.run', JSON.stringify(r)); __sg.tick(); });
+  await q.waitForSelector('[data-sg-layer="lock"]');
+  check('phone: the lock screen is protected too (no copy, covers on blur)', await q.evaluate(() => { const e = new Event('contextmenu', { cancelable: true, bubbles: true }); document.getElementById('sg-left').dispatchEvent(e); dispatchEvent(new Event('blur')); const on = document.querySelector('.sg-ov').classList.contains('sg-blank'); dispatchEvent(new Event('focus')); return e.defaultPrevented && on && !document.querySelector('.sg-blank'); }));
+  await l.close();
+
+  // 英語
+  const en = await open(env, GAME, { touch: true, lang: 'en', seed }); await en.page.waitForFunction(() => window.__sg);
+  await en.page.evaluate(() => __sg.advance(181000)); await waitQuiz(en.page); await en.page.evaluate(() => __sg.simulate(true));
+  check('English cover text', (await en.page.textContent('.sg-cover')).includes('Screenshots cannot be fully blocked'), await en.page.textContent('.sg-cover'));
+  await en.close();
+
+  // パソコン（タッチなし）：今までどおり
+  const d = await open(env, GAME, { touch: false, seed }); const w = d.page;
+  await w.waitForFunction(() => window.__sg); await w.evaluate(() => __sg.advance(181000)); await waitQuiz(w);
+  const desk = await w.evaluate(() => { const e = new Event('copy', { cancelable: true, bubbles: true }); document.getElementById('sg-stem').dispatchEvent(e); dispatchEvent(new Event('blur')); return { touch: __sg.touch(), prot: __sg.prot(), copy: e.defaultPrevented, blank: !!document.querySelector('.sg-blank'), sel: getComputedStyle(document.getElementById('sg-stem')).userSelect }; });
+  check('desktop (no touch): no protection at all, same as before', desk.prot === null && !desk.copy && !desk.blank, desk);
+  await d.close();
+
+  // 設定の説明
+  const st = await open(env, '/', { seed: { [KEY]: ON({}) } }); await openSG(st.page);
+  check('settings note says screenshots cannot be fully blocked', (await st.page.textContent('#sg-sbody')).includes('スクショは完全には防げません'));
+  await st.close();
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch(); const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { off, hub, enable, quiz: quizTest, lock: lockTest, pin: pinTest, until: untilTest, hidden: hiddenTest, layout: layoutTest, keys: keysTest };
+  const all = { off, hub, enable, quiz: quizTest, lock: lockTest, pin: pinTest, until: untilTest, hidden: hiddenTest, layout: layoutTest, keys: keysTest, protect: protectTest };
   for (const [n, f] of Object.entries(all)) {
     if (only && !only.includes(n)) continue;
     try { await f(env); } catch (e) { check(n + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }

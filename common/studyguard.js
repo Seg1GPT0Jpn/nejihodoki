@@ -218,7 +218,7 @@
     '問題を読み込み中…': 'Loading questions…', '問題を読み込めませんでした。あとでもう一度出します。': 'Could not load questions. Will try again soon.', 'つづけて問題': 'Next set',
     'クリア！おつかれさま': 'Done! Nice work.', 'まちがいが多かったので、ここで終わります。': 'Too many misses, so we stop here.',
     '勉強ガードをオフにしました': 'Study guard turned off', 'テスト期間が終わったので、勉強ガードをオフにしました。': 'The test period ended, so the study guard was turned off.',
-    'いまはお休み中': 'Taking a break', 'あと {t}': '{t} left', 'まちがいが続いたので、ゲームを少しお休みします。': 'Lots of misses, so the games rest for a bit.', 'まなびの工房で勉強する': 'Study in Manabi workshop', 'ホームへ': 'Go home', 'お休みが終わりました': 'Break is over',
+    'いまはお休み中': 'Taking a break', 'あと {t}': '{t} left', 'まちがいが続いたので、ゲームを少しお休みします。': 'Lots of misses, so the games rest for a bit.', 'まなびの工房で勉強する': 'Study in Manabi workshop', 'ホームへ': 'Go home', 'かくしています': 'Hidden', 'スクショは完全には防げません': 'Screenshots cannot be fully blocked', 'スマホでは、問題の画面で文字のコピーをさせず、画面が隠れたときは黒く隠します。': 'On phones, copying text is switched off on the quiz screen and the screen is blacked out when hidden.', 'お休みが終わりました': 'Break is over',
     '放送文': 'Listening script', '音声はありません。放送文を読んで答えよう。': 'No audio. Read the script and answer.',
     '問題の文': 'Question text', '選択肢': 'Choices',
   };
@@ -304,6 +304,8 @@
     '.sg-sw .pill{min-width:56px;padding:4px 10px;border-radius:999px;text-align:center;background:var(--kb-surface,#263744);font-size:14px}.sg-sw[aria-checked="true"] .pill{background:var(--kb-ok,#4cc38a);color:var(--kb-ok-ink,#04210f)}',
     '.sg-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sg-row .sg-in{flex:1 1 120px;width:auto}.sg-msg{min-height:1.4em;font-size:13px;margin:4px 0 0}',
     '.sg-lock{text-align:center}.sg-big{font-size:clamp(34px,12vw,56px);font-weight:900;font-variant-numeric:tabular-nums;margin:6px 0}',
+    '.sg-prot,.sg-prot *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.sg-prot input{-webkit-user-select:text;user-select:text}.sg-prot img{-webkit-user-drag:none}',
+    '.sg-cover{display:none;position:absolute;inset:0;z-index:2;background:#000;color:#cfd8dc;align-items:center;justify-content:center;text-align:center;font-size:14px;white-space:pre-line;padding:20px}.sg-blank .sg-cover{display:flex}',
     '.sg-bn{position:fixed;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:2147482000;max-width:520px;margin:0 auto;padding:12px 14px;border-radius:16px;background:var(--kb-surface,#263744);border:1px solid var(--kb-line,#3a4f5f);box-shadow:var(--kb-shadow,0 8px 24px rgba(0,0,0,.4));color:var(--kb-ink,#eef2f4);font-family:var(--kb-font-body,system-ui,sans-serif);font-size:14px;line-height:1.5}',
     '.sg-bn h2{margin:0 0 4px;font-size:16px}.sg-bn p{margin:0 0 10px}.sg-bn .btns{display:flex;flex-wrap:wrap;gap:8px}.sg-bn .btns .sg-btn{flex:1 1 80px}',
   ].join('\n');
@@ -316,6 +318,32 @@
   // ---- 重なり（おおい）の共通部分：背景を inert に、Tab を中に閉じこめ、キーをゲームに渡さない
   var overlays = [];
   function overlayOpen() { return overlays.length > 0; }
+  // ---- 写し取りへの軽い対策（スマホ・タブレットだけ。クイズとお休みの画面が開いている間だけ。ベストエフォート）
+  // ウェブページは、OS のスクリーンショットを止められない（できるのはネイティブアプリだけ）。ここでやるのは次の2つだけで、見た目・押す場所は変えない：
+  //   (a) 文字の選択・コピー・切り取り・貼り付け・長押しメニュー・ドラッグをさせない
+  //   (b) 画面が隠れた・別の画面に移った（visibilitychange hidden / pagehide / window の blur）ときは、すぐ黒いおおいで隠し、戻ったらすぐ外す
+  function touchDevice() {
+    try { if (root.matchMedia && root.matchMedia('(pointer: coarse)').matches) return true; } catch (e) {}
+    return 'ontouchstart' in root || (root.navigator && root.navigator.maxTouchPoints > 0);
+  }
+  function protect(api) {
+    var ov = api.ov, st = { blank: false, reason: '', n: 0 }, offs = [];
+    var cover = h('div', { class: 'sg-cover', 'aria-hidden': 'true' }, h('p', { text: T('かくしています') + '\n' + T('スクショは完全には防げません') }));
+    ov.append(cover); ov.classList.add('sg-prot');
+    function set(on, why) { if (st.blank === on) return; st.blank = on; st.reason = on ? why : ''; if (on) st.n++; ov.classList.toggle('sg-blank', on); }
+    function on(t, type, f, o) { t.addEventListener(type, f, o); offs.push(function () { t.removeEventListener(type, f, o); }); }
+    var inField = function (el) { return !!(el && el.closest && el.closest('input,textarea')); };
+    ['copy', 'cut', 'paste', 'contextmenu', 'dragstart', 'drop'].forEach(function (t) { on(ov, t, function (e) { e.preventDefault(); }, true); });
+    on(ov, 'selectstart', function (e) { if (!inField(e.target)) e.preventDefault(); }, true);
+    on(doc, 'visibilitychange', function () { if (doc.visibilityState === 'hidden' || doc.hidden === true) set(true, 'hidden'); else set(false); });
+    on(root, 'pagehide', function () { set(true, 'pagehide'); });
+    on(root, 'pageshow', function () { set(false); });
+    on(root, 'blur', function (e) { if (e.target === root) set(true, 'blur'); }, true);
+    on(root, 'focus', function (e) { if (e.target === root) set(false); }, true);
+    // 動けなくならないように：画面をさわったら、必ず外す（見えている間は押せる）
+    on(ov, 'pointerdown', function () { if (st.blank && doc.visibilityState !== 'hidden') set(false); }, true);
+    api.prot = { state: function () { return { blank: st.blank, reason: st.reason, n: st.n }; }, off: function () { offs.forEach(function (f) { f(); }); offs = []; cover.remove(); ov.classList.remove('sg-prot', 'sg-blank'); }, simulate: function (on, why) { set(!!on, why || 'sim'); } };
+  }
   function mountOverlay(o) { // { cls, label, build(panel, api) , dismiss } → api
     ensureCss();
     var ov = h('div', { class: 'sg-ov' + (o.sheet ? ' sg-ov--sheet' : ''), 'data-sg-layer': o.kind || '' });
@@ -344,7 +372,7 @@
     ov.addEventListener('keypress', function (e) { e.stopPropagation(); });
     ['keydown', 'keyup', 'keypress'].forEach(function (t) { root.addEventListener(t, onKey, true); });
     api.close = function () {
-      if (api.closed) return; api.closed = true;
+      if (api.closed) return; api.closed = true; if (api.prot) api.prot.off();
       ['keydown', 'keyup', 'keypress'].forEach(function (t) { root.removeEventListener(t, onKey, true); });
       var i = overlays.indexOf(api); if (i >= 0) overlays.splice(i, 1);
       ov.remove();
@@ -353,6 +381,7 @@
       if (o.onClose) o.onClose();
     };
     overlays.push(api);
+    if (o.protect && touchDevice()) protect(api);
     return api;
   }
   function focusIn(api, sel) {
@@ -439,7 +468,7 @@
     var s = eng.settings(), trial = !!opt.trial;
     var sess = createSession({ q: s.q, ex: s.ex });
     var pool = [], seen = {}, getter = null, ui = null, cur = null, lastTotal = 0, finished = false, outcome = '';
-    var layer = mountOverlay({ kind: 'quiz', fix: true, label: T('勉強ガード'), labelledby: 'sg-qt', dismiss: null, onClose: function () { quiz = null; resumeGame(); } });
+    var layer = mountOverlay({ kind: 'quiz', fix: true, protect: true, label: T('勉強ガード'), labelledby: 'sg-qt', dismiss: null, onClose: function () { quiz = null; resumeGame(); } });
     var self = { layer: layer, sess: sess, trial: trial };
     pauseGame();
     var head = h('div', { class: 'sg-hd' }, [h('h2', { id: 'sg-qt', text: T('勉強の時間です') }), h('p', { class: 'sg-st', id: 'sg-prog', 'aria-live': 'polite' })]);
@@ -617,7 +646,7 @@
   function fmt(ms) { var s = Math.max(0, Math.ceil(ms / 1000)), m = Math.floor(s / 60); return m + ':' + ('0' + (s % 60)).slice(-2); }
   function showLock() {
     if (lockUi) return;
-    var layer = mountOverlay({ kind: 'lock', label: T('いまはお休み中'), labelledby: 'sg-lt', dismiss: null, onClose: function () { lockUi = null; resumeGame(); } });
+    var layer = mountOverlay({ kind: 'lock', protect: true, label: T('いまはお休み中'), labelledby: 'sg-lt', dismiss: null, onClose: function () { lockUi = null; resumeGame(); } });
     pauseGame();
     var t = h('p', { class: 'sg-big', id: 'sg-left', role: 'timer', 'aria-live': 'off' });
     var body = h('div', { class: 'sg-bd sg-lock' }, [h('p', { class: 'sg-st', style: 'font-size:14px', text: T('まちがいが続いたので、ゲームを少しお休みします。') }), t]);
@@ -716,7 +745,7 @@
     function save(p) { if (!unlocked && eng.settings().pin) return; var n = eng.patch(p); s = n; refresh(); return n; }
     function draw() {
       s = eng.settings(); var els = [];
-      els.push(h('p', { class: 'sg-note', style: 'margin:0 0 12px', text: T('遊んでいる間だけ数えます。この端末の中だけで動き、サイトのデータを消すと設定も消えます。') }));
+      els.push(h('p', { class: 'sg-note', style: 'margin:0 0 12px', text: T('遊んでいる間だけ数えます。この端末の中だけで動き、サイトのデータを消すと設定も消えます。') + ' ' + T('スマホでは、問題の画面で文字のコピーをさせず、画面が隠れたときは黒く隠します。') + T('スクショは完全には防げません') + '。' }));
       if (s.pin && !unlocked) {
         var pin = h('input', { class: 'sg-in', id: 'sg-pinin', type: 'password', inputmode: 'numeric', pattern: '[0-9]*', maxlength: '4', autocomplete: 'off', 'aria-label': T('PIN（4けた）') });
         var msg = h('p', { class: 'sg-msg', id: 'sg-pinmsg', role: 'status' });
@@ -817,6 +846,8 @@
       quiz: function () { return quiz ? quiz.state() : null; }, peek: function () { return quiz ? quiz.peek() : null; },
       locked: function () { return !!lockUi; }, lockLeft: function () { return eng.lockLeft(); },
       overlays: function () { return overlays.length; },
+      prot: function () { var t = overlays[overlays.length - 1]; return t && t.prot ? t.prot.state() : null; }, touch: touchDevice,
+      simulate: function (on, why) { var t = overlays[overlays.length - 1]; if (t && t.prot) t.prot.simulate(on, why); },
     };
   }
 
