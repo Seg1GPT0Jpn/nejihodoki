@@ -249,9 +249,9 @@ test('section table: every section a piece uses has a seat, a pan and a bank ins
 
 // --- Dynamics: stroke -> level -------------------------------------------------------------------------------------------------------------------
 // synthetic strokes (amp = fraction of min(stage w,h), speed = stage fractions per second) as each input device produces them
-const STROKES = {
-  mouse: { micro: [0.03, 0.15], small: [0.12, 0.7], ordinary: [0.2, 1.0], medium: [0.4, 2.0], large: [0.6, 3.0], vlarge: [0.75, 3.6], max: [0.95, 4.6] },
-  touch: { micro: [0.03, 0.15], small: [0.12, 0.7], ordinary: [0.2, 1.0], medium: [0.36, 1.8], large: [0.52, 2.6], vlarge: [0.66, 3.2], max: [0.84, 4.0] },
+const STROKES = { // [stroke size as a fraction of the stage, speed in stages per second]
+  mouse: { micro: [0.03, 0.15], small: [0.10, 0.4], p: [0.20, 0.8], mp: [0.35, 1.4], mf: [0.50, 2.0], f: [0.75, 2.9], ff: [0.97, 3.4] },
+  touch: { micro: [0.03, 0.15], small: [0.10, 0.4], p: [0.20, 0.8], mp: [0.35, 1.4], mf: [0.50, 2.0], f: [0.75, 2.9], ff: [0.97, 3.4] },
 };
 test('Dynamics: the curve is monotone and spans ppp..ff for every device and sensitivity', () => {
   const D = E.Dynamics; let prev = -1;
@@ -261,32 +261,24 @@ test('Dynamics: the curve is monotone and spans ppp..ff for every device and sen
     for (let k = 0; k <= 20; k++) { const l = D.level(k * 0.05, k * 0.2, dev, sens); ok(l >= p - 1e-12, dev + ' ' + sens + ' monotone in stroke size'); p = l; }
   }));
   for (let k = 0; k <= 10; k++) { if (k) ok(D.keyLevel(k) > D.keyLevel(k - 1), 'keyboard steps rise'); }
-  ok(D.keyLevel(0) < 0.1 && D.keyLevel(10) > 0.9 && D.mark(D.keyLevel(0)) === 'ppp' && D.mark(D.keyLevel(10)) === 'ff');
+  ok(D.keyLevel(0) < 0.1 && D.keyLevel(10) > 0.9 && D.mark(D.keyLevel(3)) === 'mp' && D.mark(D.keyLevel(5)) === 'mf' && D.mark(D.keyLevel(0)) === 'ppp' && D.mark(D.keyLevel(10)) === 'ff');
   let lastM = -1; const order = ['ppp', 'pp', 'p', 'mp', 'mf', 'f', 'ff']; for (let l = 0.04; l <= 1; l += 0.01) { const i = order.indexOf(D.mark(l)); ok(i >= lastM, 'marks never go back'); lastM = i; }
 });
-test('Dynamics: p is easy, a medium stroke is still p/mp, a large stroke is mf, f needs a very large fast sweep, ff almost the biggest swing (mouse and touch)', () => {
+test('Dynamics: the ladder follows the stroke size - ppp < 0.06, pp 0.06-0.13, p 0.15-0.28, mp 0.30-0.40, mf 0.45-0.58, f 0.68-0.85, ff only for a swing across the whole stage (mouse and touch)', () => {
   const D = E.Dynamics;
   ['mouse', 'touch'].forEach(dev => {
-    const S = STROKES[dev], L = k => D.level(S[k][0], S[k][1], dev, 'mid'), M = k => D.mark(L(k));
-    ok(['ppp', 'pp'].includes(M('micro')), dev + ' micro stroke is ppp/pp: ' + L('micro'));
-    ok(L('small') >= 0.12 && L('small') < 0.28, dev + ' a small stroke is pp..p: ' + L('small'));
-    ok(L('ordinary') >= 0.22 && L('ordinary') <= 0.34, dev + ' an ordinary stroke is p: ' + L('ordinary'));
-    ok(['p', 'mp'].includes(M('medium')), dev + ' a medium stroke is still p/mp: ' + L('medium') + ' ' + M('medium'));
-    ok(M('large') === 'mf' || M('large') === 'mp', dev + ' a large stroke is mf (or top of mp): ' + L('large') + ' ' + M('large'));
-    ok(L('large') < 0.57, dev + ' a large stroke does not reach f: ' + L('large'));
-    ok(M('vlarge') === 'f', dev + ' a very large fast sweep is f: ' + L('vlarge'));
-    ok(M('max') === 'ff' && L('max') >= 0.8, dev + ' only the biggest swing is ff: ' + L('max'));
+    const S = STROKES[dev], M = k => D.mark(D.level(S[k][0], S[k][1], dev, 'mid'));
+    eq(M('micro'), 'ppp', dev + ' 0.03'); eq(M('small'), 'pp', dev + ' 0.10');
+    eq(M('p'), 'p', dev + ' 0.20'); eq(M('mp'), 'mp', dev + ' 0.35'); eq(M('mf'), 'mf', dev + ' 0.50'); eq(M('f'), 'f', dev + ' 0.75'); eq(M('ff'), 'ff', dev + ' 0.97');
+    for (const [a, mk] of [[0.03, 'ppp'], [0.07, 'pp'], [0.12, 'pp'], [0.16, 'p'], [0.27, 'p'], [0.31, 'mp'], [0.39, 'mp'], [0.46, 'mf'], [0.57, 'mf'], [0.69, 'f'], [0.84, 'f'], [0.93, 'ff']]) eq(D.mark(D.level(a, a * 2.4, dev, "mid")), mk, dev + ' amp ' + a);
+    ok(D.level(0.88, 0.88 * 2.4, dev, 'mid') < 0.74 && D.level(0.93, 0.93 * 2.4, dev, 'mid') >= 0.74, 'ff needs about nine tenths of the stage');
   });
-  // the soft region covers most of the range: up to ~65 % of the old mf stroke (amp 0.4 / speed 2) stays in p..mp
-  ok(D.level(0.26, 1.3, 'mouse', 'mid') < 0.45, 'two thirds of the old mf stroke is at most mp: ' + D.level(0.26, 1.3, 'mouse', 'mid'));
-  ok(D.level(0.42, 2.8, 'mouse', 'mid') < 0.5, 'the old "loud" stroke (0.42 / 2.8) is below mf now: ' + D.level(0.42, 2.8, 'mouse', 'mid'));
-  ok(D.level(0.4, 2, 'mouse', 'low') < D.level(0.4, 2, 'mouse', 'mid') && D.level(0.75, 3.6, 'mouse', 'low') < 0.57, 'low sensitivity makes f harder');
-  // beats must still register at small amplitudes: the dead zone of the detector is below a clear small downbeat (0.1 of the stage)
+  ok(D.level(0.4, 2, 'mouse', 'low') < D.level(0.4, 2, 'mouse', 'mid') && D.level(0.9, 3.6, 'mouse', 'low') < 0.74, 'low sensitivity makes f harder (x 1.25 on every threshold)'); ok(D.level(0.7, 3, 'mouse', 'high') > 0.8, 'high sensitivity: easier (x 0.8)');
   const det = new E.BeatDetector({ scale: 400 }), ev = bounce(det, { bpm: 90, amp: 44, beats: 6 }); ok(ev.length >= 4, 'a clear small downbeat (0.11 of the stage) still registers: ' + ev.length);
 });
 test('Dynamics: phone motion and keyboard, sensitivity low/standard/high, smoothing', () => {
   const D = E.Dynamics, clamp01 = v => Math.min(1, Math.max(0, v)), mo = pk => D.level(clamp01(pk / 14) * 0.5 + 0.04, 0, 'motion', 'mid');
-  ok(mo(2.5) < 0.26 && mo(4.5) < 0.4 && mo(7) > 0.36 && mo(7) < 0.5 && mo(10) > 0.45 && mo(10) < 0.66 && mo(14) > 0.8, 'phone: ' + [2.5, 4.5, 7, 10, 14].map(mo).map(v => v.toFixed(2)).join(' '));
+  ok(mo(3) < 0.12 && mo(5) < 0.24 && mo(7) > 0.24 && mo(7) < 0.34 && mo(9) > 0.34 && mo(9) < 0.45 && mo(11) > 0.45 && mo(11) < 0.57 && mo(12) > 0.57 && mo(13) > 0.57 && mo(13) < 0.74 && mo(14) >= 0.9, 'phone: ' + [3, 5, 7, 9, 11, 12, 13, 14].map(mo).map(v => v.toFixed(2)).join(' '));
   ok(D.level(0.4, 2, 'mouse', 'low') < D.level(0.4, 2, 'mouse', 'mid') && D.level(0.4, 2, 'mouse', 'mid') < D.level(0.4, 2, 'mouse', 'high'), 'sensitivity orders the levels');
   ok(D.level(0.2, 1, 'mouse', 'high') < 0.45, 'even at high sensitivity an ordinary stroke is not loud');
   ok(D.level(0.1, 0.5, 'mouse', 'low') >= 0.04);

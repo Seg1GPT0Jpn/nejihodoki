@@ -51,17 +51,18 @@
   //   exertion x = 0.55 * amplitude/ampRef + 0.45 * speed/spdRef   (amp: fraction of min(stage width, height); speed: stage-fractions per second)
   //   level = piecewise-linear through ANCHORS (monotone), then *sensitivity* scales x (low 0.8, standard 1, high 1.25).
   // ------------------------------------------------------------------------------------------------------------------------------------------
-  const DYN_ANCHORS = [[0, 0.04], [0.06, 0.08], [0.14, 0.19], [0.24, 0.30], [0.40, 0.40], [0.58, 0.50], [0.78, 0.65], [0.97, 0.88], [1.1, 1]];
-  const DYN_DEVICE = { mouse: { amp: 0.97, spd: 4.86 }, touch: { amp: 0.84, spd: 4.3 }, motion: { amp: 0.52, spd: 1 }, key: { amp: 1, spd: 1 } };
+  const DYN_ANCHORS = [[0, 0.04], [0.06, 0.12], [0.13, 0.235], [0.15, 0.25], [0.28, 0.335], [0.30, 0.35], [0.40, 0.445], [0.45, 0.46], [0.58, 0.565], [0.68, 0.58], [0.85, 0.725], [0.91, 0.735], [0.93, 0.88], [0.97, 1]];
+  // x is (almost) the stroke size as a fraction of the stage: ppp < 0.06, pp 0.06-0.13, p 0.15-0.28, mp 0.30-0.40, mf 0.45-0.58, f 0.68-0.85, ff >= 0.92 (a swing across the whole stage); the speed adds at most 10 %
+  const DYN_DEVICE = { mouse: { k: 1, spd: 2.4 }, touch: { k: 1, spd: 2.4 }, motion: { k: 1, spd: 1 }, key: { k: 1, spd: 1 } };
   const DYN_SENS = { low: 0.8, mid: 1, high: 1.25 };
   const Dynamics = {
     ANCHORS: DYN_ANCHORS, SENS: DYN_SENS, DEVICES: DYN_DEVICE,
     curve(x) { const A = DYN_ANCHORS; if (x <= 0) return A[0][1]; for (let i = 1; i < A.length; i++) if (x <= A[i][0]) { const a = A[i - 1], b = A[i]; return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return 1; },
-    exertion(amp, speed, device) { const d = DYN_DEVICE[device] || DYN_DEVICE.mouse; if (device === 'motion') return Math.max(0, amp - 0.04) / d.amp; return 0.55 * amp / d.amp + 0.45 * (speed || 0) / d.spd; },
+    exertion(amp, speed, device) { const d = DYN_DEVICE[device] || DYN_DEVICE.mouse; if (device === 'motion') return Math.pow(clamp(Math.max(0, amp - 0.04) / 0.5, 0, 1.2), 2.2); return d.k * (0.9 * amp + 0.1 * Math.min(1.2, (speed || 0) / d.spd)); },
     // amp, speed as reported by BeatDetector ({amp, speed}); device 'mouse' | 'touch' | 'motion'; sens 'low' | 'mid' | 'high'
     level(amp, speed, device, sens) { return Dynamics.curve(Dynamics.exertion(amp, speed, device) * (DYN_SENS[sens] || 1)); },
     // keyboard Up/Down: step 0..10 -> level (ppp .. ff), not affected by sensitivity
-    keyLevel(step) { return Dynamics.curve(clamp(step, 0, 10) * 0.11); },
+    keyLevel(step) { return Dynamics.curve(clamp(step, 0, 10) * 0.1); },
     // short smoothing between strokes: dt seconds since the previous ictus; a jump is followed 65-75 % of the way
     smooth(prev, lv, dt) { const a = 1 - Math.exp(-(dt > 0 ? dt : 0.5) / 0.28); return prev + (lv - prev) * clamp(a, 0.4, 0.85); },
     // 0..1 -> mark name (ppp..ff), the thresholds sit at the mid-points of the marks' target levels
@@ -257,11 +258,11 @@
     if (this.dbgN) { this.dbg.push({ t, v, b: beat }); if (this.dbg.length > this.dbgN) this.dbg.shift(); }
     return out;
   };
-  // MotionCalibrator: the player swings a few times; their median peak becomes an "ordinary swing" (about mp). scale = 7 / median peak, within 0.4 .. 3.
+  // MotionCalibrator: the player swings a few times; their median peak becomes an "ordinary swing" (about mp). scale = 8.5 / median peak, within 0.4 .. 3.
   function MotionCalibrator(n) { this.n = n || 5; this.peaks = []; }
   MotionCalibrator.prototype.add = function (peak) { if (peak > 0) this.peaks.push(peak); return this.ready(); };
   MotionCalibrator.prototype.ready = function () { return this.peaks.length >= this.n; };
-  MotionCalibrator.prototype.scale = function () { if (!this.peaks.length) return 1; const a = this.peaks.slice().sort((x, y) => x - y), m = a[a.length >> 1]; return clamp(7 / m, 0.4, 3); };
+  MotionCalibrator.prototype.scale = function () { if (!this.peaks.length) return 1; const a = this.peaks.slice().sort((x, y) => x - y), m = a[a.length >> 1]; return clamp(8.5 / m, 0.4, 3); };
 
   // ------------------------------------------------------------------------------------------------------------------------------------------
   // BeatClock: position (in conductor beats) as a function of time, in straight segments. The scheduler `commit`s a horizon, and a new segment (new tempo) can only
