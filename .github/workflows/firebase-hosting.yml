@@ -34,6 +34,31 @@ jobs:
           channelId: live
           projectId: neji-5913a
 
+  rules:
+    # firestore.rules と database.rules.json を、main に入るたびに自動で反映する（手で貼らなくてよい）。
+    # サービスアカウントに「Firebase Rules 管理者」と「Firebase Realtime Database 管理者」の権限がないと失敗する
+    # （失敗しても、ほかの公開は止めない）。ルールは、公開の前に、エミュレーターのテストを通してから main に入れること。
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: 秘密鍵が登録されているか確認
+        id: check
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$SA" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"
+          else echo "::warning::FIREBASE_SERVICE_ACCOUNT が未登録のため、ルールの自動反映をスキップしました"; fi
+      - name: ルール（Firestore と Realtime Database）を反映
+        if: steps.check.outputs.ok == '1'
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx -y firebase-tools@13 deploy --only firestore:rules,database --project neji-5913a --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
+
   pages:
     # main のときだけ（ほかのブランチから手で動かしても gh-pages は変えない）
     if: github.ref == 'refs/heads/main'
