@@ -26,6 +26,7 @@
   const clean = n => String(n || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const pnow = () => (root.performance && performance.now ? performance.now() : Date.now());
+  const within = (pr, ms) => new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('timeout')), ms); pr.then(v => { clearTimeout(t); res(v); }, e => { clearTimeout(t); rej(e); }); });
   const quietly = pr => { if (pr && pr.catch) pr.catch(() => {}); return pr; };
   const PRESETS = [{ mode: 'stock', stk: 3, tm: 3 }, { mode: 'stock', stk: 2, tm: 3 }, { mode: 'stock', stk: 5, tm: 3 }, { mode: 'time', stk: 3, tm: 3 }];
   const PRESET_NAME = [['ストック3', 'Stock 3'], ['ストック2', 'Stock 2'], ['ストック5', 'Stock 5'], ['じかん3分', 'Timed 3 min']];
@@ -129,7 +130,10 @@
   function stopListeners() { S.offs.forEach(f => { try { f(); } catch (e) {} }); S.offs = []; S.timers.forEach(clearInterval); S.timers = []; }
   function fail(e) {
     const c = e && (e.code || e.message) || 'error';
-    resetNet(); S.err = /no-config|sdk-load|timeout/.test(c) ? T('つながりませんでした') + '（' + c + '）' : T('つながりませんでした') + '（' + String(c).slice(0, 40) + '）';
+    resetNet();
+    // データベースのルールに bw（大乱闘のオンライン）がまだ入っていないと PERMISSION_DENIED になる。だまってとまらず、わかるメッセージを出す
+    if (/permission[_ -]?denied/i.test(String(c))) S.err = T('オンライン対戦はまだじゅんびちゅうです（サーバーのルールが未設定）') + '（PERMISSION_DENIED）';
+    else S.err = T('つながりませんでした') + '（' + String(c).slice(0, 40) + '）';
     setPhase('menu');
   }
 
@@ -181,7 +185,7 @@
   // ---- クイックマッチ
   async function queueStart(gen) {
     S.qref = S.db.ref('bw/queue/' + S.uid);
-    try { await S.qref.onDisconnect().remove(); await S.qref.set({ n: S.nick, t: S.TS, h: S.TS, k: 2, v: E.NETV }); } catch (e) { if (gen === S.gen) fail(e); return; }
+    try { await S.qref.onDisconnect().remove(); await within(S.qref.set({ n: S.nick, t: S.TS, h: S.TS, k: 2, v: E.NETV }), 12000); } catch (e) { if (gen === S.gen) fail(e); return; }
     if (gen !== S.gen) return;
     setPhase('queue');
     listen(S.db.ref('bw/queue'), v => { S.q = v || {}; queueEval(); });
@@ -204,7 +208,7 @@
     const ref = S.db.ref('bw/rooms').push(), meta = { at: S.TS, h: S.uid, n: 2, k: o.kind, v: E.NETV };
     if (o.grp) { meta.inv = {}; o.grp.forEach(id => { meta.inv[id] = 1; }); }
     try {
-      await ref.set({ meta, seats: { 0: mySeatDoc() }, cfg: { s: 'rnd', p: 0 } });
+      await within(ref.set({ meta, seats: { 0: mySeatDoc() }, cfg: { s: 'rnd', p: 0 } }), 12000);
       if (gen !== S.gen) { quietly(ref.remove()); return; }
       if (o.kind === 'q' && S.qref) await S.qref.update({ r: ref.key, m: o.grp });
     } catch (e) { if (gen === S.gen) fail(e); return; }

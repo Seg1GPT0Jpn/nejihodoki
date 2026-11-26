@@ -622,6 +622,59 @@
     penguin: { arch: 'counter', sig: 'drum-reflect', tm: 1.05 },
   };
   for (const id of Object.keys(META)) Object.assign(CH[id], META[id]);
+  // ------------------------------------------------------------------------------------------------ 通常技のリメイク（しゅるいで変える）
+  // 数字だけでなく「どんな技か」を変える：連続ヒット（flurry）・遅れてくる大技（delayed）・前へ進む（lunge）・のぼる（rising）・空中でとまる（stall）・飛び道具（proj）・わな（trap）・
+  // つかみ（cmd）・まわる（spin）・急降下（pound）・構え（counter）・当たり判定が動く（hb を自分でかく）。engine.js の normals() が読む（ov の kind / seq / lg / lift / stall / rh / mv / proj）。
+  const NF = {
+    flurry: (n, gap, x) => Object.assign({ seq: Array.from({ length: n }, (_, i) => i < n - 1 ? { at: i * gap, a: 2, dm: 0.42, bk: 0.5, kb: 0.1 } : { at: i * gap, a: 3, dm: 0.8, bk: 1.1, kb: 1.2 }) }, x),
+    delayed: (wait, big, x) => Object.assign({ seq: [{ at: 0, a: 2, dm: 0.3, bk: 0.5, kb: 0.1 }, { at: wait, a: 4, dm: big, bk: 1.25, kb: 1.35 }] }, x),
+    lunge: (v, x) => Object.assign({ lg: v, lp: 2 }, x),
+    rising: (lift, lf, x) => Object.assign({ lift, lf }, x),
+    stall: (g, v, x) => Object.assign({ stall: { g, v } }, x),
+    proj: (p, x) => Object.assign({ kind: 'proj', proj: Object.assign({ vy: 0, g: 0, bkb: 8, kbg: 6, ang: 25 }, p) }, x),
+    trap: (p, x) => Object.assign({ kind: 'mine', proj: Object.assign({ max: 1, arm: 24, bkb: 14, kbg: 18, ang: 70 }, p) }, x),
+    spin: (rh, fin, x) => Object.assign({ kind: 'spin', rh, mv: { rh, fin: Object.assign({ dmg: 3, bkb: 14, kbg: 14, ang: 55 }, fin) } }, x),
+    pound: (fv, land, x) => Object.assign({ kind: 'pound', mv: { fv, land: Object.assign({ a: 5, dmg: 7, bkb: 16, kbg: 16, ang: 60, hb: [[26, -8, 26, -8, 24], [-26, -8, -26, -8, 24]] }, land) } }, x),
+    cmd: x => Object.assign({ kind: 'cmdgrab' }, x),
+    counter: (cf, x) => Object.assign({ kind: 'counter', mv: { cf, cs: 4, ca: 4 } }, x),
+  };
+  // おもちゃごとの、しゅるいのちがう通常技（キーは技の名前）。どの子も 4つ以上
+  const NRM = {
+    robo: { jab: NF.flurry(3, 4), ftilt: NF.proj({ sp: 8, r: 9, life: 13, dmg: 5, kind: 'fist' }, { s: 9, t: 30 }), dtilt: { hb: [[8, -6, 66, -6, 12]], a: 6, t: 26 },
+      nair: NF.spin(6, {}, { a: 26, t: 42 }), fsmash: NF.delayed(16, 1.3, { s: 14 }), dair: NF.pound(12, {}, { s: 12, t: 46, hb: [[0, 8, 0, 8, 22]] }) },
+    duck: { jab: NF.flurry(2, 4), ftilt: NF.lunge(4.4, { hb: [[26, -30, 76, -30, 9]], a: 5 }), utilt: NF.rising(5, 7), dtilt: { seq: [{ at: 0, a: 3, hb: [[10, -8, 60, -8, 12]], dm: 0.7 }, { at: 8, a: 3, hb: [[60, -8, 10, -8, 12]], dm: 0.9, kb: 1.2 }] },
+      fsmash: { hb: [[-10, -86, 70, -10, 20]], a: 7, t: 50 }, fair: NF.delayed(8, 1.25, { s: 6 }), dair: NF.pound(11, { dmg: 8 }, { s: 11, t: 44, hb: [[8, 6, 8, 6, 16]] }) },
+    tin: { jab: NF.proj({ sp: 12, r: 6, life: 12, dmg: 3, kind: 'cork' }, { s: 4, t: 18 }), ftilt: NF.lunge(4.8, { hb: [[28, -32, 64, -32, 9]], a: 4 }), utilt: NF.proj({ sp: 5, vy: -7, g: 0.3, r: 8, life: 40, dmg: 5, ang: 88, kind: 'cork' }, { s: 8, t: 30 }),
+      dtilt: NF.proj({ sp: 10, r: 7, life: 22, dmg: 4, kind: 'cork' }, { s: 7, t: 28 }), fair: NF.flurry(3, 5, { s: 6 }), dair: NF.proj({ sp: 1, vy: 8, g: 0.2, r: 8, life: 30, dmg: 7, ang: -80, kind: 'cork' }, { s: 9, t: 34 }) },
+    bear: { ftilt: NF.delayed(8, 0.9, { s: 8, seq: [{ at: 0, a: 3, hb: [[20, -42, 54, -30, 22]], dm: 0.8 }, { at: 9, a: 3, hb: [[54, -26, 18, -44, 22]], dm: 1.0, kb: 1.1 }] }), utilt: NF.rising(4, 8), dtilt: { hb: [[44, -8, 44, -8, 26], [-44, -8, -44, -8, 26]], a: 5, ang: 60 },
+      fsmash: NF.lunge(5, { lp: 6, a: 8, t: 52 }), dair: NF.pound(11, { dmg: 9, hb: [[40, -8, 40, -8, 30], [-40, -8, -40, -8, 30]] }, { s: 13, t: 50, hb: [[0, 8, 0, 8, 30]] }), jab: NF.cmd({ hb: [[30, -30, 44, -30, 20]], s: 8, t: 34, dmg: 4 }) },
+    top: { jab: NF.flurry(4, 3), ftilt: NF.lunge(3.8, { rh: 5, a: 14, t: 34, hb: [[0, -24, 24, -24, 22]] }), dtilt: NF.lunge(4.4, { hb: [[10, -8, 46, -8, 12]], a: 10, rh: 5, t: 28 }), nair: NF.stall(0.1, 0.6, { rh: 5, a: 26, t: 40 }), uair: NF.rising(3, 6, { rh: 5, a: 14, t: 34 }) },
+    jack: { jab: NF.delayed(5, 0.8, { s: 3, hb: [[30, -34, 102, -34, 10]] }), ftilt: { hb: [[24, -40, 108, -30, 12]], a: 8, t: 36 }, utilt: NF.rising(5.5, 6), fsmash: NF.delayed(14, 1.2, { s: 14, hb: [[30, -40, 100, -32, 22]] }), dair: { seq: [{ at: 0, a: 2, dm: 0.5, bk: 0.6, kb: 0.3, ang: 60, hb: [[6, -14, 12, -8, 16]] }, { at: 3, a: 3, dm: 1.0, bk: 1.2, kb: 1.4, ang: -80, hb: [[4, 14, 8, 22, 12]] }] } },
+    ninja: { jab: NF.flurry(3, 3), ftilt: NF.lunge(7.2, { hb: [[20, -28, 52, -28, 10]], a: 5, t: 28 }), utilt: NF.rising(6.2, 7), dtilt: NF.trap({ r: 11, life: 420, dmg: 5, kind: 'mine' }, { s: 7, t: 26 }),
+      fsmash: NF.proj({ sp: 9, r: 9, life: 36, dmg: 11, bkb: 20, kbg: 24, ang: 35, kind: 'shuriken' }, { s: 14, t: 46 }), dair: { hb: [[10, -24, 28, 6, 16]], a: 8, ang: -50 } },
+    wiz: { jab: NF.proj({ sp: 9, r: 6, life: 16, dmg: 3, kind: 'orb' }, { s: 5, t: 20 }), utilt: NF.proj({ sp: 1, vy: -8, g: 0.1, r: 8, life: 28, dmg: 5, ang: 88, kind: 'orb' }, { s: 8, t: 30 }), dtilt: NF.trap({ r: 12, life: 360, dmg: 6, kind: 'mine' }, { s: 8, t: 28 }),
+      fsmash: NF.proj({ sp: 11, r: 12, life: 24, dmg: 12, bkb: 22, kbg: 28, ang: 32, pierce: 1, rh: 99, kind: 'orb' }, { s: 18, t: 52 }), nair: NF.spin(7, { dmg: 3 }, { a: 28, t: 42 }), dair: NF.proj({ sp: 1, vy: 9, g: 0.2, r: 9, life: 32, dmg: 8, ang: -80, kind: 'orb' }, { s: 10, t: 36 }) },
+    cat: { jab: NF.flurry(5, 3), ftilt: NF.lunge(6.2, { hb: [[14, -26, 40, -26, 14]], a: 6 }), dtilt: NF.lunge(4.2, { hb: [[10, -6, 44, -6, 11]], a: 8, t: 26 }), fsmash: NF.lunge(8, { lp: 4, a: 8, t: 46 }), nair: NF.spin(6, {}, { a: 24, t: 38 }), fair: { seq: [{ at: 0, a: 2, hb: [[22, -34, 44, -26, 13]], dm: 0.6 }, { at: 5, a: 3, hb: [[24, -20, 48, -34, 13]], dm: 0.8, kb: 1.2 }] }, dair: NF.lunge(3.4, { ang: -55, lp: 3, a: 9, hb: [[10, -28, 30, 4, 14]] }) },
+    tank: { jab: { hb: [[26, -30, 40, -30, 18]], s: 5 }, ftilt: NF.proj({ sp: 6, vy: -1.5, g: 0.18, r: 11, life: 36, dmg: 7, bkb: 14, kbg: 16, ang: 35, kind: 'shell' }, { s: 11, t: 34 }), utilt: NF.proj({ sp: 1.5, vy: -9, g: 0.22, r: 11, life: 40, dmg: 7, ang: 88, kind: 'shell' }, { s: 10, t: 34 }),
+      dtilt: NF.trap({ r: 14, life: 500, dmg: 8, kind: 'mine' }, { s: 10, t: 34 }), fsmash: NF.delayed(18, 1.5, { s: 16, hb: [[30, -34, 66, -28, 26]] }), dair: NF.pound(13, { dmg: 10, hb: [[50, -8, 50, -8, 34], [-50, -8, -50, -8, 34]] }, { s: 14, t: 50, hb: [[0, 8, 0, 8, 34]] }) },
+    giraffe: { jab: { hb: [[26, -66, 98, -58, 10]], a: 5, t: 22 }, ftilt: { seq: [{ at: 0, a: 4, hb: [[16, -84, 60, -70, 13]], dm: 0.8 }, { at: 4, a: 4, hb: [[60, -62, 100, -30, 13]], dm: 0.9, kb: 1.1 }] }, dtilt: { hb: [[20, -6, 104, -6, 10]], a: 7, t: 30 },
+      fsmash: NF.delayed(12, 1.2, { s: 14, hb: [[30, -76, 90, -60, 24]] }), nair: NF.spin(6, {}, { a: 26, t: 42 }), uair: NF.stall(0.12, 0.5, { hb: [[0, -70, 0, -130, 14]], a: 9 }) },
+    ball: { jab: NF.lunge(2.6, { lift: 3, lf: 4, s: 3, hb: [[22, -22, 34, -22, 16]] }), ftilt: NF.lunge(6, { rh: 5, a: 14, t: 34, hb: [[0, -20, 22, -20, 22]] }), utilt: NF.rising(5, 6), nair: NF.stall(0.1, 0.8, { rh: 5, a: 26, t: 40 }), dair: NF.pound(13, { dmg: 8 }, { s: 12, t: 48, hb: [[0, 8, 0, 8, 22]] }) },
+    crab: { jab: NF.flurry(2, 4), ftilt: NF.cmd({ hb: [[30, -26, 46, -22, 20]], s: 9, t: 38, dmg: 7, bkb: 24, kbg: 30 }), dtilt: NF.lunge(5.4, { hb: [[10, -6, 46, -6, 11]], a: 8, t: 26 }), fsmash: NF.delayed(13, 1.35, { s: 13 }), dsmash: { hb: [[44, -8, 44, -8, 22], [-44, -8, -44, -8, 22]], a: 6 }, nair: NF.spin(6, {}, { a: 26, t: 40 }) },
+    snail: { jab: NF.delayed(5, 0.9, { s: 4 }), ftilt: NF.lunge(2.2, { a: 10, t: 36 }), dtilt: NF.trap({ r: 16, life: 600, dmg: 3, bkb: 6, kbg: 0, ang: 80, kind: 'mine' }, { s: 8, t: 30 }), fsmash: NF.spin(7, { dmg: 4 }, { s: 14, a: 28, t: 56, sm: 0 }), nair: NF.stall(0.1, 0.7, { rh: 6, a: 26, t: 40 }), dair: NF.pound(11, { dmg: 8 }, { s: 12, t: 48, hb: [[0, 8, 0, 8, 22]] }) },
+    kaiju: { jab: NF.flurry(2, 5), ftilt: { seq: [{ at: 0, a: 4, hb: [[-30, -28, -6, -34, 20]], dm: 0.6, ang: 140 }, { at: 6, a: 4, hb: [[30, -34, 84, -22, 22]], dm: 1.0, kb: 1.2 }], s: 6 }, utilt: NF.proj({ sp: 0.6, vy: -9, g: 0.14, r: 16, life: 22, dmg: 7, ang: 88, kind: 'wave' }, { s: 10, t: 34 }),
+      fsmash: NF.proj({ sp: 6, r: 22, life: 16, dmg: 14, bkb: 26, kbg: 36, ang: 36, pierce: 1, rh: 99, kind: 'flame' }, { s: 18, t: 54 }), usmash: NF.rising(5, 8, { hb: [[10, -50, 4, -92, 24]], a: 8 }), dair: NF.pound(12, { dmg: 11, hb: [[56, -8, 56, -8, 36], [-56, -8, -56, -8, 36]] }, { s: 14, t: 52, hb: [[0, 8, 0, 8, 36]] }) },
+    samurai: { jab: NF.delayed(7, 0.8, { s: 3, hb: [[30, -32, 78, -32, 8]], seq: [{ at: 0, a: 2, dm: 0.3, hb: [[10, -32, 22, -32, 8]] }, { at: 8, a: 3, dm: 1.2, bk: 1.1, kb: 1.2, hb: [[30, -32, 82, -30, 8]] }] }), ftilt: { seq: [{ at: 0, a: 3, hb: [[24, -8, 66, -8, 9]], dm: 0.6, ang: 70 }, { at: 6, a: 3, hb: [[24, -30, 70, -62, 9]], dm: 0.9, kb: 1.2, ang: 60 }] }, utilt: NF.counter(14, { hb: [[16, -34, 44, -40, 26]], dmg: 8, s: 4, a: 14, t: 44 }),
+      dtilt: NF.lunge(3.4, { hb: [[10, -6, 52, -6, 9]], a: 8, t: 28 }), fsmash: NF.flurry(5, 3, { s: 12, hb: [[28, -34, 70, -34, 12]] }), nair: NF.spin(6, {}, { a: 26, t: 40 }), dair: NF.pound(12, { dmg: 9 }, { s: 12, t: 46, hb: [[6, 6, 10, 20, 10]] }) },
+    balloon: { jab: NF.proj({ sp: 5, r: 10, life: 14, dmg: 3, kind: 'puff' }, { s: 5, t: 20 }), utilt: NF.rising(2.6, 8, { hb: [[10, -44, 0, -80, 20]] }), ftilt: NF.proj({ sp: 3.4, r: 15, life: 24, dmg: 6, bkb: 12, kbg: 14, kind: 'puff' }, { s: 11, t: 36 }), nair: NF.stall(0.06, 0.5, { rh: 6, a: 26, t: 40 }), uair: NF.stall(0.05, -0.5, { hb: [[0, -62, 0, -96, 22]], a: 12 }), fsmash: NF.delayed(15, 1.25, { s: 12 }), dair: NF.proj({ sp: 0.5, vy: 6, g: 0.1, r: 12, life: 40, dmg: 6, ang: -80, kind: 'puff' }, { s: 11, t: 38 }) },
+    penguin: { jab: NF.flurry(3, 3), ftilt: NF.lunge(6.2, { hb: [[8, -10, 48, -10, 14]], a: 8, t: 30 }), dtilt: NF.proj({ sp: 6.5, r: 8, life: 30, dmg: 5, pierce: 1, rh: 99, kind: 'wave' }, { s: 8, t: 30 }), fsmash: NF.delayed(14, 1.3, { s: 14 }), nair: NF.stall(0.1, 0.8, { rh: 6, a: 26, t: 40 }), dair: NF.pound(12, { dmg: 9 }, { s: 12, t: 46, hb: [[0, 8, 0, 8, 22]] }) },
+  };
+  for (const id of Object.keys(NRM)) { const ov = CH[id].kit.ov = CH[id].kit.ov || {}; for (const key of Object.keys(NRM[id])) ov[key] = Object.assign({}, ov[key], NRM[id][key]); CH[id].rem = 2; }
+
+  // 通常技のリメイクのあとの強さの調整（おもちゃごとの pw のかけ算）
+  const PWADJ = {"ninja":1.25,"wiz":1.217,"cat":1.089,"bear":0.851,"tank":0.894,"penguin":0.91,"crab":1.052,"jack":0.777,"giraffe":0.766,"robo":0.993,"duck":0.994,"tin":1.045,"top":1.034,"ball":1.016,"snail":1.087,"kaiju":0.977,"samurai":1.053,"balloon":1.019,"rocketon":1.044,"stapler":0.95,"void":0.92,"bomb":0.969,"magnet":0.964,"plaster":0.974,"prism":1.029,"sand":0.966,"shroom":0.974,"pinball":1.029,"cham":1.031,"patrol":0.973,"pumper":1.031}; // @PWADJ
+  for (const id of Object.keys(PWADJ)) CH[id].kit.pw = +(CH[id].kit.pw * PWADJ[id]).toFixed(3);
+
   // はじめの18人の並び（ボスの junk は入れない）
   const CHAR_IDS = ['robo', 'duck', 'tin', 'bear', 'top', 'jack', 'ninja', 'wiz', 'cat', 'tank', 'giraffe', 'ball', 'crab', 'snail', 'kaiju', 'samurai', 'balloon', 'penguin'];
   // はじめの18人。選ぶ画面と開き方の古い決まり（robo / duck / bear が最初から、tin / top / jack がラダー、あとは勝つたび）に使う

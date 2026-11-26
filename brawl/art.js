@@ -752,7 +752,8 @@
   function drawSwoosh(c, st, f, C) {
     const m = E.MOVES[f.ch][f.mv]; if (!m || !m.hb || !m.hb.length || m.kind === 'proj') return;
     const fr = f.mf; if (fr < m.s - 1 || fr > m.s + m.a + 3) return;
-    const arr = m.kind === 'pound' ? (f.pf ? m.hb : m.land ? m.land.hb : m.hb) : m.hb;
+    let arr = m.kind === 'pound' ? (f.pf ? m.hb : m.land ? m.land.hb : m.hb) : m.hb;
+    if (m.seq) { const g = m.seq.find(q => fr >= m.s + q.at - 1 && fr < m.s + q.at + q.a + 3); if (!g) return; arr = g.hb; }
     const k = clamp((fr - m.s + 1) / (m.a + 3), 0, 1);
     c.save(); c.globalAlpha = (1 - k) * 0.85; c.lineCap = 'round';
     for (const h of arr) {

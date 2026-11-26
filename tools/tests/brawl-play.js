@@ -65,11 +65,12 @@ async function solo(env) {
   await p.keyboard.down('Space'); await p.waitForTimeout(150); const air = (await F(p, 0)); await p.keyboard.up('Space'); check('Space jumps', air.y < -10, air);
   await p.waitForTimeout(900);
   await p.keyboard.press('Space'); await p.waitForTimeout(120); await p.keyboard.press('Space'); await p.waitForTimeout(300);
-  let atk = false; await p.keyboard.down('KeyJ'); for (let i = 0; i < 6 && !atk; i++) { await p.waitForTimeout(15); atk = (await F(p, 0)).s === 'atk'; } await p.keyboard.up('KeyJ');
+  let atk = false; await p.keyboard.down('KeyJ'); for (let i = 0; i < 20 && !atk; i++) { await p.waitForTimeout(15); atk = (await F(p, 0)).s === 'atk'; } await p.keyboard.up('KeyJ');
   check('J attacks', atk);
   await p.waitForTimeout(500);
+  await wait(p, () => __kb.state().fighters[0].s === 'free' && __kb.state().fighters[0].gr >= 0);   // the air attack above can be long now (a spinning aerial)
   await p.evaluate(() => { __brawl.place(0, 0, 0); __brawl.place(1, 300, 0); });
-  atk = false; await p.keyboard.down('KeyK'); for (let i = 0; i < 6 && !atk; i++) { await p.waitForTimeout(15); const f = await F(p, 0); atk = f.s === 'atk' && /sp/.test(f.mv); } await p.keyboard.up('KeyK'); check('K uses a special', atk);
+  atk = false; await p.keyboard.down('KeyK'); for (let i = 0; i < 20 && !atk; i++) { await p.waitForTimeout(15); const f = await F(p, 0); atk = f.s === 'atk' && /sp/.test(f.mv); } await p.keyboard.up('KeyK'); check('K uses a special', atk);
   await p.waitForTimeout(700);
   let ch = false; await p.keyboard.down('KeyU'); await p.keyboard.down('KeyD'); await p.waitForTimeout(250); ch = (await F(p, 0)).mv === 'fsmash'; await p.keyboard.up('KeyU'); await p.keyboard.up('KeyD');
   check('U (held) charges a smash attack', ch, await F(p, 0)); await p.waitForTimeout(900);

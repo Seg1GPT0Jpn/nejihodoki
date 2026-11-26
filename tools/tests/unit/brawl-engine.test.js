@@ -80,15 +80,15 @@ test('deterministic: the same seed and the same inputs give the same match, a di
 test('knockback: stronger with damage, weaker on heavy toys, exactly the formula; hitstun grows with it', () => {
   const launchSpeed = (ch, pct) => {
     const st = duel({ a: 'robo', b: ch, ax: -30, bx: 0 });
-    st.fighters[1].pct = pct; const m = E.MOVES.robo.fsmash;
-    const evs = go(st, 40, (i) => i === 0 ? (B.M | B.R) : 0, 0).filter(e => e.t === 'hit');
+    st.fighters[1].pct = pct; const m = E.MOVES.robo.dsmash;
+    const evs = go(st, 40, (i) => i === 0 ? (B.M | B.D) : 0, 0).filter(e => e.t === 'hit');
     ok(evs.length >= 1, 'fsmash hit ' + ch + ' at ' + pct);
     return { p: evs[0].p, dmg: evs[0].dmg, st };
   };
   const v0 = launchSpeed('duck', 0), v100 = launchSpeed('duck', 100), v200 = launchSpeed('duck', 200);
   ok(v100.p > v0.p * 1.4 && v200.p > v100.p * 1.3, `monotone ${v0.p} ${v100.p} ${v200.p}`);
   // exact: v = (bkb + kbg * pctAfter / 100) * 0.18 * (1 + (100 - weight) * 0.006)
-  const m = E.MOVES.robo.fsmash, W = E.CH.duck.weight, d = v100.dmg;
+  const m = E.MOVES.robo.dsmash, W = E.CH.duck.weight, d = v100.dmg;
   const want = (m.bkb + m.kbg * (100 + d) * 0.01) * 0.18 * (1 + (100 - W) * 0.006);
   ok(Math.abs(v100.p - want) < 0.01, `formula ${v100.p} vs ${want}`);
   const bear = launchSpeed('bear', 100), top = launchSpeed('top', 100);
@@ -225,7 +225,7 @@ test('shield: absorbs hits (no damage), wears down, breaks into a long stun; rol
   go(st, 6, 0, B.H); eq(b.s, 'shield');
   const evs = go(st, 40, (i) => (i === 0 ? B.A : 0), B.H); ok(evs.some(e => e.t === 'block'), 'blocked'); eq(b.pct, 0, 'no damage through the shield'); ok(b.shd < 100, 'shield wore down');
   const st2 = duel({ a: 'bear', ax: -30, bx: 0 }); const c = st2.fighters[1]; let broke = false;
-  for (let i = 0; i < 1500 && !broke; i++) { go(st2, 1, i % 30 === 0 ? (B.M | B.R) : 0, B.H); if (c.s === 'stun') broke = true; }
+  for (let i = 0; i < 1500 && !broke; i++) { if (i % 70 === 0) { c.x = st2.fighters[0].x + 30; } go(st2, 1, i % 70 === 0 ? (B.M | B.D) : 0, B.H); if (c.s === 'stun') broke = true; }
   ok(broke, 'the shield breaks under heavy hits'); go(st2, 20, 0, 0); eq(c.s, 'stun'); go(st2, 200, 0, 0); ok(c.s !== 'stun', 'stun ends');
   // dodge
   const s3 = duel({ ax: -30, bx: 0 }); const d = s3.fighters[1]; go(s3, 6, 0, B.H); go(s3, 1, 0, B.H | B.R); let inv = 0; for (let i = 0; i < 20; i++) { go(s3, 1, 0, B.H | B.R); if (d.inv > 0) inv++; }
@@ -291,6 +291,7 @@ test('every move of every toy hits a toy standing where its hitbox is (and every
       for (const h of m.kind === 'pound' ? m.land.hb : (m.hb || [])) cands.push([h[0] + (h[2] - h[0]) * 0.5, h[1] + (h[3] - h[1]) * 0.5]);
       if (m.kind === 'proj' || m.kind === 'ammo' || m.kind === 'charge') cands.push([160, -30], [90, -30]);
       if (E.KINDS[m.kind] && !m.hb.length && ['stance', 'reload', 'absorb', 'zone', 'summon', 'glide', 'grow', 'cloak', 'detonate', 'channel'].indexOf(m.kind) >= 0) { checkEffect(id, k, m, bits[k]); continue; }
+      if (m.kind === 'proj' && m.proj && (m.proj.vy || m.proj.g)) { let px = 24, py = -30, vy = m.proj.vy || 0; for (let q = 0; q < Math.min(m.proj.life || 30, 60); q++) { px += m.proj.sp || 0; py += vy; vy += m.proj.g || 0; if (q % 3 === 0) cands.push([px, py]); } }   // lobbed/falling shots: try along the arc
       if (m.kind === 'mine') cands.push([30, -6]);
       if (m.kind === 'buff') { const st = duel({ a: id, b: 'robo', bx: 400 }); go(st, 1, bits[k], 0); go(st, 30, 0, 0); ok(st.fighters[0].buff > 0, id + ' buff'); continue; }
       if (m.proj && m.proj.fz) { // a fuse bomb: harmless in flight, then the blast hits a toy standing where it went off
@@ -344,7 +345,7 @@ test('the up special recovers: every toy gains height or distance (or drops in a
 });
 
 test('DI: holding a direction at the moment of launch bends the flight a little (survival DI changes where the toy goes)', () => {
-  const vy = di => { const st = duel({ a: 'robo', ax: -30, bx: 0 }); st.fighters[1].pct = 60; let out = null; for (let i = 0; i < 60; i++) { E.step(st, [i === 0 ? B.M | B.R : 0, di]); if (st.fighters[1].s === 'hurt' && st.fighters[1].hold === 0 && out == null) out = [st.fighters[1].vx, st.fighters[1].vy]; } return out; };
+  const vy = di => { const st = duel({ a: 'robo', ax: -30, bx: 0 }); st.fighters[1].pct = 60; let out = null; for (let i = 0; i < 60; i++) { E.step(st, [i === 0 ? B.M | B.D : 0, di]); if (st.fighters[1].s === 'hurt' && st.fighters[1].hold === 0 && out == null) out = [st.fighters[1].vx, st.fighters[1].vy]; } return out; };
   const n = vy(0), up = vy(B.U), dn = vy(B.D);
   ok(n && up && dn && up[1] !== n[1] && dn[1] !== n[1], 'DI changes the launch'); ok(Math.hypot(up[0], up[1]) > Math.hypot(n[0], n[1]) * 0.95 && Math.hypot(up[0], up[1]) < Math.hypot(n[0], n[1]) * 1.05, 'but keeps its speed');
 });
@@ -437,12 +438,12 @@ test('air dodge: directional, once per jump; landing during it costs lag; aerial
   const st = duel(); const a = st.fighters[0]; a.y = -100; a.gr = -1; go(st, 1, B.H | B.R, 0); eq(a.s, 'adodge'); ok(a.dvx > 3 && a.dvy === 0, 'dodges the way you hold'); go(st, 3, 0, 0); ok(a.inv > 0, 'invincible');
   const s2 = duel(); const b = s2.fighters[0]; b.y = -30; b.gr = -1; b.vy = 3; go(s2, 1, B.H | B.D, 0); for (let i = 0; i < 20 && b.gr < 0; i++) go(s2, 1, 0, 0); eq(b.s, 'lag', 'landing out of an air dodge: lag');
   const land = (key, wait) => { const s = duel(); const f = s.fighters[0]; f.y = -150; f.gr = -1; f.vy = 0; f.jumps = 0; go(s, 1, key === 'nair' ? B.A : key === 'fair' ? B.A | B.R : B.A | B.D, 0); f.face = 1; for (let i = 0; i < wait; i++) { go(s, 1, 0, 0); } f.y = -4; f.vy = 5; f.vx = 0; f.gr = -1; go(s, 3, 0, 0); return { s: f.s, mf: f.mf }; };
-  const m = E.MOVES.robo.nair; ok(m.ac && m.ac.length === 2, 'nair has an auto-cancel window');
-  const early = (() => { const s = duel(); const f = s.fighters[0]; f.y = -3; f.gr = -1; f.vy = 3; f.jumps = 0; go(s, 1, B.A, 0); for (let i = 0; i < 3; i++) go(s, 1, 0, 0); return f; })();
+  const m = E.MOVES.robo.fair; ok(m.ac && m.ac.length === 2, 'nair has an auto-cancel window');
+  const early = (() => { const s = duel(); const f = s.fighters[0]; f.y = -3; f.gr = -1; f.vy = 3; f.jumps = 0; go(s, 1, B.A | B.R, 0); for (let i = 0; i < 3; i++) go(s, 1, 0, 0); return f; })();
   ok(early.s !== 'lag', 'landing in the first frames of an aerial: no lag (auto-cancel) ' + early.s);
-  const mid = (() => { const s = duel(); const f = s.fighters[0]; f.y = -100; f.gr = -1; f.vy = 0; f.jumps = 0; go(s, 1, B.A, 0); for (let i = 0; i < 10; i++) go(s, 1, 0, 0); f.y = -3; f.vy = 4; go(s, 3, 0, 0); return f; })();
+  const mid = (() => { const s = duel(); const f = s.fighters[0]; f.y = -100; f.gr = -1; f.vy = 0; f.jumps = 0; go(s, 1, B.A | B.R, 0); for (let i = 0; i < 10; i++) go(s, 1, 0, 0); f.y = -3; f.vy = 4; go(s, 3, 0, 0); return f; })();
   eq(mid.s, 'lag', 'landing in the middle of an aerial: landing lag'); eq(mid.lag > 0, true);
-  const late = (() => { const s = duel(); const f = s.fighters[0]; f.y = -400; f.gr = -1; f.vy = 0; f.jumps = 0; go(s, 1, B.A, 0); for (let i = 0; i < E.MOVES.robo.nair.ac[1] + 1; i++) go(s, 1, 0, 0); f.y = -3; f.vy = 4; f.vx = 0; go(s, 3, 0, 0); return f; })();
+  const late = (() => { const s = duel(); const f = s.fighters[0]; f.y = -400; f.gr = -1; f.vy = 0; f.jumps = 0; go(s, 1, B.A | B.R, 0); for (let i = 0; i < E.MOVES.robo.fair.ac[1] + 1; i++) go(s, 1, 0, 0); f.y = -3; f.vy = 4; f.vx = 0; go(s, 3, 0, 0); return f; })();
   ok(late.s !== 'lag', 'landing after the move is nearly over: auto-cancelled ' + late.s);
 });
 
@@ -507,10 +508,10 @@ test('ledge options: get up, get-up attack, roll up, ledge jump, drop; invincibl
 
 test('hitlag, smash DI, crouch cancel, taunt, star KO, tumble bounce: small details of the fighting game feel', () => {
   // smash DI: a direction press during the hit-stop shifts the toy a little
-  const run = (di) => { const st = duel({ ax: -30, bx: 0 }); st.fighters[1].pct = 50; let x = null; for (let i = 0; i < 40; i++) { E.step(st, [i === 0 ? B.M | B.R : 0, i >= 6 && i < 9 && di ? B.U : 0]); if (st.fighters[1].hold > 0 && st.fighters[1].lv) x = st.fighters[1].y; } return st.fighters[1].y; };
-  const sdi = duel({ ax: -30, bx: 0 }); sdi.fighters[1].pct = 70; const p0 = sdi.fighters[1].x; let frozenMoves = 0; for (let i = 0; i < 40; i++) { E.step(sdi, [i === 0 ? B.M | B.R : 0, (sdi.fighters[1].hold > 1 && sdi.fighters[1].lv && frozenMoves < 2 && (frozenMoves++ || true)) ? (i % 2 ? B.L : B.R) : 0]); } ok(sdi.fighters[1].sdi > 0, 'SDI used ' + sdi.fighters[1].sdi);
+  const run = (di) => { const st = duel({ ax: -30, bx: 0 }); st.fighters[1].pct = 50; let x = null; for (let i = 0; i < 40; i++) { E.step(st, [i === 0 ? B.M | B.D : 0, i >= 6 && i < 9 && di ? B.U : 0]); if (st.fighters[1].hold > 0 && st.fighters[1].lv) x = st.fighters[1].y; } return st.fighters[1].y; };
+  const sdi = duel({ ax: -30, bx: 0 }); sdi.fighters[1].pct = 70; const p0 = sdi.fighters[1].x; let frozenMoves = 0; for (let i = 0; i < 40; i++) { E.step(sdi, [i === 0 ? B.M | B.D : 0, (sdi.fighters[1].hold > 1 && sdi.fighters[1].lv && frozenMoves < 2 && (frozenMoves++ || true)) ? (i % 2 ? B.L : B.R) : 0]); } ok(sdi.fighters[1].sdi > 0, 'SDI used ' + sdi.fighters[1].sdi);
   // crouch cancel reduces the launch
-  const launchV = (crouch) => { const st = duel({ ax: -30, bx: 0 }); st.fighters[1].pct = 60; let p = 0; for (let i = 0; i < 40; i++) { const evs = E.step(st, [i === 0 ? B.M | B.R : 0, crouch ? B.D : 0]); for (const e of evs) if (e.t === 'hit') p = e.p; } return p; };
+  const launchV = (crouch) => { const st = duel({ ax: -30, bx: 0 }); st.fighters[1].pct = 60; let p = 0; for (let i = 0; i < 40; i++) { const evs = E.step(st, [i === 0 ? B.M | B.D : 0, crouch ? B.D : 0]); for (const e of evs) if (e.t === 'hit') p = e.p; } return p; };
   ok(launchV(true) < launchV(false) * 0.95, 'crouch cancel');
   // taunt
   const ta = duel(); const evs = go(ta, 1, B.T, 0); ok(evs.some(e => e.t === 'taunt') && ta.fighters[0].s === 'taunt', 'taunt'); go(ta, 70, 0, 0); eq(ta.fighters[0].s, 'free', 'taunt ends');

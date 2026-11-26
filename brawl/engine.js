@@ -135,8 +135,19 @@
       m.dmg = o.dmg || rd(b.dmg * k.pw * (o.pw || 1)); m.bkb = rd(b.bkb * (0.85 + 0.15 * k.pw)); m.kbg = rd(b.kbg * k.pw * (o.pw || 1)); m.ang = o.ang != null ? o.ang : b.ang;
       if (o.bkb) m.bkb = o.bkb; if (o.kbg) m.kbg = o.kbg;
       const reach = o.reach || k.reach, rr = o.rr || k.rr;
-      m.hb = (o.hb || b.hb).map(h => [rd(h[0] * (h[0] > 0 && key !== 'nair' ? reach : 1)), h[1], rd(h[2] * (h[2] > 0 && key !== 'nair' ? reach : 1)), h[3], rd(h[4] * rr)]);
+      const mapHb = arr => arr.map(h => [rd(h[0] * (h[0] > 0 && key !== 'nair' ? reach : 1)), h[1], rd(h[2] * (h[2] > 0 && key !== 'nair' ? reach : 1)), h[3], rd(h[4] * rr)]);
+      m.hb = mapHb(o.hb || b.hb);
       if (o.ll != null) m.ll = o.ll;
+      // 技の「しゅるい」をかえる（リメイク）：kind・飛び道具・足もと・追加の数（mv）・移動（lg 前へ / lift 上へ / stall 空中でとまる）・連続ヒット（rh）・ヒットの並び（seq）
+      if (o.kind) m.kind = o.kind;
+      if (o.mv) Object.assign(m, JSON.parse(JSON.stringify(o.mv)));
+      if (o.proj) m.proj = Object.assign({}, o.proj);
+      for (const p of ['lg', 'lp', 'rh', 'lift', 'lf']) if (o[p] !== undefined) m[p] = o[p];
+      if (o.stall) m.stall = Object.assign({}, o.stall);
+      if (o.seq) { // 当たる時間の並び：at＝技の中で何フレーム目 a＝長さ hb＝当たり判定（なければ技の） dm/bk/kb＝ダメージ・ふっとばしの倍率 ang
+        m.seq = o.seq.map(g => ({ at: g.at, a: g.a || 2, hb: mapHb(g.hb || o.hb || b.hb), dmg: rd(m.dmg * (g.dm !== undefined ? g.dm : 1)), bkb: rd(m.bkb * (g.bk !== undefined ? g.bk : 1)), kbg: rd(m.kbg * (g.kb !== undefined ? g.kb : 1)), ang: g.ang !== undefined ? g.ang : m.ang }));
+        m.a = Math.max.apply(null, m.seq.map(g => g.at + g.a)); m.t = Math.max(m.t, m.s + m.a + 4); m.hb = [].concat.apply([], m.seq.map(g => g.hb));
+      }
       out[key] = m;
     }
     return out;
@@ -299,6 +310,38 @@
     }
     return Math.round(tot / wt * 10000) / 100;
   }
+
+  // ------------------------------------------------------------------------------------------------ 通常技の「かたち」のちがい（数字ではなく、種類・ヒットの並び・動き・当たり判定の形をバケツに分けて比べる）
+  // shapeSig(id)：13この通常技（じゃぶ・ふつうの技・つよい攻撃・空中技・ダッシュこうげき）それぞれを、段にわけた特徴の列にする。
+  // 同じ「しゅるい」のなかで数字を少しかえても、バケツがかわらないかぎり、ちがいは増えない（数字いじりでは、下限を超えられない）。
+  const SHAPE_KEYS = NORMALS.concat(['dattack']);
+  const KCODE = { melee: 0, dash: 1, spin: 2, proj: 3, mine: 4, counter: 5, cmdgrab: 6, pound: 7, rise: 8 };
+  const bk = (v, cuts) => { let i = 0; while (i < cuts.length && v > cuts[i]) i++; return i; };
+  const ZONE = (x, y) => Math.abs(x) < 16 && y > -70 && y < -6 ? 0 : x < -6 ? 1 : y < -62 ? 2 : y > -16 ? 3 : 4; // 0＝まわり 1＝うしろ 2＝うえ 3＝した 4＝まえ
+  const shapeCache = {};
+  function shapeSig(id) {
+    if (shapeCache[id]) return shapeCache[id];
+    const out = [];
+    for (const k of SHAPE_KEYS) {
+      const m = MOVES[id][k], seq = m.seq, hb = (seq ? seq[0].hb : m.hb)[0] || [0, 0, 0, 0, 0], dx = hb[2] - hb[0], dy = hb[3] - hb[1];
+      const sweep = Math.abs(dx) < 14 && Math.abs(dy) < 14 ? 0 : Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 1 : 2) : (dy < 0 ? 3 : 4);
+      const nh = seq ? Math.min(3, seq.length) : m.rh ? Math.min(3, Math.max(1, Math.floor(m.a / m.rh))) : m.kind === 'spin' ? 3 : 1;
+      const move = m.lg ? 1 : m.lift ? 2 : m.stall ? 3 : m.kind === 'dash' ? 1 : m.kind === 'rise' ? 2 : 0;
+      const delay = seq && seq[0].at >= 8 ? 1 : (seq && seq.length > 1 && seq[1].at - seq[0].at >= 8 ? 1 : 0);
+      const ad = V(m.ang || 0), kd = ad[1] < -0.8 ? 0 : ad[1] < -0.3 ? 1 : ad[1] > 0.3 ? 3 : 2; // ふっとびの向き：上・ななめ上・よこ・下
+      out.push([KCODE[m.kind] | 0, nh, sweep, ZONE(hb[0] + (hb[2] - hb[0]) / 2, hb[1] + (hb[3] - hb[1]) / 2), Math.min(3, (seq ? seq : [1, 2, 3].slice(0, m.hb.length)).length), bk(hb[4], [13, 21]), kd, bk(m.s, [5, 10]), bk(m.a, [3, 6]), move, delay]);
+    }
+    return (shapeCache[id] = out);
+  }
+  const SHAPE_W = [3, 2, 1.5, 1.5, 1, 1, 1, 1, 1, 2, 1.5];
+  // 2人の通常技のかたちのちがい（0〜100）：13この技ぜんぶで、特徴がちがう割合（重みつき）の平均
+  function shapeDist(a, b) {
+    const A = shapeSig(a), Bq = shapeSig(b); let tot = 0, wt = 0;
+    for (let i = 0; i < A.length; i++) for (let k = 0; k < SHAPE_W.length; k++) { tot += A[i][k] !== Bq[i][k] ? SHAPE_W[k] : 0; wt += SHAPE_W[k]; }
+    return Math.round(tot / wt * 10000) / 100;
+  }
+  // 「しゅるいがちがう技」の数：ふつうの近接（kind が melee で、連続・並び・移動・とどめ のどれでもない）ではない通常技がいくつあるか
+  function kindMoves(id) { let n = 0; for (const k of SHAPE_KEYS) { const m = MOVES[id][k]; if (m.kind !== 'melee' || m.seq || m.rh || m.lg || m.lift || m.stall) n++; } return n; }
   const throwMul = id => CH[id].tm || 1;
 
   // ------------------------------------------------------------------------------------------------ 新しい種類のとくぎ（kits.js の kind / proj.kind で使う）
@@ -1016,6 +1059,12 @@
     if (k === 'reflect' && fr >= m.s && fr < m.s + m.a) f.rfl = 1;
     let grav = C.grav, aair = 0.45;
     const cx = { grav, free: false, ax, ay, inp, grounded };
+    // 技のしゅるい（リメイク）：ヒットの並びごとに当たりなおし・連続ヒット・前へ進む・上へのぼる・空中でとまる
+    if (m.seq) { for (let i = 0; i < m.seq.length; i++) if (fr === m.s + m.seq[i].at) { f.mh = []; if (i) ev(st, { t: 'tick', x: f.x + f.face * 30, y: f.y - C.h * 0.5 }); } }
+    else if (m.rh && fr > m.s && fr < m.s + m.a && (fr - m.s) % m.rh === 0) f.mh = [];
+    if (m.lg && fr >= m.s - (m.lp | 0) && fr < m.s + m.a) f.vx = f.face * m.lg;
+    if (m.lift && fr >= m.s && fr < m.s + (m.lf | 0)) { f.gr = -1; f.vy = -m.lift; grav = 0; f.ffl = false; }
+    if (m.stall && fr >= m.s && fr < m.s + m.a && f.gr < 0) { grav = m.stall.g; if (f.vy > m.stall.v) f.vy = m.stall.v; }
     if (k === 'dash') {
       if (fr >= m.s && fr < m.s + m.a) { f.vx = f.face * m.v; if (!grounded) { f.vy = 0; grav = 0; } }
       else if (fr === m.s + m.a) f.vx *= 0.35;
@@ -1034,7 +1083,7 @@
         if (!grounded) { f.pf = 1; f.vy = m.fv; f.vx *= 0.3; f.mf = m.s; f.mh = []; ev(st, { t: 'move', i: f.i, k: 'poundfall', x: f.x, y: f.y }); }
         else { f.mf = m.s + 1; f.mh = []; ev(st, { t: 'slam', i: f.i, x: f.x, y: f.y, p: 8 }); }
       }
-      if (f.pf) { f.mf = m.s; grav = 0.9; f.vy = Math.max(f.vy, m.fv * 0.7); }
+      if (f.pf) { f.mf = m.s; grav = 0.9; f.vy = Math.max(f.vy, m.fv * 0.7); if (++f.pf > 90) { f.pf = 0; f.mf = m.t; } }   // おちつづけない（ふわふわの子が高いところから急降下してもとまる）
     } else if (k === 'counter') {
       if (fr >= m.s && fr < m.s + m.a) f.arm = 2;
     } else if (KINDS[k] && KINDS[k].tick) {
@@ -1139,6 +1188,8 @@
       if (A.cdm > 0 && fr >= s0 && fr < s0 + m.ca) { hbs = m.hb; p = { dmg: Math.min(24, m.dmg + A.cdm * 1.2), bkb: m.bkb, kbg: m.kbg, ang: m.ang }; t = (fr - s0) / Math.max(1, m.ca - 1); }
     } else if (k === 'spin') {
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = fr >= m.s + m.a - m.rh ? m.fin : m; t = 0; }
+    } else if (k === 'melee' && m.seq) {
+      for (const g of m.seq) if (fr >= m.s + g.at && fr < m.s + g.at + g.a) { hbs = g.hb; p = g; t = (fr - m.s - g.at) / Math.max(1, g.a - 1); break; }
     } else if (k === 'melee' || k === 'dash' || k === 'rise' || k === 'tele' || k === 'reflect') {
       if (fr >= m.s && fr < m.s + m.a) { hbs = m.hb; p = m; t = (fr - m.s) / Math.max(1, m.a - 1); }
     } else if (k === 'grab' || k === 'cmdgrab') {
@@ -1751,7 +1802,7 @@
   }
   const hashStr = st => { const h = hash(st); return h[0].toString(16).padStart(8, '0') + h[1].toString(16).padStart(8, '0'); };
   // NETV：決まった結果が変わる直しをしたら上げる。ちがう版どうしではオンライン対戦をしない（ずれてしまうので）
-  const NETV = 5;
+  const NETV = 6;
   // 種つきの入力（テスト用）：ランダムに押す
   function randInput(st, i) {
     const r = rnd(st); let b = 0;
@@ -1762,7 +1813,7 @@
     return b;
   }
   const api = {
-    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, makeVariant, defineKind, defineProj, KINDS, PROJ, sigOf, dist, sigReset: () => { for (const k of Object.keys(sigCache)) delete sigCache[k]; }, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
+    DT, B, CMASK, FLICK_N, FLICK_HOLD, CH, CHAR_IDS, K, defineChar, makeVariant, defineKind, defineProj, KINDS, PROJ, sigOf, dist, shapeSig, shapeDist, kindMoves, sigReset: () => { for (const k of Object.keys(sigCache)) delete sigCache[k]; }, STAGES, STAGE_IDS, MOVES, NORMALS, EXTRAS, GRAB, THROWS, create, step, cpu, dummy, randInput, copy, clone, hash, hashStr, NETV, thinAt, activeBoxes, boxesOf, hurtDist, rnd, hash32, rd, clamp, sinT, V, floorBelow, nearestLedge, recoverReach, supportAt,
     sameJSON: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BrawlEngine = api;
