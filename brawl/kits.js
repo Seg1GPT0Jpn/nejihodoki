@@ -671,8 +671,63 @@
   };
   for (const id of Object.keys(NRM)) { const ov = CH[id].kit.ov = CH[id].kit.ov || {}; for (const key of Object.keys(NRM[id])) ov[key] = Object.assign({}, ov[key], NRM[id][key]); CH[id].rem = 2; }
 
+  // ---- リメイク 2：のこりの32人の通常技。ひとことの書き方：f3=3連打 d8=8フレームおくれて大 lu5=前へ5 ri5=のぼる st=空中でとまる pj:orb=まっすぐ飛び道具 pl:cork=上へ山なり pd:puff=下へ落とす tr=わな sp6=まわる po12=急降下 cg=つかみ
+  const RC = (code, S) => {
+    const [h, kd] = code.split(':'), t = h.replace(/[0-9.]+$/, ''), n = +(h.slice(t.length) || 0), pk = kd || 'orb', slow = /^(fsmash|usmash|dsmash)$/.test(S);
+    switch (t) {
+      case 'f': return NF.flurry(n, n > 3 ? 3 : 4, slow ? { s: 12 } : {});
+      case 'd': return NF.delayed(n, slow ? 1.3 : 1.15, slow ? { s: 13 } : {});
+      case 'lu': return NF.lunge(n, { lp: 2 });
+      case 'ri': return NF.rising(n, 6);
+      case 'st': return NF.stall(0.1, 0.6, { rh: 6, a: 24, t: 40 });
+      case 'pj': return NF.proj({ sp: 9, r: 8, life: 18, dmg: slow ? 9 : 4, kind: pk, bkb: slow ? 18 : 8, kbg: slow ? 22 : 6 }, { s: slow ? 14 : 7, t: slow ? 46 : 28 });
+      case 'pl': return NF.proj({ sp: 4, vy: -7, g: 0.28, r: 9, life: 40, dmg: 5, ang: 70, kind: pk }, { s: 9, t: 32 });
+      case 'pd': return NF.proj({ sp: 1, vy: 7, g: 0.2, r: 9, life: 34, dmg: 6, ang: -80, kind: pk }, { s: 10, t: 36 });
+      case 'tr': return NF.trap({ r: 12, life: 420, dmg: 5, kind: 'mine' }, { s: 8, t: 30 });
+      case 'sp': return NF.spin(n || 6, {}, { a: 26, t: 40 });
+      case 'po': return NF.pound(n || 12, {}, { s: 12, t: 46 });
+      case 'cg': return NF.cmd({ s: 9, t: 36, dmg: 6 });
+    }
+    throw new Error('RC ' + code);
+  };
+  const NRM2 = {
+    rocketon: 'jab=f2 ftilt=pj:fist utilt=ri6 dtilt=lu5 fsmash=d14 nair=st dair=po13',
+    pumper: 'jab=f3 ftilt=lu4 utilt=pl:wave dtilt=pj:wave fsmash=pj:wave nair=sp6 dair=pd:wave',
+    scoopjack: 'jab=f3 ftilt=d7 utilt=ri5 dtilt=lu4 fsmash=lu6 nair=sp7 dair=po11',
+    sonar: 'jab=pj:wave ftilt=pj:wave utilt=pl:wave dtilt=tr fsmash=d15 nair=st dair=pd:wave',
+    dozer: 'jab=d5 ftilt=lu3 utilt=ri4 dtilt=cg fsmash=lu7 nair=sp6 dair=po14',
+    paper: 'jab=f4 ftilt=lu5 utilt=ri3 dtilt=pj:cork fsmash=d12 nair=st fair=f3 dair=pd:cork',
+    patrol: 'jab=d6 ftilt=cg utilt=pl:orb dtilt=tr fsmash=f4 nair=sp7 dair=po12 fair=lu4',
+    reed: 'jab=f2 ftilt=pj:wave utilt=pl:wave dtilt=lu4 fsmash=pj:wave nair=st uair=st',
+    riff: 'jab=pj:wave ftilt=f3 utilt=pl:orb dtilt=pj:wave fsmash=f5 nair=sp7 dair=pd:orb',
+    drum: 'jab=d6 ftilt=lu4 utilt=ri6 dtilt=cg fsmash=d17 nair=sp6 dair=po13',
+    belle: 'jab=f2 ftilt=lu6 utilt=pl:puff dtilt=pj:puff fsmash=d12 nair=st fair=d7 dair=po11',
+    keys: 'jab=f5 ftilt=pj:orb utilt=ri4 dtilt=tr fsmash=f4 nair=sp8 dair=pd:orb',
+    stapler: 'jab=pj:cork ftilt=cg utilt=pl:cork dtilt=lu4 fsmash=pj:shuriken nair=st dair=po12',
+    sushi: 'jab=f3 ftilt=d6 utilt=ri5 dtilt=lu6 fsmash=lu7 nair=sp6 dair=pd:puff',
+    void: 'jab=pj:orb ftilt=cg utilt=pl:orb dtilt=tr fsmash=pj:orb nair=st dair=pd:orb',
+    comet: 'jab=f3 ftilt=lu7 utilt=ri6 dtilt=pj:flame fsmash=pj:flame nair=st dair=lu4',
+    mirror: 'jab=d4 ftilt=d6 utilt=ri4 dtilt=lu5 fsmash=d15 nair=sp7 fair=f2 dair=po12',
+    sand: 'jab=pj:puff ftilt=pj:puff utilt=pl:puff dtilt=tr fsmash=lu6 nair=sp6 dair=pd:puff',
+    shroom: 'jab=f2 ftilt=pl:puff utilt=ri4 dtilt=tr fsmash=d14 nair=st dair=po11',
+    camp: 'jab=f3 ftilt=lu4 utilt=pl:flame dtilt=pj:flame fsmash=pj:flame nair=sp6 dair=pd:flame',
+    snow: 'jab=pj:puff ftilt=d6 utilt=ri5 dtilt=tr fsmash=pj:puff nair=st dair=po12',
+    kite: 'jab=f2 ftilt=lu5 utilt=ri7 dtilt=lu3 fsmash=d11 nair=sp7 uair=st dair=lu4',
+    door: 'jab=d4 ftilt=cg utilt=ri4 dtilt=pj:wave fsmash=d16 nair=sp6 dair=po13',
+    pinball: 'jab=f4 ftilt=lu6 utilt=ri5 dtilt=lu4 fsmash=f3 nair=st dair=po12',
+    bomb: 'jab=d5 ftilt=pl:shell utilt=cg dtilt=tr fsmash=lu6 nair=sp6 dair=pd:shell',
+    ghost: 'jab=f3 ftilt=d7 utilt=ri4 dtilt=lu3 fsmash=d13 nair=st dair=pd:orb',
+    thunder: 'jab=f4 ftilt=pj:shuriken utilt=ri6 dtilt=lu6 fsmash=pj:shuriken nair=sp7 dair=lu5',
+    cham: 'jab=d5 ftilt=lu6 utilt=cg dtilt=pj:cork fsmash=d12 nair=st fair=f3 dair=po11',
+    magnet: 'jab=d5 ftilt=cg utilt=ri5 dtilt=tr fsmash=lu5 nair=sp6 dair=pd:orb',
+    stamp: 'jab=f2 ftilt=d6 utilt=ri3 dtilt=cg fsmash=d18 nair=sp6 dair=po14',
+    plaster: 'jab=f3 ftilt=pj:puff utilt=ri4 dtilt=pj:puff fsmash=f5 nair=st dair=pd:puff',
+    prism: 'jab=pj:orb ftilt=f3 utilt=pl:orb dtilt=lu5 fsmash=pj:orb nair=sp8 fair=d6 dair=po12',
+  };
+  for (const id of Object.keys(NRM2)) { const ov = CH[id].kit.ov = CH[id].kit.ov || {}; for (const part of NRM2[id].split(' ')) { const [k, c] = part.split('='); ov[k] = Object.assign({}, ov[k], RC(c, k)); } CH[id].rem = 2; }
+
   // 通常技のリメイクのあとの強さの調整（おもちゃごとの pw のかけ算）
-  const PWADJ = {"ninja":1.25,"wiz":1.217,"cat":1.089,"bear":0.851,"tank":0.894,"penguin":0.91,"crab":1.052,"jack":0.777,"giraffe":0.766,"robo":0.993,"duck":0.994,"tin":1.045,"top":1.034,"ball":1.016,"snail":1.087,"kaiju":0.977,"samurai":1.053,"balloon":1.019,"rocketon":1.044,"stapler":0.95,"void":0.92,"bomb":0.969,"magnet":0.964,"plaster":0.974,"prism":1.029,"sand":0.966,"shroom":0.974,"pinball":1.029,"cham":1.031,"patrol":0.973,"pumper":1.031}; // @PWADJ
+  const PWADJ = {"ninja":1.25,"wiz":1.217,"cat":1.032,"bear":0.811,"tank":0.919,"penguin":0.861,"crab":1.052,"jack":0.777,"giraffe":0.746,"robo":0.993,"duck":0.994,"tin":1.045,"top":1.034,"ball":1.048,"snail":1.087,"kaiju":0.977,"samurai":1.053,"balloon":0.992,"rocketon":1.127,"stapler":1.07,"void":1.01,"bomb":0.969,"magnet":0.936,"plaster":0.923,"prism":1.057,"sand":1.045,"shroom":0.974,"pinball":1.029,"cham":1.031,"patrol":0.973,"pumper":1.031,"sonar":1.036,"paper":0.959,"keys":0.942,"mirror":0.945,"camp":1.055,"kite":0.898,"ghost":0.869,"thunder":1.065,"door":1.031,"snow":1.034,"stamp":0.944}; // @PWADJ
   for (const id of Object.keys(PWADJ)) CH[id].kit.pw = +(CH[id].kit.pw * PWADJ[id]).toFixed(3);
 
   // はじめの18人の並び（ボスの junk は入れない）
