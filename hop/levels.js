@@ -139,7 +139,7 @@
   lvl('6-4', 6, { ja: 'ネジまわしゴーレムの間', en: 'Screwdriver Golem Hall' }, 'atelier', ['startR', 'conv1', 'cp', 'arenaGolem', 'goal'], { par: 30, gear: 'ribbon', boss: 'golem', gimmick: { ja: 'ボス：ネジまわしゴーレム', en: 'Boss: Screwdriver Golem' }, put: [[0, 9, 7, 'm'], [1, 10, 6, 'm'], [2, 5, 7, 'm'], [3, 6, 6, 'm'], [3, 28, 6, 'm']] });
 
   // Worlds not released yet stay in PENDING (they are built and proven, but the map, the counters and the tests only see LEVELS). Stage 2 = set RELEASED_WORLDS to 6.
-  const RELEASED_WORLDS = 2;
+  const RELEASED_WORLDS = (typeof process !== 'undefined' && process.env && Number(process.env.HOP_WORLDS)) || 6;
   for (let i = LEVELS.length - 1; i >= 0; i--) if (LEVELS[i].world > RELEASED_WORLDS) PENDING.unshift(LEVELS.splice(i, 1)[0]);
   // ---- assemble
   function assemble(def) {
