@@ -121,6 +121,18 @@ async function runCases(T, opt = {}) {
     await check(g, 'own push mahjong save (best, per-mode tallies, stats, yaku counts, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~mahjong~save': { v: JSON.stringify({ v: 1, best: 45000, g: { east: { p: 3, w: 1, r1: 1, r2: 1, r3: 1, r4: 0, b: 45000 } }, stats: { games: 5, hands: 30, agari: 12, tsumo: 5, ron: 7, 'mangan+': 1 }, y: { riichi: 4, tanyao: 5 }, set: { lv: 2, mode: 'east', aka: 1, uma: '10-20' }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'mahjong save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~mahjong~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'mahjong save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~mahjong~save': 'x' } }, A, { merge: true }));
+    // チェス工房（chess）：記録 kusoge.chess.save だけを同期する（とちゅうのゲーム .game・ルールを見た .howto は端末だけ）
+    await check(g, 'own push chess save (stars, per-level tallies, stats, settings, today\'s puzzle)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~chess~save': { v: JSON.stringify({ v: 1, pts: 28, cs: 2, w: { 1: { p: 3, w: 3, d: 0 }, 4: { p: 5, w: 3, d: 0 } }, stats: { plays: 17, wins: 12, draws: 2, losses: 3, l1: 3, l4: 3, castle: 9, ep: 1, promo: 5, mates: 10, hint: 2, undo: 3, wsb: 4, pz: 14, dperf: 1, onl: 0, onw: 0 }, set: { level: 4, me: 'r', tc: 2, legal: 1, auq: 0, pre: 0, fast: 0, fig: 1, coords: 1, af: 0 }, dl: { last: 20261125, pts: 700, r: [['g5c1', 1, 200], ['g2g7', 0, 0]] }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'chess save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~chess~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'chess save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~chess~save': 'x' } }, A, { merge: true }));
+    // ワードウルフ（wordwolf）：記録 kusoge.wordwolf.save だけを同期する（あそびかた .howto は端末だけ）
+    await check(g, 'own push wordwolf save (rank, stats, settings, recent pairs)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~wordwolf~save': { v: JSON.stringify({ v: 1, rank: 14, stats: { games: 12, wins: 4, soloGames: 6, soloWins: 4, local: 3, onl: 1, onw: 0, hints: 40, perfect: 2, maxpts: 3, bs: 3, two: 1, knows: 1, big: 1 }, set: { n: 6, lv: 0, minutes: 3, reveal: 'hold', rounds: 2, cpus: 4, skill: 2, cats: [], wolves: 2, knows: true }, recent: [3, 40, 77] }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'wordwolf save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~wordwolf~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'wordwolf save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~wordwolf~save': 'x' } }, A, { merge: true }));
+    // あてっこ（akin）：記録 kusoge.akin.save だけを同期する（おぼえたもの .custom・とちゅうの1問 .run・あそびかた .howto は端末だけ）
+    await check(g, 'own push akin save (guesses = ranking, per-range and per-theme tallies, stats, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~akin~save': { v: JSON.stringify({ v: 1, rk: 12, num: { r100: { p: 6, w: 5, b: 7 }, r1k: { p: 2, w: 2, b: 11 } }, th: { animals: { p: 4, w: 4, b: 8 }, foods: { p: 2, w: 1, b: 10 } }, stats: { plays: 15, wins: 12, losses: 3, nw: 7, tw: 5, fast: 1, m1: 0, cust: 0, quick: 1, recover: 1, learn: 2, back: 2, idk: 6, duo: 1 }, set: { hard: 0, peek: 1, sc: 3 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'akin save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~akin~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'akin save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~akin~save': 'x' } }, A, { merge: true }));
     // まなびの工房（manabi）：記録 kusoge.manabi.save だけを同期する（設定 prefs・howto・rep はこの端末だけ）
     await check(g, 'own push manabi save (xp, days, boxes, stats, quests, league)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: JSON.stringify({ v: 1, xp: 1250, d: [20406, 20407], g: { 20407: 30 }, goal: 20, b: { 'ct-eng-u01': 'ab12:0112' }, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, mk: { 'x-1': 62 }, set: { cr: 'JH', g: 0 }, tut: 1, gm: 40, fz: 1, hm: 0, hr: 5, cw: { S1: 2 }, ds: { d: 20407, xp: 30 }, dq: { d: 20407, c: [1, 0, 0] }, lg: { w: 2915, t: 1 }, sk: 0 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'manabi save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~manabi~save': { v: 7, t: now } } }, A, { merge: true }));
@@ -132,7 +144,7 @@ async function runCases(T, opt = {}) {
     // 式の数の上限（1回の書き込みで1000）の確認。ルールは「この書き込みで変わるキー」だけを確かめる（firestore.rules の okEnt の上のコメント）。
     // 以前は、すでにあるキーも毎回ぜんぶ確かめていたので、キーが15個ほどになった人の書き込みが拒否されていた。
     {
-      const keys = [...require('fs').readFileSync(require('path').join(__dirname, '../../../firestore.rules'), 'utf8').matchAll(/okEntAt\(g, ch, '([^']+)'\)/g)].map(m => m[1]);
+      const keys = [...require('fs').readFileSync(require('path').join(__dirname, '../../../firestore.rules'), 'utf8').matchAll(/\(!\('([^']+)' in ch\)/g)].map(m => m[1]);
       const part = (a, b, v) => { const o = {}; for (const k of keys.slice(a, b)) o[k] = { v: v || '{"v":1}', t: now }; return o; };
       const U = await signUp(T);
       const N = keys.length;
@@ -297,6 +309,12 @@ async function runCases(T, opt = {}) {
     await check(g3, 'fishing +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { fishing: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'mahjong +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { mahjong: 1 }, A, { merge: true }));
     await check(g3, 'mahjong +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { mahjong: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'chess +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { chess: 1 }, A, { merge: true }));
+    await check(g3, 'chess +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { chess: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'wordwolf +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { wordwolf: 1 }, A, { merge: true }));
+    await check(g3, 'wordwolf +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { wordwolf: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'akin +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { akin: 1 }, A, { merge: true }));
+    await check(g3, 'akin +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { akin: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'manabi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { manabi: 1 }, A, { merge: true }));
     await check(g3, 'manabi +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { manabi: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'orchestra +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { orchestra: 1 }, A, { merge: true }));
@@ -779,6 +797,44 @@ async function runCases(T, opt = {}) {
     await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A));
   }
 
+  // ================================================================ RTDB: tr/chess（2人だけ。隠す情報はない。pd は m（手の文字列・8手で1つ・100個まで）・mc・ck（時計 [白, 黒]）・tb・ti・of・rz・rw、手は { t: 'mv', c: from, k, w, x（to を2ビットずつ）}・昇格は t: 'pq' など・投了などは { t: 'rs' }）
+  {
+    const g = 'rtdb:tr-chess';
+    const P = `tr/chess`, room = rid('-chtest'), code = String(100000 + Math.floor(Math.random() * 900000));
+    cleanup.push(() => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own set (2 players)', 'allow', () => rtdb(T, 'PUT', `${P}/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 2, f: 1 }, A));
+    await check(g, 'queue: someone else\'s entry', 'deny', () => rtdb(T, 'PATCH', `${P}/queue/${A.uid}`, { n: 'evil' }, B));
+    await check(g, 'queue: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/chesss/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 2 }, A));
+    const meta = { at: TS, h: A.uid, n: 2, k: 'c', cp: 2, tm: 180, fl: 0 };
+    await check(g, 'room: create (2 seats, 180 s turns)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'room: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/chesss/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'code: create (host)', 'allow', () => rtdb(T, 'PUT', `${P}/codes/${code}`, { h: A.uid, r: room, t: TS }, A));
+    await check(g, 'seat: guest takes seat 1', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/1`, { u: B.uid, n: 'Ben', j: TS }, B));
+    await check(g, 'seat: a third person (2 seats)', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/2`, { u: C.uid, n: 'Cy', j: TS }, C));
+    await check(g, 'on: both', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/on/${A.uid}`, 1, A));
+    const pub = (v, o) => Object.assign({ v, g: 1, ph: 'play', tn: 1, dl: 0, sl: 'pp', pu: [0, 1], pd: { m: ['EMNbmV-'], mc: 1, ck: [1800, 1800], tb: 180, ti: 2, of: 0, rz: '', rw: -2 }, ev: [{ i: 1, t: 'mv', s: 0, c: 12, n: 28 }] }, o || {});
+    await check(g, 'pub: a guest writes it', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1), B));
+    await check(g, 'pub: the host publishes the move list (strings of 24 characters), the clocks and the offer', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1), A));
+    await check(g, 'pub: a move string of 25 characters', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { pd: { m: ['EMNbmV-EMNbmV-EMNbmV-EMNbmV-'.slice(0, 25)], mc: 1 } }), A));
+    await check(g, 'pub: 101 move strings (index over 99)', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { pd: { m: Array.from({ length: 101 }, () => 'EMN'), mc: 800 } }), A));
+    await check(g, 'pub: a pd key in capitals', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { pd: { M: ['EMN'], mc: 1 } }), A));
+    await check(g, 'pub: the next move with a capture/check/promotion event', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { tn: 0, ev: [{ i: 2, t: 'mv', s: 1, c: 52, n: 8000 }] }), A));
+    await check(g, 'pub: an event with a hidden field', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { ev: [{ i: 3, t: 'mv', s: 0, c: 12, n: 28, hand: [1, 2] }] }), A));
+    await check(g, 'pub: the host publishes a resignation result', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { ph: 'over', tn: -1, pd: { m: ['EMNbmV-'], mc: 1, ck: [1800, 1790], tb: 180, ti: 2, of: 0, rz: 'resign', rw: 0 }, ev: [{ i: 3, t: 'rs', s: 1 }], rs: { r: [1, 2], w: 0, y: 'w' } }), A));
+    await check(g, 'act: a guest moves { t: mv, c, k, w, x }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 1, v: 3, a: { t: 'mv', c: 52, k: 0, w: 1, x: 2 } }, B));
+    await check(g, 'act: a promotion { t: pq }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 2, v: 3, a: { t: 'pq', c: 52, k: 0, w: 3, x: 3 } }, B));
+    await check(g, 'act: resign { t: rs }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 3, v: 3, a: { t: 'rs' } }, B));
+    await check(g, 'act: a move on someone else\'s account', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${A.uid}`, { q: 1, v: 3, a: { t: 'mv', c: 52, k: 0, w: 1, x: 2 } }, B));
+    await check(g, 'act: a square over 255', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 4, v: 3, a: { t: 'mv', c: 900, k: 0, w: 0, x: 0 } }, B));
+    await check(g, 'act: a "to" part over 7 (the range is 0-7 since the 8-seat wordwolf)', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 5, v: 3, a: { t: 'mv', c: 12, k: 8, w: 0, x: 0 } }, B));
+    await check(g, 'priv: the host writes the (empty) private part', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/priv/${B.uid}`, { v: 3 }, A));
+    await check(g, 'priv: another guest reads it', 'deny', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, C));
+    await check(g, 'room: list all rooms', 'deny', () => rtdb(T, 'GET', `${P}/rooms`, undefined, B));
+    await check(g, 'room: delete by the host', 'allow', () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A));
+    await check(g, 'code: the host removes it', 'allow', () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A));
+  }
+
   // ================================================================ RTDB: tr/mahjong（4席。みんなが見る状態 pd は数・短い文字列・数の配列だけ、手牌は priv/{uid} にだけ、手は { t: 'discard', c: 牌の id, k: 0|1 } など）
   {
     const g = 'rtdb:tr-mahjong';
@@ -807,6 +863,83 @@ async function runCases(T, opt = {}) {
     await check(g, 'priv: the owner reads it', 'allow', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, B));
     await check(g, 'priv: another guest reads it', 'deny', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, C));
     await check(g, 'priv: a tile number over 255', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/priv/${B.uid}`, { v: 2, h: [300] }, A));
+    await check(g, 'room: list all rooms', 'deny', () => rtdb(T, 'GET', `${P}/rooms`, undefined, B));
+    await check(g, 'room: delete by the host', 'allow', () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A));
+    await check(g, 'code: the host removes it', 'allow', () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A));
+  }
+
+  // ================================================================ RTDB: tr/orchestra（指揮者ゲームの他団体との勝負。2人。結果は16個の 0..255 の並び＝ act の r、pd の ra / rb）
+  {
+    const g = 'rtdb:tr-orchestra';
+    const P = `tr/orchestra`, room = rid('-octest'), code = String(100000 + Math.floor(Math.random() * 900000));
+    cleanup.push(() => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own set (2 players)', 'allow', () => rtdb(T, 'PUT', `${P}/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 2, f: 1 }, A));
+    await check(g, 'queue: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/orchestras/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 2 }, A));
+    const meta = { at: TS, h: A.uid, n: 2, k: 'c', cp: 2, tm: 120, fl: 0 };
+    await check(g, 'room: create (2 seats, 120 s to pick the piece)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'code: create (host)', 'allow', () => rtdb(T, 'PUT', `${P}/codes/${code}`, { h: A.uid, r: room, t: TS }, A));
+    await check(g, 'seat: guest takes seat 1', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/1`, { u: B.uid, n: 'Ben', j: TS }, B));
+    await check(g, 'on: the host', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/on/${A.uid}`, 1, A));
+    const vec = [1, 80, 72, 90, 66, 75, 82, 98, 1, 20, 2, 0, 100, 130, 70, 85];
+    const pub = (v, pd, o) => Object.assign({ v, g: 1, ph: 'play', tn: -1, dl: 0, sl: 'pp', pu: [0, 1], pd, ev: [{ i: 1, t: 'pk', c: 3 }] }, o || {});
+    await check(g, 'pub: a guest writes it', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1, { p: 3, ph: 1 }), B));
+    await check(g, 'pub: the host publishes the chosen piece and one posted result (16 numbers)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1, { p: 3, ph: 1, ra: vec }), A));
+    await check(g, 'pub: both results with the final ranks', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { p: 3, ph: 2, ra: vec, rb: vec }, { ph: 'over', rs: { r: [1, 1], w: -1, y: 'w' }, ev: [{ i: 2, t: 'dn', s: 1 }] }), A));
+    await check(g, 'pub: a result vector with a nested array', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { p: 3, ph: 1, ra: [[1, 2]] }), A));
+    await check(g, 'act: a guest picks nothing but posts { t: done, r: [16 numbers] }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 1, v: 2, a: { t: 'done', r: vec } }, B));
+    await check(g, 'act: a result on someone else\'s account', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${A.uid}`, { q: 1, v: 2, a: { t: 'done', r: vec } }, B));
+    await check(g, 'act: a result number over 255', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 2, v: 2, a: { t: 'done', r: vec.map((x, i) => (i === 1 ? 300 : x)) } }, B));
+    await check(g, 'act: a result with 17 numbers', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 3, v: 2, a: { t: 'done', r: vec.concat([1]) } }, B));
+    await check(g, 'act: a result with an unknown field', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 4, v: 2, a: { t: 'done', r: vec, z: 1 } }, B));
+    await check(g, 'act: a guest quits { t: quit }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 5, v: 2, a: { t: 'quit' } }, B));
+    await check(g, 'room: delete by the host', 'allow', () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A));
+    await check(g, 'code: the host removes it', 'allow', () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own remove', 'allow', () => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A));
+  }
+
+  // ================================================================ RTDB: tr/wordwolf（3〜8席。pd は数・短い文字列・数の配列だけ。ウルフ・ことばは結果まで pd に出ない（priv/{uid} に自分のことばの番号だけ）。手は { t: hn, c } ヒント・{ t: vt, c, k } 投票・{ t: gs, c } 逆転）
+  {
+    const g = 'rtdb:tr-wordwolf';
+    const P = `tr/wordwolf`, room = rid('-wwtest'), code = String(100000 + Math.floor(Math.random() * 900000));
+    cleanup.push(() => rtdb(T, 'DELETE', `${P}/queue/${A.uid}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A), () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));
+    await check(g, 'queue: own set (8 players)', 'allow', () => rtdb(T, 'PUT', `${P}/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 8, f: 1 }, A));
+    await check(g, 'queue: 9 players', 'deny', () => rtdb(T, 'PUT', `${P}/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 9, f: 1 }, A));
+    await check(g, 'queue: the room\'s member list may name 8 seats', 'allow', () => rtdb(T, 'PUT', `${P}/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 8, f: 1, r: room, m: [A.uid, B.uid, C.uid, A.uid, B.uid, C.uid, A.uid, B.uid] }, A));
+    await check(g, 'queue: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/wordwolfs/queue/${A.uid}`, { n: 'Aoi', t: TS, k: 4 }, A));
+    const meta = { at: TS, h: A.uid, n: 8, k: 'c', cp: 2, tm: 30, fl: 1 };
+    await check(g, 'room: create (8 seats, 30 s turns)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'room: a game that is not in the list', 'deny', () => rtdb(T, 'PUT', `tr/wordwolfs/rooms/${room}`, { meta, seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'room: 9 seats', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}x`, { meta: Object.assign({}, meta, { n: 9 }), seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'room: another game cannot have 8 seats', 'deny', () => rtdb(T, 'PUT', `tr/gomoku/rooms/${room}z`, { meta: Object.assign({}, meta, { tm: 45 }), seats: { 0: { u: A.uid, n: 'Aoi', j: TS } } }, A));
+    await check(g, 'code: create (host)', 'allow', () => rtdb(T, 'PUT', `${P}/codes/${code}`, { h: A.uid, r: room, t: TS }, A));
+    await check(g, 'seat: guest takes seat 4 (8-seat room)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/4`, { u: B.uid, n: 'Ben', j: TS }, B));
+    await check(g, 'seat: the same person takes a second seat', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/5`, { u: B.uid, n: 'Ben', j: TS }, B));
+    await check(g, 'seat: guest takes seat 7', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/7`, { u: C.uid, n: 'Cy', j: TS }, C));
+    await check(g, 'seat: seat 8 does not exist', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/seats/8`, { u: C.uid, n: 'Cy', j: TS }, C));
+    await check(g, 'on: a seated guest (seat 4) says it is here', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/on/${B.uid}`, 1, B));
+    await check(g, 'on: host', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/on/${A.uid}`, 1, A));
+    const pd0 = { ph: 'h', n: 8, rd: 2, kk: 2, kn: 0, hi: 1, hp: [3], ht: [412] };
+    const pub = (v, o) => Object.assign({ v, g: 1, ph: 'play', tn: 7, dl: 0, sl: 'pppppppp', pu: [0, 1, 2, 3, 4, 5, 6, 7], pd: pd0 }, o || {});
+    await check(g, 'pub: a guest writes it', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1), B));
+    await check(g, 'pub: the host publishes the hint phase (8 seats, turn on seat 7)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(1), A));
+    await check(g, 'pub: the vote phase with the voted flags and the last tally', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(2, { tn: 2, pd: { ph: 'v', n: 8, rd: 2, kk: 2, kn: 1, hi: 16, hp: [0, 1], ht: [5, 9], vd: [1, 1, 0, 0, 0, 0, 0, 0], rv: 0, sl: 2, cd: [], lw: 2, lc: [0, 1, 2, 0, 0, 3, 0, 0], lb: [1, 2, 0, 2, 0, 1, 3, 4] } }), A));
+    await check(g, 'pub: 9 seats in the state string', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { sl: 'ppppppppp' }), A));
+    await check(g, 'pub: a turn on seat 8', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { tn: 8 }), A));
+    await check(g, 'pub: a pd key in capitals', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { pd: { PH: 'h' } }), A));
+    await check(g, 'pub: a nested array in pd', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { pd: { hp: [[1, 2]] } }), A));
+    await check(g, 'pub: 101 hint entries (index over 99)', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(3, { pd: { hp: Array.from({ length: 101 }, () => 1) } }), A));
+    await check(g, 'pub: the result (8 ranks, the winner seat, wolves, points, the word pair)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(4, { ph: 'over', tn: -1, pd: { ph: 'e', n: 8, rd: 2, kk: 2, kn: 1, hi: 16, hp: [0], ht: [5], cg: [1, 3], go: [10, 11, 12, 13, 14, 15], pi: 333, mj: 1, wl: [1, 3], pt: [2, 0, 1, 1, 1, 1, 2, 1], ow: 0, wn: 0, gp: 2, gk: 0 }, rs: { r: [2, 5, 1, 1, 1, 1, 2, 1], w: -1, y: 'w' } }), A));
+    await check(g, 'pub: a rank of 9', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/pub`, pub(5, { ph: 'over', tn: -1, rs: { r: [9, 1, 1, 1, 1, 1, 1, 1], w: 0, y: 'w' } }), A));
+    await check(g, 'act: a guest picks hint card 3 { t: hn, c }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 1, v: 4, a: { t: 'hn', c: 3 } }, B));
+    await check(g, 'act: a vote for two players { t: vt, c, k }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 2, v: 4, a: { t: 'vt', c: 6, k: 7 } }, B));
+    await check(g, 'act: a guess { t: gs, c }', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${C.uid}`, { q: 1, v: 4, a: { t: 'gs', c: 5 } }, C));
+    await check(g, 'act: a vote on someone else\'s account', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${A.uid}`, { q: 3, v: 4, a: { t: 'vt', c: 6, k: 7 } }, B));
+    await check(g, 'act: a second target over 7', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 4, v: 4, a: { t: 'vt', c: 6, k: 8 } }, B));
+    await check(g, 'act: free text', 'deny', () => rtdb(T, 'PUT', `${P}/rooms/${room}/act/${B.uid}`, { q: 5, v: 4, a: { t: 'hn', c: 1, msg: 'hello' } }, B));
+    await check(g, 'priv: the host writes the seat\'s own word number (x.s)', 'allow', () => rtdb(T, 'PUT', `${P}/rooms/${room}/priv/${B.uid}`, { v: 4, x: { s: 1333 } }, A));
+    await check(g, 'priv: another guest reads it', 'deny', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, C));
+    await check(g, 'priv: the owner reads it', 'allow', () => rtdb(T, 'GET', `${P}/rooms/${room}/priv/${B.uid}`, undefined, B));
     await check(g, 'room: list all rooms', 'deny', () => rtdb(T, 'GET', `${P}/rooms`, undefined, B));
     await check(g, 'room: delete by the host', 'allow', () => rtdb(T, 'DELETE', `${P}/rooms/${room}`, undefined, A));
     await check(g, 'code: the host removes it', 'allow', () => rtdb(T, 'DELETE', `${P}/codes/${code}`, undefined, A));

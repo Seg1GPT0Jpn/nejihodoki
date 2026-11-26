@@ -20,7 +20,7 @@ const OUT = path.join(__dirname, 'out', 'shots', 'orchestra-play');
 const results = [];
 const check = (name, cond, info) => { results.push({ name, ok: !!cond }); console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond ? '' : '  ' + String(JSON.stringify(info)).slice(0, 700)}`); };
 const note = (s) => console.log('       ' + s);
-const SAVE = 'kusoge.orchestra.save', HOWTO = 'kusoge.orchestra.howto';
+const SAVE = 'kusoge.orchestra.save', HOWTO = 'kusoge.orchestra.howto', CONTEST = 'kusoge.orchestra.contest';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const audioNumbers = {};
 
@@ -491,6 +491,98 @@ async function concertLayouts(env) {
   }
 }
 
+// a stand-in for common/turnroom.js: keeps the host's state in the page with the real contest adapter, and lets the test act as the other seat (no network)
+const FAKE_ROOM = `(() => {
+  window.KoboTurnRoom = { create(cfg) {
+    const A = cfg.host, F = window.__fake = { me: 0, gn: 1, v: 0, st: null, sl: 'pp', over: false, why: 'w', rm: {}, log: [], phase: 'off', leaves: 0, rematches: 0, seed: 11, m: null };
+    const jc = x => JSON.parse(JSON.stringify(x));
+    const model = fresh => { const over = F.over || A.isOver(F.st); return { gn: F.gn, v: ++F.v, ph: over ? 'over' : 'play', me: F.me, n: 2, host: F.me === 0, uid: 'u', code: '123456', tn: over ? -1 : A.turn(F.st), dl: 0, left: 0, names: F.me === 0 ? ['あなた', 'ライバル'] : ['ライバル', 'あなた'], sl: F.sl, pu: [0, 1], pd: jc(A.pub(F.st)), priv: null, rs: over ? (A.isOver(F.st) ? A.result(F.st) : A.fallback(A.pub(F.st))) : null, why: over ? F.why : '', ev: [], replaced: false, rm: F.rm, cpu: 2, conn: true, fresh: !!fresh }; };
+    const push = fresh => { F.m = model(fresh); cfg.onModel(F.m); };
+    F.start = (me, humans) => { F.me = me; F.st = A.create({ g: F.gn, n: 2, seed: F.seed, cp: 2, humans: humans || [0, 1], first: 0 }); F.over = false; F.sl = 'pp'; F.rm = {}; F.phase = 'play'; push(true); };
+    F.opp = a => { const r = A.apply(F.st, 1 - F.me, a); if (r) push(false); return !!r; };
+    F.sets = sl => { F.sl = sl; push(false); };
+    F.hostGone = () => { F.over = true; F.why = 'hg'; push(false); };
+    setInterval(() => { if (F.phase === 'play' && F.m) cfg.onTick(Object.assign({}, F.m)); }, 300);
+    return { open() { F.phase = 'menu'; }, submit(a) { F.log.push(a); if (F.over || !F.st) return false; const r = A.apply(F.st, F.me, a); if (!r) return false; push(false); return true; },
+      leave() { F.phase = 'off'; F.leaves++; return true; }, rematch() { F.rematches++; F.rm = { u: 1 }; return true; }, model() { return F.m; }, get phase() { return F.phase; }, timeLeft() { return 0; } };
+  } };
+})()`;
+async function playContest(p, bpmOverride) {
+  await wait(p, () => __kb.state().playing, null, 90000); const c = await stageBox(p); const bpm = bpmOverride || await p.evaluate(() => __orch.G.score.bpmAt(0));
+  await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 4, bpm, 0.22 * c.scale); await wait(p, () => __kb.state().state === 'playing');
+  await p.evaluate(() => __orch.seekNearEnd(7)); let g = 0; while (!(await p.evaluate(() => !document.getElementById('ovCt').hidden)) && g++ < 60) await bounce(p, c, 60 / bpm, 0.22 * c.scale);
+  await wait(p, () => !document.getElementById('ovCt').hidden, null, 20000);
+}
+async function contestMode(env) {
+  console.log('5e. contest mode: rounds, the strict play (no aids, no pause), judges, ranking and save; duels against a CPU group and online (stand-in room)');
+  const s = await open(env); const p = s.page; const cs = () => p.evaluate(() => __orch.contestState());
+  check('the title has a contest button', await p.locator('#tContest').isVisible(), null); await p.click('#tContest'); await wait(p, () => !document.getElementById('ovCt').hidden, null, 5000);
+  check('the contest menu: three rounds, only the qualifier open', (await p.locator('#ctRounds .rc').count()) === 3 && !(await p.locator('.rc[data-round="q"]').isDisabled()) && (await p.locator('.rc[data-round="f"]').isDisabled()) && (await p.locator('.rc[data-round="n"]').isDisabled()), null); await shot(p, '05e-menu');
+  await p.click('.rc[data-round="q"]'); await p.waitForSelector('#ctFree .rc');
+  check('entry: rules, the compulsory piece, five free pieces, rivals', (await p.locator('#ctFree .rc').count()) === 5 && (await p.locator('.ctrules li').count()) >= 7 && /真夏の夜の夢/.test(await p.locator('#ctBody').innerText()), await p.locator('#ctBody').innerText()); await shot(p, '05e-entry');
+  await p.click('#ctFree .rc[data-free="finlandia"]'); check('choosing a free piece marks it', (await p.getAttribute('#ctFree .rc[data-free="finlandia"]', 'aria-checked')) === 'true' && (await p.getAttribute('#ctFree .rc[data-free="nachtmusik"]', 'aria-checked')) === 'false', null);
+  await p.click('#ctGo'); check('the compulsory piece is announced first', /予選.*課題曲/.test(await p.locator('#ctTitle').innerText()), await p.locator('#ctTitle').innerText());
+  await p.click('#ctGo'); await wait(p, () => __kb.state().playing, null, 90000); let a = await cs();
+  check('strict play: contest difficulty, no ghost, no pause button, no pause key', a.g && a.g.contest && a.g.diff === 'contest' && a.g.tol === 0.55 && !a.g.ghost && !a.g.pauseBtn, a.g);
+  await p.keyboard.press('p'); check('P does not open a pause menu', !(await st(p)).menuOpen, null); check('the chip shows the round and the piece kind', /予選/.test(await p.locator('#pieceChip').innerText()), await p.locator('#pieceChip').innerText());
+  await playContest(p); check('judging: five judges with comments and the piece score', (await p.locator('#ctBody .jrow').count()) === 5 && /^\d+\.\d$/.test(await p.locator('#ctPieceScore').innerText()) && (await p.locator('#ctBody .ctcat').count()) >= 3, await p.locator('#ctBody').innerText()); await shot(p, '05e-judge');
+  await p.click('#ctNext'); check('then the free piece', /自由曲/.test(await p.locator('#ctTitle').innerText()), await p.locator('#ctTitle').innerText()); await p.click('#ctGo'); await playContest(p); await p.click('#ctNext');
+  await p.waitForSelector('#ctTable'); a = await cs();
+  check('results: a table of 8 groups with ranks and medals, awards, a line on the cut-off', (await p.locator('#ctTable tbody tr').count()) === 8 && (await p.locator('#ctTable tr.me').count()) === 1 && (await p.locator('#ctAwards div').count()) === 6 && (await p.locator('#ctWhy').innerText()).length > 5 && (await p.locator('details.ctd').count()) === 8, await p.locator('#ctBody').innerText()); await shot(p, '05e-result');
+  const you = await p.evaluate(() => parseFloat(document.querySelector('#ctTable tr.me td:last-child').textContent));
+  const rec = await stored(p, CONTEST); check('saved: one entry, the history line and the counters agree with the table', rec && rec.r.q.n === 1 && rec.hist.length === 1 && Math.abs(rec.r.q.s - you) < 0.05 && rec.stats.entries === 1 && rec.hist[0].f === 'finlandia', { rec, you });
+  check('the contest piece did not count as an ordinary play', await p.evaluate(() => !__orch.save.p.midsummer && !__orch.save.p.finlandia && __orch.save.stats.plays === 0), null);
+  await p.evaluate(() => document.querySelector('details.ctd summary').click()); check('a group\'s details show sub-scores and a judge comment', /拍・テンポ \d+/.test(await p.locator('details.ctd[open]').innerText()), null);
+  // a cleared qualifier opens the semifinal
+  await p.evaluate(k => { const v = JSON.parse(localStorage.getItem(k)); v.r.q.c = 1; localStorage.setItem(k, JSON.stringify(v)); }, CONTEST); await p.click('#ctMenuBtn');
+  check('after moving on, the semifinal is open and the nationals are still locked', !(await p.locator('.rc[data-round="f"]').isDisabled()) && (await p.locator('.rc[data-round="n"]').isDisabled()), null);
+  // duel against a CPU group
+  await p.click('#ctDuel'); await p.click('#duCpu'); await p.selectOption('#duPiece', 'finlandia'); await p.selectOption('#duRival', 'hinata'); check('the CPU duel setup shows the group', /ひなた/.test(await p.locator('#duInfo').innerText()), null);
+  await p.click('#duGo'); await p.click('#ctGo'); await playContest(p); await p.waitForSelector('#duVerdict');
+  const dv = await p.locator('#duVerdict').innerText(); const r2 = await stored(p, CONTEST);
+  check('the duel verdict: win/lose/draw, votes, the sub-scores side by side; saved', /勝ち|負け|引き分け/.test(dv) && (await p.locator('table.ctt tbody tr').count()) >= 3 && (await p.locator('#ctBody > .jrow').count()) === 5 && r2.stats.duels === 1 && r2.duel.finlandia && r2.set.rival === 'hinata', { dv, r2: r2.stats }); await shot(p, '05e-duel');
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+  // online, with the stand-in room: the host's flow, then a forfeit by the other seat, then a guest whose host disappears
+  await p.evaluate(FAKE_ROOM); await p.click('#duMenu'); await p.click('#duOnline'); await p.evaluate(() => __fake.start(0)); await p.waitForSelector('#duPiece');
+  check('online (host): the host picks the piece from the list', (await p.locator('#duPiece option').count()) === 16 && await p.locator('#duPick').isVisible(), null);
+  await p.selectOption('#duPiece', 'finlandia'); await p.click('#duPick'); await p.waitForSelector('#ctGo'); await p.click('#ctGo'); await wait(p, () => __kb.state().playing, null, 90000);
+  check('online play is the strict contest play', (await cs()).g.contest, await cs()); await playContest(p); await p.waitForSelector('#duState');
+  check('online: the result vector was posted and the waiting screen shows the opponent', await p.evaluate(() => __fake.log.some(a => a.t === 'done' && a.r.length === 16)) && /演奏中/.test(await p.locator('#duState').innerText()), await p.evaluate(() => __fake.log));
+  await p.evaluate(() => { const C = OrchContest; __fake.opp(C.duel.toWire(C.cpuPerf(C.ENS_BY.hinata, 'finlandia', 'd'))); }); await p.waitForSelector('#duVerdict'); const r3 = await stored(p, CONTEST);
+  check('online: both posted → the verdict, saved as a duel; rematch and leave buttons', r3.stats.duels === 2 && await p.locator('#duAgain').isVisible() && await p.locator('#duMenu').isVisible(), r3.stats);
+  await p.click('#duAgain'); check('rematch asks the room', await p.evaluate(() => __fake.rematches) === 1, null); await p.click('#duMenu'); check('leaving the room returns to the duel menu', await p.evaluate(() => __fake.leaves) >= 1 && await p.locator('#duOnline').isVisible(), null);
+  // the opponent leaves during the piece: the host marks the seat as forfeited → win by forfeit, not recorded
+  await p.click('#duOnline'); await p.evaluate(() => __fake.start(0)); await p.waitForSelector('#duPiece'); await p.selectOption('#duPiece', 'finlandia'); await p.click('#duPick'); await p.waitForSelector('#ctGo'); await p.click('#ctGo');
+  await wait(p, () => __kb.state().playing, null, 90000); await p.evaluate(() => __fake.sets('px')); await wait(p, () => __fake.log.some(a => a.t === 'forf'), null, 8000); await playContest(p); await p.waitForSelector('#duVerdict', { timeout: 8000 }).catch(async () => { note('fusen debug: ' + JSON.stringify({ err: s.log.pageErrors.slice(0, 3), body: (await p.locator('#ctBody').innerText()).slice(0, 200), c: await cs(), fake: await p.evaluate(() => ({ log: __fake.log.map(a => a.t), over: __fake.over, m: __fake.m && { ph: __fake.m.ph, pd: __fake.m.pd } })) })); });
+  check('opponent gone: a win by forfeit that does not touch the record', /不戦勝/.test(await p.locator('#duVerdict').innerText()) && (await stored(p, CONTEST)).stats.duels === 2, await p.locator('#ctBody').innerText()); await p.click('#duMenu');
+  // as a guest: the host picks, I play, then the host's connection is lost: my run is compared with a CPU group
+  await p.click('#duOnline'); await p.evaluate(() => __fake.start(1)); await p.waitForSelector('#ctBody'); check('online (guest): waiting for the host to pick', /ホストが曲/.test(await p.locator('#ctBody').innerText()), await p.locator('#ctBody').innerText());
+  await p.evaluate(() => __fake.opp(OrchContest.duel.pickWire(OrchContest.DUEL_PIECES.indexOf('finlandia')))); await p.waitForSelector('#ctGo'); await p.click('#ctGo'); await playContest(p); await p.waitForSelector('#duState');
+  check('the stand-in button is not offered right away', await p.locator('#duStand').isDisabled(), null); await p.evaluate(() => __fake.hostGone()); await p.waitForSelector('#duVerdict', { timeout: 8000 });
+  const t4 = await p.locator('#ctBody').innerText(); check('host lost: compared with a CPU group instead, and recorded', /CPU団体/.test(t4) && (await stored(p, CONTEST)).stats.duels === 3, t4.slice(0, 200));
+  check('no page errors (online)', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // English
+  const e = await open(env, { lang: 'en' }); const q = e.page; const jp = async w => { const r = await q.evaluate(`(${jpScan})(true)`); check('English: ' + w + ' has no Japanese', r.length === 0, r.slice(0, 6)); };
+  await q.click('#tContest'); await jp('contest menu'); await q.click('.rc[data-round="q"]'); await q.waitForSelector('#ctFree .rc'); await jp('round entry'); await q.click('#ctGo'); await jp('the announcement');
+  for (const [w, r] of [['judge', 'n'], ['result', 'f'], ['duel', 'q']]) { await q.evaluate(([w, r]) => __orch.contestDemo(w, r), [w, r]); await q.waitForSelector('#ctBody'); await jp('the ' + w + ' screen'); }
+  await q.evaluate(() => { __orch.showTitle(); }); await q.click('#tContest'); await q.click('#ctDuel'); await jp('duel menu'); await q.click('#duCpu'); await jp('CPU duel setup');
+  check('no page errors (English)', e.log.pageErrors.length === 0, e.log.pageErrors.slice(0, 3)); await e.close();
+}
+
+async function contestLayouts(env) {
+  console.log('5f. contest screens fit at every screen size x ja/en (menu, entry, stage, judging, results, duel screens)');
+  for (const vp of (process.env.OR_VPS || 'se1,ip12,land').split(',')) for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp, lang, touch: true, seed: { [HOWTO]: '1', [CONTEST]: JSON.stringify({ v: 1, r: { q: { s: 70, m: 2, b: 5, n: 1, c: 1, sc: 70, sf: 70 } } }) } }); const p = s.page; const tag = `${vp}/${lang}`;
+    const probe = async what => { const r = await p.evaluate(`(${layoutProbe})()`); check(`${tag} contest ${what}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0 && (!r.primary.length || r.primary.every(x => x.visible !== false)), r); };
+    await probe('title'); await p.click('#tContest'); await probe('menu'); if (lang === 'ja') await shot(p, `5f-${vp}-menu`);
+    await p.click('.rc[data-round="f"]'); await p.waitForSelector('#ctFree .rc'); await probe('entry'); await p.click('#ctGo'); await probe('announcement');
+    for (const [w, r] of [['judge', 'n'], ['result', 'f'], ['duel', 'q']]) { await p.evaluate(([w, r]) => __orch.contestDemo(w, r), [w, r]); await p.waitForTimeout(150); await probe(w); if (lang === 'ja') await shot(p, `5f-${vp}-${w}`); }
+    await p.evaluate(() => __orch.showTitle()); await p.click('#tContest'); await p.click('#ctDuel'); await probe('duel menu'); await p.click('#duCpu'); await probe('CPU duel setup');
+    check(`${tag}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
+
 async function pause(env) {
   console.log('8. pause: the menu stops the clock and the sound, resuming re-enters, leaving goes back to the pieces');
   const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'enjoy'); const c = await stageBox(p);
@@ -578,7 +670,7 @@ async function layouts(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, lessonMode, concertMode, concertLayouts, pause, english, themes, saves, layouts]) {
+  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, lessonMode, concertMode, concertLayouts, contestMode, contestLayouts, pause, english, themes, saves, layouts]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
   }

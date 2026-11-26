@@ -1,0 +1,19 @@
+チェス工房（chess/）を足すために、統合担当が直す共有ファイル（chess/ の中だけで作ったので、ここは未着手）
+
+1. common/games.js
+   - chess/assets/registry-entry.txt を、gomoku/sudoku/crates… のならびの games 配列の最後に足す（order 35 は仮。ほかの追加とぶつかったら振りなおす）。
+   - chess/assets/achievements-entry.txt（18件）を、ゲームごとの実績の `chess: [ ... ],` として足す。
+2. sw.js：ENGINES に './chess/engine.js', './chess/ai.js', './chess/art.js', './chess/puzzles.js', './chess/online.js' を足し、BUILD を上げる。
+3. database.rules.json：tr の中の `(colorcards|reversi|gomoku)` を `(colorcards|reversi|gomoku|chess)` に（19か所。chess-online.test.js が数える）。
+   - 手（act）：t は英小文字2〜8字（mv pq pr pb pn rs dr da dn tb ta fl）、c は 0..63（from）、k・w・x は 0..3 で to を 2ビットずつ（to = k | w<<2 | x<<4）。今のルールの検証で通る（変更なし）。
+   - pd：m（文字列24字以内の配列・最大100個）, mc, ck（配列2つ）, tb, ti, of, rz, rw。キーは英小文字1〜4字、値は数・文字列24字以内・数の配列で、今のルールの検証で通る（変更なし）。
+4. firestore.rules：games()・caps()（'chess': 100000）・okLegacyScores（okCap）・plus1('chess')・okEntAt(g, ch, 'kusoge~chess~save')、tools/tests/rules/spec.js の CAPS。
+5. tools/tests/rules/cases.js：gomoku の「RTDB: tr/gomoku」と同じ形で tr/chess（キュー・部屋・席・pub の pd と ev・act の手）と、own push chess save のケース。
+6. tools/tests/rules/turnroom-bots.js：SRC_CH = load(['chess/engine.js','chess/ai.js','chess/online.js','common/turnroom.js']) を足し、reversi/gomoku のシナリオと同じく 2 ボットで 1 局。ボットは view の game から AI.cpuMove(game, 3, { nodes: 400 }) で選んで、ChessOnline.toWire(m&63, (m>>6)&63, (m>>12)&15) を submit する（昇格は promo つき）。rules/run.js の clients の表示に chess を足す。
+7. アダプターのメモ（common/turnroom.js の使い方。turnroom.js 自体は変更なし）：seats [2]・seatsMax 2・alternate true（もう一度で色が入れかわる。席 0 = 白）・turnSec 180（1手の上限。切れたら投了）・dealMs 500。
+   持ち時間はアダプター（ホストの Date.now）が持つ。pd.ck は 0.1 秒単位（1e6 の上限に収まる）。時間切れは、どのページからでも { t:'fl' } を送り、ホストの時計が 0 のときだけ受ける。
+   切れた席・出た席の代わりは、2手まで CPU が打ち、3回目は投了。部屋の CPU 席は meta.cp 1..3 → エンジンの強さ 3・5・6。
+   ホストが消えると、turnroom の fallback(pd)：メイト・投了などが出ていればそのとおり、なければ駒の損得が3点以上で多いほうの勝ち、それ以外は引き分け。
+8. tools/tests/lib/pages.js（ゲーム一覧に { id: 'chess' }）、tools/tests/unit/registry.test.js（IDS・daily の一覧・ranking の chess の行）、achievements.test.js（'chess-save.json': { has: [...] }・play する一覧）、tools/tests/fixtures/saves/hub-records.json（chess の行）、tools/tests/shots.js（chess: [{ query: '?debug', eval: 'window.__chess && __chess.thumbScene()' }]）。
+9. img/icons/chess.svg ← chess/icon.svg をコピー。img/thumbs/chess.webp・chess@2x.webp は shots.js で作る。
+10. ハブの index.html など、ゲームの一覧を手で持っている場所があれば足す（games.js からの自動生成なら不要）。README.md・HANDOFF.md・tools/tests/README.md に chess の説明（chess-play.js・chess-*.test.js・chess/tools/gen-puzzles.js）。

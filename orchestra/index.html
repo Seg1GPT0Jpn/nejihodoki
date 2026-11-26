@@ -232,6 +232,22 @@ table.cr td { padding: 4px; border-bottom: 1px solid var(--or-line); vertical-al
 .paper .btn.sub { color: #2c1a14; border-color: #b9a47c; }
 @media (max-height: 560px) { .csStage { display: none; } #tConcert { min-height: 40px; margin-top: 3px; } #tBest { margin: 1px 0; } }
 @media (prefers-reduced-motion: reduce) { .csStage .pl i, .csStage .cu { animation: none !important; transition: none !important; } }
+/* contest mode: the round cards, the rules, the sub-score bars, the judges, the ranking table and the medals (the judging and result screens use the printed look of .paper) */
+#ctBtns { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; } #ctBtns .btn:not(.sub) { grid-column: 1 / -1; }
+.rc.sel { border-color: var(--kb-accent); box-shadow: inset 0 0 0 2px var(--kb-accent); } .rc:disabled { opacity: .5; cursor: default; }
+#ctBody .grp { margin: 10px 0 3px; text-align: left; }
+.ctrules { margin: 4px 0 8px; padding-left: 1.2em; text-align: left; font-size: 12px; line-height: 1.55; }
+.ctcat { display: grid; grid-template-columns: 7em 1fr 2.4em; align-items: center; gap: 6px; font-size: 12px; margin: 3px 0; text-align: left; }
+.ctcat i { height: 8px; border-radius: 4px; background: var(--or-line); position: relative; overflow: hidden; } .ctcat i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--kb-accent); border-radius: 4px; } .ctcat b { text-align: right; }
+.jrow { border-top: 1px dotted var(--or-line); padding: 5px 0; text-align: left; font-size: 12px; line-height: 1.55; } .jrow .js { float: right; font: 800 14px var(--kb-font-body); font-variant-numeric: tabular-nums; } .jrow p { margin: 2px 0; font-size: 12px; } .jrow p.note { color: #a8494e; } .jrow small { color: var(--kb-dim); }
+.medal { display: inline-block; padding: 0 8px; border-radius: 999px; font: 800 11px/18px var(--kb-font-body); background: transparent; color: var(--kb-dim); } .medal.m3 { background: #e5b936; color: #2c1a14; } .medal.m2 { background: #c3c7cc; color: #2c1a14; } .medal.m1 { background: #c98a52; color: #2c1a14; }
+.cegrade b.medal { font-size: 30px; line-height: 1.3; padding: 0 14px; letter-spacing: 0; }
+table.ctt { width: 100%; border-collapse: collapse; font-size: 11.5px; } table.ctt th { font-size: 10.5px; color: var(--kb-dim); font-weight: 700; text-align: right; } table.ctt td { padding: 4px; border-bottom: 1px dotted var(--or-line); vertical-align: top; } table.ctt td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } table.ctt td.win { font-weight: 800; color: #7a1d2c; }
+table.ctt tr.me td { background: rgba(184, 120, 10, .14); } table.ctt tr.cut td { border-bottom: 2px solid #7a1d2c; }
+details.ctd { margin: 3px 0; padding: 2px 4px; border: 1px solid var(--or-line); border-radius: 10px; text-align: left; font-size: 12px; } details.ctd summary { min-height: 36px; display: flex; align-items: center; cursor: pointer; font-weight: 800; } details.ctd p { margin: 3px 0; }
+.paper .ctcat i { background: #d6c29c; } .paper .ctcat i::after { background: #b8780a; } .paper .jrow, .paper table.ctt td, .paper details.ctd { border-color: #d6c29c; } .paper .info { background: #f1e6c8; border-color: #d6c29c; color: #2c1a14; } .paper .grp, .paper table.ctt th { color: #6b5046; } .paper .medal { color: #6b5046; } .paper .medal.m1, .paper .medal.m2, .paper .medal.m3 { color: #2c1a14; }
+.paper .setrow { border-color: #d6c29c; } .paper .newrec { margin: 4px auto; }
+@media (max-height: 560px) { #tContest { min-height: 40px; margin-top: 3px; } }
 body.thumb header, body.thumb #chips, body.thumb #hint, body.thumb .kb-layer, body.thumb .kb-toasts, body.thumb #toast { display: none !important; }
 </style>
 </head>
@@ -272,7 +288,7 @@ body.thumb header, body.thumb #chips, body.thumb #hint, body.thumb .kb-layer, bo
     </details>
     <div class="scroll"><div class="rlist" id="pList"></div></div>
     <p id="tBest"></p>
-    <button class="btn sub" id="tConcert" type="button" data-i18n>演奏会モード</button>
+    <div class="row2"><button class="btn sub" id="tConcert" type="button" data-i18n>演奏会モード</button><button class="btn sub" id="tContest" type="button" data-i18n>コンクールモード</button></div>
     <div class="row2"><button class="btn sub" id="tPrac" type="button" data-i18n>練習</button><button class="btn sub" id="tHow" type="button" data-i18n>遊び方</button><button class="btn sub" id="tCred" type="button" data-i18n>クレジット</button><button class="btn sub" id="tSet" type="button" data-i18n>設定</button></div>
   </div>
 </div>
@@ -377,6 +393,14 @@ body.thumb header, body.thumb #chips, body.thumb #hint, body.thumb .kb-layer, bo
   </div>
 </div>
 
+<div class="overlay" id="ovCt" hidden role="dialog" aria-modal="true" aria-labelledby="ctTitle">
+  <div class="card wide" id="ctCard">
+    <h2 id="ctTitle"></h2>
+    <div class="scroll" id="ctBody"></div>
+    <div id="ctBtns"></div>
+  </div>
+</div>
+
 <div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
   <div class="card howto">
     <h2 id="howtoTitle" data-i18n>遊び方</h2>
@@ -394,9 +418,11 @@ body.thumb header, body.thumb #chips, body.thumb #hint, body.thumb .kb-layer, bo
 <script src="midi.js"></script>
 <script src="engine.js"></script>
 <script src="concert.js"></script>
+<script src="contest.js"></script>
 <script src="joycon.js"></script>
 <script src="sampler.js"></script>
 <script src="art.js"></script>
+<script src="../common/turnroom.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -565,7 +591,7 @@ function choosePiece(p) {
   showOv('ovPart');
 }
 function showTitle() {
-  concertAbort(); stopPlay(); layoutDemo(); hideAll(); $('pauseBtn').hidden = true; $('chips').hidden = true; $('tempoChip').hidden = true; hint(''); $('toast').hidden = true;
+  concertAbort(); ctAbort(); stopPlay(); layoutDemo(); hideAll(); $('pauseBtn').hidden = true; $('chips').hidden = true; $('tempoChip').hidden = true; hint(''); $('toast').hidden = true;
   $('pieceChip').textContent = T('指揮者ゲーム'); renderDiffs(); renderPieces(); showOv('ovTitle'); fit();
 }
 async function loadIndex() {
@@ -582,7 +608,7 @@ async function startPiece(id, partId, demo, lessonBars) {
   if (AU) AU.ctx(); // inside the tap: creates and resumes the shared AudioContext
   const meta = INDEX.pieces.find(p => p.id === id); if (!meta) return;
   const tok = loading = { cancelled: false };
-  if (!demo && !lessonBars && !concert) { save.set.piece = id; selPiece = id; writeSave(); }
+  if (!demo && !lessonBars && !concert && !ctRun) { save.set.piece = id; selPiece = id; writeSave(); }
   $('lPiece').textContent = L(meta.title) + ' — ' + L(meta.composer); $('lBar').style.width = '0%'; $('lInfo').textContent = T('楽器の音を読み込み中'); showOv('ovLoad');
   $('lCancel').onclick = () => { tok.cancelled = true; };
   try {
@@ -619,20 +645,21 @@ function beginPlay(id, score, ctx, bank, tier, partId, demo, lesson) {
     noteOff(t, nid) { return player.noteOff(t, nid); },
     maintain(u) { return player.maintain(u); }, setLevel(l, t) { return player.setLevel(l, t); }, releaseAll(t, r) { return player.releaseAll(t, r); },
   };
-  const diff = E.DIFFS[demo ? 'enjoy' : curDiff];
+  const diff = ctRun && !demo ? CT.diffFor(ctRun.rid) : E.DIFFS[demo ? 'enjoy' : curDiff];
   const session = new E.Session({ score, diff, sink, now: nowT });
   G = { sink, lesson: lesson || null, demo: !!demo, dc: null, id, key: partId ? id + '~' + partId : id, part: partId || null, score, ctx, bank, player, session, diff, tier, meta: INDEX.pieces.find(p => p.id === id), reported: false, startedAt: perfNow(), ended: false, shown: false, beats: 0, hist: [] };
+  if (ctRun && !demo) { G.contest = true; G.pauses = 0; }
   kbStep = 5; kbLevel = E.Dynamics.keyLevel(5); lvSmooth = 0.45; lastIctusT = null; session.level = 0.45; trail = []; hist = new Array(score.nBeats).fill(null); actQ = []; lastAct = {}; flash = {}; cueSeen = new Set(); paused = false; menuOpen = false;
   detector = new E.BeatDetector({ scale: art.scale }); flick = new E.FlickDetector({ scale: art.scale });
   art.layout(score.sections); buildChips(score); hideAll();
-  $('pieceChip').textContent = concert && !demo ? concertChip() : L(G.meta.title); $('pauseBtn').hidden = false; $('chips').hidden = false; $('tempoChip').hidden = false;
+  $('pieceChip').textContent = concert && !demo ? concertChip() : ctRun && !demo ? ctChip() : L(G.meta.title); $('pauseBtn').hidden = !!G.contest; $('chips').hidden = false; $('tempoChip').hidden = false;
   fit();
   if (prefs.motion) enableMotion();
   hint(T('音が出ないときは画面をタップ')); setTimeout(() => { if (G && G.session.state !== 'idle') hint(''); }, 4500);
   if (demo) { G.dc = new E.DemoConductor(session); hint(lesson ? T('まず、お手本をよく見て聴こう') : T('お手本で聴いています（採点なし）')); }
   if (lesson) { $('chips').hidden = true; lessonBar(); }
-  if (!demo && !lesson) emit('play_start', { mode: 'normal', stage: INDEX.pieces.findIndex(p => p.id === id) + 1, resumed: false });
-  if (!demo) save.stats.plays++; if (!demo) { const sv = save.p[G.key] = save.p[G.key] || { n: 0, b0: 0, s0: 0, b1: 0, s1: 0, b2: 0, s2: 0 }; sv.n++; writeSave(); }
+  if (!demo && !lesson) emit('play_start', { mode: ctRun ? 'versus' : 'normal', stage: INDEX.pieces.findIndex(p => p.id === id) + 1, resumed: false });
+  if (!demo && !ctRun) save.stats.plays++; if (!demo && !ctRun) { const sv = save.p[G.key] = save.p[G.key] || { n: 0, b0: 0, s0: 0, b1: 0, s1: 0, b2: 0, s2: 0 }; sv.n++; writeSave(); }
   clearInterval(tickTimer); tickTimer = setInterval(tick, 25);
   cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
   needDraw = true;
@@ -750,7 +777,7 @@ addEventListener('keydown', e => {
   if ((!G && !practice) || anyOverlay() || menuOpen) return;
   const c = e.code;
   if (practice) { if (BEAT_KEYS.includes(c)) { e.preventDefault(); if (!e.repeat) onIctus({ t: toCtx(e.timeStamp), amp: 0.2, speed: 1 }, true); } return; }
-  if (c === 'KeyP' && !e.repeat) { e.preventDefault(); openMenu(); return; }
+  if (c === 'KeyP' && !e.repeat && !(G && G.contest)) { e.preventDefault(); openMenu(); return; }
   if (paused) return;
   if (BEAT_KEYS.includes(c)) { e.preventDefault(); if (e.repeat) return; onIctus({ t: toCtx(e.timeStamp), amp: 0.2, speed: 1 }, true); return; }
   if (c === 'ArrowUp' || c === 'ArrowDown') { e.preventDefault(); kbStep = clamp(kbStep + (c === 'ArrowUp' ? 1 : -1), 0, 10); kbLevel = E.Dynamics.keyLevel(kbStep); lvSmooth = kbLevel; G.session.level = kbLevel; needDraw = true; return; }
@@ -868,7 +895,7 @@ function tick() {
 }
 function ghostState(snap, now) {
   if (!G) return null;
-  const mode = G.demo ? 'bold' : prefs.ghost; if (mode === 'off') return null;
+  const mode = G.demo ? 'bold' : G.contest ? 'off' : prefs.ghost; if (mode === 'off') return null;
   const alpha = mode === 'bold' ? 0.85 : 0.35, pat = snap.pattern || 2;
   let f, bib;
   if (snap.state === 'playing') { f = snap.pos - Math.floor(snap.pos); bib = snap.beatInBar; if (snap.held) return null; }
@@ -898,7 +925,7 @@ function frame() {
     now, dark: dark(), act, glow, keys: secKeys, level: s.level, curMark: E.Dynamics.mark(s.level), target: snap.target, mark: snap.mark, pattern: snap.pattern, beatInBar: snap.beatInBar, tol: G.diff.tol,
     trail, dyn: score.dyn, hist, cues: s.scorer.cues.map(c => ({ b: c.b, secs: c.secs, q: c.q })), pos: snap.pos, secHue: Object.fromEntries(score.sections.map(x => [x.id, x.def.hue])),
     barText: T('小節 {n}', { n: snap.bar }) + ' · ' + snap.mark, timeText: mm(cur) + ' / ' + mm(total), silhouette: true,
-    ghost: ghostState(snap, now), guide: prefs.guide, guideTip: snap.state === 'idle' || snap.beat < 12 ? T('ここで一番下に振り下ろす') : '', bflash: bflash && nowT() - bflash.t < 0.9 ? Object.assign({}, bflash, { k: 1 - (nowT() - bflash.t) / 0.9 }) : null,
+    ghost: ghostState(snap, now), guide: prefs.guide && !G.contest, guideTip: snap.state === 'idle' || snap.beat < 12 ? T('ここで一番下に振り下ろす') : '', bflash: bflash && nowT() - bflash.t < 0.9 ? Object.assign({}, bflash, { k: 1 - (nowT() - bflash.t) / 0.9 }) : null,
     msg: snap.state === 'idle' ? T('2回振ってスタート\n1回目で構え、2回目でテンポが決まる') : snap.state === 'armed' ? T('もう1回') : paused ? T('一時停止中') : '',
   };
   if (stt.msg && snap.state === 'armed') stt.msg = T('もう1回');
@@ -910,6 +937,11 @@ function frame() {
 function finish() {
   if (!G || G.shown) return; G.shown = true; G.ended = true;
   const res = G.session.result(), id = G.id, di = DIFF_IDS.indexOf(G.diff.id);
+  if (G.contest) {      // a contest piece: no record of its own; the contest screens judge it
+    try { G.player.hall.fadeOut(1.6); } catch (e) {} G.reported = true; G.result = res;
+    emit('play_end', { mode: 'versus', score: res.total, durationMs: Math.round((perfNow() - G.startedAt) * 1000), reason: 'clear', stats: {} });
+    setTimeout(() => { if (ctRun && G && G.contest) ctPieceDone(); }, 1500); return;
+  }
   const sv = save.p[G.key] = save.p[G.key] || { n: 0, b0: 0, s0: 0, b1: 0, s1: 0, b2: 0, s2: 0 };
   const prevBest = bestOf(sv), isBest = res.total > prevBest;
   if (res.total > sv['b' + di]) sv['b' + di] = res.total; if (res.stars > sv['s' + di]) sv['s' + di] = res.stars;
@@ -947,18 +979,19 @@ $('rMenu').onclick = () => showTitle();
 $('rNext').onclick = () => { const i = INDEX.pieces.findIndex(p => p.id === (G ? G.id : selPiece)); if (INDEX.pieces[i + 1]) startPiece(INDEX.pieces[i + 1].id); };
 
 // ---------- pause / menu ----------
-function doPause() { if (!G || paused) return; paused = true; G.session.pause(nowT()); pointer = null; needDraw = true; }
+function doPause() { if (!G || paused) return; paused = true; if (G.contest && G.session.state === 'playing') G.pauses++; G.session.pause(nowT()); pointer = null; needDraw = true; }
 function doResume() { if (!G || !paused) return; paused = false; G.session.resume(nowT()); if (G.ctx && G.ctx.state === 'suspended' && AU) AU.resume(); }
 let pm = null;
 function openMenu() {
   if (!UI) { showTitle(); return; }
   if (pm && pm.isOpen) return;
   const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); menuOpen = false; showHowto(false); } }];
-  extra.push({ label: concert ? T('演奏会をやめる') : T('この曲をやめる'), icon: 'menu', onClick: () => { pm.close(); menuOpen = false; const g = KG(); if (g) g.menuClosed(); showTitle(); } });
+  if (G && G.contest) extra.push({ label: T('棄権して出る'), icon: 'menu', onClick: () => { pm.close(); menuOpen = false; const g = KG(); if (g) g.menuClosed(); ctQuit(); } });
+  else extra.push({ label: concert ? T('演奏会をやめる') : T('この曲をやめる'), icon: 'menu', onClick: () => { pm.close(); menuOpen = false; const g = KG(); if (g) g.menuClosed(); showTitle(); } });
   pm = UI.pauseMenu({
     title: T('一時停止'), home: '../', extra,
     onResume: () => { menuOpen = false; const g = KG(); if (g) g.menuClosed(); doResume(); },
-    onRestart: concert ? undefined : () => { menuOpen = false; const id = G.id; const g = KG(); if (g) g.menuClosed(); startPiece(id); },
+    onRestart: concert || (G && G.contest) ? undefined : () => { menuOpen = false; const id = G.id; const g = KG(); if (g) g.menuClosed(); startPiece(id); },
     onOpen: () => { menuOpen = true; doPause(); const g = KG(); if (g) g.menuOpened(); },
   });
   pm.open();
@@ -968,7 +1001,7 @@ if (window.KoboGame) KoboGame.register({
   id: GAME,
   pause() { doPause(); },
   resume(reason) { if (!paused) return; if (reason !== 'menu' && G && G.session.state !== 'ended' && !anyOverlay() && !menuOpen) { openMenu(); return; } if (!menuOpen) doResume(); },
-  isIdle: () => !concert && (!G || G.session.state === 'idle' || G.session.state === 'ended'),
+  isIdle: () => !concert && !ctRun && !duel && (!G || G.session.state === 'idle' || G.session.state === 'ended'),
   dispose() { stopPlay(); },
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.session.state !== 'ended' && !paused) { /* KoboGame pauses; keep a fallback for pages without it */ if (!KG()) doPause(); } });
@@ -1045,7 +1078,7 @@ function renderConcert() {
   li.innerHTML = S.hist.length ? S.hist.slice(0, 6).map(x => '<div>' + esc(T('{d} · {n}曲 · 評価{g} {s}点', { d: new Date(x.t).toLocaleDateString(EN ? 'en-US' : 'ja-JP', { month: 'numeric', day: 'numeric' }), n: x.ids.length, g: CC.GRADES[x.g], s: x.s })) + ' ' + '★'.repeat(x.st) + '</div>').join('') : esc(T('まだ演奏会の記録はありません'));
   box.appendChild(li);
 }
-$('tConcert').onclick = () => openConcert(); $('cnBack').onclick = () => showTitle();
+$('tConcert').onclick = () => openConcert(); $('tContest').onclick = () => ctOpen(); $('cnBack').onclick = () => showTitle();
 // -- the builder
 function saveDraft() { const s = cstore(); s.set.draft = cb.items.map(CC.itemKey); s.set.iv = cb.iv; cwrite(s); }
 const cwrite = s => store.set(CON_KEY, JSON.stringify(s));
@@ -1150,6 +1183,295 @@ function conEnd() {
   showOv('ovConEnd'); $('ceBody').scrollTop = 0;
 }
 let concertEndInfo = null;
+
+// ---------- コンクールモード・他団体との勝負 ----------
+// contest.js has the rules (rounds, the strict difficulty, the four sub-scores, the judges and their comments, the CPU groups, the ranking, the duel adapter, the store);
+// this is the stage around it: the menus, the judging and result screens, the online room (common/turnroom.js) and the saving.
+// Each piece is played by the ordinary flow (startPiece -> beginPlay -> finish); with ctRun set the play has no ghost / guide / pause / restart and finish() hands over to ctPieceDone().
+const CT = window.OrchContest, CT_KEY = 'kusoge.orchestra.contest';
+KoboI18n.add({ en: Object.assign({}, CT.EN, {
+  'コンクールモード': 'Contest mode', 'コンクール': 'Contest', '課題曲と自由曲の2曲で、予選・本選・全国大会に挑戦。お手本もガイドも一時停止もなし。好みのちがう審査員5人の採点で、金・銀・銅賞が決まります。': 'Take on the Qualifier, the Semifinal and the Nationals with a compulsory piece and a free piece. No model, no guide, no pause. Five judges with different tastes decide gold, silver and bronze.',
+  '課題曲': 'Compulsory', '自由曲': 'Free piece', '他団体との勝負': 'Duel with another group', '友だちや CPU の団体と、同じ曲を指揮して点をくらべます。': 'Conduct the same piece as a friend or a CPU group and compare the scores.',
+  '{a}団体 · 上位{b}団体が次へ': '{a} groups · top {b} move on', '{a}団体 · 優勝をめざす': '{a} groups · aiming for the title', '前の部を突破すると挑戦できます': 'Move on from the previous round to enter', 'まだ記録なし': 'No record yet',
+  'ベスト {s}点': 'Best {s} pts', '{n}回 出場': '{n} entries', '出場 {n}回 · 金{g} 銀{s} 銅{b} · 進出 {p}回': '{n} entries · gold {g} silver {s} bronze {b} · moved on {p}', '勝負 {n}回 · {w}勝 {l}敗 {d}分け': 'Duels {n} · {w} wins {l} losses {d} draws',
+  'お手本・ゴースト・ガイドは出ません': 'No model, ghost baton or guide', '一時停止・やり直しはできません（止めると「表現」が減点）': 'No pausing or restarting (stopping costs Expression points)', '入りの取りこぼしは大きく減点されます': 'Missed entrances cost a lot',
+  '強弱は、楽譜の強弱の階段に近いほど高得点': 'The closer your dynamics follow the score\'s ladder, the higher the score', '拍・テンポ／強弱／入り／表現の4つを、審査員5人が採点（最高と最低を除いた平均）': 'Judged by five judges on Pulse & Tempo, Dynamics, Entrances and Expression (highest and lowest dropped)',
+  '金{a} · 銀{b} · 銅{c}（点で決まります）': 'Gold {a} · Silver {b} · Bronze {c} (decided by points)', '足切り {n}点 · 上位{k}団体が次へ': 'Cut-off {n} pts · top {k} move on', '上位の部ほど、拍も強弱もきびしくなります': 'The higher the round, the stricter the pulse and the dynamics',
+  '自由曲をえらぶ（難しい曲は、しっかり弾けたとき少し加点）': 'Pick your free piece (a hard piece earns a small bonus when it goes well)', 'ライバル団体': 'Rival groups', '演奏開始': 'Start', '指揮台へ': 'To the podium',
+  '次は{k}です。始まったら止められません。': '{k} comes next. Once it starts there is no stopping.', '難しさ {n}': 'Level {n}', '入り {n}回': '{n} entrances', '約{n}分': 'about {n} min',
+  '審査員の採点': 'The judges\' scores', '{n}点': '{n} pts', '審査員の講評': 'Judges\' comments', '次へ': 'Next', '結果発表へ': 'To the results', '自由曲へ': 'To the free piece', '「{p}」の採点': 'Scores for "{p}"',
+  '結果発表': 'Results', '{r}位 / {n}団体': 'Rank {r} of {n}', '{a}点': '{a} pts', '合計': 'Total', 'あなた': 'You', 'あなたの団体': 'Your group', '賞なし': 'No medal', '難度点 +{n}': 'Difficulty bonus +{n}',
+  '次の部「{n}」へ進みます！': 'You move on to the {n}!', '足切りの {n}点に届きませんでした。': 'You did not reach the cut-off of {n} pts.', '点は足りていましたが、上位{k}団体に入れませんでした。': 'Your score was enough, but you missed the top {k}.',
+  '全国大会、おつかれさまでした。': 'The Nationals are over. Well done.', '全国優勝！ グランプリです！': 'National champion! The grand prize is yours!', '部門賞': 'Part awards', '※同点のときは、CPUの団体が上に並びます': 'On equal points the CPU groups are ranked above you',
+  '{n}の部へ': 'On to the {n}', 'もう一度この部へ': 'Enter this round again', 'メニューへ': 'To the menu', 'タイトルへ': 'To the title', 'ベスト更新！': 'New best!', '団体のくわしい点': 'Details of each group',
+  '拍・テンポ {a} · 強弱 {b} · 入り {c} · 表現 {d}': 'Pulse {a} · Dynamics {b} · Entrances {c} · Expression {d}', '拍・テンポ {a} · 強弱 {b} · 表現 {d}': 'Pulse {a} · Dynamics {b} · Expression {d}', '審査員{j}（{s}点）': 'Judge {j} ({s} pts)',
+  '棄権する': 'Give up', '棄権すると、この演奏は採点されません。やめますか？': 'If you give up, this performance is not scored. Quit?', 'もどる': 'Back', 'やめる': 'Cancel', '出る': 'Leave', 'ここでやめる': 'Quit here', '棄権して出る': 'Give up and leave',
+  '友だちとオンライン': 'Online with a friend', 'CPU団体と勝負': 'Duel a CPU group', 'コードの部屋をつくるか、コードで入るか、クイックマッチで。ホストが曲をえらびます。': 'Make a room with a code, join with a code or use quick match. The host picks the piece.',
+  '曲': 'Piece', '相手': 'Opponent', '勝負開始': 'Start the duel', '曲をえらんでください。2人とも同じ曲を、同時に指揮します。': 'Pick a piece. You both conduct the same piece at the same time.', 'この曲で勝負！': 'Duel on this piece!',
+  'ホストが曲をえらんでいます…': 'The host is picking the piece…', '{n}秒': '{n}s', '{p}と勝負': 'Duel with {p}', '勝負': 'Duel', '{a} 対 {b}': '{a} vs {b}', '勝負の曲は「{p}」です。始まったら止められません。': 'The piece is "{p}". Once it starts there is no stopping.',
+  '演奏おつかれさま！ 相手の演奏を待っています…': 'Well played! Waiting for your opponent to finish…', '相手：演奏中': 'Opponent: playing', '相手：接続が切れています（もどれば続きから）': 'Opponent: disconnected (they can come back)', '相手：部屋を出ました': 'Opponent: left the room',
+  '相手：CPUの団体': 'Opponent: a CPU group', '待たずにCPU団体と比べる': 'Compare with a CPU group instead', 'あなたの点': 'Your scores', '相手の点': 'Opponent\'s scores', '勝ち！': 'You win!', '負け': 'You lose', '引き分け': 'A draw', '不戦勝': 'Win by forfeit',
+  '審査員の票は {a} 対 {b}': 'The judges voted {a} to {b}', '{d}点の差': 'A margin of {d} pts', '相手が棄権したので、あなたの勝ちです。': 'Your opponent gave up, so you win.', '相手が来ませんでした': 'Your opponent did not finish',
+  '相手との接続が切れたので、あなたの演奏を CPU団体「{p}」と比べました。': 'The connection to your opponent was lost, so your performance was compared with the CPU group "{p}".', '相手との接続が切れました。最後まで演奏すると、CPU団体と比べます。': 'Lost your opponent. Finish the piece and it will be compared with a CPU group.',
+  'もう一度（同じ相手）': 'Again (same opponent)', 'もう一度を待っています…': 'Waiting for a rematch…', 'ルームを出る': 'Leave the room', 'もう一度': 'Again', '勝負のあと': 'After the duel', 'オンラインにつなげませんでした': 'Could not go online',
+  'ゲームに入れませんでした': 'You could not join this game', '席がCPUに交代しました': 'Your seat was taken over by a CPU', 'ホストが退出したので、ここで終了です': 'The host left, so the match ends here', 'ホストとの接続が切れたので、ここで終了です': 'Lost the host, so the match ends here',
+  '部屋を出ると、あなたの演奏は棄権になります。出ますか？': 'If you leave, your performance counts as a forfeit. Leave?', '{r}位': 'No. {r}', '審査員の票': 'Votes', '{n}勝': '{n} wins',
+  '{a}勝{b}敗{c}分け': '{a}W {b}L {c}D', '記録': 'Record', '曲ごとの記録': 'Record by piece', '{p} · この曲では {a}勝 {b}敗 {c}分け（ベスト {s}点）': '{p}: {a} wins, {b} losses, {c} draws on this piece (best {s} pts)',
+}) });
+let ctRun = null;     // the contest in progress: { kind:'round', rid, freeId, step, perfs, judged } | { kind:'duel', mode:'cpu'|'online', pid, rival }
+let duel = null, TR = null, duelLeaving = false;
+const ctS = () => CT.readStore(store.get(CT_KEY));
+const ctW = s => store.set(CT_KEY, JSON.stringify(s));
+const f1 = n => (Math.round((Number(n) || 0) * 10) / 10).toFixed(1);
+const myName = () => { const n = String(store.get('kobo.nick') || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); return n || T('あなた'); };
+const medalName = m => T(CT.MEDALS[m] || '賞なし');
+const roundName = R => L(R.name);
+const cpid = id => { const p = byId()[id]; return p ? nameFull(p) : id; };
+const pieceLine = id => { const m = CT.PIECES[id], p = byId()[id]; return esc(p ? L(p.composer) : '') + ' · ' + esc(T('難しさ {n}', { n: '◆'.repeat(m.lv) })) + ' · ' + esc(T('約{n}分', { n: Math.max(1, Math.round(m.min)) })) + (m.cues ? ' · ' + esc(T('入り {n}回', { n: m.cues })) : ''); };
+function ctChip() { if (!ctRun) return ''; if (ctRun.kind === 'round') return roundName(CT.ROUND_BY[ctRun.rid]) + ' · ' + T(ctRun.step === 0 ? '課題曲' : '自由曲'); return T('勝負') + ' · ' + cpid(ctRun.pid); }
+function ctChrome() { stopPlay(); layoutDemo(); $('pauseBtn').hidden = true; $('chips').hidden = true; $('tempoChip').hidden = true; hint(''); $('toast').hidden = true; $('pieceChip').textContent = T('コンクール'); fit(); }
+function ctAbort() { ctRun = null; if (duel || TR) duelLeave(); }
+// one screen: title, html, buttons [{ t, fn, cls }] ('sub' ones sit two to a row, the rest take a whole row)
+function ctScreen(title, html, btns, o) {
+  o = o || {}; $('ctTitle').textContent = title; $('ctBody').innerHTML = html; const box = $('ctBtns'); box.innerHTML = '';
+  (btns || []).forEach(b => { const e = document.createElement('button'); e.type = 'button'; e.className = 'btn' + (b.cls ? ' ' + b.cls : ''); e.textContent = b.t; if (b.id) e.id = b.id; if (b.dis) e.disabled = true; e.onclick = b.fn; box.appendChild(e); });
+  $('ctCard').classList.toggle('paper', !!o.paper); showOv('ovCt'); $('ctBody').scrollTop = 0;
+}
+const catBars = (cats, hasCue) => CT.CATS.filter(k => k !== 'cue' || hasCue).map(k => '<div class="ctcat"><span>' + esc(T(CT.CATN[k])) + '</span><i style="--w:' + Math.round(cats[k]) + '%"></i><b>' + Math.round(cats[k]) + '</b></div>').join('');
+// ----- the menu
+function ctOpen() { if (!INDEX) return; ctAbort(); ctMenu(); }
+function ctMenu() {
+  if (!INDEX) return; ctRun = null; if (duel) duelEnd(); ctChrome();
+  const S = ctS(), open = CT.unlockedRounds(S), st = S.stats;
+  let h = '<p>' + esc(T('課題曲と自由曲の2曲で、予選・本選・全国大会に挑戦。お手本もガイドも一時停止もなし。好みのちがう審査員5人の採点で、金・銀・銅賞が決まります。')) + '</p><div class="rlist" id="ctRounds"></div>';
+  h += '<div class="info" id="ctStats">' + (st.entries || st.duels ? (st.entries ? esc(T('出場 {n}回 · 金{g} 銀{s} 銅{b} · 進出 {p}回', { n: st.entries, g: st.gold, s: st.silver, b: st.bronze, p: st.passed })) : '') + (st.entries && st.duels ? '<br>' : '') + (st.duels ? esc(T('勝負 {n}回 · {w}勝 {l}敗 {d}分け', { n: st.duels, w: st.wins, l: st.losses, d: st.draws })) : '') : esc(T('まだ記録なし'))) + '</div>';
+  ctScreen(T('コンクールモード'), h, [{ t: T('他団体との勝負'), id: 'ctDuel', fn: () => duelMenu() }, { t: T('もどる'), cls: 'link', id: 'ctBack', fn: () => showTitle() }]);
+  const box = $('ctRounds');
+  CT.ROUNDS.forEach(R => {
+    const on = open.includes(R.id), rec = S.r[R.id], by = byId();
+    const b = rowBtn('rc', '<span class="no">' + R.no + '</span><span class="tx"><b>' + esc(roundName(R)) + '</b><small>' + esc(T('課題曲') + '：' + cpid(R.compulsory)) + '</small><small>' + esc(on ? (R.id === 'n' ? T('{a}団体 · 優勝をめざす', { a: R.rivals.length + 1 }) : T('{a}団体 · 上位{b}団体が次へ', { a: R.rivals.length + 1, b: R.advance })) : T('前の部を突破すると挑戦できます')) + '</small></span>' +
+      '<span class="sc"><span class="st">' + (rec && rec.m ? esc(medalName(rec.m)) : '') + '</span>' + (rec ? esc(T('ベスト {s}点', { s: f1(rec.s) })) : esc(T('まだ記録なし'))) + '</span>', () => { if (on) ctEntry(R.id); });
+    b.dataset.round = R.id; b.disabled = !on; b.setAttribute('aria-label', roundName(R) + (on ? '' : ', ' + T('前の部を突破すると挑戦できます'))); void by;
+    const w = document.createElement('div'); w.className = 'rrow'; w.appendChild(b); box.appendChild(w);
+  });
+}
+// ----- the entry: rules, the compulsory piece, the free piece to choose, the rivals
+function ctEntry(rid) {
+  const R = CT.ROUND_BY[rid], S = ctS(); let sel = R.free.includes(S.set.free[rid]) ? S.set.free[rid] : R.free[0];
+  let h = '<ul class="ctrules">' + ['お手本・ゴースト・ガイドは出ません', '一時停止・やり直しはできません（止めると「表現」が減点）', '入りの取りこぼしは大きく減点されます', '強弱は、楽譜の強弱の階段に近いほど高得点', '拍・テンポ／強弱／入り／表現の4つを、審査員5人が採点（最高と最低を除いた平均）', '上位の部ほど、拍も強弱もきびしくなります'].map(x => '<li>' + esc(T(x)) + '</li>').join('') +
+    '<li>' + esc(T('金{a} · 銀{b} · 銅{c}（点で決まります）', { a: R.medal[0], b: R.medal[1], c: R.medal[2] })) + '</li><li>' + esc(rid === 'n' ? T('{a}団体 · 優勝をめざす', { a: R.rivals.length + 1 }) : T('足切り {n}点 · 上位{k}団体が次へ', { n: R.cut, k: R.advance })) + '</li></ul>';
+  h += '<div class="grp">' + esc(T('課題曲')) + '</div><div class="info"><b>' + esc(cpid(R.compulsory)) + '</b><br><small>' + pieceLine(R.compulsory) + '</small></div>';
+  h += '<div class="grp">' + esc(T('自由曲をえらぶ（難しい曲は、しっかり弾けたとき少し加点）')) + '</div><div class="rlist" id="ctFree"></div>';
+  h += '<div class="grp">' + esc(T('ライバル団体')) + '</div><div class="info">' + R.rivals.map(id => esc(L(CT.ENS_BY[id].name))).join(' · ') + '</div>';
+  ctScreen(roundName(R), h, [{ t: T('演奏開始'), id: 'ctGo', fn: () => ctStartRound(rid, sel) }, { t: T('もどる'), cls: 'link', id: 'ctBack', fn: () => ctMenu() }]);
+  const box = $('ctFree');
+  const draw = () => { box.innerHTML = ''; R.free.forEach(id => { const m = CT.PIECES[id], b = rowBtn('rc' + (id === sel ? ' sel' : ''), '<span class="tx"><b>' + esc(cpid(id)) + '</b><small>' + pieceLine(id) + '</small></span><span class="sc">' + (id === sel ? '●' : '○') + '</span>', () => { sel = id; draw(); }, cpid(id)); b.dataset.free = id; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', id === sel ? 'true' : 'false'); void m; const w = document.createElement('div'); w.className = 'rrow'; w.appendChild(b); box.appendChild(w); }); };
+  draw();
+}
+function ctStartRound(rid, freeId) {
+  if (!INDEX || loading) return; if (AU) AU.ctx(); stopPlay(); conStop();
+  ctRun = { kind: 'round', rid, freeId, step: 0, perfs: [], judged: [] }; ctStage();
+}
+function ctStage() {
+  const r = ctRun; if (!r) return; const R = CT.ROUND_BY[r.rid], pid = r.step === 0 ? R.compulsory : r.freeId; ctChrome();
+  ctScreen(roundName(R) + ' · ' + T(r.step === 0 ? '課題曲' : '自由曲'), '<div class="info"><b>' + esc(cpid(pid)) + '</b><br><small>' + pieceLine(pid) + '</small></div><p>' + esc(T('次は{k}です。始まったら止められません。', { k: cpid(pid) })) + '</p>',
+    [{ t: T('指揮台へ'), id: 'ctGo', fn: () => { if (AU) AU.ctx(); startPiece(pid); } }, { t: T('ここでやめる'), cls: 'link', id: 'ctQuit', fn: () => { ctRun = null; ctMenu(); } }]);
+}
+// ----- a piece is over: the four sub-scores from the engine's raw numbers, then the judges
+function ctPerf() { const R = CT.roundOf(ctRun.rid) || CT.DUEL_ROUND; return CT.analyse(CT.extract(G.session.scorer, { hist: hist.slice(), pauses: G.pauses || 0 }), { tight: R.tight }); }
+function ctPieceDone() {
+  const r = ctRun; if (!r || !G) return; const perf = ctPerf(), pid = G.id; ctChrome();
+  if (r.kind === 'round') { r.perfs.push(perf); const R = CT.ROUND_BY[r.rid], j = CT.judgePiece(perf, pid, R); r.judged.push(j); ctJudge(pid, perf, j, R, () => { if (r.step === 0) { r.step = 1; ctStage(); } else ctResult(); }, r.step === 0 ? T('自由曲へ') : T('結果発表へ')); return; }
+  if (r.mode === 'cpu') { duelCpuDone(perf); return; }
+  if (duel) { ctRun = null; duel.perf = perf; duel.postedAt = Date.now(); duelStep(); }
+}
+function judgeBlock(pid, perf, j, R, o) {
+  o = o || {}; const hasCue = CT.PIECES[pid].cues > 0;
+  let h = '<div class="ceprog">' + esc(T('「{p}」の採点', { p: cpid(pid) })) + '</div><div class="cegrade"><b id="ctPieceScore">' + f1(j.total) + '</b><span>/ 100</span></div>' + catBars(j.cats, hasCue);
+  h += '<div class="grp">' + esc(T('審査員の採点')) + '</div>';
+  CT.JUDGES.forEach((jd, i) => {
+    const s = j.judges[i].score, lines = CT.comment(jd.id, perf, pid, R, { T });
+    h += '<div class="jrow" data-judge="' + jd.id + '"><span class="js">' + f1(s) + '</span><b>' + esc(L(jd.name)) + '</b> <small>' + esc(L(jd.role)) + '</small>' + (o.brief ? lines.slice(0, 2) : lines).map(x => '<p class="' + x.kind + '">' + esc(x.text) + '</p>').join('') + '</div>';
+  });
+  return h;
+}
+function ctJudge(pid, perf, j, R, next, nextLabel) {
+  ctScreen(T('審査員の採点'), judgeBlock(pid, perf, j, R), [{ t: nextLabel, id: 'ctNext', fn: next }], { paper: true });
+}
+// ----- the results: the ranking with medals, the cut-off, the part awards
+function ctResult() {
+  const r = ctRun; if (!r) return; const R = CT.ROUND_BY[r.rid];
+  const fl = CT.field(r.rid, { name: myName(), comp: r.perfs[0], freeId: r.freeId, free: r.perfs[1] }), you = fl.you;
+  const rec = CT.recordRound(ctS(), r.rid, fl, Date.now()); ctW(rec.store); ctRun = null;
+  emit('progress', { key: 'contest', value: rec.store.stats.passed });
+  const nm = x => (typeof x.name === 'string' ? x.name : L(x.name)), next = CT.ROUNDS[CT.ROUNDS.indexOf(R) + 1];
+  let h = '<div class="cegrade"><b class="medal m' + you.medal + '" id="ctMedal">' + esc(medalName(you.medal)) + '</b><span><em>' + esc(T('{r}位 / {n}団体', { r: you.rank, n: fl.n })) + '</em><em>' + f1(you.total) + ' ' + esc(T('合計')) + '</em></span></div>';
+  if (rec.isBest) h += '<div class="newrec" id="ctNew">' + esc(T('ベスト更新！')) + '</div>';
+  const why = fl.champion ? T('全国優勝！ グランプリです！') : r.rid === 'n' ? T('全国大会、おつかれさまでした。') : fl.adv.ok ? T('次の部「{n}」へ進みます！', { n: roundName(next) }) : fl.adv.why === 'score' ? T('足切りの {n}点に届きませんでした。', { n: R.cut }) : T('点は足りていましたが、上位{k}団体に入れませんでした。', { k: R.advance });
+  h += '<div class="cehead" id="ctWhy">' + esc(why) + '</div>';
+  h += '<table class="ctt" id="ctTable"><thead><tr><th></th><th></th><th>' + esc(T('課題曲')) + '</th><th>' + esc(T('自由曲')) + '</th><th>' + esc(T('合計')) + '</th></tr></thead><tbody>' + fl.rows.map(x => '<tr class="' + (x.id === 'me' ? 'me' : '') + (x.rank === fl.advance && R.id !== 'n' ? ' cut' : '') + '" data-rank="' + x.rank + '"><td class="n">' + x.rank + '</td><td>' + esc(nm(x)) + (x.cpu ? '' : ' ★') + '<br><span class="medal m' + x.medal + '">' + esc(medalName(x.medal)) + '</span></td><td class="n">' + f1(x.comp.total) + '</td><td class="n">' + f1(x.free.total) + '</td><td class="n"><b>' + f1(x.total) + '</b></td></tr>').join('') + '</tbody></table>';
+  h += '<small>' + esc(T('※同点のときは、CPUの団体が上に並びます')) + '</small>';
+  h += '<div class="grp">' + esc(T('部門賞')) + '</div><div class="info" id="ctAwards">' + fl.awards.map(a => { const w = fl.rows.find(x => x.id === a.win.id); return '<div>' + esc(L(a.name)) + '：<b>' + esc(nm(w)) + '</b>' + (w.id === 'me' ? ' ★' : '') + '</div>'; }).join('') + '</div>';
+  h += '<div class="grp">' + esc(T('団体のくわしい点')) + '</div>' + fl.rows.map(x => rowDetail(x, R, nm)).join('');
+  const again = () => ctEntry(r.rid), btns = [];
+  if (fl.adv.ok) btns.push({ t: T('{n}の部へ', { n: roundName(next) }), id: 'ctNextRound', fn: () => ctEntry(next.id) });
+  btns.push({ t: T('もう一度この部へ'), cls: fl.adv.ok ? 'sub' : '', id: 'ctAgain', fn: again }, { t: T('メニューへ'), cls: 'sub', id: 'ctMenuBtn', fn: () => ctMenu() });
+  ctScreen(T('結果発表') + ' · ' + roundName(R), h, btns, { paper: true });
+}
+function rowDetail(x, R, nm) {
+  const note = x.cpu ? '<p><small>' + esc(L(CT.ENS_BY[x.id].note)) + '</small></p>' : '';
+  const piece = (id, j, label, perf) => {
+    const hasCue = CT.PIECES[id].cues > 0, c = j.cats; let best = 0; j.judges.forEach((q, i) => { if (q.score > j.judges[best].score) best = i; });
+    const cm = perf ? CT.comment(CT.JUDGES[best].id, perf, id, R, { T })[0] : null;
+    return '<p><b>' + esc(label) + '</b> ' + esc(cpid(id)) + ' · ' + f1(j.total) + '<br><small>' + esc(hasCue ? T('拍・テンポ {a} · 強弱 {b} · 入り {c} · 表現 {d}', { a: Math.round(c.beat), b: Math.round(c.dyn), c: Math.round(c.cue), d: Math.round(c.expr) }) : T('拍・テンポ {a} · 強弱 {b} · 表現 {d}', { a: Math.round(c.beat), b: Math.round(c.dyn), d: Math.round(c.expr) })) + '</small>' +
+      (cm ? '<br><small>' + esc(T('審査員{j}（{s}点）', { j: L(CT.JUDGES[best].name), s: f1(j.judges[best].score) }) + '：' + cm.text) + '</small>' : '') + '</p>';
+  };
+  return '<details class="ctd" data-who="' + x.id + '"><summary>' + x.rank + '. ' + esc(nm(x)) + ' · ' + f1(x.total) + '</summary>' + note + piece(R.compulsory, x.comp, T('課題曲'), x.perfs[0]) + piece(x.freeId, x.free, T('自由曲'), x.perfs[1]) + (x.bonus ? '<p><small>' + esc(T('難度点 +{n}', { n: x.bonus })) + '</small></p>' : '') + '</details>';
+}
+// ----- the way out in the middle of a contest piece
+async function ctQuit() {
+  const ok = UI ? await UI.confirm({ title: T(ctRun && ctRun.kind === 'duel' && ctRun.mode === 'online' ? '部屋を出ると、あなたの演奏は棄権になります。出ますか？' : '棄権すると、この演奏は採点されません。やめますか？'), ok: T('出る'), cancel: T('やめる'), danger: true }) : true;
+  if (!ok) return false;
+  const online = ctRun && ctRun.kind === 'duel' && ctRun.mode === 'online'; if (online && TR) { duelLeaving = true; try { TR.submit(CT.duel.quitWire()); } catch (e) {} setTimeout(() => { duelLeave(); }, 350); }
+  const back = ctRun && ctRun.kind === 'duel' ? duelMenu : ctMenu; ctRun = null; stopPlay(); if (online) duel = null; back(); return true;
+}
+// ----- 勝負 (duel)
+function duelMenu() {
+  if (!INDEX) return; ctRun = null; if (duel) duelEnd(); ctChrome(); const S = ctS();
+  ctScreen(T('他団体との勝負'), '<p>' + esc(T('友だちや CPU の団体と、同じ曲を指揮して点をくらべます。')) + '</p><p><small>' + esc(T('コードの部屋をつくるか、コードで入るか、クイックマッチで。ホストが曲をえらびます。')) + '</small></p><div class="info">' + esc(T('勝負 {n}回 · {w}勝 {l}敗 {d}分け', { n: S.stats.duels, w: S.stats.wins, l: S.stats.losses, d: S.stats.draws })) + '</div>',
+    [{ t: T('友だちとオンライン'), id: 'duOnline', fn: () => duelOnline() }, { t: T('CPU団体と勝負'), cls: 'sub', id: 'duCpu', fn: () => duelCpuSetup() }, { t: T('もどる'), cls: 'sub', id: 'ctBack', fn: () => ctMenu() }]);
+}
+function duelPieceOptions(sel) { return CT.DUEL_PIECES.map(id => '<option value="' + id + '"' + (id === sel ? ' selected' : '') + '>' + esc(cpid(id) + ' (' + '◆'.repeat(CT.PIECES[id].lv) + ')') + '</option>').join(''); }
+function duelRecordLine(pid) { const d = ctS().duel[pid]; return d ? T('{p} · この曲では {a}勝 {b}敗 {c}分け（ベスト {s}点）', { p: cpid(pid), a: d.w, b: d.l, c: d.d, s: f1(d.b) }) : ''; }
+function duelCpuSetup() {
+  const S = ctS(), rivals = CT.ENSEMBLES.slice().sort((a, b) => a.skill - b.skill);
+  ctScreen(T('CPU団体と勝負'), '<div class="setrow"><label for="duPiece">' + esc(T('曲')) + '</label><select id="duPiece">' + duelPieceOptions(S.set.piece || 'midsummer') + '</select></div><div class="setrow"><label for="duRival">' + esc(T('相手')) + '</label><select id="duRival">' + rivals.map(e => '<option value="' + e.id + '"' + (e.id === (S.set.rival || 'sakura') ? ' selected' : '') + '>' + esc(L(e.name)) + '</option>').join('') + '</select></div><div class="info" id="duInfo"></div>',
+    [{ t: T('勝負開始'), id: 'duGo', fn: () => duelCpuStart($('duPiece').value, $('duRival').value) }, { t: T('もどる'), cls: 'link', id: 'ctBack', fn: () => duelMenu() }]);
+  const upd = () => { const e = CT.ENS_BY[$('duRival').value]; $('duInfo').innerHTML = '<b>' + esc(L(e.name)) + '</b><br><small>' + esc(L(e.note)) + '</small><br><small>' + esc(duelRecordLine($('duPiece').value)) + '</small>'; };
+  $('duPiece').onchange = upd; $('duRival').onchange = upd; upd();
+}
+function duelCpuStart(pid, rival) {
+  if (!INDEX || loading || !CT.PIECES[pid] || !CT.ENS_BY[rival]) return; if (AU) AU.ctx(); stopPlay(); conStop();
+  const s = ctS(); s.set.piece = pid; s.set.rival = rival; ctW(s); ctRun = { kind: 'duel', mode: 'cpu', rid: 'd', pid, rival };
+  ctChrome(); ctScreen(T('{p}と勝負', { p: L(CT.ENS_BY[rival].name) }), '<div class="info"><b>' + esc(cpid(pid)) + '</b><br><small>' + pieceLine(pid) + '</small></div><p>' + esc(T('勝負の曲は「{p}」です。始まったら止められません。', { p: cpid(pid) })) + '</p>',
+    [{ t: T('指揮台へ'), id: 'ctGo', fn: () => { if (AU) AU.ctx(); startPiece(pid); } }, { t: T('ここでやめる'), cls: 'link', id: 'ctQuit', fn: () => { ctRun = null; duelMenu(); } }]);
+}
+function duelCpuDone(perf) {
+  const r = ctRun, e = CT.ENS_BY[r.rival], theirs = CT.cpuPerf(e, r.pid, 'd'), v = CT.verdict(r.pid, perf, theirs); ctRun = null;
+  const rec = CT.recordDuel(ctS(), r.pid, v, 0); ctW(rec.store); emit('progress', { key: 'duel', value: rec.store.stats.wins });
+  duelResultScreen(v, 0, [myName(), L(e.name)], perf, r.pid, { again: () => duelCpuStart(r.pid, r.rival), againLabel: T('もう一度'), menu: () => duelMenu(), menuLabel: T('メニューへ') });
+}
+// the result: who won, the judges' votes, the four sub-scores side by side, what each judge said about you
+function duelResultScreen(v, me, names, myPerf, pid, o) {
+  o = o || {}; const A = me === 0 ? v.a : v.b, B = me === 0 ? v.b : v.a, win = v.win < 0 ? 0 : v.win === me ? 1 : -1, hasCue = CT.PIECES[pid].cues > 0, tally = me === 0 ? v.tally : [v.tally[1], v.tally[0]];
+  let h = '<div class="cegrade"><b class="medal m' + (win > 0 ? 3 : win < 0 ? 1 : 2) + '" id="duVerdict">' + esc(T(win > 0 ? '勝ち！' : win < 0 ? '負け' : '引き分け')) + '</b><span><em>' + esc(T('{a} 対 {b}', { a: f1(A.total), b: f1(B.total) })) + '</em><em>' + esc(T('審査員の票は {a} 対 {b}', { a: tally[0], b: tally[1] })) + '</em></span></div>';
+  h += '<div class="ceprog">' + esc(cpid(pid)) + '</div><table class="ctt"><thead><tr><th></th><th>' + esc(names[0]) + '</th><th>' + esc(names[1]) + '</th></tr></thead><tbody>' + CT.CATS.filter(k => k !== 'cue' || hasCue).map(k => '<tr><td>' + esc(T(CT.CATN[k])) + '</td><td class="n' + (A.cats[k] > B.cats[k] ? ' win' : '') + '">' + Math.round(A.cats[k]) + '</td><td class="n' + (B.cats[k] > A.cats[k] ? ' win' : '') + '">' + Math.round(B.cats[k]) + '</td></tr>').join('') + '</tbody></table>';
+  h += '<div class="grp">' + esc(T('審査員の票')) + '</div>' + CT.JUDGES.map((jd, i) => { const a = A.judges[i].score, b = B.judges[i].score; return '<div class="jrow"><span class="js">' + f1(a) + ' - ' + f1(b) + '</span><b>' + esc(L(jd.name)) + '</b> <small>' + esc(L(jd.role)) + '</small></div>'; }).join('');
+  if (myPerf) h += '<details class="ctd"><summary>' + esc(T('審査員の講評')) + '</summary>' + CT.JUDGES.map(jd => '<div class="jrow"><b>' + esc(L(jd.name)) + '</b>' + CT.comment(jd.id, myPerf, pid, CT.DUEL_ROUND, { T }).map(x => '<p class="' + x.kind + '">' + esc(x.text) + '</p>').join('') + '</div>').join('') + '</details>';
+  if (o.note) h += '<div class="cehead">' + esc(o.note) + '</div>';
+  const btns = []; if (o.again) btns.push({ t: o.againLabel, id: 'duAgain', fn: o.again }); btns.push({ t: o.menuLabel, cls: 'sub', id: 'duMenu', fn: o.menu }); if (o.extra) btns.push(o.extra);
+  ctScreen(T('勝負'), h, btns, { paper: true });
+}
+// ----- online: common/turnroom.js (the lobby, the room, who is present) + contest.js (the game side). Nobody sees the other's play: only the posted result.
+function ensureTR() {
+  if (TR || !window.KoboTurnRoom) return TR;
+  TR = KoboTurnRoom.create({
+    game: GAME, host: CT.duel.host, turnSec: 120, seats: [2], seatsMax: 2, dealMs: 400,
+    cpuNames: k => L(CT.ENS_BY[CT.DUEL_CPU[k % 2]].name), getOpts: () => ({ n: 2 }),
+    onModel: duelOnModel, onTick: duelOnTick, onClose: () => duelMenu(), onIdleClose: () => { duelEnd(); duelMenu(); },
+  });
+  return TR;
+}
+function duelOnline() {
+  if (!ensureTR()) { toast(T('オンラインにつなげませんでした'), 'bad', 1800); return; }
+  hideAll(); duel = null; duelLeaving = false; TR.open({ n: 2 });
+}
+function duelEnd() { duel = null; ctRun = ctRun && ctRun.kind === 'duel' ? null : ctRun; }
+function duelLeave() { try { if (TR && TR.phase !== 'off') TR.leave(); } catch (e) {} duel = null; duelLeaving = false; }
+function duelOnModel(m) {
+  if (!ensureTR() || duelLeaving) return;
+  if (m.me < 0 || (m.replaced && !duel)) { toast(m.me < 0 ? T('ゲームに入れませんでした') : T('席がCPUに交代しました'), 'bad', 2200); duelLeave(); duelMenu(); return; }
+  if (m.fresh || !duel || duel.gn !== m.gn) duel = { gn: m.gn, started: false, perf: null, posted: false, postedAt: 0, recorded: false, shown: '', sentAt: 0, dcAt: 0, forfeited: false };
+  duel.m = m; duel.v = CT.duel.view(m);
+  if (m.replaced && !duel.final) { toast(T('席がCPUに交代しました'), 'bad', 2200); duelLeave(); duelMenu(); return; }
+  duelStep();
+}
+const duelLimitMs = () => { const m = duel && duel.v && CT.PIECES[duel.v.piece]; return ((m ? m.min : 5) * 2 + 3) * 60000; };
+function duelStep() {
+  const d = duel; if (!d || !d.m) return; const m = d.m, v = d.v;
+  if (m.ph === 'over') { duelFinal(); return; }
+  if (v.ph === 0) { duelPick(); return; }
+  if (v.ph === 1 && v.piece) {
+    if (!d.started) { d.started = true; ctRun = { kind: 'duel', mode: 'online', rid: 'd', pid: v.piece }; if (AU) AU.ctx(); ctChrome(); ctScreen(T('勝負'), '<div class="info"><b>' + esc(cpid(v.piece)) + '</b><br><small>' + pieceLine(v.piece) + '</small></div><p>' + esc(T('勝負の曲は「{p}」です。始まったら止められません。', { p: cpid(v.piece) })) + '</p>', [{ t: T('指揮台へ'), id: 'ctGo', fn: () => { if (AU) AU.ctx(); startPiece(v.piece); } }, { t: T('ルームを出る'), cls: 'link', id: 'ctQuit', fn: () => { ctQuit(); } }]); return; }
+    if (d.perf) { if (!v.myOut && Date.now() - d.sentAt > 8000) { d.sentAt = Date.now(); TR.submit(CT.duel.toWire(d.perf)); } if (duel === d && !d.final) duelWait(); }
+  }
+}
+function duelPick() {
+  const d = duel, m = d.m, host = m.me === 0, key = 'pick' + m.gn + (host ? 'h' : 'g'); if (d.shown === key) return; d.shown = key; ctChrome();
+  const opp = m.names[1 - m.me] || '';
+  if (host) {
+    ctScreen(T('他団体との勝負'), '<p>' + esc(T('曲をえらんでください。2人とも同じ曲を、同時に指揮します。')) + '</p><div class="setrow"><label for="duPiece">' + esc(T('曲')) + '</label><select id="duPiece">' + duelPieceOptions(ctS().set.piece || 'midsummer') + '</select></div><div class="info" id="duInfo"></div><p id="duTime" role="status"></p>',
+      [{ t: T('この曲で勝負！'), id: 'duPick', fn: () => { const id = $('duPiece').value, i = CT.DUEL_PIECES.indexOf(id); const s = ctS(); s.set.piece = id; ctW(s); $('duPick').disabled = true; TR.submit(CT.duel.pickWire(i)); } }, { t: T('ルームを出る'), cls: 'link', id: 'duLeave', fn: () => duelAskLeave() }]);
+    const upd = () => { $('duInfo').innerHTML = '<b>' + esc(opp) + '</b><br><small>' + pieceLine($('duPiece').value) + '</small>'; }; $('duPiece').onchange = upd; upd();
+  } else ctScreen(T('他団体との勝負'), '<p><b>' + esc(opp) + '</b></p><p>' + esc(T('ホストが曲をえらんでいます…')) + '</p>', [{ t: T('ルームを出る'), cls: 'link', id: 'duLeave', fn: () => duelAskLeave() }]);
+}
+async function duelAskLeave() { const ok = UI ? await UI.confirm({ title: T('部屋を出ると、あなたの演奏は棄権になります。出ますか？'), ok: T('出る'), cancel: T('やめる'), danger: true }) : true; if (ok) { duelLeave(); duelMenu(); } }
+function duelWait() {
+  const d = duel, m = d.m, v = d.v, key = 'wait' + m.gn; const opp = m.names[v.op] || '', c = d.perf, pid = v.piece;
+  if (d.shown !== key) {
+    d.shown = key; ctChrome();
+    ctScreen(T('他団体との勝負'), '<p>' + esc(T('演奏おつかれさま！ 相手の演奏を待っています…')) + '</p><div class="info"><b>' + esc(T('あなたの点')) + '</b>' + catBars({ beat: c.beat, dyn: c.dyn, cue: c.cue, expr: c.expr }, CT.PIECES[pid].cues > 0) + '</div><p><b>' + esc(opp) + '</b></p><p id="duState" role="status"></p>',
+      [{ t: T('待たずにCPU団体と比べる'), id: 'duStand', dis: true, fn: () => duelStandIn() }, { t: T('ルームを出る'), cls: 'link', id: 'duLeave', fn: () => duelAskLeave() }]);
+  }
+  duelWaitText();
+}
+function duelWaitText() {
+  const d = duel; if (!d || !d.v || !$('duState')) return; const m = d.m, v = d.v, sl = String(m.sl || '')[v.op] || 'p';
+  $('duState').textContent = sl === 'c' ? T('相手：CPUの団体') : sl === 'x' ? T('相手：部屋を出ました') : sl === 'd' ? T('相手：接続が切れています（もどれば続きから）') : T('相手：演奏中');
+  const b = $('duStand'); if (b) b.disabled = !(Date.now() - d.postedAt > duelLimitMs() || sl === 'x');
+}
+function duelOnTick(m) {
+  const d = duel; if (!d || !m) return; d.m = m; d.v = CT.duel.view(m);
+  const el = $('duTime'); if (el && m.dl) el.textContent = T('{n}秒', { n: Math.ceil(Math.max(0, m.left) / 1000) });
+  if (m.ph !== 'over' && d.v.ph === 1) {
+    if (d.perf) duelWaitText();
+    if (m.host && !d.v.oppOut && !d.forfeited) {   // the host settles a seat that is gone, or that never finishes
+      const sl = String(m.sl || '')[d.v.op] || 'p'; if (sl === 'd') { if (!d.dcAt) d.dcAt = Date.now(); } else d.dcAt = 0;
+      const long = d.perf && Date.now() - d.postedAt > duelLimitMs(), gone = sl === 'x' || (d.dcAt && Date.now() - d.dcAt > 30000);
+      if ((gone || long) && sl !== 'c') { d.forfeited = true; TR.submit(CT.duel.forfWire()); }
+    }
+    if (d.perf && !d.v.myOut && Date.now() - d.sentAt > 8000) { d.sentAt = Date.now(); TR.submit(CT.duel.toWire(d.perf)); }
+  }
+  if (m.ph === 'over' && !d.final) duelStep();
+  if (m.ph === 'over' && d.final && $('duRm')) { const n = Object.keys(m.rm || {}).length; $('duRm').textContent = d.again ? T('もう一度を待っています…') + ' (' + n + '/2)' : ''; }
+}
+function duelStandIn() {
+  const d = duel; if (!d || !d.perf) return; const pid = d.v.piece, e = CT.ENS_BY[CT.DUEL_CPU[0]], theirs = CT.cpuPerf(e, pid, 'd'), v = CT.verdict(pid, d.perf, theirs);
+  d.final = true; try { if (TR) TR.leave(); } catch (x) {} d.m = null;
+  const rec = CT.recordDuel(ctS(), pid, v, 0); ctW(rec.store); emit('progress', { key: 'duel', value: rec.store.stats.wins });
+  duelResultScreen(v, 0, [myName(), L(e.name)], d.perf, pid, { note: T('相手との接続が切れたので、あなたの演奏を CPU団体「{p}」と比べました。', { p: L(e.name) }), menu: () => duelMenu(), menuLabel: T('メニューへ') });
+}
+function duelFinal() {
+  const d = duel, m = d.m, v = d.v; if (d.final) return;
+  if (G && !d.perf && G.contest && G.session.state !== 'ended') { if (!d.warned) { d.warned = true; toast(T('相手との接続が切れました。最後まで演奏すると、CPU団体と比べます。'), '', 3200); } return; }     // still playing: keep going, compare at the end
+  if (m.me < 0 || v.meForfeit) { duelLeave(); duelMenu(); return; }
+  if (!d.perf && !v.mine) { if (loading) return; d.final = true; duelLeave(); duelMenu(); return; }
+  const names = [m.names[m.me], m.names[v.op]], pid = v.piece, ranked = m.why === 'w';
+  if (v.verdict) {
+    d.final = true; d.again = false; const vd = v.verdict; if (!d.recorded) { d.recorded = true; const rec = CT.recordDuel(ctS(), pid, vd, m.me); ctW(rec.store); emit('progress', { key: 'duel', value: rec.store.stats.wins }); }
+    ctChrome();
+    duelResultScreen(vd, m.me, names, d.perf, pid, { again: ranked ? () => { d.again = true; if (TR.rematch()) { const b = $('duAgain'); if (b) b.disabled = true; } } : null, againLabel: T('もう一度（同じ相手）'), menu: () => { duelLeave(); duelMenu(); }, menuLabel: T('ルームを出る'),
+      note: ranked ? '' : (m.why === 'hl' ? T('ホストが退出したので、ここで終了です') : T('ホストとの接続が切れたので、ここで終了です')) });
+    const n = document.createElement('p'); n.id = 'duRm'; n.setAttribute('role', 'status'); $('ctBody').appendChild(n); return;
+  }
+  if (v.oppForfeit && d.perf) {      // the opponent gave up: you win by forfeit (not counted in the record)
+    d.final = true; ctChrome(); const j = CT.judgePiece(d.perf, pid, CT.DUEL_ROUND);
+    ctScreen(T('勝負'), '<div class="cegrade"><b class="medal m3" id="duVerdict">' + esc(T('不戦勝')) + '</b><span><em>' + f1(j.total) + '</em></span></div><div class="cehead">' + esc(T('相手が棄権したので、あなたの勝ちです。')) + '</div>' + catBars(j.cats, CT.PIECES[pid].cues > 0),
+      [{ t: T('ルームを出る'), id: 'duMenu', fn: () => { duelLeave(); duelMenu(); } }], { paper: true }); return;
+  }
+  if (d.perf) { duelStandIn(); return; }
+  d.final = true; duelLeave(); duelMenu();
+}
 
 // ---------- how to, credits, settings ----------
 function renderHowto() {
@@ -1301,6 +1623,17 @@ if (DEBUG) {
     // concert mode: start an evening from item keys (or inspect it)
     concertStart: (keys, diff, mark) => { if (diff) curDiff = diff; hideAll(); startConcert(keys.map(CC.parseItem), mark || null, null); },
     concertState: () => ({ active: !!concert, step: concert ? concert.step : -1, steps: concert ? concert.steps.map(s => s.t + (s.t === 'gap' ? (s.quiet ? ':quiet' : ':clap') : '')) : [], results: concert ? concert.results.slice() : [], ph: $('csCard').dataset.ph, stage: !$('ovConStage').hidden, end: !$('ovConEnd').hidden, info: concertEndInfo, store: cstore() }),
+    // contest mode: what is on the table (or inspect the saved record)
+    contestState: () => ({ run: ctRun ? { kind: ctRun.kind, rid: ctRun.rid || '', step: ctRun.step == null ? -1 : ctRun.step, mode: ctRun.mode || '', pid: ctRun.pid || '' } : null, duel: duel ? { started: duel.started, perf: !!duel.perf, final: !!duel.final, posted: duel.posted } : null,
+      screen: $('ctTitle').textContent, shown: !$('ovCt').hidden, paper: $('ctCard').classList.contains('paper'), g: G ? { contest: !!G.contest, diff: G.diff.id, pauses: G.pauses || 0, tol: G.diff.tol, ghost: !!ghostState({ state: 'idle', pattern: 2, beatInBar: 0 }, 0), pauseBtn: !$('pauseBtn').hidden } : null, store: ctS() }),
+    // contest mode: draw the judging / result / duel screens from seeded CPU performances without playing (layout and English checks)
+    contestDemo: (what, rid) => {
+      rid = rid || 'q'; const R = CT.ROUND_BY[rid], e = CT.ENS_BY.sakura, f = R.free[1]; hideAll(); stopPlay();
+      if (what === 'judge') { const pid = R.compulsory, perf = CT.cpuPerf(e, pid, rid), j = CT.judgePiece(perf, pid, R); ctRun = { kind: 'round', rid, freeId: f, step: 0, perfs: [perf], judged: [j] }; ctJudge(pid, perf, j, R, () => {}, T('自由曲へ')); }
+      else if (what === 'result') { ctRun = { kind: 'round', rid, freeId: f, step: 1, perfs: [CT.cpuPerf(e, R.compulsory, rid), CT.cpuPerf(e, f, rid)], judged: [] }; ctResult(); }
+      else if (what === 'duel') { const pid = 'egmont', a = CT.cpuPerf(e, pid, 'd'), b = CT.cpuPerf(CT.ENS_BY.hinata, pid, 'd'); duelResultScreen(CT.verdict(pid, a, b), 0, [myName(), L(CT.ENS_BY.hinata.name)], a, pid, { again: () => {}, againLabel: T('もう一度'), menu: () => {}, menuLabel: T('メニューへ') }); }
+      return true;
+    },
     setSave(fn) { fn(save); writeSave(); }, showTitle, showCredits, showHowto, openMenu, fit,
     thumbScene() { store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideAll(); $('chips').hidden = true; thumbMode = true; fit(); return true; },
     tier: tierOf, flickInfo: () => ({ pts: flick ? flick.pts.length : -1, scale: flick ? flick.scale : 0, check: flick ? flick.pts.slice() : null }),
@@ -1366,6 +1699,6 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
 </script>
 <script src="../firebase-config.js"></script>
 <script src="../common/cloud.js"></script>
-<script>KoboCloud.sync({ 'kusoge.orchestra.save': 'newest', 'kusoge.orchestra.concert': 'newest' }, { reloadOnNewer: true });</script>
+<script>KoboCloud.sync({ 'kusoge.orchestra.save': 'newest', 'kusoge.orchestra.concert': 'newest', 'kusoge.orchestra.contest': 'newest' }, { reloadOnNewer: true });</script>
 </body>
 </html>

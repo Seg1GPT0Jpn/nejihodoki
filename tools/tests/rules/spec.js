@@ -28,8 +28,8 @@ function checkSpec() {
   for (const id of Object.keys(CAPS)) {
     if (legacyIds.includes(id)) add(`firestore.rules okLegacyScores() checks ${id}`, new RegExp(`okCap\\(s\\.get\\('${id}', 0\\), c\\['${id}'\\]\\)`).test(fsr));
     else add(`firestore.rules legacy scores do not accept ${id}`, !new RegExp(`okCap\\(s\\.get\\('${id}', 0\\)`).test(fsr));
-    add(`firestore.rules plus1('${id}')`, fsr.includes(`plus1('${id}')`));
   }
+  for (const id of Object.keys(CAPS)) add(`firestore.rules okPlays() checks ${id}`, fsr.includes(`d.get('${id}', 0) - p.get('${id}', 0) in [0, 1]`));
   let db = null;
   try { db = JSON.parse(fs.readFileSync(path.join(ROOT, 'database.rules.json'), 'utf8')); add('database.rules.json is valid JSON', true); }
   catch (e) { add('database.rules.json is valid JSON', false, e.message); return out; }

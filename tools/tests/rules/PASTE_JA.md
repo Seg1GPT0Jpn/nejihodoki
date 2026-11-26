@@ -260,3 +260,20 @@ Realtime Database：
 - **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、この2つのゲームはランキングに載らず、プレイ回数も数えられません**（ほかのゲームは今までどおり遊べます）。Realtime Database（`database.rules.json`）は変わりません（どちらもオンライン対戦なし）。
 - Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'shmup': 99999999`＝アーケードのベスト点、`'fishing': 150`＝ずかんの種の数）、旧ランキングの点の確認 `okCap(…'shmup')` `okCap(…'fishing')`、プレイ回数の `plus1('shmup')` `plus1('fishing')`、同期する保存のキー `kusoge~shmup~save` `kusoge~fishing~save` の形の確認（`okEntAt` に2行）です。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（ペーパーウイング・のんびり釣りの保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「チェス工房」（chess）を足したとき（2026-11）
+- **Firestore と Realtime Database の両方**を貼り直してください（上の「1. Firestore のルール」「2. Realtime Database のルール」と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。**貼り直さないと、チェス工房だけが、ランキングに載らない・「オンライン対戦」が「つなげませんでした」になります**（ほかのゲームは今までどおり遊べます）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'chess': 100000`＝★の合計）、同期する保存のキー `kusoge~chess~save` の形の確認（`okGames` に1項）です。旧ランキング（`okCap`）には入れません（旧ランキングは前からあるゲームだけ）。
+- Realtime Database で変わったのは、`"tr"` の許可するゲームの一覧 `^(colorcards|reversi|gomoku|mahjong)$` → `^(colorcards|reversi|gomoku|chess|mahjong)$`（19か所）だけです。チェスは `tr/chess/…` を使い、2人だけ・隠す手札なし。盤は `pd.m`（手の文字列：24文字以内・100個まで）で出し、手は `{ t: 'mv', c: from, k・w・x: to を2ビットずつ }`（昇格は `t: 'pq'` など、投了・引き分けの申し出・「待った」・時間切れの届けは `{ t: 'rs' | 'dr' | 'da' | 'dn' | 'tb' | 'ta' | 'fl' }`）です（ルールの形は変えていません）。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`、`node tools/tests/rules/run.js --only bots`（`rtdb:tr-chess` の許可と拒否・ボット2人のチェスの通しを含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「あてっこ」（akin）を足したとき（2026-11）
+- **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、あてっこだけが、ランキングに載らず、プレイ回数も数えられません**（ほかのゲームは今までどおり）。Realtime Database は変わりません（オンライン対戦なし）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'akin': 100000`＝コンピュータが当てた回数）、プレイ回数の `plus1('akin')`、同期する保存のキー `kusoge~akin~save` の形の確認（`okEntAt` に1行）です。旧ランキング（`okCap`）には入れていません。おぼえたもの `kusoge.akin.custom` は端末だけで、同期しません。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（あてっこの保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「ワードウルフ」（wordwolf）を足したとき（2026-11）
+- **Firestore と Realtime Database の両方**を貼り直してください（上の「1. Firestore のルール」「2. Realtime Database のルール」と同じ手順で、新しい `firestore.rules` と `database.rules.json` の全文）。**貼り直さないと、ワードウルフだけが、ランキングに載らない・「オンライン」が「つなげませんでした」になります**（ほかのゲームは今までどおり遊べます）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'wordwolf': 500`＝ひとりで遊んだ回数＋勝った回数×2）、プレイ回数 `okPlays()` の1項、同期する保存のキー `kusoge~wordwolf~save` の形の確認（`okGames` に1項）です。旧ランキング（`okCap`）には入れません。
+- Realtime Database で変わったのは次の点です。(1) `"tr"` の許可するゲームの一覧に `wordwolf` を足しました（`^(colorcards|reversi|gomoku|chess|mahjong|orchestra|wordwolf)$`、19か所）。(2) ワードウルフは**3〜8席**なので、席の番号を `0〜7`、`meta.n`・`queue.k` の上限を 8（**`wordwolf` だけ**。ほかのゲームは今までどおり 4 まで）、`pub.sl` を最大8文字、`tn`・`pu`・`ev` の席の番号・`rs.r`（1〜8）・`rs.w`・手の `k/w/x` を 0〜7 にしました。席にいる人かどうかの確認（`on`・`act`・`rm`）に席 4〜7 を足しました。(3) ワードウルフは `tr/wordwolf/…` を使い、ウルフ・みんなのことば・逆転の答えは、ホストのメモリと、本人だけが読める `priv/{uid}.x.s`（自分のことばの番号）だけにあり、結果が出るまで `pd` には出ません。手は `{ t: 'hn', c }`（ヒントカード）・`{ t: 'vt', c, k }`（投票。ウルフが2人のとき k に2人目）・`{ t: 'gs', c }`（逆転の答え）で、自由な文字は送れません。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`、`node tools/tests/rules/run.js --only bots`（`rtdb:tr-wordwolf` の許可と拒否・ボット4人のワードウルフの通しを含む）。貼ったあと本番に対して `--live` を流してください。

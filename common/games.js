@@ -860,9 +860,9 @@
       icon: 'img/icons/orchestra.svg', iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#5b1d2b"/><ellipse cx="36" cy="78" rx="52" ry="40" fill="#8a3a45"/><ellipse cx="36" cy="78" rx="34" ry="24" fill="#a8494e"/><g fill="#f2c15e"><circle cx="14" cy="38" r="4.2"/><circle cx="26" cy="31" r="4.2"/><circle cx="46" cy="31" r="4.2"/><circle cx="58" cy="38" r="4.2"/><circle cx="20" cy="24" r="3.4"/><circle cx="36" cy="21" r="3.4"/><circle cx="52" cy="24" r="3.4"/></g><rect x="26" y="54" width="20" height="8" rx="3" fill="#2b0f16"/><circle cx="36" cy="49" r="4.4" fill="#2b0f16"/><path d="M36 45L52 14" stroke="#fff4dc" stroke-width="2.6" stroke-linecap="round"/><circle cx="52" cy="14" r="3.2" fill="#ffd36a"/><path d="M45 11c3-5 9-5 11 0M42 16c2-8 14-9 17 0" fill="none" stroke="#ffd36a" stroke-width="1.6" stroke-linecap="round" opacity=".7"/></svg>',
       thumb: 'img/thumbs/orchestra.webp', thumb2x: 'img/thumbs/orchestra@2x.webp',
       tech: '2d',
-      // real time: hiding the page pauses the piece and waits for "Resume"; no online play. No ranking (a personal toy): stars and best scores stay on the device and sync across it; score is only the sum of the 8 best scores, for the registry
-      flags: { ranking: false, achievements: true, daily: false, versus: false, pause: true, stages: true },
-      versus: null,
+      // real time: hiding the page pauses the piece and waits for "Resume"; online only as a duel (Contest mode, via common/turnroom.js, no netcode during play). No ranking (a personal toy): stars and best scores stay on the device and sync across it; score is only the sum of the 8 best scores, for the registry
+      flags: { ranking: false, achievements: true, daily: false, versus: true, pause: true, stages: true },
+      versus: 'own',
       // total = sum over the 8 pieces of the best score (0-100, best of the three difficulties); ranking is off and nothing reads rankSource
       score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 10000, maxRate: null },
       rankSource: { key: 'kusoge.orchestra.save', paths: ['total'], agg: 'first', offset: 0 },
@@ -872,12 +872,15 @@
         'kusoge.orchestra.prefs': '音質・動きセンサー・振りの感度・振り方ガイド { quality: auto|hi|lo, motion, sens, guide }。この端末だけ（同期しない）',
         'kusoge.orchestra.howto': '遊び方を見た（\'1\'）',
         'kusoge.orchestra.concert': '演奏会モードの記録 { v:1, best:{ <曲目（曲IDをカンマでつないだもの）>:{ s（全体の点）, g（評価 0..3 = C,B,A,S）, st（★1〜5）, n（回数）} }, hist:[{ t, k, ids, s, g, st, diff, min }]（新しい順・最大20）, stats:{ done（最後まで終えた演奏会）, s（S評価の数）, a（A以上の数）, pieces, minutes }, set:{ diff, iv（休憩の位置）, draft（自分の曲目）} }',
+        'kusoge.orchestra.contest': 'コンクールモード・他団体との勝負の記録 { v:1, r:{ q（予選）|f（本選）|n（全国大会）:{ s（ベストの点）, m（金銀銅 0..3）, b（ぬいた団体の数）, n（出場回数）, c（次へ進めた 0/1）, sc（課題曲のベスト）, sf（自由曲のベスト）} }, hist:[{ t, r, s, m, k（順位）, f（自由曲）, p（進めた 0/1）}]（新しい順・最大20）, stats:{ entries, gold, silver, bronze, passed, cups（全国大会の金賞）, grand（全国優勝）, duels, wins, losses, draws }, duel:{ <曲ID>:{ w, l, d, b（勝負でのベストの点）} }, set:{ free:{ q, f, n }（自由曲）, rival, piece } }',
       },
       // counters, best scores and stars only grow (max); the last difficulty and piece are whole values (newest)
       sync: {
         'kusoge.orchestra.save': { fields: { total: 'max', stars: 'max', p: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
         // concert records: best scores per programme and the counters only grow (max); the history, the last programme draft and the difficulty are whole values (newest)
         'kusoge.orchestra.concert': { fields: { best: { each: { each: 'max' } }, stats: { each: 'max' }, hist: 'newest', set: 'newest' }, rest: 'newest' },
+        // contest records: the best points / medals / counters per round and per piece (duels) and the counters only grow (max); the history and the chosen free pieces are whole values (newest)
+        'kusoge.orchestra.contest': { fields: { r: { each: { each: 'max' } }, duel: { each: { each: 'max' } }, stats: { each: 'max' }, hist: 'newest', set: 'newest' }, rest: 'newest' },
       },
     },
     {
@@ -1136,6 +1139,61 @@
       // counters, per-mode tallies and bests only grow (max; the fewest-questions best is the smallest positive one); settings are a whole value (newest)
       sync: {
         'kusoge.akin.save': { fields: { rk: 'max', num: { each: { fields: { p: 'max', w: 'max', b: 'minPos' }, rest: 'max' } }, th: { each: { fields: { p: 'max', w: 'max', b: 'minPos' }, rest: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
+    {
+      id: 'chess', order: 37, path: 'chess/', added: '2026-11-26',
+      title: { ja: 'チェス工房', en: 'Chess Workshop' },
+      short: { ja: 'チェス', en: 'Chess' },
+      desc: { ja: '世界じゅうで遊ばれている定番のボードゲーム。キャスリング・アンパッサン・プロモーションも、チェック・チェックメイト・引き分けのルールもぜんぶ本物。CPUは6段階（でたらめから、14手先まで読むめいじんまで）、いちばんよい手と「なぜ」を教えてくれるヒント、もどす、持ち時間（3分＋2秒・5分・10分・15分＋10秒）、毎日の「今日のパズル」5問（チェックメイトと駒の取り合い）、評価バーつきの検討モード、FEN と PGN の読みこみ・書き出し、ふたりで1台、友だちとのオンライン対戦（部屋のコード・クイックマッチ。時計・引き分けの申しこみ・「待った」つき）もできます。', en: 'The classic board game with every real rule: castling, en passant, promotion, check, checkmate and all the draws. Six CPU levels (from random to a master that reads 14 plies), hints that explain the best move, undo, clocks (3+2, 5, 10, 15+10), five daily puzzles (checkmates and winning material), an analysis board with an evaluation bar, FEN and PGN in and out, two players on one device, and online matches with friends (room code or quick match, with clocks, draw offers and takebacks).' },
+      label: { ja: 'ボードゲーム', en: 'Board game' },
+      genres: ['board'], tags: ['2d', 'turn', 'board', 'casual', 'daily', 'versus', 'online'],
+      keywords: { ja: ['チェス', 'ちぇす', 'ボードゲーム', 'キャスリング', 'チェックメイト', 'パズル', 'CPU', 'ふたりで', '棋譜', 'PGN', 'オンライン対戦', '友だちと', '持ち時間', 'ブリッツ'], en: ['chess', 'board game', 'checkmate', 'castling', 'en passant', 'puzzle', 'cpu', 'two player', 'pgn', 'fen', 'analysis', 'online', 'multiplayer', 'blitz', 'clock'] },
+      icon: 'img/icons/chess.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#22212b"/><rect x="5" y="5" width="62" height="62" rx="5" fill="#5a3f27"/><rect x="8" y="8" width="14" height="14" fill="#f0e2c4"/><rect x="22" y="8" width="14" height="14" fill="#b58a5a"/><rect x="36" y="8" width="14" height="14" fill="#f0e2c4"/><rect x="50" y="8" width="14" height="14" fill="#b58a5a"/><rect x="8" y="22" width="14" height="14" fill="#b58a5a"/><rect x="22" y="22" width="14" height="14" fill="#f0e2c4"/><rect x="36" y="22" width="14" height="14" fill="#b58a5a"/><rect x="50" y="22" width="14" height="14" fill="#f0e2c4"/><rect x="8" y="36" width="14" height="14" fill="#f0e2c4"/><rect x="22" y="36" width="14" height="14" fill="#b58a5a"/><rect x="36" y="36" width="14" height="14" fill="#f0e2c4"/><rect x="50" y="36" width="14" height="14" fill="#b58a5a"/><rect x="8" y="50" width="14" height="14" fill="#b58a5a"/><rect x="22" y="50" width="14" height="14" fill="#f0e2c4"/><rect x="36" y="50" width="14" height="14" fill="#b58a5a"/><rect x="50" y="50" width="14" height="14" fill="#f0e2c4"/><g transform="translate(6 12) scale(0.46)"><g stroke="#3b2a17" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M30 82c0-18 5-28 17-35-8 1-17 3-24 3-6 0-6-8-1-12l17-17-1-10 9 6 7-8 5 11c14 7 20 24 18 44 0 3 0 6 0 8z" fill="#f6ecd3"/><circle cx="41" cy="32" r="2.6" fill="#3b2a17" stroke="none"/><path d="M52 24c8 6 12 15 12 27" stroke="#b79d6a" stroke-width="2.4" fill="none"/><path d="M28 40l6 0" stroke="#b79d6a" stroke-width="2.4" fill="none"/><path d="M25 82h50l3 8H22z" fill="#f6ecd3"/><circle cx="50" cy="86" r="2" stroke="#b79d6a" stroke-width="2.4"/></g></g><g transform="translate(36 28) scale(0.34)"><g stroke="#13111a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><circle cx="50" cy="31" r="13" fill="#4a4658"/><path d="M36 47h28v7H36z" fill="#4a4658"/><path d="M40 54c1 12-1 21-10 28h40c-9-7-11-16-10-28z" fill="#4a4658"/><path d="M42 31a9 9 0 0 1 6-8" stroke="#9a94b0" stroke-width="2.4" fill="none"/><path d="M25 82h50l3 8H22z" fill="#4a4658"/><circle cx="50" cy="86" r="2" stroke="#9a94b0" stroke-width="2.4"/></g></g><g transform="translate(36 2) scale(0.3)"><g stroke="#13111a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M46 3h8v8h8v8h-8v8h-8v-8h-8v-8h8z" fill="#4a4658"/><path d="M30 58c-3-20 6-31 20-31s23 11 20 31z" fill="#4a4658"/><path d="M34 58h32l-3 14H37z" fill="#4a4658"/><path d="M38 72c-1 7-5 10-14 10h52c-9 0-13-3-12-10z" fill="#4a4658"/><path d="M36 42c4-5 9-7 14-7" stroke="#9a94b0" stroke-width="2.4" fill="none"/><path d="M25 82h50l3 8H22z" fill="#4a4658"/><circle cx="50" cy="86" r="2" stroke="#9a94b0" stroke-width="2.4"/></g></g></svg>',
+      thumb: 'img/thumbs/chess.webp', thumb2x: 'img/thumbs/chess@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.chess.game); online matches (2 players, host-authoritative, host-side clocks) run on RTDB tr/chess/* through common/turnroom.js (database.rules.json). Online results do not feed the ranking
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ★: a win against the CPU with no hint and no undo gives the CPU level (1-6) in ★; a draw with a hint-free, undo-free game against level 4 or higher gives 1. Two players on one device, analysis, puzzles and online count nothing. The cap leaves room for years of play
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.chess.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.chess.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.chess.save': '{ v:1, pts（★の合計＝ランキング）, cs（今の連勝）, w:{ "<強さ 1〜6>":{ p（遊んだ回数）, w（勝った回数）, d（引き分けの回数） } }, stats:{ plays, wins, draws, losses, l1〜l6（その強さのCPUに勝った）, quick（25手以内に勝った）, long（80手以上の対局）, blitz（3分＋2秒・5分で勝った）, rapid（10分・15分＋10秒で勝った）, flag（時間切れで勝った）, castle（キャスリングした対局）, ep（アンパッサンをした対局）, promo（プロモーションした対局）, under（ナイト・ビショップ・ルークに成った対局）, mates（チェックメイトで勝った）, stal（ステイルメイトの引き分け）, rep（同じ形のくり返しの引き分け）, hint, undo, wsb（最長の連勝）, twop（ふたりで1台）, ana（検討モードを開いた）, fen・pgn（コピー・読みこみ）, pz（今日のパズルの正解数）, pzm・pzw（メイト・駒を取る問題の正解数）, dperf（5問ぜんぶ正解した日）, dplay（今日の5問を最後まで解いた日）, onl（オンラインで遊んだ回数）, onw（オンラインで勝った回数。★・ランキングには入らない） }, set:{ level, me（w|b|r）, tc（持ち時間 0〜4）, legal, auq（プロモーションは自動でクイーン）, pre（プレムーブ）, fast, fig（駒の絵文字で棋譜）, coords, af（ふたりのとき盤を回す） }, dl:{ last（日付 YYYYMMDD）, pts, r:[[最初に指した手 例 e2e4, 正解 0|1, 点]…] }, tut }',
+        'kusoge.chess.game': 'とちゅうのゲーム（1手ごとに自動保存）{ v:1, mode（cpu|pass）, level, me, tc, start（FEN。ふつうの初期局面なら空）, mv（UCI の手をスペースでつないだもの）, hinted, undone, seed, ms, clk（残り時間 [白, 黒, 動いている色]）, flip, cfg, castled, ep, promo, under, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.chess.howto': 'ルールを見た（\'1\'）',
+      },
+      // counters only grow (max); the last settings, the current streak and today's puzzle answers are whole values (newest)
+      sync: {
+        'kusoge.chess.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', dl: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
+    {
+      id: 'wordwolf', order: 38, path: 'wordwolf/', added: '2026-11-26',
+      title: { ja: 'ワードウルフ', en: 'Word Wolf' },
+      short: { ja: 'ワードウルフ', en: 'Word Wolf' },
+      desc: { ja: 'みんなに同じことばが配られるけれど、ひとり（または2人）のウルフだけ、すこしちがうことば。ことばを言わずにヒントを出し合って、ウルフをさがそう。1台をまわして3〜8人で遊べるほか、性格のちがうCPUとひとりで、またはオンラインでも（話し合いは「ヒントカード」だけ。自由なチャットなし）。ウルフがつかまっても、みんなのことばを当てれば逆転勝ち。「ウルフは自分がウルフと知っている」ルールも。食べ物・動物・乗り物・学校・スポーツ・季節・職業など、オリジナルのことば370組以上。広告も賭けもありません。', en: 'Everyone gets the same word, except one (or two) wolves with a slightly different one. Give hints without saying the word and find the wolf. Play with 3-8 people on one phone, solo against CPUs with different personalities, or online (talk only with hint cards, no free chat). A caught wolf can still win by guessing the village word. Optional rule: the wolf knows it is the wolf. 370+ original word pairs across food, animals, vehicles, school, sports, seasons, jobs and more. No ads, no gambling.' },
+      label: { ja: '話して当てるパーティー', en: 'Talking party game' },
+      genres: ['board'], tags: ['2d', 'turn', 'casual', 'versus', 'online'],
+      keywords: { ja: ['ワードウルフ', '人狼', 'わーどうるふ', 'ウルフ', 'パーティー', 'ことば', '言葉', 'お題', 'ヒント', '投票', 'ひとりで', '1台をまわす', 'オンライン', 'みんなで', '子ども'], en: ['word wolf', 'wordwolf', 'werewolf', 'party', 'words', 'hints', 'vote', 'deduction', 'pass the phone', 'online', 'solo', 'kids'] },
+      icon: 'img/icons/wordwolf.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#2a2150"/><circle cx="56" cy="14" r="7" fill="#ffe083"/><circle cx="58.5" cy="12" r="6" fill="#2a2150"/><g fill="#ffe083" opacity=".8"><circle cx="12" cy="12" r="1.2"/><circle cx="26" cy="7" r="1"/><circle cx="44" cy="10" r="1"/></g><path d="M14 22l11 8h22l11-8 2 20c0 12-11 22-24 22S12 54 12 42z" fill="#8b86b8" stroke="#1c1733" stroke-width="2" stroke-linejoin="round"/><path d="M25 30l-6-9 4 1zM47 30l6-9-4 1z" fill="#ffb3cf"/><circle cx="28" cy="42" r="3.4" fill="#fff"/><circle cx="44" cy="42" r="3.4" fill="#fff"/><circle cx="29" cy="42.5" r="1.7" fill="#1c1733"/><circle cx="43" cy="42.5" r="1.7" fill="#1c1733"/><path d="M31 53h10l-5 6z" fill="#1c1733"/><rect x="3" y="56" width="28" height="13" rx="4" fill="#ffd24d" stroke="#9a6d00" stroke-width="1.5"/><path d="M8 62.5h18" stroke="#2b2200" stroke-width="2" stroke-linecap="round"/><rect x="41" y="58" width="28" height="11" rx="4" fill="#fff" stroke="#b9b0dc" stroke-width="1.5"/><text x="55" y="66.5" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="9" fill="#2a2150">???</text></svg>',
+      thumb: 'img/thumbs/wordwolf.webp', thumb2x: 'img/thumbs/wordwolf@2x.webp',
+      tech: '2d',
+      // turn-based talk game: nothing to pause (the discussion timer pauses itself); online 3-8 seats (host-authoritative, the words stay in the host's memory and in tr/wordwolf/rooms/*/priv) run through common/turnroom.js. Only solo games count for the ranking
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ranking = solo games played + 2 x solo wins (vs CPUs), capped at 500; pass-the-phone and online are tallied apart (stats.local / stats.onl) and count nothing
+      score: { unit: { ja: 'pt', en: ' pts' }, fmt: { ja: '{n}pt', en: '{n} pts' }, order: 'desc', cap: 500, maxRate: null },
+      rankSource: { key: 'kusoge.wordwolf.save', paths: ['rank'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.wordwolf.save', paths: ['rank'], agg: 'first', min: 1, num: true, tpl: { ja: '{n}pt', en: '{n} pts' } },
+      keys: {
+        'kusoge.wordwolf.save': '{ v:1, rank（ひとりで遊んだ回数 + 勝った回数×2 ＝ランキング。上限500）, stats:{ games, wins, wolfGames, wolfWins, soloGames, soloWins, caught, counters, escapes, local, hints, perfect, maxpts, hard, big, streak, bs, two, knows, onl, onw }, set:{ n, lv, minutes, reveal, rounds, cpus, skill, cats, wolves, knows }, recent（さいきん出たペアの番号） }',
+        'kusoge.wordwolf.howto': 'ルールを見た（\'1\'）',
+      },
+      // counters, the best and the rank only grow (max); settings are a whole value (newest)
+      sync: {
+        'kusoge.wordwolf.save': { fields: { rank: 'max', stats: { each: 'max' }, set: 'newest', recent: 'newest' }, rest: 'newest' },
       },
     },
   ];
@@ -1487,6 +1545,9 @@
       { id: 'orchestra.three5', tier: 4, icon: 'trophy', title: { ja: '★3のコンサート', en: 'Standing Ovation' }, desc: { ja: '★3の演奏を合わせて5回する', en: 'Earn three stars five times in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 5 }, grantsTitle: { ja: 'マエストロ', en: 'Maestro' } },
       { id: 'orchestra.concert', tier: 3, icon: 'trophy', title: { ja: '演奏会を完走', en: 'Concert Complete' }, desc: { ja: '演奏会モードで、入場から終演まで一晩を最後まで指揮する', en: 'Conduct a whole evening in Concert mode, from entrance to final bow' }, when: { rec: { key: 'kusoge.orchestra.concert', path: 'stats.done' }, gte: 1 } },
       { id: 'orchestra.concertA', tier: 4, icon: 'star', title: { ja: '満場の拍手', en: 'Full House Applause' }, desc: { ja: '演奏会モードで、全体の評価A以上を取る', en: 'Earn an overall grade of A or better in Concert mode' }, when: { rec: { key: 'kusoge.orchestra.concert', path: 'stats.a' }, gte: 1 } },
+      { id: 'orchestra.contestQ', tier: 3, icon: 'trophy', title: { ja: '予選を突破', en: 'Through the Qualifier' }, desc: { ja: 'コンクールモードで、次の部へ進む', en: 'Move on to the next round in Contest mode' }, when: { rec: { key: 'kusoge.orchestra.contest', path: 'stats.passed' }, gte: 1 } },
+      { id: 'orchestra.contestGold', tier: 4, icon: 'trophy', title: { ja: '全国大会で金賞', en: 'Nationals Gold' }, desc: { ja: 'コンクールモードの全国大会で、金賞を取る', en: 'Earn a gold medal at the Nationals in Contest mode' }, when: { rec: { key: 'kusoge.orchestra.contest', path: 'stats.cups' }, gte: 1 }, grantsTitle: { ja: '金賞の指揮者', en: 'Gold-Medal Conductor' } },
+      { id: 'orchestra.duelWin', tier: 3, icon: 'star', title: { ja: '勝負に勝つ', en: 'Duel Victory' }, desc: { ja: '他団体との勝負（友だちまたはCPU団体）に勝つ', en: 'Win a duel against another group (a friend or a CPU group)' }, when: { rec: { key: 'kusoge.orchestra.contest', path: 'stats.wins' }, gte: 1 } },
     ],
     gomoku: [
       { id: 'gomoku.first', tier: 1, icon: 'check', title: { ja: 'はじめの一勝', en: 'First Win' }, desc: { ja: 'CPUに勝つ', en: 'Beat the CPU' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.wins' }, gte: 1 } },
@@ -1662,6 +1723,66 @@
       { id: 'mahjong.tobi', tier: 2, icon: 'star', title: { ja: 'トビ！', en: 'Bust a Rival' }, desc: { ja: '相手を0点未満にして終わらせる', en: 'Send a CPU below zero and end the game' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.tobiMade' }, gte: 1 } },
       { id: 'mahjong.nagashi', tier: 3, icon: 'star', title: { ja: '流し満貫', en: 'Nagashi Mangan' }, desc: { ja: '流し満貫を決める', en: 'Score a nagashi mangan' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.nagashi' }, gte: 1 } },
       { id: 'mahjong.online', tier: 2, icon: 'star', title: { ja: '4人でオンライン', en: 'Online Table' }, desc: { ja: 'オンライン対戦を最後まで遊ぶ', en: 'Finish an online match' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.onl' }, gte: 1 } },
+    ],
+    akin: [
+      { id: 'akin.first', tier: 1, icon: 'check', title: { ja: 'はじめてのあてっこ', en: 'First Guess' }, desc: { ja: 'コンピュータに1回当ててもらう', en: 'Let the computer guess right once' }, when: { rec: { key: 'kusoge.akin.save', path: 'rk' }, gte: 1 } },
+      { id: 'akin.num', tier: 1, icon: 'check', title: { ja: '数をよまれた', en: 'Number Read' }, desc: { ja: '数字あてっこで当ててもらう', en: 'Have a number guessed in Number mode' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.nw' }, gte: 1 } },
+      { id: 'akin.thing', tier: 1, icon: 'check', title: { ja: 'ものをよまれた', en: 'Thing Read' }, desc: { ja: 'いろんなあてっこで当ててもらう', en: 'Have a thing guessed in Thing mode' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.tw' }, gte: 1 } },
+      { id: 'akin.fast7', tier: 2, icon: 'star', title: { ja: '7問の名推理', en: 'Seven Questions' }, desc: { ja: '1〜100の数を7問以内で当ててもらう', en: 'Have a number from 1–100 guessed in 7 questions or fewer' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.fast' }, gte: 1 } },
+      { id: 'akin.million', tier: 2, icon: 'star', title: { ja: '100万分の1', en: 'One in a Million' }, desc: { ja: '1〜1,000,000の中の数を当ててもらう', en: 'Have a number from 1–1,000,000 guessed' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.m1' }, gte: 1 } },
+      { id: 'akin.custom', tier: 1, icon: 'star', title: { ja: '自分のはんい', en: 'Your Own Range' }, desc: { ja: '自分で決めた範囲で当ててもらう', en: 'Have a number guessed in a custom range' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.cust' }, gte: 1 } },
+      { id: 'akin.quick8', tier: 2, icon: 'star', title: { ja: 'ズバリ8問', en: 'Spot-on in Eight' }, desc: { ja: 'ものを8問以内で当ててもらう', en: 'Have a thing guessed in 8 questions or fewer' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.quick' }, gte: 1 } },
+      { id: 'akin.six', tier: 3, icon: 'trophy', title: { ja: '6テーマぜんぶ', en: 'All Six Themes' }, desc: { ja: '6つのテーマすべてで当ててもらう', en: 'Have something guessed in all six themes' }, when: { rec: { key: 'kusoge.akin.save', path: 'th', each: 'w', measure: 'countGte', min: 1 }, gte: 6 } },
+      { id: 'akin.recover', tier: 1, icon: 'check', title: { ja: 'あきらめない！', en: 'Never Give Up' }, desc: { ja: 'まちがった予想のあと、もういちど当ててもらう', en: 'Get a right guess after a wrong one' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.recover' }, gte: 1 } },
+      { id: 'akin.undo', tier: 1, icon: 'check', title: { ja: 'ひとつ前へ', en: 'One Step Back' }, desc: { ja: '「ひとつ前にもどる」を使う', en: 'Use Undo' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.back' }, gte: 1 } },
+      { id: 'akin.idk', tier: 1, icon: 'check', title: { ja: 'わからない', en: 'No Idea' }, desc: { ja: '「わからない」を5回使う', en: 'Answer "Don\'t know" 5 times' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.idk' }, gte: 5 } },
+      { id: 'akin.stump', tier: 2, icon: 'star', title: { ja: 'コンピュータをこまらせた', en: 'Stumped It' }, desc: { ja: 'コンピュータに当てられずにこうさんさせる', en: 'Make the computer give up' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.losses' }, gte: 1 } },
+      { id: 'akin.stump10', tier: 3, icon: 'trophy', title: { ja: 'よみにくい人', en: 'Hard to Read' }, desc: { ja: 'コンピュータを合わせて10回こまらせる', en: 'Stump the computer 10 times' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.losses' }, gte: 10 } },
+      { id: 'akin.teach', tier: 1, icon: 'star', title: { ja: 'おしえてあげた', en: 'Teacher' }, desc: { ja: 'コンピュータに新しいものを1つ教える', en: 'Teach the computer a new thing' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.learn' }, gte: 1 } },
+      { id: 'akin.teach10', tier: 3, icon: 'trophy', title: { ja: '物知り先生', en: 'Know-It-All' }, desc: { ja: '新しいものを10こ教える', en: 'Teach the computer 10 new things' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.learn' }, gte: 10 } },
+      { id: 'akin.duo', tier: 2, icon: 'star', title: { ja: 'ふたりで対決', en: 'Head to Head' }, desc: { ja: 'ふたりであてっこを最後まで遊ぶ', en: 'Finish a two-player match' }, when: { rec: { key: 'kusoge.akin.save', path: 'stats.duo' }, gte: 1 } },
+      { id: 'akin.wins10', tier: 2, icon: 'star', title: { ja: '10回あてた', en: 'Ten Guesses' }, desc: { ja: 'コンピュータが合わせて10回当てる', en: 'The computer guesses right 10 times in total' }, when: { rec: { key: 'kusoge.akin.save', path: 'rk' }, gte: 10 } },
+      { id: 'akin.wins50', tier: 3, icon: 'trophy', title: { ja: '50回あてた', en: 'Fifty Guesses' }, desc: { ja: 'コンピュータが合わせて50回当てる', en: 'The computer guesses right 50 times in total' }, when: { rec: { key: 'kusoge.akin.save', path: 'rk' }, gte: 50 } },
+      { id: 'akin.wins200', tier: 4, icon: 'trophy', title: { ja: '200回あてた', en: 'Two Hundred Guesses' }, desc: { ja: 'コンピュータが合わせて200回当てる', en: 'The computer guesses right 200 times in total' }, when: { rec: { key: 'kusoge.akin.save', path: 'rk' }, gte: 200 } },
+    ],
+    chess: [
+      { id: 'chess.win', tier: 1, icon: 'check', title: { ja: 'はじめての勝ち', en: 'First Victory' }, desc: { ja: 'CPUに1回勝つ', en: 'Beat the CPU once' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.wins' }, gte: 1 } },
+      { id: 'chess.castle', tier: 1, icon: 'check', title: { ja: 'キングの引っこし', en: 'Castled' }, desc: { ja: 'キャスリングをした対局をつくる', en: 'Castle in a game' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.castle' }, gte: 1 } },
+      { id: 'chess.promo', tier: 1, icon: 'check', title: { ja: 'ポーンの出世', en: 'Pawn Promotion' }, desc: { ja: 'ポーンをプロモーションさせる', en: 'Promote a pawn' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.promo' }, gte: 1 } },
+      { id: 'chess.analysis', tier: 1, icon: 'check', title: { ja: '検討モードをのぞく', en: 'Peeking at the Engine' }, desc: { ja: '検討モードを開く', en: 'Open the analysis board' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.ana' }, gte: 1 } },
+      { id: 'chess.pz10', tier: 1, icon: 'star', title: { ja: 'パズル10問', en: 'Ten Puzzles' }, desc: { ja: '今日のパズルを10問正解する', en: 'Solve 10 daily puzzles' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.pz' }, gte: 10 } },
+      { id: 'chess.ep', tier: 2, icon: 'star', title: { ja: 'とおりすがりに', en: 'En Passant' }, desc: { ja: 'アンパッサンで取る', en: 'Capture en passant' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.ep' }, gte: 1 } },
+      { id: 'chess.under', tier: 2, icon: 'star', title: { ja: 'ナイトに成る', en: 'Underpromotion' }, desc: { ja: 'クイーン以外の駒にプロモーションする', en: 'Promote to something other than a queen' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.under' }, gte: 1 } },
+      { id: 'chess.quick', tier: 2, icon: 'star', title: { ja: '電光石火', en: 'Lightning Win' }, desc: { ja: '25手以内にCPUに勝つ', en: 'Beat the CPU in 25 moves or fewer' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.quick' }, gte: 1 } },
+      { id: 'chess.long', tier: 2, icon: 'star', title: { ja: '長い夜', en: 'A Long Night' }, desc: { ja: '80手以上の対局をさいごまで指す', en: 'Play a game of 80 moves or more' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.long' }, gte: 1 } },
+      { id: 'chess.lv4', tier: 2, icon: 'star', title: { ja: 'ふつうに勝つ', en: 'Beat Regular' }, desc: { ja: '「ふつう」のCPUに勝つ', en: 'Beat the Regular CPU' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.l4' }, gte: 1 } },
+      { id: 'chess.blitz', tier: 2, icon: 'star', title: { ja: 'ブリッツの勝ち', en: 'Blitz Winner' }, desc: { ja: '3分＋2秒か5分の持ち時間で勝つ', en: 'Win a 3+2 or 5-minute game' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.blitz' }, gte: 1 } },
+      { id: 'chess.dperf', tier: 2, icon: 'star', title: { ja: '5問ぜんぶ', en: 'All Five' }, desc: { ja: '今日のパズルの5問をぜんぶ正解する', en: 'Solve all five puzzles of a day' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.dperf' }, gte: 1 } },
+      { id: 'chess.online', tier: 2, icon: 'star', title: { ja: 'オンラインの勝ち', en: 'Online Victory' }, desc: { ja: 'オンライン対戦で勝つ', en: 'Win an online match' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.onw' }, gte: 1 } },
+      { id: 'chess.pz100', tier: 3, icon: 'trophy', title: { ja: 'パズルの達人', en: 'Puzzle Master' }, desc: { ja: '今日のパズルを100問正解する', en: 'Solve 100 daily puzzles' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.pz' }, gte: 100 } },
+      { id: 'chess.stars100', tier: 3, icon: 'trophy', title: { ja: '★100こ', en: 'A Hundred Stars' }, desc: { ja: '★を合わせて100こ集める', en: 'Collect 100 stars' }, when: { rec: { key: 'kusoge.chess.save', path: 'pts' }, gte: 100 } },
+      { id: 'chess.streak5', tier: 3, icon: 'trophy', title: { ja: '5連勝', en: 'Five in a Row' }, desc: { ja: 'CPUに5連勝する（ヒントなし・もどすなしでなくてよい）', en: 'Win 5 games in a row against the CPU' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.wsb' }, gte: 5 } },
+      { id: 'chess.lv6', tier: 4, icon: 'trophy', title: { ja: 'めいじんに勝つ', en: 'Beat the Master' }, desc: { ja: 'いちばん強い「めいじん」に勝つ', en: 'Beat the strongest CPU, the Master' }, when: { rec: { key: 'kusoge.chess.save', path: 'stats.l6' }, gte: 1 } },
+      { id: 'chess.stars300', tier: 4, icon: 'trophy', title: { ja: '★300こ', en: 'Three Hundred Stars' }, desc: { ja: '★を合わせて300こ集める', en: 'Collect 300 stars' }, when: { rec: { key: 'kusoge.chess.save', path: 'pts' }, gte: 300 } },
+    ],
+    wordwolf: [
+      { id: 'wordwolf.solo', tier: 1, icon: 'check', title: { ja: 'はじめての勝ち', en: 'First Victory' }, desc: { ja: 'ひとりで（CPUと）遊んで勝つ', en: 'Win a solo game against CPUs' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.soloWins' }, gte: 1 } },
+      { id: 'wordwolf.local', tier: 1, icon: 'check', title: { ja: 'みんなでワイワイ', en: 'Party Time' }, desc: { ja: '1台をまわして遊ぶ', en: 'Play a pass-the-phone game' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.local' }, gte: 1 } },
+      { id: 'wordwolf.hints30', tier: 1, icon: 'star', title: { ja: 'ヒントの名人', en: 'Hint Giver' }, desc: { ja: 'ヒントカードを30回言う', en: 'Give 30 hints' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.hints' }, gte: 30 } },
+      { id: 'wordwolf.wolf', tier: 2, icon: 'star', title: { ja: 'ウルフの勝ち', en: 'Wolf Victory' }, desc: { ja: 'ウルフになって勝つ', en: 'Win as the wolf' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.wolfWins' }, gte: 1 } },
+      { id: 'wordwolf.perfect', tier: 2, icon: 'star', title: { ja: 'ウルフを見やぶる', en: 'Wolf Spotter' }, desc: { ja: 'ウルフに投票して、村を勝たせる', en: 'Vote for the wolf and win as the village' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.perfect' }, gte: 1 } },
+      { id: 'wordwolf.counter', tier: 2, icon: 'star', title: { ja: '大逆転', en: 'Great Reversal' }, desc: { ja: 'ウルフの逆転が決まるゲームを遊ぶ', en: 'See a wolf win by guessing the word' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.counters' }, gte: 1 } },
+      { id: 'wordwolf.two', tier: 2, icon: 'star', title: { ja: 'ウルフが2人', en: 'Two Wolves' }, desc: { ja: 'ウルフ2人のゲームを遊ぶ', en: 'Play with two wolves' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.two' }, gte: 1 } },
+      { id: 'wordwolf.knows', tier: 2, icon: 'star', title: { ja: '正体を知るウルフ', en: 'Knowing Wolf' }, desc: { ja: '「ウルフは知っている」で遊ぶ', en: 'Play with the wolf-knows rule' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.knows' }, gte: 1 } },
+      { id: 'wordwolf.big', tier: 2, icon: 'star', title: { ja: '8人で大にぎわい', en: 'Eight at the Table' }, desc: { ja: '8人で遊ぶ', en: 'Play with 8 players' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.big' }, gte: 1 } },
+      { id: 'wordwolf.online', tier: 2, icon: 'star', title: { ja: 'オンラインで遊ぶ', en: 'Online Round' }, desc: { ja: 'オンラインで1ゲーム遊びきる', en: 'Finish an online game' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.onl' }, gte: 1 } },
+      { id: 'wordwolf.win10', tier: 2, icon: 'trophy', title: { ja: '10勝', en: 'Ten Wins' }, desc: { ja: 'ひとりで10回勝つ', en: 'Win 10 solo games' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.soloWins' }, gte: 10 } },
+      { id: 'wordwolf.hard', tier: 3, icon: 'trophy', title: { ja: 'そっくりな2つ', en: 'Look-Alikes' }, desc: { ja: 'むずかしいペアで勝つ', en: 'Win on a hard pair' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.hard' }, gte: 1 } },
+      { id: 'wordwolf.streak3', tier: 3, icon: 'trophy', title: { ja: '3連勝', en: 'Three in a Row' }, desc: { ja: 'ひとりで3連勝する', en: 'Win 3 solo games in a row' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.bs' }, gte: 3 } },
+      { id: 'wordwolf.onwin', tier: 3, icon: 'trophy', title: { ja: 'オンラインの勝ち', en: 'Online Victor' }, desc: { ja: 'オンラインで勝つ', en: 'Win an online game' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.onw' }, gte: 1 } },
+      { id: 'wordwolf.games50', tier: 3, icon: 'trophy', title: { ja: '50ゲーム', en: 'Fifty Games' }, desc: { ja: '合わせて50ゲーム遊ぶ', en: 'Play 50 games in total' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.games' }, gte: 50 } },
+      { id: 'wordwolf.wins50', tier: 4, icon: 'trophy', title: { ja: 'ひとりで50勝', en: 'Fifty Wins' }, desc: { ja: 'ひとりで50回勝つ', en: 'Win 50 solo games' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.soloWins' }, gte: 50 } },
+      { id: 'wordwolf.escape', tier: 4, icon: 'trophy', hidden: true, title: { ja: 'にげきり名人', en: 'Master Escape' }, desc: { ja: 'ウルフで3点をとる', en: 'Score 3 points as the wolf' }, when: { rec: { key: 'kusoge.wordwolf.save', path: 'stats.maxpts' }, gte: 3 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

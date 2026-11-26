@@ -36,9 +36,9 @@ async function smokeOne(env, t, p) {
       t.check('main-elements', info.h1 && /\d/.test(info.lv) && info.ach >= 15 && info.games === games().length && info.del, info);
     } else {
       // 盤面は canvas か、SVG の盤面（trade の世界地図 svg#map）
-      const info = await page.evaluate(() => ({ canvas: document.querySelectorAll('canvas').length, svg: !!document.querySelector('svg#map'), home: !!document.querySelector('a[href="../"]'), dom: !!document.querySelector('#tabs') && !!document.querySelector('#main'), grid: !!document.querySelector('#main #board') }));
-      // manabi is a DOM study app (no canvas): its tab bar and main area stand in for the board; sudoku's board is a DOM grid (#board)
-      t.check('main-elements', (info.canvas > 0 || info.svg || (p.id === 'manabi' && info.dom) || (p.id === 'sudoku' && info.grid)) && info.home, info);
+      const info = await page.evaluate(() => ({ canvas: document.querySelectorAll('canvas').length, svg: !!document.querySelector('svg#map'), home: !!document.querySelector('a[href="../"]'), dom: !!document.querySelector('#tabs') && !!document.querySelector('#main'), grid: !!document.querySelector('#main #board'), view: !!document.querySelector('main#view .card') }));
+      // wordwolf is a DOM card/talk game (cards in main#view); manabi is a DOM study app (no canvas): its tab bar and main area stand in for the board; sudoku's board is a DOM grid (#board)
+      t.check('main-elements', (info.canvas > 0 || info.svg || (p.id === 'manabi' && info.dom) || (p.id === 'sudoku' && info.grid) || (p.id === 'wordwolf' && info.view)) && info.home, info);
     }
     if (p.three) {
       // 最初の描画が5秒以内（WebGL の draw 呼び出しを数える。__kb.ready() があればそれも）

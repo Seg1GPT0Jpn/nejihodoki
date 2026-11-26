@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ワードウルフ</title>
+<meta name="theme-color" content="#1c1733">
+<meta name="description" content="ひとりだけ、ちがうことばをもらったウルフをさがそう。1台をまわして3〜8人、またはCPUとひとりで。ことばを言わずに話して、投票でウルフをつかまえよう。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ワードウルフ">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ワードウルフ：月夜のむらさきと、ことばカードのきいろ。--kb-* は共通のトークンを塗りなおしたもの、--ww-* はこのゲームだけ */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1c1733; --kb-surface: #2a2348; --kb-surface-2: #352d5a; --kb-sunken: #130f26; --kb-line: #4d4380;
+  --kb-ink: #f4f0ff; --kb-dim: #b9b0dc; --kb-accent: #ffd24d; --kb-accent-ink: #2b2200; --kb-accent-text: #ffe083; --kb-accent-soft: rgba(255, 210, 77, .16);
+  --kb-scrim: rgba(8, 5, 20, .8); --kb-focus: #8fe3ff;
+  --ww-panel: rgba(255, 255, 255, .07); --ww-card: linear-gradient(#30285a, #272046); --ww-go: linear-gradient(#ffe27a, #f2b92b); --ww-go-shadow: #9a6d00;
+  --ww-good: #7fe3a6; --ww-bad: #ff9a8a; --ww-wolf: #ff8fb0; --ww-back: repeating-linear-gradient(45deg, #4a3f86 0 10px, #3e3475 10px 20px);
+  --ww-title: linear-gradient(90deg, #ffe083, #ffd24d 50%, #ff9ec2); color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #fbf3dd; --kb-surface: #fffdf5; --kb-surface-2: #f1e5c3; --kb-sunken: #e7d9ae; --kb-line: #cdbb86;
+    --kb-ink: #2a2140; --kb-dim: #62557f; --kb-accent: #7a46d6; --kb-accent-ink: #ffffff; --kb-accent-text: #5a2fb0; --kb-accent-soft: rgba(122, 70, 214, .12);
+    --kb-scrim: rgba(42, 33, 64, .5); --kb-focus: #b34700;
+    --ww-panel: rgba(42, 33, 64, .06); --ww-card: linear-gradient(#fffdf5, #f5e9c8); --ww-go: linear-gradient(#9462e8, #6d3cc4); --ww-go-shadow: #43238a;
+    --ww-good: #1c7a47; --ww-bad: #b83a26; --ww-wolf: #b3295f; --ww-back: repeating-linear-gradient(45deg, #b9a4ec 0 10px, #a68ce0 10px 20px);
+    --ww-title: linear-gradient(90deg, #5a2fb0, #7a46d6 55%, #c0306c); color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #fbf3dd; --kb-surface: #fffdf5; --kb-surface-2: #f1e5c3; --kb-sunken: #e7d9ae; --kb-line: #cdbb86;
+  --kb-ink: #2a2140; --kb-dim: #62557f; --kb-accent: #7a46d6; --kb-accent-ink: #ffffff; --kb-accent-text: #5a2fb0; --kb-accent-soft: rgba(122, 70, 214, .12);
+  --kb-scrim: rgba(42, 33, 64, .5); --kb-focus: #b34700;
+  --ww-panel: rgba(42, 33, 64, .06); --ww-card: linear-gradient(#fffdf5, #f5e9c8); --ww-go: linear-gradient(#9462e8, #6d3cc4); --ww-go-shadow: #43238a;
+  --ww-good: #1c7a47; --ww-bad: #b83a26; --ww-wolf: #b3295f; --ww-back: repeating-linear-gradient(45deg, #b9a4ec 0 10px, #a68ce0 10px 20px);
+  --ww-title: linear-gradient(90deg, #5a2fb0, #7a46d6 55%, #c0306c); color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); max-width: 640px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+header { flex: none; display: flex; align-items: center; gap: 4px; padding: 4px 6px 0; }
+h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-display); background: var(--ww-title); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--ww-panel); border: 1px solid var(--kb-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+#view { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+#view > * { flex: none; }
+.sp { flex: 1 1 auto !important; min-height: 4px; }
+.card { background: var(--ww-card); border: 1px solid var(--kb-line); border-radius: 20px; padding: 12px 14px; text-align: center; box-shadow: 0 6px 22px rgba(0, 0, 0, .25); }
+.card h2 { margin: 0 0 4px; font: 400 21px var(--kb-font-display); color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.card h2.logo { background: var(--ww-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 28px; }
+.card p, p.note { margin: 4px 0; font-size: 13px; line-height: 1.55; color: var(--kb-dim); } p.note { text-align: center; }
+.card p.big { font-size: 15px; color: var(--kb-ink); font-weight: 800; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 50px; padding: 8px 12px; border-radius: 16px; border: 0; cursor: pointer; background: var(--ww-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 4px 0 var(--ww-go-shadow); text-decoration: none; text-align: center; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--ww-go-shadow); } .btn:disabled { opacity: .42; cursor: default; box-shadow: none; }
+.btn.sub { background: var(--ww-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--kb-line); font-size: 14px; min-height: 46px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; font-size: 13.5px; min-height: 44px; }
+.row2 { display: flex; gap: 8px; } .row2 > * { flex: 1; min-width: 0; }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 62px; box-sizing: border-box; padding: 8px 14px; border-radius: 18px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); text-align: left; cursor: pointer; }
+.qm b { display: block; font-size: 16px; } .qm small { display: block; font-weight: 500; font-size: 12px; color: var(--kb-dim); margin-top: 2px; }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.qm.plain { border-color: var(--kb-line); background: var(--ww-panel); }
+.og { margin: 0; text-align: left; } .og .ol { font-size: 12px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--ww-panel); border: 1px solid var(--kb-line); flex-wrap: wrap; }
+.opt { flex: 1 1 0; min-width: 40px; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.opt small { font-weight: 500; font-size: 10px; opacity: .85; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.names { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.names input, .fld input { min-width: 0; min-height: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 10px; user-select: text; -webkit-user-select: text; }
+.cover { text-align: center; padding: 26px 14px; } .cover .who { font: 400 30px var(--kb-font-display); color: var(--kb-accent-text); margin: 8px 0 6px; overflow-wrap: anywhere; }
+.cover .ico { width: 64px; height: 64px; margin: 0 auto; color: var(--kb-accent-text); } .cover .ico svg { width: 100%; height: 100%; }
+#wcard { position: relative; margin: 6px auto; width: min(100%, 300px); min-height: 170px; border-radius: 22px; border: 2px solid var(--kb-line); display: grid; place-items: center; text-align: center; padding: 14px; cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; background: var(--ww-back); color: var(--kb-ink); font: 800 15px var(--kb-font-body); box-shadow: 0 6px 0 rgba(0, 0, 0, .25); }
+#wcard.open { background: var(--kb-surface); border-color: var(--kb-accent); }
+#wcard .wd { font: 400 34px/1.2 var(--kb-font-display); color: var(--kb-ink); overflow-wrap: anywhere; } #wcard .wd small { display: block; font: 500 12px var(--kb-font-body); color: var(--kb-dim); margin-top: 6px; }
+#wcard .sealed { display: flex; flex-direction: column; align-items: center; gap: 6px; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); color: #fff; } #wcard .sealed svg { width: 40px; height: 40px; }
+:root[data-kb-theme="light"] #wcard .sealed { color: #2a2140; text-shadow: none; }
+@media (prefers-color-scheme: light) { :root:not([data-kb-theme="dark"]) #wcard .sealed { color: #2a2140; text-shadow: none; } }
+.timer { font: 400 54px var(--kb-font-display); color: var(--kb-accent-text); font-variant-numeric: tabular-nums; line-height: 1.1; margin: 2px 0; } .timer.low { color: var(--ww-bad); } .timer.zero { animation: blink .7s steps(2) infinite; }
+.prompt { margin: 6px 0; padding: 8px 12px; border-radius: 14px; background: var(--kb-accent-soft); border: 1px dashed var(--kb-accent); font-weight: 800; font-size: 14px; line-height: 1.5; }
+.log { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.line { padding: 7px 10px; border-radius: 14px; background: var(--ww-panel); border: 1px solid var(--kb-line); font-size: 14px; line-height: 1.45; } .line b { color: var(--kb-accent-text); } .line.me { border-color: var(--kb-accent); background: var(--kb-accent-soft); } .line i { font-style: normal; font-size: 11px; color: var(--kb-dim); margin-left: 6px; }
+.pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .pick.one { grid-template-columns: 1fr; }
+.pk { min-height: 52px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--ww-panel); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 6px 8px; cursor: pointer; text-align: center; line-height: 1.35; } .pk small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.pk:active { transform: translateY(1px); } .pk[aria-pressed="true"] { border-color: var(--kb-accent); box-shadow: inset 0 0 0 2px var(--kb-accent); background: var(--kb-accent-soft); }
+.kv { display: grid; grid-template-columns: 1fr auto auto; gap: 3px 12px; margin: 6px 4px; text-align: left; font-size: 13px; font-weight: 800; align-items: center; } .kv .h { color: var(--kb-dim); font-weight: 500; font-size: 11px; } .kv span:nth-child(3n+2), .kv span:nth-child(3n) { text-align: right; font-variant-numeric: tabular-nums; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.badge.wolf { background: var(--ww-wolf); color: #fff; } .badge.good { background: var(--ww-good); color: #072; }
+.w2 { display: flex; gap: 8px; justify-content: center; margin: 6px 0; } .w2 > div { flex: 1; padding: 8px 6px; border-radius: 14px; background: var(--ww-panel); border: 1px solid var(--kb-line); font: 400 22px var(--kb-font-display); overflow-wrap: anywhere; } .w2 small { display: block; font: 500 11px var(--kb-font-body); color: var(--kb-dim); margin-bottom: 2px; } .w2 .wf { border-color: var(--ww-wolf); }
+.howto { text-align: left; } .howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); } .howto ul { margin: 4px 0; padding-left: 20px; font-size: 13px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); } .langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.toastbar { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); z-index: 85; max-width: 90%; padding: 8px 16px; border-radius: 14px; background: rgba(20, 20, 28, .92); color: #fff; font-weight: 800; font-size: 14px; pointer-events: none; animation: fade .2s ease-out; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes fade { from { opacity: 0; } } @keyframes blink { 50% { opacity: .35; } } @keyframes rise { from { transform: translateY(10px); opacity: 0; } }
+#view > * { animation: rise .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { #view > *, .timer.zero, .toastbar { animation: none !important; } }
+@media (max-width: 379px) { h1 { font-size: 15px; } #view { padding: 6px 8px 12px; } .card { padding: 10px 10px; } #wcard .wd { font-size: 28px; } .timer { font-size: 46px; } .w2 > div { font-size: 18px; } }
+body.thumb header { display: none !important; }
+.ptag { font-style: normal; font-size: 10.5px; padding: 0 7px; margin-left: 4px; border-radius: 999px; background: var(--kb-accent-soft); color: var(--kb-accent-text); font-weight: 800; }
+.line .lead { color: var(--kb-dim); }
+.topic { min-height: 4px; margin: 4px 0; } .tcard { display: inline-block; padding: 8px 14px; border-radius: 14px; background: var(--kb-surface-2); border: 1.5px solid var(--kb-accent); font-weight: 800; font-size: 14px; line-height: 1.5; }
+.wfnote { margin-top: 8px; padding: 4px 10px; border-radius: 10px; background: var(--ww-wolf); color: #fff; font: 800 12.5px var(--kb-font-body); }
+.owc { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 2px; min-height: 64px; padding: 10px; border-radius: 16px; border: 2px solid var(--kb-line); background: var(--ww-back); color: var(--kb-ink); font: 800 14px var(--kb-font-body); cursor: pointer; text-align: center; }
+.owc.open { background: var(--kb-surface); border-color: var(--kb-accent); } .owc .wd { font: 400 28px/1.2 var(--kb-font-display); overflow-wrap: anywhere; } .owc small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); } .owc .sealed { display: inline-flex; align-items: center; gap: 6px; } .owc .sealed svg { width: 22px; height: 22px; }
+.timer.sm { display: inline-block; font-size: 22px; margin: 0; vertical-align: middle; min-width: 3ch; }
+.btn.sub[disabled] { opacity: .5; }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../" id="backLink" aria-label="ゲーム一覧へ戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 id="h1">ワードウルフ</h1>
+    <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <main id="view" aria-live="polite"></main>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<script src="words.js"></script>
+<script src="engine.js"></script>
+<script src="online.js"></script>
+<script src="../common/turnroom.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ワードウルフ：engine.js が配る・CPUのヒント・投票・点数（pure）、words.js が ことば、online.js がオンラインのホスト側。このファイルは机の上：画面・タイマー・保存・オンラインの画面。
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.WordWolfEngine, W = window.WordWolfWords, ON = window.WordWolfOnline;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'wordwolf', SAVE_KEY = 'kusoge.wordwolf.save', HOWTO_KEY = 'kusoge.wordwolf.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id), view = $('view');
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sfx = (n, a) => { if (A) A.sfx(n, a); };
+const emit = (t, p) => { const g = KG(); if (g) g.emit(t, p); };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const wn = w => (EN ? w.en : w.ja);
+const hint = t => E.hintText(t, EN ? 'en' : 'ja', W);
+const CPUN = EN ? ['Mika', 'Pochi', 'Haru', 'Sora', 'Momo', 'Ren', 'Yuki'] : ['ミケ', 'ポチ', 'ハル', 'ソラ', 'モモ', 'レン', 'ユキ'];
+const ICON = {
+  wolf: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10l12 8h20l12-8 2 22c0 12-10 22-24 22S8 44 8 32z"/><circle cx="24" cy="32" r="2.5" fill="currentColor"/><circle cx="40" cy="32" r="2.5" fill="currentColor"/><path d="M28 42h8l-4 5z" fill="currentColor"/></svg>',
+  phone: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="18" y="6" width="28" height="52" rx="6"/><path d="M28 50h8"/><path d="M50 22l8 8-8 8M14 22l-8 8 8 8" /></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  go: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 5l9 7-9 7z"/></svg>',
+};
+
+// ---------- save ----------
+const SET0 = { n: 4, lv: 0, minutes: 4, reveal: 'hold', rounds: 2, cpus: 4, skill: 2, cats: [], wolves: 1, knows: false };
+function readSave() {
+  let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = { v: 1, stats: E.newStats(), set: Object.assign({}, SET0), recent: [] };
+  if (!o || typeof o !== 'object') { s.rank = 0; return s; }
+  const n = (v, d) => (Number.isFinite(Number(v)) ? Math.max(0, Math.floor(Number(v))) : d);
+  if (o.stats && typeof o.stats === 'object') for (const k of Object.keys(s.stats)) s.stats[k] = n(o.stats[k], 0);
+  if (o.set && typeof o.set === 'object') {
+    s.set.n = clamp(n(o.set.n, 4), 3, 8); s.set.lv = clamp(n(o.set.lv, 0), 0, 3); s.set.minutes = [1, 2, 3, 4, 5].includes(n(o.set.minutes, 4)) ? n(o.set.minutes, 4) : 4;
+    s.set.reveal = o.set.reveal === 'tap' ? 'tap' : 'hold'; s.set.rounds = clamp(n(o.set.rounds, 2), 1, 3); s.set.cpus = clamp(n(o.set.cpus, 4), 2, 5); s.set.skill = clamp(n(o.set.skill, 2), 1, 3);
+    s.set.wolves = clamp(n(o.set.wolves, 1), 1, 2); s.set.knows = o.set.knows === true;
+    if (Array.isArray(o.set.cats)) s.set.cats = o.set.cats.map(Number).filter(c => c >= 0 && c < W.cats.length);
+  }
+  if (Array.isArray(o.recent)) s.recent = o.recent.map(Number).filter(Number.isFinite).slice(-60);
+  s.rank = E.rankValue(s); return s;
+}
+let save = readSave();
+function writeSave() { save.rank = E.rankValue(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+
+// ---------- game state ----------
+let G = null;      // { mode: 'solo'|'local'|'online', S, phase, ... }
+let session = null; // 同じメンバーで続けるときの合計点 { names, total[] }
+function toast(msg, ms) { const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 1500); }
+const say = t => { $('live').textContent = ''; setTimeout(() => { $('live').textContent = t; }, 30); };
+let wake = null;
+async function wakeOn() { try { if (navigator.wakeLock && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { wake = null; } }
+function wakeOff() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const pname = p => G.S.players[p].name;
+const persona = p => { const pl = G && G.S && G.S.players[p]; return pl && pl.cpu ? E.personaOf(G.S, p) : null; };
+const pTag = p => { const q = persona(p); return q ? ' <i class="ptag">' + esc(EN ? q.en : q.ja) + '</i>' : ''; };
+const go = () => '<span class="go" aria-hidden="true">' + ICON.go + '</span>';
+const qm = (id, ttl, sub, cls) => '<button class="qm' + (cls || '') + '" id="' + id + '" type="button" data-act="' + id + '"><span><b>' + esc(ttl) + '</b><small>' + esc(sub) + '</small></span>' + go() + '</button>';
+const btn = (act, label, cls, extra) => '<button class="btn' + (cls ? ' ' + cls : '') + '" type="button" data-act="' + act + '"' + (extra || '') + '>' + label + '</button>';
+const catName = c => (EN ? W.cats[c].en : W.cats[c].ja);
+const LVN = ['', L('かんたん', 'Easy'), L('ふつう', 'Normal'), L('むずかしい', 'Hard')];
+const render = html => { stopTimer(); view.innerHTML = html; view.scrollTop = 0; const f = view.querySelector('.btn:not(.sub):not(.link):not(:disabled), .qm'); try { f && f.focus({ preventScroll: true }); } catch (e) {} };
+const HEAD = () => { $('h1').textContent = L('ワードウルフ', 'Word Wolf'); };
+
+// ---------- title / setup ----------
+const SU = { mode: 'solo' };
+function showTitle() {
+  if (TR && TR.phase !== 'off') { try { TR.leave(); } catch (e) {} }
+  G = null; wakeOff(); HEAD(); const st = save.stats;
+  render('<div class="card"><h2 class="logo">' + esc(L('ワードウルフ', 'Word Wolf')) + '</h2><p>' + esc(L('みんなに同じことば。でも、ひとりだけちがうことば。ウルフはだれだ？', 'Everyone has the same word, except one player. Who is the wolf?')) + '</p><p>' + esc(L('遊んだ回数 ', 'Games ') + st.games + L('　ひとりで勝った回数 ', '   Solo wins ') + st.soloWins) + '</p></div>' +
+    qm('mSolo', L('ひとりで（CPUと）', 'Solo vs CPUs'), L('性格のちがうCPUのヒントを読んで、ウルフをさがそう', 'Read the hints of CPUs with different personalities')) +
+    qm('mLocal', L('みんなで（1台をまわす）', 'Pass the phone'), L('3〜8人。ことばは1人ずつ、こっそり見る', '3-8 players. Each sees the word in private')) +
+    qm('mOnline', L('オンライン', 'Online'), L('3〜8人。ヒントカードで話し合う（自由なチャットなし）', '3-8 players. Talk with hint cards (no free chat)')) +
+    qm('mHow', L('あそびかた', 'How to play'), L('ルールと、画面のかくしかた', 'Rules and privacy tips'), ' plain') +
+    '<a class="btn sub" href="../" id="mHome">' + esc(L('ゲーム一覧へ', 'All games')) + '</a>');
+}
+function setupHtml(mode) {
+  const s = save.set, seg = (key, vals, fmt, cur) => '<div class="seg" role="group" data-key="' + key + '">' + vals.map(v => '<button class="opt" type="button" data-act="set" data-k="' + key + '" data-v="' + v + '" aria-pressed="' + (cur === v) + '">' + fmt(v) + '</button>').join('') + '</div>';
+  const og = (t, h) => '<div class="og"><div class="ol">' + esc(t) + '</div>' + h + '</div>';
+  const ttl = mode === 'solo' ? L('ひとりで', 'Solo') : mode === 'online' ? L('オンライン', 'Online') : L('みんなで', 'Pass the phone');
+  let h = '<div class="card"><h2>' + esc(ttl) + '</h2></div>';
+  if (mode === 'solo') h += og(L('CPUの数', 'CPU players'), seg('cpus', [2, 3, 4, 5], v => v, s.cpus)) + og(L('CPUの鋭さ', 'CPU sharpness'), seg('skill', [1, 2, 3], v => [L('ゆるい', 'Easy'), L('ふつう', 'Normal'), L('するどい', 'Sharp')][v - 1], s.skill));
+  if (mode === 'solo' || mode === 'online') h += og(L('ヒントのラウンド数', 'Hint rounds'), seg('rounds', [1, 2, 3], v => v, s.rounds));
+  if (mode === 'local') {
+    h += og(L('人数', 'Players'), seg('n', [3, 4, 5, 6, 7, 8], v => v, s.n)) + og(L('話し合いの時間', 'Discussion time'), seg('minutes', [1, 2, 3, 4, 5], v => L(v + '分', v + ' min'), s.minutes)) +
+      og(L('ことばの見かた', 'How to see the word'), seg('reveal', ['hold', 'tap'], v => (v === 'hold' ? L('おしている間だけ', 'While holding') : L('タップでひらく', 'Tap to open')), s.reveal));
+    h += og(L('名前', 'Names'), '<div class="names" id="names">' + Array.from({ length: s.n }, (_, i) => '<input data-i="' + i + '" maxlength="8" autocomplete="off" aria-label="' + esc(L('プレイヤー', 'Player') + ' ' + (i + 1)) + '" value="' + esc(nameOf(i)) + '">').join('') + '</div>');
+  }
+  h += og(L('ウルフの数', 'Number of wolves'), seg('wolves', [1, 2], v => v + L('人', ''), s.wolves)) + '<p class="note">' + esc(L('ウルフ2人は5人以上のとき。2人とも つかまえると村の勝ち', '2 wolves need 5+ players. Catch both to win')) + '</p>';
+  h += og(L('ウルフは自分がウルフと', 'Does the wolf know?'), seg('knows', [false, true], v => (v ? L('知っている', 'Knows') : L('知らない', 'Does not know')), s.knows));
+  if (mode !== 'online') {
+    h += og(L('むずかしさ（ことばの近さ）', 'Difficulty (how close the words are)'), seg('lv', [0, 1, 2, 3], v => (v ? LVN[v] : L('おまかせ', 'Any')), s.lv));
+    h += og(L('ジャンル', 'Categories'), '<div class="pick" id="cats">' + W.cats.map((c, i) => '<button class="pk" type="button" data-act="cat" data-c="' + i + '" aria-pressed="' + (!s.cats.length || s.cats.includes(i)) + '">' + esc(catName(i)) + '</button>').join('') + '</div>');
+  } else h += '<p class="note">' + esc(L('オンラインはホストの設定で、ことばはおまかせ。話し合いは「ヒントカード」だけ。声で話すときは、ことばそのものを言わないでね（通話は知っている人とだけ）。', 'In online games the host\'s settings apply and words are random. You talk only with hint cards. If you chat by voice, never say the word itself (only with people you know).')) + '</p>';
+  h += btn('start', esc(mode === 'online' ? L('ロビーへ', 'To the lobby') : L('はじめる', 'Start'))) + btn('toTitle', esc(L('もどる', 'Back')), 'link');
+  return h;
+}
+let names = [];
+const nameOf = i => names[i] || (L('プレイヤー', 'Player ') + (i + 1));
+function showSetup(mode) { SU.mode = mode; render(setupHtml(mode)); HEAD(); }
+function showHowto(first) {
+  const li = a => a.map(x => '<li>' + esc(x) + '</li>').join('');
+  render('<div class="card howto"><h2>' + esc(L('あそびかた', 'How to play')) + '</h2>' +
+    '<h3>' + esc(L('ルール', 'Rules')) + '</h3><ul>' + li([L('みんなに「ことば」がくばられます。ただし1人だけ（ウルフ）は、すこしちがうことば。だれも自分がウルフかどうか知りません。', 'Everyone gets a word, but one player (the wolf) gets a slightly different one. Nobody knows who has which.'), L('ことばを言わずに、ヒントを出し合って話します。他の人のヒントと合わない人があやしい！', 'Describe your word without saying it. Whoever does not fit is suspicious!'), L('話し合いのあとで投票。いちばん多く票を集めた人がつかまります（同数なら決選、またも同数ならウルフの勝ち）。', 'Then vote. The most-voted player is caught (a tie goes to a runoff; a second tie means the wolf escapes).'), L('ウルフがつかまっても、みんなのことばを当てたら逆転勝ち！', 'If the wolf is caught, they can still win by guessing the others\' word!'), L('ウルフが2人のときは、2人に投票。2人とも つかまえると村の勝ち、1人だけならウルフの勝ち。「ウルフは知っている」にすると、ウルフは自分がウルフだと教えられます。', 'With 2 wolves you vote for 2 players; catching both is a village win, only one is a wolf win. In "wolf knows" mode the wolf is told they are the wolf.')]) + '</ul>' +
+    '<h3>' + esc(L('点数', 'Scoring')) + '</h3><ul>' + li([L('村の勝ち：ウルフに投票した人 +2、ほかの村人 +1', 'Village wins: +2 for those who voted for a wolf, +1 for the rest'), L('ウルフの逆転：ウルフ +2、ウルフに投票した人 +1', 'Wolf counter-win: wolf +2, +1 for those who voted correctly'), L('ウルフのにげきり：にげたウルフ +3（つかまったウルフは +1）', 'Wolf escapes: +3 for an escaped wolf (+1 if caught)')]) + '</ul>' +
+    '<h3>' + esc(L('1台をまわすとき', 'Passing the phone')) + '</h3><ul>' + li([L('「わたされた」を押すと自分のことばカードが出ます。おしている間だけ（またはタップで）見えます。のぞかれないように！', 'Press "I have it" to get your word card. It shows only while you hold it (or tap). Watch out for peeking!'), L('見終わったら「かくした」を押して、つぎの人へ。投票もこっそり、1人ずつ。', 'When done, press "Hide" and pass on. Voting is also private, one by one.'), L('話し合いでは「話題カード」を引くと、話すきっかけになります。', 'Draw a topic card to get the discussion going.'), L('遊んでいる間に画面が暗くならないよう、端末の自動ロックを長めにしてください。', 'Set your device auto-lock to a longer time so the screen stays on.')]) + '</ul>' +
+    '<h3>' + esc(L('ひとりで・オンライン', 'Solo and online')) + '</h3><ul>' + li([L('CPUは性格がちがいます。ことばの特ちょうから、ヒントを言います（最初はざっくり、だんだん具体的に）。', 'CPUs have different personalities. They give hints from their word, vague at first and more specific later.'), L('あなたもヒントカードを1枚えらんで言いましょう。あなたがウルフになることも。', 'You pick a hint card too. You might be the wolf.'), L('オンラインは3〜8人。ホストのページがゲームを進めます。自由な文字のチャットはありません。', 'Online is 3-8 players, run by the host\'s page. There is no free-text chat.')]) + '</ul>' +
+    '<div class="langrow"><label for="langSel">言語 / Language</label><span id="langPick"></span></div></div>' +
+    btn('howGo', esc(first ? L('はじめる', 'Start') : L('とじる', 'Close'))));
+  const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel';
+}
+
+// ---------- starting ----------
+function newSeed() { const q = /[?&]seed=(\d+)/.exec(location.search); return DEBUG && q ? q[1] : String((Math.random() * 1e9) | 0); }
+function startGame(mode, o) {
+  o = o || {}; const s = save.set; names = names.slice();
+  let n, humans, nm = [];
+  if (mode === 'solo') { n = s.cpus + 1; humans = 1; nm = [L('あなた', 'You')]; const pool = E.shuffle(CPUN.map((_, i) => i), E.rng(newSeed() + 'n')); for (let i = 1; i < n; i++) nm.push(CPUN[pool[i - 1]]); }
+  else { n = s.n; humans = n; for (let i = 0; i < n; i++) nm.push((names[i] || '').trim() || nameOf(i)); }
+  const S = E.newGame({ seed: o.seed || newSeed(), n, humans, names: nm, lv: s.lv, cats: s.cats, recent: save.recent, skill: s.skill, minutes: s.minutes, rounds: mode === 'solo' ? s.rounds : 1, wolves: s.wolves, wolfKnows: s.knows });
+  save.recent.push(S.pair); save.recent = save.recent.slice(-60); writeSave();
+  if (mode === 'local') { if (!session || session.names.join('|') !== nm.join('|')) session = { names: nm, total: nm.map(() => 0), games: 0 }; } else session = null;
+  G = { mode, S, phase: 'start', vi: 0, votes: [], cands: null, human: mode === 'solo' ? 0 : -1, lines: [], turn: 0, revealed: false, done: false, shuf: 0, card: -1 };
+  emit('play_start', { mode: 'practice' }); wakeOn();
+  if (mode === 'solo') showWord(0); else showPass(0, 'word');
+}
+
+// ---------- the pass-the-phone cover and the word card ----------
+function showPass(p, next) {
+  G.phase = 'pass'; G.next = next; G.cur = p; HEAD();
+  const sub = { word: L('ことばを こっそり見ます', 'to see their word in private'), vote: L('投票します', 'to vote'), guess: L('ことばを当てます', 'to guess the word') }[next];
+  render('<div class="card cover"><div class="ico">' + ICON.phone + '</div><p>' + esc(L('スマホを この人にわたしてください', 'Hand the phone to')) + '</p><div class="who" id="who">' + esc(pname(p)) + '</div><p>' + esc(sub) + '</p><p class="note">' + esc(L('ほかの人は 画面を見ないでね', 'Everyone else: look away')) + '</p></div><div class="sp"></div>' + btn('passOk', esc(L('わたされた（' + pname(p) + 'です）', 'I have the phone (' + pname(p) + ')'))));
+}
+let revealTimer = 0;
+function wolfNote(p) { return E.knowsWolf(G.S, p) ? '<div class="wfnote">' + esc(L('あなたはウルフです。ほかの人は、ちがうことばです。', 'You are the wolf. The others have a different word.')) + '</div>' : ''; }
+function showWord(p) {
+  G.phase = 'word'; G.cur = p; G.revealed = false; const tap = save.set.reveal === 'tap' && G.mode === 'local';
+  const hold = G.mode === 'solo' || !tap;
+  render('<div class="card"><h2>' + esc(pname(p)) + '</h2><p>' + esc(hold ? L('カードを おしている間だけ ことばが見えます', 'The word shows only while you hold the card') : L('カードをタップすると ことばが見えます（数秒で消えます）', 'Tap the card to see the word (it hides itself)')) + '</p>' +
+    '<div id="wcard" role="button" tabindex="0" aria-pressed="false" aria-label="' + esc(L('ことばカード', 'Word card')) + '"><div class="sealed">' + ICON.eye + '<span>' + esc(hold ? L('おして見る', 'Hold to see') : L('タップして見る', 'Tap to see')) + '</span></div></div>' +
+    (G.mode === 'solo' ? '<p class="note">' + esc(L('ほかの人も同じことば…とは限りません。ヒントをよく聞こう', 'The others may not have the same word. Listen to their hints!')) + '</p>' : '') + '</div><div class="sp"></div>' +
+    btn('wordDone', esc(G.mode === 'solo' ? L('見た！ヒントへ', 'Got it - to the hints') : L('かくした つぎの人へ', 'Hide it and pass on')), '', ' disabled'));
+  bindCard(p, hold);
+}
+function cardShow(p, on) {
+  const c = $('wcard'); if (!c || !G) return; const w = E.wordOf(G.S, p);
+  c.classList.toggle('open', on); c.setAttribute('aria-pressed', String(on));
+  c.innerHTML = on ? '<div class="wd">' + esc(wn(w)) + (EN ? '' : '<small>' + esc(w.en) + '</small>') + '</div>' + wolfNote(p) : '<div class="sealed">' + ICON.eye + '<span>' + esc(save.set.reveal === 'tap' && G.mode === 'local' ? L('タップして見る', 'Tap to see') : L('おして見る', 'Hold to see')) + '</span></div>';
+  if (on) { G.revealed = true; const b = document.querySelector('[data-act="wordDone"]'); if (b) b.disabled = false; sfx('select'); } clearTimeout(revealTimer);
+  if (on && !(save.set.reveal === 'hold' || G.mode === 'solo')) revealTimer = setTimeout(() => cardShow(p, false), 5000);
+}
+function bindCard(p, hold) {
+  const c = $('wcard'); let down = false;
+  if (hold) {
+    c.addEventListener('pointerdown', e => { e.preventDefault(); down = true; try { c.setPointerCapture(e.pointerId); } catch (x) {} cardShow(p, true); });
+    const up = () => { if (down) { down = false; cardShow(p, false); } };
+    c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up); c.addEventListener('lostpointercapture', up); c.addEventListener('contextmenu', e => e.preventDefault());
+    c.addEventListener('keydown', e => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat) { e.preventDefault(); cardShow(p, true); } });
+    c.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') cardShow(p, false); });
+    c.addEventListener('blur', () => cardShow(p, false));
+  } else c.addEventListener('click', () => cardShow(p, !c.classList.contains('open')));
+}
+// うしろの画面にもどる・タブを隠すとことばは消える
+const hideWord = () => { if (G && G.phase === 'word') cardShow(G.cur, false); };
+document.addEventListener('visibilitychange', () => { if (document.hidden) hideWord(); });
+window.addEventListener('blur', hideWord); window.addEventListener('pagehide', hideWord);
+
+// ---------- discussion (local) ----------
+let tmr = null;
+function stopTimer() { if (tmr) { clearInterval(tmr.iv); tmr = null; } }
+function showTalk() {
+  G.phase = 'talk'; const S = G.S, first = S.order[0];
+  render('<div class="card"><h2>' + esc(L('話し合い', 'Discussion')) + '</h2><div class="timer" id="tm" role="timer" aria-live="off">' + mmss(S.minutes * 60000) + '</div>' +
+    '<div class="prompt" id="prompt">' + esc(L('ことばを言わずに、ヒントを出し合おう。いちばん ことばに合わない人がウルフ！', 'Talk about your word WITHOUT saying it. Whoever does not fit is the wolf!')) + '</div>' +
+    '<div class="topic" id="topic" aria-live="polite"></div>' +
+    '<p>' + esc(L('はじめの人：', 'First speaker: ')) + '<b>' + esc(pname(first)) + '</b></p></div>' +
+    btn('tmCard', esc(L('話題カードを引く', 'Draw a topic card')), 'sub') +
+    '<div class="row2">' + btn('tmPause', esc(L('とめる', 'Pause')), 'sub', ' id="tmPause"') + btn('tmPlus', esc(L('+30秒', '+30 s')), 'sub') + '</div><div class="sp"></div>' +
+    btn('toVote', esc(L('話し合い おわり → 投票へ', 'Done talking - vote'))));
+  tmr = { end: Date.now() + S.minutes * 60000, left: 0, paused: false, fired: false };
+  tmr.iv = setInterval(tickTimer, 250); tickTimer();
+}
+function drawTopic() {
+  const r = E.rng('ww:' + G.S.seed + ':topic:' + (G.card + 1)); G.card++; const idx = Math.floor(r() * W.prompts.length), t = $('topic');
+  if (t) t.innerHTML = '<span class="tcard">' + esc(E.promptOf(idx, EN ? 'en' : 'ja', W)) + '</span>'; sfx('tap');
+}
+function tickTimer() {
+  if (!tmr) return; const el = $('tm'); if (!el) return;
+  const left = tmr.paused ? tmr.left : tmr.end - Date.now(); el.textContent = mmss(left); el.classList.toggle('low', left <= 30000 && left > 0); el.classList.toggle('zero', left <= 0);
+  if (left <= 0 && !tmr.fired) { tmr.fired = true; sfx('fail'); if (A) A.vibrate([200, 100, 200]); say(L('時間です', 'Time is up')); const pr = document.querySelector('.prompt'); if (pr) pr.textContent = L('時間です！投票にすすみましょう', 'Time is up! On to the vote.'); }
+}
+function timerPause() { if (!tmr) return; if (tmr.paused) { tmr.paused = false; tmr.end = Date.now() + tmr.left; } else { tmr.left = tmr.end - Date.now(); tmr.paused = true; } const b = $('tmPause'); if (b) b.textContent = tmr.paused ? L('つづける', 'Resume') : L('とめる', 'Pause'); }
+
+// ---------- solo hints ----------
+// ヒントカード：自分のことばについての、あたりさわりのないヒント文を一覧から選ぶ（8枚ずつ。「ほかのヒント」で入れかえ）
+const pickCards = (choices, key, shuf) => E.shuffle(choices, E.rng('ww:cards:' + key + ':' + shuf)).slice(0, 8);
+const lineHtml = (name, tag, r, me, lead, extra) => '<div class="line' + (me ? ' me' : '') + '"><b>' + esc(name) + '</b>' + (extra || '') + '<i>' + esc(L('ラウンド', 'Round ') + (r + 1)) + '</i><br>' + (lead ? '<span class="lead">' + esc(lead) + '</span>' : '') + esc(hint(tag)) + '</div>';
+function showHints() {
+  G.phase = 'hints'; const S = G.S; const order = S.order; G.turn = G.turn || 0; G.lines = G.lines || [];
+  const total = order.length * S.rounds;
+  const lh = G.lines.map(l => lineHtml(pname(l.p), l.tag, l.r, l.p === 0, l.lead, pTag(l.p))).join('');
+  let act, who = '';
+  if (G.turn >= total) act = btn('toVote', esc(L('投票へ', 'Vote')));
+  else {
+    const p = order[G.turn % order.length], r = Math.floor(G.turn / order.length); who = L(pname(p) + ' の番', pname(p) + '\'s turn');
+    if (p === 0) {
+      const opts = pickCards(E.hintChoices(S, 0), G.turn, G.shuf);
+      act = '<div class="card"><p class="big">' + esc(L('あなたの番。ヒントカードを1枚えらぼう', 'Your turn. Pick one hint card')) + '</p><div class="pick one" id="hintPick">' + opts.map(t => '<button class="pk" type="button" data-act="myHint" data-t="' + t + '">' + esc(hint(t)) + '</button>').join('') + '</div>' + btn('moreCards', esc(L('ほかのヒントを見る', 'Show other cards')), 'sub') + btn('myPass', esc(L('パスする', 'Pass')), 'link') + '</div>';
+    } else act = btn('cpuNext', esc(L(pname(p) + ' のヒントを聞く', 'Hear ' + pname(p))));
+  }
+  HEAD();
+  render('<div class="card"><h2>' + esc(L('ヒント', 'Hints')) + '</h2><p>' + esc(L('あなたのことば：', 'Your word: ')) + '<button class="btn sub" style="display:inline-flex;width:auto;min-height:36px;padding:2px 12px" type="button" id="peek" data-act="peek">' + esc(L('もう一度見る', 'Peek again')) + '</button></p>' + (E.knowsWolf(S, 0) ? wolfNote(0) : '') +
+    '<p>' + esc(L('ラウンド ', 'Round ') + Math.min(S.rounds, Math.floor(Math.min(G.turn, total - 1) / order.length) + 1) + ' / ' + S.rounds) + (who ? '　' + esc(who) : '') + (S.k > 1 ? '　' + esc(L('ウルフは2人', '2 wolves')) : '') + '</p></div>' +
+    '<div class="log" id="log">' + (lh || '<p class="note">' + esc(L('だれかが ヒントを言うたびに、ここにたまります', 'Hints will pile up here')) + '</p>') + '</div>' + (act.indexOf('class="card"') === 0 ? act : '<div class="sp"></div>' + act));
+  const lg = $('log'); if (lg && lg.lastElementChild) lg.lastElementChild.scrollIntoView({ block: 'nearest' });
+}
+function addHint(p, tag, lead) {
+  const S = G.S, r = Math.floor(G.turn / S.order.length); if (tag != null) { S.hints.push({ p, tag, r }); G.lines.push({ p, tag, r, lead }); } G.turn++; G.shuf = 0; sfx(p === 0 ? 'ok' : 'tap'); showHints(); say(tag != null ? pname(p) + ': ' + hint(tag) : '');
+}
+
+// ---------- voting ----------
+// 1人が k 人に投票（ウルフ2人なら2人）。同数なら、同数の人だけで決選
+const rule = () => E.ballotRule(G.S);
+function candsList(v) { const r = rule(); return (r.cands || G.S.players.map((_, i) => i)).filter(x => x !== v); }
+function showVote(v) {
+  G.phase = 'vote'; G.cur = v; G.choice = []; const S = G.S, r = rule(), c = candsList(v), need = Math.min(r.slots, c.length); G.need = need;
+  render('<div class="card"><h2>' + esc(pname(v)) + '</h2><p class="big">' + esc(S.revote ? L('決選投票：ウルフだと思う人は？', 'Runoff: who is the wolf?') : need > 1 ? L('ウルフだと思う人を ' + need + '人 えらぶ', 'Pick ' + need + ' players you think are wolves') : L('ウルフだと思う人に 投票', 'Vote for the wolf')) + '</p>' +
+    (G.mode === 'local' ? '<p class="note">' + esc(L('だれに入れたかは、ほかの人には見えません', 'Nobody else sees your vote yet')) + '</p>' : '') + '</div>' +
+    '<div class="pick" id="vpick">' + c.map(i => '<button class="pk" type="button" data-act="voteFor" data-i="' + i + '" aria-pressed="false">' + esc(pname(i)) + (G.mode === 'solo' && i !== 0 ? pTag(i) + '<small>' + esc(E.hintsBy(S, i).map(h => hint(h.tag)).join(' ')).slice(0, 70) + '</small>' : '') + '</button>').join('') + '</div><div class="sp"></div>' +
+    btn('voteOk', esc(L('この人に入れる', 'Cast this vote')), '', ' disabled'));
+  HEAD();
+}
+function afterVote(v, picks) {
+  G.votes[v] = picks; sfx('select');
+  const S = G.S, r = rule();
+  if (G.mode === 'solo') { S.players.forEach((_, p) => { if (p !== 0) G.votes[p] = E.cpuVote(S, p, r.cands, r.slots); }); return tallyVotes(); }
+  const next = v + 1; if (next < S.n) showPass(next, 'vote'); else tallyVotes();
+}
+function tallyVotes() {
+  const S = G.S, votes = G.votes.slice(0, S.n); const res = E.applyVotes(S, votes); G.res = res; G.phase = 'tally';
+  const rows = S.players.map((p, i) => '<span>' + esc(p.name) + '</span><span>' + esc('→ ' + (votes[i] && votes[i].length ? votes[i].map(t => S.players[t].name).join('・') : '-')) + '</span><span>' + esc(L(res.counts[i] + '票', res.counts[i] + ' votes')) + '</span>').join('');
+  const nm = res.caught ? res.caught.map(pname).join('・') : '';
+  const msg = res.next === 'caught' ? L(nm + ' が選ばれた！', nm + ' ' + (res.caught.length > 1 ? 'were' : 'was') + ' chosen!') : res.next === 'revote' ? L('同数！ ' + res.tied.map(pname).join('・') + ' で決選投票', 'A tie! Runoff between ' + res.tied.map(pname).join(', ')) : L('また同数… だれもつかまりませんでした', 'Tied again... nobody is caught');
+  render('<div class="card"><h2>' + esc(L('投票けっか', 'Votes')) + '</h2><div class="kv"><span class="h">' + esc(L('だれが', 'Voter')) + '</span><span class="h">' + esc(L('だれに', 'For')) + '</span><span class="h">' + esc(L('票', 'Votes')) + '</span>' + rows + '</div><p class="big" id="tallyMsg">' + esc(msg) + '</p></div><div class="sp"></div>' +
+    btn('afterTally', esc(res.next === 'revote' ? L('決選投票へ', 'To the runoff') : res.next === 'caught' && E.allWolvesCaught(S) ? L('つかまった人は…？', 'Who was caught...?') : L('けっかを見る', 'See the result'))));
+  sfx(res.next === 'revote' ? 'error' : 'ok'); say(msg);
+}
+function guesserSeat() { const S = G.S; const cw = S.wolves.filter(w => S.caught.indexOf(w) >= 0); return (G.mode === 'solo' && cw.indexOf(0) >= 0) ? 0 : cw[0]; }
+function afterTally() {
+  const S = G.S, res = G.res;
+  if (res.next === 'revote') { G.votes = []; if (G.mode === 'solo') showVote(0); else showPass(0, 'vote'); return; }
+  if (res.next === 'caught' && E.allWolvesCaught(S)) {
+    const g = guesserSeat();
+    if (G.mode === 'solo' && g === 0) { showGuess(0); return; }
+    if (G.mode === 'local') { showPass(g, 'guess'); return; }
+    const opts = E.guessOptions(S), gi = E.cpuGuess(S); G.guessText = wn(opts[gi]); finishGame(!!opts[gi].ok); return;
+  }
+  finishGame(false);
+}
+function showGuess(p) {
+  G.phase = 'guess'; G.cur = p; G.gopts = E.guessOptions(G.S); G.choice = null;
+  render('<div class="card"><h2>' + esc(L('逆転のチャンス！', 'Last chance!')) + '</h2><p class="big">' + esc(L(pname(p) + ' はつかまりました。みんなのことばは？', pname(p) + ' was caught. What is everyone else\'s word?')) + '</p><p>' + esc(L('当たれば、ウルフの逆転勝ち！', 'Guess right and the wolf wins!')) + '</p></div>' +
+    '<div class="pick" id="gpick">' + G.gopts.map((o, i) => '<button class="pk" type="button" data-act="guessFor" data-i="' + i + '" aria-pressed="false">' + esc(wn(o)) + '</button>').join('') + '</div><div class="sp"></div>' + btn('guessOk', esc(L('これだ！', 'This one!')), '', ' disabled'));
+}
+
+// ---------- result ----------
+const HOWTXT = (o, S) => ({ caught: L(S.wolves.map(pname).join('・') + ' をつかまえた！', 'The wolf ' + S.wolves.map(pname).join(', ') + ' was caught!'), counter: L(S.wolves.map(pname).join('・') + ' が ことばを当てて逆転！', S.wolves.map(pname).join(', ') + ' guessed the word and turned it around!'), wrong: L(o.caughtAll.map(pname).join('・') + ' はウルフじゃなかった…', o.caughtAll.map(pname).join(', ') + ' not a wolf...'), partial: L('ウルフ2人のうち、つかまえたのは1人だけ…', 'Only one of the two wolves was caught...'), tie: L('同数が続いて、ウルフはにげきった', 'The votes stayed tied and the wolf got away') }[o.how]);
+function finishGame(guessOk) {
+  const S = G.S, o = E.finish(S, guessOk); G.phase = 'result'; stopTimer(); wakeOff();
+  const solo = G.mode === 'solo', st = save.stats; E.record(st, S, G.human);
+  if (!solo && session) { S.players.forEach((_, i) => { session.total[i] += o.pts[i]; }); session.games++; }
+  const humanWon = solo ? (o.winner === 'wolf') === (S.wolves.indexOf(0) >= 0) : null;
+  writeSave(); emit('play_end', { mode: 'practice', score: solo ? (o.pts[0] | 0) : 0, durationMs: 0, reason: 'clear' }); sfx(solo ? (humanWon ? 'win' : 'fail') : 'clear');
+  const title = o.winner === 'village' ? L('村の勝ち！', 'Village wins!') : L('ウルフの勝ち！', 'The wolf wins!');
+  const P = E.pairOf(S), maj = P[S.maj], wolfW = P[S.maj === 'a' ? 'b' : 'a'];
+  const rows = S.players.map((p, i) => '<span>' + esc(p.name) + (p.wolf ? ' <span class="badge wolf">' + esc(L('ウルフ', 'Wolf')) + '</span>' : '') + '</span><span>+' + o.pts[i] + '</span><span>' + (session ? session.total[i] : '') + '</span>').join('');
+  render('<div class="card"><h2>' + esc(title) + '</h2>' + (solo ? '<p class="big">' + esc(humanWon ? L('あなたの勝ち！', 'You win!') : L('あなたの負け…', 'You lose...')) + '</p>' : '') + '<p>' + esc(HOWTXT(o, S)) + '</p>' + (G.guessText ? '<p>' + esc(L('ウルフの答え：', 'Wolf\'s guess: ') + G.guessText) + '</p>' : '') +
+    '<div class="w2"><div><small>' + esc(L('みんなのことば', 'Everyone\'s word')) + '</small>' + esc(wn(maj)) + (EN ? '' : '<small>' + esc(maj.en) + '</small>') + '</div><div class="wf"><small>' + esc(L('ウルフのことば', 'Wolf\'s word')) + '</small>' + esc(wn(wolfW)) + (EN ? '' : '<small>' + esc(wolfW.en) + '</small>') + '</div></div>' +
+    '<div class="kv" id="score"><span class="h">' + esc(L('名前', 'Name')) + '</span><span class="h">' + esc(L('今回', 'This round')) + '</span><span class="h">' + esc(session ? L('合計', 'Total') : '') + '</span>' + rows + '</div></div><div class="sp"></div>' +
+    btn('again', esc(solo ? L('もう一度', 'Play again') : L('つぎのことばで もう一回', 'Next round'))) + '<div class="row2">' + btn('toSetup', esc(L('せってい', 'Settings')), 'sub') + btn('toTitle', esc(L('タイトルへ', 'Title')), 'sub') + '</div>');
+  say(title);
+}
+
+// =====================================================================================
+// online: common/turnroom.js（ロビー・部屋）＋ online.js（ゲームの中身）。ホストのページがゲームを進め、どのページも（ホストも）model を描く。
+// 話し合いは「ヒントカード」だけ。自由な文字入力はない。
+// =====================================================================================
+let TR = null, O = null;
+function ensureTR() {
+  if (TR || !window.KoboTurnRoom || !ON) return TR;
+  TR = KoboTurnRoom.create({
+    game: GAME, host: ON.host, turnSec: 30, seats: [3, 4, 5, 6, 7, 8], seatsMax: 8, minSeats: 3, dealMs: 1500,
+    cpuNames: k => CPUN[k % CPUN.length], getOpts: () => ({ n: save.set.n }), getCpu: () => save.set.skill, cpuLabel: lv => [L('ゆるい', 'Easy'), L('ふつう', 'Normal'), L('するどい', 'Sharp')][lv - 1],
+    onOpts: o => { if (o && o.n) { save.set.n = clamp(o.n, 3, 8); writeSave(); } },
+    onModel: onlineModel, onTick: onlineTick, onClose: () => showTitle(),
+    onIdleClose: () => { O = null; showTitle(); },
+  });
+  return TR;
+}
+function openOnline() {
+  if (!ensureTR()) { sfx('error'); toast(L('オンラインを使えません', 'Online is not available')); return showTitle(); }
+  ON.setCfg({ rounds: save.set.rounds, wolves: save.set.wolves, knows: save.set.knows });   // 部屋をつくるページ（ホスト）だけが使う
+  O = null; G = { mode: 'online', phase: 'lobby', S: null }; TR.open({ n: save.set.n });
+}
+const oName = i => (O && O.m && O.m.names[i]) || ('P' + (i + 1));
+function onlineModel(m) {
+  if (!m) return;
+  if (m.me < 0 || (m.replaced && (!O || O.over))) { if (TR) TR.leave(); O = null; toast(m.replaced ? L('席がCPUに交代しました', 'Your seat was taken over by a CPU') : L('このゲームには入れませんでした', 'You are not in this game'), 2200); showTitle(); return; }
+  const v = ON.view(m, W);
+  if (!O || O.rid !== m.rid) O = { rid: m.rid, gn: 0, tot: [], open: false, shuf: 0, pick: [], sent: null, scored: 0 };
+  if (m.fresh || O.gn !== m.gn) { O.gn = m.gn; O.open = false; O.shuf = 0; O.pick = []; O.sent = null; O.rmSent = false; O.startedAt = Date.now(); emit('play_start', { mode: 'versus' }); wakeOn(); }
+  O.m = v.__m = m; O.v = v; G = G && G.mode === 'online' ? G : { mode: 'online' }; G.phase = 'online'; G.S = null;
+  if (v.ph === 'e' && O.scored !== m.gn) { O.scored = m.gn; onlineScore(v, m); }
+  if (v.ph === 'v' && O.sent && !v.voted[m.me]) { if (Date.now() - O.sent.t > 700) { O.sent.t = Date.now(); TR.submit(O.sent.a); } }   // 同じ時に何人かが投票したとき、送りなおす
+  renderOnline();
+}
+function onlineScore(v, m) {
+  const f = v.fin, me = m.me, st = save.stats, isW = f.wolves.indexOf(me) >= 0, won = (f.winner === 'wolf') === isW;
+  st.games++; st.onl++; if (won) st.onw++; if (v.n >= 8) st.big++; if (v.k >= 2) st.two++; if (v.knows) st.knows++;
+  st.hints += v.hints.filter(h => h.p === me).length;
+  if (f.how === 'caught') st.caught++; else if (f.how === 'counter') st.counters++; else st.escapes++;
+  writeSave(); wakeOff(); emit('play_end', { mode: 'versus', score: 0, durationMs: Date.now() - (O.startedAt || Date.now()), reason: 'clear' }); sfx(won ? 'win' : 'fail');
+  f.pts.forEach((p, i) => { O.tot[i] = (O.tot[i] || 0) + p; });
+}
+function onlineTick(m) {
+  const el = $('otm'); if (!el || !m) return; const left = TR.timeLeft();
+  el.textContent = left > 0 ? mmss(left) : ''; el.classList.toggle('low', left > 0 && left <= 8000);
+}
+function oWordCard() {
+  const v = O.v, w = v.myWord; if (!w) return '';
+  return '<button class="owc' + (O.open ? ' open' : '') + '" type="button" data-act="oShow" aria-pressed="' + O.open + '">' + (O.open ? '<span class="wd">' + esc(wn(w)) + '</span>' + (EN ? '' : '<small>' + esc(w.en) + '</small>') + (v.knowsWolf ? '<div class="wfnote">' + esc(L('あなたはウルフです', 'You are the wolf')) + '</div>' : '') : '<span class="sealed">' + ICON.eye + ' ' + esc(L('タップで あなたのことばを見る', 'Tap to see your word')) + '</span>') + '</button>';
+}
+function oLog() {
+  const v = O.v; if (!v.hints.length) return '<p class="note">' + esc(L('ヒントカードがここにたまります', 'Hint cards will pile up here')) + '</p>';
+  return '<div class="log">' + v.hints.map((h, i) => lineHtml(oName(h.p), h.tag, Math.floor(i / v.n), h.p === O.m.me)).join('') + '</div>';
+}
+function renderOnline() {
+  if (!O || !O.v) return; const v = O.v, m = O.m, me = m.me, vc = v.n;
+  const keep = view.scrollTop; stopTimer(); HEAD();
+  let h = '<div class="card"><h2>' + esc(L('オンライン', 'Online') + ' · ' + vc + L('人', ' players')) + '</h2><p>' + esc((v.k > 1 ? L('ウルフは2人　', '2 wolves  ') : '') + (v.knows ? L('ウルフは知っている', 'Wolf knows') : L('ウルフは知らない', 'Wolf does not know'))) + '</p>' + oWordCard() + '</div>';
+  if (v.ph === 'h') {
+    const mine = m.tn === me, round = Math.min(v.rounds, Math.floor(v.hi / vc) + 1);
+    h += '<div class="card"><p>' + esc(L('ヒントのラウンド ', 'Hint round ') + round + ' / ' + v.rounds) + '　<span class="timer sm" id="otm"></span></p>';
+    if (mine) {
+      const opts = pickCards(v.choices, 'o' + v.hi, O.shuf);
+      h += '<p class="big">' + esc(L('あなたの番。ヒントカードを1枚えらぼう', 'Your turn. Pick one hint card')) + '</p><div class="pick one" id="hintPick">' + opts.map(t => '<button class="pk" type="button" data-act="oHint" data-t="' + t + '">' + esc(hint(t)) + '</button>').join('') + '</div>' + btn('oMore', esc(L('ほかのヒントを見る', 'Show other cards')), 'sub');
+    } else h += '<p class="big">' + esc(L(oName(m.tn) + ' が えらんでいます…', oName(m.tn) + ' is choosing...')) + '</p>';
+    h += '<p class="note">' + esc(L('ことばそのものは言わないでね。声で話すときは、知っている人とだけ。', 'Never say the word itself. Voice chat only with people you know.')) + '</p></div>' + oLog();
+  } else if (v.ph === 'v') {
+    const cands = (v.cands.length ? v.cands : Array.from({ length: vc }, (_, i) => i)).filter(i => i !== me), iVoted = v.voted[me], need = Math.min(v.slots, cands.length);
+    h += '<div class="card"><p class="big">' + esc(v.revote ? L('決選投票：ウルフだと思う人は？', 'Runoff: who is the wolf?') : need > 1 ? L('ウルフだと思う人を ' + need + '人 えらぶ', 'Pick ' + need + ' players you think are wolves') : L('ウルフだと思う人に 投票', 'Vote for the wolf')) + '　<span class="timer sm" id="otm"></span></p>';
+    if (v.lastCounts.length && v.revote) h += '<p class="note">' + esc(L('同数でした。', 'It was a tie.')) + '</p>';
+    if (iVoted) h += '<p>' + esc(L('投票ずみ。みんなを待っています… ', 'Voted. Waiting for the others... ') + v.voted.filter(Boolean).length + '/' + vc) + '</p>';
+    else h += '<div class="pick" id="vpick">' + cands.map(i => '<button class="pk" type="button" data-act="oVoteFor" data-i="' + i + '" aria-pressed="' + (O.pick.indexOf(i) >= 0) + '">' + esc(oName(i)) + '</button>').join('') + '</div>' + btn('oVoteOk', esc(L('この人に入れる', 'Cast this vote')), '', O.pick.length === need ? '' : ' disabled');
+    h += '</div>' + oLog();
+  } else if (v.ph === 'g') {
+    const me2 = v.turn === me;
+    h += '<div class="card"><h2>' + esc(L('逆転のチャンス！', 'Last chance!')) + '</h2><p class="big">' + esc(v.caught.map(oName).join('・') + L(' がつかまりました。', ' caught. ')) + '</p><p>' + esc(me2 ? L('みんなのことばは？ 当てれば逆転勝ち！', 'What is the others\' word? Guess right to win!') : L(oName(v.turn) + ' が答えをえらんでいます…', oName(v.turn) + ' is guessing...')) + '　<span class="timer sm" id="otm"></span></p>';
+    if (me2) h += '<div class="pick" id="gpick">' + v.guessOpts.map((o, i) => '<button class="pk" type="button" data-act="oGuess" data-i="' + i + '">' + esc(wn(o)) + '</button>').join('') + '</div>';
+    h += '</div>';
+  } else {
+    const f = v.fin, isW = f.wolves.indexOf(me) >= 0, won = (f.winner === 'wolf') === isW;
+    const rows = f.pts.map((p, i) => '<span>' + esc(oName(i)) + (i === me ? ' ★' : '') + (f.wolves.indexOf(i) >= 0 ? ' <span class="badge wolf">' + esc(L('ウルフ', 'Wolf')) + '</span>' : '') + '</span><span>+' + p + '</span><span>' + (O.tot[i] || 0) + '</span>').join('');
+    const how = HOWTXT_ON(f.how, v.caught.map(oName).join('・'), f.wolves.map(oName).join('・'));
+    h += '<div class="card"><h2>' + esc(f.winner === 'village' ? L('村の勝ち！', 'Village wins!') : L('ウルフの勝ち！', 'The wolf wins!')) + '</h2><p class="big">' + esc(won ? L('あなたの勝ち！', 'You win!') : L('あなたの負け…', 'You lose...')) + '</p><p id="oHow">' + esc(how) + '</p>' +
+      '<div class="w2"><div><small>' + esc(L('みんなのことば', 'Everyone\'s word')) + '</small>' + esc(wn(f.maj)) + '</div><div class="wf"><small>' + esc(L('ウルフのことば', 'Wolf\'s word')) + '</small>' + esc(wn(f.wolfW)) + '</div></div>' +
+      '<div class="kv" id="score"><span class="h">' + esc(L('名前', 'Name')) + '</span><span class="h">' + esc(L('今回', 'This round')) + '</span><span class="h">' + esc(L('合計', 'Total')) + '</span>' + rows + '</div></div>' +
+      btn('oAgain', esc(O.rmSent ? L('みんなを待っています…', 'Waiting for the others...') : L('もう一回', 'Play again')), '', O.rmSent ? ' disabled' : '') + btn('oLeave', esc(L('部屋を出る', 'Leave the room')), 'sub');
+  }
+  view.innerHTML = h; view.scrollTop = keep; onlineTick(m);
+  say(v.ph === 'h' && m.tn === me ? L('あなたの番です', 'Your turn') : '');
+}
+const HOWTXT_ON = (how, caughtNames, wolfNames) => ({ caught: L(wolfNames + ' をつかまえた！', 'The wolf ' + wolfNames + ' was caught!'), counter: L(wolfNames + ' が ことばを当てて逆転！', wolfNames + ' guessed the word and turned it around!'), wrong: L(caughtNames + ' はウルフじゃなかった…', caughtNames + ' not a wolf...'), partial: L('ウルフ2人のうち、つかまえたのは1人だけ…', 'Only one of the two wolves was caught...'), tie: L('同数が続いて、ウルフはにげきった', 'The votes stayed tied and the wolf got away') }[how]);
+function leaveOnline() { if (TR) TR.leave(); O = null; showTitle(); }
+
+// ---------- clicks ----------
+view.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return; const a = b.dataset.act, d = b.dataset;
+  switch (a) {
+    case 'mSolo': sfx('tap'); return showSetup('solo');
+    case 'mLocal': sfx('tap'); return showSetup('local');
+    case 'mOnline': sfx('tap'); return showSetup('online');
+    case 'mHow': return showHowto(false);
+    case 'howGo': store.set(HOWTO_KEY, '1'); return showTitle();
+    case 'toTitle': return showTitle();
+    case 'toSetup': return showSetup(G ? G.mode : SU.mode);
+    case 'set': { const k = d.k; let v = d.v; if (k === 'knows') v = v === 'true'; else if (k !== 'reveal') v = +v; save.set[k] = v; if (k === 'n') { const ins = [...view.querySelectorAll('#names input')]; ins.forEach(i => { names[+i.dataset.i] = i.value; }); } writeSave(); sfx('tap'); const y = view.scrollTop; showSetup(SU.mode); view.scrollTop = y; return; }
+    case 'cat': { const c = +d.c, all = W.cats.map((_, i) => i); let cur = save.set.cats.length ? save.set.cats.slice() : all; cur = cur.includes(c) ? cur.filter(x => x !== c) : cur.concat(c); if (!cur.length) { toast(L('ジャンルは1つは えらんでね', 'Keep at least one category')); return; } save.set.cats = cur.length === all.length ? [] : cur.sort((x, y) => x - y); writeSave(); b.setAttribute('aria-pressed', String(cur.includes(c))); sfx('tap'); return; }
+    case 'start': { view.querySelectorAll('#names input').forEach(i => { names[+i.dataset.i] = i.value; }); sfx('ok'); return SU.mode === 'online' ? openOnline() : startGame(SU.mode); }
+    case 'again': sfx('ok'); return startGame(G.mode);
+    case 'passOk': sfx('tap'); return G.next === 'word' ? showWord(G.cur) : G.next === 'vote' ? showVote(G.cur) : showGuess(G.cur);
+    case 'wordDone': { const S = G.S; if (G.mode === 'solo') { G.turn = 0; G.lines = []; return showHints(); } const nx = G.cur + 1; if (nx < S.n) showPass(nx, 'word'); else showTalk(); return; }
+    case 'peek': { toast(L('あなたのことば：', 'Your word: ') + wn(E.wordOf(G.S, 0)), 2200); return; }
+    case 'myHint': return addHint(0, +d.t);
+    case 'myPass': return addHint(0, null);
+    case 'moreCards': G.shuf++; sfx('tap'); return showHints();
+    case 'cpuNext': { const S = G.S, p = S.order[G.turn % S.order.length], r = Math.floor(G.turn / S.order.length), ld = E.cpuLead(S, p, r); return addHint(p, E.cpuHintTag(S, p, r), EN ? ld.en : ld.ja); }
+    case 'tmPause': return timerPause();
+    case 'tmCard': return drawTopic();
+    case 'tmPlus': if (tmr) { if (tmr.paused) tmr.left += 30000; else tmr.end += 30000; tmr.fired = false; tickTimer(); } return;
+    case 'toVote': G.votes = []; G.cands = null; return G.mode === 'solo' ? showVote(0) : showPass(0, 'vote');
+    case 'voteFor': { const i = +d.i, k = G.choice.indexOf(i); if (k >= 0) G.choice.splice(k, 1); else { if (G.choice.length >= G.need) G.choice.shift(); G.choice.push(i); } view.querySelectorAll('#vpick .pk').forEach(x => x.setAttribute('aria-pressed', String(G.choice.indexOf(+x.dataset.i) >= 0))); view.querySelector('[data-act="voteOk"]').disabled = G.choice.length !== G.need; sfx('tap'); return; }
+    case 'voteOk': return afterVote(G.cur, G.choice.slice());
+    case 'afterTally': return afterTally();
+    case 'guessFor': { G.choice = +d.i; view.querySelectorAll('#gpick .pk').forEach(x => x.setAttribute('aria-pressed', String(x === b))); view.querySelector('[data-act="guessOk"]').disabled = false; sfx('tap'); return; }
+    case 'guessOk': { const o = G.gopts[G.choice]; G.guessText = wn(o); return finishGame(!!o.ok); }
+    // online
+    case 'oShow': O.open = !O.open; sfx('tap'); return renderOnline();
+    case 'oMore': O.shuf++; sfx('tap'); return renderOnline();
+    case 'oHint': { const slot = O.v.choices.indexOf(+d.t); if (slot < 0 || !TR.submit({ t: 'hn', c: slot })) { sfx('error'); return; } sfx('ok'); O.shuf = 0; return; }
+    case 'oVoteFor': { const v = O.v, need = Math.min(v.slots, (v.cands.length ? v.cands.length : v.n) - (v.cands.indexOf(O.m.me) >= 0 || !v.cands.length ? 1 : 0)), i = +d.i, k = O.pick.indexOf(i); if (k >= 0) O.pick.splice(k, 1); else { if (O.pick.length >= need) O.pick.shift(); O.pick.push(i); } sfx('tap'); return renderOnline(); }
+    case 'oVoteOk': { const w = { t: 'vt', c: O.pick[0], k: O.pick.length > 1 ? O.pick[1] : -1 }; if (!TR.submit(w)) { sfx('error'); return; } O.sent = { a: w, t: Date.now() }; O.pick = []; sfx('select'); return; }
+    case 'oGuess': { if (!TR.submit({ t: 'gs', c: +d.i })) sfx('error'); else sfx('select'); return; }
+    case 'oAgain': { if (TR.rematch()) { O.rmSent = true; sfx('tap'); renderOnline(); } else leaveOnline(); return; }
+    case 'oLeave': return leaveOnline();
+  }
+});
+// keyboard: 1-9 pick, Enter confirm is native on buttons; Esc opens the menu
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.metaKey || e.ctrlKey) return; const tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'SELECT')) return;
+  if (e.code === 'Escape') { if (!(pm && pm.isOpen) && !(TR && ['nick', 'menu', 'connecting', 'creating', 'joining', 'queue', 'room', 'err'].includes(TR.phase))) { openMenu(); e.preventDefault(); } return; }
+  if (/^Digit[1-9]$/.test(e.code) && G && (G.phase === 'vote' || G.phase === 'guess' || G.phase === 'hints' || G.phase === 'online')) {
+    const list = [...view.querySelectorAll('.pk')], k = +e.code.slice(5) - 1; if (list[k]) { list[k].click(); }
+  }
+});
+
+// ---------- menu, sound ----------
+function renderSound() { const b = $('sndBtn'); if (!A) { b.hidden = true; return; } const m = A.muted; b.setAttribute('aria-pressed', String(!m)); b.setAttribute('aria-label', m ? L('サウンド オフ', 'Sound off') : L('サウンド オン', 'Sound on')); b.innerHTML = m ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>'; }
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); });
+if (A) A.onChange(renderSound);
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); const dark = !(UI && UI.theme && UI.theme.resolved && UI.theme.resolved() === 'light'); if (m) m.setAttribute('content', dark ? '#1c1733' : '#fbf3dd'); }
+let pm = null;
+function openMenu() {
+  if (!UI) { showTitle(); return; } if (pm && pm.isOpen) return;
+  const online = !!G && G.mode === 'online' && G.phase === 'online', inGame = !!G && G.mode !== 'online' && G.phase !== 'result' && G.phase !== 'lobby';
+  const extra = [{ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }];
+  if (online) extra.push({ label: L('部屋を出る', 'Leave the room'), icon: 'close', onClick: async () => { pm.close(); const ok = UI.confirm ? await UI.confirm({ title: L('出ると、あなたの席はCPUに代わります。出ますか？', 'Your seat will be taken over by a CPU. Leave?'), ok: L('出る', 'Leave'), cancel: L('やめる', 'Cancel'), danger: true }) : true; if (ok) leaveOnline(); } });
+  else extra.push({ label: L('タイトルへ', 'Title'), icon: 'menu', onClick: () => { pm.close(); showTitle(); } });
+  pm = UI.pauseMenu({ title: L('メニュー', 'Menu'), home: '../', onSettings: false, extra, onRestart: inGame ? () => startGame(G.mode) : undefined, confirmRestart: false, onResume: () => { if (tmr && tmr.paused) timerPause(); }, onOpen: () => { hideWord(); if (tmr && !tmr.paused) timerPause(); } });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && G && G.phase !== 'result' && G.phase !== 'start' && G.mode !== 'online') wakeOn(); });
+
+// ---------- boot ----------
+document.title = L('ワードウルフ', 'Word Wolf'); HEAD();
+$('backLink').setAttribute('aria-label', L('ゲーム一覧へ戻る', 'Back to games')); $('menuBtn').setAttribute('aria-label', L('メニュー', 'Menu'));
+renderSound(); themeColor();
+KG() && KG().register({ id: GAME, pause() { hideWord(); }, resume() {}, save() {}, isIdle: () => !G || G.phase === 'result' || G.phase === 'title' || G.phase === 'lobby', dispose() { stopTimer(); wakeOff(); } });
+if (store.get(HOWTO_KEY) == null) showHowto(true); else showTitle();
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  window.__kb = Object.assign(window.__kb || {}, {
+    ready: () => true,
+    state: () => ({
+      phase: G ? G.phase : 'title', mode: G ? G.mode : '', cur: G ? G.cur : -1, human: G ? G.human : -1, n: G && G.S ? G.S.n : 0, wolf: G && G.S ? G.S.wolf : -1, wolves: G && G.S ? G.S.wolves : [], k: G && G.S ? G.S.k : 0, knows: G && G.S ? G.S.knows : false, pair: G && G.S ? G.S.pair : -1, maj: G && G.S ? G.S.maj : '',
+      words: G && G.S ? G.S.players.map((_, i) => E.wordOf(G.S, i).ja) : [], hints: G && G.S ? G.S.hints.length : 0, votes: G && G.votes ? G.votes.slice() : [], outcome: G && G.S ? G.S.outcome : null, res: G ? G.res : null, cands: G ? G.cands : null, revealed: G ? G.revealed : false,
+      stats: save.stats, rank: save.rank, set: save.set, session: session, turn: G ? G.turn : 0, seed: G && G.S ? G.S.seed : '', timer: tmr ? { paused: tmr.paused, left: tmr.paused ? tmr.left : tmr.end - Date.now() } : null, order: G && G.S ? G.S.order : [], lastVotes: G && G.S ? G.S.lastVotes : null,
+    }),
+  });
+  window.__wordwolf = {
+    E, W, ON, get G() { return G; }, get O() { return O; }, get save() { return save; }, setSet(o) { Object.assign(save.set, o); writeSave(); }, startGame, showTitle, showSetup, showHowto, resetSave() { store.del(SAVE_KEY); save = readSave(); session = null; names = []; },
+    setSave(o) { save = Object.assign(readSave(), o); writeSave(); }, shiftTimer(ms) { if (tmr) { tmr.end -= ms; tickTimer(); } },
+    onlineState() { const m = TR ? TR.model() : null, tr = TR ? TR._S : null; return { phase: TR ? TR.phase : 'off', host: TR ? TR.isHost : false, code: tr ? tr.code : null, rid: tr ? tr.rid : null, uid: TR ? TR.uid : null, err: tr ? tr.err : null, ph: O && O.v ? O.v.ph : '', me: m ? m.me : -1, tn: m ? m.tn : -1, gn: m ? m.gn : 0, names: m ? m.names : [], tot: O ? O.tot : [] }; },
+    thumbScene() {
+      store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); save.set.cpus = 4; save.set.rounds = 2; startGame('solo', { seed: 7 }); showHints();
+      const S = G.S; for (let i = 0; i < 4; i++) { const p = S.order[G.turn % S.order.length]; if (p === 0) { addHint(0, E.hintChoices(S, 0)[0]); } else addHint(p, E.cpuHintTag(S, p, 0)); }
+      return true;
+    },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.wordwolf.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

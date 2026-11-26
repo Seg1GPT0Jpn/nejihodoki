@@ -1,7 +1,7 @@
 rules_version = '2';
 // ひまつぶし工房：Firestore のルール（P1-4）。Firebase コンソールの Firestore → ルール に全文を貼り付けて「公開」する。
 // テスト：node tools/tests/rules/run.js（エミュレーター）／ --live（本番）
-// ゲームを足すとき：games()・caps()・okLegacyScores()（okCap）・plus1() の4か所と、tools/tests/rules/spec.js の CAPS を直す。
+// ゲームを足すとき：games()・caps()・okPlays()（kbPlays の1項）・okGames()（同期する保存のキーごとの1項）と、tools/tests/rules/spec.js の CAPS を直す。okLegacyScores() は古い32ゲームだけで、足さない。
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -13,10 +13,10 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
 
     // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
-    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing', 'mahjong']; }
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing', 'mahjong', 'akin', 'chess', 'wordwolf']; }
     function caps() {
       return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
-               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 10000, 'gomoku': 100000, 'sudoku': 100000, 'crates': 240, 'hop': 168, 'maze': 85, 'shmup': 99999999, 'fishing': 150, 'mahjong': 150000 };
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 10000, 'gomoku': 100000, 'sudoku': 100000, 'crates': 240, 'hop': 168, 'maze': 85, 'shmup': 99999999, 'fishing': 150, 'mahjong': 150000, 'akin': 100000, 'chess': 100000, 'wordwolf': 500 };
     }
 
     // ===== 日本時間の日付と週 =====
@@ -57,43 +57,46 @@ service cloud.firestore {
     function changedKeys(g) {
       return resource == null || !('games' in resource.data) ? g.keys().toSet() : g.diff(resource.data.games).affectedKeys();
     }
-    function okEntAt(g, ch, k) { return !(k in ch) || !(k in g) || okEnt(g[k]); }
+    // okGames は、キーごとの確かめを関数に包まず「(!('キー' in ch) || !('キー' in g) || okEnt(g['キー']))」と直に書く（関数の呼び出しと引数で式の数が倍になるため。1000の上限の対策）
     function okGames(g) {
       let ch = changedKeys(g);
       return g is map && g.size() <= 300
-        && okEntAt(g, ch, 'nejihodoki3d~maxLevel') && okEntAt(g, ch, 'nejihodoki3d~stars') && okEntAt(g, ch, 'nejihodoki3d~daily')
-        && okEntAt(g, ch, 'kusoge~blocks~best') && okEntAt(g, ch, 'kusoge~blocks~state')
-        && okEntAt(g, ch, 'kusoge~drop~best')
-        && okEntAt(g, ch, 'kusoge~raft~best') && okEntAt(g, ch, 'kusoge~raft~save')
-        && okEntAt(g, ch, 'kusoge~gates~save')
-        && okEntAt(g, ch, 'kusoge~n59049~best') && okEntAt(g, ch, 'kusoge~n59049~bestTile') && okEntAt(g, ch, 'kusoge~n59049~state')
-        && okEntAt(g, ch, 'kusoge~water~save') && okEntAt(g, ch, 'kusoge~parking~save') && okEntAt(g, ch, 'kusoge~hole~save')
-        && okEntAt(g, ch, 'kusoge~hitsumabushi~save')
-        && okEntAt(g, ch, 'kusoge~planet~save') && okEntAt(g, ch, 'kusoge~planet~world')
-        && okEntAt(g, ch, 'kusoge~hitblow~save')
-        && okEntAt(g, ch, 'kusoge~shogi~save') && okEntAt(g, ch, 'kusoge~shogi~game')
-        && okEntAt(g, ch, 'kusoge~escape~save')
-        && okEntAt(g, ch, 'kusoge~td~save')
-        && okEntAt(g, ch, 'kusoge~physics~save')
-        && okEntAt(g, ch, 'kusoge~minigolf~save')
-        && okEntAt(g, ch, 'kusoge~cards~save')
-        && okEntAt(g, ch, 'kusoge~fit~save')
-        && okEntAt(g, ch, 'kusoge~town~save')
-        && okEntAt(g, ch, 'kusoge~colorcards~save')
-        && okEntAt(g, ch, 'kusoge~brawl~save')
-        && okEntAt(g, ch, 'kusoge~train~save')
-        && okEntAt(g, ch, 'kusoge~reversi~save')
-        && okEntAt(g, ch, 'kusoge~manabi~save')
-        && okEntAt(g, ch, 'kusoge~orchestra~save')
-        && okEntAt(g, ch, 'kusoge~gomoku~save')
-        && okEntAt(g, ch, 'kusoge~sudoku~save')
-        && okEntAt(g, ch, 'kusoge~crates~save')
-        && okEntAt(g, ch, 'kusoge~hop~save')
-        && okEntAt(g, ch, 'kusoge~maze~save')
-        && okEntAt(g, ch, 'kusoge~shmup~save')
-        && okEntAt(g, ch, 'kusoge~fishing~save')
-        && okEntAt(g, ch, 'kusoge~mahjong~save')
-        && okEntAt(g, ch, 'kusoge~vs~stats');
+        && (!('nejihodoki3d~maxLevel' in ch) || !('nejihodoki3d~maxLevel' in g) || okEnt(g['nejihodoki3d~maxLevel'])) && (!('nejihodoki3d~stars' in ch) || !('nejihodoki3d~stars' in g) || okEnt(g['nejihodoki3d~stars'])) && (!('nejihodoki3d~daily' in ch) || !('nejihodoki3d~daily' in g) || okEnt(g['nejihodoki3d~daily']))
+        && (!('kusoge~blocks~best' in ch) || !('kusoge~blocks~best' in g) || okEnt(g['kusoge~blocks~best'])) && (!('kusoge~blocks~state' in ch) || !('kusoge~blocks~state' in g) || okEnt(g['kusoge~blocks~state']))
+        && (!('kusoge~drop~best' in ch) || !('kusoge~drop~best' in g) || okEnt(g['kusoge~drop~best']))
+        && (!('kusoge~raft~best' in ch) || !('kusoge~raft~best' in g) || okEnt(g['kusoge~raft~best'])) && (!('kusoge~raft~save' in ch) || !('kusoge~raft~save' in g) || okEnt(g['kusoge~raft~save']))
+        && (!('kusoge~gates~save' in ch) || !('kusoge~gates~save' in g) || okEnt(g['kusoge~gates~save']))
+        && (!('kusoge~n59049~best' in ch) || !('kusoge~n59049~best' in g) || okEnt(g['kusoge~n59049~best'])) && (!('kusoge~n59049~bestTile' in ch) || !('kusoge~n59049~bestTile' in g) || okEnt(g['kusoge~n59049~bestTile'])) && (!('kusoge~n59049~state' in ch) || !('kusoge~n59049~state' in g) || okEnt(g['kusoge~n59049~state']))
+        && (!('kusoge~water~save' in ch) || !('kusoge~water~save' in g) || okEnt(g['kusoge~water~save'])) && (!('kusoge~parking~save' in ch) || !('kusoge~parking~save' in g) || okEnt(g['kusoge~parking~save'])) && (!('kusoge~hole~save' in ch) || !('kusoge~hole~save' in g) || okEnt(g['kusoge~hole~save']))
+        && (!('kusoge~hitsumabushi~save' in ch) || !('kusoge~hitsumabushi~save' in g) || okEnt(g['kusoge~hitsumabushi~save']))
+        && (!('kusoge~planet~save' in ch) || !('kusoge~planet~save' in g) || okEnt(g['kusoge~planet~save'])) && (!('kusoge~planet~world' in ch) || !('kusoge~planet~world' in g) || okEnt(g['kusoge~planet~world']))
+        && (!('kusoge~hitblow~save' in ch) || !('kusoge~hitblow~save' in g) || okEnt(g['kusoge~hitblow~save']))
+        && (!('kusoge~shogi~save' in ch) || !('kusoge~shogi~save' in g) || okEnt(g['kusoge~shogi~save'])) && (!('kusoge~shogi~game' in ch) || !('kusoge~shogi~game' in g) || okEnt(g['kusoge~shogi~game']))
+        && (!('kusoge~escape~save' in ch) || !('kusoge~escape~save' in g) || okEnt(g['kusoge~escape~save']))
+        && (!('kusoge~td~save' in ch) || !('kusoge~td~save' in g) || okEnt(g['kusoge~td~save']))
+        && (!('kusoge~physics~save' in ch) || !('kusoge~physics~save' in g) || okEnt(g['kusoge~physics~save']))
+        && (!('kusoge~minigolf~save' in ch) || !('kusoge~minigolf~save' in g) || okEnt(g['kusoge~minigolf~save']))
+        && (!('kusoge~cards~save' in ch) || !('kusoge~cards~save' in g) || okEnt(g['kusoge~cards~save']))
+        && (!('kusoge~fit~save' in ch) || !('kusoge~fit~save' in g) || okEnt(g['kusoge~fit~save']))
+        && (!('kusoge~town~save' in ch) || !('kusoge~town~save' in g) || okEnt(g['kusoge~town~save']))
+        && (!('kusoge~colorcards~save' in ch) || !('kusoge~colorcards~save' in g) || okEnt(g['kusoge~colorcards~save']))
+        && (!('kusoge~brawl~save' in ch) || !('kusoge~brawl~save' in g) || okEnt(g['kusoge~brawl~save']))
+        && (!('kusoge~train~save' in ch) || !('kusoge~train~save' in g) || okEnt(g['kusoge~train~save']))
+        && (!('kusoge~reversi~save' in ch) || !('kusoge~reversi~save' in g) || okEnt(g['kusoge~reversi~save']))
+        && (!('kusoge~manabi~save' in ch) || !('kusoge~manabi~save' in g) || okEnt(g['kusoge~manabi~save']))
+        && (!('kusoge~orchestra~save' in ch) || !('kusoge~orchestra~save' in g) || okEnt(g['kusoge~orchestra~save']))
+        && (!('kusoge~gomoku~save' in ch) || !('kusoge~gomoku~save' in g) || okEnt(g['kusoge~gomoku~save']))
+        && (!('kusoge~sudoku~save' in ch) || !('kusoge~sudoku~save' in g) || okEnt(g['kusoge~sudoku~save']))
+        && (!('kusoge~crates~save' in ch) || !('kusoge~crates~save' in g) || okEnt(g['kusoge~crates~save']))
+        && (!('kusoge~hop~save' in ch) || !('kusoge~hop~save' in g) || okEnt(g['kusoge~hop~save']))
+        && (!('kusoge~maze~save' in ch) || !('kusoge~maze~save' in g) || okEnt(g['kusoge~maze~save']))
+        && (!('kusoge~shmup~save' in ch) || !('kusoge~shmup~save' in g) || okEnt(g['kusoge~shmup~save']))
+        && (!('kusoge~fishing~save' in ch) || !('kusoge~fishing~save' in g) || okEnt(g['kusoge~fishing~save']))
+        && (!('kusoge~mahjong~save' in ch) || !('kusoge~mahjong~save' in g) || okEnt(g['kusoge~mahjong~save']))
+        && (!('kusoge~akin~save' in ch) || !('kusoge~akin~save' in g) || okEnt(g['kusoge~akin~save']))
+        && (!('kusoge~chess~save' in ch) || !('kusoge~chess~save' in g) || okEnt(g['kusoge~chess~save']))
+        && (!('kusoge~wordwolf~save' in ch) || !('kusoge~wordwolf~save' in g) || okEnt(g['kusoge~wordwolf~save']))
+        && (!('kusoge~vs~stats' in ch) || !('kusoge~vs~stats' in g) || okEnt(g['kusoge~vs~stats']));
     }
     function okNejiUser(d) {
       return (!('games' in d) || okGames(d.games))
@@ -211,9 +214,19 @@ service cloud.firestore {
     // ===== 匿名のプレイ回数：1週間に1件。1回の書き込みで、1つのゲームを1だけ増やす =====
     // kbPlays/w<週番号> = { <ゲーム>: 回数 }
     function prevPlays() { return resource == null ? {} : resource.data; }
-    function plus1(g) {
-      return request.resource.data.get(g, 0) == prevPlays().get(g, 0)
-          || request.resource.data.get(g, 0) == prevPlays().get(g, 0) + 1;
+    // 1回の書き込みで増えるのは1ゲームの +1 だけ（変わったキーが1つであることは affectedKeys().size() == 1 が見る）。
+    // 式の数の上限（1000）の対策：ゲームごとに request.resource.data / prevPlays() を呼び直さず、d と p に1回だけ渡して引き算で確かめる（games() と同じ並び）。
+    function okPlays(d, p) {
+      return d.get('neji', 0) - p.get('neji', 0) in [0, 1] && d.get('blocks', 0) - p.get('blocks', 0) in [0, 1] && d.get('drop', 0) - p.get('drop', 0) in [0, 1] && d.get('raft', 0) - p.get('raft', 0) in [0, 1]
+          && d.get('gates', 0) - p.get('gates', 0) in [0, 1] && d.get('n59049', 0) - p.get('n59049', 0) in [0, 1] && d.get('water', 0) - p.get('water', 0) in [0, 1] && d.get('parking', 0) - p.get('parking', 0) in [0, 1]
+          && d.get('hole', 0) - p.get('hole', 0) in [0, 1] && d.get('hitsumabushi', 0) - p.get('hitsumabushi', 0) in [0, 1] && d.get('planet', 0) - p.get('planet', 0) in [0, 1] && d.get('hitblow', 0) - p.get('hitblow', 0) in [0, 1]
+          && d.get('shogi', 0) - p.get('shogi', 0) in [0, 1] && d.get('escape', 0) - p.get('escape', 0) in [0, 1] && d.get('td', 0) - p.get('td', 0) in [0, 1] && d.get('physics', 0) - p.get('physics', 0) in [0, 1]
+          && d.get('minigolf', 0) - p.get('minigolf', 0) in [0, 1] && d.get('trade', 0) - p.get('trade', 0) in [0, 1] && d.get('cards', 0) - p.get('cards', 0) in [0, 1] && d.get('fit', 0) - p.get('fit', 0) in [0, 1]
+          && d.get('town', 0) - p.get('town', 0) in [0, 1] && d.get('colorcards', 0) - p.get('colorcards', 0) in [0, 1] && d.get('brawl', 0) - p.get('brawl', 0) in [0, 1] && d.get('train', 0) - p.get('train', 0) in [0, 1]
+          && d.get('reversi', 0) - p.get('reversi', 0) in [0, 1] && d.get('manabi', 0) - p.get('manabi', 0) in [0, 1] && d.get('orchestra', 0) - p.get('orchestra', 0) in [0, 1] && d.get('gomoku', 0) - p.get('gomoku', 0) in [0, 1]
+          && d.get('sudoku', 0) - p.get('sudoku', 0) in [0, 1] && d.get('crates', 0) - p.get('crates', 0) in [0, 1] && d.get('hop', 0) - p.get('hop', 0) in [0, 1] && d.get('maze', 0) - p.get('maze', 0) in [0, 1]
+          && d.get('shmup', 0) - p.get('shmup', 0) in [0, 1] && d.get('fishing', 0) - p.get('fishing', 0) in [0, 1] && d.get('mahjong', 0) - p.get('mahjong', 0) in [0, 1] && d.get('akin', 0) - p.get('akin', 0) in [0, 1]
+          && d.get('chess', 0) - p.get('chess', 0) in [0, 1] && d.get('wordwolf', 0) - p.get('wordwolf', 0) in [0, 1];
     }
     match /kbPlays/{week} {
       allow get: if true;
@@ -221,8 +234,7 @@ service cloud.firestore {
       allow create, update: if signedIn() && week == 'w' + string(weekNo(request.time))
         && request.resource.data.keys().hasOnly(games())
         && request.resource.data.diff(prevPlays()).affectedKeys().size() == 1
-        && plus1('neji') && plus1('blocks') && plus1('drop') && plus1('raft') && plus1('gates')
-        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape') && plus1('td') && plus1('physics') && plus1('minigolf') && plus1('trade') && plus1('cards') && plus1('fit') && plus1('town') && plus1('colorcards') && plus1('brawl') && plus1('train') && plus1('reversi') && plus1('manabi') && plus1('orchestra') && plus1('gomoku') && plus1('sudoku') && plus1('crates') && plus1('hop') && plus1('maze') && plus1('shmup') && plus1('fishing') && plus1('mahjong');
+        && okPlays(request.resource.data, prevPlays())
     }
 
     // ── まなびの工房のソーシャル（週のリーグ kbLg・できごと kbFeed・ふたりクエスト kbPairs）──

@@ -81,7 +81,18 @@ node tools/tests/mahjong-play.js              # 麻雀工房の通し（本物�
 node tools/tests/unit/mahjong-shanten.test.js # 麻雀工房のシャンテン数（全探索との照合・待ち牌）
 node tools/tests/unit/mahjong-engine.test.js  # 麻雀工房の中身（牌山・役・符と点数・フリテン・流局・ウマ/オカ・毎回同じ結果）
 node tools/tests/unit/mahjong-ai.test.js      # 麻雀工房のCPU（3段階の強さの差・ヒント・1手の時間）
+node tools/tests/chess-play.js                # チェス工房の通し（本物のクリック・キー・ドラッグ・タッチで、CPUと1局・キャスリング・アンパッサン・プロモーション・ヒント・もどす・ふたりで1台・今日のパズル・検討・つづきから・持ち時間・オンライン2ページ）
+node tools/tests/unit/chess-engine.test.js   # チェス工房の中身（perft・全探索との照合・FEN/SAN/PGN・特別な手と引き分け・持ち時間）
+node tools/tests/unit/chess-ai.test.js       # チェス工房のCPU（メイト探索・6段階の強さの差・ヒントの説明・時間の上限・定跡）
+node tools/tests/unit/chess-puzzles.test.js  # チェス工房の問題集120問（答えが1つだけ・メイトの長さ・毎日の5問）。作り直すのは `node chess/tools/gen-puzzles.js`（公開後は作り直さない）
+node tools/tests/unit/chess-online.test.js   # チェス工房のオンライン（ホストのアダプター：pd/act が rules の形に収まる・投了/引き分け/待った・時計・CPU の席・database.rules.json の許可の数）
+node tools/tests/wordwolf-play.js             # ワードウルフの通し（本物のクリックで、ひとり・1台をまわす4人・ウルフ2人＋知っている・英語・画面サイズ・オンライン（エミュレーターで2ページ＋CPU）。--no-online で省く）
+node tools/tests/unit/wordwolf-words.test.js  # ワードウルフのことば（300組以上・1語15個以上のヒント・ヒントにことばが漏れない・むずかしさ3段）
+node tools/tests/unit/wordwolf-engine.test.js # ワードウルフの中身（ウルフ1〜2人・投票と決選・点数・CPU の性格とヒント・うたがい度）
+node tools/tests/unit/wordwolf-online.test.js # ワードウルフのオンライン（ホストのアダプター：pd/priv が rules の形に収まる・ウルフが結果まで出ない・手の検査）
 node tools/tests/unit/mahjong-online.test.js  # 麻雀工房のオンライン（ホストのアダプター：pd/priv が rules の形に収まる・他家の手牌が出ない・局の進行）
+node tools/tests/akin-play.js [first,number,undo,idk,custom,theme,noise,learn,contra,resume,duo,keys,english,layouts]  # あてっこの通し（本物のクリック・キーで数字あてっこ（1〜100・100万・自分の範囲）・ものあてっこ6テーマ・もどる・わからない・まちがい・こうさん→教える→次は当たる・つづきから・ふたり・英語・320px）
+node tools/tests/unit/akin-engine.test.js     # あてっこの中身（質問が半分に分かれる・何問で当たるか・もどる・わからない・まちがい耐性・おぼえる・保存の読み込み）と、6テーマのデータの検査（全タグが正しい・同じベクトルがない・全ものが当たる）
 node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
 node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
 node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）

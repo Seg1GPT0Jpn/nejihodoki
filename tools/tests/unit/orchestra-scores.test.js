@@ -56,7 +56,7 @@ test('no third-party code: the orchestra/ scripts are self-contained, only Googl
 });
 
 test('English for every Japanese string the page shows (T(...) literals, data-i18n texts and labels) and for every section name in engine.js', () => {
-  const html = rd('orchestra/index.html'); const dict = html.slice(html.indexOf('KoboI18n.add'), html.indexOf('</script>', html.indexOf('KoboI18n.add')));
+  const html = rd('orchestra/index.html'); const dict = html + rd('orchestra/concert.js') + rd('orchestra/contest.js'); // the English tables live in the first KoboI18n.add block, in the concert-mode block and in the contest-mode block (and in concert.js / contest.js EN)
   const keys = new Set([...dict.matchAll(/'((?:[^'\\]|\\.)*)'\s*:\s*'(?:[^'\\]|\\.)*'/g)].map(m => m[1].replace(/\\n/g, '\n').replace(/\\'/g, "'")));
   const body = html.slice(html.indexOf("const T = KoboI18n.t;"));
   const used = new Set([...body.matchAll(/\bT\(\s*'((?:[^'\\]|\\.)*)'/g)].map(m => m[1].replace(/\\n/g, '\n').replace(/\\'/g, "'")));

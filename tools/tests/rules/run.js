@@ -82,7 +82,7 @@ function log(row) {
       // common/turnroom.js（colorcards のオンライン対戦）：本物の SDK のボットが2〜4人で、本物のルールの上で動く（turnroom-bots.js。約5分）
       if (live) console.log('bots: emulator only (skipped with --live)');
       else {
-        console.log(`clients: colorcards online with 2-4 bots + reversi and gomoku online with 2 bots + mahjong online with 4 bots (${T.name})`);
+        console.log(`clients: colorcards online with 2-4 bots + reversi and gomoku online with 2 bots + mahjong online with 4 bots + chess online with 2 bots (${T.name})`);
         if (emu) await emu.clearData();
         const tb = await require('./turnroom-bots').runTurnroomBots(T, { log });
         for (const r of tb.rows) { rows.push(r); log(r); }

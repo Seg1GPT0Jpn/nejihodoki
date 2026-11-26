@@ -75,8 +75,8 @@
       del(k) { try { root.localStorage.removeItem(k); } catch (e) { delete mem[k]; } },
     };
     const tim = cfg.timing || {};    // the tests shorten the waits (the pages use ?debug&trtm=…）
-    const MAXN = cfg.seatsMax || 4;
-    const SEATS = (cfg.seats && cfg.seats.length ? cfg.seats : [2, 3, 4]).filter(n => n >= 2 && n <= MAXN);   // 選べる人数
+    const MAXN = cfg.seatsMax || 4, MINN = cfg.minSeats || 2;      // 席の数の下限・上限（ワードウルフは 3〜8）
+    const SEATS = (cfg.seats && cfg.seats.length ? cfg.seats : [2, 3, 4]).filter(n => n >= MINN && n <= MAXN);   // 選べる人数
     const fitN = n => (SEATS.indexOf(n) >= 0 ? n : SEATS.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a), SEATS[0]));
     const TURN_S = clamp(tim.turnSec || qnum('trtm', cfg.turnSec || 30), 3, 180);
     const SEAT_GRACE = (tim.seatGrace || qnum('trgrace', 60)) * 1000;      // 切れた席がもどれる時間
@@ -252,7 +252,7 @@
       let go = 0, left = 0;
       if (grp.length >= k) go = k;
       else if (allFill) { left = QM_FILL - waited; if (left <= 0) go = k; }
-      else if (grp.length >= 2) { left = QM_WAIT - waited; if (left <= 0) go = grp.length; }
+      else if (grp.length >= MINN) { left = QM_WAIT - waited; if (left <= 0) go = grp.length; }
       S.qn = open.length; S.qLeft = Math.max(0, Math.ceil(left / 1000)); S.qFill = allFill && grp.length < k; ui.render();
       if (!go) return;
       // the oldest of the group makes the room; if it does not (a sleeping tab) the next one does, every 6 s
@@ -403,7 +403,7 @@
       const meta = S.meta, idxs = humansIn().filter(i => present(i));
       const fill = meta.fl === 1;
       const N = fill ? meta.n : idxs.length;
-      if (N < 2 || idxs.length < 1) return;
+      if (N < MINN || idxs.length < 1) return;
       const pu = idxs.slice(0, N);
       while (pu.length < N) pu.push(-1);
       // CPUs sit between the people at random (the host stays at index 0)
@@ -558,7 +558,7 @@
           const inv = Object.keys(S.meta.inv || {});
           const all = inv.every(u => { const i = seatOf(u); return i >= 0 && present(i); });
           if (idxs.length >= 1 && (all || now - S.attachAt > 8000)) hostStart('q');
-        } else if (idxs.length >= S.meta.n && idxs.length >= 2 && now - S.attachAt > 600) {
+        } else if (idxs.length >= S.meta.n && idxs.length >= MINN && now - S.attachAt > 600) {
           if (!S.fullAt) S.fullAt = now;
           if (now - S.fullAt > 1500) hostStart('full');
         } else S.fullAt = 0;
@@ -747,7 +747,7 @@
           const meta = S.meta, hs = humansIn().filter(i => present(i)).length;
           let btn = '';
           if (S.host && meta && meta.k === 'c') {
-            const can = hs >= 2 || meta.fl;
+            const can = hs >= MINN || meta.fl;
             const label = hs >= meta.n ? T('スタート') : meta.fl ? T('空席をCPUでうめて、スタート') : T('{n}人で、スタート', { n: hs });
             btn = '<button class="ktr-btn" type="button" data-ktr="start"' + (can ? '' : ' disabled') + '>' + esc(label) + '</button>';
           }
@@ -808,7 +808,7 @@
       open(o) {
         reset(false, true);
         S.opts = Object.assign({ n: 3, fill: store.get('kusoge.' + game + '.trfill') !== '0' }, S.opts, o || {});
-        if (cfg.getOpts) { const g = cfg.getOpts(); if (g && g.n) S.opts.n = clamp(g.n, 2, MAXN); }
+        if (cfg.getOpts) { const g = cfg.getOpts(); if (g && g.n) S.opts.n = clamp(g.n, MINN, MAXN); }
         S.opts.n = fitN(S.opts.n);
         S.err = null;
         if (!cleanNick(store.get('kobo.nick'))) emitPhase('nick'); else emitPhase('menu');
