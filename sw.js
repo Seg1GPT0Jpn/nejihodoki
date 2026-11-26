@@ -5,12 +5,12 @@
 // 開いたことのないゲームは、オフラインでは offline.html。ゲームを足すときは games.js に足すだけでよい。ページの中身を変えたら BUILD を上げる。
 importScripts('common/games.js');
 const REG = self.KOBO_REGISTRY || { version: 0, games: [] };
-const BUILD = 106;
+const BUILD = 107;
 const PREFIX = 'kobo-v';
 const VERSION = PREFIX + BUILD + '.' + REG.version;
 const OFFLINE = './offline.html';
 const NAV_TIMEOUT = 4000;
-const CORE = ['./', './index.html', OFFLINE, './firebase-config.js', './manifest.webmanifest',
+const CORE = ['./common/orient.js', './common/orient-shell.html', './', './index.html', OFFLINE, './firebase-config.js', './manifest.webmanifest',
   './apple-touch-icon.png', './favicon-32.png', // (the manifest icons are fetched by the browser itself when it installs; not needed offline)
   './common/cloud.js', './common/i18n.js', './common/versus.js', './common/turnroom.js', './common/games.js', './common/platform.js', './common/achievements.js', './common/rank.js',
   './common/game.js', './common/audio.js', './common/ui.js', './common/theme.css', './common/ui.css',

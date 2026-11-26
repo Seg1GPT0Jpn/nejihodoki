@@ -90,3 +90,5 @@
 - brawl リマスター第1弾（2026-11-26）: 全50人の上必殺技（復帰）を作りなおし。種類31（rocket・copter・blink・tether・balloon・spring・dashglide・drill・multihop・dropin・gravflip・arcreturn・lift・chargeleap・jet・cloudstep・pendulum・ripple・fold・magnet・wallbounce・spinup・slingshot・bubble・ghostrise・parachute・rebound・pogo ほか）。旗 `rr`（CPUの届く距離）/`hz`/`hold`/`nohelp`。復帰のちがいの距離（全組10以上）。`NETV`=5（ゴールデンハッシュ全て取りなおし）。テスト: brawl-recovery.test.js、brawl-play 第19節。通常技のリマスターは次。
 
 - brawl リマスター第2弾（2026-11-26）: 最初の18人の通常技を、種類から作りなおし（多段・ため・突進・上がる・空中でとどまる・飛び道具・地雷・つかみ・カウンター・たたきつけ・回転）。`NETV`=6。`ov` に kind/mv/proj/lg/lp/rh/lift/lf/stall/seq を追加。`NRM` 表（kits.js）。新しいテスト: brawl-normals.test.js。online.js は PERMISSION_DENIED のとき、はっきりしたメッセージを出し、書き込みは12秒でタイムアウト。残りの32人は、まだ。
+
+- common/orient.js（KoboOrient）+ common/orient-shell.html: ゲームごとの画面のむき（じどう / よこ（きょうせい）/ たて）。90度回した iframe のシェルで、中のゲームは本当の横画面として動く（座標は iframe が正しく変換）。brawl に設定・一時停止の項目・向きの案内のボタンを配線。キー `kusoge.brawl.ori`（この端末だけ）。ほかのゲームで使うには、`<head>` の先頭に `orient.js` と `KoboOrient.boot({key:'kusoge.<game>.ori'})` を置き、設定画面から `KoboOrient.set()` を呼ぶ。テスト: tools/tests/unit/orient.test.js、brawl-play 第20節。

@@ -651,13 +651,84 @@ async function recoveries(env) {
   check('no page errors while drawing every recovery', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+// 20. 画面のむき：390x844 のたて長で「よこ きょうせい」。ページぜんたいが90°まわって出て、タッチの座標も合う
+async function orient(env) {
+  console.log('20. screen orientation: forced landscape on a portrait phone (390x844), ja/en; auto is unchanged');
+  const O = require('../../common/orient.js'), ORI = 'kusoge.brawl.ori';
+  for (const lang of ['ja', 'en']) {
+    const s = await B.newSession(env, { vp: V.get('ip12'), lang, seed: { [HOWTO]: '1', [ORI]: 'land' }, isMobile: true, hasTouch: true });
+    const p = s.page; await s.goto('/brawl/?debug');
+    await p.waitForFunction(() => document.getElementById('ko'), null, { timeout: 8000 });
+    const fr = () => p.frames().find(f => f !== p.mainFrame());
+    for (let i = 0; i < 60 && !fr(); i++) await p.waitForTimeout(100);
+    await fr().waitForFunction(() => window.__kb && __kb.ready() && window.__brawl, null, { timeout: 10000 });
+    const L = lang + ': ';
+    const box = await p.evaluate(() => { const r = document.getElementById('ko').getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, iw: innerWidth, ih: innerHeight }; });
+    check(L + 'the rotated game fills the whole phone screen', Math.abs(box.x) < 1.5 && Math.abs(box.y) < 1.5 && Math.abs(box.w - box.iw) < 1.5 && Math.abs(box.h - box.ih) < 1.5, box);
+    const inner = await fr().evaluate(() => ({ w: innerWidth, h: innerHeight, land: matchMedia('(orientation: landscape)').matches }));
+    check(L + 'inside, the page sees a landscape screen (844x390) so its landscape layout is used', inner.w === 844 && inner.h === 390 && inner.land, inner);
+    const W = box.iw, H = box.ih;
+    const tap = async sel => {   // tap an element: its centre in the rotated space -> the phone screen
+      const c = await fr().evaluate(sel => { const r = document.querySelector(sel).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, sel);
+      const d = O.unmapPoint(c.x, c.y, { dir: 'cw', W, H }); await p.touchscreen.tap(d.x, d.y); return d;
+    };
+    await fr().evaluate(() => __brawl.showTitle());
+    await p.waitForTimeout(300);
+    check(L + 'no page scroll on the phone', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && document.documentElement.scrollHeight <= innerHeight + 1));
+    await tap('#mSolo');
+    const opened = await fr().waitForFunction(() => !document.getElementById('ovSetup').hidden, null, { timeout: 5000 }).then(() => true, () => false);
+    check(L + 'tapping a menu item at its rotated position opens it', opened);
+    await shot(p, '20-orient-setup-' + lang);
+    await tap('#sGo'); await fr().waitForFunction(() => __kb.state().playing, null, { timeout: 8000 }); await fr().evaluate(() => __brawl.skipCount()); await fr().waitForFunction(() => __kb.state().count === 0 && __kb.state().frame > 3, null, { timeout: 8000 });
+    check(L + 'the touch pad is shown in the match', await fr().evaluate(() => !document.body.classList.contains('notouch') && document.querySelectorAll('#pad .tb').length === 6));
+    const cdp = await s.ctx.newCDPSession(p), T = touchApi(cdp), F2 = i => fr().evaluate(i => __kb.state().fighters[i], i);
+    await fr().evaluate(() => { __brawl.freeze(); __brawl.place(0, -200, 0); __brawl.place(1, 300, 0); });
+    const dev = (x, y) => O.unmapPoint(x, y, { dir: 'cw', W, H });
+    const ctr = sel => fr().evaluate(sel => { const r = document.querySelector(sel).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, sel);
+    const x0 = (await F2(0)).x, a0 = dev(90, 390 - 90), a1 = dev(150, 390 - 90);
+    await T.down(1, a0.x, a0.y); await T.move(1, a1.x, a1.y); await p.waitForTimeout(500); const x1 = (await F2(0)).x;
+    check(L + 'dragging the stick toward the content right moves the fighter right', x1 > x0 + 30, { x0, x1 });
+    const bj = await ctr('#pad .tb[data-k="J"]'), dj = dev(bj.x, bj.y);
+    await T.down(2, dj.x, dj.y); await p.waitForTimeout(150); const fj = await F2(0); check(L + 'stick + jump button at once: moving and in the air', fj.y < -10 && fj.vx > 0.5, fj); await T.up(2); await T.up(1);
+    await p.waitForTimeout(900);
+    const ba = await ctr('#pad .tb[data-k="A"]'), da = dev(ba.x, ba.y);
+    let atk = false; await T.down(3, da.x, da.y); for (let i = 0; i < 20 && !atk; i++) { await p.waitForTimeout(15); atk = (await F2(0)).s === 'atk'; } await T.up(3);
+    check(L + 'the attack button attacks', atk);
+    await shot(p, '20-orient-match-' + lang);
+    await fr().evaluate(() => { __brawl.showTitle(); __brawl.showCtl('keys', () => {}); });
+    const segs = await fr().evaluate(() => Array.from(document.querySelectorAll('#oOri button')).map(b => b.textContent));
+    check(L + 'settings has the three orientation choices', segs.length === 3, segs);
+    check(L + 'no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3));
+    await s.close();
+  }
+  // auto: nothing changes (no shell), and the prompt has a "not turning?" button that switches to forced landscape
+  const s = await B.newSession(env, { vp: V.get('ip12'), lang: 'ja', seed: { [HOWTO]: '1' }, isMobile: true, hasTouch: true }); const p = s.page; await s.goto('/brawl/?debug');
+  await p.waitForFunction(() => window.__kb && __kb.ready() && window.__brawl, null, { timeout: 10000 });
+  check('auto: the page is the plain game (no shell frame)', await p.evaluate(() => !document.getElementById('ko') && innerWidth === 390));
+  await p.evaluate(() => __brawl.showTitle()); await p.waitForTimeout(300);
+  const lf = await p.evaluate(() => { const b = document.getElementById('landForce'), t = document.getElementById('landTip'); return { shown: !t.hidden, btn: !!b, w: b ? b.getBoundingClientRect().width : 0, tw: t.getBoundingClientRect().width, tl: t.getBoundingClientRect().left }; });
+  check('auto: the landscape prompt shows a "not turning?" button, inside the screen', lf.shown && lf.btn && lf.w >= 44 && lf.tw <= 390 && lf.tl >= 0, lf);
+  await shot(p, '20-orient-auto-tip');
+  await p.click('#landForce');
+  const sw = await p.waitForFunction(() => document.getElementById('ko'), null, { timeout: 8000 }).then(() => true, () => false);
+  check('the prompt button switches to forced landscape', sw);
+  check('the choice is saved on this device', (await p.evaluate(k => localStorage.getItem(k), ORI)) === 'land');
+  await s.close();
+  // a device that is already landscape: forced landscape does not rotate
+  const s2 = await B.newSession(env, { vp: V.get('land'), lang: 'ja', seed: { [HOWTO]: '1', [ORI]: 'land' }, isMobile: true, hasTouch: true }); const p2 = s2.page; await s2.goto('/brawl/?debug');
+  await p2.waitForFunction(() => document.getElementById('ko'), null, { timeout: 8000 });
+  const b2 = await p2.evaluate(() => { const r = document.getElementById('ko').getBoundingClientRect(); return { w: r.width, h: r.height, iw: innerWidth, ih: innerHeight, t: getComputedStyle(document.getElementById('ko')).transform }; });
+  check('already landscape: the frame is not rotated and fills the screen', b2.t === 'none' && Math.abs(b2.w - b2.iw) < 1.5 && Math.abs(b2.h - b2.ih) < 1.5, b2);
+  await s2.close();
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi, newtoys, story, recoveries]) {
+  for (const f of [first, solo, touch, twop, ladder, training, pause, resume, english, layouts, controls, gamepad, roster, ctlpage, touchflick, multi, newtoys, story, recoveries, orient]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }
   }

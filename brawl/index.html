@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>おもちゃ大乱闘</title>
+<script src="../common/orient.js"></script>
+<script>window.KoboOrient && KoboOrient.boot({ key: 'kusoge.brawl.ori' });</script>
 <meta name="theme-color" content="#1b1830">
 <meta name="description" content="工房のおもちゃたちが、ステージの外へふっとばし合う大乱闘。ダメージがたまるほど遠くへ飛ぶ。18人のおもちゃ、5つのステージ、はじき・ジャストガード・うけ身までそろった本格的な操作、CPU・ふたりで・ラダー・れんしゅう。">
 <link rel="manifest" href="../manifest.webmanifest">
@@ -53,7 +55,7 @@ KoboI18n.add({ en: {
   // in game
   'じゅんび…': 'Get ready…', 'ゲーム！': 'GAME!', 'サドンデス！': 'Sudden death!', '自分': 'You', 'ダミー': 'Dummy', 'ぼうぎょ': 'Shield', 'ジャンプ': 'Jump', 'CPU': 'CPU', 'たちっぱなし': 'Stand',
   'れんしゅうの設定': 'Training settings', 'ダミーの動き': 'Dummy behavior', 'たつ': 'Stand', 'まもる': 'Shield', 'とぶ': 'Jump', 'うごく': 'Fight', 'ダメージを0にもどす': 'Reset damage', 'あたり判定を見る': 'Show hitboxes', 'コンボ {n}': 'Combo {n}', '合計 {n}%': 'Total {n}%', 'さいご {n}%': 'Last hit {n}%',
-  '横向きにすると遊びやすいよ': 'Rotate your phone for easier play', 'ふたりで遊ぶときは、横向きの画面がおすすめ': 'For two players, landscape is recommended',
+  'よこにならないとき': 'Not turning?', '画面のむき': 'Screen orientation', '試合をやめて、画面のむきをかえますか？': 'Quit this match and change the screen orientation?', '横向きにすると遊びやすいよ': 'Rotate your phone for easier play', 'ふたりで遊ぶときは、横向きの画面がおすすめ': 'For two players, landscape is recommended',
   '攻': 'Atk', '特': 'Sp', '強': 'Smash', '跳': 'Jump', '守': 'Shield', '掴': 'Grab', 'こうげき': 'Attack', 'とくぎ': 'Special', '強攻撃': 'Smash', 'まもり': 'Shield', 'つかみ': 'Grab',
   // menu
   'この試合をやめる': 'Quit this match', 'やり直す': 'Restart', 'この試合をやり直す': 'Restart this match', '自動保存しました': 'Autosaved',
@@ -300,6 +302,7 @@ label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent
 #landTip { position: fixed; z-index: 60; left: 50%; top: calc(var(--kb-sat) + 52px); transform: translateX(-50%); width: max-content; max-width: min(94vw, 420px); display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 999px; background: rgba(15, 12, 30, .92); border: 1px solid rgba(255, 255, 255, .3); color: #fff; font-size: 12.5px; font-weight: 800; box-shadow: 0 6px 20px rgba(0, 0, 0, .4); animation: fade .3s ease-out; }
 #landTip svg { width: 22px; height: 22px; flex: none; animation: tilt 2.4s ease-in-out infinite; } #landTip span { min-width: 0; white-space: nowrap; }
 #landTip button { flex: none; min-height: 44px; min-width: 44px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .16); color: #fff; font: 800 12px var(--kb-font-body); padding: 0 12px; cursor: pointer; touch-action: manipulation; }
+#landTip { flex-wrap: wrap; justify-content: center; border-radius: 22px; padding-right: 6px; } #landTip #landForce { background: rgba(255, 255, 255, .3); }
 #landTip.over { top: calc(var(--kb-sat) + 6px); }
 #landTip[hidden] { display: none; }
 @keyframes tilt { 0%, 40% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
@@ -350,7 +353,7 @@ label.chk input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent
   <div id="pad" aria-hidden="false"></div>
 </div>
 
-<div id="landTip" hidden role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M11 18.5h2"/></svg><span data-i18n>よこ向きがおすすめ</span><button type="button" id="landX" data-i18n>とじる</button></div>
+<div id="landTip" hidden role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M11 18.5h2"/></svg><span data-i18n>よこ向きがおすすめ</span><button type="button" id="landForce" data-i18n>よこにならないとき</button><button type="button" id="landX" data-i18n>とじる</button></div>
 
 <div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tLogo">
   <div class="card">
@@ -755,10 +758,12 @@ function hudOpts() {
 const LAND_KEY = 'kusoge.brawl.land';
 function landTip() {
   const el = $('landTip'); if (!el) return;
-  const want = isTouchDevice && view.portrait && innerWidth < 700 && store.get(LAND_KEY) !== '1';
+  const want = isTouchDevice && view.portrait && innerWidth < 700 && store.get(LAND_KEY) !== '1' && (!window.KoboOrient || KoboOrient.get() === 'auto');
   const ov = anyOverlay(), show = want && (!ov || !$('ovTitle').hidden);
   el.hidden = !show; el.classList.toggle('over', ov);
 }
+$('landForce').onclick = () => { store.set(LAND_KEY, '1'); $('landTip').hidden = true; if (window.KoboOrient) KoboOrient.set('land'); };
+document.addEventListener('pointerup', () => { if (window.KoboOrient) KoboOrient.tryLock(); }, true);
 $('landX').onclick = () => { store.set(LAND_KEY, '1'); $('landTip').hidden = true; };
 let needDraw = true;
 window.addEventListener('resize', layout);
@@ -1508,8 +1513,17 @@ function renderCtl() {
     h += '<dl class="guide">' + rows.map(r => '<dt>' + esc(EN ? r[1] : r[0]) + '</dt><dd>' + esc(EN ? r[3] : r[2]) + '</dd>').join('') + '</dl>';
     body.innerHTML = h;
   }
+  body.insertAdjacentHTML('beforeend', '<div class="sec"><label>' + esc(tx('画面のむき', 'Screen orientation')) + '</label><div class="seg" id="oOri"></div><p class="ctlnote">' + esc(tx('「よこ きょうせい」「たて きょうせい」は、スマホが回らないときに、画面ごと回して出します。', 'If your phone will not rotate, “Landscape” or “Portrait” turns the whole game for you.')) + '</p></div>');
+  oriSeg();
   body.scrollTop = 0;
 }
+const ORI_NAMES = { auto: ['じどう', 'Auto'], land: ['よこ（きょうせい）', 'Landscape'], port: ['たて', 'Portrait'] };
+function oriSet(m) {
+  if (!window.KoboOrient || KoboOrient.get() === m) return;
+  if (G && playing() && !confirm(T('試合をやめて、画面のむきをかえますか？'))) return;
+  KoboOrient.set(m); renderCtl();
+}
+function oriSeg() { const el = $('oOri'); if (!el || !window.KoboOrient) return; seg(el, KoboOrient.MODES.map(m => [m, tx(ORI_NAMES[m][0], ORI_NAMES[m][1])]), KoboOrient.get(), oriSet); }
 function startRemap(p, a, btn) {
   if (remapping && remapping.btn) remapping.btn.textContent = remapping.old;
   remapping = { p, a, btn, old: btn.textContent }; btn.textContent = tx('キーをおす…', 'Press a key…'); btn.classList.add('wait');
@@ -1571,7 +1585,9 @@ function openMenu() {
   if (!UI) { showTitle(); return; }
   if (pm && pm.isOpen) return;
   const on = playing();
+  const oriNext = () => { const M = window.KoboOrient ? KoboOrient.MODES : ['auto']; return M[(M.indexOf(window.KoboOrient ? KoboOrient.get() : 'auto') + 1) % M.length]; };
   const extra = [{ label: T('遊び方'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }, { label: T('操作・設定'), icon: 'help', onClick: () => { pm.close(); showCtl('keys', () => {}); } }];
+  if (window.KoboOrient) extra.push({ label: T('画面のむき') + '：' + tx(ORI_NAMES[KoboOrient.get()][0], ORI_NAMES[KoboOrient.get()][1]), icon: 'help', onClick: () => { const n = oriNext(); if (on && !confirm(T('試合をやめて、画面のむきをかえますか？'))) return; KoboOrient.set(n); pm.close(); menuOpen = false; hideAll(); showTitle(); } });
   extra.push({ label: T(on ? 'この試合をやめる' : 'メニューへ'), icon: 'menu', onClick: () => { pm.close(); menuOpen = false; hideAll(); showTitle(); } });
   pm = UI.pauseMenu({
     title: T(on ? '一時停止' : 'メニュー'), home: '../', extra,
