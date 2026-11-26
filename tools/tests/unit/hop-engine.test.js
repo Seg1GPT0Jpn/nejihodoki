@@ -168,6 +168,16 @@ test('hazards: spikes and pits end the run (restart at the checkpoint, any numbe
   S = flat({ 9: '  P  s' }, 40); for (let i = 0; i < 1500 && S.deaths < 4; i++) { if (!S.p.dead && S.p.inv === 0) { S.p.x = 4 * 16; S.p.y = 146; } E.step(S, B.R); S.ev.length = 0; } eq(S.deaths, 4, 'four deaths in a row, still playing'); ok(!S.res);
 });
 
+test('a pit takes every power-up (big, suit, reserve box), also from the checkpoint copy', () => {
+  for (const assist of [false, true]) {
+    const S = flat({ 9: '  P', 10: '#####   ####', 11: '#####   ####', 12: '#####   ####' }, 40, null, assist ? { assist: { hearts: true } } : null);
+    S.p.pw = 1; S.p.gear = 1; S.reserve = 4; S.snap.p.pw = 1; S.snap.p.gear = 1; S.snap.reserve = 4;
+    for (let i = 0; i < 300 && !S.hurts; i++) { E.step(S, B.R | B.RUN); S.ev.length = 0; }
+    runN(S, 100, 0);
+    ok(S.hurts >= 1, 'fell'); eq(S.p.pw, 0, 'big lost (assist ' + assist + ')'); eq(S.p.gear, 0, 'suit lost'); eq(S.reserve, 0, 'reserve lost');
+  }
+});
+
 test('power-ups: small -> big (puff) -> suit; a second item goes to the reserve box and a button swaps it in; a bare hit steps down one level at a time', () => {
   let S = flat({ 9: '  P' }, 40); eq(S.p.pw, 0); E.givePower(S, 4); eq(S.p.pw, 1); eq(S.p.gear, 0); E.givePower(S, 2); eq(S.p.gear, 2); eq(S.reserve, 0);
   E.givePower(S, 1); eq(S.p.gear, 1, 'a new suit replaces the old'); eq(S.reserve, 2, 'and the old one is kept in the reserve');

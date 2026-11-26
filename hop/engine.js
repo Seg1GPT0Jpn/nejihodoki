@@ -459,7 +459,9 @@
     if (S.safe) { p.x = S.safe.x; p.y = S.safe.y; p.vx = 0; p.vy = 0; p.on = false; p.rope = null; p.pound = 0; }
     p.inv = 90; S.cam.x = camTarget(S);
   }
-  function fell(S) { const p = S.p; ev(S, 'fall', p.x, S.L.H * TS); spikeHit(S); }
+  // falling into a pit costs every power-up (big, suit and the reserve box), also the copy kept at the checkpoint
+  function loseAllPower(S) { const p = S.p; p.pw = 0; p.gear = 0; S.reserve = 0; if (S.snap) { S.snap.p.pw = 0; S.snap.p.gear = 0; S.snap.reserve = 0; } }
+  function fell(S) { const p = S.p; ev(S, 'fall', p.x, S.L.H * TS); loseAllPower(S); spikeHit(S); }
   // returns true when the hit killed the player: gear -> big -> small -> lose
   function hurtCore(S) {
     const p = S.p; S.hurts++;

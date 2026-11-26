@@ -115,3 +115,16 @@ Not found on Mutopia: Holst Suites 1 and 2, Fučík, Teike, Grainger, Mozart Gra
 
 ## Code and art
 All code, the procedural hall reverb and the stage art are original to this project. No real people are depicted.
+
+## Owner-supplied MIDI (licence as stated by the project owner)
+| id | Work | File | Note |
+|---|---|---|---|
+| slavonic72-2 | Dvořák, Slavonic Dance Op. 72 No. 2 (No. 10) | "Slovanska tance 10" by Windy, 2002 | The owner stated it may be used. The file contains no licence text. (Another file by the same maker, a "Mars" MIDI with "All rights reserved", was NOT used.) URL/licence evidence pending. |
+| finlandia | Sibelius, Finlandia (hymn section, short 4-voice reduction) | MIDISFREE.COM download, author unknown | The owner stated it may be used. The file contains no licence text. URL/licence evidence pending. |
+
+## The project owner's own works
+| id | Work | Note |
+|---|---|---|
+| own-chikyuu | 地球星歌 (euphonium quartet) | the owner's own composition; MIDI exported from MuseScore by the owner |
+| own-original | 秋風に揺れる葉 (brass quintet) | the owner's own composition |
+| own-venus | Holst, The Planets: Venus (brass arrangement) | the owner's arrangement of a public-domain work |
