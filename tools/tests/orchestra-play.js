@@ -424,6 +424,73 @@ async function lessonMode(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+// 演奏会モード：曲目づくり → 入場 → 1曲目 → 拍手 → 休憩 → 2曲目 → 楽章のあいだ（拍手なし）→ 3曲目 → 終演 → 公演レビューと保存。曲は速く終わる小さなものを選ぶ（終わり近くへ飛んで指揮）
+const CON = 'kusoge.orchestra.concert';
+async function concertMode(env) {
+  console.log('5c. concert mode: programme, entrance, applause, interval, quiet gap between movements, finale, review and save');
+  const s = await open(env); const p = s.page; const cs = () => p.evaluate(() => __orch.concertState());
+  await p.click('#tConcert'); await wait(p, () => !document.getElementById('ovCon').hidden, null, 5000);
+  const presets = await p.evaluate(() => [...document.querySelectorAll('#cnList .rc[data-preset]')].map(b => b.dataset.preset));
+  check('the concert menu lists the ready-made programmes: ' + presets.length, presets.includes('work:dvorak9') && presets.includes('work:mahler5') && presets.some(x => x.startsWith('mix:')), presets); await shot(p, '05c-menu');
+  await p.click('.rc[data-preset="work:dvorak9"]'); await p.waitForSelector('#cbList .cbrow');
+  check('a whole symphony fills the programme with every movement in order (no interval inside a half-hour symphony)', (await p.locator('#cbList .cbrow').count()) === 4 && (await p.locator('#cbList .cbiv[aria-pressed="true"]').count()) === 0 && /4/.test(await p.locator('#cbSum').innerText()), await p.locator('#cbSum').innerText());
+  check('the order is the movements 1 2 3 4', (await p.evaluate(() => [...document.querySelectorAll('#cbList .cbrow')].map(r => r.dataset.item).join())) === 'dvorak9-1,dvorak9-2,dvorak9-3,dvorak9-4');
+  await p.click('#cbBack'); await p.click('#cnCustom'); await p.click('#cbClear'); check('clearing leaves nothing to start', await p.locator('#cbGo').isDisabled() && (await p.locator('#cbMsg').innerText()).length > 0, null);
+  await p.click('#cbAdd summary'); await p.click('#cbPool [data-add="finlandia"]'); await p.click('#cbPool [data-add-work="haydn76-1"]');
+  const items = () => p.evaluate(() => [...document.querySelectorAll('#cbList .cbrow')].map(r => r.dataset.item).join());
+  check('"add all" brings the quartet in movement order', (await items()) === 'finlandia,haydn76-1-1,haydn76-1-2,haydn76-1-4', await items());
+  await p.click('#cbList .cbrow:nth-of-type(1) [data-act="down"]'); await p.click('#cbList .cbrow:nth-of-type(2) [data-act="up"]'); check('reorder moves a piece down and up again', (await items()) === 'finlandia,haydn76-1-1,haydn76-1-2,haydn76-1-4', await items());
+  await p.click('#cbList .cbrow:last-of-type [data-act="rm"]'); check('remove drops the piece', (await items()) === 'finlandia,haydn76-1-1,haydn76-1-2', await items());
+  await p.click('#cbList .cbiv[data-iv="0"]'); check('the player can mark an interval after the first piece', await p.locator('#cbList .cbiv[data-iv="0"][aria-pressed="true"]').count() === 1, null);
+  await p.reload(); await p.waitForFunction(() => window.__kb && __kb.ready()); const dr = await stored(p, CON);
+  check('the draft (pieces and interval) is saved', dr && dr.set.draft.join() === 'finlandia,haydn76-1-1,haydn76-1-2' && dr.set.iv === 'finlandia', dr);
+  await p.click('#tConcert'); await p.click('#cnDiffs .dfb[data-diff="enjoy"]'); await p.click('#cnCustom'); check('and comes back after a reload', (await items()) === 'finlandia,haydn76-1-1,haydn76-1-2' && await p.locator('#cbList .cbiv[data-iv="0"][aria-pressed="true"]').count() === 1, await items());
+  await p.click('#cbGo'); await wait(p, () => document.getElementById('csCard').dataset.ph === 'entrance' && !document.getElementById('ovConStage').hidden, null, 5000);
+  let a = await cs(); check('the evening: entrance, 3 pieces, applause, interval, a quiet gap, finale', a.steps.join() === 'entrance,piece,gap:clap,interval,piece,gap:quiet,piece,finale', a.steps); await shot(p, '05c-entrance');
+  const snd = await p.evaluate(() => ({ ctx: !!(window.KoboAudio && KoboAudio.ctx()), t: document.getElementById('csTitle').textContent }));
+  check('the entrance screen shows (and the audio context is running for the applause and the A)', snd.ctx && /入場/.test(snd.t), snd);
+  const playOut = async (id) => {
+    await p.click('#csGo'); await wait(p, () => __kb.state().playing, null, 90000); const c = await stageBox(p);
+    check('piece ' + id + ' is played by the ordinary flow (chip shows the position in the programme)', (await p.locator('#pieceChip').innerText()).includes('/') && (await st(p)).piece === id, await p.locator('#pieceChip').innerText());
+    await p.mouse.move(c.x + c.w * 0.5, c.y + c.stageH * 0.3); await conductBeats(p, c, 4, 66, 0.22 * c.scale); await wait(p, () => __kb.state().state === 'playing');
+    await p.evaluate(() => __orch.seekNearEnd(7)); let g = 0; while (!(await cs()).stage && g++ < 40) await bounce(p, c, 60 / 66, 0.22 * c.scale);
+    await wait(p, () => !document.getElementById('ovConStage').hidden, null, 20000);
+  };
+  await playOut('finlandia'); a = await cs(); check('after a piece: applause screen with its score, no result overlay', a.ph === 'clap' && a.results.length === 1 && !(await st(p)).result && /点/.test(await p.locator('#csMini').innerText()), a); await shot(p, '05c-applause');
+  await p.click('#csGo'); await wait(p, () => document.getElementById('csCard').dataset.ph === 'interval', null, 5000); check('the interval comes next, with the first-half average', /前半の平均/.test(await p.locator('#csMini').innerText()), await p.locator('#csMini').innerText()); await shot(p, '05c-interval');
+  await playOut('haydn76-1-1'); a = await cs(); check('between two movements of one work: a quiet pause, no applause', a.ph === 'quiet' && a.results.length === 2, a);
+  check('quiet gap: the button waits a moment before it lets you go on', await p.locator('#csGo').isDisabled(), null); await wait(p, () => !document.getElementById('csGo').disabled, null, 5000); await shot(p, '05c-quiet');
+  await playOut('haydn76-1-2'); await wait(p, () => document.getElementById('csCard').dataset.ph === 'finale', null, 5000); await shot(p, '05c-finale');
+  await p.click('#csGo'); await wait(p, () => !document.getElementById('ovConEnd').hidden, null, 5000); a = await cs();
+  const grade = await p.locator('#ceGrade').innerText(); const txt = await p.locator('#ovConEnd').innerText();
+  check('the review: a grade, the programme, praise lines, the sub-scores and every piece', /^[SABC]$/.test(grade) && (await p.locator('#ovConEnd .celine').count()) >= 3 && /公演レビュー/.test(txt) && /スタミナ/.test(txt) && (await p.locator('#ovConEnd table tr').count()) === 3, txt.slice(0, 300)); await shot(p, '05c-review');
+  const cst = await stored(p, CON); const key = 'finlandia,haydn76-1-1,haydn76-1-2';
+  check('saved: best per programme, one history line, the counters', cst && cst.best[key] && cst.best[key].n === 1 && cst.best[key].s === a.info.overall && cst.hist.length === 1 && cst.hist[0].ids.length === 3 && cst.stats.done === 1 && cst.stats.pieces === 3, cst);
+  check('the three pieces were also saved as ordinary plays (each piece keeps its own best)', await p.evaluate(() => { const v = __orch.save.p; return v.finlandia && v['haydn76-1-1'] && v['haydn76-1-2'] && v.finlandia.b0 + v['haydn76-1-1'].b0 + v['haydn76-1-2'].b0 >= 0; }), null);
+  check('the finished concert unlocked its achievement', await p.evaluate(() => { try { return !!(window.KoboAchievements && KoboAchievements.has('orchestra.concert')); } catch (e) { return null; } }) === true, null);
+  await p.click('#ceMenu'); check('back in the menu the programme shows its best and the log lists the concert', (await p.locator('#cnHist').innerText()).includes('3') && !(await p.locator('#cnCustom').isHidden()), await p.locator('#cnHist').innerText());
+  await p.click('#cnBack'); check('the title is back and no concert is running', (await st(p)).title && !(await cs()).active, await cs());
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // English: the menu and the builder have no Japanese left; a quit mid-concert drops the evening
+  const e = await open(env, { lang: 'en' }); const q = e.page; await q.click('#tConcert'); await q.click('.rc[data-preset="work:dvorak9"]'); await q.waitForSelector('#cbList .cbrow');
+  const jp = await q.evaluate(`(${jpScan})(true)`); check('English: concert menu and programme builder have no Japanese', jp.length === 0, jp.slice(0, 5));
+  await q.evaluate(() => __orch.concertStart(['finlandia'], 'enjoy')); await q.waitForSelector('#ovConStage:not([hidden])'); const jp2 = await q.evaluate(`(${jpScan})(true)`); check('English: the entrance screen has no Japanese', jp2.length === 0, jp2.slice(0, 5));
+  await q.click('#csQuit'); check('quitting from the entrance returns to the title and drops the evening', (await st(q)).title && !(await q.evaluate(() => __orch.concertState())).active, null);
+  check('no page errors (English)', e.log.pageErrors.length === 0, e.log.pageErrors.slice(0, 3)); await e.close();
+}
+
+async function concertLayouts(env) {
+  console.log('5d. concert screens fit at every screen size x ja/en (menu, builder with a full programme, the stage between pieces)');
+  for (const vp of (process.env.OR_VPS || 'se1,ip12,land').split(',')) for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp, lang, touch: true }); const p = s.page; const tag = `${vp}/${lang}`;
+    const probe = async what => { const r = await p.evaluate(`(${layoutProbe})()`); check(`${tag} concert ${what}: fits (hscroll ${r.hscroll}, off ${r.offscreen.length})`, r.hscroll <= 1 && r.offscreen.length === 0 && (!r.primary.length || r.primary.every(x => x.visible !== false)), r); };
+    await probe('title'); await p.click('#tConcert'); await probe('menu'); await p.click('.rc[data-preset="work:mahler5"]'); await p.waitForSelector('#cbList .cbrow'); await probe('builder (Mahler 5: interval)'); if (lang === 'ja') await shot(p, `5d-${vp}-builder`);
+    await p.click('#cbAdd summary'); await probe('builder (add list open)');
+    await p.evaluate(() => __orch.concertStart(['finlandia', 'beethoven-marsch'], 'normal')); await p.waitForSelector('#ovConStage:not([hidden])'); await p.waitForTimeout(400); await probe('entrance'); if (lang === 'ja') await shot(p, `5d-${vp}-entrance`);
+    check(`${tag}: no page errors`, s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
 async function pause(env) {
   console.log('8. pause: the menu stops the clock and the sound, resuming re-enters, leaving goes back to the pieces');
   const s = await open(env); const p = s.page; await startReal(p, 'nachtmusik', 'enjoy'); const c = await stageBox(p);
@@ -511,7 +578,7 @@ async function layouts(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, lessonMode, pause, english, themes, saves, layouts]) {
+  for (const f of [first, audio, conduct, practiceCheck, cues, finish, newPieces, modelDemo, keyboard, touch, phoneMotion, joycon, lessonMode, concertMode, concertLayouts, pause, english, themes, saves, layouts]) {
     if (only && !only.includes(f.name)) continue;
     try { await f(env); } catch (e) { check(f.name + ' crashed', false, String(e && e.stack || e).slice(0, 900)); }
   }

@@ -871,10 +871,13 @@
         'kusoge.orchestra.save': '{ v:1, total（曲ごとのベスト得点の合計）, stars（曲ごとの最高の★の合計）, p:{ <曲ID（beethoven5, nachtmusik, dvorak7-1, dvorak9-4, dvorak8-1 など。長い楽章は <ID>~a / <ID>~b の前半・後半も）>:{ b0,s0（たのしむのベスト点と★）, b1,s1（ふつう）, b2,s2（マエストロ）, n（遊んだ回数）} }, stats:{ plays, finishes, cues（出した入りの数）, perfect（ばっちりの入り）, beats（振った拍）, three（★3の数）}, set:{ diff（最後のむずかしさ）, piece }, tut }',
         'kusoge.orchestra.prefs': '音質・動きセンサー・振りの感度・振り方ガイド { quality: auto|hi|lo, motion, sens, guide }。この端末だけ（同期しない）',
         'kusoge.orchestra.howto': '遊び方を見た（\'1\'）',
+        'kusoge.orchestra.concert': '演奏会モードの記録 { v:1, best:{ <曲目（曲IDをカンマでつないだもの）>:{ s（全体の点）, g（評価 0..3 = C,B,A,S）, st（★1〜5）, n（回数）} }, hist:[{ t, k, ids, s, g, st, diff, min }]（新しい順・最大20）, stats:{ done（最後まで終えた演奏会）, s（S評価の数）, a（A以上の数）, pieces, minutes }, set:{ diff, iv（休憩の位置）, draft（自分の曲目）} }',
       },
       // counters, best scores and stars only grow (max); the last difficulty and piece are whole values (newest)
       sync: {
         'kusoge.orchestra.save': { fields: { total: 'max', stars: 'max', p: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+        // concert records: best scores per programme and the counters only grow (max); the history, the last programme draft and the difficulty are whole values (newest)
+        'kusoge.orchestra.concert': { fields: { best: { each: { each: 'max' } }, stats: { each: 'max' }, hist: 'newest', set: 'newest' }, rest: 'newest' },
       },
     },
     {
@@ -1104,6 +1107,35 @@
       // counters, best and y/stat tallies only grow (max); settings are a whole value (newest)
       sync: {
         'kusoge.mahjong.save': { fields: { best: 'max', g: { each: { each: 'max' } }, stats: { each: 'max' }, y: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
+    {
+      id: 'akin', order: 36, path: 'akin/', added: '2026-11-26',
+      title: { ja: 'あてっこ', en: "I'll Guess It" },
+      short: { ja: 'あてっこ', en: "I'll Guess It" },
+      desc: { ja: 'あなたが心に決めた数やものを、コンピュータが質問して当てる、20の扉ふうのゲーム。数字あてっこは1〜100・1〜1,000・自分で決める範囲（100万まで）。いろんなあてっこは、どうぶつ・たべもの・スポーツ・せかいの国・しごと・身のまわりのものの6テーマ（約460こ）で、「はい・たぶんそう・たぶんちがう・いいえ・わからない」で答えます。まちがえてもへいき、ひとつ前にもどれます。当てられたら答えを教えると、あたらしいものをおぼえます。スマホをまわす「ふたりであてっこ」つき。広告はありません。', en: 'A twenty-questions style game where the computer guesses what you are thinking of. Number mode covers 1–100, 1–1,000 or your own range up to 1,000,000. Thing mode has six themes (animals, foods, sports, countries, jobs, everyday things; about 460 items) answered with yes / probably / probably not / no / don\'t know. A wrong answer is not fatal and you can undo. If it gives up, tell it the answer and it learns the new thing. Includes a pass-the-phone two-player mode. No ads.' },
+      label: { ja: '20の質問', en: 'Twenty questions' },
+      genres: ['puzzle'], tags: ['2d', 'logic', 'turn', 'casual', 'numbers', 'relax'],
+      keywords: { ja: ['あてっこ', '20の質問', '二十の扉', '数当て', '数字', 'クイズ', '質問', '推理', 'どうぶつ', 'たべもの', '国', 'ふたり', 'スマホをまわす', 'パーティー'], en: ['twenty questions', '20 questions', 'guessing game', 'guess the number', 'mind reader', 'quiz', 'animals', 'foods', 'countries', 'jobs', 'two player', 'pass the phone', 'party'] },
+      icon: 'img/icons/akin.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#22384a"/><circle cx="36" cy="42" r="22" fill="#5aa9e6" stroke="#2f6fa8" stroke-width="2"/><ellipse cx="36" cy="50" rx="14" ry="10" fill="#a9d6f7" opacity=".55"/><circle cx="28" cy="40" r="3.4" fill="#16202a"/><circle cx="44" cy="40" r="3.4" fill="#16202a"/><path d="M30 50q6 6 12 0z" fill="#16202a"/><rect x="32" y="16" width="8" height="6" rx="1.5" fill="#8a96a3"/><circle cx="36" cy="11" r="7.5" fill="#ffd45e" stroke="#c99a1e" stroke-width="1.5"/><path d="M24 9l-4-2M48 9l4-2" stroke="#ffd45e" stroke-width="2" stroke-linecap="round"/><text x="60" y="30" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="22" fill="#f2b33d">?</text><text x="11" y="30" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="#8fc6ee">?</text></svg>',
+      thumb: 'img/thumbs/akin.webp', thumb2x: 'img/thumbs/akin@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished round (kusoge.akin.run, this device only). Learned items (kusoge.akin.custom) stay on this device. No online battle (the two-player mode is pass-the-phone)
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: false, stages: false },
+      versus: null,
+      // ranking = how many times the computer has guessed the player's secret (rounds the player stumped the computer are not counted); it only grows
+      score: { unit: { ja: '回', en: ' guesses' }, fmt: { ja: '{n}回あてた', en: '{n} guessed' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.akin.save', paths: ['rk'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.akin.save', paths: ['rk'], agg: 'first', min: 1, num: true, tpl: { ja: '{n}回あてた', en: '{n} guessed' } },
+      keys: {
+        'kusoge.akin.save': '{ v:1, rk（コンピュータがあてた回数＝ランキング）, num:{ "<r100|r1k|r1m|cust>":{ p（遊んだ回数）, w（あてた回数）, b（いちばん少ない質問数）} }, th:{ "<テーマID animals|foods|sports|countries|jobs|things>":{ p, w, b } }, stats:{ plays, wins, losses（コンピュータがあてられなかった回数）, nw（数字であてた）, tw（ものであてた）, fast（1〜100を7問以内）, m1（1〜100万であてた）, cust（自分で決めた範囲であてた）, quick（ものを8問以内）, recover（まちがえた予想のあとであてた）, learn（教えてもらった新しいもの）, back（もどった回数）, idk（わからないと答えた回数）, duo（ふたりあそびを最後まで）}, set:{ hard（算数すきむけの質問）, peek（考えをのぞく）, sc }, tut }',
+        'kusoge.akin.custom': 'おしえてもらった新しいもの { v:1, t:{ "<テーマID>":[{ n（名前）, a（質問ごとに1文字：1=はい 0=いいえ 5=場合による -=わからない）}] } }（テーマごとに150こまで）。この端末だけ（同期しない）',
+        'kusoge.akin.run': 'とちゅうの1問 { v:1, kind:"num"|"th", key, lo, hi, hard, hist（数字：質問と答えの並び）, log（もの：質問と答えの並び）, back, idk, t }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.akin.howto': 'あそびかたを見た（\'1\'）',
+      },
+      // counters, per-mode tallies and bests only grow (max; the fewest-questions best is the smallest positive one); settings are a whole value (newest)
+      sync: {
+        'kusoge.akin.save': { fields: { rk: 'max', num: { each: { fields: { p: 'max', w: 'max', b: 'minPos' }, rest: 'max' } }, th: { each: { fields: { p: 'max', w: 'max', b: 'minPos' }, rest: 'max' } }, stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
       },
     },
   ];
@@ -1453,6 +1485,8 @@
       { id: 'orchestra.perfect20', tier: 2, icon: 'star', title: { ja: '入りの名人', en: 'Cue Master' }, desc: { ja: '「ばっちり」の入りを合わせて20回出す', en: 'Give 20 perfect cues in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.perfect' }, gte: 20 } },
       { id: 'orchestra.tour', tier: 3, icon: 'trophy', title: { ja: '8曲を指揮した', en: 'Eight Pieces' }, desc: { ja: 'どれでも8曲を「ふつう」で最後まで指揮する', en: 'Conduct any eight pieces to the end on Normal' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'p', each: 's1', measure: 'countGte', min: 1 }, gte: 8 } },
       { id: 'orchestra.three5', tier: 4, icon: 'trophy', title: { ja: '★3のコンサート', en: 'Standing Ovation' }, desc: { ja: '★3の演奏を合わせて5回する', en: 'Earn three stars five times in total' }, when: { rec: { key: 'kusoge.orchestra.save', path: 'stats.three' }, gte: 5 }, grantsTitle: { ja: 'マエストロ', en: 'Maestro' } },
+      { id: 'orchestra.concert', tier: 3, icon: 'trophy', title: { ja: '演奏会を完走', en: 'Concert Complete' }, desc: { ja: '演奏会モードで、入場から終演まで一晩を最後まで指揮する', en: 'Conduct a whole evening in Concert mode, from entrance to final bow' }, when: { rec: { key: 'kusoge.orchestra.concert', path: 'stats.done' }, gte: 1 } },
+      { id: 'orchestra.concertA', tier: 4, icon: 'star', title: { ja: '満場の拍手', en: 'Full House Applause' }, desc: { ja: '演奏会モードで、全体の評価A以上を取る', en: 'Earn an overall grade of A or better in Concert mode' }, when: { rec: { key: 'kusoge.orchestra.concert', path: 'stats.a' }, gte: 1 } },
     ],
     gomoku: [
       { id: 'gomoku.first', tier: 1, icon: 'check', title: { ja: 'はじめの一勝', en: 'First Win' }, desc: { ja: 'CPUに勝つ', en: 'Beat the CPU' }, when: { rec: { key: 'kusoge.gomoku.save', path: 'stats.wins' }, gte: 1 } },
