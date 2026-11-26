@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -102,9 +102,9 @@ test('flags reflect what the pages have today', () => {
     if (g.flags.versus) eq(g.versus, /KoboVersus\.init/.test(page) ? 'common' : 'own', g.id + ' versus impl');
     else { eq(g.versus, null, g.id + ' versus impl'); ok(!/KoboVersus\.init|versus\.js/.test(page), g.id + ' has no versus code'); }
   }
-  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit,reversi,gomoku,sudoku,crates,hop,maze', 'games with a daily today');
-  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train,manabi,orchestra,sudoku,hop,maze', 'realtime games (AUDIT 3)');
-  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,train,manabi,orchestra,crates,hop,maze', 'games without a match');
+  eq(R.games.filter(g => g.flags.daily).map(g => g.id).join(), 'neji,blocks,drop,n59049,water,parking,hitsumabushi,hitblow,td,minigolf,fit,reversi,gomoku,sudoku,crates,hop,maze,shmup,fishing', 'games with a daily today');
+  eq(R.games.filter(g => g.flags.pause).map(g => g.id).join(), 'drop,raft,gates,hole,hitsumabushi,planet,escape,td,physics,minigolf,trade,fit,brawl,train,manabi,orchestra,sudoku,hop,maze,shmup,fishing', 'realtime games (AUDIT 3)');
+  eq(R.games.filter(g => !g.flags.versus).map(g => g.id).join(), 'escape,td,physics,trade,cards,town,train,manabi,orchestra,crates,hop,maze,shmup,fishing', 'games without a match');
   ok(R.games.every(g => g.flags.achievements && g.achievements && g.achievements.length >= 5), 'every game has achievements (P3-3)');
 });
 
@@ -201,6 +201,10 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('hop', k => null), 0, 'hop: nothing saved');
   eq(P.rankValue('maze', k => '{"v":1,"stars":9,"stats":{"clears":4}}'), 9, 'maze: total stars');
   eq(P.rankValue('maze', k => null), 0, 'maze: nothing saved');
+  eq(P.rankValue('shmup', k => '{"v":1,"rank":1234500,"stats":{"plays":14}}'), 1234500, 'shmup: best Arcade score');
+  eq(P.rankValue('shmup', k => null), 0, 'shmup: nothing saved');
+  eq(P.rankValue('fishing', k => '{"v":1,"zc":28,"stats":{"catches":28}}'), 28, 'fishing: Fish Book kinds');
+  eq(P.rankValue('fishing', k => null), 0, 'fishing: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

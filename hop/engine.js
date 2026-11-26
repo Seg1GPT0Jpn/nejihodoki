@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   const TS = 16;
-  const B = { L: 1, R: 2, U: 4, D: 8, J: 16, RUN: 32, ACT: 64 };
+  const B = { L: 1, R: 2, U: 4, D: 8, J: 16, RUN: 32, ACT: 64, RES: 128 };
   // tile ids
   const T = { AIR: 0, GROUND: 1, BRICK: 2, QBLK: 3, GBLK: 4, USED: 5, ONEWAY: 6, SPIKE: 7, CSPIKE: 8, WATER: 9, ICE: 10, SPRING: 11, CONVR: 12, CONVL: 13, COIN: 14, MEDAL: 15, GOAL: 16, CP: 17, BURROW: 18, RING: 19, HEART: 20, GATE: 21, FAKE: 22, WIND: 23 };
   const CH = { '#': T.GROUND, B: T.BRICK, '?': T.QBLK, '!': T.GBLK, x: T.USED, '-': T.ONEWAY, '^': T.SPIKE, v: T.CSPIKE, '~': T.WATER, i: T.ICE, S: T.SPRING, '>': T.CONVR, '<': T.CONVL, c: T.COIN, m: T.MEDAL, G: T.GOAL, K: T.CP, o: T.RING, h: T.HEART, g: T.GATE, f: T.FAKE, w: T.WIND };
@@ -79,11 +79,12 @@
     const S = {
       L, f: 0, rng: (hashStr(L.id) ^ (opts.seed | 0)) >>> 0, mod: {}, en: [], p: null, cam: { x: 0 }, vw: opts.vw || 320,
       coins: 0, med: 0, hurts: 0, deaths: 0, stomps: 0, maxCombo: 0, pounds: 0, cpIdx: -1, bossDead: 0, res: null, safe: null,
-      assist: { hearts: !!as.hearts, auto: !!as.auto, slow: !!as.slow }, maxHearts: 3, prev: 0, ev: [], snap: null, bump: null, shake: 0, gearsUsed: 0, cond: { ribbon: 0, glide: 0, swim: 0, burrow: 0 },
+      assist: { hearts: !!as.hearts, auto: !!as.auto, slow: !!as.slow }, reserve: (opts.reserve | 0), prev: 0, ev: [], snap: null, bump: null, shake: 0, gearsUsed: 0, cond: { ribbon: 0, glide: 0, swim: 0, burrow: 0 },
     };
     const st = L.start || { x: 2, y: L.H - 4 };
-    S.p = { x: st.x * TS + 3, y: st.y * TS + 2, w: PW, h: PH, vx: 0, vy: 0, face: 1, on: false, coy: 0, buf: 0, jumping: false, crouch: false, pound: 0, inv: 0, gear: opts.gear || 0, hearts: 3, swim: false,
-      rope: null, ropeCd: 0, dead: 0, combo: 0, ride: -1, burCd: 0, whiff: 0, hurtT: 0, stand: 0, lastGt: 0, sx: 0, sy: 0, spr: 0 };
+    S.p = { x: st.x * TS + 3, y: st.y * TS + 2, w: PW, h: PH, vx: 0, vy: 0, face: 1, on: false, coy: 0, buf: 0, jumping: false, crouch: false, pound: 0, inv: 0, gear: opts.gear || 0, swim: false,
+      pw: 0, rope: null, ropeCd: 0, dead: 0, combo: 0, ride: -1, burCd: 0, whiff: 0, hurtT: 0, stand: 0, lastGt: 0, sx: 0, sy: 0, spr: 0 };
+    if (S.p.gear) S.p.pw = 1;
     spawn(S);
     S.cam.x = camTarget(S);
     S.safe = { x: S.p.x, y: S.p.y };
@@ -113,16 +114,16 @@
   // ---- cloning (the core is plain data; the static level is shared)
   function cloneEn(e) { const o = {}; for (const k in e) o[k] = e[k]; if (e.rope) o.rope = e.rope; return o; }
   function cloneP(p) { const o = {}; for (const k in p) o[k] = p[k]; if (p.rope) o.rope = { ax: p.rope.ax, ay: p.rope.ay, len: p.rope.len }; return o; }
-  function snapOf(S) { return { p: cloneP(S.p), en: S.en.map(cloneEn), mod: Object.assign({}, S.mod), coins: S.coins, med: S.med, cpIdx: S.cpIdx, bossDead: S.bossDead, rng: S.rng, safe: S.safe && { x: S.safe.x, y: S.safe.y }, gearsUsed: S.gearsUsed }; }
+  function snapOf(S) { return { p: cloneP(S.p), en: S.en.map(cloneEn), mod: Object.assign({}, S.mod), coins: S.coins, med: S.med, cpIdx: S.cpIdx, bossDead: S.bossDead, rng: S.rng, safe: S.safe && { x: S.safe.x, y: S.safe.y }, gearsUsed: S.gearsUsed, reserve: S.reserve }; }
   function clone(S) {
     return { L: S.L, f: S.f, rng: S.rng, mod: Object.assign({}, S.mod), en: S.en.map(cloneEn), p: cloneP(S.p), cam: { x: S.cam.x }, vw: S.vw, coins: S.coins, med: S.med, hurts: S.hurts, deaths: S.deaths, stomps: S.stomps,
-      maxCombo: S.maxCombo, pounds: S.pounds, cpIdx: S.cpIdx, bossDead: S.bossDead, res: S.res && Object.assign({}, S.res), safe: S.safe && { x: S.safe.x, y: S.safe.y }, assist: S.assist, maxHearts: S.maxHearts, prev: S.prev, ev: [], snap: S.snap,
+      maxCombo: S.maxCombo, pounds: S.pounds, cpIdx: S.cpIdx, bossDead: S.bossDead, res: S.res && Object.assign({}, S.res), safe: S.safe && { x: S.safe.x, y: S.safe.y }, assist: S.assist, reserve: S.reserve, prev: S.prev, ev: [], snap: S.snap,
       bump: S.bump, shake: S.shake, gearsUsed: S.gearsUsed, cond: Object.assign({}, S.cond) };
   }
   function restore(S) {
     const sn0 = S.snap, c = { p: cloneP(sn0.p), en: sn0.en.map(cloneEn), mod: Object.assign({}, sn0.mod) };
     S.p = c.p; S.en = c.en; S.mod = c.mod; S.coins = sn0.coins; S.med = sn0.med; S.cpIdx = sn0.cpIdx; S.bossDead = sn0.bossDead; S.rng = sn0.rng; S.safe = sn0.safe && { x: sn0.safe.x, y: sn0.safe.y };
-    S.gearsUsed = sn0.gearsUsed; S.p.hearts = S.maxHearts; S.p.inv = 90; S.p.dead = 0; S.p.vx = 0; S.p.vy = 0; S.p.rope = null; S.cam.x = camTarget(S); S.bump = null;
+    S.gearsUsed = sn0.gearsUsed; S.reserve = sn0.reserve | 0; S.p.inv = 90; S.p.dead = 0; S.p.vx = 0; S.p.vy = 0; S.p.rope = null; S.cam.x = camTarget(S); S.bump = null;
   }
 
   // ---- tiles
@@ -227,6 +228,7 @@
     const l = !!(inp & B.L), r = !!(inp & B.R), u = !!(inp & B.U), d = !!(inp & B.D), jh = !!(inp & B.J), act = !!(inp & B.ACT);
     const run = !!(inp & B.RUN) || as.auto;
     const jp = jh && !(prev & B.J), dp = d && !(prev & B.D), ap = act && !(prev & B.ACT);
+    if ((inp & B.RES) && !(prev & B.RES)) useReserve(S);
     if (p.inv > 0) p.inv--;
     if (p.hurtT > 0) p.hurtT--;
     if (p.ropeCd > 0) p.ropeCd--;
@@ -341,7 +343,6 @@
     // tile effects
     tileEffects(S, p, dp, jp);
     if (p.on && p.vx === 0 && !dir) { /* idle */ }
-    if (S.p.hearts > 0 && p.crouch === false && p.h !== PH) p.h = PH;
   }
   function setSpr(S, p) { const tx = Math.floor((p.x + p.w / 2) / TS), ty = Math.floor((p.y + p.h + 2) / TS); S.sprAt = { x: tx, y: ty, f: S.f }; }
   function boxSolid(S, b) {
@@ -354,18 +355,22 @@
     for (let tx = x0; tx <= x1; tx++) { const t = tl(S, tx, y); if (t === T.SPIKE || t === T.CSPIKE) return true; }
     return false;
   }
-  function headHit(S, p) {
-    const tx = p.hx, ty = p.hy, t = tl(S, tx, ty);
-    ev(S, 'bump', tx * TS + 8, ty * TS + 8);
+  function hitBlock(S, tx, ty, fromAbove) {
+    const p = S.p, t = tl(S, tx, ty);
     if (t === T.QBLK) { setTl(S, tx, ty, T.USED); S.coins++; ev(S, 'coin', tx * TS + 8, ty * TS - 4); S.bump = { x: tx, y: ty, f: S.f }; }
     else if (t === T.GBLK) {
       setTl(S, tx, ty, T.USED); S.bump = { x: tx, y: ty, f: S.f };
-      const sub = (p.gear === 0 && S.L.meta.gear && GEAR[S.L.meta.gear]) ? GEAR[S.L.meta.gear] : 4;
+      const mg = S.L.meta.gear && GEAR[S.L.meta.gear], sub = (mg && p.gear !== mg) ? mg : 4;
       S.en.push({ k: 'item', sub, x: tx * TS + 2, y: ty * TS - 12, w: 12, h: 12, vx: 0, vy: 0, t: 0, dead: 0 });
       ev(S, 'itemup', tx * TS + 8, ty * TS);
     } else if (t === T.BRICK) {
-      if (p.gear > 0) { setTl(S, tx, ty, T.AIR); ev(S, 'break', tx * TS + 8, ty * TS + 8); stunAbove(S, tx, ty); } else { S.bump = { x: tx, y: ty, f: S.f }; stunAbove(S, tx, ty); }
-    } else { stunAbove(S, tx, ty); }
+      if (p.pw) { setTl(S, tx, ty, T.AIR); ev(S, 'break', tx * TS + 8, ty * TS + 8); if (!fromAbove) stunAbove(S, tx, ty); } else { S.bump = { x: tx, y: ty, f: S.f }; if (!fromAbove) stunAbove(S, tx, ty); }
+    }
+  }
+  function headHit(S, p) {
+    const tx = p.hx, ty = p.hy; ev(S, 'bump', tx * TS + 8, ty * TS + 8);
+    const t = tl(S, tx, ty);
+    if (t === T.QBLK || t === T.GBLK || t === T.BRICK) hitBlock(S, tx, ty, false); else stunAbove(S, tx, ty);
   }
   function stunAbove(S, tx, ty) { // bumping a block from below flips the walkers standing on it
     for (const e of S.en) if (!e.dead && DEF[e.k] && DEF[e.k].st && e.k !== 'boss' && e.k !== 'item' && Math.abs(e.x + e.w / 2 - (tx * TS + 8)) < 12 && Math.abs(e.y + e.h - ty * TS) < 3) { kill(S, e, 0); }
@@ -373,9 +378,10 @@
   function landPound(S) {
     const p = S.p; S.pounds++; S.shake = 8; ev(S, 'pound', p.x + p.w / 2, p.y + p.h);
     const tx0 = Math.floor((p.x + 1) / TS), tx1 = Math.floor((p.x + p.w - 1 - EPS) / TS), ty = Math.floor((p.y + p.h + 0.5) / TS);
-    for (let tx = tx0; tx <= tx1; tx++) if (tl(S, tx, ty) === T.BRICK) { setTl(S, tx, ty, T.AIR); ev(S, 'break', tx * TS + 8, ty * TS + 8); }
+    for (let tx = tx0; tx <= tx1; tx++) { const tt = tl(S, tx, ty); if (tt === T.QBLK || tt === T.GBLK || (tt === T.BRICK && p.pw)) hitBlock(S, tx, ty, true); }
     for (const e of S.en) {
       if (e.dead || e.k === 'plat' || e.k === 'item' || e.k === 'shot' || e.k === 'boss' || e.k === 'pend' || e.k === 'cannon' || e.k === 'drip') continue;
+      if ((e.k === 'pin' || e.k === 'umb') && !p.pw) continue;      // only a big hero crushes the spiny and the shielded
       if (Math.abs(e.x + e.w / 2 - (p.x + p.w / 2)) < 34 && Math.abs(e.y + e.h - (p.y + p.h)) < 12) kill(S, e, 1);
     }
   }
@@ -422,10 +428,10 @@
       else if (t === T.MEDAL) {
         const id = L.medals.findIndex(m => m.x === tx && m.y === ty);
         setTl(S, tx, ty, T.AIR); if (id >= 0) S.med |= 1 << id; ev(S, 'medal', tx * TS + 8, ty * TS + 8, id);
-      } else if (t === T.HEART) { setTl(S, tx, ty, T.AIR); if (p.hearts < S.maxHearts) p.hearts++; ev(S, 'heart', tx * TS + 8, ty * TS + 8); }
+      } else if (t === T.HEART) { setTl(S, tx, ty, T.AIR); givePower(S, 4); ev(S, 'heart', tx * TS + 8, ty * TS + 8); }
       else if (t === T.CP) {
         const ci = L.cps.findIndex(c => c.x === tx && c.y === ty);
-        if (ci > S.cpIdx) { S.cpIdx = ci; if (p.hearts < S.maxHearts) p.hearts = Math.min(S.maxHearts, p.hearts + 1); ev(S, 'cp', tx * TS + 8, ty * TS); const sv = clone(S); sv.snap = null; S.snap = snapOf(S); S.snap.p.x = tx * TS + 3; S.snap.p.y = ty * TS + 2; S.snap.p.vx = 0; S.snap.p.vy = 0; S.snap.p.on = false; S.snap.p.crouch = false; S.snap.p.h = PH; S.snap.p.rope = null; S.snap.safe = { x: tx * TS + 3, y: ty * TS + 2 }; }
+        if (ci > S.cpIdx) { S.cpIdx = ci; ev(S, 'cp', tx * TS + 8, ty * TS); const sv = clone(S); sv.snap = null; S.snap = snapOf(S); S.snap.p.x = tx * TS + 3; S.snap.p.y = ty * TS + 2; S.snap.p.vx = 0; S.snap.p.vy = 0; S.snap.p.on = false; S.snap.p.crouch = false; S.snap.p.h = PH; S.snap.p.rope = null; S.snap.safe = { x: tx * TS + 3, y: ty * TS + 2 }; }
       } else if (t === T.GOAL) { /* handled below with a tall zone */ }
       else if (t === T.SPIKE) { if (p.y + p.h > ty * TS + 7 && p.inv === 0) { spikeHit(S); return; } }
       else if (t === T.CSPIKE) { if (p.y < ty * TS + 9 && p.inv === 0) { spikeHit(S); return; } }
@@ -444,28 +450,23 @@
   }
   function win(S) {
     if (S.res) return;
-    S.res = { frames: S.f, coins: S.coins, med: S.med, hurts: S.hurts, deaths: S.deaths, hearts: S.p.hearts, stomps: S.stomps, maxCombo: S.maxCombo, pounds: S.pounds, cond: S.cond };
+    S.res = { frames: S.f, coins: S.coins, med: S.med, hurts: S.hurts, deaths: S.deaths, pw: S.p.pw, gear: S.p.gear, stomps: S.stomps, maxCombo: S.maxCombo, pounds: S.pounds, cond: S.cond };
     ev(S, 'goal', S.p.x, S.p.y);
   }
-  function spikeHit(S) { // forgiving: lose a heart and go back to the last safe spot
-    const p = S.p; ev(S, 'hurt', p.x, p.y);
-    if (hurtCore(S)) return;
+  function spikeHit(S) { // spikes and pits always cost the run (restart from the checkpoint); in "never lose" mode you are put back on the last safe spot
+    const p = S.p; ev(S, 'hurt', p.x, p.y); S.hurts++;
+    if (!S.assist.hearts) { die(S); return; }
     if (S.safe) { p.x = S.safe.x; p.y = S.safe.y; p.vx = 0; p.vy = 0; p.on = false; p.rope = null; p.pound = 0; }
     p.inv = 90; S.cam.x = camTarget(S);
   }
-  function fell(S) {
-    const p = S.p; ev(S, 'fall', p.x, S.L.H * TS);
-    if (hurtCore(S)) return;
-    if (S.safe) { p.x = S.safe.x; p.y = S.safe.y; p.vx = 0; p.vy = 0; p.on = false; p.rope = null; p.pound = 0; }
-    p.inv = 90; S.cam.x = camTarget(S);
-  }
-  // returns true when the hit killed the player
+  function fell(S) { const p = S.p; ev(S, 'fall', p.x, S.L.H * TS); spikeHit(S); }
+  // returns true when the hit killed the player: gear -> big -> small -> lose
   function hurtCore(S) {
     const p = S.p; S.hurts++;
     if (p.gear > 0) { p.gear = 0; p.rope = null; ev(S, 'gearoff', p.x, p.y); return false; }
-    if (!S.assist.hearts) p.hearts--;
-    if (p.hearts <= 0) { die(S); return true; }
-    return false;
+    if (p.pw) { p.pw = 0; ev(S, 'shrink', p.x, p.y); return false; }
+    if (S.assist.hearts) return false;
+    die(S); return true;
   }
   function hurt(S, srcX) {
     const p = S.p;
@@ -473,6 +474,19 @@
     ev(S, 'hurt', p.x, p.y);
     if (hurtCore(S)) return;
     p.inv = 100; p.hurtT = 18; p.vy = -3.4; p.vx = (p.x + p.w / 2 < srcX ? -1 : 1) * 1.7; p.on = false; p.pound = 0; p.rope = null; p.ride = -1;
+  }
+  // power-ups: a puff makes you big; a gear item makes you big with that suit. A second one goes to the reserve box.
+  function givePower(S, kind) {
+    const p = S.p;
+    if (kind === 4) { if (!p.pw) { p.pw = 1; ev(S, 'grow', p.x, p.y); } else if (!S.reserve) { S.reserve = 4; ev(S, 'reserve', p.x, p.y); } else S.coins++; return; }
+    if (p.gear === kind) { if (!S.reserve) S.reserve = kind; else S.coins++; return; }
+    if (p.gear && !S.reserve) S.reserve = p.gear;
+    p.pw = 1; p.gear = kind; S.gearsUsed |= (1 << kind); ev(S, 'gear', p.x, p.y, kind);
+  }
+  function useReserve(S) {
+    const k = S.reserve, p = S.p; if (!k || p.dead) return;
+    if (k === 4 && p.pw) return;
+    S.reserve = 0; givePower(S, k); ev(S, 'reserveuse', p.x, p.y);
   }
   function die(S) {
     const p = S.p; p.dead = 1; p.vy = -6; p.vx = 0; p.rope = null; p.pound = 0; S.deaths++; p.deadT = 0; ev(S, 'die', p.x, p.y);
@@ -542,8 +556,7 @@
     e.t++;
     if (overlap(p, e) && !p.dead) {
       e.dead = 1;
-      if (e.sub === 4) { if (p.hearts < S.maxHearts) p.hearts++; ev(S, 'heart', e.x, e.y); }
-      else { p.gear = e.sub; S.gearsUsed |= (1 << e.sub); ev(S, 'gear', e.x, e.y, e.sub); }
+      givePower(S, e.sub); ev(S, 'itemget', e.x, e.y, e.sub);
     }
   }
   function gravity(S, e) { e.vy = Math.min(e.vy + 0.4, 6); }
@@ -675,7 +688,7 @@
     // stomped from above. Which states are weak depends on the boss.
     let weak = e.inv === 0;
     const p = S.p;
-    if (e.bk === 'golem' && e.sh && pound) { e.sh = 0; e.s = 6; e.t = 0; p.vy = -6; p.on = false; p.pound = 0; p.y = Math.min(p.y, e.y - p.h); S.shake = 12; ev(S, 'yank', e.x + e.w / 2, e.y); return; }
+    if (e.bk === 'golem' && e.sh && pound && p.pw) { e.sh = 0; e.s = 6; e.t = 0; p.vy = -6; p.on = false; p.pound = 0; p.y = Math.min(p.y, e.y - p.h); S.shake = 12; ev(S, 'yank', e.x + e.w / 2, e.y); return; }
     if (e.bk === 'general' && e.s !== 2) weak = false;
     if (e.bk === 'golem') weak = weak && e.s === 6;
     if (e.bk === 'duck' && e.s !== 0) weak = false;
@@ -712,9 +725,9 @@
         continue;
       }
       if (above && falling) {
-        if (e.k === 'pin') { if (p.pound) { kill(S, e, 1); p.vy = -4; continue; } hurt(S, e.x + e.w / 2); continue; }
+        if (e.k === 'pin') { if (p.pound && p.pw) { kill(S, e, 1); p.vy = -4; continue; } hurt(S, e.x + e.w / 2); continue; }
         if (e.k === 'umb' && e.sh) {
-          if (p.pound) { kill(S, e, 1); p.vy = -5; p.pound = 0; p.combo++; continue; }
+          if (p.pound && p.pw) { kill(S, e, 1); p.vy = -5; p.pound = 0; p.combo++; continue; }
           p.vy = -6.2; p.on = false; p.jumping = true; p.y = Math.min(p.y, e.y - p.h); ev(S, 'clang', e.x, e.y); continue;
         }
         kill(S, e, 1); p.combo++; if (p.combo > S.maxCombo) S.maxCombo = p.combo;
@@ -748,7 +761,7 @@
   // coarse hash (solver de-duplication)
   function hash(S) {
     const p = S.p;
-    let h = ((p.x / 3) | 0) * 7919 + ((p.y / 3) | 0) * 104729 + ((p.vx * 3) | 0) * 31 + ((p.vy * 2) | 0) * 17 + (p.on ? 1 : 0) + p.hearts * 5 + p.gear * 11 + S.cpIdx * 977 + S.med * 131 + S.coins * 13 + (p.rope ? 3 : 0) + (p.inv > 0 ? 1 : 0) * 23 + (S.bossDead ? 99999 : 0);
+    let h = ((p.x / 3) | 0) * 7919 + ((p.y / 3) | 0) * 104729 + ((p.vx * 3) | 0) * 31 + ((p.vy * 2) | 0) * 17 + (p.on ? 1 : 0) + (p.pw ? 5 : 0) + p.gear * 11 + S.reserve * 3 + S.cpIdx * 977 + S.med * 131 + S.coins * 13 + (p.rope ? 3 : 0) + (p.inv > 0 ? 1 : 0) * 23 + (S.bossDead ? 99999 : 0);
     for (const e of S.en) if (e.k === 'boss') h += e.hp * 1000003 + e.s * 31;
     return h | 0;
   }
@@ -756,12 +769,12 @@
   function sig(S) {
     let h = 2166136261;
     const add = v => { h ^= Math.round(v * 1000) | 0; h = Math.imul(h, 16777619); };
-    const p = S.p; add(p.x); add(p.y); add(p.vx); add(p.vy); add(p.hearts); add(S.coins); add(S.med); add(S.f); add(S.deaths);
+    const p = S.p; add(p.x); add(p.y); add(p.vx); add(p.vy); add(p.pw); add(p.gear); add(S.reserve); add(S.coins); add(S.med); add(S.f); add(S.deaths);
     for (const e of S.en) { add(e.x); add(e.y); }
     return (h >>> 0).toString(16);
   }
 
-  const HE = { TS, B, T, CH, DEF, GEAR, PW, PH, BOSS_HP, parse, newState, step, clone, hash, sig, rle, unrle, runReplay, tl, solid, overlap, camTarget, hasGround, bossAI: {}, SOLID };
+  const HE = { givePower, useReserve, TS, B, T, CH, DEF, GEAR, PW, PH, BOSS_HP, parse, newState, step, clone, hash, sig, rle, unrle, runReplay, tl, solid, overlap, camTarget, hasGround, bossAI: {}, SOLID };
   if (typeof module === 'object' && module && module.exports) module.exports = HE;
   root.HopEngine = HE;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

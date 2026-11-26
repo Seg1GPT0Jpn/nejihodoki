@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>のんびり釣り</title>
+<meta name="theme-color" content="#0e2233">
+<meta name="description" content="投げて、待って、合わせて、巻いて、たもですくう。時間・天気・季節でちがう150種のずかんを集める、ひまつぶしの釣りゲーム。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="のんびり釣り">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* のんびり釣り：水の青とうき（赤）。--kb-* は共通トークンの塗りなおし、--fs-* はこのゲームだけ */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0e2233; --kb-surface: #17324a; --kb-surface-2: #1f425f; --kb-sunken: #0a1a28; --kb-line: #35607f;
+  --kb-ink: #eef6fb; --kb-dim: #a9c4d6;
+  --kb-accent: #4cc9e0; --kb-accent-ink: #04222c; --kb-accent-text: #7fe0f2; --kb-accent-soft: rgba(76, 201, 224, .16);
+  --kb-scrim: rgba(4, 12, 20, .78); --kb-focus: #ffd166;
+  --fs-panel: rgba(255, 255, 255, .07); --fs-card: linear-gradient(#1c3c58, #17324a); --fs-go: linear-gradient(#6fdcf0, #2aa9c6); --fs-go-shadow: #146a7e;
+  --fs-good: #7be0a0; --fs-bad: #ff9a8a; --fs-star: #ffc83d; --fs-star-off: #3d566a; --fs-key: #264a66; --fs-key-shadow: #12293b; --fs-title: linear-gradient(90deg, #bff5ff, #4cc9e0 55%, #ffd166);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #e9f4fa; --kb-surface: #fbfeff; --kb-surface-2: #d6eaf5; --kb-sunken: #c3deec; --kb-line: #9cc3d8;
+    --kb-ink: #12293a; --kb-dim: #476478;
+    --kb-accent: #1b93b0; --kb-accent-ink: #ffffff; --kb-accent-text: #0f6b82; --kb-accent-soft: rgba(27, 147, 176, .12);
+    --kb-scrim: rgba(18, 41, 58, .45); --kb-focus: #b36a00;
+    --fs-panel: rgba(18, 41, 58, .06); --fs-card: linear-gradient(#fbfeff, #dfeff8); --fs-go: linear-gradient(#34b6d2, #1b93b0); --fs-go-shadow: #0d5a6e;
+    --fs-good: #1f7a46; --fs-bad: #b83a26; --fs-star: #d08a00; --fs-star-off: #b8cdda; --fs-key: #e1f0f8; --fs-key-shadow: #9cc3d8; --fs-title: linear-gradient(90deg, #0f6b82, #1b93b0 55%, #b36a00);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #e9f4fa; --kb-surface: #fbfeff; --kb-surface-2: #d6eaf5; --kb-sunken: #c3deec; --kb-line: #9cc3d8;
+  --kb-ink: #12293a; --kb-dim: #476478;
+  --kb-accent: #1b93b0; --kb-accent-ink: #ffffff; --kb-accent-text: #0f6b82; --kb-accent-soft: rgba(27, 147, 176, .12);
+  --kb-scrim: rgba(18, 41, 58, .45); --kb-focus: #b36a00;
+  --fs-panel: rgba(18, 41, 58, .06); --fs-card: linear-gradient(#fbfeff, #dfeff8); --fs-go: linear-gradient(#34b6d2, #1b93b0); --fs-go-shadow: #0d5a6e;
+  --fs-good: #1f7a46; --fs-bad: #b83a26; --fs-star: #d08a00; --fs-star-off: #b8cdda; --fs-key: #e1f0f8; --fs-key-shadow: #9cc3d8; --fs-title: linear-gradient(90deg, #0f6b82, #1b93b0 55%, #b36a00);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); max-width: 760px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+header { flex: none; display: flex; align-items: center; gap: 4px; padding: 4px 6px 0; }
+h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-display); background: var(--fs-title); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--fs-panel); border: 1px solid var(--kb-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+#hud { flex: none; display: flex; gap: 5px; padding: 4px 8px; justify-content: center; }
+.chip { flex: 0 1 auto; min-width: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 8px; min-height: 40px; border-radius: 12px; background: var(--fs-panel); border: 1px solid var(--kb-line); font-size: 10.5px; color: var(--kb-dim); white-space: nowrap; font-family: inherit; cursor: default; }
+.chip b { font: 800 14px var(--kb-font-body); color: var(--kb-ink); font-variant-numeric: tabular-nums; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+button.chip { cursor: pointer; } .chip.lv { flex: 1 1 auto; align-items: flex-start; overflow: hidden; }
+#stage { flex: 1 1 auto; min-height: 90px; position: relative; margin: 2px 8px; border-radius: 14px; overflow: hidden; border: 1px solid var(--kb-line); background: #123; touch-action: none; }
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline-offset: -3px; }
+#meters { position: absolute; left: 8px; right: 8px; top: 6px; display: none; gap: 5px; flex-direction: column; pointer-events: none; }
+body.fighting #meters { display: flex; }
+.mrow { display: flex; align-items: center; gap: 6px; font: 800 10.5px var(--kb-font-body); color: #fff; text-shadow: 0 1px 2px #000; }
+.mrow span { width: 44px; flex: none; } .mrow em { font-style: normal; width: 44px; text-align: right; flex: none; font-variant-numeric: tabular-nums; }
+.bar { position: relative; flex: 1 1 auto; height: 12px; border-radius: 7px; background: rgba(0, 0, 0, .45); border: 1px solid rgba(255, 255, 255, .35); overflow: hidden; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #5ee08a, #ffe066); border-radius: 6px; }
+.bar.t i.hot { background: linear-gradient(90deg, #ffb347, #ff5a4a); } .bar.s i { background: linear-gradient(90deg, #4cc9e0, #9ff0ff); }
+.bar u { position: absolute; top: 0; bottom: 0; background: rgba(120, 255, 160, .22); border-left: 1px solid rgba(160, 255, 190, .8); border-right: 1px solid rgba(160, 255, 190, .8); text-decoration: none; }
+.bar.t b { position: absolute; top: -1px; bottom: -1px; right: 0; width: 12%; background: rgba(255, 90, 70, .3); }
+#cue { position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); font: 400 30px var(--kb-font-display); color: #fff; text-shadow: 0 2px 0 #c33, 0 0 12px rgba(255, 255, 255, .7); pointer-events: none; opacity: 0; white-space: nowrap; }
+#cue.on { animation: cue .7s ease-out; }
+#netbar { position: absolute; left: 12%; right: 12%; bottom: 14%; height: 24px; border-radius: 12px; background: rgba(0, 0, 0, .5); border: 2px solid #fff; display: none; pointer-events: none; }
+body.netting #netbar { display: block; } #netbar u { position: absolute; top: 0; bottom: 0; background: rgba(110, 255, 150, .6); border-radius: 10px; text-decoration: none; } #netbar i { position: absolute; top: -4px; bottom: -4px; width: 8px; margin-left: -4px; background: #fff; border-radius: 4px; box-shadow: 0 0 8px #fff; }
+#power { position: absolute; right: 8px; bottom: 8px; width: 12px; height: 46%; max-height: 120px; border-radius: 7px; background: rgba(0, 0, 0, .45); border: 1px solid rgba(255, 255, 255, .4); display: none; pointer-events: none; }
+body.aiming #power { display: block; } #power i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, #5ee08a, #ffe066, #ff6a4a); border-radius: 6px; }
+#status { flex: none; min-height: 34px; box-sizing: border-box; padding: 4px 12px; margin: 2px 8px 0; border-radius: 12px; font-size: 12px; font-weight: 800; line-height: 1.3; text-align: center; color: var(--kb-ink); background: var(--fs-panel); border: 1px solid var(--kb-line); display: flex; align-items: center; justify-content: center; }
+#status.warn { border-color: var(--fs-bad); color: var(--fs-bad); } #status.good { border-color: var(--fs-good); }
+#ctl { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; }
+#act { min-height: 52px; border-radius: 16px; border: 0; cursor: pointer; background: var(--fs-go); color: var(--kb-accent-ink); font: 800 17px var(--kb-font-body); box-shadow: 0 4px 0 var(--fs-go-shadow); touch-action: none; display: flex; align-items: center; justify-content: center; gap: 8px; }
+#act:active, #act.held { transform: translateY(2px); box-shadow: 0 2px 0 var(--fs-go-shadow); }
+#nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.nb { min-width: 0; min-height: 46px; box-sizing: border-box; border-radius: 13px; border: 1px solid var(--kb-line); background: var(--fs-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--fs-key-shadow); font: 800 10.5px var(--kb-font-body); cursor: pointer; padding: 2px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; white-space: nowrap; position: relative; }
+.nb svg { width: 20px; height: 20px; } .nb:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--fs-key-shadow); }
+.nb .dot { position: absolute; top: 3px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: #ff6a4a; border: 1.5px solid var(--kb-surface); }
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) 296px; grid-template-rows: auto auto auto 1fr; grid-template-areas: "hd hd" "st hu" "st sa" "st ct"; column-gap: 8px; }
+  header { grid-area: hd; padding-top: 0; } #hud { grid-area: hu; flex-wrap: wrap; padding: 2px 8px 2px 0; } .chip { min-height: 32px; padding: 1px 7px; } .chip.lv { flex: 1 1 100%; }
+  #stage { grid-area: st; margin: 2px 4px 6px 8px; } #status { grid-area: sa; margin: 0 8px 0 0; min-height: 30px; font-size: 11.5px; line-height: 1.25; }
+  #ctl { grid-area: ct; padding: 4px 8px 4px 0; } #act { min-height: 48px; }
+  .nb { min-height: 44px; } .nb svg { width: 18px; height: 18px; }
+}
+@media (max-width: 379px) { h1 { font-size: 15px; } .chip { padding: 2px 5px; } .chip b { font-size: 13px; } #nav { gap: 4px; } .nb { font-size: 9.5px; } }
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .2s ease-out; }
+.panel { width: 100%; max-width: 480px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--fs-card); border: 1px solid var(--kb-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); animation: rise .25s ease-out; }
+.panel > * { flex: none; } .panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font: 400 21px var(--kb-font-display); color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--fs-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 4px 0 var(--fs-go-shadow); text-decoration: none; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--fs-go-shadow); } .btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--fs-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--kb-line); font-size: 13.5px; min-height: 44px; }
+.btn.sm { width: auto; min-width: 64px; min-height: 44px; margin: 0; font-size: 13px; padding: 4px 10px; border-radius: 12px; flex: none; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--fs-panel); border: 1px solid var(--kb-line); flex-wrap: wrap; margin: 4px 0; }
+.opt { flex: 1 1 0; min-width: 44px; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 12.5px var(--kb-font-body); cursor: pointer; padding: 2px 4px; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.og { margin: 8px 0 0; text-align: left; } .og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 2px 2px; }
+.rows { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--fs-key); min-height: 52px; box-sizing: border-box; }
+.row .tx { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 800; line-height: 1.3; } .row .tx small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.row.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent); } .row.lock { opacity: .6; }
+.prog { height: 8px; border-radius: 5px; background: var(--fs-panel); border: 1px solid var(--kb-line); margin-top: 3px; overflow: hidden; } .prog i { display: block; height: 100%; background: var(--kb-accent); }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 4px 2px 8px; }
+.card { position: relative; min-width: 0; padding: 5px 3px 5px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--fs-key); color: var(--kb-ink); box-shadow: 0 3px 0 var(--fs-key-shadow); font: 800 10.5px/1.25 var(--kb-font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.card canvas { width: 80px; height: 54px; } .card small { font-weight: 500; font-size: 9.5px; color: var(--kb-dim); } .card.unk canvas { opacity: .9; } .card.sel { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent); }
+.card .no { position: absolute; top: 2px; left: 6px; font-size: 9px; color: var(--kb-dim); font-weight: 500; }
+.stars { color: var(--fs-star); letter-spacing: 1px; font-size: 14px; } .stars i { color: var(--fs-star-off); font-style: normal; }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; margin: 4px 0; } .tag { padding: 2px 8px; border-radius: 999px; background: var(--fs-panel); border: 1px solid var(--kb-line); font-size: 11px; font-weight: 800; color: var(--kb-ink); } .tag.on { border-color: var(--kb-accent); color: var(--kb-accent-text); } .tag.warn { border-color: var(--fs-star); color: var(--fs-star); }
+.big { font: 400 24px var(--kb-font-display); line-height: 1.15; color: var(--kb-ink); } .newrec { display: inline-block; margin: 2px 2px; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6px 6px; text-align: left; font-size: 13px; font-weight: 800; } .kv span:nth-child(odd) { color: var(--kb-dim); font-weight: 500; } .kv span:nth-child(even) { text-align: right; }
+.howto { text-align: left; } .howto h2 { text-align: center; } .howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); } .howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+#tank { width: 100%; height: 190px; border-radius: 14px; display: block; border: 1px solid var(--kb-line); }
+.toastbar { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); z-index: 85; max-width: 90%; padding: 8px 16px; border-radius: 14px; background: rgba(10, 20, 32, .92); color: #fff; font-weight: 800; font-size: 14px; pointer-events: none; animation: rise .2s; text-align: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } } @keyframes fade { from { opacity: 0; } }
+@keyframes cue { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .panel, .overlay, #cue.on, .toastbar { animation: none !important; } }
+body.thumb header, body.thumb #hud, body.thumb #ctl, body.thumb #status { display: none !important; }
+body.thumb #app { display: flex !important; flex-direction: column; max-width: none; } body.thumb #stage { flex: 1 1 auto; margin: 0; border-radius: 0; border: 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../" id="backLink" aria-label="ゲーム一覧へ戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 id="h1">のんびり釣り</h1>
+    <button class="icon" id="sndBtn" type="button" aria-label="サウンド" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <div id="hud">
+    <button class="chip lv" id="chLoc" type="button"><span id="lLoc">場所</span><b id="vLoc">-</b></button>
+    <span class="chip" id="chEnv"><span id="lEnv">いま</span><b id="vEnv">-</b></span>
+    <span class="chip"><span id="lCoin">コイン</span><b id="vCoin">0</b></span>
+    <span class="chip"><span id="lZk">ずかん</span><b id="vZk">0</b></span>
+  </div>
+  <div id="stage">
+    <canvas id="scene" tabindex="0" role="application" aria-label="釣り場"></canvas>
+    <div id="meters"><div class="mrow"><span id="lTen">ひき</span><div class="bar t" id="barT"><u id="zoneT"></u><b></b><i id="fillT"></i></div><em id="vDist"></em></div><div class="mrow"><span id="lSta">体力</span><div class="bar s"><i id="fillS"></i></div><em id="vSta"></em></div></div>
+    <div id="cue" aria-hidden="true"></div>
+    <div id="netbar" aria-hidden="true"><u id="netZone"></u><i id="netPos"></i></div>
+    <div id="power" aria-hidden="true"><i id="powFill"></i></div>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="ctl">
+    <button id="act" type="button"></button>
+    <div id="nav">
+      <button class="nb" id="nZk" type="button"></button><button class="nb" id="nSh" type="button"></button><button class="nb" id="nMp" type="button"></button><button class="nb" id="nOr" type="button"></button><button class="nb" id="nAq" type="button"></button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle"><div class="panel" id="ovPanel"></div></div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle"></h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel">言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button"></button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<script src="fish.js"></script>
+<script src="engine.js"></script>
+<script src="art.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// のんびり釣り：fish.js が150種のデータ、engine.js が乱数・あたり・引き・保存・買い物・大会（pure）、art.js が絵。このファイルは机の上：入力・時間・画面・保存。
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.FishingEngine, ART = window.FishingArt, FISH = E.FISH;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'fishing';
+const SAVE_KEY = 'kusoge.fishing.save', HOWTO_KEY = 'kusoge.fishing.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const reduceMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return { matches: false }; } })();
+const sfx = (n, a) => { if (A) A.sfx(n, a); };
+const tone = (f, d, o) => { if (A) A.tone(f, d, o); };
+const buzz = p => { if (save.set.vib && A) A.vibrate(p); };
+const emit = (type, p) => { const g = KG(); if (g) g.emit(type, p); };
+const nm = f => (EN ? f.en : f.ja), noteOf = f => (EN ? f.noteEn : f.noteJa), locNm = l => (EN ? E.LOCATIONS[l].en : E.LOCATIONS[l].ja);
+const gearNm = it => (EN ? it.en : it.ja);
+const fmtCm = cm10 => (cm10 / 10).toFixed(1) + ' cm';
+const ICON = {
+  book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>',
+  shop: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+  map: '<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',
+  list: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4v2h6V4M8.5 11h7M8.5 15h5"/>',
+  tank: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M7 13c2-3 5-3 7 0-2 3-5 3-7 0zM14 13l3-2v4z"/>',
+};
+const svg = k => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[k] + '</svg>';
+
+// ---------- save ----------
+function readSave() { let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {} return E.sanitize(o); }
+let save = readSave();
+function writeSave() { E.derive(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+const dateKeyNow = () => (PF && PF.jstDateKey ? PF.jstDateKey() : (() => { const d = new Date(Date.now() + 9 * 3600e3); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); })());
+const dbg = { env: null, seed: null, force: null, speed: 1 };
+const curEnv = () => dbg.env || E.envAt(Date.now(), { clk: save.set.clk, sn: save.set.sn });
+const TNAME = ['朝', '昼', '夕', '夜'], TNAME_EN = ['Morning', 'Daytime', 'Evening', 'Night'], WNAME = ['晴れ', 'くもり', '雨'], WNAME_EN = ['Sunny', 'Cloudy', 'Rainy'], SNAME = ['春', '夏', '秋', '冬'], SNAME_EN = ['Spring', 'Summer', 'Autumn', 'Winter'];
+const envText = e => L(TNAME[e.t] + '・' + (e.snow ? '雪' : WNAME[e.wx]) + '・' + SNAME[e.season], TNAME_EN[e.t] + ' / ' + (e.snow ? 'Snowy' : WNAME_EN[e.wx]) + ' / ' + SNAME_EN[e.season]);
+
+// ---------- session ----------
+const cv = $('scene'), ctx = cv.getContext('2d');
+const S = { st: 'idle', loc: save.lc, power: 0.6, aim: 0, hold: 0, castT: 0, castDist: 15, plan: null, tw: 0, f: null, tour: null, last: null, T: 0, bobSink: 0, ripple: 0, rodBend: 0, ov: '', menu: false };
+let VW = { w: 300, h: 300, dpr: 1 }, particles = [], held = new Set(), raf = 0, lastT = 0, persistT = 0, ambT = 3, reelT = 0, cueT = 0;
+const paused = () => !!S.ov || S.menu || !!$('howto').hidden === false;
+const setStatus = (txt, cls) => { const el = $('status'); el.textContent = txt || ''; el.className = cls || ''; $('live').textContent = txt || ''; };
+function toast(msg, ms) { const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 1700); }
+function cue(txt) { const c = $('cue'); c.textContent = txt; c.classList.remove('on'); void c.offsetWidth; if (!reduceMotion.matches) c.classList.add('on'); else { c.style.opacity = 1; clearTimeout(cueT); cueT = setTimeout(() => { c.style.opacity = 0; }, 600); } }
+const gear = () => E.gearOf(save);
+const castMax = () => 40;
+function nextSeed() { return dbg.seed != null ? E.hash32('dbg:' + dbg.seed + ':' + save.stats.casts) : (Math.random() * 4294967296) >>> 0; }
+function setSt(st) { S.st = st; S.t0 = S.T; document.body.classList.toggle('fighting', st === 'fight' || st === 'net'); document.body.classList.toggle('netting', st === 'net'); document.body.classList.toggle('aiming', !!(st === 'idle' && (held.size > 0 || S.drag))); renderAct(); }
+function burst(x, y, n, kind, c) { for (let k = 0; k < n; k++) { const a = Math.random() * Math.PI * 2, sp = 20 + Math.random() * 60; particles.push({ x, y, vx: Math.cos(a) * sp, vy: -Math.abs(Math.sin(a)) * sp * 1.3, life: 0.7, max: 0.7, r: 1.5 + Math.random() * 2, kind: kind || 'drop', c: c || '#dff' }); } }
+function ring(x, y, r, life, c) { particles.push({ x, y, vx: 0, vy: 0, life: life || 1, max: life || 1, r: r || 8, kind: 'ring', c: c || 'rgba(255,255,255,.8)' }); }
+
+// ---------- cast / wait / bite / hook ----------
+function doCast(power, aim) {
+  if (S.st !== 'idle' || paused()) return false;
+  S.power = clamp(power, 0.12, 1); S.aim = clamp(aim, -1, 1);
+  S.castDist = E.castDistance(S.power, save.g.r); S.castT = 0; save.stats.casts++; setSt('cast'); setStatus(L('えいっ！', 'Cast!'), ''); sfx('drop'); buzz(12);
+  const env = curEnv(); S.plan = E.planBite(nextSeed(), env, S.loc, gear(), { wide: save.set.wide, force: dbg.force ? dbg.force.fi : undefined, cm10: dbg.force ? dbg.force.cm10 : undefined }); dbg.force = null; S.plan.env = env;
+  emit('play_start', { mode: S.tour ? 'practice' : 'normal' }); return true;
+}
+function landed() {
+  const L0 = bobPos(); ring(L0.x, L0.y, 8, 1.2); burst(L0.x, L0.y, 8, 'drop'); sfx('pop'); S.tw = 0; S.tapIdx = 0; setSt('wait'); setStatus(L('待っています… ウキを見ていてね', 'Waiting… watch the float'), '');
+}
+function tickWait(dt) {
+  S.tw += dt; const p = S.plan;
+  while (S.tapIdx < p.taps.length && S.tw >= p.taps[S.tapIdx]) { S.tapIdx++; S.bobSink = 0.5; ring(bobPos().x, bobPos().y, 6, 0.7); tone(500 + S.tapIdx * 40, 0.04, { type: 'sine', vol: 0.05 }); buzz(6); }
+  S.bobSink = Math.max(0, S.bobSink - dt * 2.2);
+  if (S.tw >= p.winStart - 0.12) { setSt('bite'); S.bobSink = 1; cue(L('あたり！', 'Bite!')); sfx('select'); tone(880, 0.12, { type: 'triangle', vol: 0.12 }); buzz([30, 30, 50]); setStatus(L('今だ！ 合わせよう', 'Now! Set the hook'), 'good'); }
+}
+function tickBite(dt) {
+  S.tw += dt; S.bobSink = 1; const p = S.plan;
+  if (S.tw > p.winEnd) { sfx('fail'); setStatus(L('逃げられた… また待とう（えさは減りません）', 'It got away… waiting again (no loss)'), ''); newWait(); }
+}
+function newWait() { const env = curEnv(); S.plan = E.planBite(nextSeed(), env, S.loc, gear(), { wide: save.set.wide }); S.plan.env = env; S.tw = 0; S.tapIdx = 0; S.bobSink = 0; setSt('wait'); }
+function reelBack(msg) { S.plan = null; S.f = null; S.chargeSrc = null; S.hold = 0; setSt('idle'); setStatus(msg || L('投げてみよう。画面を上へはじく／Space ／ボタン', 'Ready to cast: flick the screen up, press Space, or use the button.'), ''); }
+function pressAction() {
+  if (S.st === 'wait') { const r = E.hookResult(S.plan, S.tw); if (r === 'early') { sfx('error'); reelBack(L('早すぎ！ 巻きもどしました（罰はありません）', 'Too early! Reeled back in (no penalty).')); } return; }
+  if (S.st === 'bite') { const r = E.hookResult(S.plan, S.tw); if (r === 'hook') startFight(); return; }
+  if (S.st === 'net') { doNet(); return; }
+}
+function startFight() {
+  const p = S.plan, a = save.g.a; /* the fish's identity stays secret until it is landed */
+  if (save.g.sl < 0 && save.g.sb > 0 && a[save.g.sb] > 0) { a[save.g.sb]--; if (a[save.g.sb] <= 0) { save.g.sb = 0; toast(L('えさがなくなりました。ねりえに戻します', 'Out of that bait. Back to dough.'), 1800); } }
+  S.f = E.fightInit(p.fi, p.cm10, gear(), p.seed, { wide: save.set.wide, dist: S.castDist }); S.lastPhase = 'rest'; reelT = 0;
+  setSt('fight'); cue(L('ヒット！', 'Hooked!')); sfx('ok'); buzz([40, 20, 40]); setStatus(L('押しつづけて巻く。引いたら（! が出たら）はなそう', 'Hold to reel. Let go when it pulls (when ! shows).'), 'good'); burst(bobPos().x, bobPos().y, 12, 'drop');
+}
+function tickFight(dt) {
+  const f = S.f, h = held.size > 0; const ev = E.fightStep(f, h, dt);
+  for (const e of ev) {
+    if (e === 'warn') { cue('!'); tone(980, 0.09, { type: 'square', vol: 0.05 }); buzz(18); setStatus(L('引くよ！ はなして！', 'It is about to pull! Let go!'), 'warn'); }
+    else if (e === 'surge') { sfx('hit'); burst(bobPos().x, bobPos().y, 6, 'drop'); }
+    else if (e === 'leap') { cue(L('ジャンプ！', 'Jump!')); sfx('pop'); burst(bobPos().x, bobPos().y - 6, 14, 'drop'); }
+    else if (e === 'rest') setStatus(L('いまだ！ 巻こう', 'Now reel!'), 'good');
+    else if (e === 'slip') { cue(L('すべった', 'Slip!')); sfx('error'); buzz(60); setStatus(L('糸がすべりました。ひっぱられる間ははなそう（糸は切れません）', 'The line slipped. Let go while it pulls (the line never breaks).'), 'warn'); }
+    else if (e === 'net') { setSt('net'); cue(L('たも！', 'Net!')); sfx('select'); setStatus(L('光の帯に合わせて、タップ／Space', 'Tap / Space when the marker is in the green zone'), 'good'); }
+    else if (e === 'escape') { fishEscaped(); return; }
+  }
+  if (h && f.status === 'fight' && !f.slipT) { reelT += dt; if (reelT > 0.16) { reelT = 0; tone(260 + 120 * f.T, 0.03, { type: 'square', vol: 0.018 }); } }
+}
+function doNet() { const r = E.netPress(S.f); if (r === 'landed') { onLanded(); } else if (r === 'miss') { setSt('fight'); sfx('fail'); cue(L('おしい！', 'Close!')); setStatus(L('にげられかけた！ もう少し巻こう（なにも失いません）', 'It slipped the net! Reel a little more (nothing is lost).'), 'warn'); } }
+function fishEscaped() {
+  sfx('fail'); setStatus(L('逃げられました。ざんねん！ また会えるよ（なにも失いません）', 'It got away. Maybe next time! (Nothing is lost.)'), 'warn'); emit('play_end', { reason: 'quit', score: save.zc }); roundDone(); reelBack(null); S.f = null;
+}
+const rarityStars = r => '<span class="stars">' + '★'.repeat(r) + '<i>' + '★'.repeat(5 - r) + '</i></span>';
+function onLanded() {
+  const f = S.f, fi = f.fi, cm10 = f.cm10, env = S.plan.env || curEnv(), fish = FISH[fi];
+  const r = E.recordCatch(save, fi, cm10, env, S.loc); const hit = E.orderProgress(save, { i: fi, cm10, loc: S.loc, isNew: r.isNew, t: env.t });
+  S.last = { fi, cm10, r, env }; if (S.tour) { S.tour.s += cm10; S.tour.n++; }
+  sfx(r.isNew ? 'win' : 'clear'); buzz([60, 40, 90]); const L0 = bobPos(); burst(L0.x, L0.y, 24, 'drop'); for (let k = 0; k < 8; k++) particles.push({ x: L0.x + (Math.random() - 0.5) * 60, y: L0.y - Math.random() * 40, vx: 0, vy: -20, life: 1, max: 1, r: 5 + Math.random() * 4, kind: 'spark', c: '#ffe680' });
+  if (r.isNew) emit('best', { score: save.zc }); emit('play_end', { reason: 'clear', score: save.zc });
+  writeSave(); roundDone(); S.f = null; setSt('catch'); showCatch(r, hit); renderHud();
+}
+function roundDone() { if (!S.tour) return; S.tour.r++; save.tn.r = S.tour.r; save.tn.s = S.tour.s; if (S.tour.r >= E.TOUR_ROUNDS) setTimeout(finishTour, 400); else toast(L('大会 ' + S.tour.r + '/' + E.TOUR_ROUNDS + '投 終了', 'Tournament: round ' + S.tour.r + ' of ' + E.TOUR_ROUNDS + ' done'), 1200); writeSave(); }
+
+// ---------- positions ----------
+function bobPos() {
+  const W = VW.w, H = VW.h, st = S.st, base = { hy: S.hy || Math.round(H * 0.38), loc: E.LOCATIONS[S.loc].id }; let far = 0.06, aim = S.aim;
+  if (st === 'idle' || st === 'catch') { aim = S.aim * 0.4; far = 0.06; }
+  else if (st === 'cast' || st === 'wait' || st === 'bite') far = clamp((S.castDist - 4) / (castMax() - 4), 0, 1);
+  else if (st === 'fight') far = clamp(S.f.dist / castMax(), 0, 1); else if (st === 'net') far = 0.04;
+  const lay = ART.layout(W, H, Object.assign(base, { far, aim, rodBend: S.rodBend }));
+  if (st === 'cast') { const k = clamp(S.castT / 0.8, 0, 1), s = 1 - (1 - k) * (1 - k); const tip = lay.tip; return { x: tip.x + (lay.bx - tip.x) * s, y: tip.y + (lay.by - tip.y) * s - Math.sin(Math.PI * k) * H * 0.28, s: lay.bs * (0.6 + 0.4 * k) }; }
+  return { x: lay.bx, y: lay.by, s: lay.bs };
+}
+
+// ---------- frame ----------
+function sim(dt) {
+  S.T += dt; if (S.st === 'cast') { S.castT += dt; if (S.castT >= 0.8) landed(); }
+  else if (S.st === 'wait') tickWait(dt); else if (S.st === 'bite') tickBite(dt);
+  else if (S.st === 'fight') { tickFight(dt); } else if (S.st === 'net') E.netTick(S.f, dt);
+  if (S.st === 'idle' && held.size && S.chargeSrc) S.hold += dt;
+  S.ripple = Math.max(0, S.ripple - dt); S.rodBend += ((S.st === 'fight' ? 0.5 + (S.f ? S.f.T : 0) * 1.2 : 0) - S.rodBend) * Math.min(1, dt * 8);
+  for (const p of particles) { p.life -= dt; if (p.kind === 'drop') { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 220 * dt; } else if (p.kind === 'spark') { p.y += p.vy * dt; } else if (p.kind === 'bubble') { p.y -= 20 * dt; } }
+  particles = particles.filter(p => p.life > 0);
+  ambT -= dt; if (ambT <= 0) { ambient(); ambT = 4 + Math.random() * 6; }
+  persistT += dt; if (persistT > 20) { persistNow(); persistT = 0; }
+}
+function ambient() {
+  if (!A || S.ov) return; const id = E.LOCATIONS[S.loc].id, env = curEnv();
+  if (id === 'pond') { tone(150, 0.1, { type: 'sine', vol: 0.03 }); tone(170, 0.1, { type: 'sine', vol: 0.03, delay: 0.14 }); } else if (id === 'night') { for (let k = 0; k < 3; k++) tone(3200, 0.04, { type: 'sine', vol: 0.012, delay: k * 0.09 }); }
+  else if (id === 'harbour' || id === 'estuary') { tone(660, 0.5, { type: 'sine', vol: 0.02 }); } else if (id === 'deep') { tone(90, 0.9, { type: 'sine', vol: 0.03, slide: 60 }); } else if (id === 'ice') { tone(1800, 0.05, { type: 'triangle', vol: 0.012 }); }
+  else { A.noise(0.25, { vol: 0.018, freq: 900 }); } if (env.wx === 2) A.noise(0.4, { vol: 0.012, freq: 3000 });
+}
+function render() {
+  const W = VW.w, H = VW.h; if (!W) return; ctx.setTransform(VW.dpr, 0, 0, VW.dpr, 0, 0); const env = curEnv(), T = S.T;
+  const sc = { loc: E.LOCATIONS[S.loc].id, env, T, land: W > H * 1.2 }; ART.drawScene(ctx, W, H, sc); S.hy = sc.hy;
+  const lay = ART.drawAngler(ctx, W, H, Object.assign({}, sc, { hy: sc.hy, rodBend: S.rodBend }), T); const bp = bobPos();
+  const st = S.st, fighting = st === 'fight' || st === 'net'; let bob = bp;
+  const line = { loc: sc.loc, env, hy: sc.hy, state: st, tension: fighting ? S.f.T : 0, slack: fighting ? 0.4 : 1, tipPos: lay.tip, bobPos: { x: bp.x, y: bp.y } };
+  if (st === 'idle' && (held.size || S.drag)) { const aimv = S.drag ? S.drag.aim : S.aim, pw = S.drag ? S.drag.power : clamp(0.2 + S.hold / 1.1 * 0.8, 0.2, 1); const far = clamp((E.castDistance(pw, save.g.r) - 4) / (castMax() - 4), 0, 1), tl = ART.layout(W, H, { hy: sc.hy, far, aim: aimv, loc: sc.loc }); ctx.save(); ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(tl.bx, tl.by, 16 * tl.bs, 5 * tl.bs, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); $('powFill').style.height = Math.round(pw * 100) + '%'; }
+  if (st !== 'catch') { const pos = ART.drawLine(ctx, W, H, line, T); void pos; }
+  if (fighting) { const f = S.f, fish = FISH[f.fi], big = clamp(0.22 + f.cm10 / 10 / Math.max(10, fish.max) * 0.3, 0.2, 0.5), nearK = 1 - clamp(f.dist / castMax(), 0, 1), w = (34 + 90 * big * (0.3 + nearK * 0.9)) * (st === 'net' ? 1.3 : 1), thr = f.phase === 'surge' ? 1 : 0.25, sx = bp.x + Math.sin(T * (6 + 8 * thr)) * (10 + 18 * thr), sy = bp.y + 12 + Math.sin(T * 9) * 3 * thr;
+    ART.drawFish(ctx, fish.art, sx, sy, w, { t: T * (1 + thr * 2), flip: Math.sin(T * 0.9) > 0, alpha: 0.62, sil: undefined, key: fish.key, wag: 0.5 + thr });
+    ctx.fillStyle = 'rgba(10,40,70,.25)'; ctx.beginPath(); ctx.ellipse(sx, sy + 6, w * 0.5, w * 0.14, 0, 0, Math.PI * 2); ctx.fill(); }
+  if (st !== 'catch' && !fighting) ART.drawBobber(ctx, bp.x, bp.y, bp.s, T, { sink: S.bobSink, ripple: st === 'wait' || st === 'bite' ? 0.5 + Math.sin(T * 2) * 0.2 : 0.3, glow: env.hour < 5.5 || env.hour >= 19.5 });
+  else if (fighting) ART.drawBobber(ctx, bp.x, bp.y - 4, bp.s * 0.8, T, { sink: 1, ripple: 1 });
+  ART.drawParticles(ctx, particles);
+  if (env.wx === 2 && !reduceMotion.matches) { /* ripple dots on the water */ if (Math.random() < 0.3) ring(Math.random() * W, sc.hy + 10 + Math.random() * (H - sc.hy) * 0.7, 3, 0.6, 'rgba(255,255,255,.5)'); }
+  // メーター
+  if (fighting) { const f = S.f; $('fillT').style.width = Math.min(100, f.T * 100) + '%'; $('fillT').className = f.T > 0.8 ? 'hot' : ''; $('fillS').style.width = Math.round(f.stam * 100) + '%'; $('vDist').textContent = Math.max(0, f.dist - E.NET_AT).toFixed(1) + ' m'; $('vSta').textContent = Math.round(f.stam * 100) + '%';
+    if (st === 'net') { const n = f.net; $('netZone').style.left = (n.c - n.zw / 2) * 100 + '%'; $('netZone').style.width = n.zw * 100 + '%'; $('netPos').style.left = n.pos * 100 + '%'; } }
+}
+function frame(now) {
+  raf = requestAnimationFrame(frame); const dt = Math.min(0.1, (now - lastT) / 1000 || 0); lastT = now;
+  if (!paused()) { const k = dbg.speed; const steps = Math.max(1, Math.ceil(k)); for (let i = 0; i < steps; i++) sim(dt * k / steps); } else if (S.st === 'cast' || S.st === 'wait') { /* frozen while a panel is open */ }
+  render(); if (((now / 1000) | 0) !== S.envSec) { S.envSec = (now / 1000) | 0; renderHud(); }
+}
+function fit() {
+  const st = $('stage'), r = st.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); VW = { w: Math.max(40, Math.floor(r.width)), h: Math.max(40, Math.floor(r.height)), dpr };
+  cv.width = Math.round(VW.w * dpr); cv.height = Math.round(VW.h * dpr);
+}
+
+// ---------- HUD ----------
+function renderHud() {
+  const env = curEnv(); $('vLoc').textContent = locNm(S.loc); $('vEnv').textContent = envText(env); $('vCoin').textContent = save.coins; $('vZk').textContent = save.zc + '/' + E.N;
+  $('lLoc').textContent = L('場所', 'Place'); $('lEnv').textContent = L('いま', 'Now'); $('lCoin').textContent = L('コイン', 'Coins'); $('lZk').textContent = L('ずかん', 'Book');
+  $('lTen').textContent = L('ひき', 'Pull'); $('lSta').textContent = L('体力', 'Stamina');
+  const orderReady = save.q.o.some((o, k) => E.orderDone(save, k) && !save.q.d[k]); const od = $('nOr').querySelector('.dot'); if (od) od.hidden = !orderReady;
+  if (S.tour) $('vLoc').textContent = locNm(S.loc) + ' ' + S.tour.r + '/' + E.TOUR_ROUNDS;
+}
+function renderAct() {
+  const b = $('act'), st = S.st; let t = L('なげる', 'Cast');
+  if (st === 'cast') t = L('とんでいく…', 'Flying…'); else if (st === 'wait') t = L('まきもどす', 'Reel back'); else if (st === 'bite') t = L('あわせる！', 'Hook it!'); else if (st === 'fight') t = L('おしつづけて巻く', 'Hold to reel'); else if (st === 'net') t = L('たもですくう！', 'Net it!'); else if (st === 'catch') t = L('つぎへ', 'Next');
+  b.textContent = t; b.classList.toggle('held', held.has('btn'));
+}
+function renderNav() {
+  $('nZk').innerHTML = svg('book') + '<span>' + L('ずかん', 'Book') + '</span>'; $('nSh').innerHTML = svg('shop') + '<span>' + L('お店', 'Shop') + '</span>'; $('nMp').innerHTML = svg('map') + '<span>' + L('場所', 'Places') + '</span>';
+  $('nOr').innerHTML = svg('list') + '<span>' + L('オーダー', 'Orders') + '</span><i class="dot" hidden></i>'; $('nAq').innerHTML = svg('tank') + '<span>' + L('水そう', 'Tank') + '</span>';
+}
+
+// ---------- overlays ----------
+const ovEl = $('ov'), ovPanel = $('ovPanel');
+function openOv(name, html, after) { S.ov = name; ovPanel.innerHTML = html; ovEl.hidden = false; if (after) after(ovPanel); const f = ovPanel.querySelector('[data-first]') || ovPanel.querySelector('button'); try { f && f.focus({ preventScroll: true }); } catch (e) {} }
+function closeOv() { ovEl.hidden = true; ovPanel.innerHTML = ''; S.ov = ''; stopTank(); renderHud(); if (S.st === 'catch') afterCatch(); }
+const closeBtn = () => '<button class="btn sub" data-close type="button" data-first>' + esc(L('とじる', 'Close')) + '</button>';
+ovEl.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeOv(); });
+function showCatch(r, hit) {
+  const f = FISH[S.last.fi], cm10 = S.last.cm10, orderMsg = hit.length ? L('オーダーが進みました', 'Orders progressed') : '';
+  const tags = []; if (r.isNew) tags.push(L('ずかんに新登録！', 'New in your book!')); if (r.best && !r.isNew) tags.push(L('じこベスト！', 'Personal best!')); if (r.big) tags.push(L('大物！', 'A big one!'));
+  const html = '<h2>' + esc(L('釣れた！', 'Caught!')) + '</h2><div class="scroll"><canvas id="cFish" width="240" height="150" style="width:240px;height:150px;max-width:100%"></canvas><div class="big">' + esc(nm(f)) + '</div><div>' + rarityStars(f.r) + '</div>' +
+    '<div>' + tags.map(t => '<span class="newrec">' + esc(t) + '</span>').join('') + '</div><div class="kv"><span>' + esc(L('大きさ', 'Size')) + '</span><span>' + fmtCm(cm10) + '</span><span>' + esc(L('コイン', 'Coins')) + '</span><span>+' + r.coins + '</span><span>' + esc(L('ベスト', 'Best')) + '</span><span>' + fmtCm(save.b[S.last.fi]) + '</span></div>' +
+    '<p>' + esc(noteOf(f)) + '</p>' + (orderMsg ? '<p>' + esc(orderMsg) + '</p>' : '') + '</div><button class="btn" data-close type="button" data-first>' + esc(L('つぎへ', 'Next')) + '</button>';
+  openOv('catch', html, p => { const c = p.querySelector('#cFish').getContext('2d'); drawFishFit(c, f.art, 120, 78, 220, 130, { t: 0, key: f.key }); });
+  setStatus(L(nm(f) + ' ' + fmtCm(cm10) + ' を釣った！', 'Caught a ' + nm(f) + ', ' + fmtCm(cm10) + '!'), 'good'); if (r.isNew) toast(L('ずかん ' + save.zc + '/' + E.N, 'Book ' + save.zc + '/' + E.N), 1400);
+}
+function afterCatch() { if (S.st !== 'catch') return; S.last && setStatus('', ''); reelBack(); const nl = E.LOCATIONS.filter((l, i) => save.zc >= l.unlock && save.zc - (S.last ? (S.last.r.isNew ? 1 : 0) : 0) < l.unlock); if (nl.length) toast(L('あたらしい場所：' + nl.map(l => l.ja).join('、'), 'New place: ' + nl.map(l => l.en).join(', ')), 2400); checkOrders(); }
+function checkOrders() { save.q.o.forEach((o, k) => { if (E.orderDone(save, k) && !save.q.d[k] && !S.notified) { S.notified = 1; toast(L('オーダー達成！ 「オーダー」で受け取れます', 'Order complete! Claim it in Orders'), 2000); } }); S.notified = 0; }
+function fishBox(art) { const r = ['ray', 'jel', 'sea', 'oct', 'cra', 'tur', 'squ', 'shr'].includes(art.shape) ? 0.75 : clamp(art.D / art.L * 1.0 + (art.fin === 'sail' || art.fin === 'high' ? 0.18 : 0.08), 0.18, 1.1); return r; }
+function drawFishFit(c, art, cx, cy, bw, bh, o) { const w = Math.min(bw, bh / fishBox(art) * 1.0); ART.drawFish(c, art, cx, cy, w * 0.95, o); }
+
+// -- zukan
+function showZukan(filter, sel) {
+  filter = filter == null ? -1 : filter;
+  const list = FISH.filter(f => filter < 0 || f.loc.includes(filter)); const have = list.filter(f => E.zHas(save, f.i)).length;
+  const opts = '<option value="-1">' + esc(L('ぜんぶ', 'All')) + '</option>' + E.LOC_ORDER.map(i => '<option value="' + i + '"' + (i === filter ? ' selected' : '') + '>' + esc(locNm(i)) + '</option>').join('');
+  const html = '<h2>' + esc(L('魚のずかん', 'Fish Book')) + '</h2><p>' + esc(L('集めた数', 'Collected')) + ' <b>' + save.zc + ' / ' + E.N + '</b>' + esc(L('（', ' (') + (filter < 0 ? L('ぜんぶ', 'All') : locNm(filter)) + ' ' + have + '/' + list.length + L('）', ')')) + '</p>' +
+    '<div class="og"><select id="zkSel" aria-label="' + esc(L('場所でしぼる', 'Filter by place')) + '" style="width:100%;min-height:44px;border-radius:10px;border:1px solid var(--kb-line);background:var(--kb-bg);color:var(--kb-ink);font:800 14px var(--kb-font-body);padding:4px 8px">' + opts + '</select></div>' +
+    '<div class="scroll" id="zkScroll"><div class="grid" id="zkGrid">' + list.map(f => { const h = E.zHas(save, f.i); return '<button class="card ' + (h ? '' : 'unk') + '" type="button" data-i="' + f.i + '"><span class="no">' + String(f.i + 1).padStart(3, '0') + '</span><canvas width="160" height="108"></canvas><span>' + (h ? esc(nm(f)) : '？？？') + '</span><small>' + (h ? fmtCm(save.b[f.i]) : '★'.repeat(f.r)) + '</small></button>'; }).join('') + '</div></div>' + closeBtn();
+  openOv('zukan', html, p => {
+    p.querySelectorAll('#zkGrid .card').forEach(b => { const f = FISH[+b.dataset.i], c = b.querySelector('canvas').getContext('2d'); drawFishFit(c, f.art, 80, 54, 150, 96, E.zHas(save, f.i) ? { t: 0, key: f.key } : { t: 0, sil: document.documentElement.getAttribute('data-kb-theme') === 'light' ? '#8aa5b6' : '#0b1a27' }); b.onclick = () => showFishDetail(f.i, filter); });
+    p.querySelector('#zkSel').onchange = e => showZukan(+e.target.value);
+    if (sel != null) { const b = p.querySelector('.card[data-i="' + sel + '"]'); if (b) b.scrollIntoView({ block: 'center' }); }
+  });
+}
+function showFishDetail(i, filter) {
+  const f = FISH[i], have = E.zHas(save, i); const tn = [0, 1, 2, 3].filter(k => (f.time >> k) & 1), wn = [0, 1, 2].filter(k => (f.wx >> k) & 1), sn = [0, 1, 2, 3].filter(k => (f.season >> k) & 1);
+  const anyT = tn.length === 4, anyW = wn.length === 3, anyS = sn.length === 4;
+  const kind = f.kind === 'f' ? L('架空の生きもの（この世にはいません）', 'Fictional creature (invented)') : f.kind === 'u' ? L('実在。解説に「確かでない」点をふくみます', 'Real, but the note contains a claim marked as not firmly established') : L('実在の生きものがモデル', 'Inspired by a real animal');
+  const html = '<h2>' + esc(have ? nm(f) : '？？？') + '</h2><canvas id="cDet" width="260" height="150" style="width:260px;height:150px;max-width:100%"></canvas><div>' + rarityStars(f.r) + '</div>' +
+    '<div class="scroll"><div class="tags">' + f.loc.map(l => '<span class="tag on">' + esc(locNm(l)) + '</span>').join('') + '</div>' +
+    '<div class="kv"><span>' + esc(L('大きさ', 'Size')) + '</span><span>' + f.min + '–' + f.max + ' cm</span><span>' + esc(L('じこベスト', 'Your best')) + '</span><span>' + (have ? fmtCm(save.b[i]) : '-') + '</span></div>' +
+    '<div class="tags"><span class="tag">' + esc(anyT ? L('いつでも', 'Any time of day') : tn.map(k => L(TNAME[k], TNAME_EN[k])).join(' / ')) + '</span><span class="tag">' + esc(anyW ? L('どんな天気でも', 'Any weather') : wn.map(k => L(WNAME[k], WNAME_EN[k])).join(' / ')) + '</span><span class="tag">' + esc(anyS ? L('一年中', 'All year') : sn.map(k => L(SNAME[k], SNAME_EN[k])).join(' / ')) + '</span></div>' +
+    (have ? '<p style="color:var(--kb-ink)">' + esc(noteOf(f)) + '</p><div class="tags"><span class="tag' + (f.kind !== 'r' ? ' warn' : '') + '">' + esc(kind) + '</span></div>' : '<p>' + esc(L('まだ釣ったことがありません。出会える場所・時間だけ、ヒントとして見えます。', 'Not caught yet. Only where and when to find it is shown as a hint.')) + '</p>') + '</div>' +
+    '<button class="btn sub" id="dBack" type="button" data-first>' + esc(L('ずかんへもどる', 'Back to the book')) + '</button>';
+  openOv('zukan', html, p => { drawFishFit(p.querySelector('#cDet').getContext('2d'), f.art, 130, 76, 240, 136, have ? { t: 0, key: f.key } : { t: 0, sil: '#0b1a27' }); p.querySelector('#dBack').onclick = () => showZukan(filter, i); });
+}
+// -- shop
+function showShop(tab) {
+  tab = tab || 'gear'; const g = save.g;
+  const rows = (kind, arr, cur, txt) => arr.map((it, i) => { const owned = i <= cur, next = i === cur + 1; return '<div class="row' + (owned ? ' cur' : '') + '"><div class="tx">' + esc(gearNm(it)) + '<small>' + esc(txt(it)) + '</small></div>' + (owned ? '<span class="tag on">' + esc(L('持っている', 'Owned')) + '</span>' : '<button class="btn sm" data-buy="' + kind + ':' + i + '" ' + (next && save.coins >= it.price ? '' : 'disabled') + ' type="button">' + it.price + '</button>') + '</div>'; }).join('');
+  let body = '';
+  if (tab === 'gear') body = '<div class="og"><div class="ol">' + esc(L('さお（遠くへ投げる・引きに強い）', 'Rods (cast farther, pull harder)')) + '</div><div class="rows">' + rows('rod', E.RODS, g.r, it => L('力 ' + it.power + '・飛ぶ距離 ×' + it.cast, 'Power ' + it.power + ', cast ×' + it.cast)) + '</div></div>' +
+    '<div class="og"><div class="ol">' + esc(L('リール（巻く速さ）', 'Reels (reeling speed)')) + '</div><div class="rows">' + rows('reel', E.REELS, g.e, it => L('速さ ×' + it.speed, 'Speed ×' + it.speed)) + '</div></div>' +
+    '<div class="og"><div class="ol">' + esc(L('糸（強い魚の引きに耐える）', 'Lines (withstand strong pulls)')) + '</div><div class="rows">' + rows('line', E.LINES, g.n, it => L('強さ ×' + it.str, 'Strength ×' + it.str)) + '</div></div><p>' + esc(L('「次の1つ」だけ買えます。足りないコインは釣りで貯めましょう。', 'You can buy the next tier only. Earn the coins by fishing.')) + '</p>';
+  else if (tab === 'bait') body = '<div class="og"><div class="ol">' + esc(L('えさ（10こ入り・使うと減る）', 'Bait (packs of 10, used up)')) + '</div><div class="rows">' + E.BAITS.map((it, i) => '<div class="row' + (g.sl < 0 && g.sb === i ? ' cur' : '') + '"><div class="tx">' + esc(gearNm(it)) + '<small>' + esc(i === 0 ? L('いつもの。なくならない', 'Always available, never runs out') : L('のこり ' + g.a[i], 'Left: ' + g.a[i])) + '</small></div>' + (i ? '<button class="btn sm" data-buy="bait:' + i + '" ' + (save.coins >= it.price ? '' : 'disabled') + ' type="button">' + it.price + '</button>' : '') + '<button class="btn sm sub" data-use="b:' + i + '" ' + (i && !g.a[i] ? 'disabled' : '') + ' type="button">' + esc(L('つける', 'Use')) + '</button></div>').join('') + '</div></div>' +
+    '<div class="og"><div class="ol">' + esc(L('ルアー（何度でも使える・早くかかる）', 'Lures (reusable, bite sooner)')) + '</div><div class="rows">' + E.LURES.map((it, i) => { const own = (g.u >> i) & 1; return '<div class="row' + (g.sl === i ? ' cur' : '') + '"><div class="tx">' + esc(gearNm(it)) + '<small>' + esc(L('待ち時間 ×' + it.wait, 'Wait ×' + it.wait)) + '</small></div>' + (own ? '<button class="btn sm sub" data-use="l:' + i + '" type="button">' + esc(g.sl === i ? L('はずす', 'Remove') : L('つける', 'Use')) + '</button>' : '<button class="btn sm" data-buy="lure:' + i + '" ' + (save.coins >= it.price ? '' : 'disabled') + ' type="button">' + it.price + '</button>') + '</div>'; }).join('') + '</div></div><p>' + esc(L('魚ごとに好きなえさがあります（ずかんのヒント）。', 'Every fish has favourite bait.')) + '</p>';
+  else body = '<div class="og"><div class="ol">' + esc(L('水そうのかざり', 'Aquarium decorations')) + '</div><div class="rows">' + E.DECOR.map((it, i) => { const own = (save.aq.d >> i) & 1; return '<div class="row' + (own ? ' cur' : '') + '"><div class="tx">' + esc(gearNm(it)) + '</div>' + (own ? '<span class="tag on">' + esc(L('持っている', 'Owned')) + '</span>' : '<button class="btn sm" data-buy="decor:' + i + '" ' + (save.coins >= it.price ? '' : 'disabled') + ' type="button">' + it.price + '</button>') + '</div>'; }).join('') + '</div></div>';
+  const seg = '<div class="seg" role="group">' + [['gear', L('道具', 'Gear')], ['bait', L('えさ・ルアー', 'Bait & lures')], ['decor', L('かざり', 'Decor')]].map(x => '<button class="opt" data-tab="' + x[0] + '" aria-pressed="' + (tab === x[0]) + '" type="button">' + esc(x[1]) + '</button>').join('') + '</div>';
+  openOv('shop', '<h2>' + esc(L('つりぐ店', 'Tackle Shop')) + '</h2><p>' + esc(L('コイン', 'Coins')) + ' <b>' + save.coins + '</b></p>' + seg + '<div class="scroll">' + body + '</div>' + closeBtn(), p => {
+    p.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => showShop(b.dataset.tab); });
+    p.querySelectorAll('[data-buy]').forEach(b => { b.onclick = () => { const [k, i] = b.dataset.buy.split(':'), r = E.buy(save, k, +i); if (r.ok) { sfx('coin'); writeSave(); toast(L('買いました！', 'Purchased!'), 900); } else { sfx('error'); toast(L('買えません', 'Cannot buy'), 900); } showShop(tab); renderHud(); }; });
+    p.querySelectorAll('[data-use]').forEach(b => { b.onclick = () => { const [k, i] = b.dataset.use.split(':'); if (k === 'b') { save.g.sb = +i; save.g.sl = -1; } else save.g.sl = save.g.sl === +i ? -1 : +i; sfx('ok'); writeSave(); showShop(tab); }; });
+  });
+}
+// -- places
+function showMap() {
+  const env = curEnv(); const rows = E.LOC_ORDER.map(i => { const l = E.LOCATIONS[i], ok = save.zc >= l.unlock, n = E.fitNow(env, i), seen = FISH.filter(f => f.loc.includes(i) && E.zHas(save, f.i)).length, tot = FISH.filter(f => f.loc.includes(i)).length;
+    return '<div class="row' + (i === S.loc ? ' cur' : '') + (ok ? '' : ' lock') + '"><div class="tx">' + esc(locNm(i)) + '<small>' + esc(EN ? l.en2 : l.ja2) + '</small><small>' + esc(ok ? L('いまぴったりの魚：' + n + '種 / ずかん ' + seen + '/' + tot, 'Kinds that suit now: ' + n + ' / book ' + seen + '/' + tot) : L('ずかん ' + l.unlock + '種で開きます（いま ' + save.zc + '）', 'Opens at ' + l.unlock + ' kinds in your book (now ' + save.zc + ')')) + '</small></div><button class="btn sm' + (i === S.loc ? ' sub' : '') + '" data-loc="' + i + '" ' + (ok && i !== S.loc ? '' : 'disabled') + ' type="button">' + esc(ok ? (i === S.loc ? L('ここ', 'Here') : L('行く', 'Go')) : L('ロック', 'Locked')) + '</button></div>'; }).join('');
+  openOv('map', '<h2>' + esc(L('釣り場', 'Fishing Places')) + '</h2><p>' + esc(L('いま：', 'Now: ') + envText(env)) + '</p><div class="scroll"><div class="rows">' + rows + '</div></div>' + closeBtn(), p => {
+    p.querySelectorAll('[data-loc]').forEach(b => { b.onclick = () => { if (S.st === 'fight' || S.st === 'net') return; changeLoc(+b.dataset.loc); closeOv(); }; });
+  });
+}
+function changeLoc(i) { if (S.tour && S.tour.loc !== i) { toast(L('大会中は場所を変えられません', 'You cannot change place during a tournament'), 1600); return; } S.loc = i; save.lc = i; save.lm |= 1 << i; writeSave(); if (S.st === 'wait' || S.st === 'bite') reelBack(); sfx('ok'); particles = []; renderHud(); setStatus(L(locNm(i) + 'に来ました', 'Arrived at ' + locNm(i)), ''); }
+// -- orders & tournament
+function showOrders() {
+  E.ensureOrders(save, dateKeyNow()); writeSave(); const wk = E.weekKey(dateKeyNow()); if (save.tn.k !== wk) { save.tn.k = wk; save.tn.loc = E.tournamentLoc(wk, save.zc); save.tn.r = 0; save.tn.s = 0; save.tn.done = 0; writeSave(); }
+  const q = save.q, oh = q.o.map((o, k) => { const done = E.orderDone(save, k), claimed = q.d[k], pr = Math.min(o[1], q.p[k] || 0); return '<div class="row' + (claimed ? ' cur' : '') + '"><div class="tx">' + esc(E.orderText(o, EN ? 'en' : 'ja')) + '<small>' + pr + ' / ' + o[1] + esc(L('・ほうび ', ' - Reward ')) + o[3] + '</small><div class="prog"><i style="width:' + Math.round(pr / o[1] * 100) + '%"></i></div></div>' + (claimed ? '<span class="tag on">' + esc(L('受け取り済み', 'Claimed')) + '</span>' : '<button class="btn sm" data-claim="' + k + '" ' + (done ? '' : 'disabled') + ' type="button">' + esc(L('受け取る', 'Claim')) + '</button>') + '</div>'; }).join('');
+  const tn = save.tn, tl = tn.loc; let th = '';
+  if (tn.done) { const bots = E.botScores(wk, tl), me = tn.s; th = '<p>' + esc(L('今週の大会は終了。あなたは ' + tn.done + ' 位でした。つぎは来週！', 'This week\'s tournament is over. You placed #' + tn.done + '. Next one next week!')) + '</p>' + standings(bots, me); }
+  else if (S.tour) th = '<p>' + esc(L('大会中：' + S.tour.r + '/' + E.TOUR_ROUNDS + '投。合計 ' + fmtCm(S.tour.s), 'In progress: round ' + S.tour.r + ' of ' + E.TOUR_ROUNDS + ', total ' + fmtCm(S.tour.s))) + '</p>';
+  else th = '<p>' + esc(L('場所：' + locNm(tl) + '。' + E.TOUR_ROUNDS + '回投げて、釣れた魚の大きさの合計をボット5にんと競います。ボットの結果は種から決まった数字です。魚が釣れなくても罰はありません。', 'Place: ' + locNm(tl) + '. Cast ' + E.TOUR_ROUNDS + ' times; the total length of your catches is compared with 5 bots (their results are fixed by a seed). No penalty for missing.')) + '</p><button class="btn" id="tnGo" type="button">' + esc(tn.r ? L('大会をつづける', 'Continue tournament') : L('大会に出る', 'Enter tournament')) + '</button>';
+  openOv('orders', '<h2>' + esc(L('オーダーと大会', 'Orders & Tournament')) + '</h2><div class="scroll"><div class="og"><div class="ol">' + esc(L('きょうのオーダー（毎日かわる）', "Today's orders (new every day)")) + '</div><div class="rows">' + oh + '</div></div><div class="og"><div class="ol">' + esc(L('今週の大会', "This week's tournament")) + '</div>' + th + '<p>' + esc(L('優勝 ' + save.tn.w + ' 回', 'Wins: ' + save.tn.w)) + '</p></div></div>' + closeBtn(), p => {
+    p.querySelectorAll('[data-claim]').forEach(b => { b.onclick = () => { const rw = E.claimOrder(save, +b.dataset.claim); if (rw) { sfx('coin'); toast('+' + rw, 900); writeSave(); renderHud(); } showOrders(); }; });
+    const go = p.querySelector('#tnGo'); if (go) go.onclick = () => { S.tour = { k: wk, loc: tl, r: tn.r, s: tn.s, n: 0 }; closeOv(); changeLoc(tl); S.loc = tl; reelBack(L('大会スタート！ ' + E.TOUR_ROUNDS + '回投げよう', 'Tournament start! Cast ' + E.TOUR_ROUNDS + ' times')); renderHud(); };
+  });
+}
+function standings(bots, me) { const all = bots.map(b => ({ name: gearNm(E.BOTS[b.b]), score: b.score })).concat([{ name: L('あなた', 'You'), score: me, me: 1 }]).sort((a, b) => b.score - a.score); return '<div class="rows">' + all.map((x, i) => '<div class="row' + (x.me ? ' cur' : '') + '"><div class="tx">' + (i + 1) + '. ' + esc(x.name) + '</div><b>' + (x.score / 10).toFixed(1) + ' cm</b></div>').join('') + '</div>'; }
+function finishTour() {
+  const t = S.tour; if (!t) return; const bots = E.botScores(t.k, t.loc), rank = E.tournamentRank(t.s, bots), rw = E.finishTournament(save, rank); S.tour = null; save.tn.s = t.s; save.tn.r = E.TOUR_ROUNDS; writeSave(); sfx(rank === 1 ? 'win' : 'clear'); renderHud();
+  openOv('tourend', '<h2>' + esc(L('大会しゅうりょう！', 'Tournament over!')) + '</h2><div class="big">' + esc(L(rank + ' 位', '#' + rank)) + '</div><p>' + esc(L('合計 ', 'Total ') + fmtCm(t.s) + L('・ほうび ', ' / reward ') + rw) + '</p><div class="scroll">' + standings(bots, t.s) + '</div>' + closeBtn());
+}
+// -- aquarium
+let tankRaf = 0, tankFish = [], tankT = 0;
+function stopTank() { cancelAnimationFrame(tankRaf); tankRaf = 0; }
+function showAquarium() {
+  const caught = FISH.filter(f => E.zHas(save, f.i)); const sel = new Set(save.aq.f);
+  const html = '<h2>' + esc(L('わたしの水そう', 'My Aquarium')) + '</h2><canvas id="tank" width="360" height="190" aria-label="' + esc(L('水そう', 'Aquarium')) + '"></canvas><p>' + esc(L('水そうに入れる魚をえらぼう（12ひきまで）。水そうをタップするとえさをあげられます。かざりはお店で買えます。', 'Pick fish to put in the tank (up to 12). Tap the tank to feed them. Decorations are sold in the shop.')) + ' (' + sel.size + '/12)</p><div class="scroll">' +
+    (caught.length ? '<div class="grid" id="aqGrid">' + caught.map(f => '<button class="card' + (sel.has(f.i) ? ' sel' : '') + '" type="button" data-i="' + f.i + '" aria-pressed="' + sel.has(f.i) + '"><canvas width="160" height="108"></canvas><span>' + esc(nm(f)) + '</span></button>').join('') + '</div>' : '<p>' + esc(L('まだ魚がいません。釣ってみよう！', 'No fish yet. Go catch some!')) + '</p>') + '</div>' + closeBtn();
+  openOv('aquarium', html, p => {
+    p.querySelectorAll('#aqGrid .card').forEach(b => { const f = FISH[+b.dataset.i]; drawFishFit(b.querySelector('canvas').getContext('2d'), f.art, 80, 54, 150, 96, { t: 0, key: f.key }); b.onclick = () => { const i = +b.dataset.i, k = save.aq.f.indexOf(i); if (k >= 0) save.aq.f.splice(k, 1); else if (save.aq.f.length < 12) save.aq.f.push(i); else toast(L('12ひきまでです', 'Up to 12 fish'), 900); sfx('tap'); writeSave(); showAquarium(); }; });
+    startTank(p.querySelector('#tank'));
+  });
+}
+function startTank(c) {
+  const g = c.getContext('2d'), W = c.width, H = c.height; tankFish = save.aq.f.map((i, k) => { const f = FISH[i], big = clamp(f.max / 120, 0.4, 1); return { art: f.art, key: f.key, x: Math.random() * W, y: 24 + Math.random() * (H * 0.6), vx: (k % 2 ? 1 : -1) * (14 + Math.random() * 22), vy: 0, ph: Math.random() * 6, w: 46 + 40 * big, food: null }; }); let foods = []; tankT = 0; let last = performance.now();
+  c.onclick = e => { const r = c.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width * W; for (let k = 0; k < 6; k++) foods.push({ x: x + (Math.random() - 0.5) * 30, y: 6, life: 6 }); sfx('pop'); };
+  const loop = now => { tankRaf = requestAnimationFrame(loop); const dt = Math.min(0.05, (now - last) / 1000); last = now; tankT += dt;
+    for (const f of tankFish) { let tgt = null; for (const d of foods) if (!tgt || Math.hypot(d.x - f.x, d.y - f.y) < Math.hypot(tgt.x - f.x, tgt.y - f.y)) tgt = d; if (tgt) { f.vx += Math.sign(tgt.x - f.x) * 40 * dt; f.vy += Math.sign(tgt.y - f.y) * 30 * dt; if (Math.hypot(tgt.x - f.x, tgt.y - f.y) < 14) tgt.life = 0; } f.vx = clamp(f.vx, -60, 60); f.vy *= 0.97; f.x += f.vx * dt; f.y = clamp(f.y + (f.vy + Math.sin(tankT * 1.5 + f.ph) * 6) * dt, 20, H * 0.78); if (f.x > W + 30) f.vx = -Math.abs(f.vx); if (f.x < -30) f.vx = Math.abs(f.vx); }
+    foods.forEach(d => { d.y += 22 * dt; d.life -= dt; if (d.y > H * 0.86) d.y = H * 0.86; }); foods = foods.filter(d => d.life > 0);
+    ART.drawTank(g, W, H, tankT, tankFish, save.aq.d, !(document.documentElement.getAttribute('data-kb-theme') === 'light')); g.fillStyle = '#e8b86a'; for (const d of foods) { g.beginPath(); g.arc(d.x, d.y, 2.5, 0, Math.PI * 2); g.fill(); } };
+  stopTank(); tankRaf = requestAnimationFrame(loop);
+}
+// -- options & how to
+function showOptions() {
+  const s = save.set, seg = (id, arr, cur) => '<div class="seg" role="group" data-seg="' + id + '">' + arr.map((x, i) => '<button class="opt" data-v="' + i + '" aria-pressed="' + (cur === i) + '" type="button">' + esc(x) + '</button>').join('') + '</div>';
+  const tog = (id, ja, en, v) => '<div class="og"><div class="ol">' + esc(L(ja, en)) + '</div><div class="seg" data-tog="' + id + '"><button class="opt" data-v="1" aria-pressed="' + !!v + '" type="button">' + esc(L('オン', 'On')) + '</button><button class="opt" data-v="0" aria-pressed="' + !v + '" type="button">' + esc(L('オフ', 'Off')) + '</button></div></div>';
+  const html = '<h2>' + esc(L('オプション', 'Options')) + '</h2><div class="scroll"><div class="og"><div class="ol">' + esc(L('時間（魚の出かたがかわります）', 'Time of day (changes which fish bite)')) + '</div>' + seg('clk', [L('いまの時刻', 'Real time'), L('ゲーム時計', 'Game clock'), L('朝', 'Dawn'), L('昼', 'Day'), L('夕', 'Dusk'), L('夜', 'Night')], s.clk) + '<p>' + esc(L('ゲーム時計：実時間の1分がゲームの1時間。', 'Game clock: 1 real minute = 1 game hour.')) + '</p></div>' +
+    '<div class="og"><div class="ol">' + esc(L('季節', 'Season')) + '</div>' + seg('sn', [L('いまの季節', 'Real'), L('春', 'Spring'), L('夏', 'Summer'), L('秋', 'Autumn'), L('冬', 'Winter')], s.sn) + '</div>' +
+    tog('wide', 'ゆったり（タイミングの窓を2ばいに・引きもやさしく）', 'Relaxed timing (double windows, gentler pulls)', s.wide) + tog('vib', 'ふるえる（バイブ）', 'Vibration', s.vib) + tog('off', 'るすの間も釣る（おかえり時に集計・上限あり）', 'Fish while away (tallied on return, capped)', s.off) + '</div>' + closeBtn();
+  openOv('options', html, p => {
+    p.querySelectorAll('[data-seg]').forEach(g => g.querySelectorAll('.opt').forEach(b => { b.onclick = () => { save.set[g.dataset.seg] = +b.dataset.v; writeSave(); renderHud(); showOptions(); }; }));
+    p.querySelectorAll('[data-tog]').forEach(g => g.querySelectorAll('.opt').forEach(b => { b.onclick = () => { save.set[g.dataset.tog] = +b.dataset.v; writeSave(); showOptions(); }; }));
+  });
+}
+function showHowto(first) {
+  $('howtoTitle').textContent = L('あそびかた', 'How to play'); const li = a => a.map(x => '<li>' + esc(x) + '</li>').join('');
+  $('howBody').innerHTML = '<p style="color:var(--kb-ink);font-weight:800;font-size:13px">' + esc(L('投げて、待って、合わせて、巻いて、たもですくう。釣れた魚は「ずかん」に集まります。罰はありません（糸は切れません）。', 'Cast, wait, hook, reel, net. Everything you catch fills your Fish Book. There is no punishment (the line never breaks).')) + '</p>' +
+    '<h3>' + esc(L('うごかしかた', 'Controls')) + '</h3><ul>' + li([L('なげる：画面を上へはじく（長さ＝強さ、横＝向き）／ボタン／Space（長押しで強く）。矢印キーで向き。', 'Cast: flick up on the screen (length = power, sideways = aim), tap the button, or press Space (hold for more power). Arrow keys aim.'), L('ウキがしずんだら「あわせる」：タップ／Space。早すぎ・遅すぎでもやり直せます。', 'When the float sinks, hook: tap or Space. Too early or late just means trying again.'), L('巻く：画面やボタンを押しつづける／Space長押し／ゲームパッドのAボタン。', 'Reel: hold the screen or button, hold Space, or hold A on a gamepad.'), L('魚が引くとき（!）ははなす。ひきメーターが赤い所に入るとすべります。体力が減ったら引き寄せます。', 'Let go when the fish pulls (!). If the tension meter hits red the line slips. Tire it out, then pull it in.'), L('最後の「たも」は、帯の緑の所でタップ。', 'For the final net, tap while the marker is in the green zone.')]) + '</ul>' +
+    '<h3>' + esc(L('魚の出かた', 'What bites')) + '</h3><ul>' + li([L('場所・時間・天気・季節で、釣れる魚がかわります。時間は「オプション」でゲーム時計や朝・夜に固定もできます。', 'Place, time, weather and season change what bites. Use Options for a game clock or a fixed time.'), L('魚ごとに好きなえさがあります。強い魚には、じょうぶな糸やさおが役立ちます。', 'Fish have favourite baits. Strong fish need sturdy line and rods.'), L('ずかんの解説は、実在の魚は確かなことだけ。「架空」の魚はそう書いてあります。', 'Book notes keep to well-known facts for real fish; invented creatures are marked as fictional.')]) + '</ul>' +
+    '<h3>' + esc(L('そのほか', 'More')) + '</h3><ul>' + li([L('オーダー（毎日）と大会（毎週・ボットと競争）でコインをもらえます。', 'Daily orders and a weekly bot tournament pay coins.'), L('るすの間も、すこし釣れています（最大8時間ぶん・レアは出ない・小さめ・半値。オプションでオフ）。', 'While you are away you still catch a few fish (up to 8 hours, no rare fish, smaller, half price; can be turned off).'), L('ランキングは、ずかんに集めた魚の数です。', 'The ranking is how many kinds you have collected.')]) + '</ul>';
+  $('howtoGo').textContent = first ? L('はじめる', 'Start') : L('とじる', 'Close'); $('howtoGo').onclick = () => { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; save.tut = 1; writeSave(); };
+  $('howto').hidden = false; try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+// -- away
+function checkAway(show) {
+  const now = Date.now(); if (!save.ts) { save.ts = now; writeSave(); return; }
+  const list = E.offlineCatches(save, now); const gap = (now - save.ts) / 1000; save.ts = now;
+  if (!list.length) { writeSave(); return; }
+  const sum = E.applyOffline(save, list); writeSave(); renderHud();
+  const hrs = Math.min(gap, E.OFF.cap) / 3600; const html = '<h2>' + esc(L('おかえりなさい', 'Welcome back')) + '</h2><p>' + esc(L('るすの間に ' + list.length + ' ひき釣れていました（' + hrs.toFixed(1) + '時間ぶん）', 'While you were away: ' + list.length + ' fish (about ' + hrs.toFixed(1) + ' h)')) + '</p><div class="kv"><span>' + esc(L('新しい種類', 'New kinds')) + '</span><span>' + sum.fresh + '</span><span>' + esc(L('コイン', 'Coins')) + '</span><span>+' + sum.coins + '</span></div><div class="scroll"><div class="grid" id="awGrid">' + list.slice(0, 12).map(c => '<div class="card"><canvas width="160" height="108"></canvas><span>' + esc(nm(FISH[c.i])) + '</span><small>' + fmtCm(c.cm10) + '</small></div>').join('') + '</div><p>' + esc(L('るすの釣りは目安です：最大' + E.OFF.cap / 3600 + '時間・' + E.OFF.maxN + 'ひきまで、★' + (E.OFF.rareMax + 1) + '以上のレアは出ず、大きさは控えめ、コインは半分。「オプション」でオフにできます。', 'Away fishing is an estimate: at most ' + E.OFF.cap / 3600 + ' hours and ' + E.OFF.maxN + ' fish, no ' + (E.OFF.rareMax + 1) + '-star or rarer fish, modest sizes, half the coins. You can turn it off in Options.')) + '</p></div>' + closeBtn();
+  if (show !== false) openOv('away', html, p => p.querySelectorAll('#awGrid .card').forEach((d, k) => { const f = FISH[list[k].i]; drawFishFit(d.querySelector('canvas').getContext('2d'), f.art, 80, 54, 150, 96, { t: 0, key: f.key }); }));
+  return list;
+}
+function persistNow() { save.ts = Date.now(); if (S.tour) { save.tn.r = S.tour.r; save.tn.s = S.tour.s; } writeSave(); }
+
+// ---------- input ----------
+function pressStart(src) {
+  if (S.ov || S.menu || !$('howto').hidden) return; held.add(src);
+  if (S.st === 'idle') { S.chargeSrc = src; S.hold = 0; document.body.classList.add('aiming'); }
+  else if (S.st === 'catch') { /* panel is up */ } else pressAction(); renderAct();
+}
+function pressEnd(src) {
+  const was = held.has(src); held.delete(src); document.body.classList.remove('aiming');
+  if (was && S.st === 'idle' && S.chargeSrc === src && !S.drag) { const pw = S.hold < 0.25 ? S.power : clamp(0.2 + S.hold / 1.1 * 0.8, 0.2, 1); S.hold = 0; S.chargeSrc = null; doCast(pw, S.aim); }
+  renderAct();
+}
+$('act').addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button !== 0) return; try { $('act').setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); pressStart('btn'); });
+$('act').addEventListener('pointerup', () => pressEnd('btn')); $('act').addEventListener('pointercancel', () => pressEnd('btn')); $('act').addEventListener('lostpointercapture', () => pressEnd('btn'));
+$('act').addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'Enter') e.preventDefault(); });
+// the screen: a flick/drag up to cast in idle; elsewhere a press (hook / net) and a hold (reel)
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return; if (S.ov || S.menu || !$('howto').hidden) return; try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+  if (S.st === 'idle') { S.drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, aim: S.aim, power: 0, moved: false }; document.body.classList.add('aiming'); } else pressStart('ptr');
+});
+cv.addEventListener('pointermove', e => { const d = S.drag; if (!d || d.id !== e.pointerId) return; const r = cv.getBoundingClientRect(), dx = e.clientX - d.x0, dy = d.y0 - e.clientY; if (Math.hypot(dx, dy) > 10) d.moved = true; d.aim = clamp(dx / (r.width * 0.3), -1, 1); d.power = clamp(dy / (r.height * 0.5), 0, 1); });
+const dragEnd = e => { const d = S.drag; if (d && d.id === e.pointerId) { S.drag = null; document.body.classList.remove('aiming'); if (d.moved && d.power > 0.12) doCast(d.power, d.aim); else if (!d.moved) doCast(S.power, S.aim); } else pressEnd('ptr'); };
+cv.addEventListener('pointerup', dragEnd); cv.addEventListener('pointercancel', e => { if (S.drag && S.drag.id === e.pointerId) { S.drag = null; document.body.classList.remove('aiming'); } else pressEnd('ptr'); });
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.metaKey || e.ctrlKey) return; const tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.tagName === 'SELECT')) return;
+  if (e.code === 'Escape') { if (S.ov) { closeOv(); e.preventDefault(); } else if (!$('howto').hidden) { } else if (!S.menu) { openMenu(); e.preventDefault(); } return; }
+  if (S.ov === 'catch' && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); closeOv(); return; }
+  if (S.ov || S.menu || !$('howto').hidden) return;
+  if (e.code === 'Space' || e.code === 'Enter') { if (tg && tg.tagName === 'BUTTON' && tg !== cv && e.code === 'Enter') return; e.preventDefault(); if (!e.repeat) pressStart('key'); return; }
+  if (S.st === 'idle') { if (e.code === 'ArrowLeft' || e.code === 'KeyA') { S.aim = clamp(S.aim - 0.15, -1, 1); e.preventDefault(); } else if (e.code === 'ArrowRight' || e.code === 'KeyD') { S.aim = clamp(S.aim + 0.15, -1, 1); e.preventDefault(); } else if (e.code === 'ArrowUp' || e.code === 'KeyW') { S.power = clamp(S.power + 0.1, 0.2, 1); e.preventDefault(); } else if (e.code === 'ArrowDown' || e.code === 'KeyS') { S.power = clamp(S.power - 0.1, 0.2, 1); e.preventDefault(); } }
+  if (e.code === 'KeyZ') showZukan(); else if (e.code === 'KeyB') showShop(); else if (e.code === 'KeyM') showMap(); else if (e.code === 'KeyO') showOrders(); else if (e.code === 'KeyQ') showAquarium();
+});
+document.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') pressEnd('key'); });
+window.addEventListener('blur', () => { held.clear(); S.drag = null; document.body.classList.remove('aiming'); });
+$('nZk').onclick = () => showZukan(); $('nSh').onclick = () => showShop(); $('nMp').onclick = () => showMap(); $('nOr').onclick = () => showOrders(); $('nAq').onclick = () => showAquarium(); $('chLoc').onclick = () => showMap();
+(() => { // gamepad：A=なげる／あわせる／巻く／たも、左スティック・十字=向き、X=ずかん、Y=お店、Start=メニュー
+  const last = { b: [], t: 0 };
+  setInterval(() => { const pads = navigator.getGamepads ? navigator.getGamepads() : []; const gp = [...pads].find(Boolean); if (!gp) return; const b = gp.buttons.map(x => x.pressed), edge = i => b[i] && !last.b[i];
+    if (edge(9)) { if (S.ov) closeOv(); else openMenu(); }
+    if (!S.ov && !S.menu && $('howto').hidden) { const ax = gp.axes[0] || 0; if (S.st === 'idle') { if (b[14] || ax < -0.4) S.aim = clamp(S.aim - 0.04, -1, 1); if (b[15] || ax > 0.4) S.aim = clamp(S.aim + 0.04, -1, 1); }
+      if (edge(0) || edge(7)) pressStart('pad'); if (!b[0] && !b[7] && last.b[0] || (!b[7] && last.b[7] && !b[0])) pressEnd('pad'); if (edge(2)) showZukan(); if (edge(3)) showShop(); if (edge(1)) showMap(); }
+    else if (S.ov === 'catch' && edge(0)) closeOv(); last.b = b; }, 40);
+})();
+
+// ---------- sound / menu / boot ----------
+function renderSound() { const b = $('sndBtn'); if (!A) { b.hidden = true; return; } const m = A.muted; b.setAttribute('aria-pressed', String(!m)); b.setAttribute('aria-label', m ? L('サウンド オフ', 'Sound off') : L('サウンド オン', 'Sound on'));
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/>' + (m ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>') + '</svg>'; }
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); }); if (A) A.onChange(renderSound);
+let pm = null;
+function openMenu() {
+  if (!UI) { showOptions(); return; } if (pm && pm.isOpen) return;
+  const extra = [{ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } }, { label: L('オプション（時間・季節・やさしさ）', 'Options (time, season, relaxed)'), icon: 'settings', onClick: () => { pm.close(); showOptions(); } }, { label: L('ずかん', 'Fish Book'), icon: 'menu', onClick: () => { pm.close(); showZukan(); } }];
+  pm = UI.pauseMenu({ title: L('ひとやすみ', 'Paused'), home: '../', extra, onResume: () => { S.menu = false; const g = KG(); if (g) g.menuClosed(); }, onOpen: () => { S.menu = true; const g = KG(); if (g) g.menuOpened(); persistNow(); } });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); const d = !(UI && UI.theme && UI.theme.resolved && UI.theme.resolved() === 'light'); if (m) m.setAttribute('content', d ? '#0e2233' : '#e9f4fa'); }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0)); try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeColor); } catch (e) {}
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => { if (document.hidden) { hiddenAt = Date.now(); persistNow(); } else if (hiddenAt && Date.now() - hiddenAt > E.OFF.min * 1000 && S.st === 'idle') { hiddenAt = 0; checkAway(true); } });
+window.addEventListener('pagehide', persistNow);
+let rz = 0; const relayout = () => { clearTimeout(rz); rz = setTimeout(fit, 50); }; window.addEventListener('resize', relayout); if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+
+document.title = L('のんびり釣り', 'Easy Fishing'); $('h1').textContent = L('のんびり釣り', 'Easy Fishing'); $('backLink').setAttribute('aria-label', L('ゲーム一覧へ戻る', 'Back to games')); $('menuBtn').setAttribute('aria-label', L('メニュー', 'Menu')); cv.setAttribute('aria-label', L('釣り場', 'Fishing spot'));
+renderSound(); themeColor(); renderNav(); renderAct(); fit(); E.ensureOrders(save, dateKeyNow());
+KG() && KG().register({ id: GAME, pause() {}, resume() {}, save() { persistNow(); }, isIdle: () => !S.ov && (S.st === 'idle' || S.st === 'wait'), dispose() { cancelAnimationFrame(raf); stopTank(); }, daily: { start() { showOrders(); } } });
+reelBack(); renderHud(); raf = requestAnimationFrame(frame);
+{
+  const first = store.get(HOWTO_KEY) == null && !save.tut, launch = PF && PF.launch ? PF.launch() : { daily: null };
+  if (first) showHowto(true); else { const away = checkAway(true); if (launch && launch.daily && !(away && away.length)) showOrders(); }
+  if (first) { save.ts = Date.now(); writeSave(); }
+}
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const api = { ready: () => true,
+    state: () => ({ st: S.st, loc: S.loc, ov: S.ov, howto: !$('howto').hidden, menu: S.menu, coins: save.coins, zc: save.zc, t: S.tw, castDist: S.castDist, aim: S.aim, power: S.power, held: held.size,
+      plan: S.plan ? { fi: S.plan.fi, cm10: S.plan.cm10, wait: S.plan.wait, ws: S.plan.winStart, we: S.plan.winEnd, taps: S.plan.taps } : null,
+      fight: S.f ? { fi: S.f.fi, phase: S.f.phase, pt: S.f.pt, T: S.f.T, stam: S.f.stam, dist: S.f.dist, slips: S.f.slips, status: S.f.status, net: S.f.net ? { pos: S.f.net.pos, c: S.f.net.c, zw: S.f.net.zw } : null } : null,
+      last: S.last ? { fi: S.last.fi, cm10: S.last.cm10, isNew: S.last.r.isNew } : null, tour: S.tour, status: $('status').textContent, env: curEnv(), save: JSON.parse(JSON.stringify(save)) }) };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__fishing = { api, E, ART, get S() { return S; }, get save() { return save; },
+    seed(n) { dbg.seed = n; }, force(fi, cm10) { dbg.force = { fi, cm10: cm10 || Math.round((FISH[fi].min + FISH[fi].max) / 2 * 10) }; }, speed(k) { dbg.speed = k; }, env(o) { dbg.env = o ? Object.assign({ t: 1, hour: 12, season: 0, wx: 0, snow: false }, o) : null; renderHud(); },
+    setSave(o) { save = E.sanitize(Object.assign(E.newSave(), o)); writeSave(); S.loc = save.lc; renderHud(); return save; }, resetSave() { store.del(SAVE_KEY); save = readSave(); S.loc = 0; S.tour = null; renderHud(); }, writeSave, checkAway, persist: persistNow,
+    showZukan, showShop, showMap, showOrders, showAquarium, showOptions, showHowto, openMenu, closeOv, changeLoc, relayout: fit, finishTour, reelBack,
+    thumbScene() { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; closeOv(); document.body.classList.add('thumb'); dbg.env = { t: 2, hour: 17.6, season: 2, wx: 0, snow: false }; S.loc = 4; save.lc = 4; fit(); setSt('wait'); S.plan = E.planBite(5, dbg.env, 4, gear(), {}); S.castDist = 22; S.tw = 1; S.tapIdx = 9; S.bobSink = 0.3; setStatus('', ''); return true; },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.fishing.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

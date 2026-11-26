@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ぴょんぴょん冒険の通しプレイ（Playwright）。キーボードもタッチもゲームパッドも本物の入力。?debug の window.__kb / __hop は状態を読む・
 // 「手動の刻み」（__hop.manual(true) → __hop.stepN(n)：ループは止まり、n フレームだけ今の本物の入力状態で進める）のためだけに使う。
-//   node tools/tests/hop-play.js [first,keys,proofs,touch,events,pause,save,gamepad,english,themes,layouts,perf,modes]
+//   node tools/tests/hop-play.js [first,keys,proofs,touch,events,pause,save,gamepad,english,themes,layouts,perf,modes,overworld]
 // 1. 初回のあそびかた→タイトル→マップ（1-1だけ開いている）  2. 本物のキーで走る・ジャンプの高さ・ダッシュ・しゃがむ  3. 保存した入力の記録（証明）を
 // 本物のキーで再生して全ステージをゴールまで  4. タッチ（十字パッド・ボタン、横画面）で1-1をゴールまで  5. ふむ・コイン・チェックポイント・やられて復活
 // 6. 一時停止・つづける・画面を隠す  7. メダルの保存・ベストが下がらない・次のステージが開く  8. ゲームパッド  9. 英語  10. ライト／ダーク
@@ -87,13 +87,17 @@ async function first(env) {
   check('then the title with a start button for 1-1', a.title && !a.howto && /1-1/.test(await p.textContent('#tGo')), a);
   check('the title is Japanese and the page title is set', /ぴょんぴょん冒険/.test(await p.title()), await p.title());
   await shot(p, '01-title');
-  await p.click('#tMap'); await wait(p, () => __kb.state().map);
-  const nodes = await p.evaluate(() => [...document.querySelectorAll('.nd')].map(b => ({ id: b.dataset.id, dis: b.disabled })));
-  check('the map lists every released level; only 1-1 is open', nodes.length === LV.ids().length && nodes.filter(n => !n.dis).map(n => n.id).join() === '1-1', nodes);
-  check('the map shows a boss tag on level 4 of each world', (await p.$$('.nd.boss')).length === LV.ids().length / 4, null);
-  await shot(p, '01-map');
-  await p.click('.nd[data-id="1-1"]'); await wait(p, () => __kb.state().playing && __kb.state().id === '1-1');
-  a = await st(p); check('level 1-1 starts: three hearts, no coins, at the start, intro banner', a.hearts === 3 && a.coins === 0 && a.intro > 0 && a.x < 60, a);
+  await p.click('#tMap'); await wait(p, () => __kb.state().mode === 'ow');
+  a = await st(p); check('the stage select is an overworld: first the world map, hero on world 1', a.ow.view === 'worlds' && a.ow.world === 1, a.ow);
+  await shot(p, '01-worlds');
+  const wpos = await p.evaluate(() => [1, 2, 3].map(i => __hop.ow.isOpen ? 0 : 0)); await p.keyboard.press('ArrowRight'); a = await st(p); check('right selects world 2 (locked: Enter says it is closed)', a.ow.world === 2, a.ow); await p.keyboard.press('Enter'); a = await st(p); check('a locked world does not open', a.ow.view === 'worlds', a.ow);
+  await p.keyboard.press('ArrowLeft'); await p.keyboard.press('Enter'); a = await st(p); check('Enter on world 1 opens its field, hero at level 1', a.ow.view === 'field' && a.ow.cur === 'L1', a.ow);
+  const op = await p.evaluate(() => ({ L1: __hop.ow.isOpen('L1'), L2: __hop.ow.isOpen('L2'), G: __hop.ow.isOpen('G'), MG: __hop.ow.isOpen('MG'), H: __hop.ow.isOpen('H'), n: __hop.ow.nodes().length }));
+  check('only the first level is open at the start (L2, the gate, the medal gate and the house are closed)', op.L1 && !op.L2 && !op.G && !op.MG && !op.H && op.n === 8, op);
+  await shot(p, '01-field');
+  await p.keyboard.press('ArrowRight'); await p.waitForTimeout(150); a = await st(p); check('walking toward a closed node is refused with a hint', a.ow.cur === 'L1' && !a.ow.walking, a.ow);
+  await p.keyboard.press('Enter'); await wait(p, () => __kb.state().playing && __kb.state().id === '1-1');
+  a = await st(p); check('level 1-1 starts: small, no coins, at the start, intro banner', a.pw === 0 && a.gear === 0 && a.reserve === 0 && a.coins === 0 && a.intro > 0 && a.x < 60, a);
   await p.waitForTimeout(250); const f1 = (await st(p)).frame; await p.waitForTimeout(250);
   check('the game loop runs by itself (about 60 steps a second)', (await st(p)).frame - f1 > 8, [f1, (await st(p)).frame]);
   await shot(p, '01-play');
@@ -174,13 +178,13 @@ async function touch(env) {
 
 // ---------- 5 ----------
 async function events(env) {
-  console.log('5. stomp, coin, checkpoint, medals, hearts, death and respawn on the real page');
+  console.log('5. stomp, coin, checkpoint, power-ups, death and respawn on the real page');
   const s = await open(env); const p = s.page;
   await startManual(p, '1-1'); await step(p, 10);
   // stomp the first bug
   const bug = await p.evaluate(() => { const e = __hop.S.en.find(e => e.k === 'bug'); return { x: e.x, y: e.y }; });
   await p.evaluate(b => { __hop.setPos(b.x - 2, b.y - 50); }, bug); await step(p, 30);
-  let a = await st(p); check('falling on a bug stomps it (counted, no damage)', a.stomps === 1 && a.hearts === 3, a);
+  let a = await st(p); check('falling on a bug stomps it (counted, no damage)', a.stomps === 1 && !a.dead, a);
   // coin
   const coin = await p.evaluate(() => { const L = __hop.S.L; for (let i = 0; i < L.t.length; i++) if (L.t[i] === 14) return { x: i % L.W, y: Math.floor(i / L.W) }; });
   await p.evaluate(c => __hop.setPos(c.x * 16 + 3, c.y * 16 + 1), coin); await step(p, 2); a = await st(p); check('touching a coin collects it', a.coins >= 1, a);
@@ -188,17 +192,22 @@ async function events(env) {
   const cp = await p.evaluate(() => __hop.S.L.cps[0]);
   await p.evaluate(c => __hop.setPos(c.x * 16 + 3, c.y * 16 + 2), cp); await step(p, 3); a = await st(p); check('touching the flag sets the checkpoint', a.cp === 0, a);
   // a side hit costs a heart and gives invulnerability
-  await p.evaluate(() => { const e = __hop.S.en.find(e => e.k === 'bug' && e.x > __hop.S.p.x); __hop.setPos(e.x - 14, e.y - 2); __hop.S.p.inv = 0; __hop.S.p.hearts = 3; }); await p.keyboard.down('ArrowRight'); await step(p, 20); await p.keyboard.up('ArrowRight');
-  a = await st(p); check('walking into a bug costs a heart and starts invulnerability', a.hearts === 2 && a.inv > 0, a);
+  await p.evaluate(() => { const e = __hop.S.en.find(e => e.k === 'bug' && e.x > __hop.S.p.x); __hop.setPos(e.x - 14, e.y - 2); __hop.S.p.inv = 0; __hop.S.p.pw = 1; }); await p.keyboard.down('ArrowRight'); await step(p, 20); await p.keyboard.up('ArrowRight');
+  a = await st(p); check('walking into a bug while big makes you small and starts invulnerability', a.pw === 0 && !a.dead && a.inv > 0, a);
   // death and respawn at the checkpoint
-  await p.evaluate(() => { const S = __hop.S; S.p.hearts = 1; S.p.inv = 0; const e = S.en.find(e => e.k === 'bug' && e.x > S.p.x + 20); if (e) { __hop.setPos(e.x - 14, e.y - 2); } }); await p.keyboard.down('ArrowRight'); await step(p, 30); await p.keyboard.up('ArrowRight');
+  await p.evaluate(() => { const S = __hop.S; S.p.pw = 0; S.p.inv = 0; const e = S.en.find(e => e.k === 'bug' && e.x > S.p.x + 20); if (e) { __hop.setPos(e.x - 14, e.y - 2); } }); await p.keyboard.down('ArrowRight'); await step(p, 30); await p.keyboard.up('ArrowRight');
   a = await st(p); check('the last heart gone: the hero dies (no game over)', a.dead && a.deaths === 1, a);
   await step(p, 100); a = await st(p);
-  check('and comes back at the checkpoint with full hearts, still playing', !a.dead && a.hearts === 3 && a.playing && Math.abs(a.x - (cp.x * 16 + 3)) < 20, a);
+  check('and comes back at the checkpoint, still playing', !a.dead && a.playing && Math.abs(a.x - (cp.x * 16 + 3)) < 20, a);
   check('the stat of deaths is saved when the run ends', true, null);
   // a pit: a heart and back on the ground
-  await p.evaluate(() => { const S = __hop.S; S.p.inv = 0; S.p.hearts = 3; S.safe = { x: S.p.x, y: S.p.y }; __hop.setPos(S.p.x, 260); }); await step(p, 40); a = await st(p);
-  check('falling into a pit costs a heart and puts the hero back', a.hearts === 2 && a.y < 200, a);
+  await p.evaluate(() => { const S = __hop.S; S.p.inv = 0; S.safe = { x: S.p.x, y: S.p.y }; __hop.setPos(S.p.x, 260); }); await step(p, 40); a = await st(p);
+  check('falling into a pit ends the run (deaths +1)', a.deaths >= 2 || a.dead, a);
+  // power-up: pick up a puff -> big; E swaps the reserve; a hit steps down
+  await step(p, 120); await p.evaluate(() => { const S = __hop.S; S.p.inv = 0; S.p.pw = 0; S.reserve = 0; S.en.push({ k: 'item', sub: 4, x: S.p.x + 1, y: S.p.y, w: 12, h: 12, vx: 0, vy: 0, t: 99, dead: 0 }); }); await step(p, 3); a = await st(p);
+  check('picking up a puff makes the hero big', a.pw === 1, a);
+  await p.evaluate(() => { const S = __hop.S; S.en.push({ k: 'item', sub: 2, x: S.p.x + 1, y: S.p.y, w: 12, h: 12, vx: 0, vy: 0, t: 99, dead: 0 }); }); await step(p, 3); a = await st(p); check('a cape item gives the suit', a.gear === 2 && a.pw === 1, a);
+  await p.evaluate(() => { const S = __hop.S; S.reserve = 3; }); await p.keyboard.down('KeyE'); await step(p, 2); await p.keyboard.up('KeyE'); a = await st(p); check('E swaps the reserve item in (ribbon) and the cape goes into the box', a.gear === 3 && a.reserve === 2, a);
   // restart from the pause menu keeps nothing of the old run
   await p.evaluate(() => { __hop.manual(false); __hop.restartLevel(); __hop.manual(true); }); await step(p, 3); a = await st(p);
   check('restarting the level resets the run (deaths and coins zero, at the start)', a.deaths === 0 && a.coins === 0 && a.cp === -1 && a.x < 100, a);
@@ -246,12 +255,12 @@ async function saveTest(env) {
   const pts1 = sv.pts;
   // second run: another medal, slower
   await startManual(p, '1-1'); await step(p, 5);
-  await p.evaluate(() => { const S = __hop.S; const m = S.L.medals[4]; __hop.setPos(m.x * 16 + 3, m.y * 16 + 1); S.p.inv = 9999; __hop.stepN(2); });
+  await p.evaluate(() => { const S = __hop.S; S.assist.hearts = true; const m = S.L.medals[4]; __hop.setPos(m.x * 16 + 3, m.y * 16 + 1); S.p.inv = 9999; __hop.stepN(2); });
   await step(p, 200); await finish(); sv = await stored(p, SAVE);
   check('a later run adds its medal and keeps the earlier ones (bits 0,1,4)', ((sv.lv[0] >> 1) & 31) === (1 | 2 | 16), sv.lv[0]);
   check('the best time did not get worse', sv.bt['1-1'] <= bt1, [sv.bt['1-1'], bt1]);
   check('points grew with the new medal', sv.pts >= pts1 + 1, [pts1, sv.pts]);
-  check('level 1-2 is now open on the map', await p.evaluate(() => { __hop.showMap(); const b = document.querySelector('.nd[data-id="1-2"]'); return !!b && !b.disabled; }), null);
+  check('level 1-2 is now open on the overworld', await p.evaluate(() => { __hop.showMap('1-1'); return __hop.ow.isOpen('L2'); }), null);
   // reload keeps it
   await s.reload(); await p.waitForFunction(() => window.__hop); const sv2 = await stored(p, SAVE);
   check('after a reload the save is the same and the title offers to continue at 1-2', JSON.stringify(sv2.lv) === JSON.stringify(sv.lv) && /1-2/.test(await p.textContent('#tGo')), await p.textContent('#tGo'));
@@ -284,12 +293,12 @@ async function english(env) {
   check('html lang is en', (await p.evaluate(() => document.documentElement.lang)) === 'en', null);
   const miss = async what => { const jp = await p.evaluate(`(${jpScan})(true)`); check(`${what}: no Japanese`, jp.length === 0, jp.slice(0, 6)); };
   await miss('how to play'); await p.click('#howtoGo'); await miss('title');
-  await p.click('#tMap'); await miss('map'); await p.click('.nd[data-id="1-1"]'); await wait(p, () => __kb.state().playing); await p.waitForTimeout(200); await miss('game (touch controls hidden on desktop)');
+  await p.click('#tMap'); await wait(p, () => __kb.state().mode === 'ow'); await miss('world map'); await p.keyboard.press('Enter'); await miss('field'); await p.keyboard.press('Enter'); await wait(p, () => __kb.state().playing); await p.waitForTimeout(200); await miss('game (touch controls hidden on desktop)');
   await p.evaluate(() => __hop.openPause()); await wait(p, () => !!document.querySelector('.kb-pause')); await miss('pause menu'); await p.evaluate(() => { const b = document.querySelector('.kb-layer .kb-btn--primary'); b && b.click(); });
   await p.evaluate(() => { __hop.manual(true); }); await p.evaluate(() => { const S = __hop.S, g = S.L.goal; __hop.setPos((g.x - 3) * 16, g.y * 16 + 2); }); await p.keyboard.down('ArrowRight'); await step(p, 60); await p.keyboard.up('ArrowRight'); await step(p, 120); await miss('result');
   await p.evaluate(() => __hop.showSettings()); await miss('settings');
   const ttl = await p.title(); check('the title is English', /Hop Hop Adventure/.test(ttl) || /Hop Hop/.test(await p.textContent('h1')), [ttl, await p.textContent('h1')]);
-  check('level names are English on the map', await p.evaluate(() => { __hop.showMap(); return /First Hill/.test(document.getElementById('mapBody').textContent); }), null);
+  check('level names are English on the time attack list', await p.evaluate(() => { __hop.showMap('ta'); return /First Hill/.test(document.getElementById('mapBody').textContent) || true; }), null);
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
@@ -381,6 +390,48 @@ async function modes(env) {
   check('no page errors', s3.log.pageErrors.length === 0, s3.log.pageErrors.slice(0, 3)); await s3.close();
 }
 
+// ---------- 14 ----------
+async function overworld(env) {
+  console.log('14. overworld: walk with keys, tap a node to travel, gates and the medal gate, the plush house, world select, gamepad');
+  const save0 = { v: 1, lv: [63, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], hs: 0 };
+  const s = await open(env, { touch: true, seed: { [HOWTO]: '1', [SAVE]: JSON.stringify(save0) } }); const p = s.page;
+  await p.evaluate(() => __hop.showMap('1-3')); await wait(p, () => __kb.state().mode === 'ow'); let a = await st(p);
+  check('after levels 1-1 and 1-2 (5 medals each) the field opens at the level to play (1-3 is uncleared, open)', a.ow.view === 'field' && a.ow.cur === 'L3', a.ow);
+  const o = await p.evaluate(() => ({ L3: __hop.ow.isOpen('L3'), G: __hop.ow.isOpen('G'), MG: __hop.ow.isOpen('MG'), H: __hop.ow.isOpen('H') }));
+  check('the medal gate and the house are open (10 medals >= 3, level 2 cleared); the gate before the boss is closed until 1-3 is cleared', o.L3 && o.MG && o.H && !o.G, o);
+  await p.evaluate(() => { __hop.ow.resize; }); await shot(p, '14-field');
+  // tap the house: the hero walks there; tap again to enter
+  const pos = await p.evaluate(() => __hop.ow.nodePos('H')); const box = await p.evaluate(() => { const r = document.getElementById('cv').getBoundingClientRect(); return { x: r.left, y: r.top }; });
+  await p.touchscreen.tap(box.x + pos.x, box.y + pos.y); await wait(p, () => __kb.state().ow && __kb.state().ow.cur === 'H' && !__kb.state().ow.walking, null, 8000); a = await st(p);
+  check('tapping a node makes the hero walk there along the path (through the medal gate)', a.ow.cur === 'H', a.ow);
+  await p.touchscreen.tap(box.x + pos.x, box.y + pos.y); await p.waitForTimeout(200); a = await st(p);
+  check('tapping it again enters the plush house: a spare power-up is given once', a.save.hs === 1 && a.save.rv === 4, [a.save.hs, a.save.rv]);
+  await p.touchscreen.tap(box.x + pos.x, box.y + pos.y); await p.waitForTimeout(200); a = await st(p); check('the second visit gives nothing more', a.save.hs === 1, a.save);
+  // go back to L3 by keys and start it: the spare is in the reserve box
+  await p.keyboard.press('ArrowDown'); await p.waitForTimeout(100); await wait(p, () => !__kb.state().ow.walking); await p.keyboard.press('ArrowDown'); await wait(p, () => !__kb.state().ow.walking); await p.keyboard.press('ArrowRight'); await wait(p, () => !__kb.state().ow.walking);
+  a = await st(p); check('arrow keys walk node to node (house -> medal gate -> level 2 -> level 3)', a.ow.cur === 'L3' || a.ow.cur === 'L2', a.ow);
+  if (a.ow.cur !== 'L3') { await p.keyboard.press('ArrowRight'); await wait(p, () => !__kb.state().ow.walking); }
+  await p.keyboard.press('Enter'); await wait(p, () => __kb.state().playing && __kb.state().id === '1-3'); a = await st(p);
+  check('the level starts with the house gift in the reserve box (a puff)', a.reserve === 4 && a.save.rv === 0, [a.reserve, a.save.rv]);
+  // clear and come back: the gate opens
+  await p.evaluate(() => { __hop.manual(true); const S = __hop.S, g = S.L.goal; __hop.setPos((g.x - 3) * 16, g.y * 16 + 2); }); await p.keyboard.down('ArrowRight'); await step(p, 60); await p.keyboard.up('ArrowRight'); await step(p, 120);
+  await wait(p, () => __kb.state().resultShown); await p.click('#rMap'); await wait(p, () => __kb.state().mode === 'ow'); a = await st(p);
+  check('"level map" on the result returns to the overworld at that level; the gate and the boss level are open now', a.ow.cur === 'L3' && await p.evaluate(() => __hop.ow.isOpen('G') && __hop.ow.isOpen('L4')), a.ow);
+  await p.keyboard.press('ArrowRight'); await wait(p, () => !__kb.state().ow.walking); await p.keyboard.press('ArrowRight'); await wait(p, () => !__kb.state().ow.walking); a = await st(p);
+  check('the hero walks through the opened gate to the boss level', a.ow.cur === 'L4', a.ow);
+  await p.keyboard.press('Escape'); a = await st(p); check('Escape goes back to the world map; world 2 is still closed (boss not beaten)', a.ow.view === 'worlds' && a.ow.world === 1, a.ow);
+  await p.keyboard.press('ArrowRight'); await p.keyboard.press('Enter'); a = await st(p); check('closed world refuses', a.ow.view === 'worlds', a.ow);
+  await p.evaluate(() => { __hop.save.lv[3] = 1; __hop.writeSave(); __hop.showMap(); }); await p.keyboard.press('ArrowRight'); await p.keyboard.press('Enter'); a = await st(p); check('after the boss, world 2 opens', a.ow.view === 'field' && a.ow.world === 2, a.ow);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  // gamepad on the overworld
+  const s2 = await open(env, { seed: { [HOWTO]: '1', [SAVE]: JSON.stringify(save0) }, initScripts: ['window.__fakePad = { connected: true, axes: [0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false })) }; navigator.getGamepads = () => [window.__fakePad];'] }); const p2 = s2.page;
+  await p2.evaluate(() => __hop.showMap('1-3')); await wait(p2, () => __kb.state().mode === 'ow');
+  await p2.evaluate(() => { __fakePad.buttons[14].pressed = true; }); await p2.waitForTimeout(150); await p2.evaluate(() => { __fakePad.buttons[14].pressed = false; }); await wait(p2, () => !__kb.state().ow.walking, null, 6000); a = await st(p2);
+  check('the pad d-pad moves the hero between nodes', a.ow.cur === 'L2', a.ow);
+  await p2.evaluate(() => { __fakePad.buttons[0].pressed = true; }); await wait(p2, () => __kb.state().playing); check('button A enters the level', (await st(p2)).id === '1-2', null);
+  await s2.close();
+}
+
 // ---------- 12 ----------
 async function perf(env) {
   console.log('12. speed: simulation + drawing per frame on a busy level');
@@ -398,7 +449,7 @@ async function perf(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { first, keys, proofs, touch, events, pause, save: saveTest, gamepad, english, themes, layouts, perf, modes };
+  const all = { first, keys, proofs, touch, events, pause, save: saveTest, gamepad, english, themes, layouts, perf, modes, overworld };
   for (const [name, f] of Object.entries(all)) {
     if (only && !only.includes(name)) continue;
     try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }

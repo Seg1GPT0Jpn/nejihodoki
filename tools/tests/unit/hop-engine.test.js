@@ -98,15 +98,16 @@ test('enemies: bug walks and turns at walls; stomp kills and bounces (higher whi
   const bug = S.en.find(e => e.k === 'bug'); const x0 = bug.x; runN(S, 90, 0);
   ok(bug.x < x0 - 10 || bug.dir === 1, 'the bug walked'); runN(S, 400, 0); ok(!bug.dead);
   // side hit
-  S = flat({ 9: '  P b' }, 40); runN(S, 60, B.R); eq(S.p.hearts, 2, 'lost a heart'); ok(S.p.inv > 0, 'invulnerable'); const h = S.p.hearts; runN(S, 20, B.R); eq(S.p.hearts, h, 'no second hit during i-frames');
+  S = flat({ 9: '  P b' }, 40, null, { reserve: 0 }); S.p.pw = 1; runN(S, 60, B.R); eq(S.p.pw, 0, 'big -> small'); ok(S.p.inv > 0, 'invulnerable'); ok(!S.p.dead); runN(S, 20, B.R); ok(!S.p.dead, 'no second hit during i-frames');
   eq(S.hurts, 1);
+  S = flat({ 9: '  P b' }, 40); runN(S, 60, B.R); ok(S.p.dead || S.deaths === 1, 'a hit while small loses the run');
   // stomp
   S = flat({ 9: '  P      b' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 100; S.p.vy = 2; runN(S, 25, 0);
-  ok(S.en.every(e => e.k !== 'bug'), 'stomped'); eq(S.stomps, 1); eq(S.p.hearts, 3);
+  ok(S.en.every(e => e.k !== 'bug'), 'stomped'); eq(S.stomps, 1); ok(!S.p.dead);
   const mkStomp = jh => { const s = flat({ 9: '  P      b' }, 40); s.p.x = 9 * 16 - 4; s.p.y = 100; s.p.vy = 2; let top = s.p.y; for (let i = 0; i < 40; i++) { E.step(s, jh ? B.J : 0); top = Math.min(top, s.p.y); } return top; };
   ok(mkStomp(true) < mkStomp(false) - 8, 'holding jump bounces higher');
-  // gear is lost before hearts
-  S = flat({ 9: '  P b' }, 40, null, { gear: 2 }); runN(S, 60, B.R); eq(S.p.gear, 0); eq(S.p.hearts, 3);
+  // gear -> big -> small -> lose, one step per hit
+  S = flat({ 9: '  P b' }, 40, null, { gear: 2 }); runN(S, 60, B.R); eq(S.p.gear, 0); eq(S.p.pw, 1, 'still big after losing the suit'); ok(!S.p.dead);
 });
 
 test('enemies: windup turns at ledges, frog hops towards the hero, bat and balloon follow their sine paths, cannon shoots when near and not when far', () => {
@@ -121,26 +122,27 @@ test('enemies: windup turns at ledges, frog hops towards the hero, bat and ballo
   S = flat({ 9: '  P          t' }, 60); const shots = () => S.en.filter(e => e.k === 'shot').length; let maxShots = 0; for (let i = 0; i < 260; i++) { E.step(S, 0); maxShots = Math.max(maxShots, shots()); } ok(maxShots >= 1, 'cannon fired');
   S = flat({ 9: '  P', 8: '', 10: '#'.repeat(80) }, 80); S.en.push({ k: 'cannon', x: 70 * 16, y: 9 * 16, w: 16, h: 16, t: 200, dir: -1, dead: 0, ox: 0, oy: 0 }); runN(S, 200, 0); eq(S.en.filter(e => e.k === 'shot').length, 0, 'out of range = quiet');
   // a pellet hurts
-  S = flat({ 9: '  P' }, 40); S.en.push({ k: 'shot', sub: 'pellet', x: 3 * 16, y: 9 * 16 + 4, w: 6, h: 6, vx: -1.5, vy: 0, g: 0, life: 100, dead: 0 }); runN(S, 30, 0); eq(S.p.hearts, 2);
+  S = flat({ 9: '  P' }, 40); S.en.push({ k: 'shot', sub: 'pellet', x: 3 * 16, y: 9 * 16 + 4, w: 6, h: 6, vx: -1.5, vy: 0, g: 0, life: 100, dead: 0 }); S.p.pw = 1; runN(S, 30, 0); eq(S.p.pw, 0);
 });
 
 test('enemies: pin cushion hurts when stomped but dies to a ground pound; roller wakes up and charges; drip falls on the hero and splats; bird dives; pendulum swings; umbrella shields', () => {
-  let S = flat({ 9: '  P      s' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 100; S.p.vy = 2; runN(S, 20, 0); eq(S.p.hearts, 2, 'stomping a pin cushion hurts');
-  S = flat({ 9: '  P      s' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 70; S.p.vy = 0; E.step(S, B.D); E.step(S, 0); runN(S, 25, B.D); ok(S.en.every(e => e.k !== 'pin') && S.p.hearts === 3, 'pound kills it');
+  let S = flat({ 9: '  P      s' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 100; S.p.vy = 2; S.p.pw = 1; runN(S, 20, 0); eq(S.p.pw, 0, 'stomping a pin cushion hurts');
+  S = flat({ 9: '  P      s' }, 40); S.p.pw = 1; S.p.x = 9 * 16 - 4; S.p.y = 70; S.p.vy = 0; S.p.on = false; E.step(S, B.D); E.step(S, 0); runN(S, 25, B.D); ok(S.en.every(e => e.k !== 'pin') && S.p.pw === 1, 'a big hero crushes it with a pound');
+  S = flat({ 9: '  P      s' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 70; S.p.on = false; E.step(S, B.D); runN(S, 25, B.D); ok(S.en.some(e => e.k === 'pin') && (S.p.dead || S.deaths === 1), 'a small one cannot');
   S = flat({ 9: '  P    r' }, 60); const r = S.en.find(e => e.k === 'roller'); runN(S, 120, 0); ok(r.x < 12 * 16 - 20 || r.s >= 2, 'roller charged');
-  S = flat({ 9: '  P', 3: '           y', 2: '           #' }, 40); S.p.x = 11 * 16 + 2; runN(S, 60, 0); ok(S.p.hearts < 3 || S.en.some(e => e.k === 'drip' && e.s === 2), 'drip fell');
+  S = flat({ 9: '  P', 3: '           y', 2: '           #' }, 40); S.p.x = 11 * 16 + 2; runN(S, 60, 0); ok(S.p.dead || S.deaths === 1 || S.en.some(e => e.k === 'drip' && e.s === 2), 'drip fell');
   S = flat({ 9: '  P', 4: '         e' }, 40); const bd = S.en.find(e => e.k === 'bird'); S.p.x = bd.x; let dove = false; for (let i = 0; i < 200; i++) { E.step(S, 0); if (bd.s === 1) dove = true; } ok(dove, 'bird dived');
   S = flat({ 9: '  P', 3: '          l' }, 40); const pe = S.en.find(e => e.k === 'pend'); let a = 1e9, b = -1e9; for (let i = 0; i < 300; i++) { E.step(S, 0); a = Math.min(a, pe.x); b = Math.max(b, pe.x); } ok(b - a > 120, 'pendulum swing ' + (b - a));
-  S = flat({ 9: '  P      u' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 100; S.p.vy = 2; runN(S, 20, 0); const um = S.en.find(e => e.k === 'umb'); ok(um && !um.dead && S.stomps === 0 && S.p.hearts === 3, 'stomping a shielded umbrella only bounces');
-  S = flat({ 9: '  P      u' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 70; S.p.on = false; E.step(S, B.D); runN(S, 25, B.D); ok(S.en.every(e => e.k !== 'umb'), 'pound breaks the umbrella');
+  S = flat({ 9: '  P      u' }, 40); S.p.x = 9 * 16 - 4; S.p.y = 100; S.p.vy = 2; runN(S, 20, 0); const um = S.en.find(e => e.k === 'umb'); ok(um && !um.dead && S.stomps === 0 && !S.p.dead, 'stomping a shielded umbrella only bounces');
+  S = flat({ 9: '  P      u' }, 40); S.p.pw = 1; S.p.x = 9 * 16 - 4; S.p.y = 70; S.p.on = false; E.step(S, B.D); runN(S, 25, B.D); ok(S.en.every(e => e.k !== 'umb'), 'pound breaks the umbrella');
 });
 
-test('blocks: ? gives a coin once, ! gives gear (heart if you already have some), bricks break with gear or a pound, bumps stun walkers', () => {
+test('blocks: ? gives a coin once, ! gives gear or a puff, bricks break only when big, bumps stun walkers', () => {
   let S = flat({ 9: '  P', 6: '  ?' }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); eq(S.coins, 1); eq(E.tl(S, 2, 6), T.USED); runN(S, 60, 0); runN(S, 30, B.J); eq(S.coins, 1, 'only once');
   S = flat({ 9: '  P', 6: '  !' }, 60, { gear: 'cape' }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); ok(S.en.some(e => e.k === 'item' && e.sub === 2), 'item appears'); const it = S.en.find(e => e.k === 'item'); runN(S, 30, 0); S.p.x = it.x - 2; S.p.y = it.y - 2; E.step(S, 0); eq(S.p.gear, 2, 'cape picked up');
   S = flat({ 9: '  P', 6: '  B' }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); eq(E.tl(S, 2, 6), T.BRICK, 'a bare head only bumps a brick');
-  S = flat({ 9: '  P', 6: '  B' }, 60, null, { gear: 1 }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); eq(E.tl(S, 2, 6), T.AIR, 'gear breaks it');
-  S = flat({ 9: '  P', 9.5: '' }); S.mod[10 * 60 + 5] = T.BRICK; S.p.x = 5 * 16 + 3; S.p.y = 60; E.step(S, 0); E.step(S, B.D); runN(S, 40, B.D); eq(E.tl(S, 5, 10), T.AIR, 'a pound breaks the brick below');
+  S = flat({ 9: '  P', 6: '  B' }, 60, null, { gear: 1 }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); eq(E.tl(S, 2, 6), T.AIR, 'a big (suited) hero breaks it');
+  S = flat({ 9: '  P', 9.5: '' }); S.p.pw = 1; S.mod[10 * 60 + 5] = T.BRICK; S.p.x = 5 * 16 + 3; S.p.y = 60; E.step(S, 0); E.step(S, B.D); runN(S, 40, B.D); eq(E.tl(S, 5, 10), T.AIR, 'a pound breaks the brick below');
 });
 
 test('springs bounce, ice slides, conveyors push, water slows (and a stroke swims up), updraft lifts, wind pushes', () => {
@@ -155,17 +157,38 @@ test('springs bounce, ice slides, conveyors push, water slows (and a stroke swim
   S = flat({}, 60, { wind: 0.3 }); const wx = S.p.x; runN(S, 40, 0); ok(S.p.x > wx + 8, 'wind pushes');
 });
 
-test('hazards are forgiving: spikes and pits cost a heart (a gear first) and put the hero back on the last safe spot; hearts 0 = die and respawn at the checkpoint', () => {
-  let S = flat({ 9: '  P', 10: '#####^^^####', 11: '############', 12: '############' }, 40); for (let i = 0; i < 90 && !S.hurts; i++) E.step(S, B.R | B.RUN); ok(S.hurts === 1, 'spike hurt'); ok(S.p.x < 6 * 16 && S.p.y < 150, 'sent back to a safe place ' + S.p.x + ',' + S.p.y); ok(S.p.hearts === 2);
-  S = flat({ 9: '  P', 10: '#####   ####', 11: '#####   ####', 12: '#####   ####' }, 40); for (let i = 0; i < 120 && !S.hurts; i++) E.step(S, B.R | B.RUN); ok(S.hurts === 1 && S.p.x < 6 * 16 + 1 && S.p.y < 150 && S.p.hearts === 2, 'fell and came back x=' + S.p.x + ' y=' + S.p.y);
-  // death and respawn at the checkpoint, with the counters kept
-  S = flat({ 9: '  P K          b', 10: '#'.repeat(60) }, 60); S.p.x = 4 * 16 + 3; runN(S, 20, 0); eq(S.cpIdx, 0, 'checkpoint touched');
-  S.p.hearts = 1; S.p.x = 14 * 16 - 8; runN(S, 40, B.R); ok(S.p.dead || S.deaths === 1, 'died'); runN(S, 100, 0); eq(S.deaths, 1); ok(!S.p.dead, 'respawned'); ok(Math.abs(S.p.x - (4 * 16 + 3)) < 14, 'at the checkpoint x=' + S.p.x); eq(S.p.hearts, 3, 'hearts refilled'); ok(S.p.inv > 0);
+test('hazards: spikes and pits end the run (restart at the checkpoint, any number of times); "never lose" puts you back on the last safe spot; checkpoints keep your power-up', () => {
+  let S = flat({ 9: '  P', 10: '#####^^^####', 11: '############', 12: '############' }, 40); for (let i = 0; i < 120 && !S.deaths; i++) E.step(S, B.R | B.RUN); eq(S.deaths, 1, 'spikes end the run');
+  S = flat({ 9: '  P', 10: '#####   ####', 11: '#####   ####', 12: '#####   ####' }, 40); for (let i = 0; i < 120 && !S.deaths; i++) E.step(S, B.R | B.RUN); eq(S.deaths, 1, 'a pit ends the run');
+  S = flat({ 9: '  P', 10: '#####   ####', 11: '#####   ####', 12: '#####   ####' }, 40, null, { assist: { hearts: true } }); for (let i = 0; i < 120 && !S.hurts; i++) E.step(S, B.R | B.RUN); ok(S.hurts === 1 && !S.p.dead && S.p.x < 6 * 16 + 1 && S.p.y < 150, 'assist: back on the ground x=' + S.p.x + ' y=' + S.p.y);
+  S = flat({ 9: '  P K          b', 10: '#'.repeat(60) }, 60); S.p.x = 4 * 16 + 3; runN(S, 20, 0); eq(S.cpIdx, 0, 'checkpoint touched'); S.p.pw = 1; S.p.gear = 1; S.reserve = 4; E.step(S, 0);
+  const sn = S.snap; S.p.pw = 1; S.p.gear = 0; S.p.x = 14 * 16 - 8; S.p.pw = 0; runN(S, 40, B.R); ok(S.p.dead || S.deaths === 1, 'died'); runN(S, 100, 0); eq(S.deaths, 1); ok(!S.p.dead, 'respawned'); ok(Math.abs(S.p.x - (4 * 16 + 3)) < 14, 'at the checkpoint x=' + S.p.x); ok(S.p.inv > 0);
   ok(S.en.some(e => e.k === 'bug'), 'enemies are back');
-  // assists: hearts never go down
-  S = flat({ 9: '  P b' }, 40, null, { assist: { hearts: true } }); runN(S, 60, B.R); eq(S.p.hearts, 3); ok(S.hurts >= 1);
-  // death has no game over: any number of deaths
-  S = flat({ 9: '  P  s' }, 40); for (let i = 0; i < 1500 && S.deaths < 4; i++) { if (!S.p.dead && S.p.inv === 0) { S.p.hearts = 1; S.p.x = 4 * 16; S.p.y = 146; } E.step(S, B.R); S.ev.length = 0; } eq(S.deaths, 4, 'four deaths in a row, still playing'); ok(!S.res);
+  S = flat({ 9: '  P b' }, 40, null, { assist: { hearts: true } }); runN(S, 60, B.R); ok(!S.p.dead && S.hurts >= 1, '"never lose": a hit while small does nothing');
+  S = flat({ 9: '  P  s' }, 40); for (let i = 0; i < 1500 && S.deaths < 4; i++) { if (!S.p.dead && S.p.inv === 0) { S.p.x = 4 * 16; S.p.y = 146; } E.step(S, B.R); S.ev.length = 0; } eq(S.deaths, 4, 'four deaths in a row, still playing'); ok(!S.res);
+});
+
+test('power-ups: small -> big (puff) -> suit; a second item goes to the reserve box and a button swaps it in; a bare hit steps down one level at a time', () => {
+  let S = flat({ 9: '  P' }, 40); eq(S.p.pw, 0); E.givePower(S, 4); eq(S.p.pw, 1); eq(S.p.gear, 0); E.givePower(S, 2); eq(S.p.gear, 2); eq(S.reserve, 0);
+  E.givePower(S, 1); eq(S.p.gear, 1, 'a new suit replaces the old'); eq(S.reserve, 2, 'and the old one is kept in the reserve');
+  E.step(S, B.RES); eq(S.p.gear, 2, 'the reserve button swaps it in'); eq(S.reserve, 1, 'and the suit you had goes in');
+  S = flat({ 9: '  P' }, 40); E.givePower(S, 4); E.givePower(S, 4); eq(S.reserve, 4, 'a spare puff waits in the reserve'); E.step(S, B.RES); eq(S.reserve, 4, 'a big hero keeps a spare puff');
+  S = flat({ 9: '  P' }, 40, null, { reserve: 3 }); E.step(S, B.RES); eq(S.p.gear, 3); eq(S.p.pw, 1); eq(S.reserve, 0);
+  // hits step down: suit -> big -> small -> lose
+  S = flat({ 9: '  P' }, 40, null, { gear: 3 }); const hit = () => { S.p.inv = 0; S.en.push({ k: 'shot', sub: 'pellet', x: S.p.x + 2, y: S.p.y + 4, w: 6, h: 6, vx: 0, vy: 0, g: 0, life: 50, dead: 0 }); runN(S, 3, 0); };
+  hit(); eq(S.p.gear, 0); eq(S.p.pw, 1); hit(); eq(S.p.pw, 0); ok(!S.p.dead); hit(); ok(S.p.dead || S.deaths === 1, 'lost');
+  // a power-up block gives a puff to a small hero, the level suit to anyone else; the reserve survives a respawn
+  S = flat({ 9: '  P', 6: '  !' }, 60, { gear: 'cape' }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); const it = S.en.find(e => e.k === 'item'); ok(it && it.sub === 2, 'the level suit comes out of the block');
+  S = flat({ 9: '  P', 6: '  !' }, 60); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); ok(S.en.some(e => e.k === 'item' && e.sub === 4), 'a puff comes out when the level has no suit');
+});
+
+test('blocks from above: a ground pound opens ? and ! blocks and (when big) breaks bricks; a small hero cannot break bricks, head or pound', () => {
+  const pound = (rows, pw) => { const S = flat(rows); S.p.pw = pw; S.p.x = 5 * 16 + 3; S.p.y = 3 * 16; S.p.vy = 0; S.p.on = false; E.step(S, B.D); runN(S, 30, B.D); return S; };
+  let S = pound({ 9: '  P', 6: '     ?' }, 0); eq(E.tl(S, 5, 6), T.USED, 'a pound opens a ? block'); eq(S.coins, 1);
+  S = pound({ 9: '  P', 6: '     !' }, 0); eq(E.tl(S, 5, 6), T.USED, 'and a ! block'); ok(S.en.some(e => e.k === 'item'));
+  S = pound({ 9: '  P', 6: '     B' }, 1); eq(E.tl(S, 5, 6), T.AIR, 'a big hero pounds a brick to bits');
+  S = pound({ 9: '  P', 6: '     B' }, 0); eq(E.tl(S, 5, 6), T.BRICK, 'a small one cannot');
+  S = flat({ 9: '  P', 6: '  B' }); S.p.x = 2 * 16 + 3; runN(S, 30, B.J); eq(E.tl(S, 2, 6), T.BRICK, 'head bump: small cannot'); S = flat({ 9: '  P', 6: '  B' }); S.p.pw = 1; S.p.x = 2 * 16 + 3; runN(S, 30, B.J); eq(E.tl(S, 2, 6), T.AIR, 'big can');
 });
 
 test('burrows teleport (down on the mouth), medals are bits, coins add up, the goal ends the run with a result', () => {
@@ -231,18 +254,18 @@ const stompBoss = (S, boss) => { S.p.x = boss.x + boss.w / 2 - 5; S.p.y = boss.y
 
 test('bosses 3-6: rubber duck is weak only on the surface and fires bubbles from below; owl crashes and is dizzy; clock mouse pops out of holes; golem needs a pound or the ribbon to lose its shield', () => {
   // duck
-  let S = E.newState(arenaLevel('duck', r => { r[3] = ' '.repeat(14) + 'X' + ' '.repeat(29); r[8] = '~'.repeat(44); r[9] = ' P' + '~'.repeat(42); })); let d = S.en.find(e => e.k === 'boss'); d.awake = 1; S.p.inv = 9999; S.p.hearts = 99; let shots = 0, dived = false; for (let i = 0; i < 500; i++) { E.step(S, 0); S.ev.length = 0; if (d.s === 1) dived = true; shots = Math.max(shots, S.en.filter(e => e.k === 'shot').length); }
+  let S = E.newState(arenaLevel('duck', r => { r[3] = ' '.repeat(14) + 'X' + ' '.repeat(29); r[8] = '~'.repeat(44); r[9] = ' P' + '~'.repeat(42); })); let d = S.en.find(e => e.k === 'boss'); d.awake = 1; S.p.inv = 9999;  let shots = 0, dived = false; for (let i = 0; i < 500; i++) { E.step(S, 0); S.ev.length = 0; if (d.s === 1) dived = true; shots = Math.max(shots, S.en.filter(e => e.k === 'shot').length); }
   ok(dived && shots >= 3, 'duck dives and fires bubbles ' + shots);
   S = E.newState(arenaLevel('duck')); d = S.en.find(e => e.k === 'boss'); d.awake = 1; d.s = 1; d.inv = 0; stompBoss(S, d); eq(d.hp, 3, 'not weak while diving'); d.s = 0; d.inv = 0; runN(S, 3, 0); stompBoss(S, d); eq(d.hp, 2, 'weak at the surface');
   // owl
-  S = E.newState(arenaLevel('owl')); let o = S.en.find(e => e.k === 'boss'); o.awake = 1; S.p.inv = 9999; S.p.hearts = 99; let crashed = false; for (let i = 0; i < 900 && !crashed; i++) { E.step(S, 0); S.ev.length = 0; if (o.s === 3) crashed = true; } ok(crashed, 'owl swoops and crashes');
+  S = E.newState(arenaLevel('owl')); let o = S.en.find(e => e.k === 'boss'); o.awake = 1; S.p.inv = 9999;  let crashed = false; for (let i = 0; i < 900 && !crashed; i++) { E.step(S, 0); S.ev.length = 0; if (o.s === 3) crashed = true; } ok(crashed, 'owl swoops and crashes');
   o.inv = 0; const hp0 = o.hp; stompBoss(S, o); eq(o.hp, hp0 - 1, 'dizzy owl is hurt'); S = E.newState(arenaLevel('owl')); o = S.en.find(e => e.k === 'boss'); o.awake = 1; o.s = 0; stompBoss(S, o); eq(o.hp, 3, 'a flying owl is not');
   // mouse
-  S = E.newState(arenaLevel('mouse')); let m = S.en.find(e => e.k === 'boss'); m.awake = 1; S.p.inv = 9999; S.p.hearts = 99; const holes = new Set(); let popped = false; for (let i = 0; i < 900; i++) { E.step(S, 0); S.ev.length = 0; if (m.s === 1 && m.t > 30) { popped = true; holes.add(m.hole); } } ok(popped && holes.size >= 2, 'the mouse pops out of different holes ' + [...holes]);
-  S = E.newState(arenaLevel('mouse')); m = S.en.find(e => e.k === 'boss'); m.awake = 1; S.p.x = m.x; S.p.y = 146; S.p.inv = 0; m.s = 0; m.hide = 1; m.y = m.fy + 6; runN(S, 5, 0); eq(S.p.hearts, 3, 'a hidden mouse is harmless');
+  S = E.newState(arenaLevel('mouse')); let m = S.en.find(e => e.k === 'boss'); m.awake = 1; S.p.inv = 9999;  const holes = new Set(); let popped = false; for (let i = 0; i < 900; i++) { E.step(S, 0); S.ev.length = 0; if (m.s === 1 && m.t > 30) { popped = true; holes.add(m.hole); } } ok(popped && holes.size >= 2, 'the mouse pops out of different holes ' + [...holes]);
+  S = E.newState(arenaLevel('mouse')); m = S.en.find(e => e.k === 'boss'); m.awake = 1; S.p.x = m.x; S.p.y = 146; S.p.inv = 0; m.s = 0; m.hide = 1; m.y = m.fy + 6; runN(S, 5, 0); ok(!S.p.dead && S.hurts === 0, 'a hidden mouse is harmless');
   // golem
   S = E.newState(arenaLevel('golem')); let g = S.en.find(e => e.k === 'boss'); g.awake = 1; g.inv = 0; eq(g.sh, 1); stompBoss(S, g); eq(g.hp, 6, 'a plain stomp bonks off the shield'); 
-  S = E.newState(arenaLevel('golem')); g = S.en.find(e => e.k === 'boss'); g.awake = 1; S.p.x = g.x + 8; S.p.y = g.y - 40; S.p.on = false; S.p.inv = 300; E.step(S, B.D); runN(S, 12, B.D); eq(g.sh, 0, 'a ground pound breaks the shield'); eq(g.s, 6); g.inv = 0; stompBoss(S, g); eq(g.hp, 5, 'then a stomp hurts'); eq(g.sh, 1, 'and the shield comes back');
+  S = E.newState(arenaLevel('golem')); g = S.en.find(e => e.k === 'boss'); g.awake = 1; S.p.pw = 1; S.p.x = g.x + 8; S.p.y = g.y - 40; S.p.on = false; S.p.inv = 300; E.step(S, B.D); runN(S, 12, B.D); eq(g.sh, 0, 'a ground pound breaks the shield'); eq(g.s, 6); g.inv = 0; stompBoss(S, g); eq(g.hp, 5, 'then a stomp hurts'); eq(g.sh, 1, 'and the shield comes back');
   S = E.newState(arenaLevel('golem'), { gear: 3 }); g = S.en.find(e => e.k === 'boss'); g.awake = 1; S.p.x = g.x - 30; S.p.y = 146; runN(S, 3, 0); E.step(S, B.ACT); eq(g.sh, 0, 'the ribbon yanks the shield off');
 });
 

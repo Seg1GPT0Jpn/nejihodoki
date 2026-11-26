@@ -100,7 +100,7 @@
       for (const sc of SCRIPTS) {
         if (sc.glide === undefined) sc.glide = gear === 2;
         const S = E.clone(base);
-        const p = S.p; p.x = tx * TS + 3; p.y = (ty + 1) * TS - p.h; p.vx = 0; p.vy = 0; p.on = true; p.inv = 99999; p.hearts = 99; S.assist.hearts = true;
+        const p = S.p; p.x = tx * TS + 3; p.y = (ty + 1) * TS - p.h; p.vx = 0; p.vy = 0; p.on = true; p.inv = 99999; S.assist.hearts = true;
         let airborne = false, f = 0;
         for (; f < (sc.pulse ? 420 : 260); f++) {
           E.step(S, inputOf(sc, f, airborne)); S.ev.length = 0;

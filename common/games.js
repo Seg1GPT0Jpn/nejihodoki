@@ -967,7 +967,7 @@
       id: 'hop', order: 31, path: 'hop/', added: '2026-11-26',
       title: { ja: 'ぴょんぴょん冒険', en: 'Hop Hop Adventure' },
       short: { ja: 'ぴょんぴょん冒険', en: 'Hop Hop Adventure' },
-      desc: { ja: 'ぬいぐるみのうさぎ「ぴょんた」を走らせてジャンプ！ 敵をふんで、コインと5このかくしメダルを集めて、ゴールの旗へ。6つの世界・24ステージ（パッチワークの野原・ぜんまい工場・ゴムのあひる池・ふぶきの山・とけいの町・ねじ山のお城。ボスは6体）、ばね靴・マント・リボンの3つのどうぐ、ステージごとのしかけとボス、最短タイムを競うタイムアタック（ゴースト付き）、毎日ひとつの「きょうのステージ」、自分でつくって合言葉でわたせるエディター。ハートがなくなってもチェックポイントから何度でもやり直せます。キーボード・タッチ・ゲームパッドで遊べます。', en: 'Run and jump with Pyonta, a toy rabbit! Stomp enemies, grab coins and five hidden medals in every level and reach the goal flag. Six worlds and 24 levels (a patchwork meadow, a windup toy factory, a rubber-duck pond, a blizzard mountain, a clock town and a screw-hill castle) with six bosses, three gadgets (spring boots, a glide cape and a swinging ribbon), a new gimmick in every level, bosses, time attack with a ghost of your best run, a new daily level every day and a level editor that shares by code. Run out of hearts and you simply restart from the checkpoint, as often as you like. Keyboard, touch and gamepad.' },
+      desc: { ja: 'ぬいぐるみのうさぎ「ぴょんた」を走らせてジャンプ！ 敵をふんで、コインと5このかくしメダルを集めて、ゴールの旗へ。6つの世界・24ステージ（パッチワークの野原・ぜんまい工場・ゴムのあひる池・ふぶきの山・とけいの町・ねじ山のお城。ボスは6体）、ばね靴・マント・リボンの3つのどうぐ、ステージごとのしかけとボス、最短タイムを競うタイムアタック（ゴースト付き）、毎日ひとつの「きょうのステージ」、自分でつくって合言葉でわたせるエディター。ふくらみわたで「おおきい」に、やられると一段ずつ下がり、ゲームオーバーはなくチェックポイントから何度でもやり直せます。キーボード・タッチ・ゲームパッドで遊べます。', en: 'Run and jump with Pyonta, a toy rabbit! Stomp enemies, grab coins and five hidden medals in every level and reach the goal flag. Six worlds and 24 levels (a patchwork meadow, a windup toy factory, a rubber-duck pond, a blizzard mountain, a clock town and a screw-hill castle) with six bosses, three gadgets (spring boots, a glide cape and a swinging ribbon), a new gimmick in every level, bosses, time attack with a ghost of your best run, a new daily level every day and a level editor that shares by code. Grab a puff to grow big, get hit and you step down one level at a time; there is no game over, just restart from the checkpoint as often as you like. Keyboard, touch and gamepad.' },
       label: { ja: '横スクロールアクション', en: 'Side-scrolling action' },
       genres: ['action'], tags: ['2d', 'stages', 'daily', 'casual'],
       keywords: { ja: ['エディター', 'タイムアタック', 'きょうのステージ', 'アクション', 'ジャンプ', '横スクロール', 'ぴょんた', 'うさぎ', 'ぬいぐるみ', 'おもちゃ', 'ステージ', 'ボス', 'メダル', 'コイン', 'ゴール', 'タッチ', 'ゲームパッド'], en: ['action', 'platformer', 'jump', 'run', 'side scroller', 'rabbit', 'toy', 'levels', 'boss', 'medals', 'coins', 'goal flag', 'touch', 'gamepad'] },
@@ -982,14 +982,14 @@
       rankSource: { key: 'kusoge.hop.save', paths: ['pts'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.hop.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '{n} ポイント', en: '{n} pts' } },
       keys: {
-        'kusoge.hop.save': '{ v:1, pts（クリア1＋メダル0〜5＋タイム★1 を24ステージ分。lv から毎回計算し直す＝ランキング）, lv:[24ステージの整数。ビット0＝クリア, ビット1〜5＝メダル1〜5, ビット6＝めやすタイム★, ビット7＝ダメージなしクリア], bt:{ "<ワールド>-<番号>":最短フレーム数 }, coins, stats:{ plays, clears, deaths, stomps, coins, medals, pounds, ribbon, glide（0.5秒単位）, burrow, swim, nohurt, combo（最大）, daily（きょうのステージのクリア数）, edit（エディターでクリアした数）}, cl（クリアしたステージ数）, md（メダルの数）, all5（メダル5こ全部のステージ数）, par（タイム★の数）, wc:{ "<ワールド>":クリアしたステージ数 }, set:{ slow, hearts, auto, tc（タッチボタン auto|on|off）, keys:{ L,R,U,D,J,RUN,ACT: 足すキー（KeyboardEvent.code）}}, dl:{ k（最後にクリアした日 YYYYMMDD）, t（その日の最短フレーム）, st（連続日数）, bs（最長の連続日数）, n（クリアした日数）}, tut }',
+        'kusoge.hop.save': '{ v:1, pts（クリア1＋メダル0〜5＋タイム★1 を24ステージ分。lv から毎回計算し直す＝ランキング）, lv:[24ステージの整数。ビット0＝クリア, ビット1〜5＝メダル1〜5, ビット6＝めやすタイム★, ビット7＝ダメージなしクリア], bt:{ "<ワールド>-<番号>":最短フレーム数 }, coins, stats:{ plays, clears, deaths, stomps, coins, medals, pounds, ribbon, glide（0.5秒単位）, burrow, swim, nohurt, combo（最大）, daily（きょうのステージのクリア数）, edit（エディターでクリアした数）}, cl（クリアしたステージ数）, hs（ぬいぐるみの家をたずねたワールドのビット）, rv（家でもらった予備のどうぐ 0〜4。つぎのステージの開始時に箱へ入る）, md（メダルの数）, all5（メダル5こ全部のステージ数）, par（タイム★の数）, wc:{ "<ワールド>":クリアしたステージ数 }, set:{ slow, hearts（＝やられない）, auto, tc（タッチボタン auto|on|off）, keys:{ L,R,U,D,J,RUN,ACT: 足すキー（KeyboardEvent.code）}}, dl:{ k（最後にクリアした日 YYYYMMDD）, t（その日の最短フレーム）, st（連続日数）, bs（最長の連続日数）, n（クリアした日数）}, tut }',
         'kusoge.hop.howto': 'あそびかたを見た（\'1\'）',
         'kusoge.hop.ghost': '{ "<ワールド>-<番号>": 最速の走りの入力の記録（rle。毎フレームのビット列）}。タイムアタックのゴースト。この端末だけ（同期しない）',
         'kusoge.hop.ed': 'エディター { slots:[合言葉 HP1:… ×3], cur }。この端末だけ（同期しない）',
       },
       // pts and every counter only grow (max); cleared levels, medals and stars are bit sets (OR); best times are the fewest frames (minPos); the last switches are whole values (newest)
       sync: {
-        'kusoge.hop.save': { fields: { pts: 'max', lv: 'arrBor', bt: { each: 'minPos' }, coins: 'max', stats: { each: 'max' }, cl: 'max', md: 'max', all5: 'max', par: 'max', wc: { each: 'max' }, set: 'newest', dl: { fields: { n: 'max', bs: 'max' }, groups: [{ keys: ['k', 't', 'st'], cmp: ['max', 'minPos', 'max'] }], rest: 'max' }, tut: 'max' }, rest: 'newest' },
+        'kusoge.hop.save': { fields: { pts: 'max', lv: 'arrBor', bt: { each: 'minPos' }, coins: 'max', stats: { each: 'max' }, cl: 'max', md: 'max', all5: 'max', par: 'max', hs: 'bor', rv: 'max', wc: { each: 'max' }, set: 'newest', dl: { fields: { n: 'max', bs: 'max' }, groups: [{ keys: ['k', 't', 'st'], cmp: ['max', 'minPos', 'max'] }], rest: 'max' }, tut: 'max' }, rest: 'newest' },
       },
     },
     {
@@ -1020,6 +1020,62 @@
       // stars, per-slot bests (fastest time / fewest moves: minPos), counters, coins/gems and the daily streak only grow (max); the look in use and settings are whole values (newest)
       sync: {
         'kusoge.maze.save': { fields: { stars: 'max', b: { each: { fields: { s: 'max', t: 'minPos', m: 'minPos', n: 'max' }, rest: 'max' } }, en: { fields: { best: 'max', score: 'max', runs: 'max' }, rest: 'max' }, dl: { fields: { k: 'max', t: 'minPos', m: 'minPos', s: 'max', st: 'max', bs: 'max', n: 'max' }, rest: 'max' }, coins: 'max', gems: 'max', wz: { each: 'max' }, world: 'newest', stats: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
+    {
+      id: 'shmup', order: 33, path: 'shmup/', added: '2026-11-26',
+      title: { ja: 'ペーパーウイング', en: 'Paper Wing' },
+      short: { ja: 'ペーパーウイング', en: 'Paper Wing' },
+      desc: { ja: '紙ひこうきの隊で、さびたガラクタ艦隊をやっつける横スクロール・シューティング。3つの機体（ツバメ・コウノトリ・ホタル）、全7ステージとマルチフェーズのボス、弾すれすれのグレイズと連鎖でスコアを伸ばす。ボスラッシュ、毎日ルールが変わるチャレンジ、リプレイの共有つき。やさしいモードとアシスト（スローモーション・オートボム・アイテム吸引）で、はじめての人でもクリアできます。', en: 'A side-scrolling shooter: a squadron of toy paper planes against a rusty junk fleet. Three ships (Swallow, Stork, Firefly), seven stages with multi-phase bosses, graze and chain scoring, a Boss Rush, a Daily Challenge with changing rules, and shareable replays. Easy mode and assists (slow motion, auto-bomb, item magnet) let newcomers finish too.' },
+      label: { ja: '横スクロールシューティング', en: 'Side-scrolling shooter' },
+      genres: ['action'], tags: ['2d', 'stages', 'daily', 'realtime', 'upgrades', 'endless'],
+      keywords: { ja: ['シューティング', 'シューター', 'シュート', '横スクロール', '紙ひこうき', 'ボス', 'ボスラッシュ', 'グレイズ', 'ボム', 'リプレイ', 'デイリー', 'アーケード', '弾幕'], en: ['shooter', 'shmup', 'shoot em up', 'side scroller', 'paper plane', 'boss', 'boss rush', 'graze', 'bomb', 'replay', 'daily', 'arcade', 'bullet hell'] },
+      icon: 'img/icons/shmup.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#6fb4f0"/><ellipse cx="14" cy="58" rx="22" ry="9" fill="#fff" opacity=".55"/><ellipse cx="62" cy="14" rx="18" ry="7" fill="#fff" opacity=".5"/><g transform="translate(55 38)"><circle r="11" fill="#b5653a" stroke="#4a2a1a" stroke-width="2.5"/><g stroke="#4a2a1a" stroke-width="2.5" stroke-linecap="round"><path d="M0-15v4M0 11v4M-15 0h4M11 0h4M-11-11l3 3M8 8l3 3M11-11l-3 3M-8 8l-3 3"/></g><circle r="4" fill="#ffd23f" stroke="#4a2a1a" stroke-width="2"/></g><circle cx="39" cy="30" r="3.2" fill="#ff5a6e" stroke="#fff" stroke-width="1.2"/><circle cx="44" cy="44" r="3.2" fill="#ffd23f" stroke="#fff" stroke-width="1.2"/><path d="M6 42l34-15-12 14-7 3z" fill="#fff" stroke="#46618a" stroke-width="2.2" stroke-linejoin="round"/><path d="M6 42l22-1-7 3z" fill="#bcd5f2"/><path d="M40 27L28 41" stroke="#4f86c9" stroke-width="2" stroke-linecap="round"/><path d="M2 50h12M0 55h8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".8"/></svg>',
+      thumb: 'img/thumbs/shmup.webp', thumb2x: 'img/thumbs/shmup@2x.webp',
+      tech: '2d',
+      // realtime (pause:true: the shared pause menu opens when the page is hidden). Ranking = the best Arcade score with no assists (any difficulty; the score is already multiplied by the difficulty: 0.6 / 1 / 1.4 / 1.8)
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // the engine clamps a run at 99,999,999 (SCORE_CAP). A full Arcade run is a few million; no per-second rate applies (maxRate null) because boss bonuses arrive in big steps
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n} 点', en: '{n} pts' }, order: 'desc', cap: 99999999, maxRate: null },
+      rankSource: { key: 'kusoge.shmup.save', paths: ['rank'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.shmup.save', paths: ['rank'], agg: 'first', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best: {n} pts' } },
+      keys: {
+        'kusoge.shmup.save': '{ v:1, rank（アーケードのベスト点・アシストなし＝ランキング）, best:{ a:{ "<むずかしさ 0〜3>":点 }, r:{ "<0〜3>":点（ボスラッシュ） }, p:{ "<ステージ 0〜6>":点（練習） } }, dl:{ k（日付 YYYYMMDD）, s（その日の点）}, reach（アーケードで着いたステージ 1〜7）, cl:{ a0〜a3（むずかしさごとのクリア回数）, rush }, stats:{ plays, kills, graze, bombs, deaths, bosses（倒したボスのビット）, bossn（倒したボスの数）, maxChain, stages, conts, nomiss（ノーミスのステージ数）, items, daily（チャレンジのクリア数）, clr1（コンティニューなしのクリア）, shipn（使った機体の数）, secs, assisted }, ships（使った機体のビット）, set:{ ship, diff, assist（1スロー 2オートボム 4吸引）, core, gain }, tut }',
+        'kusoge.shmup.rank': 'この端末のランキング [{ s, d, sh, m, c, a, cl, t }]（10件。同期しない）',
+        'kusoge.shmup.reps': '最近のリプレイ [{ id, code（PW1.…）, m, d, sh, s, cl, dk }]（5件。この端末だけ・同期しない）',
+        'kusoge.shmup.howto': 'あそびかたを見た（\'1\'）',
+      },
+      // bests, counters and the reached stage only grow (max); defeated-boss and used-ship bits are unions; the daily record is the better (date, score) pair; the last setup is a whole value (newest)
+      sync: {
+        'kusoge.shmup.save': { fields: { v: 'max', rank: 'max', best: { each: { each: 'max' } }, dl: { fields: { k: 'max', s: 'max' }, groups: [{ keys: ['k', 's'], cmp: ['max', 'max'] }] }, reach: 'max', cl: { each: 'max' }, stats: { fields: { bosses: 'bor' }, rest: 'max' }, ships: 'bor', set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
+    {
+      id: 'fishing', order: 34, path: 'fishing/', added: '2026-11-26',
+      title: { ja: 'のんびり釣り', en: 'Easy Fishing' },
+      short: { ja: 'のんびり釣り', en: 'Easy Fishing' },
+      desc: { ja: '投げて、待って、合わせて、巻いて、たもですくう、のんびり釣りゲーム。12の釣り場（ため池・川・みなと・潮だまり・氷の穴・月夜の湖・さんご礁・深海…）で、時間・天気・季節によって釣れる魚がかわります。実在の魚をもとにした絵と短い解説つきの150種のずかんを集めよう（架空の生きものはそう書いてあります）。さお・リール・糸・えさ・ルアーを買いそろえ、毎日のオーダーと毎週のボット大会に挑戦、水そうで釣った魚をかざれます。るすの間も少し釣れます（上限あり）。', en: 'A relaxed fishing game: cast, wait, set the hook, reel, and net. Twelve places (pond, river, harbour, tide pools, ice hole, moonlit lake, coral reef, deep sea and more) where the real time of day, weather and season change what bites. Fill a 150-kind Fish Book with original art and short natural-history notes (invented creatures are clearly labelled). Upgrade rods, reels, lines, baits and lures, take daily orders and a weekly tournament against bots, and show off your catches in an aquarium. You even catch a few while away (capped).' },
+      label: { ja: '釣りずかん', en: 'Fishing & collecting' },
+      genres: ['simulation'], tags: ['2d', 'relax', 'casual', 'idle', 'upgrades', 'daily', 'explore'],
+      keywords: { ja: ['釣り', 'つり', 'フィッシング', '魚', 'ずかん', '図鑑', '放置', 'のんびり', 'さお', 'ルアー', '水族館', '水そう', '大会', '集める'], en: ['fishing', 'fish', 'angling', 'collection', 'fish book', 'zukan', 'idle', 'relaxing', 'rod', 'lure', 'aquarium', 'tournament', 'collect'] },
+      icon: 'img/icons/fishing.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#cdeaf7"/><circle cx="56" cy="14" r="7" fill="#ffe08a"/><path d="M0 34Q9 30 18 34T36 34T54 34T72 34V72H0Z" fill="#3d9bd0"/><path d="M0 46Q9 42 18 46T36 46T54 46T72 46V72H0Z" fill="#2a7fb8"/><path d="M8 33Q12 31 16 33M44 36Q48 34 52 36" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".7"/><path d="M6 8L30 26" stroke="#8a5a2b" stroke-width="2.4" stroke-linecap="round"/><path d="M30 26Q38 30 40 31" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><ellipse cx="40" cy="36" rx="4.6" ry="1.8" fill="#fff" opacity=".6"/><path d="M36 33a4 4.2 0 0 1 8 0z" fill="#e5484d"/><path d="M36 33h8a4 4 0 0 1-8 0z" fill="#fff"/><path d="M40 29V26" stroke="#444" stroke-width="1.4" stroke-linecap="round"/><path d="M22 58C28 49 42 49 50 58 42 67 28 67 22 58Z" fill="#f59a3c" stroke="#a85a14" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 58L13 51V65Z" fill="#f2b45a" stroke="#a85a14" stroke-width="1.6" stroke-linejoin="round"/><circle cx="44" cy="56" r="1.9" fill="#fff"/><circle cx="44.5" cy="56" r="1" fill="#222"/><path d="M32 52Q34 58 32 64" fill="none" stroke="#a85a14" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg>',
+      thumb: 'img/thumbs/fishing.webp', thumb2x: 'img/thumbs/fishing@2x.webp',
+      tech: '2d',
+      // realtime (the float waits, the fight runs), so pause: true; away time is tallied once on return (capped). No online battle
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: false },
+      versus: null,
+      // ranking = kinds collected in the Fish Book (derived from the bitset every save), at most 150
+      score: { unit: { ja: '種', en: 'kinds' }, fmt: { ja: 'ずかん {n} / 150 種', en: 'Book {n} / 150' }, order: 'desc', cap: 150, maxRate: null },
+      rankSource: { key: 'kusoge.fishing.save', paths: ['zc'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.fishing.save', paths: ['zc'], agg: 'first', min: 1, num: true, tpl: { ja: 'ずかん {n}/150', en: 'Book {n}/150' } },
+      keys: {
+        'kusoge.fishing.save': '{ v:1, zc（ずかんに載った種の数＝ランキング。z から毎回計算し直す）, z:[5つの整数]（ずかんのビット列。30ビットずつ、番号＝fish.js の並び順）, b:{ "<番号>": 自己ベストの大きさ（cm×10）}, coins, g:{ r（さお 0〜4）, e（リール 0〜4）, n（糸 0〜4）, u（ルアーのビット）, a:[えさの残り×5], sb（いまのえさ）, sl（いまのルアー -1=なし）}, lc（いまの釣り場）, lm（行ったことのある釣り場のビット）, q:{ k（日付 YYYYMMDD）, o:[[種類,必要数,引数,ほうび]×3], p（進み）, d（受け取り済み）, sp（きょう釣った種）}, tn:{ k（大会の週の月曜 YYYYMMDD）, loc, r（投げた回数）, s（合計 cm×10）, done（順位 0=まだ）, w（優勝回数）, bt（最高順位）}, aq:{ f:[水そうの魚の番号]（12まで）, d（かざりのビット）}, set:{ clk（時間 0=実時間 1=ゲーム時計 2〜5=朝昼夕夜）, sn（季節 0=実際 1〜4）, wide（ゆったり）, vib（バイブ）, off（るすの釣り）}, ts（最後に保存した時刻 ms。るすの間の釣りの計算に使う）, stats:{ catches, casts, big, rare, r5, night, rain, orders, earned, away, locs, bought }, tut }',
+        'kusoge.fishing.howto': 'ルールを見た（\'1\'）',
+      },
+      // the book (bit sets), bests, coins, gear tiers, counters and the clock only grow (bor / max); the look in use, settings, daily orders and the equipped bait are whole values (newest)
+      sync: {
+        'kusoge.fishing.save': { fields: { zc: 'max', z: 'arrBor', b: { each: 'max' }, coins: 'max', g: { fields: { r: 'max', e: 'max', n: 'max', u: 'bor', a: 'arrMax', sb: 'newest', sl: 'newest' }, rest: 'newest' }, lm: 'bor', q: 'newest', tn: { fields: { w: 'max', bt: 'minPos' }, rest: 'newest' }, aq: { fields: { d: 'bor' }, rest: 'newest' }, stats: { each: 'max' }, set: 'newest', ts: 'max', tut: 'max' }, rest: 'newest' },
       },
     },
   ];
@@ -1478,6 +1534,48 @@
       { id: 'maze.three20', tier: 3, icon: 'trophy', title: { ja: '最短の旅人', en: 'Traveller of the Shortest Way' }, desc: { ja: '★3のクリアを20回出す', en: 'Earn 3 stars 20 times' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.three' }, gte: 20 } },
       { id: 'maze.stars60', tier: 4, icon: 'trophy', title: { ja: '★60こ', en: 'Sixty Stars' }, desc: { ja: '★を合わせて60こ集める', en: 'Collect 60 stars' }, when: { rec: { key: 'kusoge.maze.save', path: 'stars' }, gte: 60 } },
       { id: 'maze.worlds40', tier: 4, icon: 'trophy', title: { ja: 'ずかんコンプリート', en: 'Complete Collection' }, desc: { ja: '40のせかいをぜんぶひらく', en: 'Unlock all 40 worlds' }, when: { rec: { key: 'kusoge.maze.save', path: 'stats.worlds' }, gte: 40 } },
+    ],
+    shmup: [
+      { id: 'shmup.first', tier: 1, icon: 'play', title: { ja: '初出撃', en: 'Maiden Flight' }, desc: { ja: '1回出撃する', en: 'Take off once' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.plays' }, gte: 1 } },
+      { id: 'shmup.boss1', tier: 1, icon: 'check', title: { ja: 'ブリキ退治', en: 'Tin Toppled' }, desc: { ja: 'ボスを1体たおす', en: 'Defeat a boss' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.bossn' }, gte: 1 } },
+      { id: 'shmup.bomb', tier: 1, icon: 'check', title: { ja: 'かみふぶき', en: 'Paper Blizzard' }, desc: { ja: 'ボムを合わせて10回使う', en: 'Use bombs 10 times in total' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.bombs' }, gte: 10 } },
+      { id: 'shmup.graze300', tier: 1, icon: 'star', title: { ja: 'すれすれ好き', en: 'Close Shave' }, desc: { ja: '弾すれすれ（グレイズ）を合わせて300回', en: 'Graze bullets 300 times in total' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.graze' }, gte: 300 } },
+      { id: 'shmup.daily', tier: 1, icon: 'star', title: { ja: '今日の挑戦', en: 'Today\'s Challenge' }, desc: { ja: '「きょうのチャレンジ」をクリアする', en: 'Clear a Daily Challenge' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.daily' }, gte: 1 } },
+      { id: 'shmup.stage4', tier: 2, icon: 'star', title: { ja: '雲の上の工場へ', en: 'Above the Clouds' }, desc: { ja: 'アーケードでステージ4に着く', en: 'Reach stage 4 in Arcade' }, when: { rec: { key: 'kusoge.shmup.save', path: 'reach' }, gte: 4 } },
+      { id: 'shmup.kills1k', tier: 2, icon: 'check', title: { ja: 'ガラクタ千機', en: 'A Thousand Scraps' }, desc: { ja: '敵を合わせて1000機たおす', en: 'Defeat 1,000 enemies in total' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.kills' }, gte: 1000 } },
+      { id: 'shmup.chain30', tier: 2, icon: 'star', title: { ja: 'つながる連鎖', en: 'Chain Reaction' }, desc: { ja: '30連鎖をつくる', en: 'Build a 30-chain' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.maxChain' }, gte: 30 } },
+      { id: 'shmup.ships3', tier: 2, icon: 'check', title: { ja: '三機そろい踏み', en: 'The Whole Squadron' }, desc: { ja: '3つの機体すべてで出撃する', en: 'Fly all three ships' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.shipn' }, gte: 3 } },
+      { id: 'shmup.score1m', tier: 2, icon: 'star', title: { ja: '100万点', en: 'One Million' }, desc: { ja: 'アーケードで100万点をこえる', en: 'Score 1,000,000 in Arcade' }, when: { rec: { key: 'kusoge.shmup.save', path: 'rank' }, gte: 1000000 } },
+      { id: 'shmup.clear.easy', tier: 2, icon: 'trophy', title: { ja: 'はじめてのぜんクリ', en: 'First All Clear' }, desc: { ja: '「やさしい」でアーケードをクリアする', en: 'Clear Arcade on Easy' }, when: { rec: { key: 'kusoge.shmup.save', path: 'cl.a0' }, gte: 1 } },
+      { id: 'shmup.nomiss3', tier: 3, icon: 'trophy', title: { ja: 'ノーミス名人', en: 'Flawless' }, desc: { ja: 'ミスなしでステージを3回クリアする', en: 'Clear 3 stages without a miss' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.nomiss' }, gte: 3 } },
+      { id: 'shmup.boss7', tier: 3, icon: 'trophy', title: { ja: '七つのボス', en: 'Seven Bosses' }, desc: { ja: '7体のボスをぜんぶたおす', en: 'Defeat all seven bosses' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.bossn' }, gte: 7 } },
+      { id: 'shmup.rush', tier: 3, icon: 'trophy', title: { ja: 'ボスラッシュ完走', en: 'Rush Hour' }, desc: { ja: 'ボスラッシュをクリアする', en: 'Clear the Boss Rush' }, when: { rec: { key: 'kusoge.shmup.save', path: 'cl.rush' }, gte: 1 } },
+      { id: 'shmup.clear.normal', tier: 3, icon: 'trophy', title: { ja: 'ふつうの空を飛びきる', en: 'Normal Skies' }, desc: { ja: '「ふつう」でアーケードをクリアする', en: 'Clear Arcade on Normal' }, when: { rec: { key: 'kusoge.shmup.save', path: 'cl.a1' }, gte: 1 } },
+      { id: 'shmup.nocont', tier: 3, icon: 'trophy', title: { ja: 'コンティニューなし', en: 'No Continues' }, desc: { ja: 'コンティニューなしでアーケードをクリアする', en: 'Clear Arcade without continuing' }, when: { rec: { key: 'kusoge.shmup.save', path: 'stats.clr1' }, gte: 1 } },
+      { id: 'shmup.score10m', tier: 4, icon: 'trophy', title: { ja: '1000万点', en: 'Ten Million' }, desc: { ja: 'アーケードで1000万点をこえる', en: 'Score 10,000,000 in Arcade' }, when: { rec: { key: 'kusoge.shmup.save', path: 'rank' }, gte: 10000000 } },
+      { id: 'shmup.clear.ghost', tier: 4, icon: 'trophy', title: { ja: 'ゆうれいの空の覇者', en: 'Ghost Ace' }, desc: { ja: '「ゆうれい」でアーケードをクリアする', en: 'Clear Arcade on Ghost' }, when: { rec: { key: 'kusoge.shmup.save', path: 'cl.a3' }, gte: 1 }, grantsTitle: { ja: 'ペーパーエース', en: 'Paper Ace' } },
+    ],
+    fishing: [
+      { id: 'fishing.first', tier: 1, icon: 'check', title: { ja: 'はじめの一ぴき', en: 'First Catch' }, desc: { ja: '魚を1ぴき釣る', en: 'Catch a fish' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.catches' }, gte: 1 } },
+      { id: 'fishing.book10', tier: 1, icon: 'star', title: { ja: 'ずかん10種', en: 'Ten Kinds' }, desc: { ja: 'ずかんを10種にする', en: 'Collect 10 kinds in the Fish Book' }, when: { rec: { key: 'kusoge.fishing.save', path: 'zc' }, gte: 10 } },
+      { id: 'fishing.book30', tier: 2, icon: 'star', title: { ja: 'ずかん30種', en: 'Thirty Kinds' }, desc: { ja: 'ずかんを30種にする', en: 'Collect 30 kinds' }, when: { rec: { key: 'kusoge.fishing.save', path: 'zc' }, gte: 30 } },
+      { id: 'fishing.book60', tier: 3, icon: 'trophy', title: { ja: 'ずかん60種', en: 'Sixty Kinds' }, desc: { ja: 'ずかんを60種にする', en: 'Collect 60 kinds' }, when: { rec: { key: 'kusoge.fishing.save', path: 'zc' }, gte: 60 } },
+      { id: 'fishing.book100', tier: 3, icon: 'trophy', title: { ja: 'ずかん100種', en: 'One Hundred Kinds' }, desc: { ja: 'ずかんを100種にする', en: 'Collect 100 kinds' }, when: { rec: { key: 'kusoge.fishing.save', path: 'zc' }, gte: 100 } },
+      { id: 'fishing.book150', tier: 4, icon: 'trophy', title: { ja: 'ずかんコンプリート', en: 'Complete Fish Book' }, desc: { ja: 'ずかんの150種をぜんぶ集める', en: 'Collect all 150 kinds' }, when: { rec: { key: 'kusoge.fishing.save', path: 'zc' }, gte: 150 } },
+      { id: 'fishing.rare', tier: 2, icon: 'star', title: { ja: 'めずらしい魚', en: 'A Rare Find' }, desc: { ja: '★4以上の魚を釣る', en: 'Catch a fish of 4 stars or more' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.rare' }, gte: 1 } },
+      { id: 'fishing.legend', tier: 3, icon: 'trophy', title: { ja: '幻の大物', en: 'Legendary Catch' }, desc: { ja: '★5の魚を釣る', en: 'Catch a 5-star fish' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.r5' }, gte: 1 } },
+      { id: 'fishing.big', tier: 2, icon: 'star', title: { ja: '大物ハンター', en: 'Big Fish Hunter' }, desc: { ja: '大きさが上位15%の魚を10ぴき釣る', en: 'Catch 10 fish in the top 15% of their size range' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.big' }, gte: 10 } },
+      { id: 'fishing.night', tier: 1, icon: 'check', title: { ja: '夜釣り', en: 'Night Fishing' }, desc: { ja: '夜に5ひき釣る', en: 'Catch 5 fish at night' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.night' }, gte: 5 } },
+      { id: 'fishing.rain', tier: 1, icon: 'check', title: { ja: '雨の日の釣り', en: 'Rainy Day Angler' }, desc: { ja: '雨の日に5ひき釣る', en: 'Catch 5 fish in the rain' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.rain' }, gte: 5 } },
+      { id: 'fishing.places6', tier: 2, icon: 'star', title: { ja: '釣り場めぐり', en: 'Place Hopper' }, desc: { ja: '6つの釣り場で釣る', en: 'Fish at 6 different places' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.locs' }, gte: 6 } },
+      { id: 'fishing.places12', tier: 3, icon: 'trophy', title: { ja: '12の釣り場', en: 'Every Place' }, desc: { ja: '12の釣り場ぜんぶで釣る', en: 'Fish at all 12 places' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.locs' }, gte: 12 } },
+      { id: 'fishing.catch100', tier: 2, icon: 'star', title: { ja: '100ぴき', en: 'One Hundred Catches' }, desc: { ja: '合わせて100ひき釣る', en: 'Catch 100 fish in total' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.catches' }, gte: 100 } },
+      { id: 'fishing.earned5000', tier: 2, icon: 'star', title: { ja: 'コイン5000まい', en: 'Five Thousand Coins' }, desc: { ja: 'コインを合わせて5000まいかせぐ', en: 'Earn 5,000 coins in total' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.earned' }, gte: 5000 } },
+      { id: 'fishing.rod3', tier: 2, icon: 'star', title: { ja: 'カーボンのさお', en: 'Carbon Rod' }, desc: { ja: 'カーボンロッドを手に入れる', en: 'Get the Carbon Rod' }, when: { rec: { key: 'kusoge.fishing.save', path: 'g.r' }, gte: 2 } },
+      { id: 'fishing.line5', tier: 3, icon: 'trophy', title: { ja: 'ほしぞら糸', en: 'Starlight Line' }, desc: { ja: 'いちばん強い糸を手に入れる', en: 'Get the strongest line' }, when: { rec: { key: 'kusoge.fishing.save', path: 'g.n' }, gte: 4 } },
+      { id: 'fishing.orders10', tier: 2, icon: 'star', title: { ja: 'オーダー名人', en: 'Order Taker' }, desc: { ja: 'オーダーを10回達成する', en: 'Complete 10 orders' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.orders' }, gte: 10 } },
+      { id: 'fishing.tour', tier: 3, icon: 'trophy', title: { ja: '大会で優勝', en: 'Tournament Winner' }, desc: { ja: '週の大会で1位になる', en: 'Win a weekly tournament' }, when: { rec: { key: 'kusoge.fishing.save', path: 'tn.w' }, gte: 1 } },
+      { id: 'fishing.away', tier: 1, icon: 'check', title: { ja: 'おかえりなさい', en: 'Welcome Back' }, desc: { ja: 'るすの間に釣れた魚を受け取る', en: 'Collect fish caught while you were away' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.away' }, gte: 1 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

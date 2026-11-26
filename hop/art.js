@@ -128,7 +128,7 @@
         c.fillStyle = '#ff6f91'; c.beginPath(); c.moveTo(-4, 2); c.lineTo(-6, 9); c.lineTo(-3, 7.5); c.lineTo(-1, 9.5); c.lineTo(0, 3); c.fill(); c.beginPath(); c.moveTo(4, 2); c.lineTo(6, 9); c.lineTo(3, 7.5); c.lineTo(1, 9.5); c.lineTo(0, 3); c.fill();
         starPath(c, 0, -1, 7, 3.4, 5); fs(c, '#ffe066', '#b07a00', 1); ell(c, 0, -1, 2, 2); fs(c, '#fff6b8'); c.restore(); break;
       }
-      case T.HEART: { heart(c, x + 8, y + 8 + Math.sin(f * 0.07 + tx) * 1.5, 6, '#ff5a7a'); break; }
+      case T.HEART: { puff(c, x + 8, y + 8 + Math.sin(f * 0.07 + tx) * 1.5, 6.5, f); break; }
       case T.CP: {
         const on = S.L.cps.findIndex(q => q.x === tx && q.y === ty) <= S.cpIdx;
         c.fillStyle = '#8a6a4a'; c.fillRect(x + 7, y - 4, 2, 20);
@@ -147,6 +147,7 @@
   }
   function patch(c, x, y, col, th) { c.fillStyle = col; c.fillRect(x, y, TS, TS); c.strokeStyle = th.ink; c.lineWidth = 0.8; c.strokeRect(x + 0.4, y + 0.4, 15.2, 15.2); stitchLine(c, x + 2.5, y + 2.5, x + 13.5, y + 2.5, '#fff'); stitchLine(c, x + 2.5, y + 13.5, x + 13.5, y + 13.5, '#fff'); stitchLine(c, x + 2.5, y + 2.5, x + 2.5, y + 13.5, '#fff'); stitchLine(c, x + 13.5, y + 2.5, x + 13.5, y + 13.5, '#fff'); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 5, y + 5); c.lineTo(x + 11, y + 11); c.moveTo(x + 11, y + 5); c.lineTo(x + 5, y + 11); c.stroke(); }
   function starPath(c, x, y, R, r, n) { c.beginPath(); for (let i = 0; i < n * 2; i++) { const a = -Math.PI / 2 + i * Math.PI / n, rad = i % 2 ? r : R; c.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); } c.closePath(); }
+  function puff(c, x, y, r, f) { c.fillStyle = '#fff'; c.strokeStyle = '#4a3326'; c.lineWidth = 1; c.beginPath(); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + 0.3; c.arc(x + Math.cos(a) * r * 0.55, y + Math.sin(a) * r * 0.55, r * 0.55, 0, TAU); } c.fill(); ell(c, x, y, r * 0.7, r * 0.7); fs(c, '#fff4e6', '#4a3326', 0.9); eyes(c, x, y - 0.5, 2, 1.1, 0); ell(c, x, y + 2.3, 1.4, 0.9); fs(c, '#ffb3c6'); }
   function heart(c, x, y, r, col) { c.beginPath(); c.moveTo(x, y + r * 0.9); c.bezierCurveTo(x - r * 1.5, y - r * 0.1, x - r * 0.7, y - r * 1.2, x, y - r * 0.45); c.bezierCurveTo(x + r * 0.7, y - r * 1.2, x + r * 1.5, y - r * 0.1, x, y + r * 0.9); c.fillStyle = col; c.fill(); }
 
   // ---- things
@@ -227,7 +228,7 @@
       }
       case 'item': {
         const b = Math.sin(f * 0.1) * 1.2; c.translate(0, b);
-        if (e.sub === 4) heart(c, cx, cy, 6.5, '#ff5a7a');
+        if (e.sub === 4) puff(c, cx, cy, 7, f);
         else if (e.sub === 1) { ell(c, cx, cy + 3, 6, 3); fs(c, '#ff8a3d', th.ink, 1); c.strokeStyle = '#e8edf5'; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { c.moveTo(cx - 4, cy - 5 + i * 2.5); c.lineTo(cx + 4, cy - 4 + i * 2.5); } c.stroke(); }
         else if (e.sub === 2) { c.beginPath(); c.moveTo(cx - 6, cy - 5); c.lineTo(cx + 6, cy - 5); c.lineTo(cx + 8, cy + 6); c.quadraticCurveTo(cx, cy + 2, cx - 8, cy + 6); c.closePath(); fs(c, '#9b6bd9', th.ink, 1); c.fillStyle = '#ffd75e'; c.fillRect(cx - 2, cy - 6, 4, 2); }
         else { ell(c, cx, cy, 6, 6); fs(c, '#ff89b0', th.ink, 1); c.strokeStyle = '#fff'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(cx - 5, cy + 1); c.bezierCurveTo(cx - 2, cy - 5, cx + 2, cy + 5, cx + 5, cy - 1); c.stroke(); }
@@ -294,11 +295,11 @@
 
   // ---- the hero
   function drawPlayer(c, p, f, S) {
-    if (p.dead) { c.save(); c.translate(p.x + p.w / 2, p.y + p.h / 2); c.rotate(p.deadT * 0.25); body(c, p, f, 'dead', S); c.restore(); return; }
+    if (p.dead) { c.save(); c.translate(p.x + p.w / 2, p.y + p.h / 2); c.rotate(p.deadT * 0.25); if (p.pw) c.scale(1.22, 1.22); body(c, p, f, 'dead', S); c.restore(); return; }
     if (p.inv > 0 && Math.floor(p.inv / 4) % 2 === 1 && !p.hurtT) return;
     const air = !p.on && !p.rope, run = p.on && Math.abs(p.vx) > 0.35;
     let pose = p.hurtT > 0 ? 'hurt' : p.rope ? 'rope' : p.pound ? 'pound' : p.crouch ? 'crouch' : air ? (p.vy < 0 ? 'jump' : (p.gear === 2 && (S.prev & 16) && p.vy > 0.3 ? 'glide' : 'fall')) : run ? 'run' : 'idle';
-    c.save(); c.translate(p.x + p.w / 2, p.y + p.h); c.scale(p.face >= 0 ? 1 : -1, 1);
+    c.save(); c.translate(p.x + p.w / 2, p.y + p.h); c.scale(p.face >= 0 ? 1 : -1, 1); if (p.pw) c.scale(1.22, 1.22);
     if (p.spr > 0) c.scale(0.9, 1.15);
     if (pose === 'jump') c.scale(0.92, 1.1); else if (pose === 'fall') c.scale(0.95, 1.06);
     body(c, p, f, pose, S); c.restore();
@@ -369,7 +370,10 @@
         case 'cp': fx.burst(x, y, 12, '#6fe08a', { s: 1.8, life: 34, kind: 'star', g: 0.02 }); fx.text(x, y - 12, 'CHECK!', '#b9ffc8'); break;
         case 'goal': fx.burst(x, y, 30, '#ffd23f', { s: 3, life: 60, kind: 'star', g: 0.05 }); fx.burst(x, y, 20, '#ff6fa0', { s: 2.5, life: 60, g: 0.05 }); break;
         case 'gear': fx.burst(x, y, 12, '#c9a8ff', { s: 1.8, life: 30, kind: 'star' }); break;
-        case 'heart': fx.burst(x, y, 6, '#ff6b8a', { s: 1, life: 24, g: -0.02 }); break;
+        case 'heart': fx.burst(x, y, 6, '#ffffff', { s: 1, life: 24, g: -0.02 }); break;
+        case 'grow': fx.burst(x + 5, y + 7, 14, '#fff', { s: 2, life: 30, kind: 'star' }); fx.add({ x: x + 5, y: y + 7, vx: 0, vy: 0, life: 16, t: 0, col: '#ffd23f', kind: 'ring' }); break;
+        case 'shrink': fx.burst(x + 5, y + 7, 8, '#ffb3c6', { s: 1.6, life: 22 }); break;
+        case 'reserve': case 'reserveuse': fx.burst(x + 5, y, 6, '#ffe27a', { s: 1.2, life: 22, kind: 'star' }); break;
         case 'burrow': fx.burst(x + 5, y + 7, 12, '#a0785a', { s: 1.4, life: 24 }); break;
         case 'quake': case 'bossdown': fx.burst(x, y, 18, '#ffd23f', { s: 2.4, life: 40, kind: 'star' }); break;
         case 'bosshit': fx.burst(x, y, 14, '#fff', { s: 2.2, life: 26, kind: 'star' }); break;

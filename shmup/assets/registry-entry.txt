@@ -1,0 +1,29 @@
+    {
+      id: 'shmup', order: 32, path: 'shmup/', added: '2026-11-26',
+      title: { ja: 'ペーパーウイング', en: 'Paper Wing' },
+      short: { ja: 'ペーパーウイング', en: 'Paper Wing' },
+      desc: { ja: '紙ひこうきの隊で、さびたガラクタ艦隊をやっつける横スクロール・シューティング。3つの機体（ツバメ・コウノトリ・ホタル）、全7ステージとマルチフェーズのボス、弾すれすれのグレイズと連鎖でスコアを伸ばす。ボスラッシュ、毎日ルールが変わるチャレンジ、リプレイの共有つき。やさしいモードとアシスト（スローモーション・オートボム・アイテム吸引）で、はじめての人でもクリアできます。', en: 'A side-scrolling shooter: a squadron of toy paper planes against a rusty junk fleet. Three ships (Swallow, Stork, Firefly), seven stages with multi-phase bosses, graze and chain scoring, a Boss Rush, a Daily Challenge with changing rules, and shareable replays. Easy mode and assists (slow motion, auto-bomb, item magnet) let newcomers finish too.' },
+      label: { ja: '横スクロールシューティング', en: 'Side-scrolling shooter' },
+      genres: ['action'], tags: ['2d', 'stages', 'daily', 'realtime', 'upgrades', 'endless'],
+      keywords: { ja: ['シューティング', 'シューター', 'シュート', '横スクロール', '紙ひこうき', 'ボス', 'ボスラッシュ', 'グレイズ', 'ボム', 'リプレイ', 'デイリー', 'アーケード', '弾幕'], en: ['shooter', 'shmup', 'shoot em up', 'side scroller', 'paper plane', 'boss', 'boss rush', 'graze', 'bomb', 'replay', 'daily', 'arcade', 'bullet hell'] },
+      icon: 'img/icons/shmup.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#6fb4f0"/><ellipse cx="14" cy="58" rx="22" ry="9" fill="#fff" opacity=".55"/><ellipse cx="62" cy="14" rx="18" ry="7" fill="#fff" opacity=".5"/><g transform="translate(55 38)"><circle r="11" fill="#b5653a" stroke="#4a2a1a" stroke-width="2.5"/><g stroke="#4a2a1a" stroke-width="2.5" stroke-linecap="round"><path d="M0-15v4M0 11v4M-15 0h4M11 0h4M-11-11l3 3M8 8l3 3M11-11l-3 3M-8 8l-3 3"/></g><circle r="4" fill="#ffd23f" stroke="#4a2a1a" stroke-width="2"/></g><circle cx="39" cy="30" r="3.2" fill="#ff5a6e" stroke="#fff" stroke-width="1.2"/><circle cx="44" cy="44" r="3.2" fill="#ffd23f" stroke="#fff" stroke-width="1.2"/><path d="M6 42l34-15-12 14-7 3z" fill="#fff" stroke="#46618a" stroke-width="2.2" stroke-linejoin="round"/><path d="M6 42l22-1-7 3z" fill="#bcd5f2"/><path d="M40 27L28 41" stroke="#4f86c9" stroke-width="2" stroke-linecap="round"/><path d="M2 50h12M0 55h8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".8"/></svg>',
+      thumb: 'img/thumbs/shmup.webp', thumb2x: 'img/thumbs/shmup@2x.webp',
+      tech: '2d',
+      // realtime (pause:true: the shared pause menu opens when the page is hidden). Ranking = the best Arcade score with no assists (any difficulty; the score is already multiplied by the difficulty: 0.6 / 1 / 1.4 / 1.8)
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: true },
+      versus: null,
+      // the engine clamps a run at 99,999,999 (SCORE_CAP). A full Arcade run is a few million; no per-second rate applies (maxRate null) because boss bonuses arrive in big steps
+      score: { unit: { ja: '点', en: 'pts' }, fmt: { ja: '{n} 点', en: '{n} pts' }, order: 'desc', cap: 99999999, maxRate: null },
+      rankSource: { key: 'kusoge.shmup.save', paths: ['rank'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.shmup.save', paths: ['rank'], agg: 'first', min: 1, num: true, tpl: { ja: 'ベスト {n} 点', en: 'Best: {n} pts' } },
+      keys: {
+        'kusoge.shmup.save': '{ v:1, rank（アーケードのベスト点・アシストなし＝ランキング）, best:{ a:{ "<むずかしさ 0〜3>":点 }, r:{ "<0〜3>":点（ボスラッシュ） }, p:{ "<ステージ 0〜6>":点（練習） } }, dl:{ k（日付 YYYYMMDD）, s（その日の点）}, reach（アーケードで着いたステージ 1〜7）, cl:{ a0〜a3（むずかしさごとのクリア回数）, rush }, stats:{ plays, kills, graze, bombs, deaths, bosses（倒したボスのビット）, bossn（倒したボスの数）, maxChain, stages, conts, nomiss（ノーミスのステージ数）, items, daily（チャレンジのクリア数）, clr1（コンティニューなしのクリア）, shipn（使った機体の数）, secs, assisted }, ships（使った機体のビット）, set:{ ship, diff, assist（1スロー 2オートボム 4吸引）, core, gain }, tut }',
+        'kusoge.shmup.rank': 'この端末のランキング [{ s, d, sh, m, c, a, cl, t }]（10件。同期しない）',
+        'kusoge.shmup.reps': '最近のリプレイ [{ id, code（PW1.…）, m, d, sh, s, cl, dk }]（5件。この端末だけ・同期しない）',
+        'kusoge.shmup.howto': 'あそびかたを見た（\'1\'）',
+      },
+      // bests, counters and the reached stage only grow (max); defeated-boss and used-ship bits are unions; the daily record is the better (date, score) pair; the last setup is a whole value (newest)
+      sync: {
+        'kusoge.shmup.save': { fields: { v: 'max', rank: 'max', best: { each: { each: 'max' } }, dl: { fields: { k: 'max', s: 'max' }, groups: [{ keys: ['k', 's'], cmp: ['max', 'max'] }] }, reach: 'max', cl: { each: 'max' }, stats: { fields: { bosses: 'bor' }, rest: 'max' }, ships: 'bor', set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },

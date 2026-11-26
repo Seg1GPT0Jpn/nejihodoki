@@ -67,9 +67,16 @@ node tools/tests/hop-play.js                  # ぴょんぴょん冒険の通�
 node tools/tests/unit/hop-engine.test.js     # ぴょんぴょん冒険の中身（毎回同じ・ジャンプの高さ・コヨーテ/先行入力・当たり・敵ごとの動き・ブロック・ばね/氷/ベルト/水/上昇風・とげと穴・復活・かくしあな・足場・どうぐ・ボス・入力の記録）
 node tools/tests/unit/hop-levels.test.js     # ぴょんぴょん冒険のステージ（形・チャンク・全ステージの検査と物理の届く範囲・壊れたステージを見つける・**全ステージの証明の入力を再生してゴールにつく**）
 node tools/hop-solve.js --all --write         # 証明（hop/proofs.js）を作り直す（ステージやエンジンを変えたとき。約3分。`--show 1-2` で地図を表示）
+node tools/tests/unit/hop-gen.test.js        # ぴょんぴょん冒険のきょうのステージ（部品の証明を再生・日付で同じステージ・物理の届く範囲・合言葉の符号化）。`HOP_SLOW=1` で本物のソルバーを6日分
 node tools/tests/maze-play.js                 # めいろ探検の通し（本物のキー・タップで歩く・5つの型・もどる・ヒント・きょうのめいろ・どこまでも下へ・合言葉・ずかん・保存）
 node tools/tests/unit/maze-engine.test.js    # めいろ探検の中身（めいろの生成・全部解ける・最短の数・型ごとのルール・★の計算）
 node tools/tests/unit/maze-entries.test.js   # めいろ探検の登録の貼り付け原稿と common/games.js が合っているか
+node tools/tests/shmup-play.js                # ペーパーウイングの通し（本物のキー・タッチで飛ぶ・撃つ・ボム・ポーズ・ステージ・ボス・きょうのチャレンジ・リプレイ・保存）
+node tools/tests/unit/shmup-engine.test.js    # ペーパーウイングの中身（毎回同じ結果・当たり・グレイズと連鎖・ボスのフェーズ・リプレイの再生・点の上限）
+node tools/tests/unit/shmup-bot.test.js       # ペーパーウイングの自動プレイのボット（ステージが最後まで進む・決まった結果）
+node tools/tests/fishing-play.js              # のんびり釣りの通し（本物のクリック・キーで投げる・合わせる・巻く・ずかん・お店・オーダー・大会・水そう・保存）
+node tools/tests/unit/fishing-engine.test.js  # のんびり釣りの中身（毎回同じ結果・魚の出かた・ファイト・ずかんのビット列・るすの間の釣り・大会）
+node tools/tests/unit/fishing-entries.test.js # のんびり釣りの登録の貼り付け原稿と common/games.js が合っているか
 node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
 node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
 node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）

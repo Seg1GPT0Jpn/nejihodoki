@@ -13,10 +13,10 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
 
     // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
-    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze']; }
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing']; }
     function caps() {
       return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
-               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 10000, 'gomoku': 100000, 'sudoku': 100000, 'crates': 240, 'hop': 168, 'maze': 85 };
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 10000, 'gomoku': 100000, 'sudoku': 100000, 'crates': 240, 'hop': 168, 'maze': 85, 'shmup': 99999999, 'fishing': 150 };
     }
 
     // ===== 日本時間の日付と週 =====
@@ -90,6 +90,8 @@ service cloud.firestore {
         && okEntAt(g, ch, 'kusoge~crates~save')
         && okEntAt(g, ch, 'kusoge~hop~save')
         && okEntAt(g, ch, 'kusoge~maze~save')
+        && okEntAt(g, ch, 'kusoge~shmup~save')
+        && okEntAt(g, ch, 'kusoge~fishing~save')
         && okEntAt(g, ch, 'kusoge~vs~stats');
     }
     function okNejiUser(d) {
@@ -113,9 +115,11 @@ service cloud.firestore {
     function legacyOpen() { return request.time < timestamp.date(2026, 12, 1) + duration.value(15, 'h'); }
     // caps() は1回だけ読む（okScore() を16回呼ぶと、そのたびに表を作り直してルールの式の数の上限を超えた）
     function okCap(v, cap) { return v is number && v >= 0 && v <= cap; }
+    // 旧ランキングに書ける（点数を持つ）ゲーム。新しく足すゲームは、ここに入れない（旧ランキングは移行期間だけ。式の数の上限1000のため、増やさない）
+    function legacyGames() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze']; }
     function okLegacyScores(s) {
       let c = caps();
-      return s is map && s.keys().hasOnly(games())
+      return s is map && s.keys().hasOnly(legacyGames())
         && okCap(s.get('neji', 0), c['neji']) && okCap(s.get('blocks', 0), c['blocks']) && okCap(s.get('drop', 0), c['drop']) && okCap(s.get('raft', 0), c['raft'])
         && okCap(s.get('gates', 0), c['gates']) && okCap(s.get('n59049', 0), c['n59049']) && okCap(s.get('water', 0), c['water']) && okCap(s.get('parking', 0), c['parking'])
         && okCap(s.get('hole', 0), c['hole']) && okCap(s.get('hitsumabushi', 0), c['hitsumabushi']) && okCap(s.get('planet', 0), c['planet']) && okCap(s.get('hitblow', 0), c['hitblow'])
@@ -217,7 +221,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(games())
         && request.resource.data.diff(prevPlays()).affectedKeys().size() == 1
         && plus1('neji') && plus1('blocks') && plus1('drop') && plus1('raft') && plus1('gates')
-        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape') && plus1('td') && plus1('physics') && plus1('minigolf') && plus1('trade') && plus1('cards') && plus1('fit') && plus1('town') && plus1('colorcards') && plus1('brawl') && plus1('train') && plus1('reversi') && plus1('manabi') && plus1('orchestra') && plus1('gomoku') && plus1('sudoku') && plus1('crates') && plus1('hop') && plus1('maze');
+        && plus1('n59049') && plus1('water') && plus1('parking') && plus1('hole') && plus1('hitsumabushi') && plus1('planet') && plus1('hitblow') && plus1('shogi') && plus1('escape') && plus1('td') && plus1('physics') && plus1('minigolf') && plus1('trade') && plus1('cards') && plus1('fit') && plus1('town') && plus1('colorcards') && plus1('brawl') && plus1('train') && plus1('reversi') && plus1('manabi') && plus1('orchestra') && plus1('gomoku') && plus1('sudoku') && plus1('crates') && plus1('hop') && plus1('maze') && plus1('shmup') && plus1('fishing');
     }
 
     // ── まなびの工房のソーシャル（週のリーグ kbLg・できごと kbFeed・ふたりクエスト kbPairs）──

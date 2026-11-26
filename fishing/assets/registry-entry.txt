@@ -1,0 +1,28 @@
+    {
+      // NOTE for the integrator: `order` is a placeholder (use the next free number after the other new games); `added` = the day of wiring
+      id: 'fishing', order: 31, path: 'fishing/', added: '2026-11-26',
+      title: { ja: 'のんびり釣り', en: 'Easy Fishing' },
+      short: { ja: 'のんびり釣り', en: 'Easy Fishing' },
+      desc: { ja: '投げて、待って、合わせて、巻いて、たもですくう、のんびり釣りゲーム。12の釣り場（ため池・川・みなと・潮だまり・氷の穴・月夜の湖・さんご礁・深海…）で、時間・天気・季節によって釣れる魚がかわります。実在の魚をもとにした絵と短い解説つきの150種のずかんを集めよう（架空の生きものはそう書いてあります）。さお・リール・糸・えさ・ルアーを買いそろえ、毎日のオーダーと毎週のボット大会に挑戦、水そうで釣った魚をかざれます。るすの間も少し釣れます（上限あり）。', en: 'A relaxed fishing game: cast, wait, set the hook, reel, and net. Twelve places (pond, river, harbour, tide pools, ice hole, moonlit lake, coral reef, deep sea and more) where the real time of day, weather and season change what bites. Fill a 150-kind Fish Book with original art and short natural-history notes (invented creatures are clearly labelled). Upgrade rods, reels, lines, baits and lures, take daily orders and a weekly tournament against bots, and show off your catches in an aquarium. You even catch a few while away (capped).' },
+      label: { ja: '釣りずかん', en: 'Fishing & collecting' },
+      genres: ['simulation'], tags: ['2d', 'relax', 'casual', 'idle', 'upgrades', 'daily', 'explore'],
+      keywords: { ja: ['釣り', 'つり', 'フィッシング', '魚', 'ずかん', '図鑑', '放置', 'のんびり', 'さお', 'ルアー', '水族館', '水そう', '大会', '集める'], en: ['fishing', 'fish', 'angling', 'collection', 'fish book', 'zukan', 'idle', 'relaxing', 'rod', 'lure', 'aquarium', 'tournament', 'collect'] },
+      icon: 'img/icons/fishing.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#cdeaf7"/><circle cx="56" cy="14" r="7" fill="#ffe08a"/><path d="M0 34Q9 30 18 34T36 34T54 34T72 34V72H0Z" fill="#3d9bd0"/><path d="M0 46Q9 42 18 46T36 46T54 46T72 46V72H0Z" fill="#2a7fb8"/><path d="M8 33Q12 31 16 33M44 36Q48 34 52 36" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".7"/><path d="M6 8L30 26" stroke="#8a5a2b" stroke-width="2.4" stroke-linecap="round"/><path d="M30 26Q38 30 40 31" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><ellipse cx="40" cy="36" rx="4.6" ry="1.8" fill="#fff" opacity=".6"/><path d="M36 33a4 4.2 0 0 1 8 0z" fill="#e5484d"/><path d="M36 33h8a4 4 0 0 1-8 0z" fill="#fff"/><path d="M40 29V26" stroke="#444" stroke-width="1.4" stroke-linecap="round"/><path d="M22 58C28 49 42 49 50 58 42 67 28 67 22 58Z" fill="#f59a3c" stroke="#a85a14" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 58L13 51V65Z" fill="#f2b45a" stroke="#a85a14" stroke-width="1.6" stroke-linejoin="round"/><circle cx="44" cy="56" r="1.9" fill="#fff"/><circle cx="44.5" cy="56" r="1" fill="#222"/><path d="M32 52Q34 58 32 64" fill="none" stroke="#a85a14" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg>',
+      thumb: 'img/thumbs/fishing.webp', thumb2x: 'img/thumbs/fishing@2x.webp',
+      tech: '2d',
+      // realtime (the float waits, the fight runs), so pause: true; away time is tallied once on return (capped). No online battle
+      flags: { ranking: true, achievements: true, daily: true, versus: false, pause: true, stages: false },
+      versus: null,
+      // ranking = kinds collected in the Fish Book (derived from the bitset every save), at most 150
+      score: { unit: { ja: '種', en: 'kinds' }, fmt: { ja: 'ずかん {n} / 150 種', en: 'Book {n} / 150' }, order: 'desc', cap: 150, maxRate: null },
+      rankSource: { key: 'kusoge.fishing.save', paths: ['zc'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.fishing.save', paths: ['zc'], agg: 'first', min: 1, num: true, tpl: { ja: 'ずかん {n}/150', en: 'Book {n}/150' } },
+      keys: {
+        'kusoge.fishing.save': '{ v:1, zc（ずかんに載った種の数＝ランキング。z から毎回計算し直す）, z:[5つの整数]（ずかんのビット列。30ビットずつ、番号＝fish.js の並び順）, b:{ "<番号>": 自己ベストの大きさ（cm×10）}, coins, g:{ r（さお 0〜4）, e（リール 0〜4）, n（糸 0〜4）, u（ルアーのビット）, a:[えさの残り×5], sb（いまのえさ）, sl（いまのルアー -1=なし）}, lc（いまの釣り場）, lm（行ったことのある釣り場のビット）, q:{ k（日付 YYYYMMDD）, o:[[種類,必要数,引数,ほうび]×3], p（進み）, d（受け取り済み）, sp（きょう釣った種）}, tn:{ k（大会の週の月曜 YYYYMMDD）, loc, r（投げた回数）, s（合計 cm×10）, done（順位 0=まだ）, w（優勝回数）, bt（最高順位）}, aq:{ f:[水そうの魚の番号]（12まで）, d（かざりのビット）}, set:{ clk（時間 0=実時間 1=ゲーム時計 2〜5=朝昼夕夜）, sn（季節 0=実際 1〜4）, wide（ゆったり）, vib（バイブ）, off（るすの釣り）}, ts（最後に保存した時刻 ms。るすの間の釣りの計算に使う）, stats:{ catches, casts, big, rare, r5, night, rain, orders, earned, away, locs, bought }, tut }',
+        'kusoge.fishing.howto': 'ルールを見た（\'1\'）',
+      },
+      // the book (bit sets), bests, coins, gear tiers, counters and the clock only grow (bor / max); the look in use, settings, daily orders and the equipped bait are whole values (newest)
+      sync: {
+        'kusoge.fishing.save': { fields: { zc: 'max', z: 'arrBor', b: { each: 'max' }, coins: 'max', g: { fields: { r: 'max', e: 'max', n: 'max', u: 'bor', a: 'arrMax', sb: 'newest', sl: 'newest' }, rest: 'newest' }, lm: 'bor', q: 'newest', tn: { fields: { w: 'max', bt: 'minPos' }, rest: 'newest' }, aq: { fields: { d: 'bor' }, rest: 'newest' }, stats: { each: 'max' }, set: 'newest', ts: 'max', tut: 'max' }, rest: 'newest' },
+      },
+    },

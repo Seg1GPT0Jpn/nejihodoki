@@ -255,3 +255,8 @@ Realtime Database：
 - **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、このゲームはランキングに載らず、プレイ回数も数えられません**（ほかのゲームは今までどおり遊べます）。Realtime Database（`database.rules.json`）は変わりません（オンライン対戦なし）。
 - Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'maze': 85`＝★の合計）、旧ランキングの点の確認 `okCap(…'maze')`、プレイ回数の `plus1('maze')`、同期する保存のキー `kusoge~maze~save` の形の確認（`okEntAt` に1行）です。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（めいろ探検の保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「ペーパーウイング」（shmup）と「のんびり釣り」（fishing）を足したとき（2026-11）
+- **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、この2つのゲームはランキングに載らず、プレイ回数も数えられません**（ほかのゲームは今までどおり遊べます）。Realtime Database（`database.rules.json`）は変わりません（どちらもオンライン対戦なし）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'shmup': 99999999`＝アーケードのベスト点、`'fishing': 150`＝ずかんの種の数）、旧ランキングの点の確認 `okCap(…'shmup')` `okCap(…'fishing')`、プレイ回数の `plus1('shmup')` `plus1('fishing')`、同期する保存のキー `kusoge~shmup~save` `kusoge~fishing~save` の形の確認（`okEntAt` に2行）です。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（ペーパーウイング・のんびり釣りの保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。

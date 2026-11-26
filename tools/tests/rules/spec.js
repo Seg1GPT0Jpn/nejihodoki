@@ -21,8 +21,13 @@ function checkSpec() {
   const ruleCaps = {};
   if (cm) for (const m of cm[1].matchAll(/'([^']+)':\s*(\d+)/g)) ruleCaps[m[1]] = +m[2];
   add('firestore.rules caps() == registry score.cap', JSON.stringify(ruleCaps) === JSON.stringify(Object.fromEntries(Object.keys(ruleCaps).map(k => [k, CAPS[k]]))) && Object.keys(ruleCaps).length === Object.keys(CAPS).length, JSON.stringify(ruleCaps));
+  // 旧ランキング（okLegacyScores）は、移行期間のあいだ、前からあるゲームだけを受け付ける。新しいゲームは legacyGames() に入れない（式の数の上限1000のため）。
+  const lgm = /function legacyGames\(\)\s*\{\s*return\s*\[([^\]]*)\]/.exec(fsr);
+  const legacyIds = lgm ? lgm[1].match(/'([^']+)'/g).map(s => s.slice(1, -1)) : [];
+  add('firestore.rules legacyGames() is a subset of games()', legacyIds.length > 0 && legacyIds.every(id => ruleGames.includes(id)), legacyIds.join(','));
   for (const id of Object.keys(CAPS)) {
-    add(`firestore.rules okLegacyScores() checks ${id}`, new RegExp(`okCap\\(s\\.get\\('${id}', 0\\), c\\['${id}'\\]\\)`).test(fsr));
+    if (legacyIds.includes(id)) add(`firestore.rules okLegacyScores() checks ${id}`, new RegExp(`okCap\\(s\\.get\\('${id}', 0\\), c\\['${id}'\\]\\)`).test(fsr));
+    else add(`firestore.rules legacy scores do not accept ${id}`, !new RegExp(`okCap\\(s\\.get\\('${id}', 0\\)`).test(fsr));
     add(`firestore.rules plus1('${id}')`, fsr.includes(`plus1('${id}')`));
   }
   let db = null;
