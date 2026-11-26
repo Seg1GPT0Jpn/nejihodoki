@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HUB = readText('index.html');
-const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing'];
+const IDS = ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing', 'mahjong'];
 
 // ---- 今のハブから読み取ったもの
 function hubDict() {
@@ -205,6 +205,8 @@ test('rankValue equals cloud.js RANK_SOURCES for 8 games; hole uses best points 
   eq(P.rankValue('shmup', k => null), 0, 'shmup: nothing saved');
   eq(P.rankValue('fishing', k => '{"v":1,"zc":28,"stats":{"catches":28}}'), 28, 'fishing: Fish Book kinds');
   eq(P.rankValue('fishing', k => null), 0, 'fishing: nothing saved');
+  eq(P.rankValue('mahjong', k => '{"v":1,"best":45000,"stats":{"games":5}}'), 45000, 'mahjong: best final score');
+  eq(P.rankValue('mahjong', k => null), 0, 'mahjong: nothing saved');
 });
 
 test('recordText reproduces the hub cards (refreshRecords) and fixes hole (R9)', () => {

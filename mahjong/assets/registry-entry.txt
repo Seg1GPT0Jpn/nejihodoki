@@ -1,0 +1,28 @@
+    {
+      id: 'mahjong', order: 31, path: 'mahjong/', added: '2026-11-26',
+      title: { ja: '麻雀工房', en: 'Mahjong Workshop' },
+      short: { ja: '麻雀工房', en: 'Mahjong Workshop' },
+      desc: { ja: 'リーチ麻雀をCPUと、または4人オンラインで。はじめてなら「麻雀入門」（1局のミニ麻雀・かんたんな役だけ・ヒントとシャンテン表示・あがりの解説）とチュートリアルから。本格麻雀は東風戦・東南戦で、全部の役と符計算、チー・ポン・カン、フリテン、流局、赤ドラ・裏ドラ、ウマ・オカ。CPUは3段階。棋譜の再生、れんしゅう（ヒント・もどす）つき。広告も賭けもありません。', en: 'Riichi mahjong against CPUs or in 4-seat online matches. New to it? Start with the tutorial and Beginner mahjong (a one-hand mini game with simple yaku, hints, a shanten display and a win explanation). The full game covers East and Hanchan with every yaku, fu/han scoring, chii/pon/kan, furiten, draws, red fives, ura dora and uma/oka. Three CPU levels, kifu replay and a practice mode with hints and undo. No ads, no gambling.' },
+      label: { ja: 'リーチ麻雀', en: 'Riichi mahjong' },
+      genres: ['board'], tags: ['2d', 'turn', 'versus', 'online', 'strategy'],
+      keywords: { ja: ['麻雀', 'リーチ麻雀', 'マージャン', '牌', '役', '東風', '東南', 'ミニ麻雀', '入門', 'シャンテン', 'チー', 'ポン', 'カン', 'オンライン対戦'], en: ['mahjong', 'riichi', 'tiles', 'yaku', 'tonpuusen', 'hanchan', 'beginner', 'shanten', 'chii', 'pon', 'kan', 'online', 'cpu'] },
+      icon: 'img/icons/mahjong.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#14503b"/><g stroke="#fff" stroke-opacity=".1"><path d="M0 18h72M0 36h72M0 54h72M18 0v72M36 0v72M54 0v72"/></g><g transform="rotate(-12 24 40)"><rect x="9" y="16" width="26" height="36" rx="4" fill="#e0d8c4"/><rect x="9" y="14" width="26" height="35" rx="4" fill="#fbf7ea" stroke="#b9ad90"/><text x="22" y="32" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="15" fill="#1f2a3d">五</text><text x="22" y="46" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="11" fill="#c5352b">萬</text></g><g transform="rotate(10 50 38)"><rect x="37" y="14" width="26" height="36" rx="4" fill="#e0d8c4"/><rect x="37" y="12" width="26" height="35" rx="4" fill="#fbf7ea" stroke="#b9ad90"/><circle cx="50" cy="24" r="6.5" fill="#fff" stroke="#245fa8" stroke-width="2"/><circle cx="50" cy="24" r="2" fill="#c5352b"/><circle cx="44" cy="37" r="4.5" fill="#fff" stroke="#23865a" stroke-width="1.8"/><circle cx="56" cy="37" r="4.5" fill="#fff" stroke="#c5352b" stroke-width="1.8"/></g><rect x="22" y="54" width="28" height="9" rx="3" fill="#fff" stroke="#c33" stroke-width="1.2"/><circle cx="36" cy="58.5" r="2.4" fill="#c33"/></svg>',
+      thumb: 'img/thumbs/mahjong.webp', thumb2x: 'img/thumbs/mahjong@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.mahjong.run, this device only); online 4-seat matches (host-authoritative, hidden hands in tr/mahjong/rooms/*/priv) run through common/turnroom.js. Online results never feed the ranking (stats only)
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ranking = the best final score (points) in a full East/Hanchan game against CPUs; beginner mini games, practice, tutorial and online count nothing. 4 players x 25000 = 100000 in play; the cap leaves room for tobi-free blowouts
+      score: { unit: { ja: '点', en: ' pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 150000, maxRate: null },
+      rankSource: { key: 'kusoge.mahjong.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.mahjong.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: '{n}点', en: '{n} pts' } },
+      keys: {
+        'kusoge.mahjong.save': '{ v:1, best（本格麻雀の最高の最終持ち点＝ランキング）, g:{ mini|east|hanchan:{ p（遊んだ回数）, w（1位の回数）, r1,r2,r3,r4（順位の回数）, b（最高の持ち点） } }, stats:{ games, hands, agari, tsumo, ron, deal（放銃）, riichiWin, mangan, haneman, baiman, yakuman, mangan+, maxHan, maxPts, calls, kan, chankan, draws, tenpaiDraw, nagashi, dealerWin, openWin, top, hardTop, normalTop, tobiMade, tobiHit, miniHands, miniWins, hints, undos, tutDone, onl, onw }, y:{ "<役の id>": あがった回数 }, set:{ lv, mode, aka, ura, ippatsu, kuitan, tobi, west, oka, uma, hint, shanten, onetap, fast, mini }, tut }',
+        'kusoge.mahjong.run': 'とちゅうの対局（毎手自動保存）{ v:1, mode, practice, levels, st（mahjong/engine.js の状態そのまま）, cur, kifu, rec, t }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.mahjong.howto': 'はじめに（麻雀のしくみ）を見た（\'1\'）',
+      },
+      // counters, best and y/stat tallies only grow (max); settings are a whole value (newest)
+      sync: {
+        'kusoge.mahjong.save': { fields: { best: 'max', g: { each: { each: 'max' } }, stats: { each: 'max' }, y: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },

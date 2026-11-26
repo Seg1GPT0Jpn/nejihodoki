@@ -20,6 +20,7 @@ const load = fl => fl.map(f => ({ f, code: fs.readFileSync(path.join(ROOT, f), '
 const SRC = load(['colorcards/engine.js', 'colorcards/online.js', 'common/turnroom.js']);
 const SRC_RV = load(['reversi/engine.js', 'reversi/online.js', 'common/turnroom.js']);
 const SRC_GK = load(['gomoku/engine.js', 'gomoku/online.js', 'common/turnroom.js']);
+const SRC_MJ = load(['mahjong/ai.js', 'mahjong/engine.js', 'mahjong/online.js', 'common/turnroom.js']);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const FAST = { turnSec: 3, seatGrace: 5, hostGrace: 5, qmWait: 2, qmFill: 3, cpuMs: 120, dealMs: 300, awayMs: 250, dcMs: 600, lateMs: 250 };
 
@@ -171,6 +172,47 @@ class GkBot extends Bot {
   }
 }
 
+// 麻雀のボット：4人・手牌は本人にだけ見える。model（pd と自分の priv）から online.js の view で「できる手」を作り、あがれるならあがり、なければ切る・鳴かない
+class MjBot extends Bot {
+  async init() {
+    const { ports, ns } = this.env;
+    const ctx = this.ctx = makeCtx(SRC_MJ), fb = ctx.firebase;
+    this.app = fb.initializeApp({ apiKey: 'fake-api-key', projectId: 'demo-kobo', appId: '1:1:web:1', databaseURL: `http://127.0.0.1:${ports.database}/?ns=${ns}` });
+    this.app.auth().useEmulator(`http://127.0.0.1:${ports.auth}`, { disableWarnings: true });
+    this.uid = (await this.app.auth().signInAnonymously()).user.uid;
+    this.db = this.app.database();
+    this.E = ctx.MahjongEngine; this.O = ctx.MahjongOnline;
+    this.tr = ctx.KoboTurnRoom.create({ game: 'mahjong', headless: true, net: { db: this.db, uid: this.uid, TS: fb.database.ServerValue.TIMESTAMP }, host: this.O.host, seats: [4], seatsMax: 4, timing: this.env.timing || FAST,
+      cpuNames: k => 'CPU' + (k + 1), getCpu: () => 2, onModel: m => this.onModel(m), onPhase: (ph, info) => this.phases.push(ph + (info && info.detail ? ':' + info.detail : '')) });
+    return this;
+  }
+  onModel(m) {
+    if (this.dead) return;
+    this.last = m; this.models.push({ gn: m.gn, v: m.v, ph: m.ph, tn: m.tn, sl: m.sl, why: m.why, rs: m.rs, me: m.me, n: m.n, fresh: m.fresh });
+    let v;
+    try { v = this.O.view(m); } catch (e) { this.issues.push('view threw: ' + e.message); return; }
+    // 他家の手牌は見えない（枚数ぶんの -1）
+    if (m.me >= 0) v.st.hands.forEach((h, s) => { if (s !== m.me && h.some(x => x !== -1)) this.issues.push('a rival hand is visible (seat ' + s + ', v' + m.v + ')'); });
+    if (m.ph !== 'play' || m.me < 0 || m.tn !== m.me || this.frozen || this.stall || m.replaced) return;
+    const key = m.gn + ':' + m.v;
+    if (this.actFor === key) return;
+    this.actFor = key;
+    setTimeout(() => {
+      if (this.dead || this.frozen || this.stall || !this.last || this.last.v !== m.v) return;
+      let a;
+      if (v.st.phase === 'end') a = { t: 'nx' };
+      else {
+        const L = v.legal || [], pick = t => L.find(x => x.t === t);
+        a = pick('tsumo') || pick('ron') || pick('pass');
+        if (!a) { const d = L.filter(x => x.t === 'discard' && !x.riichi); a = d.length ? d[Math.floor(Math.random() * d.length)] : L[0]; }
+      }
+      if (!a) { this.issues.push('no legal move at v' + m.v); return; }
+      this.acts++;
+      this.tr.submit(this.O.toWire(a));
+    }, 20 + Math.random() * 60);
+  }
+}
+
 async function until(fn, ms, what) {
   const end = Date.now() + ms;
   while (Date.now() < end) { let v; try { v = fn(); } catch (e) { v = false; } if (v) return v; await sleep(80); }
@@ -306,6 +348,36 @@ async function reversi(env, rows, bots) {
 }
 
 // 五目ならべ：2人。コードの部屋で最後まで・もう一度（色が入れかわる）・ルールの穴・クイック・切れた席は CPU・時間切れ
+async function mahjong(env, rows, bots) {
+  const add = (name, pass, detail) => rows.push({ name: 'mahjong: ' + name, pass: !!pass, detail });
+  const [A, B, C, D, X] = await Promise.all(['Ma', 'Mb', 'Mc', 'Md', 'Mx'].map(n => new MjBot(env, n).init()));
+  bots.push(A, B, C, D, X);
+  await A.tr.begin('host', { n: 4, fill: false, nick: 'Ma' });
+  await until(() => A.tr._S.code, 8000, 'room code');
+  const code = A.tr._S.code;
+  await Promise.all([B, C, D].map(b => b.tr.begin('join', { code, nick: b.nick })));
+  await until(() => [A, B, C, D].every(b => b.last && b.last.ph === 'play'), 20000, 'all four see the game');
+  const ms = [A, B, C, D].map(b => b.last);
+  add('four seats, one room, game 1, all different seats', ms.every(m => m.rid === ms[0].rid && m.n === 4 && m.gn === 1) && new Set(ms.map(m => m.me)).size === 4 && ms.every(m => m.me >= 0), ms.map(m => m.me).join());
+  const rid = ms[0].rid, R = `tr/mahjong/rooms/${rid}`;
+  const pr = [];
+  pr.push(await B.probe('a guest reads another guest\'s hand', db => db.ref(`${R}/priv/${C.uid}`).once('value')));
+  pr.push(await B.probe('a guest reads all hands', db => db.ref(`${R}/priv`).once('value')));
+  pr.push(await B.probe('a guest writes the public state', db => db.ref(`${R}/pub/ph`).set('end')));
+  pr.push(await B.probe('a guest moves for the host', db => db.ref(`${R}/act/${A.uid}`).set({ q: Date.now() + 5, v: 1, a: { t: 'tsumo' } })));
+  pr.push(await X.probe('an outsider takes a seat after the start', db => db.ref(`${R}/seats/1`).set({ u: X.uid, n: 'Rx', j: X.ctx.firebase.database.ServerValue.TIMESTAMP })));
+  pr.push(await X.probe('an outsider reads the room list', db => db.ref('tr/mahjong/rooms').once('value')));
+  for (const p of pr) add('probe: ' + p.name, p.pass, p.detail);
+  await until(() => [A, B, C, D].every(b => b.final(1)), 240000, 'game 1 over');
+  const fin = [A, B, C, D].map(b => b.final(1));
+  add('game 1 ends with the same result on all four pages', fin.every(f => JSON.stringify(f.rs) === JSON.stringify(fin[0].rs)) && fin[0].why === 'w', JSON.stringify(fin[0].rs));
+  add('the ranks are 1..4 (ties may share)', fin[0].rs && fin[0].rs.r && Object.values(fin[0].rs.r).length === 4, JSON.stringify(fin[0].rs));
+  add('no page ever saw a rival hand, and every page acted', [A, B, C, D].every(b => !b.issues.length && b.acts > 5), [A, B, C, D].map(b => b.issues.slice(0, 2).join('; ') + '/' + b.acts).join(' | '));
+  for (const b of [D, C, B, A]) { b.tr.leave(); await sleep(150); }
+  await sleep(1800);
+  add('the room and the code are gone after everybody left', !Object.keys(await ownerGet(env, 'tr/mahjong/rooms', true)).includes(rid) && !Object.keys(await ownerGet(env, 'tr/mahjong/codes', true)).includes(code));
+}
+
 async function gomoku(env, rows, bots) {
   const add = (name, pass, detail) => rows.push({ name: 'gomoku: ' + name, pass: !!pass, detail });
   const [A, B, X] = await Promise.all(['Ga', 'Gb', 'Gx'].map(n => new GkBot(env, n).init()));
@@ -523,8 +595,8 @@ function normalize(bot) {
   const out = [];
   for (const e of bot.log) {
     let p = e.path.split(bot.uid).join('{me}');
-    p = p.replace(/^(tr\/(?:colorcards|reversi|gomoku)\/rooms)\/[^/]+/, '$1/$room').replace(/\/codes\/\d{6}$/, '/codes/$code').replace(/\/seats\/\d$/, '/seats/$i').replace(/\/on\/[\w-]{20,}$/, '/on/{other}').replace(/\/priv\/[\w-]{20,}$/, '/priv/{other}');
-    p = p.replace(/^tr\/(?:colorcards|reversi|gomoku)\//, 'tr/$game/');
+    p = p.replace(/^(tr\/(?:colorcards|reversi|gomoku|mahjong)\/rooms)\/[^/]+/, '$1/$room').replace(/\/codes\/\d{6}$/, '/codes/$code').replace(/\/seats\/\d$/, '/seats/$i').replace(/\/on\/[\w-]{20,}$/, '/on/{other}').replace(/\/priv\/[\w-]{20,}$/, '/priv/{other}');
+    p = p.replace(/^tr\/(?:colorcards|reversi|gomoku|mahjong)\//, 'tr/$game/');
     out.push({ op: e.op, path: p, res: e.res, err: e.err, key: e.op + ' ' + p, bot: bot.nick });
   }
   return out;
@@ -541,8 +613,8 @@ async function runTurnroomBots(T, opt = {}) {
   const env = { ports: T.ports, ns: T.ns, timing: FAST };
   const rows = [], bots = [];
   const info = { steps: [] };
-  const names = opt.only || ['room4', 'quick', 'disconnect', 'timeout', 'hostleave', 'guestleave', 'reversi', 'gomoku'];
-  const fns = { room4, quick, disconnect, timeout, hostleave, guestleave, reversi, gomoku };
+  const names = opt.only || ['room4', 'quick', 'disconnect', 'timeout', 'hostleave', 'guestleave', 'reversi', 'gomoku', 'mahjong'];
+  const fns = { room4, quick, disconnect, timeout, hostleave, guestleave, reversi, gomoku, mahjong };
   let error = null;
   for (const n of names) {
     if (opt.log) opt.log({ group: 'client', name: 'running turnroom bots: ' + n + '…' });
@@ -564,7 +636,7 @@ async function runTurnroomBots(T, opt = {}) {
   out.push({ group: 'client:colorcards-bots', name: 'no write left unanswered (apart from the bots that vanished)', expect: '0', got: String(pend.length), pass: true, detail: pend.length ? pend.slice(0, 3).map(o => o.op + ' ' + o.path).join(' / ') : undefined });
   const inv = {}; for (const o of ops) { const k = o.key; inv[k] = inv[k] || { op: o.op, path: o.path, keys: '', n: 0, res: {} }; inv[k].n++; inv[k].res[o.res] = (inv[k].res[o.res] || 0) + 1; }
   // leftovers
-  const cnt = async k => (await Promise.all(['colorcards', 'reversi', 'gomoku'].map(g => ownerGet(env, `tr/${g}/${k}`, true)))).reduce((a, o) => a + Object.keys(o).length, 0);
+  const cnt = async k => (await Promise.all(['colorcards', 'reversi', 'gomoku', 'mahjong'].map(g => ownerGet(env, `tr/${g}/${k}`, true)))).reduce((a, o) => a + Object.keys(o).length, 0);
   const left = { rooms: await cnt('rooms'), queue: await cnt('queue'), codes: await cnt('codes') };
   out.push({ group: 'client:colorcards-bots', name: 'nothing left in tr/*/queue and codes', expect: '0', got: String(left.queue + left.codes), pass: left.queue + left.codes === 0, detail: JSON.stringify(left) });
   for (const b of bots) await b.close();

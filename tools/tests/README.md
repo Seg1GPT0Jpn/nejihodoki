@@ -77,6 +77,11 @@ node tools/tests/unit/shmup-bot.test.js       # ペーパーウイングの自�
 node tools/tests/fishing-play.js              # のんびり釣りの通し（本物のクリック・キーで投げる・合わせる・巻く・ずかん・お店・オーダー・大会・水そう・保存）
 node tools/tests/unit/fishing-engine.test.js  # のんびり釣りの中身（毎回同じ結果・魚の出かた・ファイト・ずかんのビット列・るすの間の釣り・大会）
 node tools/tests/unit/fishing-entries.test.js # のんびり釣りの登録の貼り付け原稿と common/games.js が合っているか
+node tools/tests/mahjong-play.js              # 麻雀工房の通し（本物のクリック・タップで、入門・本格麻雀・鳴き・リーチ・あがり・流局・れんしゅう・棋譜・保存・オンライン2ページ）
+node tools/tests/unit/mahjong-shanten.test.js # 麻雀工房のシャンテン数（全探索との照合・待ち牌）
+node tools/tests/unit/mahjong-engine.test.js  # 麻雀工房の中身（牌山・役・符と点数・フリテン・流局・ウマ/オカ・毎回同じ結果）
+node tools/tests/unit/mahjong-ai.test.js      # 麻雀工房のCPU（3段階の強さの差・ヒント・1手の時間）
+node tools/tests/unit/mahjong-online.test.js  # 麻雀工房のオンライン（ホストのアダプター：pd/priv が rules の形に収まる・他家の手牌が出ない・局の進行）
 node tools/tests/manabi-play.js               # まなびの工房の通し（本物のクリック・入力で、ホーム・レッスン・問題の型・復習・再読み込み・模試・キー・数式・画面サイズ・ダーク。KaTeX は `tools/tests/.cache/katex-0.16.9/` の写しを返す（なければ初回に curl で取る。取れなければ数式は TeX のまま確かめる）。`node tools/tests/manabi-play.js home,lesson` のように絞れる）
 node tools/tests/unit/manabi-engine.test.js   # まなびの工房の中身（答え合わせ・日本語の正規化・ライトナー・レッスンの決まった結果・保存とストリーク・getQuiz）
 node tools/tests/unit/manabi-gen.test.js      # 自動でつくる問題と特別コース（答えはコードで計算し直して確かめる）

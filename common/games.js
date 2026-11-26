@@ -1078,6 +1078,34 @@
         'kusoge.fishing.save': { fields: { zc: 'max', z: 'arrBor', b: { each: 'max' }, coins: 'max', g: { fields: { r: 'max', e: 'max', n: 'max', u: 'bor', a: 'arrMax', sb: 'newest', sl: 'newest' }, rest: 'newest' }, lm: 'bor', q: 'newest', tn: { fields: { w: 'max', bt: 'minPos' }, rest: 'newest' }, aq: { fields: { d: 'bor' }, rest: 'newest' }, stats: { each: 'max' }, set: 'newest', ts: 'max', tut: 'max' }, rest: 'newest' },
       },
     },
+    {
+      id: 'mahjong', order: 35, path: 'mahjong/', added: '2026-11-26',
+      title: { ja: '麻雀工房', en: 'Mahjong Workshop' },
+      short: { ja: '麻雀工房', en: 'Mahjong Workshop' },
+      desc: { ja: 'リーチ麻雀をCPUと、または4人オンラインで。はじめてなら「麻雀入門」（1局のミニ麻雀・かんたんな役だけ・ヒントとシャンテン表示・あがりの解説）とチュートリアルから。本格麻雀は東風戦・東南戦で、全部の役と符計算、チー・ポン・カン、フリテン、流局、赤ドラ・裏ドラ、ウマ・オカ。CPUは3段階。棋譜の再生、れんしゅう（ヒント・もどす）つき。広告も賭けもありません。', en: 'Riichi mahjong against CPUs or in 4-seat online matches. New to it? Start with the tutorial and Beginner mahjong (a one-hand mini game with simple yaku, hints, a shanten display and a win explanation). The full game covers East and Hanchan with every yaku, fu/han scoring, chii/pon/kan, furiten, draws, red fives, ura dora and uma/oka. Three CPU levels, kifu replay and a practice mode with hints and undo. No ads, no gambling.' },
+      label: { ja: 'リーチ麻雀', en: 'Riichi mahjong' },
+      genres: ['board'], tags: ['2d', 'turn', 'versus', 'online', 'strategy'],
+      keywords: { ja: ['麻雀', 'リーチ麻雀', 'マージャン', '牌', '役', '東風', '東南', 'ミニ麻雀', '入門', 'シャンテン', 'チー', 'ポン', 'カン', 'オンライン対戦'], en: ['mahjong', 'riichi', 'tiles', 'yaku', 'tonpuusen', 'hanchan', 'beginner', 'shanten', 'chii', 'pon', 'kan', 'online', 'cpu'] },
+      icon: 'img/icons/mahjong.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#14503b"/><g stroke="#fff" stroke-opacity=".1"><path d="M0 18h72M0 36h72M0 54h72M18 0v72M36 0v72M54 0v72"/></g><g transform="rotate(-12 24 40)"><rect x="9" y="16" width="26" height="36" rx="4" fill="#e0d8c4"/><rect x="9" y="14" width="26" height="35" rx="4" fill="#fbf7ea" stroke="#b9ad90"/><text x="22" y="32" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="15" fill="#1f2a3d">五</text><text x="22" y="46" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="11" fill="#c5352b">萬</text></g><g transform="rotate(10 50 38)"><rect x="37" y="14" width="26" height="36" rx="4" fill="#e0d8c4"/><rect x="37" y="12" width="26" height="35" rx="4" fill="#fbf7ea" stroke="#b9ad90"/><circle cx="50" cy="24" r="6.5" fill="#fff" stroke="#245fa8" stroke-width="2"/><circle cx="50" cy="24" r="2" fill="#c5352b"/><circle cx="44" cy="37" r="4.5" fill="#fff" stroke="#23865a" stroke-width="1.8"/><circle cx="56" cy="37" r="4.5" fill="#fff" stroke="#c5352b" stroke-width="1.8"/></g><rect x="22" y="54" width="28" height="9" rx="3" fill="#fff" stroke="#c33" stroke-width="1.2"/><circle cx="36" cy="58.5" r="2.4" fill="#c33"/></svg>',
+      thumb: 'img/thumbs/mahjong.webp', thumb2x: 'img/thumbs/mahjong@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.mahjong.run, this device only); online 4-seat matches (host-authoritative, hidden hands in tr/mahjong/rooms/*/priv) run through common/turnroom.js. Online results never feed the ranking (stats only)
+      flags: { ranking: true, achievements: true, daily: false, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ranking = the best final score (points) in a full East/Hanchan game against CPUs; beginner mini games, practice, tutorial and online count nothing. 4 players x 25000 = 100000 in play; the cap leaves room for tobi-free blowouts
+      score: { unit: { ja: '点', en: ' pts' }, fmt: { ja: '{n}点', en: '{n} pts' }, order: 'desc', cap: 150000, maxRate: null },
+      rankSource: { key: 'kusoge.mahjong.save', paths: ['best'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.mahjong.save', paths: ['best'], agg: 'first', min: 1, num: true, tpl: { ja: '{n}点', en: '{n} pts' } },
+      keys: {
+        'kusoge.mahjong.save': '{ v:1, best（本格麻雀の最高の最終持ち点＝ランキング）, g:{ mini|east|hanchan:{ p（遊んだ回数）, w（1位の回数）, r1,r2,r3,r4（順位の回数）, b（最高の持ち点） } }, stats:{ games, hands, agari, tsumo, ron, deal（放銃）, riichiWin, mangan, haneman, baiman, yakuman, mangan+, maxHan, maxPts, calls, kan, chankan, draws, tenpaiDraw, nagashi, dealerWin, openWin, top, hardTop, normalTop, tobiMade, tobiHit, miniHands, miniWins, hints, undos, tutDone, onl, onw }, y:{ "<役の id>": あがった回数 }, set:{ lv, mode, aka, ura, ippatsu, kuitan, tobi, west, oka, uma, hint, shanten, onetap, fast, mini }, tut }',
+        'kusoge.mahjong.run': 'とちゅうの対局（毎手自動保存）{ v:1, mode, practice, levels, st（mahjong/engine.js の状態そのまま）, cur, kifu, rec, t }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.mahjong.howto': 'はじめに（麻雀のしくみ）を見た（\'1\'）',
+      },
+      // counters, best and y/stat tallies only grow (max); settings are a whole value (newest)
+      sync: {
+        'kusoge.mahjong.save': { fields: { best: 'max', g: { each: { each: 'max' } }, stats: { each: 'max' }, y: { each: 'max' }, set: 'newest', tut: 'max' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1576,6 +1604,30 @@
       { id: 'fishing.orders10', tier: 2, icon: 'star', title: { ja: 'オーダー名人', en: 'Order Taker' }, desc: { ja: 'オーダーを10回達成する', en: 'Complete 10 orders' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.orders' }, gte: 10 } },
       { id: 'fishing.tour', tier: 3, icon: 'trophy', title: { ja: '大会で優勝', en: 'Tournament Winner' }, desc: { ja: '週の大会で1位になる', en: 'Win a weekly tournament' }, when: { rec: { key: 'kusoge.fishing.save', path: 'tn.w' }, gte: 1 } },
       { id: 'fishing.away', tier: 1, icon: 'check', title: { ja: 'おかえりなさい', en: 'Welcome Back' }, desc: { ja: 'るすの間に釣れた魚を受け取る', en: 'Collect fish caught while you were away' }, when: { rec: { key: 'kusoge.fishing.save', path: 'stats.away' }, gte: 1 } },
+    ],
+    mahjong: [
+      { id: 'mahjong.first', tier: 1, icon: 'check', title: { ja: 'はじめてのあがり', en: 'First Win' }, desc: { ja: 'どれかのゲームで1回あがる', en: 'Win a hand in any mode' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.agari' }, gte: 1 } },
+      { id: 'mahjong.tut', tier: 1, icon: 'check', title: { ja: '牌をならべて', en: 'Learning the Tiles' }, desc: { ja: 'チュートリアルを終える', en: 'Finish the tutorial' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.tutDone' }, gte: 1 } },
+      { id: 'mahjong.mini', tier: 1, icon: 'star', title: { ja: '入門の一局', en: 'Beginner Hand' }, desc: { ja: '麻雀入門でCPUに勝つ', en: 'Win a Beginner mini game' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.miniWins' }, gte: 1 } },
+      { id: 'mahjong.tsumo', tier: 1, icon: 'star', title: { ja: 'ツモ！', en: 'Self-Draw' }, desc: { ja: 'ツモであがる', en: 'Win by tsumo' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.tsumo' }, gte: 1 } },
+      { id: 'mahjong.ron', tier: 1, icon: 'star', title: { ja: 'ロン！', en: 'Ron!' }, desc: { ja: 'ロンであがる', en: 'Win by ron' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.ron' }, gte: 1 } },
+      { id: 'mahjong.riichi', tier: 1, icon: 'star', title: { ja: 'リーチ一発勝負', en: 'Riichi Win' }, desc: { ja: 'リーチをかけてあがる', en: 'Win after declaring riichi' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.riichiWin' }, gte: 1 } },
+      { id: 'mahjong.hint', tier: 1, icon: 'check', title: { ja: 'ヒントに頼る', en: 'Asking for Advice' }, desc: { ja: 'ヒントを使って1局あそぶ', en: 'Use hints in a game' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.hints' }, gte: 1 } },
+      { id: 'mahjong.call', tier: 1, icon: 'check', title: { ja: '鳴いて進める', en: 'Calling Tiles' }, desc: { ja: 'チーかポンをする', en: 'Make a chii or pon' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.calls' }, gte: 1 } },
+      { id: 'mahjong.kan', tier: 2, icon: 'star', title: { ja: 'カン！', en: 'Kan!' }, desc: { ja: 'カンをする', en: 'Declare a kan' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.kan' }, gte: 1 } },
+      { id: 'mahjong.tanyao', tier: 1, icon: 'star', title: { ja: 'タンヤオの基本', en: 'Simples Only' }, desc: { ja: 'タンヤオであがる', en: 'Win with tanyao' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'y.tanyao' }, gte: 1 } },
+      { id: 'mahjong.pinfu', tier: 2, icon: 'star', title: { ja: 'ピンフ名人', en: 'Pinfu Player' }, desc: { ja: 'ピンフであがる', en: 'Win with pinfu' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'y.pinfu' }, gte: 1 } },
+      { id: 'mahjong.chiitoi', tier: 2, icon: 'star', title: { ja: '七つのペア', en: 'Seven Pairs' }, desc: { ja: '七対子であがる', en: 'Win with chiitoitsu' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'y.chiitoi' }, gte: 1 } },
+      { id: 'mahjong.mangan', tier: 2, icon: 'star', title: { ja: '満貫！', en: 'Mangan' }, desc: { ja: '満貫以上の手であがる', en: 'Win a mangan or better' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.mangan+' }, gte: 1 } },
+      { id: 'mahjong.yakuman', tier: 3, icon: 'trophy', title: { ja: '役満', en: 'Yakuman' }, desc: { ja: '役満であがる', en: 'Win a yakuman' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.yakuman' }, gte: 1 } },
+      { id: 'mahjong.east', tier: 2, icon: 'trophy', title: { ja: '東風を制す', en: 'East Winner' }, desc: { ja: '東風戦で1位になる', en: 'Finish 1st in an East game' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'g.east.r1' }, gte: 1 } },
+      { id: 'mahjong.hanchan', tier: 2, icon: 'trophy', title: { ja: '東南の覇者', en: 'Hanchan Winner' }, desc: { ja: '東南戦で1位になる', en: 'Finish 1st in a Hanchan' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'g.hanchan.r1' }, gte: 1 } },
+      { id: 'mahjong.hard', tier: 3, icon: 'trophy', title: { ja: 'つよいCPUに勝つ', en: 'Beat the Hard CPUs' }, desc: { ja: 'つよいCPU3人を相手に本格麻雀で1位になる', en: 'Finish 1st in a full game against three Hard CPUs' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.hardTop' }, gte: 1 } },
+      { id: 'mahjong.wins10', tier: 2, icon: 'star', title: { ja: 'あがり10回', en: 'Ten Wins' }, desc: { ja: '合わせて10回あがる', en: 'Win 10 hands in total' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.agari' }, gte: 10 } },
+      { id: 'mahjong.wins100', tier: 3, icon: 'trophy', title: { ja: 'あがり100回', en: 'One Hundred Wins' }, desc: { ja: '合わせて100回あがる', en: 'Win 100 hands in total' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.agari' }, gte: 100 } },
+      { id: 'mahjong.tobi', tier: 2, icon: 'star', title: { ja: 'トビ！', en: 'Bust a Rival' }, desc: { ja: '相手を0点未満にして終わらせる', en: 'Send a CPU below zero and end the game' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.tobiMade' }, gte: 1 } },
+      { id: 'mahjong.nagashi', tier: 3, icon: 'star', title: { ja: '流し満貫', en: 'Nagashi Mangan' }, desc: { ja: '流し満貫を決める', en: 'Score a nagashi mangan' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.nagashi' }, gte: 1 } },
+      { id: 'mahjong.online', tier: 2, icon: 'star', title: { ja: '4人でオンライン', en: 'Online Table' }, desc: { ja: 'オンライン対戦を最後まで遊ぶ', en: 'Finish an online match' }, when: { rec: { key: 'kusoge.mahjong.save', path: 'stats.onl' }, gte: 1 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];
