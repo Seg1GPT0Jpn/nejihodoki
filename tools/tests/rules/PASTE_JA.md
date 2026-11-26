@@ -277,3 +277,8 @@ Realtime Database：
 - Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'wordwolf': 500`＝ひとりで遊んだ回数＋勝った回数×2）、プレイ回数 `okPlays()` の1項、同期する保存のキー `kusoge~wordwolf~save` の形の確認（`okGames` に1項）です。旧ランキング（`okCap`）には入れません。
 - Realtime Database で変わったのは次の点です。(1) `"tr"` の許可するゲームの一覧に `wordwolf` を足しました（`^(colorcards|reversi|gomoku|chess|mahjong|orchestra|wordwolf)$`、19か所）。(2) ワードウルフは**3〜8席**なので、席の番号を `0〜7`、`meta.n`・`queue.k` の上限を 8（**`wordwolf` だけ**。ほかのゲームは今までどおり 4 まで）、`pub.sl` を最大8文字、`tn`・`pu`・`ev` の席の番号・`rs.r`（1〜8）・`rs.w`・手の `k/w/x` を 0〜7 にしました。席にいる人かどうかの確認（`on`・`act`・`rm`）に席 4〜7 を足しました。(3) ワードウルフは `tr/wordwolf/…` を使い、ウルフ・みんなのことば・逆転の答えは、ホストのメモリと、本人だけが読める `priv/{uid}.x.s`（自分のことばの番号）だけにあり、結果が出るまで `pd` には出ません。手は `{ t: 'hn', c }`（ヒントカード）・`{ t: 'vt', c, k }`（投票。ウルフが2人のとき k に2人目）・`{ t: 'gs', c }`（逆転の答え）で、自由な文字は送れません。
 - 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`、`node tools/tests/rules/run.js --only bots`（`rtdb:tr-wordwolf` の許可と拒否・ボット4人のワードウルフの通しを含む）。貼ったあと本番に対して `--live` を流してください。
+
+## 新作「ぽかぽか島スポーツ」（sports）を足したとき（2026-11）
+- **Firestore のルールだけ**貼り直してください（上の「1. Firestore のルール」と同じ手順で、新しい `firestore.rules` の全文）。**貼り直さないと、ぽかぽか島スポーツだけ、ランキングに載らず、プレイ回数も数えられず、同期する保存も拒否されます**（ほかのゲームは今までどおり遊べます）。Realtime Database は変わりません（オンライン対戦はありません）。
+- Firestore で変わったのは、ゲームの一覧 `games()` と上限 `caps()`（`'sports': 999`＝★の合計。最大99）、プレイ回数 `okPlays()` の1項、同期する保存のキー `kusoge~sports~save` の形の確認（`okGames` に1項）です。旧ランキング（`okCap`）には入れません。
+- 貼る前の確認：`node tools/tests/rules/run.js --only spec,rest`（ぽかぽか島スポーツの保存・プレイ回数を含む）。貼ったあと本番に対して `--live` を流してください。

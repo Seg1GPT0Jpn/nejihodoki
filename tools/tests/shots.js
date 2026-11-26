@@ -42,6 +42,8 @@ const RECIPES = {
   mahjong: [{ query: '?debug', eval: 'window.__mahjong && __mahjong.thumbScene()' }],
   akin: [{ query: '?debug', eval: 'window.__akin && __akin.thumbScene()' }],
   wordwolf: [{ query: '?debug', eval: 'window.__wordwolf && __wordwolf.thumbScene()' }],
+  puff: [{ query: '?debug', eval: 'window.__puff && __puff.thumbScene()' }],
+  sports: [{ query: '?debug', eval: 'window.__sports && __sports.thumbScene()' }],
   chess: [{ query: '?debug', eval: 'window.__chess && __chess.thumbScene()' }],
   // the home path with some progress: a streak, XP and crowns (the ?debug hook sets the save and redraws; no app code needed)
   manabi: [{ query: '?debug', eval: "window.__manabi && (__manabi.setSave({ v: 1, xp: 1250, d: [20400, 20401, 20402, 20403, 20404, 20405, 20406, 20407], g: { 20407: 30 }, goal: 20, st: { q: 150, ok: 127, ls: 12, mk: 1, best: 8 }, gm: 40, hr: 5 }), __manabi.setToday(20407), __manabi.goHome(), __manabi.tab('profile'))" }],

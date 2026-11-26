@@ -86,6 +86,13 @@ node tools/tests/unit/chess-engine.test.js   # チェス工房の中身（perft�
 node tools/tests/unit/chess-ai.test.js       # チェス工房のCPU（メイト探索・6段階の強さの差・ヒントの説明・時間の上限・定跡）
 node tools/tests/unit/chess-puzzles.test.js  # チェス工房の問題集120問（答えが1つだけ・メイトの長さ・毎日の5問）。作り直すのは `node chess/tools/gen-puzzles.js`（公開後は作り直さない）
 node tools/tests/unit/chess-online.test.js   # チェス工房のオンライン（ホストのアダプター：pd/act が rules の形に収まる・投了/引き分け/待った・時計・CPU の席・database.rules.json の許可の数）
+node tools/tests/puff-play.js                  # ふわふわぱふの通し（本物のキー・タッチ・ゲームパッドで走る・ふわっと6回・すいこむ→のむ→コピー→わざ→すてる・保存した証明の入力を全25ステージ再生してメダル3つ＋ゴール・ふたりプレイ・一時停止・保存と再読み込み・英語・画面のむき（強制よこ）・画面サイズ320px〜タブレット×ja/en）
+node tools/tests/unit/puff-engine.test.js     # ふわふわぱふの中身（毎回同じ・ふわっ・すいこみ→コピーの状態遷移・8つのわざとしかけ・敵ごとの動き・体力/やられない/穴/水・チェックポイント・ボスの弱点とフェーズ・ふたりプレイ）
+node tools/tests/unit/puff-levels.test.js     # ふわふわぱふのステージ（25ステージの形・8つのわざが全部必要・ただ飛ぶだけでは通れない・ボスの弱点の敵・**全ステージの証明の入力を再生してメダル3つ＋ゴール**・証明が最新か）
+node tools/tests/sports-play.js              # ぽかぽか島スポーツの通し（島・種目いちらん・カード・あそびかた・11種目を本物のマウス・タッチ・キーで・ふたりプレイ・遊覧飛行・英語・320px・横向き・タブレット・保存）
+node tools/tests/unit/sports-engine.test.js  # ぽかぽか島スポーツの中身（★のしきい値・保存・デイリー・ボウリング／卓球／テニスの得点・11種目の物理と、ボットで★3に届く／でたらめでは届かないこと）
+node tools/tests/unit/sports-world.test.js   # 3Dの島の中身（種つきの高さの地図・ランドマーク・飛行機・リング）
+node tools/puff-solve.js --all --write        # 証明（puff/proofs.js）を作り直す（ステージやエンジンを変えたとき。約3秒。`--show 1-2` で地図を表示）
 node tools/tests/wordwolf-play.js             # ワードウルフの通し（本物のクリックで、ひとり・1台をまわす4人・ウルフ2人＋知っている・英語・画面サイズ・オンライン（エミュレーターで2ページ＋CPU）。--no-online で省く）
 node tools/tests/unit/wordwolf-words.test.js  # ワードウルフのことば（300組以上・1語15個以上のヒント・ヒントにことばが漏れない・むずかしさ3段）
 node tools/tests/unit/wordwolf-engine.test.js # ワードウルフの中身（ウルフ1〜2人・投票と決選・点数・CPU の性格とヒント・うたがい度）

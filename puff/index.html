@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script src="../common/orient.js"></script>
+<script>window.KoboOrient && KoboOrient.boot({ key: 'kusoge.puff.ori' });</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ふわふわぱふ</title>
+<meta name="theme-color" content="#2a2150">
+<meta name="description" content="ふわふわの雲の子「ぱふ」で、敵をすいこんでコピー！ ほのお・でんき・こおりなど8つのわざで しかけをとき、5つの世界とボスをめぐる横スクロールアクション。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ふわふわぱふ">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #1d1a3a; --kb-surface: #2a2650; --kb-surface-2: #38336a; --kb-sunken: #141230; --kb-line: #54508c;
+  --kb-ink: #f3f1e8; --kb-dim: #b7c4d1;
+  --kb-accent: #ff9ac8; --kb-accent-ink: #3a0a20; --kb-accent-text: #ffc4de; --kb-accent-soft: rgba(255, 210, 63, .16);
+  --kb-scrim: rgba(8, 14, 22, .74); --kb-focus: #8fd0ff;
+  --hp-panel: rgba(255, 255, 255, .07); --hp-card: linear-gradient(#27394d, #1f2f40); --hp-go: linear-gradient(#ffc4de, #f5b324); --hp-go-shadow: #8a5f05;
+  --hp-good: #7be0a0; --hp-bad: #ff8f80; --hp-star: #ffc83d; --hp-star-off: #4a5d72; --hp-key: rgba(255, 255, 255, .13); --hp-key-on: rgba(255, 210, 63, .5);
+  --hp-title: linear-gradient(90deg, #ffc4de, #ffb347 50%, #ff7a9a);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #e9f3fb; --kb-surface: #ffffff; --kb-surface-2: #d9e9f6; --kb-sunken: #cfe0ee; --kb-line: #b4cadd;
+    --kb-ink: #23313f; --kb-dim: #5b6f82;
+    --kb-accent: #c78900; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5b00; --kb-accent-soft: rgba(199, 137, 0, .12);
+    --kb-scrim: rgba(35, 49, 63, .45); --kb-focus: #1f6fbf;
+    --hp-panel: rgba(35, 49, 63, .06); --hp-card: linear-gradient(#ffffff, #eef6fc); --hp-go: linear-gradient(#f0b72f, #c78900); --hp-go-shadow: #7d5400;
+    --hp-good: #2c8a52; --hp-bad: #c2412a; --hp-star: #d08a00; --hp-star-off: #c3d3e0; --hp-key: rgba(35, 49, 63, .12); --hp-key-on: rgba(199, 137, 0, .45);
+    --hp-title: linear-gradient(90deg, #a56a00, #d08a00 50%, #d1456b);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #e9f3fb; --kb-surface: #ffffff; --kb-surface-2: #d9e9f6; --kb-sunken: #cfe0ee; --kb-line: #b4cadd;
+  --kb-ink: #23313f; --kb-dim: #5b6f82;
+  --kb-accent: #c78900; --kb-accent-ink: #ffffff; --kb-accent-text: #8a5b00; --kb-accent-soft: rgba(199, 137, 0, .12);
+  --kb-scrim: rgba(35, 49, 63, .45); --kb-focus: #1f6fbf;
+  --hp-panel: rgba(35, 49, 63, .06); --hp-card: linear-gradient(#ffffff, #eef6fc); --hp-go: linear-gradient(#f0b72f, #c78900); --hp-go-shadow: #7d5400;
+  --hp-good: #2c8a52; --hp-bad: #c2412a; --hp-star: #d08a00; --hp-star-off: #c3d3e0; --hp-key: rgba(35, 49, 63, .12); --hp-key-on: rgba(199, 137, 0, .45);
+  --hp-title: linear-gradient(90deg, #a56a00, #d08a00 50%, #d1456b);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+header { flex: none; display: flex; align-items: center; gap: 4px; padding: 3px 6px 0; }
+body.playing header { display: none; }
+h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-display); background: var(--hp-title); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--hp-panel); border: 1px solid var(--kb-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+#stage { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #79c8ff; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+#pauseBtn { position: absolute; top: calc(6px + var(--kb-sat) * 0); right: 8px; z-index: 5; width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(255,255,255,.55); background: rgba(20,30,45,.45); color: #fff; display: none; place-items: center; padding: 0; cursor: pointer; }
+body.playing #pauseBtn { display: grid; }
+#pauseBtn svg { width: 22px; height: 22px; }
+#toastbar { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); z-index: 6; padding: 6px 14px; border-radius: 999px; background: rgba(20,30,45,.8); color: #fff; font: 800 13px var(--kb-font-body); pointer-events: none; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
+/* touch controls */
+@media (orientation: landscape) and (max-height: 560px) {
+}
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .2s; touch-action: pan-y; }
+.panel { width: 100%; max-width: 480px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--hp-card); border: 1px solid var(--kb-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); animation: rise .25s; }
+.panel > * { flex: none; }
+.panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font: 400 22px var(--kb-font-display); color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel h2.logo { background: var(--hp-title); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 27px; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--hp-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 4px 0 var(--hp-go-shadow); text-decoration: none; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--hp-go-shadow); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--hp-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--kb-line); font-size: 13.5px; min-height: 44px; }
+.btn.link { background: transparent; color: var(--kb-dim); box-shadow: none; font-size: 13.5px; min-height: 44px; margin-top: 2px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.qm { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; box-sizing: border-box; margin-top: 6px; padding: 6px 12px; border-radius: 16px; border: 1.5px solid var(--kb-accent); background: var(--kb-accent-soft); color: var(--kb-ink); font: 800 14px var(--kb-font-body); text-align: left; cursor: pointer; }
+.qm:first-child { margin-top: 0; } .qm b { display: block; font-size: 15px; } .qm small { display: block; font-weight: 500; font-size: 11.5px; color: var(--kb-dim); }
+.qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); }
+.qm.plain { border-color: var(--kb-line); background: var(--hp-panel); }
+.stars { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
+.stars svg { width: 46px; height: 46px; } .stars .on { fill: var(--hp-star); stroke: #8a5600; } .stars .off { fill: var(--hp-star-off); stroke: transparent; }
+.stars svg.pop { animation: starpop .5s ease-out both; }
+.big { font: 400 28px var(--kb-font-display); line-height: 1.15; color: var(--kb-ink); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6px 6px; text-align: left; font-size: 13px; font-weight: 800; }
+.kv span:nth-child(odd) { color: var(--kb-dim); font-weight: 500; } .kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.newrec { display: inline-block; margin: 2px 0; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--hp-panel); border: 1px solid var(--kb-line); flex-wrap: wrap; }
+.opt { flex: 1 1 0; min-width: 40px; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 13px var(--kb-font-body); cursor: pointer; padding: 2px 4px; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.og { margin: 8px 0 0; text-align: left; } .og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 3px 2px; }
+.howto { max-width: 480px; text-align: left; } .howto h2 { text-align: center; }
+.howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); }
+.howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes starpop { from { transform: scale(.3) rotate(-30deg); opacity: 0; } 60% { transform: scale(1.25) rotate(8deg); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .panel, .overlay, .stars svg.pop { animation: none !important; } }
+@media (max-width: 379px) { h1 { font-size: 15px; } }
+#landTip .btn { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.55); }
+body.thumb header, body.thumb #touch, body.thumb #pauseBtn { display: none !important; }
+
+/* puff: touch controls, owbar, ability chip */
+#owbar { flex: none; display: none; align-items: center; gap: 8px; padding: 6px 10px 8px; } body.ow #owbar { display: flex; }
+#owbar .btn { width: auto; margin: 0; flex: none; min-width: 84px; min-height: 44px; }
+#owHint { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; color: var(--kb-ink); }
+#owHint small { display: block; font-weight: 500; color: var(--kb-dim); font-size: 11.5px; }
+#touch { flex: none; display: none; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 14px 10px; touch-action: none; --u: 1; }
+body.touch.playing #touch { display: flex; }
+#stick { position: relative; flex: none; width: calc(116px * var(--u)); height: calc(116px * var(--u)); border-radius: 50%; border: 2px solid var(--kb-line); background: var(--hp-key); touch-action: none; }
+#knob { position: absolute; left: 50%; top: 50%; width: 46%; height: 46%; margin: -23% 0 0 -23%; border-radius: 50%; background: var(--hp-key-on); border: 2px solid var(--kb-accent); pointer-events: none; transition: transform .04s; }
+#stick i { position: absolute; font-style: normal; font-size: 12px; color: var(--kb-dim); pointer-events: none; }
+#stick .u { left: 50%; top: 4px; transform: translateX(-50%); } #stick .d { left: 50%; bottom: 4px; transform: translateX(-50%); } #stick .l { left: 7px; top: 50%; transform: translateY(-50%); } #stick .r { right: 7px; top: 50%; transform: translateY(-50%); }
+#btns { position: relative; flex: none; width: calc(210px * var(--u)); height: calc(112px * var(--u)); touch-action: none; }
+.tb { position: absolute; border-radius: 50%; border: 2px solid var(--kb-line); background: var(--hp-key); color: var(--kb-ink); font: 800 12px var(--kb-font-body); white-space: nowrap; display: grid; place-items: center; touch-action: none; cursor: pointer; padding: 0; line-height: 1.1; text-align: center; }
+.tb.on { background: var(--hp-key-on); border-color: var(--kb-accent); }
+#bJ { right: 0; bottom: 0; width: calc(84px * var(--u)); height: calc(84px * var(--u)); font-size: 14px; }
+#bA { right: calc(92px * var(--u)); bottom: calc(14px * var(--u)); width: calc(76px * var(--u)); height: calc(76px * var(--u)); font-size: 13px; background: rgba(255,154,200,.28); }
+#bS { right: calc(38px * var(--u)); bottom: calc(78px * var(--u)); width: calc(54px * var(--u)); height: calc(54px * var(--u)); font-size: 11px; }
+#bS.dim { opacity: .45; }
+@media (max-width: 359px) { #touch { --u: .86; padding: 4px 8px 8px; gap: 4px; } }
+@media (orientation: landscape) and (max-height: 560px) {
+  body.touch.playing #touch { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 max(10px, var(--kb-sal)) max(8px, var(--kb-sab)) max(10px, var(--kb-sal)); pointer-events: none; z-index: 4; --u: .8; }
+  #stick, #btns { pointer-events: auto; } #stick, .tb { background: rgba(20,30,45,.38); color: #fff; border-color: rgba(255,255,255,.5); } #knob { background: rgba(255,210,63,.5); } #stick i { color: rgba(255,255,255,.7); }
+  .tb.on { background: rgba(255,210,63,.55); }
+}
+.abrow { display: flex; gap: 10px; align-items: flex-start; padding: 8px; margin-top: 6px; border-radius: 14px; background: var(--hp-panel); border: 1px solid var(--kb-line); text-align: left; }
+.abrow .dot { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(0,0,0,.35); display: grid; place-items: center; font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.abrow b { font-size: 14px; } .abrow p { margin: 2px 0 0; font-size: 12px; line-height: 1.45; }
+.abrow.off { opacity: .55; }
+.seg .opt { min-width: 60px; }
+#landTip { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 6; padding: 8px 12px; border-radius: 14px; background: rgba(20,30,45,.85); color: #fff; font-size: 12.5px; font-weight: 800; text-align: center; }
+body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../" aria-label="ゲーム一覧へ戻る" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 data-i18n>ふわふわぱふ</h1>
+    <button class="icon" id="sndBtn" type="button" aria-label="サウンド" data-i18n-attr="aria-label" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-label="メニュー" data-i18n-attr="aria-label" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <div id="stage">
+    <canvas id="cv" tabindex="0" role="application" aria-label="ふわふわぱふの画面" data-i18n-attr="aria-label"></canvas>
+    <button id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg></button>
+    <div id="toastbar" hidden role="status"></div>
+    <div id="landTip" hidden><span data-i18n>横向きにすると遊びやすいよ</span> <button class="btn sub" id="landGo" type="button" style="display:inline-flex;width:auto;min-height:36px;margin:4px 0 0" data-i18n>横向きにする</button></div>
+  </div>
+  <div id="owbar"><button class="btn sub" id="owBack" type="button" data-i18n>もどる</button><span id="owHint" role="status" aria-live="polite"></span><button class="btn" id="owGo" type="button" data-i18n>はじめる</button></div>
+  <div id="touch" aria-label="タッチ操作" data-i18n-attr="aria-label">
+    <div id="stick" role="group" aria-label="スティック" data-i18n-attr="aria-label"><i class="u">▲</i><i class="d">▼</i><i class="l">◀</i><i class="r">▶</i><div id="knob"></div></div>
+    <div id="btns">
+      <button class="tb" id="bS" type="button" aria-label="のむ・すてる" data-i18n-attr="aria-label"><span data-i18n>のむ</span></button>
+      <button class="tb" id="bA" type="button" aria-label="すいこむ" data-i18n-attr="aria-label"><span data-i18n>すいこむ</span></button>
+      <button class="tb" id="bJ" type="button" aria-label="ふわっ" data-i18n-attr="aria-label"><span data-i18n>ふわっ</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovTitle" hidden role="dialog" aria-modal="true" aria-labelledby="tTitle">
+  <div class="panel">
+    <h2 class="logo" id="tTitle" data-i18n>ふわふわぱふ</h2>
+    <p id="tSub" data-i18n>ふわっと飛んで、敵をすいこんでコピー！ 5つの世界をめぐろう。</p>
+    <div class="scroll" id="tList"></div>
+    <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>あそびかた</button><button class="btn sub" id="tSet" type="button" data-i18n>せってい</button></div>
+    <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
+  </div>
+</div>
+
+<div class="overlay" id="ovBook" hidden role="dialog" aria-modal="true" aria-labelledby="bkTitle">
+  <div class="panel" style="max-width:520px">
+    <h2 id="bkTitle" data-i18n>コピーずかん</h2>
+    <p id="bkSub"></p>
+    <div class="scroll" id="bkBody"></div>
+    <button class="btn" id="bkClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovResult" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="panel">
+    <h2 id="rTitle"></h2>
+    <div class="scroll">
+      <div class="stars" id="rStars" aria-hidden="true"></div>
+      <div class="big" id="rBig"></div>
+      <div id="rNew" class="newrec" hidden></div>
+      <div class="kv" id="rKv"></div>
+      <p id="rNote"></p>
+    </div>
+    <button class="btn" id="rNext" type="button"></button>
+    <div class="row2"><button class="btn sub" id="rAgain" type="button" data-i18n>もう一度</button><button class="btn sub" id="rMap" type="button" data-i18n>ちずへ</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovSet" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="panel">
+    <h2 id="setTitle" data-i18n>せってい</h2>
+    <div class="scroll" id="setBody"></div>
+    <button class="btn" id="setClose" type="button" data-i18n>とじる</button>
+  </div>
+</div>
+
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle" data-i18n>あそびかた</h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel" data-i18n>言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button" data-i18n>はじめる</button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<script src="engine.js"></script>
+<script src="levels.js"></script>
+<script src="art.js"></script>
+<script src="overworld.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ふわふわぱふ — the table: canvas, input (keyboard, touch, gamepad), the hub map, results and saves.
+// The rules live in engine.js (pure, runs in node too), the stages in levels.js, all drawing in art.js.
+const T = KoboI18n.t;
+KoboI18n.add({ en: {
+  'ふわふわぱふ': 'Fluffy Puff', 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'All games', 'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '言語 / Language': 'Language',
+  'ふわふわぱふの画面': 'Game screen', '一時停止': 'Pause', 'タッチ操作': 'Touch controls', 'スティック': 'Stick', 'ふわっ': 'Float', 'すいこむ': 'Inhale', 'のむ': 'Swallow', 'のむ・すてる': 'Swallow / drop',
+  'ふわっと飛んで、敵をすいこんでコピー！ 5つの世界をめぐろう。': 'Float, inhale enemies and copy their powers! Travel through five worlds.',
+  'あそびかた': 'How to play', 'せってい': 'Settings', 'とじる': 'Close', 'はじめる': 'Start', 'もう一度': 'Again', 'ちずへ': 'To the map', 'もどる': 'Back', 'コピーずかん': 'Copy book',
+  '横向きにすると遊びやすいよ': 'Landscape is easier to play', '横向きにする': 'Rotate the game',
+}});
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const E = window.PuffEngine, ART = window.PuffArt, LV = window.PuffLevels, OWM = window.PuffOverworld;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'puff', SAVE_KEY = 'kusoge.puff.save', HOWTO_KEY = 'kusoge.puff.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const coarse = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
+function emit(type, p) { const g = KG(); if (g) g.emit(type, p); }
+const B = E.B, STEP = 1000 / 60, NLV = 25;
+const popc = n => { let c = 0; while (n) { c += n & 1; n >>>= 1; } return c; };
+const AB = {
+  fire: { n: L('ほのお', 'Fire'), col: '#ff7a2a', from: L('ぼうぼう', 'Bobo'), mv: L('Aを押しっぱなしで ほのおのいき。ロープのあみ・ツタ・雪や灰の山をもやす', 'Hold action to breathe fire. Burns rope nets, vines and snow or ash heaps.') },
+  spark: { n: L('でんき', 'Spark'), col: '#ffd800', from: L('ぴりぴり', 'Piri'), mv: L('まわりにビリビリ。ソケットにふれると、とびらがひらく', 'A ring of sparks. Zap a socket to open the electric door.') },
+  ice: { n: L('こおり', 'Ice'), col: '#7fd8ff', from: L('こごり', 'Kogori'), mv: L('こおりのいき。みずや溶岩をこおらせて、わたれる足場にする', 'Frosty breath. Freezes water and lava into a path.') },
+  blade: { n: L('きりさき', 'Blade'), col: '#b8c4d8', from: L('きりり', 'Kiriri'), mv: L('まえをスパッと切る。ツタをばっさり', 'A quick slash. Cuts vines.') },
+  stone: { n: L('いし', 'Stone'), col: '#9a9aa8', from: L('ごろ', 'Goro'), mv: L('いしになって ドスン！ われたブロックをくだく。ダメージもうけない', 'Turn to stone and slam down. Breaks cracked blocks; you take no damage.') },
+  leaf: { n: L('はっぱ', 'Leaf'), col: '#6fcf5a', from: L('ひらり', 'Hirari'), mv: L('ブーメランのはっぱ。ツタを切り、とおくのほしやメダルをとってくる', 'A boomerang leaf. Cuts vines and fetches far-off stars and medals.') },
+  bubble: { n: L('あわ', 'Bubble'), col: '#5fd0f0', from: L('ぷか', 'Puka'), mv: L('あわを飛ばす。水の中を泳げる（水でダメージなし）', 'Blows bubbles. Lets you swim in water without harm.') },
+  bomb: { n: L('ばくだん', 'Bomb'), col: '#4a5064', from: L('ばくだ', 'Bakuda'), mv: L('ばくだんを投げる。われたブロック・ロープ・雪や灰の山をふきとばす', 'Throws a bomb. Blows up cracked blocks, rope nets and heaps.') },
+};
+const ABKEYS = E.ABS;
+
+// ---------- save ----------
+// lv[i]: bit 0 cleared, bits 1-3 the three medals, bit 4 cleared without a hit. All bit sets only grow (merged by OR).
+function newSave() { return { v: 1, pts: 0, lv: new Array(NLV).fill(0), stars: 0, stats: {}, ab: 0, abn: 0, cl: 0, md: 0, all3: 0, nh: 0, wc: {}, set: { hearts: 0, two: 0, tc: 'auto' }, tut: 0 }; }
+function recompute(s) {
+  let pts = 0, cl = 0, md = 0, all3 = 0, nh = 0; const wc = {};
+  for (let i = 0; i < NLV; i++) {
+    const b = s.lv[i] | 0; if (!(b & 1)) continue;
+    cl++; const m = popc((b >> 1) & 7); md += m; if (m === 3) all3++; if (b & 16) nh++;
+    pts += 1 + m + (b & 16 ? 1 : 0); const w = Math.floor(i / 5) + 1; wc[w] = (wc[w] || 0) + 1;
+  }
+  s.pts = pts; s.cl = cl; s.md = md; s.all3 = all3; s.nh = nh; s.wc = wc; s.abn = popc(s.ab & 255);
+}
+function readSave() {
+  let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
+  const s = newSave(); if (!o || typeof o !== 'object') return s;
+  if (Array.isArray(o.lv)) for (let i = 0; i < NLV; i++) s.lv[i] = (o.lv[i] | 0) & 31;
+  s.stars = Math.max(0, Math.min(1e9, o.stars | 0)); s.ab = (o.ab | 0) & 255;
+  if (o.stats && typeof o.stats === 'object') for (const k in o.stats) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0 && /^[a-z0-9_]{1,16}$/.test(k)) s.stats[k] = Math.min(1e9, v | 0); }
+  if (o.set && typeof o.set === 'object') { s.set.hearts = o.set.hearts ? 1 : 0; s.set.two = o.set.two ? 1 : 0; s.set.tc = ['auto', 'on', 'off'].indexOf(o.set.tc) >= 0 ? o.set.tc : 'auto'; }
+  s.tut = o.tut ? 1 : 0;
+  recompute(s); return s;
+}
+let save = readSave();
+function writeSave() { recompute(save); store.set(SAVE_KEY, JSON.stringify(save)); }
+const stat = (k, n) => { save.stats[k] = Math.min(1e9, (save.stats[k] || 0) + (n || 0)); };
+let DBG_UNLOCK = false;
+const unlocked = i => i >= 0 && i < NLV && (i === 0 || !!(save.lv[i - 1] & 1) || DBG_UNLOCK);
+const lvName = id => { const d = LV.get(id); return d ? L(d.name.ja, d.name.en) : id; };
+
+// ---------- sound (short effects only, no music) ----------
+const tone = (f, d, o) => { if (A) A.tone(f, d, o); };
+const noise = (d, o) => { if (A && A.noise) A.noise(d, o); };
+const SND = {
+  jump: () => tone(380, 0.1, { type: 'triangle', vol: 0.06, slide: 700 }),
+  flap: () => tone(520, 0.09, { type: 'sine', vol: 0.06, slide: 820 }),
+  swim: () => tone(300, 0.1, { type: 'sine', vol: 0.05, slide: 520 }),
+  inhale: () => { tone(300, 0.2, { type: 'sine', vol: 0.05, slide: 180 }); },
+  gulp: () => { tone(700, 0.07, { type: 'square', vol: 0.04, slide: 300 }); tone(500, 0.08, { type: 'square', vol: 0.04, delay: 0.06 }); },
+  spit: () => tone(520, 0.1, { type: 'square', vol: 0.05, slide: 1100 }),
+  copy: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.12, { type: 'triangle', vol: 0.08, delay: i * 0.06 })); },
+  drop: () => tone(600, 0.14, { type: 'triangle', vol: 0.06, slide: 220 }),
+  fire: () => noise(0.12, { vol: 0.07, freq: 900 }),
+  ice: () => tone(1500, 0.1, { type: 'sine', vol: 0.04, slide: 2200 }),
+  zap: () => { tone(900, 0.12, { type: 'sawtooth', vol: 0.04, slide: 300 }); noise(0.08, { vol: 0.05, freq: 3000 }); },
+  slash: () => tone(1100, 0.08, { type: 'sawtooth', vol: 0.04, slide: 300 }),
+  stone: () => tone(150, 0.14, { type: 'square', vol: 0.06, slide: 70 }),
+  leaf: () => tone(780, 0.08, { type: 'triangle', vol: 0.05, slide: 520 }),
+  bub: () => tone(600, 0.1, { type: 'sine', vol: 0.05, slide: 900 }),
+  bombset: () => tone(300, 0.07, { type: 'square', vol: 0.04 }),
+  boom: () => { noise(0.3, { vol: 0.2, freq: 500 }); tone(90, 0.25, { type: 'sine', vol: 0.12, slide: 40 }); },
+  burn: () => noise(0.08, { vol: 0.07, freq: 1200 }),
+  cut: () => tone(900, 0.07, { type: 'triangle', vol: 0.06, slide: 400 }),
+  crack: () => noise(0.14, { vol: 0.14, freq: 700 }),
+  freeze: () => tone(1700, 0.1, { type: 'sine', vol: 0.05, slide: 900 }),
+  sock: () => { [880, 1175].forEach((f, i) => tone(f, 0.1, { type: 'square', vol: 0.05, delay: i * 0.06 })); },
+  door: () => { tone(300, 0.3, { type: 'sawtooth', vol: 0.05, slide: 700 }); },
+  hit: () => tone(260, 0.06, { type: 'square', vol: 0.05, slide: 120 }),
+  kill: () => { tone(400, 0.09, { type: 'square', vol: 0.06, slide: 120 }); noise(0.05, { vol: 0.05, freq: 2000 }); },
+  hurt: () => tone(300, 0.25, { type: 'sawtooth', vol: 0.06, slide: 90 }),
+  die: () => { [392, 330, 262, 196].forEach((f, i) => tone(f, 0.2, { type: 'triangle', vol: 0.08, delay: i * 0.11 })); },
+  splash: () => noise(0.12, { vol: 0.1, freq: 1500 }),
+  fall: () => tone(400, 0.25, { type: 'sine', vol: 0.06, slide: 120 }),
+  star: () => tone(1175, 0.07, { type: 'square', vol: 0.035 }),
+  candy: () => { tone(988, 0.07, { type: 'square', vol: 0.04 }); tone(1319, 0.1, { type: 'square', vol: 0.04, delay: 0.06 }); },
+  medal: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.16, { type: 'triangle', vol: 0.07, delay: i * 0.07 })); },
+  heart: () => { tone(660, 0.1, { type: 'sine', vol: 0.1 }); tone(880, 0.14, { type: 'sine', vol: 0.1, delay: 0.08 }); },
+  cp: () => { [659, 784, 988].forEach((f, i) => tone(f, 0.12, { type: 'triangle', vol: 0.08, delay: i * 0.06 })); },
+  goal: () => { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.22, { type: 'triangle', vol: 0.09, delay: i * 0.09 })); },
+  bosshit: () => tone(200, 0.2, { type: 'sawtooth', vol: 0.08, slide: 700 }),
+  bosshit2: () => { tone(200, 0.2, { type: 'sawtooth', vol: 0.09, slide: 900 }); tone(1200, 0.12, { type: 'square', vol: 0.05, delay: 0.05 }); },
+  bossdown: () => { [300, 250, 200, 150, 100].forEach((f, i) => tone(f, 0.16, { type: 'sawtooth', vol: 0.08, delay: i * 0.09 })); },
+  phase: () => { tone(220, 0.3, { type: 'sawtooth', vol: 0.07, slide: 520 }); },
+  quake: () => noise(0.22, { vol: 0.16, freq: 500 }),
+  bolt: () => { noise(0.16, { vol: 0.12, freq: 2500 }); tone(1800, 0.1, { type: 'sawtooth', vol: 0.05, slide: 200 }); },
+  shoot: () => tone(220, 0.1, { type: 'square', vol: 0.04, slide: 110 }),
+  clang: () => tone(1100, 0.08, { type: 'square', vol: 0.04, slide: 700 }),
+  puffout: () => tone(500, 0.08, { type: 'sine', vol: 0.05, slide: 250 }),
+  pop: () => tone(900, 0.06, { type: 'sine', vol: 0.05, slide: 1500 }),
+  revive: () => { [523, 784].forEach((f, i) => tone(f, 0.12, { type: 'triangle', vol: 0.07, delay: i * 0.07 })); },
+  restore: () => tone(300, 0.2, { type: 'triangle', vol: 0.06, slide: 600 }),
+};
+const lastSnd = {};
+function snd(n) { if (!SND[n]) return; const t = performance.now(); const gap = (n === 'fire' || n === 'burn' || n === 'freeze' || n === 'star') ? 110 : 45; if (lastSnd[n] && t - lastSnd[n] < gap) return; lastSnd[n] = t; SND[n](); }
+
+// ---------- canvas ----------
+const cv = $('cv'), ctx = cv.getContext('2d', { alpha: false });
+let cw = 320, ch = 200, dpr = 1, sc = 1, fx = new ART.Fx(), dirty = true;
+function fit() {
+  const r = $('stage').getBoundingClientRect(); cw = Math.max(160, Math.round(r.width)); ch = Math.max(100, Math.round(r.height));
+  dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+  sc = Math.max(0.5, Math.min(ch / 208, cw / 224));                       // the screen always shows at least 14 tiles across
+  if (G) G.S.vw = cw / sc;
+  if (OW) OW.resize(cw, ch);
+  render(); dirty = false; kick(); landTip();
+}
+
+// ---------- the run ----------
+let G = null;                         // { id, def, L, S, rec, intro, doneT, live, result, counts }
+let OW = null, mode = 'title', paused = false, acc = 0, last = 0, raf = 0, MANUAL = false, pm = null;
+function startLevel(id, o) { const def = LV.get(id); return def ? startDef(def, o) : false; }
+function startDef(def, o) {
+  o = o || {};
+  const np = save.set.two ? 2 : 1, L0 = E.parse(def);
+  const S = E.newState(L0, { players: np, vw: cw / sc, assist: { hearts: !!save.set.hearts } });
+  G = { id: def.id, def, L: L0, S, rec: [], intro: 150, doneT: 0, live: true, result: null, resultShown: false, np, counts: { burn: 0, cut: 0, crack: 0, ice: 0, sock: 0, swim: 0 }, absSeen: 0 };
+  S.cam.x = E.camTarget(S); fx = new ART.Fx(); acc = 0; paused = false; mode = 'play';
+  hideOverlays(); document.body.classList.add('playing'); showTouch();
+  emit('play_start', { mode: 'normal', stage: def.id }); stat('plays', 1);
+  dirty = true; kick(); landTip(); return true;
+}
+function endRun(reason) {
+  if (!G || !G.live) return; G.live = false;
+  const S = G.S; stat('deaths', S.deaths); stat('kills', S.kills); stat('inhaled', S.inhaled); stat('copies', S.copies); stat('drops', S.drops);
+  for (const k in G.counts) stat(k, G.counts[k]);
+  save.stars = Math.min(1e9, save.stars + S.stars); save.ab = (save.ab | S.abGot) & 255;
+  writeSave();
+  emit('play_end', { mode: 'normal', score: save.pts, durationMs: Math.round(S.f * STEP), reason: reason === 'clear' ? 'clear' : 'quit', stage: G.id });
+}
+function onClear() {
+  const S = G.S, r = S.res, i = LV.index(G.id), old = save.lv[i] | 0;
+  const b = old | 1 | (r.med << 1) | (r.hurts === 0 ? 16 : 0);
+  const newBits = b & ~old; save.lv[i] = b;
+  stat('clears', 1); if (r.hurts === 0) stat('nohurt', 1); if (G.np === 2) stat('coop', 1);
+  if (G.def.boss) stat('boss', 1);
+  const newAb = r.ab & ~save.ab;
+  endRun('clear');
+  G.result = { id: G.id, frames: r.frames, med: r.med, stars: r.stars, hurts: r.hurts, deaths: r.deaths, copies: r.copies, kills: r.kills, newBits, newAb, np: G.np, first: !(old & 1) };
+  writeSave();
+  emit('stage_clear', { stage: G.id, stars: 1 + (popc(r.med) === 3 ? 1 : 0) + (r.hurts === 0 ? 1 : 0) });
+  emit('progress', { stage: G.id });
+}
+function restartLevel() { if (!G) return; const def = G.def; endRun('quit'); startDef(def); }
+const fmtT = f => { const s = f / 60, m = Math.floor(s / 60); return m + ':' + String(Math.floor(s % 60)).padStart(2, '0'); };
+
+// ---------- input ----------
+const KEYS1 = { ArrowLeft: B.L, KeyA: B.L, ArrowRight: B.R, KeyD: B.R, ArrowUp: B.U | B.J, KeyW: B.U | B.J, ArrowDown: B.D, KeyS: B.D, KeyZ: B.J, Space: B.J, KeyK: B.J, KeyX: B.ACT, KeyJ: B.ACT, KeyC: B.SW, KeyL: B.SW, ShiftLeft: B.SW, ShiftRight: B.SW };
+// two players on one keyboard: left hand = player 1 (A D S, W jump, F inhale, G swallow); right hand = player 2 (arrows, Up jump, comma inhale, period swallow)
+const KEYSP1 = { KeyA: B.L, KeyD: B.R, KeyS: B.D, KeyW: B.J, Space: B.J, KeyF: B.ACT, KeyG: B.SW, KeyE: B.U };
+const KEYSP2 = { ArrowLeft: B.L, ArrowRight: B.R, ArrowDown: B.D, ArrowUp: B.J, Comma: B.ACT, Period: B.SW, KeyM: B.ACT, Slash: B.SW };
+const down = new Set(); let tmask = 0; const dbgHold = { m: 0, m2: 0 };
+const two = () => !!(G && G.np === 2);
+function kmask(n) { let m = 0; const map = two() ? (n ? KEYSP2 : KEYSP1) : (n ? {} : KEYS1); down.forEach(c => { m |= map[c] || 0; }); return m; }
+const keyBit = c => (two() ? (KEYSP1[c] || KEYSP2[c]) : KEYS1[c]) || 0;
+function pads() { try { return Array.from((navigator.getGamepads && navigator.getGamepads()) || []).filter(g => g && g.connected); } catch (e) { return []; } }
+function padMask(g) {
+  const ax = g.axes[0] || 0, ay = g.axes[1] || 0, b = i => g.buttons[i] && g.buttons[i].pressed; let m = 0;
+  if (ax < -0.4 || b(14)) m |= B.L; if (ax > 0.4 || b(15)) m |= B.R; if (ay < -0.5 || b(12)) m |= B.U; if (ay > 0.5 || b(13)) m |= B.D;
+  if (b(0)) m |= B.J; if (b(2) || b(1)) m |= B.ACT; if (b(3) || b(4) || b(5)) m |= B.SW;
+  if (b(9) && !padMask.sp) { padMask.sp = 1; openPause(); } if (!b(9)) padMask.sp = 0;
+  return m;
+}
+function inputMask(n) {
+  if (n === 0 && dbgHold.m) return dbgHold.m; if (n === 1 && dbgHold.m2) return dbgHold.m2;
+  const ps = pads(); let m = kmask(n);
+  if (two()) { if (ps[n]) m |= padMask(ps[n]); } else if (n === 0) for (const g of ps) m |= padMask(g);
+  if (n === 0) m |= tmask;
+  return m;
+}
+document.addEventListener('keydown', e => {
+  const tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.tagName === 'SELECT')) return;
+  if (e.altKey || e.metaKey || e.ctrlKey) return;
+  if (mode === 'ow' && !anyOverlay()) {
+    const c = e.code; if (['ArrowLeft', 'KeyA', 'ArrowUp', 'KeyW'].includes(c)) OW.dir(-1, 0); else if (['ArrowRight', 'KeyD', 'ArrowDown', 'KeyS'].includes(c)) OW.dir(1, 0);
+    else if (['Enter', 'Space', 'KeyZ'].includes(c)) OW.activate(); else if (c === 'Escape' || c === 'KeyX') OW.back(); else return;
+    e.preventDefault(); return;
+  }
+  if (mode === 'play' && !anyOverlay() && !(pm && pm.isOpen)) {
+    if (e.code === 'Escape' || e.code === 'KeyP') { e.preventDefault(); openPause(); return; }
+    if (e.code === 'KeyR' && e.shiftKey) { restartLevel(); return; }
+    if (keyBit(e.code)) { e.preventDefault(); down.add(e.code); }
+  }
+});
+document.addEventListener('keyup', e => { down.delete(e.code); });
+window.addEventListener('blur', () => { down.clear(); padOff(); });
+// touch: a stick (slide anywhere inside), three buttons
+const stick = $('stick'), knob = $('knob'); let stickId = null;
+function stickSet(e) {
+  const r = stick.getBoundingClientRect(), R = r.width / 2, dx = (e.clientX - (r.left + R)) / R, dy = (e.clientY - (r.top + R)) / R; let m = 0;
+  if (dx < -0.28) m |= B.L; else if (dx > 0.28) m |= B.R; if (dy < -0.55) m |= B.U; else if (dy > 0.5) m |= B.D;
+  tmask = (tmask & ~(B.L | B.R | B.U | B.D)) | m;
+  const len = Math.hypot(dx, dy) || 1, k = Math.min(1, len) * R * 0.5; knob.style.transform = 'translate(' + (dx / len * k).toFixed(1) + 'px,' + (dy / len * k).toFixed(1) + 'px)';
+}
+function stickOff() { tmask &= ~(B.L | B.R | B.U | B.D); stickId = null; knob.style.transform = ''; }
+function padOff() { tmask = 0; stickOff(); btnIds.clear(); ['bJ', 'bA', 'bS'].forEach(id => $(id).classList.remove('on')); }
+stick.addEventListener('pointerdown', e => { e.preventDefault(); stickId = e.pointerId; try { stick.setPointerCapture(e.pointerId); } catch (x) {} stickSet(e); touchMode(); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === stickId) stickSet(e); });
+const stickEnd = e => { if (e.pointerId === stickId) stickOff(); };
+stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd); stick.addEventListener('lostpointercapture', stickEnd);
+const btnIds = new Map();
+for (const [id, bit] of [['bJ', B.J], ['bA', B.ACT], ['bS', B.SW]]) {
+  const el = $(id);
+  el.addEventListener('pointerdown', e => { e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (x) {} btnIds.set(e.pointerId, bit); tmask |= bit; el.classList.add('on'); touchMode(); });
+  const up = e => { if (btnIds.get(e.pointerId) === bit) { btnIds.delete(e.pointerId); let still = false; btnIds.forEach(v => { if (v === bit) still = true; }); if (!still) { tmask &= ~bit; el.classList.remove('on'); } } };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+cv.addEventListener('pointerdown', e => { if (mode === 'ow' && OW) { const r = cv.getBoundingClientRect(); OW.tap(e.clientX - r.left, e.clientY - r.top); touchMode(); } });
+document.addEventListener('pointerup', () => { if (window.KoboOrient) KoboOrient.tryLock(); }, true);
+const owP = { l: 0, r: 0, a: 0, b: 0 };
+function owPad() {
+  try {
+    const now = { l: false, r: false, a: false, b: false };
+    for (const g of pads()) { const ax = g.axes[0] || 0, b = i => g.buttons[i] && g.buttons[i].pressed; now.l = now.l || ax < -0.5 || !!b(14) || !!b(12); now.r = now.r || ax > 0.5 || !!b(15) || !!b(13); now.a = now.a || !!b(0) || !!b(9); now.b = now.b || !!b(1); }
+    if (now.l && !owP.l) OW.dir(-1, 0); if (now.r && !owP.r) OW.dir(1, 0); if (now.a && !owP.a) OW.activate(); if (now.b && !owP.b) OW.back();
+    owP.l = +now.l; owP.r = +now.r; owP.a = +now.a; owP.b = +now.b;
+  } catch (e) {}
+}
+function touchMode() { if (!document.body.classList.contains('touch')) { document.body.classList.add('touch'); fitSoon(); } }
+function showTouch() {
+  const tc = save.set.tc, on = tc === 'on' || (tc === 'auto' && (coarse || document.body.classList.contains('touch')));
+  document.body.classList.toggle('touch', on); fitSoon();
+}
+window.addEventListener('touchstart', () => { if (save.set.tc !== 'off' && !document.body.classList.contains('touch')) { document.body.classList.add('touch'); fitSoon(); } }, { passive: true, once: true });
+let fitT = 0; function fitSoon() { clearTimeout(fitT); fitT = setTimeout(fit, 30); }
+function labels() {
+  if (!G || mode !== 'play') return; const p = G.S.ps[0];
+  const a = p.held ? L('はきだす', 'Spit') : p.ab ? AB[p.ab].n : p.puff ? L('ふーっ', 'Puff') : L('すいこむ', 'Inhale');
+  const s = p.held ? L('のむ', 'Swallow') : p.ab ? L('すてる', 'Drop') : L('のむ', 'Swallow');
+  const ba = $('bA').firstChild, bs = $('bS').firstChild; if (ba.textContent !== a) ba.textContent = a; if (bs.textContent !== s) bs.textContent = s;
+  $('bS').classList.toggle('dim', !(p.held || p.ab)); $('bJ').firstChild.textContent = p.on ? L('ジャンプ', 'Jump') : L('ふわっ', 'Float');
+}
+let tipShown = false;
+function landTip() {
+  const el = $('landTip'); if (!el || tipShown) return;
+  const want = mode === 'play' && !tipShown && coarse && ch > cw && cw < 700 && window.KoboOrient && KoboOrient.get() === 'auto' && store.get('kusoge.puff.tip') !== '1';
+  el.hidden = !want; if (want) { tipShown = true; setTimeout(() => { el.hidden = true; }, 6000); }
+}
+$('landGo').onclick = () => { store.set('kusoge.puff.tip', '1'); if (window.KoboOrient) KoboOrient.set('land'); };
+
+// ---------- loop ----------
+function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+function frame(ts) {
+  raf = 0; const dt = Math.min(100, ts - last); last = ts;
+  if (G && mode === 'play' && !paused && !MANUAL) {
+    acc += dt; let n = 0;
+    while (acc >= STEP && n < 5) { stepOnce(); acc -= STEP; n++; if (mode !== 'play') break; }
+    if (n === 5) acc = 0; dirty = true; labels();
+  } else if (G && mode === 'result') { fx.update(); dirty = true; }
+  else if (mode === 'ow' && OW) { owPad(); OW.update(); owSync(); dirty = true; }
+  if (dirty) { render(); dirty = false; }
+  if (G && (mode === 'play' || mode === 'result') && (!paused || MANUAL)) raf = requestAnimationFrame(frame);
+  else if (mode === 'ow') raf = requestAnimationFrame(frame);
+}
+function stepOnce() {
+  const S = G.S;
+  if (S.res) { G.doneT++; fx.update(); S.f++; for (const p of S.ps) p.vx = 0; if (G.doneT > 80 && !G.resultShown) { G.resultShown = true; showResult(); } return; }
+  const m0 = inputMask(0), m1 = G.np === 2 ? inputMask(1) : 0;
+  G.rec.push(m0); E.step(S, m0, m1);
+  if (G.intro > 0) G.intro--;
+  if (S.ev.length) { ART.feed(fx, S, snd); for (const e of S.ev) { const k = e[0]; if (k === 'burn') G.counts.burn++; else if (k === 'cut') G.counts.cut++; else if (k === 'crack') G.counts.crack++; else if (k === 'freeze' && e[3] === T_WATER) G.counts.ice++; else if (k === 'sock') G.counts.sock++; else if (k === 'swim') G.counts.swim++; } }
+  fx.update();
+  if (S.res && !G.result) onClear();
+}
+const T_WATER = E.T.WATER;
+function render() {
+  if (!G && mode === 'ow' && OW) { OW.draw(ctx, dpr); return; }
+  if (!G) { const th = ART.THEMES.meadow; ART.sky(ctx, th, cw, ch); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return; }
+  const S = G.S;
+  ART.draw(ctx, S, { w: cw, h: ch, sc, dpr, t: S.f, theme: G.def.theme, fx });
+  drawHud();
+}
+function drawHud() {
+  const S = G.S, c = ctx, u = clamp(cw / 34, 11, 17), pad0 = Math.max(8, u * 0.6);
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.save();
+  c.font = '800 ' + Math.round(u * 1.0) + 'px sans-serif'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+  const txt = (s, x, y, al) => { c.textAlign = al || 'left'; c.lineWidth = 3; c.strokeStyle = 'rgba(30,20,45,.75)'; c.strokeText(s, x, y); c.fillStyle = '#fff'; c.fillText(s, x, y); };
+  const oy = Math.max(0, (ch - 208 * sc) / 2);
+  let y = Math.max(pad0, oy * 0.3 + pad0) + u * 0.6;
+  S.ps.forEach((p, i) => {
+    const hs = i ? 0.8 : 1, r = u * 0.62 * hs, x0 = pad0 + (i ? u * 0.2 : 0);
+    if (i) txt('2P', x0, y, 'left'); else if (S.np === 2) txt('1P', x0, y, 'left');
+    const off = S.np === 2 ? u * 1.9 : 0;
+    for (let k = 0; k < 3; k++) { const v = clamp(p.hp - k * 2, 0, 2); ART.heart(c, x0 + off + k * r * 2.4 + r, y, r, v >= 2 ? '#ff5f82' : v === 1 ? '#ffb0c0' : 'rgba(255,255,255,.28)'); if (v === 1) { c.save(); c.beginPath(); c.rect(x0 + off + k * r * 2.4 + r, y - r * 1.5, r * 2, r * 3); c.clip(); ART.heart(c, x0 + off + k * r * 2.4 + r, y, r, 'rgba(255,255,255,.3)'); c.restore(); } }
+    if (S.assist.hearts) txt('∞', x0 + off + r * 7.8 + 2, y, 'left');
+    const ax = x0 + off + r * 10.5;
+    if (p.ab) { c.fillStyle = AB[p.ab].col; c.strokeStyle = 'rgba(30,20,45,.8)'; c.lineWidth = 2; c.beginPath(); c.arc(ax + r, y, r * 1.05, 0, 6.3); c.fill(); c.stroke(); txt(AB[p.ab].n, ax + r * 2.4, y, 'left'); }
+    else if (p.held) { txt(L('もぐもぐ…', 'Mouth full'), ax, y, 'left'); }
+    y += u * 1.7 * hs;
+  });
+  txt('★ ' + S.stars, pad0 + u * 0.2, y, 'left');
+  for (let i = 0; i < 3; i++) { const x = pad0 + u * 0.4 + i * u * 1.45 + u * 4.4; ART.starPath(c, x, y, u * 0.62, u * 0.3, 5); c.fillStyle = (S.med >> i) & 1 ? '#ffd23f' : 'rgba(255,255,255,.3)'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = 'rgba(30,20,45,.7)'; c.stroke(); }
+  const b = S.en.find(e => e.k === 'boss');
+  if (b && !b.dead) {
+    const w = Math.min(cw * 0.5, 260), x = (cw - w) / 2, by = ch - Math.max(18, oy * 0.5 + 14) - u;
+    c.fillStyle = 'rgba(30,20,45,.6)'; ART.rr(c, x - 3, by - 3, w + 6, u * 0.9 + 6, 6); c.fill(); c.fillStyle = '#ff5f82'; ART.rr(c, x, by, w * Math.max(0, b.hp / b.max), u * 0.9, 4); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1; for (let k = 1; k < 3; k++) { c.beginPath(); c.moveTo(x + w * k / 3, by); c.lineTo(x + w * k / 3, by + u * 0.9); c.stroke(); }
+  }
+  if (G.intro > 0) {
+    const a = Math.min(1, G.intro / 40, (150 - G.intro) / 20); c.globalAlpha = Math.max(0, a); c.font = '800 ' + Math.round(u * 1.9) + 'px sans-serif';
+    txt(G.id + '  ' + lvName(G.id), cw / 2, ch * 0.3, 'center'); c.font = '800 ' + Math.round(u * 1.0) + 'px sans-serif';
+    const g = G.def.gimmick; txt(L(g.ja, g.en), cw / 2, ch * 0.3 + u * 2.3, 'center'); c.globalAlpha = 1;
+  }
+  if (S.ps.every(p => p.dead)) { c.globalAlpha = Math.min(0.6, S.wipe / 60); c.fillStyle = '#000'; c.fillRect(0, 0, cw, ch); c.globalAlpha = 1; }
+  c.restore();
+}
+
+// ---------- screens ----------
+const OVL = ['ovTitle', 'ovBook', 'ovResult', 'ovSet', 'howto'];
+const anyOverlay = () => OVL.some(id => !$(id).hidden);
+function hideOverlays() { OVL.forEach(id => { $(id).hidden = true; }); document.body.classList.remove('ow'); }
+function live(s) { $('live').textContent = s; }
+function toast(msg, ms) { const t = $('toastbar'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, ms || 1800); }
+function starSvg(on, pop) { return '<svg viewBox="0 0 24 24" class="' + (on ? 'on' : 'off') + (pop ? ' pop' : '') + '" aria-hidden="true"' + (pop ? ' style="animation-delay:' + pop + 'ms"' : '') + '><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.5l-5.9 3.2 1.3-6.6L2.5 9.5l6.6-.8z"/></svg>'; }
+function leaveToTitle() { if (G) endRun('quit'); G = null; mode = 'title'; document.body.classList.remove('playing'); showTitle(); }
+function nextUnplayed() { for (let i = 0; i < NLV; i++) if (!(save.lv[i] & 1)) return i; return NLV - 1; }
+function showTitle() {
+  hideOverlays(); mode = 'title'; document.body.classList.remove('playing'); if (G && G.live) endRun('quit'); G = null; paused = false;
+  const ni = nextUnplayed(), started = save.cl > 0 || save.stats.plays > 0;
+  const rows = [];
+  rows.push('<button class="qm" id="tGo" type="button"><span><b>' + esc(started ? L('つづきから', 'Continue') : L('ぼうけんをはじめる', 'Start the adventure')) + '</b><small>' + esc(LV.idOf(ni) + ' ' + lvName(LV.idOf(ni))) + '</small></span><span class="go" aria-hidden="true">▶</span></button>');
+  rows.push('<button class="qm plain" id="tMap" type="button"><span><b>' + esc(L('ちずを ひらく', 'Open the map')) + '</b><small>' + esc(L('クリア ', 'Cleared ') + save.cl + '/' + NLV + '　' + L('メダル ', 'Medals ') + save.md + '/' + NLV * 3) + '</small></span></button>');
+  rows.push('<button class="qm plain" id="tBook" type="button"><span><b>' + esc(L('コピーずかん', 'Copy book')) + '</b><small>' + esc(L('みつけたわざ ', 'Found ') + save.abn + '/8') + '</small></span></button>');
+  $('tList').innerHTML = rows.join('');
+  $('tGo').onclick = () => showOverworld(LV.idOf(ni)); $('tMap').onclick = () => showOverworld(); $('tBook').onclick = () => showBook();
+  $('ovTitle').hidden = false; try { $('tGo').focus({ preventScroll: true }); } catch (e) {}
+  dirty = true; kick();
+}
+function showOverworld(id) {
+  hideOverlays(); mode = 'ow'; if (G && G.live) endRun('quit'); document.body.classList.remove('playing'); document.body.classList.add('ow'); G = null; paused = false; padOff();
+  OW.open(id || null); OW.resize(cw, ch); owSync(); dirty = true; kick();
+}
+function owSync() {
+  const f = OW.info(); const h = $('owHint'); const sig = f.id + f.un + f.medals + f.cleared;
+  if (h.dataset.sig !== sig) { h.dataset.sig = sig; h.innerHTML = '<b>' + esc(f.id + '  ' + f.name) + (f.boss ? ' ★BOSS' : '') + '</b><small>' + esc(f.un ? f.gimmick : L('まえのステージをクリアすると あそべます', 'Clear the previous stage to unlock')) + '　' + (f.cleared ? '✓ ' : '') + L('メダル ', 'Medals ') + f.medals + '/3' + (f.nohurt ? ' ♥' : '') + '</small>'; }
+  $('owGo').disabled = !f.un; $('owBack').textContent = L('もどる', 'Back');
+}
+function showBook() {
+  hideOverlays(); mode = 'book';
+  $('bkSub').textContent = L('敵をすいこんで「のむ」と、そのわざをコピーできます。Dのボタン（すてる）で手ばなすと ごほうびのキャンディ。', 'Inhale an enemy and swallow it to copy its ability. Drop it to get a candy.');
+  $('bkBody').innerHTML = ABKEYS.map((k, i) => { const on = (save.ab >> i) & 1, a = AB[k];
+    return '<div class="abrow' + (on ? '' : ' off') + '"><span class="dot" style="background:' + a.col + '">' + (on ? '✓' : '?') + '</span><span><b>' + esc(on ? a.n : '？？？') + '</b>' + (on ? '<p>' + esc(a.mv) + '</p><p style="color:var(--kb-dim)">' + esc(L('もっている敵：', 'From: ') + a.from) + '</p>' : '<p>' + esc(L('まだ みつけていません', 'Not found yet')) + '</p>') + '</span></div>'; }).join('');
+  $('ovBook').hidden = false; try { $('bkClose').focus({ preventScroll: true }); } catch (e) {}
+}
+$('bkClose').onclick = () => showTitle();
+function showResult() {
+  const R = G.result; if (!R) return;
+  mode = 'result'; document.body.classList.remove('playing'); padOff(); const i = LV.index(G.id);
+  $('rTitle').textContent = G.id + '  ' + lvName(G.id);
+  const med = popc(R.med);
+  $('rStars').innerHTML = [true, med === 3, R.hurts === 0].map((s, k) => starSvg(s, s ? 200 + k * 260 : 0)).join('');
+  $('rBig').textContent = L('クリア！', 'Cleared!');
+  const nw = $('rNew'); nw.hidden = !R.newAb; nw.textContent = R.newAb ? L('あたらしいわざを おぼえた！', 'New ability found!') : '';
+  $('rKv').innerHTML = '<span>' + esc(L('タイム', 'Time')) + '</span><span>' + fmtT(R.frames) + '</span><span>' + esc(L('メダル', 'Medals')) + '</span><span>' + med + '/3</span><span>' + esc(L('ほし', 'Stars')) + '</span><span>' + R.stars + '</span><span>' + esc(L('コピーした回数', 'Copies')) + '</span><span>' + R.copies + '</span><span>' + esc(L('やられた回数', 'Hits taken')) + '</span><span>' + R.hurts + '</span>';
+  $('rNote').textContent = med < 3 ? L('メダルは各ステージに3こ。しかけをとくと、かくれた部屋にあります。', 'Each stage hides 3 medals. Solve the puzzles to reach the hidden rooms.') : R.hurts ? L('一度もやられずにクリアすると ♥ のごほうび。', 'Clear without a hit for a heart star.') : L('かんぺき！', 'Perfect!');
+  const hasNext = i + 1 < NLV;
+  $('rNext').textContent = hasNext ? L('つぎのステージへ', 'Next stage') : L('ちずへ', 'To the map');
+  $('rNext').onclick = () => { if (hasNext) startLevel(LV.idOf(i + 1)); else showOverworld(G.id); };
+  $('rAgain').onclick = () => restartLevel(); $('rMap').onclick = () => showOverworld(G.id);
+  $('ovResult').hidden = false; try { $('rNext').focus({ preventScroll: true }); } catch (e) {}
+  live(L('クリア！', 'Cleared!'));
+}
+function showHowto(first) {
+  hideOverlays();
+  const li = a => a.map(x => '<li>' + esc(x) + '</li>').join('');
+  $('howBody').innerHTML = '<p style="color:var(--kb-ink);font-weight:800;font-size:13px">' + esc(L('雲の子「ぱふ」で、ゴールの扉までたどりつこう。敵は すいこんで、のんで、コピー！', 'Guide Puff, a little cloud, to the goal door. Inhale enemies, swallow them and copy their powers!')) + '</p>' +
+    '<h3>' + esc(L('そうさ', 'Controls')) + '</h3><ul>' + li(EN ? ['Arrows / WASD: move. Z / Space / Up / W: jump. Press jump again in the air to float (up to 6 puffs).', 'X / J: inhale (hold). With a mouthful: press again to spit a star. With an ability: use it.', 'C / L / Shift: swallow what is in your mouth (copy the ability). With an ability: drop it for a candy.', 'Two players: left hand A D S + W (jump) + F (inhale) + G (swallow); right hand arrows + Up + comma + period. Esc / P: pause.', 'Gamepad: stick or d-pad, A jump, X or B inhale, Y or bumpers swallow, Start pause.'] : ['矢印キー・WASD：うごく　Z・スペース・↑・W：ジャンプ。空中でもう一度ジャンプすると、ふわっと浮く（6回まで）', 'X・J：すいこむ（押しっぱなし）。口にいれたらもう一度で、ほしの弾をはく。わざがあるときは、そのわざ', 'C・L・Shift：口の中のものを「のむ」（わざをコピー）。わざをもっているときは、すてる（キャンディになる）', 'ふたりプレイ：左手 A D S ＋ W（ジャンプ）・F（すいこむ）・G（のむ）／ 右手 矢印 ＋ ↑ ・「,」・「.」。Esc・P：ポーズ', 'ゲームパッド：スティックか十字、A ジャンプ、X か B すいこむ、Y かバンパー のむ、Start ポーズ']) + '</ul>' +
+    '<h3>' + esc(L('しかけ', 'Puzzles')) + '</h3><ul>' + li(EN ? ['Rope nets and snow or ash heaps: Fire or Bomb. Vines: Blade, Leaf or Fire.', 'Cracked blocks: Stone or Bomb. Water and lava: Ice freezes it, Bubble swims in it.', 'Sockets: zap with Spark to open the electric door. Three medals hide in every stage.', 'Enemies come back after a while, so you can always copy the ability again.'] : ['ロープのあみ・雪や灰の山：ほのお か ばくだん。ツタ：きりさき・はっぱ・ほのお', 'われたブロック：いし か ばくだん。水や溶岩：こおりで固める／あわで泳ぐ', 'ソケット：でんきでビリビリ → 電気のとびらがひらく。メダルは各ステージに3つ', 'やっつけた敵はしばらくするともどってくるので、わざは何度でもコピーできる']) + '</ul>' +
+    '<h3>' + esc(L('やさしさ', 'Assists')) + '</h3><ul>' + li(EN ? ['Hearts are generous, hearts and candies heal you, and there is no game over: you restart from the checkpoint. “Never lose” mode and 2-player co-op are in Settings.'] : ['ハートはたっぷり。ハートやキャンディで回復し、ゲームオーバーはありません（チェックポイントから再開）。せっていで「やられない」と「ふたりプレイ」が選べます']) + '</ul>';
+  $('howtoGo').textContent = first ? L('はじめる', 'Start') : L('とじる', 'Close');
+  $('howtoGo').onclick = () => { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; if (first || !G) showTitle(); };
+  $('howto').hidden = false; try { $('howtoGo').focus({ preventScroll: true }); } catch (e) {}
+}
+$('tHow').onclick = () => showHowto(false);
+const ORI_NAMES = { auto: ['じどう', 'Auto'], land: ['よこ きょうせい', 'Landscape'], port: ['たて きょうせい', 'Portrait'] };
+function showSettings() {
+  hideOverlays();
+  const seg = (key, opts) => '<div class="seg" role="group" data-k="' + key + '">' + opts.map(o => '<button class="opt" type="button" data-v="' + o[0] + '" aria-pressed="' + (String(save.set[key]) === String(o[0])) + '">' + esc(o[1]) + '</button>').join('') + '</div>';
+  $('setBody').innerHTML =
+    '<div class="og"><div class="ol">' + esc(L('ミスしたとき', 'When you get hit')) + '</div>' + seg('hearts', [[0, L('ふつう', 'Normal')], [1, L('やられない', 'Never lose')]]) + '</div>' +
+    '<div class="og"><div class="ol">' + esc(L('ふたりプレイ（ともだちの「もこ」）', '2 players (helper “Moko”)')) + '</div>' + seg('two', [[0, L('ひとり', 'Solo')], [1, L('ふたり', 'Two')]]) + '</div>' +
+    '<div class="og"><div class="ol">' + esc(L('タッチ操作ボタン', 'Touch buttons')) + '</div>' + seg('tc', [['auto', L('じどう', 'Auto')], ['on', L('出す', 'Show')], ['off', L('出さない', 'Hide')]]) + '</div>' +
+    (window.KoboOrient ? '<div class="og"><div class="ol">' + esc(L('画面のむき', 'Screen orientation')) + '</div><div class="seg" id="oOri" role="group"></div><p>' + esc(L('スマホが回らないときは「よこ きょうせい」で、画面ごと回して出します。', 'If your phone will not rotate, “Landscape” turns the whole game for you.')) + '</p></div>' : '') +
+    '<p>' + esc(L('「やられない」では、ダメージを受けても体力が減りません（穴や水に落ちてももどされるだけ）。', 'With “Never lose”, hits never reduce your hearts (falling just puts you back).')) + '</p>';
+  $('setBody').querySelectorAll('.seg[data-k]').forEach(sg => sg.querySelectorAll('.opt').forEach(b => { b.onclick = () => {
+    const k = sg.dataset.k, v = b.dataset.v; save.set[k] = (k === 'tc') ? v : Number(v); writeSave(); showTouch();
+    sg.querySelectorAll('.opt').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+  }; }));
+  if (window.KoboOrient && $('oOri')) { const el = $('oOri'); const draw = () => { el.innerHTML = KoboOrient.MODES.map(m => '<button class="opt" type="button" data-v="' + m + '" aria-pressed="' + (KoboOrient.get() === m) + '">' + esc(L(ORI_NAMES[m][0], ORI_NAMES[m][1])) + '</button>').join(''); el.querySelectorAll('.opt').forEach(b => { b.onclick = () => { if (KoboOrient.get() === b.dataset.v) return; if (G && G.live && !confirm(T('ステージをやめて、画面のむきをかえますか？'))) return; writeSave(); KoboOrient.set(b.dataset.v); draw(); }; }); }; draw(); }
+  $('ovSet').hidden = false;
+}
+KoboI18n.add({ en: { 'ステージをやめて、画面のむきをかえますか？': 'Quit this stage and change the screen orientation?' } });
+$('tSet').onclick = () => showSettings(); $('setClose').onclick = () => { $('ovSet').hidden = true; if (G && mode === 'play') openPause(); else if (mode === 'ow') { $('ovSet').hidden = true; document.body.classList.add('ow'); } else showTitle(); };
+
+// ---------- pause menu, sound, theme ----------
+function openPause() {
+  if (!UI || mode !== 'play' || (pm && pm.isOpen)) return;
+  paused = true; padOff(); down.clear();
+  pm = UI.pauseMenu({ title: T('一時停止'), home: '../',
+    extra: [{ label: L('ちずへ', 'Level map'), icon: 'menu', onClick: () => { pm.close(); paused = false; showOverworld(G && G.id); } },
+      { label: L('せってい', 'Settings'), icon: 'settings', onClick: () => { pm.close(); showSettings(); } }],
+    onSettings: false, onRestart: () => restartLevel(), confirmRestart: false,
+    onOpen: () => { const g = KG(); if (g) g.menuOpened(); },
+    onResume: () => { paused = false; const g = KG(); if (g) g.menuClosed(); acc = 0; kick(); } });
+  pm.open();
+}
+$('pauseBtn').addEventListener('click', openPause);
+function renderSound() { const b = $('sndBtn'); if (!A) { b.hidden = true; return; } const m = A.muted; b.setAttribute('aria-pressed', String(!m)); b.setAttribute('aria-label', T(m ? 'サウンド オフ' : 'サウンド オン')); b.replaceChildren(); if (UI) { const ic = UI.icon(m ? 'mute' : 'sound'); if (ic && ic.nodeType) b.append(ic); else b.innerHTML = String(ic || ''); } }
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) SND.star(); });
+if (A) A.onChange(renderSound);
+$('menuBtn').addEventListener('click', () => { if (mode === 'play') openPause(); else showSettings(); });
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', !(UI && UI.theme && UI.theme.resolved && UI.theme.resolved() === 'light') ? '#2a2150' : '#e9f3fb'); }
+
+// ---------- resize, boot ----------
+let rz = 0; const relayout = () => { clearTimeout(rz); rz = setTimeout(fit, 40); };
+window.addEventListener('resize', relayout); window.addEventListener('orientationchange', () => setTimeout(fit, 120));
+if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0));
+function persistNow() { if (G && G.live) { /* a stage in progress is not saved; clears and stats are */ } writeSave(); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) { persistNow(); down.clear(); padOff(); } else { last = performance.now(); acc = 0; kick(); } });
+window.addEventListener('pagehide', persistNow);
+OW = OWM.create({ ART, LV, L, get save() { return save; }, unlocked, popc, toast: m => toast(m, 2200), exit: () => showTitle(), startLevel: id => startLevel(id), onMove: () => snd('star') });
+$('owBack').onclick = () => OW.back(); $('owGo').onclick = () => OW.activate();
+renderSound(); themeColor(); showTouch(); fit();
+KG() && KG().register({
+  id: GAME,
+  pause() { if (mode === 'play') paused = true; padOff(); down.clear(); },
+  resume(reason) { if (reason === 'menu') { paused = false; acc = 0; kick(); return; } if (mode === 'play' && !(pm && pm.isOpen)) { paused = false; openPause(); } else { paused = false; kick(); } },
+  save() { persistNow(); },
+  isIdle: () => !(G && G.live && mode === 'play'),
+  dispose() { cancelAnimationFrame(raf); },
+});
+{ if (store.get(HOWTO_KEY) == null && !save.tut) { save.tut = 1; writeSave(); showHowto(true); } else showTitle(); }
+kick();
+
+// ---------- test hooks (?debug) ----------
+if (DEBUG) {
+  const api = {
+    ready: () => true,
+    state() {
+      const S = G && G.S, p = S && S.ps[0];
+      return { mode, id: G ? G.id : '', playing: !!(G && mode === 'play'), paused, over: !!(S && S.res), frame: S ? S.f : 0, x: p ? p.x : 0, y: p ? p.y : 0, vx: p ? p.vx : 0, vy: p ? p.vy : 0, on: p ? p.on : false, hp: p ? p.hp : 0, ab: p ? p.ab : null, held: p && p.held ? p.held.k : null, puff: p ? p.puff : 0, flaps: p ? p.flaps : 0,
+        np: S ? S.np : 0, stars: S ? S.stars : 0, med: S ? S.med : 0, hurts: S ? S.hurts : 0, deaths: S ? S.deaths : 0, kills: S ? S.kills : 0, cp: S ? S.cpIdx : -1, bossDead: S ? S.bossDead : 0, result: G && G.result || null, save: JSON.parse(JSON.stringify(save)),
+        title: !$('ovTitle').hidden, resultShown: !$('ovResult').hidden, howto: !$('howto').hidden, settings: !$('ovSet').hidden, book: !$('ovBook').hidden, touch: document.body.classList.contains('touch'), vw: S ? S.vw : 0, sc, ow: mode === 'ow', owCur: OW ? OW.cur : 0, pauseOpen: !!(pm && pm.isOpen) };
+    },
+  };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__puff = {
+    api, E, ART, LV, get G() { return G; }, get S() { return G && G.S; }, get save() { return save; }, get ow() { return OW; }, start: startLevel, showOverworld, showTitle, showBook, showSettings, openPause, startDef,
+    resetSave() { store.del(SAVE_KEY); save = readSave(); }, unlockAll() { DBG_UNLOCK = true; },
+    hold(m, m2) { dbgHold.m = m | 0; dbgHold.m2 = m2 | 0; }, release() { dbgHold.m = 0; dbgHold.m2 = 0; },
+    manual(on) { MANUAL = !!on; acc = 0; kick(); }, stepN(n) { for (let i = 0; i < n && G && mode === 'play' && !paused; i++) stepOnce(); dirty = true; render(); return G ? G.S.f : 0; },
+    finish() { for (let i = 0; i < 400 && G && !G.resultShown; i++) stepOnce(); },
+    setPos(x, y, i) { const p = G.S.ps[i || 0]; p.x = x; p.y = y; p.vx = 0; p.vy = 0; G.S.cam.x = E.camTarget(G.S); },
+    give(ab) { G.S.ps[0].ab = ab; }, fit, render: () => { dirty = true; render(); },
+    thumbScene() { store.set(HOWTO_KEY, '1'); document.body.classList.add('thumb'); hideOverlays(); startLevel('1-1'); G.intro = 0; const S = G.S; fit(); const p = S.ps[0]; p.x = 36 * 16; p.y = 140; p.vy = -1.2; p.vx = 1.2; p.on = false; p.ab = 'fire'; p.puff = 1; p.face = 1; S.cam.x = E.camTarget(S); S.cam.x = Math.max(0, p.x - S.vw * 0.4); for (let i = 0; i < 4; i++) E.step(S, B.R | B.ACT); S.cam.x = Math.max(0, p.x - S.vw * 0.4); render(); },
+  };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.puff.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>

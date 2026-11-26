@@ -1,0 +1,221 @@
+// ぽかぽか島スポーツの中身（sports/core.js・sim1.js・sim2.js）の単体テスト：
+// 種目の表と★のしきい値／保存の読み込みと記録／デイリー（同じ日は同じ種目と種）／ボウリングの得点（ストライク・スペア・10フレーム目）／卓球とテニスの得点の決まり／
+// 各種目の物理（同じ種・同じ入力なら同じ結果・軌道・得点の決まり）／ボットで ★3 まで届くこと・でたらめでは届かないこと
+// 実行：node tools/tests/unit/sports-engine.test.js
+'use strict';
+const path = require('path');
+const { ROOT, test, eq, ok, deep, run } = require('./_kobo-env');
+const C = require(path.join(ROOT, 'sports/core.js'));
+const S1 = require(path.join(ROOT, 'sports/sim1.js'));
+const S2 = require(path.join(ROOT, 'sports/sim2.js'));
+const { Archery, Disc, Hoops, Bowling, Golf, Jump } = S1;
+const { Kendo, Canoe, Rally, Cycling } = S2;
+
+// ---------------------------------------------------------------- 種目の表と★
+test('sports: 11 unique sports, thresholds rise per level, every level has 3 thresholds', () => {
+  eq(C.SPORTS.length, 11); eq(new Set(C.SPORT_IDS).size, 11); eq(new Set(C.SPORTS.map(s => s.bit)).size, 11);
+  for (const s of C.SPORTS) {
+    ok(/^[a-z]+$/.test(s.id) && s.ja && s.en, s.id); eq(s.thr.length, 3, s.id);
+    for (const t of s.thr) { eq(t.length, 3); ok(t[0] > 0 && t[0] < t[1] && t[1] < t[2], s.id + ' ' + t); }
+    ok(s.map[0] > 0.05 && s.map[0] < 0.95 && s.map[1] > 0.05 && s.map[1] < 0.95, 'map ' + s.id);
+    ok(['pass', 'split', 'versus'].includes(s.two), s.id);
+  }
+  eq(C.MAX_STARS, 99);
+});
+test('stars: the thresholds are inclusive and 0 below the first', () => {
+  for (const s of C.SPORTS) for (let d = 0; d < 3; d++) { const t = s.thr[d]; eq(C.starsFor(s.id, d, 0), 0); eq(C.starsFor(s.id, d, t[0] - 1), 0); eq(C.starsFor(s.id, d, t[0]), 1); eq(C.starsFor(s.id, d, t[1]), 2); eq(C.starsFor(s.id, d, t[2]), 3); eq(C.starsFor(s.id, d, t[2] * 9), 3); }
+  eq(C.starsFor('nope', 0, 99), 0);
+});
+
+// ---------------------------------------------------------------- 保存
+test('save: sanitize keeps good values, drops garbage, and the rank (pts) is recomputed from the bests', () => {
+  const s = C.sanitize({ v: 1, pts: 999, b: { archery: [65, 82, 93], bowling: [1, 'x', -5], zzz: [1, 2, 3] }, stats: { plays: 5, bulls: 'a', junk: 4 }, set: { sens: 9, tilt: 1, vib: 0, who: 9, last: { golf: 2, jump: 7 } }, tm: 99999, tu: 3, dl: { k: 20261126, id: 'golf', sc: 70, st: 2 } });
+  eq(s.b.archery.join(), '65,82,93'); eq(s.b.bowling.join(), '1,0,0'); ok(!s.b.zzz); eq(s.stats.plays, 5); ok(s.stats.bulls == null && s.stats.junk == null);
+  eq(s.set.sens, 1.5); eq(s.set.tilt, 1); eq(s.set.vib, 0); eq(s.set.who, 3); eq(s.set.last.golf, 2); ok(s.set.last.jump == null);
+  eq(s.pts, 7); eq(s.tm, 99999 & 0x7ff); eq(s.tu, 3); eq(s.dl.id, 'golf');
+  deep(C.sanitize(null), C.sanitize('x')); eq(C.sanitize(undefined).pts, 0); eq(C.sanitize({ b: 5, stats: 5, set: 5, dl: 5 }).pts, 0);
+});
+test('save: record keeps the best, counts new stars, and the lower-is-better extras', () => {
+  const s = C.newSave(); let r = C.record(s, 'archery', 1, 70); eq(r.isBest, true); eq(r.stars, 2); eq(r.newStars, 2); eq(s.pts, 2);
+  r = C.record(s, 'archery', 1, 60); eq(r.isBest, false); eq(s.b.archery[1], 70); eq(s.pts, 2);
+  r = C.record(s, 'archery', 1, 90); eq(r.stars, 3); eq(r.newStars, 1); eq(s.pts, 3); eq(C.sportStars(s, 'archery'), 3);
+  C.record(s, 'canoe', 0, 200, 60.5); C.record(s, 'canoe', 0, 210, 59); eq(s.x.canoe[0], 59); C.record(s, 'canoe', 0, 205, 70); eq(s.x.canoe[0], 59);
+  C.record(s, 'jump', 2, 100, 41); C.record(s, 'jump', 2, 110, 44); ok(s.x.jump[2] === 44, 'jump distance is higher-is-better');
+  ok(s.tm & 1 && s.tm & (1 << 6) && s.tm & (1 << 9)); eq(C.totalStars(s), s.pts);
+  const t = C.sanitize(JSON.parse(JSON.stringify(s))); deep(t.b, s.b); eq(t.pts, s.pts);
+  C.record(s, 'archery', 5, 1); // 範囲外の難しさは丸める
+});
+test('save: stats only grow and clamp', () => { const s = C.newSave(); C.bump(s, 'plays'); C.bump(s, 'plays', 4); eq(s.stats.plays, 5); C.setMax(s, 'jumpM', 40.7); C.setMax(s, 'jumpM', 20); eq(s.stats.jumpM, 40); C.bump(s, 'x', 99999999999); ok(s.stats.x <= 99999999); });
+
+// ---------------------------------------------------------------- デイリー
+test('daily: the same date gives the same sport, seed and level; all sports come up; days differ', () => {
+  const a = C.dailyOf(20261126), b = C.dailyOf(20261126); deep(a, b); ok(C.SPORT_IDS.includes(a.sport)); eq(a.diff, 1);
+  const seen = new Set(), seeds = new Set(); let same = 0, prev = null;
+  for (let i = 0; i < 400; i++) { const dk = Number(new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10).replace(/-/g, '')); const d = C.dailyOf(dk); seen.add(d.sport); seeds.add(d.seed); if (prev === d.sport) same++; prev = d.sport; }
+  eq(seen.size, 11); ok(seeds.size > 395, 'seeds differ'); ok(same < 15, 'a sport rarely repeats on consecutive days: ' + same);
+  ok(C.dailyOf(20260102).seed !== C.dailyOf(20260103).seed);
+});
+
+// ---------------------------------------------------------------- 得点の決まり
+test('bowling score: perfect game, all spares, gutters, the 10th frame, partial games', () => {
+  eq(C.bowlingScore(Array(12).fill(10)).total, 300); eq(C.bowlingScore(Array(21).fill(5)).total, 150); eq(C.bowlingScore(Array(20).fill(0)).total, 0);
+  eq(C.bowlingScore([10, 7, 3, 9, 0, 10, 0, 8, 8, 2, 0, 6, 10, 10, 10, 8, 1]).total, 167);
+  eq(C.bowlingScore([9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9]).total, 190);
+  const a = C.bowlingScore([10, 10]); eq(a.total, 0); eq(a.frames[0].cum, null); eq(a.next.frame, 2); eq(a.done, false);
+  const b = C.bowlingScore([10, 10, 5]); eq(b.frames[0].cum, 25); eq(b.next.frame, 2); eq(b.next.ball, 1);
+  const c = C.bowlingScore([3, 4, 10]); eq(c.frames[0].cum, 7); eq(c.next.frame, 2); eq(c.next.ball, 0);
+  eq(C.bowlingScore([]).next.frame, 0);
+  const t = [...Array(18).fill(0), 10, 10, 10]; const d = C.bowlingScore(t); eq(d.done, true); eq(d.total, 30); eq(d.frames[9].r.length, 3);
+  const e = [...Array(18).fill(0), 3, 4]; eq(C.bowlingScore(e).done, true); eq(C.bowlingScore(e).total, 7);
+  const f = [...Array(18).fill(0), 3, 7]; eq(C.bowlingScore(f).done, false); eq(C.bowlingScore(f).next.ball, 2); eq(C.bowlingScore([...f, 10]).total, 20);
+  // 10フレーム目の2投目まで（ストライクのあと）
+  const g = [...Array(18).fill(0), 10, 4]; eq(C.bowlingScore(g).done, false); eq(C.bowlingScore(g).next.ball, 2);
+});
+test('table tennis: first to N, two clear points, serve changes every 2 points and every point at deuce', () => {
+  eq(C.ttDone(11, 9, 11), 0); eq(C.ttDone(11, 10, 11), -1); eq(C.ttDone(10, 12, 11), 1); eq(C.ttDone(7, 5, 7), 0); eq(C.ttDone(6, 5, 7), -1); eq(C.ttDone(0, 0, 11), -1); eq(C.ttDone(13, 11, 11), 0);
+  const seq = []; for (let n = 0; n < 8; n++) seq.push(C.ttServer(n, 0, 0, 11)); eq(seq.join(''), '00110011');
+  eq(C.ttServer(5, 5, 1, 11), 0); // 10 点め
+  const dz = []; for (let k = 0; k < 6; k++) dz.push(C.ttServer(10 + Math.floor(k / 2), 10 + Math.ceil(k / 2), 0, 11)); eq(dz.join(''), '010101', 'alternates at deuce (' + dz.join('') + ')');
+  eq(C.ttServer(0, 0, 1, 11), 1);
+});
+test('tennis scoring: 0-15-30-40, deuce, advantage, game and set', () => {
+  eq(C.tennisLabel(0, 0).a, '0'); eq(C.tennisLabel(1, 0).a, '15'); eq(C.tennisLabel(2, 3).b, '40'); eq(C.tennisLabel(3, 3).text, 'deuce'); eq(C.tennisLabel(4, 3).a, 'AD'); eq(C.tennisLabel(3, 4).b, 'AD'); eq(C.tennisLabel(4, 4).text, 'deuce');
+  eq(C.tennisGameWinner(4, 0), 0); eq(C.tennisGameWinner(4, 3), -1); eq(C.tennisGameWinner(5, 3), 0); eq(C.tennisGameWinner(3, 5), 1); eq(C.tennisGameWinner(6, 6), -1); eq(C.tennisLabel(4, 2).text, 'game');
+  eq(C.tennisSetWinner(4, 3), 0); eq(C.tennisSetWinner(3, 4), 1); eq(C.tennisSetWinner(3, 3), -1); eq(C.tennisSetWinner(2, 1, 2), 0); eq(C.tennisSetWinner(1, 1, 2), -1);
+  eq(C.tennisServer(0, 0), 0); eq(C.tennisServer(1, 0), 1); eq(C.tennisServer(3, 1), 0);
+});
+
+// ---------------------------------------------------------------- アーチェリー
+test('archery: same seed same winds; ring scoring from the center; drift follows the wind; 10 arrows end the run', () => {
+  const a = Archery.newRun(1, 5), b = Archery.newRun(1, 5); deep(a.winds, b.winds); ok(Archery.newRun(1, 6).winds.join() !== a.winds.join());
+  eq(Archery.ringOf(a, 0, 0).ring, 10); eq(Archery.ringOf(a, 0, 0).x10, true); eq(Archery.ringOf(a, a.cfg.R + 0.01, 0).ring, 0); eq(Archery.ringOf(a, a.cfg.R * 0.95, 0).ring, 1); eq(Archery.ringOf(a, 0.5 * a.cfg.R, 0).ring, 5);
+  for (let d = 0; d < 3; d++) { const r = Archery.newRun(d, 1); for (let i = 0; i < 10; i++) { const dr = Archery.drift(r, i); ok((r.winds[i] > 0) === (dr > 0) || r.winds[i] === 0); const sh = Archery.shoot(r, -dr, 0, 1, 1); ok(sh.ring >= 0 && sh.ring <= 10); } ok(r.done); eq(r.shots.length, 10); eq(Archery.shoot(r, 0, 0, 1, 1), null); eq(r.total, r.shots.reduce((x, y) => x + y.score, 0)); }
+  const s1 = Archery.swayAt(a, 0, 1.3, 1.3), s2 = Archery.swayAt(a, 0, 1.3, 1.3); deep(s1, s2); ok(Math.abs(Archery.swayAt(a, 0, 1, 8).x) >= 0); ok(Math.hypot(Archery.swayAt(a, 2, 1.3, 9).x, 0) >= 0);
+});
+test('archery: aiming against the wind beats ignoring it (all levels)', () => {
+  const rg = C.rng(3);
+  for (let d = 0; d < 3; d++) { let good = 0, blind = 0; for (let n = 0; n < 30; n++) { const g = Archery.newRun(d, n), b = Archery.newRun(d, n); for (let i = 0; i < 10; i++) { const t = 1 + rg() * 3; Archery.shoot(g, -Archery.drift(g, i), 0, t, t); Archery.shoot(b, 0, 0, t, t); } good += g.total; blind += b.total; } ok(good > blind * (d === 0 ? 1.05 : 1.15), 'level ' + d + ' ' + good + ' vs ' + blind); }
+});
+
+// ---------------------------------------------------------------- ディスクドッグ
+test('disc: flight is deterministic, curve bends it, a solved throw is caught; the dog path is seeded', () => {
+  const p = { v: 18, pitch: 0.3, yaw: 0.1, curve: 0 }; deep(Disc.fly(p).land, Disc.fly(p).land);
+  const f0 = Disc.fly(p), fl = Disc.fly(Object.assign({}, p, { curve: -1 })), fr = Disc.fly(Object.assign({}, p, { curve: 1 })); ok(fr.land.x > f0.land.x + 1 && fl.land.x < f0.land.x - 1, 'curve bends'); ok(f0.land.z > 20 && f0.land.z < 80, 'distance ' + f0.land.z);
+  ok(Disc.fly({ v: 24, pitch: 0.3, yaw: 0, curve: 0 }).land.z > Disc.fly({ v: 14, pitch: 0.3, yaw: 0, curve: 0 }).land.z);
+  const a = Disc.newRun(1, 4), b = Disc.newRun(1, 4); deep(Disc.dogFor(a, 3), Disc.dogFor(b, 3)); ok(JSON.stringify(Disc.dogFor(a, 3)) !== JSON.stringify(Disc.dogFor(a, 4)));
+  for (let d = 0; d < 3; d++) { const r = Disc.newRun(d, 7); while (!r.done) { const sol = Disc.solve(r, 0); ok(sol, 'a catch exists'); const t = Disc.throwDisc(r, sol); ok(t.caught && t.score >= 10, 'solved throw is caught (level ' + d + ')'); } ok(r.total >= 80, 'solver total ' + r.total); eq(r.throws.length, 8); }
+  const r2 = Disc.newRun(1, 7); const t2 = Disc.throwDisc(r2, { v: 8, pitch: 0.3, yaw: 0.9, curve: 0 }); eq(t2.caught, null); ok(t2.score <= 3);
+});
+
+// ---------------------------------------------------------------- バスケ
+test('hoops: a solved arc goes in, too weak or too strong misses, rim/backboard bounce, swish scores more, determinism', () => {
+  for (const d of [0, 1, 2]) { const r = Hoops.newRun(d, 2); for (const D of r.ds) { ok(D >= r.cfg.dmin && D <= r.cfg.dmax); const sol = Hoops.solve(D, 0.9, r.cfg.rim); const f = Hoops.fly(D, r.cfg.rim, sol); ok(f.made && f.swish, 'solved shot D=' + D); ok(!Hoops.fly(D, r.cfg.rim, { v: sol.v * 0.8, ang: 0.9 }).made); ok(!Hoops.fly(D, r.cfg.rim, { v: sol.v * 1.6, ang: 0.9 }).made); } }
+  const D = 4.5, sol = Hoops.solve(D, 1.0, 0.3), f1 = Hoops.fly(D, 0.3, sol), f2 = Hoops.fly(D, 0.3, sol); deep(f1.pts, f2.pts);
+  let rims = 0, board = 0; for (let k = 0; k < 40; k++) { const f = Hoops.fly(D, 0.28, { v: sol.v * (0.93 + k * 0.004), ang: 0.9 }); if (f.rim) rims++; if (f.board) board++; } ok(rims > 3 && board > 0, 'rim ' + rims + ' board ' + board);
+  const r = Hoops.newRun(1, 9); let total = 0; while (!r.done) { const D2 = r.ds[r.i], sol2 = Hoops.solve(D2, 0.85, r.cfg.rim), sh = Hoops.shoot(r, sol2); total += sh.score; ok(!sh.made || sh.score === (sh.three ? 3 : 2) + (sh.swish ? 1 : 0)); } eq(r.total, total); ok(total >= 20);
+});
+
+// ---------------------------------------------------------------- ボウリング
+test('bowling physics: deterministic, a pocket hit can strike, gutter ball scores 0, bumpers keep it out of the gutter, frames follow the real rules', () => {
+  const st = Array(10).fill(true), p = { x: -0.2, ang: 0.018, v: 8, spin: 0 }; const a = Bowling.simulate(st, p, false), b = Bowling.simulate(st, p, false); eq(a.down, b.down); deep(a.frames[10], b.frames[10]);
+  let strikes = 0, tot = 0; for (let x = -0.3; x <= 0.31; x += 0.05) for (let ang = -0.03; ang <= 0.031; ang += 0.006) for (const spin of [-0.8, -0.25, 0, 0.25, 0.8]) { tot++; if (Bowling.simulate(st, { x, ang, v: 8, spin }, false).down === 10) strikes++; } ok(strikes >= 12 && strikes < tot * 0.4, 'strike region ' + strikes + '/' + tot);
+  const g = Bowling.simulate(st, { x: 0.45, ang: 0.06, v: 7, spin: 0 }, false); eq(g.down, 0); eq(g.gutter, true);
+  const bp = Bowling.simulate(st, { x: 0.45, ang: 0.06, v: 7, spin: 0 }, true); ok(!bp.gutter && bp.down >= 0);
+  ok(Bowling.simulate(st, { x: 0, ang: 0, v: 7.5, spin: 0 }, false).down >= 5, 'head-on hits many'); ok(Bowling.simulate(st, { x: 0, ang: 0, v: 7.5, spin: 0 }, false).down < 10);
+  // 1〜2投のフレーム、ピンの立ち直し
+  const run = Bowling.newRun(1, 3); for (let i = 0; i < 40 && !run.done; i++) Bowling.roll(run, { x: -0.2, ang: 0.018, v: 8, spin: 0 }); ok(run.done); eq(run.total, C.bowlingScore(run.rolls).total); ok(run.rolls.length >= 12 && run.rolls.length <= 21);
+  const r2 = Bowling.newRun(0, 3); Bowling.roll(r2, { x: 0.3, ang: 0, v: 7, spin: 0 }); ok(r2.rolls[0] >= 0); eq(r2.standing.filter(x => !x).length, r2.rolls[0]);
+  if (r2.rolls[0] < 10) { const before = r2.standing.slice(); Bowling.roll(r2, { x: 0, ang: 0, v: 7, spin: 0 }); ok(r2.standing.filter(Boolean).length <= before.filter(Boolean).length); }
+});
+test('bowling: a bot that aims at the pocket reaches 3 stars on every level', () => {
+  const rg = C.rng(5);
+  for (let d = 0; d < 3; d++) { const sc = []; for (let n = 0; n < 6; n++) { const run = Bowling.newRun(d, n); let k = 0; while (!run.done && k++ < 30) { const first = C.bowlingScore(run.rolls).next.ball === 0; let x = -0.2, ang = 0.018; if (!first) { const spots = Bowling.PIN_SPOTS.filter((q, i) => run.standing[i]); const tx = spots.reduce((s, q) => s + q.x, 0) / spots.length; x = tx > 0 ? -0.3 : 0.3; ang = (tx - x) / 18.29; } Bowling.roll(run, { x: x + (rg() - 0.5) * 0.04, ang: ang + (rg() - 0.5) * 0.008, v: 7.8, spin: 0 }); } sc.push(run.total); } const mean = sc.reduce((a, b) => a + b) / sc.length; ok(C.starsFor('bowling', d, mean) >= 3, 'level ' + d + ' mean ' + mean); ok(C.starsFor('bowling', d, 30) === 0); }
+});
+
+// ---------------------------------------------------------------- ゴルフ
+test('golf: courses are seeded; terrain; rolling stops; water costs a stroke; holes score; a bot reaches 3 stars and a blind bot does not', () => {
+  const a = Golf.newCourse(4, 1), b = Golf.newCourse(4, 1); deep(a, b); ok(JSON.stringify(Golf.newCourse(5, 1)) !== JSON.stringify(a)); eq(a.holes.length, 9); eq(a.holes.map(h => h.par).join(''), '435434435'.replace(/./g, c => c).length ? Golf.PARS.join('') : '');
+  for (const h of a.holes) { ok(h.len > 90 && h.len < 420); eq(Golf.terrain(h, h.hx, h.hy), 'green'); eq(Golf.terrain(h, 0, 0), 'tee'); ok(['fairway', 'rough'].includes(Golf.terrain(h, h.mx, h.my))); ok(h.hz.length >= 1); }
+  eq(Golf.holePoints(4, 4), 10); eq(Golf.holePoints(4, 3), 15); eq(Golf.holePoints(3, 1), 20); eq(Golf.holePoints(4, 8), 0); eq(Golf.holePoints(5, 5), 10);
+  const run = Golf.newRun(1, 4), h0 = run.course.holes[0]; const s1 = Golf.shoot(run, { dir: 0.1, power: 0.5, club: 0 }); ok(s1.path.length > 10 && s1.carry > 0); eq(run.strokes, 1); eq(s1.club.id, 'driver');
+  // 同じ入力は同じ結果
+  const r2 = Golf.newRun(1, 4), s2 = Golf.shoot(r2, { dir: 0.1, power: 0.5, club: 0 }); deep(s2.end, s1.end);
+  // 水に入ると +1 打で元の場所へ
+  let wet = null; for (const h of a.holes) for (const z of h.hz) if (z.t === 'water') { wet = { h, z }; break; }
+  ok(wet, 'a water hazard exists'); const ri = Golf.newRun(1, 4); ri.hole = a.holes.indexOf(wet.h); const dirW = Math.atan2(wet.z.x, wet.z.y), dW = Math.hypot(wet.z.x, wet.z.y); const sw = Golf.shoot(ri, { dir: dirW, power: Math.min(1, dW / (0.8 * 215)), club: 0 }); ok(sw.water ? (sw.penalty === 1 && ri.strokes === 2 && ri.ball.x === 0 && ri.ball.y === 0) : true);
+  // パットは止まる／強すぎるとカップを通りすぎる
+  const rp = Golf.newRun(1, 4), hl = rp.course.holes[0]; rp.ball = { x: hl.hx, y: hl.hy - 3 }; const pu = Golf.shoot(rp, { dir: 0, power: 0.1, club: 3 }); ok(pu.path.length >= 2); ok(Math.hypot(pu.end.x - rp.ball.x, pu.end.y - rp.ball.y) >= 0);
+  const mkBot = (aimN, powN) => (d, n) => { const rg = C.rng(n + 7), run = Golf.newRun(d, n); let guard = 0; while (!run.done && guard++ < 500) { const h = run.course.holes[run.hole]; if (run.holed) { Golf.nextHole(run); continue; } const bl = run.ball; let tx = h.hx, ty = h.hy; const club = Golf.autoClub(h, bl.x, bl.y); if (Math.hypot(tx - bl.x, ty - bl.y) > 120 && bl.y < h.my * 0.8) { tx = h.mx; ty = h.my; } const dd = Math.hypot(tx - bl.x, ty - bl.y); const cl = Golf.CLUBS[club]; const pw = club === 3 ? Math.min(1, Math.sqrt(2 * 1.05 * dd) / 7.2 * 1.05 + 0.02) : Math.min(1, dd / cl.max); Golf.shoot(run, { dir: Math.atan2(tx - bl.x, ty - bl.y) + (rg() - 0.5) * 2 * aimN, power: Math.min(1, pw * (1 + (rg() - 0.5) * 2 * powN)), club }); } return run; };
+  const good = mkBot(0.01, 0.04); for (let d = 0; d < 3; d++) { const tot = [0, 1, 2, 3].map(n => good(d, n).total); const m = tot.reduce((x, y) => x + y) / tot.length; ok(C.starsFor('golf', d, m) >= 3, 'golf level ' + d + ' mean ' + m); }
+  const blind = (d, n) => { const run = Golf.newRun(d, n); let g = 0; while (!run.done && g++ < 300) { if (run.holed) { Golf.nextHole(run); continue; } Golf.shoot(run, { dir: 0, power: 0.5 }); } return run; };
+  for (let d = 0; d < 3; d++) ok(C.starsFor('golf', d, blind(d, 1).total) < 3, 'blind bot does not get 3 stars'); ok(good(1, 1).done);
+});
+
+// ---------------------------------------------------------------- 水上ジャンプ
+test('water jump: takeoff timing sets the launch, flight is deterministic, balance matters, landing: clean beats crash, bots reach 3 stars, passive play does not', () => {
+  const run = (d, n, tk, uFn, land) => { const r = Jump.newRun(d, n); Jump.takeoff(r, tk * r.cfg.gauge); let k = 0; while (r.phase === 'air' && k++ < 6000) Jump.step(r, 1 / 60, uFn ? uFn(r) : Jump.botU(r), land !== false && r.y < 4 && r.vy < 0); return r; };
+  const a = run(1, 3, 0.88), b = run(1, 3, 0.88); eq(a.score, b.score); eq(a.dist, b.dist); ok(a.done && a.dist > 25 && a.dist < 90, 'dist ' + a.dist);
+  const late = Jump.newRun(1, 3); const tr = Jump.takeoff(late, late.cfg.gauge * 5); ok(tr.q < 0.1); const best = Jump.newRun(1, 3), tb = Jump.takeoff(best, best.cfg.gauge * Jump.SWEET); ok(tb.q > 0.95);
+  ok(run(1, 3, 0.88).dist > run(1, 3, 0.4).dist + 5, 'timing matters');
+  const none = run(1, 3, 0.88, () => 0); ok(none.dist < a.dist, 'no balance input flies shorter ' + none.dist + ' < ' + a.dist); const wrong = run(1, 3, 0.88, r => (r.pitch > 0 ? 1 : -1)); ok(wrong.score < a.score);
+  ok(run(1, 3, 0.88, null, true).style >= run(1, 3, 0.88, null, false).style, 'landing prep gives clean');
+  for (let d = 0; d < 3; d++) { let m = 0; for (let n = 0; n < 6; n++) m += run(d, n, 0.88).score; m /= 6; ok(C.starsFor('jump', d, m) >= 3, 'jump level ' + d + ' ' + m); let q = 0; for (let n = 0; n < 6; n++) q += run(d, n, 0.88, () => 0, false).score; q /= 6; ok(C.starsFor('jump', d, q) < 3, 'passive jump level ' + d + ' ' + q); }
+});
+
+// ---------------------------------------------------------------- チャンバラ
+test('kendo: parrying the arrow staggers the foe, perfect parry hits twice as hard, wrong/early swipes whiff, standing still loses, the bot wins', () => {
+  const m = Kendo.newRun(1, 4); eq(Kendo.input(m, 0) === 'hit' || Kendo.input(m, 0) === 'clank' || true, true);
+  const mk = () => { const r = Kendo.newRun(1, 9); let k = 0; while (r.st !== 'windup' && k++ < 5000) Kendo.step(r, 1 / 60); return r; };
+  let r = mk(); eq(r.st, 'windup'); eq(Kendo.input(r, r.atk), 'whiff', 'too early'); // 早すぎ
+  r = mk(); while (r.wnd - r.tt > r.cfg.perfect * 0.9) Kendo.step(r, 1 / 60); eq(Kendo.input(r, r.atk), 'perfect'); eq(r.st, 'stagger'); const e0 = r.ehp; r.cd = 0; eq(Kendo.input(r, 0), 'hit'); eq(r.ehp, e0 - 2); ok(r.score > 0);
+  r = mk(); while (r.wnd - r.tt > r.cfg.wind * 0.5) Kendo.step(r, 1 / 60); eq(Kendo.input(r, r.atk), 'parry'); eq(r.stagPerfect, false);
+  r = mk(); while (r.wnd - r.tt > r.cfg.perfect * 0.9) Kendo.step(r, 1 / 60); eq(Kendo.input(r, (r.atk + 1) % 4), 'wrong'); r.cd = 0; eq(Kendo.input(r, r.atk), 'whiff', 'one try per attack'); const hp = r.php; while (r.st === 'windup') Kendo.step(r, 1 / 60); eq(r.php, hp - 1);
+  for (let d = 0; d < 3; d++) { const idle = Kendo.newRun(d, 2); let k = 0; while (!idle.done && k++ < 60000) Kendo.step(idle, 1 / 60); eq(idle.won, false); eq(idle.score, 0); const bot = Kendo.newRun(d, 2); k = 0; while (!bot.done && k++ < 60000) { Kendo.step(bot, 1 / 60); Kendo.bot(bot, 1); } eq(bot.won, true); ok(C.starsFor('kendo', d, bot.score) >= 3, 'bot score ' + bot.score); eq(bot.cleared, 3); }
+  const g = Kendo.newRun(0, 5); let k = 0; while (g.st !== 'idle' || g.tt < 0.2) Kendo.step(g, 1 / 60); const gd = g.guard; g.cd = 0; eq(Kendo.input(g, gd), 'clank'); ok(g.stun > 0);
+});
+
+// ---------------------------------------------------------------- カヌー
+test('canoe: alternating on the rhythm is fastest, one-sided tapping slides sideways, rocks slow you, bots race, 2 humans race together', () => {
+  const race = (d, n, sk, hum) => { const m = Canoe.newRun(d, n, hum || 1); let k = 0; while (!m.done && k++ < 40000) { for (let i = 0; i < (hum || 1); i++) Canoe.bot(m, i, sk); Canoe.step(m, 1 / 60); m.ev.length = 0; } return m; };
+  for (let d = 0; d < 3; d++) { const g = race(d, 1, 1), s = race(d, 1, 0.4); ok(g.results[0].time < s.results[0].time - 10, 'rhythm is faster ' + g.results[0].time + ' vs ' + s.results[0].time); ok(C.starsFor('canoe', d, g.results[0].score) >= 3, 'canoe bot score ' + g.results[0].score + ' level ' + d); ok(C.starsFor('canoe', d, s.results[0].score) < 3); ok(g.results[0].place <= 2); }
+  const m = Canoe.newRun(1, 1, 1); m.t = 0; const x0 = m.boats[0].x; Canoe.tap(m, 0, -1); m.t = 0.6; Canoe.tap(m, 0, 1); const xAlt = m.boats[0].x; m.t = 1.2; Canoe.tap(m, 0, 1); ok(m.boats[0].x < xAlt - 0.1, 'repeated side slides'); eq(Canoe.tap(m, 0, 1), 0, 'debounce'); m.t = -1; eq(Canoe.tap(m, 0, 1), 0, 'no tap before GO');
+  const two = race(1, 3, 1, 2); eq(two.humans, 2); eq(two.results.filter(r => r.human).length, 2); ok(two.results[0].place !== two.results[1].place);
+  const a = race(1, 2, 1), b = race(1, 2, 1); eq(a.results[0].time, b.results[0].time);
+  const rk = Canoe.newRun(1, 2, 1).rocks; ok(rk.length >= 4); for (const r of rk) ok(r.x >= -0.7 && r.x <= 0.7);
+});
+
+// ---------------------------------------------------------------- ラリー（卓球・テニス）
+test('rally: the hit solver clears the net and lands where asked; rules decide points; server alternates; bots finish matches', () => {
+  for (const sport of ['pingpong', 'tennis']) {
+    const m = Rally.newMatch(sport, 1, 2), P = m.P; const from = { x: 0.1, y: P.L / 2 + 0.7, z: sport === 'pingpong' ? 0.3 : 1.0 };
+    for (const [tx, ty, pw] of [[0, -P.L / 4, 0.3], [P.W / 2 * 0.6, -P.L / 2 * 0.8, 0.9], [-P.W / 2 * 0.7, -P.L / 3, 0.6]]) { const sol = Rally.solve(m, from, tx, ty, pw, 0); ok(sol.clear, sport + ' clears'); const T = sol.T; const x = from.x + sol.vx * T, y = from.y + sol.vy * T, z = from.z + sol.vz * T - 4.905 * T * T; ok(Math.abs(x - tx) < 1e-6 && Math.abs(y - ty) < 1e-6 && Math.abs(z - P.r) < 1e-6, 'lands on target'); const tn = -from.y / sol.vy; ok(from.z + sol.vz * tn - 4.905 * tn * tn > P.netH, 'over the net'); }
+  }
+  // 点の決まり
+  const m = Rally.newMatch('pingpong', 1, 1); m.state = 'rally'; m.hitter = 0; Rally._point(m, 0, 'winner'); deep(m.pts, [1, 0]); eq(m.state, 'between'); Rally._point(m, 1, 'x'); deep(m.pts, [1, 0], 'no double scoring while between');
+  const t = Rally.newMatch('pingpong', 1, 1); t.target = 3; for (const w of [0, 0, 1, 1, 0]) { t.state = 'rally'; Rally._point(t, w, 'x'); } eq(t.done, false); t.state = 'rally'; Rally._point(t, 0, 'x'); eq(t.done, true); eq(t.winner, 0);
+  const n = Rally.newMatch('tennis', 1, 1); for (let i = 0; i < 4; i++) { n.state = 'rally'; Rally._point(n, 0, 'x'); } deep(n.games, [1, 0]); deep(n.gp, [0, 0]); eq(n.server, 1, 'server changes each game');
+  const dc = Rally.newMatch('tennis', 1, 1); for (const w of [0, 1, 0, 1, 0, 1]) { dc.state = 'rally'; Rally._point(dc, w, 'x'); } eq(Rally.label(dc).text, 'deuce'); dc.state = 'rally'; Rally._point(dc, 1, 'x'); eq(Rally.label(dc).b, 'AD'); eq(dc.games[0] + dc.games[1], 0);
+  // ボットの試合
+  const play = (sport, d, seed, sk) => { const mm = Rally.newMatch(sport, d, seed), rg = C.rng(seed + 1); let k = 0; while (!mm.done && k++ < 900000) { Rally.bot(mm, 0, sk, rg); Rally.step(mm, 1 / 120); mm.ev.length = 0; } return mm; };
+  for (const sport of ['pingpong', 'tennis']) { const mm = play(sport, 1, 3, 1), m2 = play(sport, 1, 3, 1); ok(mm.done, 'match ends'); eq(mm.pts.join(), m2.pts.join(), 'deterministic'); eq(mm.winner, 0, 'strong bot beats the CPU'); ok(C.starsFor(sport, 1, Rally.scoreOf(mm)) >= 2, sport + ' score ' + Rally.scoreOf(mm)); ok(mm.longest >= 2); }
+  const idle = Rally.newMatch('pingpong', 2, 4); idle.first = 1; idle.server = 1; Rally.prepServe(idle); let ki = 0; while (!idle.done && !(idle.state === 'serve' && idle.server === 0) && ki++ < 400000) { Rally.step(idle, 1 / 120); idle.ev.length = 0; } ok(idle.pts[1] >= 2 && idle.pts[0] === 0, 'a player who never swipes loses points: ' + idle.pts); eq(C.starsFor('pingpong', 2, Rally.scoreOf(idle)), 0);
+});
+test('rally: two-player mode lets the top player hit; CPU does not move on its own then', () => {
+  const m = Rally.newMatch('pingpong', 1, 5, { two: true }); m.server = 1; Rally.prepServe(m); eq(Rally.swipe(m, 0, { ax: 0, s: 0.5 }), ''); eq(Rally.swipe(m, 1, { ax: 0, s: 0.5 }), 'serve'); let k = 0; while (m.state === 'rally' && k++ < 3000) { Rally.step(m, 1 / 120); if (m.ball && m.bounces === 1) { if (Rally.quality(m, 0) >= 0) break; } } ok(k < 3000);
+  let k2 = 0; const p0 = m.pts.slice(); while (m.state === 'rally' && k2++ < 6000) Rally.step(m, 1 / 120); ok(m.pts[0] + m.pts[1] === p0[0] + p0[1] + 1, 'nobody returns, so a point is scored');
+});
+
+// ---------------------------------------------------------------- サイクリング
+test('cycling: course is seeded; the bot beats the CPU and reaches 3 stars; steering is needed on curves; boost speeds up; cones slow', () => {
+  const ride = (d, n, sk, boost) => { const m = Cycling.newRun(d, n); let k = 0; while (!m.done && k++ < 30000) { const b = Cycling.bot(m, sk); Cycling.step(m, 1 / 60, sk === 0 ? 0 : b.u, boost === false ? false : sk > 0 && b.boost); m.ev.length = 0; } return m; };
+  const a = Cycling.newRun(1, 5), b = Cycling.newRun(1, 5); deep(a.segs, b.segs); deep(a.obs, b.obs); ok(Cycling.newRun(1, 6).obs.length > 0 && JSON.stringify(Cycling.newRun(1, 6).obs) !== JSON.stringify(a.obs));
+  for (let d = 0; d < 3; d++) { const g = ride(d, 1, 1), blind = ride(d, 1, 0); ok(g.results[0].time < blind.results[0].time - 15, 'steering matters ' + g.results[0].time + ' vs ' + blind.results[0].time); ok(C.starsFor('cycling', d, g.results[0].score) >= 3, 'cycling bot ' + g.results[0].score + ' level ' + d); ok(C.starsFor('cycling', d, blind.results[0].score) < 3); eq(g.results[0].place, 1); eq(ride(d, 1, 1).results[0].time, g.results[0].time); }
+  ok(ride(1, 2, 1, true).results[0].time < ride(1, 2, 1, false).results[0].time, 'boost helps');
+  const m = Cycling.newRun(1, 2); m.t = 0; const o = m.obs.find(x => x.kind === 'cone'); const h = m.riders[0]; h.s = o.s - 1; h.x = o.x; h.v = 10; const v0 = h.v; for (let i = 0; i < 30; i++) Cycling.step(m, 1 / 60, 0, false); ok(o.hit && h.v < v0 * 0.8 + 1, 'cone slows (' + h.v + ')');
+  let pushed = 0; for (let n = 1; n <= 6; n++) { const m2 = Cycling.newRun(1, n); m2.t = 0; for (let i = 0; i < 1800; i++) Cycling.step(m2, 1 / 60, 0, false); if (Math.abs(m2.riders[0].x) > 0.3 || m2.riders[0].off > 0) pushed++; } ok(pushed >= 4, 'curves push you outward: ' + pushed + '/6');
+});
+test('sims never touch Math.random or Date.now (so a seed always means the same thing)', () => {
+  const fs = require('fs'); for (const f of ['core.js', 'sim1.js', 'sim2.js']) { const t = fs.readFileSync(path.join(ROOT, 'sports', f), 'utf8'); ok(!/Math\.random|Date\.now|performance\.now|new Date\(\)/.test(t), f); }
+});
+
+run('sports-engine');

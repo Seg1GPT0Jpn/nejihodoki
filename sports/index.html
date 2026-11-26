@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ぽかぽか島スポーツ</title>
+<meta name="theme-color" content="#0b3a52">
+<meta name="description" content="南の島をめぐって遊ぶ、11種目のミニスポーツ。アーチェリー・ディスクドッグ・ボウリング・チャンバラ・バスケ・ゴルフ・カヌー・卓球・サイクリング・水上ジャンプ・テニス。スワイプ・フリック・タップで遊べる。">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ぽかぽか島スポーツ">
+<link rel="stylesheet" href="../common/theme.css">
+<link rel="stylesheet" href="../common/ui.css">
+<script src="../common/i18n.js"></script>
+<script src="../common/games.js"></script>
+<script src="../common/platform.js"></script>
+<script src="../common/audio.js"></script>
+<script src="../common/ui.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* ぽかぽか島スポーツ：南の島の青とコーラル。--kb-* は共通トークンの塗りなおし、--sp-* はこのゲームだけ */
+:root, :root[data-kb-theme="dark"] {
+  --kb-bg: #0b2d42; --kb-surface: #123f5a; --kb-surface-2: #1a5273; --kb-sunken: #082233; --kb-line: #2f6a8c;
+  --kb-ink: #eef8fd; --kb-dim: #a6cbe0;
+  --kb-accent: #ff8a6b; --kb-accent-ink: #3a1208; --kb-accent-text: #ffb09a; --kb-accent-soft: rgba(255, 138, 107, .16);
+  --kb-scrim: rgba(3, 14, 22, .78); --kb-focus: #ffd24d;
+  --sp-panel: rgba(255, 255, 255, .08); --sp-card: linear-gradient(#17506f, #123f5a); --sp-go: linear-gradient(#ffb08a, #ff7a5c); --sp-go-shadow: #b0432c;
+  --sp-good: #7be0a0; --sp-bad: #ff9a8a; --sp-star: #ffd24d; --sp-star-off: #3c637a; --sp-key: #1d5a7c; --sp-key-shadow: #0e3347; --sp-title: linear-gradient(90deg, #bff5ff, #ffd24d 55%, #ff8a6b);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-kb-theme="dark"]) {
+    --kb-bg: #e6f7fc; --kb-surface: #ffffff; --kb-surface-2: #d3eef8; --kb-sunken: #bfe3f1; --kb-line: #8fc6de;
+    --kb-ink: #0f3047; --kb-dim: #3f6479;
+    --kb-accent: #e8573a; --kb-accent-ink: #ffffff; --kb-accent-text: #b8361d; --kb-accent-soft: rgba(232, 87, 58, .12);
+    --kb-scrim: rgba(15, 48, 71, .45); --kb-focus: #b36a00;
+    --sp-panel: rgba(15, 48, 71, .06); --sp-card: linear-gradient(#ffffff, #dff2fa); --sp-go: linear-gradient(#ff9a78, #e8573a); --sp-go-shadow: #9e3420;
+    --sp-good: #1f7a46; --sp-bad: #b83a26; --sp-star: #d08a00; --sp-star-off: #b6d0dc; --sp-key: #dff2fa; --sp-key-shadow: #8fc6de; --sp-title: linear-gradient(90deg, #0b6f94, #d08a00 55%, #e8573a);
+    color-scheme: light;
+  }
+}
+:root[data-kb-theme="light"] {
+  --kb-bg: #e6f7fc; --kb-surface: #ffffff; --kb-surface-2: #d3eef8; --kb-sunken: #bfe3f1; --kb-line: #8fc6de;
+  --kb-ink: #0f3047; --kb-dim: #3f6479;
+  --kb-accent: #e8573a; --kb-accent-ink: #ffffff; --kb-accent-text: #b8361d; --kb-accent-soft: rgba(232, 87, 58, .12);
+  --kb-scrim: rgba(15, 48, 71, .45); --kb-focus: #b36a00;
+  --sp-panel: rgba(15, 48, 71, .06); --sp-card: linear-gradient(#ffffff, #dff2fa); --sp-go: linear-gradient(#ff9a78, #e8573a); --sp-go-shadow: #9e3420;
+  --sp-good: #1f7a46; --sp-bad: #b83a26; --sp-star: #d08a00; --sp-star-off: #b6d0dc; --sp-key: #dff2fa; --sp-key-shadow: #8fc6de; --sp-title: linear-gradient(90deg, #0b6f94, #d08a00 55%, #e8573a);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+[hidden] { display: none !important; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: var(--kb-bg); color: var(--kb-ink); font-family: var(--kb-font-body);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--kb-sat) var(--kb-sar) var(--kb-sab) var(--kb-sal); max-width: 820px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--kb-focus); outline-offset: 2px; }
+header { flex: none; display: flex; align-items: center; gap: 4px; padding: 4px 6px 0; }
+h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-display); background: var(--sp-title); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back, .icon { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: var(--kb-ink); text-decoration: none; background: var(--sp-panel); border: 1px solid var(--kb-line); padding: 0; cursor: pointer; }
+.back svg, .icon svg { width: 22px; height: 22px; }
+#hud { flex: none; display: flex; gap: 6px; padding: 4px 8px; align-items: center; }
+.chip { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 2px 10px; min-height: 36px; border-radius: 12px; background: var(--sp-panel); border: 1px solid var(--kb-line); font-size: 12px; color: var(--kb-dim); white-space: nowrap; }
+.chip b { font: 800 14px var(--kb-font-body); color: var(--kb-ink); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+#hudText { flex: 1 1 auto; min-width: 0; text-align: left; justify-content: flex-start; overflow: hidden; }
+#stage { flex: 1 1 auto; min-height: 120px; position: relative; margin: 2px 8px; border-radius: 14px; overflow: hidden; border: 1px solid var(--kb-line); background: #123; touch-action: none; }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+body.g3d #gl { display: block; } body.g3d #cv { background: transparent; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline-offset: -3px; }
+#status { flex: none; min-height: 34px; box-sizing: border-box; padding: 4px 12px; margin: 2px 8px 0; border-radius: 12px; font-size: 12px; font-weight: 800; line-height: 1.3; text-align: center; color: var(--kb-ink); background: var(--sp-panel); border: 1px solid var(--kb-line); display: flex; align-items: center; justify-content: center; }
+#ctl { flex: none; display: flex; gap: 6px; padding: 6px 8px 8px; flex-wrap: wrap; }
+#ctl .cb { flex: 1 1 0; min-width: 64px; min-height: 52px; border-radius: 16px; border: 0; cursor: pointer; background: var(--sp-key); color: var(--kb-ink); box-shadow: 0 4px 0 var(--sp-key-shadow); font: 800 14px var(--kb-font-body); padding: 4px 6px; touch-action: none; display: flex; align-items: center; justify-content: center; text-align: center; }
+#ctl .cb.main { background: var(--sp-go); color: var(--kb-accent-ink); box-shadow: 0 4px 0 var(--sp-go-shadow); }
+#ctl .cb.on, #ctl .cb:active, #ctl .cb.held { transform: translateY(2px); box-shadow: 0 2px 0 var(--sp-key-shadow); outline: 3px solid var(--kb-accent); outline-offset: -3px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-rows: auto auto auto 1fr; grid-template-areas: "hd hd" "st hu" "st sa" "st ct"; column-gap: 8px; }
+  header { grid-area: hd; padding-top: 0; } #hud { grid-area: hu; flex-wrap: wrap; padding: 2px 8px 2px 0; } #stage { grid-area: st; margin: 2px 4px 6px 8px; } #status { grid-area: sa; margin: 0 8px 0 0; min-height: 30px; font-size: 11.5px; }
+  #ctl { grid-area: ct; padding: 4px 8px 4px 0; align-content: flex-start; } #ctl .cb { min-height: 46px; flex: 1 1 100px; }
+}
+@media (max-width: 379px) { h1 { font-size: 15px; } .chip { padding: 2px 6px; } }
+.overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .15s; }
+.panel { width: 100%; max-width: 480px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--sp-card); border: 1px solid var(--kb-line); border-radius: 22px; padding: 14px 14px 10px; text-align: center; color: var(--kb-ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .4); animation: rise .2s; }
+.panel > * { flex: none; } .panel .scroll { flex: 1 1 auto; min-height: 40px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.panel h2 { margin: 0 0 2px; font: 400 21px var(--kb-font-display); color: var(--kb-accent-text); overflow-wrap: anywhere; }
+.panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--kb-dim); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; min-height: 48px; margin-top: 8px; padding: 8px 10px; border-radius: 16px; border: 0; cursor: pointer; background: var(--sp-go); color: var(--kb-accent-ink); font: 800 16px var(--kb-font-body); box-shadow: 0 4px 0 var(--sp-go-shadow); }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--sp-go-shadow); } .btn:disabled { opacity: .45; cursor: default; }
+.btn.sub { background: var(--sp-panel); color: var(--kb-ink); box-shadow: none; border: 1px solid var(--kb-line); font-size: 13.5px; min-height: 44px; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn { flex: 1; min-width: 0; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--sp-panel); border: 1px solid var(--kb-line); flex-wrap: wrap; margin: 4px 0; }
+.opt { flex: 1 1 0; min-width: 44px; min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--kb-dim); font: 800 12.5px var(--kb-font-body); cursor: pointer; padding: 2px 4px; }
+.opt[aria-pressed="true"] { background: var(--kb-surface); color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); }
+.og { margin: 8px 0 0; text-align: left; } .og .ol { font-size: 11.5px; font-weight: 800; color: var(--kb-dim); margin: 0 0 2px 2px; }
+.rows { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; border: 1px solid var(--kb-line); background: var(--sp-key); min-height: 52px; box-sizing: border-box; width: 100%; color: var(--kb-ink); font: inherit; cursor: pointer; text-align: left; }
+.row .ic { width: 40px; height: 40px; flex: none; } .row .tx { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 800; line-height: 1.3; } .row .tx small { display: block; font-weight: 500; font-size: 11px; color: var(--kb-dim); }
+.row.cur { border-color: var(--kb-accent); box-shadow: 0 0 0 2px var(--kb-accent); }
+.stars { color: var(--sp-star); letter-spacing: 1px; font-size: 15px; } .stars i { color: var(--sp-star-off); font-style: normal; }
+.big { font: 400 34px var(--kb-font-display); line-height: 1.15; color: var(--kb-ink); } .newrec { display: inline-block; margin: 2px 2px; padding: 2px 10px; border-radius: 999px; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 12px; font-weight: 800; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6px 6px; text-align: left; font-size: 13px; font-weight: 800; } .kv span:nth-child(odd) { color: var(--kb-dim); font-weight: 500; } .kv span:nth-child(even) { text-align: right; }
+.howto { text-align: left; } .howto h2 { text-align: center; } .howto h3 { margin: 12px 0 2px; font-size: 13.5px; color: var(--kb-accent-text); } .howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
+.langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; color: var(--kb-dim); }
+.langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.demo { width: 100%; height: 130px; border-radius: 14px; display: block; border: 1px solid var(--kb-line); background: #123; margin: 6px 0; }
+@media (max-height: 520px) { .dcv { display: none; } }
+.dcv { width: 72px; height: 72px; display: block; margin: 0 auto; }
+.toastbar { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); z-index: 85; max-width: 90%; padding: 8px 16px; border-radius: 14px; background: rgba(10, 20, 32, .92); color: #fff; font-weight: 800; font-size: 14px; pointer-events: none; animation: rise .2s; text-align: center; }
+.pgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; } .pcell { padding: 2px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--sp-key); color: var(--kb-ink); min-height: 74px; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; } .pcell img { width: 100%; border-radius: 8px; display: block; } .pcell .pq { font: 400 26px var(--kb-font-display); padding: 10px 0; color: var(--kb-dim); } .pcell small { font-size: 9px; color: var(--kb-dim); line-height: 1.2; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.rec { width: 100%; border-collapse: collapse; font-size: 12px; } .rec td, .rec th { padding: 4px 3px; border-bottom: 1px solid var(--kb-line); text-align: center; } .rec td:first-child, .rec th:first-child { text-align: left; font-weight: 800; }
+@keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } } @keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .panel, .overlay, .toastbar { animation: none !important; } }
+body.thumb header, body.thumb #hud, body.thumb #ctl, body.thumb #status { display: none !important; }
+body.thumb #app { display: flex !important; flex-direction: column; max-width: none; } body.thumb #stage { flex: 1 1 auto; margin: 0; border-radius: 0; border: 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="back" href="../" id="backLink" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 id="h1"></h1>
+    <button class="icon" id="sndBtn" type="button" aria-pressed="true"></button>
+    <button class="icon" id="menuBtn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <div id="hud"><span class="chip" id="hudText"></span><span class="chip" id="hudStars"></span></div>
+  <div id="stage"><canvas id="gl" aria-hidden="true"></canvas><canvas id="cv" tabindex="0" role="application"></canvas></div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="ctl"></div>
+</div>
+<div class="overlay" id="ov" hidden role="dialog" aria-modal="true"><div class="panel" id="ovPanel"></div></div>
+<div class="overlay" id="howto" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle" data-kb-howto>
+  <div class="panel howto">
+    <h2 id="howtoTitle"></h2>
+    <div class="scroll" id="howBody"></div>
+    <div class="langrow"><label for="langSel">言語 / Language</label><span id="langPick"></span></div>
+    <button class="btn" id="howtoGo" type="button"></button>
+  </div>
+</div>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+
+<script src="core.js"></script>
+<script src="sim1.js"></script>
+<script src="sim2.js"></script>
+<script src="world.js"></script>
+<script src="art.js"></script>
+<script src="gl.js"></script>
+<script src="fly.js"></script>
+<script src="venues1.js"></script>
+<script src="venues2.js"></script>
+<script src="venues3.js"></script>
+<script src="../common/game.js"></script>
+<script>
+(() => {
+'use strict';
+// ぽかぽか島スポーツ：core.js（乱数・種目の表・★・保存・デイリー・得点の決まり）、sim1/sim2.js（11種目の物理と得点）、art.js（島とキャラクターの絵）、
+// venues*.js（種目ごとの入力・時間・絵）。このファイルは島（ハブ）・パネル・ふたりプレイ・保存・プラットフォームとの連携。
+const EN = KoboI18n.lang === 'en';
+const L = (ja, en) => (EN ? en : ja);
+const C = window.SportsCore, ART = window.SportsArt, VEN = window.SportsVenues, SP = C.SPORTS;
+const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
+const KG = () => window.KoboGame || null;
+const GAME = 'sports', SAVE_KEY = 'kusoge.sports.save', HOWTO_KEY = 'kusoge.sports.howto';
+const DEBUG = /[?&]debug\b/.test(location.search);
+const $ = id => document.getElementById(id);
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sfx = (n, a) => { if (A) A.sfx(n, a); }, tone = (f, d, o) => { if (A) A.tone(f, d, o); }, noise = (d, o) => { if (A) A.noise(d, o); };
+const buzz = p => { if (save.set.vib && A) A.vibrate(p); };
+const emit = (type, p) => { const g = KG(); if (g) g.emit(type, p); };
+const nm = s => L(s.ja, s.en), dname = d => C.DIFF_NAMES[EN ? 'en' : 'ja'][d];
+const dateKeyNow = () => (PF && PF.jstDateKey ? PF.jstDateKey() : (() => { const d = new Date(Date.now() + 9 * 3600e3); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); })());
+
+// ---------- 保存 ----------
+function readSave() { let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {} return C.sanitize(o); }
+let save = readSave();
+function writeSave() { C.derive(save); countStars3(); store.set(SAVE_KEY, JSON.stringify(save)); renderHudStars(); }
+function countStars3() { let n = 0; for (const s of SP) for (let d = 0; d < 3; d++) if (C.starsOf(save, s.id, d) >= 3) n++; if (n > (save.stats.stars3 | 0)) save.stats.stars3 = n; }
+const MAXKEYS = { jumpM: 1, streak: 1 };
+function bumpStat(k, n) { if (S && S.practice) return; if (MAXKEYS[k]) C.setMax(save, k, n == null ? 1 : n); else C.bump(save, k, n == null ? 1 : n); }
+
+// ---------- 文章 ----------
+const TXT = {
+  archery: { d: ['風を読んで、的のまんなかをねらう弓の競技。', 'Read the wind and hit the bullseye.'], demo: { strokes: [[[0.35, 0.7], [0.5, 0.5], [0.55, 0.42]]], tail: 'release' },
+    how: [['画面をなぞって、ねらいを動かします（指はつけたまま）。', 'Drag to move your aim, keeping your finger down.'], ['手はゆれます。息を止めて約3秒をこえると、ゆれが大きくなります。', 'Your aim sways, and shakes more after about 3 seconds.'], ['風ふきながしを見て、風上へずらしてねらいます。「やさしい」は黄色い点線が着弾の予想です。', 'Check the windsock and aim into the wind. Easy shows a dotted landing guess.'], ['指をはなすと矢が飛びます。10本の合計が点数。まんなかは10点！', 'Release to shoot. Ten arrows make your score; the center is worth 10.']] },
+  disc: { d: ['フリスビーを投げて、走る犬「こむぎ」に空中でキャッチさせよう。', 'Throw the disc so that Komugi the dog catches it in mid-air.'], demo: { strokes: [[[0.3, 0.85], [0.42, 0.5], [0.6, 0.2]]] },
+    how: [['ディスクを投げたい向きへ、上にむけてスワイプ（フリック）。', 'Flick upward in the direction you want to throw.'], ['はやくスワイプするほど強く飛びます。長くスワイプするほど高く飛びます。', 'A faster flick throws harder; a longer flick throws higher.'], ['スワイプの途中で曲げるとカーブします。', 'Curve the swipe to curve the disc.'], ['犬が走る先をねらおう。やさしいは犬の進路と、投げたあとの落ちる場所の予想が出ます。', 'Aim ahead of the dog. Easy shows its path and your landing guess.']] },
+  bowling: { d: ['10フレームで競う、ほんもののルールのボウリング。', 'Ten frames with the real scoring rules.'], demo: { strokes: [[[0.5, 0.9], [0.42, 0.85]], [[0.45, 0.8], [0.52, 0.3], [0.55, 0.05]]] },
+    how: [['下のほうを横になぞって、ボールの位置を決めます。', 'Slide along the bottom to place the ball.'], ['レーンの奥（上のほう）をなぞると、ねらう場所が決まります。ボタンでも細かく動かせます。', 'Touch the far end of the lane to set your aim; buttons fine-tune it.'], ['下から上へ、すばやくフリックで投げます。速いほど強い球。曲げるとカーブ（スピン）。', 'Flick upward from the lower half. Faster is stronger; curve the swipe to spin it.'], ['ストライク（1投で全部）とスペア（2投で全部）はボーナスがつきます。', 'Strikes and spares earn bonus points.']] },
+  kendo: { d: ['木の刀で戦う、スワイプのチャンバラ。受け流して、切りこめ！', 'A swipe-based wooden-sword duel: parry, then strike!'], demo: { strokes: [[[0.7, 0.5], [0.3, 0.5]], [[0.3, 0.55], [0.7, 0.55]], [[0.5, 0.8], [0.5, 0.2]]] },
+    how: [['敵が刀をふりかぶると、大きな矢印が出ます。', 'When the foe winds up, a big arrow appears.'], ['矢印と同じ向きにスワイプで受け流し。まわりの輪が金色の「ぴたり」のときは大チャンス！', 'Swipe the same way to parry. A gold ring means a perfect parry!'], ['敵がよろけたら、どの向きでもスワイプで切りつけます。', 'When the foe staggers, swipe any way to strike.'], ['敵が構えているときは、青い盾「ガード」のない向きに切りこめます（盾の向きは はじかれます）。', 'When the foe is idle, strike away from the blue Guard side.']] },
+  hoops: { d: ['ななめ上へフリックして、ゴールをねらうシュート。', 'Flick up and across to arc the ball into the hoop.'], demo: { strokes: [[[0.2, 0.85], [0.4, 0.6], [0.55, 0.45]]] },
+    how: [['ボールからゴールの方向へ、ななめ上に指をすべらせます。', 'Slide your finger up toward the hoop.'], ['指の向きが角度、長さが強さです。はなすとシュート。', 'Direction sets the angle, length sets the power. Release to shoot.'], ['やさしい・ふつうは、ひいている間に ボールの通り道が点線で出ます。', 'On Easy and Normal, a dotted arc previews the shot.'], ['スウィッシュ（リングに当たらず入る）はボーナス。遠くからは3点！', 'A swish earns a bonus; long shots are worth three.']] },
+  golf: { d: ['9ホールをまわる、うしろへひいて打つゴルフ。', 'Nine holes, played by pulling back and releasing.'], demo: { strokes: [[[0.5, 0.35], [0.5, 0.8]]], tail: 'release' },
+    how: [['ボールから、打ちたい向きの反対にひっぱります。', 'Drag away from the ball, opposite to where you want to hit.'], ['ひっぱる長さが強さ。白い線の先が、飛ぶ距離のめやすです。', 'Pull length is the power; the white line shows about how far it goes.'], ['クラブは自動で選ばれます。下のボタンで変えることもできます。グリーンではパターです。', 'The club is chosen automatically; change it with the buttons. Use the putter on the green.'], ['バンカーとラフでは飛ばず、水に入ると1打プラス。少ない打数で点数アップ！', 'Sand and rough cut distance; water costs a stroke. Fewer strokes, more points!']] },
+  canoe: { d: ['左右を交互にたたいてこぐ、リズムのカヌーレース。', 'A rhythm canoe race: tap left and right in turn.'], demo: { taps: [[0.25, 0.75], [0.75, 0.75]] },
+    how: [['「ひだり」「みぎ」を交互にタップ（A・D か ←・→ キーでも）。', 'Tap Left and Right in turn (or use A/D or the arrow keys).'], ['白い輪が小さい輪にぴったり重なるときにタップすると、力がいっぱい出ます。', 'Tap when the white ring meets the small ring for the strongest strokes.'], ['同じ側を続けてたたくと、横にずれます。岩はよけよう（ぶつかると遅くなる）。', 'Tapping one side twice slides you sideways. Dodge the rocks!'], ['ふたりで遊ぶときは画面が左右に分かれます。', 'In two-player mode the screen splits in half.']] },
+  pingpong: { d: ['スワイプで打ち返す、CPU（またはふたり）との卓球ラリー。', 'Swipe to return the ball against the CPU, or a friend.'], demo: { strokes: [[[0.5, 0.9], [0.6, 0.5], [0.7, 0.25]]] },
+    how: [['ボールがはねて、まわりの輪が緑になったときに、スワイプで打ち返します。', 'After the bounce, swipe when the ring around the ball turns green.'], ['スワイプの向きがコース、速さが強さ。まげるとスピン。', 'Swipe direction aims, speed adds power, and a curve adds spin.'], ['サーブもスワイプ。ちょんとタップなら、やさしいショットになります。', 'Serve with a swipe, too. A simple tap makes an easy shot.'], ['2点差をつけて先取り（やさしいは5点、ふつうは7点、むずかしいは9点）。', 'First to the target score, ahead by two.']] },
+  cycling: { d: ['カーブとコーンをかわして走る、4人のレース。', 'A four-rider race with curves and cones.'], demo: { strokes: [[[0.35, 0.7], [0.65, 0.7]], [[0.65, 0.7], [0.35, 0.7]]] },
+    how: [['指を左右にドラッグすると、ハンドルがきれます。はなすとまっすぐ。', 'Drag left or right to steer; let go to go straight.'], ['カーブでは外側にふくらむので、中へ向かって曲がろう。', 'Curves push you outward, so steer into them.'], ['ブーストボタンで加速（ゲージがなくなるまで）。ボトルでゲージが回復。', 'Hold Boost to speed up; bottles refill the gauge.'], ['コーンは遅くなり、黄色のやじるしはダッシュ。道の外は遅くなります。', 'Cones slow you; yellow arrows give a dash; the grass is slow.']] },
+  jump: { d: ['ボートにひかれて、ジャンプ台から空へ。空中でバランスをとって着水！', 'Get towed up the ramp, fly, balance and splash down!'], demo: { taps: [[0.5, 0.6]], strokes: [[[0.5, 0.8], [0.5, 0.35]]] },
+    how: [['ジャンプ台の旗に選手がきたら、タップでジャンプ。ぴったりだと遠くまで飛べます。', 'Tap as the skier reaches the flag. Perfect timing flies farther.'], ['空中では、指を上下にずらす（またはボタン・↑↓）で機首を上げ下げします。緑のゾーンに合わせよう。', 'In the air, drag up or down (or use the buttons) to match the green zone.'], ['水面に近づいたら「ちゃくち」をタップ。ピタッと着水するとボーナス。', 'Tap Land close to the water for a clean splash.'], ['点数はきょりとスタイル。', 'Your score is distance plus style.']] },
+  tennis: { d: ['スワイプで打ち返す、島のコートのテニス。', 'Swipe to return the ball on the island court.'], demo: { strokes: [[[0.5, 0.9], [0.4, 0.5], [0.3, 0.25]]] },
+    how: [['ボールがはねたら、まわりの輪が緑のときにスワイプで打ち返します。', 'After the bounce, swipe when the ring turns green.'], ['スワイプの向きがコース、速さが強さです。', 'Swipe direction aims; speed is power.'], ['サーブは最初にスワイプ。サービスエリアに入らないとフォールト（2回で失点）。', 'Swipe to serve. Two faults lose the point.'], ['0・15・30・40とデュースの、本物の数え方。先にゲームをとったほうの勝ち。', 'Real scoring: 15, 30, 40, deuce and advantage.']] },
+};
+const FIRST = { how: [['島のしるしをタップして、種目をえらびます。', 'Tap a marker on the island to pick a sport.'], ['11種目それぞれに「やさしい・ふつう・むずかしい」があり、★は最大3つ。島ぜんぶで★99こ。', 'Each of the 11 sports has Easy, Normal and Hard levels, with up to three stars each.'], ['毎日ちがう種目の「きょうのチャレンジ」。同じ日は世界じゅう同じ条件です。', 'A new Daily Challenge every day: the same conditions for everyone.'], ['ふたりでも遊べます（1台をまわす。カヌーは画面わけ、卓球とテニスはたいせん）。', 'Two players can share one device (pass the device; split screen in Canoe; head to head in Table Tennis and Tennis).'], ['スマホをかたむける操作はオプション。いつでも、さわって遊べます。', 'Tilt controls are optional. You can always play by touch.']] };
+
+// ---------- 画面とキャンバス ----------
+const cv = $('cv'), g = cv.getContext('2d');
+let W = 300, H = 400, dpr = 1, T = 0, last = 0, raf = 0;
+let mode = 'hub'; // 'hub' | 'play'
+let S = null, venue = null, paused = false, ovName = '', menuOpen = false;
+let view3d = null;
+if (!/[?&]no3d\b/.test(location.search)) { try { const hr = new Date().getHours() + new Date().getMinutes() / 60; view3d = window.SportsFly.create($('gl'), { hour: hr, lowPower: !!save.set.lp, quality: save.set.lp ? 0 : 2 }); } catch (e) { view3d = null; } }
+const uses3d = () => !!view3d && ((mode === 'hub') || !!(S && S.flight));
+const hub = { x: 0.2, y: 0.6, tx: null, to: null, sel: 0, walk: 0, drag: 0, pointer: null };
+function fit() {
+  const r = cv.getBoundingClientRect(); dpr = Math.min(2.5, window.devicePixelRatio || 1); W = Math.max(100, Math.round(r.width)); H = Math.max(100, Math.round(r.height));
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); if (view3d) view3d.R.resize(W, H); if (venue) venue.resize(W, H);
+}
+
+// ---------- かたむき（任意。さわる操作はいつでも使える） ----------
+const Tilt = { on: false, x: 0, y: 0, b0: null, listening: false,
+  handler(e) { if (e.gamma == null || e.beta == null) return; if (Tilt.b0 == null) Tilt.b0 = e.beta; const land = Math.abs(window.orientation || 0) === 90 || (screen.orientation && /landscape/.test(screen.orientation.type || '')); const gx = land ? e.beta : e.gamma, by = land ? e.gamma : e.beta - Tilt.b0; Tilt.x = clamp(gx / 28, -1, 1); Tilt.y = clamp(by / 22, -1, 1); Tilt.on = true; },
+  async enable() {
+    try { if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') return false; } } catch (e) { return false; }
+    if (!window.DeviceOrientationEvent) return false; if (!Tilt.listening) { window.addEventListener('deviceorientation', Tilt.handler); Tilt.listening = true; } Tilt.b0 = null; return true; },
+  disable() { Tilt.on = false; Tilt.x = Tilt.y = 0; if (Tilt.listening) { window.removeEventListener('deviceorientation', Tilt.handler); Tilt.listening = false; } },
+};
+if (save.set.tilt) Tilt.enable().then(ok => { if (!ok) { save.set.tilt = 0; writeSave(); } });
+
+// ---------- ステータス・HUD・ボタン ----------
+const setStatus = txt => { $('status').textContent = txt || ''; $('live').textContent = txt || ''; };
+const setHudText = t => { $('hudText').textContent = t || ''; };
+function renderHudStars() { $('hudStars').textContent = '★ ' + save.pts + '/' + C.MAX_STARS; }
+function toast(msg, ms) { const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 1700); }
+let btnList = [];
+function setButtons(list) {
+  btnList = list || []; const ctl = $('ctl'); ctl.innerHTML = ''; ctl.hidden = !btnList.length;
+  btnList.forEach(b => {
+    const e = document.createElement('button'); e.type = 'button'; e.className = 'cb' + (b.on ? ' on' : '') + (b.main || b.id === 'go' || b.id === 'boost' ? ' main' : ''); e.textContent = b.label; e.dataset.id = b.id;
+    if (b.hold) {
+      const down = ev => { ev.preventDefault(); e.classList.add('held'); try { e.setPointerCapture(ev.pointerId); } catch (x) {} if (venue && venue.button) venue.button(b.id, true); };
+      const up = ev => { e.classList.remove('held'); if (venue && venue.button) venue.button(b.id, false); };
+      e.addEventListener('pointerdown', down); e.addEventListener('pointerup', up); e.addEventListener('pointercancel', up); e.addEventListener('lostpointercapture', up);
+      e.addEventListener('keydown', ev => { if (ev.code === 'Enter' || ev.code === 'Space') { ev.preventDefault(); if (!e.classList.contains('held')) { e.classList.add('held'); if (venue && venue.button) venue.button(b.id, true); } } }); e.addEventListener('keyup', ev => { if (ev.code === 'Enter' || ev.code === 'Space') { e.classList.remove('held'); if (venue && venue.button) venue.button(b.id, false); } });
+    } else e.addEventListener('click', () => { if (mode === 'hub') b.fn && b.fn(); else if (venue && venue.button) { venue.button(b.id, true); } });
+    ctl.appendChild(e);
+  });
+}
+function hubButtons() {
+  setHudText(L('きょうのチャレンジ: ', 'Daily: ') + nm(C.sportOf(C.dailyOf(dateKeyNow()).sport)));
+  setButtons([{ id: 'daily', label: L('きょうの チャレンジ', 'Daily Challenge'), main: true, fn: () => startDaily() }, { id: 'fly', label: L('遊覧飛行', 'Scenic flight'), fn: () => showFlight() }, { id: 'list', label: L('種目いちらん', 'All sports'), fn: () => showList() }, { id: 'rec', label: L('きろく', 'Records'), fn: () => showRecords() }, { id: 'opt', label: L('せってい', 'Settings'), fn: () => showSettings() }].concat(view3d ? [{ id: 'tod', label: L('じこく ', 'Time ') + todName(), fn: () => cycleTod() }, { id: 'ov', label: L('島ぜんたい', 'Whole island'), fn: () => { view3d.hub.overview(); hub.pendingOpen = null; } }] : []));
+}
+
+// ---------- パネル ----------
+function openOv(html, name) { ovName = name || 'ov'; $('ovPanel').innerHTML = html; $('ov').hidden = false; $('live').textContent = ''; const f = $('ovPanel').querySelector('button, [href]'); if (f) setTimeout(() => f.focus(), 30); }
+function closeOv() { $('ov').hidden = true; ovName = ''; $('ovPanel').innerHTML = ''; try { cv.focus(); } catch (e) {} }
+const anyOv = () => !$('ov').hidden || !$('howto').hidden || menuOpen;
+function sportIconHtml(id) { return '<canvas class="ic" data-ic="' + id + '" width="80" height="80" aria-hidden="true"></canvas>'; }
+function paintIcons(root) { (root || document).querySelectorAll('canvas[data-ic]').forEach(c => { const x = c.getContext('2d'); x.clearRect(0, 0, c.width, c.height); ART.circ(x, 40, 40, 36, '#fff', SP.find(s => s.id === c.dataset.ic).col, 4); ART.icon(x, c.dataset.ic, 40, 40, 28); }); }
+const starsHtml = (n, tot) => '<span class="stars" aria-label="' + n + '/' + (tot || 3) + '">' + '★'.repeat(n) + '<i>' + '★'.repeat((tot || 3) - n) + '</i></span>';
+function bestStarsOf(id) { return Math.max(C.starsOf(save, id, 0), C.starsOf(save, id, 1), C.starsOf(save, id, 2)); }
+
+function showList() {
+  const dly = C.dailyOf(dateKeyNow());
+  openOv('<h2>' + L('種目いちらん', 'All sports') + '</h2><p>' + L('えらぶと、その場所へ歩いていきます。', 'Pick one to walk there.') + '</p><div class="scroll"><div class="rows">' + SP.map(s => '<button class="row" type="button" data-id="' + s.id + '">' + sportIconHtml(s.id) + '<span class="tx">' + esc(nm(s)) + (dly.sport === s.id ? ' <span class="newrec">' + L('きょう', 'Today') + '</span>' : '') + '<small>' + esc(L(TXT[s.id].d[0], TXT[s.id].d[1])) + '</small></span>' + starsHtml(C.sportStars(save, s.id), 9).replace(/aria-label="[^"]*"/, '') + '</button>').join('') + '</div></div><button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'list');
+  paintIcons($('ovPanel')); $('ovPanel').querySelectorAll('.row').forEach(r => r.onclick = () => { closeOv(); const i = SP.findIndex(s => s.id === r.dataset.id); hubWalkTo(i, true); }); $('ovClose').onclick = closeOv;
+}
+function showCard(id, opts) {
+  opts = opts || {}; const s = SP.find(x => x.id === id); const diffNow = opts.diff != null ? opts.diff : (save.set.last && save.set.last[id] != null ? save.set.last[id] : 1);
+  let players = opts.players || 1, diff = diffNow;
+  const draw = () => {
+    const two = s.two; const modeLabel = two === 'split' ? L('ふたり（画面わけ）', '2 players (split)') : two === 'versus' ? L('ふたり（たいせん）', '2 players (versus)') : L('ふたり（1台まわし）', '2 players (pass the device)');
+    openOv('<h2>' + esc(nm(s)) + '</h2><div class="scroll"><canvas class="dcv" id="cardIc" width="144" height="144" aria-hidden="true"></canvas><p>' + esc(L(TXT[id].d[0], TXT[id].d[1])) + '</p>'
+      + '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(C.starsOf(save, id, d)) + '<br><small>' + (C.bestOf(save, id, d) || '–') + '</small></button>').join('') + '</div></div>'
+      + '<div class="og"><div class="ol">' + L('人数', 'Players') + '</div><div class="seg" id="segP"><button class="opt" type="button" data-p="1" aria-pressed="' + (players === 1) + '">' + L('ひとり', '1 player') + '</button><button class="opt" type="button" data-p="2" aria-pressed="' + (players === 2) + '">' + modeLabel + '</button></div></div>'
+      + '</div><div class="row2"><button class="btn" id="goBtn" type="button">' + L('あそぶ', 'Play') + '</button><button class="btn sub" id="howBtn" type="button">' + L('あそびかた', 'How to play') + '</button></div><button class="btn sub" id="ovClose" type="button">' + L('もどる', 'Back') + '</button>', 'card');
+    const ic = $('cardIc').getContext('2d'); ART.circ(ic, 72, 72, 66, '#fff', s.col, 6); ART.icon(ic, id, 72, 72, 52);
+    $('segD').querySelectorAll('.opt').forEach(b => b.onclick = () => { diff = +b.dataset.d; draw(); }); $('segP').querySelectorAll('.opt').forEach(b => b.onclick = () => { players = +b.dataset.p; draw(); });
+    $('goBtn').onclick = () => { save.set.last = save.set.last || {}; save.set.last[id] = diff; closeOv(); if (!(save.tu & (1 << s.bit))) showTutorial(id, () => startSport({ id, diff, players })); else startSport({ id, diff, players }); };
+    $('howBtn').onclick = () => showTutorial(id, () => showCard(id, { diff, players })); $('ovClose').onclick = closeOv;
+  };
+  draw();
+}
+function demoLoop(canvas, spec, id) {
+  const x = canvas.getContext('2d'); let t0 = performance.now(), stop = false; const col = SP.find(s => s.id === id).col;
+  function frame(ts) {
+    if (stop || !document.body.contains(canvas)) return; const w = canvas.width, h = canvas.height, t = (ts - t0) / 1000; x.clearRect(0, 0, w, h);
+    x.fillStyle = '#12405a'; x.fillRect(0, 0, w, h); ART.icon(x, id, w * 0.12, h * 0.2, 18); const kind = SP.find(s => s.id === id).col; void kind;
+    const strokes = spec.strokes || [], taps = spec.taps || [], total = (strokes.length + taps.length) * 1.1 + 0.6, tt = t % total;
+    let acc = 0; const P = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+    const finger = (px, py, down) => { x.fillStyle = down ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.55)'; x.beginPath(); x.arc(px * w, py * h, h * (down ? 0.08 : 0.1), 0, 6.3); x.fill(); x.strokeStyle = col; x.lineWidth = 3; x.stroke(); };
+    strokes.forEach((pts, i) => { const t1 = tt - acc; acc += 1.1; if (t1 < 0 || t1 > 1.1) return; const f = Math.min(1, t1 / 0.9), seg = pts.length - 1, k = Math.min(seg - 1, Math.floor(f * seg)), q = P(pts[k], pts[k + 1], f * seg - k);
+      x.strokeStyle = 'rgba(255,255,255,.6)'; x.lineWidth = 4; x.setLineDash([2, 7]); x.beginPath(); pts.forEach((p, j) => { if (j) x.lineTo(p[0] * w, p[1] * h); else x.moveTo(p[0] * w, p[1] * h); }); x.stroke(); x.setLineDash([]); finger(q[0], q[1], f < 1); if (f >= 1 && spec.tail) { x.fillStyle = '#ffd24d'; x.font = '800 ' + Math.round(h * 0.14) + 'px sans-serif'; x.textAlign = 'center'; x.fillText('✦', w * 0.8, h * 0.3); } });
+    taps.forEach((p, i) => { const t1 = tt - acc; acc += 1.1; if (t1 < 0 || t1 > 1.1) return; finger(p[0], p[1], t1 < 0.3); x.strokeStyle = 'rgba(255,255,255,' + (1 - t1) + ')'; x.lineWidth = 4; x.beginPath(); x.arc(p[0] * w, p[1] * h, h * (0.1 + t1 * 0.25), 0, 6.3); x.stroke(); });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame); return () => { stop = true; };
+}
+function showTutorial(id, then) {
+  const s = SP.find(x => x.id === id), tx = TXT[id]; save.tu |= 1 << s.bit; writeSave();
+  openOv('<h2>' + esc(nm(s)) + L('のあそびかた', ': how to play') + '</h2><canvas class="demo" id="demoCv" width="440" height="190" aria-hidden="true"></canvas><div class="scroll howto"><ul>' + tx.how.map(h2 => '<li>' + esc(L(h2[0], h2[1])) + '</li>').join('') + '</ul><p>' + esc(tilts(id) ? L('スマホをかたむける操作も、せってい から ためせます（さわる操作はそのまま使えます）。', 'Tilt controls can be tried in Settings (touch always works).') : '') + '</p></div>'
+    + '<div class="row2"><button class="btn" id="tPlay" type="button">' + L('れんしゅう', 'Practice') + '</button><button class="btn sub" id="tNext" type="button">' + L('つぎへ', 'Continue') + '</button></div>', 'tut');
+  demoLoop($('demoCv'), tx.demo, id);
+  $('tPlay').onclick = () => { closeOv(); startSport({ id, diff: 0, players: 1, practice: true }); }; $('tNext').onclick = () => { closeOv(); if (then) then(); };
+}
+const tilts = id => id === 'archery' || id === 'cycling' || id === 'jump';
+function showHowto(first) {
+  $('howtoTitle').textContent = L('ぽかぽか島へようこそ', 'Welcome to Sunny Isle'); $('howBody').innerHTML = '<ul>' + FIRST.how.map(h2 => '<li>' + esc(L(h2[0], h2[1])) + '</li>').join('') + '</ul>'; $('howtoGo').textContent = first ? L('島をたんけんする', 'Explore the island') : L('とじる', 'Close');
+  $('howto').hidden = false; $('howtoGo').onclick = () => { $('howto').hidden = true; store.set(HOWTO_KEY, '1'); save.tut = 1; writeSave(); try { cv.focus(); } catch (e) {} }; setTimeout(() => $('howtoGo').focus(), 30);
+}
+function showRecords() {
+  const dk = dateKeyNow(), dl = C.dailyOf(dk);
+  openOv('<h2>' + L('きろく', 'Records') + '</h2><p>' + L('★ ', 'Stars ') + save.pts + ' / ' + C.MAX_STARS + (save.stats.plays ? ' · ' + L('あそんだ回数 ', 'Plays ') + save.stats.plays : '') + '</p><div class="scroll"><table class="rec"><tr><th>' + L('種目', 'Sport') + '</th><th>' + dname(0) + '</th><th>' + dname(1) + '</th><th>' + dname(2) + '</th></tr>'
+    + SP.map(s => '<tr><td>' + esc(nm(s)) + '</td>' + [0, 1, 2].map(d => '<td>' + (C.bestOf(save, s.id, d) || '–') + '<br><span class="stars">' + '★'.repeat(C.starsOf(save, s.id, d)) + '</span></td>').join('') + '</tr>').join('') + '</table>'
+    + '<div class="kv"><span>' + L('きょうのチャレンジ', 'Today\'s challenge') + '</span><span>' + esc(nm(C.sportOf(dl.sport))) + '</span><span>' + L('きょうのベスト', 'Today\'s best') + '</span><span>' + (save.dl.k === dk ? save.dl.sc + ' ' + '★'.repeat(save.dl.st) : '–') + '</span></div></div><button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'rec');
+  $('ovClose').onclick = closeOv;
+}
+function showSettings() {
+  const redraw = () => {
+    openOv('<h2>' + L('せってい', 'Settings') + '</h2><div class="scroll"><div class="og"><div class="ol">' + L('キャラクター', 'Character') + '</div><div class="seg" id="segK">' + ART.KINDS.map((k, i) => '<button class="opt" type="button" data-k="' + i + '" aria-pressed="' + (save.set.who === i) + '">' + esc(L(k.ja, k.en)) + '</button>').join('') + '</div></div>'
+      + '<div class="og"><div class="ol">' + L('ふりかたの かんど', 'Swipe sensitivity') + '</div><div class="seg" id="segS">' + [[0.75, L('よわい', 'Low')], [1, L('ふつう', 'Normal')], [1.25, L('つよい', 'High')]].map(a => '<button class="opt" type="button" data-s="' + a[0] + '" aria-pressed="' + (Math.abs(save.set.sens - a[0]) < 0.01) + '">' + a[1] + '</button>').join('') + '</div></div>'
+      + '<div class="og"><div class="ol">' + L('しんどう', 'Vibration') + '</div><div class="seg" id="segV"><button class="opt" type="button" data-v="1" aria-pressed="' + (save.set.vib === 1) + '">' + L('あり', 'On') + '</button><button class="opt" type="button" data-v="0" aria-pressed="' + (save.set.vib === 0) + '">' + L('なし', 'Off') + '</button></div></div>'
+      + '<div class="og"><div class="ol">' + L('かたむき操作（アーチェリー・サイクリング・水上ジャンプ）', 'Tilt controls (Archery, Cycling, Water Jump)') + '</div><div class="seg" id="segT"><button class="opt" type="button" data-t="1" aria-pressed="' + (save.set.tilt === 1) + '">' + L('つかう', 'On') + '</button><button class="opt" type="button" data-t="0" aria-pressed="' + (save.set.tilt === 0) + '">' + L('つかわない', 'Off') + '</button></div><p>' + L('対応していない端末では動きません。さわる操作は、いつでも使えます。', 'Not every device supports it. Touch controls always work.') + '</p></div>'
+      + '<div class="og"><div class="ol">' + L('かるい描画（3D の島。バッテリーをのばす）', 'Light graphics (3D island, saves battery)') + '</div><div class="seg" id="segL"><button class="opt" type="button" data-l="1" aria-pressed="' + (save.set.lp === 1) + '">' + L('かるくする', 'On') + '</button><button class="opt" type="button" data-l="0" aria-pressed="' + (save.set.lp === 0) + '">' + L('ふつう', 'Auto') + '</button></div></div>'
+      + '<div class="langrow"><label for="langSel2">言語 / Language</label><span id="langPick2"></span></div></div><div class="row2"><button class="btn sub" id="hwBtn" type="button">' + L('島のあそびかた', 'About the island') + '</button><button class="btn" id="ovClose" type="button">' + L('とじる', 'Close') + '</button></div>', 'set');
+    $('segK').querySelectorAll('.opt').forEach(b => b.onclick = () => { save.set.who = +b.dataset.k; writeSave(); sfx('select'); redraw(); }); $('segS').querySelectorAll('.opt').forEach(b => b.onclick = () => { save.set.sens = +b.dataset.s; writeSave(); redraw(); }); $('segV').querySelectorAll('.opt').forEach(b => b.onclick = () => { save.set.vib = +b.dataset.v; writeSave(); if (save.set.vib) buzz(30); redraw(); });
+    $('segL').querySelectorAll('.opt').forEach(b => b.onclick = () => { save.set.lp = +b.dataset.l; if (view3d) view3d.R.setQuality(save.set.lp ? 0 : 2, !!save.set.lp); writeSave(); redraw(); });
+    $('segT').querySelectorAll('.opt').forEach(b => b.onclick = async () => { if (+b.dataset.t) { const ok = await Tilt.enable(); if (ok) { save.set.tilt = 1; bumpStat('tiltOn'); toast(L('かたむき操作を オンにしました', 'Tilt controls on')); } else { save.set.tilt = 0; toast(L('この端末では つかえませんでした', 'Tilt is not available here')); } } else { save.set.tilt = 0; Tilt.disable(); } writeSave(); redraw(); });
+    { const sel = KoboI18n.picker($('langPick2')); if (sel) sel.id = 'langSel2'; } $('hwBtn').onclick = () => { closeOv(); showHowto(false); }; $('ovClose').onclick = closeOv;
+  };
+  redraw();
+}
+
+// ---------- 島（ハブ） ----------
+const nodePos = (i, r) => { const s = SP[i]; return { x: s.map[0] * W, y: (0.1 + s.map[1] * 0.8) * H, r }; };
+const nodeR = () => clamp(Math.min(W, H) * 0.075, 21, 32);
+function hubWalkTo(i, open) { if (view3d) { focus3d(SP[i].id, open); return; } hub.sel = i; hub.to = i; hub.open = !!open; hub.walk = 0; }
+function hubUpdate(dt) {
+  if (hub.to != null) { const p = nodePos(hub.to), tx = p.x / W, ty = p.y / H, dx = tx - hub.x, dy = ty - hub.y, d = Math.hypot(dx, dy), sp = 0.55 * dt; if (d <= sp) { hub.x = tx; hub.y = ty; const i = hub.to; hub.to = null; if (hub.open) { hub.open = false; sfx('select'); showCard(SP[i].id); } } else { hub.x += dx / d * sp; hub.y += dy / d * sp; hub.dir = dx < 0 ? -1 : 1; hub.walk += dt; } }
+}
+function hubDraw() {
+  ART.hubMap(g, W, H, T); const r = nodeR(), dly = C.dailyOf(dateKeyNow());
+  // 道
+  g.setLineDash([3, 8]); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); const order = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; const ring = [0, 1, 2, 5, 6, 9, 8, 10, 7, 3, 4, 0]; ring.forEach((i, k) => { const p = nodePos(i); if (k) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }); g.stroke(); g.setLineDash([]); void order;
+  SP.forEach((s, i) => { const p = nodePos(i); ART.nodeDraw(g, s, p.x, p.y, r, bestStarsOf(s.id), { daily: dly.sport === s.id, hot: hub.sel === i && hub.to == null, t: T }); });
+  const sp = SP[hub.sel], pp = nodePos(hub.sel); const lw = Math.min(W - 10, 150); const lx = clamp(pp.x, lw / 2 + 4, W - lw / 2 - 4), ly = pp.y - r * 1.9 < 24 ? pp.y + r * 2.6 : pp.y - r * 1.8;
+  ART.rr(g, lx - lw / 2, ly - 14, lw, 28, 12); g.fillStyle = 'rgba(18,59,87,.85)'; g.fill(); ART.text(g, nm(sp), lx, ly, 14, { stroke: false });
+  const mx = hub.x * W, my = hub.y * H; ART.mascot(g, mx + r * 0.95, my + r * 1.05, r * 2.5, { kind: save.set.who, pose: hub.to != null ? 'run' : 'idle', t: T, dir: hub.dir || 1 });
+}
+function hubKey(code) {
+  if (code === 'Enter' || code === 'Space') { hubWalkTo(hub.sel, true); return true; }
+  const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[code]; if (!dir) return false; const a = nodePos(hub.sel); let best = -1, bd = 1e9;
+  SP.forEach((s, i) => { if (i === hub.sel) return; const p = nodePos(i), dx = p.x - a.x, dy = p.y - a.y, d = Math.hypot(dx, dy), dot = (dx * dir[0] + dy * dir[1]) / (d || 1); if (dot > 0.35 && d / dot < bd) { bd = d / dot; best = i; } }); if (best >= 0) { hub.sel = best; sfx('move'); } return true;
+}
+
+// ---------- セッション ----------
+function newSeed() { return (Math.random() * 4294967296) >>> 0; }
+function startDaily() { const dk = dateKeyNow(), d = C.dailyOf(dk); startSport({ id: d.sport, diff: d.diff, players: 1, daily: true, dateKey: dk, seed: d.seed }); }
+function startSport(o) {
+  if (mode === 'play') endSession(true); const s = SP.find(x => x.id === o.id); const players = (o.players === 2 && !o.daily && !o.practice) ? 2 : 1;
+  S = { id: o.id, sp: s, diff: C.clamp(o.diff | 0, 0, 2), seed: o.seed != null ? o.seed : newSeed(), daily: !!o.daily, dateKey: o.dateKey || null, practice: !!o.practice, players, mode: players === 2 ? (s.two === 'pass' ? 'pass' : 'versus') : 'solo', cur: 0, scores: [], results: [], emitted: false };
+  mode = 'play'; paused = false; document.body.classList.add('playing'); setHudText(''); setStatus(''); setButtons([]);
+  venue = VEN[o.id](makeEnv()); fit(); beginTurn();
+  emit('play_start', { mode: S.practice ? 'practice' : S.daily ? 'daily' : S.players === 2 ? 'versus' : 'normal', dateKey: S.daily ? S.dateKey : undefined });
+  document.title = nm(s) + ' | ' + L('ぽかぽか島スポーツ', 'Sunny Isle Sports');
+}
+function beginTurn() { S.kind = S.cur === 0 ? save.set.who : (save.set.who + 1) % 4; venue.start(); if (S.players === 2 && S.mode === 'pass') toast('P' + (S.cur + 1), 1200); }
+function makeEnv() {
+  return { L, set: save.set, sfx, tone, noise, buzz, status: setStatus, hud: setHudText, stat: bumpStat, setButtons, tilt: () => ({ on: !!(save.set.tilt && Tilt.on), x: Tilt.x, y: Tilt.y }),
+    get diff() { return S.diff; }, get seed() { return S.seed; }, get players() { return S.players; }, get versusMode() { return S.mode === 'pass' ? 'pass' : S.mode === 'versus' ? 'versus' : 'solo'; }, get kind() { return S.kind; }, get practice() { return S.practice; },
+    get flightMode() { return S.flightMode; }, relaxed: false, photo: addPhoto, done: res => onDone(res) };
+}
+function onDone(res) {
+  if (!S) return; res = res || {}; if (S.flight) { finishFlight(res); return; }
+  if (S.players === 2 && S.mode === 'pass') {
+    S.scores.push(res.score | 0); S.results.push(res);
+    if (S.cur === 0) { S.cur = 1; showHandoff(); return; }
+  } else { S.scores = res.scores ? res.scores.slice() : [res.score | 0]; S.results = [res]; }
+  finishSession(res);
+}
+function showHandoff() {
+  const s = S.sp; openOv('<h2>' + L('P1 のけっか', 'P1 result') + '</h2><div class="big">' + S.scores[0] + '</div><p>' + L('つぎは P2 の番です。同じ条件で遊びます。', 'P2\'s turn next, with the very same conditions.') + '</p><button class="btn" id="hoGo" type="button">' + L('P2 がはじめる', 'P2 starts') + '</button>', 'hand');
+  void s; $('hoGo').onclick = () => { closeOv(); setStatus(''); beginTurn(); };
+}
+function fmtDetail(id, r) {
+  const d = (r && r.detail) || {};
+  if (id === 'golf') return L('合計 ', 'Total ') + d.strokes + L('打（パー', ' strokes (par ') + d.par + L('）', ')');
+  if (id === 'jump') return d.dist + 'm · ' + L('スタイル +', 'style +') + d.style;
+  if (id === 'canoe' || id === 'cycling') return d.place + L('位 · ', ['st', 'nd', 'rd', 'th'][Math.min(3, d.place - 1)] + ' · ') + d.time + L('秒', 's');
+  if (id === 'bowling') return d.strikes + L(' ストライク', ' strikes');
+  if (id === 'pingpong' || id === 'tennis') return (d.won ? L('かち', 'Won') : L('まけ', 'Lost')) + ' · ' + L('最長ラリー ', 'Longest rally ') + d.longest;
+  if (id === 'kendo') return (d.won ? L('3人ぬき！', 'All three beaten!') : L('とちゅうで…', 'Not quite…')) + ' · ' + L('ぴたり ', 'Perfect ') + d.perfects;
+  if (id === 'archery') return d.x10 ? L('まんなか(X) ', 'Bullseyes ') + d.x10 : '';
+  if (id === 'disc') return L('キャッチ ', 'Catches ') + d.catches + '/8';
+  if (id === 'hoops') return L('入った ', 'Made ') + d.made + '/10';
+  return '';
+}
+function finishSession(res) {
+  const id = S.id, diff = S.diff; let html = '';
+  const ss = S;
+  if (S.players === 2) {
+    S.mode2 = true; const sc = S.scores; let w = -1; if (res.versus) w = res.winner; else if (sc[0] !== sc[1]) w = sc[0] > sc[1] ? 0 : 1;
+    if (!S.practice) { bumpStat('twop'); if (w === 0 || w === 1) bumpStat('wins2p'); if (id === 'canoe' && w === 0) {} }
+    html = '<h2>' + L('たいせんけっか', 'Match result') + '</h2><div class="kv"><span>P1</span><span>' + sc[0] + '</span><span>P2</span><span>' + sc[1] + '</span></div><div class="big">' + (w < 0 ? L('ひきわけ', 'Draw') : 'P' + (w + 1) + L(' のかち！', ' wins!')) + '</div>';
+    sfx(w < 0 ? 'ok' : 'win'); writeSave();
+    emit('play_end', { mode: 'versus', score: Math.max(sc[0], sc[1]), reason: 'clear' });
+  } else {
+    const score = res.score | 0; let rec = { isBest: false, stars: C.starsFor(id, diff, score), newStars: 0, prev: 0 };
+    if (S.practice) html = '<h2>' + L('れんしゅう', 'Practice') + '</h2><div class="big">' + score + '</div><p>' + L('れんしゅうの点数は きろくされません。', 'Practice scores are not recorded.') + '</p>';
+    else {
+      bumpStat('plays');
+      if (S.daily) { const st = C.dailyStars(id, score); if (save.dl.k !== S.dateKey) { save.dl = { k: S.dateKey, id, sc: score, st }; bumpStat('daily'); } else if (score > save.dl.sc) save.dl = { k: S.dateKey, id, sc: score, st }; html = '<h2>' + L('きょうのチャレンジ', 'Daily Challenge') + '</h2><p>' + esc(nm(S.sp)) + '</p><div class="big">' + score + '</div><div>' + starsHtml(st) + '</div><p>' + L('きょうのベスト ', 'Today\'s best ') + save.dl.sc + '</p>'; rec.stars = st; }
+      else { rec = C.record(save, id, diff, score, res.extra); html = '<h2>' + esc(nm(S.sp)) + ' · ' + dname(diff) + '</h2><div class="big">' + score + '</div><div>' + starsHtml(rec.stars) + '</div>' + (rec.isBest ? '<span class="newrec">' + L('ベスト更新！', 'New best!') + '</span>' : '<p>' + L('ベスト ', 'Best ') + C.bestOf(save, id, diff) + '</p>') + (rec.newStars ? '<span class="newrec">' + L('★ +' + rec.newStars, '★ +' + rec.newStars) + '</span>' : ''); }
+      const d = res.detail || {}; if (id === 'bowling' && d.perfect) bumpStat('perfect'); if ((id === 'canoe' || id === 'cycling') && d.place === 1 && id === 'canoe') bumpStat('canoeW'); if ((id === 'pingpong' || id === 'tennis') && d.won) bumpStat('rallyW');
+      if (S.dailyAll) { }
+      writeSave(); sfx(rec.stars >= 3 ? 'win' : rec.stars ? 'clear' : 'ok');
+    }
+    const fd = fmtDetail(id, res); if (fd) html += '<p>' + esc(fd) + '</p>';
+    emit('play_end', { mode: S.practice ? 'practice' : S.daily ? 'daily' : 'normal', dateKey: S.daily ? S.dateKey : undefined, score, reason: res.detail && res.detail.won === false ? 'over' : 'clear' });
+  }
+  S.ended = true; setStatus('');
+  openOv(html + '<div class="row2"><button class="btn" id="again" type="button">' + L('もういちど', 'Again') + '</button><button class="btn sub" id="toHub" type="button">' + L('島にもどる', 'Back to island') + '</button></div>', 'result');
+  $('again').onclick = () => { closeOv(); startSport({ id: ss.id, diff: ss.diff, players: ss.players, practice: ss.practice, daily: ss.daily, dateKey: ss.dateKey, seed: ss.daily ? ss.seed : undefined }); }; $('toHub').onclick = () => { closeOv(); endSession(); };
+}
+function endSession(silent) {
+  if (!S) { mode = 'hub'; return; } const wasPlaying = mode === 'play'; if (venue && venue.dispose) venue.dispose();
+  if (wasPlaying && !S.ended && !S.emittedEnd) { emit('play_end', { mode: S.practice ? 'practice' : S.daily ? 'daily' : S.players === 2 ? 'versus' : 'normal', dateKey: S.daily ? S.dateKey : undefined, score: 0, reason: 'quit' }); }
+  S = null; venue = null; mode = 'hub'; paused = false; document.body.classList.remove('playing'); if (!silent) { hubButtons(); setHudText(''); setStatus(L('しるしをタップして、種目をえらぼう', 'Tap a marker to pick a sport')); document.title = L('ぽかぽか島スポーツ', 'Sunny Isle Sports'); fit(); }
+}
+
+// ---------- 3D の島（ハブ）・遊覧飛行・アルバム ----------
+const TODS = [[8, '朝', 'Morning'], [13, '昼', 'Day'], [17.8, '夕', 'Evening'], [22.5, '夜', 'Night']];
+let tod = (() => { const h = new Date().getHours(); return h >= 5 && h < 11 ? 0 : h < 16 ? 1 : h < 19 ? 2 : 3; })();
+const todName = () => L(TODS[tod][1], TODS[tod][2]);
+if (view3d) view3d.setHour(TODS[tod][0]);
+function cycleTod() { tod = (tod + 1) % 4; view3d.setHour(TODS[tod][0]); hubButtons(); sfx('select'); }
+function focus3d(id, open) { hub.sel = id; view3d.hub.focus(id); hub.pendingOpen = open ? id : null; hub.arrived = false; }
+function hub3dFrame(dt) {
+  const v = view3d.hub; v.update(dt); v.render(dt); view3d.R.adapt(dt * 1000); g.clearRect(0, 0, W, H);
+  v.draw(g, W, H, { EN, stars: id => bestStarsOf(id), daily: C.dailyOf(dateKeyNow()).sport, sel: hub.sel });
+  if (hub.pendingOpen && v.arrived && !anyOv()) { const id = hub.pendingOpen; hub.pendingOpen = null; sfx('select'); if (C.sportOf(id)) showCard(id); else if (id === 'airstrip') showFlight(); else { toast(view3d.spotName(id, EN) + L('（ひこうきから「さつえい」できるよ）', ' — take a photo from the plane!'), 2200); } }
+}
+const ALBUM_KEY = 'kusoge.sports.album';
+function loadAlbum() { try { const o = JSON.parse(store.get(ALBUM_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+function saveAlbum(a) { store.set(ALBUM_KEY, JSON.stringify(a)); }
+const popcount = n => { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; };
+function addPhoto(id, url) {
+  const al = loadAlbum(); const idx = C.SPORT_IDS.concat(['town', 'lighthouse', 'harbor', 'airstrip', 'volcano']).indexOf(id); const first = idx >= 0 && !(save.fl.ph & (1 << idx)); al[id] = url; saveAlbum(al);
+  if (idx >= 0) save.fl.ph |= 1 << idx; C.setMax(save, 'photos', popcount(save.fl.ph)); writeSave(); toast(first ? L('アルバムに新しい写真！ ', 'New photo in the album! ') + view3d.spotName(id, EN) : L('撮りなおしました ', 'Retaken: ') + view3d.spotName(id, EN)); if (first) sfx('win');
+}
+function showAlbum() {
+  const al = loadAlbum(), ids = C.SPORT_IDS.concat(['town', 'lighthouse', 'harbor', 'airstrip', 'volcano']); const got = ids.filter(i => al[i]).length;
+  openOv('<h2>' + L('フォトアルバム', 'Photo album') + '</h2><p>' + got + ' / ' + ids.length + ' ' + L('まい。ひこうきで ランドマークを撮ろう', 'photos. Fly over landmarks and take pictures.') + '</p><div class="scroll"><div class="pgrid" id="pgrid">' + ids.map(i => '<button class="pcell" type="button" data-id="' + i + '" aria-label="' + esc(view3d ? view3d.spotName(i, EN) : i) + '">' + (al[i] ? '<img alt="" src="' + al[i] + '">' : '<span class="pq">?</span>') + '<small>' + esc(view3d ? view3d.spotName(i, EN) : i) + '</small></button>').join('') + '</div></div><button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'album');
+  $('ovClose').onclick = closeOv; $('pgrid').querySelectorAll('.pcell').forEach(b => b.onclick = () => { if (al[b.dataset.id]) { const w = window.open(); void w; } });
+}
+function showFlight(opts) {
+  if (!view3d) { toast(L('このたんまつは 3D に対応していません', '3D is not available on this device')); return; }
+  let diff = opts && opts.diff != null ? opts.diff : 1, fm = opts && opts.mode || 'ring';
+  const draw = () => {
+    openOv('<h2>' + L('遊覧飛行', 'Scenic flight') + '</h2><p>' + L('ちいさな飛行機で島の空へ。ドラッグで操縦（かたむき操作は せってい から）、キーボードは矢印か WASD。', 'Take a little plane over the island. Drag to steer (tilt is optional in Settings); on PC use the arrow keys or WASD.') + '</p>'
+      + '<div class="og"><div class="ol">' + L('あそびかた', 'Mode') + '</div><div class="seg" id="segM"><button class="opt" type="button" data-m="ring" aria-pressed="' + (fm === 'ring') + '">' + L('リングレース', 'Ring race') + '</button><button class="opt" type="button" data-m="free" aria-pressed="' + (fm === 'free') + '">' + L('ゆったり遊覧', 'Free sightseeing') + '</button></div></div>'
+      + (fm === 'ring' ? '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(window.SportsWorld.fstars(d, save.fl.b[d])) + '<br><small>' + (save.fl.b[d] || '–') + '</small></button>').join('') + '</div></div><p>' + L('リング12こを順にくぐって、最後は空港に着陸！ 風船をわると ボーナス。', 'Fly through 12 rings in order, then land on the airstrip. Pop balloons for bonus points.') + '</p>' : '<p>' + L('ぶつからない のんびりモード。風船をわったり、ランドマークを「さつえい」したり。', 'A relaxed mode where you cannot crash. Pop balloons and photograph landmarks.') + '</p>')
+      + '<div class="row2"><button class="btn" id="goBtn" type="button">' + L('とびたつ', 'Take off') + '</button><button class="btn sub" id="albBtn" type="button">' + L('アルバム', 'Album') + '</button></div><button class="btn sub" id="ovClose" type="button">' + L('もどる', 'Back') + '</button>', 'flight');
+    $('segM').querySelectorAll('.opt').forEach(b => b.onclick = () => { fm = b.dataset.m; draw(); }); const sd = $('segD'); if (sd) sd.querySelectorAll('.opt').forEach(b => b.onclick = () => { diff = +b.dataset.d; draw(); });
+    $('goBtn').onclick = () => { closeOv(); startFlight({ diff, mode: fm }); }; $('albBtn').onclick = showAlbum; $('ovClose').onclick = closeOv;
+  };
+  draw();
+}
+function startFlight(o) {
+  if (mode === 'play') endSession(true); S = { id: 'flight', flight: true, sp: null, diff: C.clamp(o.diff | 0, 0, 2), seed: 1, practice: false, daily: false, players: 1, mode: 'solo', cur: 0, scores: [], results: [], flightMode: o.mode || 'ring', kind: save.set.who };
+  mode = 'play'; paused = false; document.body.classList.add('playing'); setHudText(''); setStatus(''); setButtons([]); venue = view3d.flightVenue(makeEnv()); fit(); venue.start(); emit('play_start', { mode: 'normal' }); document.title = L('遊覧飛行', 'Scenic flight') + ' | ' + L('ぽかぽか島スポーツ', 'Sunny Isle Sports');
+}
+function finishFlight(res) {
+  const d = res.detail || {}, ss = S; bumpStat('flights'); C.setMax(save, 'rings', d.rings || 0); if (d.landed) { bumpStat('landings'); save.fl.n++; } let html;
+  if (d.mode === 'free') html = '<h2>' + L('ゆったり遊覧', 'Free sightseeing') + '</h2><p>' + L('風船 ', 'Balloons ') + d.pops + ' · ' + L('写真 ', 'Photos ') + popcount(save.fl.ph) + '/16</p>';
+  else { const stars = window.SportsWorld.fstars(S.diff, res.score), best = res.score > save.fl.b[S.diff]; if (best) save.fl.b[S.diff] = res.score; html = '<h2>' + L('リングレース', 'Ring race') + ' · ' + dname(S.diff) + '</h2><div class="big">' + res.score + '</div><div>' + starsHtml(stars) + '</div>' + (best ? '<span class="newrec">' + L('ベスト更新！', 'New best!') + '</span>' : '') + '<p>' + L('リング ', 'Rings ') + d.rings + '/12 · ' + L('風船 ', 'Balloons ') + d.pops + ' · ' + (d.landed ? L('着陸せいこう', 'Landed') : d.crashed ? L('ぶつかった', 'Crashed') : L('時間ぎれ', 'Time up')) + '</p>'; }
+  writeSave(); emit('play_end', { mode: 'normal', score: res.score | 0, reason: d.landed || d.mode === 'free' ? 'clear' : 'over' }); S.ended = true; sfx('clear');
+  openOv(html + '<div class="row2"><button class="btn" id="again" type="button">' + L('もういちど', 'Again') + '</button><button class="btn sub" id="toHub" type="button">' + L('島にもどる', 'Back to island') + '</button></div>', 'result');
+  $('again').onclick = () => { closeOv(); startFlight({ diff: ss.diff, mode: ss.flightMode }); }; $('toHub').onclick = () => { closeOv(); endSession(); };
+}
+// ---------- 入力 ----------
+const rectOf = () => cv.getBoundingClientRect();
+const pt = e => { const r = rectOf(); return { x: e.clientX - r.left, y: e.clientY - r.top, t: e.timeStamp }; };
+cv.addEventListener('pointerdown', e => {
+  if (anyOv()) return; try { cv.setPointerCapture(e.pointerId); } catch (x) {} const p = pt(e); if (A && A.resume) A.resume(); if (mode === 'play' && venue) { if (paused) { return; } venue.down(p.x, p.y, e.pointerId, p); } else { hub.pointer = { id: e.pointerId, x: p.x, y: p.y, lx: p.x, moved: false }; }
+});
+cv.addEventListener('pointermove', e => { const p = pt(e); if (mode === 'play' && venue && !paused) venue.move(p.x, p.y, e.pointerId, p); else if (mode === 'hub' && view3d && hub.pointer && hub.pointer.id === e.pointerId) { const q = hub.pointer; if (Math.hypot(p.x - q.x, p.y - q.y) > 10) q.moved = true; if (q.moved) { view3d.hub.rotate(p.x - q.lx); view3d.hub.drag = true; } q.lx = p.x; } });
+const pend = e => { const p = pt(e); if (mode === 'play' && venue) { if (!paused) venue.up(p.x, p.y, e.pointerId, p); } else if (hub.pointer && hub.pointer.id === e.pointerId && e.type === 'pointerup') { const q = hub.pointer; hub.pointer = null; view3d && (view3d.hub.drag = null); if (!q.moved && Math.hypot(p.x - q.x, p.y - q.y) < 14) hubTap(p.x, p.y); } };
+cv.addEventListener('pointerup', pend); cv.addEventListener('pointercancel', e => { hub.pointer = null; const p = pt(e); if (mode === 'play' && venue && !paused) venue.up(p.x, p.y, e.pointerId, p); });
+cv.addEventListener('contextmenu', e => e.preventDefault());
+function hubTap(x, y) {
+  if (view3d) { const it = view3d.hub.pick(x, y); if (it) { sfx('tap'); focus3d(it.id, true); } return; }
+  const r = nodeR(); let best = -1, bd = 1e9; SP.forEach((s, i) => { const p = nodePos(i), d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = i; } });
+  if (best >= 0 && bd <= Math.max(r * 1.7, 40)) { hubWalkTo(best, true); sfx('tap'); }
+}
+window.addEventListener('keydown', e => {
+  if (e.repeat && mode === 'play' && !/^Arrow/.test(e.code)) return; if (e.code === 'Escape') { if (!$('ov').hidden && ovName !== 'result' && ovName !== 'hand') { closeOv(); return; } if (anyOv()) return; openMenu(); return; }
+  if (anyOv() || e.ctrlKey || e.metaKey || e.altKey) return; const tg = e.target; if (tg && /^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(tg.tagName)) { if (!(tg.tagName === 'BUTTON' && false)) return; }
+  if (mode === 'hub') { if (hubKey(e.code)) e.preventDefault(); } else if (venue && !paused) { if (/^(Arrow|Space|Enter)/.test(e.code)) e.preventDefault(); venue.key(e.code, true); }
+});
+window.addEventListener('keyup', e => { if (mode === 'play' && venue && !paused && !anyOv()) venue.key(e.code, false); });
+window.addEventListener('blur', () => { if (mode === 'play' && venue && venue.key) ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD'].forEach(c => venue.key(c, false)); });
+
+// ---------- 音・メニュー・起動 ----------
+function renderSound() { const b = $('sndBtn'); if (!A) { b.hidden = true; return; } const m = A.muted; b.setAttribute('aria-pressed', String(!m)); b.setAttribute('aria-label', m ? L('サウンド オフ', 'Sound off') : L('サウンド オン', 'Sound on'));
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/>' + (m ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>') + '</svg>'; }
+$('sndBtn').addEventListener('click', () => { if (!A) return; A.toggleMute(); if (!A.muted) sfx('ok'); }); if (A) A.onChange(renderSound);
+let pm = null;
+function openMenu() {
+  if (!UI) { showSettings(); return; } if (pm && pm.isOpen) return;
+  const extra = [{ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); if (mode === 'play' && S) { const id = S.id; showTutorial(id, () => {}); } else showHowto(false); } }, { label: L('せってい', 'Settings'), icon: 'settings', onClick: () => { pm.close(); showSettings(); } }];
+  if (mode === 'play') extra.unshift({ label: L('島にもどる（やめる）', 'Back to island (quit)'), icon: 'home', onClick: () => { pm.close(); endSession(); } });
+  pm = UI.pauseMenu({ title: L('ひとやすみ', 'Paused'), home: '../', extra, onSettings: false, onResume: () => { menuOpen = false; paused = false; const gm = KG(); if (gm) gm.menuClosed(); }, onOpen: () => { menuOpen = true; paused = true; const gm = KG(); if (gm) gm.menuOpened(); persistNow(); } });
+  pm.open();
+}
+$('menuBtn').addEventListener('click', openMenu);
+{ const sel = KoboI18n.picker($('langPick')); if (sel) sel.id = 'langSel'; }
+function themeColor() { const m = document.querySelector('meta[name="theme-color"]'); const d = !(UI && UI.theme && UI.theme.resolved && UI.theme.resolved() === 'light'); if (m) m.setAttribute('content', d ? '#0b2d42' : '#e6f7fc'); }
+if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0)); try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeColor); } catch (e) {}
+function persistNow() { writeSave(); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) persistNow(); }); window.addEventListener('pagehide', persistNow);
+let rz = 0; const relayout = () => { clearTimeout(rz); rz = setTimeout(fit, 50); }; window.addEventListener('resize', relayout); if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+function frame(ts) {
+  raf = requestAnimationFrame(frame); if (save.set.lp && ts - last < 30) return; const dt = Math.min(0.05, Math.max(0, (ts - last) / 1000)); last = ts; T += dt;
+  const g3 = uses3d(); if (document.body.classList.contains('g3d') !== g3) document.body.classList.toggle('g3d', g3);
+  if (mode === 'hub') { if (view3d) hub3dFrame(dt); else { hubUpdate(dt); hubDraw(); } } else if (venue) { if (!paused && !anyOv()) venue.update(dt); else if (S && S.flight && venue.flight && !anyOv()) venue.update(0.0001); venue.draw(g); }
+}
+
+document.title = L('ぽかぽか島スポーツ', 'Sunny Isle Sports'); $('h1').textContent = L('ぽかぽか島スポーツ', 'Sunny Isle Sports'); $('backLink').setAttribute('aria-label', L('ゲーム一覧へ戻る', 'Back to games')); $('menuBtn').setAttribute('aria-label', L('メニュー', 'Menu')); cv.setAttribute('aria-label', L('ぽかぽか島の地図。しるしをえらんで種目をはじめます', 'Map of Sunny Isle. Pick a marker to start a sport'));
+renderSound(); themeColor(); renderHudStars(); hubButtons(); setStatus(L('しるしをタップして、種目をえらぼう', 'Tap a marker to pick a sport')); fit();
+KG() && KG().register({ id: GAME, pause() { paused = true; }, resume() { if (!menuOpen && !anyOv()) paused = false; }, save() { persistNow(); }, isIdle: () => mode === 'hub' || !!(S && S.ended), dispose() { cancelAnimationFrame(raf); },
+  daily: { start(o) { const dk = o && o.dateKey ? o.dateKey : dateKeyNow(); const d = C.dailyOf(dk); startSport({ id: d.sport, diff: d.diff, players: 1, daily: true, dateKey: dk, seed: d.seed }); } } });
+raf = requestAnimationFrame(frame);
+{ const first = store.get(HOWTO_KEY) == null && !save.tut; if (first) showHowto(true); }
+
+// ---------- テスト用（?debug） ----------
+if (DEBUG) {
+  const api = { ready: () => true, state: () => ({ mode, sport: S && S.id, diff: S && S.diff, players: S && S.players, cur: S && S.cur, scores: S && S.scores, ov: ovName, howto: !$('howto').hidden, paused, status: $('status').textContent, hud: $('hudText').textContent, save: JSON.parse(JSON.stringify(save)), buttons: btnList.map(b => b.id), W, H }) };
+  window.__kb = Object.assign(window.__kb || {}, api);
+  window.__sports = { api, C, get S() { return S; }, get venue() { return venue; }, get save() { return save; }, startSport, startDaily, showCard, showList, showRecords, showSettings, showTutorial, showHowto, endSession, closeOv, hub, nodePos, Tilt,
+    setSave(o) { save = C.sanitize(Object.assign(C.newSave(), o)); writeSave(); return save; }, resetSave() { store.del(SAVE_KEY); save = readSave(); renderHudStars(); },
+    seed(n) { newSeed = () => n; },
+    thumbScene() { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; closeOv(); document.body.classList.add('thumb'); hub.x = 0.62; hub.y = 0.45; hub.sel = 5; fit(); return true; } };
+}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+<script src="../firebase-config.js"></script>
+<script src="../common/cloud.js"></script>
+<script>KoboCloud.sync({ 'kusoge.sports.save': 'newest' }, { reloadOnNewer: true });</script>
+</body>
+</html>
