@@ -50,6 +50,9 @@
       }
       return inp;
     }
+    // ひこう：目ざす点へ むけて、スティックで 曲がる・上下する
+    const aeroSteer = (S, inp, tp) => { const h = S.h, up = [0, 1, 0]; const d = h.fd ? V.norm(h.fd) : V.norm(h.fw), dh = V.norm(E.projT(d, up)), tv = V.sub(tp, h.x), th = V.len(E.projT(tv, up)) > 0.05 ? V.norm(E.projT(tv, up)) : dh;
+      const s = V.dot(V.cross(dh, th), up), c = V.dot(dh, th); inp.sx = Math.max(-1, Math.min(1, -(c < 0 ? (s >= 0 ? 1 : -1) : s) * 7)); const err = V.dot(V.norm(tv), up) - V.dot(d, up); inp.sy = Math.max(-1, Math.min(1, -err * 7)); return inp; };
     bot.act = function (S) {
       const h = S.h, inp = { sx: 0, sy: 0, b: 0 };
       if (S.over || h.dead) return inp;
@@ -79,6 +82,7 @@
       if (st.fly) {
         if (tg.gone) { nextStep(); return inp; }
         const o = go(S, tg.p, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+        if (st.aero) { if (h.fl) return aeroSteer(S, inp, tg.p); if (h.on >= 0 && !(S.pb & B.J)) inp.b |= B.J; return inp; }
         if (st.swim) { const above = V.dot(V.sub(tg.p, h.x), h.up), vu = V.dot(h.v, h.up); if ((h.on >= 0 || (h.sw && above > -0.2 && vu < 1.2)) && !(S.pb & B.J)) inp.b |= B.J; return inp; }
         if (h.pw && h.pw.k === 'kite') { const tb = tg.i >= 0 ? L.ents[tg.i].bi : -1; if (h.on >= 0) { if (!(S.pb & B.J)) inp.b |= B.J; } else if (tb < 0 || h.gb !== tb) inp.b |= B.J; }
         return inp;
@@ -93,6 +97,7 @@
         nextStep(); return bot.act(S);
       }
       const o = go(S, tg.p, { stop: 0.15 }); inp.sx = o.sx; inp.sy = o.sy;
+      if (st.aero && h.fl) return aeroSteer(S, inp, tg.p);
       if (st.swim && h.sw) { const above = V.dot(V.sub(tg.p, h.x), h.up), vu = V.dot(h.v, h.up); if (above > -0.2 && vu < 1.2 && !(S.pb & B.J)) inp.b |= B.J; return inp; }
       if (st.bounce) { if (!(S.pb & B.J)) inp.b |= B.J; return inp; }
       if (st.dash && h.pw && h.pw.k === 'dash' && h.on < 0 && (h.aj | 0) < 1 && V.dot(h.v, h.up) < 1.5 && !(S.pb & B.J)) inp.b |= B.J;

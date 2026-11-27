@@ -144,6 +144,16 @@ test('galaxy rules: heat zones burn a hero who stands still, swim zones make you
   const shy = look => { const L2 = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', id: 'w', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 1, ph: 0, shy: 1 }], missions: [{ id: 'm', start: { p: [0, 6.5, 6] } }] }); const S2 = E.create(L2, 'm'); S2.cam.fw = look ? V.norm(V.sub(S2.ep[0], S2.h.x)) : [0, 0, 1]; runN(S2, 120); return S2.sh[0] || 0; };
   ok(shy(false) > 1.5 && shy(true) < 0.2, 'a shy ghost moves only when unseen: ' + shy(false).toFixed(1) + ' / watched ' + shy(true).toFixed(1));
 });
+test('flight: in a fly zone the hero flies forward and steers with the stick; a boss that needs light ignores hits until its lanterns are lit', () => {
+  const L = E.compile({ id: 't', bodies: [sph({ g: 0 })], ents: [], zones: [{ s: 'box', c: [0, 20, 0], h: [60, 30, 60], m: 'fly' }], missions: [{ id: 'm', start: { p: [0, 20, 0] } }] });
+  const fly = (sx, sy) => { const S = E.create(L, 'm'); S.h.fw = [1, 0, 0]; runN(S, 10); const a = S.h.x.slice(); runN(S, 40, { sx, sy }); return V.sub(S.h.x, a); };
+  const st = fly(0, 0), rt = fly(1, 0), dn = fly(0, 1), up = fly(0, -1);
+  ok(V.len(st) > 7 && Math.abs(st[2]) < 1.5, 'flies straight ' + st.map(v => v.toFixed(1)));
+  ok(Math.abs(rt[2]) > 2.5 && Math.sign(rt[2]) !== Math.sign(fly(-1, 0)[2]), 'steers left/right'); ok(dn[1] < st[1] - 1.5 && up[1] > st[1] + 1.5, 'steers up/down');
+  const Lb = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, needLit: 'bq' }, { k: 'lantern', id: 'l1', b: 'a', l: [10.5, 0, 0], grp: 'bq' }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(Lb, 'm');
+  S.boss.st = 'stun'; const hp0 = S.boss.hp; const bp = E.bossPos(S); S.h.x = [bp[0], bp[1] + 0.2, bp[2] + 1]; E.step(S, { b: B.S }); ok(S.boss.hp === hp0, 'a shielded boss takes no damage until the lanterns are lit');
+  S.flag.lanternsbq = 1; S.boss.st = 'stun'; S.h.x = [bp[0], bp[1] + 0.2, bp[2] + 1]; for (let i = 0; i < 6; i++) E.step(S, { b: i === 0 ? B.S : 0 }); ok(S.boss.hp < hp0, 'it takes damage once lit');
+});
 test('charging boss: a telegraphed aim, then a dash, then a dazed opening (never a surprise hit)', () => {
   const L = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, spd: 0.5, charge: 1 }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(L, 'm'); const seen = []; for (let i = 0; i < 4800 && seen.filter(x => x === 'stun').length < 2; i++) { E.step(S, {}); if (seen[seen.length - 1] !== S.boss.st) seen.push(S.boss.st); }
   const ai = seen.indexOf('aim'); ok(ai >= 0 && seen[ai + 1] === 'charge' && seen[ai + 2] === 'stun', 'order ' + seen.join('>')); ok(seen.indexOf('jump') < ai, 'a slam first, then the charge');

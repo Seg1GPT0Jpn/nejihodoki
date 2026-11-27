@@ -319,7 +319,7 @@
     const n0 = grounded0 ? h.gn : gu;
     let v = h.v.slice();
     let stk = false; for (const z of L.zones) { if (z.m === 'sticky' && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { stk = true; break; } } h.stk = stk ? 1 : 0;
-    let swim = false, hot = false; for (const z of L.zones) { if ((z.m === 'swim' || z.m === 'heat') && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { if (z.m === 'swim') swim = true; else hot = true; } } h.sw = swim ? 1 : 0;
+    let swim = false, hot = false, flz = null; for (const z of L.zones) { if ((z.m === 'swim' || z.m === 'heat' || z.m === 'fly') && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { if (z.m === 'swim') swim = true; else if (z.m === 'fly') flz = z; else hot = true; } } h.sw = swim ? 1 : 0; h.fl = flz && !grounded0 ? 1 : 0; if (!h.fl) h.fp = 0;
     if (hot && grounded0 && len(h.v) < 2.4) { h.ht = (h.ht || 0) + DT; if (h.ht > 1.15) { h.ht = 0; S.ev.push(['burn', h.x[0], h.x[1], h.x[2]]); h.burn = 1; } } else h.ht = Math.max(0, (h.ht || 0) - 2 * DT);
     const speed = (stk ? 0.42 : 1) * (swim ? 0.8 : 1) * K.RUN * (h.pw && h.pw.k === 'jelly' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'drill' ? 1.4 : 1);
     if (grounded0) {
@@ -336,9 +336,14 @@
     if (mag2) { const t = projT(dirW, gu); if (len(t)) { const f2 = projT(slerpN(h.fw, t, 1 - expD(-18 * DT)), gu); h.fw = len(f2) ? f2 : t; } } else { const t = projT(h.fw, gu); h.fw = len(t) ? t : perp(gu); }
     // 重力
     if (h.dsh > 0) h.dsh -= DT;
-    if (g.gm > 0) v = sub(v, mul(gu, g.gm * DT * (h.pound === 1 || h.dsh > 0 ? 0 : h.sw ? 0.2 : h.pw && h.pw.k === 'kite' && jh && !grounded0 && h.hov > 0 ? 0.22 : 1)));
+    if (g.gm > 0) v = sub(v, mul(gu, g.gm * DT * (h.pound === 1 || h.dsh > 0 || h.fl ? 0 : h.sw ? 0.2 : h.pw && h.pw.k === 'kite' && jh && !grounded0 && h.hov > 0 ? 0.22 : 1)));
     else v = mul(v, 1 - 0.35 * DT);
     if (h.sw && !grounded0) { v = mul(v, 1 - 1.4 * DT); const vu0 = dot(v, gu); if (vu0 < -3.2) v = add(v, mul(gu, -3.2 - vu0)); if (jp) { const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, Math.max(vu, 0) * 0.3 + 7.2)); S.ev.push(['swim', h.x[0], h.x[1], h.x[2]]); } } // およぎ：ジャンプでひとかき
+    if (h.fl) { // ひこう：ずっと まえへ。スティックで 曲がる・上下
+      const up = flz.up || [0, 1, 0]; const first = !h.fp; h.fp = 1; let d = first || !h.fd ? norm(add(projT(h.fw, up), mul(up, 0.12))) : h.fd; d = rodr(d, up, -sx * 2.4 * DT); const ax = cross(d, up);
+      if (len(ax) > 1e-3) { const dn = rodr(d, norm(ax), -sy * 1.4 * DT), a1 = Math.abs(dot(dn, up)); if (a1 <= 0.78 || a1 < Math.abs(dot(d, up))) d = dn; }
+      h.fd = d.slice(); v = mul(d, 13); const hd = projT(d, up); if (len(hd) > 0.05) h.fw = norm(hd);
+    }
     // ジャンプ・スピン・ドスン
     h.cy = grounded0 ? DIF.coyote[S.dif] : Math.max(0, h.cy - DT);
     const canJump = h.cy > 0;
@@ -488,7 +493,7 @@
       if (S.e[i]) continue; const e = L.ents[i]; if (e.req && !S.flag[e.req]) continue;
       const p = S.ep[i]; if (!p) continue; const d = len(sub(p, h.x));
       switch (e.k) {
-        case 'coin': if (d < 1.15 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.coin++; S.ev.push(['coin', p[0], p[1], p[2]]); } break;
+        case 'coin': if (d < (e.rad || 1.15) * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.coin++; S.ev.push(['coin', p[0], p[1], p[2]]); } break;
         case 'crystal': if (d < 1.3 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.crystal++; S.cnt.coin += 5; S.ev.push(['crystal', p[0], p[1], p[2]]); } break;
         case 'heart': if (d < 1.3) { S.e[i] = 1; h.hp = Math.min(S.hpMax, h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); } break;
         case 'orb': if (d < 1.5 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.orb++; S.ev.push(['orb', p[0], p[1], p[2]]); if (S.cnt.orb >= S.need.orb) { S.flag.orbs = 1; S.ev.push(['banner', 'orbs']); } } break;
@@ -501,7 +506,7 @@
         case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (m.kind !== 'hunt' && (!m.shard || m.shard === e.id)) finish(S, true, 'shard'); } break;
         case 'launch': if (d < DIF.launchR[S.dif] && !h.lau && h.lcd <= 0 && S.h.dead === 0) startLaunch(S, i); break;
         case 'pad': if (d < 1.4 && h.lcd <= 0) { const up = entUp(S, i), v = h.v; h.v = add(sub(v, mul(up, dot(v, up))), mul(up, e.power || 20)); h.on = -1; h.lcd = 0.3; h.jh = 0; S.ev.push(['pad', p[0], p[1], p[2]]); } break;
-        case 'chaser': if ((S.trail || []).length > (e.delay || 130) && d < 1.3) hurt(S, p); break;
+        case 'chaser': if ((S.trail || []).length > (e.delay || 130) && (!e.act || len(sub(h.x, e.act.c)) < e.act.r) && d < 1.3) hurt(S, p); break;
         case 'spike': if (foeOn(S, e) && d < 0.95 + DIF.sp[S.dif]) hurt(S, p, true); break;
         case 'walker': if (foeOn(S, e) && d < K.ENEMY_R + 0.2 + DIF.er[S.dif]) {
           const up = h.up, rel = dot(sub(h.x, p), up), vu = dot(h.v, up);
@@ -516,7 +521,7 @@
   }
   // ---------- ボス：グツグツおうさま ----------
   function bossHit(S) {
-    const bo = S.boss; if (bo.st !== 'stun') return; bo.hp--; bo.flash = 0.7; bo.st = bo.hp <= 0 ? 'dead' : 'hurt'; bo.t = bo.hp <= 0 ? 2.2 : 0.9; S.cnt.hit++;
+    const bo = S.boss; if (bo.st !== 'stun') return; { const be = S.L.ents[bo.i]; if (be.needLit && !S.flag['lanterns' + be.needLit]) { const p0 = bossPos(S); S.ev.push(['clang', p0[0], p0[1], p0[2]]); return; } } bo.hp--; bo.flash = 0.7; bo.st = bo.hp <= 0 ? 'dead' : 'hurt'; bo.t = bo.hp <= 0 ? 2.2 : 0.9; S.cnt.hit++;
     const p = bossPos(S); S.ev.push([bo.hp <= 0 ? 'boom' : 'bosshit', p[0], p[1], p[2]]);
     if (bo.hp <= 0) { S.flag.boss = 1; S.ev.push(['banner', 'boss']); }
   }

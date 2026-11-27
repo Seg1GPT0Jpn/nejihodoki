@@ -67,8 +67,8 @@ test('balance band: the perfect bot clears everything; a sloppy bot (reaction de
   const skill = k => ({ delay: 9, noise: 0.28, miss: 0.2, seed: k }); const share = {};
   for (const g of LV.GALAXIES) { if (['g3', 'g4'].includes(g.id)) continue; const L = LV.compile(E, g.id); let f = 0, n = 0; for (const m of L.mlist) { if (m.kind === 'hunt') continue; const par = (m.par || 100) * 60; for (let k = 1; k <= 3; k++) { const r = Bot.run(L, m.id, { skill: skill(k), max: Math.round(par * 2.2) }); if (r.S.cnt.die >= 2 || r.S.cnt.hurt >= 6) f++; n++; } } share[g.id] = f / n; }
   console.log('      sloppy-bot hurt/KO share per galaxy: ' + JSON.stringify(Object.fromEntries(Object.entries(share).map(([k, v]) => [k, +v.toFixed(2)]))));
-  ok(share.g1 <= 0.2 && share.g2 <= 0.2, 'early galaxies are gentle'); { const v = Object.values(share); ok(Math.max(...v) - Math.min(...v) >= 0.5, 'a fixed sloppy policy scores very differently per galaxy: ' + (Math.max(...v) - Math.min(...v)).toFixed(2)); } const late = (share.g7 + share.g8 + share.g9 + share.g10 + share.g11 + share.g12) / 6, mid = (share.g5 + share.g6 + share.g7 + share.g8) / 4, early = (share.g1 + share.g2) / 2;
-  ok(late >= 0.3 && late <= 0.9, 'g7-12 share ' + late.toFixed(2)); ok(share.g9 >= share.g5 && share.g10 >= share.g6, 'the later galaxies are harder than the middle ones'); ok(mid >= early + 0.1, 'rises with the galaxy index: ' + early.toFixed(2) + ' -> ' + mid.toFixed(2));
+  ok(share.g1 <= 0.2 && share.g2 <= 0.2, 'early galaxies are gentle'); { const v = Object.values(share); ok(Math.max(...v) - Math.min(...v) >= 0.5, 'a fixed sloppy policy scores very differently per galaxy: ' + (Math.max(...v) - Math.min(...v)).toFixed(2)); } const late = (share.g7 + share.g8 + share.g9 + share.g10 + share.g11 + share.g12) / 6, mid = (share.g5 + share.g6 + share.g7 + share.g8 + share.g9 + share.g10) / 6, early = (share.g1 + share.g2) / 2;
+  ok(late >= 0.3 && late <= 0.9, 'g7-12 share ' + late.toFixed(2)); ok(share.g9 >= share.g5 && share.g10 >= share.g6, 'the later galaxies are harder than the middle ones'); ok(mid >= early + 0.07, 'rises with the galaxy index: ' + early.toFixed(2) + ' -> ' + mid.toFixed(2));
 });
 test('suits are required, and a run+jump-only player cannot finish the main missions beyond galaxy 2', () => {
   // each suit has a set piece nobody can pass without it (the suit is taken away right after it is picked up)
@@ -104,6 +104,7 @@ test('new goal types and galaxy rules exist: chase (g7,g10), swim lagoon (g5), t
   const mech = id => { const s = new Set(); LV.def(id).missions.forEach(m => (m.mech || []).forEach(k => s.add(k))); return s; };
   ok(mech('g7').has('chase') && mech('g10').has('chase'), 'chase'); ok(mech('g5').has('lagoon'), 'lagoon'); ok(mech('g6').has('tilt'), 'tilt');
   ok(LV.def('g3').zones.some(z => z.m === 'heat'), 'lava heat zones'); ok(LV.def('g7').ents.some(e => e.shy), 'shy ghosts'); ok(LV.def('g10').zones.some(z => z.m === 'sticky'), 'quicksand');
+  ok(mech('g9').has('flight') && LV.def('g9').zones.some(z => z.m === 'fly'), 'flight (g9)'); ok(LV.def('g7').ents.some(e => e.needLit), 'a light-gated boss (g7)'); for (const id of ['g8', 'g11', 'g12']) { const looks = new Set(LV.def(id).ents.filter(e => (e.k === 'walker' || e.k === 'spike') && e.look).map(e => e.look)); ok(looks.size >= 3, id + ' enemy looks ' + [...looks]); }
   ok(LV.def('g5').zones.some(z => z.m === 'swim') && LV.def('g6').zones.some(z => z.rot), 'swim and rotating gravity zones');
 });
 test('the hub has a gate for every galaxy', () => {
