@@ -76,17 +76,17 @@
   // =====================================================================================
   function rallyVenue(sport) {
     return function (env) {
-      const L = env.L; let w = 300, h = 400, m = null, kt = 0, pops = [], gests = {}, fired = {}, trail = [], swing = [0, 0], st = 'play', rest = 0, kdir = 0;
+      const L = env.L; let w = 300, h = 400, m = null, kt = 0, pops = [], gests = {}, fired = {}, trail = [], swing = [0, 0], st = 'play', rest = 0, kdir = 0, shk = 0, sparks = [];
       const Sim = S2.Rally; let two = false;
       function geo() {
         const P = m.P, tn = sport === 'tennis', back = tn ? 7.5 : 2.6, hor = h * (tn ? 0.2 : 0.2), camH = tn ? 5.6 : 1.3, zc = back, W2 = P.W / 2 + (tn ? 1.4 : 0.1);
         const F = Math.min(w * 0.47 * zc / W2, h * 1.4); return { F, hor, camH, back, X: (x, y, z) => { const d = P.L / 2 + back - y; return { x: w / 2 + x * F / d, y: hor + (camH - (z || 0)) * F / d, s: F / d }; } };
       }
-      function start() { two = env.players === 2 && env.versusMode === 'versus'; m = Sim.newMatch(sport, env.diff, env.seed, { two }); st = 'play'; pops = []; trail = []; hud(); env.status(two ? L('2P対戦：下がP1、上がP2。ボールがはねたらスワイプ！', '2-player: P1 plays the bottom, P2 the top. Swipe after the bounce!') : L('ボールがはねて、緑の輪のときにスワイプで打ち返そう！', 'Swipe when the ring turns green, after the bounce!')); }
+      function start() { two = env.players === 2 && env.versusMode === 'versus'; const o = env.opts || {}; m = Sim.newMatch(sport, env.diff, env.seed, { two, opp: o.opp, doubles: !!o.doubles && !two }); st = 'play'; pops = []; trail = []; hud(); env.status(two ? L('2P対戦：下がP1、上がP2。ボールがはねたらスワイプ！', '2-player: P1 plays the bottom, P2 the top. Swipe after the bounce!') : L('ボールがはねて、緑の輪のときにスワイプで打ち返そう！', 'Swipe when the ring turns green, after the bounce!')); }
       function hud() { const l = Sim.label(m); env.hud(sport === 'pingpong' ? l.a + ' - ' + l.b + '  (' + L(m.target + '点先取', 'first to ' + m.target) + ')' : L('ゲーム ', 'Games ') + m.games[0] + '-' + m.games[1] + '  ' + l.a + '-' + l.b); }
-      function aimOf(v, side, curve) { return { ax: clamp(v.dx / Math.max(1, Math.abs(v.dy)) * 1.1, -1, 1), s: clamp((v.speed - 0.3) / 2.1, 0.05, 1), spin: curve * 0.8 }; }
+      function aimOf(v, side, curve) { return { ax: clamp(v.dx / Math.max(1, Math.abs(v.dy)) * 1.1, -1, 1), s: clamp((v.speed - 0.3) / 2.1, 0.05, 1), spin: curve * 0.8, top: clamp((v.speed - 1.1) / 1.1, -1, 1) * 0.9 }; }
       function sideAt(y) { return two && y < h * 0.46 ? 1 : 0; }
-      function fire(side, aim) { const r = Sim.swipe(m, side, aim); if (r === 'hit' || r === 'serve') { swing[side] = 0.28; env.sfx(aim.s > 0.7 ? 'hit' : 'tap'); env.noise(0.05, { vol: 0.05, freq: 2400 }); env.buzz(8); } else if (r === 'whiff') { swing[side] = 0.2; env.tone(200, 0.06, { type: 'triangle', vol: 0.03 }); } return r; }
+      function fire(side, aim) { const r = Sim.swipe(m, side, aim); if (r === 'hit' || r === 'serve') { swing[side] = 0.28; env.sfx(aim.s > 0.7 ? 'hit' : 'tap'); if (aim.s > 0.82 && r === 'hit') { shk = 0.35; pops.push({ txt: L('スマッシュ！', 'Smash!'), t: 0, col: '#ff9a6a' }); env.sfx('combo', 3); } if (m.ball) for (let i = 0; i < 8; i++) sparks.push({ x: m.ball.x, y: m.ball.y, z: m.ball.z, a: i / 8 * 6.28, t: 0 }); env.noise(0.05, { vol: 0.05, freq: 2400 }); env.buzz(8); } else if (r === 'whiff') { swing[side] = 0.2; env.tone(200, 0.06, { type: 'triangle', vol: 0.03 }); } return r; }
       function drain() {
         for (const e of m.ev) {
           if (e.type === 'bounce') { env.tone(sport === 'pingpong' ? 900 : 300, 0.04, { type: 'sine', vol: 0.05 }); }
@@ -106,13 +106,14 @@
           if (two) { if (code === 'KeyJ') fire(1, { ax: -0.7, s: 0.5, spin: 0 }); if (code === 'KeyK') fire(1, { ax: 0, s: 0.5, spin: 0 }); if (code === 'KeyL') fire(1, { ax: 0.7, s: 0.5, spin: 0 }); }
         },
         update(dt) {
-          if (!m) return; kt += dt; dt = Math.min(dt, 1 / 30); for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.2); swing[0] = Math.max(0, swing[0] - dt); swing[1] = Math.max(0, swing[1] - dt);
+          if (!m) return; kt += dt; dt = Math.min(dt, 1 / 30); shk = Math.max(0, shk - dt * 1.8); for (const p of sparks) p.t += dt; sparks = sparks.filter(p => p.t < 0.35); for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.2); swing[0] = Math.max(0, swing[0] - dt); swing[1] = Math.max(0, swing[1] - dt);
           if (st === 'play') {
             Sim.step(m, dt); drain(); if (m.ball && m.state === 'rally') { trail.push({ x: m.ball.x, y: m.ball.y, z: m.ball.z }); if (trail.length > 7) trail.shift(); } else trail = [];
             if (m.done) { st = 'end'; rest = 1.8; env.sfx(m.winner === 0 ? 'win' : 'over'); pops.push({ txt: two ? (m.winner === 0 ? L('P1 のかち！', 'P1 wins!') : L('P2 のかち！', 'P2 wins!')) : m.winner === 0 ? L('かち！', 'You win!') : L('まけ…', 'You lose'), t: -0.1, col: PAL.sun }); }
           } else if (st === 'end') { rest -= dt; if (rest <= 0) { st = 'over'; if (two) env.done({ versus: true, winner: m.winner, scores: [m.pts[0], m.pts[1]], score: m.pts[0], detail: { pts: m.pts, games: m.games, longest: m.longest } }); else env.done({ score: Sim.scoreOf(m), detail: { won: m.winner === 0, pts: m.pts, games: m.games, longest: m.longest, aces: m.aces } }); } }
         },
-        draw(g) {
+        draw(g) { g.save(); if (shk > 0) g.translate((Math.random() - 0.5) * shk * 12, (Math.random() - 0.5) * shk * 8); this.draw0(g); for (const p of sparks) { const q = geo().X(p.x, p.y, p.z); g.fillStyle = 'rgba(255,230,120,' + (1 - p.t / 0.35) + ')'; g.beginPath(); g.arc(q.x + Math.cos(p.a) * p.t * 120, q.y + Math.sin(p.a) * p.t * 120, 3, 0, 6.3); g.fill(); } g.restore(); },
+        draw0(g) {
           if (!m) return; const P = m.P, q = geo(), tn = sport === 'tennis', X = q.X, hl = P.L / 2, ww = P.W / 2;
           // 背景
           if (tn) { A.sky(g, w, h, q.hor, kt); g.fillStyle = PAL.sea1; g.fillRect(0, q.hor - 8, w, 8); g.fillStyle = PAL.grass1; g.fillRect(0, q.hor, w, h - q.hor); }
@@ -129,7 +130,7 @@
           const drawNet = () => { const a = X(-ww - (tn ? 0.4 : 0.1), 0, 0), b = X(ww + (tn ? 0.4 : 0.1), 0, 0), at = X(-ww - (tn ? 0.4 : 0.1), 0, P.netH), bt = X(ww + (tn ? 0.4 : 0.1), 0, P.netH); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.lineTo(bt.x, bt.y); g.lineTo(at.x, at.y); g.closePath(); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(at.x, at.y); g.lineTo(bt.x, bt.y); g.stroke(); g.strokeStyle = '#555'; g.lineWidth = 3; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(at.x, at.y); g.moveTo(b.x, b.y); g.lineTo(bt.x, bt.y); g.stroke(); };
           const ball = m.ball, bp = ball ? X(ball.x, ball.y, ball.z) : null;
           // 自分
-          let mp = X(m.pp[0], hl + (tn ? 1.7 : 0.95), 0); if (!tn) mp = { x: X(m.pp[0], hl + 0.95, 0).x, y: h * 0.99, s: h * 0.26 / 1.5 }; A.mascot(g, mp.x, mp.y + 4, (tn ? 1.9 : 1.5) * mp.s * (tn ? 0.95 : 1), { kind: env.kind, pose: swing[0] > 0 ? 'swing' : 'idle', t: kt, dir: -1 }); racket(g, mp, -1, swing[0], tn);
+          let mp = X(m.pp[0], tn && m.net[0] ? 5.4 : hl + (tn ? 1.7 : 0.95), 0); if (m.doubles) { const pp2 = X(clamp(-m.pp[0] * 0.8 + (m.pp[0] >= 0 ? -1 : 1) * (tn ? 2.2 : 0.35), -ww, ww), tn ? hl + 1.4 : hl + 0.9, tn ? 0 : -0.76); A.mascot(g, pp2.x, tn ? pp2.y : h * 0.99, (tn ? 1.8 : 1.5) * (tn ? pp2.s * 0.9 : h * 0.2 / 1.5), { kind: typeof env.kind === 'object' ? { k: (env.kind.k + 2) % 4, c: (env.kind.c + 3) % 8, h: 0, f: 1 } : (env.kind + 2) % 4, pose: 'idle', t: kt + 1, dir: -1 }); const op2 = X(clamp(-m.pp[1] * 0.8 + (tn ? 2.2 : 0.35), -ww, ww), -hl - (tn ? 1.7 : 0.8), tn ? 0 : -0.76); A.mascot(g, op2.x, op2.y, (tn ? 1.8 : 1.5) * op2.s * 0.95, { kind: 1, pose: 'idle', t: kt + 2, dir: 1 }); } if (!tn) mp = { x: X(m.pp[0], hl + 0.95, 0).x, y: h * 0.99, s: h * 0.26 / 1.5 }; A.mascot(g, mp.x, mp.y + 4, (tn ? 1.9 : 1.5) * mp.s * (tn ? 0.95 : 1), { kind: env.kind, pose: swing[0] > 0 ? 'swing' : 'idle', t: kt, dir: -1 }); racket(g, mp, -1, swing[0], tn);
           // ボールの影と本体：ネットより奥のもの→ネット→手前のもの
           const farFirst = ball && ball.y < 0;
           const drawBall = () => { if (!ball) return; const sh = X(ball.x, ball.y, tn ? 0 : (Rally_in(ball) ? 0 : -0.76)), r = Math.max(3.2, P.r * 2.3 * bp.s * (tn ? 1.7 : 1.0)); ell(g, sh.x, sh.y, r * 1.1, r * 0.4, 'rgba(0,0,0,.28)'); for (let i = 0; i < trail.length - 1; i++) { const t = X(trail[i].x, trail[i].y, trail[i].z); circ(g, t.x, t.y, r * (0.25 + i * 0.07), 'rgba(255,255,255,' + (0.05 + i * 0.05) + ')'); } circ(g, bp.x, bp.y, r, tn ? '#e8f55a' : '#fff', PAL.ink, 1.5);

@@ -89,6 +89,48 @@ async function golfTest(env) {
   }
 }
 
+async function variantsTest(env) {
+  console.log('2d. bowling variants / lanes, rally opponent styles and doubles');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; await p.evaluate(() => __sports.showCard('bowling')); check(lang + ': bowling card shows formats and lanes', (await p.locator('#segB .opt').count()) === 3 && (await p.locator('#segLn .opt').count()) === 3);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English bowling card has no Japanese', jp.length === 0, jp.slice(0, 5)); }
+    await p.locator('#segB .opt[data-b="pins100"]').click(); await p.locator('#segLn .opt[data-n="dry"]').click(); await p.click('#goBtn'); await sleep(p, 300); let a = await st(p); if (a.ov === 'tut') await p.click('#tNext'); await sleep(p, 500); a = await st(p);
+    check(lang + ': 100-pin challenge starts on a dry lane', a.mode === 'play' && /1\/10/.test(a.hud), a.hud);
+    const b = await box(p); await drag(p, [[b.x + b.width * 0.5, b.y + b.height * 0.75], [b.x + b.width * 0.5, b.y + b.height * 0.5], [b.x + b.width * 0.5, b.y + b.height * 0.3]], { steps: 3 }); await sleep(p, 6500); const s2 = (await st(p)).status; check(lang + ': a ball is rolled in the variant', /本|pins|ストライク|STRIKE|ガター|Gutter|スペア|SPARE|つぎの1投|Next ball/.test(s2), s2);
+    await p.evaluate(() => __sports.showCard('tennis')); check(lang + ': tennis card shows opponent style and doubles', (await p.locator('#segO .opt').count()) === 4 && (await p.locator('#segDb .opt').count()) === 2);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English tennis card has no Japanese', jp.length === 0, jp.slice(0, 5)); }
+    await p.locator('#segO .opt[data-o="power"]').click(); await p.locator('#segDb .opt[data-db="1"]').click(); await p.click('#goBtn'); await sleep(p, 300); a = await st(p); if (a.ov === 'tut') await p.click('#tNext'); await sleep(p, 600);
+    for (let i = 0; i < 4; i++) { await drag(p, [[b.x + b.width * 0.5, b.y + b.height * 0.85], [b.x + b.width * 0.55, b.y + b.height * 0.55], [b.x + b.width * 0.6, b.y + b.height * 0.3]], { steps: 3 }); await sleep(p, 900); } check(lang + ': doubles tennis runs', (await st(p)).mode === 'play'); check(lang + ': no page errors', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
+async function variants2Test(env) {
+  console.log('2e. archery / kendo / hoops variants');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; const b0 = async () => box(p);
+    for (const [id, v, hudRe] of [['archery', 'moving', /1\/10/], ['kendo', 'wave', /3|Hearts|ハート/], ['hoops', 'contest', /1\/25/]]) {
+      await p.evaluate(i => __sports.showCard(i), id); check(lang + ': ' + id + ' card has format options', (await p.locator('#segB .opt').count()) === 3);
+      if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English ' + id + ' card has no Japanese', jp.length === 0, jp.slice(0, 5)); }
+      await p.locator('#segB .opt[data-b="' + v + '"]').click(); await p.click('#goBtn'); await sleep(p, 300); let a = await st(p); if (a.ov === 'tut') await p.click('#tNext'); await sleep(p, 700); a = await st(p); check(lang + ': ' + id + ' ' + v + ' starts', a.mode === 'play' && hudRe.test(a.hud), a.hud);
+      const b = await b0(); if (id === 'archery') { await drag(p, [[b.x + b.width * 0.5, b.y + b.height * 0.5], [b.x + b.width * 0.55, b.y + b.height * 0.45]], { hold: 300 }); await sleep(p, 1800); check(lang + ': a moving-target arrow is shot', /2\/10/.test(await hud(p)), await hud(p)); }
+      else if (id === 'kendo') { for (let i = 0; i < 12; i++) { await p.keyboard.press(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'][i % 4]); await sleep(p, 250); } check(lang + ': cut-through runs', (await st(p)).mode === 'play'); }
+      else { await drag(p, [[b.x + b.width * 0.2, b.y + b.height * 0.7], [b.x + b.width * 0.4, b.y + b.height * 0.5], [b.x + b.width * 0.5, b.y + b.height * 0.42]]); await sleep(p, 2500); check(lang + ': a contest shot is taken', /2\/25/.test(await hud(p)), await hud(p)); }
+    }
+    check(lang + ': no page errors', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
+async function avatarTest(env) {
+  console.log('2f. avatar creator');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; await p.evaluate(() => __sports.showAvatar(0)); check(lang + ': avatar creator opens', (await st(p)).ov === 'avatar');
+    await p.locator('#avC .opt[data-v="4"]').click(); await p.locator('#avH .opt[data-v="3"]').click(); await p.locator('#avF .opt[data-v="2"]').click(); await p.locator('#avK .opt[data-v="1"]').click();
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English avatar creator has no Japanese', jp.length === 0, jp.slice(0, 5)); }
+    await p.locator('#segS .opt[data-s="1"]').click(); await p.locator('#avRnd').click(); await p.click('#ovClose'); const sv = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), SAVE); check(lang + ': avatars are saved for P1 and P2', sv.set.av && sv.set.av.c === 4 && sv.set.av.h === 3 && sv.set.av.f === 2 && sv.set.av.k === 1 && sv.set.av2, sv.set);
+    await p.evaluate(() => __sports.startSport({ id: 'tennis', diff: 1, players: 1, practice: true })); await sleep(p, 600); await shot(p, 'avatar-' + lang); check(lang + ': the avatar is used in a sport', (await st(p)).mode === 'play'); check(lang + ': no page errors', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+}
+
 async function touchTest(env) {
   console.log('2b. touch: a full archery game (10 arrows) with real touches, record is saved');
   const s = await open(env, { vp: 'se2', touch: true }); const p = s.page; await p.evaluate(() => __sports.startSport({ id: 'archery', diff: 0, players: 1 })); await sleep(p, 300);
@@ -140,7 +182,7 @@ async function layoutTest(env) {
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
+  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, variants: variantsTest, variants2: variants2Test, avatar: avatarTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
   for (const [name, f] of Object.entries(all)) { if (only && !only.includes(name)) continue; try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); } }
   await browser.close(); await srv.close();
   const fail = results.filter(r => !r.ok).length;

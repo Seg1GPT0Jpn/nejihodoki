@@ -48,7 +48,7 @@
   ];
   // pose: 'idle' | 'cheer' | 'run' | 'sad' | 'swing'。x, y は足もと、s は高さ
   function mascot(g, x, y, s, o) {
-    o = o || {}; const K = KINDS[(o.kind | 0) % 4], t = o.t || 0, pose = o.pose || 'idle', dir = o.dir || 1, bob = pose === 'run' ? Math.abs(Math.sin(t * 12)) * s * 0.06 : pose === 'idle' ? Math.sin(t * 2.5) * s * 0.012 : 0;
+    o = o || {}; const av = o.kind && typeof o.kind === 'object' ? o.kind : null, K = av ? avK(av) : KINDS[(o.kind | 0) % 4], kn = av ? av.k : (o.kind | 0), t = o.t || 0, pose = o.pose || 'idle', dir = o.dir || 1, bob = pose === 'run' ? Math.abs(Math.sin(t * 12)) * s * 0.06 : pose === 'idle' ? Math.sin(t * 2.5) * s * 0.012 : 0;
     g.save(); g.translate(x, y - bob); g.scale(dir, 1);
     ell(g, 0, 0, s * 0.3, s * 0.06, 'rgba(0,0,0,.18)');
     const bw = s * 0.3, bh = s * 0.3, by = -s * 0.3;
@@ -69,14 +69,32 @@
     else { g.fillStyle = K.body; g.strokeStyle = PAL.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(-hr * 0.2, hy - hr * 0.95); g.quadraticCurveTo(0, hy - hr * 1.7, hr * 0.3, hy - hr * 0.95); g.closePath(); g.fill(); g.stroke(); }
     circ(g, 0, hy, hr, K.body, PAL.ink, 2); ell(g, 0, hy + hr * 0.25, hr * 0.72, hr * 0.62, K.belly);
     // 顔
-    const bl = pose === 'sad' ? 0.1 : (Math.sin(t * 1.3 + (o.kind | 0)) > 0.97 ? 0.2 : 1);
+    const bl = pose === 'sad' ? 0.1 : (Math.sin(t * 1.3 + kn) > 0.97 ? 0.2 : 1);
     ell(g, -hr * 0.36, hy - hr * 0.02, hr * 0.12, hr * 0.17 * bl, PAL.ink); ell(g, hr * 0.36, hy - hr * 0.02, hr * 0.12, hr * 0.17 * bl, PAL.ink);
     circ(g, -hr * 0.4, hy - hr * 0.08, hr * 0.04, '#fff'); circ(g, hr * 0.32, hy - hr * 0.08, hr * 0.04, '#fff');
     ell(g, -hr * 0.62, hy + hr * 0.25, hr * 0.14, hr * 0.09, K.cheek); ell(g, hr * 0.62, hy + hr * 0.25, hr * 0.14, hr * 0.09, K.cheek);
     g.strokeStyle = PAL.ink; g.lineWidth = 1.8; g.lineCap = 'round'; g.beginPath();
     if (pose === 'sad') { g.moveTo(-hr * 0.15, hy + hr * 0.5); g.quadraticCurveTo(0, hy + hr * 0.38, hr * 0.15, hy + hr * 0.5); } else if (pose === 'cheer') { g.moveTo(-hr * 0.22, hy + hr * 0.32); g.quadraticCurveTo(0, hy + hr * 0.7, hr * 0.22, hy + hr * 0.32); } else { g.moveTo(-hr * 0.15, hy + hr * 0.38); g.quadraticCurveTo(0, hy + hr * 0.52, hr * 0.15, hy + hr * 0.38); } g.stroke();
+    if (av) { const fc = av.f | 0;
+      if (fc === 1) { ell(g, 0, hy + hr * 0.45, hr * 0.2, hr * 0.14, PAL.ink); ell(g, 0, hy + hr * 0.5, hr * 0.12, hr * 0.06, '#ff7a6b'); }
+      else if (fc === 2) { ell(g, -hr * 0.36, hy - hr * 0.02, hr * 0.17, hr * 0.2, K.body); g.strokeStyle = PAL.ink; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-hr * 0.5, hy); g.lineTo(-hr * 0.22, hy - hr * 0.04); g.stroke(); }
+      else if (fc === 3) { for (const sg of [-1, 1]) { ell(g, sg * hr * 0.36, hy - hr * 0.02, hr * 0.17, hr * 0.2, K.body); g.strokeStyle = PAL.ink; g.lineWidth = 2.2; g.beginPath(); g.arc(sg * hr * 0.36, hy - hr * 0.02, hr * 0.14, 0.2, Math.PI - 0.2); g.stroke(); } }
+      hat(g, av.h | 0, hr, hy, K);
+    }
     if (o.band) { g.fillStyle = o.band; g.fillRect(-hr * 0.98, hy - hr * 0.55, hr * 1.96, hr * 0.2); }
     g.restore();
+  }
+  // アバター（つくれるキャラクター）：k = 耳のかたち 0〜3、c = 色 0〜7、h = ぼうし 0〜5、f = 顔 0〜3
+  const AVCOL = [['#ff9a4d', '#ffe2bd', '#ff6f5e'], ['#ff9ec2', '#fff0f6', '#ff6f9a'], ['#46c9b3', '#d8fff6', '#ff8a7a'], ['#ffd24d', '#fff6cf', '#ff8a5e'], ['#8f9cff', '#e6e9ff', '#ff8fb3'], ['#7fdc79', '#e9ffe4', '#ff8a7a'], ['#c9a27a', '#f6e8d6', '#ff7a6b'], ['#f4f4f6', '#ffffff', '#ff9ec2']];
+  const EARS = ['round', 'long', 'tri', 'tuft'];
+  function avK(av) { const c = AVCOL[(av.c | 0) % 8]; return { body: c[0], belly: c[1], cheek: c[2], ear: EARS[(av.k | 0) % 4] }; }
+  function hat(g, n, hr, hy, K) {
+    g.lineWidth = 2; g.strokeStyle = PAL.ink; g.lineJoin = 'round';
+    if (n === 1) { g.fillStyle = '#e5484d'; g.beginPath(); g.ellipse(0, hy - hr * 0.55, hr * 0.95, hr * 0.62, 0, Math.PI, TAU); g.fill(); g.stroke(); g.fillStyle = '#b8323a'; g.beginPath(); g.ellipse(hr * 0.55, hy - hr * 0.55, hr * 0.7, hr * 0.14, 0, 0, TAU); g.fill(); g.stroke(); }
+    else if (n === 2) { g.fillStyle = '#3a7ab8'; g.beginPath(); g.ellipse(0, hy - hr * 0.5, hr * 0.92, hr * 0.7, 0, Math.PI, TAU); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillRect(-hr * 0.9, hy - hr * 0.62, hr * 1.8, hr * 0.16); circ(g, 0, hy - hr * 1.2, hr * 0.18, '#fff', PAL.ink, 2); }
+    else if (n === 3) { g.fillStyle = '#ffd24d'; g.beginPath(); g.moveTo(-hr * 0.6, hy - hr * 0.8); g.lineTo(-hr * 0.7, hy - hr * 1.4); g.lineTo(-hr * 0.3, hy - hr * 1.1); g.lineTo(0, hy - hr * 1.5); g.lineTo(hr * 0.3, hy - hr * 1.1); g.lineTo(hr * 0.7, hy - hr * 1.4); g.lineTo(hr * 0.6, hy - hr * 0.8); g.closePath(); g.fill(); g.stroke(); circ(g, 0, hy - hr * 1.0, hr * 0.1, '#e5484d'); }
+    else if (n === 4) { for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; circ(g, hr * 0.62 + Math.cos(a) * hr * 0.2, hy - hr * 0.78 + Math.sin(a) * hr * 0.2, hr * 0.15, '#ff8fb3', PAL.ink, 1.4); } circ(g, hr * 0.62, hy - hr * 0.78, hr * 0.11, '#ffd24d', PAL.ink, 1.2); }
+    else if (n === 5) { g.fillStyle = '#e5484d'; g.fillRect(-hr * 0.98, hy - hr * 0.55, hr * 1.96, hr * 0.2); g.strokeRect(-hr * 0.98, hy - hr * 0.55, hr * 1.96, hr * 0.2); }
   }
   // 犬の「こむぎ」（ディスクドッグ用）。x, y は足もと、s は体の長さ。dir = 1 で右向き
   function dog(g, x, y, s, o) {
@@ -142,6 +160,6 @@
     for (let i = 0; i < 3; i++) star(g, x + (i - 1) * r * 0.62, y + r * 1.32, r * 0.3, i < st ? PAL.sun : 'rgba(18,59,87,.28)');
   }
 
-  const api = { PAL, KINDS, rr, ell, circ, lin, text, sky, cloud, sea, palm, mascot, dog, icon, rectFill, stars, star, hubMap, nodeDraw, islandPath, clamp, lerp, TAU };
+  const api = { PAL, KINDS, AVCOL, avK, rr, ell, circ, lin, text, sky, cloud, sea, palm, mascot, dog, icon, rectFill, stars, star, hubMap, nodeDraw, islandPath, clamp, lerp, TAU };
   root.SportsArt = api;
 })(typeof window !== 'undefined' ? window : globalThis);

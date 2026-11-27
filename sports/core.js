@@ -45,6 +45,19 @@
   // 難しさの名前
   const DIFF_NAMES = { ja: ['やさしい', 'ふつう', 'むずかしい'], en: ['Easy', 'Normal', 'Hard'] };
 
+  // 種目のバリエーション（★の合計には入れない。保存は vb["<キー>"] = [やさしい, ふつう, むずかしい]）
+  const VARIANTS = {
+    bowling100: { sport: 'bowling', ja: 'ピン100本', en: '100-pin challenge', thr: [[50, 65, 80], [45, 60, 75], [40, 55, 70]] },
+    archeryMoving: { sport: 'archery', ja: 'うごく的', en: 'Moving targets', thr: [[40, 58, 75], [35, 52, 68], [28, 42, 58]] },
+    archeryRounds: { sport: 'archery', ja: '3ラウンド', en: 'Three rounds', thr: [[80, 105, 125], [65, 90, 110], [48, 70, 92]] },
+    kendoWave: { sport: 'kendo', ja: 'れんぞくぎり', en: 'Cut-through', thr: [[2500, 5000, 8000], [2500, 5000, 8000], [2200, 4500, 7500]] },
+    kendoBamboo: { sport: 'kendo', ja: 'たけ切り', en: 'Bamboo cutting', thr: [[2500, 5000, 8000], [2500, 5000, 8000], [2200, 4500, 7500]] },
+    hoopsContest: { sport: 'hoops', ja: '3ポイントコンテスト', en: '3-point contest', thr: [[8, 13, 18], [7, 11, 16], [6, 9, 13]] },
+    hoopsPickup: { sport: 'hoops', ja: 'CPUとピックアップ', en: 'Pick-up vs CPU', thr: [[10, 16, 22], [9, 14, 20], [8, 12, 17]] },
+    spares: { sport: 'bowling', ja: 'スペアチャレンジ', en: 'Spare challenge', thr: [[30, 50, 70], [30, 50, 70], [10, 30, 50]] },
+  };
+  function variantStars(key, diff, score) { const v = VARIANTS[key]; if (!v) return 0; const t = v.thr[clamp(diff | 0, 0, 2)]; let n = 0; for (let i = 0; i < 3; i++) if (score >= t[i]) n = i + 1; return n; }
+
   // ---------- ★ ----------
   function starsFor(id, diff, score) {
     const s = sportOf(id); if (!s) return 0;
@@ -55,7 +68,7 @@
 
   // ---------- 保存 ----------
   const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops', 'matchW'];
-  function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, gh: 9, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, gf: { b: [0, 0, 0], m: 0 }, tm: 0, tu: 0, tut: 0 }; }
+  function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, gh: 9, av: null, av2: null, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, gf: { b: [0, 0, 0], m: 0 }, vb: {}, tm: 0, tu: 0, tut: 0 }; }
   function sanitize(o) {
     const s = newSave();
     if (!o || typeof o !== 'object') return s;
@@ -68,12 +81,13 @@
     if (o.dl && typeof o.dl === 'object') s.dl = { k: Math.max(0, Math.floor(num(o.dl.k, 0))), id: typeof o.dl.id === 'string' && sportOf(o.dl.id) ? o.dl.id : '', sc: Math.max(0, Math.floor(num(o.dl.sc, 0))), st: clamp(Math.floor(num(o.dl.st, 0)), 0, 3) };
     if (o.stats && typeof o.stats === 'object') for (const k of STAT_KEYS) { const v = Math.floor(num(o.stats[k], 0)); if (v > 0) s.stats[k] = Math.min(v, 99999999); }
     if (o.set && typeof o.set === 'object') {
-      s.set.sens = clamp(num(o.set.sens, 1), 0.5, 1.5); s.set.tilt = o.set.tilt ? 1 : 0; s.set.lp = o.set.lp ? 1 : 0; s.set.gh = o.set.gh === 18 ? 18 : 9; s.set.vib = o.set.vib === 0 ? 0 : 1;
+      s.set.sens = clamp(num(o.set.sens, 1), 0.5, 1.5); s.set.tilt = o.set.tilt ? 1 : 0; s.set.lp = o.set.lp ? 1 : 0; s.set.gh = o.set.gh === 18 ? 18 : 9; for (const kk of ['av', 'av2']) { const a = o.set[kk]; if (a && typeof a === 'object') s.set[kk] = { k: clamp(Math.floor(num(a.k, 0)), 0, 3), c: clamp(Math.floor(num(a.c, 0)), 0, 7), h: clamp(Math.floor(num(a.h, 0)), 0, 5), f: clamp(Math.floor(num(a.f, 0)), 0, 3) }; } s.set.vib = o.set.vib === 0 ? 0 : 1;
       s.set.who = clamp(Math.floor(num(o.set.who, 0)), 0, 3);
       if (o.set.last && typeof o.set.last === 'object') for (const sp of SPORTS) { const v = o.set.last[sp.id]; if (v === 0 || v === 1 || v === 2) s.set.last[sp.id] = v; }
     }
     if (o.fl && typeof o.fl === 'object') { const b = Array.isArray(o.fl.b) ? o.fl.b : []; s.fl = { b: [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))), ph: Math.max(0, Math.floor(num(o.fl.ph, 0))) & 0xffff, n: Math.max(0, Math.min(99999999, Math.floor(num(o.fl.n, 0)))) }; }
     if (o.gf && typeof o.gf === 'object') { const b = Array.isArray(o.gf.b) ? o.gf.b : []; s.gf = { b: [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))), m: Math.max(0, Math.min(99999999, Math.floor(num(o.gf.m, 0)))) }; }
+    if (o.vb && typeof o.vb === 'object') for (const k of Object.keys(VARIANTS)) { const b = o.vb[k]; if (Array.isArray(b)) s.vb[k] = [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))); }
     s.tm = Math.max(0, Math.floor(num(o.tm, 0))) & 0x7ff; s.tu = Math.max(0, Math.floor(num(o.tu, 0))) & 0x7ff; s.tut = o.tut ? 1 : 0;
     derive(s);
     return s;
@@ -165,6 +179,6 @@
   function tennisServer(gamesPlayed, first) { return (first + gamesPlayed) % 2; }
 
   const api = { hash32, rng, clamp, num, gauss, DIFFS, DIFF_NAMES, SPORTS, SPORT_IDS, sportOf, starsFor, newSave, sanitize, derive, bestOf, starsOf, sportStars, totalStars, MAX_STARS, record, bump, setMax, LOWER_BETTER,
-    dayNumber, dailyOf, dailyStars, bowlingScore, ttDone, ttServer, tennisGameWinner, tennisLabel, tennisSetWinner, tennisServer, STAT_KEYS };
+    VARIANTS, variantStars, dayNumber, dailyOf, dailyStars, bowlingScore, ttDone, ttServer, tennisGameWinner, tennisLabel, tennisSetWinner, tennisServer, STAT_KEYS };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.SportsCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

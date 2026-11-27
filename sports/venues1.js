@@ -38,18 +38,18 @@
   // アーチェリー
   // =====================================================================================
   V.archery = function (env) {
-    const L = env.L; let w = 300, h = 400, run = null, st = 'ready', t = 0, hold = 0, aim = { x: 0, y: 0 }, ptr = null, last = null, flyT = 0, flyShot = null, rest = 0, pops = [], keys = {}, kt = 0;
+    const L = env.L; let w = 300, h = 400, run = null, st = 'ready', t = 0, hold = 0, aim = { x: 0, y: 0 }, ptr = null, last = null, flyT = 0, flyShot = null, rest = 0, pops = [], keys = {}, kt = 0, ct = 0;
     const Sim = S1.Archery;
-    function G() { const cx = w / 2, cy = h * 0.43, rp = Math.min(w * 0.44, h * 0.34); return { cx, cy, rp, pm: rp / run.cfg.R }; }
-    function start() { run = Sim.newRun(env.diff, env.seed); st = 'ready'; aim = { x: 0, y: 0 }; t = 0; hold = 0; pops = []; hud(); env.status(L('画面をなぞって ねらい、はなして うつ。風をよんでね', 'Drag to aim, release to shoot. Read the wind!')); }
-    function hud() { env.hud(L('ほん ', 'Arrow ') + Math.min(run.i + 1, Sim.N) + '/' + Sim.N + '  ' + L('てん ', 'Pts ') + run.total); }
+    function G() { const cx0 = w / 2, cy = h * 0.43, rp = Math.min(w * 0.44, h * 0.34), pm = rp / run.cfg.R, tx = Sim.targetX(run, Math.min(run.i, run.n - 1), ct) * pm; return { cx: cx0 + tx, cx0, cy, rp, pm }; }
+    function start() { run = Sim.newRun(env.diff, env.seed, { variant: (env.opts || {}).variant || null }); ct = 0; st = 'ready'; aim = { x: 0, y: 0 }; t = 0; hold = 0; pops = []; hud(); env.status(L('画面をなぞって ねらい、はなして うつ。風をよんでね', 'Drag to aim, release to shoot. Read the wind!')); }
+    function hud() { env.hud((run.variant === 'rounds' ? L('ラウンド ', 'Round ') + Math.min(3, Math.floor(run.i / 5) + 1) + '  ' : '') + L('ほん ', 'Arrow ') + Math.min(run.i + 1, run.n) + '/' + run.n + '  ' + L('てん ', 'Pts ') + run.total); }
     function tiltOff() { const tl = env.tilt(); return tl.on ? { x: tl.x * run.cfg.R * 0.55, y: tl.y * run.cfg.R * 0.4 } : { x: 0, y: 0 }; }
     function shoot() {
-      const to = tiltOff(); const r = Sim.shoot(run, aim.x + to.x, aim.y + to.y, t, hold); if (!r) return; st = 'fly'; flyT = 0; flyShot = r; env.sfx('drop'); env.tone(180, 0.18, { type: 'sawtooth', vol: 0.04, slide: 700 });
+      const to = tiltOff(); const r = Sim.shoot(run, aim.x + to.x, aim.y + to.y, t, hold, ct); if (!r) return; st = 'fly'; flyT = 0; flyShot = r; env.sfx('drop'); env.tone(180, 0.18, { type: 'sawtooth', vol: 0.04, slide: 700 });
     }
     function landed() {
       const r = flyShot; env.noise(0.07, { vol: 0.1, freq: 900 }); env.tone(r.ring >= 9 ? 880 : 440, 0.1, { type: 'triangle', vol: 0.08 });
-      if (r.x10) env.stat('bulls'); const g = G(); pops.push({ txt: r.ring ? (r.x10 ? 'X 10' : String(r.ring)) : L('はずれ', 'Miss'), x: g.cx + r.x * g.pm, y: g.cy + r.y * g.pm - 14, t: 0, col: r.ring >= 9 ? PAL.sun : '#fff' });
+      if (r.x10) env.stat('bulls'); const g = G(); pops.push({ txt: (r.ring ? (r.x10 ? 'X 10' : String(r.ring)) : L('はずれ', 'Miss')) + (r.bonus ? ' +5!' : ''), x: g.cx + r.x * g.pm, y: g.cy + r.y * g.pm - 14, t: 0, col: r.ring >= 9 ? PAL.sun : '#fff' });
       st = 'result'; rest = 0.9; hud(); env.status(r.ring ? L(r.ring + '点！', r.ring + ' points!') : L('はずれ！ 風にちゅうい', 'Missed! Mind the wind')); env.buzz(r.ring >= 9 ? 20 : 8);
     }
     return {
@@ -61,7 +61,7 @@
         keys[code] = down; if (code === 'Space' || code === 'Enter') { if (down && st === 'ready') { st = 'draw'; t = 0; hold = 0; } else if (!down && st === 'draw') shoot(); }
       },
       update(dt) {
-        if (!run) return; kt += dt; for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.1);
+        if (!run) return; kt += dt; ct += dt; for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.1);
         if (st === 'draw') { t += dt; hold += dt; const sp = run.cfg.R * 1.4 * dt; if (keys.ArrowLeft) aim.x -= sp; if (keys.ArrowRight) aim.x += sp; if (keys.ArrowUp) aim.y -= sp; if (keys.ArrowDown) aim.y += sp; }
         else if (st === 'fly') { flyT += dt; if (flyT >= 0.38) landed(); }
         else if (st === 'result') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; env.done({ score: run.total, detail: { x10: run.shots.filter(s => s.x10).length } }); } else { st = 'ready'; env.status(L('つぎのいっぽん。なぞって ねらおう', 'Next arrow. Drag to aim.')); } } }
@@ -74,19 +74,20 @@
         g.strokeStyle = PAL.wood2; g.lineWidth = Math.max(4, q.rp * 0.07); g.lineCap = 'round'; g.beginPath(); g.moveTo(q.cx - q.rp * 0.5, q.cy + q.rp * 0.5); g.lineTo(q.cx - q.rp * 0.8, hor + h * 0.06); g.moveTo(q.cx + q.rp * 0.5, q.cy + q.rp * 0.5); g.lineTo(q.cx + q.rp * 0.8, hor + h * 0.06); g.stroke();
         const cols = ['#fff', '#fff', '#2b2b33', '#2b2b33', '#3aa0ff', '#3aa0ff', PAL.red, PAL.red, PAL.sun, PAL.sun];
         for (let i = 0; i < 10; i++) circ(g, q.cx, q.cy, q.rp * (1 - i / 10), cols[i], 'rgba(18,59,87,.7)', 1);
+        { const bn = run.bonus[Math.min(run.i, run.n - 1)]; if (bn && run.i < run.n) { const bx = q.cx + bn.x * q.pm, by = q.cy + bn.y * q.pm; circ(g, bx, by, bn.r * q.pm, 'rgba(255,255,255,.85)', PAL.ink, 2); A.star(g, bx, by, bn.r * q.pm * 0.8, PAL.sun); text(g, '+5', bx, by + bn.r * q.pm + 12, fontPx(w, h) - 3); } }
         // 刺さった矢
         for (const s of run.shots) if (s.ring || Math.hypot(s.x, s.y) < R * 1.4) { const px = q.cx + s.x * q.pm, py = q.cy + s.y * q.pm; g.strokeStyle = '#6b4a2a'; g.lineWidth = 2; g.beginPath(); g.moveTo(px, py); g.lineTo(px - q.rp * 0.18, py + q.rp * 0.3); g.stroke(); circ(g, px, py, 2.4, '#222'); g.fillStyle = PAL.red; g.fillRect(px - q.rp * 0.2, py + q.rp * 0.26, 4, 6); }
         // 飛んでいる矢
         if (st === 'fly' && flyShot) { const f = flyT / 0.38, px = lerp(w / 2, q.cx + flyShot.x * q.pm, f), py = lerp(h * 0.95, q.cy + flyShot.y * q.pm, f), sz = 1 - f * 0.55; g.strokeStyle = '#6b4a2a'; g.lineWidth = 3 * sz; g.beginPath(); g.moveTo(px, py); g.lineTo(px + (w / 2 - px) * 0.0, py + 46 * sz); g.stroke(); circ(g, px, py, 4 * sz, '#222'); }
         // ねらい
         if (st === 'ready' || st === 'draw') {
-          const sw = Sim.swayAt(run, run.i, st === 'draw' ? t : 0, hold), to = tiltOff(), rx = q.cx + (aim.x + to.x + (st === 'draw' ? sw.x : 0)) * q.pm, ry = q.cy + (aim.y + to.y + (st === 'draw' ? sw.y : 0)) * q.pm;
+          const sw = Sim.swayAt(run, run.i, st === 'draw' ? t : 0, hold), to = tiltOff(), rx = q.cx0 + (aim.x + to.x + (st === 'draw' ? sw.x : 0)) * q.pm, ry = q.cy + (aim.y + to.y + (st === 'draw' ? sw.y : 0)) * q.pm;
           const bad = hold > 3; g.strokeStyle = bad ? PAL.red : '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(rx, ry, q.rp * 0.12, 0, TAU); g.moveTo(rx - q.rp * 0.22, ry); g.lineTo(rx + q.rp * 0.22, ry); g.moveTo(rx, ry - q.rp * 0.22); g.lineTo(rx, ry + q.rp * 0.22); g.stroke(); g.strokeStyle = 'rgba(18,59,87,.6)'; g.lineWidth = 1; g.stroke();
           if (env.diff === 0) { const dr = Sim.drift(run, run.i) * q.pm; g.setLineDash([4, 4]); g.strokeStyle = PAL.sun; g.lineWidth = 2.5; g.beginPath(); g.arc(rx + dr, ry, q.rp * 0.09, 0, TAU); g.stroke(); g.setLineDash([]); }
           if (st === 'draw') { const bw = w * 0.36, bx = w / 2 - bw / 2, by = h * 0.86; rr(g, bx, by, bw, 10, 5); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill(); rr(g, bx, by, bw * clamp(1 - hold / 6, 0, 1), 10, 5); g.fillStyle = bad ? PAL.red : '#7be0a0'; g.fill(); text(g, L('いき', 'Breath'), w / 2, by - 10, fontPx(w, h) - 2); }
         }
         // 風
-        const wd = run.winds[Math.min(run.i, Sim.N - 1)]; sock(g, w * 0.86, h * 0.1, Math.min(w, h) * 0.07, wd, kt);
+        const wd = run.winds[Math.min(run.i, run.n - 1)]; sock(g, w * 0.86, h * 0.1, Math.min(w, h) * 0.07, wd, kt);
         text(g, (env.diff === 2 ? '' : Math.abs(wd).toFixed(1) + 'm/s ') + (wd > 0.15 ? '→' : wd < -0.15 ? '←' : '・'), w * 0.86, h * 0.1 + Math.min(w, h) * 0.12, fontPx(w, h));
         for (const p of pops) text(g, p.txt, p.x, p.y - p.t * 30, fontPx(w, h) * 1.7, { color: p.col });
       },
@@ -163,17 +164,18 @@
   // バスケシュート
   // =====================================================================================
   V.hoops = function (env) {
-    const L = env.L; let w = 300, h = 400, run = null, st = 'ready', ptr = null, start0 = null, cur = null, sh = null, ft = 0, rest = 0, pops = [], kt = 0, keys = {}, kp = { v: 8, ang: 0.9 };
+    const L = env.L; let w = 300, h = 400, run = null, st = 'ready', ptr = null, start0 = null, cur = null, sh = null, ft = 0, rest = 0, pops = [], kt = 0, keys = {}, kp = { v: 8, ang: 0.9 }, tleft = 0;
     const Sim = S1.Hoops;
     const geo = () => { const sc = Math.min(w * 0.82 / (run.cfg.dmax + 2.4), h * 0.82 / 6.4), x0 = w * 0.12, fy = h * 0.86; return { sc, x0, fy, X: m => x0 + m * sc, Y: m => fy - m * sc }; };
-    function start() { run = Sim.newRun(env.diff, env.seed); st = 'ready'; pops = []; sh = null; hud(); env.status(L('ボールからフリック（ひっぱって はなす）。ななめ上へ！', 'Flick from the ball toward the hoop, with an arc.')); }
-    function hud() { env.hud(L('シュート ', 'Shot ') + Math.min(run.i + 1, Sim.N) + '/' + Sim.N + '  ' + L('てん ', 'Pts ') + run.total); }
+    function start() { run = Sim.newRun(env.diff, env.seed, { variant: (env.opts || {}).variant || null }); tleft = run.limit; st = 'ready'; pops = []; sh = null; hud(); env.status(L('ボールからフリック（ひっぱって はなす）。ななめ上へ！', 'Flick from the ball toward the hoop, with an arc.')); }
+    function hud() { env.hud((run.variant === 'contest' ? L('のこり ', 'Time ') + Math.max(0, Math.ceil(tleft)) + 's  ' : '') + (run.variant === 'pickup' ? 'CPU ' + run.cpuTotal + '  ' : '') + L('シュート ', 'Shot ') + Math.min(run.i + 1, run.n) + '/' + run.n + '  ' + L('てん ', 'Pts ') + run.total); }
     function paramsFrom(sx, sy, ex, ey) { const g = geo(), dx = ex - sx, dy = sy - ey; const ang = clamp(Math.atan2(dy, dx), 0.35, 1.4), len = Math.hypot(dx, dy); return { v: clamp(len * 0.052 * env.set.sens, 3, 15), ang }; }
     function shoot(p) { sh = Sim.shoot(run, p); if (!sh) return; st = 'fly'; ft = 0; env.sfx('pop'); env.buzz(8); }
     function after() {
       env.sfx(sh.made ? (sh.swish ? 'win' : 'ok') : 'fail'); if (sh.swish) env.stat('swish');
       pops.push({ txt: sh.made ? (sh.swish ? L('スウィッシュ！', 'Swish!') : L('ナイスシュート！', 'Nice!')) : (sh.rim ? L('おしい！', 'So close!') : L('はずれ', 'Miss')), t: 0, col: sh.made ? PAL.sun : '#fff' });
-      st = 'result'; rest = 1.1; hud(); env.status(sh.made ? L('+' + sh.score + '点' + (sh.three ? '（3ポイント）' : ''), '+' + sh.score + (sh.three ? ' (three!)' : '')) : L('もういっかい ねらおう', 'Try the next one'));
+      if (sh.cpu) { pops.push({ txt: 'CPU ' + (sh.cpu.made ? L('入った', 'scores') : L('はずした', 'misses')), t: -0.5, col: '#9ee7ff' }); }
+      st = 'result'; rest = run.variant === 'pickup' ? 1.7 : run.variant === 'contest' ? 0.5 : 1.1; hud(); env.status(sh.made ? L('+' + sh.score + '点' + (sh.three ? '（3ポイント）' : ''), '+' + sh.score + (sh.three ? ' (three!)' : '')) : L('もういっかい ねらおう', 'Try the next one'));
     }
     return {
       start, resize(a, b) { w = a; h = b; },
@@ -182,11 +184,11 @@
       up(x, y, id) { if (ptr !== id) return; ptr = null; const ex = x, ey = y; if (Math.hypot(ex - start0.x, ey - start0.y) < 30) { start0 = null; env.status(L('ボールからななめ上へスワイプ！', 'Swipe up and toward the hoop')); return; } const p = paramsFrom(start0.x, start0.y, ex, ey); start0 = null; shoot(p); },
       key(code, down) { keys[code] = down; if (down && st === 'ready') { if (code === 'ArrowUp') kp.v = clamp(kp.v + 0.25, 4, 13); if (code === 'ArrowDown') kp.v = clamp(kp.v - 0.25, 4, 13); if (code === 'ArrowRight') kp.ang = clamp(kp.ang + 0.02, 0.4, 1.35); if (code === 'ArrowLeft') kp.ang = clamp(kp.ang - 0.02, 0.4, 1.35); if (code === 'Space') shoot({ v: kp.v, ang: kp.ang }); } },
       update(dt) {
-        if (!run) return; kt += dt; for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.2);
-        if (st === 'fly') { ft += dt; if (ft >= sh.pts.length / 60) after(); } else if (st === 'result') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; env.done({ score: run.total, detail: { made: run.shots.filter(s => s.made).length } }); } else { st = 'ready'; hud(); } } }
+        if (!run) return; kt += dt; if (run.limit && st !== 'over' && !run.done) { tleft -= dt; if (tleft <= 0) { run.done = true; st = 'over'; env.sfx('over'); env.done({ score: run.total, detail: { made: run.shots.filter(s => s.made).length, contest: true } }); return; } } for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.2);
+        if (st === 'fly') { ft += dt; if (ft >= sh.pts.length / 60) after(); } else if (st === 'result') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; env.done({ score: run.total, detail: { made: run.shots.filter(s => s.made).length, cpu: run.variant === 'pickup' ? run.cpuTotal : null } }); } else { st = 'ready'; hud(); } } }
       },
       draw(g) {
-        if (!run) return; const q = geo(), i = Math.min(run.i, Sim.N - 1), D = run.ds[i], rim = run.cfg.rim;
+        if (!run) return; const q = geo(), i = Math.min(run.i, run.n - 1), D = run.ds[i], rim = run.cfg.rim;
         g.fillStyle = lin(g, 0, 0, 0, h, '#ffd9a8', '#ffb98a'); g.fillRect(0, 0, w, h); circ(g, w * 0.82, h * 0.2, Math.min(w, h) * 0.08, '#fff2b0'); A.cloud(g, w * 0.3, h * 0.18, Math.min(w, h) * 0.06);
         g.fillStyle = PAL.sea1; g.fillRect(0, h * 0.58, w, h * 0.06); g.fillStyle = PAL.sand; g.fillRect(0, q.fy, w, h - q.fy); g.fillStyle = '#e8b86a'; g.fillRect(0, q.fy, w, 6);
         for (let m = 1; m <= 9; m++) { g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(q.X(m) - 1, q.fy + 6, 2, 8); if (m % 2) text(g, m + 'm', q.X(m), q.fy + 24, fontPx(w, h) - 3, { color: 'rgba(18,59,87,.8)', stroke: false }); }
@@ -217,21 +219,22 @@
   // ボウリング
   // =====================================================================================
   V.bowling = function (env) {
-    const L = env.L; let w = 300, h = 400, run = null, st = 'ready', bx = 0, tx = 0, ptr = null, zone = '', gest = null, last = null, anim = null, ft = 0, rest = 0, pops = [], kt = 0, keys = {}, fell = {}, spinK = 0, hold = {};
+    const L = env.L; let w = 300, h = 400, run = null, st = 'ready', bx = 0, tx = 0, ptr = null, zone = '', gest = null, last = null, anim = null, ft = 0, rest = 0, pops = [], kt = 0, keys = {}, fell = {}, spinK = 0, hold = {}, shake = 0, conf = [];
     const Sim = S1.Bowling;
     // レーンの遠近：y = 0（手前）〜 19.5（ピンのむこう）
     function lane() { const yb = h * 0.80, yt = h * 0.2, wb = Math.min(w * 0.7, h * 0.44), wt = wb * 0.5; return { yb, yt, wb, wt, X: (x, y) => { const f = clamp(y / 19.6, 0, 1.05); return w / 2 + x / 1.05 * (wb + (wt - wb) * f); }, Y: y => { const f = clamp(y / 19.6, 0, 1.1); return h * 0.8 - (h * 0.8 - h * 0.2) * Math.pow(f, 0.78); }, S: y => { const f = clamp(y / 19.6, 0, 1.1); return (wb + (wt - wb) * f) / 1.05; } }; }
-    function start() { run = Sim.newRun(env.diff, env.seed); st = 'ready'; bx = 0; tx = 0; pops = []; anim = null; fell = {}; hud(); env.setButtons([{ id: 'posL', label: '◁ ' + L('いち', 'Move'), hold: true }, { id: 'aimL', label: '◀ ' + L('ねらい', 'Aim'), hold: true }, { id: 'aimR', label: L('ねらい', 'Aim') + ' ▶', hold: true }, { id: 'posR', label: L('いち', 'Move') + ' ▷', hold: true }, { id: 'go', label: L('なげる', 'Roll') }]); env.status(L('ボールを よこにずらして、上のほうで ねらいを決め、すばやく上へフリック！', 'Slide the ball, set the aim up the lane, then flick upward.')); }
+    function start() { const o = env.opts || {}; run = Sim.newRun(env.diff, env.seed, { lane: o.lane, variant: o.variant }); st = 'ready'; bx = 0; tx = 0; pops = []; anim = null; fell = {}; hud(); env.setButtons([{ id: 'posL', label: '◁ ' + L('いち', 'Move'), hold: true }, { id: 'aimL', label: '◀ ' + L('ねらい', 'Aim'), hold: true }, { id: 'aimR', label: L('ねらい', 'Aim') + ' ▶', hold: true }, { id: 'posR', label: L('いち', 'Move') + ' ▷', hold: true }, { id: 'go', label: L('なげる', 'Roll') }]); env.status(L('ボールを よこにずらして、上のほうで ねらいを決め、すばやく上へフリック！', 'Slide the ball, set the aim up the lane, then flick upward.')); }
     function nb() { return C.bowlingScore(run.rolls).next; }
-    function hud() { const n = nb(); env.hud(L('フレーム ', 'Frame ') + Math.min(10, n.frame + 1) + '/10  ' + L('てん ', 'Score ') + run.total); }
+    function hud() { if (run.variant) { env.hud((run.variant === 'spares' ? L('スペア ', 'Spare ') : L('ラウンド ', 'Round ')) + Math.min(10, run.round + 1) + '/10  ' + L('てん ', 'Score ') + run.total + '  ' + L(laneNames[run.lane][0], laneNames[run.lane][1])); return; } const n = nb(); env.hud(L('フレーム ', 'Frame ') + Math.min(10, n.frame + 1) + '/10  ' + L('てん ', 'Score ') + run.total + (run.lane !== 'house' ? '  ' + L(laneNames[run.lane][0], laneNames[run.lane][1]) : '')); }
+    const laneNames = { house: ['ふつうのレーン', 'House lane'], dry: ['かわいたレーン（よく曲がる）', 'Dry lane (hooks a lot)'], oil: ['あぶらレーン（曲がりにくい）', 'Oily lane (hooks little)'] };
     function aimAng() { return (tx - bx) / Sim.PIN_Y; }
     function throwBall(v, spin) {
       const a = aimAng(); anim = Sim.roll(run, { x: bx, ang: a, v, spin }, env.diff === 0); if (!anim) return; st = 'roll'; ft = 0; fell = {}; env.sfx('drop'); env.noise(0.25, { vol: 0.05, freq: 500 }); env.buzz(10);
     }
     function after() {
       const r = run.last; let msg = '';
-      if (r.strike) { msg = L('ストライク！', 'STRIKE!'); env.sfx('win'); env.stat('strikes'); } else if (r.spare) { msg = L('スペア！', 'SPARE!'); env.sfx('clear'); env.stat('spares'); } else if (r.gutter) { msg = L('ガター…', 'Gutter…'); env.sfx('fail'); } else { msg = r.down + L('本', ' pins'); env.sfx(r.down ? 'ok' : 'fail'); }
-      const f = r.score.frames; let tk = 0, c = 0; for (let i = 0; i < 10; i++) { if (f[i].strike) c++; else c = 0; tk = Math.max(tk, c); } if (tk >= 3) env.stat('turkey');
+      if (r.strike) { msg = L('ストライク！', 'STRIKE!'); env.sfx('win'); env.noise(0.4, { vol: 0.12, freq: 900 }); env.stat('strikes'); shake = 0.7; for (let i = 0; i < 46; i++) conf.push({ x: w / 2, y: h * 0.4, vx: (Math.random() - 0.5) * 360, vy: -120 - Math.random() * 220, col: ['#ffd24d', '#ff7a6b', '#7be0a0', '#9ee7ff'][i % 4] }); } else if (r.spare) { msg = L('スペア！', 'SPARE!'); env.sfx('clear'); env.stat('spares'); shake = 0.35; } else if (r.gutter) { msg = L('ガター…', 'Gutter…'); env.sfx('fail'); } else { msg = r.down + L('本', ' pins'); env.sfx(r.down ? 'ok' : 'fail'); }
+      if (r.score) { const f = r.score.frames; let tk = 0, c = 0; for (let i = 0; i < 10; i++) { if (f[i].strike) c++; else c = 0; tk = Math.max(tk, c); } if (tk >= 3) env.stat('turkey'); }
       pops.push({ txt: msg, t: 0, col: r.strike || r.spare ? PAL.sun : '#fff' }); st = 'result'; rest = 1.5; hud(); env.status(msg);
     }
     function vpFrom(gv) { return { v: clamp(5 + 5.5 * clamp((gv.speed - 0.45) / 1.8, 0, 1), 5, 10.5), spin: gest ? gest.curve(260) : 0 }; }
@@ -252,12 +255,13 @@
       },
       button(id, down) { if (id === 'go') { if (down && st === 'ready') throwBall(7.8, spinK); return; } hold[id] = down; },
       update(dt) {
-        if (!run) return; kt += dt; for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.5);
+        if (!run) return; kt += dt; shake = Math.max(0, shake - dt * 1.6); for (const c of conf) { c.x += c.vx * dt; c.y += c.vy * dt; c.vy += 520 * dt; } conf = conf.filter(c => c.y < h + 20); for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.5);
         if (st === 'ready') { if (hold.aimL) tx = clamp(tx - dt * 0.16, -0.52, 0.52); if (hold.aimR) tx = clamp(tx + dt * 0.16, -0.52, 0.52); if (hold.posL) bx = clamp(bx - dt * 0.3, -0.46, 0.46); if (hold.posR) bx = clamp(bx + dt * 0.3, -0.46, 0.46); }
         if (st === 'roll') { ft += dt; if (ft >= anim.frames.length / 60 + 0.2) after(); }
-        else if (st === 'result') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; const s = run.last.score; env.done({ score: run.total, detail: { strikes: s.frames.filter(f => f.strike).length, perfect: run.total === 300 } }); } else { st = 'ready'; Sim.prep(run); anim = null; hud(); env.status(L('つぎの1投。よこにずらして ねらおう', 'Next ball. Slide and aim.')); } } }
+        else if (st === 'result') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; const s = run.last.score || { frames: [] }; env.done({ score: run.total, detail: run.variant ? { variant: run.variant, lane: run.lane } : { strikes: s.frames.filter(f => f.strike).length, perfect: run.total === 300, lane: run.lane } }); } else { st = 'ready'; if (!run.variant) Sim.prep(run); anim = null; hud(); env.status(L('つぎの1投。よこにずらして ねらおう', 'Next ball. Slide and aim.')); } } }
       },
-      draw(g) {
+      draw(g) { g.save(); if (shake > 0) g.translate((Math.random() - 0.5) * shake * 14, (Math.random() - 0.5) * shake * 10); this.draw0(g); for (const c of conf) { g.fillStyle = c.col; g.fillRect(c.x, c.y, 6, 4); } g.restore(); },
+      draw0(g) {
         if (!run) return; const l = lane(); g.fillStyle = lin(g, 0, 0, 0, h, '#5fb4e8', '#b7e4f8'); g.fillRect(0, 0, w, h);
         // 壁と床
         g.fillStyle = '#2c3e66'; g.fillRect(0, 0, w, l.yt - 6); g.fillStyle = '#3a4f82'; for (let i = 0; i < 8; i++) g.fillRect(i * w / 8 + 4, 6, w / 8 - 8, l.yt - 22);
@@ -272,7 +276,7 @@
         for (let k = -2; k <= 2; k++) { const y = 4.5 + Math.abs(k) * 0.4; g.fillStyle = 'rgba(120,70,20,.5)'; g.beginPath(); g.moveTo(l.X(k * 0.2, y), l.Y(y) - 5); g.lineTo(l.X(k * 0.2 - 0.03, y - 0.4), l.Y(y - 0.4) + 3); g.lineTo(l.X(k * 0.2 + 0.03, y - 0.4), l.Y(y - 0.4) + 3); g.fill(); }
         // ピン
         const standing = st === 'roll' ? null : run.standing, frame = st === 'roll' ? anim.frames[Math.min(anim.frames.length - 1, Math.floor(ft * 60))] : null;
-        const pinsDraw = []; Sim.PIN_SPOTS.forEach((sp, i) => { let x = sp.x, y = sp.y, up = true, gone = false;
+        const pinsDraw = []; run.spots.forEach((sp, i) => { let x = sp.x, y = sp.y, up = true, gone = false;
           if (st === 'roll') { const base = run.standing; const prev = st === 'roll' ? (anim.fell[i] ? true : false) : false; if (frame) { x = frame.p[i][0]; y = frame.p[i][1]; up = !!frame.p[i][2]; gone = !!frame.p[i][3]; } if (!(run.standing[i] || anim.fell[i])) gone = true; } else { up = !!standing[i]; gone = !up; }
           if (!gone) pinsDraw.push({ x, y, up, i }); });
         pinsDraw.sort((a, b) => b.y - a.y).forEach(p => { const X = l.X(p.x, p.y), Y = l.Y(p.y), s = l.S(p.y) * 0.9; g.save(); g.translate(X, Y); if (p.up) { ell(g, 0, 0, s * 0.07, s * 0.02, 'rgba(0,0,0,.25)'); ell(g, 0, -s * 0.14, s * 0.052, s * 0.12, '#fff', PAL.ink, 1.2); g.fillStyle = PAL.red; g.fillRect(-s * 0.05, -s * 0.2, s * 0.1, s * 0.03); circ(g, 0, -s * 0.28, s * 0.036, '#fff', PAL.ink, 1.2); } else { g.rotate(1.2 + (p.i % 3) * 0.3); ell(g, 0, -s * 0.12, s * 0.05, s * 0.12, '#f3f3f3', PAL.ink, 1); } g.restore(); });
@@ -282,7 +286,8 @@
           A.mascot(g, l.X(bx - 0.32, 0), l.Y(0) + h * 0.07, h * 0.15, { kind: env.kind, pose: 'idle', t: kt }); circ(g, l.X(bx, 0.3), l.Y(0.3) - 4, l.S(0.3) * 0.11 + 4, '#3a4a9a', PAL.ink, 2); circ(g, l.X(bx, 0.3) - 2, l.Y(0.3) - 8, 1.5, '#fff');
         } else if (frame) { const bx2 = frame.bx, by2 = frame.by; ell(g, l.X(bx2, by2), l.Y(by2) + 2, l.S(by2) * 0.1, l.S(by2) * 0.03, 'rgba(0,0,0,.3)'); circ(g, l.X(bx2, by2), l.Y(by2) - l.S(by2) * 0.06, Math.max(3, l.S(by2) * 0.11), '#3a4a9a', PAL.ink, 1.6); circ(g, l.X(bx2, by2) - 1, l.Y(by2) - l.S(by2) * 0.09, Math.max(1, l.S(by2) * 0.02), '#fff'); }
         // スコアの帯
-        const sc = C.bowlingScore(run.rolls), cw = Math.min(46, (w - 8) / 10), x0 = (w - cw * 10) / 2, fs = Math.max(9, cw * 0.28);
+        if (run.variant) { text(g, (run.variant === 'spares' ? L('のこりピンを ぜんぶ たおそう！', 'Clear the leave!') : L('ピン100本：2投で ぜんぶ たおそう', '100 pins: clear them in two balls')) + '  ' + run.total, w / 2, 24, fontPx(w, h)); }
+        const sc = run.variant ? { frames: [], next: { frame: 99 } } : C.bowlingScore(run.rolls), cw = Math.min(46, (w - 8) / 10), x0 = (w - cw * 10) / 2, fs = Math.max(9, cw * 0.28);
         sc.frames.forEach((f, i) => { const x = x0 + i * cw; rr(g, x + 1, 4, cw - 2, 40, 5); g.fillStyle = i === sc.next.frame && st !== 'over' ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.8)'; g.fill(); g.strokeStyle = i === sc.next.frame ? PAL.sun : PAL.ink; g.lineWidth = i === sc.next.frame ? 2.5 : 1; g.stroke();
           const r = f.r; let s1 = '', s2 = '', s3 = ''; if (i < 9) { if (f.strike) { s2 = 'X'; } else { if (r[0] != null) s1 = r[0] === 0 ? '-' : String(r[0]); if (r[1] != null) s2 = f.spare ? '/' : r[1] === 0 ? '-' : String(r[1]); } } else { const m = rr2(r); s1 = m[0]; s2 = m[1]; s3 = m[2]; }
           const xs = i < 9 ? [x + cw * 0.62, x + cw * 0.86] : [x + cw * 0.4, x + cw * 0.62, x + cw * 0.86]; const ss = i < 9 ? [s1, s2] : [s1, s2, s3]; ss.forEach((s, k) => { if (s) text(g, s, xs[k], 13, fs, { color: PAL.ink, stroke: false }); }); if (f.cum != null) text(g, String(f.cum), x + cw / 2, 32, fs + 1, { color: PAL.ink, stroke: false }); });

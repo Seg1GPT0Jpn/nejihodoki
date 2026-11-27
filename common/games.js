@@ -1244,13 +1244,13 @@
       rankSource: { key: 'kusoge.sports.save', paths: ['pts'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.sports.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/99', en: 'Stars {n}/99' } },
       keys: {
-        'kusoge.sports.save': '{ v:1, pts（★の合計＝ランキング。b から毎回計算し直す）, b:{ "<種目の ID>":[やさしい, ふつう, むずかしい のベスト点] }, x:{ "<種目の ID>":[…の「おまけ記録」（カヌー・サイクリング・ゴルフ…の小さいほどよい値や、ジャンプのきょり×1）] }, dl:{ k（きょうのチャレンジの日付 YYYYMMDD）, id, sc（きょうのベスト）, st（★）}, stats:{ plays, daily, twop, wins2p, stars3, strikes, spares, turkey, perfect, bulls, hio, birdie, swish, catches, parry, ace, jumpM（いちばん遠いジャンプ m）, flights, photos, rings, landings, pops, matchW, canoeW, cycW, rallyW, tiltOn, clears }, set:{ sens, tilt, vib, who（キャラクター 0〜3）, last:{ "<種目の ID>":最後に選んだむずかしさ } }, gf:{ b:[ゴルフ18ホールのベスト点 やさしい/ふつう/むずかしい（★の合計には入らない）], m（CPUとのマッチプレーで勝った回数）}, fl:{ b:[リングレースのベスト点 やさしい/ふつう/むずかしい], ph（撮影したランドマークのビット）, n（着陸した回数）}, tm（遊んだことのある種目のビット）, tu（あそびかたを見た種目のビット）, tut（島のあそびかたを見た）}',
+        'kusoge.sports.save': '{ v:1, pts（★の合計＝ランキング。b から毎回計算し直す）, b:{ "<種目の ID>":[やさしい, ふつう, むずかしい のベスト点] }, x:{ "<種目の ID>":[…の「おまけ記録」（カヌー・サイクリング・ゴルフ…の小さいほどよい値や、ジャンプのきょり×1）] }, dl:{ k（きょうのチャレンジの日付 YYYYMMDD）, id, sc（きょうのベスト）, st（★）}, stats:{ plays, daily, twop, wins2p, stars3, strikes, spares, turkey, perfect, bulls, hio, birdie, swish, catches, parry, ace, jumpM（いちばん遠いジャンプ m）, flights, photos, rings, landings, pops, matchW, canoeW, cycW, rallyW, tiltOn, clears }, set:{ sens, tilt, vib, who（はじめのキャラクター 0〜3）, lp（かるい描画）, gh（ゴルフの9/18ホール）, av・av2（つくったアバター 1P・2P：{ k 耳 0〜3, c 色 0〜7, h ぼうし 0〜5, f 顔 0〜3 }）, last:{ "<種目の ID>":最後に選んだむずかしさ } }, vb:{ "bowling100"|"spares":[やさしい, ふつう, むずかしい のベスト点]（種目のバリエーション。★の合計には入らない）}, gf:{ b:[ゴルフ18ホールのベスト点 やさしい/ふつう/むずかしい（★の合計には入らない）], m（CPUとのマッチプレーで勝った回数）}, fl:{ b:[リングレースのベスト点 やさしい/ふつう/むずかしい], ph（撮影したランドマークのビット）, n（着陸した回数）}, tm（遊んだことのある種目のビット）, tu（あそびかたを見た種目のビット）, tut（島のあそびかたを見た）}',
         'kusoge.sports.howto': '島のあそびかたを見た（\'1\'）',
         'kusoge.sports.album': 'フォトアルバム { "<ランドマークの ID>": 撮った写真（小さな jpeg の data URL） }。この端末だけ（同期しない。撮ったランドマークの記録は kusoge.sports.save の fl.ph が持つ）',
       },
       // bests, stars and every counter only grow (b is a per-level max array, stats max); the bit sets are OR; the last settings, today's challenge and the extra records are whole values (newest)
       sync: {
-        'kusoge.sports.save': { fields: { pts: 'max', b: { each: 'arrMax' }, stats: { each: 'max' }, tm: 'bor', tu: 'bor', tut: 'max', fl: { fields: { b: 'arrMax', ph: 'bor', n: 'max' }, rest: 'newest' }, gf: { fields: { b: 'arrMax', m: 'max' }, rest: 'newest' }, x: 'newest', dl: 'newest', set: 'newest' }, rest: 'newest' },
+        'kusoge.sports.save': { fields: { pts: 'max', b: { each: 'arrMax' }, stats: { each: 'max' }, tm: 'bor', tu: 'bor', tut: 'max', fl: { fields: { b: 'arrMax', ph: 'bor', n: 'max' }, rest: 'newest' }, gf: { fields: { b: 'arrMax', m: 'max' }, rest: 'newest' }, vb: { each: 'arrMax' }, x: 'newest', dl: 'newest', set: 'newest' }, rest: 'newest' },
       },
     },
   ];

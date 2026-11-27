@@ -5,7 +5,7 @@
   'use strict';
   const C = (typeof require === 'function' && typeof module === 'object') ? require('./core.js') : root.SportsCore;
   const { rng, hash32, clamp, gauss } = C;
-  const G = 9.81;
+  const G = 9.81, lerp = (a, b, t) => a + (b - a) * t;
 
   // =====================================================================================
   // チャンバラ：4方向のスワイプ（0 = ←, 1 = →, 2 = ↑, 3 = ↓）。敵のふりかぶり（矢印）と同じ向きで受け流し、すきに切りこむ
@@ -74,6 +74,26 @@
       return '';
     },
   };
+
+  // チャンバラ「れんぞくぎり」（たくさんの敵）と「たけ切り」：矢印の向きにすばやくスワイプして切る。切りそこねると、敵ならハートがへり、竹ならコンボが切れる
+  const WCFG = [{ w0: 1.6, w1: 0.95, gap: 0.45 }, { w0: 1.25, w1: 0.7, gap: 0.38 }, { w0: 1.0, w1: 0.52, gap: 0.3 }];
+  const Wave = {
+    LIMIT: [60, 55, 50], HEARTS: 3,
+    newRun(diff, seed, opts) { diff = clamp(diff | 0, 0, 2); const bamboo = !!(opts && opts.bamboo), r = rng(hash32('wave:' + seed + (bamboo ? 'b' : ''))); const m = { kind: 'kendowave', diff, seed, bamboo, cfg: WCFG[diff], r, t: 0, limit: Wave.LIMIT[diff], hearts: bamboo ? 99 : Wave.HEARTS, score: 0, combo: 0, maxCombo: 0, cuts: 0, miss: 0, idx: 0, foe: null, gap: 0.5, cd: 0, done: false, ev: [], perfect: 0 }; return m; },
+    _spawn(m) { const k = m.idx++, dbl = k > 2 && k % 6 === 5, f = Math.min(1, m.t / m.limit), wnd = lerp(m.cfg.w0, m.cfg.w1, f) * (dbl ? 1.5 : 1); m.foe = { need: dbl ? [(m.r() * 4) | 0, (m.r() * 4) | 0] : [(m.r() * 4) | 0], got: 0, wnd, t: 0, kind: k % 4, dbl }; m.ev.push({ type: 'foe', dir: m.foe.need[0], dbl }); },
+    step(m, dt) {
+      if (m.done) return; m.t += dt; m.cd = Math.max(0, m.cd - dt); if (m.t >= m.limit) { m.done = true; m.ev.push({ type: 'timeup' }); return; }
+      if (!m.foe) { m.gap -= dt; if (m.gap <= 0) Wave._spawn(m); return; }
+      m.foe.t += dt; if (m.foe.t >= m.foe.wnd) { m.miss++; m.combo = 0; if (!m.bamboo) { m.hearts--; m.ev.push({ type: 'hurt', hearts: m.hearts }); if (m.hearts <= 0) { m.done = true; m.ev.push({ type: 'lose' }); } } else m.ev.push({ type: 'miss' }); m.foe = null; m.gap = m.cfg.gap; }
+    },
+    input(m, dir) {
+      if (m.done || !m.foe) return ''; if (m.cd > 0) return 'cd'; const f = m.foe; if ((dir | 0) !== f.need[f.got]) { m.combo = 0; m.cd = 0.28; m.ev.push({ type: 'wrong' }); return 'wrong'; }
+      f.got++; if (f.got < f.need.length) { f.t = Math.max(0, f.t - 0.25 * f.wnd); m.ev.push({ type: 'half', dir: f.need[f.got] }); return 'half'; }
+      const fast = 1 - f.t / f.wnd, perfect = fast > 0.62; m.combo++; m.maxCombo = Math.max(m.maxCombo, m.combo); m.cuts++; m.score += 60 + 4 * Math.min(m.combo - 1, 10) + Math.round(fast * 40) + (f.dbl ? 50 : 0); if (perfect) m.perfect++; m.ev.push({ type: perfect ? 'perfect' : 'cut', combo: m.combo }); m.foe = null; m.gap = m.cfg.gap; return perfect ? 'perfect' : 'cut';
+    },
+    bot(m, skill) { skill = skill == null ? 1 : skill; if (m.foe && m.cd <= 0 && m.foe.t >= m.foe.wnd * (0.12 + 0.5 * (1 - skill))) return Wave.input(m, m.foe.need[m.foe.got]); return ''; },
+  };
+  Kendo.Wave = Wave;
 
   // =====================================================================================
   // カヌー：左右を交互にたたいて漕ぐ。リズムが合うほど力が出る。岩をよけ、CPU とレース（人が1〜2人）
@@ -144,13 +164,16 @@
   const RDIFF = [
     { pc: 0.9, ec: 1.9, sp: [0.2, 0.62], mv: 0.8, hv: 1.3 }, { pc: 0.96, ec: 1.15, sp: [0.25, 0.8], mv: 1.0, hv: 1.05 }, { pc: 0.995, ec: 0.7, sp: [0.3, 0.95], mv: 1.25, hv: 0.9 },
   ];
+  // CPU の性格（卓球・テニス）：steady = まもり、power = つよい球でこうげき、spin = スピンと コースのうちわけ、allround = ふつう
+  const PERS = { allround: {}, steady: { pcAdd: 0.03, sp: [0.2, 0.5], ecMul: 0.8, sa: 0.25 }, power: { pcAdd: -0.02, sp: [0.6, 0.98], ecMul: 1.35, sa: 0.3 }, spin: { pcAdd: 0, sp: [0.3, 0.72], ecMul: 1.0, sa: 1.4, wide: 1 } };
   const Rally = {
-    P: RALLY, RD: RDIFF,
+    P: RALLY, RD: RDIFF, PERS,
     // sport: 'pingpong' | 'tennis'。opts = { two: ふたりで }
     newMatch(sport, diff, seed, opts) {
       diff = clamp(diff | 0, 0, 2); const P = RALLY[sport], r = rng(hash32('rally:' + sport + ':' + seed));
       const target = sport === 'pingpong' ? [5, 7, 9][diff] : [2, 2, 3][diff];
-      const m = { kind: sport, sport, diff, seed, P, D: RDIFF[diff], r, t: 0, target, two: !!(opts && opts.two), pts: [0, 0], games: [0, 0], gp: [0, 0], first: 0, server: 0, state: 'serve', st0: 0, ball: null, hitter: 0, bounces: 0, serveNo: 1, ev: [], rally: 0, longest: 0, done: false, winner: -1, aces: 0, px: [0, 0], whiff: [0, 0], cpuPlan: null, lastPoint: null, wonRallies: 0, pp: [0, 0] };
+      const opp = PERS[opts && opts.opp] ? opts.opp : 'allround', pr = PERS[opp], base = RDIFF[diff]; const D = { pc: clamp(base.pc + (pr.pcAdd || 0) + (opts && opts.doubles ? 0.02 : 0), 0.1, 0.996), ec: base.ec * (pr.ecMul || 1), sp: pr.sp || base.sp, mv: base.mv * (opts && opts.doubles ? 1.12 : 1), hv: base.hv, sa: pr.sa == null ? 1 : pr.sa, wide: !!pr.wide };
+      const m = { kind: sport, sport, diff, opp, doubles: !!(opts && opts.doubles), net: [false, false], volleys: 0, seed, P, D, r, t: 0, target, two: !!(opts && opts.two), pts: [0, 0], games: [0, 0], gp: [0, 0], first: 0, server: 0, state: 'serve', st0: 0, ball: null, hitter: 0, bounces: 0, serveNo: 1, ev: [], rally: 0, longest: 0, done: false, winner: -1, aces: 0, px: [0, 0], whiff: [0, 0], cpuPlan: null, lastPoint: null, wonRallies: 0, pp: [0, 0] };
       Rally.prepServe(m); return m;
     },
     // サーバーの手元にボールを置く
@@ -160,7 +183,7 @@
     },
     // ボールを打つ速度を決める：いまの位置 (x,y,z) から、(tx,ty) に T 秒でバウンドする。ネットをこえる T をさがす（power=1 で最短）
     solve(m, b, tx, ty, power, spin) {
-      const P = m.P, g = G; const T0 = P.Tmax - power * (P.Tmax - P.Tmin); const sgn = b.y > 0 ? 1 : -1;
+      const P = m.P, g = G; const T0 = (P.Tmax - power * (P.Tmax - P.Tmin)) * (m.sport === 'pingpong' ? 1 - Math.min(0.2, (m.rally || 0) * 0.012) : 1); const sgn = b.y > 0 ? 1 : -1;
       const sh = (spin || 0) * (P.W * 0.045); // カーブで流れる分、先にずらして打つ（ボールは曲がって戻る）
       for (let T = T0, k = 0; k < 40; T += 0.03, k++) {
         const vx = (tx - sh - b.x) / T, vy = (ty - b.y) / T, vz = (P.r - b.z + 0.5 * g * T * T) / T;
@@ -172,32 +195,35 @@
     },
     // 人（side=0 下、1 上）が打つ。aim = { ax（-1〜1 横）, s（0〜1 つよさ）, spin（-1〜1）}。返す値：'serve' | 'hit' | 'whiff' | ''
     swipe(m, side, aim) {
-      if (m.done) return ''; const P = m.P, a = { ax: clamp(aim.ax || 0, -1, 1), s: clamp(aim.s == null ? 0.5 : aim.s, 0, 1), spin: clamp(aim.spin || 0, -1, 1) };
+      if (m.done) return ''; const P = m.P, a = { ax: clamp(aim.ax || 0, -1, 1), s: clamp(aim.s == null ? 0.5 : aim.s, 0, 1), spin: clamp(aim.spin || 0, -1, 1), top: clamp(aim.top || 0, -1, 1) };
       if (m.state === 'serve') {
         if (m.server !== side || !m.ball.held) return ''; return Rally.doServe(m, side, a, 1);
       }
       if (m.state !== 'rally') return '';
-      const q = Rally.quality(m, side); if (q < 0) { m.whiff[side] = m.t; return 'whiff'; }
-      return Rally.doHit(m, side, a, q, 0);
+      const vo = {}, q = Rally.quality(m, side, vo); if (q < 0) { m.whiff[side] = m.t; return 'whiff'; }
+      if (vo.v) a.s = Math.min(a.s, 0.85); return Rally.doHit(m, side, a, q, 0, !!vo.v);
     },
     // いま打てるか：打てるなら 0〜1 の「ちょうどよさ」、打てないなら -1
-    quality(m, side) {
-      const P = m.P, b = m.ball; if (m.state !== 'rally' || m.hitter === side || m.bounces !== 1 || Math.sign(b.y || 1) !== (side === 0 ? 1 : -1)) return -1;
+    quality(m, side, volleyOut) {
+      const P = m.P, b = m.ball; if (m.state !== 'rally' || m.hitter === side) return -1;
+      if (m.bounces === 0 && m.sport === 'tennis' && m.net[side] && m.crossed && Math.sign(b.y || 1) === (side === 0 ? 1 : -1) && Math.abs(b.y) < 6.2 && b.z > 0.35 && b.z < 2.5 && Math.abs(b.x - m.pp[side]) <= P.reach * 1.6 * (m.doubles ? 1.45 : 1)) { if (volleyOut) volleyOut.v = true; return 0.5 + 0.4 * (1 - clamp(Math.abs(b.z - 1.1) / 1.4, 0, 1)); }
+      if (m.bounces !== 1 || Math.sign(b.y || 1) !== (side === 0 ? 1 : -1)) return -1;
       const ay = Math.abs(b.y) - P.L / 2; if (ay < P.zone[0] || ay > P.zone[1] || b.z > P.zMax) return -1;
-      const g = Math.abs(b.x - m.pp[side]); if (g > P.reach * 1.6) return -1;
-      const qh = 1 - clamp(Math.abs(b.z - P.hStar) / P.hTol, 0, 1), qy = 1 - clamp(Math.abs(ay - P.yStar) / P.yTol, 0, 1); return (0.6 * qh + 0.4 * qy) * (1 - 0.45 * clamp(g / (P.reach * 1.6), 0, 1));
+      const rch = P.reach * (m.doubles && side === 0 ? 1.45 : 1), g = Math.abs(b.x - m.pp[side]); if (g > rch * 1.6) return -1;
+      const qh = 1 - clamp(Math.abs(b.z - P.hStar) / P.hTol, 0, 1), qy = 1 - clamp(Math.abs(ay - P.yStar) / P.yTol, 0, 1); return (0.6 * qh + 0.4 * qy) * (1 - 0.45 * clamp(g / (rch * 1.6), 0, 1));
     },
     doServe(m, side, a, tries) {
       const P = m.P, b = m.ball, sgn = side === 0 ? -1 : 1, depth = P.box ? P.box * (0.45 + 0.5 * a.s) : P.L / 2 * (0.35 + 0.55 * a.s);
       const e = P.errMin * 2 * (side === 1 && !m.two ? m.D.ec : 1);
       const tx = a.ax * P.W / 2 * 0.85 + gauss(m.r) * e, ty = sgn * depth + gauss(m.r) * e * 1.1;
-      b.held = false; const sol = Rally.solve(m, b, tx, ty, a.s * 0.5, a.spin); Object.assign(b, { vx: sol.vx, vy: sol.vy, vz: sol.vz, spin: sol.spin, T: sol.T }); m.state = 'rally'; m.hitter = side; m.bounces = 0; m.serving = true; m.rally = 1; m.crossed = false;
+      b.held = false; const sol = Rally.solve(m, b, tx, ty, a.s * 0.5, a.spin); Object.assign(b, { vx: sol.vx, vy: sol.vy, vz: sol.vz, spin: sol.spin, T: sol.T, top: a.top || 0 }); m.state = 'rally'; m.hitter = side; m.bounces = 0; m.serving = true; m.rally = 1; m.crossed = false;
       m.ev.push({ type: 'serve', side }); return 'serve';
     },
-    doHit(m, side, a, q, cpu) {
+    doHit(m, side, a, q, cpu, volley) {
       const P = m.P, b = m.ball, sgn = side === 0 ? -1 : 1; const dfrac = 0.28 + 0.66 * a.s, e = (P.errMin + (1 - q) * P.err) * (0.5 + a.s) * (side === 1 && !m.two ? m.D.ec : 1);
       const tx = clamp(a.ax * P.W / 2 * 0.92, -P.W / 2 * 0.98, P.W / 2 * 0.98) + gauss(m.r) * e * 2.2, ty = sgn * (dfrac * P.L / 2) + gauss(m.r) * e * 2.4;
-      const sol = Rally.solve(m, b, tx, ty, a.s, a.spin); Object.assign(b, { vx: sol.vx, vy: sol.vy, vz: sol.vz, spin: sol.spin, T: sol.T });
+      const sol = Rally.solve(m, b, tx, ty, a.s, a.spin); Object.assign(b, { vx: sol.vx, vy: sol.vy, vz: sol.vz, spin: sol.spin, T: sol.T, top: a.top || 0 });
+      if (m.sport === 'tennis' && !m.two) { m.net[side] = dfrac < 0.42 && side === 0 && !volley; } if (volley) m.volleys++; if (volley) m.net[side] = true;
       m.px[side] = b.x; m.hitter = side; m.bounces = 0; m.rally++; m.serving = false; m.crossed = false; m.longest = Math.max(m.longest, m.rally); m.ev.push({ type: 'hit', side, q, power: a.s }); m.cpuPlan = null; return 'hit';
     },
     inBounds(m, x, y) { return Math.abs(x) <= m.P.W / 2 + m.P.r && Math.abs(y) <= m.P.L / 2 + m.P.r; },
@@ -232,7 +258,7 @@
       if (b.z <= P.r && b.vz < 0) {
         const inb = Rally.inBounds(m, b.x, b.y), s2 = b.y >= 0 ? 0 : 1;
         if (!inb && m.sport === 'pingpong') { if (b.z > P.floor) return; }
-        if (inb) { b.z = P.r; b.vz = -b.vz * P.rest; b.vx *= 0.96; b.vy *= 0.96; m.ev.push({ type: 'bounce', x: b.x, y: b.y, side: s2 }); }
+        if (inb) { const tp = b.top || 0; b.z = P.r; b.vz = -b.vz * P.rest * (1 - 0.14 * tp); b.vx *= 0.96; b.vy *= 0.96 * (1 + 0.15 * tp); m.ev.push({ type: 'bounce', x: b.x, y: b.y, side: s2 }); }
         if (m.bounces === 0) {
           if (!inb) { m.ev.push({ type: 'out' }); Rally._point(m, m.hitter ^ 1, 'out'); return; }
           if (s2 === m.hitter) { Rally._point(m, m.hitter ^ 1, 'ownside'); return; }
@@ -250,13 +276,13 @@
       if (!m.cpuPlan) {
         const p = m.cpuPlan = { ok: true }, sp = Math.hypot(b.vx, b.vy) / (P.L * 2.4 / (P.Tmin + P.Tmax)), wide = Math.abs(b.x - m.pp[1]) / (P.reach * 1.6);
         const ph = clamp(D.pc - 0.07 * sp - 0.15 * wide - (wide > 1 ? 1 : 0) - (m.rally > 10 ? 0.02 * (m.rally - 10) : 0), 0.15, 0.995);
-        p.ok = m.r() < ph; p.q = clamp(0.35 + 0.65 * m.r() * (D.pc > 0.99 ? 1 : D.pc), 0.3, 1); p.s = D.sp[0] + m.r() * (D.sp[1] - D.sp[0]); p.ax = clamp((m.px[0] > 0 ? -1 : 1) * (0.25 + m.r() * 0.7) * (m.r() < 0.75 ? 1 : -0.6), -1, 1); p.spin = (m.r() - 0.5) * 1.0;
+        p.ok = m.r() < ph; p.q = clamp(0.35 + 0.65 * m.r() * (D.pc > 0.99 ? 1 : D.pc), 0.3, 1); p.s = D.sp[0] + m.r() * (D.sp[1] - D.sp[0]); p.ax = clamp((m.px[0] > 0 ? -1 : 1) * (0.25 + m.r() * 0.7) * (m.r() < 0.75 ? 1 : -0.6), -1, 1); p.spin = (m.r() - 0.5) * 2 * (D.sa == null ? 0.5 : D.sa * 0.5); p.top = D.sp[1] > 0.9 ? 0.5 : D.wide ? -0.3 : 0;
       }
-      if (m.cpuPlan.ok && b.z <= P.zMax + 0.1) { Rally.doHit(m, 1, { ax: m.cpuPlan.ax, s: m.cpuPlan.s, spin: m.cpuPlan.spin }, m.cpuPlan.q, 1); } else if (!m.cpuPlan.ok && ay < P.yStar - 1.2) { /* 見送り */ }
+      if (m.cpuPlan.ok && b.z <= P.zMax + 0.1) { Rally.doHit(m, 1, { ax: m.cpuPlan.ax, s: m.cpuPlan.s, spin: m.cpuPlan.spin, top: m.cpuPlan.top }, m.cpuPlan.q, 1); } else if (!m.cpuPlan.ok && ay < P.yStar - 1.2) { /* 見送り */ }
     },
     _point(m, winner, why) {
       if (m.state === 'between' || m.state === 'done') return;
-      const rallyLen = m.rally; m.lastPoint = { winner, why, rally: rallyLen }; m.ev.push({ type: 'point', winner, why, rally: rallyLen });
+      m.net = [false, false]; const rallyLen = m.rally; m.lastPoint = { winner, why, rally: rallyLen }; m.ev.push({ type: 'point', winner, why, rally: rallyLen });
       if (winner === 0 && m.serving && rallyLen <= 1 && why === 'winner') m.aces++;
       if (winner === 0) m.wonRallies++;
       if (m.sport === 'pingpong') {
@@ -346,6 +372,6 @@
     },
   };
 
-  const api = { Kendo, Canoe, Rally, Cycling };
+  const api = { Kendo, Canoe, Rally, Cycling, Wave };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.SportsSim2 = api;
 })(typeof window !== 'undefined' ? window : globalThis);

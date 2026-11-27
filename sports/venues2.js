@@ -86,7 +86,7 @@
   // =====================================================================================
   // チャンバラ
   // =====================================================================================
-  V.kendo = function (env) {
+  const duelVenue = function (env) {
     const L = env.L; let w = 300, h = 400, run = null, kt = 0, ptr = null, p0 = null, used = false, slashes = [], pops = [], flash = 0, shake = 0, over = false, rest = 0, st = 'play', evSeen = 0, keysDown = {}, sparks = [];
     const Sim = S2.Kendo, ARW = ['←', '→', '↑', '↓'], VEC = [[-1, 0], [1, 0], [0, -1], [0, 1]];
     const FOES = [{ kind: 2, band: PAL.red }, { kind: 3, band: '#3a4a9a' }, { kind: 1, band: '#222' }];
@@ -148,4 +148,45 @@
       },
     };
   };
+
+  // チャンバラ「れんぞくぎり」「たけ切り」
+  const waveVenue = function (env) {
+    const L = env.L, Sim = S2.Wave, VEC = [[-1, 0], [1, 0], [0, -1], [0, 1]], bamboo = (env.opts || {}).variant === 'bamboo'; let w = 300, h = 400, m = null, kt = 0, ptr = null, p0 = null, used = false, st = 'play', rest = 0, pops = [], slashes = [], bits = [], shake = 0, flash = 0, acc = 0;
+    function start() { m = Sim.newRun(env.diff, env.seed, { bamboo }); st = 'play'; pops = []; slashes = []; bits = []; hud(); env.status(bamboo ? L('竹があらわれたら、矢印の向きにすばやくスワイプ！ ふとい竹は2回', 'Swipe the arrow\'s way quickly to cut the bamboo! Thick ones need two cuts') : L('敵がかまえたら、矢印と同じ向きにスワイプで切る！ おそいとやられる', 'Swipe the arrow\'s way to cut each foe before it strikes!')); }
+    function hud() { env.hud((bamboo ? L('たけ ', 'Cuts ') : L('ハート ', 'Hearts ') + m.hearts + '  ' + L('切った ', 'Cuts ')) + m.cuts + '  ' + L('コンボ ', 'Combo ') + m.combo + '  ' + L('てん ', 'Pts ') + m.score); }
+    function act(dir) { if (st !== 'play') return; const f = m.foe, r = Sim.input(m, dir); if (r === 'cut' || r === 'perfect') { slashes.push({ dir, t: 0 }); for (let i = 0; i < 12; i++) bits.push({ x: w / 2, y: h * 0.45, vx: (Math.random() - 0.5) * 300, vy: -120 - Math.random() * 200, r: Math.random() * 6, c: bamboo ? '#5bbf5b' : '#ffd24d' }); shake = r === 'perfect' ? 0.35 : 0.18; env.sfx(r === 'perfect' ? 'win' : 'hit'); env.noise(0.08, { vol: 0.1, freq: 2200 }); env.buzz(10); if (m.combo >= 5 && m.combo % 5 === 0) pops.push({ txt: m.combo + L('コンボ！', ' combo!'), t: 0, col: PAL.sun }); else pops.push({ txt: r === 'perfect' ? L('すばやい！', 'Quick!') : L('ざん！', 'Cut!'), t: 0, col: r === 'perfect' ? PAL.sun : '#fff' }); }
+      else if (r === 'half') { slashes.push({ dir, t: 0 }); env.sfx('tap'); } else if (r === 'wrong') { env.sfx('error'); pops.push({ txt: L('ちがう向き！', 'Wrong way!'), t: 0, col: '#fff' }); } void f; drain(); }
+    function drain() { for (const e of m.ev) { if (e.type === 'hurt') { env.sfx('fail'); flash = 0.4; env.buzz(40); pops.push({ txt: L('やられた！', 'Ouch!'), t: 0, col: PAL.coral }); } else if (e.type === 'miss') { env.sfx('fail'); pops.push({ txt: L('きりそこね', 'Missed'), t: 0, col: '#fff' }); } else if (e.type === 'foe') env.tone(320, 0.07, { type: 'triangle', vol: 0.04, slide: 520 }); } m.ev.length = 0; hud(); }
+    return {
+      start, resize(a, b) { w = a; h = b; },
+      down(x, y, id) { if (st !== 'play') return; ptr = id; p0 = { x, y }; used = false; }, move(x, y, id) { if (ptr !== id || used || !p0) return; const dx = x - p0.x, dy = y - p0.y; if (Math.hypot(dx, dy) >= 32) { used = true; act(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 0 : 1) : (dy < 0 ? 2 : 3)); } }, up(x, y, id) { if (ptr === id) { ptr = null; used = false; } },
+      key(code, down) { if (!down) return; const d = { ArrowLeft: 0, ArrowRight: 1, ArrowUp: 2, ArrowDown: 3, KeyA: 0, KeyD: 1, KeyW: 2, KeyS: 3 }[code]; if (d != null) act(d); },
+      update(dt) {
+        if (!m) return; kt += dt; dt = Math.min(dt, 0.05); shake = Math.max(0, shake - dt); flash = Math.max(0, flash - dt); for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1); for (const s of slashes) s.t += dt; slashes = slashes.filter(s => s.t < 0.25); for (const b of bits) { b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 700 * dt; } bits = bits.filter(b => b.y < h + 20);
+        if (st === 'play') { Sim.step(m, dt); drain(); acc += dt; if (m.done) { st = 'end'; rest = 1.5; env.sfx(m.hearts > 0 ? 'win' : 'over'); pops.push({ txt: m.hearts > 0 ? L('そこまで！', 'Time!') : L('まけ…', 'Defeated'), t: -0.1, col: PAL.sun }); } }
+        else if (st === 'end') { rest -= dt; if (rest <= 0) { st = 'over'; env.stat('parry', m.perfect > 0 ? 0 : 0); env.done({ score: m.score, detail: { cuts: m.cuts, maxCombo: m.maxCombo, perfect: m.perfect, bamboo } }); } }
+      },
+      draw(g) {
+        if (!m) return; g.save(); if (shake > 0) g.translate((Math.random() - 0.5) * shake * 16, (Math.random() - 0.5) * shake * 10);
+        g.fillStyle = bamboo ? lin(g, 0, 0, 0, h, '#d9f2c8', '#a9d98a') : lin(g, 0, 0, 0, h, '#ffe9c7', '#ffd09a'); g.fillRect(-10, -10, w + 20, h + 20); g.fillStyle = bamboo ? '#8bbf6a' : '#e9bd7a'; g.fillRect(-10, h * 0.66, w + 20, h * 0.4);
+        if (bamboo) for (let i = 0; i < 7; i++) { const x = ((i * 57) % w), hh = h * (0.4 + (i % 3) * 0.08); g.fillStyle = 'rgba(70,140,70,.35)'; g.fillRect(x, h * 0.66 - hh, 10, hh); }
+        const cx = w / 2, fy = h * 0.66, fs = Math.min(h * 0.4, w * 0.8), f = m.foe;
+        if (f) {
+          const k = f.t / f.wnd, wob = Math.sin(kt * 30) * 2 * k;
+          if (bamboo) { g.save(); g.translate(cx + wob, fy); for (let sgm = 0; sgm < (f.dbl ? 3 : 2); sgm++) { const y = -sgm * fs * 0.34; g.fillStyle = '#6cc46c'; g.strokeStyle = PAL.ink; g.lineWidth = 3; rr(g, -fs * 0.1, y - fs * 0.34, fs * 0.2, fs * 0.34, 6); g.fill(); g.stroke(); g.fillStyle = '#4aa84a'; g.fillRect(-fs * 0.11, y - fs * 0.04, fs * 0.22, fs * 0.04); } g.restore(); }
+          else A.mascot(g, cx + wob, fy, fs, { kind: [2, 3, 1, 0][f.kind], pose: k > 0.6 ? 'swing' : 'idle', t: kt, band: PAL.red });
+          const dir = f.need[f.got], v = VEC[dir], R = fs * 0.4, perfect = k < 0.38; g.save(); g.translate(cx, fy - fs * 0.5); g.lineWidth = 8; g.strokeStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(0, 0, R, 0, TAU); g.stroke(); g.strokeStyle = perfect ? PAL.sun : PAL.red; g.beginPath(); g.arc(0, 0, R, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - k)); g.stroke(); g.rotate(Math.atan2(v[1], v[0])); g.fillStyle = perfect ? PAL.sun : PAL.red; g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.moveTo(R * 0.55, 0); g.lineTo(-R * 0.1, -R * 0.45); g.lineTo(-R * 0.1, -R * 0.18); g.lineTo(-R * 0.55, -R * 0.18); g.lineTo(-R * 0.55, R * 0.18); g.lineTo(-R * 0.1, R * 0.18); g.lineTo(-R * 0.1, R * 0.45); g.closePath(); g.fill(); g.stroke(); g.restore();
+          if (f.dbl) text(g, L('2回！ ', 'Twice! ') + f.got + '/' + f.need.length, cx, fy - fs * 1.1, fontPx(w, h), { color: PAL.sun });
+        }
+        for (const s of slashes) { const v = VEC[s.dir], q = s.t / 0.25; g.strokeStyle = 'rgba(255,255,255,' + (1 - q) + ')'; g.lineWidth = 12 * (1 - q) + 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(cx - v[0] * fs * 0.55 + v[1] * fs * 0.2, fy - fs * 0.45 - v[1] * fs * 0.55 - v[0] * fs * 0.2); g.lineTo(cx + v[0] * fs * 0.55 - v[1] * fs * 0.2, fy - fs * 0.45 + v[1] * fs * 0.55 + v[0] * fs * 0.2); g.stroke(); }
+        for (const b of bits) { g.fillStyle = b.c; g.fillRect(b.x, b.y, b.r + 3, b.r + 3); }
+        A.mascot(g, w * 0.5, h * 0.97, Math.min(h * 0.2, w * 0.4), { kind: env.kind, pose: m.cd > 0 ? 'sad' : 'idle', t: kt }); g.restore();
+        if (!bamboo) for (let i = 0; i < Sim.HEARTS; i++) text(g, i < m.hearts ? '♥' : '♡', 18 + i * 22, 22, 22, { color: i < m.hearts ? PAL.red : '#fff' });
+        const tl = clamp(1 - m.t / m.limit, 0, 1); rr(g, w * 0.3, 8, w * 0.4, 7, 4); g.fillStyle = 'rgba(0,0,0,.25)'; g.fill(); rr(g, w * 0.3, 8, w * 0.4 * tl, 7, 4); g.fillStyle = '#fff'; g.fill(); text(g, String(m.score), w - 10, 22, fontPx(w, h) * 1.3, { align: 'right' }); if (m.combo > 1) text(g, m.combo + L(' コンボ', ' combo'), w / 2, h * 0.14, fontPx(w, h) * 1.4, { color: PAL.sun });
+        if (flash > 0) { g.fillStyle = 'rgba(255,60,60,' + flash * 0.9 + ')'; g.fillRect(0, 0, w, h); }
+        for (const p of pops) if (p.t >= 0) text(g, p.txt, w / 2, h * 0.3 - p.t * 20, fontPx(w, h) * 1.7, { color: p.col });
+      },
+    };
+  };
+  V.kendo = function (env) { return (env.opts || {}).variant ? waveVenue(env) : duelVenue(env); };
 })(typeof window !== 'undefined' ? window : globalThis);

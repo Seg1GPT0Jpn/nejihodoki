@@ -18,12 +18,17 @@
   ];
   const Archery = {
     CFG: ARCH, N: 10,
-    newRun(diff, seed) {
-      const cfg = ARCH[clamp(diff | 0, 0, 2)], r = rng(hash32('arch:' + seed)), winds = [], ph = [];
-      let w = (r() * 2 - 1) * cfg.wind;
-      for (let i = 0; i < Archery.N; i++) { w = clamp(w + (r() * 2 - 1) * cfg.wind * 0.55, -cfg.wind, cfg.wind); winds.push(Math.round(w * 10) / 10); ph.push([r() * 6.28, r() * 6.28, r() * 6.28, r() * 6.28]); }
-      return { kind: 'archery', diff: clamp(diff | 0, 0, 2), seed, cfg, i: 0, shots: [], total: 0, winds, ph, done: false };
+    // opts.variant: null（10本）| 'moving'（うごく的＋ボーナス的）| 'rounds'（5本ずつ3ラウンド。ラウンドごとにとおく・風が強く）
+    cfgFor(diff, variant, i) { const d = variant === 'rounds' ? clamp(diff + Math.floor(i / 5) - 1, 0, 2) : diff; return ARCH[d]; },
+    newRun(diff, seed, opts) {
+      opts = opts || {}; diff = clamp(diff | 0, 0, 2); const variant = opts.variant === 'moving' || opts.variant === 'rounds' ? opts.variant : null, n = variant === 'rounds' ? 15 : 10;
+      const r = rng(hash32('arch:' + seed)), winds = [], ph = [], mv = [], bonus = []; let w = 0;
+      for (let i = 0; i < n; i++) { const cfg = Archery.cfgFor(diff, variant, i); w = clamp((i === 0 ? (r() * 2 - 1) * cfg.wind : w) + (i ? (r() * 2 - 1) * cfg.wind * 0.55 : 0), -cfg.wind, cfg.wind); winds.push(Math.round(w * 10) / 10); ph.push([r() * 6.28, r() * 6.28, r() * 6.28, r() * 6.28]);
+        mv.push({ amp: cfg.R * [0.9, 1.3, 1.7][diff], per: [5.5, 4.2, 3.2][diff], ph: r() * 6.28 }); bonus.push(variant === 'moving' && i % 3 === 2 ? { x: (r() * 2 - 1) * cfg.R * 0.55, y: (r() * 2 - 1) * cfg.R * 0.45, r: cfg.R * 0.2 } : null); }
+      return { kind: 'archery', diff, seed, variant, n, cfg: Archery.cfgFor(diff, variant, 0), i: 0, shots: [], total: 0, winds, ph, mv, bonus, done: false };
     },
+    // 的のよこのうごき（m）。tc = ずっと進んでいる時計（秒）
+    targetX(run, i, tc) { if (run.variant !== 'moving') return 0; const m = run.mv[Math.min(i, run.n - 1)]; return m.amp * Math.sin((tc || 0) / m.per * 6.2832 + m.ph); },
     // 風で流される量（m）。右向きの風（正）で右へ
     drift(run, i) { return run.winds[i] * 0.22 * (run.cfg.dist / 50); },
     // 手のゆれ（m）。hold = 弓をひいている時間（秒）。息を止めすぎるとゆれが大きくなる
@@ -35,11 +40,11 @@
       const d = Math.hypot(x, y), w = run.cfg.R / 10; if (d >= run.cfg.R) return { ring: 0, score: 0, x10: false };
       const ring = 10 - Math.floor(d / w); return { ring, score: ring, x10: ring === 10 && d < w * 0.5 };
     },
-    // ねらい (ax, ay)（標的の面、m）で放す。t = 放した時刻（ゆれの位相）
-    shoot(run, ax, ay, t, hold) {
-      if (run.done) return null; const i = run.i, s = Archery.swayAt(run, i, t || 0, hold), dr = Archery.drift(run, i);
-      const x = ax + s.x + dr, y = ay + s.y, rr = Archery.ringOf(run, x, y), shot = { x, y, ring: rr.ring, score: rr.score, x10: rr.x10, wind: run.winds[i], ax, ay };
-      run.shots.push(shot); run.total += rr.score; run.i++; if (run.i >= Archery.N) run.done = true; return shot;
+    // ねらい (ax, ay)（標的の面、m）で放す。t = 放した時刻（ゆれの位相）、tc = 的のうごきの時計
+    shoot(run, ax, ay, t, hold, tc) {
+      if (run.done) return null; const i = run.i, s = Archery.swayAt(run, i, t || 0, hold), dr = Archery.drift(run, i), tx = Archery.targetX(run, i, tc);
+      const x = ax + s.x + dr - tx, y = ay + s.y, rr = Archery.ringOf(run, x, y), bn = run.bonus[i], hitB = !!bn && Math.hypot(x - bn.x, y - bn.y) < bn.r, shot = { x, y, ring: rr.ring, score: rr.score + (hitB ? 5 : 0), x10: rr.x10, wind: run.winds[i], ax, ay, tx, bonus: hitB };
+      run.shots.push(shot); run.total += shot.score; run.i++; if (run.i >= run.n) run.done = true; else run.cfg = Archery.cfgFor(run.diff, run.variant, run.i); return shot;
     },
   };
 
@@ -100,10 +105,12 @@
   const HOOP_Y = 3.05, BALL_R = 0.11, REL_Y = 2.0;
   const Hoops = {
     CFG: HOOPS, N: 10, HOOP_Y, BALL_R, REL_Y,
-    newRun(diff, seed) {
-      const cfg = HOOPS[clamp(diff | 0, 0, 2)], r = rng(hash32('hoops:' + seed)), ds = [];
-      for (let i = 0; i < Hoops.N; i++) ds.push(Math.round((cfg.dmin + r() * (cfg.dmax - cfg.dmin)) * 10) / 10);
-      return { kind: 'hoops', diff: clamp(diff | 0, 0, 2), seed, cfg, ds, i: 0, shots: [], total: 0, done: false };
+    // opts.variant: null（10本）| 'contest'（3ポイントコンテスト：5カ所×5本、さいごの1本はマネーボール2倍、60秒）| 'pickup'（CPU と1本ずつこうたい）
+    newRun(diff, seed, opts) {
+      const variant = opts && (opts.variant === 'contest' || opts.variant === 'pickup') ? opts.variant : null, cfg = HOOPS[clamp(diff | 0, 0, 2)], r = rng(hash32('hoops:' + seed)), ds = [], n = variant === 'contest' ? 25 : Hoops.N;
+      for (let i = 0; i < n; i++) ds.push(variant === 'contest' ? [5.6, 6.0, 6.4, 6.0, 5.6][i % 5] : Math.round((cfg.dmin + r() * (cfg.dmax - cfg.dmin)) * 10) / 10);
+      const cpu = []; if (variant === 'pickup') { const cr = rng(hash32('hcpu:' + seed)), pm = [0.36, 0.48, 0.6][clamp(diff | 0, 0, 2)]; for (let i = 0; i < n; i++) cpu.push({ made: cr() < clamp(pm - 0.07 * (ds[i] - 4), 0.12, 0.8), three: ds[i] >= 5.5, swish: cr() < 0.4 }); }
+      return { kind: 'hoops', variant, n, diff: clamp(diff | 0, 0, 2), seed, cfg, ds, cpu, cpuTotal: 0, i: 0, shots: [], total: 0, done: false, limit: variant === 'contest' ? 60 : 0 };
     },
     // 飛ばす。D = ゴールまでの距離（m）。p = { v, ang }。軌道 pts（x, y）と結果 { made, swish, rim, board }
     fly(D, rimR, p) {
@@ -123,8 +130,9 @@
     },
     shoot(run, p) {
       if (run.done) return null; const i = run.i, D = run.ds[i], f = Hoops.fly(D, run.cfg.rim, p), three = D >= 5.5;
-      const score = f.made ? (three ? 3 : 2) + (f.swish ? 1 : 0) : 0, sh = { D, p: { v: p.v, ang: p.ang }, pts: f.pts, made: f.made, swish: f.swish, rim: f.rim, board: f.board, score, three };
-      run.shots.push(sh); run.total += score; run.i++; if (run.i >= Hoops.N) run.done = true; return sh;
+      const money = run.variant === 'contest' && i % 5 === 4, score = run.variant === 'contest' ? (f.made ? (money ? 2 : 1) : 0) : f.made ? (three ? 3 : 2) + (f.swish ? 1 : 0) : 0, sh = { D, p: { v: p.v, ang: p.ang }, pts: f.pts, made: f.made, swish: f.swish, rim: f.rim, board: f.board, score, three };
+      if (run.variant === 'pickup') { const c = run.cpu[i]; sh.cpu = c; if (c.made) run.cpuTotal += (c.three ? 3 : 2) + (c.swish ? 1 : 0); } sh.money = money;
+      run.shots.push(sh); run.total += score; run.i++; if (run.i >= run.n) run.done = true; return sh;
     },
     // ボット・テスト用：リングの中心を通る強さを角度ごとに計算（落ちてくる角度が深いほど入りやすい）
     solve(D, ang, rimR) {
@@ -138,17 +146,33 @@
   // =====================================================================================
   const LANE_W = 1.05, PIN_Y = 18.29, BALL_RB = 0.1085, PIN_R = 0.07;
   const PIN_SPOTS = (() => { const o = []; const dx = 0.3048 / 2, dy = 0.264; for (let row = 0; row < 4; row++) for (let k = 0; k <= row; k++) o.push({ x: (k - row / 2) * 0.3048, y: PIN_Y + row * dy }); return o; })();
+  const LANES = { house: { hook: 2.1, start: 7, len: 9 }, dry: { hook: 3.3, start: 4, len: 8 }, oil: { hook: 1.25, start: 10, len: 8 } };
+  // スペアチャレンジの「のこりピン」（0 = 1番ピン … 9 = 10番ピン）
+  const LEAVES = [
+    [[3], [5], [1], [2], [6], [9], [4], [7], [3, 6], [5, 8]],
+    [[3, 6], [5, 9], [1, 4], [2, 5], [3, 7], [1, 5], [2, 6], [4, 8], [6, 9], [0, 3]],
+    [[6, 9], [3, 9], [5, 6], [1, 9], [2, 7], [4, 5], [6, 8, 9], [3, 5, 9], [1, 2, 8], [0, 6, 9]],
+  ];
   const Bowling = {
     PIN_SPOTS, LANE_W, PIN_Y,
-    newRun(diff, seed) { return { kind: 'bowling', diff: clamp(diff | 0, 0, 2), seed, rolls: [], standing: Array(10).fill(true), done: false, total: 0, last: null }; },
+    LANES, LEAVES,
+    // opts = { lane: 'house'|'dry'|'oil', variant: null | 'pins100' | 'spares' }。バリエーションは、1ラウンドごとに ピンの並びをかえて遊ぶ
+    newRun(diff, seed, opts) {
+      opts = opts || {}; diff = clamp(diff | 0, 0, 2); const run = { kind: 'bowling', diff, seed, lane: LANES[opts.lane] ? opts.lane : 'house', variant: opts.variant || null, rolls: [], standing: Array(10).fill(true), spots: PIN_SPOTS, done: false, total: 0, last: null, round: 0, ball: 0 };
+      if (run.variant === 'pins100') { const r = rng(hash32('b100:' + seed)); run.layouts = []; for (let k = 0; k < 10; k++) run.layouts.push(Bowling.layout(r, diff)); run.spots = run.layouts[0]; }
+      else if (run.variant === 'spares') { const r = rng(hash32('bsp:' + seed)), pool = LEAVES[diff].slice(); for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; } run.leaves = pool.slice(0, 10); run.standing = PIN_SPOTS.map((q, i) => run.leaves[0].includes(i)); }
+      return run;
+    },
+    // ピン100本：10ラウンド、そのつどピンの並びがちがう（10本ずつ）
+    layout(r, diff) { const w = [0.3, 0.4, 0.5][diff], out = []; let g = 0; while (out.length < 10 && g++ < 500) { const x = (r() * 2 - 1) * w, y = PIN_Y + r() * (0.5 + diff * 0.3); if (out.every(q => Math.hypot(q.x - x, q.y - y) > 0.17)) out.push({ x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 }); } while (out.length < 10) out.push({ x: -0.45 + out.length * 0.09, y: PIN_Y + 1.1 }); return out; },
     // 1投。p = { x（スタート位置 m、±0.45）, ang（ラジアン、ふつう ±0.08）, v（m/s 4.5〜9.5）, spin（-1〜1）}。bumpers = true で両わきがはねかえす
-    simulate(standing, p, bumpers) {
-      const hook = 2.1, B = { x: clamp(p.x, -0.5, 0.5), y: 0, vx: 0, vy: 0, r: BALL_RB, m: 6.4, gut: 0 };
+    simulate(standing, p, bumpers, o) {
+      o = o || {}; const hook = o.hook || 2.1, rs = o.start == null ? 7 : o.start, rl = o.len || 9, SPOTS = o.spots || PIN_SPOTS, B = { x: clamp(p.x, -0.5, 0.5), y: 0, vx: 0, vy: 0, r: BALL_RB, m: 6.4, gut: 0 };
       const sp = clamp(p.v, 4, 10); B.vx = sp * Math.sin(clamp(p.ang, -0.2, 0.2)); B.vy = sp * Math.cos(clamp(p.ang, -0.2, 0.2));
-      const pins = PIN_SPOTS.map((s, i) => ({ x: s.x, y: s.y, vx: 0, vy: 0, up: !!standing[i], gone: !standing[i], hit: false, i, r: PIN_R, m: 1.55 }));
+      const pins = SPOTS.map((s, i) => ({ x: s.x, y: s.y, vx: 0, vy: 0, up: !!standing[i], gone: !standing[i], hit: false, i, r: PIN_R, m: 1.55 }));
       const dt = 1 / 240, frames = []; const spin = clamp(p.spin, -1, 1);
       for (let k = 0; k < 2400; k++) {
-        const ramp = clamp((B.y - 7) / 9, 0, 1);
+        const ramp = clamp((B.y - rs) / rl, 0, 1);
         if (!B.gut) { B.vx += spin * hook * ramp * dt; B.vy -= 0.06 * dt; }
         B.x += B.vx * dt; B.y += B.vy * dt;
         if (!B.gut && Math.abs(B.x) > LANE_W / 2 + 0.01 && B.y < PIN_Y - 0.5) { if (bumpers) { B.x = Math.sign(B.x) * (LANE_W / 2 + 0.01); B.vx = -B.vx * 0.35; } else { B.gut = Math.sign(B.x); } }
@@ -171,10 +195,20 @@
     },
     // 投げる前にピンを立てなおす（フレームの1投目、10フレーム目で全部倒れたあと）
     prep(run) { const nb = C.bowlingScore(run.rolls).next; if (nb.ball === 0 || (nb.frame === 9 && run.standing.every(s => !s))) run.standing = Array(10).fill(true); return run.standing; },
+    // バリエーションの1投
+    rollV(run, p, bumpers) {
+      if (run.done) return null; if (run.diff > 0) { const j = rng(hash32('bw:' + run.seed + ':' + run.rolls.length)), k = run.diff === 1 ? 1 : 3; p = { x: p.x + gauss(j) * 0.006 * k, ang: p.ang + gauss(j) * 0.0018 * k, v: p.v, spin: p.spin }; }
+      const L = LANES[run.lane], allUp = run.standing.every(Boolean), r = Bowling.simulate(run.standing, p, bumpers == null ? run.diff === 0 : bumpers, { hook: L.hook, start: L.start, len: L.len, spots: run.spots });
+      run.standing = run.standing.map((s, i) => s && !r.fell[i]); run.rolls.push(r.down); const clear = run.standing.every(s => !s), first = run.ball === 0;
+      let spare = false, strike = false; if (run.variant === 'pins100') { run.total += r.down; strike = allUp && r.down === 10 && first; spare = !first && clear; run.ball++; if (clear || run.ball >= 2) { run.round++; run.ball = 0; if (run.round >= 10) run.done = true; else { run.standing = Array(10).fill(true); run.spots = run.layouts[run.round]; } } }
+      else { spare = clear; if (clear) run.total += 10; run.round++; if (run.round >= 10) run.done = true; else run.standing = PIN_SPOTS.map((q, i) => run.leaves[run.round].includes(i)); }
+      run.last = { down: r.down, frames: r.frames, gutter: r.gutter, strike, spare, score: null }; return r;
+    },
     roll(run, p, bumpers) {
+      if (run.variant) return Bowling.rollV(run, p, bumpers);
       if (run.done) return null; const standing = Bowling.prep(run), allUp = standing.every(Boolean);
       if (run.diff > 0) { const j = rng(hash32('bw:' + run.seed + ':' + run.rolls.length)), k = run.diff === 1 ? 1 : 3; p = { x: p.x + gauss(j) * 0.006 * k, ang: p.ang + gauss(j) * 0.0018 * k, v: p.v, spin: p.spin }; }
-      const r = Bowling.simulate(standing, p, bumpers == null ? run.diff === 0 : bumpers);
+      const L = LANES[run.lane || 'house'], r = Bowling.simulate(standing, p, bumpers == null ? run.diff === 0 : bumpers, { hook: L.hook, start: L.start, len: L.len });
       run.standing = standing.map((s, i) => s && !r.fell[i]);
       run.rolls.push(r.down); const sc = C.bowlingScore(run.rolls); run.total = sc.total; run.done = sc.done;
       run.last = { down: r.down, frames: r.frames, gutter: r.gutter, strike: allUp && r.down === 10, spare: !allUp && run.standing.every(s => !s) , score: sc };
