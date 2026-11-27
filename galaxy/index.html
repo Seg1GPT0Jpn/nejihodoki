@@ -333,6 +333,7 @@ const SND = {
   heart: () => { tone(660, 0.1, { type: 'sine', vol: 0.1 }); tone(880, 0.14, { type: 'sine', vol: 0.1, delay: 0.08 }); }, cp: () => { [659, 784, 988].forEach((f, i) => tone(f, 0.12, { type: 'triangle', vol: 0.08, delay: i * 0.06 })); },
   bosswarn: () => tone(200, 0.5, { type: 'sawtooth', vol: 0.06, slide: 500 }), bosslang: () => { noise(0.3, { vol: 0.2, freq: 400 }); tone(70, 0.3, { type: 'sine', vol: 0.14, slide: 35 }); }, bosshit: () => tone(200, 0.22, { type: 'sawtooth', vol: 0.09, slide: 800 }),
   boom: () => { noise(0.5, { vol: 0.2, freq: 450 }); [300, 250, 200, 150, 100].forEach((f, i) => tone(f, 0.16, { type: 'sawtooth', vol: 0.07, delay: i * 0.09 })); }, done: () => { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.22, { type: 'triangle', vol: 0.09, delay: i * 0.09 })); },
+  crumble: () => noise(0.18, { vol: 0.1, freq: 600 }), switch: () => { tone(500, 0.08, { type: 'square', vol: 0.05 }); tone(750, 0.12, { type: 'square', vol: 0.05, delay: 0.07 }); },
   fail: () => { [330, 262, 196].forEach((f, i) => tone(f, 0.2, { type: 'sawtooth', vol: 0.06, delay: i * 0.12 })); }, arrive: () => tone(520, 0.3, { type: 'sine', vol: 0.05, slide: 780 }), tap: () => tone(700, 0.05, { type: 'sine', vol: 0.05 }),
 };
 const lastSnd = {};
@@ -531,7 +532,7 @@ function render(dt) {
   if (!R || !G) return; const S = G.S, t = performance.now() / 1000;
   const cam = camera(S, dt, t), objs = ART.scene(S, t, fx, { locked: lockedMap() });
   const parts = fx.fill(); if (fx.flash > 0) $('flash').style.opacity = String(Math.min(0.55, fx.flash * 0.6)); else if ($('flash').style.opacity !== '0') $('flash').style.opacity = '0';
-  R.render({ cam, t: save.set.rm ? 0 : t, xf: S.xf, objs, parts });
+  R.render({ cam, t: save.set.rm ? 0 : t, xf: S.xf, objs, parts, on: S.L.bodies.map((b, bi) => E.bodyActive(S, bi)) });
   if (G.gid === 'hub') { $('labels').hidden = false; hubLabels(); } else $('labels').hidden = true;
 }
 const lockedMap = () => { const o = {}; for (const g of GALS) o[g.id] = !galUnlocked(g.id); return o; };

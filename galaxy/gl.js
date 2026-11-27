@@ -172,6 +172,7 @@
   function frustum(m) { const r = i => [m[3] + (i < 3 ? m[i * 4 % 16 === 0 ? 0 : 0] : 0)]; const P = []; const row = k => [m[k], m[4 + k], m[8 + k], m[12 + k]]; const a = row(0), b = row(1), c = row(2), w = row(3);
     for (const [x, s] of [[a, 1], [a, -1], [b, 1], [b, -1], [c, 1], [c, -1]]) { const p = [w[0] + s * x[0], w[1] + s * x[1], w[2] + s * x[2], w[3] + s * x[3]], l = Math.hypot(p[0], p[1], p[2]) || 1; P.push([p[0] / l, p[1] / l, p[2] / l, p[3] / l]); } return P; }
   function inFrustum(P, c, r) { for (const p of P) if (p[0] * c[0] + p[1] * c[1] + p[2] * c[2] + p[3] < -r) return false; return true; }
+  const LAZY_R = 160;
   function create(canvas, E, opt) {
     opt = opt || {}; let gl = null;
     try { gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!opt.preserve }) || canvas.getContext('experimental-webgl'); } catch (e) { gl = null; }
@@ -192,10 +193,15 @@
     function setQuality(q, fixed) { st.q = clamp(q | 0, 0, 2); if (fixed != null) st.fixed = !!fixed; applyQ(); if (lvl && builtLod !== (st.q === 0 ? 0 : 1)) { const l = lvl; load(l, lastOn); } }
     function mesh(name, fn) { if (meshes[name]) return meshes[name]; const mb = new MB(); fn(mb); return (meshes[name] = upload(mb)); }
     function load(L, on) {
-      free(); lvl = L; lastOn = on || null; builtLod = st.q === 0 ? 0 : 1; bodyM = L.bodies.map((b, bi) => { if (on && !on[bi]) return null; const o = upload(bodyMesh(E, b, L, builtLod)); o.atm = b.k === 's' && b.g > 0 ? { r: b.r * 1.13, col: atmCol(b.surf) } : null; return o; });
+      free(); lvl = L; lastOn = on || null; builtLod = st.q === 0 ? 0 : 1; bodyM = L.bodies.map(() => null);
       decoM = (L.deco || []).map(d => ({ d, m: upload(planetMesh(d.col, d.ring)) }));
       if (!meshes._atm) { const mb = new MB(); mb.ell(0, 0, 0, 1, 1, 1, [1, 1, 1], 10, 16); meshes._atm = upload(mb); }
     }
+    // 近くの星だけメッシュを作る（遠くなったら捨てる）。長いコースでも三角形が増えすぎない
+    function ensureBodies(cam) {
+      if (!lvl) return; for (let i = 0; i < lvl.bodies.length; i++) { if (lastOn && !lastOn[i]) continue; const b = lvl.bodies[i], p = (st.xfNow && st.xfNow[i] ? st.xfNow[i].p : b.p), d = Math.hypot(p[0] - cam.p[0], p[1] - cam.p[1], p[2] - cam.p[2]);
+        if (!bodyM[i] && d < LAZY_R) { const o = upload(bodyMesh(E, b, lvl, builtLod)); o.atm = b.k === 's' && b.g > 0 ? { r: b.r * 1.13, col: atmCol(b.surf) } : null; bodyM[i] = o; }
+        else if (bodyM[i] && d > LAZY_R * 1.6) { for (const k of ['bp', 'bn', 'bc']) gl.deleteBuffer(bodyM[i][k]); bodyM[i] = null; } } }
     const atmCol = s => (s === 'ice' ? [0.55, 0.85, 1] : s === 'lava' ? [1, 0.4, 0.15] : s === 'metal' ? [0.55, 0.65, 1] : s === 'stone' ? [0.75, 0.75, 1] : s === 'moss' ? [0.5, 1, 0.8] : [0.5, 0.9, 1]);
     function free() { const dl = m => { if (m) for (const k of ['bp', 'bn', 'bc']) gl.deleteBuffer(m[k]); }; bodyM.forEach(dl); decoM.forEach(d => dl(d.m)); bodyM = []; decoM = []; }
     const bindLit = m => { gl.bindBuffer(gl.ARRAY_BUFFER, m.bp); gl.vertexAttribPointer(P.a.pos, 3, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ARRAY_BUFFER, m.bn); gl.vertexAttribPointer(P.a.nor, 3, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ARRAY_BUFFER, m.bc); gl.vertexAttribPointer(P.a.col, 3, gl.FLOAT, false, 0, 0); };
@@ -225,7 +231,7 @@
       }
       // 世界
       litUniforms(st.vp, cam.p, sun, sunC, sky.dark ? amb.map(v => v * 0.5) : amb, fogC, sky.dark ? 0.011 : 0.0016);
-      const xf = fr.xf, pl = frustum(st.vp); st.culled = 0; const vis = []; for (let i = 0; i < bodyM.length; i++) { if (!bodyM[i]) { vis[i] = false; continue; } const bb = lvl.bodies[i]; if (!inFrustum(pl, xf[i].p, bb.br * (bb.ring ? 2.2 : 1.15))) { st.culled++; vis[i] = false; continue; } vis[i] = true; drawLit(bodyM[i], M.fromRP(xf[i].R, xf[i].p), WHITE, 0, [0.2, 0.28, 0.45]); }
+      const xf = fr.xf; st.xfNow = xf; ensureBodies(cam); const pl = frustum(st.vp); st.culled = 0; const vis = []; for (let i = 0; i < bodyM.length; i++) { if (!bodyM[i] || (fr.on && fr.on[i] === false)) { vis[i] = false; continue; } const bb = lvl.bodies[i]; if (!inFrustum(pl, xf[i].p, bb.br * (bb.ring ? 2.2 : 1.15))) { st.culled++; vis[i] = false; continue; } vis[i] = true; drawLit(bodyM[i], M.fromRP(xf[i].R, xf[i].p), WHITE, 0, [0.2, 0.28, 0.45]); }
       for (const o of fr.objs || []) { const m = meshes[o.m]; if (m) drawLit(m, o.M, o.tint, o.emis, o.rim); }
       gl.disableVertexAttribArray(P.a.pos); gl.disableVertexAttribArray(P.a.nor); gl.disableVertexAttribArray(P.a.col);
       // 大気の輪（足す）
@@ -251,6 +257,6 @@
     applyQ();
     return { render, resize, load, mesh, setQuality, adapt, project, dispose, free, state: st, gl, M, MB, hex, mix, canvas, snap(cb) { snap = cb; } };
   }
-  const GalaxyGL = { create, M, MB, hex, mix, PAL, bodyMesh, frustum, inFrustum };
+  const GalaxyGL = { create, M, MB, hex, mix, PAL, bodyMesh, frustum, inFrustum, LAZY_R };
   if (typeof module !== 'undefined' && module.exports) module.exports = GalaxyGL; else root.GalaxyGL = GalaxyGL;
 })(typeof window !== 'undefined' ? window : globalThis);

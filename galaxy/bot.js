@@ -13,7 +13,7 @@
     const bot = { i: 0, sf: 0, jh: 0, jumped: false, launched: false, fail: null, ssp: 0 };
     const pt = (S, sp) => (Array.isArray(sp) ? sp : V.add(S.xf[typeof sp.b === 'string' ? L.idx[sp.b] : sp.b].p, V.mv(S.xf[typeof sp.b === 'string' ? L.idx[sp.b] : sp.b].R, sp.l)));
     function target(S, st) {
-      const k = st.to || st.fly; if (m.pts && m.pts[k]) return { p: pt(S, m.pts[k]), i: -1 };
+      const k = st.to || st.fly; if (m.pts && m.pts[k]) { const sp = m.pts[k]; return { p: pt(S, sp), i: -1, bi: Array.isArray(sp) ? -1 : (typeof sp.b === 'string' ? L.idx[sp.b] : sp.b) }; }
       const i = L.eidx[k]; if (i == null) throw new Error('route: no such thing ' + k);
       return { p: S.ep[i] || V.add([0, 0, 0], S.h.x), i, gone: !!S.e[i] || S.lit.indexOf(i) >= 0 };
     }
@@ -39,7 +39,9 @@
         const o = go(S, bp, { stop: 0.5 }); inp.sx = o.sx; inp.sy = o.sy;
         if (dd < 3.1 && h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S;
       } else if (bo.st === 'dead' || bo.st === 'gone') { /* wait for the shard */ }
-      else {
+      else if (bo.st === 'aim' || bo.st === 'charge') {
+        const side = V.norm(V.cross(h.up, V.norm(V.sub(bp, h.x)))); const sg = V.dot(side, V.sub(h.x, c)) >= 0 ? 1 : -1; const o = go(S, V.add(h.x, V.mul(side, 7 * sg)), { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+      } else {
         // にげる（ボスのいる向きと逆）
         let away = V.sub(h.x, bp); if (bo.st === 'jump') away = V.sub(h.x, V.add(c, V.mv(S.xf[bi].R, V.mul(bo.tg, R))));
         let ta = V.sub(away, V.mul(h.up, V.dot(away, h.up))); if (V.len(ta) < 0.4) away = E.perp(h.up); const run = V.add(h.x, V.mul(V.norm(away), 6)); const o = go(S, run, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
@@ -81,6 +83,8 @@
         return inp;
       }
       // ふつうの：そこまで行く
+      // 動く足場：出ていない（または出ている時間が足りない）ときは、ようすを見て立ちどまる
+      if (tg.bi != null && tg.bi >= 0 && h.on >= 0 && !(L.bodies[h.on] && L.bodies[h.on].cr) && (!E.bodyActive(S, tg.bi) || E.bodyWindow(S, tg.bi) < (st.win || 0.2))) { const dd = V.len(V.sub(tg.p, h.x)); if (dd < 14) return inp; }
       const dist = V.len(V.sub(tg.p, h.x));
       if (!tg.gone) bot.lastP = tg.p;
       if (tg.i >= 0 ? tg.gone : dist < (st.tol || 1.0)) {

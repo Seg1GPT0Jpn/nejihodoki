@@ -80,7 +80,7 @@
       b.p = b.p.slice(); L.bodies.push(b); if (b.id) L.idx[b.id] = i;
     });
     (def.zones || []).forEach(z0 => { const z = copy(z0); if (typeof z.b === 'string') z.b = L.idx[z.b]; if (z.dir) z.dir = norm(z.dir); L.zones.push(z); });
-    const S0 = { L, xf: L.bodies.map(b => xfAt(b, 0)), bOn: L.bodies.map(() => true) };
+    const S0 = { L, xf: L.bodies.map(b => xfAt(b, 0)), bOn: L.bodies.map(() => true), dis: L.bodies.map(() => 0), flag: {}, t: 0 };
     (def.ents || []).forEach((e0, i) => {
       const e = copy(e0); e.i = i; e.bi = e.b == null ? -1 : (typeof e.b === 'string' ? L.idx[e.b] : e.b); e.m = e.m || null;
       if (e.bi < 0 && e.p == null) e.p = [0, 0, 0];
@@ -118,7 +118,7 @@
     const L = S.L; let best = -1, bs = 1e9, hs = 1e9, bn = null, bd = 0, hn = null, hd = 0;
     for (let i = 0; i < L.bodies.length; i++) {
       const b = L.bodies[i]; if (b.g <= 0) continue;
-      if (!S.bOn[i]) continue; const f = S.xf[i]; if (len(sub(x, f.p)) - b.br > b.gr + 0.5) continue;
+      if (!bAct(S, i)) continue; const f = S.xf[i]; if (len(sub(x, f.p)) - b.br > b.gr + 0.5) continue;
       const r = sdfW(S, i, x); if (r[0] > b.gr) continue;
       const sc = r[0] / b.gr; if (i === hint) { hs = sc; hn = [r[1], r[2], r[3]]; hd = r[0]; }
       if (sc < bs) { bs = sc; best = i; bn = [r[1], r[2], r[3]]; bd = r[0]; }
@@ -126,7 +126,7 @@
     if (hint >= 0 && hn && best !== hint && hd - bd < 0.35) { best = hint; bn = hn; bd = hd; }
     let up = bn, gm = best >= 0 ? K.G0 * L.bodies[best].g : 0, zone = -1;
     for (let zi = 0; zi < L.zones.length; zi++) {
-      const z = L.zones[zi]; if (z.ms && z.ms.indexOf(S.mid) < 0) continue; if (!inZone(z, x)) continue;
+      const z = L.zones[zi]; if (z.m === 'wind' || (z.ms && z.ms.indexOf(S.mid) < 0)) continue; if (!inZone(z, x)) continue;
       if (z.m === 'dir') { up = mul(z.dir, -1); gm = K.G0 * (z.g == null ? 1 : z.g); zone = zi; }
       else if (z.m === 'inv' && bn) { up = mul(bn, -1); zone = zi; }
       else if (z.m === 'body' && z.b >= 0) { const r = sdfW(S, z.b, x); up = [r[1], r[2], r[3]]; best = z.b; bd = r[0]; gm = K.G0 * L.bodies[z.b].g; zone = zi; }
@@ -142,7 +142,7 @@
     const m = L.missions[mid] || L.mlist[0]; const dif = clamp(opt.dif != null ? opt.dif | 0 : (m.dif == null ? 0 : m.dif), 0, 3);
     const S = { f: 0, t: 0, id: L.id, mid: m.id, rs: (opt.seed == null ? 12345 : opt.seed) >>> 0, as: { hp: as.hp ? 1 : 0, nofall: as.nofall ? 1 : 0, slow: as.slow ? 1 : 0 },
       pb: 0, ev: [], e: new Array(L.ents.length).fill(0), flag: {}, cnt: { coin: 0, crystal: 0, orb: 0, kill: 0, stomp: 0, lumi: 0, die: 0, jump: 0, spin: 0, pound: 0, wk: 0, launch: 0, hurt: 0, hit: 0 }, lumi: 0, cp: -1, res: null, over: 0, gate: -1, bnr: null,
-      cam: { fw: [0, 0, -1], up: [0, 1, 0], pitch: 0.4, man: 0 }, boss: null, need: { orb: 0, lan: 0 }, lit: [], lg: {}, tl: 0, hpMax: DIF.hp[dif] + (as.hp ? 3 : 0), bsig: 0, dif, wk: DIF.wk[dif], lives: DIF.lives[dif] + (as.hp ? 2 : 0) };
+      cam: { fw: [0, 0, -1], up: [0, 1, 0], pitch: 0.4, man: 0 }, boss: null, need: { orb: 0, lan: 0 }, lit: [], lg: {}, dis: L.bodies.map(() => 0), stand: L.bodies.map(() => 0), tl: 0, hpMax: DIF.hp[dif] + (as.hp ? 3 : 0), bsig: 0, dif, wk: DIF.wk[dif], lives: DIF.lives[dif] + (as.hp ? 2 : 0) };
     Object.defineProperty(S, 'L', { value: L, writable: true, enumerable: false });
     Object.defineProperty(S, 'xf', { value: L.bodies.map(b => xfAt(b, 0)), writable: true, enumerable: false });
     Object.defineProperty(S, 'xp', { value: L.bodies.map(b => xfAt(b, 0)), writable: true, enumerable: false });
@@ -201,7 +201,7 @@
     for (let it = 0; it < 3; it++) {
       let moved = false;
       for (let i = 0; i < bodies.length; i++) {
-        const b = bodies[i], f = S.xf[i]; if (!S.bOn[i]) continue;
+        const b = bodies[i], f = S.xf[i]; if (!bAct(S, i)) continue;
         if (len(sub(x, f.p)) > b.br + HR + 0.6) continue;
         const r = sdfW(S, i, x), d = r[0]; if (d >= HR + K.SKIN) continue;
         const n = [r[1], r[2], r[3]];
@@ -241,6 +241,15 @@
     h.v = [0, 0, 0]; h.on = -1; h.lau = null; h.pound = 0; h.spin = 0; h.dead = 0; h.inv = DIF.inv[S.dif]; if (h.hp <= 0) h.hp = S.hpMax;
     const g = gravAt(S, h.x, -1); h.gb = g.i; if (g.up) h.up = g.up.slice(); S.ev.push(['respawn', h.x[0], h.x[1], h.x[2]]);
   }
+  // 動く足場：崩れる（cr）・ひっこむ（ph：T 周期の d 割だけ出る）・スイッチで出る（sw）
+  function bAct(S, i) {
+    if (!S.bOn[i]) return false; const b = S.L.bodies[i];
+    if (S.dis[i] > 0) return false;
+    if (b.ph) { const x = ((S.t / b.ph.T + (b.ph.o || 0)) % 1 + 1) % 1; if (x >= b.ph.d) return false; }
+    if (b.sw != null && !S.flag['sw' + b.sw]) return false;
+    return true;
+  }
+  function bWin(S, i) { if (!bAct(S, i)) return 0; const b = S.L.bodies[i]; if (b.ph) { const x = ((S.t / b.ph.T + (b.ph.o || 0)) % 1 + 1) % 1; return (b.ph.d - x) * b.ph.T; } return 99; }
   const magR = S => (S.h.pw && S.h.pw.k === 'magnet' ? 3.6 : 0);
   // ランク：パータイム・ノーダメージ・ルミ全部で点をつけ、S/A/B/C
   function rank(m, res, lumiAll) { let p = 0; const par = (m.par || 60) * 60; if (res.f <= par * 0.75) p += 2; else if (res.f <= par * 1.15) p += 1; if (res.die === 0 && res.hurt === 0) p += 1; if (lumiAll) p += 1; return p >= 4 ? 3 : p >= 3 ? 2 : p >= 2 ? 1 : 0; }
@@ -268,6 +277,7 @@
       const rel = mulM(f.R, [R0[0], R0[3], R0[6], R0[1], R0[4], R0[7], R0[2], R0[5], R0[8]]); h.fw = norm(mv(rel, h.fw)); h.v = mv(rel, h.v); S.cam.fw = norm(mv(rel, S.cam.fw)); S.cam.up = norm(mv(rel, S.cam.up));
     }
     S.t += DT; refreshEnts(S, DT);
+    for (let i = 0; i < L.bodies.length; i++) { const bd = L.bodies[i]; if (S.dis[i] > 0) S.dis[i] -= DT; if (bd.cr) { if (h.on === i && S.dis[i] <= 0) { S.stand[i] += DT; if (S.stand[i] >= bd.cr * DIF.crum[S.dif]) { S.dis[i] = bd.back || 3; S.stand[i] = 0; S.ev.push(['crumble', S.xf[i].p[0], S.xf[i].p[1], S.xf[i].p[2]]); } } else S.stand[i] = Math.max(0, S.stand[i] - DT * 0.5); } }
     // 時計
     if (S.tl > 0 && !S.res) S.tl = Math.max(0, S.tl - DT); // ランクのための目安の時計。0になっても失敗にはならない
     h.inv = Math.max(0, h.inv - DT); h.scd = Math.max(0, h.scd - DT); h.lcd = Math.max(0, h.lcd - DT); h.wt = Math.max(0, h.wt - DT); h.jb = Math.max(0, h.jb - DT);
@@ -293,10 +303,10 @@
     // ---- 速度 ----
     const n0 = grounded0 ? h.gn : gu;
     let v = h.v.slice();
-    const speed = K.RUN * (h.pw && h.pw.k === 'spring' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : 1);
+    const speed = K.RUN * (h.pw && h.pw.k === 'spring' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'rock' ? 1.4 : 1);
     if (grounded0) {
       let dsr = sub(dirW, mul(n0, dot(dirW, n0))); dsr = mul(dsr, speed);
-      const vn = dot(v, n0), vt = sub(v, mul(n0, vn)), surf = L.bodies[h.on].fr * (h.pw && h.pw.k === 'skate' ? 0.55 : 1);
+      const vn = dot(v, n0), vt = sub(v, mul(n0, vn)), surf = L.bodies[h.on].fr * (h.pw && h.pw.k === 'skate' ? 0.55 : h.pw && h.pw.k === 'rock' ? 0.4 : 1);
       let diff = sub(dsr, vt); const dl = len(diff), lim = (mag2 ? K.ACC_G : K.FRIC) * surf * DT;
       const nv = dl <= lim ? dsr : add(vt, mul(diff, lim / dl));
       v = add(nv, mul(n0, Math.min(vn, 0)));
@@ -338,6 +348,8 @@
     // かべすべり
     if (h.wt > 0 && !grounded0 && dot(v, gu) < -4 && h.pound !== 1) v = add(sub(v, mul(gu, dot(v, gu))), mul(gu, -4));
     // ---- 動かす ----
+    let windy = false;
+    for (const z of L.zones) { if (z.m !== 'wind' || (z.ms && z.ms.indexOf(S.mid) < 0) || !inZone(z, h.x)) continue; if (z.gust && ((S.t / z.gust.T) % 1) >= z.gust.d) continue; const a = z.to ? mul(norm(sub(z.to, h.x)), z.str || 20) : z.acc; v = add(v, mul(a, DT)); if (z.drag) v = mul(v, 1 - z.drag * DT); if (a) { windy = true; S.ev.push(['wind', h.x[0], h.x[1], h.x[2]]); } }
     let x = h.x.slice(); const mvLen = len(v) * DT, nsub = clamp(Math.ceil(mvLen / 0.3), 1, 16), hh = DT / nsub, ct = [];
     const crs = []; for (const i of S.act) { const e = L.ents[i]; if (e.k === 'crate' && !S.e[i]) crs.push({ p: S.ep[i], r: 0.7, i }); }
     const fv = grounded0 && !jumped ? gv : [0, 0, 0];
@@ -353,7 +365,7 @@
     }
     if (jumped) ground = null;
     // 地面にくっつく（なだらかに曲がった面・角をまわる）
-    if (!ground && grounded0 && !jumped && dot(v, gu) < 3) {
+    if (!ground && grounded0 && !jumped && !windy && dot(v, gu) < 3) {
       const r = sdfW(S, h.on, x), gap = r[0] - HR;
       if (gap > K.SKIN && gap < 0.32) { const n = [r[1], r[2], r[3]]; x = sub(x, mul(n, gap)); if (dot(n, gu) > 0.3) ground = { i: h.on, n, du: dot(n, gu) }; }
     }
@@ -390,7 +402,7 @@
     return S;
   }
   function moveBodies(S) { for (let i = 0; i < S.L.bodies.length; i++) { S.xp[i] = S.xf[i]; S.xf[i] = S.L.bodies[i].mv.length ? xfAt(S.L.bodies[i], S.t + DT) : S.xf[i]; } }
-  function nearestD(S, x) { let d = 1e9; for (let i = 0; i < S.L.bodies.length; i++) { if (!S.bOn[i]) continue; const f = S.xf[i], b = S.L.bodies[i]; const c = len(sub(x, f.p)) - b.br; if (c > d + 60) continue; const r = sdfW(S, i, x)[0]; if (r < d) d = r; } return d; }
+  function nearestD(S, x) { let d = 1e9; for (let i = 0; i < S.L.bodies.length; i++) { if (!bAct(S, i)) continue; const f = S.xf[i], b = S.L.bodies[i]; const c = len(sub(x, f.p)) - b.br; if (c > d + 60) continue; const r = sdfW(S, i, x)[0]; if (r < d) d = r; } return d; }
   function voidOut(S) {
     const h = S.h; S.ev.push(['void', h.x[0], h.x[1], h.x[2]]);
     if (!S.as.nofall) { h.hp -= 1 + (S.dif >= 3 ? 9 : 0); S.cnt.hurt++; }
@@ -435,7 +447,7 @@
     else if (e.k === 'crate') {
       S.ev.push(['crate', p[0], p[1], p[2]]);
       if (e.drop === 'heart') { S.h.hp = Math.min(S.hpMax, S.h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); }
-      else if (e.drop === 'bee' || e.drop === 'spring' || e.drop === 'cloud' || e.drop === 'skate' || e.drop === 'fire' || e.drop === 'shield') givePower(S, e.drop, p);
+      else if (e.drop === 'bee' || e.drop === 'spring' || e.drop === 'cloud' || e.drop === 'skate' || e.drop === 'fire' || e.drop === 'shield' || e.drop === 'rock' || e.drop === 'magnet') givePower(S, e.drop, p);
       else { S.cnt.coin += 3; S.ev.push(['coin', p[0], p[1], p[2]]); }
     }
   }
@@ -451,6 +463,8 @@
         case 'heart': if (d < 1.3) { S.e[i] = 1; h.hp = Math.min(S.hpMax, h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); } break;
         case 'orb': if (d < 1.5 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.orb++; S.ev.push(['orb', p[0], p[1], p[2]]); if (S.cnt.orb >= S.need.orb) { S.flag.orbs = 1; S.ev.push(['banner', 'orbs']); } } break;
         case 'lumi': if (d < 1.5 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.lumi++; S.lumi |= 1 << (e.n2 || 0); S.ev.push(['lumi', p[0], p[1], p[2], e.n2 || 0]); const m = L.missions[S.mid]; if (m.kind === 'hunt' && S.cnt.lumi >= (m.lumi || 3)) finish(S, true, 'lumi'); } break;
+        case 'crate': if (h.pw && h.pw.k === 'rock' && d < 1.55) hitEnt(S, i, 'roll'); break;
+        case 'switch': if (d < 1.4 && S.lit.indexOf(i) < 0) { S.lit.push(i); S.flag['sw' + (e.n2 || 0)] = 1; S.ev.push(['switch', p[0], p[1], p[2]]); } break;
         case 'lantern': if (d < 1.7 && S.lit.indexOf(i) < 0) { S.lit.push(i); S.ev.push(['lantern', p[0], p[1], p[2]]); const gp = e.grp || ''; let nl = 0; for (const j of S.lit) if ((L.ents[j].grp || '') === gp) nl++; if (nl >= S.lg[gp]) { S.flag['lanterns' + gp] = 1; S.flag.lanterns = S.flag.lanterns || (S.lit.length >= S.need.lan ? 1 : 0); S.ev.push(['banner', 'lanterns']); } } break;
         case 'power': if (d < 1.5) { S.e[i] = 1; givePower(S, e.type, p); } break;
         case 'cp': if (DIF.cp[S.dif] && d < 1.8 && S.cp !== i) { S.cp = i; S.ev.push(['cp', p[0], p[1], p[2]]); } break;
@@ -460,7 +474,7 @@
         case 'spike': if (d < 0.95 + DIF.sp[S.dif]) hurt(S, p, true); break;
         case 'walker': if (d < K.ENEMY_R + 0.2 + DIF.er[S.dif]) {
           const up = h.up, rel = dot(sub(h.x, p), up), vu = dot(h.v, up);
-          if (h.spin > 0 || h.pound === 1) hitEnt(S, i, h.spin > 0 ? 'spin' : 'pound');
+          if (h.spin > 0 || h.pound === 1 || (h.pw && h.pw.k === 'rock')) hitEnt(S, i, h.spin > 0 ? 'spin' : 'pound');
           else if (rel > 0.45 && vu < -1) { hitEnt(S, i, 'stomp'); S.cnt.stomp++; h.v = add(sub(h.v, mul(up, vu)), mul(up, (S.pb & B.J) ? 11 : 8)); h.on = -1; h.aj = 0; h.as = 0; }
           else hurt(S, p);
         } break;
@@ -483,7 +497,8 @@
     if (bo.st === 'walk') {
       bo.off = 0; const ang = geod(bo.d, hq), step = Math.min(ang, ((e.spd || 0.42) * DIF.boss[S.dif] + (e.spd ? 0.025 : 0.12) * (bo.hp0 - bo.hp)) * DT * slow);
       if (ang > 1e-4) bo.d = norm(add(mul(bo.d, Math.cos(step)), mul(norm(sub(hq, mul(bo.d, dot(hq, bo.d)))), Math.sin(step))));
-      if (bo.t <= 0) { bo.st = 'jump'; bo.t = 1.15 * DIF.tele[S.dif]; bo.t0 = bo.t; bo.from = bo.d.slice(); bo.tg = hq.slice(); S.ev.push(['bosswarn']); }
+      if (bo.t <= 0 && e.charge && (bo.n = (bo.n || 0) + 1) % 2 === 0) { bo.st = 'aim'; bo.t = 0.85 * DIF.tele[S.dif]; bo.tg = hq.slice(); bo.from = bo.d.slice(); S.ev.push(['bosswarn']); }
+      else if (bo.t <= 0) { bo.st = 'jump'; bo.t = 1.15 * DIF.tele[S.dif]; bo.t0 = bo.t; bo.from = bo.d.slice(); bo.tg = hq.slice(); S.ev.push(['bosswarn']); }
     } else if (bo.st === 'jump') {
       const s = 1 - bo.t / bo.t0, ang = geod(bo.from, bo.tg), sn = Math.sin(ang) || 1e-6;
       const w0 = Math.sin((1 - s) * ang) / sn, w1 = Math.sin(s * ang) / sn; bo.d = ang > 1e-4 ? norm(add(mul(bo.from, w0), mul(bo.tg, w1))) : bo.from.slice(); bo.off = 7 * 4 * s * (1 - s);
@@ -493,6 +508,10 @@
       { const rr = len(sub(h.x, S.xf[e.bi].p)) || R, dist = geod(bo.d, hq) * rr, height = rr - R - HR;
         let hit = false; for (let k = 0; k < bo.nr; k++) if (bo.ring - 5 * k > 0.4 && Math.abs(dist - (bo.ring - 5 * k)) < 0.9) hit = true; if (hit && height < 0.8) hurt(S, bossPos(S)); }
       if (bo.t <= 0) { bo.st = 'stun'; bo.t = Math.max(1.6, ((e.stun || 5) - 0.25 * lost) * DIF.stun[S.dif]); bo.ring = -1; }
+    } else if (bo.st === 'aim') {
+      if (bo.t <= 0) { bo.st = 'charge'; bo.t = 0.95; bo.from = bo.d.slice(); let ax = cross(bo.from, bo.tg); ax = len(ax) > 1e-3 ? norm(ax) : perp(bo.from); bo.ax = ax; }
+    } else if (bo.st === 'charge') {
+      bo.d = norm(rodr(bo.d, bo.ax, 1.2 * DIF.boss[S.dif] * DT)); if (bo.t <= 0) { bo.st = 'stun'; bo.t = Math.max(1.6, (e.stun || 5) * DIF.stun[S.dif]); bo.ring = -1; }
     } else if (bo.st === 'stun') {
       if (bo.t <= 0) { bo.st = 'walk'; bo.t = 3.2 + rnd(S) * 1.2; }
     } else if (bo.st === 'hurt') {
@@ -501,7 +520,7 @@
       if (bo.t <= 0) bo.st = 'gone';
     }
     // 歩きまわっているあいだに、体にふれる
-    if (bo.st === 'walk' || bo.st === 'jump') { const p = bossPos(S); if (len(sub(p, h.x)) < 1.6 + HR + 0.2) hurt(S, p); }
+    if (bo.st === 'walk' || bo.st === 'jump' || bo.st === 'aim' || bo.st === 'charge') { const p = bossPos(S); if (len(sub(p, h.x)) < 1.6 + HR + 0.2) hurt(S, p); }
     else if (bo.st === 'land') { const p = bossPos(S); if (len(sub(p, h.x)) < 1.5 + HR) hurt(S, p); }
     // 気絶中にふんづける
     if (bo.st === 'stun' && h.pound === 0) { const p = bossPos(S); if (len(sub(p, h.x)) < 1.6 + HR + 0.2 && dot(sub(h.x, p), h.up) > 0.9 && dot(h.v, h.up) < -1) { bossHit(S); h.v = add(sub(h.v, mul(h.up, dot(h.v, h.up))), mul(h.up, 11)); h.on = -1; } }
@@ -526,7 +545,7 @@
     const dir = add(mul(fw, -Math.cos(p)), mul(up, Math.sin(p))); const tgt = add(h.x, mul(up, 0.7));
     let dd = dist || 7.5;
     // 手前からカメラの位置まで、少しずつ進んで、体にぶつかる手前でとめる（めりこまない・遮られない）
-    for (let t = 0.8; t <= dd; t += 0.35) { const pos = add(tgt, mul(dir, t)); let hit = false; for (let i = 0; i < S.L.bodies.length; i++) { if (!S.bOn[i]) continue; const f = S.xf[i], b = S.L.bodies[i]; if (len(sub(pos, f.p)) > b.br + 3) continue; if (sdfW(S, i, pos)[0] < 0.6) { hit = true; break; } } if (hit) { dd = Math.max(1.8, t - 0.5); break; } }
+    for (let t = 0.8; t <= dd; t += 0.35) { const pos = add(tgt, mul(dir, t)); let hit = false; for (let i = 0; i < S.L.bodies.length; i++) { if (!bAct(S, i)) continue; const f = S.xf[i], b = S.L.bodies[i]; if (len(sub(pos, f.p)) > b.br + 3) continue; if (sdfW(S, i, pos)[0] < 0.6) { hit = true; break; } } if (hit) { dd = Math.max(1.8, t - 0.5); break; } }
     return { pos: add(tgt, mul(dir, dd)), tgt, fw: norm(sub(tgt, add(tgt, mul(dir, dd)))), up, dist: dd };
   }
   // スティックの「あそび」と曲がり：dz 以下は 0、そこから 1 までをなめらかに（小さく倒すとゆっくり歩く）
@@ -539,6 +558,6 @@
   function unrle(s) { const o = []; if (!s) return o; for (const t of s.split(',')) { const p = t.split(':'), v = parseInt(p[0], 36), n = parseInt(p[1], 36); for (let i = 0; i < n; i++) o.push(v); } return o; }
   function replay(L, mid, rec, opt) { const S = create(L, mid, opt); for (let i = 0; i < rec.length && !S.over; i++) step(S, unpack(rec[i])); return S; }
 
-  const E = { DT, HR, B, K, DIF, rank, RANK_REWARD, SURF, compile, create, clone, hash, step, sdf, sdfW, xfAt, gravAt, entPos, entUp, bossPos, camFrame, camPose, stickCurve, quant, pack, unpack, rle, unrle, replay, projT, perp, nearestD, hurt, respawn, finish, geod, vec: { add, sub, mul, dot, cross, len, norm, rodr, mv, mtv, axM, mulM, clamp, slerpN }, isOn };
+  const E = { bodyActive: bAct, bodyWindow: bWin, DT, HR, B, K, DIF, rank, RANK_REWARD, SURF, compile, create, clone, hash, step, sdf, sdfW, xfAt, gravAt, entPos, entUp, bossPos, camFrame, camPose, stickCurve, quant, pack, unpack, rle, unrle, replay, projT, perp, nearestD, hurt, respawn, finish, geod, vec: { add, sub, mul, dot, cross, len, norm, rodr, mv, mtv, axM, mulM, clamp, slerpN }, isOn };
   if (typeof module !== 'undefined' && module.exports) module.exports = E; else root.GalaxyEngine = E;
 })(typeof window !== 'undefined' ? window : globalThis);

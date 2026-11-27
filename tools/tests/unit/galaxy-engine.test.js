@@ -98,4 +98,18 @@ test('shield power absorbs one hit; final boss gets more shockwave rings as it l
   const LV = require(path.join(ROOT, 'galaxy/levels.js')), L8 = LV.compile(E, 'g8'); const rings = hp => { const S8 = E.create(L8, 'g8m3'); S8.boss.hp = hp + S8.boss.xh; S8.boss.st = 'land'; S8.boss.t = 1; S8.boss.ring = 0.5; S8.boss.d = [0, 1, 0]; E.step(S8, {}); return S8.boss.nr; };
   eq(rings(6), 1); eq(rings(4), 2); eq(rings(2), 3);
 });
+test('crumbling platforms vanish a moment after you stand on them, then come back; phase platforms follow a fixed rhythm (no random timers)', () => {
+  const L = mk([{ id: 'p', k: 'b', p: [0, 0, 0], h: [3, 0.5, 3], cr: 0.5, back: 2 }, { id: 'q', k: 'b', p: [20, 0, 0], h: [3, 0.5, 3], ph: { T: 4, d: 0.5, o: 0 } }], [], [], { p: [0, 1.2, 0] }); const S = E.create(L, 'm'); runN(S, 10); ok(E.bodyActive(S, 0), 'solid at first'); runN(S, 40); ok(!E.bodyActive(S, 0), 'gone after standing'); ok(S.dis[0] > 0); runN(S, 120); ok(E.bodyActive(S, 0) || S.dis[0] <= 0, 'back after a few seconds');
+  const act = t => { const S2 = E.create(L, 'm'); S2.t = t; return E.bodyActive(S2, 1); }; ok(act(0.5) && !act(2.5) && act(4.5), 'phase rhythm: on, off, on'); eq(E.bodyWindow(Object.assign(E.create(L, 'm'), { t: 1.5 }), 1) > 0, true);
+});
+test('wind zones lift the hero (only in their mission and only during the gust); switches raise bridges; rolling rock beats walkers', () => {
+  const Lw = E.compile({ id: 't', bodies: [sph()], zones: [{ s: 'box', c: [0, 10, 0], h: [3, 6, 3], m: 'wind', acc: [0, 60, 0], drag: 1, gust: { T: 6, d: 0.7 }, ms: ['m'] }], ents: [], missions: [{ id: 'm', start: { p: [0, 7.0, 0] } }, { id: 'n', start: { p: [0, 7.0, 0] } }] });
+  const up = id => { const S = E.create(Lw, id); runN(S, 80); return S.h.x[1]; }; ok(up('m') > 9, 'lifted ' + up('m')); ok(up('n') < 7.2, 'other missions are not');
+  const Ls = E.compile({ id: 't', bodies: [sph(), { id: 'br', k: 'b', p: [0, 0, 20], h: [2, 0.5, 2], sw: 3 }], ents: [{ k: 'switch', b: 'a', l: [0, 6.8, 0], n2: 3, id: 'sw' }], missions: [{ id: 'm', start: { p: [0, 6.5, 0.4] } }] }); const S = E.create(Ls, 'm'); ok(!E.bodyActive(S, 1)); runN(S, 3); ok(E.bodyActive(S, 1), 'the bridge appears once the switch is pressed');
+  const Lr = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 0, ph: 0 }], missions: [{ id: 'm', start: { p: [0, 6.5, 1.8] } }] }); const R = E.create(Lr, 'm'); R.h.pw = { k: 'rock', t: 99 }; runN(R, 40, { sx: 0, sy: 0 }); R.h.x = [0, 6.5, 0.3]; runN(R, 3); ok(R.e[0] === 1 || R.cnt.kill >= 1 || R.h.hp === 3, 'the rolling hero is not hurt by a walker');
+});
+test('charging boss: a telegraphed aim, then a dash, then a dazed opening (never a surprise hit)', () => {
+  const L = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, spd: 0.5, charge: 1 }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(L, 'm'); const seen = []; for (let i = 0; i < 4800 && seen.filter(x => x === 'stun').length < 2; i++) { E.step(S, {}); if (seen[seen.length - 1] !== S.boss.st) seen.push(S.boss.st); }
+  const ai = seen.indexOf('aim'); ok(ai >= 0 && seen[ai + 1] === 'charge' && seen[ai + 2] === 'stun', 'order ' + seen.join('>')); ok(seen.indexOf('jump') < ai, 'a slam first, then the charge');
+});
 run('galaxy-engine');

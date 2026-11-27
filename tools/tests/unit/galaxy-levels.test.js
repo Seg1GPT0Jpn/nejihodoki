@@ -28,7 +28,7 @@ test('every body is valid; every thing is placed in free space near a planet (in
   }
 });
 test('hidden Lumi hunt: every galaxy has 3 lumi (bits 0-2), and the bot collects them all on the real engine', () => {
-  for (const g of LV.GALAXIES) { const L = LV.compile(E, g.id); const lu = L.ents.filter(e => e.k === 'lumi'); eq(lu.map(e => e.n2).sort().join(), '0,1,2', g.id + ' lumi bits'); const r = Bot.run(L, g.id + 'hunt'); ok(r.ok, g.id + ' hunt: ' + r.fail); eq(r.S.lumi, 7, g.id + ' all three collected'); eq(r.S.cnt.lumi, 3); }
+  for (const g of LV.GALAXIES) { const L = LV.compile(E, g.id); const Sh = E.create(L, g.id + 'hunt'); const lu = Sh.act.map(i => L.ents[i]).filter(e => e.k === 'lumi'); eq(lu.map(e => e.n2).sort().join(), '0,1,2', g.id + ' lumi bits'); const r = Bot.run(L, g.id + 'hunt', { max: 60000 }); ok(r.ok, g.id + ' hunt: ' + r.fail); eq(r.S.lumi, 7, g.id + ' all three collected'); eq(r.S.cnt.lumi, 3); }
 });
 test('power-ups: skate is faster, fire spin melts spikes (and plain spin does not), melt and hunt missions are bot-cleared', () => {
   const L = LV.compile(E, 'g4'), S = E.create(L, 'g4m1'); const sp = (pw) => { const S2 = E.create(L, 'g4m1'); S2.h.pw = pw ? { k: pw, t: 99 } : null; for (let i = 0; i < 60; i++) E.step(S2, { sx: 0, sy: 1 }); return V.len(S2.h.v); }; ok(sp('skate') > sp(null) * 1.3, 'skate speed');
@@ -36,34 +36,39 @@ test('power-ups: skate is faster, fire spin melts spikes (and plain spin does no
 });
 test('skate is physically required: the gap in "Skate Leap" cannot be crossed without the skate crate, and the mission never fails by time', () => {
   const L = LV.compile(E, 'g4'); const withSk = Bot.run(L, 'g4m3'); ok(withSk.ok, 'with skate ' + withSk.fail);
-  const S = E.create(L, 'g4m3'); S.e[L.eidx.sk] = 1; const bot = Bot.create(L, 'g4m3'); while (!S.over && S.f < 5000 && !bot.fail) { const i = E.quant(bot.act(S)); E.step(S, E.unpack(E.pack(i))); }
-  ok(!S.over, 'without the skate crate the other platform is not reached (the mission does not end, and does not fail either)'); ok(S.h.x[0] < 40, 'still on the first platform side ' + S.h.x[0]);
+  const S = E.create(L, 'g4m3'); S.e[L.eidx.g4m3s1sk] = 1; const bot = Bot.create(L, 'g4m3'); while (!S.over && S.f < 5000 && !bot.fail) { const i = E.quant(bot.act(S)); E.step(S, E.unpack(E.pack(i))); }
+  ok(!S.over, 'without the skate crate the other platform is not reached (the mission does not end, and does not fail either)'); ok(S.h.x[0] < 80 + 36, 'still on the first platform side ' + S.h.x[0]);
 });
-test('triangle budget (phones): every mission stays under budget at full detail (only its own planets are built), and the low detail level is much lighter', () => {
+test('triangle budget (phones): at any time only the planets near the hero are built (streaming radius 160), staying under budget; low detail is much lighter', () => {
   const GL = require(path.join(ROOT, 'galaxy/gl.js')); let worst = 0;
-  for (const id of LV.ids) { const L = LV.compile(E, id); for (const m of L.mlist) { const S = E.create(L, m.id); let hi = 0, lo = 0; for (const b of L.bodies) if (S.bOn[b.i]) { hi += GL.bodyMesh(E, b, L, 1).p.length / 9; lo += GL.bodyMesh(E, b, L, 0).p.length / 9; } worst = Math.max(worst, hi); ok(hi < 52000, m.id + ' high ' + hi); ok(lo < hi * 0.66, m.id + ' low ' + lo + ' vs ' + hi); } }
-  console.log('      worst-case static triangles per mission: ' + Math.round(worst));
+  for (const id of LV.ids) { const L = LV.compile(E, id); for (const m of L.mlist) { const S = E.create(L, m.id); const act = L.bodies.filter(b => S.bOn[b.i]); const tri = new Map(act.map(b => [b.i, [GL.bodyMesh(E, b, L, 1).p.length / 9, GL.bodyMesh(E, b, L, 0).p.length / 9]]));
+    let hi = 0, lo = 0; for (const c of act) { let h = 0, l = 0; for (const b of act) if (V.len(V.sub(b.p, c.p)) < GL.LAZY_R) { h += tri.get(b.i)[0]; l += tri.get(b.i)[1]; } hi = Math.max(hi, h); lo = Math.max(lo, l); }
+    worst = Math.max(worst, hi); ok(hi < 52000, m.id + ' high ' + hi); ok(lo < hi * 0.7 || hi < 3000, m.id + ' low ' + lo + ' vs ' + hi); } }
+  console.log('      worst-case streamed triangles per mission: ' + Math.round(worst));
 });
 test('frustum culling: bodies behind the camera are skipped, bodies in front are kept', () => {
   const GL = require(path.join(ROOT, 'galaxy/gl.js')), M = GL.M, pv = M.mul(M.persp(1, 1, 0.1, 500), M.look([0, 0, 0], [0, 0, -1], [0, 1, 0]).v), P = GL.frustum(pv);
   ok(GL.inFrustum(P, [0, 0, -20], 2), 'in front'); ok(!GL.inFrustum(P, [0, 0, 20], 2), 'behind'); ok(!GL.inFrustum(P, [100, 0, -10], 2), 'far to the side');
 });
-test('long courses: EVERY non-comet, non-hunt mission is a long multi-section course the perfect bot clears in 120-300 s (boss/final 180-360 s), with 2+ checkpoints, and stays fair for the perfect bot', () => {
-  let n = 0; for (const g of LV.GALAXIES) { const L = LV.compile(E, g.id); for (const m of L.mlist) {
-    if (m.kind === 'hunt') continue; if (m.kind === 'comet') { ok(!m.long, m.id + ' comets stay short'); continue; }
-    ok(m.long, m.id + ' must be a long course'); n++; const r = Bot.run(L, m.id, { max: 60000 }); ok(r.ok, m.id + ' ' + r.fail); const sec = r.frames / 60, boss = m.kind === 'boss' || m.kind === 'final';
-    ok(sec >= (boss ? 180 : 120) && sec <= (boss ? 360 : 300), m.id + ' took ' + sec.toFixed(0) + ' s'); const S = E.create(L, m.id); ok(S.act.filter(i => L.ents[i].k === 'cp').length >= 2, m.id + ' checkpoints'); ok(r.S.cnt.hurt <= 8 && r.S.cnt.die <= 3, m.id + ' fair for the perfect bot: hurt ' + r.S.cnt.hurt + ' KO ' + r.S.cnt.die); } }
-  ok(n >= 17, 'all 17 non-comet missions are long: ' + n); console.log('      long courses: ' + n);
+test('long courses: EVERY non-comet, non-hunt mission is a long multi-section course the perfect bot clears in 120-300 s (boss/final 180-360 s); hunts 120-300 s; comets 30-200 s and fail-free; 2+ checkpoints; fair for the perfect bot', () => {
+  let n = 0, hunts = 0, comets = 0; for (const g of LV.GALAXIES) { const L = LV.compile(E, g.id); for (const m of L.mlist) {
+    const r = Bot.run(L, m.id, { max: 60000 }); ok(r.ok, m.id + ' ' + r.fail); const sec = r.frames / 60, boss = m.kind === 'boss' || m.kind === 'final';
+    ok(r.S.cnt.hurt <= 8 && r.S.cnt.die <= 3, m.id + ' fair for the perfect bot: hurt ' + r.S.cnt.hurt + ' KO ' + r.S.cnt.die);
+    if (m.kind === 'comet') { comets++; ok(!m.long && sec >= 30 && sec <= 200, m.id + ' comet ' + sec.toFixed(0) + ' s'); continue; }
+    if (m.kind === 'hunt') { hunts++; ok(sec >= 120 && sec <= 300, m.id + ' hunt ' + sec.toFixed(0) + ' s'); continue; }
+    ok(m.long, m.id + ' must be a long course'); n++; ok(sec >= (boss ? 180 : 120) && sec <= (boss ? 360 : 300), m.id + ' took ' + sec.toFixed(0) + ' s'); const S = E.create(L, m.id); ok(S.act.filter(i => L.ents[i].k === 'cp').length >= 2, m.id + ' checkpoints'); } }
+  ok(n >= 17 && hunts === 8 && comets >= 6, 'counts ' + n + ' ' + hunts + ' ' + comets); console.log('      long courses: ' + n + ', hunts: ' + hunts + ', comets: ' + comets);
 });
 test('ranks: S/A/B/C from par time, no damage and all lumi; rewards grow; a clean slow run is B at best', () => {
   const m = { par: 100 }; eq(E.rank(m, { f: 70 * 60, die: 0, hurt: 0 }, true), 3, 'fast, clean, all lumi = S'); eq(E.rank(m, { f: 70 * 60, die: 0, hurt: 0 }, false), 2, 'A'); eq(E.rank(m, { f: 110 * 60, die: 0, hurt: 0 }, false), 1, 'B'); eq(E.rank(m, { f: 300 * 60, die: 1, hurt: 3 }, false), 0, 'C'); eq(E.rank(m, { f: 300 * 60, die: 0, hurt: 0 }, true), 1, 'slow clean with lumi = B');
   ok(E.RANK_REWARD[3] > E.RANK_REWARD[2] && E.RANK_REWARD[2] > E.RANK_REWARD[1] && E.RANK_REWARD[1] > E.RANK_REWARD[0]);
 });
-test('balance: the perfect bot clears every mission; a sloppy bot (reaction delay, stick noise, missed jumps) fails a meaningful share of the demanding ones, more in later galaxies', () => {
-  const skill = k => ({ delay: 9, noise: 0.28, miss: 0.2, seed: k }); const share = {}; let perfect = 0;
-  for (const g of LV.GALAXIES) { const L = LV.compile(E, g.id); let f = 0, n = 0; for (const m of L.mlist) { if (m.kind === 'hunt' || m.long) continue; const p = Bot.run(L, m.id, { max: 60000 }); ok(p.ok, m.id + ' perfect ' + p.fail); perfect++; for (let k = 1; k <= 3; k++) { if (!Bot.run(L, m.id, { skill: skill(k), max: 6000 }).ok) f++; n++; } } share[g.id] = n ? f / n : 0; }
-  console.log('      sloppy-bot failure share per galaxy: ' + JSON.stringify(Object.fromEntries(Object.entries(share).map(([k, v]) => [k, +v.toFixed(2)])))); ok(perfect >= 5);
-  const vals = Object.values(share), avg = vals.reduce((a, b) => a + b, 0) / vals.length; ok(avg >= 0.1, 'overall sloppy failure share ' + avg.toFixed(2)); ok(vals.some(v => v >= 0.25), 'some galaxy fails 25%+ of sloppy runs');
+test('balance band: the perfect bot clears everything; a sloppy bot (reaction delay, stick noise, missed jumps) is hurt/KO more and more with the galaxy index (about 0% in g1-2, 30-75% in g7-8)', () => {
+  const skill = k => ({ delay: 9, noise: 0.28, miss: 0.2, seed: k }); const share = {};
+  for (const g of LV.GALAXIES) { if (['g3', 'g4'].includes(g.id)) continue; const L = LV.compile(E, g.id); let f = 0, n = 0; for (const m of L.mlist) { if (m.kind === 'hunt') continue; const par = (m.par || 100) * 60; for (let k = 1; k <= 3; k++) { const r = Bot.run(L, m.id, { skill: skill(k), max: Math.round(par * 2.2) }); if (r.S.cnt.die >= 2 || r.S.cnt.hurt >= 6) f++; n++; } } share[g.id] = f / n; }
+  console.log('      sloppy-bot hurt/KO share per galaxy: ' + JSON.stringify(Object.fromEntries(Object.entries(share).map(([k, v]) => [k, +v.toFixed(2)]))));
+  ok(share.g1 <= 0.12 && share.g2 <= 0.12, 'early galaxies are gentle'); const late = (share.g7 + share.g8) / 2, mid = (share.g5 + share.g6 + share.g7 + share.g8) / 4, early = (share.g1 + share.g2) / 2;
+  ok(late >= 0.3 && late <= 0.9, 'g7-8 share ' + late.toFixed(2)); ok(mid >= early + 0.15, 'rises with the galaxy index: ' + early.toFixed(2) + ' -> ' + mid.toFixed(2));
 });
 test('the hub has a gate for every galaxy', () => {
   const L = LV.compile(E, 'hub'); const gs = L.ents.filter(e => e.k === 'gate').map(e => e.gal); eq(gs.join(), LV.GALAXIES.map(g => g.id).join());

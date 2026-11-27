@@ -57,6 +57,8 @@
     m('lantern', b => { b.box(0, 0.5, 0, 0.1, 1.0, 0.1, C.dark); b.box(0, 1.15, 0, 0.5, 0.5, 0.5, [0.35, 0.3, 0.45]); b.cone(0, 1.4, 0, 0.42, 0.28, C.dark, 4, 0.05); });
     m('lantern_on', b => { b.box(0, 0.5, 0, 0.1, 1.0, 0.1, C.dark); b.box(0, 1.15, 0, 0.5, 0.5, 0.5, [2.2, 1.7, 0.6]); b.cone(0, 1.4, 0, 0.42, 0.28, C.dark, 4, 0.05); });
     m('shield', b => { b.ell(0, 0, 0, 0.5, 0.5, 0.18, [0.5, 0.85, 1.4], 6, 12); b.ring(0, 0, 0, 0.5, 0.06, C.white, 18, 4); });
+    m('switch', b => { b.ell(0, 0, 0, 0.7, 0.14, 0.7, C.metal2, 3, 12); b.ell(0, 0.12, 0, 0.45, 0.1, 0.45, [0.6, 0.9, 1.4], 3, 10); });
+    m('rock', b => { b.ell(0, 0, 0, 0.5, 0.45, 0.5, [0.55, 0.5, 0.45], 5, 9); b.ell(0.2, 0.2, 0.3, 0.15, 0.1, 0.12, [0.7, 0.66, 0.6], 3, 6); });
     m('ring', b => { b.ring(0, 0, 0, 1, 0.06, [1, 1, 1], 28, 4); });
     m('stonering', b => { b.ring(0, 0, 0, 1, 0.035, [1, 0.8, 0.4], 28, 4); });
   }
@@ -136,10 +138,11 @@
         case 'heart': O('heart', bob, spin, up, 0.8, null, 0.35); break;
         case 'launch': if (e.mode === 'cannon') O('cannon', V.add(p, V.mul(up, -0.5)), spin, up, 1, null, 0); else if (e.mode === 'pipe') O('pipe', V.add(p, V.mul(up, -0.5)), spin, up, 1, null, 0); else { O('launch', V.add(p, V.mul(up, 0.5)), ROT(up, t * 1.4), up, 1, null, 0.6); fx.glow(V.add(p, V.mul(up, 0.5)), [1, 0.5, 0.85], 9, 0.55); } break;
         case 'pad': O('pad', V.add(p, V.mul(up, -0.2)), spin, up, 1, null, 0.1); break;
-        case 'crate': O('crate', p, ROT(up, i), up, 1, e.drop === 'heart' ? [1, 0.7, 0.75] : e.drop === 'bee' ? [1, 1, 0.6] : e.drop === 'spring' ? [1, 0.7, 0.7] : e.drop === 'cloud' ? [0.8, 0.9, 1] : e.drop === 'skate' ? [0.7, 0.85, 1.2] : e.drop === 'fire' ? [1.3, 0.8, 0.6] : e.drop === 'shield' ? [0.7, 1, 1.3] : null, 0); break;
+        case 'crate': O('crate', p, ROT(up, i), up, 1, e.drop === 'heart' ? [1, 0.7, 0.75] : e.drop === 'bee' ? [1, 1, 0.6] : e.drop === 'spring' ? [1, 0.7, 0.7] : e.drop === 'cloud' ? [0.8, 0.9, 1] : e.drop === 'skate' ? [0.7, 0.85, 1.2] : e.drop === 'fire' ? [1.3, 0.8, 0.6] : e.drop === 'shield' ? [0.7, 1, 1.3] : e.drop === 'rock' ? [0.8, 0.75, 0.7] : null, 0); break;
         case 'walker': { const dv = V.norm(V.cross(up, V.mv(S.xf[e.bi].R, e.ax))); const sq = 1 + Math.sin(t * 6 + i) * 0.06; if (e.look === 'ghost') { O('ghost', V.add(p, V.mul(up, 0.2 + Math.sin(t * 3 + i) * 0.15)), dv, up, 1, null, 0.5); fx.glow(p, [0.6, 0.7, 1], 4, 0.3); } else O('walker', p, dv, up, [sq, 2 - sq, sq], null, 0); break; }
         case 'spike': O('spike', V.add(p, V.mul(up, -0.1)), spin, up, 1, null, 0.1); break;
         case 'cp': { const on = S.cp === i; O('cp', V.add(p, V.mul(up, -0.5)), ROT(up, 0.6), up, 1, on ? [0.7, 1, 0.7] : [0.8, 0.8, 0.9], on ? 0.3 : 0); break; }
+        case 'switch': { const on = S.lit.indexOf(i) >= 0; O('switch', V.add(p, V.mul(up, -0.45)), spin, up, 1, on ? [0.5, 1, 0.6] : null, on ? 0.9 : 0.3); fx.glow(p, on ? [0.5, 1, 0.6] : [0.6, 0.8, 1], 5, 0.4); break; }
         case 'lantern': { const lit = S.lit.indexOf(i) >= 0; O(lit ? 'lantern_on' : 'lantern', V.add(p, V.mul(up, -0.5)), ROT(up, 0.3), up, 1, null, lit ? 0.8 : 0); if (lit) fx.glow(V.add(p, V.mul(up, 0.7)), [1, 0.8, 0.35], 14, 0.55); else fx.glow(V.add(p, V.mul(up, 0.7)), [0.6, 0.5, 1], 3, 0.25); break; }
         case 'power': O(e.type, bob, spin, up, 1, null, 0.5); fx.glow(p, [1, 0.9, 0.4], 4, 0.4); break;
         case 'gate': { const open = !opt.locked || !opt.locked[e.gal]; O('gate', V.add(p, V.mul(up, -0.3)), ROT(up, 0.5 + i * 2), up, 1, open ? null : [0.45, 0.45, 0.55], open ? 0.45 : 0); if (open) fx.glow(V.add(p, V.mul(up, 1.2)), [0.5, 0.6, 1], 9, 0.5); break; }
