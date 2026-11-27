@@ -98,6 +98,26 @@
     },
   };
 
+  // フリスビーゴルフ：ディスクをバスケット（まとの かご）にいれる。5ホール、パー付き。投げるたびに、いまの場所からバスケットを正面に見る
+  const DG = [{ dmin: 40, dmax: 70 }, { dmin: 55, dmax: 95 }, { dmin: 75, dmax: 130 }];
+  Disc.golf = {
+    HOLES: 5, MAXT: 6,
+    newRun(diff, seed) { diff = clamp(diff | 0, 0, 2); const r = rng(hash32('dgolf:' + seed)), cfg = DG[diff], holes = []; for (let i = 0; i < Disc.golf.HOLES; i++) { const d = Math.round(cfg.dmin + r() * (cfg.dmax - cfg.dmin)); holes.push({ d, par: d < 62 ? 2 : 3 }); } return { kind: 'discgolf', diff, seed, holes, hole: 0, d: holes[0].d, strokes: 0, results: [], total: 0, done: false, holed: false, last: null }; },
+    // 1投。p = { v, pitch, yaw, curve }。バスケットの高さ（かごのわ）を通ったら入る。1.1m以内におちたら ちょっくりタップインで入る
+    throwDisc(run, p) {
+      if (run.done || run.holed) return null; const f = Disc.fly(p), d = run.d; let hit = null;
+      for (const q of f.pts) { if (q.t > 0.3 && Math.hypot(q.x, q.z - d) < 0.7 && q.h > 0.2 && q.h < 1.7) { hit = q; break; } }
+      const L = f.land, near = Math.hypot(L.x, L.z - d); run.strokes++; const holed = !!hit || near < 0.9, o = { p: { v: p.v, pitch: p.pitch, yaw: p.yaw, curve: p.curve }, pts: f.pts, land: L, holed, chain: !!hit, near, from: d, strokes: run.strokes };
+      if (holed) { run.holed = true; const h = run.holes[run.hole], pts = Math.max(0, 10 + 5 * (h.par - run.strokes)); run.results.push({ par: h.par, strokes: run.strokes, pts }); run.total += pts; o.pts = pts; if (run.results.length >= Disc.golf.HOLES) run.done = true; }
+      else if (run.strokes >= Disc.golf.MAXT) { const h = run.holes[run.hole]; run.holed = true; run.results.push({ par: h.par, strokes: Disc.golf.MAXT, pts: 0, pickup: true }); o.pickup = true; if (run.results.length >= Disc.golf.HOLES) run.done = true; }
+      else run.d = Math.max(1.2, near);
+      run.last = o; return o;
+    },
+    nextHole(run) { if (run.done) return false; run.hole++; run.d = run.holes[run.hole].d; run.strokes = 0; run.holed = false; run.last = null; return true; },
+    // ボット：バスケットに入る（かごのわを通る）投げ方を探す
+    solve(run, curve) { const d = run.d; let best = null; for (const cv of curve == null ? [0, 0.4, -0.4] : [curve]) for (let v = 8; v <= 30; v += 1) for (let pitch = 0.08; pitch <= 0.5; pitch += 0.04) for (let yaw = -0.35; yaw <= 0.35; yaw += 0.02) { const f = Disc.fly({ v, pitch, yaw, curve: cv }); let sc = Math.hypot(f.land.x, f.land.z - d); for (const q of f.pts) if (q.t > 0.3 && q.h > 0.2 && q.h < 1.7) sc = Math.min(sc, Math.hypot(q.x, q.z - d) - 0.8); if (!best || sc < best.sc) best = { v, pitch, yaw, curve: cv, sc }; } return best; },
+  };
+
   // =====================================================================================
   // バスケシュート：横から見たコート。フリックの向きが角度、速さが強さ。10本
   // =====================================================================================

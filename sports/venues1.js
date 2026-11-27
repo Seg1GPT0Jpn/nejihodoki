@@ -98,7 +98,7 @@
   // =====================================================================================
   // ディスクドッグ
   // =====================================================================================
-  V.disc = function (env) {
+  const discVenue = function (env) {
     const L = env.L; let w = 300, h = 400, run = null, st = 'ready', t = 0, ptr = null, gest = null, th = null, ft = 0, rest = 0, pops = [], kt = 0, pre = null, dogT = 0, keys = {}, kcurve = 0;
     const Sim = S1.Disc;
     function proj(x, z, hh) { const hor = h * 0.27, yb = h * 0.84, u = Math.sqrt(clamp(z, 0, 90) / 90), k = 0.22 + 0.78 * (1 - u), px = Math.min(w * 0.042, h * 0.03) * k; return { x: w / 2 + x * px, y: hor + (yb - hor) * (1 - u) - (hh || 0) * px * 1.3, s: px * 6 }; }
@@ -159,6 +159,45 @@
       },
     };
   };
+
+  // フリスビーゴルフ：バスケットをねらって投げ、おちた場所からまた投げる
+  const discGolfVenue = function (env) {
+    const L = env.L, Sim = S1.Disc, GF = Sim.golf; let w = 300, h = 400, run = null, st = 'ready', ptr = null, gest = null, th = null, ft = 0, rest = 0, pops = [], kt = 0, pre = null;
+    function proj(x, z, hh) { const hor = h * 0.27, yb = h * 0.84, u = Math.sqrt(clamp(z, 0, 140) / 140), k = 0.22 + 0.78 * (1 - u), px = Math.min(w * 0.042, h * 0.03) * k; return { x: w / 2 + x * px, y: hor + (yb - hor) * (1 - u) - (hh || 0) * px * 1.3, s: px * 6 }; }
+    function start() { run = GF.newRun(env.diff, env.seed); st = 'ready'; th = null; pops = []; pre = null; hud(); env.status(L('バスケットをねらってフリック！ ゆるいカーブで まわりこませよう', 'Flick toward the basket! Use a curve to bend around.')); }
+    function hud() { const hl = run.holes[Math.min(run.hole, GF.HOLES - 1)]; env.hud(L('ホール ', 'Hole ') + (run.hole + 1) + '/' + GF.HOLES + '  ' + L('パー', 'Par ') + hl.par + '  ' + (run.strokes + 1) + L('投め  ', ' throw  ') + Math.round(run.d) + 'm  ' + L('てん ', 'Pts ') + run.total); }
+    function params(v) { const spd = clamp(v.speed, 0.2, 3.2), len = clamp(v.len, 0, h * 0.5); return { v: 8 + 6.2 * spd, pitch: 0.12 + 0.34 * clamp(len / (h * 0.4), 0, 1), yaw: clamp(Math.atan2(v.dx, -v.dy), -1.1, 1.1) * 0.5, curve: gest ? gest.curve(260) : 0 }; }
+    function after() {
+      const r = th; if (r.holed) { env.sfx(r.strokes === 1 ? 'win' : 'clear'); const rs = run.results[run.results.length - 1], d = rs.strokes - rs.par; pops.push({ txt: r.chain ? (r.strokes === 1 ? L('ホールインワン！', 'Ace!') : L('チェーンにカラン！', 'Chains!')) : L('タップイン！', 'Tap-in!'), t: 0, col: PAL.sun }); if (r.strokes === 1) env.stat('hio'); if (d < 0) env.stat('birdie'); st = 'holed'; rest = 1.8; env.status(L('+' + rs.pts + '点', '+' + rs.pts + ' pts')); }
+      else if (r.pickup) { env.sfx('fail'); pops.push({ txt: L('ここまで…', 'Pick up'), t: 0, col: '#fff' }); st = 'holed'; rest = 1.6; }
+      else { env.sfx('tap'); pops.push({ txt: Math.round(r.near) + L('m のこり', ' m left'), t: 0, col: '#fff' }); st = 'ready'; }
+      hud();
+    }
+    return {
+      start, resize(a, b) { w = a; h = b; },
+      down(x, y, id, e) { if (st !== 'ready' || y < h * 0.12) return; ptr = id; gest = new Gesture(); gest.add(x, y, nowMs(e)); },
+      move(x, y, id, e) { if (ptr !== id || !gest) return; gest.add(x, y, nowMs(e)); const v = gest.vec(220); if (env.diff < 2 && v.len > 30) pre = Sim.fly(params(v)).pts; else pre = null; },
+      up(x, y, id, e) { if (ptr !== id || !gest) return; gest.add(x, y, nowMs(e)); const v = gest.vec(160); ptr = null; pre = null; if (v.len < 50 || v.dy > -20) { gest = null; env.status(L('もっと長く、上へスワイプ！', 'Swipe longer, upward!')); return; } const p = params(v); gest = null; th = GF.throwDisc(run, p); if (th) { st = 'fly'; ft = 0; env.sfx('drop'); env.noise(0.12, { vol: 0.06, freq: 2600 }); env.buzz(10); } },
+      key(code, down) { if (down && code === 'Space' && st === 'ready') { th = GF.throwDisc(run, { v: 20, pitch: 0.2, yaw: 0, curve: 0 }); if (th) { st = 'fly'; ft = 0; env.sfx('drop'); } } },
+      update(dt) {
+        if (!run) return; kt += dt; for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 1.4);
+        if (st === 'fly') { ft += dt; const end = th.pts[th.pts.length - 1].t; if (ft >= end + 0.2) after(); }
+        else if (st === 'holed') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; env.done({ score: run.total, detail: { holes: run.results.length, strokes: run.results.reduce((a, r) => a + r.strokes, 0), aces: run.results.filter(r => r.strokes === 1).length } }); } else { GF.nextHole(run); st = 'ready'; hud(); } } }
+      },
+      draw(g) {
+        if (!run) return; const hor = h * 0.27; A.sky(g, w, h, hor, kt); g.fillStyle = PAL.sea1; g.fillRect(0, hor - h * 0.03, w, h * 0.03); g.fillStyle = lin(g, 0, hor, 0, h, PAL.grass1, PAL.grass0); g.fillRect(0, hor, w, h - hor);
+        for (let z = 0; z < 140; z += 20) { const a = proj(-60, z), c = proj(0, z + 20); g.fillStyle = (z / 20) % 2 ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.05)'; g.fillRect(0, c.y, w, a.y - c.y); if (z > 0) text(g, z + 'm', w * 0.08, a.y - 4, fontPx(w, h) - 3, { color: 'rgba(255,255,255,.9)', stroke: 'rgba(18,59,87,.4)' }); }
+        const b = proj(0, run.d, 0); g.strokeStyle = '#555'; g.lineWidth = Math.max(2, b.s * 0.04); g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x, b.y - b.s * 0.42); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(b.x + k * b.s * 0.04, b.y - b.s * 0.36); g.lineTo(b.x + k * b.s * 0.015, b.y - b.s * 0.22); g.stroke(); } ell(g, b.x, b.y - b.s * 0.22, b.s * 0.1, b.s * 0.03, '#ffd24d', PAL.ink, 1.5); ell(g, b.x, b.y - b.s * 0.38, b.s * 0.09, b.s * 0.025, '#e5484d', PAL.ink, 1.2); text(g, Math.round(run.d) + 'm', b.x, b.y - b.s * 0.6, fontPx(w, h));
+        const me = proj(0, 0); A.mascot(g, me.x, me.y + 6, h * 0.19, { kind: env.kind, pose: st === 'fly' ? 'swing' : st === 'holed' && th && th.holed ? 'cheer' : 'idle', t: kt });
+        const disc = q => { const p = proj(q.x, q.z, q.h), sh = proj(q.x, q.z, 0); ell(g, sh.x, sh.y, p.s * 0.06 + 3, 2.5, 'rgba(0,0,0,.22)'); g.save(); g.translate(p.x, p.y); ell(g, 0, 0, Math.max(7, p.s * 0.1), Math.max(3, p.s * 0.04), PAL.coral, PAL.ink, 1.5); g.restore(); };
+        if (pre) { g.setLineDash([3, 5]); g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2; g.beginPath(); pre.forEach((q, i) => { const p = proj(q.x, q.z, q.h); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }); g.stroke(); g.setLineDash([]); }
+        if (st === 'fly') { const pts = th.pts; let q = pts[pts.length - 1]; for (let i = 0; i < pts.length; i++) if (pts[i].t >= ft) { q = pts[i]; break; } disc(q); } else if (st === 'ready') disc({ x: 0.3, z: 0.3, h: 1.2 }); else if (st === 'holed' && th) disc(th.holed ? { x: 0, z: run.holes[run.hole] ? run.holes[run.hole].d : 0, h: 0.4 } : th.land);
+        for (const p of pops) text(g, p.txt, w / 2, h * 0.5 - p.t * 24, fontPx(w, h) * 1.6, { color: p.col });
+        if (gest && gest.pts.length > 1) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); gest.pts.forEach((q, i) => { if (i) g.lineTo(q.x, q.y); else g.moveTo(q.x, q.y); }); g.stroke(); }
+      },
+    };
+  };
+  V.disc = function (env) { return (env.opts || {}).variant === 'golf' ? discGolfVenue(env) : discVenue(env); };
 
   // =====================================================================================
   // バスケシュート

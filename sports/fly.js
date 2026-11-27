@@ -4,7 +4,7 @@
 //   view.flightVenue(env)：飛行の「会場」（venues と同じ { start, resize, down, move, up, key, update, draw, button }）
 (function (root) {
   'use strict';
-  const W = root.SportsWorld, GL = root.SportsGL, ART = root.SportsArt, C = root.SportsCore;
+  const I = root.SportsIsland, W = root.SportsWorld, GL = root.SportsGL, ART = root.SportsArt, C = root.SportsCore;
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), TAU = Math.PI * 2, lerp = (a, b, t) => a + (b - a) * t;
   const NAMES = { town: ['ぽかぽかタウン', 'Pokapoka Town'], lighthouse: ['しろい灯台', 'White Lighthouse'], harbor: ['のんびり港', 'Sleepy Harbor'], airstrip: ['空港（ひこうじょう）', 'Airstrip'], volcano: ['まるい火山', 'Round Volcano'] };
   const spotName = (id, EN) => { if (NAMES[id]) return NAMES[id][EN ? 1 : 0]; const s = C.sportOf(id); return s ? (EN ? s.en : s.ja) : id; };
@@ -19,12 +19,32 @@
     view.setHour(view.hour);
 
     // ---------- ハブ：島を見わたすカメラ ----------
-    const hub = view.hub = { yaw: 0.4, auto: true, dist: 2300, h: 1250, tx: 0, ty: 20, tz: 0, goal: null, focusT: 0, sel: -1, t: 0, drag: null, tipId: null };
+    const hub = view.hub = { yaw: 0.4, auto: true, dist: 1500, h: 900, tx: 0, ty: 20, tz: 0, goal: null, focusT: 0, sel: -1, t: 0, drag: null, tipId: null };
     hub.focus = id => { const m = world.markOf(id); if (!m) return; hub.goal = { x: m.x, y: m.y + 10, z: m.z, dist: id === 'volcano' ? 700 : 260, h: id === 'volcano' ? 380 : 130 }; hub.focusId = id; };
-    hub.overview = () => { hub.goal = { x: 0, y: 20, z: 0, dist: 2300, h: 1250 }; hub.focusId = null; };
+    hub.overview = () => { hub.goal = { x: 0, y: 20, z: 0, dist: 1500, h: 900 }; hub.focusId = null; };
     hub.camera = () => { const cx = hub.tx + Math.sin(hub.yaw) * hub.dist, cz = hub.tz + Math.cos(hub.yaw) * hub.dist, cy = hub.ty + hub.h; const dx = hub.tx - cx, dy = hub.ty - cy, dz = hub.tz - cz; return { x: cx, y: cy, z: cz, yaw: Math.atan2(dx, dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)), fov: 0.95 }; };
     hub.update = dt => { hub.t += dt; if (hub.auto && !hub.drag && !hub.focusId) hub.yaw += dt * 0.05; if (hub.goal) { const k = Math.min(1, dt * 2.2), g = hub.goal; hub.tx += (g.x - hub.tx) * k; hub.ty += (g.y - hub.ty) * k; hub.tz += (g.z - hub.tz) * k; hub.dist += (g.dist - hub.dist) * k; hub.h += (g.h - hub.h) * k; hub.arrived = Math.hypot(g.x - hub.tx, g.z - hub.tz) < 25; } };
-    hub.render = dt => R.render(hub.camera(), { list: [], wx: world.weather }, dt);
+    // ---------- 島のくらし：島の人・いきもの・ふね ----------
+    const life = view.life = { items: [], list: [] };
+    { const hash = (a, b) => { let k = (Math.imul(a, 374761393) + Math.imul(b, 668265263)) | 0; k = Math.imul(k ^ (k >>> 13), 1274126177); return ((k ^ (k >>> 16)) >>> 0) / 4294967296; };
+      const seaPoint = (m, out) => { let x = m.x, z = m.z; const l = Math.hypot(x, z) || 1; for (let k = 0; k < 40 && world.heightAt(x, z) > -1.5; k++) { x += x / l * 12; z += z / l * 12; } return { x: x + (x / l) * out, z: z + (z / l) * out }; };
+      I.NPCS.forEach((n, i) => { const m = world.markOf(n.spot); if (!m) return; const a = hash(i, 7) * 6.28, r = 16 + hash(i, 9) * 8, x = m.x + Math.cos(a) * r, z = m.z + Math.sin(a) * r; life.items.push({ kind: 'npc', id: n.id, i, x, z, y: Math.max(world.heightAt(x, z), 0.3), yaw: a + 3.14, tint: (() => { const c = ART.AVCOL[n.av.c]; const h2 = GL.hex(c[0]); return [h2[0] * 1.1, h2[1] * 1.1, h2[2] * 1.1]; })() }); });
+      const lh = world.markOf('lighthouse'), hb = world.markOf('harbor'), ap = world.markOf('airstrip'); const sea1 = seaPoint(hb, 20), sea2 = seaPoint(lh, 70);
+      life.sea1 = sea1; life.sea2 = sea2; life.wild = [{ kind: 'wild', id: 'turtle', x: sea1.x, z: sea1.z, y: -0.4 }, { kind: 'wild', id: 'crab', x: hb.x + 24, z: hb.z - 18, y: 0 }, { kind: 'wild', id: 'crab2', crab: 1, x: ap.x - 30, z: ap.z + 22, y: 0 }, { kind: 'wild', id: 'dolphin', x: sea2.x, z: sea2.z, y: -1 }, { kind: 'wild', id: 'gull', x: 0, z: 0, y: 120 }];
+    }
+    life.update = t => {
+      const list = [], items = []; const HALF = world.HALF;
+      for (const n of life.items) { const y = n.y + Math.abs(Math.sin(t * 2 + n.i)) * 0.15; list.push({ kind: 'npc', x: n.x, y, z: n.z, yaw: n.yaw + Math.sin(t * 0.6 + n.i) * 0.3, s: 1.5, tint: n.tint }); items.push({ kind: 'npc', id: n.id, x: n.x, y: y + 4.6, z: n.z }); }
+      for (let k = 0; k < 4; k++) { const a = t * (0.018 + k * 0.004) + k * 1.57, r = HALF * (0.8 + (k % 2) * 0.08); const x = Math.cos(a) * r, z = Math.sin(a) * r; list.push({ kind: 'boat', x, y: 0.1 + Math.sin(t * 1.3 + k) * 0.25, z, yaw: Math.atan2(-Math.sin(a), Math.cos(a)) , roll: Math.sin(t * 1.1 + k) * 0.06, s: 1.6, tint: [[1, 1, 1], [1, 0.9, 0.8], [0.9, 1, 1], [1, 0.8, 0.9]][k] }); }
+      const hb = world.markOf('harbor'); list.push({ kind: 'boat', x: hb.x + 10, y: 0.05 + Math.sin(t * 1.5) * 0.15, z: hb.z + 26, yaw: 1.2, roll: Math.sin(t) * 0.05, s: 1.4, tint: [1, 1, 1] });
+      for (let k = 0; k < 6; k++) { const a = t * (0.06 + k * 0.01) + k * 1.05, r = 350 + k * 110; list.push({ kind: 'bird', x: Math.cos(a) * r, y: 95 + k * 14 + Math.sin(t * 2 + k) * 4, z: Math.sin(a) * r, yaw: Math.atan2(-Math.sin(a), Math.cos(a)), roll: Math.sin(t * 7 + k) * 0.5, s: 1.2 }); }
+      const g0 = { x: Math.cos(t * 0.07) * 420, y: 112, z: Math.sin(t * 0.07) * 420 }; items.push({ kind: 'wild', id: 'gull', x: g0.x, y: g0.y + 3, z: g0.z });
+      const w = life.wild; list.push({ kind: 'turtle', x: w[0].x + Math.sin(t * 0.2) * 5, y: -0.45, z: w[0].z, yaw: t * 0.2, s: 1.6 }); items.push({ kind: 'wild', id: 'turtle', x: w[0].x, y: 1.5, z: w[0].z });
+      for (const c of [w[1], w[2]]) { list.push({ kind: 'crab', x: c.x + Math.sin(t * 0.8 + c.x) * 2, y: 0.2, z: c.z, yaw: 1.57, s: 1.4 }); items.push({ kind: 'wild', id: 'crab', x: c.x, y: 1.5, z: c.z }); }
+      const jp = (t % 16) / 16; if (jp < 0.2) { const u = jp / 0.2, hh = Math.sin(u * Math.PI) * 9; list.push({ kind: 'dolphin', x: w[3].x + u * 30 - 15, y: hh - 1, z: w[3].z, yaw: 1.57, pitch: Math.cos(u * Math.PI) * 0.9, s: 1.6 }); items.push({ kind: 'wild', id: 'dolphin', x: w[3].x + u * 30 - 15, y: hh + 3, z: w[3].z }); }
+      life.list = list; life.items2 = items;
+    };
+    hub.render = dt => { life.update(hub.t); R.render(hub.camera(), { list: life.list, wx: world.weather, fog: 5200, far: 5600 }, dt); };
     // 目印（2D の上描き）。items = [{ id, mark, x, y, r }]
     hub.items = []; hub.draw = (g, w, h, o) => {
       hub.items = []; const EN = o.EN; const cam = R.state.cam; const rb = Math.min(w, h);
@@ -32,9 +52,10 @@
         hub.items.push({ id: m.id, sport: sp, x: p.x, y: p.y, r, dist }); }
       hub.items.sort((a, b) => b.dist - a.dist);
       for (const it of hub.items) { if (it.sport) { ART.nodeDraw(g, it.sport, it.x, it.y, it.r, o.stars(it.id), { daily: o.daily === it.id, hot: o.sel === it.id, t: hub.t }); } else { g.beginPath(); g.arc(it.x, it.y, it.r * 0.55, 0, TAU); g.fillStyle = 'rgba(255,255,255,.85)'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(18,59,87,.8)'; g.stroke(); ART.text(g, it.id === 'airstrip' ? '✈' : it.id === 'town' ? '⌂' : it.id === 'lighthouse' ? '▲' : it.id === 'volcano' ? '▲' : '⚓', it.x, it.y, it.r * 0.7, { color: '#123b57', stroke: false }); } if (o.sel === it.id || (it.dist < 700 && it.r > 24)) { const lw = Math.min(w - 8, 14 * (spotName(it.id, EN).length + 2)); ART.rr(g, clamp(it.x - lw / 2, 4, w - lw - 4), it.y - it.r - 26, lw, 22, 9); g.fillStyle = 'rgba(18,59,87,.82)'; g.fill(); ART.text(g, spotName(it.id, EN), clamp(it.x, lw / 2 + 4, w - lw / 2 - 4), it.y - it.r - 15, 13, { stroke: false }); } }
+      life.screen = []; for (const it of life.items2 || []) { const p = R.project(it.x, it.y, it.z); if (!p || p.w > 1100 || p.x < 0 || p.x > w || p.y < 0 || p.y > h) continue; const sc = clamp(900 / p.w, 0.7, 1.5); life.screen.push({ kind: it.kind, id: it.id, x: p.x, y: p.y, r: 17 * sc }); const met = o.met && o.met(it.kind, it.id); g.beginPath(); g.arc(p.x, p.y, 13 * sc, 0, TAU); g.fillStyle = met ? 'rgba(255,255,255,.7)' : '#ffd24d'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(18,59,87,.8)'; g.stroke(); ART.text(g, it.kind === 'npc' ? '…' : '?', p.x, p.y - 1, 14 * sc, { color: '#123b57', stroke: false }); }
       void cam;
     };
-    hub.pick = (x, y) => { let best = null, bd = 1e9; for (const it of hub.items) { const d = Math.hypot(it.x - x, it.y - y); if (d < Math.max(it.r * 1.4, 26) && d < bd) { bd = d; best = it; } } return best; };
+    hub.pick = (x, y) => { for (const it of life.screen || []) { if (Math.hypot(it.x - x, it.y - y) < Math.max(it.r * 1.5, 26)) return { kind: it.kind, id: it.id, life: true }; } let best = null, bd = 1e9; for (const it of hub.items) { const d = Math.hypot(it.x - x, it.y - y); if (d < Math.max(it.r * 1.4, 26) && d < bd) { bd = d; best = it; } } return best; };
     hub.rotate = dx => { hub.yaw -= dx * 0.006; };
 
     // ---------- 遊覧飛行 ----------

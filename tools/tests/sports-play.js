@@ -10,6 +10,8 @@ const server = require('./lib/server');
 const B = require('./lib/browser');
 const V = require('./lib/viewports');
 const { jpScan, layoutProbe } = require('./lib/layout');
+const CORE = require('../../sports/core.js');
+const RICH = JSON.stringify(CORE.sanitize({ b: Object.fromEntries(CORE.SPORTS.map(sp => [sp.id, [sp.thr[0][2], sp.thr[1][2], sp.thr[2][2]]])), tu: 2047, tut: 1 }));
 
 const OUT = path.join(__dirname, 'out', 'shots', 'sports-play');
 const results = [];
@@ -77,7 +79,7 @@ async function sportsTest(env) {
 async function golfTest(env) {
   console.log('2c. golf: options, caddie, clubs, scorecard, full swing, match play vs CPU');
   for (const lang of ['ja', 'en']) {
-    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; await p.evaluate(() => __sports.showCard('golf')); check(lang + ': golf card has holes and format options', (await p.locator('#segH .opt').count()) === 2 && (await p.locator('#segC .opt').count()) === 2);
+    const s = await open(env, { vp: 'ip12', lang, seed: { [SAVE]: RICH } }); const p = s.page; await p.evaluate(() => __sports.showCard('golf')); check(lang + ': golf card has holes and format options', (await p.locator('#segH .opt').count()) === 2 && (await p.locator('#segC .opt').count()) === 2);
     await p.locator('#segH .opt[data-h="18"]').click(); await p.locator('#segC .opt[data-c="1"]').click(); await p.click('#goBtn'); await sleep(p, 300); let a = await st(p);
     if (a.ov === 'tut') { await p.click('#tNext'); }
     await sleep(p, 600); a = await st(p); check(lang + ': golf starts (18 holes, match play)', a.mode === 'play' && /H1\/18/.test(a.hud), a.hud);
@@ -92,7 +94,7 @@ async function golfTest(env) {
 async function variantsTest(env) {
   console.log('2d. bowling variants / lanes, rally opponent styles and doubles');
   for (const lang of ['ja', 'en']) {
-    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; await p.evaluate(() => __sports.showCard('bowling')); check(lang + ': bowling card shows formats and lanes', (await p.locator('#segB .opt').count()) === 3 && (await p.locator('#segLn .opt').count()) === 3);
+    const s = await open(env, { vp: 'ip12', lang, seed: { [SAVE]: RICH } }); const p = s.page; await p.evaluate(() => __sports.showCard('bowling')); check(lang + ': bowling card shows formats and lanes', (await p.locator('#segB .opt').count()) === 3 && (await p.locator('#segLn .opt').count()) === 3);
     if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English bowling card has no Japanese', jp.length === 0, jp.slice(0, 5)); }
     await p.locator('#segB .opt[data-b="pins100"]').click(); await p.locator('#segLn .opt[data-n="dry"]').click(); await p.click('#goBtn'); await sleep(p, 300); let a = await st(p); if (a.ov === 'tut') await p.click('#tNext'); await sleep(p, 500); a = await st(p);
     check(lang + ': 100-pin challenge starts on a dry lane', a.mode === 'play' && /1\/10/.test(a.hud), a.hud);
@@ -107,7 +109,7 @@ async function variantsTest(env) {
 async function variants2Test(env) {
   console.log('2e. archery / kendo / hoops variants');
   for (const lang of ['ja', 'en']) {
-    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; const b0 = async () => box(p);
+    const s = await open(env, { vp: 'ip12', lang, seed: { [SAVE]: RICH } }); const p = s.page; const b0 = async () => box(p);
     for (const [id, v, hudRe] of [['archery', 'moving', /1\/10/], ['kendo', 'wave', /3|Hearts|ハート/], ['hoops', 'contest', /1\/25/]]) {
       await p.evaluate(i => __sports.showCard(i), id); check(lang + ': ' + id + ' card has format options', (await p.locator('#segB .opt').count()) === 3);
       if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English ' + id + ' card has no Japanese', jp.length === 0, jp.slice(0, 5)); }
@@ -129,6 +131,28 @@ async function avatarTest(env) {
     await p.locator('#segS .opt[data-s="1"]').click(); await p.locator('#avRnd').click(); await p.click('#ovClose'); const sv = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), SAVE); check(lang + ': avatars are saved for P1 and P2', sv.set.av && sv.set.av.c === 4 && sv.set.av.h === 3 && sv.set.av.f === 2 && sv.set.av.k === 1 && sv.set.av2, sv.set);
     await p.evaluate(() => __sports.startSport({ id: 'tennis', diff: 1, players: 1, practice: true })); await sleep(p, 600); await shot(p, 'avatar-' + lang); check(lang + ': the avatar is used in a sport', (await st(p)).mode === 'play'); check(lang + ': no page errors', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); await s.close();
   }
+}
+
+async function islandTest(env) {
+  console.log('2g. island life: unlock gating, NPCs, wildlife, stories, stamp book, guide, jet race, disc golf');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'ip12', lang }); const p = s.page;
+    await p.evaluate(() => __sports.showCard('golf')); check(lang + ': golf 18 holes and match play are locked on a fresh island', (await p.locator('#segH .opt[data-h="18"]:disabled').count()) === 1 && (await p.locator('#segC .opt[data-c="1"]:disabled').count()) === 1); await p.click('#ovClose');
+    await p.evaluate(() => __sports.showCard('bowling')); check(lang + ': bowling variants are locked', (await p.locator('#segB .opt:disabled').count()) === 2);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English locked card has no Japanese', jp.length === 0, jp.slice(0, 5)); } await p.click('#ovClose');
+    await p.evaluate(() => __sports.showNpc('roku')); check(lang + ': an islander talks', (await st(p)).ov === 'npc'); if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English NPC panel has no Japanese', jp.length === 0, jp.slice(0, 5)); } await p.click('#ovClose');
+    await p.evaluate(() => __sports.showWild('dolphin')); check(lang + ': wildlife can be found', (await st(p)).ov === 'wild'); await p.click('#ovClose');
+    await p.evaluate(() => __sports.showStory('lighthouse')); check(lang + ': a landmark story opens', (await st(p)).ov === 'story'); if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English story has no Japanese', jp.length === 0, jp.slice(0, 5)); } await p.click('#ovClose');
+    await p.evaluate(() => __sports.showStamps()); const stamps = await p.locator('.stp.got').count(); check(lang + ': the stamp book shows the islander and animal stamps', stamps >= 2, stamps); if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English stamp book has no Japanese', jp.length === 0, jp.slice(0, 5)); } await p.click('#ovClose');
+    await p.evaluate(() => __sports.showGuide()); check(lang + ': the guide gives tips', (await p.locator('#ovPanel .row').count()) >= 3); if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English guide has no Japanese', jp.length === 0, jp.slice(0, 5)); } await p.click('#ovClose');
+    const sv = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), SAVE); check(lang + ': stamps are saved', sv.bk.n === 1 && sv.bk.w === 8 && sv.stats.stamps >= 2, sv.bk);
+    check(lang + ': no page errors', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
+  const s2 = await open(env, { vp: 'ip12', seed: { [SAVE]: RICH } }); const p2 = s2.page; const b = await box(p2);
+  await p2.evaluate(() => __sports.showCard('jump')); await p2.locator('#segB .opt[data-b="jet"]').click(); await p2.click('#goBtn'); await sleep(p2, 300); let a = await st(p2); if (a.ov === 'tut') await p2.click('#tNext'); await sleep(p2, 2600); a = await st(p2); check('jet race starts', a.mode === 'play' && /km\/h/.test(a.hud), a.hud); await drag(p2, [[b.x + b.width * 0.5, b.y + b.height * 0.7], [b.x + b.width * 0.58, b.y + b.height * 0.7]], { hold: 1200 }); check('jet race runs', (await st(p2)).mode === 'play');
+  await p2.evaluate(() => __sports.showCard('disc')); await p2.locator('#segB .opt[data-b="golf"]').click(); await p2.click('#goBtn'); await sleep(p2, 300); a = await st(p2); if (a.ov === 'tut') await p2.click('#tNext'); await sleep(p2, 600); a = await st(p2); check('disc golf starts', a.mode === 'play' && /1\/5/.test(a.hud), a.hud);
+  await drag(p2, [[b.x + b.width * 0.5, b.y + b.height * 0.85], [b.x + b.width * 0.52, b.y + b.height * 0.6], [b.x + b.width * 0.55, b.y + b.height * 0.35]], { steps: 4 }); await sleep(p2, 5500); check('a disc golf throw is made', /2投め|2 throw/.test((await st(p2)).hud) || /1\/5/.test((await st(p2)).hud), (await st(p2)).hud);
+  check('no page errors', !s2.log.pageErrors.length, s2.log.pageErrors.slice(0, 3)); await s2.close();
 }
 
 async function touchTest(env) {
@@ -182,7 +206,7 @@ async function layoutTest(env) {
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, variants: variantsTest, variants2: variants2Test, avatar: avatarTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
+  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, variants: variantsTest, variants2: variants2Test, avatar: avatarTest, island: islandTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
   for (const [name, f] of Object.entries(all)) { if (only && !only.includes(name)) continue; try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); } }
   await browser.close(); await srv.close();
   const fail = results.filter(r => !r.ok).length;

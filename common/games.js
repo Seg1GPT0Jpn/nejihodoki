@@ -1244,13 +1244,13 @@
       rankSource: { key: 'kusoge.sports.save', paths: ['pts'], agg: 'first', offset: 0 },
       record: { key: 'kusoge.sports.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/99', en: 'Stars {n}/99' } },
       keys: {
-        'kusoge.sports.save': '{ v:1, pts（★の合計＝ランキング。b から毎回計算し直す）, b:{ "<種目の ID>":[やさしい, ふつう, むずかしい のベスト点] }, x:{ "<種目の ID>":[…の「おまけ記録」（カヌー・サイクリング・ゴルフ…の小さいほどよい値や、ジャンプのきょり×1）] }, dl:{ k（きょうのチャレンジの日付 YYYYMMDD）, id, sc（きょうのベスト）, st（★）}, stats:{ plays, daily, twop, wins2p, stars3, strikes, spares, turkey, perfect, bulls, hio, birdie, swish, catches, parry, ace, jumpM（いちばん遠いジャンプ m）, flights, photos, rings, landings, pops, matchW, canoeW, cycW, rallyW, tiltOn, clears }, set:{ sens, tilt, vib, who（はじめのキャラクター 0〜3）, lp（かるい描画）, gh（ゴルフの9/18ホール）, av・av2（つくったアバター 1P・2P：{ k 耳 0〜3, c 色 0〜7, h ぼうし 0〜5, f 顔 0〜3 }）, last:{ "<種目の ID>":最後に選んだむずかしさ } }, vb:{ "bowling100"|"spares":[やさしい, ふつう, むずかしい のベスト点]（種目のバリエーション。★の合計には入らない）}, gf:{ b:[ゴルフ18ホールのベスト点 やさしい/ふつう/むずかしい（★の合計には入らない）], m（CPUとのマッチプレーで勝った回数）}, fl:{ b:[リングレースのベスト点 やさしい/ふつう/むずかしい], ph（撮影したランドマークのビット）, n（着陸した回数）}, tm（遊んだことのある種目のビット）, tu（あそびかたを見た種目のビット）, tut（島のあそびかたを見た）}',
+        'kusoge.sports.save': '{ v:1, pts（★の合計＝ランキング。b から毎回計算し直す）, b:{ "<種目の ID>":[やさしい, ふつう, むずかしい のベスト点] }, x:{ "<種目の ID>":[…の「おまけ記録」（カヌー・サイクリング・ゴルフ…の小さいほどよい値や、ジャンプのきょり×1）] }, dl:{ k（きょうのチャレンジの日付 YYYYMMDD）, id, sc（きょうのベスト）, st（★）}, stats:{ plays, daily, twop, wins2p, stars3, strikes, spares, turkey, perfect, bulls, hio, birdie, swish, catches, parry, ace, jumpM（いちばん遠いジャンプ m）, flights, photos, rings, landings, pops, matchW, canoeW, cycW, rallyW, tiltOn, clears }, set:{ sens, tilt, vib, who（はじめのキャラクター 0〜3）, lp（かるい描画）, gh（ゴルフの9/18ホール）, av・av2（つくったアバター 1P・2P：{ k 耳 0〜3, c 色 0〜7, h ぼうし 0〜5, f 顔 0〜3 }）, last:{ "<種目の ID>":最後に選んだむずかしさ } }, vb:{ "<バリエーションのキー>":[やさしい, ふつう, むずかしい のベスト点]（種目のバリエーション。★の合計には入らない）}, bk:{ n（話した島の人のビット）, w（見つけたいきもののビット）}, stats.stamps（スタンプ帳のこすう）, gf:{ b:[ゴルフ18ホールのベスト点 やさしい/ふつう/むずかしい（★の合計には入らない）], m（CPUとのマッチプレーで勝った回数）}, fl:{ b:[リングレースのベスト点 やさしい/ふつう/むずかしい], ph（撮影したランドマークのビット）, n（着陸した回数）}, tm（遊んだことのある種目のビット）, tu（あそびかたを見た種目のビット）, tut（島のあそびかたを見た）}',
         'kusoge.sports.howto': '島のあそびかたを見た（\'1\'）',
         'kusoge.sports.album': 'フォトアルバム { "<ランドマークの ID>": 撮った写真（小さな jpeg の data URL） }。この端末だけ（同期しない。撮ったランドマークの記録は kusoge.sports.save の fl.ph が持つ）',
       },
       // bests, stars and every counter only grow (b is a per-level max array, stats max); the bit sets are OR; the last settings, today's challenge and the extra records are whole values (newest)
       sync: {
-        'kusoge.sports.save': { fields: { pts: 'max', b: { each: 'arrMax' }, stats: { each: 'max' }, tm: 'bor', tu: 'bor', tut: 'max', fl: { fields: { b: 'arrMax', ph: 'bor', n: 'max' }, rest: 'newest' }, gf: { fields: { b: 'arrMax', m: 'max' }, rest: 'newest' }, vb: { each: 'arrMax' }, x: 'newest', dl: 'newest', set: 'newest' }, rest: 'newest' },
+        'kusoge.sports.save': { fields: { pts: 'max', b: { each: 'arrMax' }, stats: { each: 'max' }, tm: 'bor', tu: 'bor', tut: 'max', fl: { fields: { b: 'arrMax', ph: 'bor', n: 'max' }, rest: 'newest' }, gf: { fields: { b: 'arrMax', m: 'max' }, rest: 'newest' }, vb: { each: 'arrMax' }, bk: { fields: { n: 'bor', w: 'bor' }, rest: 'newest' }, x: 'newest', dl: 'newest', set: 'newest' }, rest: 'newest' },
       },
     },
   ];
@@ -1902,6 +1902,10 @@
       { id: 'sports.jump60', tier: 3, icon: 'trophy', title: { ja: '60m ジャンプ', en: '60 m Jump' }, desc: { ja: '水上ジャンプで60m飛ぶ', en: 'Jump 60 m in water jump' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.jumpM' }, gte: 60 } },
       { id: 'sports.twop', tier: 1, icon: 'check', title: { ja: 'ふたりで', en: 'Two Players' }, desc: { ja: 'ふたりプレイを1回遊ぶ', en: 'Play a two-player game' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.twop' }, gte: 1 } },
       { id: 'sports.wins2p', tier: 2, icon: 'star', title: { ja: 'なかよしライバル', en: 'Friendly Rivals' }, desc: { ja: 'ふたりプレイを5回、さいごまで遊ぶ', en: 'Finish 5 two-player games' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.wins2p' }, gte: 5 } },
+      { id: 'sports.stamp10', tier: 1, icon: 'star', title: { ja: 'スタンプ10こ', en: 'Ten Stamps' }, desc: { ja: 'スタンプ帳に10こ押す', en: 'Collect 10 stamps in the stamp book' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.stamps' }, gte: 10 } },
+      { id: 'sports.stamp30', tier: 2, icon: 'star', title: { ja: 'スタンプ30こ', en: 'Thirty Stamps' }, desc: { ja: 'スタンプ帳に30こ押す', en: 'Collect 30 stamps' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.stamps' }, gte: 30 } },
+      { id: 'sports.stamp55', tier: 4, icon: 'trophy', title: { ja: 'スタンプ名人', en: 'Stamp Master' }, desc: { ja: 'スタンプ帳を55こ以上 あつめる', en: 'Collect 55 or more stamps' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.stamps' }, gte: 55 } },
+      { id: 'sports.npc8', tier: 2, icon: 'check', title: { ja: '島の人気者', en: 'Everyone\'s Friend' }, desc: { ja: '島の人 8人ぜんいんと おはなしする', en: 'Chat with all 8 islanders' }, when: { rec: { key: 'kusoge.sports.save', path: 'bk.n' }, gte: 255 } },
       { id: 'sports.tilt', tier: 1, icon: 'check', title: { ja: 'かたむけてみた', en: 'Tilt Tester' }, desc: { ja: 'かたむき操作をオンにする', en: 'Turn tilt controls on' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.tiltOn' }, gte: 1 } },
     ],
   };

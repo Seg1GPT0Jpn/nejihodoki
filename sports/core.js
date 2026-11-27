@@ -30,7 +30,7 @@
     { id: 'golf', bit: 5, ja: 'ゴルフ', en: 'Golf', mode: 'turn', col: '#3aa655', map: [0.62, 0.45], two: 'pass',
       thr: [[60, 80, 100], [55, 75, 95], [45, 65, 85]] },
     { id: 'canoe', bit: 6, ja: 'カヌー', en: 'Canoe', mode: 'real', col: '#1aa7c8', map: [0.88, 0.58], two: 'split',
-      thr: [[120, 170, 215], [110, 160, 205], [100, 150, 195]] },
+      thr: [[140, 190, 240], [130, 185, 235], [120, 175, 225]] },
     { id: 'pingpong', bit: 7, ja: '卓球', en: 'Table Tennis', mode: 'real', col: '#e6567a', map: [0.28, 0.72], two: 'versus',
       thr: [[70, 105, 135], [80, 120, 160], [90, 140, 185]] },
     { id: 'cycling', bit: 8, ja: 'サイクリング', en: 'Cycling', mode: 'real', col: '#8a6bd6', map: [0.55, 0.78], two: 'pass',
@@ -54,6 +54,8 @@
     kendoBamboo: { sport: 'kendo', ja: 'たけ切り', en: 'Bamboo cutting', thr: [[2500, 5000, 8000], [2500, 5000, 8000], [2200, 4500, 7500]] },
     hoopsContest: { sport: 'hoops', ja: '3ポイントコンテスト', en: '3-point contest', thr: [[8, 13, 18], [7, 11, 16], [6, 9, 13]] },
     hoopsPickup: { sport: 'hoops', ja: 'CPUとピックアップ', en: 'Pick-up vs CPU', thr: [[10, 16, 22], [9, 14, 20], [8, 12, 17]] },
+    jetRace: { sport: 'jump', ja: 'ジェットレース', en: 'Jet race', thr: [[190, 250, 290], [170, 225, 260], [150, 200, 235]] },
+    discGolf: { sport: 'disc', ja: 'フリスビーゴルフ', en: 'Disc golf', thr: [[35, 48, 60], [40, 55, 68], [40, 55, 68]] },
     spares: { sport: 'bowling', ja: 'スペアチャレンジ', en: 'Spare challenge', thr: [[30, 50, 70], [30, 50, 70], [10, 30, 50]] },
   };
   function variantStars(key, diff, score) { const v = VARIANTS[key]; if (!v) return 0; const t = v.thr[clamp(diff | 0, 0, 2)]; let n = 0; for (let i = 0; i < 3; i++) if (score >= t[i]) n = i + 1; return n; }
@@ -67,8 +69,8 @@
   }
 
   // ---------- 保存 ----------
-  const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops', 'matchW'];
-  function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, gh: 9, av: null, av2: null, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, gf: { b: [0, 0, 0], m: 0 }, vb: {}, tm: 0, tu: 0, tut: 0 }; }
+  const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops', 'matchW', 'stamps'];
+  function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, gh: 9, av: null, av2: null, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, gf: { b: [0, 0, 0], m: 0 }, vb: {}, bk: { n: 0, w: 0 }, tm: 0, tu: 0, tut: 0 }; }
   function sanitize(o) {
     const s = newSave();
     if (!o || typeof o !== 'object') return s;
@@ -88,6 +90,7 @@
     if (o.fl && typeof o.fl === 'object') { const b = Array.isArray(o.fl.b) ? o.fl.b : []; s.fl = { b: [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))), ph: Math.max(0, Math.floor(num(o.fl.ph, 0))) & 0xffff, n: Math.max(0, Math.min(99999999, Math.floor(num(o.fl.n, 0)))) }; }
     if (o.gf && typeof o.gf === 'object') { const b = Array.isArray(o.gf.b) ? o.gf.b : []; s.gf = { b: [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))), m: Math.max(0, Math.min(99999999, Math.floor(num(o.gf.m, 0)))) }; }
     if (o.vb && typeof o.vb === 'object') for (const k of Object.keys(VARIANTS)) { const b = o.vb[k]; if (Array.isArray(b)) s.vb[k] = [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))); }
+    if (o.bk && typeof o.bk === 'object') s.bk = { n: Math.max(0, Math.floor(num(o.bk.n, 0))) & 0xff, w: Math.max(0, Math.floor(num(o.bk.w, 0))) & 0xf };
     s.tm = Math.max(0, Math.floor(num(o.tm, 0))) & 0x7ff; s.tu = Math.max(0, Math.floor(num(o.tu, 0))) & 0x7ff; s.tut = o.tut ? 1 : 0;
     derive(s);
     return s;

@@ -157,9 +157,9 @@
   // サイクリング：疑似3D の道。ハンドルはドラッグ・ボタン・キー・かたむき
   // =====================================================================================
   V.cycling = function (env) {
-    const L = env.L; let w = 300, h = 400, m = null, kt = 0, ptr = null, x0 = 0, du = 0, keyU = 0, btnU = 0, boostH = false, keyBoost = false, st = 'play', rest = 0, pops = [], lean = 0, lastCd = 9, bgx = 0;
+    const L = env.L, jet = (env.opts || {}).variant === 'jet'; let w = 300, h = 400, m = null, kt = 0, ptr = null, x0 = 0, du = 0, keyU = 0, btnU = 0, boostH = false, keyBoost = false, st = 'play', rest = 0, pops = [], lean = 0, lastCd = 9, bgx = 0;
     const Sim = S2.Cycling, RW = 2.2, SEG = 4, CAMZ = 3, COL = [PAL.violet, PAL.coral, PAL.teal, PAL.sun];
-    function start() { m = Sim.newRun(env.diff, env.seed); st = 'play'; pops = []; lastCd = 9; lean = 0; bgx = 0; setBtns(); hud(); env.status(L('左右にドラッグでハンドル。ブーストで追い上げよう', 'Drag left/right to steer. Boost to catch up!')); }
+    function start() { m = Sim.newRun(env.diff, env.seed, { jet }); st = 'play'; pops = []; lastCd = 9; lean = 0; bgx = 0; setBtns(); hud(); env.status(jet ? L('左右にドラッグでかじとり。ブイをよけて、ターボで追い上げよう。前の人のうしろは らく（スリップ）', 'Drag to steer. Dodge buoys, use turbo, and tuck in behind a rider to draft.') : L('左右にドラッグでハンドル。ブーストで追い上げよう。前の人のうしろは らく（スリップストリーム）', 'Drag left/right to steer. Boost to catch up — and draft behind other riders!')); }
     function setBtns() { env.setButtons([{ id: 'left', label: '◀', hold: true }, { id: 'boost', label: L('ブースト', 'Boost'), hold: true }, { id: 'right', label: '▶', hold: true }]); }
     function place() { const hu = m.riders[0]; let p = 1; for (let i = 1; i < 4; i++) if (m.riders[i].s > hu.s) p++; return p; }
     function hud() { env.hud(place() + L('位  ', 'th  ') + Math.round(m.riders[0].v * 3.6) + 'km/h  ' + Math.max(0, Math.round(m.cfg.len - m.riders[0].s)) + 'm'); }
@@ -187,12 +187,12 @@
         const N = 56, segs = []; let cx = 0, dx = 0; const camX = hu.x * RW;
         for (let n = 0; n < N; n++) { const zn = n * SEG - frac, zf = zn + SEG, sg = Sim.curvAt(m, s + Math.max(0, zn)); const near = { z: zn, x: cx }; dx += sg.c * 0.4; cx += dx * 0.5; const far = { z: zf, x: cx }; segs.push({ n, near, far, c: sg.c }); }
         const proj = (z, x, lat) => { const d = Math.max(0.3, z + CAMZ), sc = F / d; return { x: w / 2 + (x + (lat || 0) * RW - camX) * sc, y: hor + camH * sc, sc }; };
-        g.fillStyle = PAL.grass1; g.fillRect(0, hor, w, h - hor);
+        g.fillStyle = jet ? '#2bb7d4' : PAL.grass1; g.fillRect(0, hor, w, h - hor);
         for (let n = N - 1; n >= 0; n--) {
           const sg = segs[n], a = proj(Math.max(sg.near.z, -CAMZ + 0.4), sg.near.x), b = proj(sg.far.z, sg.far.x), alt = (seg0 + n) % 2;
-          g.fillStyle = alt ? '#4bbd5d' : '#58c868'; g.fillRect(0, b.y, w, a.y - b.y + 1);
+          g.fillStyle = jet ? (alt ? '#27a9cc' : '#2fb7d8') : (alt ? '#4bbd5d' : '#58c868'); g.fillRect(0, b.y, w, a.y - b.y + 1);
           const quadStrip = (l0, l1, fill) => { const a0 = proj(Math.max(sg.near.z, -CAMZ + 0.4), sg.near.x, l0), a1 = proj(Math.max(sg.near.z, -CAMZ + 0.4), sg.near.x, l1), b1 = proj(sg.far.z, sg.far.x, l1), b0 = proj(sg.far.z, sg.far.x, l0); g.fillStyle = fill; g.beginPath(); g.moveTo(a0.x, a0.y); g.lineTo(a1.x, a1.y); g.lineTo(b1.x, b1.y); g.lineTo(b0.x, b0.y); g.closePath(); g.fill(); };
-          quadStrip(-1.25, -1.0, alt ? '#fff' : PAL.red); quadStrip(1.0, 1.25, alt ? '#fff' : PAL.red); quadStrip(-1.0, 1.0, alt ? '#9aa4ad' : '#a8b1b9'); if (alt) quadStrip(-0.03, 0.03, '#fff');
+          quadStrip(-1.25, -1.0, alt ? '#fff' : (jet ? '#ff7a6b' : PAL.red)); quadStrip(1.0, 1.25, alt ? '#fff' : (jet ? '#ff7a6b' : PAL.red)); quadStrip(-1.0, 1.0, jet ? (alt ? '#1b86b5' : '#1f93c2') : (alt ? '#9aa4ad' : '#a8b1b9')); if (alt) quadStrip(-0.03, 0.03, jet ? 'rgba(255,255,255,.55)' : '#fff');
           if (n === N - 1 && sg.far.z > 1) { /* 遠くのかすみ */ }
         }
         // ゴールの門
@@ -202,17 +202,19 @@
         for (const t of things) {
           const idx = clamp(Math.floor((t.z + frac) / SEG), 0, N - 1), sg = segs[idx], rx = lerp(sg.near.x, sg.far.x, ((t.z + frac) - idx * SEG) / SEG), p = proj(t.z, rx, t.x), u = p.sc;
           if (t.c) { bike(g, p.x, p.y, u * 1.1, COL[t.c.i], 0, t.c.i, kt + t.c.i, t.c.v); continue; }
-          const o = t.o; if (o.kind === 'cone') { g.fillStyle = PAL.orange; g.beginPath(); g.moveTo(p.x, p.y - u * 0.9); g.lineTo(p.x + u * 0.35, p.y); g.lineTo(p.x - u * 0.35, p.y); g.fill(); g.fillStyle = '#fff'; g.fillRect(p.x - u * 0.18, p.y - u * 0.5, u * 0.36, u * 0.12); }
-          else if (o.kind === 'puddle') ell(g, p.x, p.y, u * 0.55, u * 0.14, 'rgba(60,160,230,.85)', '#bfeaff', 1.5);
+          const o = t.o; if (jet && o.kind === 'cone') { ell(g, p.x, p.y, u * 0.28, u * 0.1, 'rgba(0,0,0,.2)'); g.fillStyle = PAL.orange; g.beginPath(); g.moveTo(p.x, p.y - u * 0.7); g.lineTo(p.x + u * 0.28, p.y - u * 0.04); g.lineTo(p.x - u * 0.28, p.y - u * 0.04); g.fill(); g.fillStyle = '#fff'; g.fillRect(p.x - u * 0.14, p.y - u * 0.4, u * 0.28, u * 0.1); }
+          else if (o.kind === 'cone') { g.fillStyle = PAL.orange; g.beginPath(); g.moveTo(p.x, p.y - u * 0.9); g.lineTo(p.x + u * 0.35, p.y); g.lineTo(p.x - u * 0.35, p.y); g.fill(); g.fillStyle = '#fff'; g.fillRect(p.x - u * 0.18, p.y - u * 0.5, u * 0.36, u * 0.12); }
+          else if (o.kind === 'puddle') ell(g, p.x, p.y, u * 0.55, u * 0.14, jet ? 'rgba(255,255,255,.7)' : 'rgba(60,160,230,.85)', '#bfeaff', 1.5);
           else if (o.kind === 'boost') { g.fillStyle = PAL.sun; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(p.x - u * 0.35, p.y - k * u * 0.12); g.lineTo(p.x, p.y - u * 0.2 - k * u * 0.12); g.lineTo(p.x + u * 0.35, p.y - k * u * 0.12); g.lineTo(p.x, p.y - u * 0.08 - k * u * 0.12); g.fill(); } }
           else { rr(g, p.x - u * 0.12, p.y - u * 0.55, u * 0.24, u * 0.55, u * 0.08); g.fillStyle = '#5be07a'; g.fill(); g.strokeStyle = PAL.ink; g.lineWidth = 1.2; g.stroke(); circ(g, p.x, p.y - u * 0.62, u * 0.07, '#fff'); }
         }
         // 自分
         const px = w / 2 + lean * w * 0.07; bike(g, px, yb - 4, Math.min(w, h) * 0.2, COL[0], lean, env.kind, kt, hu.v, true);
+        if (m.draft && st === 'play') text(g, L('スリップストリーム！', 'Drafting!'), w / 2, h * 0.6, fontPx(w, h) * 1.1, { color: '#9ee7ff' });
         if (m.bst && hu.en > 0) { g.strokeStyle = 'rgba(255,230,120,.7)'; g.lineWidth = 3; for (let i = 0; i < 6; i++) { const x = w * (0.1 + i * 0.16), y = h * (0.5 + (i % 3) * 0.1); g.beginPath(); g.moveTo(x, y); g.lineTo(x + (x < w / 2 ? -1 : 1) * 24, y + 20); g.stroke(); } }
         // HUD
         const pw = Math.min(w - 20, 260); rr(g, w / 2 - pw / 2, 8, pw, 12, 6); g.fillStyle = 'rgba(0,0,0,.3)'; g.fill(); for (const r of m.riders) circ(g, w / 2 - pw / 2 + 6 + (pw - 12) * clamp(r.s / m.cfg.len, 0, 1), 14, r.human ? 7 : 5, COL[r.i], '#fff', 1.5);
-        rr(g, 10, h - 78, 10, 56, 5); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill(); rr(g, 10, h - 78 + 56 * (1 - hu.en), 10, 56 * hu.en, 5); g.fillStyle = hu.en > 0.2 ? PAL.sun : PAL.coral; g.fill(); text(g, L('ブースト', 'Boost'), 40, h - 24, fontPx(w, h) - 3, { align: 'left', stroke: false, color: '#fff' });
+        rr(g, 10, h - 78, 10, 56, 5); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill(); rr(g, 10, h - 78 + 56 * (1 - hu.en), 10, 56 * hu.en, 5); g.fillStyle = hu.en > 0.2 ? PAL.sun : PAL.coral; g.fill(); text(g, jet ? L('ターボ', 'Turbo') : L('ブースト', 'Boost'), 40, h - 24, fontPx(w, h) - 3, { align: 'left', stroke: false, color: '#fff' });
         text(g, place() + (L('位', '')), w - 36, 44, fontPx(w, h) * 1.8);
         if (m.t < 0) text(g, Math.ceil(-m.t) + '', w / 2, h * 0.4, fontPx(w, h) * 4); else if (m.t < 0.6) text(g, 'GO!', w / 2, h * 0.4, fontPx(w, h) * 3, { color: PAL.sun });
         if (st !== 'play') { const r = m.results[0]; text(g, r.place + (L('位！', ['st', 'nd', 'rd', 'th'][Math.min(3, r.place - 1)] + ' place!')), w / 2, h * 0.4, fontPx(w, h) * 2.4, { color: PAL.sun }); }
@@ -221,6 +223,7 @@
       },
     };
     function bike(g, x, y, sz, col, lean, kind, t, v, me) {
+      if (jet) { g.save(); g.translate(x, y); g.rotate(lean * 0.12); const k = sz; ell(g, 0, 0, k * 0.4, k * 0.07, 'rgba(0,40,80,.25)'); g.fillStyle = col; g.strokeStyle = PAL.ink; g.lineWidth = Math.max(2, k * 0.03); g.beginPath(); g.moveTo(0, -k * 0.55); g.quadraticCurveTo(k * 0.36, -k * 0.2, k * 0.26, 0); g.lineTo(-k * 0.26, 0); g.quadraticCurveTo(-k * 0.36, -k * 0.2, 0, -k * 0.55); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillRect(-k * 0.05, -k * 0.5, k * 0.1, k * 0.45); A.mascot(g, 0, -k * 0.15, k * 0.6, { kind, pose: 'run', t: t * 0.4 }); if (v > 4) { g.fillStyle = 'rgba(255,255,255,.75)'; for (let i = 0; i < 8; i++) { const a = (t * 8 + i) % 1; g.beginPath(); g.arc((i % 2 ? 1 : -1) * k * (0.28 + a * 0.25), -k * 0.02 + a * k * 0.15, k * 0.04 * (1 - a) + 1, 0, TAU); g.fill(); } } g.restore(); return; }
       g.save(); g.translate(x, y); g.rotate(lean * 0.18); const k = sz; ell(g, 0, 0, k * 0.34, k * 0.06, 'rgba(0,0,0,.22)'); const sp = (t * (v || 0) * 0.8) % TAU;
       for (const dy of [0, -k * 0.5]) { g.save(); g.translate(0, -k * 0.16 + (dy ? 0 : 0)); g.restore(); }
       circ(g, 0, -k * 0.17, k * 0.17, null, PAL.ink, Math.max(2, k * 0.05)); g.strokeStyle = '#444'; g.lineWidth = 1.4; for (let i = 0; i < 3; i++) { const a = sp + i * Math.PI / 3; g.beginPath(); g.moveTo(Math.cos(a) * k * 0.17, -k * 0.17 + Math.sin(a) * k * 0.17); g.lineTo(-Math.cos(a) * k * 0.17, -k * 0.17 - Math.sin(a) * k * 0.17); g.stroke(); }

@@ -92,6 +92,7 @@ node tools/tests/unit/puff-levels.test.js     # ふわふわぱふのステー�
 node tools/tests/sports-play.js              # ぽかぽか島スポーツの通し（島・種目いちらん・カード・あそびかた・11種目を本物のマウス・タッチ・キーで・ふたりプレイ・遊覧飛行・英語・320px・横向き・タブレット・保存）
 node tools/tests/unit/sports-engine.test.js  # ぽかぽか島スポーツの中身（★のしきい値・保存・デイリー・ボウリング／卓球／テニスの得点・11種目の物理と、ボットで★3に届く／でたらめでは届かないこと）
 node tools/tests/unit/sports-world.test.js   # 3Dの島の中身（種つきの高さの地図・ランドマーク・飛行機・リング）
+node tools/tests/unit/sports-island.test.js  # 島の暮らし（NPC・生き物・ものがたり・スタンプ帳・解放ルール）
 node tools/puff-solve.js --all --write        # 証明（puff/proofs.js）を作り直す（ステージやエンジンを変えたとき。約3秒。`--show 1-2` で地図を表示）
 node tools/tests/wordwolf-play.js             # ワードウルフの通し（本物のクリックで、ひとり・1台をまわす4人・ウルフ2人＋知っている・英語・画面サイズ・オンライン（エミュレーターで2ページ＋CPU）。--no-online で省く）
 node tools/tests/unit/wordwolf-words.test.js  # ワードウルフのことば（300組以上・1語15個以上のヒント・ヒントにことばが漏れない・むずかしさ3段）

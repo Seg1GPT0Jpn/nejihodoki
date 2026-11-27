@@ -113,9 +113,9 @@
       const b = m.boats[i]; if (!b || !b.human || b.fin != null || m.t < 0) return 0;
       const dt = m.t - b.last; if (dt < 0.14) return 0;
       const alt = b.lastSide !== 0 && side !== b.lastSide, tc = m.cfg.tc, qr = b.last < 0 ? 0.7 : clamp(1 - Math.abs(dt - tc) / (0.65 * tc), 0, 1);
-      const p = Canoe.KICK * (alt ? 0.45 + 0.55 * qr : 0.3 * (0.4 + 0.6 * qr));
+      b.combo = alt && qr > 0.8 ? (b.combo || 0) + 1 : alt ? Math.max(0, (b.combo || 0) - 2) : 0; const p = Canoe.KICK * (alt ? 0.45 + 0.55 * qr : 0.3 * (0.4 + 0.6 * qr)) * (1 + Math.min(0.3, 0.03 * b.combo));
       b.v += p; b.x += -side * (alt ? 0.05 : 0.2); b.last = m.t; b.lastSide = side; b.q = qr; b.strokes++; if (qr > 0.8 && alt) b.perf++;
-      m.ev.push({ type: 'stroke', boat: i, side, q: qr, alt }); return qr;
+      m.ev.push({ type: 'stroke', boat: i, side, q: qr, alt, combo: b.combo }); return qr;
     },
     step(m, dt) {
       if (m.done) return; m.t += dt;
@@ -322,13 +322,13 @@
   const CYCFG = [{ len: 700, curv: 0.55, vmax: 11.5, cpu: [0.8, 0.86, 0.92] }, { len: 900, curv: 0.8, vmax: 12.5, cpu: [0.9, 0.95, 1.0] }, { len: 1100, curv: 1.05, vmax: 13.2, cpu: [1.0, 1.06, 1.12] }];
   const Cycling = {
     CFG: CYCFG, HALF: 1.0,
-    newRun(diff, seed) {
-      diff = clamp(diff | 0, 0, 2); const cfg = CYCFG[diff], r = rng(hash32('cyc:' + seed)), segs = [], obs = [];
+    newRun(diff, seed, opts) {
+      diff = clamp(diff | 0, 0, 2); const jet = !!(opts && opts.jet), c0 = CYCFG[diff], cfg = jet ? Object.assign({}, c0, { vmax: c0.vmax * 1.22, curv: c0.curv * 1.15, len: Math.round(c0.len * 1.1) }) : c0, r = rng(hash32((jet ? 'jet:' : 'cyc:') + seed)), segs = [], obs = [];
       let s = 0; while (s < cfg.len + 120) { const l = 60 + r() * 90, c = r() < 0.32 ? 0 : (r() * 2 - 1) * cfg.curv; segs.push({ s0: s, s1: s + l, c: Math.round(c * 100) / 100, h: (r() - 0.5) * 2 }); s += l; }
       let o = 40; while (o < cfg.len - 30) { o += 18 + r() * 30; const k = r(), kind = k < 0.4 ? 'cone' : k < 0.62 ? 'puddle' : k < 0.82 ? 'boost' : 'bottle'; obs.push({ s: o, x: Math.round((r() * 1.7 - 0.85) * 100) / 100, kind, hit: false }); }
       const riders = [{ i: 0, human: true, s: 0, x: 0, v: 0, en: 0.5, boost: 0, fin: null, hits: 0, off: 0, picks: 0 }];
       for (let i = 1; i < 4; i++) riders.push({ i, human: false, s: -i * 1.2, x: 0, v: 0, fin: null, sk: cfg.cpu[i - 1] * (0.97 + r() * 0.06), ph: r() * 6.28 });
-      return { kind: 'cycling', diff, seed, cfg, r, segs, obs, riders, t: -2, done: false, ev: [], results: null, u: 0, bst: false };
+      return { kind: 'cycling', jet, draft: false, diff, seed, cfg, r, segs, obs, riders, t: -2, done: false, ev: [], results: null, u: 0, bst: false };
     },
     curvAt(m, s) { for (let i = 0; i < m.segs.length; i++) if (s < m.segs[i].s1) return m.segs[i]; return m.segs[m.segs.length - 1]; },
     // u = ハンドル（-1〜1）、boost = ブーストをおしているか
@@ -336,8 +336,8 @@
       if (m.done) return; m.t += dt; if (m.t < 0) return; u = clamp(u || 0, -1, 1);
       const h = m.riders[0], cfg = m.cfg;
       if (h.fin == null) {
-        const seg = Cycling.curvAt(m, h.s), off = Math.abs(h.x) > Cycling.HALF; let vt = cfg.vmax * (off ? 0.55 : 1);
-        const bst = !!boost && h.en > 0.02; if (bst) { vt *= 1.28; h.en = Math.max(0, h.en - 0.42 * dt); } else h.en = Math.min(1, h.en + 0.1 * dt);
+        const seg = Cycling.curvAt(m, h.s), off = Math.abs(h.x) > Cycling.HALF; const grade = seg.h * 0.5; let vt = cfg.vmax * (off ? 0.55 : 1) * (1 - 0.1 * grade); m.draft = false; for (let i = 1; i < 4; i++) { const c = m.riders[i], d = c.s - h.s; if (c.fin == null && d > 1.5 && d < 14 && Math.abs(c.x - h.x) < 0.6) m.draft = true; } if (m.draft) vt *= 1.08;
+        const bst = !!boost && h.en > 0.02; if (bst) { vt *= 1.28; h.en = Math.max(0, h.en - 0.42 * dt); } else h.en = Math.min(1, h.en + (0.1 + (m.draft ? 0.05 : 0) + (grade < -0.2 ? 0.06 : 0)) * dt);
         if (h.boost > 0) { h.boost -= dt; vt *= 1.22; }
         h.v += (vt - h.v) * Math.min(1, dt * 1.1); const sp = h.v / cfg.vmax;
         h.x += (u * 1.7 * (0.45 + 0.55 * sp) - seg.c * h.v * 0.085) * dt; h.x = clamp(h.x, -1.45, 1.45); if (off) h.off += dt;

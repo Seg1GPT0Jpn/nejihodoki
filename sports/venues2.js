@@ -13,7 +13,7 @@
   // =====================================================================================
   // 水上ジャンプ
   // =====================================================================================
-  V.jump = function (env) {
+  const jumpVenue = function (env) {
     const L = env.L; let w = 300, h = 400, run = null, st = 'ready', t = 0, ptr = null, y0 = 0, du = 0, kt = 0, keyU = 0, btnU = 0, tapT = -1, tapAt = 0, landReq = false, launchT = 0, takeoffQ = null, rest = 0, pops = [], tl = 0, splash = 0;
     const Sim = S1.Jump, RAMP = 14;
     const sc = () => Math.min(h / 12.5, w / 17);
@@ -189,4 +189,5 @@
     };
   };
   V.kendo = function (env) { return (env.opts || {}).variant ? waveVenue(env) : duelVenue(env); };
+  V.jump = function (env) { return (env.opts || {}).variant === 'jet' ? V.cycling(env) : jumpVenue(env); };
 })(typeof window !== 'undefined' ? window : globalThis);

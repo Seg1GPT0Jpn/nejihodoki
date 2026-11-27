@@ -82,6 +82,7 @@ body.g3d #gl { display: block; } body.g3d #cv { background: transparent; }
   #app { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-rows: auto auto auto 1fr; grid-template-areas: "hd hd" "st hu" "st sa" "st ct"; column-gap: 8px; }
   header { grid-area: hd; padding-top: 0; } #hud { grid-area: hu; flex-wrap: wrap; padding: 2px 8px 2px 0; } #stage { grid-area: st; margin: 2px 4px 6px 8px; } #status { grid-area: sa; margin: 0 8px 0 0; min-height: 30px; font-size: 11.5px; }
   #ctl { grid-area: ct; padding: 4px 8px 4px 0; align-content: flex-start; } #ctl .cb { min-height: 46px; flex: 1 1 100px; }
+  #ctl .cb:nth-child(n+7), #ctl .cb:nth-child(n+7) ~ .cb { min-height: 40px; flex: 1 1 72px; font-size: 12.5px; } #ctl:has(.cb:nth-child(7)) .cb { min-height: 40px; flex: 1 1 72px; font-size: 12.5px; padding: 2px 4px; }
 }
 @media (max-width: 379px) { h1 { font-size: 15px; } .chip { padding: 2px 6px; } }
 .overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; height: var(--kb-vh); background: var(--kb-scrim); box-sizing: border-box; overscroll-behavior: contain; padding: max(10px, var(--kb-sat)) max(10px, var(--kb-sar)) max(10px, var(--kb-sab)) max(10px, var(--kb-sal)); animation: fade .15s; }
@@ -112,6 +113,7 @@ body.g3d #gl { display: block; } body.g3d #cv { background: transparent; }
 .dcv { width: 72px; height: 72px; display: block; margin: 0 auto; }
 .toastbar { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); z-index: 85; max-width: 90%; padding: 8px 16px; border-radius: 14px; background: rgba(10, 20, 32, .92); color: #fff; font-weight: 800; font-size: 14px; pointer-events: none; animation: rise .2s; text-align: center; }
 .pgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; } .pcell { padding: 2px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--sp-key); color: var(--kb-ink); min-height: 74px; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; } .pcell img { width: 100%; border-radius: 8px; display: block; } .pcell .pq { font: 400 26px var(--kb-font-display); padding: 10px 0; color: var(--kb-dim); } .pcell small { font-size: 9px; color: var(--kb-dim); line-height: 1.2; }
+.stg { display: flex; flex-wrap: wrap; gap: 4px; } .stp { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--kb-line); display: inline-grid; place-items: center; font-size: 13px; color: var(--kb-dim); background: var(--sp-key); } .stp.got { color: var(--sp-star); border-color: var(--sp-star); background: var(--kb-surface); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .rec { width: 100%; border-collapse: collapse; font-size: 12px; } .rec td, .rec th { padding: 4px 3px; border-bottom: 1px solid var(--kb-line); text-align: center; } .rec td:first-child, .rec th:first-child { text-align: left; font-weight: 800; }
 @keyframes rise { from { transform: translateY(14px) scale(.97); opacity: 0; } } @keyframes fade { from { opacity: 0; } }
@@ -145,6 +147,7 @@ body.thumb #app { display: flex !important; flex-direction: column; max-width: n
 <div class="sr" id="live" role="status" aria-live="polite"></div>
 
 <script src="core.js"></script>
+<script src="island.js"></script>
 <script src="sim1.js"></script>
 <script src="sim2.js"></script>
 <script src="golf.js"></script>
@@ -164,7 +167,7 @@ body.thumb #app { display: flex !important; flex-direction: column; max-width: n
 // venues*.js（種目ごとの入力・時間・絵）。このファイルは島（ハブ）・パネル・ふたりプレイ・保存・プラットフォームとの連携。
 const EN = KoboI18n.lang === 'en';
 const L = (ja, en) => (EN ? en : ja);
-const C = window.SportsCore, ART = window.SportsArt, VEN = window.SportsVenues, SP = C.SPORTS;
+const I = window.SportsIsland, C = window.SportsCore, ART = window.SportsArt, VEN = window.SportsVenues, SP = C.SPORTS;
 const PF = window.KoboPlatform || null, A = window.KoboAudio || null, UI = window.KoboUI || null;
 const KG = () => window.KoboGame || null;
 const GAME = 'sports', SAVE_KEY = 'kusoge.sports.save', HOWTO_KEY = 'kusoge.sports.howto';
@@ -185,7 +188,7 @@ function avatarOf(slot) { const a = slot === 0 ? save.set.av : save.set.av2; if 
 // ---------- 保存 ----------
 function readSave() { let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {} return C.sanitize(o); }
 let save = readSave();
-function writeSave() { C.derive(save); countStars3(); store.set(SAVE_KEY, JSON.stringify(save)); renderHudStars(); }
+function writeSave() { C.derive(save); countStars3(); C.setMax(save, 'stamps', I.stampCount(save)); store.set(SAVE_KEY, JSON.stringify(save)); renderHudStars(); }
 function countStars3() { let n = 0; for (const s of SP) for (let d = 0; d < 3; d++) if (C.starsOf(save, s.id, d) >= 3) n++; if (n > (save.stats.stars3 | 0)) save.stats.stars3 = n; }
 const MAXKEYS = { jumpM: 1, streak: 1 };
 function bumpStat(k, n) { if (S && S.practice) return; if (MAXKEYS[k]) C.setMax(save, k, n == null ? 1 : n); else C.bump(save, k, n == null ? 1 : n); }
@@ -215,8 +218,8 @@ const TXT = {
   tennis: { d: ['スワイプで打ち返す、島のコートのテニス。', 'Swipe to return the ball on the island court.'], demo: { strokes: [[[0.5, 0.9], [0.4, 0.5], [0.3, 0.25]]] },
     how: [['ボールがはねたら、まわりの輪が緑のときにスワイプで打ち返します。', 'After the bounce, swipe when the ring turns green.'], ['スワイプの向きがコース、速さが強さです。', 'Swipe direction aims; speed is power.'], ['サーブは最初にスワイプ。サービスエリアに入らないとフォールト（2回で失点）。', 'Swipe to serve. Two faults lose the point.'], ['0・15・30・40とデュースの、本物の数え方。先にゲームをとったほうの勝ち。', 'Real scoring: 15, 30, 40, deuce and advantage.'], ['みじかいボールを打つと ネットにつめて、ボレー（バウンドする前に打つ）ができます。はやいスワイプはトップスピン、ゆっくりはスライスです。ダブルスも えらべます。', 'Hit a short ball to move up to the net and volley before the bounce. Fast swipes give topspin, slow ones slice. Doubles is available.']] },
 };
-const VOPTS = { bowling: [['', '10フレーム', '10 frames'], ['pins100', 'ピン100本', '100 pins'], ['spares', 'スペア', 'Spares']], archery: [['', '10本', '10 arrows'], ['moving', 'うごく的', 'Moving targets'], ['rounds', '3ラウンド', 'Three rounds']], kendo: [['', 'とうそう（3人）', 'Duel (3 foes)'], ['wave', 'れんぞくぎり', 'Cut-through'], ['bamboo', 'たけ切り', 'Bamboo']], hoops: [['', '10本', '10 shots'], ['contest', '3ポイントコンテスト', '3-point contest'], ['pickup', 'CPUとピックアップ', 'Pick-up vs CPU']] };
-const VKEY = { pins100: 'bowling100', spares: 'spares', moving: 'archeryMoving', rounds: 'archeryRounds', wave: 'kendoWave', bamboo: 'kendoBamboo', contest: 'hoopsContest', pickup: 'hoopsPickup' };
+const VOPTS = { bowling: [['', '10フレーム', '10 frames'], ['pins100', 'ピン100本', '100 pins'], ['spares', 'スペア', 'Spares']], archery: [['', '10本', '10 arrows'], ['moving', 'うごく的', 'Moving targets'], ['rounds', '3ラウンド', 'Three rounds']], kendo: [['', 'とうそう（3人）', 'Duel (3 foes)'], ['wave', 'れんぞくぎり', 'Cut-through'], ['bamboo', 'たけ切り', 'Bamboo']], jump: [['', 'ジャンプ', 'Jump'], ['jet', 'ジェットレース', 'Jet race']], disc: [['', 'ドッグ', 'Dog catch'], ['golf', 'フリスビーゴルフ', 'Disc golf']], hoops: [['', '10本', '10 shots'], ['contest', '3ポイントコンテスト', '3-point contest'], ['pickup', 'CPUとピックアップ', 'Pick-up vs CPU']] };
+const VKEY = { pins100: 'bowling100', spares: 'spares', moving: 'archeryMoving', rounds: 'archeryRounds', wave: 'kendoWave', bamboo: 'kendoBamboo', contest: 'hoopsContest', pickup: 'hoopsPickup', jet: 'jetRace', golf: 'discGolf' };
 const FIRST = { how: [['島のしるしをタップして、種目をえらびます。', 'Tap a marker on the island to pick a sport.'], ['11種目それぞれに「やさしい・ふつう・むずかしい」があり、★は最大3つ。島ぜんぶで★99こ。', 'Each of the 11 sports has Easy, Normal and Hard levels, with up to three stars each.'], ['毎日ちがう種目の「きょうのチャレンジ」。同じ日は世界じゅう同じ条件です。', 'A new Daily Challenge every day: the same conditions for everyone.'], ['ふたりでも遊べます（1台をまわす。カヌーは画面わけ、卓球とテニスはたいせん）。', 'Two players can share one device (pass the device; split screen in Canoe; head to head in Table Tennis and Tennis).'], ['スマホをかたむける操作はオプション。いつでも、さわって遊べます。', 'Tilt controls are optional. You can always play by touch.']] };
 
 // ---------- 画面とキャンバス ----------
@@ -264,7 +267,7 @@ function setButtons(list) {
 }
 function hubButtons() {
   setHudText(L('きょうのチャレンジ: ', 'Daily: ') + nm(C.sportOf(C.dailyOf(dateKeyNow()).sport)));
-  setButtons([{ id: 'daily', label: L('きょうの チャレンジ', 'Daily Challenge'), main: true, fn: () => startDaily() }, { id: 'fly', label: L('遊覧飛行', 'Scenic flight'), fn: () => showFlight() }, { id: 'list', label: L('種目いちらん', 'All sports'), fn: () => showList() }, { id: 'rec', label: L('きろく', 'Records'), fn: () => showRecords() }, { id: 'opt', label: L('せってい', 'Settings'), fn: () => showSettings() }].concat(view3d ? [{ id: 'tod', label: L('じこく ', 'Time ') + todName(), fn: () => cycleTod() }, { id: 'ov', label: L('島ぜんたい', 'Whole island'), fn: () => { view3d.hub.overview(); hub.pendingOpen = null; } }] : []));
+  setButtons([{ id: 'daily', label: L('きょうの チャレンジ', 'Daily Challenge'), main: true, fn: () => startDaily() }, { id: 'fly', label: L('遊覧飛行', 'Scenic flight'), fn: () => showFlight() }, { id: 'list', label: L('種目いちらん', 'All sports'), fn: () => showList() }, { id: 'guide', label: L('ガイド', 'Guide'), fn: () => showGuide() }, { id: 'stamps', label: L('スタンプ帳', 'Stamps'), fn: () => showStamps() }, { id: 'rec', label: L('きろく', 'Records'), fn: () => showRecords() }, { id: 'opt', label: L('せってい', 'Settings'), fn: () => showSettings() }].concat(view3d ? [{ id: 'tod', label: L('じこく ', 'Time ') + todName(), fn: () => cycleTod() }, { id: 'ov', label: L('島ぜんたい', 'Whole island'), fn: () => { view3d.hub.overview(); hub.pendingOpen = null; } }] : []));
 }
 
 // ---------- パネル ----------
@@ -283,15 +286,17 @@ function showList() {
 }
 function showCard(id, opts) {
   opts = opts || {}; const s = SP.find(x => x.id === id); const diffNow = opts.diff != null ? opts.diff : (save.set.last && save.set.last[id] != null ? save.set.last[id] : 1);
-  let players = opts.players || 1, diff = diffNow; let po = opts.opp || 'allround', pd = !!opts.doubles; let bm = opts.variant || '', bl = opts.lane || 'house'; let gh = opts.holes || (save.set.gh === 18 ? 18 : 9), gcpu = !!opts.cpu;
+  let players = opts.players || 1, diff = diffNow; const lockTxt = key => { if (!key || I.isUnlocked(save, key)) return ''; const n = I.unlockNeed(key); return L('（★' + n.stars + 'で解放）', ' (unlock: ★' + n.stars + ')'); }, dis = key => (lockTxt(key) ? ' disabled' : '');
+  let po = opts.opp || 'allround', pd = !!opts.doubles; let bm = opts.variant || '', bl = opts.lane || 'house'; let gh = opts.holes || (save.set.gh === 18 ? 18 : 9), gcpu = !!opts.cpu;
+  if (!I.isUnlocked(save, 'golf18')) gh = 9; if (!I.isUnlocked(save, 'golfMatch')) gcpu = false; if (bm && !I.isUnlocked(save, VKEY[bm])) bm = ''; if (pd && !I.isUnlocked(save, id + 'Doubles')) pd = false;
   const draw = () => {
     const two = s.two; const modeLabel = two === 'split' ? L('ふたり（画面わけ）', '2 players (split)') : two === 'versus' ? L('ふたり（たいせん）', '2 players (versus)') : L('ふたり（1台まわし）', '2 players (pass the device)');
-    openOv('<h2>' + esc(nm(s)) + '</h2><div class="scroll"><canvas class="dcv" id="cardIc" width="144" height="144" aria-hidden="true"></canvas><p>' + esc(L(TXT[id].d[0], TXT[id].d[1])) + '</p>'
+    openOv('<h2>' + esc(nm(s)) + '</h2><div class="scroll"><canvas class="dcv" id="cardIc" width="144" height="144" aria-hidden="true"></canvas><p>' + esc(L(TXT[id].d[0], TXT[id].d[1])) + '</p>' + (I.STORIES[id] ? '<p style="font-style:italic">' + esc(L(I.STORIES[id][0], I.STORIES[id][1])) + '</p>' : '')
       + '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(C.starsOf(save, id, d)) + '<br><small>' + (C.bestOf(save, id, d) || '–') + '</small></button>').join('') + '</div></div>'
       + '<div class="og"><div class="ol">' + L('人数', 'Players') + '</div><div class="seg" id="segP"><button class="opt" type="button" data-p="1" aria-pressed="' + (players === 1) + '">' + L('ひとり', '1 player') + '</button><button class="opt" type="button" data-p="2" aria-pressed="' + (players === 2) + '">' + modeLabel + '</button></div></div>'
-      + (id === 'golf' ? '<div class="og"><div class="ol">' + L('ホール数・あそびかた', 'Holes and format') + '</div><div class="seg" id="segH"><button class="opt" type="button" data-h="9" aria-pressed="' + (gh === 9) + '">' + L('9ホール', '9 holes') + '</button><button class="opt" type="button" data-h="18" aria-pressed="' + (gh === 18) + '">' + L('18ホール', '18 holes') + '</button></div><div class="seg" id="segC"><button class="opt" type="button" data-c="0" aria-pressed="' + (!gcpu) + '">' + L('ストロークプレー', 'Stroke play') + '</button><button class="opt" type="button" data-c="1" aria-pressed="' + (gcpu) + '">' + L('CPUとマッチプレー', 'Match play vs CPU') + '</button></div></div>' : '')
-      + (VOPTS[id] ? '<div class="og"><div class="ol">' + L('あそびかた', 'Format') + (id === 'bowling' ? L('・レーン', ' and lane') : '') + '</div><div class="seg" id="segB">' + VOPTS[id].map(a => '<button class="opt" type="button" data-b="' + a[0] + '" aria-pressed="' + (bm === a[0]) + '">' + L(a[1], a[2]) + '</button>').join('') + '</div>' + (id === 'bowling' ? '<div class="seg" id="segLn">' + [['house', L('ふつう', 'House')], ['dry', L('かわき', 'Dry')], ['oil', L('あぶら', 'Oily')]].map(a => '<button class="opt" type="button" data-n="' + a[0] + '" aria-pressed="' + (bl === a[0]) + '">' + a[1] + '</button>').join('') + '</div>' : '') + '</div>' : '')
-      + ((id === 'pingpong' || id === 'tennis') ? '<div class="og"><div class="ol">' + L('あいてのタイプ・ダブルス', 'Opponent style and doubles') + '</div><div class="seg" id="segO">' + [['allround', L('オールラウンド', 'All-round')], ['steady', L('まもり', 'Defender')], ['power', L('パワー', 'Power')], ['spin', L('スピン', 'Spin')]].map(a => '<button class="opt" type="button" data-o="' + a[0] + '" aria-pressed="' + (po === a[0]) + '">' + a[1] + '</button>').join('') + '</div><div class="seg" id="segDb"><button class="opt" type="button" data-db="0" aria-pressed="' + (!pd) + '">' + L('シングルス', 'Singles') + '</button><button class="opt" type="button" data-db="1" aria-pressed="' + pd + '">' + L('ダブルス（CPUとペア）', 'Doubles (with a CPU partner)') + '</button></div></div>' : '')
+      + (id === 'golf' ? '<div class="og"><div class="ol">' + L('ホール数・あそびかた', 'Holes and format') + '</div><div class="seg" id="segH"><button class="opt" type="button" data-h="9" aria-pressed="' + (gh === 9) + '">' + L('9ホール', '9 holes') + '</button><button class="opt" type="button" data-h="18" aria-pressed="' + (gh === 18) + '"' + dis('golf18') + '>' + L('18ホール', '18 holes') + lockTxt('golf18') + '</button></div><div class="seg" id="segC"><button class="opt" type="button" data-c="0" aria-pressed="' + (!gcpu) + '">' + L('ストロークプレー', 'Stroke play') + '</button><button class="opt" type="button" data-c="1" aria-pressed="' + (gcpu) + '"' + dis('golfMatch') + '>' + L('CPUとマッチプレー', 'Match play vs CPU') + lockTxt('golfMatch') + '</button></div></div>' : '')
+      + (VOPTS[id] ? '<div class="og"><div class="ol">' + L('あそびかた', 'Format') + (id === 'bowling' ? L('・レーン', ' and lane') : '') + '</div><div class="seg" id="segB">' + VOPTS[id].map(a => '<button class="opt" type="button" data-b="' + a[0] + '" aria-pressed="' + (bm === a[0]) + '"' + dis(VKEY[a[0]]) + '>' + L(a[1], a[2]) + lockTxt(VKEY[a[0]]) + '</button>').join('') + '</div>' + (id === 'bowling' ? '<div class="seg" id="segLn">' + [['house', L('ふつう', 'House')], ['dry', L('かわき', 'Dry')], ['oil', L('あぶら', 'Oily')]].map(a => '<button class="opt" type="button" data-n="' + a[0] + '" aria-pressed="' + (bl === a[0]) + '">' + a[1] + '</button>').join('') + '</div>' : '') + '</div>' : '')
+      + ((id === 'pingpong' || id === 'tennis') ? '<div class="og"><div class="ol">' + L('あいてのタイプ・ダブルス', 'Opponent style and doubles') + '</div><div class="seg" id="segO">' + [['allround', L('オールラウンド', 'All-round')], ['steady', L('まもり', 'Defender')], ['power', L('パワー', 'Power')], ['spin', L('スピン', 'Spin')]].map(a => '<button class="opt" type="button" data-o="' + a[0] + '" aria-pressed="' + (po === a[0]) + '">' + a[1] + '</button>').join('') + '</div><div class="seg" id="segDb"><button class="opt" type="button" data-db="0" aria-pressed="' + (!pd) + '">' + L('シングルス', 'Singles') + '</button><button class="opt" type="button" data-db="1" aria-pressed="' + pd + '"' + dis(id + 'Doubles') + '>' + L('ダブルス（CPUとペア）', 'Doubles (with a CPU partner)') + lockTxt(id + 'Doubles') + '</button></div></div>' : '')
       + '</div><div class="row2"><button class="btn" id="goBtn" type="button">' + L('あそぶ', 'Play') + '</button><button class="btn sub" id="howBtn" type="button">' + L('あそびかた', 'How to play') + '</button></div><button class="btn sub" id="ovClose" type="button">' + L('もどる', 'Back') + '</button>', 'card');
     const ic = $('cardIc').getContext('2d'); ART.circ(ic, 72, 72, 66, '#fff', s.col, 6); ART.icon(ic, id, 72, 72, 52);
     if ($('segO')) { $('segO').querySelectorAll('.opt').forEach(b => b.onclick = () => { po = b.dataset.o; draw(); }); $('segDb').querySelectorAll('.opt').forEach(b => b.onclick = () => { pd = !!+b.dataset.db; draw(); }); }
@@ -320,7 +325,7 @@ function demoLoop(canvas, spec, id) {
 }
 function showTutorial(id, then) {
   const s = SP.find(x => x.id === id), tx = TXT[id]; save.tu |= 1 << s.bit; writeSave();
-  openOv('<h2>' + esc(nm(s)) + L('のあそびかた', ': how to play') + '</h2><canvas class="demo" id="demoCv" width="440" height="190" aria-hidden="true"></canvas><div class="scroll howto"><ul>' + tx.how.map(h2 => '<li>' + esc(L(h2[0], h2[1])) + '</li>').join('') + '</ul><p>' + esc(tilts(id) ? L('スマホをかたむける操作も、せってい から ためせます（さわる操作はそのまま使えます）。', 'Tilt controls can be tried in Settings (touch always works).') : '') + '</p></div>'
+  openOv('<h2>' + esc(nm(s)) + L('のあそびかた', ': how to play') + '</h2><p><b>' + esc(L(I.GUIDE.ja, I.GUIDE.en)) + L('：いっしょに やってみよう！', ': let\'s try it together!') + '</b></p><canvas class="demo" id="demoCv" width="440" height="190" aria-hidden="true"></canvas><div class="scroll howto"><ul>' + tx.how.map(h2 => '<li>' + esc(L(h2[0], h2[1])) + '</li>').join('') + '</ul><p>' + esc(tilts(id) ? L('スマホをかたむける操作も、せってい から ためせます（さわる操作はそのまま使えます）。', 'Tilt controls can be tried in Settings (touch always works).') : '') + '</p></div>'
     + '<div class="row2"><button class="btn" id="tPlay" type="button">' + L('れんしゅう', 'Practice') + '</button><button class="btn sub" id="tNext" type="button">' + L('つぎへ', 'Continue') + '</button></div>', 'tut');
   demoLoop($('demoCv'), tx.demo, id);
   $('tPlay').onclick = () => { closeOv(); startSport({ id, diff: 0, players: 1, practice: true }); }; $('tNext').onclick = () => { closeOv(); if (then) then(); };
@@ -397,7 +402,7 @@ function startDaily() { const dk = dateKeyNow(), d = C.dailyOf(dk); startSport({
 function startSport(o) {
   if (mode === 'play') endSession(true); const s = SP.find(x => x.id === o.id); const players = (o.players === 2 && !o.daily && !o.practice) ? 2 : 1;
   S = { id: o.id, sp: s, diff: C.clamp(o.diff | 0, 0, 2), seed: o.seed != null ? o.seed : newSeed(), daily: !!o.daily, dateKey: o.dateKey || null, practice: !!o.practice, players, mode: players === 2 ? (s.two === 'pass' ? 'pass' : 'versus') : 'solo', cur: 0, scores: [], results: [], emitted: false };
-  S.opts = (o.opts && !S.daily && !S.practice) ? o.opts : {}; S.gl = o.id === 'golf' && !!view3d;
+  S.opts = (o.opts && !S.daily && !S.practice) ? Object.assign({}, o.opts) : {}; if (S.opts.holes === 18 && !I.isUnlocked(save, 'golf18')) S.opts.holes = 9; if (S.opts.cpu && !I.isUnlocked(save, 'golfMatch')) S.opts.cpu = false; if (S.opts.variant && !I.isUnlocked(save, VKEY[S.opts.variant])) S.opts.variant = ''; if (S.opts.doubles && !I.isUnlocked(save, o.id + 'Doubles')) S.opts.doubles = false; S.gl = o.id === 'golf' && !!view3d;
   mode = 'play'; paused = false; document.body.classList.add('playing'); setHudText(''); setStatus(''); setButtons([]);
   venue = VEN[o.id](makeEnv()); fit(); beginTurn();
   emit('play_start', { mode: S.practice ? 'practice' : S.daily ? 'daily' : S.players === 2 ? 'versus' : 'normal', dateKey: S.daily ? S.dateKey : undefined });
@@ -424,6 +429,7 @@ function showHandoff() {
 function fmtDetail(id, r) {
   const d = (r && r.detail) || {};
   if (id === 'golf') return L('合計 ', 'Total ') + d.strokes + L('打（パー', ' strokes (par ') + d.par + L('）', ')');
+  if (id === 'jump' && d.place != null) return d.place + L('位 · ', ['st', 'nd', 'rd', 'th'][Math.min(3, d.place - 1)] + ' · ') + d.time + L('秒', 's');
   if (id === 'jump') return d.dist + 'm · ' + L('スタイル +', 'style +') + d.style;
   if (id === 'canoe' || id === 'cycling') return d.place + L('位 · ', ['st', 'nd', 'rd', 'th'][Math.min(3, d.place - 1)] + ' · ') + d.time + L('秒', 's');
   if (id === 'bowling') return d.strikes + L(' ストライク', ' strikes');
@@ -478,8 +484,32 @@ function cycleTod() { tod = (tod + 1) % 4; view3d.setHour(TODS[tod][0]); hubButt
 function focus3d(id, open) { hub.sel = id; view3d.hub.focus(id); hub.pendingOpen = open ? id : null; hub.arrived = false; }
 function hub3dFrame(dt) {
   const v = view3d.hub; v.update(dt); v.render(dt); view3d.R.adapt(dt * 1000); g.clearRect(0, 0, W, H);
-  v.draw(g, W, H, { EN, stars: id => bestStarsOf(id), daily: C.dailyOf(dateKeyNow()).sport, sel: hub.sel });
-  if (hub.pendingOpen && v.arrived && !anyOv()) { const id = hub.pendingOpen; hub.pendingOpen = null; sfx('select'); if (C.sportOf(id)) showCard(id); else if (id === 'airstrip') showFlight(); else { toast(view3d.spotName(id, EN) + L('（ひこうきから「さつえい」できるよ）', ' — take a photo from the plane!'), 2200); } }
+  v.draw(g, W, H, { EN, stars: id => bestStarsOf(id), daily: C.dailyOf(dateKeyNow()).sport, sel: hub.sel, met: (k, id) => k === 'npc' ? !!(save.bk.n & (1 << I.NPCS.findIndex(n => n.id === id))) : !!(save.bk.w & (1 << I.WILD.findIndex(w => w.id === id))) });
+  if (hub.pendingOpen && v.arrived && !anyOv()) { const id = hub.pendingOpen; hub.pendingOpen = null; sfx('select'); if (C.sportOf(id)) showCard(id); else if (id === 'airstrip') showFlight(); else if (I.STORIES[id]) showStory(id); else { toast(view3d.spotName(id, EN) + L('（ひこうきから「さつえい」できるよ）', ' — take a photo from the plane!'), 2200); } }
+}
+const avCanvasHtml = id => '<canvas class="dcv" id="' + id + '" width="144" height="144" aria-hidden="true"></canvas>';
+function paintAvatar(id, av, bg) { const c = $(id); if (!c) return; const x = c.getContext('2d'); const loop = ts => { if (!document.body.contains(c)) return; x.clearRect(0, 0, 144, 144); x.fillStyle = bg || '#9ad8ee'; x.fillRect(0, 0, 144, 144); x.fillStyle = '#7fdc79'; x.fillRect(0, 108, 144, 36); ART.mascot(x, 72, 128, 106, { kind: av, pose: Math.sin(ts / 600) > 0.7 ? 'cheer' : 'idle', t: ts / 1000 }); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+function gotStamp(what) { const before = I.stampCount(save); writeSave(); if (I.stampCount(save) > before) { toast(L('スタンプ！ ', 'Stamp! ') + what, 2000); sfx('win'); } }
+function showNpc(id) {
+  const i = I.NPCS.findIndex(n => n.id === id), n = I.NPCS[i], first = !(save.bk.n & (1 << i)); save.bk.n |= 1 << i; const ln = I.npcLine(n, dateKeyNow());
+  openOv('<h2>' + esc(L(n.ja, n.en)) + '</h2>' + avCanvasHtml('npcCv') + '<p style="font-size:14px;color:var(--kb-ink)">' + esc(L(ln[0], ln[1])) + '</p>' + (first ? '<span class="newrec">' + L('はじめまして！ スタンプ', 'Nice to meet you! Stamp') + '</span>' : '') + '<button class="btn" id="ovClose" type="button">' + L('またね', 'See you') + '</button>', 'npc');
+  paintAvatar('npcCv', n.av); $('ovClose').onclick = closeOv; if (first) gotStamp(L(n.ja, n.en)); else writeSave(); sfx('pop');
+}
+function showWild(id) {
+  const key = id === 'crab2' ? 'crab' : id, i = I.WILD.findIndex(w => w.id === key), w = I.WILD[i], first = !(save.bk.w & (1 << i)); save.bk.w |= 1 << i;
+  openOv('<h2>' + esc(L(w.ja, w.en)) + '</h2><p style="font-size:14px;color:var(--kb-ink)">' + esc(L(w.note[0], w.note[1])) + '</p>' + (first ? '<span class="newrec">' + L('はっけん！ スタンプ', 'Discovered! Stamp') + '</span>' : '') + '<button class="btn" id="ovClose" type="button">' + L('そっとしておく', 'Leave it be') + '</button>', 'wild'); $('ovClose').onclick = closeOv; if (first) gotStamp(L(w.ja, w.en)); else writeSave(); sfx('pop');
+}
+function showStory(id) {
+  const t = I.STORIES[id]; if (!t) return; openOv('<h2>' + esc(view3d ? view3d.spotName(id, EN) : id) + '</h2><p style="font-size:14px;line-height:1.7;color:var(--kb-ink)">' + esc(L(t[0], t[1])) + '</p><div class="row2"><button class="btn" id="stFly" type="button">' + L('ひこうきで見にいく', 'Fly there') + '</button><button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button></div>', 'story'); $('ovClose').onclick = closeOv; $('stFly').onclick = () => showFlight();
+}
+function showStamps() {
+  const L2 = I.stampList(save), got = L2.filter(x => x.got).length, groups = [['play', L('あそぶ', 'Play')], ['star', L('★3', '3 stars')], ['photo', L('さつえい', 'Photos')], ['npc', L('島の人', 'Islanders')], ['wild', L('いきもの', 'Wildlife')], ['var', L('あそびかた', 'Formats')]];
+  openOv('<h2>' + L('スタンプ帳', 'Stamp book') + '</h2><p>' + got + ' / ' + L2.length + '</p><div class="scroll">' + groups.map(gr => '<div class="og"><div class="ol">' + gr[1] + ' ' + L2.filter(x => x.group === gr[0] && x.got).length + '/' + L2.filter(x => x.group === gr[0]).length + '</div><div class="stg">' + L2.filter(x => x.group === gr[0]).map(x => '<span class="stp' + (x.got ? ' got' : '') + '" title="' + esc(L(x.ja, x.en)) + '" aria-label="' + esc(L(x.ja, x.en)) + (x.got ? '' : L('（まだ）', ' (not yet)')) + '">' + (x.got ? '★' : '·') + '</span>').join('') + '</div></div>').join('') + '</div><button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'stamps'); $('ovClose').onclick = closeOv;
+}
+function showGuide() {
+  const tips = I.guideTips(save, dateKeyNow());
+  openOv('<h2>' + esc(L(I.GUIDE.ja, I.GUIDE.en)) + '</h2>' + avCanvasHtml('guideCv') + '<div class="scroll"><div class="rows">' + tips.map((t, i) => '<button class="row" type="button" data-i="' + i + '"><span class="tx">' + esc(L(t.ja, t.en)) + '</span></button>').join('') + '</div></div><button class="btn sub" id="ovClose" type="button">' + L('ありがとう', 'Thanks') + '</button>', 'guide');
+  paintAvatar('guideCv', I.GUIDE.av, '#ffe9b8'); $('ovClose').onclick = closeOv; $('ovPanel').querySelectorAll('.row').forEach(b => b.onclick = () => { const a = tips[+b.dataset.i].act; closeOv(); if (a.type === 'sport') hubWalkTo(SP.findIndex(x => x.id === a.id), true); else if (a.type === 'daily') startDaily(); else if (a.type === 'flight') showFlight(); else showStamps(); });
 }
 const ALBUM_KEY = 'kusoge.sports.album';
 function loadAlbum() { try { const o = JSON.parse(store.get(ALBUM_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
@@ -530,7 +560,7 @@ const pend = e => { const p = pt(e); if (mode === 'play' && venue) { if (!paused
 cv.addEventListener('pointerup', pend); cv.addEventListener('pointercancel', e => { hub.pointer = null; const p = pt(e); if (mode === 'play' && venue && !paused) venue.up(p.x, p.y, e.pointerId, p); });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 function hubTap(x, y) {
-  if (view3d) { const it = view3d.hub.pick(x, y); if (it) { sfx('tap'); focus3d(it.id, true); } return; }
+  if (view3d) { const it = view3d.hub.pick(x, y); if (it) { sfx('tap'); if (it.life) { if (it.kind === 'npc') showNpc(it.id); else showWild(it.id); } else focus3d(it.id, true); } return; }
   const r = nodeR(); let best = -1, bd = 1e9; SP.forEach((s, i) => { const p = nodePos(i), d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = i; } });
   if (best >= 0 && bd <= Math.max(r * 1.7, 40)) { hubWalkTo(best, true); sfx('tap'); }
 }
@@ -578,7 +608,7 @@ raf = requestAnimationFrame(frame);
 if (DEBUG) {
   const api = { ready: () => true, state: () => ({ mode, sport: S && S.id, diff: S && S.diff, players: S && S.players, cur: S && S.cur, scores: S && S.scores, ov: ovName, howto: !$('howto').hidden, paused, status: $('status').textContent, hud: $('hudText').textContent, save: JSON.parse(JSON.stringify(save)), buttons: btnList.map(b => b.id), W, H }) };
   window.__kb = Object.assign(window.__kb || {}, api);
-  window.__sports = { api, C, get S() { return S; }, get venue() { return venue; }, get save() { return save; }, startSport, startDaily, showCard, showList, showRecords, showSettings, showAvatar, showTutorial, showHowto, endSession, closeOv, hub, nodePos, Tilt,
+  window.__sports = { api, C, get S() { return S; }, get venue() { return venue; }, get save() { return save; }, startSport, startDaily, showCard, showList, showRecords, showSettings, showAvatar, showNpc, showWild, showStory, showStamps, showGuide, showTutorial, showHowto, endSession, closeOv, hub, nodePos, Tilt,
     setSave(o) { save = C.sanitize(Object.assign(C.newSave(), o)); writeSave(); return save; }, resetSave() { store.del(SAVE_KEY); save = readSave(); renderHudStars(); },
     seed(n) { newSeed = () => n; },
     thumbScene() { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; closeOv(); document.body.classList.add('thumb'); hub.x = 0.62; hub.y = 0.45; hub.sel = 5; fit(); return true; } };
