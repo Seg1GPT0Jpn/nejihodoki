@@ -158,6 +158,8 @@
       if (bo.st === 'land' && bo.ring > 0) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, bu = V.norm(V.mv(R, bo.d)); const bc = V.add(c, V.mul(bu, rad * Math.cos(bo.ring / rad) + 0.2)), rr = rad * Math.sin(bo.ring / rad); if (rr > 0.1) { const bn2 = bu; O('stonering', bc, E.perp(bn2), bn2, rr, [3, 1.2, 0.3], 1); } }
     }
     if (h.lau && !fx.rm) { const lu = h.v, sp = V.len(lu); if (sp > 3) { const d = V.norm(lu); for (let k = 0; k < 4; k++) { const off = V.add(V.mul(E.perp(d), (fx.rnd() - 0.5) * 3), V.mul(V.cross(d, E.perp(d)), (fx.rnd() - 0.5) * 3)); fx.trail(V.add(V.add(h.x, V.mul(d, -2 - fx.rnd() * 5)), off), [0.7, 0.85, 1], 0.5 + fx.rnd() * 0.5); } } }
+    // star-lane ribbon: a glowing band trails from the launch point to the hero during a lane flight
+    if (h.lau && !fx.rm && L.ents[h.lau.i].lane && h.lau.t >= h.lau.pre) { const a = h.lau.p0, n = 14; for (let k = 0; k < n; k++) { const f = k / n, pp = V.add(a, V.mul(V.sub(h.x, a), f)); fx.glow(pp, [0.5 + f * 0.4, 0.7, 1], 3.2 + f * 2.5, 0.35 * f); } }
     // ピップ
     if (h.vis !== 0 || !h.lau || h.lau.t >= h.lau.pre) {
       const sq = h.pound === 1 ? [0.8, 1.35, 0.8] : h.pound === 2 ? [1.3, 0.7, 1.3] : (h.on < 0 && !h.lau ? [0.95, 1.08, 0.95] : [1, 1, 1]);

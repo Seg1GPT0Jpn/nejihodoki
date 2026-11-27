@@ -577,7 +577,7 @@ function render(dt) {
 }
 const lockedMap = () => { const o = {}; for (const g of GALS) o[g.id] = !galUnlocked(g.id); return o; };
 function camera(S, dt, t) {
-  const out = S.over && S.res && S.res.ok ? Math.min(1, G.doneT / 90) : 0; const want = 7.6 + camV.zoom * 4.2 + out * 16 + (S.h.pw && S.h.pw.k === 'bee' ? 0.5 : 0), pose = E.camPose(S, want, S.cam.pitch);
+  const out = S.over && S.res && S.res.ok ? Math.min(1, G.doneT / 90) : 0; const lz = S.h.lau && S.L.ents[S.h.lau.i].lane && S.h.lau.t > S.h.lau.pre ? 1 : 0; camV.lz = (camV.lz || 0) + (lz - (camV.lz || 0)) * Math.min(1, dt * 3); const want = 7.6 + camV.zoom * 4.2 + camV.lz * 11 + out * 16 + (S.h.pw && S.h.pw.k === 'bee' ? 0.5 : 0), pose = E.camPose(S, want, S.cam.pitch);
   camV.zoom = Math.max(0, camV.zoom - dt * 0.9);
   // the camera pulls in at once when a wall is behind it, and eases back out slowly
   const dirv = V.norm(V.sub(pose.pos, pose.tgt)); camV.d = camV.d == null || !camV.pos ? pose.dist : (pose.dist < camV.d ? pose.dist : Math.min(pose.dist, camV.d + dt * 5));
