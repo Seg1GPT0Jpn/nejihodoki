@@ -53,6 +53,7 @@
       if (S.over || h.dead) return inp;
       if (bot.i >= route.length) return inp;
       const st = route[bot.i]; bot.sf++;
+      if (st.wait != null) { if (bot.sf <= st.wait) return inp; bot.i++; bot.sf = 0; return bot.act(S); }
       if (bot.sf > (st.max || 2400)) { bot.fail = 'stuck at step ' + bot.i + ' ' + JSON.stringify(st) + ' pos ' + h.x.map(v => v.toFixed(1)); return inp; }
       const nextStep = () => { bot.i++; bot.sf = 0; bot.jumped = false; bot.launched = false; bot.jh = 0; };
       if (st.boss) {

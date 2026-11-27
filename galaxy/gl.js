@@ -86,7 +86,7 @@
     const sh = 0.96 + j * 0.08; return [c[0] * sh, c[1] * sh, c[2] * sh];
   }
   function bodyMesh(E, b, L, lod) {
-    lod = lod == null ? 1 : lod; const mb = new MB(), N = clamp(Math.round(b.sz * 2 * (lod ? 1 : 0.6)), lod ? 6 : 4, b.k === 's' ? (lod ? 16 : 10) : (lod ? 14 : 8)), ext = b.k === 's' ? [b.r, b.r, b.r] : b.k === 'b' ? b.h : b.k === 'y' ? [b.r, b.hh, b.r] : [b.r, b.hl + b.r, b.r];
+    lod = lod == null ? 1 : lod; const mb = new MB(), N = clamp(Math.round(b.sz * 2 * (lod ? 1 : 0.6)), lod ? 6 : 4, b.k === 's' ? (lod ? 13 : 9) : (lod ? 11 : 7)), ext = b.k === 's' ? [b.r, b.r, b.r] : b.k === 'b' ? b.h : b.k === 'y' ? [b.r, b.hh, b.r] : [b.r, b.hl + b.r, b.r];
     const grid = [], idx = (f, i, j) => f * (N + 1) * (N + 1) + i * (N + 1) + j;
     for (let f = 0; f < 6; f++) for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
       const u = i / N * 2 - 1, v = j / N * 2 - 1; let q;
@@ -126,7 +126,7 @@
     lava: [t => { t.cone(0, 0, 0, 0.3, 0.7, hex('#2a1214'), 6, 0.12); t.ell(0, 0.7, 0, 0.1, 0.08, 0.1, [2.2, 0.8, 0.2], 3, 6); }],
   };
   function addProps(mb, b, L, lod) {
-    const set = PROPS[b.surf]; if (!set || b.g <= 0) return; const n = lod ? clamp(Math.round(b.r * b.r * 0.16), 3, 30) : clamp(Math.round(b.r * b.r * 0.07), 2, 12); const near = []; if (L) for (const e of L.ents) if (e.bi === b.i) { const l = e.l0 || e.l; near.push(l); }
+    const set = PROPS[b.surf]; if (!set || b.g <= 0) return; const n = lod ? clamp(Math.round(b.r * b.r * 0.11), 3, 24) : clamp(Math.round(b.r * b.r * 0.07), 2, 12); const near = []; if (L) for (const e of L.ents) if (e.bi === b.i) { const l = e.l0 || e.l; near.push(l); }
     for (let i = 0; i < n; i++) {
       const h1 = hash3(b.i * 13 + i, 7, 1), h2 = hash3(b.i * 13 + i, 3, 9), h3 = hash3(b.i * 13 + i, 5, 5), y = h1 * 2 - 1, a = h2 * TAU, s = Math.sqrt(1 - y * y), d = [Math.cos(a) * s, y, Math.sin(a) * s], pos = [d[0] * b.r, d[1] * b.r, d[2] * b.r];
       if (near.some(l => Math.hypot(l[0] - pos[0], l[1] - pos[1], l[2] - pos[2]) < 2.2)) continue; if (b.surf !== 'ruin' && b.surf !== 'stone' && b.surf !== 'lava' && b.surf !== 'metal' && i % 3 === 0 && b.r > 5) continue;

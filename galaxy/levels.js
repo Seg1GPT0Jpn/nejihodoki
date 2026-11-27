@@ -57,44 +57,82 @@
   // 体（星）には m（そのミッションだけ）をつけるので、ほかのミッションの星は 出ない・描かない。
   //   course(b, mid, specs, meta) → ミッションを1つ足す。spec = { k: 'walk'|'hop'|'stones'|'pods', r, laps, w, n, ... }
   function course(b, mid, specs, meta) {
-    const M = [mid], O = k => [k * 64, 0, 0], secs = [], pts = {}, route = [];
+    const hz = meta.hz || 0, M = [mid], O = k => [k * 64, 0, 0], secs = [], pts = {}, route = [];
     const surf = meta.surf || 'grass', ent = (k, bid, l, o) => b.ent(k, bid, l, Object.assign({ m: M }, o || {}));
     specs.forEach((sp, k) => {
       const T = mid + 's' + k, o = O(k), P = (x, y, z) => [o[0] + x, o[1] + y, o[2] + z], r = sp.r || 8, S = sp.surf || surf, rt = [];
-      let entry, endL, endB, jEnd;
+      let entry, endL, endB, jEnd, laneReq, endReq;
       if (sp.k === 'walk') {
         const id = T + 'p', n = (sp.laps || 3) * 10; b.sph(id, P(0, 0, 0), r, { surf: S, m: M });
         for (let i = 0; i < n; i++) { const lat = 62 - 118 * i / (n - 1), lon = i * (360 * (sp.laps || 3) / (n - 1)); ent('coin', id, b.ll(id, lat, lon, 1.0), { id: T + 'c' + i }); rt.push(T + 'c' + i); }
-        for (let j = 0; j < (sp.w || 0); j++) { const lat = -42 + 84 * (j + 0.5) / sp.w, l0 = b.ll(id, lat, j * 97 + 30, 0.6); ent('walker', id, l0, { id: T + 'w' + j, l0, ax: [0, 1, 0], w: (j % 2 ? -1 : 1) * (0.5 + 0.12 * (j % 3)), ph: j }); }
+        const nw = (sp.w || 0) + Math.round(hz * 3);
+        for (let j = 0; j < nw; j++) { const lat = -42 + 84 * (j + 0.5) / nw, l0 = b.ll(id, lat, j * 97 + 30, 0.6); ent('walker', id, l0, { id: T + 'w' + j, l0, ax: [0, 1, 0], w: (j % 2 ? -1 : 1) * (0.5 + 0.12 * (j % 3) + (sp.ws || 0) + hz * 0.3), ph: j }); }
         entry = { b: id, l: b.ll(id, 76, 0, 0.5) }; endB = id; endL = b.ll(id, -80, 40, 0.9);
         if (sp.crate) ent('crate', id, b.ll(id, 40, 200, 0.7), { id: T + 'cr', drop: sp.crate });
       } else if (sp.k === 'hop') {
         const nm = sp.n || 5; for (let i = 0; i < nm; i++) b.sph(T + 'm' + i, P(0, 0, -8 * i), 2.4, { surf: S, m: M });
         entry = { b: T + 'm0', l: b.at(T + 'm0', [0, 1, 0], 0.5) }; pts[T + 'f'] = { b: T + 'm0', l: [0, 0, -2.95] }; rt.push({ to: T + 'f', tol: 0.7 });
-        for (let i = 0; i < nm - 1; i++) { const c = T + 'm' + (i + 1); ent('coin', c, b.at(c, [0, 0, 1], 1.0), { id: T + 'h' + i }); rt.push({ to: T + 'h' + i, j: 3.2, land: 1 }); if (i < nm - 2) { pts[T + 'g' + i] = { b: c, l: [0, 0, -2.95] }; rt.push({ to: T + 'g' + i, tol: 0.7 }); } }
+        for (let i = 0; i < nm - 1; i++) { const c = T + 'm' + (i + 1); ent('coin', c, b.at(c, [0, 0, 1], 1.0), { id: T + 'h' + i }); pts[T + 'a' + i] = { b: c, l: [0, 0, 2.95] }; rt.push({ to: T + 'a' + i, tol: 1.0, j: 3.4, land: 1 }); if (i < nm - 2) { pts[T + 'g' + i] = { b: c, l: [0, 0, -2.95] }; rt.push({ to: T + 'g' + i, tol: 0.7 }); } }
         endB = T + 'm' + (nm - 1); endL = b.at(endB, [0, 1, 0], 0.9);
       } else if (sp.k === 'stones') {
-        const N = sp.n || 10, RR = sp.RR || 13.5, id = T + 'c'; b.sph(id, P(0, 0, 0), 6, { surf: S, g: 0.5, gr: 7, m: M });
+        const N = sp.n || 10, RR = sp.RR || 13.5, id = T + 'c'; b.sph(id, P(0, 0, 0), 6, { surf: sp.core || S, g: 0.5, gr: 7, m: M });
         for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2; b.box(T + 't' + i, P(RR * Math.cos(a), RR * Math.sin(a), 0), [2.4, 0.8, 2.4], { rot: [0, 0, a - Math.PI / 2], rr: 0.5, surf: S, gr: 8, m: M }); }
         entry = { b: T + 't0', l: [0, 1.0, 0] };
-        for (let i = 1; i < N - 1; i++) { ent('coin', T + 't' + i, [0, 1.8, 0], { id: T + 'k' + i }); rt.push({ to: T + 'k' + i, j: sp.j || 7.9, land: 1 }); }
+        for (let i = 1; i < N - 1; i++) { ent('coin', T + 't' + i, [0, 1.8, 0], { id: T + 'k' + i }); pts[T + 'q' + i] = { b: T + 't' + i, l: [0, 1.3, 0] }; rt.push({ to: T + 'q' + i, tol: 1.1, j: sp.j || 7.9, land: 1 }); }
         endB = T + 't' + (N - 1); endL = [0, 1.8, 0];
         jEnd = sp.j || 7.9;
-      } else { // pods
-        const A = T + 'a', Bd = T + 'b', C = T + 'c'; b.sph(A, P(0, 0, 0), 6, { surf: S, m: M }); b.sph(Bd, P(20, 5, 0), 4.5, { surf: S, m: M }); b.sph(C, P(34, -2, 12), 3.5, { surf: S, m: M });
-        ent('launch', A, b.at(A, b.to(A, Bd), 0.9), { id: T + 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: Bd, l: b.at(Bd, b.to(Bd, A), 2.4) } });
-        ent('coin', Bd, b.at(Bd, b.to(Bd, A), 1.2), { id: T + 'b1' }); ent('walker', Bd, b.at(Bd, [0.2, 1, 0.2], 0.6), { id: T + 'w', l0: b.at(Bd, [0.2, 1, 0.2], 0.6), ax: [0, 0, 1], w: 0.8, ph: 1 });
-        ent('launch', Bd, b.at(Bd, b.to(Bd, C), 0.9), { id: T + 'L2', mode: 'star', T: 1.3, arc: 6, to: { b: C, l: b.at(C, b.to(C, Bd), 2.4) } }); ent('coin', C, b.at(C, [0, 1, 0], 1.0), { id: T + 'b2' });
+      } else if (sp.k === 'flip') { // さかさま：ジャンプで光のゾーンに入ると、重力がさかさまに
+        const sl = T + 'sl', ce = T + 'ce'; b.box(sl, P(0, 0, 0), [10, 1.5, 10], { rr: 1, surf: 'stone', m: M }); b.box(ce, P(0, 18, 0), [8, 1, 8], { rr: 0.8, surf: 'stone', m: M });
+        b.zone({ s: 'box', c: P(0, 10.5, 0), h: [7.5, 7.5, 7.5], m: 'dir', dir: [0, 1, 0], ms: M });
+        ent('coin', sl, [-4, 2.5, 4], { id: T + 'c1' }); ent('crystal', ce, [3, -2.2, 3], { id: T + 'c3' }); pts[T + 'jp'] = { b: sl, l: [0, 2.0, 0] };
+        entry = { b: sl, l: [-9, 2.0, 6] }; rt.push(T + 'c1', { to: T + 'jp', tol: 0.8 }, { to: T + 'c3', j: 99, once: 1 }); endB = ce; endL = [0, -2.0, -3];
+      } else if (sp.k === 'bee') { // ハチ：ハチの箱をわって、ホバリングで大きなすきまをわたる
+        const ra = T + 'a', rb = T + 'b'; b.sph(ra, P(0, 0, 0), 5, { surf: S, m: M }); b.sph(rb, P(19.5, 0, 0), 5.5, { surf: S, m: M });
+        ent('crate', ra, b.at(ra, [1, 0.12, 0], 0.7), { id: T + 'bx', drop: 'bee' }); ent('coin', ra, b.at(ra, [0, 1, 0], 1.0), { id: T + 'e1' }); ent('coin', null, P(9.6, 0.4, 0), { id: T + 'e2' }); ent('coin', rb, b.at(rb, [-1, 0.05, 0], 1.0), { id: T + 'e3' });
+        entry = { b: ra, l: b.at(ra, [0, 1, 0], 0.5) }; rt.push(T + 'e1', T + 'bx', { fly: T + 'e2' }, { fly: T + 'e3' }); endB = rb; endL = b.at(rb, [0.15, 1, 0], 0.9);
+      } else if (sp.k === 'melt') { // ほのおスピン：アメのトゲの わをとかす
+        const id = T + 'p'; b.sph(id, P(0, 0, 0), 9, { surf: S, m: M }); const sd = dir(-30, 90);
+        ent('crate', id, b.ll(id, 40, 90, 0.7), { id: T + 'fc', drop: 'fire' }); ent('coin', id, b.ll(id, 10, 90, 1), { id: T + 'c1' });
+        ringAround(b, id, sd, 1.5, 6, 0.5).forEach((l, i) => ent('spike', id, l, { id: T + 'sp' + (i + 1) }));
+        entry = { b: id, l: b.ll(id, 66, 90, 0.5) }; rt.push(T + 'c1', T + 'fc'); for (let i = 1; i <= 6; i++) rt.push({ melt: T + 'sp' + i, at: 2.4 }); endB = id; endL = b.ll(id, -30, 90, 0.9);
+        for (let j = 0; j < (sp.w || 0); j++) { const l0 = b.ll(id, 20 - j * 20, 150 + j * 60, 0.6); ent('walker', id, l0, { id: T + 'w' + j, l0, ax: [0, 1, 0], w: (j % 2 ? -1 : 1) * 0.7, ph: j }); }
+      } else if (sp.k === 'swing') { // ゆれる月の はし
+        const sa = T + 'a', sb = T + 'b', mm = T + 'mm'; b.sph(sa, P(0, 0, 0), 5, { surf: S, m: M }); b.sph(sb, P(22, 0, 0), 5, { surf: S, m: M }); b.sph(mm, P(8.5, 0, 0), 2.4, { surf: 'moss', m: M, mv: [{ t: 'lin', d: [6, 0, 0], T: sp.T || 7 }] });
+        ent('coin', mm, b.at(mm, [0, 1, 0], 1.0), { id: T + 'cL' }); ent('coin', mm, b.at(mm, [1, 0, 0], 1.0), { id: T + 'cR' }); ent('coin', sb, b.at(sb, [-1, 0, 0], 1.0), { id: T + 'cB' });
+        pts[T + 'fA'] = { b: sa, l: [5.5, 0, 0] }; entry = { b: sa, l: b.at(sa, [0, 1, 0], 0.5) }; rt.push({ to: T + 'fA', tol: 0.8 }, { to: T + 'cL', j: 5.2, land: 1 }, { to: T + 'cR', tol: 1.2 }, { to: T + 'cB', j: 4.2, land: 1 }); endB = sb; endL = b.at(sb, [0.2, 1, 0], 0.9);
+      } else if (sp.k === 'gears') { // まわる はぐるまの わたり
+        const gr = T + 'r', g1 = T + 'g1', g2 = T + 'g2'; b.sph(gr, P(0, 0, 0), 8, { surf: S, m: M }); b.cyl(g1, P(22, 2, 0), 5, 0.8, { surf: 'gear', rr: 0.3, m: M, mv: [{ t: 'spin', a: [0, 1, 0], T: 30 }] }); b.cyl(g2, P(33, 2, 0), 5, 0.8, { surf: 'gear', rr: 0.3, m: M, mv: [{ t: 'spin', a: [0, 1, 0], T: -30 }] });
+        ent('launch', gr, b.at(gr, b.to(gr, g1), 0.9), { id: T + 'L1', mode: 'star', T: 1.4, arc: 6, to: { b: g1, l: [-3.0, 3.2, 0] } }); ent('coin', g1, [3.4, 1.6, 0], { id: T + 'g1c' }); ent('coin', g2, [-3.4, 1.6, 0], { id: T + 'g2c' });
+        entry = { b: gr, l: b.ll(gr, 10, 60, 0.5) }; rt.push({ to: T + 'L1', launch: 1 }, { to: T + 'g1c', tol: 1.0 }, { to: T + 'g2c', j: 6.5, land: 1 }); endB = g2; endL = [0, 1.6, 0];
+      } else if (sp.k === 'lamp') { // くらやみの ちょうちん（おばけつき）
+        const id = T + 'p'; b.sph(id, P(0, 0, 0), r, { surf: 'dusk', m: M }); const nl = sp.n || 4;
+        for (let i = 0; i < nl; i++) { ent('lantern', id, b.ll(id, 0, 60 + i * (300 / (nl - 1 || 1)), 0.8), { id: T + 'ln' + i, grp: T }); rt.push(T + 'ln' + i); }
+        for (let j = 0; j < (sp.w || 2); j++) { const l0 = b.ll(id, -20 + j * 40, 105 + j * 120, 0.6); ent('walker', id, l0, { id: T + 'w' + j, look: 'ghost', l0, ax: [0, 1, 0], w: (j % 2 ? -1 : 1) * 0.75, ph: j }); }
+        entry = { b: id, l: b.ll(id, -55, 0, 0.5) }; endB = id; endL = b.ll(id, 72, 200, 0.9); laneReq = 'lanterns' + T;
+      } else if (sp.k === 'ped') { // だいざの ちょうちん
+        const id = T + 'p'; b.sph(id, P(0, 0, 0), 9, { surf: 'dusk', m: M });
+        [120, 180, 240].forEach((a, i) => { const rr = a * Math.PI / 180; b.cyl(T + 'pd' + i, P(9.7 * Math.cos(rr), 9.7 * Math.sin(rr), 0), 1.3, 0.7, { rot: [0, 0, rr - Math.PI / 2], rr: 0.3, surf: 'stone', g: 0, m: M }); ent('lantern', T + 'pd' + i, [0, 1.6, 0], { id: T + 'pl' + i, grp: T }); rt.push({ to: T + 'pl' + i, j: 3.6, land: 1 }); });
+        entry = { b: id, l: b.ll(id, 0, 80, 0.5) }; endB = id; endL = b.ll(id, 75, 200, 0.9); laneReq = 'lanterns' + T;
+      } else if (sp.k === 'boss') { // ボスのアリーナ
+        const id = T + 'arena'; b.sph(id, P(0, 0, 0), sp.r || 11, { surf: S, m: M });
+        ent('boss', id, b.at(id, [0, 1, 0], 0), Object.assign({ id: T + 'boss', rad: 1.7 }, sp.boss || {})); ent('heart', id, b.at(id, [-1, 0.2, 0.4], 1.0), { id: T + 'hh1' }); ent('heart', id, b.at(id, [1, -0.2, -0.4], 1.0), { id: T + 'hh2' });
+        entry = { b: id, l: b.at(id, [0, -0.5, 0.9], 0.5) }; rt.push({ boss: 1, max: 9000 }); endB = id; endL = b.at(id, [0.2, 1, 0.1], 1.0); endReq = 'boss';
+      } else { // pods（modes: はっしゃスター・大砲・パイプ）
+        const A = T + 'a', Bd = T + 'b', C = T + 'c', md = sp.modes || ['star', 'star'], tm = { star: [1.3, 6], cannon: [1.9, 8], pipe: [1.4, 3] }; b.sph(A, P(0, 0, 0), 6, { surf: S, m: M }); b.sph(Bd, P(20, 5, 0), 4.5, { surf: S, m: M }); b.sph(C, P(34, -2, 12), 3.5, { surf: S, m: M });
+        ent('launch', A, b.at(A, b.to(A, Bd), 0.9), { id: T + 'L1', mode: md[0], T: tm[md[0]][0], arc: tm[md[0]][1], to: { b: Bd, l: b.at(Bd, b.to(Bd, A), 2.4 + (md[0] === 'star' ? 0 : 0.2)) } });
+        ent('coin', Bd, b.at(Bd, b.to(Bd, A), 1.2), { id: T + 'b1' }); ent('walker', Bd, b.at(Bd, [0.2, 1, 0.2], 0.6), { id: T + 'w', l0: b.at(Bd, [0.2, 1, 0.2], 0.6), ax: [0, 0, 1], w: 0.8 + (sp.ws || 0), ph: 1 });
+        ent('launch', Bd, b.at(Bd, b.to(Bd, C), 0.9), { id: T + 'L2', mode: md[1], T: tm[md[1]][0], arc: tm[md[1]][1], to: { b: C, l: b.at(C, b.to(C, Bd), 2.4 + (md[1] === 'star' ? 0 : 0.2)) } }); ent('coin', C, b.at(C, [0, 1, 0], 1.0), { id: T + 'b2' });
         entry = { b: A, l: b.ll(A, 5, 50, 0.5) }; rt.push({ to: T + 'L1', launch: 1 }, T + 'b1', { to: T + 'L2', launch: 1 }, T + 'b2'); endB = C; endL = b.at(C, [0.2, -1, 0.1], 0.9);
       }
-      secs.push({ entry, endB, endL, rt, T, jEnd });
+      if (k > 0) rt.unshift({ wait: 30 });
+      secs.push({ entry, endB, endL, rt, T, jEnd, laneReq, endReq });
     });
     // つなぎ：レーン（あいだの長い はっしゃスター）と、セクションのはじめのチェックポイント
     secs.forEach((sc, k) => {
       route.push(...sc.rt);
       if (k > 0) b.ent('cp', sc.entry.b, sc.entry.l.map(v => v * 0.999), { m: M, id: sc.T + 'cp' });
-      if (k < secs.length - 1) { const nx = secs[k + 1], id = sc.T + 'endlane'; if (!b.d.ents.some(e => e.id === id)) b.ent('launch', sc.endB, sc.endL, { m: M, id, mode: 'star', T: 2.6, arc: 14, lane: 1, to: { b: nx.entry.b, l: nx.entry.l, lift: 1.5 } }); route.push(sc.jEnd ? { to: id, launch: 1, j: sc.jEnd } : { to: id, launch: 1 }); }
-      else { b.ent('shard', sc.endB, sc.endL, { m: M, id: mid + 's' }); route.push(mid + 's'); }
+      if (k < secs.length - 1) { const nx = secs[k + 1], id = sc.T + 'endlane'; if (!b.d.ents.some(e => e.id === id)) b.ent('launch', sc.endB, sc.endL, Object.assign({ m: M, id, mode: 'star', T: 2.6, arc: 14, lane: 1, to: { b: nx.entry.b, l: nx.entry.l, lift: 1.5 } }, sc.laneReq ? { req: sc.laneReq } : {})); route.push(sc.jEnd ? { to: id, launch: 1, j: sc.jEnd } : { to: id, launch: 1 }); }
+      else { b.ent('shard', sc.endB, sc.endL, Object.assign({ m: M, id: mid + 's' }, sc.endReq ? { req: sc.endReq } : {})); route.push(mid + 's'); }
     });
     b.mission({ id: mid, name: meta.name, desc: meta.desc, kind: meta.kind, start: { b: secs[0].entry.b, l: secs[0].entry.l, fw: [0, 0, 1] }, shard: mid + 's', pts, route, par: meta.par || 150, long: 1 });
   }
@@ -129,7 +167,6 @@
     b.sph('ice1', [0, 0, 0], 9, { surf: 'ice' });
     b.box('slab', [40, 0, 0], [10, 1.5, 10], { rr: 1, surf: 'stone' });
     b.box('ceil', [40, 18, 0], [8, 1, 8], { rr: 0.8, surf: 'stone' });
-    b.zone({ s: 'box', c: [40, 10.5, 0], h: [7.5, 7.5, 7.5], m: 'dir', dir: [0, 1, 0] });
     b.sph('ice2', [-30, 10, 12], 6, { surf: 'ice', ring: 1 });
     b.sph('ice3', [-48, -2, -8], 4.5, { surf: 'stone' });
     // --- ミッション1：つるつる スケート
@@ -138,13 +175,11 @@
     E1('coin', [40, 30], { id: 'a1' }); E1('coin', [15, 30], { id: 'a2' }); E1('coin', [-10, 30], { id: 'a3' }); E1('coin', [-35, 30], { id: 'a4' });
     b.ent('spike', 'ice1', b.ll('ice1', 0, 40, 0.5), { m: m1, id: 'sp1' }); b.ent('spike', 'ice1', b.ll('ice1', -22, 22, 0.5), { m: m1, id: 'sp2' });
     E1('shard', [-58, 30], { id: 's1' });
-    b.mission({ id: 'g2m1', name: T('つるつる スケート', 'Slippery Skate'), desc: T('すべる こおりの星。ブレーキは むずかしい！ トゲに ぶつからずに うらがわへ', 'A very slippery planet. Steer around the ice spikes to the shard on the far side.'), start: { b: 'ice1', l: b.ll('ice1', 66, 30, 0.5), fw: [0, 0, 1] }, shard: 's1', route: ['a1', 'a2', 'a3', 'a4', 's1'], par: 40 });
     // --- ミッション2：さかさま ステーション
     const m2 = ['g2m2'];
     b.ent('coin', 'slab', [-4, 2.5, 4], { m: m2, id: 'c1' }); b.ent('coin', 'slab', [0, 2.5, 0], { m: m2, id: 'c2' });
     b.ent('crystal', 'ceil', [3, -2.2, 3], { m: m2, id: 'c3' });
     b.ent('shard', 'ceil', [0, -2.0, -3], { m: m2, id: 's2' });
-    b.mission({ id: 'g2m2', name: T('さかさま ステーション', 'Upside-Down Station'), desc: T('ジャンプして 光のゾーンに入ると、重力が さかさまに！ 天井の うらがわを あるこう', 'Jump into the glowing zone: gravity flips and you fall up to the ceiling!'), start: { b: 'slab', l: [-6, 2.0, 6], fw: [1, 0, 0] }, shard: 's2', pts: { jp: { b: 'slab', l: [0, 2.0, 0] } }, route: ['c1', { to: 'jp', tol: 0.8 }, { to: 'c3', j: 99, once: 1 }, 's2'], par: 25 });
     // --- ミッション3：こおりの たび（大砲とパイプ）
     const m3 = ['g2m3'];
     b.ent('launch', 'ice1', b.ll('ice1', 12, 290, 0.9), { m: m3, id: 'C1', mode: 'cannon', T: 1.9, arc: 8, to: { b: 'ice2', l: b.at('ice2', b.to('ice2', 'ice1'), 2.6) } });
@@ -153,13 +188,17 @@
     b.ent('crystal', 'ice3', b.at('ice3', b.to('ice3', 'ice2'), 1.2), { m: m3, id: 'd2' });
     b.ent('shard', 'ice3', b.at('ice3', [0, 1, 0.3], 1.0), { m: m3, id: 's3' });
     b.ent('crate', 'ice2', b.at('ice2', [0.3, 1, 0.1], 0.7), { m: m3, id: 'cr1', drop: 'cloud' });
-    b.mission({ id: 'g2m3', name: T('こおりの たび', 'Cannon & Pipe'), desc: T('大砲で となりの星へ、パイプで さらに先へ。こおりの星の いちばん奥に スターシャード', 'Blast off from a cannon, take the pipe, and find the shard on the farthest ice world.'), start: { b: 'ice1', l: b.ll('ice1', 12, 250, 0.5), fw: [0, 0, 1] }, shard: 's3', route: [{ to: 'C1', launch: 1 }, 'd1', { to: 'P1', launch: 1 }, 'd2', 's3'], par: 30 });
     b.d.ents.forEach(e => { if (e.id === 'C1' || e.id === 'P1') e.m = e.m.concat('g2hunt'); });
     b.ent('lumi', 'ice1', b.ll('ice1', -20, 100, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'ice3', b.at('ice3', [-0.4, 0.5, 1], 1.2), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g2hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('こおりの3つの星に かくれた ルミを みつけよう', 'Find the Lumi hiding on the three ice worlds.'), start: { b: 'ice1', l: b.ll('ice1', 12, 250, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'C1', launch: 1 }, 'lu2', { to: 'P1', launch: 1 }, 'lu3'], par: 40 });
     b.ent('cp', 'ice1', b.ll('ice1', -30, 180, 0.2), { id: 'cp1' });
     b.ent('lumi', 'ice2', b.at('ice2', [0.8, 0.3, 0.5], 1.2), { id: 'lu2', n2: 1 });
     b.d.deco = [{ dir: [-0.4, 0.3, -0.85], r: 46, col: [0.65, 0.85, 0.98], ring: 1 }, { dir: [0.8, 0.3, 0.45], r: 16, col: [0.9, 0.95, 1] }, { dir: [0.0, 0.9, 0.4], r: 22, col: [0.55, 0.7, 0.95] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['ice1', 'ice2', 'ice3'], ['g2hunt']); scope(['slab', 'ceil'], ['_x']);
+    course(b, 'g2m1', [{ k: 'walk', r: 10, laps: 3, w: 2 }, { k: 'pods', modes: ['cannon', 'pipe'] }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'walk', r: 10, laps: 4, w: 3 }, { k: 'flip' }, { k: 'pods' }], { hz: 0.15, surf: 'ice', name: T('つるつる スケート', 'Slippery Skate'), desc: T('すべる こおりの星を めぐる ながい たび。ブレーキは むずかしい！', 'A long trip over slippery ice worlds. Braking is hard!'), par: 160 });
+    course(b, 'g2m2', [{ k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 2 }, { k: 'flip' }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'flip' }, { k: 'walk', r: 10, laps: 4, w: 3 }], { hz: 0.15, surf: 'ice', name: T('さかさま ステーション', 'Upside-Down Station'), desc: T('ジャンプして 光のゾーンに入ると、重力が さかさまに！ 天井を あるいて すすむ ながい コース', 'Jump into glowing zones to flip gravity and walk on ceilings, over a long course.'), par: 160 });
+    course(b, 'g2m3', [{ k: 'pods', modes: ['cannon', 'pipe'] }, { k: 'walk', r: 10, laps: 3, w: 3 }, { k: 'pods', modes: ['pipe', 'cannon'] }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'flip' }, { k: 'walk', r: 9, laps: 4, w: 3 }], { hz: 0.15, surf: 'ice', name: T('こおりの たび', 'Cannon & Pipe'), desc: T('大砲とパイプで 星から星へ。こおりの星ぐんを ぐるっと 長い たび', 'A long journey by cannon and pipe through the ice worlds.'), par: 165 });
     return b.d;
   }
 
@@ -181,25 +220,25 @@
     b.ent('crystal', 'st5', [0, 1.8, 0], { m: m1, id: 'k5' });
     b.ent('shard', 'st6', [0, 1.8, 0], { m: m1, id: 's1' });
     b.ent('cp', 'st3', [0, 1.1, 1.2], { m: m1, id: 'cp1' });
-    b.mission({ id: 'g3m1', name: T('ようがんの ぐるぐる', 'Stepping Stones'), desc: T('マグマの星のまわりの 石から石へ ジャンプ！ おちると あっちっち', 'Hop from stone to stone around the lava planet. Don\'t touch the lava!'), start: { b: 'st0', l: [0, 1.0, 0], fw: [0, 1, 0] }, shard: 's1',
-      pts: {}, route: [{ to: 'k1', j: 8.4, land: 1 }, { to: 'k2', j: 8.4, land: 1 }, { to: 'k3', j: 8.4, land: 1 }, { to: 'k4', j: 8.4, land: 1 }, { to: 'k5', j: 8.4, land: 1 }, { to: 's1', j: 8.4 }], par: 40 });
     // --- ミッション2：ふわふわ ハチのたび
     const m2 = ['g3m2'];
     b.ent('crate', 'ra', b.at('ra', [1, 0.12, 0], 0.7), { m: m2, id: 'bx', drop: 'bee' });
     b.ent('coin', 'ra', b.at('ra', [0, 1, 0], 1.0), { m: m2, id: 'e1' });
-    b.ent('coin', null, [79.6, 0.4, 0], { m: m2, id: 'e2' });
     b.ent('shard', 'rb', b.at('rb', [-1, 0.05, 0], 1.0), { m: m2, id: 's2' });
-    b.mission({ id: 'g3m2', name: T('ふわふわ ハチのたび', 'Bee Flight'), desc: T('ハチの箱を スピンでわって、ジャンプボタンを おしっぱなしで ふわふわ とんでいこう', 'Spin the bee crate open, then hold jump to hover across the gap.'), start: { b: 'ra', l: b.at('ra', [0, 1, 0], 0.5), fw: [1, 0, 0] }, shard: 's2', route: ['e1', 'bx', { fly: 'e2' }, { fly: 's2' }], par: 25 });
     // --- ミッション3：ボス グツグツおうさま
     const m3 = ['g3m3'];
     b.ent('boss', 'arena', b.at('arena', [0, 1, 0], 0), { m: m3, id: 'boss', hp: 3, rad: 1.7 });
     b.ent('shard', 'arena', b.at('arena', [0.2, 1, 0.1], 1.0), { m: m3, id: 's3', req: 'boss' });
     b.ent('heart', 'arena', b.at('arena', [-1, 0.2, 0.4], 1.0), { m: m3, id: 'hh1' });
-    b.mission({ id: 'g3m3', name: T('ボス グツグツおうさま', 'Boss: King Simmer'), kind: 'boss', desc: T('おうさまが ドスンと おちたら スキだらけ！ スピンか ふみつけで 3かい あてよう', 'When the king slams down he is dazed: hit him 3 times with a spin or stomp!'), start: { b: 'arena', l: b.at('arena', [0, -0.5, 0.9], 0.5), fw: [0, 0, 1] }, shard: 's3', route: [{ boss: 1 }, 's3'], par: 90 });
     b.ent('lumi', 'st2', [0, 1.8, 0], { id: 'lu1', n2: 0 }); b.ent('lumi', 'st4', [0, 1.8, 0], { id: 'lu2', n2: 1 }); b.ent('lumi', 'st6', [0, 1.8, 0], { id: 'lu3', n2: 2 });
     [1, 3, 5].forEach(i => b.ent('coin', 'st' + i, [0, 1.8, 0], { m: ['g3hunt'], id: 'hc' + i }));
     b.mission({ id: 'g3hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('マグマの石の上に かくれた ルミを3ひき さがそう', 'Hop the stones and find the 3 Lumi.'), start: { b: 'st0', l: [0, 1.0, 0], fw: [0, 1, 0] }, route: [{ to: 'hc1', j: 8.4, land: 1 }, { to: 'lu1', j: 8.4, land: 1 }, { to: 'hc3', j: 8.4, land: 1 }, { to: 'lu2', j: 8.4, land: 1 }, { to: 'hc5', j: 8.4, land: 1 }, { to: 'lu3', j: 8.4, land: 1 }], par: 40 });
     b.d.deco = [{ dir: [0.5, 0.15, -0.8], r: 50, col: [0.95, 0.45, 0.2], ring: 0 }, { dir: [-0.8, 0.4, 0.3], r: 20, col: [0.7, 0.3, 0.3], ring: 1 }, { dir: [0.0, -0.4, -0.9], r: 14, col: [0.95, 0.8, 0.4] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['core'], ['g3hunt']); for (let i = 0; i < 8; i++) scope(['st' + i], ['g3hunt']); scope(['ra', 'rb', 'arena'], ['_x']);
+    course(b, 'g3m1', [{ k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'pods' }, { k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'bee' }, { k: 'walk', r: 10, laps: 4, w: 4 }], { hz: 0.3, surf: 'stone', name: T('ようがんの ぐるぐる', 'Stepping Stones'), desc: T('マグマの星の まわりの 石から石へ ジャンプ！ ながい たび', 'Hop stone to stone around lava worlds, over a long course.'), par: 160 });
+    course(b, 'g3m2', [{ k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'bee' }, { k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'hop', n: 6 }, { k: 'bee' }, { k: 'walk', r: 10, laps: 4, w: 4 }, { k: 'pods' }, { k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'walk', r: 10, laps: 3, w: 4 }], { hz: 0.3, surf: 'stone', name: T('ふわふわ ハチのたび', 'Bee Flight'), desc: T('ハチの力で すきまを ホバリング。長い たび', 'Hover over gaps with the bee power on a long trip.'), par: 160 });
+    course(b, 'g3m3', [{ k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'bee' }, { k: 'pods' }, { k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'hop', n: 6 }, { k: 'walk', r: 10, laps: 4, w: 4 }, { k: 'stones', n: 8, RR: 11.8, j: 8.4, core: 'lava' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'boss', r: 10, boss: { hp: 3 } }], { hz: 0.3, surf: 'stone', kind: 'boss', name: T('ボス グツグツおうさま', 'Boss: King Simmer'), desc: T('マグマの道を こえて おうさまの アリーナへ。ドスンと おちたら スキだらけ！ スピンか ふみつけで 3かい', 'Cross the magma road to the arena. When the king slams down he is dazed: hit him 3 times.'), par: 200 });
     return b.d;
   }
 
@@ -213,13 +252,11 @@
     E1('coin', [40, 0], { id: 'a1' }); E1('coin', [14, 0], { id: 'a2' }); E1('crystal', [-14, 0], { id: 'a3' }); E1('coin', [-38, 0], { id: 'a4' }); E1('shard', [-66, 0], { id: 's1' });
     b.ent('walker', 'cand1', b.ll('cand1', 26, 0, 0.6), { m: m1, id: 'w1', l0: b.ll('cand1', 26, 0, 0.6), ax: [0, 0, 1], w: 0.7, ph: 0 });
     b.ent('walker', 'cand1', b.ll('cand1', -26, 0, 0.6), { m: m1, id: 'w2', l0: b.ll('cand1', -26, 0, 0.6), ax: [0, 0, 1], w: -0.8, ph: 2 });
-    b.mission({ id: 'g4m1', name: T('あまあま さんぽ', 'Sweet Stroll'), desc: T('ガミーを スピンで やっつけながら、キャンディの星の うらがわへ', 'Spin the gummy guards away and cross the candy planet.'), start: { b: 'cand1', l: b.ll('cand1', 70, 0, 0.5), fw: [0, 0, 1] }, shard: 's1', route: ['a1', 'a2', 'a3', 'a4', 's1'], par: 40 });
     // m2：ほのおスピンで、アメのトゲの わをとかす
     const m2 = ['g4m2'], sd = b.ll('cand1', -30, 90, 0).map(v => v); const sdir = LVdir(-30, 90);
     b.ent('crate', 'cand1', b.ll('cand1', 40, 90, 0.7), { m: m2, id: 'fc', drop: 'fire' });
     ringAround(b, 'cand1', sdir, 1.5, 6, 0.5).forEach((l, i) => b.ent('spike', 'cand1', l, { m: m2, id: 'sp' + (i + 1) }));
     b.ent('coin', 'cand1', b.ll('cand1', 10, 90, 1), { m: m2, id: 'c1' }); b.ent('shard', 'cand1', b.ll('cand1', -30, 90, 1.0), { m: m2, id: 's2' });
-    b.mission({ id: 'g4m2', name: T('ほのおスピンで とかせ！', 'Melt It With Fire Spin'), desc: T('ほのおの箱を スピンでわって、ほのおスピン！ アメのトゲを とかして スターシャードへ', 'Pop the fire crate, then fire-spin to melt the candy spikes around the Star Shard.'), start: { b: 'cand1', l: b.ll('cand1', 66, 90, 0.5), fw: [0, 0, 1] }, shard: 's2', route: ['c1', 'fc', { melt: 'sp1', at: 2.4 }, { melt: 'sp2', at: 2.4 }, { melt: 'sp3', at: 2.4 }, { melt: 'sp4', at: 2.4 }, { melt: 'sp5', at: 2.4 }, { melt: 'sp6', at: 2.4 }, 's2'], par: 40 });
     // m3：スケートで すきまを とびこえる（スケートがないと とどかない：ちから＝足の速さ）
     const m3 = ['g4m3']; b.box('sa', [0, 0, 300], [24, 1.5, 6], { rr: 0.6, surf: 'candy', m: m3 }); b.box('sb', [62, 0, 300], [24, 1.5, 6], { rr: 0.6, surf: 'candy', m: m3 });
     b.ent('crate', 'sa', [-19, 2.3, 0], { m: m3, id: 'sk', drop: 'skate' });
@@ -231,6 +268,10 @@
     b.ent('launch', 'cand1', b.at('cand1', b.to('cand1', 'cand2'), 0.9), { m: ['g4hunt'], id: 'LH', mode: 'cannon', T: 1.6, arc: 6, to: { b: 'cand2', l: b.at('cand2', b.to('cand2', 'cand1'), 2.4) } });
     b.mission({ id: 'g4hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('キャンディの星と おとなりの星の ルミを みつけよう', 'Find the Lumi hiding on the candy worlds.'), start: { b: 'cand1', l: b.ll('cand1', 20, 150, 0.5), fw: [0, 0, 1] }, route: ['lu1', 'lu3', { to: 'LH', launch: 1 }, 'lu2'], par: 40 });
     b.d.deco = [{ dir: [-0.6, 0.3, -0.7], r: 40, col: [1, 0.6, 0.8], ring: 1 }, { dir: [0.7, 0.4, -0.4], r: 16, col: [0.6, 0.9, 1] }, { dir: [0.1, -0.3, 0.9], r: 24, col: [1, 0.9, 0.5] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['cand1', 'cand2'], ['g4hunt']); scope(['cand3'], ['_x']);
+    course(b, 'g4m1', [{ k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'melt', w: 1 }, { k: 'hop', n: 5, surf: 'stone' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'pods' }, { k: 'melt', w: 2 }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'walk', r: 9, laps: 3, w: 3 }], { hz: 0.4, surf: 'candy', name: T('あまあま さんぽ', 'Sweet Stroll'), desc: T('ガミーを スピンで やっつけて、アメのトゲを とかしながら すすむ ながい たび', 'A long trip: spin the gummy guards and melt the candy spikes.'), par: 170 });
+    course(b, 'g4m2', [{ k: 'melt' }, { k: 'walk', r: 10, laps: 3, w: 3 }, { k: 'melt', w: 1 }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'melt', w: 2 }, { k: 'walk', r: 10, laps: 4, w: 4 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 3, w: 4 }], { hz: 0.4, surf: 'candy', name: T('ほのおスピンで とかせ！', 'Melt It With Fire Spin'), desc: T('ほのおの箱を スピンでわって、トゲの わを とかしていく ながい コース', 'A long course melting rings of candy spikes with fire spin.'), par: 170 });
     return b.d;
   }
   const LVdir = dir;
@@ -247,12 +288,10 @@
     b.ent('coin', 'bb1', b.ll('bb1', 30, 30, 1), { m: m1, id: 'a1' }); b.ent('coin', 'bb1', b.ll('bb1', 20, 60, 1), { m: m1, id: 'a2' }); b.ent('coin', 'bb2', b.at('bb2', b.to('bb2', 'bb1'), 1.2), { m: m1, id: 'a3' }); b.ent('crystal', 'bb3', b.at('bb3', b.to('bb3', 'bb2'), 1.2), { m: m1, id: 'a4' });
     b.ent('walker', 'bb2', b.at('bb2', [0.1, 1, 0.1], 0.6), { m: m1, id: 'w1', l0: b.at('bb2', [0.1, 1, 0.1], 0.6), ax: [0, 0, 1], w: 0.7, ph: 1 });
     b.ent('shard', 'bb3', b.at('bb3', [0, 1, 0.2], 1.0), { m: m1, id: 's1' });
-    b.mission({ id: 'g5m1', name: T('あわの パイプめぐり', 'Bubble Pipes'), desc: T('パイプで 星から星へ。いちばん奥の みどりの星に スターシャード', 'Take the pipes from planet to planet to the green bubble at the end.'), start: { b: 'bb1', l: b.ll('bb1', 25, 10, 0.5), fw: [0, 0, 1] }, shard: 's1', route: ['a1', 'a2', { to: 'P1', launch: 1 }, 'a3', { to: 'P2', launch: 1 }, 'a4', 's1'], par: 35 });
     // m2：ゆれる 月の はし
     const m2 = ['g5m2'];
     b.ent('coin', 'mm', b.at('mm', [0, 1, 0], 1.0), { m: m2, id: 'cL' }); b.ent('coin', 'mm', b.at('mm', [1, 0, 0], 1.0), { m: m2, id: 'cR' }); b.ent('coin', 'sb', b.at('sb', [-1, 0, 0], 1.0), { m: m2, id: 'cB' });
     b.ent('shard', 'sb', b.at('sb', [0, 1, 0], 1.0), { m: m2, id: 's2' });
-    b.mission({ id: 'g5m2', name: T('ゆれる 月の はし', 'The Swinging Moon'), desc: T('行ったり来たりする ちいさな月に のって、向こうの星へ。タイミングが コツ', 'Ride the little moon that swings back and forth to cross the gap.'), start: { b: 'sa', l: b.at('sa', [0, 1, 0], 0.5), fw: [1, 0, 0] }, shard: 's2', pts: { fA: { b: 'sa', l: [5.5, 0, 0] } }, route: [{ to: 'fA', tol: 0.8 }, { to: 'cL', j: 5.2, land: 1 }, { to: 'cR', tol: 1.2 }, { to: 'cB', j: 4.2, land: 1 }, 's2'], par: 40 });
     // m3：あわの すいせい
     const m3 = ['g5m3'];
     for (let i = 0; i < 6; i++) b.ent('orb', 'bb1', b.ll('bb1', -20, 60 + i * 55, 1.0), { m: m3, id: 'o' + (i + 1) });
@@ -262,6 +301,10 @@
     b.ent('lumi', 'bb1', b.ll('bb1', -50, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'bb2', b.at('bb2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'bb3', b.at('bb3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g5hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('あわの 3つの星の ルミを みつけよう', 'Find the Lumi on the three bubble planets.'), start: { b: 'bb1', l: b.ll('bb1', 25, 10, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'P1', launch: 1 }, 'lu2', { to: 'P2', launch: 1 }, 'lu3'], par: 40 });
     b.d.deco = [{ dir: [-0.5, 0.2, -0.8], r: 44, col: [0.4, 0.8, 0.95], ring: 0 }, { dir: [0.7, 0.5, -0.4], r: 18, col: [0.8, 1, 0.9], ring: 1 }, { dir: [0.0, -0.4, 0.9], r: 20, col: [0.5, 0.6, 1] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['bb1', 'bb2', 'bb3'], ['g5m3', 'g5hunt']); scope(['sa', 'sb', 'mm'], ['_x']);
+    course(b, 'g5m1', [{ k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'swing' }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'swing' }, { k: 'walk', r: 10, laps: 3, w: 4 }], { hz: 0.5, surf: 'water', name: T('あわの パイプめぐり', 'Bubble Pipes'), desc: T('パイプと ゆれる月で あわの星ぐんを めぐる ながい たび', 'A long trip through pipes and swinging moons.'), par: 165 });
+    course(b, 'g5m2', [{ k: 'swing' }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'pods', modes: ['pipe', 'star'] }, { k: 'swing', T: 6 }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'walk', r: 10, laps: 4, w: 4 }, { k: 'stones', n: 10, surf: 'stone' }, { k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'walk', r: 9, laps: 3, w: 4 }], { hz: 0.5, surf: 'water', name: T('ゆれる 月の はし', 'The Swinging Moon'), desc: T('行ったり来たりする 小さな月に のって 向こうの星へ。ながい コース', 'Ride the swinging little moons across a long course.'), par: 170 });
     return b.d;
   }
 
@@ -277,7 +320,6 @@
     const m1 = ['g6m1'];
     b.ent('launch', 'gr1', b.at('gr1', b.to('gr1', 'gd1'), 0.9), { m: m1.concat('g6hunt'), id: 'L1', mode: 'star', T: 1.4, arc: 6, to: { b: 'gd1', l: [-3.0, 3.2, 0] } });
     b.ent('coin', 'gd1', [3.4, 1.6, 0], { m: m1, id: 'g1c' }); b.ent('coin', 'gd2', [-3.4, 1.6, 0], { m: m1, id: 'g2c' }); b.ent('shard', 'gd2', [0, 1.6, 0], { m: m1, id: 's1' });
-    b.mission({ id: 'g6m1', name: T('はぐるまの わたり', 'Gear Crossing'), desc: T('はっしゃスターで まわる はぐるまへ。はぐるまから はぐるまへ ジャンプ！', 'Launch onto the turning gears and hop from gear to gear.'), start: { b: 'gr1', l: b.ll('gr1', 10, 60, 0.5), fw: [0, 0, 1] }, shard: 's1', route: [{ to: 'L1', launch: 1 }, { to: 'g1c', tol: 1.0 }, { to: 'g2c', j: 6.5, land: 1 }, 's1'], par: 40 });
     // m2：ぜんまいの すいせい
     const m2 = ['g6m2'];
     for (let i = 0; i < 6; i++) b.ent('orb', 'gr1', b.ll('gr1', -22, 70 + i * 55, 1.0), { m: m2, id: 'o' + (i + 1) });
@@ -286,15 +328,18 @@
     b.mission({ id: 'g6m2', name: T('ぜんまいの すいせい', 'Clockwork Comet'), kind: 'comet', desc: T('遺跡の星を まわって 6つの かけらを あつめ、はぐるまへ ワープ', 'Collect 6 orbs around the ruin planet and launch to the gear.'), timer: 30, start: { b: 'gr1', l: b.ll('gr1', -22, 20, 0.5), fw: [0, 0, 1] }, shard: 's2', route: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', { to: 'Lc', launch: 1 }, 's2'], par: 30 });
     // m3：遺跡の 石だたみ
     const m3 = ['g6m3']; for (let i = 1; i <= 4; i++) b.ent('coin', 'st' + i, [0, 1.8, 0], { m: m3, id: 'k' + i }); b.ent('crystal', 'st5', [0, 1.8, 0], { m: m3, id: 'k5' }); b.ent('shard', 'st7', [0, 1.8, 0], { m: m3, id: 's3' }); b.ent('coin', 'st6', [0, 1.8, 0], { m: m3, id: 'k6' });
-    b.mission({ id: 'g6m3', name: T('遺跡の 石だたみ', 'Ruin Stepping Stones'), desc: T('こわれた遺跡の 石から石へ。つぎの石まで ジャンプ！', 'Hop across the broken ruin stones.'), start: { b: 'st0', l: [0, 1.0, 0], fw: [0, 1, 0] }, shard: 's3', route: ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 's3'].map(x => ({ to: x, j: 7.9, land: 1 })), par: 40 });
     // m4：ボス ぜんまいガーディアン
     const m4 = ['g6m4'];
     b.ent('boss', 'arena', b.at('arena', [0, 1, 0], 0), { m: m4, id: 'boss', hp: 4, rad: 1.7, spd: 0.55, rs: 14, dbl: 1, stun: 4.6, look: 'guard' });
     b.ent('shard', 'arena', b.at('arena', [0.2, 1, 0.1], 1.0), { m: m4, id: 's4', req: 'boss' }); b.ent('heart', 'arena', b.at('arena', [-1, 0.2, 0.4], 1.0), { m: m4, id: 'hh1' });
-    b.mission({ id: 'g6m4', name: T('ボス ぜんまいガーディアン', 'Boss: Clockwork Guardian'), kind: 'boss', desc: T('2つの衝撃波を ジャンプで よけて、スキだらけの ガーディアンを 4かい たたこう', 'Jump over the double shockwave, then hit the dazed guardian 4 times.'), start: { b: 'arena', l: b.at('arena', [0, -0.5, 0.9], 0.5), fw: [0, 0, 1] }, shard: 's4', route: [{ boss: 1, max: 7000 }, 's4'], par: 120 });
     b.ent('lumi', 'gr1', b.ll('gr1', -50, 220, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'gd1', [-1.5, 1.5, 3], { id: 'lu2', n2: 1 }); b.ent('lumi', 'gd2', [2.5, 1.5, -2], { id: 'lu3', n2: 2 });
     b.mission({ id: 'g6hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('遺跡と はぐるまの ルミを みつけよう', 'Find the Lumi in the ruins and on the gears.'), start: { b: 'gr1', l: b.ll('gr1', 10, 60, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'lu3', j: 6.5, land: 1 }], par: 40 });
     b.d.deco = [{ dir: [0.5, 0.2, -0.8], r: 46, col: [0.9, 0.7, 0.35], ring: 1 }, { dir: [-0.8, 0.4, 0.3], r: 20, col: [0.7, 0.55, 0.3] }, { dir: [0.1, -0.5, -0.85], r: 14, col: [0.95, 0.85, 0.6] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['gr1', 'gd1', 'gd2'], ['g6m2', 'g6hunt']); scope(['core'], ['_x']); for (let i = 0; i < 10; i++) scope(['st' + i], ['_x']); scope(['arena'], ['_x']);
+    course(b, 'g6m1', [{ k: 'gears' }, { k: 'walk', r: 9, laps: 3, w: 4 }, { k: 'stones', n: 10 }, { k: 'gears' }, { k: 'hop', n: 6 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'gears' }, { k: 'walk', r: 10, laps: 3, w: 4 }], { hz: 0.6, surf: 'ruin', name: T('はぐるまの わたり', 'Gear Crossing'), desc: T('まわる はぐるまと 遺跡の星を つなぐ ながい たび', 'A long trip over turning gears and ruin planets.'), par: 170 });
+    course(b, 'g6m3', [{ k: 'stones', n: 10 }, { k: 'gears' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'hop', n: 6 }, { k: 'stones', n: 10 }, { k: 'gears' }, { k: 'walk', r: 10, laps: 4, w: 5 }], { hz: 0.6, surf: 'ruin', name: T('遺跡の 石だたみ', 'Ruin Stepping Stones'), desc: T('こわれた遺跡の 石から石へ。はぐるまも わたる ながい コース', 'Hop broken ruin stones and cross gears on a long course.'), par: 170 });
+    course(b, 'g6m4', [{ k: 'gears' }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'hop', n: 6 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'gears' }, { k: 'stones', n: 10 }, { k: 'hop', n: 6 }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'boss', r: 11, boss: { hp: 4, spd: 0.55, rs: 14, dbl: 1, stun: 4.6, look: 'guard' } }], { hz: 0.6, surf: 'ruin', kind: 'boss', name: T('ボス ぜんまいガーディアン', 'Boss: Clockwork Guardian'), desc: T('遺跡を こえて アリーナへ。2つの衝撃波を ジャンプでよけて、スキだらけの ガーディアンを 4かい たたこう', 'Cross the ruins to the arena, jump the double shockwave and hit the dazed guardian 4 times.'), par: 220 });
     return b.d;
   }
 
@@ -309,11 +354,9 @@
     b.ent('walker', 'hn1', b.ll('hn1', 0, 105, 0.6), { m: m1, id: 'w1', look: 'ghost', l0: b.ll('hn1', 0, 105, 0.6), ax: [0, 1, 0], w: 0.7, ph: 0 }); b.ent('walker', 'hn1', b.ll('hn1', 0, 285, 0.6), { m: m1, id: 'w2', look: 'ghost', l0: b.ll('hn1', 0, 285, 0.6), ax: [0, 1, 0], w: -0.8, ph: 0 });
     b.ent('crate', 'hn1', b.ll('hn1', 60, 300, 0.7), { m: m1, id: 'shc', drop: 'shield' });
     b.ent('shard', 'hn1', b.ll('hn1', 70, 0, 1.0), { m: m1, id: 's1', req: 'lanterns' });
-    b.mission({ id: 'g7m1', name: T('ちょうちんを ともせ', 'Light the Lanterns'), desc: T('くらい星の ちょうちん4つに ふれて あかりを ともそう。おばけは スピンで おいはらえる', 'Touch all 4 lanterns on the dark planet. Spin the ghosts away!'), start: { b: 'hn1', l: b.ll('hn1', 40, 0, 0.5), fw: [0, 0, 1] }, shard: 's1', route: ['ln1', 'ln2', 'ln3', 'ln4', 's1'], par: 40 });
     // m2：おばけの だいざ（ちょうちんは だいざの 上）
     const m2 = ['g7m2']; [1, 2, 3].forEach(i => b.ent('lantern', 'pd' + i, [0, 1.6, 0], { m: m2, id: 'pl' + i }));
     b.ent('shard', 'hn1', b.ll('hn1', 75, 200, 1.0), { m: m2, id: 's2', req: 'lanterns' });
-    b.mission({ id: 'g7m2', name: T('だいざの ちょうちん', 'Pedestal Lights'), desc: T('石のだいざに ジャンプで のって、上の ちょうちんを ともそう', 'Jump up on the stone pedestals and light the lanterns on top.'), start: { b: 'hn1', l: b.ll('hn1', 0, 80, 0.5), fw: [0, 0, 1] }, shard: 's2', route: [{ to: 'pl1', j: 3.6, land: 1 }, { to: 'pl2', j: 3.6, land: 1 }, { to: 'pl3', j: 3.6, land: 1 }, 's2'], par: 40 });
     // m3：ともしびの すいせい
     const m3 = ['g7m3']; for (let i = 0; i < 5; i++) lan(m3, 'lc' + (i + 1), [-25, 40 + i * 60]);
     b.ent('launch', 'hn1', b.at('hn1', b.to('hn1', 'hn2'), 0.9), { m: m3.concat('g7hunt'), id: 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: 'hn2', l: b.at('hn2', b.to('hn2', 'hn1'), 2.4) } });
@@ -324,6 +367,10 @@
     b.ent('lumi', 'hn1', b.ll('hn1', -50, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'hn2', b.at('hn2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'hn3', b.at('hn3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g7hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('くらやみの 3つの星の ルミを みつけよう', 'Find the Lumi in the dark on the three planets.'), start: { b: 'hn1', l: b.ll('hn1', 20, 150, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'L2', launch: 1 }, 'lu3'], par: 40 });
     b.d.deco = [{ dir: [-0.4, 0.4, -0.8], r: 44, col: [0.6, 0.45, 0.9], ring: 1 }, { dir: [0.8, 0.2, 0.5], r: 14, col: [0.9, 0.8, 1] }, { dir: [0.0, 0.8, -0.5], r: 22, col: [0.4, 0.35, 0.7] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['hn1', 'hn2', 'hn3'], ['g7m3', 'g7hunt']); scope(['pd1', 'pd2', 'pd3'], ['_x']);
+    course(b, 'g7m1', [{ k: 'lamp', n: 4, w: 3 }, { k: 'ped' }, { k: 'lamp', n: 5, w: 4 }, { k: 'hop', n: 6 }, { k: 'lamp', n: 5, w: 4 }, { k: 'stones', n: 10 }, { k: 'ped' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'ped' }], { hz: 0.8, surf: 'dusk', name: T('ちょうちんを ともせ', 'Light the Lanterns'), desc: T('くらやみの星々の ちょうちんに あかりを ともして すすむ ながい たび。おばけは スピンで おいはらえる', 'A long trip through the dark, lighting lanterns. Spin the ghosts away!'), par: 180 });
+    course(b, 'g7m2', [{ k: 'ped' }, { k: 'lamp', n: 5, w: 4 }, { k: 'hop', n: 6 }, { k: 'ped' }, { k: 'lamp', n: 6, w: 4 }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'lamp', n: 5, w: 4 }, { k: 'ped' }], { hz: 0.8, surf: 'dusk', name: T('だいざの ちょうちん', 'Pedestal Lights'), desc: T('石のだいざに ジャンプで のって ちょうちんを ともす ながい コース', 'Jump onto pedestals and light lanterns on a long course.'), par: 180 });
     return b.d;
   }
 
@@ -336,7 +383,6 @@
     const m1 = ['g8m1'];
     b.ent('crate', 'ba', b.at('ba', [1, 0.12, 0], 0.7), { m: m1, id: 'bx', drop: 'bee' }); b.ent('coin', 'ba', b.at('ba', [0, 1, 0], 1.0), { m: m1, id: 'e1' }); b.ent('coin', null, [9.6, 0.4, 200], { m: m1, id: 'e2' });
     b.ent('shard', 'bb', b.at('bb', [-1, 0.05, 0], 1.0), { m: m1, id: 's1' });
-    b.mission({ id: 'g8m1', name: T('ほしの みち', 'Star Road'), desc: T('ハチの箱を スピンでわって、ホバリングで 大きな すきまを わたろう', 'Spin open the bee crate and hover across the big gap.'), start: { b: 'ba', l: b.at('ba', [0, 1, 0], 0.5), fw: [1, 0, 0] }, shard: 's1', route: ['e1', 'bx', { fly: 'e2' }, { fly: 's1' }], par: 25 });
     // m2：ぜんぶの 銀河の しれん（ガントレット：すいせいを つなげる。ぜんぶの銀河をクリアしたら）
     const m2 = ['g8m2'], chain = ['fs1', 'fs2', 'fs3', 'fs4']; let ct = 0;
     chain.forEach((id, k) => { for (let i = 0; i < 3; i++) b.ent('orb', id, b.ll(id, k === 0 ? -20 : 20 - i * 5, 120 + i * 80 + k * 20, 1.0), { m: m2, id: 'o' + (++ct) });
@@ -347,10 +393,13 @@
     const m3 = ['g8m3'];
     b.ent('boss', 'arena', b.at('arena', [0, 1, 0], 0), { m: m3, id: 'boss', hp: 6, rad: 1.9, spd: 0.48, rs: 12, dblAt: 4, triAt: 2, stun: 5.8, look: 'king' });
     b.ent('shard', 'arena', b.at('arena', [0.2, 1, 0.1], 1.0), { m: m3, id: 's3', req: 'boss' }); b.ent('heart', 'arena', b.at('arena', [-1, 0.2, 0.4], 1.0), { m: m3, id: 'hh1' }); b.ent('heart', 'arena', b.at('arena', [1, -0.2, -0.4], 1.0), { m: m3, id: 'hh2' });
-    b.mission({ id: 'g8m3', name: T('ラスボス ほしのおうさま', 'Final Boss: Star King'), kind: 'final', desc: T('3だんかいの しょうげきは。ジャンプで よけて、スキを スピンで 6かい！', 'Three phases of shockwaves. Jump them, then spin the dazed king 6 times!'), start: { b: 'arena', l: b.at('arena', [0, -0.5, 0.9], 0.5), fw: [0, 0, 1] }, shard: 's3', route: [{ boss: 1, max: 7000 }, 's3'], par: 150 });
     b.ent('lumi', 'fs1', b.ll('fs1', 40, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'fs2', b.at('fs2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'fs3', b.at('fs3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g8hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('さいごの星ぐんの ルミを みつけよう', 'Find the last three Lumi.'), start: { b: 'fs1', l: b.ll('fs1', 20, 150, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'L2', launch: 1 }, 'lu3'], par: 40 });
     b.d.deco = [{ dir: [0.5, 0.3, -0.8], r: 54, col: [1, 0.85, 0.4], ring: 1 }, { dir: [-0.8, 0.3, 0.4], r: 22, col: [0.6, 0.7, 1] }, { dir: [0.1, -0.5, -0.85], r: 16, col: [1, 0.6, 0.8] }];
+    const scope = (ids, m) => b.d.bodies.forEach(bd => { if (ids.indexOf(bd.id) >= 0) bd.m = (bd.m || []).concat(m); });
+    scope(['fs1', 'fs2', 'fs3', 'fs4'], ['g8m2', 'g8hunt']); scope(['ba', 'bb', 'arena'], ['_x']);
+    course(b, 'g8m1', [{ k: 'bee' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'flip' }, { k: 'stones', n: 10 }, { k: 'bee' }, { k: 'hop', n: 7 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 4, w: 5 }], { hz: 1.0, surf: 'star', name: T('ほしの みち', 'Star Road'), desc: T('ハチ・重力・石・月…ぜんぶの ちからを つかう ながい ほしの みち', 'A long star road that uses every power.'), par: 190 });
+    course(b, 'g8m3', [{ k: 'bee' }, { k: 'flip' }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 3, w: 6 }, { k: 'melt', w: 2 }, { k: 'hop', n: 7 }, { k: 'gears' }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 4, w: 6 }, { k: 'hop', n: 7 }, { k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 6 }, { k: 'boss', r: 12, boss: { hp: 6, spd: 0.48, rs: 12, dblAt: 4, triAt: 2, stun: 5.8, look: 'king' } }], { hz: 1.0, surf: 'star', kind: 'final', name: T('ラスボス ほしのおうさま', 'Final Boss: Star King'), desc: T('これまでの ちからを ぜんぶ つかって アリーナへ。3だんかいの しょうげきを よけて、スキを スピンで 6かい！', 'Use every power to reach the arena, jump three phases of shockwaves, then spin the dazed king 6 times.'), par: 260 });
     return b.d;
   }
 

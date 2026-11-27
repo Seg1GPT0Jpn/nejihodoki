@@ -15,7 +15,7 @@
     INV: 1.6, VOID: 34, HOVER: 3.0, POWER_T: 28, ENEMY_R: 1.05,
   };
   // むずかしさ 0 やさしい（いままで）/ 1 ふつう / 2 むずかしい / 3 たつじん
-  const DIF = { hp: [3, 3, 3, 3], inv: [1.6, 1.4, 1.2, 1.1], timer: [1, 1, 1, 1], wk: [1, 1.25, 1.5, 1.8], launchR: [1.55, 1.5, 1.45, 1.4], pick: [1, 1, 0.97, 0.95], coyote: [0.12, 0.11, 0.1, 0.1], buf: [0.14, 0.13, 0.12, 0.12], boss: [1, 1.2, 1.4, 1.6], stun: [1, 0.75, 0.6, 0.5], tele: [1, 0.8, 0.65, 0.55], bhp: [0, 0, 1, 1], er: [0, 0.1, 0.2, 0.3], sp: [0, 0.05, 0.1, 0.15], crum: [1, 0.8, 0.65, 0.5], lives: [99, 99, 99, 99], cp: [1, 1, 0, 0], vd: [0, 1, 1, 2] };
+  const DIF = { hp: [3, 3, 3, 3], inv: [1.6, 1.4, 1.2, 1.1], timer: [1, 1, 1, 1], wk: [1, 1.25, 1.5, 1.8], launchR: [1.55, 1.5, 1.45, 1.4], pick: [1, 1, 0.97, 0.95], coyote: [0.12, 0.11, 0.1, 0.1], buf: [0.14, 0.13, 0.12, 0.12], boss: [1, 1.08, 1.16, 1.25], stun: [1, 0.9, 0.8, 0.7], tele: [1, 0.9, 0.8, 0.7], bhp: [0, 0, 0, 0], er: [0, 0.1, 0.2, 0.3], sp: [0, 0.05, 0.1, 0.15], crum: [1, 0.8, 0.65, 0.5], lives: [99, 99, 99, 99], cp: [1, 1, 1, 1], vd: [0, 1, 1, 2] };
   const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, dusk: { fr: 1 }, star: { fr: 1 }, water: { fr: 0.9 }, ruin: { fr: 1 }, gear: { fr: 1 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 } };
 
   // ---------- ベクトル・行列（9要素の行優先） ----------
@@ -126,7 +126,7 @@
     if (hint >= 0 && hn && best !== hint && hd - bd < 0.35) { best = hint; bn = hn; bd = hd; }
     let up = bn, gm = best >= 0 ? K.G0 * L.bodies[best].g : 0, zone = -1;
     for (let zi = 0; zi < L.zones.length; zi++) {
-      const z = L.zones[zi]; if (!inZone(z, x)) continue;
+      const z = L.zones[zi]; if (z.ms && z.ms.indexOf(S.mid) < 0) continue; if (!inZone(z, x)) continue;
       if (z.m === 'dir') { up = mul(z.dir, -1); gm = K.G0 * (z.g == null ? 1 : z.g); zone = zi; }
       else if (z.m === 'inv' && bn) { up = mul(bn, -1); zone = zi; }
       else if (z.m === 'body' && z.b >= 0) { const r = sdfW(S, z.b, x); up = [r[1], r[2], r[3]]; best = z.b; bd = r[0]; gm = K.G0 * L.bodies[z.b].g; zone = zi; }
@@ -142,13 +142,13 @@
     const m = L.missions[mid] || L.mlist[0]; const dif = clamp(opt.dif != null ? opt.dif | 0 : (m.dif == null ? 0 : m.dif), 0, 3);
     const S = { f: 0, t: 0, id: L.id, mid: m.id, rs: (opt.seed == null ? 12345 : opt.seed) >>> 0, as: { hp: as.hp ? 1 : 0, nofall: as.nofall ? 1 : 0, slow: as.slow ? 1 : 0 },
       pb: 0, ev: [], e: new Array(L.ents.length).fill(0), flag: {}, cnt: { coin: 0, crystal: 0, orb: 0, kill: 0, stomp: 0, lumi: 0, die: 0, jump: 0, spin: 0, pound: 0, wk: 0, launch: 0, hurt: 0, hit: 0 }, lumi: 0, cp: -1, res: null, over: 0, gate: -1, bnr: null,
-      cam: { fw: [0, 0, -1], up: [0, 1, 0], pitch: 0.4, man: 0 }, boss: null, need: { orb: 0, lan: 0 }, lit: [], tl: 0, hpMax: DIF.hp[dif] + (as.hp ? 3 : 0), bsig: 0, dif, wk: DIF.wk[dif], lives: DIF.lives[dif] + (as.hp ? 2 : 0) };
+      cam: { fw: [0, 0, -1], up: [0, 1, 0], pitch: 0.4, man: 0 }, boss: null, need: { orb: 0, lan: 0 }, lit: [], lg: {}, tl: 0, hpMax: DIF.hp[dif] + (as.hp ? 3 : 0), bsig: 0, dif, wk: DIF.wk[dif], lives: DIF.lives[dif] + (as.hp ? 2 : 0) };
     Object.defineProperty(S, 'L', { value: L, writable: true, enumerable: false });
     Object.defineProperty(S, 'xf', { value: L.bodies.map(b => xfAt(b, 0)), writable: true, enumerable: false });
     Object.defineProperty(S, 'xp', { value: L.bodies.map(b => xfAt(b, 0)), writable: true, enumerable: false });
     Object.defineProperty(S, 'ep', { value: [], writable: true, enumerable: false });
     Object.defineProperty(S, 'bOn', { value: L.bodies.map(b => !b.m || b.m.indexOf(m.id) >= 0), writable: true, enumerable: false });
-    S.act = []; L.ents.forEach((e, i) => { if ((!e.m || e.m.indexOf(m.id) >= 0) && !(e.bi >= 0 && !S.bOn[e.bi])) { S.act.push(i); if (e.k === 'orb') S.need.orb++; if (e.k === 'lantern') S.need.lan++; } });
+    S.act = []; L.ents.forEach((e, i) => { if ((!e.m || e.m.indexOf(m.id) >= 0) && !(e.bi >= 0 && !S.bOn[e.bi])) { S.act.push(i); if (e.k === 'orb') S.need.orb++; if (e.k === 'lantern') { S.need.lan++; S.lg[e.grp || ''] = (S.lg[e.grp || ''] || 0) + 1; } } });
     S.tl = m.timer ? Math.max(m.timer * DIF.timer[dif], (m.tmin || 0)) * (S.as.slow ? 1.6 : 1) : m.limit ? m.limit * (S.as.slow ? 1.6 : 1) : 0;
     const bs = L.ents.findIndex((e, i) => e.k === 'boss' && S.act.indexOf(i) >= 0);
     if (bs >= 0) { const e = L.ents[bs]; S.boss = { i: bs, hp: (e.hp || 3) + DIF.bhp[dif], hp0: (e.hp || 3) + DIF.bhp[dif], xh: DIF.bhp[dif], st: 'walk', t: 2, d: norm(e.l), tg: norm(e.l), ring: -1, rt: 0, flash: 0, off: 0 }; }
@@ -451,7 +451,7 @@
         case 'heart': if (d < 1.3) { S.e[i] = 1; h.hp = Math.min(S.hpMax, h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); } break;
         case 'orb': if (d < 1.5 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.orb++; S.ev.push(['orb', p[0], p[1], p[2]]); if (S.cnt.orb >= S.need.orb) { S.flag.orbs = 1; S.ev.push(['banner', 'orbs']); } } break;
         case 'lumi': if (d < 1.5 * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.lumi++; S.lumi |= 1 << (e.n2 || 0); S.ev.push(['lumi', p[0], p[1], p[2], e.n2 || 0]); const m = L.missions[S.mid]; if (m.kind === 'hunt' && S.cnt.lumi >= (m.lumi || 3)) finish(S, true, 'lumi'); } break;
-        case 'lantern': if (d < 1.7 && S.lit.indexOf(i) < 0) { S.lit.push(i); S.ev.push(['lantern', p[0], p[1], p[2]]); if (S.lit.length >= S.need.lan) { S.flag.lanterns = 1; S.ev.push(['banner', 'lanterns']); } } break;
+        case 'lantern': if (d < 1.7 && S.lit.indexOf(i) < 0) { S.lit.push(i); S.ev.push(['lantern', p[0], p[1], p[2]]); const gp = e.grp || ''; let nl = 0; for (const j of S.lit) if ((L.ents[j].grp || '') === gp) nl++; if (nl >= S.lg[gp]) { S.flag['lanterns' + gp] = 1; S.flag.lanterns = S.flag.lanterns || (S.lit.length >= S.need.lan ? 1 : 0); S.ev.push(['banner', 'lanterns']); } } break;
         case 'power': if (d < 1.5) { S.e[i] = 1; givePower(S, e.type, p); } break;
         case 'cp': if (DIF.cp[S.dif] && d < 1.8 && S.cp !== i) { S.cp = i; S.ev.push(['cp', p[0], p[1], p[2]]); } break;
         case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (m.kind !== 'hunt' && (!m.shard || m.shard === e.id)) finish(S, true, 'shard'); } break;
