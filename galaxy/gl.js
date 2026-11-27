@@ -68,11 +68,15 @@
     dusk: { a: '#5a4a8a', b: '#3e3268', c: '#8a74c0', d: '#2a2048', e: '#c8b0ff' }, star: { a: '#f4e08a', b: '#e0b850', c: '#fff6c8', d: '#a8742a', e: '#ffffff' },
     crystal: { a: '#9a7ce0', b: '#6a5cc8', c: '#d8c8ff', d: '#4a3a90', e: '#7ff0ff' },
     water: { a: '#4fc3e8', b: '#2f93d0', c: '#bff4ff', d: '#ffffff', e: '#ff9a8a' }, ruin: { a: '#c9b48a', b: '#a8946a', c: '#e6d6a8', d: '#7a6848', e: '#ffd060' }, gear: { a: '#b89a5a', b: '#8c7340', c: '#e8c878', d: '#5a4828', e: '#ffe9a0' },
+    chess: { a: '#f2ead8', b: '#3a3342', c: '#ffffff', d: '#8a6a3a', e: '#ffd060' }, felt: { a: '#2f8f5a', b: '#1f6e44', c: '#f4f4f0', d: '#222230', e: '#ffd060' }, tile: { a: '#e8efd8', b: '#bfd4a0', c: '#ffffff', d: '#2f8f5a', e: '#d94a4a' },
     sand: { a: '#f1d896', b: '#d9b974', c: '#fff0c0', d: '#c8a050', e: '#ffffff' }, candy: { a: '#ff9ad0', b: '#ffd1e8', c: '#fff4a0', d: '#8fe0ff', e: '#ffffff' },
   };
   function surfColor(surf, p, n, sz) {
     const P = PAL[surf] || PAL.grass, k = 1.4 / Math.max(3, sz) * 4, nx = p[0] * k, ny = p[1] * k, nz = p[2] * k, a = vnoise(nx, ny, nz), b = vnoise(nx * 2.6 + 9, ny * 2.6, nz * 2.6), j = hash3(p[0] * 9, p[1] * 9, p[2] * 9);
     let c = mix(hex(P.a), hex(P.b), clamp((a - 0.35) * 2.2, 0, 1)); c = mix(c, hex(P.c), clamp((b - 0.62) * 3, 0, 1) * 0.8);
+    if (surf === 'chess') { const q = 1.5, par = (Math.floor(p[0] / q) + Math.floor(p[1] / q) + Math.floor(p[2] / q)) & 1; c = par ? hex(P.b) : hex(P.a); }
+    else if (surf === 'felt') { const q = 2.0, x = Math.floor(p[0] / q), y = Math.floor(p[1] / q), z = Math.floor(p[2] / q); c = mix(hex(P.a), hex(P.b), ((x + y + z) & 1) * 0.7); if (((x * 7 + y * 13 + z * 5) & 7) === 0) c = hex(((x + y + z) & 1) ? P.c : P.d); }
+    else if (surf === 'tile') { const q = 1.2, fx = (p[0] / q) % 1, fy = (p[1] / q) % 1, fz = (p[2] / q) % 1, ed = Math.min(Math.abs(fx), Math.abs(fy), Math.abs(fz), 1 - Math.abs(fx), 1 - Math.abs(fy), 1 - Math.abs(fz)); c = ed < 0.06 ? hex(P.d) : mix(hex(P.a), hex(P.b), clamp((a - 0.4) * 2, 0, 1)); }
     if (surf === 'lava') { const v = Math.abs(a - 0.5); if (v < 0.07) c = mix([2.4, 0.9, 0.2], [2.0, 1.4, 0.4], b); else if (v < 0.11) c = mix(c, hex(P.d), 0.6); }
     else if (surf === 'ice') { const v = Math.abs(vnoise(nx * 1.6 + 3, ny * 1.6, nz * 1.6) - 0.5); if (v < 0.025) c = hex(P.d); }
     else if (surf === 'metal') { const g = (Math.abs(((p[0] * 0.7) % 2 + 2) % 2 - 1) < 0.04) || (Math.abs(((p[1] * 0.7) % 2 + 2) % 2 - 1) < 0.04) ? 0.75 : 1; c = c.map(q => q * g); if (j > 0.985) c = [0.5, 1.6, 2.0]; }

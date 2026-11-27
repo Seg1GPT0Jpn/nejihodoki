@@ -188,7 +188,7 @@
         case 'lantern': { const lit = S.lit.indexOf(i) >= 0; O(lit ? 'lantern_on' : 'lantern', V.add(p, V.mul(up, -0.5)), ROT(up, 0.3), up, 1, null, lit ? 0.8 : 0); if (lit) fx.glow(V.add(p, V.mul(up, 0.7)), [1, 0.8, 0.35], 14, 0.55); else fx.glow(V.add(p, V.mul(up, 0.7)), [0.6, 0.5, 1], 3, 0.25); break; }
         case 'power': O(e.type, bob, spin, up, 1, null, 0.5); fx.glow(p, [1, 0.9, 0.4], 4, 0.4); break;
         case 'npc': { const to = V.sub(h.x, p), fw0 = E.projT(to, up), fw = V.len(fw0) > 1e-3 ? V.norm(fw0) : E.perp(up), pos = V.add(p, V.mul(up, 0.9 + Math.abs(Math.sin(t * 2 + i)) * 0.06)), M = GL.M.basis(pos, fw, up, [1, 1, 1]), tn = [1.35, 0.8, 0.45]; objs.push({ m: 'hero', M, tint: tn, emis: 0.08, rim: [0.5, 0.45, 0.35] }); objs.push({ m: 'eyes_h', M, tint: tn, emis: 0.05 }); fx.glow(V.add(pos, V.mul(up, 1.7)), [1, 0.8, 0.4], 2.4, 0.3); break; }
-        case 'gate': { const open = !opt.locked || !opt.locked[e.gal]; O('gate', V.add(p, V.mul(up, -0.3)), ROT(up, 0.5 + i * 2), up, 1 + (open && opt.unlockAnim > 0 ? Math.sin(opt.unlockAnim * 0.3) * 0.25 * Math.min(1, opt.unlockAnim / 30) : 0), open ? null : [0.45, 0.45, 0.55], open ? 0.45 : 0); if (open) fx.glow(V.add(p, V.mul(up, 1.2)), [0.5, 0.6, 1], 9, 0.5); break; }
+        case 'gate': { const open = !opt.locked || !opt.locked[e.gal]; if (e.secret && !open) break; O('gate', V.add(p, V.mul(up, -0.3)), ROT(up, 0.5 + i * 2), up, 1 + (open && opt.unlockAnim > 0 ? Math.sin(opt.unlockAnim * 0.3) * 0.25 * Math.min(1, opt.unlockAnim / 30) : 0), open ? null : [0.45, 0.45, 0.55], open ? 0.45 : 0); if (open) fx.glow(V.add(p, V.mul(up, 1.2)), [0.5, 0.6, 1], 9, 0.5); break; }
         default: break;
       }
     }

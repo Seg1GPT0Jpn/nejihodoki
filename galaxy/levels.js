@@ -51,6 +51,7 @@
     b.sph('deck', [0, 0, 0], 12, { surf: 'metal' });
     b.sph('moon', [0, 0, 0], 2, { surf: 'stone', mv: [{ t: 'orbit', c: [0, 0, 0], a: [0.3, 1, 0.1], T: 24 }], g: 1 }); b.d.bodies[1].p = [17, 3, 0]; b.d.bodies[1].mv[0].c = [0, 0, 0];
     ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g11', 'g12'].forEach((g, i) => { const row = Math.floor(i / 4), col = i % 4; b.ent('gate', 'deck', b.ll('deck', [36, 8, -22][row], col * 90 + row * 30, 0.9), { id: 'gate' + (i + 1), gal: g }); });
+    b.ent('gate', 'deck', b.ll('deck', -54, 205, 0.9), { id: 'gate13', gal: 'g13', secret: 1 });
     [[62, 50], [-45, 200], [20, 330]].forEach((c, i) => b.ent('npc', 'deck', b.ll('deck', c[0], c[1], 0.5), { id: 'npc' + i, hint: i }));
     for (let i = 0; i < 6; i++) b.ent('coin', 'deck', b.ll('deck', -20 + (i % 3) * 8, 60 + i * 20, 1), {});
     b.ent('coin', 'moon', b.at('moon', [0, 1, 0], 1), {}); b.ent('crystal', 'moon', b.at('moon', [1, 0, 0], 1), {});
@@ -260,7 +261,7 @@
       if (k < secs.length - 1) { const nx = secs[k + 1], id = sc.T + 'endlane'; if (!b.d.ents.some(e => e.id === id)) b.ent('launch', sc.endB, sc.endL, Object.assign({ m: M, id, mode: 'star', T: 2.6, arc: 14, lane: 1, to: { b: nx.entry.b, l: nx.entry.l, lift: 1.5 } }, sc.laneReq ? { req: sc.laneReq } : {})); route.push(sc.jEnd ? { to: id, launch: 1, j: sc.jEnd } : { to: id, launch: 1 }); }
       else if (meta.kind !== 'hunt') { b.ent('shard', sc.endB, sc.endL, Object.assign({ m: M, id: mid + 's' }, sc.endReq ? { req: sc.endReq } : meta.kind === 'comet' ? { req: 'orbs' } : {})); route.push(mid + 's'); }
     });
-    b.mission({ id: mid, mech: Array.from(new Set(specs.map(q => q.k))), goal: (() => { const c = {}; specs.forEach(q => { if (q.k !== 'walk') c[q.k] = (c[q.k] || 0) + 1; }); let best = 'walk', n = 0; for (const k of Object.keys(c)) if (c[k] > n) { n = c[k]; best = k; } return best; })(), name: meta.name, desc: meta.desc, kind: meta.kind, timer: meta.timer, need: meta.need, lumi: meta.kind === 'hunt' ? 3 : undefined, start: { b: secs[0].entry.b, l: secs[0].entry.l, fw: [0, 0, 1] }, shard: meta.kind === 'hunt' ? undefined : mid + 's', pts, route, par: meta.par || 150, long: meta.kind === 'comet' || meta.kind === 'hunt' ? 0 : 1 });
+    b.mission({ id: mid, tribute: meta.tribute, mech: Array.from(new Set(specs.map(q => q.k))), goal: (() => { const c = {}; specs.forEach(q => { if (q.k !== 'walk') c[q.k] = (c[q.k] || 0) + 1; }); let best = 'walk', n = 0; for (const k of Object.keys(c)) if (c[k] > n) { n = c[k]; best = k; } return best; })(), name: meta.name, desc: meta.desc, kind: meta.kind, timer: meta.timer, need: meta.need, lumi: meta.kind === 'hunt' ? 3 : undefined, start: { b: secs[0].entry.b, l: secs[0].entry.l, fw: [0, 0, 1] }, shard: meta.kind === 'hunt' ? undefined : mid + 's', pts, route, par: meta.par || 150, long: meta.kind === 'comet' || meta.kind === 'hunt' ? 0 : 1 });
   }
 
   // ================== 1. みどりのポコ星ぐん ==================
@@ -529,7 +530,7 @@
     scope(['fs1', 'fs2', 'fs3', 'fs4'], ['_x']); scope(['ba', 'bb', 'arena'], ['_x']);
     course(b, 'g8m1', [{ k: 'kite' }, { k: 'jellytower' }, { k: 'flip' }, { k: 'stones', n: 10 }, { k: 'kite' }, { k: 'hop', n: 7 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'updraft' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'rail' }, { k: 'bridge' }], { hz: 2.0, surf: 'star', name: T('ほしの みち', 'Star Road'), desc: T('カイト・重力・石・月…ぜんぶの ちからを つかう ながい ほしの みち', 'A long star road that uses every power.'), par: 190 });
     course(b, 'g8m3', [{ k: 'kite' }, { k: 'flip' }, { k: 'stones', n: 10 }, { k: 'dashgap' }, { k: 'melt', w: 2 }, { k: 'hop', n: 7 }, { k: 'gears' }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 4, w: 6 }, { k: 'hop', n: 7 }, { k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 6 }, { k: 'updraft' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'rail' }, { k: 'bridge' }, { k: 'crumble', n: 5 }, { k: 'boss', r: 12, boss: { hp: 6, spd: 0.45, rs: 12, dblAt: 4, triAt: 2, stun: 7, look: 'king', charge: 1 } }], { hz: 2.0, surf: 'star', kind: 'final', name: T('ラスボス ほしのおうさま', 'Final Boss: Star King'), desc: T('これまでの ちからを ぜんぶ つかって アリーナへ。3だんかいの しょうげきを よけて、スキを スピンで 6かい！', 'Use every power to reach the arena, jump three phases of shockwaves, then spin the dazed king 6 times.'), par: 260 });
-    course(b, 'g8m2', [{ k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'pods', modes: ['cannon', 'star'] }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'gears' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }, { k: 'kite' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }], { kind: 'comet', timer: 150, need: 42, surf: 'star', hz: 1, name: T('ぜんぶの しれん', 'The Grand Gauntlet'), desc: T('ながい すいせいレース！ ぜんぶの銀河の シャードを あつめた人だけの ちょうせん。はやいほど ランクが アップ', 'A long comet race for those who cleared every other galaxy. Faster means a better rank.'), par: 150 });
+    course(b, 'g8m2', [{ k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'pods', modes: ['cannon', 'star'] }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'gears' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }, { k: 'kite' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }], { kind: 'comet', timer: 150, need: 43, surf: 'star', hz: 1, name: T('ぜんぶの しれん', 'The Grand Gauntlet'), desc: T('ながい すいせいレース！ ぜんぶの銀河の シャードを あつめた人だけの ちょうせん。はやいほど ランクが アップ', 'A long comet race for those who cleared every other galaxy. Faster means a better rank.'), par: 150 });
     course(b, 'g8hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0 }, { k: 'kite' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1 }, { k: 'flip' }, { k: 'rail' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 9, laps: 3, w: 2 }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26 }], { kind: 'hunt', surf: 'star', hz: 1, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('さいごの星ぐんの ルミを みつけよう', 'Find the last three Lumi.'), par: 170 });
     return b.d;
   }
@@ -578,6 +579,15 @@
     return b.d;
   }
 
+  // 裏ラストステージ「ひまつぶしの ぎんが」：ほんとうの おわりのあとで ひらく。ひまつぶし工房の ゲームたちへの オマージュの たび。
+  function g13() {
+    const b = Builder('g13', T('ひまつぶしの ぎんが', 'Galaxy of Idle Hours'), 'hima', { n1: [0.35, 0.18, 0.55], n2: [1, 0.85, 0.45], band: [0.5, 0.7, 0.4], sun: [0.4, 0.6, -0.6], sunc: [1, 0.95, 0.85], stars: 1.1 });
+    course(b, 'g13m1', [{ k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }, { k: 'crumble', n: 5, phase: 1, surf: 'felt' }, { k: 'stones', n: 10, surf: 'tile' }, { k: 'pods', modes: ['cannon', 'pipe'], surf: 'felt' }, { k: 'lagoon' }, { k: 'flight' }, { k: 'dashgap', surf: 'tile' }, { k: 'bouncepads', surf: 'felt' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'tile' }, { k: 'jellytower' }, { k: 'tilt', surf: 'felt' }, { k: 'bridge' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }, { k: 'updraft' }, { k: 'chase', surf: 'tile' }], { surf: 'chess', hz: 1, tribute: ['chess', 'reversi', 'mahjong', 'hole', 'fishing', 'shmup', 'hop', 'minigolf', 'sudoku', 'puff', 'physics', 'orchestra', 'gomoku', 'sports', 'planet'], name: T('ひまつぶしの たび', 'The Idle Hours Trip'), desc: T('ひまつぶし工房の ゲームたちへの オマージュ！ チェス盤・オセロ・麻雀牌・つり・シューティング…を めぐる ながい たび', 'A tribute trip through our games: a chessboard planet, reversi discs, mahjong tiles, a fishing pond, a shooter lane and more.'), par: 260 });
+    course(b, 'g13hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0, surf: 'chess' }, { k: 'stones', n: 10, surf: 'tile' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1, surf: 'felt' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }, { k: 'hop', n: 6, surf: 'tile' }, { k: 'walk', r: 9, laps: 3, w: 3, surf: 'felt' }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26, surf: 'tile' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }], { kind: 'hunt', surf: 'chess', hz: 1, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('ひまつぶしの 銀河の ルミを みつけよう', 'Find the 3 hidden Lumi in the Galaxy of Idle Hours.'), par: 170 });
+    b.d.deco = [{ dir: [-0.5, 0.3, -0.8], r: 56, col: [1, 0.85, 0.45], ring: 1 }, { dir: [0.7, 0.3, -0.5], r: 22, col: [0.7, 0.55, 1] }, { dir: [0.1, -0.4, 0.9], r: 28, col: [0.5, 1, 0.8] }];
+    return b.d;
+  }
+
   const GALAXIES = [
     { id: 'g1', build: g1, need: 0, theme: 'grass', col: '#7fdc79', icon: 'ポ' },
     { id: 'g2', build: g2, need: 3, theme: 'ice', col: '#8fd8ff', icon: 'ひ' },
@@ -591,13 +601,14 @@
     { id: 'g10', build: g10, need: 29, theme: 'sand', col: '#ffc060', icon: 'す' },
     { id: 'g11', build: g11, need: 33, theme: 'ice', col: '#c8a0ff', icon: 'き' },
     { id: 'g12', build: g12, need: 37, theme: 'ocean', col: '#5fc0ff', icon: 'ふ' },
+    { id: 'g13', build: g13, need: 47, theme: 'hima', col: '#ffd54a', icon: '✿', secret: 1, reqStats: { gauntlet: 1, final: 1 } },
   ];
   const cache = {};
   function def(id) { if (!cache[id]) cache[id] = applyPar(id === 'hub' ? hub() : GALAXIES.find(g => g.id === id).build()); return cache[id]; }
   function compile(E, id) { const k = 'c:' + id; if (!cache[k]) cache[k] = E.compile(def(id)); return cache[k]; }
   // ボットの記録からつくる、ミッションごとの「さいたん時間」（tools/galaxy-proofs.js が par.js に書く）。せいげん時間はこれより短くならない
   const PAR = (typeof GalaxyPar !== 'undefined' ? GalaxyPar : (typeof require !== 'undefined' ? (() => { try { return require('./par.js'); } catch (e) { return {}; } })() : {}));
-  const TIER = { hub: 0, g1: 1, g2: 1, g3: 1, g4: 2, g5: 2, g6: 2, g7: 3, g8: 3, g9: 2, g10: 2, g11: 3, g12: 3 };
+  const TIER = { hub: 0, g1: 1, g2: 1, g3: 1, g4: 2, g5: 2, g6: 2, g7: 3, g8: 3, g9: 2, g10: 2, g11: 3, g12: 3, g13: 3 };
   function applyPar(d) { for (const m of d.missions) m.dif = TIER[d.id] == null ? 3 : TIER[d.id]; (d.deco || []).forEach((x, i) => { if (i === 0 && !x.big) { x.r *= 2.4; x.big = 1; } }); return d; }
   const G = { GALAXIES, def, compile, ids: ['hub'].concat(GALAXIES.map(g => g.id)), dir, total: () => GALAXIES.reduce((n, g) => n + def(g.id).missions.filter(m => m.kind !== 'hunt').length, 0) };
   if (typeof module !== 'undefined' && module.exports) module.exports = G; else root.GalaxyLevels = G;

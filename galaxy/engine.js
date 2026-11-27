@@ -23,7 +23,7 @@
   };
   // むずかしさ 0 やさしい（いままで）/ 1 ふつう / 2 むずかしい / 3 たつじん
   const DIF = { hp: [3, 3, 3, 3], inv: [1.6, 1.4, 1.2, 1.1], timer: [1, 1, 1, 1], wk: [1, 1.25, 1.5, 1.8], launchR: [1.55, 1.5, 1.45, 1.4], pick: [1, 1, 0.97, 0.95], coyote: [0.12, 0.11, 0.1, 0.1], buf: [0.14, 0.13, 0.12, 0.12], boss: [1, 1.08, 1.16, 1.25], stun: [1, 0.9, 0.8, 0.7], tele: [1, 0.9, 0.8, 0.7], bhp: [0, 0, 0, 0], er: [0, 0.1, 0.2, 0.3], sp: [0, 0.05, 0.1, 0.15], crum: [1, 0.8, 0.65, 0.5], lives: [99, 99, 99, 99], cp: [1, 1, 1, 1], vd: [0, 1, 1, 2] };
-  const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, dusk: { fr: 1 }, star: { fr: 1 }, water: { fr: 0.9 }, ruin: { fr: 1 }, gear: { fr: 1 }, crystal: { fr: 0.7 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 } };
+  const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, dusk: { fr: 1 }, star: { fr: 1 }, water: { fr: 0.9 }, ruin: { fr: 1 }, gear: { fr: 1 }, crystal: { fr: 0.7 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 }, chess: { fr: 1 }, felt: { fr: 0.95 }, tile: { fr: 1 } };
 
   // ---------- ベクトル・行列（9要素の行優先） ----------
   const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];

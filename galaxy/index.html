@@ -165,6 +165,7 @@ body.photo header, body.photo #touch, body.photo #pauseBtn, body.photo #mapBtn, 
 #photoBar button { width: 52px; height: 52px; border-radius: 16px; border: 1px solid rgba(255,255,255,.55); background: rgba(10,10,40,.55); color: #fff; font: 700 15px var(--kb-font-display, sans-serif); cursor: pointer; }
 #photoBar #phShot { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.85); color: #222; border: 4px solid rgba(255,255,255,.4); }
 .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .pgrid button { padding: 0; border: 1px solid rgba(0,0,0,.2); border-radius: 8px; background: #112; overflow: hidden; aspect-ratio: 3/4; cursor: pointer; } .pgrid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#muBody .mugrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } #muBody a { display: grid; justify-items: center; gap: 2px; text-decoration: none; color: inherit; font-size: 11px; line-height: 1.2; text-align: center; padding: 6px 2px; border-radius: 12px; background: rgba(0,0,0,.06); } #muBody .mi { display: block; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; } #muBody .mi svg { width: 44px; height: 44px; display: block; }
 #alBig { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 8px; background: #000; }
 body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip, body.thumb #hud, body.thumb #labels, body.thumb #banner, body.thumb #compass { display: none !important; }
 </style>
@@ -226,6 +227,15 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     <h2 id="mapTitle"></h2>
     <svg id="mapSvg" viewBox="0 0 300 200" style="width:100%;max-height:50vh"></svg>
     <button class="btn sub" id="mapClose" type="button">×</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovMuseum" hidden role="dialog" aria-modal="true" aria-labelledby="muTitle">
+  <div class="panel">
+    <h2 id="muTitle"></h2>
+    <p id="muSub"></p>
+    <div class="scroll" id="muBody"></div>
+    <button class="btn sub" id="muClose" type="button">×</button>
   </div>
 </div>
 
@@ -333,7 +343,7 @@ function readSave() {
   for (const g of GALS) { const n = LV.def(g.id).missions.length; s.sh[g.id] = (o.sh && o.sh[g.id] | 0) & ((1 << n) - 1); s.lm[g.id] = (o.lm && o.lm[g.id] | 0) & 255; }
   if (o.bt && typeof o.bt === 'object') for (const k in o.bt) { const v = Number(o.bt[k]); if (/^g\d{1,2}(m\d|hunt)$/.test(k) && isFinite(v) && v > 0 && v < 6e5) s.bt[k] = v | 0; }
   if (o.rk && typeof o.rk === 'object') for (const k in o.rk) { const v = Number(o.rk[k]); if (/^g\d{1,2}(m\d|hunt)$/.test(k) && v >= 0 && v <= 3) s.rk[k] = v | 0; }
-  s.un = (o.un | 0) & 4095; s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
+  s.un = (o.un | 0) & 8191; s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
   if (o.stats && typeof o.stats === 'object') for (const k in o.stats) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0 && /^[a-z0-9_]{1,16}$/.test(k)) s.stats[k] = Math.min(1e9, v | 0); }
   if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.gl = [0, 1, 2].indexOf(+t.gl) >= 0 ? +t.gl : 0; s.set.sk = clamp(t.sk | 0, 0, 5); s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
   s.tut = o.tut ? 1 : 0; recompute(s); return s;
@@ -342,7 +352,8 @@ let save = readSave();
 function writeSave() { recompute(save); store.set(SAVE_KEY, JSON.stringify(save)); }
 const stat = (k, n) => { save.stats[k] = Math.min(1e9, (save.stats[k] || 0) + (n || 0)); };
 let DBG_UNLOCK = false;
-const galUnlocked = id => { const g = GALS.find(x => x.id === id); return !g || save.pts >= g.need || DBG_UNLOCK; };
+const galUnlocked = id => { const g = GALS.find(x => x.id === id); if (!g || DBG_UNLOCK) return true; if (save.pts < g.need) return false; if (g.reqStats) for (const k in g.reqStats) if ((save.stats[k] || 0) < g.reqStats[k]) return false; return true; };
+const galVisible = g => !g.secret || galUnlocked(g.id);
 const gname = id => { const d = id === 'hub' ? GNAME.hub : LV.def(id).name; return L(d.ja, d.en); };
 const mname = m => L(m.name.ja, m.name.en);
 
@@ -409,7 +420,7 @@ function enterHub(o) {
 
 // ---------- hub: NPC hints, unlock animation, constellation map ----------
 function npcHint(k) {
-  const next = GALS.filter(g => g.need > save.pts).sort((a, b) => a.need - b.need)[0];
+  const next = GALS.filter(g => !g.secret && g.need > save.pts).sort((a, b) => a.need - b.need)[0];
   const H = [
     [L('ガイドライトの さきに 星が あるよ。ゲートに 入ると ミッションを えらべる！', 'Follow the glow to a gate, then pick a mission!'), 0],
     [next ? L('つぎの ぎんがは ★' + next.need + 'こで ひらく。いま ★' + save.pts + 'こ だよ。', 'The next galaxy opens at ★' + next.need + '. You have ★' + save.pts + '.') : L('ぜんぶの ぎんがが ひらいたね！ ランクSを めざそう', 'Every galaxy is open! Go for rank S.'), 0],
@@ -429,15 +440,16 @@ function unlockCheck() {
   setTimeout(() => { if (G && G.gid === 'hub') { snd('arrive'); showBanner(L('あたらしい ぎんが: ', 'New galaxy: ') + gname(first.id), '', 2600); } }, 600);
 }
 function openMap() {
+  const VG = GALS.filter(galVisible);
   paused = true; padOff(); $('mapTitle').textContent = L('せいざマップ', 'Constellation Map');
-  const N = GALS.length, pts = GALS.map((g, i) => { const a = i / N * Math.PI * 2 - Math.PI / 2, r = 62 + (i % 2) * 18, w = 1 + (i % 3) * 0.04; return [150 + Math.cos(a) * (r + 30) * w, 100 + Math.sin(a) * (r * 0.78 + 8)]; });
+  const N = VG.length, pts = VG.map((g, i) => { const a = i / N * Math.PI * 2 - Math.PI / 2, r = 62 + (i % 2) * 18, w = 1 + (i % 3) * 0.04; return [150 + Math.cos(a) * (r + 30) * w, 100 + Math.sin(a) * (r * 0.78 + 8)]; });
   const col = g => { const d = LV.def(g.id).deco && LV.def(g.id).deco[0], c = d ? d.col : [0.5, 0.7, 1]; return 'rgb(' + c.map(v => Math.round(Math.min(1, v) * 255)).join(',') + ')'; };
-  const next = GALS.filter(g => g.need > save.pts).sort((a, b) => a.need - b.need)[0];
+  const next = VG.filter(g => !g.secret && g.need > save.pts).sort((a, b) => a.need - b.need)[0];
   let h = '<defs><radialGradient id="mg"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="300" height="200" fill="#0b0b2a" rx="10"/>';
   for (let i = 0; i < 46; i++) { const x = (i * 97 % 300), y = (i * 53 % 200), r = 0.4 + (i % 3) * 0.3; h += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff" opacity="' + (0.25 + (i % 4) * 0.15) + '"/>'; }
   h += '<circle cx="150" cy="100" r="9" fill="url(#mg)"/><circle cx="150" cy="100" r="3.2" fill="#ffd54a"/><text x="150" y="116" font-size="5.5" fill="#ffe9a0" text-anchor="middle">' + esc(L('ほしみ台', 'Deck')) + '</text>';
-  GALS.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<line x1="150" y1="100" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="' + (ok ? '#9fd8ff' : '#445') + '" stroke-width=".5" opacity=".6"' + (ok ? '' : ' stroke-dasharray="1.5 2"') + '/>'; const j = (i + 1) % N; h += '<line x1="' + pts[i][0].toFixed(1) + '" y1="' + pts[i][1].toFixed(1) + '" x2="' + pts[j][0].toFixed(1) + '" y2="' + pts[j][1].toFixed(1) + '" stroke="' + (ok && galUnlocked(GALS[j].id) ? '#7fb4ff' : '#334') + '" stroke-width=".7" opacity=".7"/>'; });
-  GALS.forEach((g, i) => { const ok = galUnlocked(g.id), d = LV.def(g.id), tot = d.missions.filter(m => m.kind !== 'hunt').length, got = popc(save.sh[g.id] | 0), x = pts[i][0].toFixed(1), y = pts[i][1].toFixed(1), c = col(g), isNext = next && next.id === g.id, full = got >= tot;
+  VG.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<line x1="150" y1="100" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="' + (ok ? '#9fd8ff' : '#445') + '" stroke-width=".5" opacity=".6"' + (ok ? '' : ' stroke-dasharray="1.5 2"') + '/>'; const j = (i + 1) % N; h += '<line x1="' + pts[i][0].toFixed(1) + '" y1="' + pts[i][1].toFixed(1) + '" x2="' + pts[j][0].toFixed(1) + '" y2="' + pts[j][1].toFixed(1) + '" stroke="' + (ok && galUnlocked(VG[j].id) ? '#7fb4ff' : '#334') + '" stroke-width=".7" opacity=".7"/>'; });
+  VG.forEach((g, i) => { const ok = galUnlocked(g.id), d = LV.def(g.id), tot = d.missions.filter(m => m.kind !== 'hunt').length, got = popc(save.sh[g.id] | 0), x = pts[i][0].toFixed(1), y = pts[i][1].toFixed(1), c = col(g), isNext = next && next.id === g.id, full = got >= tot;
     h += '<g data-g="' + g.id + '" style="cursor:pointer" tabindex="0" role="button" aria-label="' + esc(gname(g.id)) + '">'
       + (ok ? '<circle cx="' + x + '" cy="' + y + '" r="13" fill="' + c + '" opacity=".22"/>' : '') + (isNext ? '<circle cx="' + x + '" cy="' + y + '" r="11" fill="none" stroke="#ffd54a" stroke-width="1" stroke-dasharray="2 2"><animate attributeName="r" values="9;13;9" dur="2.4s" repeatCount="indefinite"/></circle>' : '')
       + '<circle cx="' + x + '" cy="' + y + '" r="' + (ok ? 7 : 5.5) + '" fill="' + (ok ? c : '#3b3d5c') + '" stroke="' + (full ? '#ffd54a' : '#fff') + '" stroke-width="' + (full ? 1.6 : 0.6) + '"/>'
@@ -460,7 +472,7 @@ function endRun(reason) {
 function onClear() {
   const S = G.S, r = S.res, m = G.m, gi = G.gid; const hunt = m.kind === 'hunt', idx = m.idx, old = hunt ? (save.lm[gi] | 0) : (save.sh[gi] | 0), first = hunt ? !(old & 128) : !(old & (1 << idx));
   if (hunt) { save.lm[gi] = old | 128 | S.lumi; stat('hunts', 1); } else save.sh[gi] = old | (1 << idx);
-  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
+  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); if (G.mid === 'g13m1') { stat('hima', 1); toast(L('ミュージアムが ひらいたよ！ ポーズメニューから いけるよ', 'The Museum is open! Find it in the pause menu'), 3800); } const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
   stat('clears', 1); if (r.die === 0) stat('nodie', 1); if (m.kind === 'comet') stat('comets', 1); if (m.kind === 'boss') stat('boss', 1); if (S.as.hp || S.as.nofall || S.as.slow) stat('assist', 1);
   const rk = E.rank(m, r, (S.lumi & 7) === 7), oldRk = save.rk[G.mid] == null ? -1 : save.rk[G.mid], bonus = rk > oldRk ? E.RANK_REWARD[rk] - (oldRk >= 0 ? E.RANK_REWARD[oldRk] : 0) : 0; if (rk > oldRk) save.rk[G.mid] = rk; save.cn = Math.min(1e9, save.cn + bonus); if (rk === 3) stat('rankS', 1);
   endRun('clear'); G.result = { ok: true, first, newBest, f: r.f, coin: r.coin, crystal: r.crystal, die: r.die, ob, lumi: S.cnt.lumi, rank: rk, bonus };
@@ -591,6 +603,15 @@ $('phShot').onclick = shutter; $('phX').onclick = endPhoto; $('phAl').onclick = 
 cv.addEventListener('pointerdown', e => { if (photo) phDrag = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
 cv.addEventListener('pointermove', e => { if (!photo || !phDrag || e.pointerId !== phDrag.id || !G) return; const S = G.S, dx = e.clientX - phDrag.x, dy = e.clientY - phDrag.y; phDrag.x = e.clientX; phDrag.y = e.clientY; S.cam.fw = V.norm(V.rodr(S.cam.fw, S.cam.up, -dx * 0.007)); S.cam.pitch = clamp(S.cam.pitch + dy * 0.005, 0.05, 1.25); });
 cv.addEventListener('pointerup', () => { phDrag = null; }); cv.addEventListener('pointercancel', () => { phDrag = null; });
+
+// ---------- museum（ひまつぶし工房の ぜんぶの ゲーム） ----------
+function tribute(gb) { const bid = G.L.bodies[gb] && G.L.bodies[gb].id; if (!bid || bid.indexOf(G.mid + 's') !== 0) return null; const k = parseInt(bid.slice(G.mid.length + 1), 10); const gid = G.m.tribute && G.m.tribute[k]; const g = gid && window.KOBO_GAMES && KOBO_GAMES.find(x => x.id === gid); return g ? { t: (EN ? g.title.en : g.title.ja), id: gid } : null; }
+function openMuseum() {
+  const gs = window.KOBO_GAMES || []; paused = true; padOff(); $('muTitle').textContent = L('ひまつぶし ミュージアム', 'Idle Hours Museum'); $('muSub').textContent = L('ひまつぶし工房の ぜんぶの ゲーム。タップして あそびに いこう！', 'All of our games. Tap one to go and play!');
+  $('muBody').innerHTML = '<div class="mugrid">' + gs.map(g => '<a href="../' + esc(g.path) + '" data-id="' + esc(g.id) + '"><i class="mi">' + (g.iconSvg || '') + '</i><span>' + esc(EN ? g.title.en : g.title.ja) + '</span></a>').join('') + '</div>';
+  $('ovMuseum').hidden = false; stat('museum', 1); writeSave(); snd('arrive');
+}
+$('muClose').onclick = () => { $('ovMuseum').hidden = true; if (mode === 'hub' || mode === 'play') { paused = false; acc = 0; kick(); } };
 function startFlyby() { if (!G || G.gid === 'hub' || mode !== 'play') return; const kg = KG(); if (kg) kg.menuClosed(); G.fly = true; G.intro = true; G.it = 0; G.introDur = save.set.rm ? 0.6 : 5.5; resumeGame(); }
 function skipIntro() { if (G && G.intro && mode === 'play') { G.it = G.introDur; } }
 
@@ -622,9 +643,9 @@ function stepOnce() {
     if (G.doneT > (S.res.ok ? 100 : 40) && !G.resultShown) { G.resultShown = true; showResult(); }
   } else if (G.gid === 'hub') {
     hubNpc(S); if (G.unlockAnim > 0) G.unlockAnim--;
-    if (S.gate >= 0 && S.h.on >= 0) { if (!G.gateLock) { const gal = S.L.ents[S.gate].gal; G.gateLock = true; openSelect(gal); } } else G.gateLock = false;
+    if (S.gate >= 0 && S.h.on >= 0 && !(S.L.ents[S.gate].secret && !galUnlocked(S.L.ents[S.gate].gal))) { if (!G.gateLock) { const gal = S.L.ents[S.gate].gal; G.gateLock = true; openSelect(gal); } } else G.gateLock = false;
   } else {
-    const gb = S.h.gb; if (S.h.on >= 0 && gb !== G.lastB && gb >= 0) { G.lastB = gb; if (!G.seen[gb]) { G.seen[gb] = 1; camV.zoom = 1; snd('arrive'); showBanner(L('あたらしい 星に とうちゃく！', 'New planet reached!'), '', 1300); } }
+    const gb = S.h.gb; if (S.h.on >= 0 && gb !== G.lastB && gb >= 0) { G.lastB = gb; if (!G.seen[gb]) { G.seen[gb] = 1; camV.zoom = 1; snd('arrive'); { const tb = G.m.tribute && tribute(gb); if (tb) showBanner(tb.t, L('のオマージュ', 'tribute'), 1800); else showBanner(L('あたらしい 星に とうちゃく！', 'New planet reached!'), '', 1300); } } }
   }
 }
 function onEvents(S) {
@@ -669,7 +690,7 @@ function hubLabels() {
   const el = $('labels'); if (!R || !G) return; const S = G.S; const ents = G.L.ents;
   const ng = G.L.ents.filter(e => e.k === 'gate').length; if (el.childElementCount !== ng) { el.innerHTML = '<span></span>'.repeat(ng); }
   let k = 0; for (const i of S.act) { const e = ents[i]; if (e.k !== 'gate') continue; const sp = el.children[k++]; if (!sp) break; const p = S.ep[i], pr = R.project(p[0] + S.h.up[0] * 0, p[1], p[2]); const up = E.entUp(S, i); const pp = R.project(p[0] + up[0] * 3.4, p[1] + up[1] * 3.4, p[2] + up[2] * 3.4);
-    if (!pp || !pp.in || V.len(V.sub(S.h.x, p)) > 26) { sp.style.display = 'none'; continue; } sp.style.display = ''; sp.style.left = pp.x + 'px'; sp.style.top = pp.y + 'px'; const g = GALS.find(x => x.id === e.gal), ok = galUnlocked(e.gal); const txt = gname(e.gal) + (ok ? '' : L('（あと★', ' (need ★') + Math.max(0, g.need - save.pts) + (EN ? ')' : '）')); if (sp.textContent !== txt) sp.textContent = txt; sp.style.opacity = ok ? '1' : '.7'; }
+    if (!pp || !pp.in || V.len(V.sub(S.h.x, p)) > 26) { sp.style.display = 'none'; continue; } sp.style.display = ''; sp.style.left = pp.x + 'px'; sp.style.top = pp.y + 'px'; const g = GALS.find(x => x.id === e.gal), ok = galUnlocked(e.gal); if (g.secret && !ok) { sp.style.display = 'none'; continue; } const txt = gname(e.gal) + (ok ? '' : L('（あと★', ' (need ★') + Math.max(0, g.need - save.pts) + (EN ? ')' : '）')); if (sp.textContent !== txt) sp.textContent = txt; sp.style.opacity = ok ? '1' : '.7'; }
 }
 function updateHud() {
   const S = G.S, h = S.h; let s = ''; for (let i = 0; i < S.hpMax; i++) s += '<i class="' + (i < h.hp ? '' : 'off') + '">♥</i>'; const he = $('hearts'); if (he.dataset.k !== s) { he.innerHTML = s; he.dataset.k = s; }
@@ -694,7 +715,7 @@ function compass() {
 }
 
 // ---------- overlays ----------
-const OVS = ['ovTitle', 'ovAlbum', 'ovMap', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
+const OVS = ['ovTitle', 'ovMuseum', 'ovAlbum', 'ovMap', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
 function hideOverlays() { OVS.forEach(id => { $(id).hidden = true; }); }
 const anyOverlay = () => OVS.some(id => !$(id).hidden);
 function showTitle() {
@@ -785,7 +806,7 @@ function openSelect(gid) {
 function closeSelect() { $('ovSel').hidden = true; mode = G && G.gid === 'hub' ? 'hub' : mode; const g = KG(); if (g) g.menuClosed(); paused = false; acc = 0; kick(); }
 function drawSelect() {
   const d = LV.def(selG), gi = GALS.find(x => x.id === selG), open = galUnlocked(selG); $('selTitle').textContent = gname(selG);
-  $('selTabs').innerHTML = GALS.map(g => '<button type="button" data-g="' + g.id + '" aria-pressed="' + (g.id === selG) + '">' + esc(gname(g.id)) + (galUnlocked(g.id) ? '' : ' 🔒') + '</button>').join('');
+  $('selTabs').innerHTML = GALS.filter(galVisible).map(g => '<button type="button" data-g="' + g.id + '" aria-pressed="' + (g.id === selG) + '">' + esc(gname(g.id)) + (galUnlocked(g.id) ? '' : ' 🔒') + '</button>').join('');
   $('selTabs').querySelectorAll('button').forEach(b => { b.onclick = () => { selG = b.dataset.g; drawSelect(); }; });
   let h = ''; if (!open) h += '<p>' + esc(L('スターシャードを ' + gi.need + ' こ あつめると ひらきます（いま ' + save.pts + ' こ）。', 'Open this galaxy with ' + gi.need + ' Star Shards (you have ' + save.pts + ').')) + '</p>';
   d.missions.forEach((m, i) => { const got = m.kind === 'hunt' ? !!((save.lm[selG] | 0) & 128) : !!((save.sh[selG] | 0) & (1 << i)), bt = save.bt[m.id]; h += '<button class="qm' + (got ? ' done' : '') + '" type="button" data-m="' + m.id + '"' + (open && (!m.need || save.pts >= m.need || DBG_UNLOCK) ? '' : ' disabled') + '><span><b>' + esc(mname(m)) + (m.kind === 'boss' ? ' ★' : m.kind === 'hunt' ? ' ✿' : '') + '</b><small>' + esc(L(m.desc.ja, m.desc.en)) + (m.need && save.pts < m.need && !DBG_UNLOCK ? ' · ' + esc(L('★', 'Needs ★') + m.need + L('こで ひらく', '')) : '') + (bt ? ' · ' + esc(L('ベスト', 'Best')) + ' ' + fmtT(bt) : '') + '</small></span><span class="go" aria-hidden="true">' + (got ? '✓' : '▶') + '</span></button>'; });
@@ -803,6 +824,7 @@ function openPause() {
   else { extra.push({ label: L('ぎんがを えらぶ', 'Choose a galaxy'), icon: 'menu', onClick: () => { pm.close(); openSelect(selG); } }); extra.push({ label: L('せいざマップ', 'Constellation Map'), icon: 'menu', onClick: () => { pm.close(); openMap(); } }); }
   if (G && !(G.intro)) extra.push({ label: L('しゃしんモード', 'Photo mode'), icon: 'menu', onClick: () => { pm.close(); startPhoto(); } });
   extra.push({ label: L('フォトアルバム', 'Photo album'), icon: 'menu', onClick: () => { pm.close(); showAlbum(); } });
+  if (galUnlocked('g13')) extra.push({ label: L('ひまつぶし ミュージアム', 'Idle Hours Museum'), icon: 'menu', onClick: () => { pm.close(); openMuseum(); } });
   extra.push({ label: L('せってい', 'Settings'), icon: 'settings', onClick: () => { pm.close(); showSettings(); } });
   extra.push({ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } });
   pm = UI.pauseMenu({ title: T('一時停止'), home: '../', extra, onSettings: false, onRestart: G && G.gid !== 'hub' ? () => restartMission() : null, confirmRestart: false,
@@ -860,7 +882,7 @@ if (DEBUG) {
   };
   window.__kb = Object.assign(window.__kb || {}, api);
   window.__galaxy = {
-    api, E, LV, ART, get G() { return G; }, get S() { return G && G.S; }, get save() { return save; }, get R() { return R; }, enterHub, startMission, showTitle, showSettings, showHowto, openPause, openSelect, skipIntro,
+    api, E, LV, ART, get G() { return G; }, get S() { return G && G.S; }, get save() { return save; }, get R() { return R; }, enterHub, startMission, showTitle, showSettings, showHowto, openPause, openMuseum, openSelect, skipIntro,
     resetSave() { store.del(SAVE_KEY); save = readSave(); }, unlockAll() { DBG_UNLOCK = true; },
     hold(o) { dbg.sx = o.sx || 0; dbg.sy = o.sy || 0; dbg.b = o.b | 0; dbg.on = 1; }, release() { dbg.on = 0; }, manual(on) { MANUAL = !!on; acc = 0; kick(); },
     stepN(n, inp) { for (let i = 0; i < n && G && (mode === 'play' || mode === 'hub') && !G.intro; i++) { if (inp) { dbg.sx = inp.sx || 0; dbg.sy = inp.sy || 0; dbg.b = inp.b | 0; dbg.on = 1; } stepOnce(); } render(0.016); return G ? G.S.f : 0; },

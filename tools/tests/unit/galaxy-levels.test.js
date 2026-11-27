@@ -7,8 +7,8 @@ const E = require(path.join(ROOT, 'galaxy/engine.js')), LV = require(path.join(R
 const V = E.vec;
 
 test('galaxies: 3 galaxies, at least 3 shards each, 10 missions, unique ids, shards unlock in order', () => {
-  eq(LV.GALAXIES.length, 12); ok(LV.total() >= 42, 'missions ' + LV.total()); let before = 0; const ids = new Set();
-  LV.GALAXIES.forEach((g, i) => { const d = LV.def(g.id); ok(d.missions.filter(m => m.kind !== 'hunt').length >= 3, g.id + ' has >= 3 missions'); ok(g.need <= before, 'reachable unlock ' + g.id + ' ' + g.need + ' <= ' + before); before += d.missions.filter(m => m.kind !== 'hunt').length; ok(d.missions.some(m => m.kind === 'hunt'), g.id + ' has a hunt');
+  eq(LV.GALAXIES.length, 13); ok(LV.total() >= 48, 'missions ' + LV.total()); let before = 0; const ids = new Set();
+  LV.GALAXIES.forEach((g, i) => { const d = LV.def(g.id); ok(g.secret || d.missions.filter(m => m.kind !== 'hunt').length >= 3, g.id + ' has >= 3 missions'); ok(g.need <= before, 'reachable unlock ' + g.id + ' ' + g.need + ' <= ' + before); before += d.missions.filter(m => m.kind !== 'hunt').length; ok(d.missions.some(m => m.kind === 'hunt'), g.id + ' has a hunt');
     for (const m of d.missions) { ok(!ids.has(m.id), 'unique ' + m.id); ids.add(m.id); ok(m.name.ja && m.name.en && m.desc.ja && m.desc.en, 'texts ' + m.id); ok(m.route && m.route.length, 'route ' + m.id); } });
   ok(LV.def('g3').missions.some(m => m.kind === 'boss') && LV.def('g6').missions.some(m => m.kind === 'boss') && LV.def('g8').missions.some(m => m.kind === 'final'), 'three bosses (the last is the final boss)');
   const gm = LV.def('g8').missions.find(m => m.id === 'g8m2'); ok(gm.need >= LV.total() - 5 && gm.kind === 'comet', 'the gauntlet needs the other galaxies'); ok(LV.def('g1').missions.some(m => m.kind === 'comet'), 'a comet');
@@ -57,7 +57,7 @@ test('long courses: EVERY non-comet, non-hunt mission is a long multi-section co
     if (m.kind === 'comet') { comets++; ok(!m.long && sec >= 30 && sec <= 200, m.id + ' comet ' + sec.toFixed(0) + ' s'); continue; }
     if (m.kind === 'hunt') { hunts++; ok(sec >= 120 && sec <= 300, m.id + ' hunt ' + sec.toFixed(0) + ' s'); continue; }
     ok(m.long, m.id + ' must be a long course'); n++; ok(sec >= (boss ? 170 : 120) && sec <= (boss ? 360 : 300), m.id + ' took ' + sec.toFixed(0) + ' s'); const S = E.create(L, m.id); ok(S.act.filter(i => L.ents[i].k === 'cp').length >= 2, m.id + ' checkpoints'); } }
-  ok(n >= 29 && hunts === 12 && comets >= 10, 'counts ' + n + ' ' + hunts + ' ' + comets); console.log('      long courses: ' + n + ', hunts: ' + hunts + ', comets: ' + comets);
+  ok(n >= 29 && hunts === 13 && comets >= 10, 'counts ' + n + ' ' + hunts + ' ' + comets); console.log('      long courses: ' + n + ', hunts: ' + hunts + ', comets: ' + comets);
 });
 test('ranks: S/A/B/C from par time, no damage and all lumi; rewards grow; a clean slow run is B at best', () => {
   const m = { par: 100 }; eq(E.rank(m, { f: 70 * 60, die: 0, hurt: 0 }, true), 3, 'fast, clean, all lumi = S'); eq(E.rank(m, { f: 70 * 60, die: 0, hurt: 0 }, false), 2, 'A'); eq(E.rank(m, { f: 110 * 60, die: 0, hurt: 0 }, false), 1, 'B'); eq(E.rank(m, { f: 300 * 60, die: 1, hurt: 3 }, false), 0, 'C'); eq(E.rank(m, { f: 300 * 60, die: 0, hurt: 0 }, true), 1, 'slow clean with lumi = B');
@@ -83,7 +83,7 @@ test('suits are required, and a run+jump-only player cannot finish the main miss
 test('differentiation (group 1: meadow / ice / candy): signature mechanics used nowhere else, 4+ goal types, 3+ planet shapes, distinct skies', () => {
   const info = id => { const d = LV.def(id), mech = new Set(), goals = new Set(), shapes = new Set(d.bodies.map(b => b.k)); for (const m of d.missions) { (m.mech || []).forEach(k => mech.add(k)); goals.add(m.kind && m.kind !== 'run' ? m.kind : m.goal); } return { d, mech, goals, shapes }; };
   const all = {}; for (const g of LV.GALAXIES) all[g.id] = info(g.id);
-  const unique = id => [...all[id].mech].filter(k => LV.GALAXIES.every(g => g.id === id || !all[g.id].mech.has(k)));
+  const unique = id => [...all[id].mech].filter(k => LV.GALAXIES.every(g => g.id === id || g.secret || !all[g.id].mech.has(k)));
   ok(unique('g2').length >= 2 && unique('g4').length >= 2, 'ice ' + unique('g2') + ' candy ' + unique('g4'));
   for (const id of ['g1', 'g2', 'g4']) { ok(all[id].goals.size >= 4, id + ' goal types ' + [...all[id].goals]); ok(all[id].shapes.size >= 3, id + ' planet shapes ' + [...all[id].shapes]); }
   for (const [a, b] of [['g1', 'g2'], ['g1', 'g4'], ['g2', 'g4']]) { const sa = all[a].d.sky, sb = all[b].d.sky, dd = Math.hypot(...sa.n1.map((v, i) => v - sb.n1[i])) + Math.hypot(...sa.n2.map((v, i) => v - sb.n2[i])); ok(dd > 0.6, a + ' vs ' + b + ' sky color distance ' + dd.toFixed(2)); }
@@ -106,6 +106,13 @@ test('new goal types and galaxy rules exist: chase (g7,g10), swim lagoon (g5), t
   ok(LV.def('g3').zones.some(z => z.m === 'heat'), 'lava heat zones'); ok(LV.def('g7').ents.some(e => e.shy), 'shy ghosts'); ok(LV.def('g10').zones.some(z => z.m === 'sticky'), 'quicksand');
   ok(mech('g9').has('flight') && LV.def('g9').zones.some(z => z.m === 'fly'), 'flight (g9)'); ok(LV.def('g7').ents.some(e => e.needLit), 'a light-gated boss (g7)'); for (const id of ['g8', 'g11', 'g12']) { const looks = new Set(LV.def(id).ents.filter(e => (e.k === 'walker' || e.k === 'spike') && e.look).map(e => e.look)); ok(looks.size >= 3, id + ' enemy looks ' + [...looks]); }
   ok(LV.def('g5').zones.some(z => z.m === 'swim') && LV.def('g6').zones.some(z => z.rot), 'swim and rotating gravity zones');
+});
+test('secret final galaxy (C1): hidden until all other shards + the gauntlet + the true ending, a hub gate, tribute planets named after real games, a long course', () => {
+  const g = LV.GALAXIES.find(x => x.id === 'g13'); ok(g && g.secret && g.need === 47 && g.reqStats.gauntlet >= 1 && g.reqStats.final >= 1, 'g13 is secret');
+  const others = LV.GALAXIES.filter(x => x.id !== 'g13').reduce((n, x) => n + LV.def(x.id).missions.filter(m => m.kind !== 'hunt').length, 0); eq(others, g.need, 'needs every other shard');
+  const hub = LV.def('hub'); ok(hub.ents.some(e => e.k === 'gate' && e.gal === 'g13' && e.secret), 'the secret gate is in the hub');
+  const m = LV.def('g13').missions.find(x => x.id === 'g13m1'); ok(m.tribute.length >= 12, 'tribute planets'); const ids = new Set(require(path.join(ROOT, 'common/games.js')).games.map(x => x.id)); for (const t of m.tribute) ok(ids.has(t), 'tribute ' + t + ' is a real game');
+  const r = Bot.run(LV.compile(E, 'g13'), 'g13m1', { max: 60000 }); ok(r.ok && r.frames / 60 >= 180 && r.frames / 60 <= 300, 'g13m1 is a long course: ' + (r.frames / 60).toFixed(0) + ' s');
 });
 test('the hub has a gate for every galaxy', () => {
   const L = LV.compile(E, 'hub'); const gs = L.ents.filter(e => e.k === 'gate').map(e => e.gal); eq(gs.join(), LV.GALAXIES.map(g => g.id).join());
