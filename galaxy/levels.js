@@ -41,9 +41,10 @@
   // ================== ほしみ台（ハブ） ==================
   function hub() {
     const b = Builder('hub', T('ほしみ台', 'Stargazer Deck'), 'hub', { n1: [0.1, 0.14, 0.45], n2: [0.6, 0.3, 0.7], band: [0.3, 0.9, 0.3], sun: [0.5, 0.55, -0.65], sunc: [1, 0.9, 0.7], stars: 1 });
-    b.sph('deck', [0, 0, 0], 9, { surf: 'metal' });
+    b.sph('deck', [0, 0, 0], 12, { surf: 'metal' });
     b.sph('moon', [0, 0, 0], 2, { surf: 'stone', mv: [{ t: 'orbit', c: [0, 0, 0], a: [0.3, 1, 0.1], T: 24 }], g: 1 }); b.d.bodies[1].p = [17, 3, 0]; b.d.bodies[1].mv[0].c = [0, 0, 0];
-    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8'].forEach((g, i) => b.ent('gate', 'deck', b.ll('deck', i % 2 ? 4 : 28, i * 45, 0.9), { id: 'gate' + (i + 1), gal: g }));
+    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g11', 'g12'].forEach((g, i) => { const row = Math.floor(i / 4), col = i % 4; b.ent('gate', 'deck', b.ll('deck', [36, 8, -22][row], col * 90 + row * 30, 0.9), { id: 'gate' + (i + 1), gal: g }); });
+    [[62, 50], [-45, 200], [20, 330]].forEach((c, i) => b.ent('npc', 'deck', b.ll('deck', c[0], c[1], 0.5), { id: 'npc' + i, hint: i }));
     for (let i = 0; i < 6; i++) b.ent('coin', 'deck', b.ll('deck', -20 + (i % 3) * 8, 60 + i * 20, 1), {});
     b.ent('coin', 'moon', b.at('moon', [0, 1, 0], 1), {}); b.ent('crystal', 'moon', b.at('moon', [1, 0, 0], 1), {});
     b.ent('crate', 'deck', b.ll('deck', 62, 40, 0.7), { id: 'hc1', drop: 'heart' });
@@ -140,6 +141,10 @@
         const sa = T + 'sa', sb = T + 'sb'; b.box(sa, P(0, 0, 0), [24, 1.5, 5], { rr: 0.6, surf: S, m: M }); b.box(sb, P(62, 0, 0), [24, 1.5, 5], { rr: 0.6, surf: S, m: M });
         ent('crate', sa, [-19, 2.3, 0], { id: T + 'sk', drop: 'skate' }); [-14, -9, -4, 1].forEach((x, q) => ent(sp.orb === false ? 'coin' : 'orb', sa, [x, 2.4, 0], { id: T + 'o' + q })); ent('coin', sb, [-21, 2.4, 0], { id: T + 'bc' }); pts[T + 'bc'] = { b: sb, l: [-21, 2.0, 0] };
         entry = { b: sa, l: [-22, 2.0, 0] }; rt.push(T + 'sk', T + 'o0', T + 'o1', T + 'o2', T + 'o3', { to: T + 'bc', j: 18.0, land: 1, hold: 1, tol: 1.6 }); endB = sb; endL = [6, 2.4, 0];
+      } else if (sp.k === 'pullgap') { // ひっぱる星の場：すきまに入ると むこうの足場へ ひっぱられる
+        const sa = T + 'sa', sb = T + 'sb'; b.box(sa, P(0, 0, 0), [10, 1.5, 5], { rr: 0.6, surf: S, m: M }); b.box(sb, P(36, 0, 0), [10, 1.5, 5], { rr: 0.6, surf: S, m: M });
+        b.zone({ s: 'box', c: P(18, 4, 0), h: [8, 5, 4], m: 'wind', to: P(36, 3.5, 0), str: 36, drag: 0.5, ms: M }); ent('coin', null, P(18, 5, 0), { id: T + 'pc' });
+        pts[T + 'pb'] = { b: sb, l: [-4, 2.0, 0] }; entry = { b: sa, l: [-8, 2.0, 0] }; rt.push({ to: T + 'pb', tol: 1.8, j: 24.5, land: 1, hold: 1 }); endB = sb; endL = [6, 2.4, 0];
       } else if (sp.k === 'boss') { // ボスのアリーナ
         const id = T + 'arena'; b.sph(id, P(0, 0, 0), sp.r || 11, { surf: S, m: M });
         ent('boss', id, b.at(id, [0, 1, 0], 0), Object.assign({ id: T + 'boss', rad: 1.7 }, sp.boss || {})); ent('heart', id, b.at(id, [-1, 0.2, 0.4], 1.0), { id: T + 'hh1' }); ent('heart', id, b.at(id, [1, -0.2, -0.4], 1.0), { id: T + 'hh2' });
@@ -425,8 +430,52 @@
     scope(['fs1', 'fs2', 'fs3', 'fs4'], ['_x']); scope(['ba', 'bb', 'arena'], ['_x']);
     course(b, 'g8m1', [{ k: 'bee' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'flip' }, { k: 'stones', n: 10 }, { k: 'bee' }, { k: 'hop', n: 7 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'updraft' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'rail' }, { k: 'bridge' }], { hz: 1.0, surf: 'star', name: T('ほしの みち', 'Star Road'), desc: T('ハチ・重力・石・月…ぜんぶの ちからを つかう ながい ほしの みち', 'A long star road that uses every power.'), par: 190 });
     course(b, 'g8m3', [{ k: 'bee' }, { k: 'flip' }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 3, w: 6 }, { k: 'melt', w: 2 }, { k: 'hop', n: 7 }, { k: 'gears' }, { k: 'stones', n: 10 }, { k: 'walk', r: 10, laps: 4, w: 6 }, { k: 'hop', n: 7 }, { k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 6 }, { k: 'updraft' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'rail' }, { k: 'bridge' }, { k: 'crumble', n: 5 }, { k: 'boss', r: 12, boss: { hp: 6, spd: 0.48, rs: 12, dblAt: 4, triAt: 2, stun: 5.8, look: 'king', charge: 1 } }], { hz: 1.0, surf: 'star', kind: 'final', name: T('ラスボス ほしのおうさま', 'Final Boss: Star King'), desc: T('これまでの ちからを ぜんぶ つかって アリーナへ。3だんかいの しょうげきを よけて、スキを スピンで 6かい！', 'Use every power to reach the arena, jump three phases of shockwaves, then spin the dazed king 6 times.'), par: 260 });
-    course(b, 'g8m2', [{ k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'pods', modes: ['cannon', 'star'] }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'gears' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }, { k: 'bee' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }], { kind: 'comet', timer: 150, need: 23, surf: 'star', hz: 1, name: T('ぜんぶの しれん', 'The Grand Gauntlet'), desc: T('ながい すいせいレース！ ぜんぶの銀河の シャードを あつめた人だけの ちょうせん。はやいほど ランクが アップ', 'A long comet race for those who cleared every other galaxy. Faster means a better rank.'), par: 150 });
+    course(b, 'g8m2', [{ k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'pods', modes: ['cannon', 'star'] }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'gears' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }, { k: 'bee' }, { k: 'walk', r: 9, laps: 2, w: 4, orb: 1 }], { kind: 'comet', timer: 150, need: 38, surf: 'star', hz: 1, name: T('ぜんぶの しれん', 'The Grand Gauntlet'), desc: T('ながい すいせいレース！ ぜんぶの銀河の シャードを あつめた人だけの ちょうせん。はやいほど ランクが アップ', 'A long comet race for those who cleared every other galaxy. Faster means a better rank.'), par: 150 });
     course(b, 'g8hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0 }, { k: 'bee' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1 }, { k: 'flip' }, { k: 'rail' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 9, laps: 3, w: 2 }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26 }], { kind: 'hunt', surf: 'star', hz: 1, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('さいごの星ぐんの ルミを みつけよう', 'Find the last three Lumi.'), par: 170 });
+    return b.d;
+  }
+
+  function g9() {
+    const b = Builder('g9', T('そらとぶ しまじま', 'Sky Isles'), 'grass', { n1: [0.1, 0.35, 0.7], n2: [0.7, 0.9, 1], band: [0.3, 0.8, 0.5], sun: [0.4, 0.7, -0.5], sunc: [1, 0.97, 0.85], stars: 0.7 });
+    course(b, 'g9m1', [{ k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'updraft' }, { k: 'pullgap' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'swing' }, { k: 'updraft' }, { k: 'bee' }, { k: 'walk', r: 10, laps: 4, w: 4 }], { surf: 'grass', hz: 0.9, name: T('うきしまの ふきあげ', 'Updraft Isles'), desc: T('風の柱に のって 空の島へ。ひっぱる星の場も わたる ながい たび', 'Ride the wind columns and pull fields across floating isles.'), par: 170 });
+    course(b, 'g9m2', [{ k: 'pods' }, { k: 'pullgap' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'bridge' }, { k: 'pullgap' }, { k: 'crumble', n: 5 }, { k: 'walk', r: 10, laps: 4, w: 4 }, { k: 'updraft' }], { surf: 'grass', hz: 0.9, name: T('ひっぱる ほしの みち', 'Pull-Star Road'), desc: T('ひっぱる星の場に とびこんで 向こうの足場へ。ながい みち', 'Leap into pull fields and be drawn across the gaps.'), par: 170 });
+    course(b, 'g9m3', [{ k: 'updraft' }, { k: 'swing' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'pullgap' }, { k: 'bee' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'bridge' }, { k: 'crumble', n: 5 }, { k: 'updraft' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'pods' }, { k: 'boss', r: 11, boss: { hp: 3, spd: 0.5, rs: 13, stun: 6, look: 'guard', chain: 1 } }], { surf: 'grass', hz: 0.9, kind: 'boss', name: T('ボス ストームロック', 'Boss: Storm Roc'), desc: T('つづけて 3かい ドスンと おちてくる！ ストームロックの スキを スピンで 4かい', 'The Storm Roc slams down three times in a row. Spin it 4 times when it is dazed.'), par: 230 });
+    course(b, 'g9m4', [{ k: 'walk', r: 9, laps: 2, w: 2, orb: 1 }, { k: 'updraft' }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'pullgap' }, { k: 'walk', r: 8, laps: 2, w: 3, orb: 1 }], { kind: 'comet', timer: 100, surf: 'grass', hz: 0.9, name: T('そらの すいせい', 'Sky Comet'), desc: T('風にのって すいせいのかけらを あつめよう。はやいほど ランクが アップ', 'Ride the wind and collect comet orbs. Faster means a better rank.'), par: 100 });
+    course(b, 'g9hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0 }, { k: 'updraft' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1 }, { k: 'pullgap' }, { k: 'walk', r: 9, laps: 3, w: 2 }, { k: 'walk', r: 10, laps: 3, w: 3 }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26 }, { k: 'walk', r: 10, laps: 3, w: 3 }], { kind: 'hunt', surf: 'grass', hz: 0.9, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('空の島の ルミを みつけよう', 'Find the 3 hidden Lumi in this galaxy.'), par: 160 });
+    b.d.deco = [{ dir: [-0.6, 0.15, -0.8], r: 60, col: [0.5, 0.8, 1], ring: 1 }, { dir: [0.7, 0.3, -0.6], r: 26, col: [1, 0.9, 0.6] }, { dir: [0.1, -0.5, 0.8], r: 30, col: [0.6, 0.95, 0.7] }];
+    return b.d;
+  }
+
+  function g10() {
+    const b = Builder('g10', T('すなの さばく', 'Dune Sea'), 'sand', { n1: [0.45, 0.25, 0.1], n2: [1, 0.75, 0.35], band: [0.6, 0.5, 0.4], sun: [0.3, 0.5, -0.8], sunc: [1, 0.85, 0.6], stars: 0.6 });
+    course(b, 'g10m1', [{ k: 'roll' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'crumble', n: 5 }, { k: 'roll' }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'roll' }], { surf: 'sand', hz: 0.9, name: T('さばくの ころがり', 'Dune Roller'), desc: T('岩の力で ころがって さばくの てきを はね飛ばす ながい たび', 'Roll through the desert foes with the rock power.'), par: 170 });
+    course(b, 'g10m2', [{ k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'crumble', n: 5 }, { k: 'melt' }, { k: 'roll' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'bridge' }], { surf: 'sand', hz: 0.9, name: T('ながれる すな', 'Shifting Sands'), desc: T('くずれる すなの足場と トゲの わを こえる ながい コース', 'Cross crumbling sand platforms and rings of spikes.'), par: 170 });
+    course(b, 'g10m3', [{ k: 'roll' }, { k: 'crumble', n: 5 }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'hop', n: 6, surf: 'stone' }, { k: 'melt' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'crumble', n: 5 }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'crumble', n: 5, phase: 1 }, { k: 'boss', r: 11, boss: { hp: 4, spd: 0.5, rs: 13, stun: 5, look: 'guard', charge: 2 } }], { surf: 'sand', hz: 0.9, kind: 'boss', name: T('ボス サンドワーム', 'Boss: Sand Worm'), desc: T('すなの下から 突進してくる！ ねらいを よく見て よけて、スキを 4かい', 'The Sand Worm charges at you. Dodge the aimed dash and hit it 4 times.'), par: 230 });
+    course(b, 'g10m4', [{ k: 'walk', r: 9, laps: 2, w: 2, orb: 1 }, { k: 'roll' }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'crumble', n: 5 }, { k: 'walk', r: 8, laps: 2, w: 3, orb: 1 }], { kind: 'comet', timer: 100, surf: 'sand', hz: 0.9, name: T('さばくの すいせい', 'Desert Comet'), desc: T('さばくを かけぬけて すいせいのかけらを あつめよう。はやいほど ランクが アップ', 'Dash across the desert collecting comet orbs. Faster means a better rank.'), par: 100 });
+    course(b, 'g10hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0 }, { k: 'crumble', n: 5 }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1 }, { k: 'roll' }, { k: 'walk', r: 9, laps: 3, w: 2 }, { k: 'walk', r: 10, laps: 3, w: 3 }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26 }, { k: 'walk', r: 10, laps: 3, w: 3 }], { kind: 'hunt', surf: 'sand', hz: 0.9, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('さばくの ルミを みつけよう', 'Find the 3 hidden Lumi in this galaxy.'), par: 160 });
+    b.d.deco = [{ dir: [0.5, 0.2, -0.8], r: 70, col: [1, 0.7, 0.35], ring: 0 }, { dir: [-0.8, 0.3, -0.4], r: 22, col: [0.9, 0.6, 0.4], ring: 1 }, { dir: [0.0, -0.4, 0.9], r: 28, col: [0.95, 0.85, 0.5] }];
+    return b.d;
+  }
+
+  function g11() {
+    const b = Builder('g11', T('きらきら すいしょうの どうくつ', 'Crystal Cavern'), 'ice', { n1: [0.25, 0.1, 0.45], n2: [0.4, 0.9, 0.9], band: [0.5, 0.4, 0.7], sun: [-0.3, 0.5, -0.7], sunc: [0.7, 0.8, 1], stars: 1, dark: 1 });
+    course(b, 'g11m1', [{ k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'flip' }, { k: 'pullgap' }, { k: 'bridge' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'flip' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'bridge' }], { surf: 'crystal', hz: 1, name: T('どうくつの さかさま', 'Upside-Down Cavern'), desc: T('重力が さかさまになる ゾーンと ひっぱる場の ながい どうくつ', 'A long cavern of gravity-flip zones and pull fields.'), par: 170 });
+    course(b, 'g11m2', [{ k: 'lamp', n: 5, w: 4 }, { k: 'bridge' }, { k: 'pullgap' }, { k: 'lamp', n: 5, w: 4 }, { k: 'rail' }, { k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'pullgap' }, { k: 'lamp', n: 5, w: 4 }], { surf: 'crystal', hz: 1, name: T('きらめく ちょうちん', 'Glittering Lanterns'), desc: T('くらい どうくつで ちょうちんを ともして すすむ ながい たび', 'Light lanterns through the dark crystal cave.'), par: 170 });
+    course(b, 'g11m3', [{ k: 'flip' }, { k: 'bridge' }, { k: 'lamp', n: 5, w: 4 }, { k: 'pullgap' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'rail' }, { k: 'flip' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'boss', r: 11, boss: { hp: 5, spd: 0.5, rs: 12, dblAt: 3, triAt: 2, stun: 5.2, look: 'king', charge: 1 } }], { surf: 'crystal', hz: 1, kind: 'boss', name: T('ボス クリスタルゴーレム', 'Boss: Crystal Golem'), desc: T('衝撃波が だんだん ふえて、突進もしてくる！ スキを スピンで 5かい', 'Shockwaves multiply and it charges too. Spin it 5 times when it is dazed.'), par: 240 });
+    course(b, 'g11m4', [{ k: 'walk', r: 9, laps: 2, w: 2, orb: 1 }, { k: 'flip' }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'pullgap' }, { k: 'walk', r: 8, laps: 2, w: 3, orb: 1 }], { kind: 'comet', timer: 100, surf: 'crystal', hz: 1, name: T('どうくつの すいせい', 'Cavern Comet'), desc: T('さかさまの どうくつで すいせいのかけらを あつめよう。はやいほど ランクが アップ', 'Collect comet orbs in the upside-down cavern. Faster means a better rank.'), par: 100 });
+    course(b, 'g11hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0 }, { k: 'flip' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1 }, { k: 'pullgap' }, { k: 'walk', r: 9, laps: 3, w: 2 }, { k: 'walk', r: 10, laps: 3, w: 3 }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26 }, { k: 'walk', r: 10, laps: 3, w: 3 }], { kind: 'hunt', surf: 'crystal', hz: 1, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('どうくつの ルミを みつけよう', 'Find the 3 hidden Lumi in this galaxy.'), par: 160 });
+    b.d.deco = [{ dir: [-0.5, 0.3, -0.8], r: 55, col: [0.55, 0.85, 1], ring: 1 }, { dir: [0.7, 0.2, -0.5], r: 20, col: [0.8, 0.6, 1] }, { dir: [0.0, 0.7, 0.6], r: 26, col: [0.5, 1, 0.85] }];
+    return b.d;
+  }
+
+  function g12() {
+    const b = Builder('g12', T('ふかい うみの みぞ', 'Deep Trench'), 'ocean', { n1: [0.02, 0.12, 0.35], n2: [0.15, 0.6, 0.8], band: [0.6, 0.6, 0.3], sun: [0.2, 0.8, -0.5], sunc: [0.7, 0.95, 1], stars: 0.8, dark: 1 });
+    course(b, 'g12m1', [{ k: 'swing' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'updraft' }, { k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'swing' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'bridge' }], { surf: 'water', hz: 1, name: T('うずまく みぞ', 'Whirling Trench'), desc: T('ゆれる月と ふきあげで ふかい うみの みぞを すすむ ながい たび', 'Swinging moons and updrafts in a deep ocean trench.'), par: 170 });
+    course(b, 'g12m2', [{ k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'bridge' }, { k: 'swing' }, { k: 'updraft' }, { k: 'pullgap' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'rail' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'swing' }], { surf: 'water', hz: 1, name: T('ふかい あわの みち', 'Deep Bubble Road'), desc: T('パイプと ひっぱる場で あわの みちを めぐる ながい コース', 'Pipes and pull fields along a long bubble road.'), par: 170 });
+    course(b, 'g12m3', [{ k: 'swing' }, { k: 'updraft' }, { k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'bridge' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'pullgap' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'crumble', n: 5, phase: 1 }, { k: 'updraft' }, { k: 'boss', r: 12, boss: { hp: 4, spd: 0.5, rs: 12, dblAt: 3, triAt: 2, stun: 6, look: 'king' } }], { surf: 'water', hz: 1, kind: 'boss', name: T('ボス リヴァイアサン', 'Boss: Leviathan'), desc: T('つづけて ドスンが 4かい！ 衝撃波も 2つ。スキを スピンで 5かい', 'It slams four times in a row with double shockwaves. Spin it 5 times when it is dazed.'), par: 250 });
+    course(b, 'g12m4', [{ k: 'walk', r: 9, laps: 2, w: 2, orb: 1 }, { k: 'swing' }, { k: 'walk', r: 9, laps: 2, w: 3, orb: 1 }, { k: 'updraft' }, { k: 'walk', r: 8, laps: 2, w: 3, orb: 1 }], { kind: 'comet', timer: 100, surf: 'water', hz: 1, name: T('うみの すいせい', 'Trench Comet'), desc: T('ふかい うみで すいせいのかけらを あつめよう。はやいほど ランクが アップ', 'Collect comet orbs in the deep sea. Faster means a better rank.'), par: 100 });
+    course(b, 'g12hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0 }, { k: 'swing' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1 }, { k: 'updraft' }, { k: 'walk', r: 9, laps: 3, w: 2 }, { k: 'walk', r: 10, laps: 3, w: 3 }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26 }, { k: 'walk', r: 10, laps: 3, w: 3 }], { kind: 'hunt', surf: 'water', hz: 1, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('ふかい うみの ルミを みつけよう', 'Find the 3 hidden Lumi in this galaxy.'), par: 160 });
+    b.d.deco = [{ dir: [-0.4, 0.3, -0.85], r: 62, col: [0.3, 0.75, 0.95], ring: 0 }, { dir: [0.8, 0.4, -0.4], r: 22, col: [0.6, 1, 0.9], ring: 1 }, { dir: [0.0, -0.5, 0.85], r: 30, col: [0.4, 0.5, 1] }];
     return b.d;
   }
 
@@ -439,14 +488,18 @@
     { id: 'g6', build: g6, need: 16, theme: 'ruins', col: '#e0b860', icon: 'ぜ' },
     { id: 'g7', build: g7, need: 18, theme: 'dusk', col: '#b48cf0', icon: 'お' },
     { id: 'g8', build: g8, need: 22, theme: 'star', col: '#ffd24a', icon: 'ほ' },
+    { id: 'g9', build: g9, need: 24, theme: 'grass', col: '#8fe0ff', icon: 'そ' },
+    { id: 'g10', build: g10, need: 29, theme: 'sand', col: '#ffc060', icon: 'す' },
+    { id: 'g11', build: g11, need: 33, theme: 'ice', col: '#c8a0ff', icon: 'き' },
+    { id: 'g12', build: g12, need: 37, theme: 'ocean', col: '#5fc0ff', icon: 'ふ' },
   ];
   const cache = {};
   function def(id) { if (!cache[id]) cache[id] = applyPar(id === 'hub' ? hub() : GALAXIES.find(g => g.id === id).build()); return cache[id]; }
   function compile(E, id) { const k = 'c:' + id; if (!cache[k]) cache[k] = E.compile(def(id)); return cache[k]; }
   // ボットの記録からつくる、ミッションごとの「さいたん時間」（tools/galaxy-proofs.js が par.js に書く）。せいげん時間はこれより短くならない
   const PAR = (typeof GalaxyPar !== 'undefined' ? GalaxyPar : (typeof require !== 'undefined' ? (() => { try { return require('./par.js'); } catch (e) { return {}; } })() : {}));
-  const TIER = { hub: 0, g1: 1, g2: 1, g3: 1, g4: 2, g5: 2, g6: 2, g7: 3, g8: 3 };
-  function applyPar(d) { for (const m of d.missions) m.dif = TIER[d.id] == null ? 3 : TIER[d.id]; return d; }
+  const TIER = { hub: 0, g1: 1, g2: 1, g3: 1, g4: 2, g5: 2, g6: 2, g7: 3, g8: 3, g9: 3, g10: 3, g11: 3, g12: 3 };
+  function applyPar(d) { for (const m of d.missions) m.dif = TIER[d.id] == null ? 3 : TIER[d.id]; (d.deco || []).forEach((x, i) => { if (i === 0 && !x.big) { x.r *= 2.4; x.big = 1; } }); return d; }
   const G = { GALAXIES, def, compile, ids: ['hub'].concat(GALAXIES.map(g => g.id)), dir, total: () => GALAXIES.reduce((n, g) => n + def(g.id).missions.filter(m => m.kind !== 'hunt').length, 0) };
   if (typeof module !== 'undefined' && module.exports) module.exports = G; else root.GalaxyLevels = G;
 })(typeof window !== 'undefined' ? window : globalThis);

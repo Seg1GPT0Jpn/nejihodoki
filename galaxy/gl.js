@@ -66,6 +66,7 @@
     ice: { a: '#cdeeff', b: '#94d2f6', c: '#ffffff', d: '#7fb8e8', e: '#ffffff' }, stone: { a: '#a4a4ba', b: '#80809c', c: '#cdcde0', d: '#6a6a86', e: '#e0e0f0' },
     lava: { a: '#3b1b1e', b: '#5b2424', c: '#7a3328', d: '#ff6a1a', e: '#ffc040' }, metal: { a: '#8f9bb8', b: '#6e7b9c', c: '#d3dcf2', d: '#4a5878', e: '#aee0ff' },
     dusk: { a: '#5a4a8a', b: '#3e3268', c: '#8a74c0', d: '#2a2048', e: '#c8b0ff' }, star: { a: '#f4e08a', b: '#e0b850', c: '#fff6c8', d: '#a8742a', e: '#ffffff' },
+    crystal: { a: '#9a7ce0', b: '#6a5cc8', c: '#d8c8ff', d: '#4a3a90', e: '#7ff0ff' },
     water: { a: '#4fc3e8', b: '#2f93d0', c: '#bff4ff', d: '#ffffff', e: '#ff9a8a' }, ruin: { a: '#c9b48a', b: '#a8946a', c: '#e6d6a8', d: '#7a6848', e: '#ffd060' }, gear: { a: '#b89a5a', b: '#8c7340', c: '#e8c878', d: '#5a4828', e: '#ffe9a0' },
     sand: { a: '#f1d896', b: '#d9b974', c: '#fff0c0', d: '#c8a050', e: '#ffffff' }, candy: { a: '#ff9ad0', b: '#ffd1e8', c: '#fff4a0', d: '#8fe0ff', e: '#ffffff' },
   };
@@ -121,6 +122,7 @@
     ruin: [t => { t.cone(0, 0, 0, 0.4, 1.8, hex('#d8c490'), 8, 0.34); t.cone(0, 1.8, 0, 0.5, 0.16, hex('#b8a478'), 8, 0.48); }, t => { t.cone(0, 0, 0, 0.36, 0.7, hex('#c8b480'), 8, 0.3); }, t => { t.box(0, 0.15, 0, 0.7, 0.3, 0.5, hex('#b4a070')); }],
     dusk: [t => { t.cone(0, 0, 0, 0.1, 0.9, hex('#3a2f58'), 5, 0.04); t.cone(0, 0.6, 0, 0.6, 0.5, hex('#4a3a70'), 6, 0.05); }, t => { t.ell(0, 0.25, 0, 0.3, 0.3, 0.3, hex('#c8b0ff'), 3, 6); }],
     star: [t => { t.star(0, 0.6, 0, 0.45, 0.2, 0.06, hex('#ffe066'), hex('#fff6c8')); t.cone(0, 0, 0, 0.05, 0.6, hex('#d8b050'), 4, 0.04); }],
+    crystal: [t => { for (let i = 0; i < 3; i++) { const a = i * 2.1; t.cone(Math.cos(a) * 0.2, 0, Math.sin(a) * 0.2, 0.18, 0.8 + i * 0.35, hex(i % 2 ? '#7ff0ff' : '#c8a0ff'), 5, 0); } }, t => { t.cone(0, 0, 0, 0.3, 1.1, hex('#b8f0ff'), 6, 0); }],
     gear: [t => { t.cone(0, 0, 0, 0.12, 0.6, hex('#8c7340'), 6, 0.1); t.ell(0, 0.65, 0, 0.2, 0.2, 0.2, hex('#ffe9a0'), 3, 6); }],
     metal: [t => { t.cone(0, 0, 0, 0.05, 1.1, hex('#cfd8ee'), 5, 0.03); t.ell(0, 1.15, 0, 0.1, 0.1, 0.1, hex('#6fe3ff'), 3, 6); }],
     lava: [t => { t.cone(0, 0, 0, 0.3, 0.7, hex('#2a1214'), 6, 0.12); t.ell(0, 0.7, 0, 0.1, 0.08, 0.1, [2.2, 0.8, 0.2], 3, 6); }],

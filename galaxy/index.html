@@ -208,6 +208,14 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
   </div>
 </div>
 
+<div class="overlay" id="ovMap" hidden role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+  <div class="panel">
+    <h2 id="mapTitle"></h2>
+    <svg id="mapSvg" viewBox="0 0 300 200" style="width:100%;max-height:50vh"></svg>
+    <button class="btn sub" id="mapClose" type="button">×</button>
+  </div>
+</div>
+
 <div class="overlay" id="ovSel" hidden role="dialog" aria-modal="true" aria-labelledby="selTitle">
   <div class="panel">
     <h2 id="selTitle"></h2>
@@ -296,15 +304,15 @@ const GALS = LV.GALAXIES, GNAME = { hub: { ja: 'ほしみ台', en: 'Stargazer De
 
 // ---------- save ----------
 // sh[galaxy]: bit i = mission i's Star Shard. lm[galaxy]: hidden Lumi bits. bt[missionId]: best time (1/60 s). All only grow (merged on sync).
-function newSave() { return { v: 1, pts: 0, sh: {}, lm: {}, bt: {}, rk: {}, cn: 0, cr: 0, stats: {}, set: { sens: 1, ac: 1, iy: 0, ahp: 0, anf: 0, asl: 0, rm: 0, lp: 0, tc: 'auto' }, tut: 0 }; }
+function newSave() { return { v: 1, pts: 0, sh: {}, lm: {}, bt: {}, rk: {}, cn: 0, cr: 0, un: 0, stats: {}, set: { sens: 1, ac: 1, iy: 0, ahp: 0, anf: 0, asl: 0, rm: 0, lp: 0, tc: 'auto' }, tut: 0 }; }
 function recompute(s) { let n = 0; for (const g of GALS) n += popc(s.sh[g.id] | 0); s.pts = n; }
 function readSave() {
   let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
   const s = newSave(); if (!o || typeof o !== 'object') return s;
   for (const g of GALS) { const n = LV.def(g.id).missions.length; s.sh[g.id] = (o.sh && o.sh[g.id] | 0) & ((1 << n) - 1); s.lm[g.id] = (o.lm && o.lm[g.id] | 0) & 255; }
-  if (o.bt && typeof o.bt === 'object') for (const k in o.bt) { const v = Number(o.bt[k]); if (/^g\d(m\d|hunt)$/.test(k) && isFinite(v) && v > 0 && v < 6e5) s.bt[k] = v | 0; }
-  if (o.rk && typeof o.rk === 'object') for (const k in o.rk) { const v = Number(o.rk[k]); if (/^g\d(m\d|hunt)$/.test(k) && v >= 0 && v <= 3) s.rk[k] = v | 0; }
-  s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
+  if (o.bt && typeof o.bt === 'object') for (const k in o.bt) { const v = Number(o.bt[k]); if (/^g\d{1,2}(m\d|hunt)$/.test(k) && isFinite(v) && v > 0 && v < 6e5) s.bt[k] = v | 0; }
+  if (o.rk && typeof o.rk === 'object') for (const k in o.rk) { const v = Number(o.rk[k]); if (/^g\d{1,2}(m\d|hunt)$/.test(k) && v >= 0 && v <= 3) s.rk[k] = v | 0; }
+  s.un = (o.un | 0) & 4095; s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
   if (o.stats && typeof o.stats === 'object') for (const k in o.stats) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0 && /^[a-z0-9_]{1,16}$/.test(k)) s.stats[k] = Math.min(1e9, v | 0); }
   if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
   s.tut = o.tut ? 1 : 0; recompute(s); return s;
@@ -374,8 +382,39 @@ function startMission(gid, mid, o) {
 function enterHub(o) {
   o = o || {}; hideOverlays(); newRun('hub', 'free'); mode = 'hub'; document.body.classList.add('playing'); showTouch(); G.intro = false; G.introDur = 0;
   if (o.from) { const gi = G.L.ents.findIndex(e => e.k === 'gate' && e.gal === o.from); if (gi >= 0) { const p = E.entPos(G.S, gi), up = E.entUp(G.S, gi); G.S.h.x = V.add(p, V.add(V.mul(up, 0.6), V.mul(E.perp(up), 3.2))); G.S.h.up = up.slice(); G.S.cam.up = up.slice(); G.S.h.on = -1; } }
-  if (o.from) G.gateLock = true; kick(); landTip(); return true;
+  if (o.from) G.gateLock = true; unlockCheck(); kick(); landTip(); return true;
 }
+
+// ---------- hub: NPC hints, unlock animation, constellation map ----------
+function npcHint(k) {
+  const next = GALS.filter(g => g.need > save.pts).sort((a, b) => a.need - b.need)[0];
+  const H = [
+    [L('ガイドライトの さきに 星が あるよ。ゲートに 入ると ミッションを えらべる！', 'Follow the glow to a gate, then pick a mission!'), 0],
+    [next ? L('つぎの ぎんがは ★' + next.need + 'こで ひらく。いま ★' + save.pts + 'こ だよ。', 'The next galaxy opens at ★' + next.need + '. You have ★' + save.pts + '.') : L('ぜんぶの ぎんがが ひらいたね！ ランクSを めざそう', 'Every galaxy is open! Go for rank S.'), 0],
+    [L('すべり台や ジャンプ台、風や じりょくの ゾーンに 気をつけて。ふしぎな 力で 星がうごくよ', 'Watch for wind, magnets and lanes between planets. Each galaxy bends the rules.'), 0]];
+  return H[k % 3][0];
+}
+function hubNpc(S) {
+  const ents = G.L.ents; let near = -1;
+  for (const i of S.act) { const e = ents[i]; if (e.k !== 'npc') continue; if (V.len(V.sub(S.h.x, S.ep[i])) < 6) { near = e.hint | 0; break; } }
+  if (near !== G.npcNear) { G.npcNear = near; if (near >= 0) { snd('tap'); showBanner(npcHint(near), L('うちゅうひこうし', 'Astronaut'), 3200); } }
+}
+function unlockCheck() {
+  let nu = 0; for (let i = 0; i < GALS.length; i++) if (galUnlocked(GALS[i].id) && GALS[i].need > 0) nu |= 1 << i;
+  const fresh = nu & ~save.un; if (!fresh) return;
+  save.un |= nu; writeSave();
+  const first = GALS.find((g, i) => fresh & (1 << i)); G.unlockAnim = 150;
+  setTimeout(() => { if (G && G.gid === 'hub') { snd('arrive'); showBanner(L('あたらしい ぎんが: ', 'New galaxy: ') + gname(first.id), '', 2600); } }, 600);
+}
+function openMap() {
+  paused = true; padOff(); $('mapTitle').textContent = L('せいざマップ', 'Constellation Map'); const pts = GALS.map((g, i) => { const a = i / GALS.length * Math.PI * 2 - 1.2, r = 40 + (i % 3) * 22; return [150 + Math.cos(a) * (r + 40), 100 + Math.sin(a) * (r * 0.8 + 10)]; });
+  let h = '<circle cx="150" cy="100" r="6" fill="#ffd54a"/>';
+  GALS.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<line x1="150" y1="100" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="' + (ok ? '#9fd8ff' : '#556') + '" stroke-width=".8" stroke-dasharray="' + (ok ? '' : '2 2') + '"/>'; if (i) h += '<line x1="' + pts[i - 1][0].toFixed(1) + '" y1="' + pts[i - 1][1].toFixed(1) + '" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="#345" stroke-width=".6"/>'; });
+  GALS.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<g data-g="' + g.id + '" style="cursor:pointer"><circle cx="' + pts[i][0].toFixed(1) + '" cy="' + pts[i][1].toFixed(1) + '" r="' + (ok ? 7 : 5) + '" fill="' + (ok ? '#7fd0ff' : '#445') + '"/><text x="' + pts[i][0].toFixed(1) + '" y="' + (pts[i][1] + 15).toFixed(1) + '" font-size="6" fill="#fff" text-anchor="middle">' + esc(gname(g.id)) + (ok ? '' : ' ★' + g.need) + '</text></g>'; });
+  $('mapSvg').innerHTML = h; $('mapSvg').querySelectorAll('g').forEach(g => { g.onclick = () => { $('ovMap').hidden = true; selG = g.dataset.g; openSelect(selG); }; });
+  $('ovMap').hidden = false; snd('tap');
+}
+$('mapClose').onclick = () => { $('ovMap').hidden = true; paused = false; acc = 0; kick(); };
 function endRun(reason) {
   if (!G || !G.live) return; G.live = false; if (mode !== 'play' && mode !== 'result') return;
   const S = G.S, c = S.cnt; stat('jumps', c.jump); stat('spins', c.spin); stat('pounds', c.pound); stat('wallkicks', c.wk); stat('launches', c.launch); stat('kills', c.kill); stat('stomps', c.stomp); stat('deaths', c.die); stat('lumi', c.lumi); for (const k of ['pbe', 'psp', 'pcl', 'psk', 'pfi', 'psh']) if (c[k]) stat(k, c[k]);
@@ -514,6 +553,7 @@ function stepOnce() {
     G.doneT++; if (G.doneT === 1 && S.res.ok) { /* shard sound came with the event */ }
     if (G.doneT > (S.res.ok ? 100 : 40) && !G.resultShown) { G.resultShown = true; showResult(); }
   } else if (G.gid === 'hub') {
+    hubNpc(S); if (G.unlockAnim > 0) G.unlockAnim--;
     if (S.gate >= 0 && S.h.on >= 0) { if (!G.gateLock) { const gal = S.L.ents[S.gate].gal; G.gateLock = true; openSelect(gal); } } else G.gateLock = false;
   } else {
     const gb = S.h.gb; if (S.h.on >= 0 && gb !== G.lastB && gb >= 0) { G.lastB = gb; if (!G.seen[gb]) { G.seen[gb] = 1; camV.zoom = 1; snd('arrive'); showBanner(L('あたらしい 星に とうちゃく！', 'New planet reached!'), '', 1300); } }
@@ -530,7 +570,7 @@ function onEvents(S) {
 }
 function render(dt) {
   if (!R || !G) return; const S = G.S, t = performance.now() / 1000;
-  const cam = camera(S, dt, t), objs = ART.scene(S, t, fx, { locked: lockedMap() });
+  const cam = camera(S, dt, t), objs = ART.scene(S, t, fx, { locked: lockedMap(), unlockAnim: G.unlockAnim | 0 });
   const parts = fx.fill(); if (fx.flash > 0) $('flash').style.opacity = String(Math.min(0.55, fx.flash * 0.6)); else if ($('flash').style.opacity !== '0') $('flash').style.opacity = '0';
   R.render({ cam, t: save.set.rm ? 0 : t, xf: S.xf, objs, parts, on: S.L.bodies.map((b, bi) => E.bodyActive(S, bi)) });
   if (G.gid === 'hub') { $('labels').hidden = false; hubLabels(); } else $('labels').hidden = true;
@@ -557,7 +597,7 @@ function hubLabels() {
   const el = $('labels'); if (!R || !G) return; const S = G.S; const ents = G.L.ents;
   const ng = G.L.ents.filter(e => e.k === 'gate').length; if (el.childElementCount !== ng) { el.innerHTML = '<span></span>'.repeat(ng); }
   let k = 0; for (const i of S.act) { const e = ents[i]; if (e.k !== 'gate') continue; const sp = el.children[k++]; if (!sp) break; const p = S.ep[i], pr = R.project(p[0] + S.h.up[0] * 0, p[1], p[2]); const up = E.entUp(S, i); const pp = R.project(p[0] + up[0] * 3.4, p[1] + up[1] * 3.4, p[2] + up[2] * 3.4);
-    if (!pp || !pp.in) { sp.style.display = 'none'; continue; } sp.style.display = ''; sp.style.left = pp.x + 'px'; sp.style.top = pp.y + 'px'; const g = GALS.find(x => x.id === e.gal), ok = galUnlocked(e.gal); const txt = gname(e.gal) + (ok ? '' : L('（あと★', ' (need ★') + Math.max(0, g.need - save.pts) + (EN ? ')' : '）')); if (sp.textContent !== txt) sp.textContent = txt; sp.style.opacity = ok ? '1' : '.7'; }
+    if (!pp || !pp.in || V.len(V.sub(S.h.x, p)) > 26) { sp.style.display = 'none'; continue; } sp.style.display = ''; sp.style.left = pp.x + 'px'; sp.style.top = pp.y + 'px'; const g = GALS.find(x => x.id === e.gal), ok = galUnlocked(e.gal); const txt = gname(e.gal) + (ok ? '' : L('（あと★', ' (need ★') + Math.max(0, g.need - save.pts) + (EN ? ')' : '）')); if (sp.textContent !== txt) sp.textContent = txt; sp.style.opacity = ok ? '1' : '.7'; }
 }
 function updateHud() {
   const S = G.S, h = S.h; let s = ''; for (let i = 0; i < S.hpMax; i++) s += '<i class="' + (i < h.hp ? '' : 'off') + '">♥</i>'; const he = $('hearts'); if (he.dataset.k !== s) { he.innerHTML = s; he.dataset.k = s; }
@@ -582,7 +622,7 @@ function compass() {
 }
 
 // ---------- overlays ----------
-const OVS = ['ovTitle', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
+const OVS = ['ovTitle', 'ovMap', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
 function hideOverlays() { OVS.forEach(id => { $(id).hidden = true; }); }
 const anyOverlay = () => OVS.some(id => !$(id).hidden);
 function showTitle() {
@@ -684,7 +724,7 @@ function openPause() {
   paused = true; padOff(); down.clear();
   const extra = [];
   if (G && G.gid !== 'hub') extra.push({ label: L('ほしみ台へ もどる', 'Back to the Station'), icon: 'menu', onClick: () => { pm.close(); const g = G.gid; endRun('quit'); enterHub({ from: g }); } });
-  else extra.push({ label: L('ぎんがを えらぶ', 'Choose a galaxy'), icon: 'menu', onClick: () => { pm.close(); openSelect(selG); } });
+  else { extra.push({ label: L('ぎんがを えらぶ', 'Choose a galaxy'), icon: 'menu', onClick: () => { pm.close(); openSelect(selG); } }); extra.push({ label: L('せいざマップ', 'Constellation Map'), icon: 'menu', onClick: () => { pm.close(); openMap(); } }); }
   extra.push({ label: L('せってい', 'Settings'), icon: 'settings', onClick: () => { pm.close(); showSettings(); } });
   extra.push({ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } });
   pm = UI.pauseMenu({ title: T('一時停止'), home: '../', extra, onSettings: false, onRestart: G && G.gid !== 'hub' ? () => restartMission() : null, confirmRestart: false,

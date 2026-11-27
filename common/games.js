@@ -1270,16 +1270,16 @@
       // pts = Star Shards collected (one per mission, 10 in the first release; the cap leaves room for the 6-8 galaxies planned)
       score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 999, maxRate: null },
       rankSource: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', offset: 0 },
-      record: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/26', en: 'Shards {n}/26' } },
+      record: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/42', en: 'Shards {n}/42' } },
       keys: {
-        'kusoge.galaxy.save': '{ v:1, pts（スターシャードの合計＝ランキング。sh から毎回計算し直す）, sh:{ "<銀河 g1〜>":ミッションごとのシャードのビット }, lm:{ "<銀河>":かくれルミのビット }, bt:{ "<ミッション ID>":ベストタイム（1/60秒。小さいほどよい） }, rk:{ "<ミッション ID>":ベストランク 0〜3（C・B・A・S） }, cn（コイン）, cr（クリスタル）, stats:{ plays, clears, nodie, comets, boss, jumps, spins, pounds, wallkicks, launches, kills, stomps, deaths, lumi, assist, hunts（かくれルミさがしのクリア数）, boss2, pbe・psp・pcl・psk・pfi（ハチ・バネ・くも・スケート・ほのおの力をとった数） }（lm の 7ビット目 128 ＝その銀河のルミさがしクリア）, set:{ sens（カメラのかんど 0.6/1/1.5）, ac（じどう追いかけ）, iy（上下反対）, ahp・anf・asl（たすけ：体力6・落下ダメージなし・すいせいの時間1.6倍）, rm（うごきをへらす）, lp（かるい描画）, tc（タッチボタン auto/on/off） }, tut }',
+        'kusoge.galaxy.save': '{ v:1, pts（スターシャードの合計＝ランキング。sh から毎回計算し直す）, sh:{ "<銀河 g1〜>":ミッションごとのシャードのビット }, lm:{ "<銀河>":かくれルミのビット }, bt:{ "<ミッション ID>":ベストタイム（1/60秒。小さいほどよい） }, un（ひらいた銀河を見たビット）, rk:{ "<ミッション ID>":ベストランク 0〜3（C・B・A・S） }, cn（コイン）, cr（クリスタル）, stats:{ plays, clears, nodie, comets, boss, jumps, spins, pounds, wallkicks, launches, kills, stomps, deaths, lumi, assist, hunts（かくれルミさがしのクリア数）, boss2, pbe・psp・pcl・psk・pfi（ハチ・バネ・くも・スケート・ほのおの力をとった数） }（lm の 7ビット目 128 ＝その銀河のルミさがしクリア）, set:{ sens（カメラのかんど 0.6/1/1.5）, ac（じどう追いかけ）, iy（上下反対）, ahp・anf・asl（たすけ：体力6・落下ダメージなし・すいせいの時間1.6倍）, rm（うごきをへらす）, lp（かるい描画）, tc（タッチボタン auto/on/off） }, tut }',
         'kusoge.galaxy.howto': 'あそびかたを見た（\'1\'）。この端末だけ（同期しない）',
         'kusoge.galaxy.ori': '画面のむき（\'auto\'|\'land\'|\'port\'）。この端末だけ（同期しない）',
         'kusoge.galaxy.tip': '「横向きにすると遊びやすいよ」のヒントを閉じた（\'1\'）。この端末だけ（同期しない）',
       },
       // shards, hidden Lumi bits and counters only grow (bit sets are OR, counters max); best times keep the smaller positive value; settings are whole values (newest)
       sync: {
-        'kusoge.galaxy.save': { fields: { pts: 'max', sh: { each: 'bor' }, lm: { each: 'bor' }, bt: { each: 'minPos' }, rk: { each: 'max' }, cn: 'max', cr: 'max', stats: { each: 'max' }, tut: 'max', set: 'newest' }, rest: 'newest' },
+        'kusoge.galaxy.save': { fields: { pts: 'max', sh: { each: 'bor' }, lm: { each: 'bor' }, un: 'bor', bt: { each: 'minPos' }, rk: { each: 'max' }, cn: 'max', cr: 'max', stats: { each: 'max' }, tut: 'max', set: 'newest' }, rest: 'newest' },
       },
     },
     {
@@ -2001,7 +2001,8 @@
       { id: 'galaxy.final', tier: 4, icon: 'trophy', title: { ja: 'ほしの おうさまを ねむらせた', en: 'Star King Defeated' }, desc: { ja: 'ラスボス ほしのおうさまをたおして、エンディングへ', en: 'Beat the final boss and see the ending' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.final' }, gte: 1 } },
       { id: 'galaxy.gauntlet', tier: 4, icon: 'trophy', title: { ja: 'ぜんぶの しれん', en: 'Grand Gauntlet' }, desc: { ja: 'ぜんぶの しれんを クリアする', en: 'Clear the Grand Gauntlet' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.gauntlet' }, gte: 1 } },
       { id: 'galaxy.shield1', tier: 1, icon: 'check', title: { ja: 'バリアで ガード', en: 'Shielded' }, desc: { ja: 'バリアの力を手に入れる', en: 'Get the shield power' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.psh' }, gte: 1 } },
-      { id: 'galaxy.shard26', tier: 4, icon: 'trophy', title: { ja: '星わたり ぜんぶ', en: 'Every Shard' }, desc: { ja: 'スターシャードを26こ全部集める', en: 'Collect all 26 Star Shards' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 26 } },
+      { id: 'galaxy.shard26', tier: 4, icon: 'trophy', title: { ja: '星わたり ぜんぶ', en: 'Every Shard' }, desc: { ja: 'スターシャードを26こ集める', en: 'Collect 26 Star Shards' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 26 } },
+      { id: 'galaxy.shard42', tier: 4, icon: 'trophy', title: { ja: '星わたり 12ぎんが', en: 'All Twelve Galaxies' }, desc: { ja: '12の銀河のスターシャードを42こ全部集める', en: 'Collect all 42 Star Shards across 12 galaxies' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 42 } },
       { id: 'galaxy.rank1', tier: 2, icon: 'star', title: { ja: 'ランクS', en: 'Rank S' }, desc: { ja: 'どれかのミッションで ランクSを とる', en: 'Earn rank S on any mission' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.rankS' }, gte: 1 } },
       { id: 'galaxy.rank10', tier: 4, icon: 'trophy', title: { ja: 'ランクS名人', en: 'Rank S Master' }, desc: { ja: 'ランクSを 合わせて10回', en: 'Earn rank S ten times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.rankS' }, gte: 10 } },
       { id: 'galaxy.die10', tier: 1, icon: 'check', title: { ja: 'ころんでもだいじょうぶ', en: 'It Happens' }, desc: { ja: 'やられても、あきらめずに10回ふっかつ', en: 'Get back up 10 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.deaths' }, gte: 10 } },

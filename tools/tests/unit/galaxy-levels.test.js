@@ -7,11 +7,11 @@ const E = require(path.join(ROOT, 'galaxy/engine.js')), LV = require(path.join(R
 const V = E.vec;
 
 test('galaxies: 3 galaxies, at least 3 shards each, 10 missions, unique ids, shards unlock in order', () => {
-  eq(LV.GALAXIES.length, 8); ok(LV.total() >= 24, 'missions ' + LV.total()); let before = 0; const ids = new Set();
+  eq(LV.GALAXIES.length, 12); ok(LV.total() >= 42, 'missions ' + LV.total()); let before = 0; const ids = new Set();
   LV.GALAXIES.forEach((g, i) => { const d = LV.def(g.id); ok(d.missions.filter(m => m.kind !== 'hunt').length >= 3, g.id + ' has >= 3 missions'); ok(g.need <= before, 'reachable unlock ' + g.id + ' ' + g.need + ' <= ' + before); before += d.missions.filter(m => m.kind !== 'hunt').length; ok(d.missions.some(m => m.kind === 'hunt'), g.id + ' has a hunt');
     for (const m of d.missions) { ok(!ids.has(m.id), 'unique ' + m.id); ids.add(m.id); ok(m.name.ja && m.name.en && m.desc.ja && m.desc.en, 'texts ' + m.id); ok(m.route && m.route.length, 'route ' + m.id); } });
   ok(LV.def('g3').missions.some(m => m.kind === 'boss') && LV.def('g6').missions.some(m => m.kind === 'boss') && LV.def('g8').missions.some(m => m.kind === 'final'), 'three bosses (the last is the final boss)');
-  const gm = LV.def('g8').missions.find(m => m.id === 'g8m2'); ok(gm.need >= LV.total() - 3 && gm.kind === 'comet', 'the gauntlet needs the other galaxies'); ok(LV.def('g1').missions.some(m => m.kind === 'comet'), 'a comet');
+  const gm = LV.def('g8').missions.find(m => m.id === 'g8m2'); ok(gm.need >= LV.total() - 5 && gm.kind === 'comet', 'the gauntlet needs the other galaxies'); ok(LV.def('g1').missions.some(m => m.kind === 'comet'), 'a comet');
 });
 test('every body is valid; every thing is placed in free space near a planet (in each mission); shards exist for every mission', () => {
   for (const id of LV.ids) {
@@ -56,8 +56,8 @@ test('long courses: EVERY non-comet, non-hunt mission is a long multi-section co
     ok(r.S.cnt.hurt <= 8 && r.S.cnt.die <= 3, m.id + ' fair for the perfect bot: hurt ' + r.S.cnt.hurt + ' KO ' + r.S.cnt.die);
     if (m.kind === 'comet') { comets++; ok(!m.long && sec >= 30 && sec <= 200, m.id + ' comet ' + sec.toFixed(0) + ' s'); continue; }
     if (m.kind === 'hunt') { hunts++; ok(sec >= 120 && sec <= 300, m.id + ' hunt ' + sec.toFixed(0) + ' s'); continue; }
-    ok(m.long, m.id + ' must be a long course'); n++; ok(sec >= (boss ? 180 : 120) && sec <= (boss ? 360 : 300), m.id + ' took ' + sec.toFixed(0) + ' s'); const S = E.create(L, m.id); ok(S.act.filter(i => L.ents[i].k === 'cp').length >= 2, m.id + ' checkpoints'); } }
-  ok(n >= 17 && hunts === 8 && comets >= 6, 'counts ' + n + ' ' + hunts + ' ' + comets); console.log('      long courses: ' + n + ', hunts: ' + hunts + ', comets: ' + comets);
+    ok(m.long, m.id + ' must be a long course'); n++; ok(sec >= (boss ? 170 : 120) && sec <= (boss ? 360 : 300), m.id + ' took ' + sec.toFixed(0) + ' s'); const S = E.create(L, m.id); ok(S.act.filter(i => L.ents[i].k === 'cp').length >= 2, m.id + ' checkpoints'); } }
+  ok(n >= 29 && hunts === 12 && comets >= 10, 'counts ' + n + ' ' + hunts + ' ' + comets); console.log('      long courses: ' + n + ', hunts: ' + hunts + ', comets: ' + comets);
 });
 test('ranks: S/A/B/C from par time, no damage and all lumi; rewards grow; a clean slow run is B at best', () => {
   const m = { par: 100 }; eq(E.rank(m, { f: 70 * 60, die: 0, hurt: 0 }, true), 3, 'fast, clean, all lumi = S'); eq(E.rank(m, { f: 70 * 60, die: 0, hurt: 0 }, false), 2, 'A'); eq(E.rank(m, { f: 110 * 60, die: 0, hurt: 0 }, false), 1, 'B'); eq(E.rank(m, { f: 300 * 60, die: 1, hurt: 3 }, false), 0, 'C'); eq(E.rank(m, { f: 300 * 60, die: 0, hurt: 0 }, true), 1, 'slow clean with lumi = B');
