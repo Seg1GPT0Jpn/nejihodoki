@@ -13,10 +13,10 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && request.auth.uid in ['OWNER_UID_HERE']; }
 
     // ===== ゲームと上限（common/games.js の score.cap と同じ値） =====
-    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing', 'mahjong', 'akin', 'chess', 'wordwolf', 'puff', 'sports', 'galaxy']; }
+    function games() { return ['neji', 'blocks', 'drop', 'raft', 'gates', 'n59049', 'water', 'parking', 'hole', 'hitsumabushi', 'planet', 'hitblow', 'shogi', 'escape', 'td', 'physics', 'minigolf', 'trade', 'cards', 'fit', 'town', 'colorcards', 'brawl', 'train', 'reversi', 'manabi', 'orchestra', 'gomoku', 'sudoku', 'crates', 'hop', 'maze', 'shmup', 'fishing', 'mahjong', 'akin', 'chess', 'wordwolf', 'puff', 'sports', 'galaxy', 'invade']; }
     function caps() {
       return { 'neji': 100000, 'blocks': 100000000, 'drop': 100000000, 'raft': 100000, 'gates': 100000,
-               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 10000, 'gomoku': 100000, 'sudoku': 100000, 'crates': 240, 'hop': 168, 'maze': 85, 'shmup': 99999999, 'fishing': 150, 'mahjong': 150000, 'akin': 100000, 'chess': 100000, 'wordwolf': 500, 'puff': 125, 'sports': 999, 'galaxy': 999 };
+               'n59049': 1000000000, 'water': 100000, 'parking': 100000, 'hole': 1000000, 'hitsumabushi': 100000, 'planet': 10000, 'hitblow': 10000, 'shogi': 100000, 'escape': 10000, 'td': 1000000, 'physics': 1000, 'minigolf': 1000, 'trade': 10000000, 'cards': 100000, 'fit': 1000, 'town': 100000, 'colorcards': 100000, 'brawl': 100000, 'train': 100000, 'reversi': 100000, 'manabi': 10000000, 'orchestra': 10000, 'gomoku': 100000, 'sudoku': 100000, 'crates': 240, 'hop': 168, 'maze': 85, 'shmup': 99999999, 'fishing': 150, 'mahjong': 150000, 'akin': 100000, 'chess': 100000, 'wordwolf': 500, 'puff': 125, 'sports': 999, 'galaxy': 999, 'invade': 9999999 };
     }
 
     // ===== 日本時間の日付と週 =====
@@ -99,6 +99,7 @@ service cloud.firestore {
         && (!('kusoge~puff~save' in ch) || !('kusoge~puff~save' in g) || okEnt(g['kusoge~puff~save']))
         && (!('kusoge~sports~save' in ch) || !('kusoge~sports~save' in g) || okEnt(g['kusoge~sports~save']))
         && (!('kusoge~galaxy~save' in ch) || !('kusoge~galaxy~save' in g) || okEnt(g['kusoge~galaxy~save']))
+        && (!('kusoge~invade~save' in ch) || !('kusoge~invade~save' in g) || okEnt(g['kusoge~invade~save']))
         && (!('kusoge~vs~stats' in ch) || !('kusoge~vs~stats' in g) || okEnt(g['kusoge~vs~stats']));
     }
     function okNejiUser(d) {
@@ -229,7 +230,7 @@ service cloud.firestore {
           && d.get('reversi', 0) - p.get('reversi', 0) in [0, 1] && d.get('manabi', 0) - p.get('manabi', 0) in [0, 1] && d.get('orchestra', 0) - p.get('orchestra', 0) in [0, 1] && d.get('gomoku', 0) - p.get('gomoku', 0) in [0, 1]
           && d.get('sudoku', 0) - p.get('sudoku', 0) in [0, 1] && d.get('crates', 0) - p.get('crates', 0) in [0, 1] && d.get('hop', 0) - p.get('hop', 0) in [0, 1] && d.get('maze', 0) - p.get('maze', 0) in [0, 1]
           && d.get('shmup', 0) - p.get('shmup', 0) in [0, 1] && d.get('fishing', 0) - p.get('fishing', 0) in [0, 1] && d.get('mahjong', 0) - p.get('mahjong', 0) in [0, 1] && d.get('akin', 0) - p.get('akin', 0) in [0, 1]
-          && d.get('chess', 0) - p.get('chess', 0) in [0, 1] && d.get('wordwolf', 0) - p.get('wordwolf', 0) in [0, 1] && d.get('puff', 0) - p.get('puff', 0) in [0, 1] && d.get('sports', 0) - p.get('sports', 0) in [0, 1] && d.get('galaxy', 0) - p.get('galaxy', 0) in [0, 1];
+          && d.get('chess', 0) - p.get('chess', 0) in [0, 1] && d.get('wordwolf', 0) - p.get('wordwolf', 0) in [0, 1] && d.get('puff', 0) - p.get('puff', 0) in [0, 1] && d.get('sports', 0) - p.get('sports', 0) in [0, 1] && d.get('galaxy', 0) - p.get('galaxy', 0) in [0, 1] && d.get('invade', 0) - p.get('invade', 0) in [0, 1];
     }
     match /kbPlays/{week} {
       allow get: if true;

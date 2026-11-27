@@ -136,6 +136,9 @@ node tools/tests/trade-play.js                 # 貿易ゲームの通し（は�
 node tools/tests/unit/trade-engine.test.js     # 貿易ゲームの中身（値段の見直しがふつうなら前と同じ・できごとの計画・8ミッションの条件と★・kusoge.trade.x の読み込みと記録・英語の辞書が全部そろう・engine.js と sw.js）
 node tools/tests/shots.js                       # サムネイルを tools/tests/out/thumbs/ に試し撮り
 node tools/tests/shots.js --write               # サムネイルを img/thumbs/ に書く（<id>.webp 360×240、<id>@2x.webp 720×480）
+node tools/tests/invade-play.js [first,keys,touch,pad,modes,campaign,settings,layouts,orient,english,perf]  # ほしぞら守備隊の通し（本物のキー・ドラッグ・ボタン・ゲームパッド、全モード、キャンペーンの★保存、CRT設定、320px〜タブレットの縦横、日英、向きの強制）
+node tools/tests/unit/invade-engine.test.js  # ほしぞら守備隊の中身（行進のスピードアップの式・移動・撃つ・当たり・シールドの削れ・連鎖と上限・おつきバスとアイテム・ボス・交代と協力・ウェーブ生成と日替わりの決定性）
+node tools/tests/unit/invade-levels.test.js  # 45ステージの作り（形がぜんぶちがう・5面ごとにボス・敵の紹介）と、ボットが全ステージ・クラシック・サバイバル・のんびり・デイリー・協力を通れること
 ```
 
 ほかのオプション：`--jobs N`（並列の数。既定は CPU の数か4の小さいほう）、`--dpr 1`（速くしたいとき）、`--timeout 秒`、`--headed`、`--out <dir>`。

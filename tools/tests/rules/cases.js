@@ -141,6 +141,10 @@ async function runCases(T, opt = {}) {
     await check(g, 'own push galaxy save (shard bits, best times, lumi bits, stats, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~galaxy~save': { v: JSON.stringify({ v: 1, pts: 4, sh: { g1: 15, g2: 0 }, lm: { g1: 1 }, bt: { g1m1: 2400 }, cn: 120, cr: 3, stats: { plays: 9, clears: 6, jumps: 300 }, set: { sens: 1, ac: 1, rm: 0 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'galaxy save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~galaxy~save': { v: 7, t: now } } }, A, { merge: true }));
     await check(g, 'galaxy save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~galaxy~save': 'x' } }, A, { merge: true }));
+    // ほしぞら守備隊（invade）：記録 kusoge.invade.save だけを同期する（ハイスコア .rank・あそびかた .howto・画面のむき .ori は端末だけ）
+    await check(g, 'own push invade save (bests, wave bests, stars per stage, daily, stats, item and boss bits, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~invade~save': { v: JSON.stringify({ v: 1, rank: 48210, best: { classic: 48210, survival: 9000 }, bw: { classic: 12, survival: 6 }, cs: [3, 2, 1, 0], cl: 3, st: 6, dl: { k: 20261127, s: 5200 }, stats: { plays: 14, kills: 640, saucers: 6, maxChain: 22 }, capm: 127, capn: 7, bossm: 3, bossn: 2, set: { auto: 2, fx: 0, shake: 1, tc: 'auto', gain: 12, pl: 0, assist: 0 }, tut: 31 }), t: now } }, updatedAt: now }, A, { merge: true }));
+    await check(g, 'invade save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~invade~save': { v: 7, t: now } } }, A, { merge: true }));
+    await check(g, 'invade save entry is not a map', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~invade~save': 'x' } }, A, { merge: true }));
     // あてっこ（akin）：記録 kusoge.akin.save だけを同期する（おぼえたもの .custom・とちゅうの1問 .run・あそびかた .howto は端末だけ）
     await check(g, 'own push akin save (guesses = ranking, per-range and per-theme tallies, stats, settings)', 'allow', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~akin~save': { v: JSON.stringify({ v: 1, rk: 12, num: { r100: { p: 6, w: 5, b: 7 }, r1k: { p: 2, w: 2, b: 11 } }, th: { animals: { p: 4, w: 4, b: 8 }, foods: { p: 2, w: 1, b: 10 } }, stats: { plays: 15, wins: 12, losses: 3, nw: 7, tw: 5, fast: 1, m1: 0, cust: 0, quick: 1, recover: 1, learn: 2, back: 2, idk: 6, duo: 1 }, set: { hard: 0, peek: 1, sc: 3 }, tut: 1 }), t: now } }, updatedAt: now }, A, { merge: true }));
     await check(g, 'akin save entry v is a number', 'deny', () => fsSet(T, `nejiUsers/${A.uid}`, { games: { 'kusoge~akin~save': { v: 7, t: now } } }, A, { merge: true }));
@@ -194,7 +198,7 @@ async function runCases(T, opt = {}) {
     await check(g, 'own write (cloud.js submitScores)', 'allow', () => fsSet(T, `kusogeRanks/${A.uid}`, ok(), A));
     await check(g, 'own write, guest (anonymous) with nickname', 'allow', () => fsSet(T, `kusogeRanks/${B.uid}`, { name: 'ゲスト', scores: {}, updatedAt: Date.now() }, B));
     // 旧ランキングは、前からあるゲームだけ（legacyGames()）。新しいゲーム（shmup・fishing 以降）は入れない。
-    const NEW_AFTER_LEGACY = ['shmup', 'fishing', 'mahjong', 'chess', 'igo', 'akin', 'werewolf', 'wordwolf', 'puff', 'sports', 'galaxy'];
+    const NEW_AFTER_LEGACY = ['shmup', 'fishing', 'mahjong', 'chess', 'igo', 'akin', 'werewolf', 'wordwolf', 'puff', 'sports', 'galaxy', 'invade'];
     const LEGACY_CAPS = Object.fromEntries(Object.entries(CAPS).filter(([k]) => !NEW_AFTER_LEGACY.includes(k)));
     await check(g, 'own write, every legacy game at its cap', 'allow', () => fsSet(T, `kusogeRanks/${A.uid}`, { name: 'cap', scores: Object.assign({}, LEGACY_CAPS), updatedAt: Date.now() }, A));
     await check(g, 'own write, a game added after the legacy period is refused', 'deny', () => fsSet(T, `kusogeRanks/${A.uid}`, { name: 'cap', scores: { shmup: 1 }, updatedAt: Date.now() }, A));
@@ -331,6 +335,8 @@ async function runCases(T, opt = {}) {
     await check(g3, 'sports +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { sports: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'galaxy +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { galaxy: 1 }, A, { merge: true }));
     await check(g3, 'galaxy +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { galaxy: 9 }, A, { merge: true }));
+    if (!live) await check(g3, 'invade +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { invade: 1 }, A, { merge: true }));
+    await check(g3, 'invade +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { invade: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'akin +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { akin: 1 }, A, { merge: true }));
     await check(g3, 'akin +2', 'deny', () => fsSet(T, `kbPlays/${wk}`, { akin: 9 }, A, { merge: true }));
     if (!live) await check(g3, 'manabi +1 (new game in the list)', 'allow', () => fsSet(T, `kbPlays/${wk}`, { manabi: 1 }, A, { merge: true }));
