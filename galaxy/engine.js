@@ -190,8 +190,11 @@
 
   // ---------- 動くもの ----------
   function bodyAt(S, i, q) { const f = S.xf[i]; return add(f.p, mv(f.R, q)); }
-  function entLocal(e, t) { if (e.k === 'walker') return rodr(e.l0, e.ax, (e.ph || 0) + e.w * t); return e.l; }
-  function entPos(S, i) { const e = S.L.ents[i]; if (e.bi >= 0) return bodyAt(S, e.bi, entLocal(e, S.t * (e.k === 'walker' ? S.wk : 1))); return e.p; }
+  // てきの うごき：ふつうは ぐるぐる歩く。dash＝止まって→ぐいっと走る（ボウラー・たねのさや）、hop＝ジャンプしながら（とびはね）、alt＝ういている、pulse＝出たり ひっこんだり（モグラ・ふんすい）
+  const wAng = (e, t) => { if (e.dash) { const T = e.dash.T, d = e.dash.d, u = t / T, f = Math.floor(u); return e.w * T * (f + Math.min((u - f) / d, 1)); } return e.w * t; };
+  const foeOn = (S, e) => !e.pulse || ((S.t / e.pulse.T + (e.pulse.o || 0)) % 1) < e.pulse.d;
+  function entLocal(e, t) { if (e.k === 'walker') return rodr(e.l0, e.ax, (e.ph || 0) + wAng(e, t)); return e.l; }
+  function entPos(S, i) { const e = S.L.ents[i]; if (e.bi >= 0) { const p = bodyAt(S, e.bi, entLocal(e, S.t * (e.k === 'walker' ? S.wk : 1))); if (e.k === 'walker' && (e.hop || e.alt)) { const off = (e.alt || 0) + (e.hop ? e.hop.h * Math.abs(sinD(Math.PI * (S.t * S.wk) / e.hop.T + (e.ph || 0))) : 0); return add(p, mul(entUp(S, i), off)); } return p; } return e.p; }
   function entUp(S, i) { const e = S.L.ents[i]; if (e.bi >= 0) { const n = e.n; if (e.k === 'walker') return mv(S.xf[e.bi].R, norm(entLocal(e, S.t * S.wk))); return mv(S.xf[e.bi].R, n); } return e.n; }
   function refreshEnts(S, dt) {
     S.ep.length = S.L.ents.length;
@@ -310,7 +313,8 @@
     // ---- 速度 ----
     const n0 = grounded0 ? h.gn : gu;
     let v = h.v.slice();
-    const speed = K.RUN * (h.pw && h.pw.k === 'jelly' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'drill' ? 1.4 : 1);
+    let stk = false; for (const z of L.zones) { if (z.m === 'sticky' && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { stk = true; break; } } h.stk = stk ? 1 : 0;
+    const speed = (stk ? 0.42 : 1) * K.RUN * (h.pw && h.pw.k === 'jelly' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'drill' ? 1.4 : 1);
     if (grounded0) {
       let dsr = sub(dirW, mul(n0, dot(dirW, n0))); dsr = mul(dsr, speed);
       const vn = dot(v, n0), vt = sub(v, mul(n0, vn)), surf = L.bodies[h.on].fr * (h.pw && h.pw.k === 'skate' ? 0.55 : h.pw && h.pw.k === 'drill' ? 0.4 : 1);
@@ -334,14 +338,14 @@
     const jel = h.pw && h.pw.k === 'jelly';
     const padB = grounded0 && h.on >= 0 ? L.bodies[h.on].bnc || 0 : 0;
     if (padB && h.pa === 1 && (h.pvf || 0) < -2 && h.pound === 0) { // キャンディのバウンスパッド：おりると はねる（ジャンプをおすと、さらに高く）
-      const imp = -h.pvf, up0 = Math.min(18, Math.max(13, imp * padB + (h.jb > 0 ? 3.2 : 0))); const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, up0)); h.on = -1; h.cy = 0; h.jb = 0; jumped = true; h.jh = 1; h.as = 0; h.aj = 0; S.cnt.jump++; S.ev.push(['jump', h.x[0], h.x[1], h.x[2], 1]);
+      const imp = -h.pvf, up0 = Math.min(18, Math.max(8 + 5 * padB, imp * padB + (h.jb > 0 ? 3.2 : 0))); const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, up0)); h.on = -1; h.cy = 0; h.jb = 0; jumped = true; h.jh = 1; h.as = 0; h.aj = 0; S.cnt.jump++; S.ev.push(['jump', h.x[0], h.x[1], h.x[2], 1]);
     } else if (jel && grounded0 && h.pa === 1 && (h.pvf || 0) < -4 && h.pound === 0) { // ゼリー：着地でぽよん。ちょうどよくジャンプを押すと、どんどん高く
       const imp = -h.pvf, up0 = Math.min(18, imp * 0.82 + (h.jb > 0 ? 3.2 : 0));
       if (up0 > 5) { const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, up0)); h.on = -1; h.cy = 0; h.jb = 0; jumped = true; h.jh = 1; h.as = 0; h.aj = 0; S.cnt.jump++; S.ev.push(['jump', h.x[0], h.x[1], h.x[2], 1]); }
     }
     h.pa = grounded0 ? 0 : 1; if (!grounded0) h.pvf = dot(v, gu);
     if (!jumped && h.jb > 0 && canJump && h.pound !== 2) {
-      const sprg = h.pw && h.pw.k === 'jelly'; const jv = K.JUMP * (sprg ? 1.25 : 1);
+      const sprg = h.pw && h.pw.k === 'jelly'; const jv = K.JUMP * (sprg ? 1.25 : 1) * (h.stk ? 0.8 : 1);
       const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, jv)); if (grounded0) v = add(v, gv); h.on = -1; h.cy = 0; h.jb = 0; jumped = true; h.jh = 1; h.as = 0; h.aj = 0; S.cnt.jump++; S.ev.push(['jump', h.x[0], h.x[1], h.x[2], sprg ? 1 : 0]);
     } else if (jp && !grounded0 && h.wt > 0 && h.pound !== 1) { // かべキック
       const wn = norm(h.wn); v = add(mul(wn, K.KICK_H), mul(gu, K.KICK_V)); h.fw = projT(wn, gu); h.wt = 0; h.jb = 0; h.as = 0; h.aj = 0; S.cnt.wk++; S.ev.push(['wk', h.x[0], h.x[1], h.x[2]]);
@@ -449,14 +453,14 @@
     const fire = h.pw && h.pw.k === 'fire', R0 = K.SPIN_R * (fire ? 1.6 : 1);
     for (const i of S.act) {
       const e = L.ents[i]; if (S.e[i]) continue;
-      if (e.k === 'walker' || e.k === 'crate') { const p = S.ep[i]; if (len(sub(p, h.x)) < R0 + (e.k === 'crate' ? 0.5 : 0.2)) hitEnt(S, i, 'spin'); }
+      if ((e.k === 'walker' || e.k === 'crate') && foeOn(S, e) && !e.bnc) { const p = S.ep[i]; if (len(sub(p, h.x)) < R0 + (e.k === 'crate' ? 0.5 : 0.2)) hitEnt(S, i, 'spin'); }
       else if (e.k === 'spike' && fire && S.ep[i] && len(sub(S.ep[i], h.x)) < R0 + 0.4) { S.e[i] = 1; S.ev.push(['melt', S.ep[i][0], S.ep[i][1], S.ep[i][2]]); }
     }
     if (S.boss && S.boss.st === 'stun') { const bp = bossPos(S); if (len(sub(bp, h.x)) < R0 + 1.6) bossHit(S); }
   }
   function poundHit(S) {
     const h = S.h, L = S.L;
-    for (const i of S.act) { const e = L.ents[i]; if (S.e[i]) continue; if (e.k === 'walker' || e.k === 'crate') { if (len(sub(S.ep[i], h.x)) < K.POUND_R) hitEnt(S, i, 'pound'); } }
+    for (const i of S.act) { const e = L.ents[i]; if (S.e[i]) continue; if ((e.k === 'walker' || e.k === 'crate') && foeOn(S, e) && !e.bnc) { if (len(sub(S.ep[i], h.x)) < K.POUND_R) hitEnt(S, i, 'pound'); } }
     if (S.boss && S.boss.st === 'stun') { const bp = bossPos(S); if (len(sub(bp, h.x)) < K.POUND_R + 1.6) bossHit(S); }
   }
   function hitEnt(S, i, how) {
@@ -489,9 +493,10 @@
         case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (m.kind !== 'hunt' && (!m.shard || m.shard === e.id)) finish(S, true, 'shard'); } break;
         case 'launch': if (d < DIF.launchR[S.dif] && !h.lau && h.lcd <= 0 && S.h.dead === 0) startLaunch(S, i); break;
         case 'pad': if (d < 1.4 && h.lcd <= 0) { const up = entUp(S, i), v = h.v; h.v = add(sub(v, mul(up, dot(v, up))), mul(up, e.power || 20)); h.on = -1; h.lcd = 0.3; h.jh = 0; S.ev.push(['pad', p[0], p[1], p[2]]); } break;
-        case 'spike': if (d < 0.95 + DIF.sp[S.dif]) hurt(S, p, true); break;
-        case 'walker': if (d < K.ENEMY_R + 0.2 + DIF.er[S.dif]) {
+        case 'spike': if (foeOn(S, e) && d < 0.95 + DIF.sp[S.dif]) hurt(S, p, true); break;
+        case 'walker': if (foeOn(S, e) && d < K.ENEMY_R + 0.2 + DIF.er[S.dif]) {
           const up = h.up, rel = dot(sub(h.x, p), up), vu = dot(h.v, up);
+          if (e.bnc && rel > 0.45 && vu < -1) { h.v = add(sub(h.v, mul(up, vu)), mul(up, (S.pb & B.J) ? 19 : 15)); h.on = -1; h.aj = 0; h.as = 0; h.lcd = Math.max(h.lcd, 0.05); S.ev.push(['jump', p[0], p[1], p[2], 1]); break; }
           if (h.spin > 0 || h.pound === 1 || (h.pw && h.pw.k === 'drill') || h.dsh > 0) hitEnt(S, i, h.spin > 0 ? 'spin' : h.dsh > 0 ? 'dash' : 'pound');
           else if (rel > 0.45 && vu < -1) { hitEnt(S, i, 'stomp'); S.cnt.stomp++; h.v = add(sub(h.v, mul(up, vu)), mul(up, (S.pb & B.J) ? 11 : 8)); h.on = -1; h.aj = 0; h.as = 0; }
           else hurt(S, p);
