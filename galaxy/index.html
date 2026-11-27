@@ -472,7 +472,7 @@ function endRun(reason) {
 function onClear() {
   const S = G.S, r = S.res, m = G.m, gi = G.gid; const hunt = m.kind === 'hunt', idx = m.idx, old = hunt ? (save.lm[gi] | 0) : (save.sh[gi] | 0), first = hunt ? !(old & 128) : !(old & (1 << idx));
   if (hunt) { save.lm[gi] = old | 128 | S.lumi; stat('hunts', 1); } else save.sh[gi] = old | (1 << idx);
-  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); if (G.mid === 'g13m2') stat('board', 1); if (G.mid === 'g13m1') { stat('hima', 1); toast(L('ミュージアムが ひらいたよ！ ポーズメニューから いけるよ', 'The Museum is open! Find it in the pause menu'), 3800); } const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
+  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); if (G.mid === 'g13m2') stat('board', 1); if (G.mid === 'g13m3') stat('arcade', 1); if (G.mid === 'g13m4') stat('puzzle', 1); if (G.mid === 'g13m1') { stat('hima', 1); toast(L('ミュージアムが ひらいたよ！ ポーズメニューから いけるよ', 'The Museum is open! Find it in the pause menu'), 3800); } const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
   stat('clears', 1); if (r.die === 0) stat('nodie', 1); if (m.kind === 'comet') stat('comets', 1); if (m.kind === 'boss') stat('boss', 1); if (S.as.hp || S.as.nofall || S.as.slow) stat('assist', 1);
   const rk = E.rank(m, r, (S.lumi & 7) === 7), oldRk = save.rk[G.mid] == null ? -1 : save.rk[G.mid], bonus = rk > oldRk ? E.RANK_REWARD[rk] - (oldRk >= 0 ? E.RANK_REWARD[oldRk] : 0) : 0; if (rk > oldRk) save.rk[G.mid] = rk; save.cn = Math.min(1e9, save.cn + bonus); if (rk === 3) stat('rankS', 1);
   endRun('clear'); G.result = { ok: true, first, newBest, f: r.f, coin: r.coin, crystal: r.crystal, die: r.die, ob, lumi: S.cnt.lumi, rank: rk, bonus };
@@ -605,7 +605,7 @@ cv.addEventListener('pointermove', e => { if (!photo || !phDrag || e.pointerId !
 cv.addEventListener('pointerup', () => { phDrag = null; }); cv.addEventListener('pointercancel', () => { phDrag = null; });
 
 // ---------- museum（ひまつぶし工房の ぜんぶの ゲーム） ----------
-function tribute(gb) { const bid = G.L.bodies[gb] && G.L.bodies[gb].id; if (!bid || bid.indexOf(G.mid + 's') !== 0) return null; const k = parseInt(bid.slice(G.mid.length + 1), 10); const gid = G.m.tribute && G.m.tribute[k]; const g = gid && window.KOBO_GAMES && KOBO_GAMES.find(x => x.id === gid); return g ? { t: (EN ? g.title.en : g.title.ja), id: gid } : null; }
+function tribute(gb) { const bid = G.L.bodies[gb] && G.L.bodies[gb].id; if (!bid || bid.indexOf(G.mid + 's') !== 0) return null; const k = parseInt(bid.slice(G.mid.length + 1), 10); const gid = G.m.tribute && G.m.tribute[k]; const g = gid && window.KOBO_GAMES && KOBO_GAMES.find(x => x.id === gid); return g ? { t: (EN ? g.title.en : g.title.ja), id: gid, k } : null; }
 function openMuseum() {
   const gs = window.KOBO_GAMES || []; paused = true; padOff(); $('muTitle').textContent = L('ひまつぶし ミュージアム', 'Idle Hours Museum'); $('muSub').textContent = L('ひまつぶし工房の ぜんぶの ゲーム。タップして あそびに いこう！', 'All of our games. Tap one to go and play!');
   $('muBody').innerHTML = '<div class="mugrid">' + gs.map(g => '<a href="../' + esc(g.path) + '" data-id="' + esc(g.id) + '"><i class="mi">' + (g.iconSvg || '') + '</i><span>' + esc(EN ? g.title.en : g.title.ja) + '</span></a>').join('') + '</div>';
@@ -645,7 +645,7 @@ function stepOnce() {
     hubNpc(S); if (G.unlockAnim > 0) G.unlockAnim--;
     if (S.gate >= 0 && S.h.on >= 0 && !(S.L.ents[S.gate].secret && !galUnlocked(S.L.ents[S.gate].gal))) { if (!G.gateLock) { const gal = S.L.ents[S.gate].gal; G.gateLock = true; openSelect(gal); } } else G.gateLock = false;
   } else {
-    const gb = S.h.gb; if (S.h.on >= 0 && gb !== G.lastB && gb >= 0) { G.lastB = gb; if (!G.seen[gb]) { G.seen[gb] = 1; camV.zoom = 1; snd('arrive'); { const tb = G.m.tribute && tribute(gb); if (tb) showBanner(tb.t, L('のオマージュ', 'tribute'), 1800); else showBanner(L('あたらしい 星に とうちゃく！', 'New planet reached!'), '', 1300); } } }
+    const gb = S.h.gb; if (S.h.on >= 0 && gb !== G.lastB && gb >= 0) { G.lastB = gb; if (!G.seen[gb]) { G.seen[gb] = 1; camV.zoom = 1; snd('arrive'); { const tb = G.m.tribute && tribute(gb); if (tb) { const hn = G.m.hints && G.m.hints[tb.k]; showBanner(tb.t, hn ? L(hn.ja, hn.en) : L('のオマージュ', 'tribute'), hn ? 3200 : 1800); } else showBanner(L('あたらしい 星に とうちゃく！', 'New planet reached!'), '', 1300); } } }
   }
 }
 function onEvents(S) {

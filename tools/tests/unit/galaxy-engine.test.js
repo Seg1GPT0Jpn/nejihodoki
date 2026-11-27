@@ -165,6 +165,19 @@ test('mini-game rules (C2): lights-out plates flip neighbours, number plates res
   ok(fish(true) === 1 && fish(false) !== 1, 'only a spin catches the fish');
   const L4 = flat([{ k: 'ball', id: 'b', p: [-6, 2.05, 0], grp: 6, hole: [4, 1.5, 0], box: [-13, 13, -7, 7] }]); const S4 = E.create(L4, 'm'); runN(S4, 3); S4.h.x = [-7.4, 2.0, 0]; S4.h.v = [0, 0, 0]; E.step(S4, { b: B.S }); runN(S4, 120); ok(S4.e[0] === 1 && S4.flag.sw6 === 1, 'the spun ball rolls into the hole and opens the bridge');
 });
+test('arcade and puzzle rules (C3): invaders die to a spin but bullets do not, a tap raises a timed platform, parking needs a full stop, hit&blow counts hits and blows, odd/quiz plates only accept the right one', () => {
+  const flat = (ents, extra) => E.compile({ id: 't', bodies: [{ id: 'a', k: 'b', p: [0, 0, 0], h: [14, 1.5, 8], rr: 0.4 }].concat(extra || []), ents, zones: [], missions: [{ id: 'm', start: { p: [-10, 2, 0] } }] });
+  const near = (S, p) => { S.h.x = [p[0], p[1], p[2]]; S.h.v = [0, 0, 0]; };
+  const dr = shot => { const S = E.create(flat([{ k: 'drift', id: 'd', p: [0, 2.2, 0], ax: [0, 0, 1], amp: 0, T: 4, shot }]), 'm'); runN(S, 3); near(S, [0, 2.0, 1.6]); S.h.inv = 0; runN(S, 20, { b: B.S }); return [S.e[0], S.cnt.hurt]; };
+  ok(dr(false)[0] === 1, 'a spin shoots an invader down'); ok(dr(true)[0] !== 1 && dr(true)[1] >= 1, 'a bullet cannot be shot and hurts');
+  const Lt = flat([{ k: 'tog', id: 't', b: 'a', l: [0, 1.6, 0], grp: 100, idx: 0, gn: 1, tap: 100 }], [{ id: 'br', k: 'b', p: [0, 0, 30], h: [2, 1, 2], swt: 100, swd: 3 }]); const St = E.create(Lt, 'm'); runN(St, 3); ok(!E.bodyActive(St, 1), 'the timed platform is hidden'); near(St, [0, 2, 0]); runN(St, 3); ok(E.bodyActive(St, 1), 'a tap raises it'); runN(St, 200); ok(!E.bodyActive(St, 1), 'and it disappears after the beat');
+  const park = speed => { const S = E.create(flat([{ k: 'park', id: 'p', b: 'a', l: [0, 1.6, 0], grp: 5, hold: 1 }]), 'm'); runN(S, 3); S.h.x = [0, 2.0, 0]; for (let i = 0; i < 100; i++) { S.h.v = [speed, 0, 0]; E.step(S, {}); } return S.flag.sw5; };
+  ok(park(0) === 1 && park(5) !== 1, 'parking needs a full stop');
+  const hb = codeIn => { const L = flat([1, 2, 3, 4].map(i => ({ k: 'tog', id: 'c' + i, b: 'a', l: [-6 + i * 3, 1.6, 0], grp: 9, idx: i, gn: 4, code: [3, 1, 4] }))); const S = E.create(L, 'm'); runN(S, 3); for (const d of codeIn) { S.h.x = [-6 + d * 3, 2, 0]; runN(S, 3); S.h.x = [-6 + d * 3, 2, 6]; runN(S, 3); } return S; };
+  const w = hb([1, 3, 2]); ok(w.fb[9][0] === 0 && w.fb[9][1] === 2 && !w.flag.sw9, 'a wrong guess reports hits and blows: ' + JSON.stringify(w.fb[9])); const c = hb([3, 1, 4]); ok(c.flag.sw9 === 1, 'the right code opens the door');
+  const od = which => { const L = flat([0, 1, 2].map(i => ({ k: 'tog', id: 'o' + i, b: 'a', l: [-4 + i * 4, 1.6, 0], grp: 3, idx: i + 1, gn: 1, odd: i === 1 ? 1 : 0 }))); const S = E.create(L, 'm'); runN(S, 3); S.h.x = [-4 + which * 4, 2, 0]; runN(S, 3); return S.flag.sw3; };
+  ok(od(1) === 1 && od(0) !== 1, 'only the odd one out opens it');
+});
 test('charging boss: a telegraphed aim, then a dash, then a dazed opening (never a surprise hit)', () => {
   const L = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, spd: 0.5, charge: 1 }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(L, 'm'); const seen = []; for (let i = 0; i < 4800 && seen.filter(x => x === 'stun').length < 2; i++) { E.step(S, {}); if (seen[seen.length - 1] !== S.boss.st) seen.push(S.boss.st); }
   const ai = seen.indexOf('aim'); ok(ai >= 0 && seen[ai + 1] === 'charge' && seen[ai + 2] === 'stun', 'order ' + seen.join('>')); ok(seen.indexOf('jump') < ai, 'a slam first, then the charge');

@@ -190,9 +190,9 @@
         pts[T + 'w0'] = P(0, 2.0, 0); pts[T + 'x0'] = P(11, 2.0, 0); pts[T + 'x1'] = P(21, 2.0, 0);
         rt.push({ to: T + 'w0', tol: 1.0 }, { to: T + 'pp2', tol: 0.8 }, { to: T + 'w0', tol: 1.0 }, { to: T + 'pp0', tol: 0.8 }, { to: T + 'w0', tol: 1.0 }, { to: T + 'x0', tol: 1.4 }, { to: T + 'x1', tol: 1.6 });
         entry = { b: sa, l: [-8, 2.0, 1] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
-      } else if (sp.k === 'mahjong') { // 麻雀牌の めいろ：たかい 牌の かべを ぬけて いく
-        const sa = T + 'sa'; b.box(sa, P(0, 0, 0), [12, 1.5, 9], { rr: 0.5, surf: 'tile', m: M });
-        b.box(T + 'w1', P(-3, 3.6, -3), [8.5, 2.2, 0.6], { rr: 0.2, surf: 'tile', g: 0, m: M }); b.box(T + 'w2', P(3, 3.6, 3), [8.5, 2.2, 0.6], { rr: 0.2, surf: 'tile', g: 0, m: M });
+      } else if (sp.k === 'mahjong' || sp.k === 'town') { // 麻雀牌の めいろ：たかい 牌の かべを ぬけて いく
+        const sa = T + 'sa'; const ws = sp.k === 'town' ? 'ruin' : 'tile'; b.box(sa, P(0, 0, 0), [12, 1.5, 9], { rr: 0.5, surf: ws, m: M });
+        b.box(T + 'w1', P(-3, 3.6, -3), [8.5, 2.2, 0.6], { rr: 0.2, surf: ws, g: 0, m: M }); b.box(T + 'w2', P(3, 3.6, 3), [8.5, 2.2, 0.6], { rr: 0.2, surf: ws, g: 0, m: M });
         [[-9, -6], [8.5, -6], [8.5, 0], [-9.5, 0], [-9.5, 6], [9, 6]].forEach((q, i) => { pts[T + 'm' + i] = P(q[0], 2.0, q[1]); rt.push({ to: T + 'm' + i, tol: 1.5 }); ent('coin', null, P(q[0], 2.4, q[1]), { id: T + 'c' + i }); });
         b.box(T + 'sb', P(18.5, 0, 6), [7, 1.5, 4], { rr: 0.6, surf: S, m: M }); pts[T + 'me'] = P(18, 2.0, 6); rt.push({ to: T + 'me', tol: 1.5 });
         entry = { b: sa, l: [-10, 2.0, -6] }; endB = T + 'sb'; endL = [4, 2.4, 0];
@@ -216,10 +216,50 @@
         b.box(T + 'br', P(14.5, 0, 0), [5.6, 1.5, 2.4], { rr: 0.4, surf: 'felt', sw: G, m: M }); b.box(T + 'sb', P(25, 0, 0), [5, 1.5, 4], { rr: 0.6, surf: S, m: M });
         pts[T + 'hole'] = P(7, 1.5, 0); rt.push({ golf: T + 'ball', hole: T + 'hole' }); pts[T + 'x0'] = P(11, 2.0, 0); pts[T + 'x1'] = P(21, 2.0, 0); rt.push({ to: T + 'x0', tol: 1.6 }, { to: T + 'x1', tol: 1.6 });
         entry = { b: sa, l: [-8, 2.0, 0] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
+      } else if (sp.k === 'invade') { // インベーダー：よこに ゆれながら ならぶ てきの たいれつ。スピンで うちおとして すすむ
+        const sa = T + 'sa'; b.box(sa, P(6, 0, 0), [14, 1.5, 7], { rr: 0.6, surf: 'felt', m: M });
+        [[4, 3.4], [10, 4.2], [16, 3.8]].forEach((rw, i) => [0, 1].forEach(j => ent('drift', null, P(rw[0], 2.5, 0), { id: T + 'iv' + i + j, ax: [0, 0, 1], amp: 5, T: rw[1], ph: j * 3.14 + i })));
+        [-4, 4, 12, 18].forEach((x, i) => { ent('coin', sa, [x - 6, 2.4, 0], { id: T + 'c' + i }); pts[T + 'p' + i] = P(x, 2.0, 0); rt.push({ to: T + 'p' + i, tol: 1.3 }); });
+        b.box(T + 'sb', P(24, 0, 0), [5.5, 1.5, 4], { rr: 0.6, surf: S, m: M }); pts[T + 'pe'] = P(23, 2.0, 0); rt.push({ to: T + 'pe', tol: 1.5 });
+        entry = { b: sa, l: [-12, 2.0, 0] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
+      } else if (sp.k === 'conduct') { // オーケストラ：ふむと ゆかが ひょうしよく あらわれる。きえるまえに わたろう
+        const n = 4, base = 100 + k * 10;
+        for (let i = 0; i < n; i++) { b.box(T + 'is' + i, P(i * 16, 0, 0), [4, 1.5, 4], { rr: 0.6, surf: 'felt', m: M }); if (i < n - 1) { ent('tog', T + 'is' + i, [1.5, 1.6, 0], { id: T + 'tp' + i, grp: base, idx: i, gn: 1, tap: base + i }); b.box(T + 'bg' + i, P(i * 16 + 8, 0, 0), [4.6, 1.5, 2], { rr: 0.4, surf: 'felt', swt: base + i, swd: 3.6, m: M }); pts[T + 'p' + i] = P(i * 16 + 1.5, 2.0, 0); rt.push({ to: T + 'p' + i, tol: 0.8 }); } }
+        pts[T + 'pe'] = P((n - 1) * 16, 2.0, 0); rt.push({ to: T + 'pe', tol: 1.2 });
+        entry = { b: T + 'is0', l: [-2, 2.0, 0] }; endB = T + 'is' + (n - 1); endL = [2.5, 2.4, 0];
+      } else if (sp.k === 'parking') { // パーキング：しるしの上で ぴたっと とまる（1びょう）。とまれたら 橋が でる
+        const G = 10 + k, sa = T + 'sa'; b.box(sa, P(0, 0, 0), [9, 1.5, 5], { rr: 0.6, surf: 'stone', m: M });
+        ent('park', sa, [1, 1.6, 0], { id: T + 'pk', grp: G, hold: 1.0 }); pts[T + 'pad'] = P(1, 2.0, 0);
+        b.box(T + 'br', P(14.5, 0, 0), [5.6, 1.5, 2.4], { rr: 0.4, surf: 'stone', sw: G, m: M }); b.box(T + 'sb', P(24, 0, 0), [5, 1.5, 4], { rr: 0.6, surf: S, m: M });
+        rt.push({ to: T + 'pad', tol: 0.45, stay: 110, max: 1500 }); pts[T + 'x0'] = P(11, 2.0, 0); pts[T + 'x1'] = P(21, 2.0, 0); rt.push({ to: T + 'x0', tol: 1.4 }, { to: T + 'x1', tol: 1.6 });
+        entry = { b: sa, l: [-7, 2.0, 0] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
+      } else if (sp.k === 'train') { // でんしゃ・いかだ：やってくる のりものに のって むこうへ
+        b.box(T + 'sa', P(0, 0, 0), [5, 1.5, 4], { rr: 0.6, surf: S, m: M }); b.box(T + 'sb', P(44, 0, 0), [5, 1.5, 4], { rr: 0.6, surf: S, m: M });
+        b.box(T + 'tr', P(7, 0, 0), [3.2, 1.5, 3.0], { rr: 0.5, surf: sp.surf2 || 'metal', m: M, mv: [{ t: 'lin', d: [30, 0, 0], T: 16 }] }); pts[T + 'A'] = P(7, 0, 0); pts[T + 'B'] = P(37, 0, 0); pts[T + 'c'] = { b: T + 'tr', l: [0, 2.0, 0] }; pts[T + 'e'] = P(43, 2.0, 0);
+        rt.push({ await: T + 'tr', at: T + 'A', r: 1.6 }, { to: T + 'c', tol: 0.9 }, { await: T + 'tr', at: T + 'B', r: 1.6 }, { to: T + 'e', tol: 1.5 });
+        entry = { b: T + 'sa', l: [-3, 2.0, 0] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
+      } else if (sp.k === 'hitblow') { // ヒット＆ブロー：3つの すうじを じゅんに ふむ。ランプの みどり＝ヒット・きいろ＝ブロー
+        const G = 10 + k, sa = T + 'sa', code = [3, 1, 4]; b.box(sa, P(0, 0, 0), [10, 1.5, 7], { rr: 0.6, surf: 'tile', m: M });
+        const pp = { 1: [-4, -3.5], 2: [4, -3.5], 3: [-4, 3.5], 4: [4, 3.5] }; for (let i = 1; i <= 4; i++) { ent('tog', sa, [pp[i][0], 1.6, pp[i][1]], { id: T + 'pl' + i, grp: G, idx: i, gn: 4, code }); pts[T + 'pp' + i] = P(pp[i][0], 2.0, pp[i][1]); }
+        for (let i = 0; i < 3; i++) ent('codelamp', sa, [-2 + i * 2, 2.6, 0], { id: T + 'cl' + i, grp: G, idx: i });
+        pts[T + 'w0'] = P(0, 2.0, 0);
+        [[1, 2, 3], [3, 1, 4]].forEach(g => g.forEach(d => rt.push({ to: T + 'w0', tol: 1.2 }, { to: T + 'pp' + d, tol: 0.8 })));
+        b.box(T + 'br', P(14.5, 0, 0), [5.6, 1.5, 2.4], { rr: 0.4, surf: 'tile', sw: G, m: M }); b.box(T + 'sb', P(24, 0, 0), [5, 1.5, 4], { rr: 0.6, surf: S, m: M });
+        pts[T + 'x0'] = P(11, 2.0, 0); pts[T + 'x1'] = P(21, 2.0, 0); rt.push({ to: T + 'x0', tol: 1.4 }, { to: T + 'x1', tol: 1.6 });
+        entry = { b: sa, l: [-8, 2.0, 0] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
+      } else if (sp.k === 'oddone' || sp.k === 'quiz') { // ワードウルフ：ひとつだけ ちがう ばんを ふむ／まなび：もんだいの こたえの すうじの ばんを ふむ
+        const G = 10 + k, sa = T + 'sa', quiz = sp.k === 'quiz'; b.box(sa, P(0, 0, 0), [10, 1.5, 7], { rr: 0.6, surf: quiz ? 'felt' : 'tile', m: M });
+        const pos = [[-5, -3.5], [0, 3.5], [5, -3.5]], right = quiz ? 1 : 2, nums = [5, 7, 9];
+        if (quiz) pos.forEach((q, i) => ent('tog', sa, [q[0], 1.6, q[1]], { id: T + 'pl' + i, grp: G, idx: nums[i], gn: 1, ans: nums[i] === 7 ? 1 : 0 })); else [[-6, -3.5], [-2, 3.5], [2, -3.5], [6, 3.5]].forEach((q, i) => ent('tog', sa, [q[0], 1.6, q[1]], { id: T + 'pl' + i, grp: G, idx: i + 1, gn: 1, odd: i === 2 ? 1 : 0 }));
+        const goal = quiz ? pos[1] : [2, -3.5]; pts[T + 'g'] = P(goal[0], 2.0, goal[1]); pts[T + 'w0'] = P(0, 2.0, 0); rt.push({ to: T + 'w0', tol: 1.2 }, { to: T + 'g', tol: 0.8 });
+        b.box(T + 'br', P(14.5, 0, 0), [5.6, 1.5, 2.4], { rr: 0.4, surf: 'tile', sw: G, m: M }); b.box(T + 'sb', P(24, 0, 0), [5, 1.5, 4], { rr: 0.6, surf: S, m: M });
+        pts[T + 'x0'] = P(11, 2.0, 0); pts[T + 'x1'] = P(21, 2.0, 0); rt.push({ to: T + 'x0', tol: 1.4 }, { to: T + 'x1', tol: 1.6 });
+        entry = { b: sa, l: [-8, 2.0, 0] }; endB = T + 'sb'; endL = [2.5, 2.4, 0];
       } else if (sp.k === 'flight') { // ひこう：ジャンプで とびたつと ずっと まえへ。スティックで リングをくぐって むこうの島へ
         const sa = T + 'sa', sb = T + 'sb'; b.box(sa, P(0, 0, 0), [6, 1.5, 4], { rr: 0.6, surf: S, m: M }); b.box(sb, P(62, 0, 0), [6, 1.5, 5], { rr: 0.6, surf: S, m: M });
         b.zone({ s: 'box', c: P(27, 8, 0), h: [23, 14, 12], m: 'fly', ms: M });
         [[12, 5, 0], [22, 8, 2.5], [32, 10, -2.5], [40, 8, 2], [46, 6, 0]].forEach((c, q) => { ent('coin', null, P(c[0], c[1], c[2]), { id: T + 'c' + q, rad: 2.6 }); rt.push({ fly: T + 'c' + q, aero: 1 }); });
+        if (sp.shots) [[17, 7, 3], [27, 9, -3], [36, 9, 3], [44, 7, 0]].forEach((c, q) => ent('drift', null, P(c[0], c[1], c[2]), { id: T + 'sh' + q, shot: 1, ax: [0, 0, 1], amp: 5, T: 2.6 + q * 0.4, ph: q * 1.7 }));
         pts[T + 'bc'] = { b: sb, l: [-2.5, 2.0, 0] }; rt.push({ to: T + 'bc', tol: 1.8, land: 1, aero: 1, max: 1500 });
         entry = { b: sa, l: [-3, 2.0, 0] }; endB = sb; endL = [2.5, 2.4, 0];
       } else if (sp.k === 'tilt') { // かたむく じゅうりょく：ジャンプのたびに ななめに ひっぱられる
@@ -300,7 +340,7 @@
       if (k < secs.length - 1) { const nx = secs[k + 1], id = sc.T + 'endlane'; if (!b.d.ents.some(e => e.id === id)) b.ent('launch', sc.endB, sc.endL, Object.assign({ m: M, id, mode: 'star', T: 2.6, arc: 14, lane: 1, to: { b: nx.entry.b, l: nx.entry.l, lift: 1.5 } }, sc.laneReq ? { req: sc.laneReq } : {})); route.push(sc.jEnd ? { to: id, launch: 1, j: sc.jEnd } : { to: id, launch: 1 }); }
       else if (meta.kind !== 'hunt') { b.ent('shard', sc.endB, sc.endL, Object.assign({ m: M, id: mid + 's' }, sc.endReq ? { req: sc.endReq } : meta.kind === 'comet' ? { req: 'orbs' } : {})); route.push(mid + 's'); }
     });
-    b.mission({ id: mid, tribute: meta.tribute, mech: Array.from(new Set(specs.map(q => q.k))), goal: (() => { const c = {}; specs.forEach(q => { if (q.k !== 'walk') c[q.k] = (c[q.k] || 0) + 1; }); let best = 'walk', n = 0; for (const k of Object.keys(c)) if (c[k] > n) { n = c[k]; best = k; } return best; })(), name: meta.name, desc: meta.desc, kind: meta.kind, timer: meta.timer, need: meta.need, lumi: meta.kind === 'hunt' ? 3 : undefined, start: { b: secs[0].entry.b, l: secs[0].entry.l, fw: [0, 0, 1] }, shard: meta.kind === 'hunt' ? undefined : mid + 's', pts, route, par: meta.par || 150, long: meta.kind === 'comet' || meta.kind === 'hunt' ? 0 : 1 });
+    b.mission({ id: mid, tribute: meta.tribute, hints: meta.hints, mech: Array.from(new Set(specs.map(q => q.k))), goal: (() => { const c = {}; specs.forEach(q => { if (q.k !== 'walk') c[q.k] = (c[q.k] || 0) + 1; }); let best = 'walk', n = 0; for (const k of Object.keys(c)) if (c[k] > n) { n = c[k]; best = k; } return best; })(), name: meta.name, desc: meta.desc, kind: meta.kind, timer: meta.timer, need: meta.need, lumi: meta.kind === 'hunt' ? 3 : undefined, start: { b: secs[0].entry.b, l: secs[0].entry.l, fw: [0, 0, 1] }, shard: meta.kind === 'hunt' ? undefined : mid + 's', pts, route, par: meta.par || 150, long: meta.kind === 'comet' || meta.kind === 'hunt' ? 0 : 1 });
   }
 
   // ================== 1. みどりのポコ星ぐん ==================
@@ -623,6 +663,8 @@
     const b = Builder('g13', T('ひまつぶしの ぎんが', 'Galaxy of Idle Hours'), 'hima', { n1: [0.35, 0.18, 0.55], n2: [1, 0.85, 0.45], band: [0.5, 0.7, 0.4], sun: [0.4, 0.6, -0.6], sunc: [1, 0.95, 0.85], stars: 1.1 });
     course(b, 'g13m1', [{ k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }, { k: 'crumble', n: 5, phase: 1, surf: 'felt' }, { k: 'stones', n: 10, surf: 'tile' }, { k: 'pods', modes: ['cannon', 'pipe'], surf: 'felt' }, { k: 'lagoon' }, { k: 'flight' }, { k: 'dashgap', surf: 'tile' }, { k: 'bouncepads', surf: 'felt' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'tile' }, { k: 'jellytower' }, { k: 'tilt', surf: 'felt' }, { k: 'bridge' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }, { k: 'updraft' }, { k: 'chase', surf: 'tile' }], { surf: 'chess', hz: 1, tribute: ['chess', 'reversi', 'mahjong', 'hole', 'fishing', 'shmup', 'hop', 'minigolf', 'sudoku', 'puff', 'physics', 'orchestra', 'gomoku', 'sports', 'planet'], name: T('ひまつぶしの たび', 'The Idle Hours Trip'), desc: T('ひまつぶし工房の ゲームたちへの オマージュ！ チェス盤・オセロ・麻雀牌・つり・シューティング…を めぐる ながい たび', 'A tribute trip through our games: a chessboard planet, reversi discs, mahjong tiles, a fishing pond, a shooter lane and more.'), par: 260 });
     course(b, 'g13m2', [{ k: 'walk', r: 10, laps: 3, w: 1, surf: 'chess' }, { k: 'chessboard' }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'felt' }, { k: 'reversi' }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'tile' }, { k: 'mahjong' }, { k: 'seqplates' }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'water' }, { k: 'pond' }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'felt' }, { k: 'golf' }], { surf: 'chess', hz: 0, tribute: ['chess', 'chess', 'reversi', 'reversi', 'mahjong', 'mahjong', 'sudoku', 'fishing', 'fishing', 'minigolf', 'minigolf'], name: T('ボードゲームの ウィング', 'The Board Game Wing'), desc: T('チェスの ナイトとび・リバーシの ひっくりかえし・麻雀牌の めいろ・数独の じゅんばん・つり・ミニゴルフ。ゲームの ルールで すすむ！', 'Knight hops, flipping reversi discs, a mahjong tile maze, number order, fishing and mini golf: advance by the games\' own rules.'), par: 240 });
+    course(b, 'g13m3', [{ k: 'walk', r: 10, laps: 3, w: 1, surf: 'felt' }, { k: 'flight', shots: 1 }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'tile' }, { k: 'invade' }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'stone' }, { k: 'conduct' }, { k: 'parking' }, { k: 'dashgap', surf: 'metal' }, { k: 'train' }], { surf: 'felt', hz: 0, tribute: ['shmup', 'shmup', 'invade', 'invade', 'orchestra', 'orchestra', 'parking', 'hop', 'train'], name: T('アーケードの ウィング', 'The Arcade Wing'), desc: T('シューティング・インベーダー・オーケストラの ひょうし・パーキング・でんしゃ。ゲームの ルールで すすむ！', 'A shooter lane, an invader formation, orchestra rhythm, parking and a train: advance by the games\' own rules.'), par: 240 });
+    course(b, 'g13m4', [{ k: 'walk', r: 10, laps: 3, w: 1, surf: 'tile' }, { k: 'hitblow' }, { k: 'oddone' }, { k: 'quiz' }, { k: 'town' }, { k: 'walk', r: 10, laps: 3, w: 1, surf: 'felt' }, { k: 'dashgap', surf: 'tile' }, { k: 'jellytower' }, { k: 'flight' }, { k: 'crumble', n: 5, surf: 'tile' }], { surf: 'tile', hz: 0, tribute: ['hitblow', 'hitblow', 'wordwolf', 'manabi', 'town', 'town', 'hop', 'puff', 'sports', 'hole'], hints: { 1: T('3つの すうじを じゅんに ふんで ひらけ。みどり＝ヒット きいろ＝ブロー', 'Step three numbers in order. Green = hit, yellow = blow.'), 2: T('ひとつだけ ちがう ばんは？', 'Which plate is the odd one out?'), 3: T('3 + 4 = ？ こたえの かずの ばんを ふもう', '3 + 4 = ?  Step on the plate with the answer.') }, name: T('パズルと まちの ウィング', 'The Puzzle & Town Wing'), desc: T('ヒット＆ブロー・ワードウルフ・まなびの もんだい・まちの めいろ・ほっぷ・ぷっふ・ひこうリング。', 'Code lock, odd-one-out, a quiz, a town maze, hop, puff and a ring flight.'), par: 240 });
     course(b, 'g13hunt', [{ k: 'walk', r: 9, laps: 3, w: 2, lumi: 0, surf: 'chess' }, { k: 'stones', n: 10, surf: 'tile' }, { k: 'walk', r: 9, laps: 3, w: 2, lumi: 1, surf: 'felt' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }, { k: 'hop', n: 6, surf: 'tile' }, { k: 'walk', r: 9, laps: 3, w: 3, surf: 'felt' }, { k: 'walk', r: 10, laps: 4, w: 3, lumi: 2, li: 26, surf: 'tile' }, { k: 'walk', r: 10, laps: 3, w: 3, surf: 'chess' }], { kind: 'hunt', surf: 'chess', hz: 1, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('ひまつぶしの 銀河の ルミを みつけよう', 'Find the 3 hidden Lumi in the Galaxy of Idle Hours.'), par: 170 });
     b.d.deco = [{ dir: [-0.5, 0.3, -0.8], r: 56, col: [1, 0.85, 0.45], ring: 1 }, { dir: [0.7, 0.3, -0.5], r: 22, col: [0.7, 0.55, 1] }, { dir: [0.1, -0.4, 0.9], r: 28, col: [0.5, 1, 0.8] }];
     return b.d;

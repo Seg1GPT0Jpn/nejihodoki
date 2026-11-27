@@ -30,7 +30,7 @@
     }
     function reflex(S, inp) {
       const h = S.h; if (h.dead || h.lau) return;
-      for (const i of S.act) { const e = L.ents[i]; if ((e.k !== 'walker' && e.k !== 'crate') || S.e[i] || !S.ep[i]) continue; if (V.len(V.sub(S.ep[i], h.x)) < 2.5 && h.scd <= 0 && !(S.pb & B.S) && h.inv <= 0) { inp.b |= B.S; return; } }
+      for (const i of S.act) { const e = L.ents[i]; if ((e.k !== 'walker' && e.k !== 'crate' && !(e.k === 'drift' && !e.shot)) || S.e[i] || !S.ep[i]) continue; if (V.len(V.sub(S.ep[i], h.x)) < 2.5 && h.scd <= 0 && !(S.pb & B.S) && h.inv <= 0) { inp.b |= B.S; return; } }
     }
     function bossAct(S) {
       const bo = S.boss, h = S.h, e = L.ents[bo.i], bi = e.bi, c = S.xf[bi].p, R = L.bodies[bi].r, inp = { sx: 0, sy: 0, b: 0 };
@@ -60,7 +60,7 @@
       const st = route[bot.i]; bot.sf++;
       if (st.wait != null) { if (bot.sf <= st.wait) return inp; bot.i++; bot.sf = 0; return bot.act(S); }
       if (bot.sf > (st.max || 2400)) { bot.fail = 'stuck at step ' + bot.i + ' ' + JSON.stringify(st) + ' pos ' + h.x.map(v => v.toFixed(1)); return inp; }
-      const nextStep = () => { bot.i++; bot.sf = 0; bot.jumped = false; bot.launched = false; bot.jh = 0; };
+      const nextStep = () => { bot.i++; bot.sf = 0; bot.stayN = 0; bot.jumped = false; bot.launched = false; bot.jh = 0; };
       if (st.boss) {
         if (S.flag.boss) { nextStep(); return inp; }
         const o = bossAct(S); reflex(S, o); return o;
@@ -68,6 +68,9 @@
       if (st.melt) {
         const i = L.eidx[st.melt]; if (S.e[i]) { nextStep(); return inp; }
         const p = S.ep[i], d = V.len(V.sub(p, h.x)); const o = go(S, p, { stop: 0.1 }); if (d > (st.at || 2.6)) { inp.sx = o.sx; inp.sy = o.sy; } else if (h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S; return inp;
+      }
+      if (st.await) { // まつ：うごく ゆかが めあての ばしょに くるまで
+        const bi = L.idx[st.await], at = pt(S, m.pts[st.at]); if (V.len(V.sub(S.xf[bi].p, at)) < (st.r || 2.5)) { nextStep(); return bot.act(S); } return inp;
       }
       if (st.fish) { // つり：さかなの いちへ およいで、ちかづいたら スピン
         const i = L.eidx[st.fish]; if (S.e[i]) { nextStep(); return inp; } const p = S.ep[i], d = V.len(V.sub(p, h.x)); const o = go(S, p, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
@@ -102,6 +105,7 @@
       if (tg.bi != null && tg.bi >= 0 && h.on >= 0 && !(L.bodies[h.on] && L.bodies[h.on].cr) && (!E.bodyActive(S, tg.bi) || E.bodyWindow(S, tg.bi) < (st.win || 0.2))) { const dd = V.len(V.sub(tg.p, h.x)); if (dd < 14) return inp; }
       const dist = V.len(V.sub(tg.p, h.x));
       if (!tg.gone) bot.lastP = tg.p;
+      if (st.stay && dist < (st.tol || 1.0) && h.on >= 0) { bot.stayN = (bot.stayN || 0) + 1; if (bot.stayN < st.stay) return inp; bot.stayN = 0; }
       if (tg.i >= 0 ? tg.gone : dist < (st.tol || 1.0)) {
         if (st.land && (h.on < 0 || bot.jh > 0)) { const o = go(S, bot.lastP, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy; if (bot.jh > 0) { bot.jh--; inp.b |= B.J; } else if (st.hold && h.on < 0) inp.b |= B.J; return inp; }
         nextStep(); return bot.act(S);
