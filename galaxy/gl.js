@@ -1,0 +1,210 @@
+// ぐるぐる星わたり：小さな WebGL の描画器（自作。外部ライブラリなし）。window.GalaxyGL
+// 星（球・箱・筒・カプセル）は、当たり判定と同じ「符号つき距離」の面にそって色つきの三角形にする。
+// 星空（星雲・天の川・太陽のまぶしさ）は1枚の絵のシェーダー、遠くの星は視差つき、星のまわりの大気の輪、足あとの光る粒。
+// 画質は自動でさがる（解像度のスケール・星雲の細かさ・大気・粒の数）。GL がなければ create() は null を返す。
+(function (root) {
+  'use strict';
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), TAU = Math.PI * 2;
+  // ---------- 行列 ----------
+  const M = {
+    persp(f, a, n, fa) { const t = 1 / Math.tan(f / 2), r = new Float32Array(16); r[0] = t / a; r[5] = t; r[10] = (fa + n) / (n - fa); r[11] = -1; r[14] = 2 * fa * n / (n - fa); return r; },
+    mul(a, b) { const o = new Float32Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; },
+    ident() { const r = new Float32Array(16); r[0] = r[5] = r[10] = r[15] = 1; return r; },
+    // 位置 p・向き fw・上 up・大きさ（数 or [x,y,z]）→ モデル行列（前は +z、上は +y）
+    basis(p, fw, up, s) {
+      s = s == null ? 1 : s; const sx = s[0] != null ? s[0] : s, sy = s[1] != null ? s[1] : s, sz = s[2] != null ? s[2] : s;
+      let f = fw, u = up; const r = norm(cross(u, f)); f = norm(cross(r, u)); const m = new Float32Array(16);
+      m[0] = r[0] * sx; m[1] = r[1] * sx; m[2] = r[2] * sx; m[4] = u[0] * sy; m[5] = u[1] * sy; m[6] = u[2] * sy; m[8] = f[0] * sz; m[9] = f[1] * sz; m[10] = f[2] * sz; m[12] = p[0]; m[13] = p[1]; m[14] = p[2]; m[15] = 1; return m;
+    },
+    fromRP(R, p) { const m = new Float32Array(16); m[0] = R[0]; m[1] = R[3]; m[2] = R[6]; m[4] = R[1]; m[5] = R[4]; m[6] = R[7]; m[8] = R[2]; m[9] = R[5]; m[10] = R[8]; m[12] = p[0]; m[13] = p[1]; m[14] = p[2]; m[15] = 1; return m; },
+    look(p, f, u) { const r = norm(cross(f, u)), uu = cross(r, f), v = new Float32Array(16), d = (a, c) => a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
+      v[0] = r[0]; v[4] = r[1]; v[8] = r[2]; v[12] = -d(r, p); v[1] = uu[0]; v[5] = uu[1]; v[9] = uu[2]; v[13] = -d(uu, p); v[2] = -f[0]; v[6] = -f[1]; v[10] = -f[2]; v[14] = d(f, p); v[15] = 1; return { v, r, u: uu }; },
+  };
+  function norm(a) { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  // ---------- メッシュ ----------
+  function MB() { this.p = []; this.n = []; this.c = []; }
+  MB.prototype.vtx = function (p, n, c) { this.p.push(p[0], p[1], p[2]); this.n.push(n[0], n[1], n[2]); this.c.push(c[0], c[1], c[2]); };
+  MB.prototype.tri = function (a, b, c, col) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2]; let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    for (const q of [a, b, c]) this.vtx(q, [nx, ny, nz], col);
+  };
+  MB.prototype.quad = function (a, b, c, d, col) { this.tri(a, b, c, col); this.tri(a, c, d, col); };
+  MB.prototype.box = function (x, y, z, w, h, d, col) { // 中心 (x,y,z)、大きさ w h d
+    const X = w / 2, Y = h / 2, Z = d / 2, v = [[x - X, y - Y, z - Z], [x + X, y - Y, z - Z], [x + X, y + Y, z - Z], [x - X, y + Y, z - Z], [x - X, y - Y, z + Z], [x + X, y - Y, z + Z], [x + X, y + Y, z + Z], [x - X, y + Y, z + Z]];
+    this.quad(v[4], v[5], v[6], v[7], col); this.quad(v[1], v[0], v[3], v[2], col); this.quad(v[0], v[4], v[7], v[3], col); this.quad(v[5], v[1], v[2], v[6], col); this.quad(v[3], v[7], v[6], v[2], col); this.quad(v[0], v[1], v[5], v[4], col);
+  };
+  // 楕円体（なめらかな法線）
+  MB.prototype.ell = function (x, y, z, rx, ry, rz, col, la, lo) {
+    la = la || 6; lo = lo || 10; const P = (i, j) => { const a = i / la * Math.PI, b = j / lo * TAU, nx = Math.sin(a) * Math.cos(b), ny = Math.cos(a), nz = Math.sin(a) * Math.sin(b); return { p: [x + nx * rx, y + ny * ry, z + nz * rz], n: [nx / rx, ny / ry, nz / rz] }; };
+    for (let i = 0; i < la; i++) for (let j = 0; j < lo; j++) {
+      const a = P(i, j), b = P(i + 1, j), c = P(i + 1, j + 1), d = P(i, j + 1), nn = q => norm(q.n);
+      if (i > 0) { this.vtx(a.p, nn(a), col); this.vtx(d.p, nn(d), col); this.vtx(c.p, nn(c), col); }
+      if (i < la - 1) { this.vtx(a.p, nn(a), col); this.vtx(c.p, nn(c), col); this.vtx(b.p, nn(b), col); }
+    }
+  };
+  MB.prototype.cone = function (x, y, z, r, h, col, seg, r2) { seg = seg || 8; r2 = r2 || 0; for (let i = 0; i < seg; i++) { const a0 = i / seg * TAU, a1 = (i + 1) / seg * TAU; const A = [x + Math.cos(a0) * r, y, z + Math.sin(a0) * r], Bq = [x + Math.cos(a1) * r, y, z + Math.sin(a1) * r], T0 = [x + Math.cos(a0) * r2, y + h, z + Math.sin(a0) * r2], T1 = [x + Math.cos(a1) * r2, y + h, z + Math.sin(a1) * r2];
+    if (r2 > 0) { this.quad(Bq, A, T0, T1, col); this.tri([x, y + h, z], T0, T1, col); this.tri([x, y, z], Bq, A, col); } else { this.tri(Bq, A, [x, y + h, z], col); this.tri([x, y, z], A, Bq, col); } } };
+  // 星形の板（5つの角、厚み t）
+  MB.prototype.star = function (x, y, z, ro, ri, t, col, col2) {
+    const pts = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i / 10 * TAU, r = i % 2 ? ri : ro; pts.push([x + Math.cos(a) * r, y - Math.sin(a) * r]); }
+    for (let i = 0; i < 10; i++) { const a = pts[i], b = pts[(i + 1) % 10]; const cc = i % 2 ? col2 || col : col;
+      this.tri([x, y, z + t], [b[0], b[1], z], [a[0], a[1], z], cc); this.tri([x, y, z - t], [a[0], a[1], z], [b[0], b[1], z], cc); }
+  };
+  MB.prototype.ring = function (x, y, z, R, r, col, seg, tube) { // 軸 z のわっか（太さ r）
+    seg = seg || 20; tube = tube || 6; const P = (i, j) => { const a = i / seg * TAU, b = j / tube * TAU, cx = Math.cos(a), sy = Math.sin(a), k = R + Math.cos(b) * r; return { p: [x + cx * k, y + sy * k, z + Math.sin(b) * r], n: [cx * Math.cos(b), sy * Math.cos(b), Math.sin(b)] }; };
+    for (let i = 0; i < seg; i++) for (let j = 0; j < tube; j++) { const a = P(i, j), b = P(i + 1, j), c = P(i + 1, j + 1), d = P(i, j + 1); for (const q of [a, b, c, a, c, d]) this.vtx(q.p, q.n, col); }
+  };
+  const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const hash3 = (x, y, z) => { let h = Math.imul(Math.floor(x) | 0, 374761393) ^ Math.imul(Math.floor(y) | 0, 668265263) ^ Math.imul(Math.floor(z) | 0, 1274126177); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  const vnoise = (x, y, z) => { const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z), fx = x - ix, fy = y - iy, fz = z - iz, s = t => t * t * (3 - 2 * t), u = s(fx), v = s(fy), w = s(fz), L = (a, b, t) => a + (b - a) * t, H = (a, b, c) => hash3(ix + a, iy + b, iz + c);
+    return L(L(L(H(0, 0, 0), H(1, 0, 0), u), L(H(0, 1, 0), H(1, 1, 0), u), v), L(L(H(0, 0, 1), H(1, 0, 1), u), L(H(0, 1, 1), H(1, 1, 1), u), v), w); };
+  // 星の表面の色（地面の種類ごと）。1 を超える値は「光る」
+  const PAL = {
+    grass: { a: '#62cf6c', b: '#3fa456', c: '#b4e870', d: '#ffe066', e: '#ff8fb8' }, moss: { a: '#4fbf92', b: '#2f9570', c: '#a6e8b0', d: '#fff0a0', e: '#ffb0d0' },
+    ice: { a: '#cdeeff', b: '#94d2f6', c: '#ffffff', d: '#7fb8e8', e: '#ffffff' }, stone: { a: '#a4a4ba', b: '#80809c', c: '#cdcde0', d: '#6a6a86', e: '#e0e0f0' },
+    lava: { a: '#3b1b1e', b: '#5b2424', c: '#7a3328', d: '#ff6a1a', e: '#ffc040' }, metal: { a: '#8f9bb8', b: '#6e7b9c', c: '#d3dcf2', d: '#4a5878', e: '#aee0ff' },
+    sand: { a: '#f1d896', b: '#d9b974', c: '#fff0c0', d: '#c8a050', e: '#ffffff' }, candy: { a: '#ff9ad0', b: '#ffd1e8', c: '#fff4a0', d: '#8fe0ff', e: '#ffffff' },
+  };
+  function surfColor(surf, p, n, sz) {
+    const P = PAL[surf] || PAL.grass, k = 1.4 / Math.max(3, sz) * 4, nx = p[0] * k, ny = p[1] * k, nz = p[2] * k, a = vnoise(nx, ny, nz), b = vnoise(nx * 2.6 + 9, ny * 2.6, nz * 2.6), j = hash3(p[0] * 9, p[1] * 9, p[2] * 9);
+    let c = mix(hex(P.a), hex(P.b), clamp((a - 0.35) * 2.2, 0, 1)); c = mix(c, hex(P.c), clamp((b - 0.62) * 3, 0, 1) * 0.8);
+    if (surf === 'lava') { const v = Math.abs(a - 0.5); if (v < 0.07) c = mix([2.4, 0.9, 0.2], [2.0, 1.4, 0.4], b); else if (v < 0.11) c = mix(c, hex(P.d), 0.6); }
+    else if (surf === 'ice') { const v = Math.abs(vnoise(nx * 1.6 + 3, ny * 1.6, nz * 1.6) - 0.5); if (v < 0.025) c = hex(P.d); }
+    else if (surf === 'metal') { const g = (Math.abs(((p[0] * 0.7) % 2 + 2) % 2 - 1) < 0.04) || (Math.abs(((p[1] * 0.7) % 2 + 2) % 2 - 1) < 0.04) ? 0.75 : 1; c = c.map(q => q * g); if (j > 0.985) c = [0.5, 1.6, 2.0]; }
+    else if (surf === 'stone') { if (b > 0.7) c = mix(c, hex(P.d), 0.5); }
+    else if (surf === 'grass' || surf === 'moss') { if (j > 0.972) c = hex(j > 0.986 ? P.d : P.e); }
+    const sh = 0.96 + j * 0.08; return [c[0] * sh, c[1] * sh, c[2] * sh];
+  }
+  function bodyMesh(E, b) {
+    const mb = new MB(), N = clamp(Math.round(b.sz * 2), 6, b.k === 's' ? 16 : 14), ext = b.k === 's' ? [b.r, b.r, b.r] : b.k === 'b' ? b.h : b.k === 'y' ? [b.r, b.hh, b.r] : [b.r, b.hl + b.r, b.r];
+    const grid = [], idx = (f, i, j) => f * (N + 1) * (N + 1) + i * (N + 1) + j;
+    for (let f = 0; f < 6; f++) for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+      const u = i / N * 2 - 1, v = j / N * 2 - 1; let q;
+      switch (f) { case 0: q = [1, u, v]; break; case 1: q = [-1, u, v]; break; case 2: q = [u, 1, v]; break; case 3: q = [u, -1, v]; break; case 4: q = [u, v, 1]; break; default: q = [u, v, -1]; }
+      const l = Math.hypot(q[0], q[1], q[2]); const w = b.k === 'b' ? q : [q[0] / l, q[1] / l, q[2] / l]; let p = [w[0] * ext[0] * 1.3, w[1] * ext[1] * 1.3, w[2] * ext[2] * 1.3], nn = [0, 1, 0];
+      for (let it = 0; it < 6; it++) { const r = E.sdf(b, p); p = [p[0] - r[1] * r[0], p[1] - r[2] * r[0], p[2] - r[3] * r[0]]; nn = [r[1], r[2], r[3]]; }
+      grid.push({ p, n: nn, c: surfColor(b.surf, p, nn, b.sz) });
+    }
+    for (let f = 0; f < 6; f++) for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const a = grid[idx(f, i, j)], bb = grid[idx(f, i + 1, j)], c = grid[idx(f, i + 1, j + 1)], d = grid[idx(f, i, j + 1)];
+      for (const t of [[a, bb, c], [a, c, d]]) { const ux = t[1].p[0] - t[0].p[0], uy = t[1].p[1] - t[0].p[1], uz = t[1].p[2] - t[0].p[2], vx = t[2].p[0] - t[0].p[0], vy = t[2].p[1] - t[0].p[1], vz = t[2].p[2] - t[0].p[2]; const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+        const o = (cx * t[0].n[0] + cy * t[0].n[1] + cz * t[0].n[2]) >= 0 ? t : [t[0], t[2], t[1]]; if (Math.hypot(cx, cy, cz) < 1e-9) continue; const cc = [(o[0].c[0] + o[1].c[0] + o[2].c[0]) / 3, (o[0].c[1] + o[1].c[1] + o[2].c[1]) / 3, (o[0].c[2] + o[1].c[2] + o[2].c[2]) / 3];
+        for (const q of o) mb.vtx(q.p, q.n, b.surf === 'lava' || b.surf === 'metal' ? q.c : cc); }
+    }
+    return mb;
+  }
+  function planetMesh(col, ring) {
+    const mb = new MB(), c = col, c2 = mix(col, [1, 1, 1], 0.35), c3 = mix(col, [0.1, 0.1, 0.2], 0.4); const la = 12, lo = 20;
+    for (let i = 0; i < la; i++) { const band = 0.5 + 0.5 * Math.sin(i * 1.7), cc = mix(mix(c, c2, band), c3, i % 3 === 0 ? 0.3 : 0); mb.ell(0, 0, 0, 1, 1, 1, cc, la, lo); break; }
+    const mb2 = new MB(); for (let i = 0; i < la; i++) for (let j = 0; j < lo; j++) { const a0 = i / la * Math.PI, a1 = (i + 1) / la * Math.PI, b0 = j / lo * TAU, b1 = (j + 1) / lo * TAU; const band = 0.5 + 0.5 * Math.sin(i * 1.9 + Math.sin(j * 0.7) * 0.4), cc = mix(mix(c, c2, band), c3, ((i + j) % 5 === 0) ? 0.25 : 0);
+      const P = (a, b) => [Math.sin(a) * Math.cos(b), Math.cos(a), Math.sin(a) * Math.sin(b)]; const A = P(a0, b0), Bq = P(a0, b1), C = P(a1, b1), D = P(a1, b0); if (i > 0) { mb2.vtx(A, A, cc); mb2.vtx(D, D, cc); mb2.vtx(C, C, cc); mb2.vtx(A, A, cc); mb2.vtx(C, C, cc); mb2.vtx(Bq, Bq, cc); } else { mb2.vtx(A, A, cc); mb2.vtx(D, D, cc); mb2.vtx(C, C, cc); } }
+    if (ring) { const rc = mix(c2, [1, 1, 1], 0.4); for (let i = 0; i < 40; i++) { const a = i / 40 * TAU, a2 = (i + 1) / 40 * TAU, ri = 1.45, ro = 2.15, cc = mix(rc, c3, (i % 3) * 0.2); mb2.quad([Math.cos(a) * ri, 0, Math.sin(a) * ri], [Math.cos(a2) * ri, 0, Math.sin(a2) * ri], [Math.cos(a2) * ro, 0, Math.sin(a2) * ro], [Math.cos(a) * ro, 0, Math.sin(a) * ro], cc); mb2.quad([Math.cos(a) * ri, 0, Math.sin(a) * ri], [Math.cos(a) * ro, 0, Math.sin(a) * ro], [Math.cos(a2) * ro, 0, Math.sin(a2) * ro], [Math.cos(a2) * ri, 0, Math.sin(a2) * ri], cc); } }
+    return mb2;
+  }
+
+  // ---------- シェーダー ----------
+  const VS = 'attribute vec3 aPos,aNor,aCol;uniform mat4 uVP,uModel;varying vec3 vN,vC,vW;void main(){vec4 w=uModel*vec4(aPos,1.0);vW=w.xyz;vN=mat3(uModel)*aNor;vC=aCol;gl_Position=uVP*w;}';
+  const FS = 'precision mediump float;varying vec3 vN,vC,vW;uniform vec3 uSun,uSunC,uAmb,uCam,uFogC,uTint,uRim;uniform float uFogK,uEmis;'
+    + 'void main(){vec3 N=normalize(vN);vec3 V=normalize(uCam-vW);float nd=max(dot(N,uSun),0.0);float s=0.22+0.38*smoothstep(0.05,0.16,nd)+0.4*smoothstep(0.45,0.58,nd);float cl=max(dot(N,V),0.0);'
+    + 'vec3 col=vC*uTint*(uAmb*0.8+uSunC*0.62*s+vec3(0.16)*cl)+vC*uEmis*0.8+uRim*pow(1.0-cl,3.0)*(0.25+0.75*smoothstep(-0.2,0.5,nd));col=col/(1.0+0.22*col);float d=length(uCam-vW);float f=1.0-exp(-d*uFogK);col=mix(col,uFogC,clamp(f,0.0,0.85));gl_FragColor=vec4(col,1.0);}';
+  const AVS = 'attribute vec3 aPos,aNor;uniform mat4 uVP,uModel;varying vec3 vN,vW;void main(){vec4 w=uModel*vec4(aPos,1.0);vW=w.xyz;vN=mat3(uModel)*aNor;gl_Position=uVP*w;}';
+  const AFS = 'precision mediump float;varying vec3 vN,vW;uniform vec3 uCam,uCol,uSun;uniform float uA;void main(){vec3 N=normalize(vN);vec3 V=normalize(uCam-vW);float f=pow(1.0-max(dot(N,V),0.0),2.6);float lit=0.45+0.55*smoothstep(-0.3,0.4,dot(N,uSun));gl_FragColor=vec4(uCol*f*lit*uA,f*lit*uA);}';
+  const SVS = 'attribute vec2 aP;varying vec2 vP;void main(){vP=aP;gl_Position=vec4(aP,0.9999,1.0);}';
+  const SFS = '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n'
+    + 'varying vec2 vP;uniform vec3 uF,uR,uU,uSun,uN1,uN2,uBand,uSunC;uniform float uTan,uAsp,uT,uQ,uStar;'
+    + 'float h31(vec3 p){p=fract(p*0.3183099+0.1);p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}'
+    + 'float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z);}'
+    + 'float fbm(vec3 p){float a=0.5,s=0.0;for(int i=0;i<3;i++){if(i==2&&uQ<0.5)break;s+=a*vn(p);p=p*2.03+vec3(1.7,9.2,3.1);a*=0.5;}return s;}'
+    + 'void main(){vec3 d=normalize(uF+uR*vP.x*uTan*uAsp+uU*vP.y*uTan);float band=exp(-abs(dot(d,uBand))*5.0);vec3 col=vec3(0.006,0.008,0.02)+uN1*0.07;'
+    + 'float n=fbm(d*2.2+vec3(0.0,uT*0.003,0.0));float n2=fbm(d*4.6+7.0);col+=uN1*(0.55*n*n)+uN2*(0.55*band*(0.25+n2))+uN2*0.06*n2;'
+    + 'col+=uN2*pow(max(dot(d,normalize(uBand.zxy+vec3(0.2))),0.0),30.0)*0.45;'
+    + 'if(uQ>0.2){for(int k=0;k<2;k++){float sc=k==0?64.0:130.0;vec3 g=d*sc;vec3 id=floor(g);float h=h31(id+float(k)*7.0);vec3 f=fract(g)-0.5;vec3 o=vec3(h31(id+1.0),h31(id+2.0),h31(id+3.0))-0.5;float st=step(0.962-0.03*uStar,h)*smoothstep(0.38,0.0,length(f+o*0.55));'
+    + 'col+=st*(0.55+0.45*sin(uT*2.5+h*60.0))*mix(vec3(0.7,0.82,1.0),vec3(1.0,0.86,0.7),h31(id+9.0))*(k==0?1.3:0.8);if(uQ<1.5)break;}}'
+    + 'float sd=max(dot(d,uSun),0.0);col+=uSunC*(pow(sd,1200.0)*4.0+pow(sd,60.0)*0.5+pow(sd,7.0)*0.09);gl_FragColor=vec4(col,1.0);}';
+  const PVS = 'attribute vec3 aPos;attribute float aSize;attribute vec4 aCol;uniform mat4 uVP;uniform float uScale;varying vec4 vCol;void main(){vCol=aCol;vec4 p=uVP*vec4(aPos,1.0);gl_Position=p;gl_PointSize=clamp(aSize*uScale/max(p.w,0.5),1.0,uMax);}'.replace('uMax', '96.0');
+  const PFS = 'precision mediump float;varying vec4 vCol;void main(){vec2 q=gl_PointCoord-0.5;float d=length(q)*2.0;float a=clamp(1.0-d,0.0,1.0);a*=a;gl_FragColor=vec4(vCol.rgb*a*vCol.a,a*vCol.a);}';
+
+  function create(canvas, E, opt) {
+    opt = opt || {}; let gl = null;
+    try { gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!opt.preserve }) || canvas.getContext('experimental-webgl'); } catch (e) { gl = null; }
+    if (!gl) return null;
+    const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+    const prog = (v, f) => { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, v)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, f)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); } return { p, u }; };
+    let P, PA, PS, PP; try { P = prog(VS, FS); PA = prog(AVS, AFS); PS = prog(SVS, SFS); PP = prog(PVS, PFS); } catch (e) { if (root.console) console.warn('GalaxyGL', e); return null; }
+    P.a = { pos: gl.getAttribLocation(P.p, 'aPos'), nor: gl.getAttribLocation(P.p, 'aNor'), col: gl.getAttribLocation(P.p, 'aCol') };
+    PA.a = { pos: gl.getAttribLocation(PA.p, 'aPos'), nor: gl.getAttribLocation(PA.p, 'aNor') }; PS.a = { p: gl.getAttribLocation(PS.p, 'aP') };
+    PP.a = { pos: gl.getAttribLocation(PP.p, 'aPos'), size: gl.getAttribLocation(PP.p, 'aSize'), col: gl.getAttribLocation(PP.p, 'aCol') };
+    const upload = mb => { const o = { n: mb.p.length / 3 }; const mk = a => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.STATIC_DRAW); return b; }; o.bp = mk(mb.p); o.bn = mk(mb.n); o.bc = mk(mb.c); return o; };
+    const qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+    const PMAX = 640, pbuf = gl.createBuffer(), parr = new Float32Array(PMAX * 8); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.bufferData(gl.ARRAY_BUFFER, parr.byteLength, gl.DYNAMIC_DRAW);
+    const meshes = {}, st = { w: 300, h: 200, cw: 300, ch: 200, scale: 1, q: opt.quality != null ? opt.quality : 2, fixed: !!opt.fixed, ema: 16, cool: 0, tris: 0, t: 0, vp: M.ident(), aspect: 1, ms: 0, atmo: true, draws: 0 };
+    let lvl = null, bodyM = [], decoM = [], decoRing = null, L0 = null, snap = null;
+    const applyQ = () => { st.scale = [0.55, 0.78, 1][st.q]; resize(st.cw, st.ch); };
+    function resize(cw, ch) { st.cw = cw; st.ch = ch; const dpr = Math.min(root.devicePixelRatio || 1, st.q === 2 ? 1.75 : 1.25) * st.scale; st.w = Math.max(96, Math.round(cw * dpr)); st.h = Math.max(96, Math.round(ch * dpr)); if (canvas.width !== st.w || canvas.height !== st.h) { canvas.width = st.w; canvas.height = st.h; } gl.viewport(0, 0, st.w, st.h); st.aspect = st.w / st.h; }
+    function setQuality(q, fixed) { st.q = clamp(q | 0, 0, 2); if (fixed != null) st.fixed = !!fixed; applyQ(); }
+    function mesh(name, fn) { if (meshes[name]) return meshes[name]; const mb = new MB(); fn(mb); return (meshes[name] = upload(mb)); }
+    function load(L) {
+      free(); lvl = L; bodyM = L.bodies.map(b => { const o = upload(bodyMesh(E, b)); o.atm = b.k === 's' && b.g > 0 ? { r: b.r * 1.13, col: atmCol(b.surf) } : null; return o; });
+      decoM = (L.deco || []).map(d => ({ d, m: upload(planetMesh(d.col, d.ring)) }));
+      if (!meshes._atm) { const mb = new MB(); mb.ell(0, 0, 0, 1, 1, 1, [1, 1, 1], 10, 16); meshes._atm = upload(mb); }
+    }
+    const atmCol = s => (s === 'ice' ? [0.55, 0.85, 1] : s === 'lava' ? [1, 0.4, 0.15] : s === 'metal' ? [0.55, 0.65, 1] : s === 'stone' ? [0.75, 0.75, 1] : s === 'moss' ? [0.5, 1, 0.8] : [0.5, 0.9, 1]);
+    function free() { const dl = m => { if (m) for (const k of ['bp', 'bn', 'bc']) gl.deleteBuffer(m[k]); }; bodyM.forEach(dl); decoM.forEach(d => dl(d.m)); bodyM = []; decoM = []; }
+    const bindLit = m => { gl.bindBuffer(gl.ARRAY_BUFFER, m.bp); gl.vertexAttribPointer(P.a.pos, 3, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ARRAY_BUFFER, m.bn); gl.vertexAttribPointer(P.a.nor, 3, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ARRAY_BUFFER, m.bc); gl.vertexAttribPointer(P.a.col, 3, gl.FLOAT, false, 0, 0); };
+    const ID = M.ident(), WHITE = [1, 1, 1], ZERO = [0, 0, 0];
+    const drawLit = (m, model, tint, emis, rim) => { gl.uniformMatrix4fv(P.u.uModel, false, model || ID); gl.uniform3fv(P.u.uTint, tint || WHITE); gl.uniform1f(P.u.uEmis, emis || 0); gl.uniform3fv(P.u.uRim, rim || ZERO); bindLit(m); gl.drawArrays(gl.TRIANGLES, 0, m.n); st.tris += m.n / 3; };
+    function litUniforms(vp, cam, sun, sunC, amb, fogC, fogK) { gl.useProgram(P.p); gl.uniformMatrix4fv(P.u.uVP, false, vp); gl.uniform3fv(P.u.uCam, cam); gl.uniform3fv(P.u.uSun, sun); gl.uniform3fv(P.u.uSunC, sunC); gl.uniform3fv(P.u.uAmb, amb); gl.uniform3fv(P.u.uFogC, fogC); gl.uniform1f(P.u.uFogK, fogK); gl.enableVertexAttribArray(P.a.pos); gl.enableVertexAttribArray(P.a.nor); gl.enableVertexAttribArray(P.a.col); }
+    // 1フレーム：fr = { cam:{p,f,u,fov}, t, xf, objs:[{m,M,tint,emis,rim}], parts:{n}, flash, dt }
+    function render(fr) {
+      const t0 = root.performance ? performance.now() : 0, cam = fr.cam, sky = (lvl && lvl.sky) || {}; st.t = fr.t || 0; st.tris = 0;
+      const fov = cam.fov || 1.05, vw = M.look(cam.p, cam.f, cam.u), proj = M.persp(fov, st.aspect, 0.15, 700); st.vp = M.mul(proj, vw.v); st.fov = fov; st.cam = cam;
+      const sun = norm(sky.sun || [0.5, 0.6, -0.5]), sunC = sky.sunc || [1, 0.95, 0.85], n1 = sky.n1 || [0.1, 0.2, 0.5], n2 = sky.n2 || [0.5, 0.4, 0.7];
+      gl.disable(gl.BLEND); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      // 星空
+      gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.useProgram(PS.p); const u = PS.u;
+      gl.uniform3fv(u.uF, cam.f); gl.uniform3fv(u.uR, vw.r); gl.uniform3fv(u.uU, vw.u); gl.uniform3fv(u.uSun, sun); gl.uniform3fv(u.uN1, n1); gl.uniform3fv(u.uN2, n2); gl.uniform3fv(u.uBand, norm(sky.band || [0.3, 0.9, 0.3])); gl.uniform3fv(u.uSunC, sunC.map(v => v * 0.9));
+      gl.uniform1f(u.uTan, Math.tan(fov / 2)); gl.uniform1f(u.uAsp, st.aspect); gl.uniform1f(u.uT, st.t); gl.uniform1f(u.uQ, st.q === 0 ? 0.4 : st.q === 1 ? 1 : 2); gl.uniform1f(u.uStar, sky.stars == null ? 1 : sky.stars);
+      gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.enableVertexAttribArray(PS.a.p); gl.vertexAttribPointer(PS.a.p, 2, gl.FLOAT, false, 0, 0); gl.drawArrays(gl.TRIANGLES, 0, 6); gl.disableVertexAttribArray(PS.a.p);
+      const amb = [0.3, 0.32, 0.4].map((v, i) => v + n1[i] * 0.25), fogC = n1.map(v => v * 0.25);
+      gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CCW);
+      // 遠くの星（視差つき）
+      if (decoM.length) {
+        const vs = new Float32Array(vw.v); vs[12] = vs[13] = vs[14] = 0; const vps = M.mul(M.persp(fov, st.aspect, 5, 2000), vs);
+        litUniforms(vps, [0, 0, 0], sun, sunC, [0.42, 0.42, 0.5], fogC, 0);
+        for (const o of decoM) { const d = o.d, dr = norm(d.dir), D = 300, par = 0.012, pos = [dr[0] * D - cam.p[0] * par, dr[1] * D - cam.p[1] * par, dr[2] * D - cam.p[2] * par];
+          gl.uniform3fv(P.u.uCam, [0, 0, 0]); drawLit(o.m, M.basis(pos, [0.3, 0.1, 0.9], [0.15, 1, 0.1], d.r), WHITE, 0.0, [0.25, 0.3, 0.5]); }
+        gl.clear(gl.DEPTH_BUFFER_BIT);
+      }
+      // 世界
+      litUniforms(st.vp, cam.p, sun, sunC, amb, fogC, 0.0016);
+      const xf = fr.xf; for (let i = 0; i < bodyM.length; i++) drawLit(bodyM[i], M.fromRP(xf[i].R, xf[i].p), WHITE, 0, [0.2, 0.28, 0.45]);
+      for (const o of fr.objs || []) { const m = meshes[o.m]; if (m) drawLit(m, o.M, o.tint, o.emis, o.rim); }
+      gl.disableVertexAttribArray(P.a.pos); gl.disableVertexAttribArray(P.a.nor); gl.disableVertexAttribArray(P.a.col);
+      // 大気の輪（足す）
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
+      if (st.q > 0 && meshes._atm) {
+        gl.useProgram(PA.p); gl.uniformMatrix4fv(PA.u.uVP, false, st.vp); gl.uniform3fv(PA.u.uCam, cam.p); gl.uniform3fv(PA.u.uSun, sun); gl.enableVertexAttribArray(PA.a.pos); gl.enableVertexAttribArray(PA.a.nor); const am = meshes._atm;
+        gl.bindBuffer(gl.ARRAY_BUFFER, am.bp); gl.vertexAttribPointer(PA.a.pos, 3, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ARRAY_BUFFER, am.bn); gl.vertexAttribPointer(PA.a.nor, 3, gl.FLOAT, false, 0, 0);
+        for (let i = 0; i < bodyM.length; i++) { const a = bodyM[i].atm; if (!a) continue; const f = xf[i]; gl.uniformMatrix4fv(PA.u.uModel, false, M.basis(f.p, [0, 0, 1], [0, 1, 0], a.r)); gl.uniform3fv(PA.u.uCol, a.col); gl.uniform1f(PA.u.uA, 0.9); gl.drawArrays(gl.TRIANGLES, 0, am.n); }
+        gl.disableVertexAttribArray(PA.a.pos); gl.disableVertexAttribArray(PA.a.nor);
+      }
+      // 光る粒
+      const np = Math.min(fr.parts ? fr.parts.n : 0, PMAX);
+      if (np > 0) { gl.useProgram(PP.p); gl.uniformMatrix4fv(PP.u.uVP, false, st.vp); gl.uniform1f(PP.u.uScale, st.h * 0.6); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, fr.parts.a.subarray(0, np * 8));
+        gl.enableVertexAttribArray(PP.a.pos); gl.enableVertexAttribArray(PP.a.size); gl.enableVertexAttribArray(PP.a.col); gl.vertexAttribPointer(PP.a.pos, 3, gl.FLOAT, false, 32, 0); gl.vertexAttribPointer(PP.a.size, 1, gl.FLOAT, false, 32, 12); gl.vertexAttribPointer(PP.a.col, 4, gl.FLOAT, false, 32, 16);
+        gl.drawArrays(gl.POINTS, 0, np); gl.disableVertexAttribArray(PP.a.pos); gl.disableVertexAttribArray(PP.a.size); gl.disableVertexAttribArray(PP.a.col); }
+      gl.depthMask(true); gl.disable(gl.BLEND);
+      if (snap) { const cb = snap; snap = null; try { cb(canvas); } catch (e) { /* ignore */ } }
+      st.ms = root.performance ? performance.now() - t0 : 0;
+    }
+    function adapt(frameMs) { if (st.fixed) return; st.ema = st.ema * 0.93 + frameMs * 0.07; st.cool++; if (st.cool < 50) return; if (st.ema > 29 && st.q > 0) { st.q--; st.cool = 0; applyQ(); } else if (st.ema < 18 && st.q < 2 && st.cool > 300) { st.q++; st.cool = 0; applyQ(); } }
+    function project(x, y, z) { const m = st.vp, w = m[3] * x + m[7] * y + m[11] * z + m[15]; if (w <= 0.1) return null; const nx = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w, ny = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w; return { x: (nx * 0.5 + 0.5) * st.cw, y: (1 - (ny * 0.5 + 0.5)) * st.ch, w, in: Math.abs(nx) < 1 && Math.abs(ny) < 1 }; }
+    function dispose() { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (x) { /* ignore */ } }
+    applyQ();
+    return { render, resize, load, mesh, setQuality, adapt, project, dispose, free, state: st, gl, M, MB, hex, mix, canvas, snap(cb) { snap = cb; } };
+  }
+  const GalaxyGL = { create, M, MB, hex, mix, PAL };
+  if (typeof module !== 'undefined' && module.exports) module.exports = GalaxyGL; else root.GalaxyGL = GalaxyGL;
+})(typeof window !== 'undefined' ? window : globalThis);

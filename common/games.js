@@ -1253,6 +1253,35 @@
         'kusoge.sports.save': { fields: { pts: 'max', b: { each: 'arrMax' }, stats: { each: 'max' }, tm: 'bor', tu: 'bor', tut: 'max', fl: { fields: { b: 'arrMax', ph: 'bor', n: 'max' }, rest: 'newest' }, gf: { fields: { b: 'arrMax', m: 'max' }, rest: 'newest' }, vb: { each: 'arrMax' }, bk: { fields: { n: 'bor', w: 'bor' }, rest: 'newest' }, x: 'newest', dl: 'newest', set: 'newest' }, rest: 'newest' },
       },
     },
+    {
+      id: 'galaxy', order: 41, path: 'galaxy/', added: '2026-11-27',
+      title: { ja: 'ぐるぐる星わたり', en: 'Pip\'s Planet Hop' },
+      short: { ja: '星わたり', en: 'Planet Hop' },
+      desc: { ja: '丸い星・四角い星の上を、星の重力にそってぐるぐる歩く3Dアクション。ジャンプ・スピン・ドスン・かべキックで、はっしゃスターや大砲やパイプをつかって星から星へ。重力がさかさまになるゾーン、ハチ・バネ・くもの力、すいせいタイムアタック、ボス。ほしみ台から銀河とミッションをえらんで、スターシャードをあつめよう。スマホ（左スティック＋右ドラッグでカメラ）・キーボード・ゲームパッドで遊べて、体力ふやすなどの「たすけ」つき。オリジナルのキャラクターと宇宙。音楽なし、広告も賭けもありません。', en: 'A 3D action game where you run around round and boxy planets with local gravity. Jump, spin, ground-pound and wall-kick, ride launch stars, cannons and pipes between planets, flip gravity in glowing zones, use bee, spring and cloud power-ups, race comets and beat a boss. Pick galaxies and missions from the Stargazer Deck and collect Star Shards. Play on a phone (left stick, drag the right side to look), keyboard or gamepad, with assist options such as extra hearts. Original characters and universe. No music, no ads, no gambling.' },
+      label: { ja: '宇宙アクション', en: 'Space action' },
+      genres: ['action'], tags: ['3d', 'realtime', 'stages', 'casual'],
+      keywords: { ja: ['星', '宇宙', 'ぐるぐる', '星わたり', '惑星', '重力', '3D', 'アクション', 'ジャンプ', 'スピン', 'ボス', 'シャード', 'すいせい', 'ギャラクシー'], en: ['planet', 'space', 'galaxy', 'gravity', '3d', 'platformer', 'action', 'jump', 'spin', 'boss', 'comet', 'shard', 'star', 'hop', 'adventure'] },
+      icon: 'img/icons/galaxy.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#1a1250"/><circle cx="12" cy="14" r="1.4" fill="#fff"/><circle cx="58" cy="10" r="1.2" fill="#fff"/><circle cx="64" cy="40" r="1.2" fill="#ffe9a0"/><circle cx="8" cy="48" r="1.1" fill="#fff"/><circle cx="40" cy="8" r="1" fill="#fff"/><circle cx="34" cy="48" r="20" fill="#5fcf6a"/><path d="M16 40Q34 28 52 42Q44 34 34 34Q22 34 16 40Z" fill="#3fa456"/><path d="M20 56Q34 66 50 54" stroke="#bfefff" stroke-width="2" fill="none" opacity=".7"/><ellipse cx="34" cy="26" rx="9" ry="9.5" fill="#fff1c9"/><circle cx="31" cy="25" r="1.9" fill="#1d1a33"/><circle cx="37.5" cy="25" r="1.9" fill="#1d1a33"/><path d="M30 18L28 12M38 18L40 12" stroke="#2a2540" stroke-width="1.4"/><circle cx="28" cy="11" r="1.8" fill="#ffd24a"/><circle cx="40" cy="11" r="1.8" fill="#ffd24a"/><path d="M58 24l2.2 5 5.4.5-4.1 3.6 1.3 5.3-4.8-2.8-4.8 2.8 1.3-5.3-4.1-3.6 5.4-.5z" fill="#ffd24a" stroke="#8a5600" stroke-width="1"/></svg>', iconBg: '#1a1250',
+      thumb: 'img/thumbs/galaxy.webp', thumb2x: 'img/thumbs/galaxy@2x.webp',
+      tech: '2d',
+      // real-time 3D (own WebGL renderer, no three.js, so tech stays '2d'): pause() stops the clock and the menu pauses too. Single player; no match code and no online room
+      flags: { ranking: true, achievements: true, daily: false, versus: false, pause: true, stages: true },
+      versus: null,
+      // pts = Star Shards collected (one per mission, 10 in the first release; the cap leaves room for the 6-8 galaxies planned)
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 999, maxRate: null },
+      rankSource: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/10', en: 'Shards {n}/10' } },
+      keys: {
+        'kusoge.galaxy.save': '{ v:1, pts（スターシャードの合計＝ランキング。sh から毎回計算し直す）, sh:{ "<銀河 g1〜>":ミッションごとのシャードのビット }, lm:{ "<銀河>":かくれルミのビット }, bt:{ "<ミッション ID>":ベストタイム（1/60秒。小さいほどよい） }, cn（コイン）, cr（クリスタル）, stats:{ plays, clears, nodie, comets, boss, jumps, spins, pounds, wallkicks, launches, kills, stomps, deaths, lumi, assist }, set:{ sens（カメラのかんど 0.6/1/1.5）, ac（じどう追いかけ）, iy（上下反対）, ahp・anf・asl（たすけ：体力6・落下ダメージなし・すいせいの時間1.6倍）, rm（うごきをへらす）, lp（かるい描画）, tc（タッチボタン auto/on/off） }, tut }',
+        'kusoge.galaxy.howto': 'あそびかたを見た（\'1\'）。この端末だけ（同期しない）',
+        'kusoge.galaxy.ori': '画面のむき（\'auto\'|\'land\'|\'port\'）。この端末だけ（同期しない）',
+        'kusoge.galaxy.tip': '「横向きにすると遊びやすいよ」のヒントを閉じた（\'1\'）。この端末だけ（同期しない）',
+      },
+      // shards, hidden Lumi bits and counters only grow (bit sets are OR, counters max); best times keep the smaller positive value; settings are whole values (newest)
+      sync: {
+        'kusoge.galaxy.save': { fields: { pts: 'max', sh: { each: 'bor' }, lm: { each: 'bor' }, bt: { each: 'minPos' }, cn: 'max', cr: 'max', stats: { each: 'max' }, tut: 'max', set: 'newest' }, rest: 'newest' },
+      },
+    },
   ];
 
   // ゲームごとの実績（P3-3。形と条件の書き方は common/achievements.js の先頭）。各ゲームの .first は achievements.js が足す。
@@ -1907,6 +1936,34 @@
       { id: 'sports.stamp55', tier: 4, icon: 'trophy', title: { ja: 'スタンプ名人', en: 'Stamp Master' }, desc: { ja: 'スタンプ帳を55こ以上 あつめる', en: 'Collect 55 or more stamps' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.stamps' }, gte: 55 } },
       { id: 'sports.npc8', tier: 2, icon: 'check', title: { ja: '島の人気者', en: 'Everyone\'s Friend' }, desc: { ja: '島の人 8人ぜんいんと おはなしする', en: 'Chat with all 8 islanders' }, when: { rec: { key: 'kusoge.sports.save', path: 'bk.n' }, gte: 255 } },
       { id: 'sports.tilt', tier: 1, icon: 'check', title: { ja: 'かたむけてみた', en: 'Tilt Tester' }, desc: { ja: 'かたむき操作をオンにする', en: 'Turn tilt controls on' }, when: { rec: { key: 'kusoge.sports.save', path: 'stats.tiltOn' }, gte: 1 } },
+    ],
+    galaxy: [
+      { id: 'galaxy.first1', tier: 1, icon: 'star', title: { ja: 'はじめてのシャード', en: 'First Shard' }, desc: { ja: 'スターシャードを1こ集める', en: 'Collect a Star Shard' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 1 } },
+      { id: 'galaxy.shard3', tier: 1, icon: 'star', title: { ja: 'シャード3こ', en: 'Three Shards' }, desc: { ja: 'スターシャードを3こ集める（氷の銀河がひらく）', en: 'Collect 3 Star Shards (opens the ice galaxy)' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 3 } },
+      { id: 'galaxy.shard6', tier: 2, icon: 'star', title: { ja: 'シャード6こ', en: 'Six Shards' }, desc: { ja: 'スターシャードを6こ集める（マグマの銀河がひらく）', en: 'Collect 6 Star Shards (opens the magma galaxy)' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 6 } },
+      { id: 'galaxy.shard10', tier: 3, icon: 'trophy', title: { ja: 'シャード全部', en: 'All Shards' }, desc: { ja: 'いまある スターシャードを10こ全部集める', en: 'Collect all 10 Star Shards' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 10 } },
+      { id: 'galaxy.clear5', tier: 1, icon: 'check', title: { ja: 'ミッション5回', en: 'Five Clears' }, desc: { ja: 'ミッションを合わせて5回クリア', en: 'Clear 5 missions in total' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.clears' }, gte: 5 } },
+      { id: 'galaxy.clear20', tier: 2, icon: 'check', title: { ja: 'ミッション20回', en: 'Twenty Clears' }, desc: { ja: 'ミッションを合わせて20回クリア', en: 'Clear 20 missions in total' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.clears' }, gte: 20 } },
+      { id: 'galaxy.nodie1', tier: 2, icon: 'check', title: { ja: 'ノーミス', en: 'No Misses' }, desc: { ja: '1回もやられずにミッションをクリアする', en: 'Clear a mission without being knocked out' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.nodie' }, gte: 1 } },
+      { id: 'galaxy.nodie5', tier: 3, icon: 'trophy', title: { ja: 'ノーミス名人', en: 'Flawless Five' }, desc: { ja: 'ノーミスクリアを5回', en: 'Clear 5 missions without a miss' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.nodie' }, gte: 5 } },
+      { id: 'galaxy.comet1', tier: 1, icon: 'check', title: { ja: 'すいせいキャッチ', en: 'Comet Catcher' }, desc: { ja: 'すいせいチャレンジをクリアする', en: 'Clear a comet challenge' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.comets' }, gte: 1 } },
+      { id: 'galaxy.boss1', tier: 2, icon: 'trophy', title: { ja: 'おうさまをたおせ', en: 'King Slayer' }, desc: { ja: 'ボス グツグツおうさまをたおす', en: 'Defeat King Simmer' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.boss' }, gte: 1 } },
+      { id: 'galaxy.jump100', tier: 1, icon: 'check', title: { ja: 'ぴょんぴょん100', en: 'Hundred Hops' }, desc: { ja: 'ジャンプを合わせて100回', en: 'Jump 100 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.jumps' }, gte: 100 } },
+      { id: 'galaxy.jump1000', tier: 2, icon: 'star', title: { ja: 'ぴょんぴょん1000', en: 'Thousand Hops' }, desc: { ja: 'ジャンプを合わせて1000回', en: 'Jump 1000 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.jumps' }, gte: 1000 } },
+      { id: 'galaxy.spin50', tier: 1, icon: 'check', title: { ja: 'くるくるスピン', en: 'Spin Master' }, desc: { ja: 'スピンを合わせて50回', en: 'Spin 50 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.spins' }, gte: 50 } },
+      { id: 'galaxy.pound20', tier: 1, icon: 'check', title: { ja: 'ドスンドスン', en: 'Pound Pounder' }, desc: { ja: 'ドスンを合わせて20回', en: 'Ground-pound 20 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.pounds' }, gte: 20 } },
+      { id: 'galaxy.wall1', tier: 1, icon: 'check', title: { ja: 'かべキック', en: 'Wall Kicker' }, desc: { ja: 'かべキックを1回きめる', en: 'Do a wall kick' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.wallkicks' }, gte: 1 } },
+      { id: 'galaxy.launch10', tier: 1, icon: 'check', title: { ja: '星からほしへ', en: 'Star to Star' }, desc: { ja: 'はっしゃスター・大砲・パイプを合わせて10回つかう', en: 'Use launch stars, cannons or pipes 10 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.launches' }, gte: 10 } },
+      { id: 'galaxy.kill10', tier: 1, icon: 'check', title: { ja: 'てきを10たい', en: 'Ten Foes' }, desc: { ja: 'てきを合わせて10たいたおす', en: 'Defeat 10 foes' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.kills' }, gte: 10 } },
+      { id: 'galaxy.stomp5', tier: 2, icon: 'star', title: { ja: 'ふみつけ名人', en: 'Stomper' }, desc: { ja: 'てきをふんでたおすのを5回', en: 'Stomp 5 foes' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.stomps' }, gte: 5 } },
+      { id: 'galaxy.lumi1', tier: 1, icon: 'star', title: { ja: 'ルミみつけた', en: 'Lumi Found' }, desc: { ja: 'かくれルミをみつける', en: 'Find a hidden Lumi' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.lumi' }, gte: 1 } },
+      { id: 'galaxy.lumi3', tier: 3, icon: 'trophy', title: { ja: 'ルミあつめ', en: 'Lumi Hunter' }, desc: { ja: 'かくれルミを3こみつける', en: 'Find 3 hidden Lumi' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.lumi' }, gte: 3 } },
+      { id: 'galaxy.coin100', tier: 1, icon: 'star', title: { ja: 'コイン100', en: 'Hundred Coins' }, desc: { ja: 'コインを合わせて100こ集める', en: 'Collect 100 coins' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'cn' }, gte: 100 } },
+      { id: 'galaxy.coin500', tier: 2, icon: 'star', title: { ja: 'コイン500', en: 'Five Hundred Coins' }, desc: { ja: 'コインを合わせて500こ集める', en: 'Collect 500 coins' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'cn' }, gte: 500 } },
+      { id: 'galaxy.crystal5', tier: 2, icon: 'star', title: { ja: 'クリスタル5こ', en: 'Crystal Five' }, desc: { ja: 'クリスタルを合わせて5こ集める', en: 'Collect 5 crystals' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'cr' }, gte: 5 } },
+      { id: 'galaxy.assist1', tier: 1, icon: 'check', title: { ja: 'たすけをつかう', en: 'Helping Hand' }, desc: { ja: 'たすけをつかってミッションをクリア', en: 'Clear a mission with assist on' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.assist' }, gte: 1 } },
+      { id: 'galaxy.plays10', tier: 1, icon: 'check', title: { ja: '星わたり10回', en: 'Ten Trips' }, desc: { ja: 'ミッションを合わせて10回あそぶ', en: 'Play 10 missions' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.plays' }, gte: 10 } },
+      { id: 'galaxy.die10', tier: 1, icon: 'check', title: { ja: 'ころんでもだいじょうぶ', en: 'It Happens' }, desc: { ja: 'やられても、あきらめずに10回ふっかつ', en: 'Get back up 10 times' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.deaths' }, gte: 10 } },
     ],
   };
   for (var ai = 0; ai < GAMES.length; ai++) GAMES[ai].achievements = ACHIEVEMENTS[GAMES[ai].id] || [];

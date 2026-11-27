@@ -1,0 +1,95 @@
+// ぐるぐる星わたり：ミッションごとの道すじ（route）にそって、本物のエンジンへ「入力だけ」を送るボット。window.GalaxyBot
+// ミッションが「ボットでクリアできる」ことの証明に使う（proofs.js に入力の記録を残す）。遊ぶときの「おまかせ」ではない。
+//   const r = GalaxyBot.run(L, 'g1m1');   // → { ok, S, rec（入力を packして並べた配列）, frames, fail }
+// route の1歩：'id'（ものの id か、pts の名前）／{ to, j（この距離でジャンプ）, tol, once, launch:1（はっしゃ→着地まで）, fly（ジャンプおしっぱなしで飛ぶ）, boss:1 }
+(function (root) {
+  'use strict';
+  const E = root.GalaxyEngine || require('./engine.js');
+  const V = E.vec, B = E.B, K = E.K;
+  const norm1 = s => (typeof s === 'string' ? { to: s } : s);
+
+  function create(L, mid) {
+    const m = L.missions[mid], route = (m.route || []).map(norm1);
+    const bot = { i: 0, sf: 0, jh: 0, jumped: false, launched: false, fail: null, ssp: 0 };
+    const pt = (S, sp) => (Array.isArray(sp) ? sp : V.add(S.xf[typeof sp.b === 'string' ? L.idx[sp.b] : sp.b].p, V.mv(S.xf[typeof sp.b === 'string' ? L.idx[sp.b] : sp.b].R, sp.l)));
+    function target(S, st) {
+      const k = st.to || st.fly; if (m.pts && m.pts[k]) return { p: pt(S, m.pts[k]), i: -1 };
+      const i = L.eidx[k]; if (i == null) throw new Error('route: no such thing ' + k);
+      return { p: S.ep[i] || V.add([0, 0, 0], S.h.x), i, gone: !!S.e[i] };
+    }
+    // 世界の向き → スティック（カメラの向き基準。エンジンの camFrame と同じ）
+    function stick(S, w, mag) {
+      const fr = E.camFrame(S), t = V.sub(w, V.mul(S.h.up, V.dot(w, S.h.up))), l = V.len(t); if (l < 1e-6) return { sx: 0, sy: 0 };
+      const d = V.mul(t, 1 / l); return { sx: V.dot(d, fr.r) * mag, sy: V.dot(d, fr.f) * mag };
+    }
+    function go(S, p, o) {
+      o = o || {}; const h = S.h, d = V.sub(p, h.x), up = h.up, t = V.sub(d, V.mul(up, V.dot(d, up))), l = V.len(t);
+      if (l < (o.stop || 0.12)) return { sx: 0, sy: 0 };
+      const fast = o.mag == null ? 1 : o.mag; let mag = Math.min(fast, Math.max(0.4, l / 1.5)); if (h.on >= 0 && L.bodies[h.on].fr < 0.5) mag = Math.min(mag, l < 4 ? 0.5 : 1);
+      return stick(S, t, mag);
+    }
+    function reflex(S, inp) {
+      const h = S.h; if (h.dead || h.lau) return;
+      for (const i of S.act) { const e = L.ents[i]; if ((e.k !== 'walker' && e.k !== 'crate') || S.e[i] || !S.ep[i]) continue; if (V.len(V.sub(S.ep[i], h.x)) < 2.5 && h.scd <= 0 && !(S.pb & B.S) && h.inv <= 0) { inp.b |= B.S; return; } }
+    }
+    function bossAct(S) {
+      const bo = S.boss, h = S.h, e = L.ents[bo.i], bi = e.bi, c = S.xf[bi].p, R = L.bodies[bi].r, inp = { sx: 0, sy: 0, b: 0 };
+      const bp = E.bossPos(S), hq = V.norm(V.mtv(S.xf[bi].R, V.sub(h.x, c))), rr = V.len(V.sub(h.x, c)), dist = E.geod(bo.d, hq) * rr, dd = V.len(V.sub(bp, h.x));
+      if (bo.st === 'stun') {
+        const o = go(S, bp, { stop: 0.5 }); inp.sx = o.sx; inp.sy = o.sy;
+        if (dd < 3.1 && h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S;
+      } else if (bo.st === 'dead' || bo.st === 'gone') { /* wait for the shard */ }
+      else {
+        // にげる（ボスのいる向きと逆）
+        let away = V.sub(h.x, bp); if (bo.st === 'jump') away = V.sub(h.x, V.add(c, V.mv(S.xf[bi].R, V.mul(bo.tg, R))));
+        const run = V.add(h.x, V.mul(V.norm(away), 6)); const o = go(S, run, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+        if (bo.st === 'land' && bo.ring > 0 && h.on >= 0 && Math.abs(dist - bo.ring) < 3.1 && dist + 0.5 > bo.ring - 3.1) { if (!(S.pb & B.J)) inp.b |= B.J; }
+      }
+      return inp;
+    }
+    bot.act = function (S) {
+      const h = S.h, inp = { sx: 0, sy: 0, b: 0 };
+      if (S.over || h.dead) return inp;
+      if (bot.i >= route.length) return inp;
+      const st = route[bot.i]; bot.sf++;
+      if (bot.sf > (st.max || 2400)) { bot.fail = 'stuck at step ' + bot.i + ' ' + JSON.stringify(st) + ' pos ' + h.x.map(v => v.toFixed(1)); return inp; }
+      const nextStep = () => { bot.i++; bot.sf = 0; bot.jumped = false; bot.launched = false; bot.jh = 0; };
+      if (st.boss) {
+        if (S.flag.boss) { nextStep(); return inp; }
+        const o = bossAct(S); reflex(S, o); return o;
+      }
+      const tg = target(S, st);
+      if (st.launch) {
+        // はっしゃ台まで歩き、飛んで、着地するまで
+        if (h.lau) { bot.launched = true; return inp; }
+        if (bot.launched) { if (h.on >= 0 || h.air > 0.4) { if (h.on >= 0) { nextStep(); } } return Object.assign(inp, go(S, h.x)); }
+        const o = go(S, tg.p, { stop: 0.2 }); inp.sx = o.sx; inp.sy = o.sy; reflex(S, inp); return inp;
+      }
+      if (st.fly) {
+        if (tg.gone) { nextStep(); return inp; }
+        const o = go(S, tg.p, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+        if (h.pw && h.pw.k === 'bee') { const tb = tg.i >= 0 ? L.ents[tg.i].bi : -1; if (h.on >= 0) { if (!(S.pb & B.J)) inp.b |= B.J; } else if (tb < 0 || h.gb !== tb) inp.b |= B.J; }
+        return inp;
+      }
+      // ふつうの：そこまで行く
+      const dist = V.len(V.sub(tg.p, h.x));
+      if (!tg.gone) bot.lastP = tg.p;
+      if (tg.i >= 0 ? tg.gone : dist < (st.tol || 1.0)) {
+        if (st.land && (h.on < 0 || bot.jh > 0)) { const o = go(S, bot.lastP, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy; if (bot.jh > 0) { bot.jh--; inp.b |= B.J; } return inp; }
+        nextStep(); return bot.act(S);
+      }
+      const o = go(S, tg.p, { stop: 0.15 }); inp.sx = o.sx; inp.sy = o.sy;
+      if (st.j != null && h.on >= 0 && dist < st.j && !(S.pb & B.J) && !(st.once && bot.jumped)) { bot.jh = 18; bot.jumped = true; }
+      if (bot.jh > 0) { bot.jh--; if (!(bot.jh === 17 && (S.pb & B.J))) inp.b |= B.J; }
+      reflex(S, inp); return inp;
+    };
+    return bot;
+  }
+  function run(L, mid, opt) {
+    opt = opt || {}; const S = E.create(L, mid, opt), bot = create(L, mid), rec = [], max = opt.max || 9000;
+    while (!S.over && S.f < max && !bot.fail) { const inp = E.quant(bot.act(S)); rec.push(E.pack(inp)); E.step(S, E.unpack(rec[rec.length - 1])); }
+    return { ok: !!(S.res && S.res.ok), S, rec, frames: S.f, fail: bot.fail || (S.res && !S.res.ok ? S.res.why : S.over ? '' : 'timeout'), step: bot.i };
+  }
+  const GalaxyBot = { create, run };
+  if (typeof module !== 'undefined' && module.exports) module.exports = GalaxyBot; else root.GalaxyBot = GalaxyBot;
+})(typeof window !== 'undefined' ? window : globalThis);

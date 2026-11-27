@@ -94,6 +94,10 @@ node tools/tests/unit/sports-engine.test.js  # ぽかぽか島スポーツの中
 node tools/tests/unit/sports-world.test.js   # 3Dの島の中身（種つきの高さの地図・ランドマーク・飛行機・リング）
 node tools/tests/unit/sports-island.test.js  # 島の暮らし（NPC・生き物・ものがたり・スタンプ帳・解放ルール）
 node tools/tests/unit/sports-air.test.js  # 空のイベント（グライダー・フォーメーション降下・風船バトル）のボット検証
+node tools/tests/galaxy-play.js [first,hub,keys,proofs,touch,pause,save,gamepad,english,orient,layouts,perf,nogl,settings]  # ぐるぐる星わたりの通し（ほしみ台・ゲート・本物のキー／タッチ／ゲームパッド・全10ミッションの証明の再生・保存・英語・画面のむき・320px〜タブレット・FPS・WebGL なしの案内・たすけ）
+node tools/tests/unit/galaxy-engine.test.js  # 星の表面にとどまる・局所重力のジャンプ・かべキック・重力ゾーン・はっしゃの軌道・すり抜けない・動く足場・決まった刻みと複製・体力とふっかつ
+node tools/tests/unit/galaxy-levels.test.js  # 銀河データの検証（置き場所・シャード・ロック）と、ボットが本物のエンジンで全ミッションをクリア・証明（proofs.js）の再生
+node tools/galaxy-proofs.js                   # ボットの入力の記録を galaxy/proofs.js に作り直す（ミッションを変えたら実行）
 node tools/puff-solve.js --all --write        # 証明（puff/proofs.js）を作り直す（ステージやエンジンを変えたとき。約3秒。`--show 1-2` で地図を表示）
 node tools/tests/wordwolf-play.js             # ワードウルフの通し（本物のクリックで、ひとり・1台をまわす4人・ウルフ2人＋知っている・英語・画面サイズ・オンライン（エミュレーターで2ページ＋CPU）。--no-online で省く）
 node tools/tests/unit/wordwolf-words.test.js  # ワードウルフのことば（300組以上・1語15個以上のヒント・ヒントにことばが漏れない・むずかしさ3段）

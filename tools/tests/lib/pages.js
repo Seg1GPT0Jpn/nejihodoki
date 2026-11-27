@@ -7,7 +7,7 @@ const { ROOT } = require('./server');
 
 const FALLBACK_GAMES = [
   { id: 'neji', three: true }, { id: 'blocks' }, { id: 'drop' }, { id: 'raft', three: true }, { id: 'gates', three: true },
-  { id: 'n59049', three: true }, { id: 'water' }, { id: 'parking', three: true }, { id: 'hole', three: true }, { id: 'hitsumabushi' }, { id: 'planet', three: true }, { id: 'hitblow' }, { id: 'shogi' }, { id: 'escape' }, { id: 'td' }, { id: 'physics' }, { id: 'minigolf' }, { id: 'trade' }, { id: 'cards' }, { id: 'fit' }, { id: 'town' }, { id: 'colorcards' }, { id: 'brawl' }, { id: 'train' }, { id: 'reversi' }, { id: 'manabi' }, { id: 'orchestra' }, { id: 'gomoku' }, { id: 'sudoku' }, { id: 'crates' }, { id: 'hop' }, { id: 'maze' }, { id: 'shmup' }, { id: 'fishing' }, { id: 'mahjong' }, { id: 'akin' }, { id: 'chess' }, { id: 'wordwolf' }, { id: 'puff' }, { id: 'sports' },
+  { id: 'n59049', three: true }, { id: 'water' }, { id: 'parking', three: true }, { id: 'hole', three: true }, { id: 'hitsumabushi' }, { id: 'planet', three: true }, { id: 'hitblow' }, { id: 'shogi' }, { id: 'escape' }, { id: 'td' }, { id: 'physics' }, { id: 'minigolf' }, { id: 'trade' }, { id: 'cards' }, { id: 'fit' }, { id: 'town' }, { id: 'colorcards' }, { id: 'brawl' }, { id: 'train' }, { id: 'reversi' }, { id: 'manabi' }, { id: 'orchestra' }, { id: 'gomoku' }, { id: 'sudoku' }, { id: 'crates' }, { id: 'hop' }, { id: 'maze' }, { id: 'shmup' }, { id: 'fishing' }, { id: 'mahjong' }, { id: 'akin' }, { id: 'chess' }, { id: 'wordwolf' }, { id: 'puff' }, { id: 'sports' }, { id: 'galaxy', three: true },
 ];
 
 function fromRegistry() {
