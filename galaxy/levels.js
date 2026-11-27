@@ -52,57 +52,73 @@
     return b.d;
   }
 
+  // ================== 長いコース（セクションをつなぐ） ==================
+  // 星のかたまり（セクション）をいくつも ならべ、あいだを「星のレーン」（長い はっしゃスター）でつなぐ。
+  // 体（星）には m（そのミッションだけ）をつけるので、ほかのミッションの星は 出ない・描かない。
+  //   course(b, mid, specs, meta) → ミッションを1つ足す。spec = { k: 'walk'|'hop'|'stones'|'pods', r, laps, w, n, ... }
+  function course(b, mid, specs, meta) {
+    const M = [mid], O = k => [k * 64, 0, 0], secs = [], pts = {}, route = [];
+    const surf = meta.surf || 'grass', ent = (k, bid, l, o) => b.ent(k, bid, l, Object.assign({ m: M }, o || {}));
+    specs.forEach((sp, k) => {
+      const T = mid + 's' + k, o = O(k), P = (x, y, z) => [o[0] + x, o[1] + y, o[2] + z], r = sp.r || 8, S = sp.surf || surf, rt = [];
+      let entry, endL, endB, jEnd;
+      if (sp.k === 'walk') {
+        const id = T + 'p', n = (sp.laps || 3) * 10; b.sph(id, P(0, 0, 0), r, { surf: S, m: M });
+        for (let i = 0; i < n; i++) { const lat = 62 - 118 * i / (n - 1), lon = i * (360 * (sp.laps || 3) / (n - 1)); ent('coin', id, b.ll(id, lat, lon, 1.0), { id: T + 'c' + i }); rt.push(T + 'c' + i); }
+        for (let j = 0; j < (sp.w || 0); j++) { const lat = -42 + 84 * (j + 0.5) / sp.w, l0 = b.ll(id, lat, j * 97 + 30, 0.6); ent('walker', id, l0, { id: T + 'w' + j, l0, ax: [0, 1, 0], w: (j % 2 ? -1 : 1) * (0.5 + 0.12 * (j % 3)), ph: j }); }
+        entry = { b: id, l: b.ll(id, 76, 0, 0.5) }; endB = id; endL = b.ll(id, -80, 40, 0.9);
+        if (sp.crate) ent('crate', id, b.ll(id, 40, 200, 0.7), { id: T + 'cr', drop: sp.crate });
+      } else if (sp.k === 'hop') {
+        const nm = sp.n || 5; for (let i = 0; i < nm; i++) b.sph(T + 'm' + i, P(0, 0, -8 * i), 2.4, { surf: S, m: M });
+        entry = { b: T + 'm0', l: b.at(T + 'm0', [0, 1, 0], 0.5) }; pts[T + 'f'] = { b: T + 'm0', l: [0, 0, -2.95] }; rt.push({ to: T + 'f', tol: 0.7 });
+        for (let i = 0; i < nm - 1; i++) { const c = T + 'm' + (i + 1); ent('coin', c, b.at(c, [0, 0, 1], 1.0), { id: T + 'h' + i }); rt.push({ to: T + 'h' + i, j: 3.2, land: 1 }); if (i < nm - 2) { pts[T + 'g' + i] = { b: c, l: [0, 0, -2.95] }; rt.push({ to: T + 'g' + i, tol: 0.7 }); } }
+        endB = T + 'm' + (nm - 1); endL = b.at(endB, [0, 1, 0], 0.9);
+      } else if (sp.k === 'stones') {
+        const N = sp.n || 10, RR = sp.RR || 13.5, id = T + 'c'; b.sph(id, P(0, 0, 0), 6, { surf: S, g: 0.5, gr: 7, m: M });
+        for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2; b.box(T + 't' + i, P(RR * Math.cos(a), RR * Math.sin(a), 0), [2.4, 0.8, 2.4], { rot: [0, 0, a - Math.PI / 2], rr: 0.5, surf: S, gr: 8, m: M }); }
+        entry = { b: T + 't0', l: [0, 1.0, 0] };
+        for (let i = 1; i < N - 1; i++) { ent('coin', T + 't' + i, [0, 1.8, 0], { id: T + 'k' + i }); rt.push({ to: T + 'k' + i, j: sp.j || 7.9, land: 1 }); }
+        endB = T + 't' + (N - 1); endL = [0, 1.8, 0];
+        jEnd = sp.j || 7.9;
+      } else { // pods
+        const A = T + 'a', Bd = T + 'b', C = T + 'c'; b.sph(A, P(0, 0, 0), 6, { surf: S, m: M }); b.sph(Bd, P(20, 5, 0), 4.5, { surf: S, m: M }); b.sph(C, P(34, -2, 12), 3.5, { surf: S, m: M });
+        ent('launch', A, b.at(A, b.to(A, Bd), 0.9), { id: T + 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: Bd, l: b.at(Bd, b.to(Bd, A), 2.4) } });
+        ent('coin', Bd, b.at(Bd, b.to(Bd, A), 1.2), { id: T + 'b1' }); ent('walker', Bd, b.at(Bd, [0.2, 1, 0.2], 0.6), { id: T + 'w', l0: b.at(Bd, [0.2, 1, 0.2], 0.6), ax: [0, 0, 1], w: 0.8, ph: 1 });
+        ent('launch', Bd, b.at(Bd, b.to(Bd, C), 0.9), { id: T + 'L2', mode: 'star', T: 1.3, arc: 6, to: { b: C, l: b.at(C, b.to(C, Bd), 2.4) } }); ent('coin', C, b.at(C, [0, 1, 0], 1.0), { id: T + 'b2' });
+        entry = { b: A, l: b.ll(A, 5, 50, 0.5) }; rt.push({ to: T + 'L1', launch: 1 }, T + 'b1', { to: T + 'L2', launch: 1 }, T + 'b2'); endB = C; endL = b.at(C, [0.2, -1, 0.1], 0.9);
+      }
+      secs.push({ entry, endB, endL, rt, T, jEnd });
+    });
+    // つなぎ：レーン（あいだの長い はっしゃスター）と、セクションのはじめのチェックポイント
+    secs.forEach((sc, k) => {
+      route.push(...sc.rt);
+      if (k > 0) b.ent('cp', sc.entry.b, sc.entry.l.map(v => v * 0.999), { m: M, id: sc.T + 'cp' });
+      if (k < secs.length - 1) { const nx = secs[k + 1], id = sc.T + 'endlane'; if (!b.d.ents.some(e => e.id === id)) b.ent('launch', sc.endB, sc.endL, { m: M, id, mode: 'star', T: 2.6, arc: 14, lane: 1, to: { b: nx.entry.b, l: nx.entry.l, lift: 1.5 } }); route.push(sc.jEnd ? { to: id, launch: 1, j: sc.jEnd } : { to: id, launch: 1 }); }
+      else { b.ent('shard', sc.endB, sc.endL, { m: M, id: mid + 's' }); route.push(mid + 's'); }
+    });
+    b.mission({ id: mid, name: meta.name, desc: meta.desc, kind: meta.kind, start: { b: secs[0].entry.b, l: secs[0].entry.l, fw: [0, 0, 1] }, shard: mid + 's', pts, route, par: meta.par || 150, long: 1 });
+  }
+
   // ================== 1. みどりのポコ星ぐん ==================
   function g1() {
     const b = Builder('g1', T('みどりのポコ星ぐん', 'Meadow Orbit'), 'grass', { n1: [0.08, 0.3, 0.5], n2: [0.45, 0.65, 0.3], band: [0.2, 0.9, 0.4], sun: [0.6, 0.5, -0.5], sunc: [1, 0.95, 0.8], stars: 1 });
-    b.sph('home', [0, 0, 0], 7, { surf: 'grass' });
-    b.sph('p2', [20, 6, 0], 4.5, { surf: 'moss' });
-    b.sph('p3', [34, -2, 12], 3.5, { surf: 'grass' });
-    for (let i = 0; i < 4; i++) b.sph('mo' + (i + 1), [-24, 0, -8 * i], 2.4, { surf: 'grass' });
-    const U = [0, 1, 0];
-    // --- ミッション1：はじめの ひとまわり
-    const m1 = ['g1m1']; const E1 = (k, ll, o) => b.ent(k, 'home', b.ll('home', ll[0], ll[1], ll[2] == null ? 1 : ll[2]), Object.assign({ m: m1 }, o || {}));
-    E1('coin', [40, 20], { id: 'a1' }); E1('coin', [18, 20], { id: 'a2' }); E1('coin', [-12, 20], { id: 'a3' }); E1('coin', [-34, 20], { id: 'a4' }); E1('crystal', [-50, 20], { id: 'a5' });
-    b.ent('walker', 'home', b.ll('home', 0, 20, 0.6), { m: m1, id: 'w1', l0: b.ll('home', 0, 20, 0.6), ax: [0, 1, 0], w: 0.55, ph: 0 });
-    E1('shard', [-64, 20], { id: 's1', }); b.d.ents[b.d.ents.length - 1].id = 's1';
-    b.mission({ id: 'g1m1', name: T('はじめの ひとまわり', 'Around the Planet'), desc: T('ちいさな星を ぐるっと ひとまわり。うらがわの スターシャードを とろう', 'Run around the little planet and grab the Star Shard on the far side.'), start: { b: 'home', l: b.ll('home', 68, 20, 0.5), fw: [0, 0, 1] }, shard: 's1', route: ['a1', 'a2', 'a3', 'a4', 'a5', 's1'], par: 40 });
-    // --- ミッション2：ふわふわ ほしわたり（発射スターで となりの星へ）
-    const m2 = ['g1m2'];
-    const lPos = b.ll('home', 16.7, 90, 0.9);
-    b.ent('launch', 'home', lPos, { m: m2, id: 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: 'p2', l: b.at('p2', b.to('p2', 'home'), 2.4) } });
-    b.ent('coin', 'p2', b.at('p2', b.to('p2', 'home'), 1.2), { m: m2, id: 'b1' });
-    const l2 = b.at('p2', b.to('p2', 'p3'), 0.9);
-    b.ent('walker', 'p2', b.at('p2', [0.2, 1, 0.2], 0.6), { m: m2, id: 'w2', l0: b.at('p2', [0.2, 1, 0.2], 0.6), ax: [0, 0, 1], w: 0.8, ph: 1 });
-    b.ent('launch', 'p2', l2, { m: m2, id: 'L2', mode: 'star', T: 1.3, arc: 6, to: { b: 'p3', l: b.at('p3', b.to('p3', 'p2'), 2.4) } });
-    b.ent('coin', 'p3', b.at('p3', [0, 1, 0], 1.0), { m: m2, id: 'b2' });
-    b.ent('crystal', 'p3', b.at('p3', [0.5, 1, 0], 1.0), { m: m2, id: 'b3' });
-    b.ent('shard', 'p3', b.at('p3', b.to('p3', 'home'), 1.0).map((v, i) => v + [0, 0.0, 0][i]), { m: m2, id: 's2' });
-    b.d.ents[b.d.ents.length - 1].l = b.at('p3', [0.1, 0.9, -0.2], 1.0);
-    b.mission({ id: 'g1m2', name: T('ふわふわ ほしわたり', 'Launch Star Hop'), desc: T('はっしゃスターに のって となりの星へ。2回とんで スターシャードへ', 'Ride the launch stars from planet to planet and reach the Star Shard.'), start: { b: 'home', l: b.ll('home', 5, 50, 0.5), fw: [0, 0, 1] }, shard: 's2', route: [{ to: 'L1', launch: 1 }, 'b1', { to: 'L2', launch: 1 }, 'b2', 's2'], par: 30 });
-    // --- ミッション3：ちいさなお月さま ぴょんぴょん
-    const m3 = ['g1m3'];
-    for (let i = 0; i < 3; i++) {
-      const c = 'mo' + (i + 2);
-      b.ent('coin', c, b.at(c, [0, 0, 1], 1.0), { m: m3, id: 'h' + (i + 1) });
-      b.ent('coin', c, b.at(c, [0, 1, 0], 1.0), { m: m3, id: 't' + (i + 1) });
-    }
-    b.ent('shard', 'mo4', b.at('mo4', [0, 1, 0], 1.0), { m: m3, id: 's3' });
-    b.mission({ id: 'g1m3', name: T('ちいさなお月さま ぴょんぴょん', 'Tiny Moon Hops'), desc: T('ちいさな 4つのお月さまを ジャンプで わたろう。星の よこから とぶのが コツ', 'Hop across four tiny moons. Jump from the side that faces the next moon.'), start: { b: 'mo1', l: b.at('mo1', U, 0.5), fw: [0, 0, -1] }, shard: 's3',
-      pts: { f1: { b: 'mo1', l: [0, 0, -2.95] }, g2: { b: 'mo2', l: [0, 0, -2.95] }, g3: { b: 'mo3', l: [0, 0, -2.95] } },
-      route: [{ to: 'f1', tol: 0.7 }, { to: 'h1', j: 3.2, land: 1 }, { to: 'g2', tol: 0.7 }, { to: 'h2', j: 3.2, land: 1 }, { to: 'g3', tol: 0.7 }, { to: 'h3', j: 3.2, land: 1 }, 's3'], par: 40 });
-    // --- ミッション4：みどりの すいせい（タイムアタック）
+    const LG = ['g1m4', 'g1hunt'];
+    b.sph('home', [0, 0, 0], 7, { surf: 'grass', m: LG }); b.sph('p2', [20, 6, 0], 4.5, { surf: 'moss', m: LG }); b.sph('p3', [34, -2, 12], 3.5, { surf: 'grass', m: LG });
+    for (let i = 0; i < 4; i++) b.sph('mo' + (i + 1), [-24, 0, -8 * i], 2.4, { surf: 'grass', m: LG });
+    course(b, 'g1m1', [{ k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'hop', n: 5 }, { k: 'pods' }, { k: 'walk', r: 10, laps: 3, w: 4, surf: 'moss' }, { k: 'stones', n: 10 }, { k: 'walk', r: 8, laps: 2, w: 2 }, { k: 'pods', surf: 'moss' }, { k: 'walk', r: 11, laps: 4, w: 4 }], { name: T('はじめの たび', 'The First Journey'), desc: T('6つの星を レーンでつないで、ながい たび。ちいさな星を ぐるぐる、月を ぴょんぴょん、石を ジャンプ！', 'A long trip over six sections joined by star lanes: spiral around planets, hop tiny moons, jump stones.'), par: 150 });
+    course(b, 'g1m2', [{ k: 'pods' }, { k: 'walk', r: 10, laps: 4, w: 4 }, { k: 'stones', n: 10, surf: 'moss' }, { k: 'hop', n: 6 }, { k: 'pods', surf: 'moss' }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'hop', n: 6 }, { k: 'walk', r: 11, laps: 4, w: 4 }], { name: T('ふわふわ ほしわたり', 'Launch Star Hop'), desc: T('はっしゃスターと レーンで ほしを つなぐ ながい コース', 'A long course linked by launch stars and star lanes.'), par: 160 });
+    course(b, 'g1m3', [{ k: 'hop', n: 7 }, { k: 'walk', r: 9, laps: 3, w: 3 }, { k: 'stones', n: 8, RR: 11.8, j: 8.4 }, { k: 'pods' }, { k: 'hop', n: 6 }, { k: 'walk', r: 10, laps: 3, w: 4, surf: 'moss' }, { k: 'stones', n: 10 }, { k: 'walk', r: 11, laps: 4, w: 4 }], { name: T('ちいさなお月さま ぴょんぴょん', 'Tiny Moon Hops'), desc: T('ちいさな月を ぴょんぴょん わたる 長い コース', 'A long course of tiny moon hops and more.'), par: 160 });
+    // m4：みどりの すいせい（みじかい「すいせい」。じかんぎれはなく、はやいほど ランクが よい）
     const m4 = ['g1m4'];
     [[-25, 100], [-25, 150], [-25, 200], [-25, 250], [-25, 300], [-25, 350]].forEach((c, i) => b.ent('orb', 'home', b.ll('home', c[0], c[1], 1.0), { m: m4, id: 'o' + (i + 1) }));
-    b.ent('launch', 'home', lPos, { m: m4, id: 'L1c', mode: 'star', T: 1.0, arc: 5, to: { b: 'p2', l: b.at('p2', b.to('p2', 'home'), 2.4) } });
+    b.ent('launch', 'home', b.ll('home', 16.7, 90, 0.9), { m: m4.concat('g1hunt'), id: 'L1c', mode: 'star', T: 1.0, arc: 5, to: { b: 'p2', l: b.at('p2', b.to('p2', 'home'), 2.4) } });
     b.ent('shard', 'p2', b.at('p2', b.to('p2', 'home'), 1.0), { m: m4, id: 's4', req: 'orbs' });
-    b.mission({ id: 'g1m4', name: T('みどりの すいせい', 'Meadow Comet'), kind: 'comet', desc: T('せいげん時間の なかで、6つの すいせいのかけらを あつめて、となりの星へ！', 'Collect all 6 comet orbs and reach the next planet before time runs out!'), timer: 32, start: { b: 'home', l: b.ll('home', -25, 50, 0.5), fw: [0, 0, 1] }, shard: 's4', route: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', { to: 'L1c', launch: 1 }, 's4'], par: 30 });
-    // かくれルミ3つを さがす（ハブからの いきさき：はっしゃスターで3つの星）
-    b.d.ents.forEach(e => { if (e.id === 'L1' || e.id === 'L2') e.m = e.m.concat('g1hunt'); });
+    b.mission({ id: 'g1m4', name: T('みどりの すいせい', 'Meadow Comet'), kind: 'comet', desc: T('6つの すいせいのかけらを あつめて、となりの星へ。はやいほど ランクが アップ（じかんぎれは ありません）', 'Collect 6 comet orbs and reach the next planet. Faster means a better rank (no time limit).'), timer: 32, start: { b: 'home', l: b.ll('home', -25, 50, 0.5), fw: [0, 0, 1] }, shard: 's4', route: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', { to: 'L1c', launch: 1 }, 's4'], par: 30 });
+    // かくれルミ3つを さがす
+    b.ent('launch', 'home', b.ll('home', 16.7, 90, 0.9), { m: ['g1hunt'], id: 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: 'p2', l: b.at('p2', b.to('p2', 'home'), 2.4) } });
+    b.ent('launch', 'p2', b.at('p2', b.to('p2', 'p3'), 0.9), { m: ['g1hunt'], id: 'L2', mode: 'star', T: 1.3, arc: 6, to: { b: 'p3', l: b.at('p3', b.to('p3', 'p2'), 2.4) } });
     b.ent('lumi', 'home', b.ll('home', -50, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'p2', b.at('p2', [0.2, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'p3', b.at('p3', [0.5, 1, 0.3], 1.3), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g1hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('3つの星に かくれている ルミを3ひき みつけよう', 'Find the 3 hidden Lumi on the three planets.'), start: { b: 'home', l: b.ll('home', 20, 30, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'L2', launch: 1 }, 'lu3'], par: 40 });
-    // かんばん・すべての ミッションにある もの
-    b.ent('cp', 'home', b.ll('home', -20, 250, 0.2), { id: 'cp1' });
-    b.ent('crate', 'home', b.ll('home', 30, 200, 0.7), { id: 'c1', drop: 'coin' });
     b.d.deco = [{ dir: [-0.5, 0.3, -0.8], r: 40, col: [0.55, 0.8, 0.45], ring: 0 }, { dir: [0.7, 0.4, -0.5], r: 18, col: [0.95, 0.75, 0.4], ring: 1 }, { dir: [0.2, -0.3, 0.9], r: 26, col: [0.5, 0.65, 0.95] }];
     return b.d;
   }
@@ -204,11 +220,12 @@
     ringAround(b, 'cand1', sdir, 1.5, 6, 0.5).forEach((l, i) => b.ent('spike', 'cand1', l, { m: m2, id: 'sp' + (i + 1) }));
     b.ent('coin', 'cand1', b.ll('cand1', 10, 90, 1), { m: m2, id: 'c1' }); b.ent('shard', 'cand1', b.ll('cand1', -30, 90, 1.0), { m: m2, id: 's2' });
     b.mission({ id: 'g4m2', name: T('ほのおスピンで とかせ！', 'Melt It With Fire Spin'), desc: T('ほのおの箱を スピンでわって、ほのおスピン！ アメのトゲを とかして スターシャードへ', 'Pop the fire crate, then fire-spin to melt the candy spikes around the Star Shard.'), start: { b: 'cand1', l: b.ll('cand1', 66, 90, 0.5), fw: [0, 0, 1] }, shard: 's2', route: ['c1', 'fc', { melt: 'sp1', at: 2.4 }, { melt: 'sp2', at: 2.4 }, { melt: 'sp3', at: 2.4 }, { melt: 'sp4', at: 2.4 }, { melt: 'sp5', at: 2.4 }, { melt: 'sp6', at: 2.4 }, 's2'], par: 40 });
-    // m3：スケートで すいせい（大きな星を 1しゅう）
-    const m3 = ['g4m3']; b.ent('crate', 'cand3', b.ll('cand3', 0, 10, 0.7), { m: m3, id: 'sk', drop: 'skate' });
-    for (let i = 0; i < 8; i++) b.ent('orb', 'cand3', b.ll('cand3', 0, 40 + i * 40, 1.0), { m: m3, id: 'o' + (i + 1) });
-    b.ent('shard', 'cand3', b.ll('cand3', 0, 355, 1.0), { m: m3, id: 's3', req: 'orbs' });
-    b.mission({ id: 'g4m3', name: T('スケートすいせい', 'Skater Comet'), kind: 'comet', desc: T('スケートの箱で とっても はやく！ 大きな星を 1しゅうして 8つの すいせいのかけらを あつめよう', 'Grab the skate crate and zoom around the big planet to collect 8 comet orbs in time.'), timer: 11, start: { b: 'cand3', l: b.ll('cand3', 0, 0, 0.5), fw: [0, 0, 1] }, shard: 's3', route: ['sk', 'o1', 'o2', 'o3', 'o4', 'o5', 'o6', 'o7', 'o8', 's3'], par: 20 });
+    // m3：スケートで すきまを とびこえる（スケートがないと とどかない：ちから＝足の速さ）
+    const m3 = ['g4m3']; b.box('sa', [0, 0, 300], [24, 1.5, 6], { rr: 0.6, surf: 'candy', m: m3 }); b.box('sb', [62, 0, 300], [24, 1.5, 6], { rr: 0.6, surf: 'candy', m: m3 });
+    b.ent('crate', 'sa', [-19, 2.3, 0], { m: m3, id: 'sk', drop: 'skate' });
+    [-14, -9, -4, 1].forEach((x, i) => b.ent('orb', 'sa', [x, 2.4, 0], { m: m3, id: 'o' + (i + 1) }));
+    b.ent('coin', 'sb', [-21, 2.4, 0], { m: m3, id: 'bc' }); b.ent('shard', 'sb', [0, 2.4, 0], { m: m3, id: 's3', req: 'orbs' });
+    b.mission({ id: 'g4m3', name: T('スケートで ジャンプ！', 'Skate Leap'), kind: 'comet', desc: T('スケートの箱で はやく走って、ふつうでは とどかない すきまを とびこえよう。はやいほど ランクが アップ', 'Grab the skate crate, run fast and leap the gap that normal jumps cannot cross. Faster means a better rank.'), timer: 20, start: { b: 'sa', l: [-22, 2.0, 0], fw: [1, 0, 0] }, shard: 's3', route: ['sk', 'o1', 'o2', 'o3', 'o4', { to: 'bc', j: 18.0, land: 1, hold: 1 }, 's3'], par: 20 });
     // かくれルミ
     b.ent('lumi', 'cand1', b.ll('cand1', 50, 220, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'cand1', b.ll('cand1', -55, 20, 1.2), { id: 'lu3', n2: 2 }); b.ent('lumi', 'cand2', b.at('cand2', [-0.3, 1, 0.5], 1.2), { id: 'lu2', n2: 1 });
     b.ent('launch', 'cand1', b.at('cand1', b.to('cand1', 'cand2'), 0.9), { m: ['g4hunt'], id: 'LH', mode: 'cannon', T: 1.6, arc: 6, to: { b: 'cand2', l: b.at('cand2', b.to('cand2', 'cand1'), 2.4) } });
@@ -241,7 +258,7 @@
     for (let i = 0; i < 6; i++) b.ent('orb', 'bb1', b.ll('bb1', -20, 60 + i * 55, 1.0), { m: m3, id: 'o' + (i + 1) });
     b.ent('launch', 'bb1', b.at('bb1', b.to('bb1', 'bb2'), 0.9), { m: m3, id: 'Lc', mode: 'star', T: 1.0, arc: 5, to: { b: 'bb2', l: b.at('bb2', b.to('bb2', 'bb1'), 2.4) } });
     b.ent('shard', 'bb2', b.at('bb2', b.to('bb2', 'bb1'), 1.0), { m: m3, id: 's3', req: 'orbs' });
-    b.mission({ id: 'g5m3', name: T('あわの すいせい', 'Bubble Comet'), kind: 'comet', desc: T('せいげん時間の なかで 6つの すいせいのかけらを あつめて、となりの星へ', 'Collect 6 comet orbs and reach the next bubble before time runs out.'), timer: 30, start: { b: 'bb1', l: b.ll('bb1', -20, 20, 0.5), fw: [0, 0, 1] }, shard: 's3', route: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', { to: 'Lc', launch: 1 }, 's3'], par: 30 });
+    b.mission({ id: 'g5m3', name: T('あわの すいせい', 'Bubble Comet'), kind: 'comet', desc: T('6つの すいせいのかけらを あつめて、となりの星へ。はやいほど ランクが アップ', 'Collect 6 comet orbs and reach the next bubble. Faster means a better rank.'), timer: 30, start: { b: 'bb1', l: b.ll('bb1', -20, 20, 0.5), fw: [0, 0, 1] }, shard: 's3', route: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', { to: 'Lc', launch: 1 }, 's3'], par: 30 });
     b.ent('lumi', 'bb1', b.ll('bb1', -50, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'bb2', b.at('bb2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'bb3', b.at('bb3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g5hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('あわの 3つの星の ルミを みつけよう', 'Find the Lumi on the three bubble planets.'), start: { b: 'bb1', l: b.ll('bb1', 25, 10, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'P1', launch: 1 }, 'lu2', { to: 'P2', launch: 1 }, 'lu3'], par: 40 });
     b.d.deco = [{ dir: [-0.5, 0.2, -0.8], r: 44, col: [0.4, 0.8, 0.95], ring: 0 }, { dir: [0.7, 0.5, -0.4], r: 18, col: [0.8, 1, 0.9], ring: 1 }, { dir: [0.0, -0.4, 0.9], r: 20, col: [0.5, 0.6, 1] }];
@@ -274,7 +291,7 @@
     const m4 = ['g6m4'];
     b.ent('boss', 'arena', b.at('arena', [0, 1, 0], 0), { m: m4, id: 'boss', hp: 4, rad: 1.7, spd: 0.55, rs: 14, dbl: 1, stun: 4.6, look: 'guard' });
     b.ent('shard', 'arena', b.at('arena', [0.2, 1, 0.1], 1.0), { m: m4, id: 's4', req: 'boss' }); b.ent('heart', 'arena', b.at('arena', [-1, 0.2, 0.4], 1.0), { m: m4, id: 'hh1' });
-    b.mission({ id: 'g6m4', name: T('ボス ぜんまいガーディアン', 'Boss: Clockwork Guardian'), kind: 'boss', desc: T('2つの衝撃波を ジャンプで よけて、スキだらけの ガーディアンを 4かい たたこう', 'Jump over the double shockwave, then hit the dazed guardian 4 times.'), start: { b: 'arena', l: b.at('arena', [0, -0.5, 0.9], 0.5), fw: [0, 0, 1] }, shard: 's4', route: [{ boss: 1 }, 's4'], par: 120 });
+    b.mission({ id: 'g6m4', name: T('ボス ぜんまいガーディアン', 'Boss: Clockwork Guardian'), kind: 'boss', desc: T('2つの衝撃波を ジャンプで よけて、スキだらけの ガーディアンを 4かい たたこう', 'Jump over the double shockwave, then hit the dazed guardian 4 times.'), start: { b: 'arena', l: b.at('arena', [0, -0.5, 0.9], 0.5), fw: [0, 0, 1] }, shard: 's4', route: [{ boss: 1, max: 7000 }, 's4'], par: 120 });
     b.ent('lumi', 'gr1', b.ll('gr1', -50, 220, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'gd1', [-1.5, 1.5, 3], { id: 'lu2', n2: 1 }); b.ent('lumi', 'gd2', [2.5, 1.5, -2], { id: 'lu3', n2: 2 });
     b.mission({ id: 'g6hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('遺跡と はぐるまの ルミを みつけよう', 'Find the Lumi in the ruins and on the gears.'), start: { b: 'gr1', l: b.ll('gr1', 10, 60, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'lu3', j: 6.5, land: 1 }], par: 40 });
     b.d.deco = [{ dir: [0.5, 0.2, -0.8], r: 46, col: [0.9, 0.7, 0.35], ring: 1 }, { dir: [-0.8, 0.4, 0.3], r: 20, col: [0.7, 0.55, 0.3] }, { dir: [0.1, -0.5, -0.85], r: 14, col: [0.95, 0.85, 0.6] }];
@@ -302,7 +319,7 @@
     b.ent('launch', 'hn1', b.at('hn1', b.to('hn1', 'hn2'), 0.9), { m: m3.concat('g7hunt'), id: 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: 'hn2', l: b.at('hn2', b.to('hn2', 'hn1'), 2.4) } });
     b.ent('walker', 'hn2', b.at('hn2', [0.2, 1, 0.2], 0.6), { m: m3, id: 'w3', look: 'ghost', l0: b.at('hn2', [0.2, 1, 0.2], 0.6), ax: [0, 0, 1], w: 0.9, ph: 1 });
     b.ent('shard', 'hn2', b.at('hn2', b.to('hn2', 'hn1'), 1.0), { m: m3, id: 's3', req: 'lanterns' });
-    b.mission({ id: 'g7m3', name: T('ともしびの すいせい', 'Lantern Comet'), kind: 'comet', desc: T('時間内に 5つの ちょうちんを ともして、となりの星へ！', 'Light 5 lanterns in time, then launch to the next planet!'), timer: 30, start: { b: 'hn1', l: b.ll('hn1', -25, 10, 0.5), fw: [0, 0, 1] }, shard: 's3', route: ['lc1', 'lc2', 'lc3', 'lc4', 'lc5', { to: 'L1', launch: 1 }, 's3'], par: 30 });
+    b.mission({ id: 'g7m3', name: T('ともしびの すいせい', 'Lantern Comet'), kind: 'comet', desc: T('5つの ちょうちんを ともして、となりの星へ！ はやいほど ランクアップ', 'Light 5 lanterns, then launch to the next planet. Faster means a better rank.'), timer: 30, start: { b: 'hn1', l: b.ll('hn1', -25, 10, 0.5), fw: [0, 0, 1] }, shard: 's3', route: ['lc1', 'lc2', 'lc3', 'lc4', 'lc5', { to: 'L1', launch: 1 }, 's3'], par: 30 });
     b.ent('launch', 'hn2', b.at('hn2', b.to('hn2', 'hn3'), 0.9), { m: ['g7hunt'], id: 'L2', mode: 'pipe', T: 1.4, arc: 4, to: { b: 'hn3', l: b.at('hn3', b.to('hn3', 'hn2'), 2.6) } });
     b.ent('lumi', 'hn1', b.ll('hn1', -50, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'hn2', b.at('hn2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'hn3', b.at('hn3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
     b.mission({ id: 'g7hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('くらやみの 3つの星の ルミを みつけよう', 'Find the Lumi in the dark on the three planets.'), start: { b: 'hn1', l: b.ll('hn1', 20, 150, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'L2', launch: 1 }, 'lu3'], par: 40 });
@@ -348,8 +365,12 @@
     { id: 'g8', build: g8, need: 22, theme: 'star', col: '#ffd24a', icon: 'ほ' },
   ];
   const cache = {};
-  function def(id) { if (!cache[id]) cache[id] = id === 'hub' ? hub() : GALAXIES.find(g => g.id === id).build(); return cache[id]; }
+  function def(id) { if (!cache[id]) cache[id] = applyPar(id === 'hub' ? hub() : GALAXIES.find(g => g.id === id).build()); return cache[id]; }
   function compile(E, id) { const k = 'c:' + id; if (!cache[k]) cache[k] = E.compile(def(id)); return cache[k]; }
+  // ボットの記録からつくる、ミッションごとの「さいたん時間」（tools/galaxy-proofs.js が par.js に書く）。せいげん時間はこれより短くならない
+  const PAR = (typeof GalaxyPar !== 'undefined' ? GalaxyPar : (typeof require !== 'undefined' ? (() => { try { return require('./par.js'); } catch (e) { return {}; } })() : {}));
+  const TIER = { hub: 0, g1: 1, g2: 1, g3: 1, g4: 2, g5: 2, g6: 2, g7: 3, g8: 3 };
+  function applyPar(d) { for (const m of d.missions) m.dif = TIER[d.id] == null ? 3 : TIER[d.id]; return d; }
   const G = { GALAXIES, def, compile, ids: ['hub'].concat(GALAXIES.map(g => g.id)), dir, total: () => GALAXIES.reduce((n, g) => n + def(g.id).missions.filter(m => m.kind !== 'hunt').length, 0) };
   if (typeof module !== 'undefined' && module.exports) module.exports = G; else root.GalaxyLevels = G;
 })(typeof window !== 'undefined' ? window : globalThis);

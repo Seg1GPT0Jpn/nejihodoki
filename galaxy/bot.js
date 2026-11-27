@@ -68,7 +68,10 @@
         // はっしゃ台まで歩き、飛んで、着地するまで
         if (h.lau) { bot.launched = true; return inp; }
         if (bot.launched) { if (h.on >= 0 || h.air > 0.4) { if (h.on >= 0) { nextStep(); } } return Object.assign(inp, go(S, h.x)); }
-        const o = go(S, tg.p, { stop: 0.2 }); inp.sx = o.sx; inp.sy = o.sy; reflex(S, inp); return inp;
+        const o = go(S, tg.p, { stop: 0.2 }); inp.sx = o.sx; inp.sy = o.sy; reflex(S, inp);
+        if (st.j != null && h.on >= 0 && V.len(V.sub(tg.p, h.x)) < st.j && !(S.pb & B.J) && !bot.jumped) { bot.jh = 18; bot.jumped = true; }
+        if (bot.jh > 0) { bot.jh--; inp.b |= B.J; }
+        return inp;
       }
       if (st.fly) {
         if (tg.gone) { nextStep(); return inp; }
@@ -80,19 +83,25 @@
       const dist = V.len(V.sub(tg.p, h.x));
       if (!tg.gone) bot.lastP = tg.p;
       if (tg.i >= 0 ? tg.gone : dist < (st.tol || 1.0)) {
-        if (st.land && (h.on < 0 || bot.jh > 0)) { const o = go(S, bot.lastP, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy; if (bot.jh > 0) { bot.jh--; inp.b |= B.J; } return inp; }
+        if (st.land && (h.on < 0 || bot.jh > 0)) { const o = go(S, bot.lastP, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy; if (bot.jh > 0) { bot.jh--; inp.b |= B.J; } else if (st.hold && h.on < 0) inp.b |= B.J; return inp; }
         nextStep(); return bot.act(S);
       }
       const o = go(S, tg.p, { stop: 0.15 }); inp.sx = o.sx; inp.sy = o.sy;
       if (st.j != null && h.on >= 0 && dist < st.j && !(S.pb & B.J) && !(st.once && bot.jumped)) { bot.jh = 18; bot.jumped = true; }
       if (bot.jh > 0) { bot.jh--; if (!(bot.jh === 17 && (S.pb & B.J))) inp.b |= B.J; }
+      else if (st.hold && bot.jumped && h.on < 0) inp.b |= B.J;
       reflex(S, inp); return inp;
     };
     return bot;
   }
+  // skill: { delay（反応のおくれ・フレーム）, noise（スティックのぶれ）, miss（ジャンプを押しそこなう確率）, seed } で「へたなプレイヤー」をまねる
   function run(L, mid, opt) {
-    opt = opt || {}; const S = E.create(L, mid, opt), bot = create(L, mid), rec = [], max = opt.max || 9000;
-    while (!S.over && S.f < max && !bot.fail) { const inp = E.quant(bot.act(S)); rec.push(E.pack(inp)); E.step(S, E.unpack(rec[rec.length - 1])); }
+    opt = opt || {}; const S = E.create(L, mid, opt), bot = create(L, mid), rec = [], max = opt.max || 9000, sk = opt.skill; const q = []; let rs = ((sk && sk.seed) || 1) >>> 0; const rnd = () => { rs = (Math.imul(rs, 1664525) + 1013904223) >>> 0; return rs / 4294967296; };
+    while (!S.over && S.f < max && !bot.fail) {
+      let inp = bot.act(S);
+      if (sk) { q.push(inp); const d = q.length > sk.delay ? q.shift() : { sx: 0, sy: 0, b: 0 }; inp = { sx: d.sx + (rnd() - 0.5) * 2 * sk.noise, sy: d.sy + (rnd() - 0.5) * 2 * sk.noise, b: d.b }; if ((inp.b & B.J) && rnd() < sk.miss) inp.b &= ~B.J; if ((inp.b & B.S) && rnd() < sk.miss * 0.5) inp.b &= ~B.S; }
+      inp = E.quant(inp); rec.push(E.pack(inp)); E.step(S, E.unpack(rec[rec.length - 1]));
+    }
     return { ok: !!(S.res && S.res.ok), S, rec, frames: S.f, fail: bot.fail || (S.res && !S.res.ok ? S.res.why : S.over ? '' : 'timeout'), step: bot.i };
   }
   const GalaxyBot = { create, run };

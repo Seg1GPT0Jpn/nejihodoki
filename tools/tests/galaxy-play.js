@@ -75,7 +75,7 @@ async function keys(env) {
   console.log('3. real keys: walk on the planet, jump, spin, pound');
   const s = await open(env); const p = s.page; await startReal(p, 'g1', 'g1m1'); let a = await st(p);
   const c = LV.compile(E, 'g1').bodies[0]; const x0 = a.x;
-  await holdKeys(p, ['KeyW'], 1500); a = await st(p); check('W runs forward and the hero is on the planet surface', dist(a.x, x0) > 3 && a.on >= 0 && Math.abs(Math.hypot(...a.x) - 7.5) < 0.12, { d: dist(a.x, x0), r: Math.hypot(...a.x), on: a.on });
+  await holdKeys(p, ['KeyW'], 1500); a = await st(p); check('W runs forward and the hero is on the planet surface', dist(a.x, x0) > 3 && a.on >= 0 && Math.abs(Math.hypot(...a.x) - 9.5) < 0.12, { d: dist(a.x, x0), r: Math.hypot(...a.x), on: a.on });
   const up = a.up; await holdKeys(p, ['KeyA'], 700); a = await st(p); check('turning keeps the up-vector on the surface normal', a.up[0] * a.x[0] / Math.hypot(...a.x) + a.up[1] * a.x[1] / Math.hypot(...a.x) + a.up[2] * a.x[2] / Math.hypot(...a.x) > 0.97, a.up);
   const j0 = a.jumps; await p.keyboard.down('Space'); await sleep(p, 120); const mid = await st(p); await p.keyboard.up('Space'); check('Space jumps (leaves the ground, counted)', mid.jumps > j0 && mid.on < 0, mid);
   await wait(p, () => __kb.state().on >= 0); await p.keyboard.down('KeyJ'); await sleep(p, 90); await p.keyboard.up('KeyJ'); await sleep(p, 150); a = await st(p); check('J spins', a.spins >= 1, a);
@@ -90,8 +90,7 @@ async function proofs(env) {
   const s = await open(env); const p = s.page;
   for (const g of LV.GALAXIES) for (const m of LV.def(g.id).missions) {
     const rec = E.unrle(PROOFS[m.id].rec);
-    const r = await p.evaluate(([gid, mid, rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission(gid, mid, { noIntro: true }); __galaxy.skip(); const G0 = __galaxy.G; G0.intro = false; const E = __galaxy.E;
-      for (const n of rec) { const u = E.unpack(n); __galaxy.stepN(1, u); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); const s0 = __kb.state(); __galaxy.release(); return { ok: s0.ok, over: s0.over, frame: s0.frame, result: s0.resultShown, pts: s0.save.pts }; }, [g.id, m.id, rec]);
+    const r = await p.evaluate(([gid, mid, rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission(gid, mid, { noIntro: true }); __galaxy.skip(); const G0 = __galaxy.G; G0.intro = false; __galaxy.runRec(rec); __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); const s0 = __kb.state(); __galaxy.release(); return { ok: s0.ok, over: s0.over, frame: s0.frame, result: s0.resultShown, pts: s0.save.pts }; }, [g.id, m.id, rec]);
     check(`${m.id} (${m.name.en}) is cleared by the recorded inputs; the result opens; the shard (or hunt) is saved`, r.ok && r.over && r.result && r.pts === (m.kind === 'hunt' ? 0 : 1), r);
   }
   await p.evaluate(() => __galaxy.manual(false)); check('no page errors', !s.log.pageErrors.length && !s.log.consoleErrors.length, [...s.log.pageErrors, ...s.log.consoleErrors].slice(0, 3)); await s.close();
@@ -100,7 +99,7 @@ async function proofs(env) {
 async function ending(env) {
   console.log('4b. final boss -> result -> ending credits -> hub; the ending can be watched again from the title');
   const s = await open(env); const p = s.page; const rec = E.unrle(PROOFS.g8m3.rec);
-  await p.evaluate(([rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission('g8', 'g8m3', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (const n of rec) { __galaxy.stepN(1, __galaxy.E.unpack(n)); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); }, [rec]);
+  await p.evaluate(([rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission('g8', 'g8m3', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; __galaxy.runRec(rec); __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); }, [rec]);
   let a = await st(p); check('the final boss result shows "to the ending"', a.resultShown && /エンディング/.test(await p.locator('#rNext').innerText()), await p.locator('#rNext').innerText());
   await p.click('#rNext'); await wait(p, () => !document.getElementById('ovEnd').hidden); const txt = await p.locator('#endRoll').innerText(); check('the credits roll (no music) with the player\'s stats', /26/.test(txt) && txt.length > 120, txt.slice(0, 200)); await shot(p, 'ending');
   const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('final clear is saved (stat) and the shard counted', sv.stats.final === 1 && sv.pts === 1, sv);
@@ -147,7 +146,7 @@ async function saveTest(env) {
   console.log('7. save and reload');
   const s = await open(env); const p = s.page;
   await p.evaluate(() => __galaxy.resetSave()); const rec = E.unrle(PROOFS.g1m1.rec);
-  await p.evaluate(([rec]) => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (const n of rec) { __galaxy.stepN(1, __galaxy.E.unpack(n)); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); }, [rec]);
+  await p.evaluate(([rec]) => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; __galaxy.runRec(rec); __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); }, [rec]);
   let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 26/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
   const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('saved: shard bit, pts, best time, coins', sv.pts === 1 && (sv.sh.g1 & 1) === 1 && sv.bt.g1m1 > 0 && sv.cn >= 5 && sv.stats.clears === 1, sv);
   await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes('1/26'), a.save);
@@ -177,7 +176,7 @@ async function english(env) {
   await p.evaluate(() => __galaxy.openSelect('g3')); await scan('mission list'); await p.click('#selClose'); await p.evaluate(() => __galaxy.showSettings()); await scan('settings'); await p.click('#setClose'); await sleep(p, 200);
   await p.evaluate(() => { __galaxy.unlockAll(); __galaxy.manual(true); __galaxy.startMission('g1', 'g1m4', { noIntro: false }); }); await scan('mission start banner'); await p.evaluate(() => { __galaxy.skip(); __galaxy.G.intro = false; __galaxy.stepN(5); });
   await sleep(p, 300); await scan('hud');
-  await p.evaluate(() => { for (let i = 0; i < 3000 && !__galaxy.S.over; i++) __galaxy.stepN(1, { sx: 0, sy: 0, b: 0 }); __galaxy.stepN(60); }); await scan('failed result (out of time)');
+  await p.evaluate(rec => { __galaxy.startMission('g1', 'g1m4', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; __galaxy.runRec(rec); __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); }, E.unrle(PROOFS.g1m4.rec)); await scan('result with rank');
   const html = await p.evaluate(() => document.documentElement.lang); check('html lang is en', html === 'en');
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors); await s.close();
 }

@@ -153,6 +153,7 @@
       if (bo.st === 'jump' && bo.tg) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, mp = V.add(c, V.mv(R, V.mul(bo.tg, rad + 0.1))), mu = V.norm(V.mv(R, bo.tg)); const pulse = 1 + Math.sin(t * 20) * 0.1; O('ring', mp, E.perp(mu), mu, 2.2 * pulse, [1, 0.3, 0.2], 1); }
       if (bo.st === 'land' && bo.ring > 0) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, bu = V.norm(V.mv(R, bo.d)); const bc = V.add(c, V.mul(bu, rad * Math.cos(bo.ring / rad) + 0.2)), rr = rad * Math.sin(bo.ring / rad); if (rr > 0.1) { const bn2 = bu; O('stonering', bc, E.perp(bn2), bn2, rr, [3, 1.2, 0.3], 1); } }
     }
+    if (h.lau && !fx.rm) { const lu = h.v, sp = V.len(lu); if (sp > 3) { const d = V.norm(lu); for (let k = 0; k < 4; k++) { const off = V.add(V.mul(E.perp(d), (fx.rnd() - 0.5) * 3), V.mul(V.cross(d, E.perp(d)), (fx.rnd() - 0.5) * 3)); fx.trail(V.add(V.add(h.x, V.mul(d, -2 - fx.rnd() * 5)), off), [0.7, 0.85, 1], 0.5 + fx.rnd() * 0.5); } } }
     // ピップ
     if (h.vis !== 0 || !h.lau || h.lau.t >= h.lau.pre) {
       const sq = h.pound === 1 ? [0.8, 1.35, 0.8] : h.pound === 2 ? [1.3, 0.7, 1.3] : (h.on < 0 && !h.lau ? [0.95, 1.08, 0.95] : [1, 1, 1]);

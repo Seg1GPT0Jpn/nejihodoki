@@ -95,7 +95,7 @@ test('lanterns: touching lights them, all lit reveals the shard flag; a ghost wa
 });
 test('shield power absorbs one hit; final boss gets more shockwave rings as it loses hearts', () => {
   const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'spike', b: 'a', l: [0, 6.5, 0] }], missions: [{ id: 'm', start: { p: [0.5, 6.5, 0] } }] }), S = E.create(L, 'm'); S.h.pw = { k: 'shield', t: 99 }; runN(S, 3); eq(S.h.hp, 3, 'no damage'); ok(!S.h.pw, 'shield used'); runN(S, 80); ok(S.h.hp <= 2, 'next hit hurts');
-  const LV = require(path.join(ROOT, 'galaxy/levels.js')), L8 = LV.compile(E, 'g8'); const rings = hp => { const S8 = E.create(L8, 'g8m3'); S8.boss.hp = hp; S8.boss.st = 'land'; S8.boss.t = 1; S8.boss.ring = 0.5; S8.boss.d = [0, 1, 0]; E.step(S8, {}); return S8.boss.nr; };
+  const LV = require(path.join(ROOT, 'galaxy/levels.js')), L8 = LV.compile(E, 'g8'); const rings = hp => { const S8 = E.create(L8, 'g8m3'); S8.boss.hp = hp + S8.boss.xh; S8.boss.st = 'land'; S8.boss.t = 1; S8.boss.ring = 0.5; S8.boss.d = [0, 1, 0]; E.step(S8, {}); return S8.boss.nr; };
   eq(rings(6), 1); eq(rings(4), 2); eq(rings(2), 3);
 });
 run('galaxy-engine');
