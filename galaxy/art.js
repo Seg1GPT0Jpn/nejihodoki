@@ -165,7 +165,7 @@
       const sq = h.pound === 1 ? [0.8, 1.35, 0.8] : h.pound === 2 ? [1.3, 0.7, 1.3] : (h.on < 0 && !h.lau ? [0.95, 1.08, 0.95] : [1, 1, 1]);
       const blink = h.inv > 0 && Math.floor(t * 18) % 2 === 0 && !h.dead; if (!blink && !(h.lau && h.lau.t < h.lau.pre && L.ents[h.lau.i].mode === 'pipe')) {
         const ang = h.spin > 0 ? (1 - h.spin / E.K.SPIN_T) * TAU * 2 : h.lau ? t * 14 : 0; const fw = ang ? V.rodr(h.fw, h.up, ang) : h.fw;
-        const tint = h.pw ? (h.pw.k === 'bee' ? [1.2, 1.15, 0.7] : h.pw.k === 'spring' ? [1.2, 0.9, 0.9] : [0.9, 1, 1.25]) : null;
+        const tint = !h.pw && opt.skin ? opt.skin : h.pw ? (h.pw.k === 'bee' ? [1.2, 1.15, 0.7] : h.pw.k === 'spring' ? [1.2, 0.9, 0.9] : [0.9, 1, 1.25]) : null;
         const tilt = h.on < 0 && !h.lau && h.pound === 0 ? V.add(h.up, V.mul(V.norm(V.sub(h.v, V.mul(h.up, V.dot(h.v, h.up)))), 0.08)) : h.up;
         const sp = V.len(h.v), bob = h.on >= 0 && sp > 2 ? 1 + Math.sin(t * 17) * 0.045 : 1, lean = h.on >= 0 && sp > 2 ? V.add(V.norm(tilt), V.mul(h.fw, Math.min(0.22, sp * 0.03))) : tilt, sq2 = [sq[0] / Math.sqrt(bob), sq[1] * bob, sq[2] / Math.sqrt(bob)];
         const win = S.res && S.res.ok, ex = h.dead || (h.inv > 1.0 && h.inv < 1.7) ? 'eyes_x' : win || h.spin > 0 ? 'eyes_h' : h.pound === 1 || h.hp === 1 && Math.floor(t * 4) % 2 === 0 ? 'eyes_j' : (h.on < 0 && h.v && V.dot(h.v, h.up) > 4) || h.lau ? 'eyes_j' : (Math.sin(t * 2.1) > 0.985 ? 'eyes_b' : 'eyes_o');

@@ -74,6 +74,10 @@ h1 { flex: 1 1 auto; min-width: 0; margin: 0; font: 400 17px var(--kb-font-displ
 #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 #pauseBtn { position: absolute; top: 6px; right: 8px; z-index: 6; width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(255,255,255,.5); background: rgba(10,10,40,.5); color: #fff; display: none; place-items: center; padding: 0; cursor: pointer; }
 body.playing #pauseBtn { display: grid; }
+#mapBtn { position: absolute; top: 6px; right: 60px; z-index: 6; width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(255,255,255,.5); background: rgba(10,10,40,.5); color: #fff; display: none; place-items: center; padding: 0; cursor: pointer; }
+body.playing.inhub #mapBtn { display: grid; }
+body.thumb #mapBtn { display: none !important; }
+#mapBtn svg { width: 22px; height: 22px; }
 #pauseBtn svg { width: 22px; height: 22px; }
 #hud { position: absolute; left: 8px; top: 6px; right: 62px; z-index: 5; display: none; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); font: 800 14px var(--kb-font-body); }
 body.playing #hud { display: block; }
@@ -155,6 +159,13 @@ body.rm .panel, body.rm .overlay, body.rm .shardrow svg.pop { animation: none !i
 @media (max-width: 379px) { h1 { font-size: 15px; } }
 #landTip { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 9; padding: 8px 12px; border-radius: 14px; background: rgba(10,10,40,.88); color: #fff; font-size: 12.5px; font-weight: 800; text-align: center; }
 #landTip .btn { background: rgba(255,255,255,.18); color: #fff; border: 1px solid rgba(255,255,255,.55); box-shadow: none; }
+body.photo header, body.photo #touch, body.photo #pauseBtn, body.photo #mapBtn, body.photo #hud, body.photo #labels, body.photo #banner, body.photo #compass, body.photo #landTip { display: none !important; }
+#photoBar { position: absolute; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 7; display: flex; justify-content: center; align-items: center; gap: 12px; }
+#photoBar[hidden] { display: none; }
+#photoBar button { width: 52px; height: 52px; border-radius: 16px; border: 1px solid rgba(255,255,255,.55); background: rgba(10,10,40,.55); color: #fff; font: 700 15px var(--kb-font-display, sans-serif); cursor: pointer; }
+#photoBar #phShot { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.85); color: #222; border: 4px solid rgba(255,255,255,.4); }
+.pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .pgrid button { padding: 0; border: 1px solid rgba(0,0,0,.2); border-radius: 8px; background: #112; overflow: hidden; aspect-ratio: 3/4; cursor: pointer; } .pgrid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#alBig { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 8px; background: #000; }
 body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip, body.thumb #hud, body.thumb #labels, body.thumb #banner, body.thumb #compass { display: none !important; }
 </style>
 </head>
@@ -173,6 +184,8 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     <div id="hud"><div id="hearts" aria-label="体力" data-i18n-attr="aria-label"></div><div id="hrow"><span id="hShard"></span><span id="hCoin"></span><span id="hTimer" hidden></span></div><div id="mName"></div></div>
     <div id="compass"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L33 33 L20 26 L7 33 Z" fill="#ffd24a" stroke="#6a4400" stroke-width="2.4" stroke-linejoin="round"/></svg></div>
     <div id="banner" hidden></div>
+    <div id="photoBar" hidden><button id="phOut" type="button" aria-label="−">−</button><button id="phShot" type="button" aria-label="Shutter">●</button><button id="phIn" type="button" aria-label="+">+</button><button id="phAl" type="button" aria-label="Album">▦</button><button id="phX" type="button" aria-label="Close">×</button></div>
+    <button id="mapBtn" type="button" aria-label="せいざマップ" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7.6 8.2l3.2 7.8M16.8 7.8l-3.6 8.4M8 7l8-1"/></svg></button>
     <button id="pauseBtn" type="button" aria-label="一時停止" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg></button>
     <div id="toastbar" hidden role="status"></div>
     <div id="touch" aria-label="タッチ操作" data-i18n-attr="aria-label">
@@ -213,6 +226,14 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     <h2 id="mapTitle"></h2>
     <svg id="mapSvg" viewBox="0 0 300 200" style="width:100%;max-height:50vh"></svg>
     <button class="btn sub" id="mapClose" type="button">×</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovAlbum" hidden role="dialog" aria-modal="true" aria-labelledby="alTitle">
+  <div class="panel">
+    <h2 id="alTitle"></h2>
+    <div class="scroll" id="alBody"></div>
+    <button class="btn sub" id="alClose" type="button">×</button>
   </div>
 </div>
 
@@ -280,7 +301,7 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
 const T = KoboI18n.t;
 KoboI18n.add({ en: {
   'ぐるぐる星わたり': "Pip's Planet Hop", 'ゲーム一覧へ戻る': 'Back to games', 'ゲーム一覧へ': 'All games', 'メニュー': 'Menu', 'サウンド': 'Sound', 'サウンド オン': 'Sound on', 'サウンド オフ': 'Sound off', '言語 / Language': 'Language',
-  'ぐるぐる星わたりの画面': 'Game screen', '一時停止': 'Pause', 'タッチ操作': 'Touch controls', '体力': 'Health', 'ジャンプ': 'Jump', 'スピン': 'Spin', 'ドスン': 'Pound',
+  'ぐるぐる星わたりの画面': 'Game screen', '一時停止': 'Pause', 'せいざマップ': 'Constellation Map', 'タッチ操作': 'Touch controls', '体力': 'Health', 'ジャンプ': 'Jump', 'スピン': 'Spin', 'ドスン': 'Pound',
   'ちいさな星をぐるぐる歩いて、重力のむきがかわる宇宙を星わたり！ スターシャードをあつめよう。': 'Run around tiny planets and hop through a universe where gravity changes direction. Collect Star Shards!',
   'ほしみ台へ': 'To the Station', 'あそびかた': 'How to play', 'せってい': 'Settings', 'とじる': 'Close', 'はじめる': 'Start', 'もう一度': 'Again',
   '横向きにすると遊びやすいよ': 'Landscape is easier to play', '横向きにする': 'Rotate the game',
@@ -304,7 +325,7 @@ const GALS = LV.GALAXIES, GNAME = { hub: { ja: 'ほしみ台', en: 'Stargazer De
 
 // ---------- save ----------
 // sh[galaxy]: bit i = mission i's Star Shard. lm[galaxy]: hidden Lumi bits. bt[missionId]: best time (1/60 s). All only grow (merged on sync).
-function newSave() { return { v: 1, pts: 0, sh: {}, lm: {}, bt: {}, rk: {}, cn: 0, cr: 0, un: 0, stats: {}, set: { sens: 1, ac: 1, iy: 0, ahp: 0, anf: 0, asl: 0, rm: 0, lp: 0, tc: 'auto' }, tut: 0 }; }
+function newSave() { return { v: 1, pts: 0, sh: {}, lm: {}, bt: {}, rk: {}, cn: 0, cr: 0, un: 0, stats: {}, set: { sens: 1, ac: 1, iy: 0, ahp: 0, anf: 0, asl: 0, rm: 0, lp: 0, gl: 0, sk: 0, tc: 'auto' }, tut: 0 }; }
 function recompute(s) { let n = 0; for (const g of GALS) n += popc(s.sh[g.id] | 0); s.pts = n; }
 function readSave() {
   let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
@@ -314,7 +335,7 @@ function readSave() {
   if (o.rk && typeof o.rk === 'object') for (const k in o.rk) { const v = Number(o.rk[k]); if (/^g\d{1,2}(m\d|hunt)$/.test(k) && v >= 0 && v <= 3) s.rk[k] = v | 0; }
   s.un = (o.un | 0) & 4095; s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
   if (o.stats && typeof o.stats === 'object') for (const k in o.stats) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0 && /^[a-z0-9_]{1,16}$/.test(k)) s.stats[k] = Math.min(1e9, v | 0); }
-  if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
+  if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.gl = [0, 1, 2].indexOf(+t.gl) >= 0 ? +t.gl : 0; s.set.sk = clamp(t.sk | 0, 0, 5); s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
   s.tut = o.tut ? 1 : 0; recompute(s); return s;
 }
 let save = readSave();
@@ -348,10 +369,11 @@ const lastSnd = {};
 function snd(n) { if (!SND[n]) return; const t = performance.now(); const gap = (n === 'coin' || n === 'orb' || n === 'spin') ? 60 : 45; if (lastSnd[n] && t - lastSnd[n] < gap) return; lastSnd[n] = t; SND[n](); }
 
 // ---------- renderer ----------
+const glowMode = () => /[?&]glow=on\b/.test(location.search) ? 1 : DEBUG && !/[?&]glow=/.test(location.search) ? 2 : save.set.gl | 0;
 const cv = $('cv'); let R = null, fx = new ART.Fx(!!save.set.rm), cw = 320, ch = 200, glOK = true, loadedLv = '';
 function makeRenderer() {
   let r = null; try { r = GLR.create(cv, E, { quality: save.set.lp ? 0 : 2, fixed: !!save.set.lp, preserve: DEBUG }); } catch (e) { r = null; }
-  if (r) { ART.build(r); loadedLv = ''; }
+  if (r) { ART.build(r); r.setGlow(glowMode()); loadedLv = ''; }
   return r;
 }
 function fit() {
@@ -366,7 +388,7 @@ let G = null, mode = 'title', paused = false, acc = 0, last = 0, raf = 0, pm = n
 const camV = { pos: null, f: null, u: null, zoom: 0 };
 function assistOpt() { return { hp: save.set.ahp, nofall: save.set.anf, slow: save.set.asl }; }
 function newRun(gid, mid, o) {
-  o = o || {}; const Lc = ensureLevel(gid), m = Lc.missions[mid];
+  document.body.classList.toggle('inhub', gid === 'hub'); o = o || {}; const Lc = ensureLevel(gid), m = Lc.missions[mid];
   const S = E.create(Lc, mid, { assist: assistOpt(), seed: o.seed });
   loadBodies(Lc, S, gid, mid);
   G = { gid, mid, L: Lc, m, S, it: 0, introDur: 0, doneT: 0, resultShown: false, live: true, seen: {}, lastB: S.h.gb, gateLock: true, hold: 0, rec: [], pend: 0 };
@@ -407,13 +429,25 @@ function unlockCheck() {
   setTimeout(() => { if (G && G.gid === 'hub') { snd('arrive'); showBanner(L('あたらしい ぎんが: ', 'New galaxy: ') + gname(first.id), '', 2600); } }, 600);
 }
 function openMap() {
-  paused = true; padOff(); $('mapTitle').textContent = L('せいざマップ', 'Constellation Map'); const pts = GALS.map((g, i) => { const a = i / GALS.length * Math.PI * 2 - 1.2, r = 40 + (i % 3) * 22; return [150 + Math.cos(a) * (r + 40), 100 + Math.sin(a) * (r * 0.8 + 10)]; });
-  let h = '<circle cx="150" cy="100" r="6" fill="#ffd54a"/>';
-  GALS.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<line x1="150" y1="100" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="' + (ok ? '#9fd8ff' : '#556') + '" stroke-width=".8" stroke-dasharray="' + (ok ? '' : '2 2') + '"/>'; if (i) h += '<line x1="' + pts[i - 1][0].toFixed(1) + '" y1="' + pts[i - 1][1].toFixed(1) + '" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="#345" stroke-width=".6"/>'; });
-  GALS.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<g data-g="' + g.id + '" style="cursor:pointer"><circle cx="' + pts[i][0].toFixed(1) + '" cy="' + pts[i][1].toFixed(1) + '" r="' + (ok ? 7 : 5) + '" fill="' + (ok ? '#7fd0ff' : '#445') + '"/><text x="' + pts[i][0].toFixed(1) + '" y="' + (pts[i][1] + 15).toFixed(1) + '" font-size="6" fill="#fff" text-anchor="middle">' + esc(gname(g.id)) + (ok ? '' : ' ★' + g.need) + '</text></g>'; });
-  $('mapSvg').innerHTML = h; $('mapSvg').querySelectorAll('g').forEach(g => { g.onclick = () => { $('ovMap').hidden = true; selG = g.dataset.g; openSelect(selG); }; });
+  paused = true; padOff(); $('mapTitle').textContent = L('せいざマップ', 'Constellation Map');
+  const N = GALS.length, pts = GALS.map((g, i) => { const a = i / N * Math.PI * 2 - Math.PI / 2, r = 62 + (i % 2) * 18, w = 1 + (i % 3) * 0.04; return [150 + Math.cos(a) * (r + 30) * w, 100 + Math.sin(a) * (r * 0.78 + 8)]; });
+  const col = g => { const d = LV.def(g.id).deco && LV.def(g.id).deco[0], c = d ? d.col : [0.5, 0.7, 1]; return 'rgb(' + c.map(v => Math.round(Math.min(1, v) * 255)).join(',') + ')'; };
+  const next = GALS.filter(g => g.need > save.pts).sort((a, b) => a.need - b.need)[0];
+  let h = '<defs><radialGradient id="mg"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="300" height="200" fill="#0b0b2a" rx="10"/>';
+  for (let i = 0; i < 46; i++) { const x = (i * 97 % 300), y = (i * 53 % 200), r = 0.4 + (i % 3) * 0.3; h += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff" opacity="' + (0.25 + (i % 4) * 0.15) + '"/>'; }
+  h += '<circle cx="150" cy="100" r="9" fill="url(#mg)"/><circle cx="150" cy="100" r="3.2" fill="#ffd54a"/><text x="150" y="116" font-size="5.5" fill="#ffe9a0" text-anchor="middle">' + esc(L('ほしみ台', 'Deck')) + '</text>';
+  GALS.forEach((g, i) => { const ok = galUnlocked(g.id); h += '<line x1="150" y1="100" x2="' + pts[i][0].toFixed(1) + '" y2="' + pts[i][1].toFixed(1) + '" stroke="' + (ok ? '#9fd8ff' : '#445') + '" stroke-width=".5" opacity=".6"' + (ok ? '' : ' stroke-dasharray="1.5 2"') + '/>'; const j = (i + 1) % N; h += '<line x1="' + pts[i][0].toFixed(1) + '" y1="' + pts[i][1].toFixed(1) + '" x2="' + pts[j][0].toFixed(1) + '" y2="' + pts[j][1].toFixed(1) + '" stroke="' + (ok && galUnlocked(GALS[j].id) ? '#7fb4ff' : '#334') + '" stroke-width=".7" opacity=".7"/>'; });
+  GALS.forEach((g, i) => { const ok = galUnlocked(g.id), d = LV.def(g.id), tot = d.missions.filter(m => m.kind !== 'hunt').length, got = popc(save.sh[g.id] | 0), x = pts[i][0].toFixed(1), y = pts[i][1].toFixed(1), c = col(g), isNext = next && next.id === g.id, full = got >= tot;
+    h += '<g data-g="' + g.id + '" style="cursor:pointer" tabindex="0" role="button" aria-label="' + esc(gname(g.id)) + '">'
+      + (ok ? '<circle cx="' + x + '" cy="' + y + '" r="13" fill="' + c + '" opacity=".22"/>' : '') + (isNext ? '<circle cx="' + x + '" cy="' + y + '" r="11" fill="none" stroke="#ffd54a" stroke-width="1" stroke-dasharray="2 2"><animate attributeName="r" values="9;13;9" dur="2.4s" repeatCount="indefinite"/></circle>' : '')
+      + '<circle cx="' + x + '" cy="' + y + '" r="' + (ok ? 7 : 5.5) + '" fill="' + (ok ? c : '#3b3d5c') + '" stroke="' + (full ? '#ffd54a' : '#fff') + '" stroke-width="' + (full ? 1.6 : 0.6) + '"/>'
+      + (ok ? '' : '<text x="' + x + '" y="' + (+y + 2.2).toFixed(1) + '" font-size="6" text-anchor="middle" fill="#fff">🔒</text>')
+      + '<text x="' + x + '" y="' + (+y + 15.5).toFixed(1) + '" font-size="5.6" fill="#fff" text-anchor="middle">' + esc(gname(g.id)) + '</text>'
+      + '<text x="' + x + '" y="' + (+y + 22).toFixed(1) + '" font-size="5" fill="' + (ok ? '#ffe9a0' : '#9aa') + '" text-anchor="middle">' + (ok ? '★ ' + got + '/' + tot : '★ ' + g.need) + '</text></g>'; });
+  $('mapSvg').innerHTML = h; $('mapSvg').querySelectorAll('g[data-g]').forEach(g => { g.onclick = () => { $('ovMap').hidden = true; selG = g.dataset.g; openSelect(selG); }; });
   $('ovMap').hidden = false; snd('tap');
 }
+$('mapBtn').addEventListener('click', () => { if (mode === 'hub' && !paused) openMap(); });
 $('mapClose').onclick = () => { $('ovMap').hidden = true; paused = false; acc = 0; kick(); };
 function endRun(reason) {
   if (!G || !G.live) return; G.live = false; if (mode !== 'play' && mode !== 'result') return;
@@ -525,6 +559,39 @@ $('landGo').onclick = () => { store.set(TIP_KEY, '1'); if (window.KoboOrient) Ko
 let toastT = 0, bannerT = 0;
 function toast(msg, ms) { const el = $('toastbar'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 1800); const lv = $('live'); lv.textContent = msg; }
 function showBanner(a, b, ms) { const el = $('banner'); el.innerHTML = '<b>' + esc(a) + '</b><small>' + esc(b || '') + '</small>'; el.hidden = false; clearTimeout(bannerT); bannerT = setTimeout(() => { el.hidden = true; }, ms || 2200); }
+
+// ---------- costumes (unlocked by Star Shards) and photo mode (local album) ----------
+const COSTUMES = [
+  { need: 0, ja: 'ふつうのピップ', en: 'Classic Pip', tint: null },
+  { need: 6, ja: 'もも', en: 'Peach', tint: [1.25, 0.85, 0.82] },
+  { need: 12, ja: 'ミント', en: 'Mint', tint: [0.8, 1.2, 1.0] },
+  { need: 20, ja: 'そら', en: 'Sky', tint: [0.8, 0.95, 1.3] },
+  { need: 30, ja: 'きん', en: 'Gold', tint: [1.4, 1.15, 0.55] },
+  { need: 42, ja: 'よぞら', en: 'Midnight', tint: [0.6, 0.6, 0.95] }];
+const skinOk = i => save.pts >= COSTUMES[i].need || DBG_UNLOCK;
+const curSkin = () => { const i = save.set.sk | 0; return skinOk(i) ? COSTUMES[i].tint : null; };
+const ALBUM_KEY = 'kusoge.galaxy.album';
+function loadAlbum() { try { const a = JSON.parse(store.get(ALBUM_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => x && typeof x.u === 'string' && x.u.startsWith('data:image/')).slice(0, 12) : []; } catch (e) { return []; } }
+function saveAlbum(a) { try { store.set(ALBUM_KEY, JSON.stringify(a.slice(0, 12))); return true; } catch (e) { return false; } }
+let photo = false, photoZ = 0, phDrag = null;
+function startPhoto() { if (!G || !R) return; photo = true; photoZ = 0; document.body.classList.add('photo'); $('photoBar').hidden = false; paused = true; }
+function endPhoto() { photo = false; document.body.classList.remove('photo'); $('photoBar').hidden = true; const kg = KG(); if (kg) kg.menuClosed(); resumeGame(); }
+function shutter() {
+  if (!R) return; snd('arrive'); $('flash').style.opacity = '0.6';
+  R.snap(c => { try { const w = Math.min(540, c.width), hh = Math.round(c.height * w / c.width), t = document.createElement('canvas'); t.width = w; t.height = hh; t.getContext('2d').drawImage(c, 0, 0, w, hh); const u = t.toDataURL('image/jpeg', 0.72); const al = loadAlbum(); al.unshift({ u, g: G ? G.gid : '', t: Date.now() }); const ok = saveAlbum(al); stat('photos', 1); writeSave(); toast(ok ? L('アルバムに うつしたよ！', 'Saved to the album!') : L('アルバムが いっぱいです', 'The album is full')); } catch (e) { toast(L('しゃしんを とれませんでした', 'Could not take the photo')); } });
+}
+function showAlbum() {
+  const al = loadAlbum(); paused = true; $('alTitle').textContent = L('フォトアルバム', 'Photo album') + ' ' + al.length + '/12';
+  const grid = () => { $('alBody').innerHTML = al.length ? '<div class="pgrid">' + al.map((p, i) => '<button type="button" data-i="' + i + '" aria-label="' + esc(L('しゃしん', 'Photo')) + ' ' + (i + 1) + '"><img alt="" src="' + p.u + '"></button>').join('') + '</div>' : '<p>' + esc(L('まだ しゃしんが ないよ。ポーズメニューの「しゃしんモード」で とろう', 'No photos yet. Use Photo mode from the pause menu.')) + '</p>'; $('alBody').querySelectorAll('button[data-i]').forEach(b => { b.onclick = () => big(+b.dataset.i); }); };
+  const big = i => { const p = al[i]; $('alBody').innerHTML = '<img id="alBig" alt="" src="' + p.u + '"><a class="btn" download="pip-' + (p.t || i) + '.jpg" href="' + p.u + '">' + esc(L('ほぞんする', 'Save')) + '</a><button class="btn sub" id="alDel" type="button">' + esc(L('けす', 'Delete')) + '</button><button class="btn sub" id="alBack" type="button">' + esc(L('もどる', 'Back')) + '</button>'; $('alDel').onclick = () => { al.splice(i, 1); saveAlbum(al); $('alTitle').textContent = L('フォトアルバム', 'Photo album') + ' ' + al.length + '/12'; grid(); }; $('alBack').onclick = grid; };
+  grid(); $('ovAlbum').hidden = false;
+}
+$('alClose').onclick = () => { $('ovAlbum').hidden = true; if (photo) return; if (mode === 'hub' || mode === 'play') { paused = false; acc = 0; kick(); } };
+$('phShot').onclick = shutter; $('phX').onclick = endPhoto; $('phAl').onclick = showAlbum; $('phIn').onclick = () => { photoZ = Math.max(-4, photoZ - 3); }; $('phOut').onclick = () => { photoZ = Math.min(30, photoZ + 4); };
+cv.addEventListener('pointerdown', e => { if (photo) phDrag = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
+cv.addEventListener('pointermove', e => { if (!photo || !phDrag || e.pointerId !== phDrag.id || !G) return; const S = G.S, dx = e.clientX - phDrag.x, dy = e.clientY - phDrag.y; phDrag.x = e.clientX; phDrag.y = e.clientY; S.cam.fw = V.norm(V.rodr(S.cam.fw, S.cam.up, -dx * 0.007)); S.cam.pitch = clamp(S.cam.pitch + dy * 0.005, 0.05, 1.25); });
+cv.addEventListener('pointerup', () => { phDrag = null; }); cv.addEventListener('pointercancel', () => { phDrag = null; });
+function startFlyby() { if (!G || G.gid === 'hub' || mode !== 'play') return; const kg = KG(); if (kg) kg.menuClosed(); G.fly = true; G.intro = true; G.it = 0; G.introDur = save.set.rm ? 0.6 : 5.5; resumeGame(); }
 function skipIntro() { if (G && G.intro && mode === 'play') { G.it = G.introDur; } }
 
 // ---------- loop ----------
@@ -532,8 +599,9 @@ function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFr
 function frame(ts) {
   raf = 0; const rawDt = ts - last, dt = Math.min(100, rawDt); last = ts;
   if (R) R.adapt(clamp(rawDt, 4, 100));
+  if (R) R.state.wide = !!(G && G.intro);
   if ((mode === 'play' || mode === 'hub') && G && !paused && !MANUAL) {
-    if (G.intro) { G.it += dt / 1000; if (G.it >= G.introDur) { G.intro = false; showBanner(mname(G.m), '', 1300); } }
+    if (G.intro) { G.it += dt / 1000; if (G.it >= G.introDur) { G.intro = false; if (!G.fly) showBanner(mname(G.m), '', 1300); G.fly = false; camV.pos = null; } }
     else {
       acc += dt; let n = 0; padIn = readPad();
       while (acc >= STEP && n < 5) { stepOnce(); acc -= STEP; n++; if (mode !== 'play' && mode !== 'hub') break; }
@@ -570,19 +638,23 @@ function onEvents(S) {
 }
 function render(dt) {
   if (!R || !G) return; const S = G.S, t = performance.now() / 1000;
-  const cam = camera(S, dt, t), objs = ART.scene(S, t, fx, { locked: lockedMap(), unlockAnim: G.unlockAnim | 0 });
+  const cam = camera(S, dt, t), objs = ART.scene(S, t, fx, { locked: lockedMap(), unlockAnim: G.unlockAnim | 0, skin: curSkin() });
   const parts = fx.fill(); if (fx.flash > 0) $('flash').style.opacity = String(Math.min(0.55, fx.flash * 0.6)); else if ($('flash').style.opacity !== '0') $('flash').style.opacity = '0';
   R.state.blur = save.set.rm ? 0 : Math.min(1, (camV.lz || 0) * 1.1); R.render({ cam, t: save.set.rm ? 0 : t, xf: S.xf, objs, parts, on: S.L.bodies.map((b, bi) => E.bodyActive(S, bi)) });
   if (G.gid === 'hub') { $('labels').hidden = false; hubLabels(); } else $('labels').hidden = true;
 }
 const lockedMap = () => { const o = {}; for (const g of GALS) o[g.id] = !galUnlocked(g.id); return o; };
 function camera(S, dt, t) {
-  const out = S.over && S.res && S.res.ok ? Math.min(1, G.doneT / 90) : 0; const lz = S.h.lau && S.L.ents[S.h.lau.i].lane && S.h.lau.t > S.h.lau.pre ? 1 : 0; camV.lz = (camV.lz || 0) + (lz - (camV.lz || 0)) * Math.min(1, dt * 3); const want = 7.6 + camV.zoom * 4.2 + camV.lz * 11 + out * 16 + (S.h.pw && S.h.pw.k === 'bee' ? 0.5 : 0), pose = E.camPose(S, want, S.cam.pitch);
+  const out = S.over && S.res && S.res.ok ? Math.min(1, G.doneT / 90) : 0; const lz = S.h.lau && S.L.ents[S.h.lau.i].lane && S.h.lau.t > S.h.lau.pre ? 1 : 0; camV.lz = (camV.lz || 0) + (lz - (camV.lz || 0)) * Math.min(1, dt * 3); const want = 7.6 + camV.zoom * 4.2 + camV.lz * 11 + (photo ? photoZ : 0) + out * 16 + (S.h.pw && S.h.pw.k === 'bee' ? 0.5 : 0), pose = E.camPose(S, want, S.cam.pitch);
   camV.zoom = Math.max(0, camV.zoom - dt * 0.9);
   // the camera pulls in at once when a wall is behind it, and eases back out slowly
   const dirv = V.norm(V.sub(pose.pos, pose.tgt)); camV.d = camV.d == null || !camV.pos ? pose.dist : (pose.dist < camV.d ? pose.dist : Math.min(pose.dist, camV.d + dt * 5));
   let pos = V.add(pose.tgt, V.mul(dirv, camV.d)), f = pose.fw, u = pose.up;
-  if (G.intro && mode === 'play') { // the fly-in: far away -> over the goal -> down to the hero
+  if (G.intro && G.fly && mode === 'play') { // the fly-by: hero -> pull back to the whole galaxy -> back to the hero
+    const k = clamp(G.it / G.introDur, 0, 1), ez = x => x * x * (3 - 2 * x), bodies = S.L.bodies; let c = [0, 0, 0]; for (const b of bodies) c = V.add(c, b.p); c = V.mul(c, 1 / bodies.length); let rad = 0; for (const b of bodies) rad = Math.max(rad, V.len(V.sub(b.p, c)) + b.br);
+    const e = ez(Math.min(1, Math.sin(Math.PI * k) * 1.3)), ang = 0.6 + k * 1.5, far = V.add(c, V.mul(V.norm([Math.sin(ang), 0.5, Math.cos(ang)]), rad * 1.0 + 30));
+    pos = V.add(V.mul(pose.pos, 1 - e), V.mul(far, e)); f = V.norm(V.sub(V.add(V.mul(pose.tgt, 1 - e), V.mul(c, e)), pos)); u = V.norm(V.add(V.mul(pose.up, 1 - e), V.mul([0, 1, 0], e)));
+  } else if (G.intro && mode === 'play') { // the fly-in: far away -> over the goal -> down to the hero
     const k = clamp(G.it / G.introDur, 0, 1), ez = x => x * x * (3 - 2 * x), bodies = S.L.bodies; let c = [0, 0, 0]; for (const b of bodies) c = V.add(c, b.p); c = V.mul(c, 1 / bodies.length); let rad = 0; for (const b of bodies) rad = Math.max(rad, V.len(V.sub(b.p, c)) + b.br);
     let fp = c, fu = [0, 1, 0]; const si = G.m.shard ? S.L.eidx[G.m.shard] : null; if (si != null) { fp = E.entPos(S, si); fu = E.entUp(S, si); } else if (S.boss) { fp = E.bossPos(S); fu = V.norm(V.sub(fp, S.xf[S.L.ents[S.boss.i].bi].p)); }
     const ang = 2.2 * (1 - k) + 0.5, far = V.add(c, V.mul(V.norm([Math.sin(ang), 0.55, Math.cos(ang)]), rad * 1.1 + 26)), mid = V.add(fp, V.add(V.mul(fu, 9), V.mul(E.perp(fu), 9)));
@@ -622,7 +694,7 @@ function compass() {
 }
 
 // ---------- overlays ----------
-const OVS = ['ovTitle', 'ovMap', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
+const OVS = ['ovTitle', 'ovAlbum', 'ovMap', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
 function hideOverlays() { OVS.forEach(id => { $(id).hidden = true; }); }
 const anyOverlay = () => OVS.some(id => !$(id).hidden);
 function showTitle() {
@@ -659,11 +731,14 @@ function showSettings() {
     '<div class="og"><div class="ol">' + esc(L('たすけ：すいせいチャレンジの時間を1.6ばい', 'Assist: slower comets (1.6x time)')) + '</div>' + onoff('asl') + '</div>' +
     '<div class="og"><div class="ol">' + esc(L('うごきをへらす（ゆれ・光・演出）', 'Reduce motion (shake, flashes, fly-ins)')) + '</div>' + onoff('rm') + '</div>' +
     '<div class="og"><div class="ol">' + esc(L('かるい描画（低電力モード）', 'Light graphics (low power)')) + '</div>' + onoff('lp') + '</div>' +
+    '<div class="og"><div class="ol">' + esc(L('ピップの ふく', 'Pip\'s costume')) + '</div><div class="seg" id="skSeg" role="group">' + COSTUMES.map((c, i) => '<button class="opt" type="button" data-v="' + i + '"' + (skinOk(i) ? '' : ' disabled') + ' aria-pressed="' + ((save.set.sk | 0) === i) + '">' + esc(L(c.ja, c.en)) + (skinOk(i) ? '' : ' ★' + c.need) + '</button>').join('') + '</div></div>' +
+    '<div class="og"><div class="ol">' + esc(L('ひかりのにじみ（ブルーム）', 'Glow (bloom)')) + '</div>' + seg('gl', [[0, L('じどう', 'Auto')], [1, L('オン', 'On')], [2, L('オフ', 'Off')]]) + '</div>' +
     '<div class="og"><div class="ol">' + esc(L('タッチ操作ボタン', 'Touch buttons')) + '</div>' + seg('tc', [['auto', L('じどう', 'Auto')], ['on', L('出す', 'Show')], ['off', L('出さない', 'Hide')]]) + '</div>' +
     (window.KoboOrient ? '<div class="og"><div class="ol">' + esc(L('画面のむき', 'Screen orientation')) + '</div><div class="seg" id="oOri" role="group"></div><p>' + esc(L('スマホが回らないときは「よこ きょうせい」で、画面ごと回して出します。', 'If your phone will not rotate, “Landscape” turns the whole game for you.')) + '</p></div>' : '') +
     '<p>' + esc(L('たすけは、ミッションの始めから効きます。ランキングのスターシャード数は、たすけを使っても変わりません。', 'Assists apply from the start of a mission. Star Shard counts are the same with assists on.')) + '</p>';
+  $('skSeg').querySelectorAll('.opt').forEach(b => { b.onclick = () => { save.set.sk = Number(b.dataset.v); writeSave(); $('skSeg').querySelectorAll('.opt').forEach(o => o.setAttribute('aria-pressed', String(o === b))); }; });
   $('setBody').querySelectorAll('.seg[data-k]').forEach(sg => sg.querySelectorAll('.opt').forEach(b => { b.onclick = () => {
-    const k = sg.dataset.k, v = b.dataset.v; save.set[k] = (k === 'tc') ? v : Number(v); writeSave(); if (k === 'tc') showTouch(); if (k === 'rm') { fx.rm = !!save.set.rm; document.body.classList.toggle('rm', !!save.set.rm); } if (k === 'lp' && R) R.setQuality(save.set.lp ? 0 : 2, !!save.set.lp);
+    const k = sg.dataset.k, v = b.dataset.v; save.set[k] = (k === 'tc') ? v : Number(v); writeSave(); if (k === 'tc') showTouch(); if (k === 'rm') { fx.rm = !!save.set.rm; document.body.classList.toggle('rm', !!save.set.rm); } if (k === 'lp' && R) R.setQuality(save.set.lp ? 0 : 2, !!save.set.lp); if (k === 'gl' && R) R.setGlow(glowMode());
     sg.querySelectorAll('.opt').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
   }; }));
   if (window.KoboOrient && $('oOri')) { const el = $('oOri'); const draw = () => { el.innerHTML = KoboOrient.MODES.map(m => '<button class="opt" type="button" data-v="' + m + '" aria-pressed="' + (KoboOrient.get() === m) + '">' + esc(L(ORI_NAMES[m][0], ORI_NAMES[m][1])) + '</button>').join(''); el.querySelectorAll('.opt').forEach(b => { b.onclick = () => { if (KoboOrient.get() === b.dataset.v) return; if (G && mode === 'play' && !confirm(T('ミッションをやめて、画面のむきをかえますか？'))) return; KoboOrient.set(b.dataset.v); draw(); }; }); }; draw(); }
@@ -723,8 +798,11 @@ function openPause() {
   if (!UI || (mode !== 'play' && mode !== 'hub') || (pm && pm.isOpen)) return;
   paused = true; padOff(); down.clear();
   const extra = [];
+  if (G && G.gid !== 'hub' && !G.S.over) extra.push({ label: L('ぎんがを みわたす', 'Galaxy view'), icon: 'menu', onClick: () => { pm.close(); startFlyby(); } });
   if (G && G.gid !== 'hub') extra.push({ label: L('ほしみ台へ もどる', 'Back to the Station'), icon: 'menu', onClick: () => { pm.close(); const g = G.gid; endRun('quit'); enterHub({ from: g }); } });
   else { extra.push({ label: L('ぎんがを えらぶ', 'Choose a galaxy'), icon: 'menu', onClick: () => { pm.close(); openSelect(selG); } }); extra.push({ label: L('せいざマップ', 'Constellation Map'), icon: 'menu', onClick: () => { pm.close(); openMap(); } }); }
+  if (G && !(G.intro)) extra.push({ label: L('しゃしんモード', 'Photo mode'), icon: 'menu', onClick: () => { pm.close(); startPhoto(); } });
+  extra.push({ label: L('フォトアルバム', 'Photo album'), icon: 'menu', onClick: () => { pm.close(); showAlbum(); } });
   extra.push({ label: L('せってい', 'Settings'), icon: 'settings', onClick: () => { pm.close(); showSettings(); } });
   extra.push({ label: L('あそびかた', 'How to play'), icon: 'help', onClick: () => { pm.close(); showHowto(false); } });
   pm = UI.pauseMenu({ title: T('一時停止'), home: '../', extra, onSettings: false, onRestart: G && G.gid !== 'hub' ? () => restartMission() : null, confirmRestart: false,
