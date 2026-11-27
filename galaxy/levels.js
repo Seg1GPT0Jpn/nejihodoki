@@ -195,7 +195,7 @@
 
   // ================== 2. こおりのひんやり星ぐん ==================
   function g2() {
-    const b = Builder('g2', T('こおりの ひんやり星ぐん', 'Frost Drift'), 'ice', { n1: [0.06, 0.22, 0.55], n2: [0.55, 0.85, 0.95], band: [0.7, 0.6, 0.2], sun: [-0.5, 0.45, -0.7], sunc: [0.85, 0.95, 1], stars: 1 });
+    const b = Builder('g2', T('こおりの ひんやり星ぐん', 'Frost Drift'), 'ice', { n1: [0.06, 0.22, 0.55], n2: [0.55, 0.85, 0.95], band: [0.7, 0.6, 0.2], sun: [-0.5, 0.45, -0.7], sunc: [0.85, 0.95, 1], stars: 1, aur: [0.3, 1, 0.7] });
     b.sph('ice1', [0, 0, 0], 9, { surf: 'ice' });
     b.box('slab', [40, 0, 0], [10, 1.5, 10], { rr: 1, surf: 'stone' });
     b.box('ceil', [40, 18, 0], [8, 1, 8], { rr: 0.8, surf: 'stone' });
@@ -408,7 +408,7 @@
 
   // ================== 8. ほしの おうかん（ラスト） ==================
   function g8() {
-    const b = Builder('g8', T('ほしの おうかん', 'Crown of Stars'), 'star', { n1: [0.2, 0.1, 0.5], n2: [1, 0.85, 0.4], band: [0.3, 0.8, 0.5], sun: [0.5, 0.6, -0.6], sunc: [1, 0.95, 0.8], stars: 1.2 });
+    const b = Builder('g8', T('ほしの おうかん', 'Crown of Stars'), 'star', { n1: [0.2, 0.1, 0.5], n2: [1, 0.85, 0.4], band: [0.3, 0.8, 0.5], sun: [0.5, 0.6, -0.6], sunc: [1, 0.95, 0.8], stars: 1.2, lens: [0.1, 0.35, 0.93, 0.22] });
     b.sph('fs1', [0, 0, 0], 8, { surf: 'star' }); b.sph('fs2', [30, 0, 0], 6, { surf: 'star' }); b.sph('fs3', [60, 5, 0], 5, { surf: 'metal' }); b.sph('fs4', [90, 0, 0], 6, { surf: 'star', ring: 1 });
     b.sph('ba', [0, 0, 200], 5, { surf: 'star' }); b.sph('bb', [19.5, 0, 200], 5.5, { surf: 'star' }); b.sph('arena', [0, 0, 300], 12, { surf: 'star' });
     // m1：ほしのみち（ハチで 大きな すきまを わたる）
@@ -458,7 +458,7 @@
   }
 
   function g11() {
-    const b = Builder('g11', T('きらきら すいしょうの どうくつ', 'Crystal Cavern'), 'ice', { n1: [0.25, 0.1, 0.45], n2: [0.4, 0.9, 0.9], band: [0.5, 0.4, 0.7], sun: [-0.3, 0.5, -0.7], sunc: [0.7, 0.8, 1], stars: 1, dark: 1 });
+    const b = Builder('g11', T('きらきら すいしょうの どうくつ', 'Crystal Cavern'), 'ice', { n1: [0.25, 0.1, 0.45], n2: [0.4, 0.9, 0.9], band: [0.5, 0.4, 0.7], sun: [-0.3, 0.5, -0.7], sunc: [0.7, 0.8, 1], stars: 1, dark: 1, aur: [0.6, 0.4, 1] });
     course(b, 'g11m1', [{ k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'flip' }, { k: 'pullgap' }, { k: 'bridge' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'flip' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'bridge' }], { surf: 'crystal', hz: 1, name: T('どうくつの さかさま', 'Upside-Down Cavern'), desc: T('重力が さかさまになる ゾーンと ひっぱる場の ながい どうくつ', 'A long cavern of gravity-flip zones and pull fields.'), par: 170 });
     course(b, 'g11m2', [{ k: 'lamp', n: 5, w: 4 }, { k: 'bridge' }, { k: 'pullgap' }, { k: 'lamp', n: 5, w: 4 }, { k: 'rail' }, { k: 'flip' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'pullgap' }, { k: 'lamp', n: 5, w: 4 }], { surf: 'crystal', hz: 1, name: T('きらめく ちょうちん', 'Glittering Lanterns'), desc: T('くらい どうくつで ちょうちんを ともして すすむ ながい たび', 'Light lanterns through the dark crystal cave.'), par: 170 });
     course(b, 'g11m3', [{ k: 'flip' }, { k: 'bridge' }, { k: 'lamp', n: 5, w: 4 }, { k: 'pullgap' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'rail' }, { k: 'flip' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'boss', r: 11, boss: { hp: 5, spd: 0.5, rs: 12, dblAt: 3, triAt: 2, stun: 5.2, look: 'king', charge: 1 } }], { surf: 'crystal', hz: 1, kind: 'boss', name: T('ボス クリスタルゴーレム', 'Boss: Crystal Golem'), desc: T('衝撃波が だんだん ふえて、突進もしてくる！ スキを スピンで 5かい', 'Shockwaves multiply and it charges too. Spin it 5 times when it is dazed.'), par: 240 });
@@ -469,7 +469,7 @@
   }
 
   function g12() {
-    const b = Builder('g12', T('ふかい うみの みぞ', 'Deep Trench'), 'ocean', { n1: [0.02, 0.12, 0.35], n2: [0.15, 0.6, 0.8], band: [0.6, 0.6, 0.3], sun: [0.2, 0.8, -0.5], sunc: [0.7, 0.95, 1], stars: 0.8, dark: 1 });
+    const b = Builder('g12', T('ふかい うみの みぞ', 'Deep Trench'), 'ocean', { n1: [0.02, 0.12, 0.35], n2: [0.15, 0.6, 0.8], band: [0.6, 0.6, 0.3], sun: [0.2, 0.8, -0.5], sunc: [0.7, 0.95, 1], stars: 0.8, dark: 1, lens: [-0.7, 0.3, 0.65, 0.2] });
     course(b, 'g12m1', [{ k: 'swing' }, { k: 'walk', r: 10, laps: 3, w: 4 }, { k: 'updraft' }, { k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'swing' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'bridge' }], { surf: 'water', hz: 5, name: T('うずまく みぞ', 'Whirling Trench'), desc: T('ゆれる月と ふきあげで ふかい うみの みぞを すすむ ながい たび', 'Swinging moons and updrafts in a deep ocean trench.'), par: 170 });
     course(b, 'g12m2', [{ k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'bridge' }, { k: 'swing' }, { k: 'updraft' }, { k: 'pullgap' }, { k: 'crumble', n: 5, phase: 1 }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'rail' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'swing' }], { surf: 'water', hz: 5, name: T('ふかい あわの みち', 'Deep Bubble Road'), desc: T('パイプと ひっぱる場で あわの みちを めぐる ながい コース', 'Pipes and pull fields along a long bubble road.'), par: 170 });
     course(b, 'g12m3', [{ k: 'swing' }, { k: 'updraft' }, { k: 'pods', modes: ['pipe', 'pipe'] }, { k: 'bridge' }, { k: 'walk', r: 10, laps: 3, w: 5 }, { k: 'pullgap' }, { k: 'walk', r: 10, laps: 4, w: 5 }, { k: 'crumble', n: 5, phase: 1 }, { k: 'updraft' }, { k: 'boss', r: 12, boss: { hp: 4, spd: 0.5, rs: 12, dblAt: 3, triAt: 2, stun: 6, look: 'king' } }], { surf: 'water', hz: 5, kind: 'boss', name: T('ボス リヴァイアサン', 'Boss: Leviathan'), desc: T('つづけて ドスンが 4かい！ 衝撃波も 2つ。スキを スピンで 5かい', 'It slams four times in a row with double shockwaves. Spin it 5 times when it is dazed.'), par: 250 });

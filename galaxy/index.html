@@ -572,7 +572,7 @@ function render(dt) {
   if (!R || !G) return; const S = G.S, t = performance.now() / 1000;
   const cam = camera(S, dt, t), objs = ART.scene(S, t, fx, { locked: lockedMap(), unlockAnim: G.unlockAnim | 0 });
   const parts = fx.fill(); if (fx.flash > 0) $('flash').style.opacity = String(Math.min(0.55, fx.flash * 0.6)); else if ($('flash').style.opacity !== '0') $('flash').style.opacity = '0';
-  R.render({ cam, t: save.set.rm ? 0 : t, xf: S.xf, objs, parts, on: S.L.bodies.map((b, bi) => E.bodyActive(S, bi)) });
+  R.state.blur = save.set.rm ? 0 : Math.min(1, (camV.lz || 0) * 1.1); R.render({ cam, t: save.set.rm ? 0 : t, xf: S.xf, objs, parts, on: S.L.bodies.map((b, bi) => E.bodyActive(S, bi)) });
   if (G.gid === 'hub') { $('labels').hidden = false; hubLabels(); } else $('labels').hidden = true;
 }
 const lockedMap = () => { const o = {}; for (const g of GALS) o[g.id] = !galUnlocked(g.id); return o; };
