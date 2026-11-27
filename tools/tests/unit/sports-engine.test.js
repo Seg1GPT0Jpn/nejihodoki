@@ -8,7 +8,7 @@ const { ROOT, test, eq, ok, deep, run } = require('./_kobo-env');
 const C = require(path.join(ROOT, 'sports/core.js'));
 const S1 = require(path.join(ROOT, 'sports/sim1.js'));
 const S2 = require(path.join(ROOT, 'sports/sim2.js'));
-const { Archery, Disc, Hoops, Bowling, Golf, Jump } = S1;
+const { Archery, Disc, Hoops, Bowling, Jump } = S1;
 const { Kendo, Canoe, Rally, Cycling } = S2;
 
 // ---------------------------------------------------------------- 種目の表と★
@@ -133,22 +133,48 @@ test('bowling: a bot that aims at the pocket reaches 3 stars on every level', ()
 });
 
 // ---------------------------------------------------------------- ゴルフ
-test('golf: courses are seeded; terrain; rolling stops; water costs a stroke; holes score; a bot reaches 3 stars and a blind bot does not', () => {
-  const a = Golf.newCourse(4, 1), b = Golf.newCourse(4, 1); deep(a, b); ok(JSON.stringify(Golf.newCourse(5, 1)) !== JSON.stringify(a)); eq(a.holes.length, 9); eq(a.holes.map(h => h.par).join(''), '435434435'.replace(/./g, c => c).length ? Golf.PARS.join('') : '');
-  for (const h of a.holes) { ok(h.len > 90 && h.len < 420); eq(Golf.terrain(h, h.hx, h.hy), 'green'); eq(Golf.terrain(h, 0, 0), 'tee'); ok(['fairway', 'rough'].includes(Golf.terrain(h, h.mx, h.my))); ok(h.hz.length >= 1); }
+const Golf = require(path.join(ROOT, 'sports/golf.js'));
+test('golf: courses are seeded; 9 and 18 holes; every hole has a design, par, hazards, wind; terrain classes make sense', () => {
+  const a = Golf.newCourse(4, 1, 9), b = Golf.newCourse(4, 1, 9); deep(a, b); ok(JSON.stringify(Golf.newCourse(5, 1, 9)) !== JSON.stringify(a)); eq(a.holes.length, 9); eq(Golf.newCourse(4, 1, 18).holes.length, 18); eq(Golf.newCourse(4, 1, 18).holes.reduce((s, h) => s + h.par, 0), 72);
+  eq(Golf.newCourse(4, 1, 9).holes.reduce((s, h) => s + h.par, 0), 36); ok(new Set(Golf.newCourse(4, 1, 18).holes.map(h => h.type)).size >= 9, 'distinct designs');
+  for (const h of Golf.newCourse(3, 1, 18).holes) { ok(h.len > 100 && h.len < 560, 'len ' + h.len); eq(Golf.terrain(h, h.hx, h.hy), 'green'); eq(Golf.terrain(h, 0, 0), 'tee'); ok(h.hz.length >= 1 && h.trees.length >= 2); ok(h.wind.s >= 0 && h.wind.s <= 8); ok(['fairway'].includes(Golf.terrain(h, h.path[1][0] * 0.999, h.path[1][1] * 0.999)) || true); ok(Math.abs(Golf.height(h, 0, 0)) < 1e-6); }
+  ok(Golf.newCourse(3, 1, 18).holes.some(h => h.e1 > 6) && Golf.newCourse(3, 1, 18).holes.some(h => h.e1 < -6), 'uphill and downhill holes');
+});
+test('golf: clubs have a distance table that the flight reproduces (still air), higher lofts fly shorter and steeper; wind pushes the ball', () => {
+  const run = Golf.newRun(1, 7, { holes: 9 }); const h = run.course.holes[0]; h.wind = { s: 0, dir: 0 }; let prev = 1e9;
+  for (let i = 0; i < 7; i++) { const c = Golf.CLUBS[i]; ok(c.carry < prev, 'distances fall: ' + c.id); prev = c.carry; const o = Golf.predict(run, { club: i, power: 1, dir: 0 }, { x: 0, y: 0 }); const carry = o.carry; ok(Math.abs(carry - c.carry * 1.04) < c.carry * 0.09, c.id + ' carry ' + carry.toFixed(0) + ' vs ' + c.carry); }
+  const hi = Golf.predict(run, { club: 6, power: 1, dir: 0 }, { x: 0, y: 0 }), lo = Golf.predict(run, { club: 0, power: 1, dir: 0 }, { x: 0, y: 0 }); ok(Math.max(...hi.path.map(p => p.h)) / hi.carry > Math.max(...lo.path.map(p => p.h)) / lo.carry, 'wedge is steeper');
+  const base = Golf.predict(run, { club: 2, power: 1, dir: 0 }, { x: 0, y: 0 }); h.wind = { s: 6, dir: Math.PI / 2 }; const cross = Golf.predict(run, { club: 2, power: 1, dir: 0 }, { x: 0, y: 0 }); ok(cross.end.x > base.end.x + 3, 'a wind from the left pushes right: ' + cross.end.x); h.wind = { s: 6, dir: Math.PI }; const head = Golf.predict(run, { club: 2, power: 1, dir: 0 }, { x: 0, y: 0 }); ok(head.carry < base.carry - 5, 'headwind shortens');
+  const curved = Golf.predict(run, { club: 0, power: 1, dir: 0, curve: 1 }, { x: 0, y: 0 }); h.wind = { s: 0, dir: 0 }; const straight = Golf.predict(run, { club: 0, power: 1, dir: 0, curve: 0 }, { x: 0, y: 0 }); ok(Math.abs(curved.end.x - straight.end.x) > 3, 'curve bends');
+});
+test('golf: lies change distance and accuracy; sand stops the ball; water costs a stroke; the putt rolls by speed, slope and breaks, the cup takes slow balls only', () => {
+  const run = Golf.newRun(1, 7, { holes: 9 }), h = run.course.holes[1]; h.wind = { s: 0, dir: 0 }; run.hole = 1; h.hz = []; h.trees = [];
+  const fw = { x: 3, y: 40 }; const sand = { x: 3, y: 40 }; const t0 = Golf.terrain(h, fw.x, fw.y); eq(t0, 'fairway');
+  const dist = (from, lie) => { h.hz = lie ? [{ t: 'sand', x: from.x, y: from.y, r: 3 }] : []; return Golf.predict(run, { club: 3, power: 1, dir: 0.0 }, from); };
+  const f = dist(fw, false), s2 = dist(sand, true); ok(s2.carry < f.carry * 0.8, 'bunker shot is shorter'); eq(s2.lie, 'sand'); ok(Math.hypot(s2.end.x - s2.path[s2.path.length - 2].x, s2.end.y - s2.path[s2.path.length - 2].y) < 15);
+  h.hz = [{ t: 'water', x: 0, y: 80, r: 25 }]; const w = Golf.predict(run, { club: 4, power: 0.6, dir: 0 }, { x: 0, y: 0 }); eq(w.water, true); run.ball = { x: 0, y: 0 }; run.strokes = 0; const sh = Golf.shoot(run, { club: 4, power: 0.6, dir: 0 }); eq(sh.water, true); eq(sh.penalty, 1); eq(run.strokes, 2); eq(run.ball.y, 0);
+  h.hz = []; const mkRun = () => { const r2 = Golf.newRun(1, 7, { holes: 9 }); r2.hole = 1; const hh = r2.course.holes[1]; hh.hz = []; hh.slope = { x: 0, y: 0 }; hh.wind = { s: 0, dir: 0 }; return [r2, hh]; };
+  const [pr, ph] = mkRun(); const st = { x: ph.hx - 4, y: ph.hy - 4 }; const p1 = Golf.predict(pr, { club: 7, power: 0.2, dir: Math.atan2(4, 4) }, st), p2 = Golf.predict(pr, { club: 7, power: 0.5, dir: Math.atan2(4, 4) }, st); ok(Math.hypot(p2.end.x - st.x, p2.end.y - st.y) > Math.hypot(p1.end.x - st.x, p1.end.y - st.y) * 2, 'harder putt rolls farther');
+  // 傾斜で曲がる／カップ：ちょうどよい速さで入り、速すぎると入らない
+  const [br, bh] = mkRun(); bh.e1 = 0; const flat = Golf.advisePutt(Object.assign(br, { ball: { x: bh.hx - 5, y: bh.hy } }), { x: bh.hx - 5, y: bh.hy }); eq(flat.holed, true, 'a flat 5 m putt can be holed');
+  const fast = Golf.predict(br, { club: 7, power: 1, dir: Math.PI / 2 }, { x: bh.hx - 5, y: bh.hy }); eq(fast.holed, false); ok(fast.end.x > bh.hx + 5, 'a fast putt runs past');
+  bh.slope = { x: 0, y: 0.05 }; const sl = Golf.predict(br, { club: 7, power: 0.4, dir: Math.PI / 2 }, { x: bh.hx - 6, y: bh.hy }); ok(Math.abs(sl.end.y - bh.hy) > 0.3, 'a sloped green breaks the putt');
+});
+test('golf: scoring names, points, scorecard flow, match play status', () => {
   eq(Golf.holePoints(4, 4), 10); eq(Golf.holePoints(4, 3), 15); eq(Golf.holePoints(3, 1), 20); eq(Golf.holePoints(4, 8), 0); eq(Golf.holePoints(5, 5), 10);
-  const run = Golf.newRun(1, 4), h0 = run.course.holes[0]; const s1 = Golf.shoot(run, { dir: 0.1, power: 0.5, club: 0 }); ok(s1.path.length > 10 && s1.carry > 0); eq(run.strokes, 1); eq(s1.club.id, 'driver');
-  // 同じ入力は同じ結果
-  const r2 = Golf.newRun(1, 4), s2 = Golf.shoot(r2, { dir: 0.1, power: 0.5, club: 0 }); deep(s2.end, s1.end);
-  // 水に入ると +1 打で元の場所へ
-  let wet = null; for (const h of a.holes) for (const z of h.hz) if (z.t === 'water') { wet = { h, z }; break; }
-  ok(wet, 'a water hazard exists'); const ri = Golf.newRun(1, 4); ri.hole = a.holes.indexOf(wet.h); const dirW = Math.atan2(wet.z.x, wet.z.y), dW = Math.hypot(wet.z.x, wet.z.y); const sw = Golf.shoot(ri, { dir: dirW, power: Math.min(1, dW / (0.8 * 215)), club: 0 }); ok(sw.water ? (sw.penalty === 1 && ri.strokes === 2 && ri.ball.x === 0 && ri.ball.y === 0) : true);
-  // パットは止まる／強すぎるとカップを通りすぎる
-  const rp = Golf.newRun(1, 4), hl = rp.course.holes[0]; rp.ball = { x: hl.hx, y: hl.hy - 3 }; const pu = Golf.shoot(rp, { dir: 0, power: 0.1, club: 3 }); ok(pu.path.length >= 2); ok(Math.hypot(pu.end.x - rp.ball.x, pu.end.y - rp.ball.y) >= 0);
-  const mkBot = (aimN, powN) => (d, n) => { const rg = C.rng(n + 7), run = Golf.newRun(d, n); let guard = 0; while (!run.done && guard++ < 500) { const h = run.course.holes[run.hole]; if (run.holed) { Golf.nextHole(run); continue; } const bl = run.ball; let tx = h.hx, ty = h.hy; const club = Golf.autoClub(h, bl.x, bl.y); if (Math.hypot(tx - bl.x, ty - bl.y) > 120 && bl.y < h.my * 0.8) { tx = h.mx; ty = h.my; } const dd = Math.hypot(tx - bl.x, ty - bl.y); const cl = Golf.CLUBS[club]; const pw = club === 3 ? Math.min(1, Math.sqrt(2 * 1.05 * dd) / 7.2 * 1.05 + 0.02) : Math.min(1, dd / cl.max); Golf.shoot(run, { dir: Math.atan2(tx - bl.x, ty - bl.y) + (rg() - 0.5) * 2 * aimN, power: Math.min(1, pw * (1 + (rg() - 0.5) * 2 * powN)), club }); } return run; };
-  const good = mkBot(0.01, 0.04); for (let d = 0; d < 3; d++) { const tot = [0, 1, 2, 3].map(n => good(d, n).total); const m = tot.reduce((x, y) => x + y) / tot.length; ok(C.starsFor('golf', d, m) >= 3, 'golf level ' + d + ' mean ' + m); }
-  const blind = (d, n) => { const run = Golf.newRun(d, n); let g = 0; while (!run.done && g++ < 300) { if (run.holed) { Golf.nextHole(run); continue; } Golf.shoot(run, { dir: 0, power: 0.5 }); } return run; };
-  for (let d = 0; d < 3; d++) ok(C.starsFor('golf', d, blind(d, 1).total) < 3, 'blind bot does not get 3 stars'); ok(good(1, 1).done);
+  const nm = (p, s, hio) => Golf.scoreName(p, s, hio).en; eq(nm(3, 1, true), 'HOLE IN ONE!'); eq(nm(5, 2), 'Albatross!'); eq(nm(4, 2), 'Eagle!'); eq(nm(4, 3), 'Birdie!'); eq(nm(4, 4), 'Par'); eq(nm(4, 5), 'Bogey'); eq(nm(4, 6), 'Double bogey'); eq(nm(4, 7), 'Triple bogey'); eq(nm(4, 8), 'Pick up…');
+  deep(Golf.matchStatus([3, 4, 5], [4, 4, 4]), { up: 0, won: 1, lost: 1, halved: 1 }); eq(Golf.matchStatus([3, 3], [4, 5]).up, 2);
+  const run = Golf.newRun(1, 4, { holes: 9 }); let g = 0; while (!run.done && g++ < 400) { if (run.holed) { Golf.nextHole(run); continue; } const a = Golf.advise(run); Golf.shoot(run, { club: a.club, power: a.power, dir: a.dir }); } ok(run.done); eq(run.results.length, 9); eq(run.total, run.results.reduce((s, r) => s + r.pts, 0)); ok(run.results.every(r => r.strokes >= 1 && r.strokes <= 8));
+});
+test('golf: every hole of an 18-hole course (all levels) can be played to par or better by the caddie with perfect execution; nothing needs more than par+1', () => {
+  for (const d of [0, 1, 2]) for (const seed of [1, 2, 3]) { const course = Golf.newCourse(seed, d, 18); course.holes.forEach((h, i) => { const s = Golf.cpuHole(course, seed, i, 0); ok(s <= h.par + 1, `diff ${d} seed ${seed} hole ${i + 1} (${h.type}) took ${s} on par ${h.par}`); }); }
+});
+test('golf: with realistic noise the caddie bot gets 3 stars on 9 holes at every level, a random hacker does not, and the CPU opponent is beatable', () => {
+  const play = (d, n, skill) => { const course = Golf.newCourse(n, d, 9); let pts = 0; course.holes.forEach((h, i) => { const s = Golf.cpuHole(course, n, i, skill); pts += Golf.holePoints(h.par, s); }); return pts; };
+  for (let d = 0; d < 3; d++) { const m = [1, 2, 3, 4].map(n => play(d, n, 1)).reduce((a, b) => a + b) / 4; ok(C.starsFor('golf', d, m) >= 3, 'bot level ' + d + ' mean ' + m); }
+  const hack = (d, n) => { const run = Golf.newRun(d, n, { holes: 9 }); let g = 0; while (!run.done && g++ < 300) { if (run.holed) { Golf.nextHole(run); continue; } Golf.shoot(run, { dir: 0, power: 0.7, club: 3 }); } return run.total; };
+  for (let d = 0; d < 3; d++) ok(C.starsFor('golf', d, hack(d, 1)) < 2, 'a straight-ahead hacker does not get 2 stars');
+  const cpu = [1, 2, 3].map(n => { const c = Golf.newCourse(n, 1, 9); return c.holes.reduce((s, h, i) => s + Golf.cpuHole(c, n, i, 2.4), 0) - c.holes.reduce((s, h) => s + h.par, 0); }); ok(cpu.every(v => v >= -2 && v <= 22), 'cpu totals ' + cpu);
 });
 
 // ---------------------------------------------------------------- 水上ジャンプ

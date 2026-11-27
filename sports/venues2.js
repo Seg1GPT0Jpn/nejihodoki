@@ -1,4 +1,4 @@
-// ぽかぽか島スポーツ：種目の「会場」その2。ゴルフ・水上ジャンプ・チャンバラ。
+// ぽかぽか島スポーツ：種目の「会場」その2。水上ジャンプ・チャンバラ（ゴルフは venue-golf.js）。
 (function (root) {
   'use strict';
   const A = root.SportsArt, S1 = root.SportsSim1, S2 = root.SportsSim2, C = root.SportsCore;
@@ -9,98 +9,6 @@
   const fontPx = (w, h) => Math.round(clamp(Math.min(w, h) * 0.04, 12, 22));
   const nowMs = e => (e && e.t != null ? e.t : Date.now());
   const angWrap = a => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
-
-  // =====================================================================================
-  // ゴルフ（9ホール）：うしろへひっぱって、はなす
-  // =====================================================================================
-  V.golf = function (env) {
-    const L = env.L; let w = 300, h = 400, run = null, st = 'aim', cam = { x: 0, y: 0, rot: 0, sc: 2 }, tgt = null, ptr = null, p0 = null, p1 = null, shot = null, ft = 0, ballShow = { x: 0, y: 0, h: 0 }, clubSel = -1, kt = 0, rest = 0, pops = [], hole = null, kdir = 0, kpow = 0.6, sum = null;
-    const Sim = S1.Golf;
-    function curHole() { return run.course.holes[run.hole]; }
-    function aimRot() { const b = run.ball, hl = curHole(); return Math.atan2(hl.hx - b.x, hl.hy - b.y); }
-    function target() {
-      const b = run.ball, hl = curHole(), d = Math.max(8, Math.hypot(hl.hx - b.x, hl.hy - b.y)), rot = aimRot();
-      const cx = lerp(b.x, hl.hx, 0.42), cy = lerp(b.y, hl.hy, 0.42); return { x: cx, y: cy, rot, sc: clamp(h * 0.66 / d, 0.75, 15) };
-    }
-    function setBtns() {
-      const lie = Sim.terrain(curHole(), run.ball.x, run.ball.y), auto = Sim.autoClub(curHole(), run.ball.x, run.ball.y), cur = clubSel < 0 ? auto : clubSel;
-      env.setButtons([{ id: 'auto', label: L('オート', 'Auto'), on: clubSel < 0 }].concat(Sim.CLUBS.map((c, i) => ({ id: 'c' + i, label: L(c.ja, c.en), on: clubSel === i })))); env.hud(L('H', 'Hole ') + (run.hole + 1) + '/9  ' + L('パー', 'Par ') + curHole().par + '  ' + (run.strokes + 1) + L('打め', ' stroke') + '  ' + L(Sim.CLUBS[cur].ja, Sim.CLUBS[cur].en)); void lie;
-    }
-    function start() {
-      run = Sim.newRun(env.diff, env.seed); st = 'aim'; clubSel = -1; pops = []; tgt = target(); cam = Object.assign({}, tgt); ballShow = { x: 0, y: 0, h: 0 }; setBtns();
-      env.status(L('うしろへ ひっぱって、はなして 打つ。長さが強さ、向きは ひっぱった反対', 'Pull back and release. Pull length = power; you shoot the opposite way.'));
-    }
-    function w2s(x, y) { const dx = x - cam.x, dy = y - cam.y, c = Math.cos(cam.rot), s = Math.sin(cam.rot); return { x: w / 2 + (dx * c - dy * s) * cam.sc, y: h * 0.5 - (dx * s + dy * c) * cam.sc }; }
-    function s2dir(px, py) { const vx = px / cam.sc, vy = -py / cam.sc, c = Math.cos(cam.rot), s = Math.sin(cam.rot); return { x: vx * c + vy * s, y: -vx * s + vy * c }; }
-    function curClub() { return clubSel < 0 ? Sim.autoClub(curHole(), run.ball.x, run.ball.y) : clubSel; }
-    function swingFrom(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by, len = Math.hypot(dx, dy), pw = clamp(len / (Math.min(w, h) * 0.34), 0, 1); const wv = s2dir(dx, dy); return { power: pw, dir: Math.atan2(wv.x, wv.y), len }; }
-    function doShot(inp) {
-      const clubIdx = curClub(); shot = Sim.shoot(run, { dir: inp.dir, power: inp.power, club: clubIdx }); if (!shot) return; st = 'fly'; ft = 0; env.sfx(shot.club.id === 'putter' ? 'tap' : 'drop'); env.noise(0.08, { vol: 0.07, freq: 1800 }); env.buzz(10);
-      const sp = 1.1; shot._sp = sp; ballShow = { x: shot.from.x, y: shot.from.y, h: 0 };
-    }
-    function afterShot() {
-      const s = shot; ballShow = { x: s.end.x, y: s.end.y, h: 0 };
-      if (s.water) { env.sfx('fail'); pops.push({ txt: L('ポチャン！ +1打', 'Splash! +1'), t: 0 }); }
-      if (s.holed || s.pickup) {
-        const r = run.results[run.results.length - 1], d = r.strokes - r.par; let nm = r.hio ? L('ホールインワン！', 'HOLE IN ONE!') : d <= -2 ? L('イーグル！', 'Eagle!') : d === -1 ? L('バーディー！', 'Birdie!') : d === 0 ? L('パー', 'Par') : d === 1 ? L('ボギー', 'Bogey') : d === 2 ? L('ダブルボギー', 'Double bogey') : L('ざんねん…', 'Pick up…');
-        if (r.hio) env.stat('hio'); if (d < 0) env.stat('birdie'); env.sfx(d < 0 ? 'win' : s.holed ? 'clear' : 'fail'); pops.push({ txt: nm, t: 0, col: d < 0 ? PAL.sun : '#fff' }); st = 'holed'; rest = 2.4; sum = { nm, r };
-        env.hud(L('H', 'Hole ') + (run.hole + 1) + '  ' + nm + '  (' + r.strokes + L('打', ' strokes') + ')'); env.status(nm + '  +' + r.pts + L('点', ' pts'));
-      } else { st = 'aim'; tgt = target(); setBtns(); env.status(L('つぎの1打', 'Next shot')); }
-    }
-    return {
-      start, resize(a, b) { w = a; h = b; },
-      button(id) { if (id === 'auto') clubSel = -1; else clubSel = +id.slice(1); env.sfx('select'); setBtns(); },
-      down(x, y, id) { if (st === 'holed') { rest = 0; return; } if (st !== 'aim') return; ptr = id; p0 = { x, y }; p1 = { x, y }; },
-      move(x, y, id) { if (ptr === id) p1 = { x, y }; },
-      up(x, y, id) { if (ptr !== id) return; ptr = null; const sw = swingFrom(p0.x, p0.y, x, y); p0 = p1 = null; if (sw.len < 16) { env.status(L('もっと うしろへ ひっぱろう', 'Pull back farther')); return; } doShot({ power: sw.power, dir: sw.dir }); },
-      key(code, down) {
-        if (!down) return; if (st === 'holed') { rest = 0; return; } if (st !== 'aim') return; const rot = aimRot();
-        if (code === 'ArrowLeft') kdir -= 0.02; if (code === 'ArrowRight') kdir += 0.02; if (code === 'ArrowUp') kpow = clamp(kpow + 0.05, 0.05, 1); if (code === 'ArrowDown') kpow = clamp(kpow - 0.05, 0.05, 1);
-        if (code === 'KeyC') { clubSel = clubSel >= 3 ? -1 : clubSel + 1; setBtns(); } if (code === 'Space') doShot({ power: kpow, dir: rot + kdir });
-      },
-      update(dt) {
-        if (!run) return; kt += dt; for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 2);
-        if (st === 'aim') { const t2 = target(); const k = Math.min(1, dt * 4.5); cam.x += (t2.x - cam.x) * k; cam.y += (t2.y - cam.y) * k; cam.rot += angWrap(t2.rot - cam.rot) * k; cam.sc += (t2.sc - cam.sc) * k; }
-        else if (st === 'fly') {
-          ft += dt * shot._sp; const path = shot.path; let i = 0; while (i < path.length - 1 && path[i + 1].t < ft) i++; const a = path[i], b = path[Math.min(path.length - 1, i + 1)], f = b.t > a.t ? clamp((ft - a.t) / (b.t - a.t), 0, 1) : 1;
-          ballShow = { x: lerp(a.x, b.x, f), y: lerp(a.y, b.y, f), h: lerp(a.h, b.h, f) }; cam.x += (ballShow.x - cam.x) * Math.min(1, dt * 2); cam.y += (ballShow.y - cam.y) * Math.min(1, dt * 2);
-          if (ft >= path[path.length - 1].t + 0.1) afterShot();
-        } else if (st === 'holed') { rest -= dt; if (rest <= 0) { if (run.done) { st = 'over'; env.done({ score: run.total, detail: { strokes: run.results.reduce((a, r) => a + r.strokes, 0), par: run.results.reduce((a, r) => a + r.par, 0), card: run.results.map(r => r.strokes), hio: run.results.some(r => r.hio) } }); } else { Sim.nextHole(run); st = 'aim'; clubSel = -1; ballShow = { x: 0, y: 0, h: 0 }; tgt = target(); cam = Object.assign({}, tgt); setBtns(); } } }
-      },
-      draw(g) {
-        if (!run) return; const hl = curHole(), sc = cam.sc; g.fillStyle = PAL.grass2; g.fillRect(0, 0, w, h);
-        // ラフの模様
-        g.fillStyle = 'rgba(0,0,0,.06)'; for (let i = 0; i < 18; i++) { const q = w2s(((i * 73) % 200) - 100 + Math.floor(cam.x / 100) * 100, ((i * 131) % 400) - 100 + Math.floor(cam.y / 100) * 100); g.beginPath(); g.arc(q.x, q.y, 18 * sc * 0.3 + 6, 0, TAU); g.fill(); }
-        // フェアウェイ
-        g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = PAL.grass0; g.lineWidth = hl.wf * 2 * sc; g.beginPath(); const t0 = w2s(0, 0), m0 = w2s(hl.mx, hl.my), h0 = w2s(hl.hx, hl.hy); g.moveTo(t0.x, t0.y); g.lineTo(m0.x, m0.y); g.lineTo(h0.x, h0.y); g.stroke();
-        g.strokeStyle = '#8be58a'; g.lineWidth = hl.wf * 1.2 * sc; g.stroke();
-        // グリーン
-        circ(g, h0.x, h0.y, hl.rg * sc + 4, '#a6eca0'); circ(g, h0.x, h0.y, hl.rg * sc, '#6fd981', null);
-        // ティー
-        rr(g, t0.x - 18 * sc * 0.4, t0.y - 8, 36 * sc * 0.4, 16, 4); g.fillStyle = '#c9f0b4'; g.fill();
-        // ハザード
-        for (const z of hl.hz) { const q = w2s(z.x, z.y); if (z.t === 'sand') { circ(g, q.x, q.y, z.r * sc, PAL.sand, PAL.sand2, 2); } else { circ(g, q.x, q.y, z.r * sc, '#3aa3d9', '#bfeaff', 3); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1.5; g.beginPath(); g.arc(q.x, q.y, z.r * sc * 0.55 + Math.sin(kt * 2) * 2, 0.3, 2.4); g.stroke(); } }
-        // カップと旗
-        circ(g, h0.x, h0.y, Math.max(2.5, 0.12 * sc * 1.8), '#222'); g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(h0.x, h0.y); g.lineTo(h0.x, h0.y - 26); g.stroke(); g.fillStyle = PAL.red; g.beginPath(); g.moveTo(h0.x, h0.y - 26); g.lineTo(h0.x + 16, h0.y - 21 + Math.sin(kt * 4) * 1.5); g.lineTo(h0.x, h0.y - 16); g.fill();
-        // 狙いの線
-        const b = (st === 'fly' || st === 'holed') ? ballShow : run.ball, bp = w2s(b.x, b.y);
-        if (st === 'aim') {
-          let sw = null; if (ptr != null && p0) sw = swingFrom(p0.x, p0.y, p1.x, p1.y); else if (kdir || kpow !== 0.6) sw = { power: kpow, dir: aimRot() + kdir, len: 1 };
-          if (sw && sw.len > 6) { const club = Sim.CLUBS[curClub()], dist = club.id === 'putter' ? sw.power * 7.2 * 7.2 / (2 * 1.05) : sw.power * club.max, ex = run.ball.x + Math.sin(sw.dir) * dist, ey = run.ball.y + Math.cos(sw.dir) * dist, q = w2s(ex, ey);
-            g.setLineDash([5, 6]); g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(bp.x, bp.y); g.lineTo(q.x, q.y); g.stroke(); g.setLineDash([]); circ(g, q.x, q.y, 6, null, '#fff', 3);
-            if (p0) { g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 5; g.beginPath(); g.moveTo(p0.x, p0.y); g.lineTo(p1.x, p1.y); g.stroke(); circ(g, p0.x, p0.y, 7, PAL.sun, PAL.ink, 2); }
-            const pw = Math.round(sw.power * 100); text(g, pw + '%  ' + Math.round(dist) + 'm', clamp(q.x, 40, w - 40), clamp(q.y - 16, 70, h - 30), fontPx(w, h));
-          }
-        }
-        // ボール
-        ell(g, bp.x, bp.y + 1, 6, 3, 'rgba(0,0,0,.25)'); circ(g, bp.x, bp.y - (b.h || 0) * sc * 0.35 - 3, Math.max(4, 3.5 + (b.h || 0) * sc * 0.02), '#fff', PAL.ink, 1.5);
-        const gm = bp; if (st === 'aim') { A.mascot(g, gm.x - 20, gm.y + 20, 52, { kind: env.kind, pose: ptr != null ? 'swing' : 'idle', t: kt }); }
-        // 距離
-        const d = Math.hypot(hl.hx - run.ball.x, hl.hy - run.ball.y); text(g, L('ホールまで ', 'To hole ') + Math.round(d) + 'm  ·  ' + L({ fairway: 'フェアウェイ', rough: 'ラフ', sand: 'バンカー', green: 'グリーン', tee: 'ティー', water: '水' }[Sim.terrain(hl, run.ball.x, run.ball.y)], Sim.terrain(hl, run.ball.x, run.ball.y)), w / 2, h * 0.07, fontPx(w, h));
-        for (const p of pops) text(g, p.txt, w / 2, h * 0.34 - p.t * 14, fontPx(w, h) * 1.8, { color: p.col || '#fff' });
-      },
-    };
-  };
 
   // =====================================================================================
   // 水上ジャンプ

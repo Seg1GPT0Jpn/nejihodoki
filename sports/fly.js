@@ -64,7 +64,7 @@
           const fw = [Math.sin(f.yaw), 0, Math.cos(f.yaw)]; camYaw += angDiff(f.yaw, camYaw) * Math.min(1, dt * 3.5); camPitch += (f.pitch * 0.55 - 0.1 - camPitch) * Math.min(1, dt * 2.5);
           const d = 15 - Math.sin(f.pitch) * 2.5, cx = f.x - Math.sin(camYaw) * Math.cos(camPitch) * d, cz = f.z - Math.cos(camYaw) * Math.cos(camPitch) * d, cy0 = f.y + 5.5 + Math.sin(camPitch) * -4; const gy = Math.max(world.heightAt(cx, cz), 0) + 3;
           cam = { x: cx, y: Math.max(cy0, gy), z: cz, yaw: camYaw, pitch: -0.12 + (camPitch + 0.1) * 0.6 - (cy0 < gy ? 0 : 0), roll: -f.roll * 0.12, fov: 1.05 }; void fw;
-          const list = [{ kind: 'plane', x: f.x, y: f.y, z: f.z, yaw: f.yaw, pitch: f.pitch, roll: f.roll, s: 0.5 }];
+          const list = [{ kind: 'plane', x: f.x, y: f.y, z: f.z, yaw: f.yaw, pitch: f.pitch, roll: f.roll, s: 0.42 }];
           if (mode === 'ring') world.course.forEach((rg, i) => { if (i >= f.next && i < f.next + 3) list.push({ kind: 'ring', x: rg.x, y: rg.y, z: rg.z, r: f.cfg.ring, yaw: Math.atan2(i === 0 ? 1 : world.course[i - 1].x - rg.x, i === 0 ? 1 : world.course[i - 1].z - rg.z) + 0, tint: i === f.next ? [1, 1, 1] : [0.8, 0.8, 0.9] }); });
           for (const b of f.balloons) if (!b.got) list.push({ kind: 'balloon', x: b.x, y: b.y, z: b.z, s: 7, tint: [[1, 0.4, 0.4], [1, 0.85, 0.3], [0.4, 0.8, 1], [0.6, 1, 0.5], [0.9, 0.5, 1]][b.col] });
           const t0 = performance.now(); R.render(cam, { list, wx: world.weather }, dt); R.adapt(dt * 1000); void t0;

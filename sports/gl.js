@@ -91,15 +91,17 @@
     const tb = []; for (let t = 0; t < NT * NT; t++) tb.push({ g: new MB(), p: new MB() });
     for (let tj = 0; tj < NT; tj++) for (let ti = 0; ti < NT; ti++) { const g = tb[tj * NT + ti].g; for (let j = tj * TN; j < (tj + 1) * TN; j++) for (let i = ti * TN; i < (ti + 1) * TN; i++) {
       const X = a => a * W.CELL - W.HALF, h = (a, b) => W.H[b * (W.N + 1) + a], v = [[X(i), h(i, j), X(j)], [X(i + 1), h(i + 1, j), X(j)], [X(i + 1), h(i + 1, j + 1), X(j + 1)], [X(i), h(i, j + 1), X(j + 1)]]; const ah = (v[0][1] + v[1][1] + v[2][1] + v[3][1]) / 4, sl = slope(i, j), jt = ((i * 7 + j * 13) % 10) / 10 - 0.5;
-      const c = groundColor(ah, sl, jt); g.tri(v[0], v[3], v[2], c); g.tri(v[0], v[2], v[1], groundColor(ah, sl, -jt)); } }
-    for (const t of W.trees) buildTree(tb[tileOf(t.x, t.z)].p, t); for (const t of W.palms) buildPalm(tb[tileOf(t.x, t.z)].p, t);
-    for (const m of W.marks) buildSpot(tb[tileOf(m.x, m.z)].p, m, W);
+      const cxm = (v[0][0] + v[2][0]) / 2, czm = (v[0][2] + v[2][2]) / 2, c = W.colorAt ? W.colorAt(cxm, czm, ah, sl, jt) : groundColor(ah, sl, jt); g.tri(v[0], v[3], v[2], c); g.tri(v[0], v[2], v[1], W.colorAt ? W.colorAt(cxm, czm, ah, sl, -jt) : groundColor(ah, sl, -jt)); } }
+    for (const t of W.trees) buildTree(tb[tileOf(t.x, t.z)].p, t); for (const t of W.palms || []) buildPalm(tb[tileOf(t.x, t.z)].p, t);
+    for (const m of W.marks || []) buildSpot(tb[tileOf(m.x, m.z)].p, m, W);
     for (let t = 0; t < tb.length; t++) { const ti = t % NT, tj = Math.floor(t / NT); tiles.push({ cx: (ti + 0.5) * TN * W.CELL - W.HALF, cz: (tj + 0.5) * TN * W.CELL - W.HALF, g: upload(tb[t].g), p: tb[t].p.p.length ? upload(tb[t].p) : null }); }
     // 雲・飛行機・リング・風船・目印の柱
     const cm = new MB(); const cw = [1, 1, 1]; for (let i = 0; i < 6; i++) cm.ell((i - 2.5) * 0.7 + Math.sin(i * 2) * 0.3, Math.cos(i * 1.3) * 0.25, Math.sin(i * 1.7) * 0.5, 0.75 + (i % 3) * 0.15, 0.4, 0.6, cw, 4, 7); const cloudM = upload(cm);
     const pm = new MB(), wh = hex('#ffffff'), co = hex('#ff7a6b'), yl = hex('#ffd24d'), dk = hex('#2b3a4a'); pm.box(0, -0.5, -2.2, 1.1, 1.1, 5.2, wh); pm.cone(0, -0.5, 2.9, 0.55, 2.2, co, 6, 0.1); pm.box(0, 0.4, -0.2, 0.9, 0.5, 1.6, mix(wh, dk, 0.5)); pm.box(0, -0.2, -0.4, 9, 0.15, 1.5, co); pm.box(0, 0, -2.6, 3.2, 0.12, 1, wh); pm.box(0, 0, -2.6, 0.12, 1.5, 1, co); pm.box(0, -0.4, 2.6, 0.2, 2, 0.2, yl); pm.box(0, -0.4, 2.7, 2, 0.2, 0.1, yl); const planeM = upload(pm);
     const rm = new MB(), rc = hex('#ffd24d'), rc2 = hex('#ff7a6b'); for (let i = 0; i < 16; i++) { const a = i / 16 * TAU, x = Math.cos(a), y = Math.sin(a); const m2 = new MB(); rm.box(0, 0, 0, 0, 0, 0, rc); rm.p.length = rm.p.length; const bx = x * 1, by = y * 1; rm.box(bx, by - 0.09, 0, 0.2, 0.2, 0.18, i % 2 ? rc : rc2); void m2; } const ringM = upload(rm);
     const bm = new MB(); bm.ell(0, 0, 0, 1, 1.3, 1, hex('#ffffff'), 6, 9); bm.box(0, -2.2, 0, 0.5, 0.4, 0.5, hex('#8a5a2b')); const balM = upload(bm);
+    const fm = new MB(); fm.box(0, 0, 0, 0.06, 2.6, 0.06, hex('#f4f4f4')); fm.quad([0, 2.6, 0], [0, 2.6, 0.9], [0, 2.0, 0.45], [0, 2.0, 0], hex('#e5484d')); fm.quad([0, 2.6, 0], [0, 2.0, 0], [0, 2.0, 0.45], [0, 2.6, 0.9], hex('#e5484d')); fm.disk(0, 0.02, 0, 0.11, hex('#1a1a1a'), 10); const flagM = upload(fm);
+    const bl = new MB(); bl.ell(0, 0, 0, 1, 1, 1, hex('#ffffff'), 4, 6); const ballM = upload(bl);
     const pillM = (() => { const b = new MB(); b.cone(0, 0, 0, 1, 1, hex('#ffffff'), 4, 0.15); return upload(b); })();
     // 水（カメラのまわりの格子）
     const wv = []; const WN = 56, WR = 2600; for (let j = 0; j < WN; j++) for (let i = 0; i < WN; i++) { const f = (a, b) => { const u = (a / WN * 2 - 1), v = (b / WN * 2 - 1); const s = k => Math.sign(k) * Math.pow(Math.abs(k), 2.2); return [s(u) * WR, s(v) * WR]; }; const a = f(i, j), b = f(i + 1, j), c = f(i + 1, j + 1), d = f(i, j + 1); wv.push(a[0], a[1], b[0], b[1], c[0], c[1], a[0], a[1], c[0], c[1], d[0], d[1]); }
@@ -115,7 +117,7 @@
       L.fog = L.hor.slice(); L.night = 1 - day; }
     const norm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
     const st = { w: 300, h: 200, scale: 1, q: 2, drawDist: 2400, fogK: 1, ema: 16, t: 0, vp: M.ident(), cam: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 }, aspect: 1, fov: 1.0, tris: 0, snap: null, lowPower: !!opt.lowPower, fixed: !!opt.lowPower };
-    function applyQ() { const Q = [{ s: 0.5, d: 1000, wv: 0.4 }, { s: 0.75, d: 1700, wv: 0.7 }, { s: 1, d: 2500, wv: 1 }][st.q]; st.scale = Q.s; st.drawDist = Q.d; st.amp = Q.wv; resize(st.cw, st.ch); }
+    function applyQ() { const Q = [{ s: 0.5, d: 1000, wv: 0.4 }, { s: 0.75, d: 1700, wv: 0.7 }, { s: 1, d: 2500, wv: 1 }][st.q]; st.scale = Q.s; st.drawDist = Q.d; st.amp = Q.wv * (W.waveAmp == null ? 1 : W.waveAmp); resize(st.cw, st.ch); }
     function resize(cssW, cssH) { st.cw = cssW; st.ch = cssH; const dpr = Math.min(root.devicePixelRatio || 1, 2) * st.scale; st.w = Math.max(64, Math.round(cssW * dpr)); st.h = Math.max(64, Math.round(cssH * dpr)); if (canvas.width !== st.w || canvas.height !== st.h) { canvas.width = st.w; canvas.height = st.h; } gl.viewport(0, 0, st.w, st.h); st.aspect = st.w / st.h; }
     st.cw = 300; st.ch = 200; st.amp = 1;
     function setQuality(q, fixed) { st.q = clamp(q, 0, 2); if (fixed != null) st.fixed = fixed; applyQ(); }
@@ -135,9 +137,9 @@
       gl.enableVertexAttribArray(P.a.pos); gl.enableVertexAttribArray(P.a.nor); gl.enableVertexAttribArray(P.a.col);
       const f = vw.b.f, rad = TN * W.CELL * 0.75; for (const tl of tiles) { const dx = tl.cx - cam.x, dz = tl.cz - cam.z, d = Math.hypot(dx, dz); if (d > fogF + rad) continue; if (d > rad * 1.5 && (dx * f[0] + dz * f[2]) / d < -0.35 - rad / d * 0.5 + (fov > 1.2 ? -0.3 : 0.2) - 0.2) continue; draw(tl.g); if (tl.p && d < (st.q === 0 ? 700 : fogF)) draw(tl.p); }
       // 雲
-      if (st.q > 0 || !dyn || dyn.clouds !== false) for (const c of W.clouds) { const wx = ((c.x + st.t * 6 + W.HALF * 1.6) % (W.HALF * 3.2)) - W.HALF * 1.6; const dd = Math.hypot(wx - cam.x, c.z - cam.z); if (dd > fogF) continue; draw(cloudM, M.model(wx, c.y, c.z, 0, 0, 0, c.s), [L.night > 0.6 ? 0.35 : 1, L.night > 0.6 ? 0.38 : 1, L.night > 0.6 ? 0.5 : 1]); }
+      if (st.q > 0 || !dyn || dyn.clouds !== false) for (const c of W.clouds) { const wx = ((c.x + st.t * 6 + W.HALF * 1.6) % (W.HALF * 3.2)) - W.HALF * 1.6; const dd = Math.hypot(wx - cam.x, c.z - cam.z); if (dd > fogF) continue; draw(cloudM, M.model(wx, c.y, c.z, 0, 0, 0, c.s), [L.night > 0.6 ? 0.45 : 1.45, L.night > 0.6 ? 0.48 : 1.45, L.night > 0.6 ? 0.6 : 1.5]); }
       if (dyn) {
-        for (const o of dyn.list || []) { if (o.kind === 'plane') draw(planeM, M.model(o.x, o.y, o.z, o.yaw, o.pitch, o.roll, o.s || 1)); else if (o.kind === 'ring') draw(ringM, M.model(o.x, o.y, o.z, o.yaw || 0, 0, 0, o.r), o.tint); else if (o.kind === 'balloon') draw(balM, M.model(o.x, o.y + Math.sin(st.t * 1.5 + o.x) * 1.5, o.z, 0, 0, 0, o.s || 7), o.tint); else if (o.kind === 'pillar') draw(pillM, M.model(o.x, o.y, o.z, st.t * 0.5, 0, 0, 1).map((v, i) => (i === 5 ? o.h : (i === 0 || i === 10) ? v * o.r : v)), o.tint); }
+        for (const o of dyn.list || []) { if (o.kind === 'plane') draw(planeM, M.model(o.x, o.y, o.z, o.yaw, o.pitch, o.roll, o.s || 1)); else if (o.kind === 'ring') draw(ringM, M.model(o.x, o.y, o.z, o.yaw || 0, 0, 0, o.r), o.tint); else if (o.kind === 'balloon') draw(balM, M.model(o.x, o.y + Math.sin(st.t * 1.5 + o.x) * 1.5, o.z, 0, 0, 0, o.s || 7), o.tint); else if (o.kind === 'flag') draw(flagM, M.model(o.x, o.y, o.z, o.yaw || 0, 0, 0, 1)); else if (o.kind === 'ball') draw(ballM, M.model(o.x, o.y, o.z, 0, 0, 0, o.s || 0.12), o.tint); else if (o.kind === 'pillar') draw(pillM, M.model(o.x, o.y, o.z, st.t * 0.5, 0, 0, 1).map((v, i) => (i === 5 ? o.h : (i === 0 || i === 10) ? v * o.r : v)), o.tint); }
       }
       gl.disableVertexAttribArray(P.a.pos); gl.disableVertexAttribArray(P.a.nor); gl.disableVertexAttribArray(P.a.col);
       // 水
@@ -149,9 +151,10 @@
     // 画質を、フレームの間隔（実測）にあわせて自動でさげる／あげる
     function adapt(frameMs) { if (st.fixed) return; st.ema = st.ema * 0.92 + frameMs * 0.08; st.cool = (st.cool || 0) + 1; if (st.cool < 45) return; if (st.ema > (st.lowTarget ? 40 : 28) && st.q > 0) { st.q--; st.cool = 0; applyQ(); } else if (st.ema < 17.5 && st.q < 2 && st.cool > 240) { st.q++; st.cool = 0; applyQ(); } }
     function project(x, y, z) { const m = st.vp, w = m[3] * x + m[7] * y + m[11] * z + m[15]; if (w <= 0.1) return null; const nx = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w, ny = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w; return { x: (nx * 0.5 + 0.5) * st.cw, y: (1 - (ny * 0.5 + 0.5)) * st.ch, w }; }
+    function free() { const dl = m => { if (!m) return; for (const k of ['bp', 'bn', 'bc']) gl.deleteBuffer(m[k]); }; for (const t of tiles) { dl(t.g); dl(t.p); } dl(cloudM); dl(planeM); dl(ringM); dl(balM); dl(pillM); dl(flagM); dl(ballM); gl.deleteBuffer(wbuf); gl.deleteBuffer(qb); }
     function dispose() { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (x) {} }
     st.q = opt.quality != null ? opt.quality : 2; applyQ(); setTime(opt.hour == null ? 10 : opt.hour, W.weather);
-    return { resize, render, setTime, setQuality, adapt, project, dispose, state: st, gl, M, basis, canvas };
+    return { resize, render, setTime, setQuality, adapt, project, dispose, free, state: st, gl, M, basis, canvas };
   }
   root.SportsGL = { create, M, basis, hex };
 })(typeof window !== 'undefined' ? window : globalThis);

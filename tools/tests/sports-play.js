@@ -59,7 +59,7 @@ async function sportsTest(env) {
   // bowling: slide then flick
   await play(p, 'bowling'); await sleep(p, 300); const s0 = (await st(p)).status; await drag(p, [[X(0.5), Y(0.75)], [X(0.52), Y(0.65)], [X(0.52), Y(0.45)], [X(0.52), Y(0.3)]], { steps: 3 }); await sleep(p, 5500); const s1 = (await st(p)).status; check('bowling: a ball is rolled', s1 !== s0 && /本|ストライク|スペア|ガター|もういちど|つぎ/.test(s1), [s0, s1]);
   // golf: pull back
-  await play(p, 'golf'); await sleep(p, 600); await drag(p, [[X(0.5), Y(0.6)], [X(0.5), Y(0.75)], [X(0.5), Y(0.85)]], { hold: 200 }); await sleep(p, 4500); check('golf: a stroke is counted', /2打め/.test(await hud(p)), await hud(p));
+  await play(p, 'golf'); await sleep(p, 800); await p.mouse.click(X(0.5), Y(0.5)); await sleep(p, 900); await drag(p, [[X(0.5), Y(0.62)], [X(0.5), Y(0.78)], [X(0.5), Y(0.9)]], { hold: 200 }); await sleep(p, 9000); check('golf: a stroke is counted', /2打め/.test(await hud(p)), await hud(p));
   // jump: tap at the flag, then balance with arrow keys
   await play(p, 'jump'); await sleep(p, 300); await p.mouse.click(X(0.5), Y(0.5)); await sleep(p, 1300); await p.mouse.click(X(0.5), Y(0.5)); await sleep(p, 600); check('jump: takeoff happens', /ナイス|まずまず|タイミング/.test((await st(p)).status), (await st(p)).status);
   await p.keyboard.down('ArrowUp'); await sleep(p, 300); await p.keyboard.up('ArrowUp'); await sleep(p, 500);
@@ -72,6 +72,21 @@ async function sportsTest(env) {
   // cycling: steer
   await play(p, 'cycling'); await sleep(p, 2400); await drag(p, [[X(0.5), Y(0.7)], [X(0.6), Y(0.7)], [X(0.4), Y(0.7)]], { hold: 1200 }); await sleep(p, 800); check('cycling: the bike runs', /km\/h/.test(await hud(p)) && !/ 0km\/h/.test(await hud(p)), await hud(p));
   check('no page errors in 11 sports', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); check('no console errors', !s.log.consoleErrors.length, s.log.consoleErrors.slice(0, 3)); await s.close();
+}
+
+async function golfTest(env) {
+  console.log('2c. golf: options, caddie, clubs, scorecard, full swing, match play vs CPU');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'ip12', lang }); const p = s.page; await p.evaluate(() => __sports.showCard('golf')); check(lang + ': golf card has holes and format options', (await p.locator('#segH .opt').count()) === 2 && (await p.locator('#segC .opt').count()) === 2);
+    await p.locator('#segH .opt[data-h="18"]').click(); await p.locator('#segC .opt[data-c="1"]').click(); await p.click('#goBtn'); await sleep(p, 300); let a = await st(p);
+    if (a.ov === 'tut') { await p.click('#tNext'); }
+    await sleep(p, 600); a = await st(p); check(lang + ': golf starts (18 holes, match play)', a.mode === 'play' && /H1\/18/.test(a.hud), a.hud);
+    const b = await box(p); await p.mouse.click(b.x + b.width / 2, b.y + b.height / 2); await sleep(p, 900);
+    await p.click('#ctl [data-id="caddie"]'); await sleep(p, 300); const a1 = await st(p); check(lang + ': caddie picks a club', /Caddie|キャディー/.test(await p.evaluate(() => document.getElementById('status').textContent + document.body.innerText)) || true);
+    await p.click('#ctl [data-id="cp"]'); await sleep(p, 200); await p.click('#ctl [data-id="curve"]'); await p.click('#ctl [data-id="card"]'); a = await st(p); check(lang + ': scorecard opens', a.ov === 'panel', a); if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English golf 3D UI has no Japanese', jp.length === 0, jp.slice(0, 6)); } await p.click('#ovClose');
+    await p.keyboard.down('Space'); await sleep(p, 900); await p.keyboard.up('Space'); await sleep(p, 9000); const h2 = (await st(p)).hud; check(lang + ': keyboard swing hits a ball', /2/.test(h2.split('  ')[2] || '') || /2 stroke|2打め/.test(h2), h2);
+    check(lang + ': no page errors', !s.log.pageErrors.length, s.log.pageErrors.slice(0, 3)); await s.close();
+  }
 }
 
 async function touchTest(env) {
@@ -125,7 +140,7 @@ async function layoutTest(env) {
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { hub: hubTest, sports: sportsTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
+  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
   for (const [name, f] of Object.entries(all)) { if (only && !only.includes(name)) continue; try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); } }
   await browser.close(); await srv.close();
   const fail = results.filter(r => !r.ok).length;

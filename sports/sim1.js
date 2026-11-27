@@ -1,5 +1,5 @@
 // ぽかぽか島スポーツ：1回ずつ「ねらって、放す」種目の中身（pure。画面・時計・組み込みの乱数に頼らない）。
-// アーチェリー・ディスクドッグ・バスケシュート・ボウリング・ゴルフ・水上ジャンプ。
+// アーチェリー・ディスクドッグ・バスケシュート・ボウリング・水上ジャンプ（ゴルフは golf.js）。
 // どれも newRun(diff, seed) で1回ぶんの状態を作り、入力（ねらい・ベクトル・タイミング）を渡すと、決まった結果と、絵のための軌道を返す。
 // 同じ種・同じ入力なら毎回同じ。ブラウザは window.SportsSim1、node は require。
 (function (root) {
@@ -183,101 +183,6 @@
   };
 
   // =====================================================================================
-  // ゴルフ：9ホール。ドラッグでひいて放す。コースは種から毎回同じ（ティーは原点、ホールは +y 方向のどこか）
-  // =====================================================================================
-  const CLUBS = [
-    { id: 'driver', ja: 'ドライバー', en: 'Driver', max: 215, frac: 0.8 },
-    { id: 'iron', ja: 'アイアン', en: 'Iron', max: 140, frac: 0.88 },
-    { id: 'wedge', ja: 'ウェッジ', en: 'Wedge', max: 70, frac: 0.95 },
-    { id: 'putter', ja: 'パター', en: 'Putter', max: 24, frac: 0 },
-  ];
-  const ROLL_A = { fairway: 1.7, rough: 5.5, sand: 16, green: 1.05, tee: 1.7, water: 99 };
-  const ROLL_F = { fairway: 1, rough: 0.35, sand: 0.05, green: 1.1, tee: 1 };
-  const GOLF_DIFF = [{ sig: 0.012, wf: 28, haz: 1 }, { sig: 0.032, wf: 21, haz: 2 }, { sig: 0.055, wf: 16, haz: 3 }];
-  const PARS = [4, 3, 5, 4, 3, 4, 4, 3, 5];
-  const Golf = {
-    CLUBS, PARS, MAXSTROKES: 8, ROLL_A,
-    newCourse(seed, diff) {
-      diff = clamp(diff | 0, 0, 2); const cfg = GOLF_DIFF[diff], r = rng(hash32('golf:' + seed)), holes = [];
-      for (let h = 0; h < 9; h++) {
-        const par = PARS[h], len = par === 3 ? 105 + r() * 55 : par === 4 ? 195 + r() * 95 : 320 + r() * 80;
-        const bend = par === 3 ? (r() - 0.5) * 0.25 : (r() - 0.5) * 0.9, mid = par === 3 ? 0.5 : 0.55;
-        const hx = Math.sin(bend) * len, hy = Math.cos(bend) * len, mx = hx * 0.5 + (r() - 0.5) * (par === 3 ? 4 : 50) * (diff ? 1 : 0.4), my = hy * mid;
-        const hz = [];
-        const nh = cfg.haz + (par === 5 ? 1 : 0) + (r() < 0.4 ? 1 : 0);
-        for (let k = 0; k < nh; k++) {
-          const t = 0.35 + r() * 0.6, side = r() < 0.5 ? -1 : 1, bx = hx * t + (mx - hx * 0.5) * (1 - t) * 0.4, by = hy * t; const off = (cfg.wf * 0.75 + r() * 18) * side;
-          const water = r() < 0.38 && t < 0.95; hz.push({ t: water ? 'water' : 'sand', x: bx + off * Math.cos(bend), y: by - off * Math.sin(bend), r: water ? 9 + r() * 9 : 5 + r() * 5 });
-        }
-        if (par === 3) hz.push({ t: 'sand', x: hx + (r() < 0.5 ? -1 : 1) * 15, y: hy + (r() - 0.5) * 8, r: 6 });
-        const slope = { x: (r() - 0.5) * 0.7, y: (r() - 0.5) * 0.7 };
-        holes.push({ par, len: Math.round(len), hx, hy, mx, my, hz, slope, rg: 15 - diff * 2, wf: cfg.wf, bend });
-      }
-      return { seed, diff, cfg, holes };
-    },
-    // 地面の種類
-    terrain(hole, x, y) {
-      for (const z of hole.hz) if (z.t === 'water' && Math.hypot(x - z.x, y - z.y) < z.r) return 'water';
-      if (Math.hypot(x - hole.hx, y - hole.hy) < hole.rg) return 'green';
-      for (const z of hole.hz) if (z.t === 'sand' && Math.hypot(x - z.x, y - z.y) < z.r) return 'sand';
-      if (Math.hypot(x, y) < 5) return 'tee';
-      const d = Math.min(distSeg(x, y, 0, 0, hole.mx, hole.my), distSeg(x, y, hole.mx, hole.my, hole.hx, hole.hy));
-      return d < hole.wf ? 'fairway' : 'rough';
-    },
-    // ふさわしいクラブ（ホールまでの距離と地面から）
-    autoClub(hole, x, y) {
-      const terr = Golf.terrain(hole, x, y), d = Math.hypot(hole.hx - x, hole.hy - y);
-      if (terr === 'green' && d < 28) return 3; if (d < 70 * (terr === 'sand' ? 0.8 : 1)) return 2; if (d < 135) return 1; return 0;
-    },
-    newRun(diff, seed) {
-      const course = Golf.newCourse(seed, diff);
-      return { kind: 'golf', diff: clamp(diff | 0, 0, 2), seed, course, hole: 0, ball: { x: 0, y: 0 }, strokes: 0, results: [], total: 0, done: false, holed: false, pen: 0 };
-    },
-    holePoints(par, strokes) { return Math.max(0, 10 + 5 * (par - strokes)); },
-    // 1打。input = { dir（ラジアン。0 = +y 方向、正で右）, power（0〜1）, club（0〜3。なければ自動）}
-    shoot(run, input) {
-      if (run.done || run.holed) return null; const hole = run.course.holes[run.hole], from = { x: run.ball.x, y: run.ball.y }, lie = Golf.terrain(hole, from.x, from.y);
-      const club = CLUBS[input.club != null ? clamp(input.club | 0, 0, 3) : Golf.autoClub(hole, from.x, from.y)], r = rng(hash32('gs:' + run.seed + ':' + run.hole + ':' + run.strokes + ':' + run.pen));
-      const sig = run.course.cfg.sig * (lie === 'rough' ? 1.9 : lie === 'sand' ? 2.4 : 1) * (club.id === 'putter' ? 0.35 : 1);
-      const power = clamp(input.power, 0, 1) * (lie === 'rough' ? 0.82 : lie === 'sand' ? 0.62 : 1) * (1 + gauss(r) * 0.02), dir = input.dir + gauss(r) * sig;
-      const ux = Math.sin(dir), uy = Math.cos(dir), path = [{ x: from.x, y: from.y, h: 0, t: 0 }]; let x = from.x, y = from.y, t = 0, water = false, holed = false, v, carry = 0;
-      run.strokes++;
-      if (club.id !== 'putter') {
-        const D = power * club.max; carry = D * club.frac; const T = Math.max(0.6, Math.sqrt(carry / 60 + 0.4) * 1.5);
-        for (let k = 1; k <= 14; k++) { const f = k / 14; path.push({ x: from.x + ux * carry * f, y: from.y + uy * carry * f, h: Math.sin(f * Math.PI) * carry * 0.16 * (club.id === 'wedge' ? 1.3 : 1), t: T * f }); }
-        x = from.x + ux * carry; y = from.y + uy * carry; t = T; const te = Golf.terrain(hole, x, y);
-        if (te === 'water') water = true;
-        else { const rollD = D * (1 - club.frac) * (ROLL_F[te] == null ? 1 : ROLL_F[te]); v = Math.sqrt(2 * (ROLL_A[te] || 1.7) * rollD); }
-      } else v = power * 7.2;
-      let vx = 0, vy = 0; if (!water) { vx = ux * (v || 0); vy = uy * (v || 0); }
-      const dt = 1 / 60;
-      for (let k = 0; k < 1500 && !water && !holed && (Math.hypot(vx, vy) > 0.06); k++) {
-        const te = Golf.terrain(hole, x, y); if (te === 'water') { water = true; break; }
-        const a = ROLL_A[te] || 1.7, sp = Math.hypot(vx, vy), nx = x + vx * dt, ny = y + vy * dt;
-        // カップ：近くを通ってゆっくりなら入る
-        if (te === 'green') {
-          const dd = distSeg(hole.hx, hole.hy, x, y, nx, ny); if (dd < 0.13 && sp < 2.1) { holed = true; x = hole.hx; y = hole.hy; break; }
-          vx += hole.slope.x * dt; vy += hole.slope.y * dt;
-        }
-        x = nx; y = ny; const sp2 = Math.hypot(vx, vy), ns = Math.max(0, sp2 - a * dt); if (sp2 > 1e-9) { vx *= ns / sp2; vy *= ns / sp2; }
-        t += dt; if (k % 3 === 0) path.push({ x, y, h: 0, t });
-      }
-      path.push({ x, y, h: 0, t });
-      let pen = 0; if (water) { pen = 1; run.strokes += 1; run.pen++; x = from.x; y = from.y; path.push({ x, y, h: 0, t: t + 0.5, water: true }); }
-      run.ball = { x, y }; const out = { path, from, end: { x, y }, lie, club, holed, water, penalty: pen, carry, strokes: run.strokes };
-      if (holed) { run.holed = true; out.pts = Golf.finishHole(run, true); } else if (run.strokes >= Golf.MAXSTROKES) { out.pts = Golf.finishHole(run, false); out.pickup = true; }
-      return out;
-    },
-    // ホールを終える（入ったか、拾い上げ）。点を足す。次のホールへは nextHole()
-    finishHole(run, holed) {
-      const hole = run.course.holes[run.hole], strokes = holed ? run.strokes : Golf.MAXSTROKES, pts = Golf.holePoints(hole.par, strokes);
-      run.results.push({ par: hole.par, strokes, pts, hio: holed && strokes === 1 }); run.total += pts; run.holed = true; if (run.results.length >= 9) run.done = true; return pts;
-    },
-    nextHole(run) { if (run.done) return false; run.hole++; run.ball = { x: 0, y: 0 }; run.strokes = 0; run.pen = 0; run.holed = false; return true; },
-  };
-  function distSeg(px, py, ax, ay, bx, by) { const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy; let u = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0; u = clamp(u, 0, 1); return Math.hypot(px - (ax + dx * u), py - (ay + dy * u)); }
-
-  // =====================================================================================
   // 水上ジャンプ：ジャンプ台に向かって走り、とびたち（ゲージを止める）、空中でバランス、着水
   // =====================================================================================
   const JUMP = [{ gauge: 2.6, zone: 0.2, gust: 0.35, lipH: 2.6 }, { gauge: 1.9, zone: 0.13, gust: 0.75, lipH: 2.6 }, { gauge: 1.35, zone: 0.09, gust: 1.25, lipH: 2.6 }];
@@ -321,6 +226,6 @@
     autoRun(run, tTake, uFn, dt) { dt = dt || 1 / 60; Jump.takeoff(run, tTake); let k = 0; while (run.phase === 'air' && k++ < 6000) Jump.step(run, dt, uFn ? uFn(run) : Jump.botU(run), run.y < 4 && run.vy < 0); return run; },
   };
 
-  const api = { Archery, Disc, Hoops, Bowling, Golf, Jump, distSeg };
+  const api = { Archery, Disc, Hoops, Bowling, Jump };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.SportsSim1 = api;
 })(typeof window !== 'undefined' ? window : globalThis);

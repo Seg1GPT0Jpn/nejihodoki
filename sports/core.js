@@ -28,7 +28,7 @@
     { id: 'hoops', bit: 4, ja: 'バスケシュート', en: 'Hoops', mode: 'turn', col: '#ff7a33', map: [0.37, 0.43], two: 'pass',
       thr: [[10, 17, 24], [8, 14, 21], [6, 11, 17]] },
     { id: 'golf', bit: 5, ja: 'ゴルフ', en: 'Golf', mode: 'turn', col: '#3aa655', map: [0.62, 0.45], two: 'pass',
-      thr: [[70, 90, 105], [60, 80, 92], [50, 68, 80]] },
+      thr: [[60, 80, 100], [55, 75, 95], [45, 65, 85]] },
     { id: 'canoe', bit: 6, ja: 'カヌー', en: 'Canoe', mode: 'real', col: '#1aa7c8', map: [0.88, 0.58], two: 'split',
       thr: [[120, 170, 215], [110, 160, 205], [100, 150, 195]] },
     { id: 'pingpong', bit: 7, ja: '卓球', en: 'Table Tennis', mode: 'real', col: '#e6567a', map: [0.28, 0.72], two: 'versus',
@@ -54,8 +54,8 @@
   }
 
   // ---------- 保存 ----------
-  const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops'];
-  function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, tm: 0, tu: 0, tut: 0 }; }
+  const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops', 'matchW'];
+  function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, gh: 9, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, gf: { b: [0, 0, 0], m: 0 }, tm: 0, tu: 0, tut: 0 }; }
   function sanitize(o) {
     const s = newSave();
     if (!o || typeof o !== 'object') return s;
@@ -68,11 +68,12 @@
     if (o.dl && typeof o.dl === 'object') s.dl = { k: Math.max(0, Math.floor(num(o.dl.k, 0))), id: typeof o.dl.id === 'string' && sportOf(o.dl.id) ? o.dl.id : '', sc: Math.max(0, Math.floor(num(o.dl.sc, 0))), st: clamp(Math.floor(num(o.dl.st, 0)), 0, 3) };
     if (o.stats && typeof o.stats === 'object') for (const k of STAT_KEYS) { const v = Math.floor(num(o.stats[k], 0)); if (v > 0) s.stats[k] = Math.min(v, 99999999); }
     if (o.set && typeof o.set === 'object') {
-      s.set.sens = clamp(num(o.set.sens, 1), 0.5, 1.5); s.set.tilt = o.set.tilt ? 1 : 0; s.set.lp = o.set.lp ? 1 : 0; s.set.vib = o.set.vib === 0 ? 0 : 1;
+      s.set.sens = clamp(num(o.set.sens, 1), 0.5, 1.5); s.set.tilt = o.set.tilt ? 1 : 0; s.set.lp = o.set.lp ? 1 : 0; s.set.gh = o.set.gh === 18 ? 18 : 9; s.set.vib = o.set.vib === 0 ? 0 : 1;
       s.set.who = clamp(Math.floor(num(o.set.who, 0)), 0, 3);
       if (o.set.last && typeof o.set.last === 'object') for (const sp of SPORTS) { const v = o.set.last[sp.id]; if (v === 0 || v === 1 || v === 2) s.set.last[sp.id] = v; }
     }
     if (o.fl && typeof o.fl === 'object') { const b = Array.isArray(o.fl.b) ? o.fl.b : []; s.fl = { b: [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))), ph: Math.max(0, Math.floor(num(o.fl.ph, 0))) & 0xffff, n: Math.max(0, Math.min(99999999, Math.floor(num(o.fl.n, 0)))) }; }
+    if (o.gf && typeof o.gf === 'object') { const b = Array.isArray(o.gf.b) ? o.gf.b : []; s.gf = { b: [0, 1, 2].map(i => Math.max(0, Math.min(999999, Math.floor(num(b[i], 0))))), m: Math.max(0, Math.min(99999999, Math.floor(num(o.gf.m, 0)))) }; }
     s.tm = Math.max(0, Math.floor(num(o.tm, 0))) & 0x7ff; s.tu = Math.max(0, Math.floor(num(o.tu, 0))) & 0x7ff; s.tut = o.tut ? 1 : 0;
     derive(s);
     return s;

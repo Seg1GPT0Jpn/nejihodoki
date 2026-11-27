@@ -147,6 +147,7 @@ body.thumb #app { display: flex !important; flex-direction: column; max-width: n
 <script src="core.js"></script>
 <script src="sim1.js"></script>
 <script src="sim2.js"></script>
+<script src="golf.js"></script>
 <script src="world.js"></script>
 <script src="art.js"></script>
 <script src="gl.js"></script>
@@ -154,6 +155,7 @@ body.thumb #app { display: flex !important; flex-direction: column; max-width: n
 <script src="venues1.js"></script>
 <script src="venues2.js"></script>
 <script src="venues3.js"></script>
+<script src="venue-golf.js"></script>
 <script src="../common/game.js"></script>
 <script>
 (() => {
@@ -219,7 +221,7 @@ let mode = 'hub'; // 'hub' | 'play'
 let S = null, venue = null, paused = false, ovName = '', menuOpen = false;
 let view3d = null;
 if (!/[?&]no3d\b/.test(location.search)) { try { const hr = new Date().getHours() + new Date().getMinutes() / 60; view3d = window.SportsFly.create($('gl'), { hour: hr, lowPower: !!save.set.lp, quality: save.set.lp ? 0 : 2 }); } catch (e) { view3d = null; } }
-const uses3d = () => !!view3d && ((mode === 'hub') || !!(S && S.flight));
+const uses3d = () => !!view3d && ((mode === 'hub') || !!(S && (S.flight || S.gl)));
 const hub = { x: 0.2, y: 0.6, tx: null, to: null, sel: 0, walk: 0, drag: 0, pointer: null };
 function fit() {
   const r = cv.getBoundingClientRect(); dpr = Math.min(2.5, window.devicePixelRatio || 1); W = Math.max(100, Math.round(r.width)); H = Math.max(100, Math.round(r.height));
@@ -276,17 +278,19 @@ function showList() {
 }
 function showCard(id, opts) {
   opts = opts || {}; const s = SP.find(x => x.id === id); const diffNow = opts.diff != null ? opts.diff : (save.set.last && save.set.last[id] != null ? save.set.last[id] : 1);
-  let players = opts.players || 1, diff = diffNow;
+  let players = opts.players || 1, diff = diffNow; let gh = opts.holes || (save.set.gh === 18 ? 18 : 9), gcpu = !!opts.cpu;
   const draw = () => {
     const two = s.two; const modeLabel = two === 'split' ? L('ふたり（画面わけ）', '2 players (split)') : two === 'versus' ? L('ふたり（たいせん）', '2 players (versus)') : L('ふたり（1台まわし）', '2 players (pass the device)');
     openOv('<h2>' + esc(nm(s)) + '</h2><div class="scroll"><canvas class="dcv" id="cardIc" width="144" height="144" aria-hidden="true"></canvas><p>' + esc(L(TXT[id].d[0], TXT[id].d[1])) + '</p>'
       + '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(C.starsOf(save, id, d)) + '<br><small>' + (C.bestOf(save, id, d) || '–') + '</small></button>').join('') + '</div></div>'
       + '<div class="og"><div class="ol">' + L('人数', 'Players') + '</div><div class="seg" id="segP"><button class="opt" type="button" data-p="1" aria-pressed="' + (players === 1) + '">' + L('ひとり', '1 player') + '</button><button class="opt" type="button" data-p="2" aria-pressed="' + (players === 2) + '">' + modeLabel + '</button></div></div>'
+      + (id === 'golf' ? '<div class="og"><div class="ol">' + L('ホール数・あそびかた', 'Holes and format') + '</div><div class="seg" id="segH"><button class="opt" type="button" data-h="9" aria-pressed="' + (gh === 9) + '">' + L('9ホール', '9 holes') + '</button><button class="opt" type="button" data-h="18" aria-pressed="' + (gh === 18) + '">' + L('18ホール', '18 holes') + '</button></div><div class="seg" id="segC"><button class="opt" type="button" data-c="0" aria-pressed="' + (!gcpu) + '">' + L('ストロークプレー', 'Stroke play') + '</button><button class="opt" type="button" data-c="1" aria-pressed="' + (gcpu) + '">' + L('CPUとマッチプレー', 'Match play vs CPU') + '</button></div></div>' : '')
       + '</div><div class="row2"><button class="btn" id="goBtn" type="button">' + L('あそぶ', 'Play') + '</button><button class="btn sub" id="howBtn" type="button">' + L('あそびかた', 'How to play') + '</button></div><button class="btn sub" id="ovClose" type="button">' + L('もどる', 'Back') + '</button>', 'card');
     const ic = $('cardIc').getContext('2d'); ART.circ(ic, 72, 72, 66, '#fff', s.col, 6); ART.icon(ic, id, 72, 72, 52);
+    if ($('segH')) { $('segH').querySelectorAll('.opt').forEach(b => b.onclick = () => { gh = +b.dataset.h; save.set.gh = gh; draw(); }); $('segC').querySelectorAll('.opt').forEach(b => b.onclick = () => { gcpu = !!+b.dataset.c; draw(); }); }
     $('segD').querySelectorAll('.opt').forEach(b => b.onclick = () => { diff = +b.dataset.d; draw(); }); $('segP').querySelectorAll('.opt').forEach(b => b.onclick = () => { players = +b.dataset.p; draw(); });
-    $('goBtn').onclick = () => { save.set.last = save.set.last || {}; save.set.last[id] = diff; closeOv(); if (!(save.tu & (1 << s.bit))) showTutorial(id, () => startSport({ id, diff, players })); else startSport({ id, diff, players }); };
-    $('howBtn').onclick = () => showTutorial(id, () => showCard(id, { diff, players })); $('ovClose').onclick = closeOv;
+    $('goBtn').onclick = () => { save.set.last = save.set.last || {}; save.set.last[id] = diff; closeOv(); if (!(save.tu & (1 << s.bit))) showTutorial(id, () => startSport({ id, diff, players, opts: { holes: gh, cpu: gcpu && players === 1 } })); else startSport({ id, diff, players, opts: { holes: gh, cpu: gcpu && players === 1 } }); };
+    $('howBtn').onclick = () => showTutorial(id, () => showCard(id, { diff, players, holes: gh, cpu: gcpu })); $('ovClose').onclick = closeOv;
   };
   draw();
 }
@@ -368,6 +372,7 @@ function startDaily() { const dk = dateKeyNow(), d = C.dailyOf(dk); startSport({
 function startSport(o) {
   if (mode === 'play') endSession(true); const s = SP.find(x => x.id === o.id); const players = (o.players === 2 && !o.daily && !o.practice) ? 2 : 1;
   S = { id: o.id, sp: s, diff: C.clamp(o.diff | 0, 0, 2), seed: o.seed != null ? o.seed : newSeed(), daily: !!o.daily, dateKey: o.dateKey || null, practice: !!o.practice, players, mode: players === 2 ? (s.two === 'pass' ? 'pass' : 'versus') : 'solo', cur: 0, scores: [], results: [], emitted: false };
+  S.opts = (o.opts && !S.daily && !S.practice) ? o.opts : {}; S.gl = o.id === 'golf' && !!view3d;
   mode = 'play'; paused = false; document.body.classList.add('playing'); setHudText(''); setStatus(''); setButtons([]);
   venue = VEN[o.id](makeEnv()); fit(); beginTurn();
   emit('play_start', { mode: S.practice ? 'practice' : S.daily ? 'daily' : S.players === 2 ? 'versus' : 'normal', dateKey: S.daily ? S.dateKey : undefined });
@@ -377,7 +382,7 @@ function beginTurn() { S.kind = S.cur === 0 ? save.set.who : (save.set.who + 1) 
 function makeEnv() {
   return { L, set: save.set, sfx, tone, noise, buzz, status: setStatus, hud: setHudText, stat: bumpStat, setButtons, tilt: () => ({ on: !!(save.set.tilt && Tilt.on), x: Tilt.x, y: Tilt.y }),
     get diff() { return S.diff; }, get seed() { return S.seed; }, get players() { return S.players; }, get versusMode() { return S.mode === 'pass' ? 'pass' : S.mode === 'versus' ? 'versus' : 'solo'; }, get kind() { return S.kind; }, get practice() { return S.practice; },
-    get flightMode() { return S.flightMode; }, relaxed: false, photo: addPhoto, done: res => onDone(res) };
+    get flightMode() { return S.flightMode; }, get opts() { return S.opts || {}; }, glCanvas: $('gl'), get gl3d() { return !!view3d && !!(S && S.gl); }, panel(html) { openOv(html + '<button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'panel'); $('ovClose').onclick = closeOv; }, relaxed: false, photo: addPhoto, done: res => onDone(res) };
 }
 function onDone(res) {
   if (!S) return; res = res || {}; if (S.flight) { finishFlight(res); return; }
@@ -414,12 +419,13 @@ function finishSession(res) {
     sfx(w < 0 ? 'ok' : 'win'); writeSave();
     emit('play_end', { mode: 'versus', score: Math.max(sc[0], sc[1]), reason: 'clear' });
   } else {
-    const score = res.score | 0; let rec = { isBest: false, stars: C.starsFor(id, diff, score), newStars: 0, prev: 0 };
-    if (S.practice) html = '<h2>' + L('れんしゅう', 'Practice') + '</h2><div class="big">' + score + '</div><p>' + L('れんしゅうの点数は きろくされません。', 'Practice scores are not recorded.') + '</p>';
+    const score = res.score | 0; let rec = { isBest: false, stars: C.starsFor(id, diff, score), newStars: 0, prev: 0 }; const gvar = id === 'golf' && S.opts && (S.opts.holes === 18 || S.opts.cpu) && !S.practice && !S.daily;
+    if (gvar) { bumpStat('plays'); const d18 = res.detail || {}; const st18 = C.starsFor(id, diff, Math.round(score / (S.opts.holes === 18 ? 2 : 1))); let best18 = false; if (S.opts.holes === 18 && !S.opts.cpu) { best18 = score > save.gf.b[diff]; if (best18) save.gf.b[diff] = score; } let mt = ''; if (S.opts.cpu && d18.cpu) { const up = d18.cpu.up; mt = '<p>' + L('マッチプレー：', 'Match play: ') + (up > 0 ? L('あなたの勝ち（' + up + 'UP）', 'You win (' + up + ' UP)') : up < 0 ? L('CPUの勝ち（' + (-up) + 'DOWN）', 'CPU wins (' + (-up) + ' DOWN)') : L('ひきわけ', 'All square')) + '</p>'; if (up > 0) { save.gf.m++; bumpStat('matchW'); } } html = '<h2>' + L('ゴルフ', 'Golf') + ' · ' + (S.opts.holes === 18 ? L('18ホール', '18 holes') : L('9ホール', '9 holes')) + ' · ' + dname(diff) + '</h2><div class="big">' + score + '</div><div>' + starsHtml(st18) + '</div>' + (best18 ? '<span class="newrec">' + L('18ホールのベスト更新！', 'New 18-hole best!') + '</span>' : '') + mt; writeSave(); sfx(st18 >= 3 ? 'win' : 'clear'); }
+    else if (S.practice) html = '<h2>' + L('れんしゅう', 'Practice') + '</h2><div class="big">' + score + '</div><p>' + L('れんしゅうの点数は きろくされません。', 'Practice scores are not recorded.') + '</p>';
     else {
       bumpStat('plays');
       if (S.daily) { const st = C.dailyStars(id, score); if (save.dl.k !== S.dateKey) { save.dl = { k: S.dateKey, id, sc: score, st }; bumpStat('daily'); } else if (score > save.dl.sc) save.dl = { k: S.dateKey, id, sc: score, st }; html = '<h2>' + L('きょうのチャレンジ', 'Daily Challenge') + '</h2><p>' + esc(nm(S.sp)) + '</p><div class="big">' + score + '</div><div>' + starsHtml(st) + '</div><p>' + L('きょうのベスト ', 'Today\'s best ') + save.dl.sc + '</p>'; rec.stars = st; }
-      else { rec = C.record(save, id, diff, score, res.extra); html = '<h2>' + esc(nm(S.sp)) + ' · ' + dname(diff) + '</h2><div class="big">' + score + '</div><div>' + starsHtml(rec.stars) + '</div>' + (rec.isBest ? '<span class="newrec">' + L('ベスト更新！', 'New best!') + '</span>' : '<p>' + L('ベスト ', 'Best ') + C.bestOf(save, id, diff) + '</p>') + (rec.newStars ? '<span class="newrec">' + L('★ +' + rec.newStars, '★ +' + rec.newStars) + '</span>' : ''); }
+      else if (!gvar) { rec = C.record(save, id, diff, score, res.extra); html = '<h2>' + esc(nm(S.sp)) + ' · ' + dname(diff) + '</h2><div class="big">' + score + '</div><div>' + starsHtml(rec.stars) + '</div>' + (rec.isBest ? '<span class="newrec">' + L('ベスト更新！', 'New best!') + '</span>' : '<p>' + L('ベスト ', 'Best ') + C.bestOf(save, id, diff) + '</p>') + (rec.newStars ? '<span class="newrec">' + L('★ +' + rec.newStars, '★ +' + rec.newStars) + '</span>' : ''); }
       const d = res.detail || {}; if (id === 'bowling' && d.perfect) bumpStat('perfect'); if ((id === 'canoe' || id === 'cycling') && d.place === 1 && id === 'canoe') bumpStat('canoeW'); if ((id === 'pingpong' || id === 'tennis') && d.won) bumpStat('rallyW');
       if (S.dailyAll) { }
       writeSave(); sfx(rec.stars >= 3 ? 'win' : rec.stars ? 'clear' : 'ok');
