@@ -195,7 +195,7 @@ const NSTAGE = LV.CAMPAIGN.length;
 function newSave() {
   return { v: 1, rank: 0, best: { classic: 0, survival: 0, endless: 0, coop: 0, alt: 0, daily: 0 }, bw: { classic: 0, survival: 0, endless: 0 }, cs: new Array(NSTAGE).fill(0), cl: 0, st: 0, dl: { k: 0, s: 0 },
     stats: { plays: 0, kills: 0, saucers: 0, caps: 0, bombs: 0, maxChain: 0, waves: 0, bosses: 0, perfect: 0, daily: 0, coop: 0, alt: 0, rep: 0, secs: 0, lost: 0, bonus: 0, heals: 0, splits: 0, dives: 0, gems: 0, pierce: 0, assisted: 0 },
-    capm: 0, capn: 0, bossm: 0, bossn: 0, set: { auto: 2, fx: 0, shake: reduceMq ? 0 : 1, tc: 'auto', gain: 12, pl: 0, assist: 0 }, tut: 0 };
+    capm: 0, capn: 0, bossm: 0, bossn: 0, set: { auto: 2, fx: 0, shake: reduceMq ? 0 : 1, tc: 'auto', gain: 12, pl: 0, assist: 0, ctl: 2 }, tut: 0 };
 }
 function readSave() {
   let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
@@ -209,7 +209,7 @@ function readSave() {
   if (o.stats) for (const k of Object.keys(s.stats)) s.stats[k] = num(o.stats[k], s.stats[k]);
   if (o.set) {
     s.set.auto = [0, 1, 2].includes(o.set.auto) ? o.set.auto : 2; s.set.fx = clamp(num(o.set.fx, 0) | 0, 0, 2); s.set.shake = o.set.shake === 0 ? 0 : 1; s.set.tc = ['auto', 'on', 'off'].includes(o.set.tc) ? o.set.tc : 'auto';
-    s.set.gain = clamp(num(o.set.gain, 12), 8, 20); s.set.pl = clamp(num(o.set.pl, 0) | 0, 0, 2); s.set.assist = num(o.set.assist, 0) & 3;
+    s.set.gain = clamp(num(o.set.gain, 12), 8, 20); s.set.pl = clamp(num(o.set.pl, 0) | 0, 0, 2); s.set.assist = num(o.set.assist, 0) & 3; s.set.ctl = [0, 1, 2].includes(o.set.ctl) ? o.set.ctl : 2;
   }
   derive(s); return s;
 }
@@ -281,7 +281,7 @@ function handleEvents(S, quiet) {
 }
 
 // ---------------------------------------------------------------- input: keyboard, touch (drag + buttons), gamepad
-const keys = new Set(); let btn = { l: 0, r: 0, fire: 0, bomb: 0 }, touchMode = false, tapFire = 0, drags = [], padPrev = 0, coop2 = false;
+const keys = new Set(); let btn = { l: 0, r: 0, fire: 0, bomb: 0 }, touchMode = false, tapFire = 0, flicks = [0, 0], drags = [], padPrev = 0, coop2 = false;
 const KB1 = { ArrowLeft: IN.L, KeyA: IN.L, ArrowRight: IN.R, KeyD: IN.R, KeyZ: IN.FIRE, Space: IN.FIRE, ArrowUp: IN.FIRE, KeyW: IN.FIRE, KeyX: IN.BOMB, KeyK: IN.BOMB, ShiftLeft: IN.BOMB, ShiftRight: IN.BOMB, ArrowDown: IN.BOMB };
 const KBC1 = { KeyA: IN.L, KeyD: IN.R, KeyW: IN.FIRE, KeyS: IN.BOMB, KeyF: IN.FIRE, KeyG: IN.BOMB };
 const KBC2 = { ArrowLeft: IN.L, ArrowRight: IN.R, ArrowUp: IN.FIRE, ArrowDown: IN.BOMB, KeyK: IN.FIRE, KeyL: IN.BOMB, Space: IN.FIRE, KeyZ: IN.FIRE, KeyX: IN.BOMB };
@@ -307,7 +307,7 @@ function padMask(g) {
 const autoOn = () => save.set.auto === 1 || (save.set.auto === 2 && (touchMode || coarse));
 function readInput() {
   const S = curS(); const co = isCoop();
-  let m0 = 0, m1 = 0, x0, x1;
+  let m0 = 0, m1 = 0, x0, x1, f0, f1;
   if (co) { for (const c of keys) { m0 |= KBC1[c] || 0; m1 |= KBC2[c] || 0; } } else { for (const c of keys) m0 |= KB1[c] || 0; }
   const gp = pads();
   if (gp.length) { m0 |= padMask(gp[0]); if (co && gp[1]) m1 |= padMask(gp[1]); else if (!co && gp.length > 1) m0 |= padMask(gp[1]); const st = gp[0].buttons[9] && gp[0].buttons[9].pressed; if (st && !(padPrev & 1)) { padPrev |= 1; openPause(); return null; } if (!st) padPrev &= ~1; }
@@ -319,12 +319,14 @@ function readInput() {
   for (const d of drags) {
     const r = cv.getBoundingClientRect(), sc = W / r.width, g = save.set.gain / 10, idx = co ? d.z : 0;
     const p = S.pl[idx]; if (!p) continue;
+    if (flicks[idx]) { if (idx === 0) f0 = flicks[idx]; else f1 = flicks[idx]; flicks[idx] = 0; }
+    if (d.flicked || save.set.ctl === 0) continue;
     if (d.base == null) d.base = p.x;
     const tx = clamp(d.base + (d.cx - d.sx) * sc * g, 9, W - 9);
     if (idx === 0) x0 = tx; else x1 = tx;
   }
   if (m0 & (IN.L | IN.R)) x0 = undefined; if (m1 & (IN.L | IN.R)) x1 = undefined;
-  return { m0, m1, x0, x1 };
+  return { m0, m1, x0, x1, f0, f1 };
 }
 // canvas drag
 cv.addEventListener('pointerdown', e => {
@@ -333,9 +335,23 @@ cv.addEventListener('pointerdown', e => {
   e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (x) {}
   const r = cv.getBoundingClientRect(), z = isCoop() ? ((e.clientX - r.left) < r.width / 2 ? 0 : 1) : 0;
   drags = drags.filter(d => d.z !== z || !isCoop()); if (!isCoop()) drags = [];
-  drags.push({ id: e.pointerId, sx: e.clientX, cx: e.clientX, base: null, z, t0: performance.now(), moved: 0 });
+  drags.push({ id: e.pointerId, sx: e.clientX, cx: e.clientX, base: null, z, t0: performance.now(), moved: 0, hist: [[performance.now(), e.clientX]], flicked: false, lastF: 0, dirF: 0 });
 });
-cv.addEventListener('pointermove', e => { const d = drags.find(q => q.id === e.pointerId); if (d) { d.cx = e.clientX; d.moved = Math.max(d.moved, Math.abs(e.clientX - d.sx)); } });
+// flick: a quick swipe (fast and long enough) sends a glide command; the engine records that command, not the raw touch
+const FLICK_MIN_SPEED = 0.85, FLICK_MIN_DIST = 16, FLICK_GAIN = 0.26, FLICK_COOL = 110;
+function detectFlick(d, now) {
+  if (save.set.ctl === 1) return;
+  const h = d.hist; while (h.length > 1 && now - h[0][0] > 90) h.shift();
+  if (h.length < 2) return;
+  const dt = Math.max(8, now - h[0][0]), dx = h[h.length - 1][1] - h[0][1], v = dx / dt;
+  if (Math.abs(dx) < FLICK_MIN_DIST || Math.abs(v) < FLICK_MIN_SPEED) return;
+  const dir = v > 0 ? 1 : -1;
+  if (now - d.lastF < FLICK_COOL && dir === d.dirF) return;
+  const sc = W / cv.getBoundingClientRect().width;
+  const f = dir * clamp(Math.abs(v) * 16.7 * sc * FLICK_GAIN, 2.5, E.FLICK_MAX);
+  flicks[isCoop() ? d.z : 0] = f; d.flicked = true; d.lastF = now; d.dirF = dir; d.hist = [[now, h[h.length - 1][1]]];
+}
+cv.addEventListener('pointermove', e => { const d = drags.find(q => q.id === e.pointerId); if (d) { d.cx = e.clientX; d.moved = Math.max(d.moved, Math.abs(e.clientX - d.sx)); const now = performance.now(); d.hist.push([now, e.clientX]); if (isLive()) detectFlick(d, now); } });
 const dragEnd = e => { const i = drags.findIndex(q => q.id === e.pointerId); if (i < 0) return; const d = drags[i]; drags.splice(i, 1); if (e.type === 'pointerup' && performance.now() - d.t0 < 260 && d.moved < 10 && isLive()) tapFire = 14; };
 cv.addEventListener('pointerup', dragEnd); cv.addEventListener('pointercancel', dragEnd); cv.addEventListener('lostpointercapture', e => { const i = drags.findIndex(q => q.id === e.pointerId); if (i >= 0) drags.splice(i, 1); });
 cv.addEventListener('contextmenu', e => e.preventDefault());
@@ -383,7 +399,7 @@ let MANUAL = false;
 function tick() {
   const S = SE.g[SE.cur];
   const inp = readInput(); if (!inp) return;
-  E.sessionStep(SE, inp.m0, inp.m1, inp.x0, inp.x1);
+  E.sessionStep(SE, inp.m0, inp.m1, inp.x0, inp.x1, inp.f0, inp.f1);
   for (const g of SE.g) handleEvents(g, false);
   liveHooks();
 }
@@ -424,7 +440,7 @@ function hints(S) {
   if (run.opts.mode === 'campaign' && run.opts.level > 3) return;
   const p = S.pl[0];
   const T0 = touchMode || coarse;
-  if (S.phase === 'intro' && S.pt > 25 && !(save.tut & 1)) showHint(1, T0 ? '画面をドラッグして、砲台をうごかそう' : '← → か A D で、砲台をうごかそう', T0 ? 'Drag on the screen to move your cannon' : 'Move with the arrow keys or A / D');
+  if (S.phase === 'intro' && S.pt > 25 && !(save.tut & 1)) showHint(1, T0 ? '画面をビュッとはじくと、砲台がすべる。はんたいにはじくと向きがかわるよ（ゆっくりドラッグでもOK）' : '← → か A D で、砲台をうごかそう', T0 ? 'Flick the screen to glide; flick the other way to turn around (a slow drag works too)' : 'Move with the arrow keys or A / D');
   else if (S.phase === 'play' && S.pt > 60 && !(save.tut & 2) && (save.tut & 1)) showHint(2, T0 ? 'じどうで うちます。ボタンでも うてるよ' : 'Space か Z で うとう！ ながおしで れんしゃ', T0 ? 'It fires by itself. You can also use the Fire button' : 'Press Space or Z to shoot. Hold for rapid fire');
   else if (S.phase === 'play' && S.eb.length > 1 && !(save.tut & 4) && (save.tut & 2)) showHint(4, 'シールドのかげに かくれよう。たまで すこしずつ けずれるよ', 'Hide behind the shields. Bullets chip them away');
   else if (S.sau && !(save.tut & 8)) showHint(8, 'おつきバスを うつと アイテムが おちてくる！', 'Shoot the Moon Bus to make a power-up drop!');
@@ -453,7 +469,7 @@ function startRun(opts) {
 }
 function announce(t) { $('live').textContent = t; }
 function toast(t) { const d = document.createElement('div'); d.className = 'toastbar'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 1700); }
-function endLive() { run = null; SE = null; drags = []; document.body.classList.remove('playing'); $('hint').hidden = true; hintT = 0; }
+function endLive() { run = null; SE = null; drags = []; document.body.classList.remove('playing'); $('hint').hidden = true; hintT = 0; flicks = [0, 0]; }
 const bestFor = (mode, mp) => (mode === 'classic' ? (mp === 'coop' ? save.best.coop : mp === 'alt' ? save.best.alt : save.best.classic) : mode === 'campaign' ? 0 : mode === 'daily' ? (save.dl.k === dayKey() ? save.dl.s : 0) : save.best[mode] || 0);
 const MODENAME = { campaign: ['キャンペーン', 'Campaign'], classic: ['クラシック', 'Classic'], survival: ['サバイバル', 'Survival'], endless: ['のんびり', 'Endless'], daily: ['きょうのチャレンジ', 'Daily Challenge'] };
 const modeName = m => L(MODENAME[m][0], MODENAME[m][1]);
@@ -521,7 +537,7 @@ function showHowto(first) {
   showOv('howto', `<h2 id="ovTitle">${L('あそびかた', 'How to play')}</h2><div class="scroll howto">
   <p>${L('星の しんにゅうしゃが よこにゆれながら おりてくる！ 砲台で ぜんぶ うちおとそう。', 'Aliens from the stars march sideways and creep down. Shoot them all with your cannon!')}</p>
   <h3>${L('そうさ', 'Controls')}</h3><ul>
-  <li><b>${L('タッチ', 'Touch')}</b>: ${L('画面を ドラッグして うごかす。じどうで うつ（「じどう」ボタンで切りかえ）。ボタンでも あそべます。よこむきでも たてむきでも OK。', 'Drag anywhere to move; it fires by itself (toggle with the Auto button). The buttons work too. Portrait or landscape.')}</li>
+  <li><b>${L('タッチ', 'Touch')}</b>: ${L('画面を ビュッとフリック（はじく）すると 砲台がすべる。はんたいにはじくと すぐ向きがかわる。ゆっくりなぞれば ドラッグで うごかせる。じどうで うつ（「じどう」ボタンで切りかえ）。ボタンでも あそべます。よこむきでも たてむきでも OK。', 'Flick the screen and the cannon glides; flick the other way to turn around at once. Drag slowly to steer by hand. It fires by itself (toggle with the Auto button). The buttons work too. Portrait or landscape.')}</li>
   <li><b>${L('キーボード', 'Keyboard')}</b>: ${L('← → か A D でうごく / Space か Z でうつ / X か Shift でボム / P か Esc でポーズ', 'Arrows or A / D to move, Space or Z to fire, X or Shift for a bomb, P or Esc to pause')}</li>
   <li><b>${L('ゲームパッド', 'Gamepad')}</b>: ${L('スティック／十字キー・Aでうつ・Bでボム・Startでポーズ', 'Stick / D-pad, A fires, B bombs, Start pauses')}</li>
   <li><b>${L('ふたりプレイ', 'Two players')}</b>: ${L('「こうたい」は 1つの画面を かわりばんこ。「きょうりょく」は ふたりの砲台が同時に並ぶ（1P: A D W S ／ 2P: ← → ↑ ↓）。', '"Take turns" swaps after each lost life. "Co-op" puts two cannons on screen at once (P1: A D W S, P2: arrow keys).')}</li></ul>
@@ -605,6 +621,7 @@ function showSettings(fromPause) {
   const seg = (key, opts) => '<div class="seg" role="group" data-k="' + key + '">' + opts.map(o => '<button class="opt" type="button" data-v="' + o[0] + '" aria-pressed="' + (String(save.set[key]) === String(o[0])) + '">' + esc(o[1]) + '</button>').join('') + '</div>';
   showOv('settings', `<h2 id="ovTitle">${L('せってい', 'Settings')}</h2><div class="scroll">
   <div class="og"><div class="ol">${L('じどうれんしゃ', 'Auto-fire')}</div>${seg('auto', [[2, L('じどう（タッチなら ON）', 'Auto (on for touch)')], [1, L('いつも ON', 'Always on')], [0, L('OFF（ボタンかタップ）', 'Off (button or tap)')]])}</div>
+  <div class="og"><div class="ol">${L('そうさ（タッチ）', 'Touch controls')}</div>${seg('ctl', [[0, L('フリック', 'Flick')], [1, L('ドラッグ', 'Drag')], [2, L('りょうほう', 'Both')]])}<p>${L('フリック：ゆびをビュッとはじくと、砲台がすべる（はやいほど とおくへ）。はんたいにはじくと すぐ向きがかわる。ドラッグ：ゆびについてくる。「りょうほう」はゆっくりならドラッグ、はやいスワイプならフリック。', 'Flick: swipe quickly and the cannon glides (faster = farther); flick the other way to reverse at once. Drag: the cannon follows your finger. “Both” drags on slow moves and flicks on fast swipes.')}</p></div>
   <div class="og"><div class="ol">${L('ドラッグの感度', 'Drag speed')}</div>${seg('gain', [[9, L('ゆっくり', 'Slow')], [12, L('ふつう', 'Normal')], [17, L('はやい', 'Fast')]])}</div>
   <div class="og"><div class="ol">${L('タッチボタン', 'Touch buttons')}</div>${seg('tc', [['auto', L('じどう', 'Auto')], ['on', L('出す', 'Show')], ['off', L('出さない', 'Hide')]])}</div>
   <div class="og"><div class="ol">${L('画面のかんじ', 'Screen look')}</div>${seg('fx', [[0, L('ふつう', 'Plain')], [1, L('ブラウン管', 'CRT lines')], [2, L('ブラウン管＋にじみ', 'CRT + glow')]])}<p>${L('走査線やにじみは おこのみで。ふだんは OFF です。', 'Scanlines and glow are optional and off by default.')}</p></div>
@@ -689,7 +706,7 @@ if (DEBUG) {
   const state = () => { const S = curS(); const p = S ? S.pl[0] : null; return {
     ready: true, screen: ovName || (run ? run.kind : 'none'), ov: ovOpen(), playing: isLive(), paused: !!(run && run.paused), finished: !!(run && run.finished), mode: S ? S.mode : '', mp: SE ? SE.mp : '', cur: SE ? SE.cur : 0,
     frame: S ? S.frame : 0, wave: S ? S.wave : 0, phase: S ? S.phase : '', score: S ? S.score : 0, lives: S ? S.lives : 0, ga: S ? S.ga : 0, gt: S ? S.gt : 0, eb: S ? S.eb.length : 0, pb: S ? S.pb.length : 0,
-    px: p ? p.x : 0, py: p ? p.y : 0, dead: p ? p.dead : 0, inv: p ? p.inv : 0, bb: p ? p.bb : 0, boss: !!(S && S.boss && !S.boss.dead), bhp: S && S.boss ? S.boss.hp : -1, stars: S ? S.stars : 0, won: !!(S && S.won), chain: S ? S.chain : 0,
+    px: p ? p.x : 0, gv: p ? p.gv : 0, py: p ? p.y : 0, dead: p ? p.dead : 0, inv: p ? p.inv : 0, bb: p ? p.bb : 0, boss: !!(S && S.boss && !S.boss.dead), bhp: S && S.boss ? S.boss.hp : -1, stars: S ? S.stars : 0, won: !!(S && S.won), chain: S ? S.chain : 0,
     shots: S ? S.st.shots : 0, kills: S ? S.st.kills : 0, shieldN: S ? S.sh.reduce((a, s) => a + s.n, 0) : 0, mt: S ? S.mt : 0, save: JSON.parse(JSON.stringify(save)), touch: touchMode, K, np: S ? S.np : 1, hint: $('hint').hidden ? '' : $('hint').textContent, hash: S ? E.hash(S) : 0, auto: autoOn(), fx: view.fx, turn: view.turn,
   }; };
   window.__kb = Object.assign(window.__kb || {}, { ready: () => true, state });

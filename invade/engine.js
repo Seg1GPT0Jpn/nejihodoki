@@ -2,7 +2,8 @@
 // A run is fully determined by (opts, input log). Only + - * / sqrt floor imul are used (own sin/cos).
 //
 //   InvadeEngine.newGame(o) -> S    o: { mode:'classic'|'campaign'|'survival'|'endless'|'daily', level (campaign, 0-based), seed, np:1|2 (co-op), alt, assist, mods, dkey }
-//   InvadeEngine.step(S, m0, m1, x0, x1)   m = IN bit mask (L R FIRE BOMB); x = optional drag target (px) that moves the base toward it at up to 4.2 px/frame
+//   InvadeEngine.step(S, m0, m1, x0, x1, f0, f1)   m = IN bit mask (L R FIRE BOMB); x = optional drag target (px) that moves the base toward it at up to 4.2 px/frame;
+//        f = optional flick command (signed px/frame, 0/undefined = none): the base glides with that speed, decaying by 10% a frame (about 10x the speed in px), stops at walls; a new flick replaces it, keys or a drag target cancel it
 //   InvadeEngine.newSession(o) / sessionStep(se, ...)   solo, 'alt' (two alternating games) or 'coop' (np = 2)
 //   InvadeEngine.interval(alive, total, spec) = the march interval in frames (the speed-up law): floor(mi + (bi - mi) * alive / total)
 //   InvadeEngine.hash(S), dailyFor(dkey)
@@ -12,6 +13,7 @@
   const LV = root.InvadeLevels || (typeof require === 'function' ? require('./levels.js') : null);
   const W = 240, H = 320, SPX = 18, SPY = 15, AW = 12, AH = 9, INV = 262, PY = 296, SHY = 228, SCW = 12, SCH = 8, CELL = 2;
   const IN = { L: 1, R: 2, FIRE: 4, BOMB: 8 };
+  const FLICK_MAX = 7, FLICK_DECAY = 0.9;
   const SCORE_CAP = 9999999, INTRO = 80, CLEAR = 150;
   const EXT = [20000, 60000, 150000, 300000, 500000, 800000, 1200000, 2000000];
   const TAU = 6.283185307179586, PI = 3.141592653589793;
@@ -68,7 +70,7 @@
   }
   function newPlayer(S, i) {
     const tiny = S.mods.indexOf('tiny') >= 0;
-    return { i, x: S.np === 2 ? (i ? W * 0.7 : W * 0.3) : W / 2, y: PY, cd: 0, inv: 0, dead: 0, bb: 1, spr: 0, rap: 0, prc: 0, sh: 0, pbp: 0, hw: tiny ? 5 : 7, hh: 4, fl: 0, sp: tiny ? 2.7 : 2.3, tm: 0 };
+    return { i, x: S.np === 2 ? (i ? W * 0.7 : W * 0.3) : W / 2, y: PY, cd: 0, inv: 0, dead: 0, bb: 1, spr: 0, rap: 0, prc: 0, sh: 0, pbp: 0, hw: tiny ? 5 : 7, hh: 4, fl: 0, sp: tiny ? 2.7 : 2.3, tm: 0, gv: 0 };
   }
 
   function specFor(S, n) {
@@ -186,7 +188,7 @@
   // ---------------------------------------------------------------- players
   function maxB(p) { return p.rap > 0 ? 6 : 4; }
   function ownCount(S, i) { let n = 0; for (const b of S.pb) if (b.o === i && !b.dead) n++; return n; }
-  function stepPlayer(S, p, m, tx) {
+  function stepPlayer(S, p, m, tx, fl) {
     if (p.fl > 0) p.fl--;
     if (p.spr > 0) p.spr--; if (p.rap > 0) p.rap--; if (p.prc > 0) p.prc--;
     if (p.inv > 0) p.inv--;
@@ -201,8 +203,13 @@
     if (p.dead < 0) return;
     // move
     const sp = p.sp;
-    if (tx != null && tx === tx) { const d = clamp(tx - p.x, -4.2, 4.2); p.x += d; }
-    else { if (m & IN.L) p.x -= sp; if (m & IN.R) p.x += sp; }
+    if (fl != null && fl === fl && fl !== 0) p.gv = clamp(fl, -FLICK_MAX, FLICK_MAX);
+    if (tx != null && tx === tx) { p.gv = 0; const d = clamp(tx - p.x, -4.2, 4.2); p.x += d; }
+    else if (m & (IN.L | IN.R)) { p.gv = 0; if (m & IN.L) p.x -= sp; if (m & IN.R) p.x += sp; }
+    else if (p.gv) {
+      p.x += p.gv; p.gv *= FLICK_DECAY;
+      if (Math.abs(p.gv) < 0.2 || p.x <= 9 || p.x >= W - 9) p.gv = 0;
+    }
     p.x = clamp(p.x, 9, W - 9);
     if (S.phase !== 'play') { p.pbp = (m & IN.BOMB) ? 1 : 0; return; }
     // fire
@@ -395,10 +402,10 @@
   }
 
   // ---------------------------------------------------------------- the frame
-  function step(S, m0, m1, x0, x1) {
+  function step(S, m0, m1, x0, x1, f0, f1) {
     S.frame++;
     if (S.hold) return;
-    const ms = [m0 | 0, m1 | 0], xs = [x0, x1];
+    const ms = [m0 | 0, m1 | 0], xs = [x0, x1], fs = [f0, f1];
     if (S.phase === 'over' || S.phase === 'done') {
       S.pt++;
       for (const p of S.pl) { if (p.dead > 0) p.dead--; }
@@ -408,7 +415,7 @@
     if (S.slow > 0) S.slow--;
     const en = !(S.slow > 0 && (S.frame & 1));
     if (S.ct > 0 && --S.ct === 0) { if (S.chain >= 5) ev(S, 'chain', 0, 0, S.chain); S.chain = 0; }
-    for (let i = 0; i < S.np; i++) stepPlayer(S, S.pl[i], ms[i], xs[i]);
+    for (let i = 0; i < S.np; i++) stepPlayer(S, S.pl[i], ms[i], xs[i], fs[i]);
     if (S.phase === 'over') { decay(S); return; }
     const sp = S.spec;
     if (S.phase === 'intro') {
@@ -633,8 +640,8 @@
     return { mp, cur: 0, g: [newGame(Object.assign({}, o, { np: mp === 'coop' ? 2 : 1 }))] };
   }
   const over = S => S.phase === 'over' || S.phase === 'done';
-  function sessionStep(se, m0, m1, x0, x1) {
-    const S = se.g[se.cur]; step(S, m0, m1, x0, x1);
+  function sessionStep(se, m0, m1, x0, x1, f0, f1) {
+    const S = se.g[se.cur]; step(S, m0, m1, x0, x1, f0, f1);
     if (S.hold) {
       const o = se.g[1 - se.cur];
       if (o && !over(o)) { se.cur = 1 - se.cur; if (o.hold) resume(o); ev(o, 'swap', 0, 0, se.cur); } else resume(S);
@@ -660,7 +667,7 @@
     return h >>> 0;
   }
 
-  const API = { W, H, SPX, SPY, AW, AH, INV, PY, SHY, SCW, SCH, CELL, SHT, SHN, IN, SCORE_CAP, INTRO, CLEAR, BSZ, DAILY, EXT, sin, cos, rnd, mkRng, interval, newGame, step, resume, newSession, sessionStep, sessionOver, sessionScore, dailyFor, hash,
+  const API = { FLICK_MAX, FLICK_DECAY, W, H, SPX, SPY, AW, AH, INV, PY, SHY, SCW, SCH, CELL, SHT, SHN, IN, SCORE_CAP, INTRO, CLEAR, BSZ, DAILY, EXT, sin, cos, rnd, mkRng, interval, newGame, step, resume, newSession, sessionStep, sessionOver, sessionScore, dailyFor, hash,
     shieldRatio, repairShields, hurtPlayer, hurtBoss, shAt, startWave, bottoms, maxB, place, hurtAlien, collect, dropCap, eshot };
   root.InvadeEngine = API;
   if (typeof module === 'object' && module.exports) module.exports = API;

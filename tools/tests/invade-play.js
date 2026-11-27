@@ -82,6 +82,32 @@ async function touchTest(env) {
   await shot(p, '03-touch'); check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+async function flickTest(env) {
+  console.log('3b. touch flick: a quick swipe glides the cannon, the opposite flick reverses, slow drag still steers, the setting switches modes');
+  const s = await open(env, { touch: true, vp: 'ip12' }); const p = s.page; const cdp = await p.context().newCDPSession(p);
+  await act(p, 'setup:classic'); await act(p, 'go:classic'); await wait(p, () => __kb.state().phase === 'play', null, 6000);
+  check('the default touch control is both (flick + drag)', (await st(p)).save.set.ctl === 2);
+  await p.click('#bAuto');
+  const r = await p.evaluate(() => { const c = document.getElementById('cv').getBoundingClientRect(); return { x: c.left, y: c.top, w: c.width, h: c.height }; });
+  const touch = async (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+  const swipe = async (x0, x1, y, steps, gap) => { await touch('touchStart', x0, y); for (let i = 1; i <= steps; i++) { await touch('touchMove', x0 + (x1 - x0) * i / steps, y); await p.waitForTimeout(gap); } };
+  const y = r.y + r.h * 0.6; await p.evaluate(() => __invade.setX(120)); await p.waitForTimeout(50);
+  await swipe(r.x + r.w * 0.3, r.x + r.w * 0.6, y, 6, 8); let a = await st(p); check('a fast swipe right starts a glide (velocity > 0)', a.gv > 1 || a.px > 135, { gv: a.gv, px: a.px });
+  await touch('touchEnd'); await p.waitForTimeout(700); const farX = (await st(p)).px; check('the cannon glided right and kept going after the finger left', farX > 150, farX);
+  await swipe(r.x + r.w * 0.6, r.x + r.w * 0.3, y, 6, 8); await touch('touchEnd'); a = await st(p); check('a flick the other way reverses at once (velocity < 0)', a.gv < -0.5 || a.px < farX, { gv: a.gv, px: a.px, farX });
+  await p.waitForTimeout(900); check('and it glides left', (await st(p)).px < farX - 15);
+  await p.evaluate(() => __invade.setX(200)); await swipe(r.x + r.w * 0.3, r.x + r.w * 0.9, y, 5, 6); await touch('touchEnd'); await p.waitForTimeout(900); check('a hard flick stops at the right wall', (await st(p)).px >= 229, (await st(p)).px);
+  await p.evaluate(() => __invade.setX(120)); await p.waitForTimeout(100); const px0 = (await st(p)).px;
+  await swipe(r.x + r.w * 0.5, r.x + r.w * 0.5 + 60, y, 12, 45); a = await st(p); check('a slow drag steers by hand without a glide', a.px > px0 + 20 && Math.abs(a.gv) < 0.3, { px0, px: a.px, gv: a.gv }); await touch('touchEnd');
+  await p.evaluate(() => { __invade.save.set.ctl = 1; __invade.setX(120); }); await p.waitForTimeout(100);
+  await swipe(r.x + r.w * 0.3, r.x + r.w * 0.8, y, 5, 8); await p.waitForTimeout(100); a = await st(p); check('drag-only: a fast swipe never glides', Math.abs(a.gv) === 0, a.gv); await touch('touchEnd');
+  await p.evaluate(() => { __invade.save.set.ctl = 0; __invade.setX(120); }); await p.waitForTimeout(100); const q0 = (await st(p)).px;
+  await swipe(r.x + r.w * 0.5, r.x + r.w * 0.5 + 60, y, 12, 45); await p.waitForTimeout(150); check('flick-only: a slow drag does not move the cannon', Math.abs((await st(p)).px - q0) < 3, { q0, px: (await st(p)).px }); await touch('touchEnd');
+  await swipe(r.x + r.w * 0.3, r.x + r.w * 0.7, y, 5, 8); await touch('touchEnd'); await p.waitForTimeout(500); check('flick-only: a flick glides', (await st(p)).px > q0 + 20);
+  await p.evaluate(() => __invade.showSettings(false)); check('the settings offer Flick / Drag / Both', (await p.$$('.seg[data-k="ctl"] .opt')).length === 3);
+  await shot(p, '03b-flick'); check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+}
+
 async function padTest(env) {
   console.log('4. gamepad: stick moves, A fires, Start pauses');
   const init = `(() => { window.__pad = { axes: [0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), connected: true, id: 'test', index: 0 }; navigator.getGamepads = () => [window.__pad]; })();`;
@@ -186,7 +212,7 @@ async function perf(env) {
   const srv = await server.start(ROOT); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { first, keys: keysTest, touch: touchTest, pad: padTest, modes: modesTest, campaign: campaignTest, settings: settingsTest, layouts, orient, english, perf };
+  const all = { first, keys: keysTest, touch: touchTest, flick: flickTest, pad: padTest, modes: modesTest, campaign: campaignTest, settings: settingsTest, layouts, orient, english, perf };
   for (const [name, f] of Object.entries(all)) {
     if (only && !only.includes(name)) continue;
     try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }

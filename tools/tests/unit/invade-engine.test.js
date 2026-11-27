@@ -212,4 +212,16 @@ test('assist: the slow assist makes the march slower and the shots gentler', () 
   ok(b.spec.bi > a.spec.bi); ok(b.spec.bv < a.spec.bv); ok(b.spec.fi > a.spec.fi);
 });
 
+test('flick glide: distance grows with the flick speed (about 10x), decays smoothly, stops at the walls, reverses at once, keys and drag cancel it', () => {
+  const dist = f => { const S = arena(); const p = S.pl[0]; p.x = 120 - (f > 0 ? 100 : -100) * 0 ; p.x = 40; const x0 = p.x; E.step(S, 0, 0, undefined, undefined, f); for (let i = 0; i < 80; i++) E.step(S, 0, 0); return p.x - x0; };
+  const d3 = dist(3), d6 = dist(6); nearly(d3, 27, 6, 'flick 3'); nearly(d6, 55, 8, 'flick 6'); ok(d6 > d3 * 1.7, 'faster flick goes farther');
+  const S = arena(); const p = S.pl[0]; p.x = 120; E.step(S, 0, 0, undefined, undefined, 5); const v1 = p.x - 120; E.step(S, 0, 0); const v2 = p.x - 120 - v1; ok(v1 > 4.9 && v2 < v1 && v2 > 0, 'starts fast and decays');
+  const W = arena(); W.pl[0].x = 200; E.step(W, 0, 0, undefined, undefined, 7); for (let i = 0; i < 60; i++) E.step(W, 0, 0); eq(W.pl[0].x, 231, 'stops at the right wall'); eq(W.pl[0].gv, 0);
+  const L = arena(); L.pl[0].x = 30; E.step(L, 0, 0, undefined, undefined, -7); for (let i = 0; i < 60; i++) E.step(L, 0, 0); eq(L.pl[0].x, 9, 'stops at the left wall');
+  const R = arena(); R.pl[0].x = 120; E.step(R, 0, 0, undefined, undefined, 6); idle(R, 5, 0); const mid = R.pl[0].x; ok(mid > 140); E.step(R, 0, 0, undefined, undefined, -6); ok(R.pl[0].x < mid, 'reversed on the same frame'); idle(R, 80, 0); ok(R.pl[0].x < 120, 'and keeps gliding left');
+  const K = arena(); K.pl[0].x = 120; E.step(K, 0, 0, undefined, undefined, 6); E.step(K, IN.L); eq(K.pl[0].gv, 0, 'a key cancels the glide'); const D = arena(); D.pl[0].x = 120; E.step(D, 0, 0, undefined, undefined, 6); E.step(D, 0, 0, 100); eq(D.pl[0].gv, 0, 'a drag target cancels it');
+  const C = arena(); E.step(C, 0, 0, undefined, undefined, 99); ok(C.pl[0].gv <= E.FLICK_MAX, 'capped');
+  const a = E.newGame({ mode: 'classic', seed: 5 }), b = E.newGame({ mode: 'classic', seed: 5 }); for (let i = 0; i < 600; i++) { const f = i % 90 === 10 ? (i % 180 === 10 ? 5 : -5) : undefined; E.step(a, IN.FIRE, 0, undefined, undefined, f); E.step(b, IN.FIRE, 0, undefined, undefined, f); } eq(E.hash(a), E.hash(b), 'replaying the flick commands gives the same game');
+});
+
 run('invade-engine');
