@@ -92,7 +92,7 @@
         nextStep(); return bot.act(S);
       }
       const o = go(S, tg.p, { stop: 0.15 }); inp.sx = o.sx; inp.sy = o.sy;
-      if (st.bounce && h.pw && h.pw.k === 'jelly') { if (!(S.pb & B.J)) inp.b |= B.J; return inp; }
+      if (st.bounce) { if (!(S.pb & B.J)) inp.b |= B.J; return inp; }
       if (st.dash && h.pw && h.pw.k === 'dash' && h.on < 0 && (h.aj | 0) < 1 && V.dot(h.v, h.up) < 1.5 && !(S.pb & B.J)) inp.b |= B.J;
       if (st.j != null && h.on >= 0 && dist < st.j && !(S.pb & B.J) && !(st.once && bot.jumped)) { bot.jh = 18; bot.jumped = true; }
       if (bot.jh > 0) { bot.jh--; if (!(bot.jh === 17 && (S.pb & B.J))) inp.b |= B.J; }

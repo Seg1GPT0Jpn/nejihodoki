@@ -332,7 +332,10 @@
     const canJump = h.cy > 0;
     let jumped = false;
     const jel = h.pw && h.pw.k === 'jelly';
-    if (jel && grounded0 && h.pa === 1 && (h.pvf || 0) < -4 && h.pound === 0) { // ゼリー：着地でぽよん。ちょうどよくジャンプを押すと、どんどん高く
+    const padB = grounded0 && h.on >= 0 ? L.bodies[h.on].bnc || 0 : 0;
+    if (padB && h.pa === 1 && (h.pvf || 0) < -2 && h.pound === 0) { // キャンディのバウンスパッド：おりると はねる（ジャンプをおすと、さらに高く）
+      const imp = -h.pvf, up0 = Math.min(18, Math.max(13, imp * padB + (h.jb > 0 ? 3.2 : 0))); const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, up0)); h.on = -1; h.cy = 0; h.jb = 0; jumped = true; h.jh = 1; h.as = 0; h.aj = 0; S.cnt.jump++; S.ev.push(['jump', h.x[0], h.x[1], h.x[2], 1]);
+    } else if (jel && grounded0 && h.pa === 1 && (h.pvf || 0) < -4 && h.pound === 0) { // ゼリー：着地でぽよん。ちょうどよくジャンプを押すと、どんどん高く
       const imp = -h.pvf, up0 = Math.min(18, imp * 0.82 + (h.jb > 0 ? 3.2 : 0));
       if (up0 > 5) { const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, up0)); h.on = -1; h.cy = 0; h.jb = 0; jumped = true; h.jh = 1; h.as = 0; h.aj = 0; S.cnt.jump++; S.ev.push(['jump', h.x[0], h.x[1], h.x[2], 1]); }
     }

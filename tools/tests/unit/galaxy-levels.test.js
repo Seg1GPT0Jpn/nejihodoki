@@ -80,6 +80,16 @@ test('suits are required, and a run+jump-only player cannot finish the main miss
   for (const g of LV.GALAXIES) { if (g.id === 'g1' || g.id === 'g2') continue; const L = LV.compile(E, g.id); for (const m of L.mlist) { if (m.kind === 'comet' || m.kind === 'hunt') continue; n++; const r = Bot.run(L, m.id, { max: Math.round((m.par || 120) * 60 * 1.6), naive: true }); if (!r.ok) failed++; } }
   console.log('      naive bot fails ' + failed + ' of ' + n + ' main missions beyond galaxy 2'); ok(n >= 25 && failed / n >= 0.9, 'naive fail share ' + failed + '/' + n);
 });
+test('differentiation (group 1: meadow / ice / candy): signature mechanics used nowhere else, 4+ goal types, 3+ planet shapes, distinct skies', () => {
+  const info = id => { const d = LV.def(id), mech = new Set(), goals = new Set(), shapes = new Set(d.bodies.map(b => b.k)); for (const m of d.missions) { (m.mech || []).forEach(k => mech.add(k)); goals.add(m.kind && m.kind !== 'run' ? m.kind : m.goal); } return { d, mech, goals, shapes }; };
+  const all = {}; for (const g of LV.GALAXIES) all[g.id] = info(g.id);
+  const unique = id => [...all[id].mech].filter(k => LV.GALAXIES.every(g => g.id === id || !all[g.id].mech.has(k)));
+  ok(unique('g2').length >= 2 && unique('g4').length >= 2, 'ice ' + unique('g2') + ' candy ' + unique('g4'));
+  for (const id of ['g1', 'g2', 'g4']) { ok(all[id].goals.size >= 4, id + ' goal types ' + [...all[id].goals]); ok(all[id].shapes.size >= 3, id + ' planet shapes ' + [...all[id].shapes]); }
+  for (const [a, b] of [['g1', 'g2'], ['g1', 'g4'], ['g2', 'g4']]) { const sa = all[a].d.sky, sb = all[b].d.sky, dd = Math.hypot(...sa.n1.map((v, i) => v - sb.n1[i])) + Math.hypot(...sa.n2.map((v, i) => v - sb.n2[i])); ok(dd > 0.6, a + ' vs ' + b + ' sky color distance ' + dd.toFixed(2)); }
+  const jacc = (a, b) => { const A = all[a].mech, B = all[b].mech; let i = 0; for (const k of A) if (B.has(k)) i++; return i / (A.size + B.size - i); };
+  ok(jacc('g1', 'g2') < 0.7 && jacc('g1', 'g4') < 0.6 && jacc('g2', 'g4') < 0.6, 'mechanic overlap ' + jacc('g1', 'g2').toFixed(2) + ' ' + jacc('g1', 'g4').toFixed(2) + ' ' + jacc('g2', 'g4').toFixed(2));
+});
 test('the hub has a gate for every galaxy', () => {
   const L = LV.compile(E, 'hub'); const gs = L.ents.filter(e => e.k === 'gate').map(e => e.gal); eq(gs.join(), LV.GALAXIES.map(g => g.id).join());
 });
