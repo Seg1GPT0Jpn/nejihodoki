@@ -56,6 +56,9 @@
     hoopsPickup: { sport: 'hoops', ja: 'CPUとピックアップ', en: 'Pick-up vs CPU', thr: [[10, 16, 22], [9, 14, 20], [8, 12, 17]] },
     jetRace: { sport: 'jump', ja: 'ジェットレース', en: 'Jet race', thr: [[190, 250, 290], [170, 225, 260], [150, 200, 235]] },
     discGolf: { sport: 'disc', ja: 'フリスビーゴルフ', en: 'Disc golf', thr: [[35, 48, 60], [40, 55, 68], [40, 55, 68]] },
+    airGlider: { sport: 'flight', ja: 'グライダー', en: 'Glider', thr: [[90, 150, 200], [80, 140, 190], [70, 120, 170]] },
+    airFormation: { sport: 'flight', ja: 'フォーメーション降下', en: 'Formation skydive', thr: [[120, 190, 250], [110, 180, 240], [100, 170, 230]] },
+    airDuel: { sport: 'flight', ja: '風船バトル', en: 'Balloon duel', thr: [[70, 120, 190], [70, 120, 190], [70, 120, 170]] },
     spares: { sport: 'bowling', ja: 'スペアチャレンジ', en: 'Spare challenge', thr: [[30, 50, 70], [30, 50, 70], [10, 30, 50]] },
   };
   function variantStars(key, diff, score) { const v = VARIANTS[key]; if (!v) return 0; const t = v.thr[clamp(diff | 0, 0, 2)]; let n = 0; for (let i = 0; i < 3; i++) if (score >= t[i]) n = i + 1; return n; }
@@ -69,7 +72,7 @@
   }
 
   // ---------- 保存 ----------
-  const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops', 'matchW', 'stamps'];
+  const STAT_KEYS = ['plays', 'daily', 'twop', 'wins2p', 'stars3', 'strikes', 'spares', 'turkey', 'perfect', 'bulls', 'hio', 'birdie', 'swish', 'catches', 'parry', 'ace', 'jumpM', 'canoeW', 'cycW', 'rallyW', 'streak', 'tiltOn', 'tutAll', 'clears', 'flights', 'photos', 'rings', 'landings', 'pops', 'matchW', 'stamps', 'airs', 'duelWins'];
   function newSave() { return { v: 1, pts: 0, b: {}, x: {}, dl: { k: 0, id: '', sc: 0, st: 0 }, stats: {}, set: { sens: 1, tilt: 0, vib: 1, who: 0, lp: 0, gh: 9, av: null, av2: null, last: {} }, fl: { b: [0, 0, 0], ph: 0, n: 0 }, gf: { b: [0, 0, 0], m: 0 }, vb: {}, bk: { n: 0, w: 0 }, tm: 0, tu: 0, tut: 0 }; }
   function sanitize(o) {
     const s = newSave();

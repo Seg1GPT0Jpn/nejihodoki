@@ -104,7 +104,7 @@
         else if (e.type === 'hit') { env.sfx('hit'); pops.push({ txt: e.dmg > 1 ? L('大ダメージ！', 'Big hit!') : L('ヒット', 'Hit'), t: 0, col: PAL.sun }); shake = 0.25; }
         else if (e.type === 'clank') { env.sfx('error'); pops.push({ txt: L('カキーン！ はじかれた', 'Blocked!'), t: 0, col: '#aaf' }); }
         else if (e.type === 'hurt') { env.sfx('fail'); flash = 0.4; env.buzz(40); pops.push({ txt: L('やられた！', 'Ouch!'), t: 0, col: PAL.coral }); }
-        else if (e.type === 'ko') { env.sfx('clear'); pops.push({ txt: L('いっぽん！', 'Down!'), t: 0, col: PAL.sun }); }
+        else if (e.type === 'ko') { env.sfx('clear'); if (env.highlight) env.highlight(L('いっぽん！', 'IPPON!')); pops.push({ txt: L('いっぽん！', 'Down!'), t: 0, col: PAL.sun }); }
         else if (e.type === 'early' || e.type === 'wrong') { env.sfx('error'); pops.push({ txt: e.type === 'wrong' ? L('ちがう向き', 'Wrong way') : L('はやい！', 'Too early'), t: 0, col: '#fff' }); }
       }
       run.ev.length = 0; hud();

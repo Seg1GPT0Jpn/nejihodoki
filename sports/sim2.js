@@ -105,7 +105,7 @@
       diff = clamp(diff | 0, 0, 2); humans = clamp(humans | 0 || 1, 1, 2); const cfg = CCFG[diff], r = rng(hash32('canoe:' + seed)), rocks = [];
       let s = 38; for (let i = 0; i < cfg.rocks; i++) { s += 22 + r() * 30; if (s > cfg.len - 25) break; rocks.push({ s, x: Math.round((r() * 1.4 - 0.7) * 100) / 100 }); }
       const boats = [];
-      for (let i = 0; i < 4; i++) boats.push({ i, human: i < humans, x: (i - 1.5) * 0.0, s: 0, v: 0, last: -9, lastSide: 0, q: 0, strokes: 0, fin: null, hits: 0, cs: cfg.cpu[(i - humans + 3) % 3] * (0.96 + r() * 0.08), next: 0.6 + r() * 0.5, cside: 1, perf: 0 });
+      for (let i = 0; i < 4; i++) boats.push({ i, human: i < humans, x: (i - 1.5) * 0.0, s: 0, v: 0, last: -9, lastSide: 0, q: 0, strokes: 0, fin: null, hits: 0, st: 1, cs: cfg.cpu[(i - humans + 3) % 3] * (0.96 + r() * 0.08), next: 0.6 + r() * 0.5, cside: 1, perf: 0 });
       return { kind: 'canoe', diff, seed, cfg, r, t: -1.5, rocks, boats, humans, done: false, ph: r() * 6.28, ev: [], results: null };
     },
     // 人の1こぎ。side = -1（左）| 1（右）
@@ -113,7 +113,7 @@
       const b = m.boats[i]; if (!b || !b.human || b.fin != null || m.t < 0) return 0;
       const dt = m.t - b.last; if (dt < 0.14) return 0;
       const alt = b.lastSide !== 0 && side !== b.lastSide, tc = m.cfg.tc, qr = b.last < 0 ? 0.7 : clamp(1 - Math.abs(dt - tc) / (0.65 * tc), 0, 1);
-      b.combo = alt && qr > 0.8 ? (b.combo || 0) + 1 : alt ? Math.max(0, (b.combo || 0) - 2) : 0; const p = Canoe.KICK * (alt ? 0.45 + 0.55 * qr : 0.3 * (0.4 + 0.6 * qr)) * (1 + Math.min(0.3, 0.03 * b.combo));
+      b.combo = alt && qr > 0.8 ? (b.combo || 0) + 1 : alt ? Math.max(0, (b.combo || 0) - 2) : 0; const tired = b.st < 0.5 ? 0.6 + 0.8 * b.st : 1, p = Canoe.KICK * (alt ? 0.45 + 0.55 * qr : 0.3 * (0.4 + 0.6 * qr)) * (1 + Math.min(0.3, 0.03 * b.combo)) * tired; b.st = clamp(b.st - (0.03 + (qr < 0.5 ? 0.05 : 0)), 0, 1); if (b.st < 0.25 && !b.warned) { b.warned = true; m.ev.push({ type: 'tired', boat: i }); }
       b.v += p; b.x += -side * (alt ? 0.05 : 0.2); b.last = m.t; b.lastSide = side; b.q = qr; b.strokes++; if (qr > 0.8 && alt) b.perf++;
       m.ev.push({ type: 'stroke', boat: i, side, q: qr, alt, combo: b.combo }); return qr;
     },
@@ -126,6 +126,7 @@
           b.next -= dt; if (b.next <= 0) { const tc = m.cfg.tc * (1.02 + (m.r() - 0.5) * 0.14); b.next += tc; b.cside = -b.cside; b.v += Canoe.KICK * (0.45 + 0.55 * clamp(b.cs - 0.1 + (m.r() - 0.5) * 0.3, 0, 1)); b.x += -b.cside * 0.05; }
           b.x += (-b.x * 0.35 + (m.r() - 0.5) * 0.6) * dt;
         }
+        if (b.human) { b.st = Math.min(1, b.st + dt * 0.085); if (b.st > 0.5) b.warned = false; }
         b.v -= Canoe.DRAG * b.v * dt; b.s += b.v * dt;
         b.x += 0.03 * Math.sin(b.s / 25 + m.ph) * dt * 2.5;
         if (b.x > 1) { b.x = 1; b.v *= 1 - 0.7 * dt * 3; } if (b.x < -1) { b.x = -1; b.v *= 1 - 0.7 * dt * 3; }

@@ -172,6 +172,25 @@ async function twopTest(env) {
   const sv = await p.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), SAVE); check('two-player games do not change the stars', !sv || !sv.b || !sv.b.archery, sv); await s.close();
 }
 
+async function airTest(env) {
+  console.log('4b. air events: glider, formation skydive, balloon duel');
+  for (const lang of ['ja', 'en']) {
+    const s = await open(env, { vp: 'ip12', lang, seed: { [SAVE]: RICH } }); const p = s.page; const is3d = await p.evaluate(() => document.body.classList.contains('g3d')); if (!is3d) { console.log('     (3D hub not available here: air skipped)'); check('air skipped without WebGL', true); await s.close(); continue; }
+    await p.evaluate(() => __sports.showFlight({ mode: 'glider' })); check(lang + ': the flight card lists the three air events', (await p.locator('#segM .opt').count()) === 5 && (await p.locator('#segM .opt:disabled').count()) === 0);
+    if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English air card has no Japanese', jp.length === 0, jp.slice(0, 5)); }
+    await p.evaluate(() => __sports.closeOv());
+    for (const k of ['glider', 'formation', 'duel']) {
+      await p.evaluate(k => __sports.startFlight({ diff: 1, mode: k }), k); await sleep(p, 900); let a = await st(p); check(lang + ': ' + k + ' starts', a.mode === 'play', a);
+      await p.keyboard.down('ArrowRight'); await sleep(p, 900); await p.keyboard.up('ArrowRight'); await p.keyboard.down('ArrowUp'); await sleep(p, 500); await p.keyboard.up('ArrowUp');
+      const r = await p.evaluate(() => { const a = __sports.venue.air(); return a && { t: a.t, kind: a.kind, done: a.done }; }); check(lang + ': ' + k + ' runs with input', r && r.kind === k && r.t > 1, r);
+      if (lang === 'en') { const jp = await p.evaluate(`(${jpScan})(true)`); check('English ' + k + ' HUD has no Japanese', jp.length === 0, jp.slice(0, 5)); }
+      if (k === 'duel') { await p.evaluate(() => __sports.highlight('ナイス！')); await sleep(p, 200); check(lang + ': a highlight zooms the stage in', /scale/.test(await p.evaluate(() => document.getElementById('stage').style.transform))); }
+      if (lang === 'ja') await shot(p, 'air-' + k);
+      await p.evaluate(() => __sports.venue.button('quit', true)); await sleep(p, 500); a = await st(p); check(lang + ': ' + k + ' ends with a result', a.ov === 'result', a);
+      await p.evaluate(() => { __sports.closeOv(); __sports.endSession(); });
+    }
+  }
+}
 async function flightTest(env) {
   console.log('4. scenic flight');
   const s = await open(env, { vp: 'se2' }); const p = s.page; const is3d = await p.evaluate(() => document.body.classList.contains('g3d')); if (!is3d) { console.log('     (3D hub not available here: flight skipped)'); check('flight skipped without WebGL', true); await s.close(); return; }
@@ -206,7 +225,7 @@ async function layoutTest(env) {
   const srv = await server.start(); const browser = await B.launch();
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, variants: variantsTest, variants2: variants2Test, avatar: avatarTest, island: islandTest, touch: touchTest, twop: twopTest, flight: flightTest, english: englishTest, layouts: layoutTest };
+  const all = { hub: hubTest, sports: sportsTest, golf: golfTest, variants: variantsTest, variants2: variants2Test, avatar: avatarTest, island: islandTest, touch: touchTest, twop: twopTest, flight: flightTest, air: airTest, english: englishTest, layouts: layoutTest };
   for (const [name, f] of Object.entries(all)) { if (only && !only.includes(name)) continue; try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); } }
   await browser.close(); await srv.close();
   const fail = results.filter(r => !r.ok).length;

@@ -16,7 +16,7 @@
     const L = env.L; let w = 300, h = 400, m = null, kt = 0, pops = [], pressed = [0, 0, 0, 0], st = 'play', rest = 0, hum = 1, lastCountdown = 9, pads = [];
     const Sim = S2.Canoe, BOATCOL = [PAL.coral, PAL.violet, PAL.teal, PAL.sun];
     function start() { hum = env.players === 2 && env.versusMode !== 'pass' ? 2 : 1; m = Sim.newRun(env.diff, env.seed, hum); st = 'play'; pops = []; lastCountdown = 9; hud(); env.status(hum === 2 ? L('左右のボタンを、リズムよく 交互に！', 'Tap left and right in turn, to the rhythm!') : L('左・右・左・右…と、リズムよく 交互にタップ！', 'Tap left, right, left, right — keep the rhythm!')); }
-    function hud() { const b = m.boats[0]; env.hud(L('きょり ', 'Dist ') + Math.round(Math.min(b.s, m.cfg.len)) + '/' + m.cfg.len + 'm'); }
+    function hud() { const b = m.boats[0], rank = 1 + m.boats.filter(o => o.s > b.s).length; env.hud(L('きょり ', 'Dist ') + Math.round(Math.min(b.s, m.cfg.len)) + '/' + m.cfg.len + 'm  ' + rank + L('位', ['st', 'nd', 'rd', 'th'][rank - 1])); }
     function tap(i, side) {
       if (st !== 'play') return; const q = Sim.tap(m, i, side); pressed[i * 2 + (side < 0 ? 0 : 1)] = 0.14; if (q > 0) { env.sfx('move'); env.noise(0.05, { vol: 0.04, freq: 1500 }); if (q > 0.8) pops.push({ txt: L('いいリズム！', 'Nice!'), i, t: 0 }); }
     }
@@ -31,13 +31,14 @@
         if (!m) return; kt += dt; dt = Math.min(dt, 0.05); for (let i = 0; i < 4; i++) pressed[i] = Math.max(0, pressed[i] - dt); for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 0.8);
         if (st === 'play') {
           const cd = Math.ceil(-m.t); if (m.t < 0 && cd !== lastCountdown) { lastCountdown = cd; env.tone(cd > 0 ? 440 : 880, 0.12, { type: 'triangle', vol: 0.08 }); }
-          Sim.step(m, dt); for (const e of m.ev) { if (e.type === 'rock') { env.sfx('fail'); env.buzz(25); pops.push({ txt: L('ゴツン！', 'Bump!'), i: e.boat, t: 0 }); } if (e.type === 'finish') { env.sfx('clear'); } } m.ev.length = 0; hud();
+          Sim.step(m, dt); for (const e of m.ev) { if (e.type === 'rock') { env.sfx('fail'); env.buzz(25); pops.push({ txt: L('ゴツン！', 'Bump!'), i: e.boat, t: 0 }); } if (e.type === 'finish') { env.sfx('clear'); } if (e.type === 'tired') { env.sfx('over'); pops.push({ txt: L('つかれた！ リズムをゆっくり', 'Tired! Slow the rhythm'), i: e.boat, t: 0 }); } } m.ev.length = 0; hud();
           if (m.done) { st = 'end'; rest = 1.8; const r = m.results; env.sfx(r[0].place === 1 ? 'win' : 'ok'); }
         } else if (st === 'end') { rest -= dt; if (rest <= 0) { st = 'over'; const r = m.results; const hs = r.filter(x => x.human); if (hum === 2) env.done({ scores: hs.map(x => x.score), score: Math.max(...hs.map(x => x.score)), extra: hs.map(x => x.time), detail: { places: hs.map(x => x.place), times: hs.map(x => x.time) } }); else env.done({ score: hs[0].score, extra: hs[0].time, detail: { place: hs[0].place, time: hs[0].time } }); } }
       },
       draw(g) {
         if (!m) return; layout();
         for (let i = 0; i < hum; i++) { const vx = i * w / hum, vw = w / hum; g.save(); g.beginPath(); g.rect(vx, 0, vw, h); g.clip(); view(g, vx, 0, vw, h, i); g.restore(); if (i) { g.fillStyle = '#fff'; g.fillRect(vx - 1.5, 0, 3, h); } }
+        for (let i = 0; i < hum; i++) { const b = m.boats[i], vx = i * w / hum, vw = w / hum, bw = vw * 0.5, bx = vx + vw / 2 - bw / 2, by = 6; g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(bx - 2, by - 2, bw + 4, 12); g.fillStyle = b.st > 0.5 ? '#7be0a0' : b.st > 0.25 ? '#ffd24d' : '#ff6b5b'; g.fillRect(bx, by, bw * b.st, 8); text(g, L('スタミナ', 'Stamina'), vx + vw / 2, by + 20, fontPx(w, h) * 0.8); }
         if (m.t < 0) text(g, Math.ceil(-m.t) + '', w / 2, h * 0.3, fontPx(w, h) * 4); else if (m.t < 0.6) text(g, 'GO!', w / 2, h * 0.3, fontPx(w, h) * 3, { color: PAL.sun });
         if (st === 'end' || st === 'over') { const r = m.results[0]; text(g, hum === 2 ? L('ゴール！', 'Finish!') : r.place + L('位！', ['st', 'nd', 'rd', 'th'][Math.min(3, r.place - 1)] + ' place!'), w / 2, h * 0.35, fontPx(w, h) * 2.4, { color: PAL.sun }); }
       },
@@ -86,7 +87,7 @@
       function hud() { const l = Sim.label(m); env.hud(sport === 'pingpong' ? l.a + ' - ' + l.b + '  (' + L(m.target + '点先取', 'first to ' + m.target) + ')' : L('ゲーム ', 'Games ') + m.games[0] + '-' + m.games[1] + '  ' + l.a + '-' + l.b); }
       function aimOf(v, side, curve) { return { ax: clamp(v.dx / Math.max(1, Math.abs(v.dy)) * 1.1, -1, 1), s: clamp((v.speed - 0.3) / 2.1, 0.05, 1), spin: curve * 0.8, top: clamp((v.speed - 1.1) / 1.1, -1, 1) * 0.9 }; }
       function sideAt(y) { return two && y < h * 0.46 ? 1 : 0; }
-      function fire(side, aim) { const r = Sim.swipe(m, side, aim); if (r === 'hit' || r === 'serve') { swing[side] = 0.28; env.sfx(aim.s > 0.7 ? 'hit' : 'tap'); if (aim.s > 0.82 && r === 'hit') { shk = 0.35; pops.push({ txt: L('スマッシュ！', 'Smash!'), t: 0, col: '#ff9a6a' }); env.sfx('combo', 3); } if (m.ball) for (let i = 0; i < 8; i++) sparks.push({ x: m.ball.x, y: m.ball.y, z: m.ball.z, a: i / 8 * 6.28, t: 0 }); env.noise(0.05, { vol: 0.05, freq: 2400 }); env.buzz(8); } else if (r === 'whiff') { swing[side] = 0.2; env.tone(200, 0.06, { type: 'triangle', vol: 0.03 }); } return r; }
+      function fire(side, aim) { const r = Sim.swipe(m, side, aim); if (r === 'hit' || r === 'serve') { swing[side] = 0.28; env.sfx(aim.s > 0.7 ? 'hit' : 'tap'); if (aim.s > 0.82 && r === 'hit') { shk = 0.35; if (env.highlight) env.highlight(L('スマッシュ！', 'SMASH!')); pops.push({ txt: L('スマッシュ！', 'Smash!'), t: 0, col: '#ff9a6a' }); env.sfx('combo', 3); } if (m.ball) for (let i = 0; i < 8; i++) sparks.push({ x: m.ball.x, y: m.ball.y, z: m.ball.z, a: i / 8 * 6.28, t: 0 }); env.noise(0.05, { vol: 0.05, freq: 2400 }); env.buzz(8); } else if (r === 'whiff') { swing[side] = 0.2; env.tone(200, 0.06, { type: 'triangle', vol: 0.03 }); } return r; }
       function drain() {
         for (const e of m.ev) {
           if (e.type === 'bounce') { env.tone(sport === 'pingpong' ? 900 : 300, 0.04, { type: 'sine', vol: 0.05 }); }

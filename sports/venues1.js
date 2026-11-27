@@ -49,7 +49,7 @@
     }
     function landed() {
       const r = flyShot; env.noise(0.07, { vol: 0.1, freq: 900 }); env.tone(r.ring >= 9 ? 880 : 440, 0.1, { type: 'triangle', vol: 0.08 });
-      if (r.x10) env.stat('bulls'); const g = G(); pops.push({ txt: (r.ring ? (r.x10 ? 'X 10' : String(r.ring)) : L('はずれ', 'Miss')) + (r.bonus ? ' +5!' : ''), x: g.cx + r.x * g.pm, y: g.cy + r.y * g.pm - 14, t: 0, col: r.ring >= 9 ? PAL.sun : '#fff' });
+      if (r.x10) { env.stat('bulls'); if (env.highlight) env.highlight(L('ど真ん中！', 'BULLSEYE!')); } const g = G(); pops.push({ txt: (r.ring ? (r.x10 ? 'X 10' : String(r.ring)) : L('はずれ', 'Miss')) + (r.bonus ? ' +5!' : ''), x: g.cx + r.x * g.pm, y: g.cy + r.y * g.pm - 14, t: 0, col: r.ring >= 9 ? PAL.sun : '#fff' });
       st = 'result'; rest = 0.9; hud(); env.status(r.ring ? L(r.ring + '点！', r.ring + ' points!') : L('はずれ！ 風にちゅうい', 'Missed! Mind the wind')); env.buzz(r.ring >= 9 ? 20 : 8);
     }
     return {
@@ -168,7 +168,7 @@
     function hud() { const hl = run.holes[Math.min(run.hole, GF.HOLES - 1)]; env.hud(L('ホール ', 'Hole ') + (run.hole + 1) + '/' + GF.HOLES + '  ' + L('パー', 'Par ') + hl.par + '  ' + (run.strokes + 1) + L('投め  ', ' throw  ') + Math.round(run.d) + 'm  ' + L('てん ', 'Pts ') + run.total); }
     function params(v) { const spd = clamp(v.speed, 0.2, 3.2), len = clamp(v.len, 0, h * 0.5); return { v: 8 + 6.2 * spd, pitch: 0.12 + 0.34 * clamp(len / (h * 0.4), 0, 1), yaw: clamp(Math.atan2(v.dx, -v.dy), -1.1, 1.1) * 0.5, curve: gest ? gest.curve(260) : 0 }; }
     function after() {
-      const r = th; if (r.holed) { env.sfx(r.strokes === 1 ? 'win' : 'clear'); const rs = run.results[run.results.length - 1], d = rs.strokes - rs.par; pops.push({ txt: r.chain ? (r.strokes === 1 ? L('ホールインワン！', 'Ace!') : L('チェーンにカラン！', 'Chains!')) : L('タップイン！', 'Tap-in!'), t: 0, col: PAL.sun }); if (r.strokes === 1) env.stat('hio'); if (d < 0) env.stat('birdie'); st = 'holed'; rest = 1.8; env.status(L('+' + rs.pts + '点', '+' + rs.pts + ' pts')); }
+      const r = th; if (r.holed) { if (r.strokes === 1 && env.highlight) env.highlight(L('エース！', 'ACE!')); env.sfx(r.strokes === 1 ? 'win' : 'clear'); const rs = run.results[run.results.length - 1], d = rs.strokes - rs.par; pops.push({ txt: r.chain ? (r.strokes === 1 ? L('ホールインワン！', 'Ace!') : L('チェーンにカラン！', 'Chains!')) : L('タップイン！', 'Tap-in!'), t: 0, col: PAL.sun }); if (r.strokes === 1) env.stat('hio'); if (d < 0) env.stat('birdie'); st = 'holed'; rest = 1.8; env.status(L('+' + rs.pts + '点', '+' + rs.pts + ' pts')); }
       else if (r.pickup) { env.sfx('fail'); pops.push({ txt: L('ここまで…', 'Pick up'), t: 0, col: '#fff' }); st = 'holed'; rest = 1.6; }
       else { env.sfx('tap'); pops.push({ txt: Math.round(r.near) + L('m のこり', ' m left'), t: 0, col: '#fff' }); st = 'ready'; }
       hud();
@@ -211,7 +211,7 @@
     function paramsFrom(sx, sy, ex, ey) { const g = geo(), dx = ex - sx, dy = sy - ey; const ang = clamp(Math.atan2(dy, dx), 0.35, 1.4), len = Math.hypot(dx, dy); return { v: clamp(len * 0.052 * env.set.sens, 3, 15), ang }; }
     function shoot(p) { sh = Sim.shoot(run, p); if (!sh) return; st = 'fly'; ft = 0; env.sfx('pop'); env.buzz(8); }
     function after() {
-      env.sfx(sh.made ? (sh.swish ? 'win' : 'ok') : 'fail'); if (sh.swish) env.stat('swish');
+      env.sfx(sh.made ? (sh.swish ? 'win' : 'ok') : 'fail'); if (sh.swish) { env.stat('swish'); if (env.highlight) env.highlight(L('スウィッシュ！', 'SWISH!')); }
       pops.push({ txt: sh.made ? (sh.swish ? L('スウィッシュ！', 'Swish!') : L('ナイスシュート！', 'Nice!')) : (sh.rim ? L('おしい！', 'So close!') : L('はずれ', 'Miss')), t: 0, col: sh.made ? PAL.sun : '#fff' });
       if (sh.cpu) { pops.push({ txt: 'CPU ' + (sh.cpu.made ? L('入った', 'scores') : L('はずした', 'misses')), t: -0.5, col: '#9ee7ff' }); }
       st = 'result'; rest = run.variant === 'pickup' ? 1.7 : run.variant === 'contest' ? 0.5 : 1.1; hud(); env.status(sh.made ? L('+' + sh.score + '点' + (sh.three ? '（3ポイント）' : ''), '+' + sh.score + (sh.three ? ' (three!)' : '')) : L('もういっかい ねらおう', 'Try the next one'));
@@ -272,7 +272,7 @@
     }
     function after() {
       const r = run.last; let msg = '';
-      if (r.strike) { msg = L('ストライク！', 'STRIKE!'); env.sfx('win'); env.noise(0.4, { vol: 0.12, freq: 900 }); env.stat('strikes'); shake = 0.7; for (let i = 0; i < 46; i++) conf.push({ x: w / 2, y: h * 0.4, vx: (Math.random() - 0.5) * 360, vy: -120 - Math.random() * 220, col: ['#ffd24d', '#ff7a6b', '#7be0a0', '#9ee7ff'][i % 4] }); } else if (r.spare) { msg = L('スペア！', 'SPARE!'); env.sfx('clear'); env.stat('spares'); shake = 0.35; } else if (r.gutter) { msg = L('ガター…', 'Gutter…'); env.sfx('fail'); } else { msg = r.down + L('本', ' pins'); env.sfx(r.down ? 'ok' : 'fail'); }
+      if (r.strike) { msg = L('ストライク！', 'STRIKE!'); env.highlight && env.highlight(L('ストライク！', 'STRIKE!')); env.sfx('win'); env.noise(0.4, { vol: 0.12, freq: 900 }); env.stat('strikes'); shake = 0.7; for (let i = 0; i < 46; i++) conf.push({ x: w / 2, y: h * 0.4, vx: (Math.random() - 0.5) * 360, vy: -120 - Math.random() * 220, col: ['#ffd24d', '#ff7a6b', '#7be0a0', '#9ee7ff'][i % 4] }); } else if (r.spare) { msg = L('スペア！', 'SPARE!'); env.sfx('clear'); env.stat('spares'); shake = 0.35; } else if (r.gutter) { msg = L('ガター…', 'Gutter…'); env.sfx('fail'); } else { msg = r.down + L('本', ' pins'); env.sfx(r.down ? 'ok' : 'fail'); }
       if (r.score) { const f = r.score.frames; let tk = 0, c = 0; for (let i = 0; i < 10; i++) { if (f[i].strike) c++; else c = 0; tk = Math.max(tk, c); } if (tk >= 3) env.stat('turkey'); }
       pops.push({ txt: msg, t: 0, col: r.strike || r.spare ? PAL.sun : '#fff' }); st = 'result'; rest = 1.5; hud(); env.status(msg);
     }

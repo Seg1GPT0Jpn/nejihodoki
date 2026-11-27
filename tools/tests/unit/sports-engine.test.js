@@ -296,4 +296,10 @@ test('sims never touch Math.random or Date.now (so a seed always means the same 
   const fs = require('fs'); for (const f of ['core.js', 'sim1.js', 'sim2.js']) { const t = fs.readFileSync(path.join(ROOT, 'sports', f), 'utf8'); ok(!/Math\.random|Date\.now|performance\.now|new Date\(\)/.test(t), f); }
 });
 
+test('canoe: stamina drains when you button-mash, holds with a steady rhythm, and tired strokes are weaker', () => {
+  const rh = Canoe.newRun(1, 1, 1); rh.t = 0; for (let i = 0; i < 40; i++) { rh.t += rh.cfg.tc; Canoe.tap(rh, 0, i % 2 ? 1 : -1); Canoe.step(rh, rh.cfg.tc); rh.t -= rh.cfg.tc; } ok(rh.boats[0].st > 0.4, 'a steady rhythm is sustainable: ' + rh.boats[0].st);
+  const ms = Canoe.newRun(1, 1, 1); ms.t = 0; for (let i = 0; i < 30; i++) { ms.t += 0.16; Canoe.tap(ms, 0, i % 2 ? 1 : -1); } ok(ms.boats[0].st < 0.2, 'mashing tires you out: ' + ms.boats[0].st); ok(ms.ev.some(e => e.type === 'tired'));
+  const f = Canoe.newRun(1, 1, 1), t2 = Canoe.newRun(1, 1, 1); f.t = t2.t = 1; t2.boats[0].st = 0.05; const a = f.boats[0].v; Canoe.tap(f, 0, 1); const b = t2.boats[0].v; Canoe.tap(t2, 0, 1); ok(f.boats[0].v - a > t2.boats[0].v - b, 'tired kick is weaker');
+  const idle = Canoe.newRun(1, 1, 1); idle.t = 0; idle.boats[0].st = 0.1; for (let i = 0; i < 300; i++) Canoe.step(idle, 0.05); ok(idle.boats[0].st > 0.9, 'rest recovers');
+});
 run('sports-engine');

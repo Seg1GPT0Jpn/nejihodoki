@@ -86,7 +86,7 @@
       if (s.water) { env.sfx('fail'); banner(L('ポチャン！ ペナルティ +1打', 'Splash! Penalty +1'), '#9ee7ff', 2); }
       else if (s.tree) banner(L('木に当たった！', 'Hit a tree!'), '#fff', 1.2);
       if (s.holed || s.pickup) {
-        const r = run.results[run.results.length - 1], nm = r.name; myStr.push(r.strokes); if (r.hio) env.stat('hio'); if (r.strokes < r.par) env.stat('birdie'); env.sfx(r.strokes < r.par ? 'win' : s.holed ? 'clear' : 'fail');
+        const r = run.results[run.results.length - 1], nm = r.name; myStr.push(r.strokes); if (r.hio) { env.stat('hio'); if (env.highlight) env.highlight(L('ホールインワン！', 'HOLE IN ONE!')); } else if (r.strokes < r.par && env.highlight) env.highlight(r.strokes - r.par <= -2 ? L('イーグル！', 'EAGLE!') : L('バーディ！', 'BIRDIE!')); if (r.strokes < r.par) env.stat('birdie'); env.sfx(r.strokes < r.par ? 'win' : s.holed ? 'clear' : 'fail');
         banner(L(nm.ja, nm.en) + (s.holed ? '' : ''), r.strokes < r.par ? '#ffd24d' : '#fff', 2.6); if (CPU) banner(L('CPU ', 'CPU ') + cpuStr[run.hole] + L('打 → ', ' → ') + matchText(), '#9ee7ff', 2.6);
         st = 'holed'; rest = 2.8; env.status(L(nm.ja, nm.en) + '  +' + r.pts + L('点', ' pts')); void hl;
       } else { st = 'aim'; const nh = curHole(); aim.dir = dirTo(run.ball, { x: nh.hx, y: nh.hy }); aim.club = -1; aim.curve = 0; power = 0; setBtns(); hudUpdate(); preview = null; if (G.lieOf(run) === 'green' && !hit1) banner(L('ナイスオン！', 'On the green!'), '#7be0a0', 1.4); env.status(L('つぎの1打。上でむきを、下でひっぱって強さを決めよう', 'Next shot: swipe the top to aim, pull down to set power')); }

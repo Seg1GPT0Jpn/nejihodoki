@@ -62,7 +62,7 @@
 
   // ---------- 解放 ----------
   // キー → { sport, stars（その種目の★の合計がこれ以上） }。golf18・golfMatch・doubles は種目のオプション
-  const UNLOCK = { bowling100: ['bowling', 2], spares: ['bowling', 3], archeryMoving: ['archery', 2], archeryRounds: ['archery', 3], kendoWave: ['kendo', 2], kendoBamboo: ['kendo', 4], hoopsContest: ['hoops', 2], hoopsPickup: ['hoops', 3], jetRace: ['jump', 3], discGolf: ['disc', 3], golf18: ['golf', 2], golfMatch: ['golf', 3], pingpongDoubles: ['pingpong', 2], tennisDoubles: ['tennis', 2] };
+  const UNLOCK = { bowling100: ['bowling', 2], spares: ['bowling', 3], archeryMoving: ['archery', 2], archeryRounds: ['archery', 3], kendoWave: ['kendo', 2], kendoBamboo: ['kendo', 4], hoopsContest: ['hoops', 2], hoopsPickup: ['hoops', 3], jetRace: ['jump', 3], discGolf: ['disc', 3], golf18: ['golf', 2], golfMatch: ['golf', 3], pingpongDoubles: ['pingpong', 2], tennisDoubles: ['tennis', 2], airGlider: ['cycling', 2], airFormation: ['canoe', 2], airDuel: ['hoops', 2] };
   const unlockNeed = key => (UNLOCK[key] ? { sport: UNLOCK[key][0], stars: UNLOCK[key][1] } : null);
   function isUnlocked(save, key) { const n = unlockNeed(key); return !n || C.sportStars(save, n.sport) >= n.stars; }
 

@@ -152,6 +152,7 @@ body.thumb #app { display: flex !important; flex-direction: column; max-width: n
 <script src="sim2.js"></script>
 <script src="golf.js"></script>
 <script src="world.js"></script>
+<script src="air.js"></script>
 <script src="art.js"></script>
 <script src="gl.js"></script>
 <script src="fly.js"></script>
@@ -410,7 +411,7 @@ function startSport(o) {
 }
 function beginTurn() { S.kind = avatarOf(S.cur === 0 ? 0 : 1); venue.start(); if (S.players === 2 && S.mode === 'pass') toast('P' + (S.cur + 1), 1200); }
 function makeEnv() {
-  return { L, set: save.set, sfx, tone, noise, buzz, status: setStatus, hud: setHudText, stat: bumpStat, setButtons, tilt: () => ({ on: !!(save.set.tilt && Tilt.on), x: Tilt.x, y: Tilt.y }),
+  return { highlight, L, set: save.set, sfx, tone, noise, buzz, status: setStatus, hud: setHudText, stat: bumpStat, setButtons, tilt: () => ({ on: !!(save.set.tilt && Tilt.on), x: Tilt.x, y: Tilt.y }),
     get diff() { return S.diff; }, get seed() { return S.seed; }, get players() { return S.players; }, get versusMode() { return S.mode === 'pass' ? 'pass' : S.mode === 'versus' ? 'versus' : 'solo'; }, get kind() { return S.kind; }, get practice() { return S.practice; },
     get flightMode() { return S.flightMode; }, get opts() { return S.opts || {}; }, glCanvas: $('gl'), get gl3d() { return !!view3d && !!(S && S.gl); }, panel(html) { openOv(html + '<button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'panel'); $('ovClose').onclick = closeOv; }, relaxed: false, photo: addPhoto, done: res => onDone(res) };
 }
@@ -524,13 +525,16 @@ function showAlbum() {
   openOv('<h2>' + L('フォトアルバム', 'Photo album') + '</h2><p>' + got + ' / ' + ids.length + ' ' + L('まい。ひこうきで ランドマークを撮ろう', 'photos. Fly over landmarks and take pictures.') + '</p><div class="scroll"><div class="pgrid" id="pgrid">' + ids.map(i => '<button class="pcell" type="button" data-id="' + i + '" aria-label="' + esc(view3d ? view3d.spotName(i, EN) : i) + '">' + (al[i] ? '<img alt="" src="' + al[i] + '">' : '<span class="pq">?</span>') + '<small>' + esc(view3d ? view3d.spotName(i, EN) : i) + '</small></button>').join('') + '</div></div><button class="btn sub" id="ovClose" type="button">' + L('とじる', 'Close') + '</button>', 'album');
   $('ovClose').onclick = closeOv; $('pgrid').querySelectorAll('.pcell').forEach(b => b.onclick = () => { if (al[b.dataset.id]) { const w = window.open(); void w; } });
 }
+const lockTxt2 = key => { if (!key || I.isUnlocked(save, key)) return ''; const n = I.unlockNeed(key); return L('（' + nm(C.sportOf(n.sport)) + '★' + n.stars + 'で解放）', ' (unlock: ' + nm(C.sportOf(n.sport)) + ' ★' + n.stars + ')'); };
+const AIRK = { glider: 'airGlider', formation: 'airFormation', duel: 'airDuel' };
+const airHelp = k => k === 'glider' ? L('エンジンなしで空をすべる。上昇気流でのぼって、ゲートを6つくぐり、そっと着陸。', 'Glide with no engine: climb in thermals, fly six gates and land softly.') : k === 'formation' ? L('自由落下しながら、仲間と「かたち」をつくる。そのあとパラシュートで空港をめざそう。', 'Skydive and build shapes with your team, then steer the canopy to the airstrip.') : L('しっぽの風船を わりあうCPUとの空中戦。3つ先にわったほうが勝ち。', 'A dogfight with the CPU: pop its tail balloons before it pops yours.');
 function showFlight(opts) {
   if (!view3d) { toast(L('このたんまつは 3D に対応していません', '3D is not available on this device')); return; }
   let diff = opts && opts.diff != null ? opts.diff : 1, fm = opts && opts.mode || 'ring';
   const draw = () => {
     openOv('<h2>' + L('遊覧飛行', 'Scenic flight') + '</h2><p>' + L('ちいさな飛行機で島の空へ。ドラッグで操縦（かたむき操作は せってい から）、キーボードは矢印か WASD。', 'Take a little plane over the island. Drag to steer (tilt is optional in Settings); on PC use the arrow keys or WASD.') + '</p>'
-      + '<div class="og"><div class="ol">' + L('あそびかた', 'Mode') + '</div><div class="seg" id="segM"><button class="opt" type="button" data-m="ring" aria-pressed="' + (fm === 'ring') + '">' + L('リングレース', 'Ring race') + '</button><button class="opt" type="button" data-m="free" aria-pressed="' + (fm === 'free') + '">' + L('ゆったり遊覧', 'Free sightseeing') + '</button></div></div>'
-      + (fm === 'ring' ? '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(window.SportsWorld.fstars(d, save.fl.b[d])) + '<br><small>' + (save.fl.b[d] || '–') + '</small></button>').join('') + '</div></div><p>' + L('リング12こを順にくぐって、最後は空港に着陸！ 風船をわると ボーナス。', 'Fly through 12 rings in order, then land on the airstrip. Pop balloons for bonus points.') + '</p>' : '<p>' + L('ぶつからない のんびりモード。風船をわったり、ランドマークを「さつえい」したり。', 'A relaxed mode where you cannot crash. Pop balloons and photograph landmarks.') + '</p>')
+      + '<div class="og"><div class="ol">' + L('あそびかた', 'Mode') + '</div><div class="seg" id="segM"><button class="opt" type="button" data-m="ring" aria-pressed="' + (fm === 'ring') + '">' + L('リングレース', 'Ring race') + '</button><button class="opt" type="button" data-m="free" aria-pressed="' + (fm === 'free') + '">' + L('ゆったり遊覧', 'Free sightseeing') + '</button>' + ['glider', 'formation', 'duel'].map(k => { const key = AIRK[k], lk = lockTxt2(key); return '<button class="opt" type="button" data-m="' + k + '"' + (lk ? ' disabled' : '') + ' aria-pressed="' + (fm === k) + '">' + L(C.VARIANTS[key].ja, C.VARIANTS[key].en) + lk + '</button>'; }).join('') + '</div></div>'
+      + (AIRK[fm] ? '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => { const bv = (save.vb[AIRK[fm]] || [0, 0, 0])[d]; return '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(C.variantStars(AIRK[fm], d, bv)) + '<br><small>' + (bv || '–') + '</small></button>'; }).join('') + '</div></div><p>' + airHelp(fm) + '</p>' : (fm === 'ring' ? '<div class="og"><div class="ol">' + L('むずかしさ', 'Level') + '</div><div class="seg" id="segD">' + [0, 1, 2].map(d => '<button class="opt" type="button" data-d="' + d + '" aria-pressed="' + (d === diff) + '">' + dname(d) + '<br>' + starsHtml(window.SportsWorld.fstars(d, save.fl.b[d])) + '<br><small>' + (save.fl.b[d] || '–') + '</small></button>').join('') + '</div></div><p>' + L('リング12こを順にくぐって、最後は空港に着陸！ 風船をわると ボーナス。', 'Fly through 12 rings in order, then land on the airstrip. Pop balloons for bonus points.') + '</p>' : '<p>' + L('ぶつからない のんびりモード。風船をわったり、ランドマークを「さつえい」したり。', 'A relaxed mode where you cannot crash. Pop balloons and photograph landmarks.') + '</p>'))
       + '<div class="row2"><button class="btn" id="goBtn" type="button">' + L('とびたつ', 'Take off') + '</button><button class="btn sub" id="albBtn" type="button">' + L('アルバム', 'Album') + '</button></div><button class="btn sub" id="ovClose" type="button">' + L('もどる', 'Back') + '</button>', 'flight');
     $('segM').querySelectorAll('.opt').forEach(b => b.onclick = () => { fm = b.dataset.m; draw(); }); const sd = $('segD'); if (sd) sd.querySelectorAll('.opt').forEach(b => b.onclick = () => { diff = +b.dataset.d; draw(); });
     $('goBtn').onclick = () => { closeOv(); startFlight({ diff, mode: fm }); }; $('albBtn').onclick = showAlbum; $('ovClose').onclick = closeOv;
@@ -543,9 +547,11 @@ function startFlight(o) {
 }
 function finishFlight(res) {
   const d = res.detail || {}, ss = S; bumpStat('flights'); C.setMax(save, 'rings', d.rings || 0); if (d.landed) { bumpStat('landings'); save.fl.n++; } let html;
-  if (d.mode === 'free') html = '<h2>' + L('ゆったり遊覧', 'Free sightseeing') + '</h2><p>' + L('風船 ', 'Balloons ') + d.pops + ' · ' + L('写真 ', 'Photos ') + popcount(save.fl.ph) + '/16</p>';
+  const airKey = AIRK[d.air];
+  if (airKey) { const vv = save.vb[airKey] || (save.vb[airKey] = [0, 0, 0]), stv = C.variantStars(airKey, S.diff, res.score), bestv = res.score > vv[S.diff]; if (bestv) vv[S.diff] = res.score; bumpStat('airs'); if (d.won) bumpStat('duelWins'); html = '<h2>' + L(C.VARIANTS[airKey].ja, C.VARIANTS[airKey].en) + ' · ' + dname(S.diff) + '</h2><div class="big">' + res.score + '</div><div>' + starsHtml(stv) + '</div>' + (bestv ? '<span class="newrec">' + L('ベスト更新！', 'New best!') + '</span>' : '') + '<p>' + (d.air === 'glider' ? L('ゲート ', 'Gates ') + d.gates + '/6 · ' + (d.landed ? L('着陸せいこう', 'Landed') : d.crashed ? L('ぶつかった', 'Crashed') : L('着陸なし', 'No landing')) : d.air === 'formation' ? L('つながった ', 'Linked ') + d.links + ' · ' + (d.landed ? L('着地まで ', 'Landed ') + d.dist + 'm' : L('着地できず', 'No landing')) : L('わった風船 ', 'Balloons popped ') + d.pops + ' · ' + (d.won ? L('しょうり！', 'Victory!') : L('まけ', 'Defeat'))) + '</p>'; }
+  else if (d.mode === 'free') html = '<h2>' + L('ゆったり遊覧', 'Free sightseeing') + '</h2><p>' + L('風船 ', 'Balloons ') + d.pops + ' · ' + L('写真 ', 'Photos ') + popcount(save.fl.ph) + '/16</p>';
   else { const stars = window.SportsWorld.fstars(S.diff, res.score), best = res.score > save.fl.b[S.diff]; if (best) save.fl.b[S.diff] = res.score; html = '<h2>' + L('リングレース', 'Ring race') + ' · ' + dname(S.diff) + '</h2><div class="big">' + res.score + '</div><div>' + starsHtml(stars) + '</div>' + (best ? '<span class="newrec">' + L('ベスト更新！', 'New best!') + '</span>' : '') + '<p>' + L('リング ', 'Rings ') + d.rings + '/12 · ' + L('風船 ', 'Balloons ') + d.pops + ' · ' + (d.landed ? L('着陸せいこう', 'Landed') : d.crashed ? L('ぶつかった', 'Crashed') : L('時間ぎれ', 'Time up')) + '</p>'; }
-  writeSave(); emit('play_end', { mode: 'normal', score: res.score | 0, reason: d.landed || d.mode === 'free' ? 'clear' : 'over' }); S.ended = true; sfx('clear');
+  writeSave(); emit('play_end', { mode: 'normal', score: res.score | 0, reason: d.landed || d.won || d.mode === 'free' ? 'clear' : 'over' }); S.ended = true; sfx('clear');
   openOv(html + '<div class="row2"><button class="btn" id="again" type="button">' + L('もういちど', 'Again') + '</button><button class="btn sub" id="toHub" type="button">' + L('島にもどる', 'Back to island') + '</button></div>', 'result');
   $('again').onclick = () => { closeOv(); startFlight({ diff: ss.diff, mode: ss.flightMode }); }; $('toHub').onclick = () => { closeOv(); endSession(); };
 }
@@ -591,10 +597,14 @@ if (UI && UI.theme) UI.theme.onChange(() => setTimeout(themeColor, 0)); try { ma
 function persistNow() { writeSave(); }
 document.addEventListener('visibilitychange', () => { if (document.hidden) persistNow(); }); window.addEventListener('pagehide', persistNow);
 let rz = 0; const relayout = () => { clearTimeout(rz); rz = setTimeout(fit, 50); }; window.addEventListener('resize', relayout); if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+// 見せ場のカット：いっしゅん スローにして、すこし寄って、ことばを出す（かんたんな「リプレイ風」の演出）
+const hl = { t: 0, txt: '', on: false, max: 0.9 };
+function highlight(txt) { if (save.set.lp) return; hl.t = hl.max; hl.txt = txt || ''; hl.on = true; try { $('stage').style.transition = 'transform .12s'; $('stage').style.transform = 'scale(1.045)'; setTimeout(() => { if (hl.t <= 0.05) $('stage').style.transform = ''; }, 1100); } catch (e) {} }
+function hlDraw() { const k = Math.min(1, hl.t / hl.max), w = W, h = H; g.save(); g.fillStyle = 'rgba(0,0,0,' + (0.28 * Math.min(1, k * 2)) + ')'; g.fillRect(0, 0, w, h * 0.12); g.fillRect(0, h * 0.88, w, h * 0.12); ART.text(g, hl.txt, w / 2, h * 0.07, Math.max(16, Math.min(w, h) * 0.06), { color: '#ffd24d' }); g.restore(); }
 function frame(ts) {
   raf = requestAnimationFrame(frame); if (save.set.lp && ts - last < 30) return; const dt = Math.min(0.05, Math.max(0, (ts - last) / 1000)); last = ts; T += dt;
   const g3 = uses3d(); if (document.body.classList.contains('g3d') !== g3) document.body.classList.toggle('g3d', g3);
-  if (mode === 'hub') { if (view3d) hub3dFrame(dt); else { hubUpdate(dt); hubDraw(); } } else if (venue) { if (!paused && !anyOv()) venue.update(dt); else if (S && S.flight && venue.flight && !anyOv()) venue.update(0.0001); venue.draw(g); }
+  if (mode === 'hub') { if (view3d) hub3dFrame(dt); else { hubUpdate(dt); hubDraw(); } } else if (venue) { if (!paused && !anyOv()) venue.update(hl.t > 0 ? dt * 0.4 : dt); else if (S && S.flight && venue.flight && !anyOv()) venue.update(0.0001); venue.draw(g); if (hl.t > 0) { hl.t -= dt; hlDraw(); } else if (hl.on) { hl.on = false; $('stage').style.transform = ''; } }
 }
 
 document.title = L('ぽかぽか島スポーツ', 'Sunny Isle Sports'); $('h1').textContent = L('ぽかぽか島スポーツ', 'Sunny Isle Sports'); $('backLink').setAttribute('aria-label', L('ゲーム一覧へ戻る', 'Back to games')); $('menuBtn').setAttribute('aria-label', L('メニュー', 'Menu')); cv.setAttribute('aria-label', L('ぽかぽか島の地図。しるしをえらんで種目をはじめます', 'Map of Sunny Isle. Pick a marker to start a sport'));
@@ -608,7 +618,7 @@ raf = requestAnimationFrame(frame);
 if (DEBUG) {
   const api = { ready: () => true, state: () => ({ mode, sport: S && S.id, diff: S && S.diff, players: S && S.players, cur: S && S.cur, scores: S && S.scores, ov: ovName, howto: !$('howto').hidden, paused, status: $('status').textContent, hud: $('hudText').textContent, save: JSON.parse(JSON.stringify(save)), buttons: btnList.map(b => b.id), W, H }) };
   window.__kb = Object.assign(window.__kb || {}, api);
-  window.__sports = { api, C, get S() { return S; }, get venue() { return venue; }, get save() { return save; }, startSport, startDaily, showCard, showList, showRecords, showSettings, showAvatar, showNpc, showWild, showStory, showStamps, showGuide, showTutorial, showHowto, endSession, closeOv, hub, nodePos, Tilt,
+  window.__sports = { api, C, get S() { return S; }, get venue() { return venue; }, get save() { return save; }, startSport, startDaily, showCard, showList, showRecords, showSettings, showAvatar, showFlight, startFlight, highlight, get view3d() { return view3d; }, showNpc, showWild, showStory, showStamps, showGuide, showTutorial, showHowto, endSession, closeOv, hub, nodePos, Tilt,
     setSave(o) { save = C.sanitize(Object.assign(C.newSave(), o)); writeSave(); return save; }, resetSave() { store.del(SAVE_KEY); save = readSave(); renderHudStars(); },
     seed(n) { newSeed = () => n; },
     thumbScene() { store.set(HOWTO_KEY, '1'); $('howto').hidden = true; closeOv(); document.body.classList.add('thumb'); hub.x = 0.62; hub.y = 0.45; hub.sel = 5; fit(); return true; } };
