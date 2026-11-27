@@ -118,4 +118,25 @@ test('never-lose and two players do not break the stages: the same recordings st
   }
 });
 
+test('no softlock: a naive player who spits the ability source away, swallows the wrong thing, drops the ability or falls at any gate can still finish (sources come back by themselves)', () => {
+  const WRONG = { fire: 'stone', spark: 'bubble', ice: 'blade', blade: 'bomb', stone: 'leaf', leaf: 'fire', bubble: 'spark', bomb: 'ice' };
+  for (const d of LV.LEVELS) {
+    const idxs = []; d.route.forEach((it, k) => { if (['get', 'use', 'water', 'sock', 'boss'].indexOf(it.t) >= 0) idxs.push(k); });
+    const pick = idxs.filter((k, n) => d.route[k].t !== 'get' || n % 2 === 0);
+    for (const k of pick) for (const variant of ['spat', 'wrong', 'fell']) {
+      const L = E.parse(d), S = E.newState(L), bot = PB.create(d); let f = 0, done = false;
+      while (!S.res && f < 40000 && !bot.fail) {
+        if (!done && bot.i === k && !S.ps[0].dead) {
+          done = true; const p = S.ps[0];
+          if (variant === 'spat') { for (const e of S.en) if (e.k !== 'boss' && E.DEF[e.k].ab) { e.dead = 1; e.rt = 0; } p.ab = null; p.held = null; }
+          else if (variant === 'wrong') { const it = d.route[k], want = it.t === 'sock' ? 'spark' : (it.ab && it.ab[0]) || 'fire'; p.ab = WRONG[want] || 'leaf'; if (it.t === 'water' && it.want) p.ab = WRONG[it.want]; }
+          else { for (const q of S.ps) { q.dead = 1; q.hp = 0; } }
+        }
+        const m = bot.step(S); E.step(S, m); f++;
+      }
+      ok(S.res, d.id + ' item ' + k + ' (' + d.route[k].t + ') after "' + variant + '" could not be finished: ' + (bot.fail || 'frame ' + f));
+    }
+  }
+});
+
 run('puff-levels');

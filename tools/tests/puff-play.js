@@ -251,6 +251,40 @@ async function pause(env) {
   check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
 }
 
+// ---------- 7b ----------
+async function stuck(env) {
+  console.log('7b. stuck? hints at the gates, hint button, retry from the checkpoint');
+  const s = await open(env); const p = s.page;
+  await p.evaluate(() => { __puff.start('1-2'); __puff.manual(true); });
+  await wait(p, () => __kb.state().playing);
+  const gate = await p.evaluate(() => { const S = __puff.S, L = S.L; for (let x = 0; x < L.W; x++) for (let y = 0; y < 13; y++) if (L.t[y * L.W + x] === 5) return { x, y }; return null; });
+  await p.evaluate(g => { __puff.G.intro = 0; __puff.setPos((g.x - 3) * 16, 10 * 16 - 2); __puff.S.ps[0].inv = 9999; }, gate); await step(p, 3);
+  let n = await p.evaluate(() => { const r = __puff.needNow(); return r && r.ab; });
+  check('next to the vine gate with no ability the page knows blade/leaf/fire are needed', n && n.includes('blade'), n);
+  check('the hint text names the ability (ja)', /きりさき/.test(await p.evaluate(() => __puff.hintText(__puff.needNow()))), null);
+  await p.evaluate(() => __puff.give('bomb')); n = await p.evaluate(() => { const r = __puff.needNow(); return r && r.ab; }); check('a wrong ability still shows the hint (it says to drop it first)', !!n, n);
+  await p.evaluate(() => __puff.give('blade')); n = await p.evaluate(() => __puff.needNow()); check('with the right ability the hint goes away', n === null, n);
+  await p.evaluate(() => __puff.give(null)); await step(p, 25); await shot(p, '07b-gate-hint');
+  // checkpoint retry
+  await p.evaluate(() => { const S = __puff.S; const c = S.L.cps[0]; __puff.setPos(c.x * 16, c.y * 16 - 2); }); await step(p, 4);
+  const cpOk = await p.evaluate(() => __puff.S.cpIdx); check('the checkpoint is touched', cpOk >= 0, cpOk);
+  await p.evaluate(() => { __puff.setPos(40, 100); }); await step(p, 2);
+  await p.evaluate(() => __puff.openPause()); await wait(p, () => !!document.querySelector('.kb-pause'));
+  const labels = await p.evaluate(() => [...document.querySelectorAll('.kb-layer .kb-btn')].map(b => b.textContent.trim()));
+  check('the pause menu has "retry from the checkpoint" and "hint"', labels.some(t => /チェックポイント/.test(t)) && labels.some(t => /ヒント/.test(t)), labels);
+  await p.evaluate(() => { const b = [...document.querySelectorAll('.kb-layer .kb-btn')].find(x => /チェックポイント/.test(x.textContent)); b && b.click(); });
+  await p.waitForTimeout(200); const a = await st(p); const cx0 = await p.evaluate(() => __puff.S.L.cps[0].x * 16);
+  check('retry puts the hero back at the checkpoint, not paused, same stage', !a.paused && a.id === '1-2' && Math.abs(a.x - cx0) < 40, { x: a.x, cx0, paused: a.paused });
+  await p.evaluate(() => __puff.openPause()); await wait(p, () => !!document.querySelector('.kb-pause'));
+  await p.evaluate(() => { const b = [...document.querySelectorAll('.kb-layer .kb-btn')].find(x => /ヒント/.test(x.textContent)); b && b.click(); }); await p.waitForTimeout(200);
+  check('the hint button shows a hint and resumes', !(await st(p)).paused && (await p.evaluate(() => !document.getElementById('toastbar').hidden)), null);
+  check('no page errors', s.log.pageErrors.length === 0, s.log.pageErrors.slice(0, 3)); await s.close();
+  const e = await open(env, { lang: 'en', seed: { [HOWTO]: '1' }, vp: 'se2' });
+  await e.page.evaluate(() => { __puff.start('1-2'); __puff.manual(true); });
+  const t2 = await e.page.evaluate(() => { const S = __puff.S, L = S.L; let g; for (let x = 0; x < L.W && !g; x++) for (let y = 0; y < 13; y++) if (L.t[y * L.W + x] === 5) { g = { x, y }; break; } __puff.G.intro = 0; __puff.setPos((g.x - 3) * 16, 158); return __puff.hintText(__puff.needNow()); });
+  check('the hint text is English in English mode (no Japanese)', !/[\u3040-\u30ff\u4e00-\u9fff]/.test(t2) && /Blade/.test(t2), t2); await e.close();
+}
+
 // ---------- 8 ----------
 async function saveTest(env) {
   console.log('8. save: clear bits and medals only grow, found abilities stay, progress and the next stage survive a reload');
@@ -425,7 +459,7 @@ async function perf(env) {
   const env = { server: srv, browser: () => browser };
   const t0 = Date.now();
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { first, keys, abilities, proofs, touch, coop, pause, save: saveTest, gamepad, english, orient, layouts, perf };
+  const all = { first, keys, abilities, proofs, touch, coop, pause, stuck, save: saveTest, gamepad, english, orient, layouts, perf };
   for (const [name, f] of Object.entries(all)) {
     if (only && !only.includes(name)) continue;
     try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }

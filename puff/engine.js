@@ -445,7 +445,7 @@
     if (e.dead && e.k === 'boss') return;
     if (e.dead) {
       e.rt++;
-      if (e.rt > 240 && !near(S, { x: e.ox, y: e.oy, w: 1, h: 1 }, 170)) { const n = mkEnemy(e.k, 0, 0); Object.assign(e, n, { x: e.ox, y: e.oy, ox: e.ox, oy: e.oy, ph: e.ph }); if (e.k === 'taiho') e.t = 60; }
+      if (e.rt > 240 && (e.rt > 420 || !S.ps.some(q => !q.dead && Math.abs(cx(q) - e.ox) < 18 && Math.abs(cy(q) - e.oy) < 24))) { const n = mkEnemy(e.k, 0, 0); Object.assign(e, n, { x: e.ox, y: e.oy, ox: e.ox, oy: e.oy, ph: e.ph }); if (e.k === 'taiho') e.t = 60; }
       return;
     }
     if (e.k === 'boss') return stepBoss(S, e);
@@ -618,7 +618,8 @@
     return S;
   }
 
-  const PE = { TS, B, T, CH, SOLID, DEF, ABS, BOSSES, BOSS_HP, BOSS_WEAK, ENEMY_CH, MAXHP, MAXFLAP, PW, PH, ACT_R, COOP_SPAN, parse, newState, step, clone, restore, hash, sig, rle, unrle, runReplay, camTarget, tl, solid, cx, cy, ov, sn };
+  function toCheckpoint(S) { if (S.res) return; restore(S); ev(S, 'restore', 0, 0); }
+  const PE = { toCheckpoint, TS, B, T, CH, SOLID, DEF, ABS, BOSSES, BOSS_HP, BOSS_WEAK, ENEMY_CH, MAXHP, MAXFLAP, PW, PH, ACT_R, COOP_SPAN, parse, newState, step, clone, restore, hash, sig, rle, unrle, runReplay, camTarget, tl, solid, cx, cy, ov, sn };
   if (typeof module === 'object' && module && module.exports) module.exports = PE;
   root.PuffEngine = PE;
 })(typeof window !== 'undefined' ? window : globalThis);
