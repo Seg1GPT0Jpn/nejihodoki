@@ -58,8 +58,8 @@ async function hub(env) {
   console.log('2. gates, galaxy list, locks');
   const s = await open(env); const p = s.page; await p.click('#tGo'); await wait(p, () => __kb.state().mode === 'hub');
   await p.evaluate(() => __galaxy.openSelect('g1')); let a = await st(p); check('the mission list opens', a.sel && a.paused, a);
-  check('galaxy 1 lists 4 missions', (await p.locator('#selBody .qm').count()) === 4); check('3 galaxy tabs', (await p.locator('#selTabs button').count()) === 3);
-  await p.locator('#selTabs button[data-g="g2"]').click(); check('the ice galaxy is locked at first', (await p.locator('#selBody .qm:disabled').count()) === 3, await p.locator('#selBody').innerText());
+  check('galaxy 1 lists 4 missions and the Lumi hunt', (await p.locator('#selBody .qm').count()) === 5); check('6 galaxy tabs', (await p.locator('#selTabs button').count()) === 6);
+  await p.locator('#selTabs button[data-g="g2"]').click(); check('the ice galaxy is locked at first', (await p.locator('#selBody .qm:disabled').count()) === 4, await p.locator('#selBody').innerText());
   await shot(p, 'select-locked'); await p.click('#selClose'); a = await st(p); check('closing resumes the hub', !a.sel && !a.paused && a.mode === 'hub', a);
   // walk to a gate for real: the gate stands on the deck
   const gate = await p.evaluate(() => { const S = __galaxy.S, i = S.L.ents.findIndex(e => e.k === 'gate'); return { p: S.ep[i], up: __galaxy.E.entUp(S, i) }; });
@@ -78,8 +78,8 @@ async function keys(env) {
   await holdKeys(p, ['KeyW'], 1500); a = await st(p); check('W runs forward and the hero is on the planet surface', dist(a.x, x0) > 3 && a.on >= 0 && Math.abs(Math.hypot(...a.x) - 7.5) < 0.12, { d: dist(a.x, x0), r: Math.hypot(...a.x), on: a.on });
   const up = a.up; await holdKeys(p, ['KeyA'], 700); a = await st(p); check('turning keeps the up-vector on the surface normal', a.up[0] * a.x[0] / Math.hypot(...a.x) + a.up[1] * a.x[1] / Math.hypot(...a.x) + a.up[2] * a.x[2] / Math.hypot(...a.x) > 0.97, a.up);
   const j0 = a.jumps; await p.keyboard.down('Space'); await sleep(p, 120); const mid = await st(p); await p.keyboard.up('Space'); check('Space jumps (leaves the ground, counted)', mid.jumps > j0 && mid.on < 0, mid);
-  await wait(p, () => __kb.state().on >= 0); await p.keyboard.press('KeyJ'); await sleep(p, 200); a = await st(p); check('J spins', a.spins >= 1, a);
-  await wait(p, () => __kb.state().on >= 0); await p.keyboard.down('Space'); await sleep(p, 250); await p.keyboard.up('Space'); await p.keyboard.press('KeyL'); try { await wait(p, () => __kb.state().pounds >= 1, null, 4000); } catch (e) {} a = await st(p); check('L in the air pounds', a.pounds >= 1, a);
+  await wait(p, () => __kb.state().on >= 0); await p.keyboard.down('KeyJ'); await sleep(p, 90); await p.keyboard.up('KeyJ'); await sleep(p, 150); a = await st(p); check('J spins', a.spins >= 1, a);
+  await wait(p, () => __kb.state().on >= 0); await p.keyboard.down('Space'); await sleep(p, 250); await p.keyboard.up('Space'); await p.keyboard.down('KeyL'); await sleep(p, 90); await p.keyboard.up('KeyL'); try { await wait(p, () => __kb.state().pounds >= 1, null, 4000); } catch (e) {} a = await st(p); check('L in the air pounds', a.pounds >= 1, a);
   const cam0 = await p.evaluate(() => __galaxy.S.cam.fw.slice()); await holdKeys(p, ['KeyE'], 600); const cam1 = await p.evaluate(() => __galaxy.S.cam.fw.slice()); check('E turns the camera', dist(cam0, cam1) > 0.1, [cam0, cam1]);
   await p.keyboard.press('Escape'); await wait(p, () => __kb.state().pauseOpen); check('Esc opens the pause menu', true); await shot(p, 'pause');
   check('no page errors', !s.log.pageErrors.length && !s.log.consoleErrors.length, [...s.log.pageErrors, ...s.log.consoleErrors].slice(0, 3)); await s.close();
@@ -92,7 +92,7 @@ async function proofs(env) {
     const rec = E.unrle(PROOFS[m.id].rec);
     const r = await p.evaluate(([gid, mid, rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission(gid, mid, { noIntro: true }); __galaxy.skip(); const G0 = __galaxy.G; G0.intro = false; const E = __galaxy.E;
       for (const n of rec) { const u = E.unpack(n); __galaxy.stepN(1, u); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); const s0 = __kb.state(); __galaxy.release(); return { ok: s0.ok, over: s0.over, frame: s0.frame, result: s0.resultShown, pts: s0.save.pts }; }, [g.id, m.id, rec]);
-    check(`${m.id} (${m.name.en}) is cleared by the recorded inputs; the result opens; the shard is saved`, r.ok && r.over && r.result && r.pts === 1, r);
+    check(`${m.id} (${m.name.en}) is cleared by the recorded inputs; the result opens; the shard (or hunt) is saved`, r.ok && r.over && r.result && r.pts === (m.kind === 'hunt' ? 0 : 1), r);
   }
   await p.evaluate(() => __galaxy.manual(false)); check('no page errors', !s.log.pageErrors.length && !s.log.consoleErrors.length, [...s.log.pageErrors, ...s.log.consoleErrors].slice(0, 3)); await s.close();
 }
@@ -135,9 +135,9 @@ async function saveTest(env) {
   const s = await open(env); const p = s.page;
   await p.evaluate(() => __galaxy.resetSave()); const rec = E.unrle(PROOFS.g1m1.rec);
   await p.evaluate(([rec]) => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (const n of rec) { __galaxy.stepN(1, __galaxy.E.unpack(n)); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); }, [rec]);
-  let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 10/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
+  let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 20/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
   const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('saved: shard bit, pts, best time, coins', sv.pts === 1 && (sv.sh.g1 & 1) === 1 && sv.bt.g1m1 > 0 && sv.cn >= 5 && sv.stats.clears === 1, sv);
-  await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes('1/10'), a.save);
+  await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes('1/20'), a.save);
   // a saved best never goes up when a slower run follows
   const bt = sv.bt.g1m1; await p.evaluate(() => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (let i = 0; i < 600; i++) __galaxy.stepN(1, { sx: i < 300 ? 0 : 1, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); });
   check('a quit mission does not change the best time', JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)).bt.g1m1 === bt);

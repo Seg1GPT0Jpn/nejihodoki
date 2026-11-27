@@ -123,8 +123,8 @@ body.touch.playing #touch { display: block; }
 .qm .go { flex: none; margin-left: auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--kb-accent); color: var(--kb-accent-ink); font-size: 18px; }
 .qm.done { border-color: var(--hp-good); } .qm.done .go { background: var(--hp-good); }
 .qm:disabled { opacity: .5; cursor: default; }
-.gtabs { display: flex; gap: 4px; margin: 0 0 8px; }
-.gtabs button { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--hp-panel); color: var(--kb-dim); font: 800 12px var(--kb-font-body); cursor: pointer; padding: 2px 4px; }
+.gtabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
+.gtabs button { flex: 1 1 30%; min-height: 44px; border-radius: 12px; border: 1px solid var(--kb-line); background: var(--hp-panel); color: var(--kb-dim); font: 800 12px var(--kb-font-body); cursor: pointer; padding: 2px 4px; }
 .gtabs button[aria-pressed="true"] { color: var(--kb-ink); box-shadow: inset 0 0 0 2px var(--kb-accent); background: var(--kb-surface); }
 .shardrow { display: flex; justify-content: center; gap: 8px; margin: 4px 0; } .shardrow svg { width: 46px; height: 46px; fill: var(--hp-star); stroke: #8a5600; } .shardrow svg.pop { animation: starpop .6s ease-out both; }
 .big { font: 400 26px var(--kb-font-display); line-height: 1.15; color: var(--kb-ink); }
@@ -287,7 +287,7 @@ function readSave() {
   let o = null; try { o = JSON.parse(store.get(SAVE_KEY) || 'null'); } catch (e) {}
   const s = newSave(); if (!o || typeof o !== 'object') return s;
   for (const g of GALS) { const n = LV.def(g.id).missions.length; s.sh[g.id] = (o.sh && o.sh[g.id] | 0) & ((1 << n) - 1); s.lm[g.id] = (o.lm && o.lm[g.id] | 0) & 255; }
-  if (o.bt && typeof o.bt === 'object') for (const k in o.bt) { const v = Number(o.bt[k]); if (/^g\dm\d$/.test(k) && isFinite(v) && v > 0 && v < 6e5) s.bt[k] = v | 0; }
+  if (o.bt && typeof o.bt === 'object') for (const k in o.bt) { const v = Number(o.bt[k]); if (/^g\d(m\d|hunt)$/.test(k) && isFinite(v) && v > 0 && v < 6e5) s.bt[k] = v | 0; }
   s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
   if (o.stats && typeof o.stats === 'object') for (const k in o.stats) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0 && /^[a-z0-9_]{1,16}$/.test(k)) s.stats[k] = Math.min(1e9, v | 0); }
   if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
@@ -348,7 +348,7 @@ function newRun(gid, mid, o) {
 }
 function startMission(gid, mid, o) {
   o = o || {}; hideOverlays(); newRun(gid, mid, o); mode = 'play'; document.body.classList.add('playing'); showTouch();
-  G.introDur = o.noIntro || save.set.rm ? 0.6 : 2.7; G.intro = true;
+  G.introDur = o.noIntro || save.set.rm ? 0.6 : 4.2; G.intro = true;
   const m = G.m; showBanner(mname(m), gname(gid) + (m.kind === 'comet' ? L('　★ すいせいチャレンジ', '  ★ Comet challenge') : m.kind === 'boss' ? L('　★ ボス', '  ★ Boss') : ''), G.introDur * 1000 + 900);
   emit('play_start', { mode: 'normal', stage: mid }); stat('plays', 1); snd('arrive'); kick(); landTip(); return true;
 }
@@ -359,15 +359,16 @@ function enterHub(o) {
 }
 function endRun(reason) {
   if (!G || !G.live) return; G.live = false; if (mode !== 'play' && mode !== 'result') return;
-  const S = G.S, c = S.cnt; stat('jumps', c.jump); stat('spins', c.spin); stat('pounds', c.pound); stat('wallkicks', c.wk); stat('launches', c.launch); stat('kills', c.kill); stat('stomps', c.stomp); stat('deaths', c.die); stat('lumi', c.lumi);
+  const S = G.S, c = S.cnt; stat('jumps', c.jump); stat('spins', c.spin); stat('pounds', c.pound); stat('wallkicks', c.wk); stat('launches', c.launch); stat('kills', c.kill); stat('stomps', c.stomp); stat('deaths', c.die); stat('lumi', c.lumi); for (const k of ['pbe', 'psp', 'pcl', 'psk', 'pfi']) if (c[k]) stat(k, c[k]);
   save.cn = Math.min(1e9, save.cn + c.coin); save.cr = Math.min(1e9, save.cr + c.crystal);
-  if (S.lumi) { const gi = G.gid; save.lm[gi] = (save.lm[gi] | 0) | S.lumi; }
+  if (S.lumi && G.gid !== 'hub') { const gi = G.gid; save.lm[gi] = (save.lm[gi] | 0) | S.lumi; }
   writeSave();
   emit('play_end', { mode: 'normal', score: save.pts, durationMs: Math.round(S.f * STEP), reason: reason === 'clear' ? 'clear' : 'quit', stage: G.mid });
 }
 function onClear() {
-  const S = G.S, r = S.res, m = G.m, gi = G.gid; const idx = m.idx, old = (save.sh[gi] | 0), first = !(old & (1 << idx));
-  save.sh[gi] = old | (1 << idx); const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
+  const S = G.S, r = S.res, m = G.m, gi = G.gid; const hunt = m.kind === 'hunt', idx = m.idx, old = hunt ? (save.lm[gi] | 0) : (save.sh[gi] | 0), first = hunt ? !(old & 128) : !(old & (1 << idx));
+  if (hunt) { save.lm[gi] = old | 128 | S.lumi; stat('hunts', 1); } else save.sh[gi] = old | (1 << idx);
+  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
   stat('clears', 1); if (r.die === 0) stat('nodie', 1); if (m.kind === 'comet') stat('comets', 1); if (m.kind === 'boss') stat('boss', 1); if (S.as.hp || S.as.nofall || S.as.slow) stat('assist', 1);
   endRun('clear'); G.result = { ok: true, first, newBest, f: r.f, coin: r.coin, crystal: r.crystal, die: r.die, ob, lumi: S.cnt.lumi };
   writeSave(); emit('stage_clear', { stage: G.mid, stars: 1 + (r.die === 0 ? 1 : 0) }); emit('progress', { stage: G.mid });
@@ -516,27 +517,31 @@ function render(dt) {
 }
 const lockedMap = () => { const o = {}; for (const g of GALS) o[g.id] = !galUnlocked(g.id); return o; };
 function camera(S, dt, t) {
-  const pose = E.camPose(S, 7.6 + camV.zoom * 4.2 + (S.h.pw && S.h.pw.k === 'bee' ? 0.5 : 0), S.cam.pitch);
+  const want = 7.6 + camV.zoom * 4.2 + (S.h.pw && S.h.pw.k === 'bee' ? 0.5 : 0), pose = E.camPose(S, want, S.cam.pitch);
   camV.zoom = Math.max(0, camV.zoom - dt * 0.9);
-  let pos = pose.pos, f = pose.fw, u = pose.up;
-  if (G.intro && mode === 'play') { // the fly-in: from far away, spiraling down to the hero
-    const k = clamp(G.it / G.introDur, 0, 1), e = k * k * (3 - 2 * k), bodies = S.L.bodies; let c = [0, 0, 0]; for (const b of bodies) c = V.add(c, b.p); c = V.mul(c, 1 / bodies.length); let rad = 0; for (const b of bodies) rad = Math.max(rad, V.len(V.sub(b.p, c)) + b.br);
-    const ang = (1 - e) * 2.4 + 0.6, far = V.add(c, V.mul(V.norm([Math.sin(ang), 0.5 + 0.2 * (1 - e), Math.cos(ang)]), rad * 1.15 + 24)), tgt = V.add(S.h.x, V.mul(V.sub(c, S.h.x), 1 - e));
-    pos = V.add(V.mul(far, 1 - e), V.mul(pose.pos, e)); f = V.norm(V.sub(V.add(V.mul(tgt, 1 - e * 0.0), [0, 0, 0]), pos)); if (e > 0.85) f = V.norm(V.add(V.mul(f, 1 - (e - 0.85) / 0.15), V.mul(pose.fw, (e - 0.85) / 0.15))); u = V.norm(V.add(V.mul([0, 1, 0], 1 - e), V.mul(pose.up, e)));
-  } else if (camV.pos) { const k = 1 - Math.exp(-22 * Math.max(dt, 0.001)); pos = V.add(camV.pos, V.mul(V.sub(pos, camV.pos), S.h.lau ? 0.25 : k)); f = V.norm(V.sub(pose.tgt, pos)); }
-  camV.pos = pos;
+  // the camera pulls in at once when a wall is behind it, and eases back out slowly
+  const dirv = V.norm(V.sub(pose.pos, pose.tgt)); camV.d = camV.d == null || !camV.pos ? pose.dist : (pose.dist < camV.d ? pose.dist : Math.min(pose.dist, camV.d + dt * 5));
+  let pos = V.add(pose.tgt, V.mul(dirv, camV.d)), f = pose.fw, u = pose.up;
+  if (G.intro && mode === 'play') { // the fly-in: far away -> over the goal -> down to the hero
+    const k = clamp(G.it / G.introDur, 0, 1), ez = x => x * x * (3 - 2 * x), bodies = S.L.bodies; let c = [0, 0, 0]; for (const b of bodies) c = V.add(c, b.p); c = V.mul(c, 1 / bodies.length); let rad = 0; for (const b of bodies) rad = Math.max(rad, V.len(V.sub(b.p, c)) + b.br);
+    let fp = c, fu = [0, 1, 0]; const si = G.m.shard ? S.L.eidx[G.m.shard] : null; if (si != null) { fp = E.entPos(S, si); fu = E.entUp(S, si); } else if (S.boss) { fp = E.bossPos(S); fu = V.norm(V.sub(fp, S.xf[S.L.ents[S.boss.i].bi].p)); }
+    const ang = 2.2 * (1 - k) + 0.5, far = V.add(c, V.mul(V.norm([Math.sin(ang), 0.55, Math.cos(ang)]), rad * 1.1 + 26)), mid = V.add(fp, V.add(V.mul(fu, 9), V.mul(E.perp(fu), 9)));
+    if (k < 0.5) { const e = ez(k / 0.5); pos = V.add(V.mul(far, 1 - e), V.mul(mid, e)); f = V.norm(V.sub(V.add(V.mul(c, 1 - e), V.mul(fp, e)), pos)); u = V.norm(V.add(V.mul([0, 1, 0], 1 - e), V.mul(fu, e))); }
+    else { const e = ez((k - 0.5) / 0.5); pos = V.add(V.mul(mid, 1 - e), V.mul(pose.pos, e)); f = V.norm(V.sub(V.add(V.mul(fp, 1 - e), V.mul(pose.tgt, e)), pos)); u = V.norm(V.add(V.mul(fu, 1 - e), V.mul(pose.up, e))); }
+  } else if (camV.pos) { const kk = 1 - Math.exp(-22 * Math.max(dt, 0.001)); pos = V.add(camV.pos, V.mul(V.sub(pos, camV.pos), S.h.lau ? 0.25 : kk)); if (V.len(V.sub(pos, pose.tgt)) > camV.d + 0.3) pos = V.add(pose.tgt, V.mul(V.norm(V.sub(pos, pose.tgt)), camV.d)); f = V.norm(V.sub(pose.tgt, pos)); }
+  camV.pos = G.intro ? null : pos;
   if (fx.shake > 0 && !save.set.rm) { const a = fx.shake * 0.25; pos = V.add(pos, [Math.sin(t * 90) * a, Math.cos(t * 77) * a, Math.sin(t * 63) * a]); }
   const wide = cw / ch < 0.8; return { p: pos, f, u, fov: wide ? 1.25 : 1.0 };
 }
 function hubLabels() {
   const el = $('labels'); if (!R || !G) return; const S = G.S; const ents = G.L.ents;
-  if (el.childElementCount !== 3) { el.innerHTML = '<span></span><span></span><span></span>'; }
+  const ng = G.L.ents.filter(e => e.k === 'gate').length; if (el.childElementCount !== ng) { el.innerHTML = '<span></span>'.repeat(ng); }
   let k = 0; for (const i of S.act) { const e = ents[i]; if (e.k !== 'gate') continue; const sp = el.children[k++]; if (!sp) break; const p = S.ep[i], pr = R.project(p[0] + S.h.up[0] * 0, p[1], p[2]); const up = E.entUp(S, i); const pp = R.project(p[0] + up[0] * 3.4, p[1] + up[1] * 3.4, p[2] + up[2] * 3.4);
     if (!pp || !pp.in) { sp.style.display = 'none'; continue; } sp.style.display = ''; sp.style.left = pp.x + 'px'; sp.style.top = pp.y + 'px'; const g = GALS.find(x => x.id === e.gal), ok = galUnlocked(e.gal); const txt = gname(e.gal) + (ok ? '' : L('（あと★', ' (need ★') + Math.max(0, g.need - save.pts) + (EN ? ')' : '）')); if (sp.textContent !== txt) sp.textContent = txt; sp.style.opacity = ok ? '1' : '.7'; }
 }
 function updateHud() {
   const S = G.S, h = S.h; let s = ''; for (let i = 0; i < S.hpMax; i++) s += '<i class="' + (i < h.hp ? '' : 'off') + '">♥</i>'; const he = $('hearts'); if (he.dataset.k !== s) { he.innerHTML = s; he.dataset.k = s; }
-  $('hShard').textContent = G.gid === 'hub' ? '★ ' + save.pts + '/' + LV.total() : '★ ' + (save.sh[G.gid] ? popc(save.sh[G.gid]) : 0) + '/' + G.L.mlist.length;
+  $('hShard').textContent = G.gid === 'hub' ? '★ ' + save.pts + '/' + LV.total() : G.m.kind === 'hunt' ? '✿ ' + S.cnt.lumi + '/' + (G.m.lumi || 3) : '★ ' + (save.sh[G.gid] ? popc(save.sh[G.gid]) : 0) + '/' + G.L.mlist.filter(x => x.kind !== 'hunt').length;
   $('hCoin').textContent = '● ' + (save.cn + (G.gid === 'hub' ? 0 : S.cnt.coin));
   const tm = $('hTimer'); if (S.tl > 0 || (G.m && G.m.timer)) { tm.hidden = false; const sec = Math.ceil(S.tl); tm.textContent = '⏱ ' + sec + (S.need.orb ? '  ◎ ' + S.cnt.orb + '/' + S.need.orb : ''); tm.classList.toggle('low', sec <= 8); } else tm.hidden = true;
   $('mName').textContent = G.gid === 'hub' ? gname('hub') : mname(G.m) + (S.boss && S.boss.st !== 'gone' ? '  ' + '♥'.repeat(Math.max(0, S.boss.hp)) : '');
@@ -546,6 +551,7 @@ function compass() {
   const c = $('compass'); if (!R || !G || G.gid === 'hub' || G.intro || G.S.over) { c.style.display = 'none'; return; }
   const S = G.S, L0 = S.L; let tp = null;
   if (S.cnt.orb < S.need.orb && !S.flag.orbs) { let bd = 1e9; for (const i of S.act) { const e = L0.ents[i]; if (e.k === 'orb' && !S.e[i]) { const d = V.len(V.sub(S.ep[i], S.h.x)); if (d < bd) { bd = d; tp = S.ep[i]; } } } }
+  if (!tp && G.m.kind === 'hunt') { let bd = 22; for (const i of S.act) { const e = L0.ents[i]; if (e.k === 'lumi' && !S.e[i]) { const d = V.len(V.sub(S.ep[i], S.h.x)); if (d < bd) { bd = d; tp = S.ep[i]; } } } }
   if (!tp && G.m.shard) { const i = L0.eidx[G.m.shard]; if (i != null && !S.e[i] && S.act.indexOf(i) >= 0 && (!L0.ents[i].req || S.flag[L0.ents[i].req])) tp = S.ep[i]; }
   if (!tp && S.boss && S.boss.st !== 'gone' && S.boss.st !== 'dead') tp = E.bossPos(S);
   if (!tp) { c.style.display = 'none'; return; }
@@ -610,11 +616,11 @@ function showResult() {
   const S = G.S, ok = S.res.ok; mode = 'result'; padOff();
   if (ok) onClear(); else { endRun('fail'); G.result = { ok: false, why: S.res.why }; }
   const r = G.result; hideOverlays(); $('ovResult').hidden = false;
-  $('rTitle').textContent = ok ? L('ミッション クリア！', 'Mission Clear!') : (r.why === 'time' ? L('じかんぎれ…', 'Out of time…') : L('ざんねん…', 'Not this time…'));
+  $('rTitle').textContent = ok ? (G.m.kind === 'hunt' ? L('ルミ みつけた！', 'Lumi Found!') : L('ミッション クリア！', 'Mission Clear!')) : (r.why === 'time' ? L('じかんぎれ…', 'Out of time…') : L('ざんねん…', 'Not this time…'));
   $('rShard').innerHTML = ok ? '<svg viewBox="0 0 24 24" class="pop"><path d="M12 1.5l3 7.3 7.8.6-6 5.1 1.9 7.6L12 17.8 5.3 22.1l1.9-7.6-6-5.1 7.8-.6z" stroke-width="1.2"/></svg>' : '';
   $('rBig').textContent = ok ? mname(G.m) : '';
-  const nw = $('rNew'); nw.hidden = !(ok && (r.first || r.newBest)); nw.textContent = ok && r.first ? L('はじめての スターシャード！', 'First Star Shard!') : L('ベストタイム！', 'New best time!');
-  const kv = []; if (ok) { kv.push([L('タイム', 'Time'), fmtT(r.f)]); if (r.ob && !r.newBest) kv.push([L('ベスト', 'Best'), fmtT(r.ob)]); kv.push([L('コイン', 'Coins'), r.coin]); if (r.crystal) kv.push([L('クリスタル', 'Crystals'), r.crystal]); kv.push([L('ミス', 'Falls / KOs'), r.die]); if (r.lumi) kv.push([L('ルミ', 'Lumi'), r.lumi]); kv.push([L('スターシャード', 'Star Shards'), save.pts + ' / ' + LV.total()]); }
+  const nw = $('rNew'); nw.hidden = !(ok && (r.first || r.newBest)); nw.textContent = ok && r.first ? (G.m.kind === 'hunt' ? L('ルミ さがし たっせい！', 'Lumi hunt complete!') : L('はじめての スターシャード！', 'First Star Shard!')) : L('ベストタイム！', 'New best time!');
+  const kv = []; if (ok) { kv.push([L('タイム', 'Time'), fmtT(r.f)]); if (r.ob && !r.newBest) kv.push([L('ベスト', 'Best'), fmtT(r.ob)]); kv.push([L('コイン', 'Coins'), r.coin]); if (r.crystal) kv.push([L('クリスタル', 'Crystals'), r.crystal]); kv.push([L('ミス', 'Falls / KOs'), r.die]); kv.push([L('スターシャード', 'Star Shards'), save.pts + ' / ' + LV.total()]); kv.push([L('ルミ', 'Lumi found'), popc((save.lm[G.gid] | 0) & 7) + ' / 3']); }
   $('rKv').innerHTML = kv.map(a => '<span>' + esc(a[0]) + '</span><span>' + esc(a[1]) + '</span>').join('');
   $('rNote').textContent = ok ? (G.gid !== 'hub' && galUnlockedNew() ? L('あたらしい銀河が ひらいたよ！ ほしみ台のゲートへ', 'A new galaxy has opened! Check the gates on the Deck.') : '') : (r.why === 'time' ? L('たすけの せっていで、時間を 1.6ばいに できます', 'You can give yourself 1.6x time in Settings (Assist).') : L('もう一度 ちょうせんしよう', 'Give it another go!'));
   const nx = nextMission(); const bn = $('rNext'); bn.textContent = ok ? (nx ? L('つぎの ミッション', 'Next mission') : L('ほしみ台へ', 'To the Station')) : L('もう一度', 'Try again');
@@ -636,7 +642,7 @@ function drawSelect() {
   $('selTabs').innerHTML = GALS.map(g => '<button type="button" data-g="' + g.id + '" aria-pressed="' + (g.id === selG) + '">' + esc(gname(g.id)) + (galUnlocked(g.id) ? '' : ' 🔒') + '</button>').join('');
   $('selTabs').querySelectorAll('button').forEach(b => { b.onclick = () => { selG = b.dataset.g; drawSelect(); }; });
   let h = ''; if (!open) h += '<p>' + esc(L('スターシャードを ' + gi.need + ' こ あつめると ひらきます（いま ' + save.pts + ' こ）。', 'Open this galaxy with ' + gi.need + ' Star Shards (you have ' + save.pts + ').')) + '</p>';
-  d.missions.forEach((m, i) => { const got = !!((save.sh[selG] | 0) & (1 << i)), bt = save.bt[m.id]; h += '<button class="qm' + (got ? ' done' : '') + '" type="button" data-m="' + m.id + '"' + (open ? '' : ' disabled') + '><span><b>' + esc(mname(m)) + (m.kind === 'boss' ? ' ★' : '') + '</b><small>' + esc(L(m.desc.ja, m.desc.en)) + (bt ? ' · ' + esc(L('ベスト', 'Best')) + ' ' + fmtT(bt) : '') + '</small></span><span class="go" aria-hidden="true">' + (got ? '✓' : '▶') + '</span></button>'; });
+  d.missions.forEach((m, i) => { const got = m.kind === 'hunt' ? !!((save.lm[selG] | 0) & 128) : !!((save.sh[selG] | 0) & (1 << i)), bt = save.bt[m.id]; h += '<button class="qm' + (got ? ' done' : '') + '" type="button" data-m="' + m.id + '"' + (open ? '' : ' disabled') + '><span><b>' + esc(mname(m)) + (m.kind === 'boss' ? ' ★' : m.kind === 'hunt' ? ' ✿' : '') + '</b><small>' + esc(L(m.desc.ja, m.desc.en)) + (bt ? ' · ' + esc(L('ベスト', 'Best')) + ' ' + fmtT(bt) : '') + '</small></span><span class="go" aria-hidden="true">' + (got ? '✓' : '▶') + '</span></button>'; });
   $('selBody').innerHTML = h; $('selBody').querySelectorAll('.qm').forEach(b => { b.onclick = () => { const g = KG(); if (g) g.menuClosed(); $('ovSel').hidden = true; startMission(selG, b.dataset.m); }; });
 }
 $('selClose').onclick = () => closeSelect();

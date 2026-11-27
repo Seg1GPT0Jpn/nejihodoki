@@ -43,7 +43,7 @@
         // にげる（ボスのいる向きと逆）
         let away = V.sub(h.x, bp); if (bo.st === 'jump') away = V.sub(h.x, V.add(c, V.mv(S.xf[bi].R, V.mul(bo.tg, R))));
         const run = V.add(h.x, V.mul(V.norm(away), 6)); const o = go(S, run, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
-        if (bo.st === 'land' && bo.ring > 0 && h.on >= 0 && Math.abs(dist - bo.ring) < 3.1 && dist + 0.5 > bo.ring - 3.1) { if (!(S.pb & B.J)) inp.b |= B.J; }
+        if (bo.st === 'land' && bo.ring > 0 && h.on >= 0 && (Math.abs(dist - bo.ring) < 3.1 || (e.dbl && Math.abs(dist - (bo.ring - 5)) < 3.1)) && dist + 0.5 > bo.ring - 8) { if (!(S.pb & B.J)) inp.b |= B.J; }
       }
       return inp;
     }
@@ -57,6 +57,10 @@
       if (st.boss) {
         if (S.flag.boss) { nextStep(); return inp; }
         const o = bossAct(S); reflex(S, o); return o;
+      }
+      if (st.melt) {
+        const i = L.eidx[st.melt]; if (S.e[i]) { nextStep(); return inp; }
+        const p = S.ep[i], d = V.len(V.sub(p, h.x)); const o = go(S, p, { stop: 0.1 }); if (d > (st.at || 2.6)) { inp.sx = o.sx; inp.sy = o.sy; } else if (h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S; return inp;
       }
       const tg = target(S, st);
       if (st.launch) {

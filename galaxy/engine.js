@@ -14,7 +14,7 @@
     SPIN_T: 0.42, SPIN_R: 2.0, SPIN_CD: 0.18, POUND_V: 32, POUND_STUN: 0.3, POUND_R: 3.2, KICK_H: 8, KICK_V: 10, WALL_T: 0.14,
     INV: 1.6, VOID: 34, HOVER: 3.0, POWER_T: 28, ENEMY_R: 1.05,
   };
-  const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 } };
+  const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, water: { fr: 0.9 }, ruin: { fr: 1 }, gear: { fr: 1 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 } };
 
   // ---------- ベクトル・行列（9要素の行優先） ----------
   const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -283,10 +283,10 @@
     // ---- 速度 ----
     const n0 = grounded0 ? h.gn : gu;
     let v = h.v.slice();
-    const speed = K.RUN * (h.pw && h.pw.k === 'spring' ? 1.05 : 1);
+    const speed = K.RUN * (h.pw && h.pw.k === 'spring' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : 1);
     if (grounded0) {
       let dsr = sub(dirW, mul(n0, dot(dirW, n0))); dsr = mul(dsr, speed);
-      const vn = dot(v, n0), vt = sub(v, mul(n0, vn)), surf = L.bodies[h.on].fr;
+      const vn = dot(v, n0), vt = sub(v, mul(n0, vn)), surf = L.bodies[h.on].fr * (h.pw && h.pw.k === 'skate' ? 0.55 : 1);
       let diff = sub(dsr, vt); const dl = len(diff), lim = (mag2 ? K.ACC_G : K.FRIC) * surf * DT;
       const nv = dl <= lim ? dsr : add(vt, mul(diff, lim / dl));
       v = add(nv, mul(n0, Math.min(vn, 0)));
@@ -314,7 +314,7 @@
     if (!grounded0 && !jumped && h.jh && !jh && dot(v, gu) > 4.5 && h.pound !== 1) { v = sub(v, mul(gu, dot(v, gu) * 0.5)); h.jh = 0; } // ボタンを離すと低く
     if (!jh) h.jh = 0;
     if (sp && h.scd <= 0 && h.pound === 0) {
-      h.spin = K.SPIN_T; h.scd = K.SPIN_T + K.SPIN_CD; S.cnt.spin++; S.ev.push(['spin', h.x[0], h.x[1], h.x[2]]);
+      const fire = h.pw && h.pw.k === 'fire'; h.spin = K.SPIN_T * (fire ? 1.3 : 1); h.scd = h.spin + K.SPIN_CD; S.cnt.spin++; S.ev.push(['spin', h.x[0], h.x[1], h.x[2]]);
       if (!grounded0 && !h.as) { h.as = 1; const vu = dot(v, gu); if (vu < 3.5) v = add(sub(v, mul(gu, vu)), mul(gu, 3.5)); }
     }
     if (h.spin > 0) h.spin = Math.max(0, h.spin - DT);
@@ -406,11 +406,13 @@
   }
   function spinHit(S) {
     const h = S.h, L = S.L;
+    const fire = h.pw && h.pw.k === 'fire', R0 = K.SPIN_R * (fire ? 1.6 : 1);
     for (const i of S.act) {
       const e = L.ents[i]; if (S.e[i]) continue;
-      if (e.k === 'walker' || e.k === 'crate') { const p = S.ep[i]; if (len(sub(p, h.x)) < K.SPIN_R + (e.k === 'crate' ? 0.5 : 0.2)) hitEnt(S, i, 'spin'); }
+      if (e.k === 'walker' || e.k === 'crate') { const p = S.ep[i]; if (len(sub(p, h.x)) < R0 + (e.k === 'crate' ? 0.5 : 0.2)) hitEnt(S, i, 'spin'); }
+      else if (e.k === 'spike' && fire && S.ep[i] && len(sub(S.ep[i], h.x)) < R0 + 0.4) { S.e[i] = 1; S.ev.push(['melt', S.ep[i][0], S.ep[i][1], S.ep[i][2]]); }
     }
-    if (S.boss && S.boss.st === 'stun') { const bp = bossPos(S); if (len(sub(bp, h.x)) < K.SPIN_R + 1.6) bossHit(S); }
+    if (S.boss && S.boss.st === 'stun') { const bp = bossPos(S); if (len(sub(bp, h.x)) < R0 + 1.6) bossHit(S); }
   }
   function poundHit(S) {
     const h = S.h, L = S.L;
@@ -423,11 +425,11 @@
     else if (e.k === 'crate') {
       S.ev.push(['crate', p[0], p[1], p[2]]);
       if (e.drop === 'heart') { S.h.hp = Math.min(S.hpMax, S.h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); }
-      else if (e.drop === 'bee' || e.drop === 'spring' || e.drop === 'cloud') givePower(S, e.drop, p);
+      else if (e.drop === 'bee' || e.drop === 'spring' || e.drop === 'cloud' || e.drop === 'skate' || e.drop === 'fire') givePower(S, e.drop, p);
       else { S.cnt.coin += 3; S.ev.push(['coin', p[0], p[1], p[2]]); }
     }
   }
-  function givePower(S, k, p) { S.h.pw = { k, t: K.POWER_T }; S.h.hov = K.HOVER; S.h.aj = 0; S.ev.push(['power', p[0], p[1], p[2], k]); }
+  function givePower(S, k, p) { const ck = 'p' + k.slice(0, 2); S.cnt[ck] = (S.cnt[ck] || 0) + 1; S.h.pw = { k, t: K.POWER_T }; S.h.hov = K.HOVER; S.h.aj = 0; S.ev.push(['power', p[0], p[1], p[2], k]); }
   function pickups(S) {
     const h = S.h, L = S.L;
     for (const i of S.act) {
@@ -438,10 +440,10 @@
         case 'crystal': if (d < 1.3) { S.e[i] = 1; S.cnt.crystal++; S.cnt.coin += 5; S.ev.push(['crystal', p[0], p[1], p[2]]); } break;
         case 'heart': if (d < 1.3) { S.e[i] = 1; h.hp = Math.min(S.hpMax, h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); } break;
         case 'orb': if (d < 1.5) { S.e[i] = 1; S.cnt.orb++; S.ev.push(['orb', p[0], p[1], p[2]]); if (S.cnt.orb >= S.need.orb) { S.flag.orbs = 1; S.ev.push(['banner', 'orbs']); } } break;
-        case 'lumi': if (d < 1.5) { S.e[i] = 1; S.cnt.lumi++; S.lumi |= 1 << (e.n2 || 0); S.ev.push(['lumi', p[0], p[1], p[2], e.n2 || 0]); } break;
+        case 'lumi': if (d < 1.5) { S.e[i] = 1; S.cnt.lumi++; S.lumi |= 1 << (e.n2 || 0); S.ev.push(['lumi', p[0], p[1], p[2], e.n2 || 0]); const m = L.missions[S.mid]; if (m.kind === 'hunt' && S.cnt.lumi >= (m.lumi || 3)) finish(S, true, 'lumi'); } break;
         case 'power': if (d < 1.5) { S.e[i] = 1; givePower(S, e.type, p); } break;
         case 'cp': if (d < 1.8 && S.cp !== i) { S.cp = i; S.ev.push(['cp', p[0], p[1], p[2]]); } break;
-        case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (!m.shard || m.shard === e.id) finish(S, true, 'shard'); } break;
+        case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (m.kind !== 'hunt' && (!m.shard || m.shard === e.id)) finish(S, true, 'shard'); } break;
         case 'launch': if (d < 1.55 && !h.lau && h.lcd <= 0 && S.h.dead === 0) startLaunch(S, i); break;
         case 'pad': if (d < 1.4 && h.lcd <= 0) { const up = entUp(S, i), v = h.v; h.v = add(sub(v, mul(up, dot(v, up))), mul(up, e.power || 20)); h.on = -1; h.lcd = 0.3; h.jh = 0; S.ev.push(['pad', p[0], p[1], p[2]]); } break;
         case 'spike': if (d < 0.95) hurt(S, p); break;
@@ -468,7 +470,7 @@
     const hq = norm(mtv(S.xf[e.bi].R, sub(h.x, S.xf[e.bi].p)));
     const slow = 1;
     if (bo.st === 'walk') {
-      bo.off = 0; const ang = geod(bo.d, hq), step = Math.min(ang, (0.42 + 0.12 * (3 - bo.hp)) * DT * slow);
+      bo.off = 0; const ang = geod(bo.d, hq), step = Math.min(ang, ((e.spd || 0.42) + 0.12 * ((e.hp || 3) - bo.hp)) * DT * slow);
       if (ang > 1e-4) bo.d = norm(add(mul(bo.d, Math.cos(step)), mul(norm(sub(hq, mul(bo.d, dot(hq, bo.d)))), Math.sin(step))));
       if (bo.t <= 0) { bo.st = 'jump'; bo.t = 1.15; bo.t0 = 1.15; bo.from = bo.d.slice(); bo.tg = hq.slice(); S.ev.push(['bosswarn']); }
     } else if (bo.st === 'jump') {
@@ -476,10 +478,10 @@
       const w0 = Math.sin((1 - s) * ang) / sn, w1 = Math.sin(s * ang) / sn; bo.d = ang > 1e-4 ? norm(add(mul(bo.from, w0), mul(bo.tg, w1))) : bo.from.slice(); bo.off = 7 * 4 * s * (1 - s);
       if (bo.t <= 0) { bo.st = 'land'; bo.t = 0.9; bo.off = 0; bo.ring = 0; bo.d = bo.tg.slice(); const p = bossPos(S); S.ev.push(['bosslang', p[0], p[1], p[2]]); }
     } else if (bo.st === 'land') {
-      bo.ring += 12 * DT; const arc = R * 1; // 弧の長さ
+      bo.ring += (e.rs || 12) * DT;
       { const rr = len(sub(h.x, S.xf[e.bi].p)) || R, dist = geod(bo.d, hq) * rr, height = rr - R - HR;
-        if (Math.abs(dist - bo.ring) < 0.9 && height < 0.8 && bo.ring > 0.4) hurt(S, bossPos(S)); }
-      if (bo.t <= 0) { bo.st = 'stun'; bo.t = 5; bo.ring = -1; }
+        if ((Math.abs(dist - bo.ring) < 0.9 || (e.dbl && bo.ring > 5 && Math.abs(dist - (bo.ring - 5)) < 0.9)) && height < 0.8 && bo.ring > 0.4) hurt(S, bossPos(S)); }
+      if (bo.t <= 0) { bo.st = 'stun'; bo.t = e.stun || 5; bo.ring = -1; }
     } else if (bo.st === 'stun') {
       if (bo.t <= 0) { bo.st = 'walk'; bo.t = 3.2 + rnd(S) * 1.2; }
     } else if (bo.st === 'hurt') {
@@ -512,7 +514,8 @@
     const c = S.cam, h = S.h, up = c.up, fw = projT(c.fw, up), p = pitch == null ? c.pitch : pitch;
     const dir = add(mul(fw, -Math.cos(p)), mul(up, Math.sin(p))); const tgt = add(h.x, mul(up, 0.7));
     let dd = dist || 7.5;
-    for (let k = 0; k < 6; k++) { const pos = add(tgt, mul(dir, dd)); let ok = true; for (let i = 0; i < S.L.bodies.length; i++) { const f = S.xf[i], b = S.L.bodies[i]; if (len(sub(pos, f.p)) > b.br + 3) continue; if (sdfW(S, i, pos)[0] < 0.7) { ok = false; break; } } if (ok) break; dd *= 0.8; }
+    // 手前からカメラの位置まで、少しずつ進んで、体にぶつかる手前でとめる（めりこまない・遮られない）
+    for (let t = 0.8; t <= dd; t += 0.35) { const pos = add(tgt, mul(dir, t)); let hit = false; for (let i = 0; i < S.L.bodies.length; i++) { const f = S.xf[i], b = S.L.bodies[i]; if (len(sub(pos, f.p)) > b.br + 3) continue; if (sdfW(S, i, pos)[0] < 0.6) { hit = true; break; } } if (hit) { dd = Math.max(1.8, t - 0.5); break; } }
     return { pos: add(tgt, mul(dir, dd)), tgt, fw: norm(sub(tgt, add(tgt, mul(dir, dd)))), up, dist: dd };
   }
   // 入力の記録（B をビット、sx・sy を -8〜8 の整数に）

@@ -10,12 +10,21 @@
     const m = r.mesh;
     m('hero', b => { // ピップ：まるい身体、大きな目、アンテナ、スカーフ、足（中心が原点、前は +z）
       b.ell(0, -0.02, 0, 0.44, 0.46, 0.41, C.cream, 8, 14); b.ell(0, -0.12, 0.1, 0.3, 0.32, 0.3, C.cream2, 5, 10);
-      b.ell(-0.16, 0.12, 0.34, 0.1, 0.12, 0.07, C.eye, 4, 8); b.ell(0.16, 0.12, 0.34, 0.1, 0.12, 0.07, C.eye, 4, 8); b.ell(-0.13, 0.17, 0.4, 0.035, 0.04, 0.03, C.white, 3, 5); b.ell(0.19, 0.17, 0.4, 0.035, 0.04, 0.03, C.white, 3, 5);
-      b.ell(-0.27, 0.0, 0.31, 0.07, 0.045, 0.04, C.pink, 3, 6); b.ell(0.27, 0.0, 0.31, 0.07, 0.045, 0.04, C.pink, 3, 6); b.ell(0, 0.0, 0.4, 0.05, 0.025, 0.03, C.eye, 3, 6);
+      b.ell(-0.27, 0.0, 0.31, 0.07, 0.045, 0.04, C.pink, 3, 6); b.ell(0.27, 0.0, 0.31, 0.07, 0.045, 0.04, C.pink, 3, 6);
       b.ell(0, -0.2, 0, 0.45, 0.08, 0.42, C.scarf, 4, 12); b.ell(0.1, -0.24, -0.4, 0.07, 0.07, 0.2, C.scarf, 3, 6);
       b.ell(-0.17, -0.45, 0.06, 0.15, 0.08, 0.2, C.orange, 3, 8); b.ell(0.17, -0.45, 0.06, 0.15, 0.08, 0.2, C.orange, 3, 8); b.ell(-0.46, -0.1, 0.02, 0.1, 0.12, 0.1, C.cream2, 3, 6); b.ell(0.46, -0.1, 0.02, 0.1, 0.12, 0.1, C.cream2, 3, 6);
       b.cone(-0.12, 0.38, -0.02, 0.025, 0.28, C.dark, 5, 0.015); b.cone(0.12, 0.38, -0.02, 0.025, 0.28, C.dark, 5, 0.015); b.ell(-0.13, 0.7, -0.02, 0.07, 0.07, 0.07, C.gold2, 3, 6); b.ell(0.13, 0.7, -0.02, 0.07, 0.07, 0.07, C.gold2, 3, 6);
     });
+    // かおのパターン：ひらいた目・まばたき・にっこり（^ ^）・ばってん・びっくり（口あき）
+    const eyeO = (b, hh, mouth) => { b.ell(-0.16, 0.12, 0.34, 0.1, hh, 0.07, C.eye, 4, 8); b.ell(0.16, 0.12, 0.34, 0.1, hh, 0.07, C.eye, 4, 8); if (hh > 0.06) { b.ell(-0.13, 0.17, 0.4, 0.035, 0.04, 0.03, C.white, 3, 5); b.ell(0.19, 0.17, 0.4, 0.035, 0.04, 0.03, C.white, 3, 5); } mouth(b); };
+    const qd = (b, p, q, r, t, col) => { b.quad(p, q, r, t, col); b.quad(p, t, r, q, col); };
+    m('eyes_o', b => eyeO(b, 0.12, t => t.ell(0, 0.0, 0.4, 0.05, 0.025, 0.03, C.eye, 3, 6)));
+    m('eyes_b', b => eyeO(b, 0.02, t => t.ell(0, 0.0, 0.4, 0.05, 0.025, 0.03, C.eye, 3, 6)));
+    m('eyes_j', b => eyeO(b, 0.13, t => t.ell(0, -0.02, 0.4, 0.07, 0.07, 0.03, [0.5, 0.1, 0.15], 3, 6)));
+    m('eyes_h', b => { for (const s of [-1, 1]) { qd(b,[s * 0.16 - 0.1, 0.1, 0.4], [s * 0.16, 0.2, 0.4], [s * 0.16, 0.16, 0.4], [s * 0.16 - 0.1, 0.06, 0.4], C.eye); qd(b,[s * 0.16, 0.2, 0.4], [s * 0.16 + 0.1, 0.1, 0.4], [s * 0.16 + 0.1, 0.06, 0.4], [s * 0.16, 0.16, 0.4], C.eye); } b.ell(0, 0.0, 0.4, 0.07, 0.04, 0.03, [0.5, 0.1, 0.15], 3, 6); });
+    m('eyes_x', b => { for (const s of [-1, 1]) { qd(b,[s * 0.16 - 0.08, 0.2, 0.4], [s * 0.16 - 0.05, 0.2, 0.4], [s * 0.16 + 0.08, 0.04, 0.4], [s * 0.16 + 0.05, 0.04, 0.4], C.eye); qd(b,[s * 0.16 + 0.05, 0.2, 0.4], [s * 0.16 + 0.08, 0.2, 0.4], [s * 0.16 - 0.05, 0.04, 0.4], [s * 0.16 - 0.08, 0.04, 0.4], C.eye); } b.ell(0, -0.01, 0.4, 0.04, 0.04, 0.03, C.eye, 3, 6); });
+    m('skate', b => { b.box(0, 0.1, 0, 0.5, 0.3, 0.9, hex('#4fb0ff')); b.box(0, -0.12, 0, 0.12, 0.1, 1.1, C.white); b.cone(0, 0.2, 0.4, 0.2, 0.3, hex('#ffffff'), 5, 0.05); });
+    m('fire', b => { for (let i = 0; i < 4; i++) { const a = i * 1.57; b.cone(Math.cos(a) * 0.18, 0, Math.sin(a) * 0.18, 0.2, 0.8 + (i % 2) * 0.3, [2.0, 0.7 + i * 0.1, 0.15], 6, 0); } b.cone(0, 0, 0, 0.26, 1.2, [2.2, 1.4, 0.4], 6, 0); });
     m('shadow', b => { b.ell(0, 0, 0, 1, 0.02, 1, [0.04, 0.04, 0.1], 2, 14); });
     m('shard', b => { b.star(0, 0, 0, 0.95, 0.45, 0.2, C.gold, C.gold2); b.ell(0, 0, 0, 0.3, 0.3, 0.3, C.white, 3, 6); });
     m('coin', b => { b.ell(0, 0, 0, 0.36, 0.36, 0.07, C.gold, 5, 12); b.ell(0, 0, 0.05, 0.22, 0.22, 0.04, C.gold2, 4, 10); });
@@ -99,6 +108,7 @@
         case 'bosshit': this.burst(p, 40, gold, { sp: 7, life: 0.9, size: 0.6 }); this.shake = this.rm ? 0 : 0.5; break;
         case 'bosslang': this.ringFx(p, th && th.bossUp || S.h.up, orange, 12, 32); this.shake = this.rm ? 0 : 0.7; break;
         case 'heart': this.burst(p, 10, red, { sp: 3, life: 0.7 }); break;
+        case 'melt': this.burst(p, 16, orange, { sp: 4, life: 0.7, size: 0.5 }); break;
         default: break;
       }
     }
@@ -120,7 +130,7 @@
         case 'heart': O('heart', bob, spin, up, 0.8, null, 0.35); break;
         case 'launch': if (e.mode === 'cannon') O('cannon', V.add(p, V.mul(up, -0.5)), spin, up, 1, null, 0); else if (e.mode === 'pipe') O('pipe', V.add(p, V.mul(up, -0.5)), spin, up, 1, null, 0); else { O('launch', V.add(p, V.mul(up, 0.5)), ROT(up, t * 1.4), up, 1, null, 0.6); fx.glow(V.add(p, V.mul(up, 0.5)), [1, 0.5, 0.85], 9, 0.55); } break;
         case 'pad': O('pad', V.add(p, V.mul(up, -0.2)), spin, up, 1, null, 0.1); break;
-        case 'crate': O('crate', p, ROT(up, i), up, 1, e.drop === 'heart' ? [1, 0.7, 0.75] : e.drop === 'bee' ? [1, 1, 0.6] : e.drop === 'spring' ? [1, 0.7, 0.7] : e.drop === 'cloud' ? [0.8, 0.9, 1] : null, 0); break;
+        case 'crate': O('crate', p, ROT(up, i), up, 1, e.drop === 'heart' ? [1, 0.7, 0.75] : e.drop === 'bee' ? [1, 1, 0.6] : e.drop === 'spring' ? [1, 0.7, 0.7] : e.drop === 'cloud' ? [0.8, 0.9, 1] : e.drop === 'skate' ? [0.7, 0.85, 1.2] : e.drop === 'fire' ? [1.3, 0.8, 0.6] : null, 0); break;
         case 'walker': { const dv = V.norm(V.cross(up, V.mv(S.xf[e.bi].R, e.ax))); const sq = 1 + Math.sin(t * 6 + i) * 0.06; O('walker', p, dv, up, [sq, 2 - sq, sq], null, 0); break; }
         case 'spike': O('spike', V.add(p, V.mul(up, -0.1)), spin, up, 1, null, 0.1); break;
         case 'cp': { const on = S.cp === i; O('cp', V.add(p, V.mul(up, -0.5)), ROT(up, 0.6), up, 1, on ? [0.7, 1, 0.7] : [0.8, 0.8, 0.9], on ? 0.3 : 0); break; }
@@ -143,7 +153,13 @@
         const ang = h.spin > 0 ? (1 - h.spin / E.K.SPIN_T) * TAU * 2 : h.lau ? t * 14 : 0; const fw = ang ? V.rodr(h.fw, h.up, ang) : h.fw;
         const tint = h.pw ? (h.pw.k === 'bee' ? [1.2, 1.15, 0.7] : h.pw.k === 'spring' ? [1.2, 0.9, 0.9] : [0.9, 1, 1.25]) : null;
         const tilt = h.on < 0 && !h.lau && h.pound === 0 ? V.add(h.up, V.mul(V.norm(V.sub(h.v, V.mul(h.up, V.dot(h.v, h.up)))), 0.08)) : h.up;
-        O('hero', h.x, fw, V.norm(tilt), sq, tint, h.dead ? 0 : 0.08, [0.5, 0.45, 0.35]);
+        const sp = V.len(h.v), bob = h.on >= 0 && sp > 2 ? 1 + Math.sin(t * 17) * 0.045 : 1, lean = h.on >= 0 && sp > 2 ? V.add(V.norm(tilt), V.mul(h.fw, Math.min(0.22, sp * 0.03))) : tilt, sq2 = [sq[0] / Math.sqrt(bob), sq[1] * bob, sq[2] / Math.sqrt(bob)];
+        const win = S.res && S.res.ok, ex = h.dead || (h.inv > 1.0 && h.inv < 1.7) ? 'eyes_x' : win || h.spin > 0 ? 'eyes_h' : h.pound === 1 || h.hp === 1 && Math.floor(t * 4) % 2 === 0 ? 'eyes_j' : (h.on < 0 && h.v && V.dot(h.v, h.up) > 4) || h.lau ? 'eyes_j' : (Math.sin(t * 2.1) > 0.985 ? 'eyes_b' : 'eyes_o');
+        const MM = GL.M.basis(h.x, fw, V.norm(lean), sq2); objs.push({ m: 'hero', M: MM, tint, emis: h.dead ? 0 : 0.08, rim: [0.5, 0.45, 0.35] }); objs.push({ m: ex, M: MM, tint, emis: 0.05 });
+        if (h.spin > 0 && !fx.rm) { for (let k = 0; k < 2; k++) { const a = t * 30 + k * 3.14, rr = 0.95, pp = V.add(h.x, V.add(V.mul(E.perp(h.up), Math.cos(a) * rr), V.mul(V.cross(h.up, E.perp(h.up)), Math.sin(a) * rr))); fx.trail(pp, h.pw && h.pw.k === 'fire' ? [1, 0.55, 0.15] : [1, 1, 0.7], 0.55); } }
+        else if (sp > 6.5 && h.on >= 0 && !fx.rm && Math.floor(t * 30) % 3 === 0) fx.trail(V.add(h.x, V.mul(h.up, -0.4)), h.pw && h.pw.k === 'skate' ? [0.5, 0.85, 1] : [0.85, 0.85, 1], 0.28);
+        if (h.pw && h.pw.k === 'fire') O('fire', V.add(h.x, V.mul(h.up, 0.55)), h.fw, h.up, 0.45, null, 0.8);
+        if (h.pw && h.pw.k === 'skate') O('skate', V.add(h.x, V.mul(h.up, -0.5)), fw, h.up, 0.6, null, 0.3);
         if (h.pw && h.pw.k === 'bee') { const wob = Math.sin(t * 40) * 0.2; O('bee', V.add(h.x, V.mul(h.up, 0.95)), h.fw, V.norm(V.add(h.up, V.mul(V.cross(h.up, h.fw), wob))), 0.5, null, 0.3); }
         if (h.pw && h.pw.k === 'cloud') O('cloud', V.add(h.x, V.mul(h.up, -0.62)), h.fw, h.up, 0.8, null, 0.2);
       }

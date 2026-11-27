@@ -65,6 +65,7 @@
     grass: { a: '#62cf6c', b: '#3fa456', c: '#b4e870', d: '#ffe066', e: '#ff8fb8' }, moss: { a: '#4fbf92', b: '#2f9570', c: '#a6e8b0', d: '#fff0a0', e: '#ffb0d0' },
     ice: { a: '#cdeeff', b: '#94d2f6', c: '#ffffff', d: '#7fb8e8', e: '#ffffff' }, stone: { a: '#a4a4ba', b: '#80809c', c: '#cdcde0', d: '#6a6a86', e: '#e0e0f0' },
     lava: { a: '#3b1b1e', b: '#5b2424', c: '#7a3328', d: '#ff6a1a', e: '#ffc040' }, metal: { a: '#8f9bb8', b: '#6e7b9c', c: '#d3dcf2', d: '#4a5878', e: '#aee0ff' },
+    water: { a: '#4fc3e8', b: '#2f93d0', c: '#bff4ff', d: '#ffffff', e: '#ff9a8a' }, ruin: { a: '#c9b48a', b: '#a8946a', c: '#e6d6a8', d: '#7a6848', e: '#ffd060' }, gear: { a: '#b89a5a', b: '#8c7340', c: '#e8c878', d: '#5a4828', e: '#ffe9a0' },
     sand: { a: '#f1d896', b: '#d9b974', c: '#fff0c0', d: '#c8a050', e: '#ffffff' }, candy: { a: '#ff9ad0', b: '#ffd1e8', c: '#fff4a0', d: '#8fe0ff', e: '#ffffff' },
   };
   function surfColor(surf, p, n, sz) {
@@ -75,9 +76,15 @@
     else if (surf === 'metal') { const g = (Math.abs(((p[0] * 0.7) % 2 + 2) % 2 - 1) < 0.04) || (Math.abs(((p[1] * 0.7) % 2 + 2) % 2 - 1) < 0.04) ? 0.75 : 1; c = c.map(q => q * g); if (j > 0.985) c = [0.5, 1.6, 2.0]; }
     else if (surf === 'stone') { if (b > 0.7) c = mix(c, hex(P.d), 0.5); }
     else if (surf === 'grass' || surf === 'moss') { if (j > 0.972) c = hex(j > 0.986 ? P.d : P.e); }
+    // くぼみ（クレーター）：石・氷・遺跡
+    if (surf === 'stone' || surf === 'ice' || surf === 'ruin' || surf === 'gear') { const cs = 0.28 / Math.max(2, sz) * 4, cx = p[0] * cs, cy = p[1] * cs, cz = p[2] * cs, ix = Math.floor(cx), iy = Math.floor(cy), iz = Math.floor(cz);
+      if (hash3(ix + 5, iy, iz) > 0.55) { const fx = cx - ix - (0.3 + hash3(ix, iy + 3, iz) * 0.4), fy = cy - iy - (0.3 + hash3(ix, iy, iz + 3) * 0.4), fz = cz - iz - (0.3 + hash3(ix + 7, iy, iz) * 0.4), d = Math.hypot(fx, fy, fz), r0 = 0.28; if (d < r0) c = c.map(q => q * 0.78); else if (d < r0 + 0.06) c = c.map(q => Math.min(1.2, q * 1.12)); } }
+    if (surf === 'candy') { const w = Math.sin(p[1] * 1.6 + a * 6) > 0.35 ? 1 : 0; if (w) c = mix(c, hex('#ffffff'), 0.6); if (j > 0.975) c = [hex('#6fe3ff'), hex('#ffe066'), hex('#8aff9a')][Math.floor(j * 977) % 3]; }
+    else if (surf === 'water') { const w = Math.abs(Math.sin(p[0] * 0.9 + p[2] * 0.7 + a * 5)); if (w > 0.93) c = hex(P.c); if (j > 0.985) c = hex(P.d); }
+    else if (surf === 'ruin') { const g1 = Math.abs(((p[1] * 0.45) % 1 + 1) % 1 - 0.5) > 0.46, g2 = Math.abs((((p[0] + p[2]) * 0.45 + Math.floor(p[1] * 0.45) * 0.5) % 1 + 1) % 1 - 0.5) > 0.47; if (g1 || g2) c = hex(P.d); }
     const sh = 0.96 + j * 0.08; return [c[0] * sh, c[1] * sh, c[2] * sh];
   }
-  function bodyMesh(E, b) {
+  function bodyMesh(E, b, L) {
     const mb = new MB(), N = clamp(Math.round(b.sz * 2), 6, b.k === 's' ? 16 : 14), ext = b.k === 's' ? [b.r, b.r, b.r] : b.k === 'b' ? b.h : b.k === 'y' ? [b.r, b.hh, b.r] : [b.r, b.hl + b.r, b.r];
     const grid = [], idx = (f, i, j) => f * (N + 1) * (N + 1) + i * (N + 1) + j;
     for (let f = 0; f < 6; f++) for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
@@ -93,8 +100,38 @@
         const o = (cx * t[0].n[0] + cy * t[0].n[1] + cz * t[0].n[2]) >= 0 ? t : [t[0], t[2], t[1]]; if (Math.hypot(cx, cy, cz) < 1e-9) continue; const cc = [(o[0].c[0] + o[1].c[0] + o[2].c[0]) / 3, (o[0].c[1] + o[1].c[1] + o[2].c[1]) / 3, (o[0].c[2] + o[1].c[2] + o[2].c[2]) / 3];
         for (const q of o) mb.vtx(q.p, q.n, b.surf === 'lava' || b.surf === 'metal' ? q.c : cc); }
     }
+    if (b.k === 's') addProps(mb, b, L); if (b.ring) addRing(mb, b);
     return mb;
   }
+  // 小さな飾り（木・草・キャンディ・氷の結晶・サンゴ・遺跡の柱）をメッシュに焼きこむ。ものの近くには置かない
+  function addTo(mb, fn, pos, u, seed) {
+    const t = new MB(); fn(t); const a = norm(cross(u, Math.abs(u[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0])), c = cross(u, a), ang = seed * 6.283, ca = Math.cos(ang), sa = Math.sin(ang);
+    const X = [a[0] * ca + c[0] * sa, a[1] * ca + c[1] * sa, a[2] * ca + c[2] * sa], Z = [c[0] * ca - a[0] * sa, c[1] * ca - a[1] * sa, c[2] * ca - a[2] * sa];
+    const tf = (x, y, z) => [pos[0] + X[0] * x + u[0] * y + Z[0] * z, pos[1] + X[1] * x + u[1] * y + Z[1] * z, pos[2] + X[2] * x + u[2] * y + Z[2] * z], tn = (x, y, z) => [X[0] * x + u[0] * y + Z[0] * z, X[1] * x + u[1] * y + Z[1] * z, X[2] * x + u[2] * y + Z[2] * z];
+    for (let i = 0; i < t.p.length; i += 3) { mb.p.push(...tf(t.p[i], t.p[i + 1], t.p[i + 2])); mb.n.push(...tn(t.n[i], t.n[i + 1], t.n[i + 2])); mb.c.push(t.c[i], t.c[i + 1], t.c[i + 2]); }
+  }
+  const PROPS = {
+    grass: [t => { t.cone(0, 0, 0, 0.12, 0.7, hex('#7a4a24'), 5, 0.08); t.ell(0, 1.0, 0, 0.55, 0.5, 0.55, hex('#3fae52'), 4, 7); t.ell(0.15, 1.35, 0.05, 0.35, 0.32, 0.35, hex('#6fd068'), 3, 6); }, t => { for (let i = 0; i < 3; i++) t.cone((i - 1) * 0.12, 0, (i % 2) * 0.1, 0.07, 0.38 + i * 0.05, hex('#8fe070'), 4, 0); }, t => { t.cone(0, 0, 0, 0.03, 0.32, hex('#4a9a50'), 4, 0.03); t.ell(0, 0.36, 0, 0.12, 0.08, 0.12, hex('#ff9ab8'), 3, 6); }],
+    moss: [t => { t.cone(0, 0, 0, 0.1, 0.6, hex('#6a4a30'), 5, 0.07); t.cone(0, 0.5, 0, 0.55, 0.9, hex('#2f9a6a'), 6, 0); }, t => { for (let i = 0; i < 3; i++) t.cone((i - 1) * 0.1, 0, 0, 0.06, 0.34, hex('#9be8b0'), 4, 0); }],
+    candy: [t => { t.cone(0, 0, 0, 0.06, 1.0, hex('#ffffff'), 6, 0.06); t.ell(0, 1.15, 0, 0.38, 0.38, 0.1, hex('#ff5f9a'), 5, 10); t.ell(0, 1.15, 0, 0.2, 0.2, 0.12, hex('#ffe0ee'), 4, 8); }, t => { t.ell(0, 0.3, 0, 0.32, 0.38, 0.32, hex('#8fe0ff'), 4, 8); t.ell(0, 0.6, 0, 0.12, 0.1, 0.12, hex('#ffffff'), 3, 5); }, t => { t.cone(0, 0, 0, 0.1, 0.28, hex('#fff0c0'), 6, 0.08); t.ell(0, 0.4, 0, 0.45, 0.22, 0.45, hex('#ff8fc0'), 4, 8); }],
+    ice: [t => { for (let i = 0; i < 4; i++) { const a = i * 1.6; t.cone(Math.cos(a) * 0.2, 0, Math.sin(a) * 0.2, 0.16, 0.7 + (i % 2) * 0.5, hex('#dff6ff'), 5, 0); } }, t => { t.cone(0, 0, 0, 0.3, 0.9, hex('#aee4ff'), 5, 0); }],
+    stone: [t => { t.ell(0, 0.15, 0, 0.35, 0.22, 0.3, hex('#9a9ab2'), 3, 6); t.ell(0.3, 0.1, 0.1, 0.2, 0.14, 0.18, hex('#b8b8cc'), 3, 6); }],
+    water: [t => { t.cone(0, 0, 0, 0.1, 0.5, hex('#ff8a7a'), 5, 0.06); for (let i = 0; i < 3; i++) t.ell((i - 1) * 0.18, 0.55 + (i % 2) * 0.1, 0, 0.14, 0.14, 0.14, hex('#ffb3a6'), 3, 6); }, t => { t.ell(0, 0.4, 0, 0.3, 0.3, 0.3, hex('#d8f8ff'), 4, 8); }, t => { t.cone(0, 0, 0, 0.12, 0.8, hex('#7fe8c0'), 5, 0.02); }],
+    ruin: [t => { t.cone(0, 0, 0, 0.4, 1.8, hex('#d8c490'), 8, 0.34); t.cone(0, 1.8, 0, 0.5, 0.16, hex('#b8a478'), 8, 0.48); }, t => { t.cone(0, 0, 0, 0.36, 0.7, hex('#c8b480'), 8, 0.3); }, t => { t.box(0, 0.15, 0, 0.7, 0.3, 0.5, hex('#b4a070')); }],
+    gear: [t => { t.cone(0, 0, 0, 0.12, 0.6, hex('#8c7340'), 6, 0.1); t.ell(0, 0.65, 0, 0.2, 0.2, 0.2, hex('#ffe9a0'), 3, 6); }],
+    metal: [t => { t.cone(0, 0, 0, 0.05, 1.1, hex('#cfd8ee'), 5, 0.03); t.ell(0, 1.15, 0, 0.1, 0.1, 0.1, hex('#6fe3ff'), 3, 6); }],
+    lava: [t => { t.cone(0, 0, 0, 0.3, 0.7, hex('#2a1214'), 6, 0.12); t.ell(0, 0.7, 0, 0.1, 0.08, 0.1, [2.2, 0.8, 0.2], 3, 6); }],
+  };
+  function addProps(mb, b, L) {
+    const set = PROPS[b.surf]; if (!set || b.g <= 0) return; const n = clamp(Math.round(b.r * b.r * 0.16), 3, 30); const near = []; if (L) for (const e of L.ents) if (e.bi === b.i) { const l = e.l0 || e.l; near.push(l); }
+    for (let i = 0; i < n; i++) {
+      const h1 = hash3(b.i * 13 + i, 7, 1), h2 = hash3(b.i * 13 + i, 3, 9), h3 = hash3(b.i * 13 + i, 5, 5), y = h1 * 2 - 1, a = h2 * TAU, s = Math.sqrt(1 - y * y), d = [Math.cos(a) * s, y, Math.sin(a) * s], pos = [d[0] * b.r, d[1] * b.r, d[2] * b.r];
+      if (near.some(l => Math.hypot(l[0] - pos[0], l[1] - pos[1], l[2] - pos[2]) < 2.2)) continue; if (b.surf !== 'ruin' && b.surf !== 'stone' && b.surf !== 'lava' && b.surf !== 'metal' && i % 3 === 0 && b.r > 5) continue;
+      addTo(mb, set[Math.floor(h3 * set.length) % set.length], pos, d, h3 * 7 % 1);
+    }
+  }
+  function addRing(mb, b) { const tilt = 0.45, ct = Math.cos(tilt), st2 = Math.sin(tilt), rc = mix(hex(PAL[b.surf] ? PAL[b.surf].c : '#ffffff'), [1, 1, 1], 0.4), rc2 = mix(rc, [0.4, 0.4, 0.5], 0.4);
+    for (let i = 0; i < 48; i++) { const a0 = i / 48 * TAU, a1 = (i + 1) / 48 * TAU, P = (a, r) => [Math.cos(a) * r, Math.sin(a) * r * st2, Math.sin(a) * r * ct], ri = b.r * 1.5, ro = b.r * 2.1, cc = i % 3 ? rc : rc2; const q = [P(a0, ri), P(a1, ri), P(a1, ro), P(a0, ro)]; mb.quad(q[0], q[1], q[2], q[3], cc); mb.quad(q[0], q[3], q[2], q[1], cc); } }
   function planetMesh(col, ring) {
     const mb = new MB(), c = col, c2 = mix(col, [1, 1, 1], 0.35), c3 = mix(col, [0.1, 0.1, 0.2], 0.4); const la = 12, lo = 20;
     for (let i = 0; i < la; i++) { const band = 0.5 + 0.5 * Math.sin(i * 1.7), cc = mix(mix(c, c2, band), c3, i % 3 === 0 ? 0.3 : 0); mb.ell(0, 0, 0, 1, 1, 1, cc, la, lo); break; }
@@ -146,7 +183,7 @@
     function setQuality(q, fixed) { st.q = clamp(q | 0, 0, 2); if (fixed != null) st.fixed = !!fixed; applyQ(); }
     function mesh(name, fn) { if (meshes[name]) return meshes[name]; const mb = new MB(); fn(mb); return (meshes[name] = upload(mb)); }
     function load(L) {
-      free(); lvl = L; bodyM = L.bodies.map(b => { const o = upload(bodyMesh(E, b)); o.atm = b.k === 's' && b.g > 0 ? { r: b.r * 1.13, col: atmCol(b.surf) } : null; return o; });
+      free(); lvl = L; bodyM = L.bodies.map(b => { const o = upload(bodyMesh(E, b, L)); o.atm = b.k === 's' && b.g > 0 ? { r: b.r * 1.13, col: atmCol(b.surf) } : null; return o; });
       decoM = (L.deco || []).map(d => ({ d, m: upload(planetMesh(d.col, d.ring)) }));
       if (!meshes._atm) { const mb = new MB(); mb.ell(0, 0, 0, 1, 1, 1, [1, 1, 1], 10, 16); meshes._atm = upload(mb); }
     }
