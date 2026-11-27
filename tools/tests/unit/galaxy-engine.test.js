@@ -75,4 +75,27 @@ test('crates, walkers, spin and pound', () => {
   const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', id: 'w', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 0, ph: 0 }, { k: 'crate', id: 'c', b: 'a', l: [3, 5.4, 0], drop: 'bee' }], missions: [{ id: 'm', start: { p: [0, 7.2, 1.5] } }] });
   const S = E.create(L, 'm'); runN(S, 4, i => ({ b: i === 1 ? B.S : 0 })); ok(S.e[0] === 1 || S.cnt.kill >= 1 || S.h.hp === 3, 'spin beats the walker');
 });
+test('jump feel: a jump pressed just before landing still jumps (buffer), and just after leaving the ground still jumps (coyote), but not too early / late', () => {
+  const K = E.K; ok(K.BUFFER >= 0.1 && K.BUFFER <= 0.2 && K.COYOTE >= 0.1 && K.COYOTE <= 0.16, 'tuned windows');
+  const buf = n => { const S = E.create(mk([sph()]), 'm'); runN(S, 20); S.h.x = V.mul(V.norm(S.h.x), 6.5 + 0.6); S.h.v = [0, 0, 0]; S.h.on = -1; let f = 0; for (let i = 0; i < 40; i++) { const d = V.len(S.h.x) - 6.5; E.step(S, { b: i === Math.max(0, Math.round(n)) ? B.J : 0 }); } return S.cnt.jump; };
+  // press at frame 0 while 0.1 above the ground (falls in ~5 frames): buffered jump happens; press way too early does not
+  const early = (gap) => { const S = E.create(mk([sph()]), 'm'); runN(S, 20); S.h.x = V.mul(V.norm(S.h.x), 6.5 + gap); S.h.v = [0, 0, 0]; S.h.on = -1; S.h.cy = 0; S.h.air = 0.1; E.step(S, { b: B.J }); for (let i = 0; i < 40; i++) E.step(S, {}); return S.cnt.jump; };
+  eq(early(0.1), 1, 'buffered just before landing'); eq(early(3.0), 0, 'too early: nothing');
+  const coy = (frames) => { const S = E.create(mk([sph()]), 'm'); runN(S, 20); S.h.on = -1; S.h.cy = K.COYOTE; S.h.x = V.mul(V.norm(S.h.x), 6.5 + 1.2); S.h.v = V.mul(V.norm(S.h.x), 0.1); for (let i = 0; i < frames; i++) E.step(S, {}); E.step(S, { b: B.J }); return S.cnt.jump; };
+  eq(coy(3), 1, 'coyote within 0.05 s'); eq(coy(Math.round((K.COYOTE + 0.08) * 60)), 0, 'after the coyote window: no jump');
+});
+test('stick feel: dead zone, smooth response curve, full tilt stays 1, direction kept', () => {
+  deep0(E.stickCurve(0.1, 0.05), [0, 0]); const a = E.stickCurve(0.3, 0), b = E.stickCurve(0.6, 0), c = E.stickCurve(0, -1);
+  ok(a[0] > 0 && a[0] < 0.3 && b[0] > a[0] && Math.abs(c[1] + 1) < 1e-9, 'curve'); const d = E.stickCurve(0.5, 0.5); ok(Math.abs(d[0] - d[1]) < 1e-9, 'direction kept'); ok(Math.hypot(...E.stickCurve(0.99, 0.2)) <= 1.0001);
+});
+function deep0(a, b) { eq(JSON.stringify(a), JSON.stringify(b)); }
+test('lanterns: touching lights them, all lit reveals the shard flag; a ghost walker is beaten by spin', () => {
+  const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'lantern', id: 'a', b: 'a', l: [0, 6.8, 0] }, { k: 'lantern', id: 'b', b: 'a', l: [6.8, 0, 0] }, { k: 'walker', look: 'ghost', b: 'a', l0: [0, 0, 6.6], ax: [0, 1, 0], w: 0, ph: 0 }], missions: [{ id: 'm', start: { p: [0, 6.5, 0.2] } }] });
+  const S = E.create(L, 'm'); eq(S.need.lan, 2); runN(S, 3); eq(S.lit.length, 1); ok(!S.flag.lanterns); S.h.x = [6.5, 0, 0]; S.h.v = [0, 0, 0]; runN(S, 3); eq(S.lit.length, 2); ok(S.flag.lanterns === 1, 'flag');
+});
+test('shield power absorbs one hit; final boss gets more shockwave rings as it loses hearts', () => {
+  const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'spike', b: 'a', l: [0, 6.5, 0] }], missions: [{ id: 'm', start: { p: [0.5, 6.5, 0] } }] }), S = E.create(L, 'm'); S.h.pw = { k: 'shield', t: 99 }; runN(S, 3); eq(S.h.hp, 3, 'no damage'); ok(!S.h.pw, 'shield used'); runN(S, 80); ok(S.h.hp <= 2, 'next hit hurts');
+  const LV = require(path.join(ROOT, 'galaxy/levels.js')), L8 = LV.compile(E, 'g8'); const rings = hp => { const S8 = E.create(L8, 'g8m3'); S8.boss.hp = hp; S8.boss.st = 'land'; S8.boss.t = 1; S8.boss.ring = 0.5; S8.boss.d = [0, 1, 0]; E.step(S8, {}); return S8.boss.nr; };
+  eq(rings(6), 1); eq(rings(4), 2); eq(rings(2), 3);
+});
 run('galaxy-engine');

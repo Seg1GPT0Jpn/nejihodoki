@@ -53,6 +53,10 @@
       for (let i = 0; i < 5; i++) { const a = (i - 2) * 0.42; b.cone(Math.sin(a) * 0.7, 0.78 + Math.cos(a) * 0.1, Math.cos(a) * 0.1, 0.16, 0.55 + (i === 2 ? 0.25 : 0), C.gold, 5, 0); }
       b.ell(-0.95, -0.2, 0, 0.3, 0.3, 0.3, C.lava, 4, 8); b.ell(0.95, -0.2, 0, 0.3, 0.3, 0.3, C.lava, 4, 8); b.ell(-0.4, -0.85, 0.1, 0.34, 0.2, 0.4, C.magma, 3, 8); b.ell(0.4, -0.85, 0.1, 0.34, 0.2, 0.4, C.magma, 3, 8);
     });
+    m('ghost', b => { b.ell(0, 0.1, 0, 0.55, 0.62, 0.5, [0.85, 0.9, 1.1], 6, 12); b.cone(0, -0.5, 0, 0.5, 0.45, [0.8, 0.86, 1.05], 8, 0.2); b.ell(-0.2, 0.2, 0.42, 0.12, 0.17, 0.08, C.eye, 3, 6); b.ell(0.2, 0.2, 0.42, 0.12, 0.17, 0.08, C.eye, 3, 6); b.ell(0, -0.05, 0.45, 0.1, 0.12, 0.06, C.eye, 3, 6); });
+    m('lantern', b => { b.box(0, 0.5, 0, 0.1, 1.0, 0.1, C.dark); b.box(0, 1.15, 0, 0.5, 0.5, 0.5, [0.35, 0.3, 0.45]); b.cone(0, 1.4, 0, 0.42, 0.28, C.dark, 4, 0.05); });
+    m('lantern_on', b => { b.box(0, 0.5, 0, 0.1, 1.0, 0.1, C.dark); b.box(0, 1.15, 0, 0.5, 0.5, 0.5, [2.2, 1.7, 0.6]); b.cone(0, 1.4, 0, 0.42, 0.28, C.dark, 4, 0.05); });
+    m('shield', b => { b.ell(0, 0, 0, 0.5, 0.5, 0.18, [0.5, 0.85, 1.4], 6, 12); b.ring(0, 0, 0, 0.5, 0.06, C.white, 18, 4); });
     m('ring', b => { b.ring(0, 0, 0, 1, 0.06, [1, 1, 1], 28, 4); });
     m('stonering', b => { b.ring(0, 0, 0, 1, 0.035, [1, 0.8, 0.4], 28, 4); });
   }
@@ -108,6 +112,8 @@
         case 'bosshit': this.burst(p, 40, gold, { sp: 7, life: 0.9, size: 0.6 }); this.shake = this.rm ? 0 : 0.5; break;
         case 'bosslang': this.ringFx(p, th && th.bossUp || S.h.up, orange, 12, 32); this.shake = this.rm ? 0 : 0.7; break;
         case 'heart': this.burst(p, 10, red, { sp: 3, life: 0.7 }); break;
+        case 'lantern': this.burst(p, 18, [1, 0.8, 0.35], { sp: 4, life: 0.9, size: 0.6 }); break;
+        case 'shield': this.burst(p, 18, [0.5, 0.85, 1.2], { sp: 5, life: 0.6 }); break;
         case 'melt': this.burst(p, 16, orange, { sp: 4, life: 0.7, size: 0.5 }); break;
         default: break;
       }
@@ -130,10 +136,11 @@
         case 'heart': O('heart', bob, spin, up, 0.8, null, 0.35); break;
         case 'launch': if (e.mode === 'cannon') O('cannon', V.add(p, V.mul(up, -0.5)), spin, up, 1, null, 0); else if (e.mode === 'pipe') O('pipe', V.add(p, V.mul(up, -0.5)), spin, up, 1, null, 0); else { O('launch', V.add(p, V.mul(up, 0.5)), ROT(up, t * 1.4), up, 1, null, 0.6); fx.glow(V.add(p, V.mul(up, 0.5)), [1, 0.5, 0.85], 9, 0.55); } break;
         case 'pad': O('pad', V.add(p, V.mul(up, -0.2)), spin, up, 1, null, 0.1); break;
-        case 'crate': O('crate', p, ROT(up, i), up, 1, e.drop === 'heart' ? [1, 0.7, 0.75] : e.drop === 'bee' ? [1, 1, 0.6] : e.drop === 'spring' ? [1, 0.7, 0.7] : e.drop === 'cloud' ? [0.8, 0.9, 1] : e.drop === 'skate' ? [0.7, 0.85, 1.2] : e.drop === 'fire' ? [1.3, 0.8, 0.6] : null, 0); break;
-        case 'walker': { const dv = V.norm(V.cross(up, V.mv(S.xf[e.bi].R, e.ax))); const sq = 1 + Math.sin(t * 6 + i) * 0.06; O('walker', p, dv, up, [sq, 2 - sq, sq], null, 0); break; }
+        case 'crate': O('crate', p, ROT(up, i), up, 1, e.drop === 'heart' ? [1, 0.7, 0.75] : e.drop === 'bee' ? [1, 1, 0.6] : e.drop === 'spring' ? [1, 0.7, 0.7] : e.drop === 'cloud' ? [0.8, 0.9, 1] : e.drop === 'skate' ? [0.7, 0.85, 1.2] : e.drop === 'fire' ? [1.3, 0.8, 0.6] : e.drop === 'shield' ? [0.7, 1, 1.3] : null, 0); break;
+        case 'walker': { const dv = V.norm(V.cross(up, V.mv(S.xf[e.bi].R, e.ax))); const sq = 1 + Math.sin(t * 6 + i) * 0.06; if (e.look === 'ghost') { O('ghost', V.add(p, V.mul(up, 0.2 + Math.sin(t * 3 + i) * 0.15)), dv, up, 1, null, 0.5); fx.glow(p, [0.6, 0.7, 1], 4, 0.3); } else O('walker', p, dv, up, [sq, 2 - sq, sq], null, 0); break; }
         case 'spike': O('spike', V.add(p, V.mul(up, -0.1)), spin, up, 1, null, 0.1); break;
         case 'cp': { const on = S.cp === i; O('cp', V.add(p, V.mul(up, -0.5)), ROT(up, 0.6), up, 1, on ? [0.7, 1, 0.7] : [0.8, 0.8, 0.9], on ? 0.3 : 0); break; }
+        case 'lantern': { const lit = S.lit.indexOf(i) >= 0; O(lit ? 'lantern_on' : 'lantern', V.add(p, V.mul(up, -0.5)), ROT(up, 0.3), up, 1, null, lit ? 0.8 : 0); if (lit) fx.glow(V.add(p, V.mul(up, 0.7)), [1, 0.8, 0.35], 14, 0.55); else fx.glow(V.add(p, V.mul(up, 0.7)), [0.6, 0.5, 1], 3, 0.25); break; }
         case 'power': O(e.type, bob, spin, up, 1, null, 0.5); fx.glow(p, [1, 0.9, 0.4], 4, 0.4); break;
         case 'gate': { const open = !opt.locked || !opt.locked[e.gal]; O('gate', V.add(p, V.mul(up, -0.3)), ROT(up, 0.5 + i * 2), up, 1, open ? null : [0.45, 0.45, 0.55], open ? 0.45 : 0); if (open) fx.glow(V.add(p, V.mul(up, 1.2)), [0.5, 0.6, 1], 9, 0.5); break; }
         default: break;
@@ -141,7 +148,7 @@
     }
     // ボス
     if (S.boss && S.boss.st !== 'gone') { const bo = S.boss, bp = E.bossPos(S), e = L.ents[bo.i], R = S.xf[e.bi].R, up = V.norm(V.mv(R, bo.d)); const k = bo.st === 'stun' ? 0.85 + Math.sin(t * 14) * 0.04 : 1; const fl = bo.flash > 0 && Math.floor(t * 20) % 2 === 0;
-      const hh = V.norm(V.sub(S.h.x, bp)), fw = V.norm(V.sub(hh, V.mul(up, V.dot(hh, up)))); const tg = bo.st === 'stun' ? [0.8, 0.8, 1.1] : fl ? [2, 2, 2] : null;
+      const hh = V.norm(V.sub(S.h.x, bp)), fw = V.norm(V.sub(hh, V.mul(up, V.dot(hh, up)))); const look = L.ents[bo.i].look, base = look === 'guard' ? [0.75, 0.85, 1.2] : look === 'king' ? [1.2, 0.95, 1.6] : null; const tg = bo.st === 'stun' ? [0.8, 0.8, 1.1] : fl ? [2, 2, 2] : base;
       const dead = bo.st === 'dead' ? Math.max(0, bo.t / 2.2) : 1; O('boss', bp, V.len(fw) > 0.1 ? fw : E.perp(up), up, [1.7 * k * dead * (1.2 - 0.2 * dead), 1.7 * (2 - k) * dead, 1.7 * k * dead], tg, bo.st === 'stun' ? 0 : 0.25); fx.glow(bp, [1, 0.5, 0.2], 12, 0.55);
       if (bo.st === 'jump' && bo.tg) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, mp = V.add(c, V.mv(R, V.mul(bo.tg, rad + 0.1))), mu = V.norm(V.mv(R, bo.tg)); const pulse = 1 + Math.sin(t * 20) * 0.1; O('ring', mp, E.perp(mu), mu, 2.2 * pulse, [1, 0.3, 0.2], 1); }
       if (bo.st === 'land' && bo.ring > 0) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, bu = V.norm(V.mv(R, bo.d)); const bc = V.add(c, V.mul(bu, rad * Math.cos(bo.ring / rad) + 0.2)), rr = rad * Math.sin(bo.ring / rad); if (rr > 0.1) { const bn2 = bu; O('stonering', bc, E.perp(bn2), bn2, rr, [3, 1.2, 0.3], 1); } }
@@ -161,6 +168,7 @@
         if (h.pw && h.pw.k === 'fire') O('fire', V.add(h.x, V.mul(h.up, 0.55)), h.fw, h.up, 0.45, null, 0.8);
         if (h.pw && h.pw.k === 'skate') O('skate', V.add(h.x, V.mul(h.up, -0.5)), fw, h.up, 0.6, null, 0.3);
         if (h.pw && h.pw.k === 'bee') { const wob = Math.sin(t * 40) * 0.2; O('bee', V.add(h.x, V.mul(h.up, 0.95)), h.fw, V.norm(V.add(h.up, V.mul(V.cross(h.up, h.fw), wob))), 0.5, null, 0.3); }
+        if (h.pw && h.pw.k === 'shield') O('shield', V.add(h.x, V.mul(h.fw, 0.6)), h.fw, h.up, 1.5, null, 0.6);
         if (h.pw && h.pw.k === 'cloud') O('cloud', V.add(h.x, V.mul(h.up, -0.62)), h.fw, h.up, 0.8, null, 0.2);
       }
       // まるい影

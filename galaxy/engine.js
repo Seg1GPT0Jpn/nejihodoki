@@ -10,11 +10,11 @@
   const DT = 1 / 60, HR = 0.5, TAU = Math.PI * 2;
   const B = { J: 1, S: 2, P: 4 };
   const K = {
-    G0: 26, RUN: 7.4, ACC_G: 70, FRIC: 55, ACC_A: 24, JUMP: 11, MAXFALL: 40, SKIN: 0.03, COYOTE: 0.1, BUFFER: 0.12,
+    G0: 26, RUN: 7.4, ACC_G: 70, FRIC: 55, ACC_A: 24, JUMP: 11, MAXFALL: 40, SKIN: 0.03, COYOTE: 0.12, BUFFER: 0.14,
     SPIN_T: 0.42, SPIN_R: 2.0, SPIN_CD: 0.18, POUND_V: 32, POUND_STUN: 0.3, POUND_R: 3.2, KICK_H: 8, KICK_V: 10, WALL_T: 0.14,
     INV: 1.6, VOID: 34, HOVER: 3.0, POWER_T: 28, ENEMY_R: 1.05,
   };
-  const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, water: { fr: 0.9 }, ruin: { fr: 1 }, gear: { fr: 1 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 } };
+  const SURF = { grass: { fr: 1 }, sand: { fr: 0.9 }, ice: { fr: 0.1 }, dusk: { fr: 1 }, star: { fr: 1 }, water: { fr: 0.9 }, ruin: { fr: 1 }, gear: { fr: 1 }, lava: { fr: 1, hurt: 1 }, candy: { fr: 0.85 }, stone: { fr: 1 }, metal: { fr: 1 }, moss: { fr: 1 } };
 
   // ---------- ベクトル・行列（9要素の行優先） ----------
   const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -139,12 +139,12 @@
     const m = L.missions[mid] || L.mlist[0];
     const S = { f: 0, t: 0, id: L.id, mid: m.id, rs: (opt.seed == null ? 12345 : opt.seed) >>> 0, as: { hp: as.hp ? 1 : 0, nofall: as.nofall ? 1 : 0, slow: as.slow ? 1 : 0 },
       pb: 0, ev: [], e: new Array(L.ents.length).fill(0), flag: {}, cnt: { coin: 0, crystal: 0, orb: 0, kill: 0, stomp: 0, lumi: 0, die: 0, jump: 0, spin: 0, pound: 0, wk: 0, launch: 0, hurt: 0, hit: 0 }, lumi: 0, cp: -1, res: null, over: 0, gate: -1, bnr: null,
-      cam: { fw: [0, 0, -1], up: [0, 1, 0], pitch: 0.4, man: 0 }, boss: null, need: { orb: 0 }, tl: 0, hpMax: as.hp ? 6 : 3, bsig: 0 };
+      cam: { fw: [0, 0, -1], up: [0, 1, 0], pitch: 0.4, man: 0 }, boss: null, need: { orb: 0, lan: 0 }, lit: [], tl: 0, hpMax: as.hp ? 6 : 3, bsig: 0 };
     Object.defineProperty(S, 'L', { value: L, writable: true, enumerable: false });
     Object.defineProperty(S, 'xf', { value: L.bodies.map(b => xfAt(b, 0)), writable: true, enumerable: false });
     Object.defineProperty(S, 'xp', { value: L.bodies.map(b => xfAt(b, 0)), writable: true, enumerable: false });
     Object.defineProperty(S, 'ep', { value: [], writable: true, enumerable: false });
-    S.act = []; L.ents.forEach((e, i) => { if (!e.m || e.m.indexOf(m.id) >= 0) { S.act.push(i); if (e.k === 'orb') S.need.orb++; } });
+    S.act = []; L.ents.forEach((e, i) => { if (!e.m || e.m.indexOf(m.id) >= 0) { S.act.push(i); if (e.k === 'orb') S.need.orb++; if (e.k === 'lantern') S.need.lan++; } });
     S.tl = m.timer ? m.timer * (S.as.slow ? 1.6 : 1) : 0;
     const bs = L.ents.findIndex((e, i) => e.k === 'boss' && S.act.indexOf(i) >= 0);
     if (bs >= 0) { const e = L.ents[bs]; S.boss = { i: bs, hp: e.hp || 3, st: 'walk', t: 2, d: norm(e.l), tg: norm(e.l), ring: -1, rt: 0, flash: 0, off: 0 }; }
@@ -173,7 +173,7 @@
   function hash(S) {
     let h = 2166136261 >>> 0; const mix = n => { h = Math.imul(h ^ (Math.round(n * 1000) | 0), 16777619) >>> 0; };
     mix(S.f); for (const k of S.h.x) mix(k); for (const k of S.h.v) mix(k); mix(S.h.hp); mix(S.cnt.coin); mix(S.cnt.crystal); mix(S.cnt.kill); mix(S.over); mix(S.res ? (S.res.ok ? 1 : 2) : 0);
-    for (const e of S.e) mix(e); if (S.boss) { mix(S.boss.hp); mix(S.boss.t); } return h >>> 0;
+    for (const e of S.e) mix(e); mix(S.lit.length); if (S.boss) { mix(S.boss.hp); mix(S.boss.t); } return h >>> 0;
   }
 
   // ---------- 動くもの ----------
@@ -221,6 +221,7 @@
   // ---------- 1ステップ ----------
   function hurt(S, from) {
     const h = S.h; if (h.inv > 0 || h.dead || h.lau || S.over) return false;
+    if (h.pw && h.pw.k === 'shield') { h.pw = null; h.inv = 1.0; S.ev.push(['shield', h.x[0], h.x[1], h.x[2]]); return false; }
     h.hp--; h.inv = K.INV; S.cnt.hurt++; S.ev.push(['hurt', h.x[0], h.x[1], h.x[2]]);
     const away = from ? norm(sub(h.x, from)) : [0, 0, 0], u = h.up;
     const hz = norm(sub(away, mul(u, dot(away, u))));
@@ -425,7 +426,7 @@
     else if (e.k === 'crate') {
       S.ev.push(['crate', p[0], p[1], p[2]]);
       if (e.drop === 'heart') { S.h.hp = Math.min(S.hpMax, S.h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); }
-      else if (e.drop === 'bee' || e.drop === 'spring' || e.drop === 'cloud' || e.drop === 'skate' || e.drop === 'fire') givePower(S, e.drop, p);
+      else if (e.drop === 'bee' || e.drop === 'spring' || e.drop === 'cloud' || e.drop === 'skate' || e.drop === 'fire' || e.drop === 'shield') givePower(S, e.drop, p);
       else { S.cnt.coin += 3; S.ev.push(['coin', p[0], p[1], p[2]]); }
     }
   }
@@ -441,6 +442,7 @@
         case 'heart': if (d < 1.3) { S.e[i] = 1; h.hp = Math.min(S.hpMax, h.hp + 1); S.ev.push(['heart', p[0], p[1], p[2]]); } break;
         case 'orb': if (d < 1.5) { S.e[i] = 1; S.cnt.orb++; S.ev.push(['orb', p[0], p[1], p[2]]); if (S.cnt.orb >= S.need.orb) { S.flag.orbs = 1; S.ev.push(['banner', 'orbs']); } } break;
         case 'lumi': if (d < 1.5) { S.e[i] = 1; S.cnt.lumi++; S.lumi |= 1 << (e.n2 || 0); S.ev.push(['lumi', p[0], p[1], p[2], e.n2 || 0]); const m = L.missions[S.mid]; if (m.kind === 'hunt' && S.cnt.lumi >= (m.lumi || 3)) finish(S, true, 'lumi'); } break;
+        case 'lantern': if (d < 1.7 && S.lit.indexOf(i) < 0) { S.lit.push(i); S.ev.push(['lantern', p[0], p[1], p[2]]); if (S.lit.length >= S.need.lan) { S.flag.lanterns = 1; S.ev.push(['banner', 'lanterns']); } } break;
         case 'power': if (d < 1.5) { S.e[i] = 1; givePower(S, e.type, p); } break;
         case 'cp': if (d < 1.8 && S.cp !== i) { S.cp = i; S.ev.push(['cp', p[0], p[1], p[2]]); } break;
         case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (m.kind !== 'hunt' && (!m.shard || m.shard === e.id)) finish(S, true, 'shard'); } break;
@@ -470,7 +472,7 @@
     const hq = norm(mtv(S.xf[e.bi].R, sub(h.x, S.xf[e.bi].p)));
     const slow = 1;
     if (bo.st === 'walk') {
-      bo.off = 0; const ang = geod(bo.d, hq), step = Math.min(ang, ((e.spd || 0.42) + 0.12 * ((e.hp || 3) - bo.hp)) * DT * slow);
+      bo.off = 0; const ang = geod(bo.d, hq), step = Math.min(ang, ((e.spd || 0.42) + (e.spd ? 0.025 : 0.12) * ((e.hp || 3) - bo.hp)) * DT * slow);
       if (ang > 1e-4) bo.d = norm(add(mul(bo.d, Math.cos(step)), mul(norm(sub(hq, mul(bo.d, dot(hq, bo.d)))), Math.sin(step))));
       if (bo.t <= 0) { bo.st = 'jump'; bo.t = 1.15; bo.t0 = 1.15; bo.from = bo.d.slice(); bo.tg = hq.slice(); S.ev.push(['bosswarn']); }
     } else if (bo.st === 'jump') {
@@ -478,10 +480,10 @@
       const w0 = Math.sin((1 - s) * ang) / sn, w1 = Math.sin(s * ang) / sn; bo.d = ang > 1e-4 ? norm(add(mul(bo.from, w0), mul(bo.tg, w1))) : bo.from.slice(); bo.off = 7 * 4 * s * (1 - s);
       if (bo.t <= 0) { bo.st = 'land'; bo.t = 0.9; bo.off = 0; bo.ring = 0; bo.d = bo.tg.slice(); const p = bossPos(S); S.ev.push(['bosslang', p[0], p[1], p[2]]); }
     } else if (bo.st === 'land') {
-      bo.ring += (e.rs || 12) * DT;
+      const lost = (e.hp || 3) - bo.hp; bo.nr = 1 + (e.dblAt != null && bo.hp <= e.dblAt ? 1 : 0) + (e.triAt != null && bo.hp <= e.triAt ? 1 : 0) + (e.dbl ? 1 : 0); if (bo.nr > 3) bo.nr = 3; bo.ring += (e.rs || 12) * (1 + 0.04 * lost) * DT;
       { const rr = len(sub(h.x, S.xf[e.bi].p)) || R, dist = geod(bo.d, hq) * rr, height = rr - R - HR;
-        if ((Math.abs(dist - bo.ring) < 0.9 || (e.dbl && bo.ring > 5 && Math.abs(dist - (bo.ring - 5)) < 0.9)) && height < 0.8 && bo.ring > 0.4) hurt(S, bossPos(S)); }
-      if (bo.t <= 0) { bo.st = 'stun'; bo.t = e.stun || 5; bo.ring = -1; }
+        let hit = false; for (let k = 0; k < bo.nr; k++) if (bo.ring - 5 * k > 0.4 && Math.abs(dist - (bo.ring - 5 * k)) < 0.9) hit = true; if (hit && height < 0.8) hurt(S, bossPos(S)); }
+      if (bo.t <= 0) { bo.st = 'stun'; bo.t = (e.stun || 5) - 0.25 * lost; bo.ring = -1; }
     } else if (bo.st === 'stun') {
       if (bo.t <= 0) { bo.st = 'walk'; bo.t = 3.2 + rnd(S) * 1.2; }
     } else if (bo.st === 'hurt') {
@@ -518,6 +520,8 @@
     for (let t = 0.8; t <= dd; t += 0.35) { const pos = add(tgt, mul(dir, t)); let hit = false; for (let i = 0; i < S.L.bodies.length; i++) { const f = S.xf[i], b = S.L.bodies[i]; if (len(sub(pos, f.p)) > b.br + 3) continue; if (sdfW(S, i, pos)[0] < 0.6) { hit = true; break; } } if (hit) { dd = Math.max(1.8, t - 0.5); break; } }
     return { pos: add(tgt, mul(dir, dd)), tgt, fw: norm(sub(tgt, add(tgt, mul(dir, dd)))), up, dist: dd };
   }
+  // スティックの「あそび」と曲がり：dz 以下は 0、そこから 1 までをなめらかに（小さく倒すとゆっくり歩く）
+  function stickCurve(x, y, dz) { dz = dz == null ? 0.12 : dz; const m = Math.hypot(x, y); if (m <= dz) return [0, 0]; const k = Math.pow(Math.min(1, (m - dz) / (1 - dz)), 1.25) / m; return [x * k, y * k]; }
   // 入力の記録（B をビット、sx・sy を -8〜8 の整数に）
   function quant(inp) { return { sx: Math.round(clamp(inp.sx || 0, -1, 1) * 8) / 8, sy: Math.round(clamp(inp.sy || 0, -1, 1) * 8) / 8, b: inp.b | 0, lx: 0, ly: 0 }; }
   function pack(inp) { return ((Math.round(clamp(inp.sx || 0, -1, 1) * 8) + 8) | ((Math.round(clamp(inp.sy || 0, -1, 1) * 8) + 8) << 5) | ((inp.b & 7) << 10)); }
@@ -526,6 +530,6 @@
   function unrle(s) { const o = []; if (!s) return o; for (const t of s.split(',')) { const p = t.split(':'), v = parseInt(p[0], 36), n = parseInt(p[1], 36); for (let i = 0; i < n; i++) o.push(v); } return o; }
   function replay(L, mid, rec, opt) { const S = create(L, mid, opt); for (let i = 0; i < rec.length && !S.over; i++) step(S, unpack(rec[i])); return S; }
 
-  const E = { DT, HR, B, K, SURF, compile, create, clone, hash, step, sdf, sdfW, xfAt, gravAt, entPos, entUp, bossPos, camFrame, camPose, quant, pack, unpack, rle, unrle, replay, projT, perp, nearestD, hurt, respawn, finish, geod, vec: { add, sub, mul, dot, cross, len, norm, rodr, mv, mtv, axM, mulM, clamp, slerpN }, isOn };
+  const E = { DT, HR, B, K, SURF, compile, create, clone, hash, step, sdf, sdfW, xfAt, gravAt, entPos, entUp, bossPos, camFrame, camPose, stickCurve, quant, pack, unpack, rle, unrle, replay, projT, perp, nearestD, hurt, respawn, finish, geod, vec: { add, sub, mul, dot, cross, len, norm, rodr, mv, mtv, axM, mulM, clamp, slerpN }, isOn };
   if (typeof module !== 'undefined' && module.exports) module.exports = E; else root.GalaxyEngine = E;
 })(typeof window !== 'undefined' ? window : globalThis);

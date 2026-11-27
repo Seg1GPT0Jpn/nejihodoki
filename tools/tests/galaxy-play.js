@@ -58,7 +58,7 @@ async function hub(env) {
   console.log('2. gates, galaxy list, locks');
   const s = await open(env); const p = s.page; await p.click('#tGo'); await wait(p, () => __kb.state().mode === 'hub');
   await p.evaluate(() => __galaxy.openSelect('g1')); let a = await st(p); check('the mission list opens', a.sel && a.paused, a);
-  check('galaxy 1 lists 4 missions and the Lumi hunt', (await p.locator('#selBody .qm').count()) === 5); check('6 galaxy tabs', (await p.locator('#selTabs button').count()) === 6);
+  check('galaxy 1 lists 4 missions and the Lumi hunt', (await p.locator('#selBody .qm').count()) === 5); check('8 galaxy tabs', (await p.locator('#selTabs button').count()) === 8);
   await p.locator('#selTabs button[data-g="g2"]').click(); check('the ice galaxy is locked at first', (await p.locator('#selBody .qm:disabled').count()) === 4, await p.locator('#selBody').innerText());
   await shot(p, 'select-locked'); await p.click('#selClose'); a = await st(p); check('closing resumes the hub', !a.sel && !a.paused && a.mode === 'hub', a);
   // walk to a gate for real: the gate stands on the deck
@@ -97,6 +97,18 @@ async function proofs(env) {
   await p.evaluate(() => __galaxy.manual(false)); check('no page errors', !s.log.pageErrors.length && !s.log.consoleErrors.length, [...s.log.pageErrors, ...s.log.consoleErrors].slice(0, 3)); await s.close();
 }
 
+async function ending(env) {
+  console.log('4b. final boss -> result -> ending credits -> hub; the ending can be watched again from the title');
+  const s = await open(env); const p = s.page; const rec = E.unrle(PROOFS.g8m3.rec);
+  await p.evaluate(([rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission('g8', 'g8m3', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (const n of rec) { __galaxy.stepN(1, __galaxy.E.unpack(n)); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); }, [rec]);
+  let a = await st(p); check('the final boss result shows "to the ending"', a.resultShown && /エンディング/.test(await p.locator('#rNext').innerText()), await p.locator('#rNext').innerText());
+  await p.click('#rNext'); await wait(p, () => !document.getElementById('ovEnd').hidden); const txt = await p.locator('#endRoll').innerText(); check('the credits roll (no music) with the player\'s stats', /26/.test(txt) && txt.length > 120, txt.slice(0, 200)); await shot(p, 'ending');
+  const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('final clear is saved (stat) and the shard counted', sv.stats.final === 1 && sv.pts === 1, sv);
+  await p.click('#endGo'); await wait(p, () => __kb.state().mode === 'hub'); check('back on the Stargazer Deck', true);
+  await p.evaluate(() => __galaxy.showTitle()); check('the title offers to watch the ending again', await p.locator('#tEnd').isVisible());
+  check('no page errors', !s.log.pageErrors.length && !s.log.consoleErrors.length, [...s.log.pageErrors, ...s.log.consoleErrors].slice(0, 3)); await s.close();
+}
+
 async function touch(env) {
   console.log('5. touch: floating stick, buttons, drag to look (portrait and landscape)');
   for (const vp of ['ip12', 'land']) {
@@ -109,6 +121,7 @@ async function touch(env) {
     let a = await st(p); check(`[${vp}] touch buttons are shown in play`, a.touch && await p.locator('#bJ').isVisible() && await p.locator('#stickz').isVisible(), a);
     const r = await p.evaluate(() => { const q = id => { const b = document.getElementById(id).getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, w: b.width, h: b.height, r: b.right, b: b.bottom }; }; const z = document.getElementById('stickz').getBoundingClientRect(); return { J: q('bJ'), S: q('bS'), P: q('bP'), z: { x: z.left, y: z.top, w: z.width, h: z.height }, W: innerWidth, H: innerHeight }; });
     check(`[${vp}] the three buttons are on screen and at least 44px`, [r.J, r.S, r.P].every(b => b.x - b.w / 2 >= 0 && b.r <= r.W + 1 && b.b <= r.H + 1 && Math.min(b.w, b.h) >= 44), r);
+    const xd = a.x; await tstart(r.z.x + r.z.w * 0.4, r.z.y + r.z.h * 0.6, 4); await tmove([{ x: r.z.x + r.z.w * 0.4, y: r.z.y + r.z.h * 0.6 - 6, id: 4 }]); await sleep(p, 600); a = await st(p); check(`[${vp}] a tiny stick movement is inside the dead zone (hero stays)`, dist(a.x, xd) < 0.6, dist(a.x, xd)); await tend();
     const x0 = a.x; await tstart(r.z.x + r.z.w * 0.4, r.z.y + r.z.h * 0.6, 1); await tmove([{ x: r.z.x + r.z.w * 0.4, y: r.z.y + r.z.h * 0.6 - 50, id: 1 }]); await sleep(p, 1100); a = await st(p);
     check(`[${vp}] dragging the stick runs the hero`, dist(a.x, x0) > 2.5, { d: dist(a.x, x0) }); await tend();
     const j0 = a.jumps; await tstart(r.J.x, r.J.y, 2); await sleep(p, 150); await tend(); a = await st(p); check(`[${vp}] the jump button jumps`, a.jumps > j0, a);
@@ -135,9 +148,9 @@ async function saveTest(env) {
   const s = await open(env); const p = s.page;
   await p.evaluate(() => __galaxy.resetSave()); const rec = E.unrle(PROOFS.g1m1.rec);
   await p.evaluate(([rec]) => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (const n of rec) { __galaxy.stepN(1, __galaxy.E.unpack(n)); if (__galaxy.S.over) break; } __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); }, [rec]);
-  let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 20/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
+  let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 26/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
   const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('saved: shard bit, pts, best time, coins', sv.pts === 1 && (sv.sh.g1 & 1) === 1 && sv.bt.g1m1 > 0 && sv.cn >= 5 && sv.stats.clears === 1, sv);
-  await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes('1/20'), a.save);
+  await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes('1/26'), a.save);
   // a saved best never goes up when a slower run follows
   const bt = sv.bt.g1m1; await p.evaluate(() => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (let i = 0; i < 600; i++) __galaxy.stepN(1, { sx: i < 300 ? 0 : 1, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); });
   check('a quit mission does not change the best time', JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)).bt.g1m1 === bt);
@@ -197,7 +210,7 @@ async function perf(env) {
   const s = await open(env, { vp: 'ip12', touch: true }); const p = s.page; await startReal(p, 'g1', 'g3' === 'x' ? '' : 'g1m3');
   const r = await p.evaluate(() => new Promise(res => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 > 2500) res({ fps: n / ((performance.now() - t0) / 1000), st: __kb.state() }); else requestAnimationFrame(f); }; requestAnimationFrame(f); }));
   console.log(`      headless software GL: ${r.fps.toFixed(1)} fps, draw ${r.st.ms} ms, ${r.st.tris} tris, quality ${r.st.q}`);
-  check('the loop keeps drawing (software GL, a few fps at least) and the scene is light', r.fps > 4 && r.st.tris < 60000, r); check('quality is within 0..2', r.st.q >= 0 && r.st.q <= 2, r.st);
+  check('the loop keeps drawing (software GL, a few fps at least) and the scene is light', r.fps > 4 && r.st.tris < 60000, r); check('quality is within 0..2', r.st.q >= 0 && r.st.q <= 2, r.st); check('off-screen planets are culled (the culling counter exists)', await p.evaluate(() => typeof __galaxy.R.state.culled === 'number'));
   await p.evaluate(() => { __galaxy.R.setQuality(2, false); for (let i = 0; i < 400; i++) __galaxy.R.adapt(60); }); check('slow frames lower the quality automatically', (await st(p)).q < 2, await st(p));
   check('no page errors', !s.log.pageErrors.length, s.log.pageErrors); await s.close();
 }
@@ -230,7 +243,7 @@ async function settings(env) {
   const env = { server: srv, browser: noGl => { if (!noGl) return browser; return noglBrowser; } };
   noglBrowser = await B.launch({ noGl: true });
   const t0 = Date.now(); const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const all = { first, hub, keys, proofs, touch, pause, save: saveTest, gamepad, english, orient, layouts, perf, nogl, settings };
+  const all = { first, hub, keys, proofs, ending, touch, pause, save: saveTest, gamepad, english, orient, layouts, perf, nogl, settings };
   for (const [name, f] of Object.entries(all)) {
     if (only && !only.includes(name)) continue;
     try { await f(env); } catch (e) { check(name + ' crashed', false, String(e && e.stack || e).slice(0, 800)); }

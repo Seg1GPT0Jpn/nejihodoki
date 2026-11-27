@@ -140,6 +140,11 @@ body.touch.playing #touch { display: block; }
 .howto ul { margin: 4px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.55; color: var(--kb-ink); } .howto li { margin: 3px 0; }
 .langrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--kb-line); font-size: 12.5px; font-weight: 800; }
 .langrow select { min-height: 44px; border-radius: 10px; border: 1px solid var(--kb-line); background: var(--kb-bg); color: var(--kb-ink); font: 800 14px var(--kb-font-body); padding: 4px 8px; }
+.credits { flex: 1 1 auto; min-height: 120px; max-height: 52vh; overflow: hidden; position: relative; text-align: center; mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+.credits #endRoll { padding: 40% 6px 30%; animation: roll 46s linear forwards; font-size: 14px; line-height: 1.8; }
+.credits h3 { margin: 18px 0 2px; color: var(--kb-accent-text); font-size: 15px; } .credits p { margin: 2px 0; color: var(--kb-ink); font-size: 13.5px; }
+body.rm .credits { overflow-y: auto; } body.rm .credits #endRoll { animation: none; padding: 8px 6px; }
+@keyframes roll { from { transform: translateY(8%); } to { transform: translateY(-100%); } }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 #nogl { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: #0b0a24; }
 @keyframes rise { from { transform: translateY(14px); opacity: 0; } }
@@ -198,6 +203,7 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     <div class="scroll" id="tInfo"></div>
     <button class="btn" id="tGo" type="button" data-i18n>ほしみ台へ</button>
     <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>あそびかた</button><button class="btn sub" id="tSet" type="button" data-i18n>せってい</button></div>
+    <button class="btn sub" id="tEnd" type="button" hidden></button>
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
@@ -223,6 +229,14 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     </div>
     <button class="btn" id="rNext" type="button"></button>
     <div class="row2"><button class="btn sub" id="rAgain" type="button" data-i18n>もう一度</button><button class="btn sub" id="rHub" type="button" data-i18n>ほしみ台へ</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovEnd" hidden role="dialog" aria-modal="true" aria-labelledby="endTitle">
+  <div class="panel" style="max-width:520px">
+    <h2 class="logo" id="endTitle"></h2>
+    <div class="credits" id="endBody"><div id="endRoll"></div></div>
+    <button class="btn" id="endGo" type="button"></button>
   </div>
 </div>
 
@@ -359,7 +373,7 @@ function enterHub(o) {
 }
 function endRun(reason) {
   if (!G || !G.live) return; G.live = false; if (mode !== 'play' && mode !== 'result') return;
-  const S = G.S, c = S.cnt; stat('jumps', c.jump); stat('spins', c.spin); stat('pounds', c.pound); stat('wallkicks', c.wk); stat('launches', c.launch); stat('kills', c.kill); stat('stomps', c.stomp); stat('deaths', c.die); stat('lumi', c.lumi); for (const k of ['pbe', 'psp', 'pcl', 'psk', 'pfi']) if (c[k]) stat(k, c[k]);
+  const S = G.S, c = S.cnt; stat('jumps', c.jump); stat('spins', c.spin); stat('pounds', c.pound); stat('wallkicks', c.wk); stat('launches', c.launch); stat('kills', c.kill); stat('stomps', c.stomp); stat('deaths', c.die); stat('lumi', c.lumi); for (const k of ['pbe', 'psp', 'pcl', 'psk', 'pfi', 'psh']) if (c[k]) stat(k, c[k]);
   save.cn = Math.min(1e9, save.cn + c.coin); save.cr = Math.min(1e9, save.cr + c.crystal);
   if (S.lumi && G.gid !== 'hub') { const gi = G.gid; save.lm[gi] = (save.lm[gi] | 0) | S.lumi; }
   writeSave();
@@ -368,7 +382,7 @@ function endRun(reason) {
 function onClear() {
   const S = G.S, r = S.res, m = G.m, gi = G.gid; const hunt = m.kind === 'hunt', idx = m.idx, old = hunt ? (save.lm[gi] | 0) : (save.sh[gi] | 0), first = hunt ? !(old & 128) : !(old & (1 << idx));
   if (hunt) { save.lm[gi] = old | 128 | S.lumi; stat('hunts', 1); } else save.sh[gi] = old | (1 << idx);
-  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
+  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
   stat('clears', 1); if (r.die === 0) stat('nodie', 1); if (m.kind === 'comet') stat('comets', 1); if (m.kind === 'boss') stat('boss', 1); if (S.as.hp || S.as.nofall || S.as.slow) stat('assist', 1);
   endRun('clear'); G.result = { ok: true, first, newBest, f: r.f, coin: r.coin, crystal: r.crystal, die: r.die, ob, lumi: S.cnt.lumi };
   writeSave(); emit('stage_clear', { stage: G.mid, stars: 1 + (r.die === 0 ? 1 : 0) }); emit('progress', { stage: G.mid });
@@ -397,7 +411,7 @@ function readInput() {
   if (down.has('L')) sx -= 1; if (down.has('R')) sx += 1; if (down.has('U')) sy += 1; if (down.has('D')) sy -= 1;
   if (down.has('J')) b |= B.J; if (down.has('S')) b |= B.S; if (down.has('P')) b |= B.P; if (down.has('cl')) lx -= 1; if (down.has('cr')) lx += 1; if (down.has('cu')) ly += 1; if (down.has('cd')) ly -= 1;
   sx += touch.sx; sy += touch.sy; b |= touch.b; lx += touch.lx; ly += touch.ly;
-  const pd = padIn; sx += pd.sx; sy += pd.sy; b |= pd.b; lx += pd.lx; ly += pd.ly;
+  const pd = padIn, pc = E.stickCurve(pd.sx, pd.sy, 0.18); sx += pc[0]; sy += pc[1]; b |= pd.b; lx += pd.lx; ly += pd.ly;
   const m = Math.hypot(sx, sy); if (m > 1) { sx /= m; sy /= m; }
   touch.lx = 0; touch.ly = 0;
   const iy = save.set.iy ? -1 : 1;
@@ -420,7 +434,7 @@ const stickz = $('stickz'), sbase = $('sbase'), knob = $('knob'), lookz = $('loo
 function layoutTouch() { if (stickId != null) return; const r = stickz.getBoundingClientRect(); sbase.style.left = Math.max(66, Math.min(r.width - 66, 84)) + 'px'; sbase.style.top = Math.max(66, r.height - 84) + 'px'; sOrg = { x: r.left + parseFloat(sbase.style.left), y: r.top + parseFloat(sbase.style.top) }; }
 function stickSet(e) {
   const R0 = 52, dx = e.clientX - sOrg.x, dy = e.clientY - sOrg.y, l = Math.hypot(dx, dy), k = Math.min(1, l / R0);
-  touch.sx = l > 4 ? dx / l * k : 0; touch.sy = l > 4 ? -dy / l * k : 0; const kk = Math.min(l, R0) / (l || 1);
+  const cu = E.stickCurve(l > 4 ? dx / l * k : 0, l > 4 ? -dy / l * k : 0, 0.14); touch.sx = cu[0]; touch.sy = cu[1]; const kk = Math.min(l, R0) / (l || 1);
   knob.style.transform = 'translate(' + (dx * kk * 0.9).toFixed(1) + 'px,' + (dy * kk * 0.9).toFixed(1) + 'px)';
 }
 function stickOff() { stickId = null; touch.sx = 0; touch.sy = 0; knob.style.transform = ''; sbase.style.opacity = '.7'; layoutTouch(); }
@@ -502,10 +516,10 @@ function stepOnce() {
 function onEvents(S) {
   fx.event(S.ev, S, {});
   for (const e of S.ev) {
-    const k = e[0]; if (k === 'banner') { if (e[1] === 'orbs') toast(L('すいせいのかけら ぜんぶ！ スターシャードが あらわれた', 'All orbs! The Star Shard appeared'), 2400); else if (e[1] === 'boss') toast(L('おうさまを たおした！ スターシャードが あらわれた', 'The king is down! A Star Shard appeared'), 2600); continue; }
+    const k = e[0]; if (k === 'banner') { if (e[1] === 'orbs') toast(L('すいせいのかけら ぜんぶ！ スターシャードが あらわれた', 'All orbs! The Star Shard appeared'), 2400); else if (e[1] === 'lanterns') toast(L('ちょうちん ぜんぶ ともった！ スターシャードが あらわれた', 'All lanterns lit! The Star Shard appeared'), 2400); else if (e[1] === 'boss') toast(L('おうさまを たおした！ スターシャードが あらわれた', 'The king is down! A Star Shard appeared'), 2600); continue; }
     snd(k);
-    if (k === 'shard') toast(L('スターシャード ゲット！', 'Star Shard get!'), 1800); else if (k === 'lumi') toast(L('ひみつの ルミを みつけた！', 'You found a hidden Lumi!'), 2000); else if (k === 'power') toast(({ bee: L('ハチの力！ ジャンプおしっぱなしでホバリング', 'Bee power! Hold jump to hover'), spring: L('バネの力！ ジャンプがとっても高く', 'Spring power! Super jumps'), cloud: L('くもの力！ 空中でジャンプ3回', 'Cloud power! 3 extra air jumps') })[e[4]] || '', 2200);
-    else if (k === 'cp') toast(L('チェックポイント', 'Checkpoint'), 1200); else if (k === 'void') toast(L('宇宙にでちゃった！', 'Lost in space!'), 1500);
+    if (k === 'shard') toast(L('スターシャード ゲット！', 'Star Shard get!'), 1800); else if (k === 'lumi') toast(L('ひみつの ルミを みつけた！', 'You found a hidden Lumi!'), 2000); else if (k === 'power') toast(({ bee: L('ハチの力！ ジャンプおしっぱなしでホバリング', 'Bee power! Hold jump to hover'), spring: L('バネの力！ ジャンプがとっても高く', 'Spring power! Super jumps'), cloud: L('くもの力！ 空中でジャンプ3回', 'Cloud power! 3 extra air jumps'), skate: L('スケートの力！ とってもはやい', 'Skate power! Super speed'), fire: L('ほのおスピン！ トゲをとかせる', 'Fire spin! Melts spikes'), shield: L('バリア！ 1回だけ ダメージをふせぐ', 'Shield! Blocks one hit') })[e[4]] || '', 2200);
+    else if (k === 'cp') toast(L('チェックポイント', 'Checkpoint'), 1200); else if (k === 'lantern') toast(L('あかりが ともった（' , 'Lantern lit (') + (S.lit.length) + '/' + S.need.lan + L('）', ')'), 1100); else if (k === 'void') toast(L('宇宙にでちゃった！', 'Lost in space!'), 1500);
   }
 }
 function render(dt) {
@@ -562,12 +576,13 @@ function compass() {
 }
 
 // ---------- overlays ----------
-const OVS = ['ovTitle', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl'];
+const OVS = ['ovTitle', 'ovSel', 'ovResult', 'ovSet', 'howto', 'ovNoGl', 'ovEnd'];
 function hideOverlays() { OVS.forEach(id => { $(id).hidden = true; }); }
 const anyOverlay = () => OVS.some(id => !$(id).hidden);
 function showTitle() {
   mode = 'title'; hideOverlays(); document.body.classList.remove('playing'); $('ovTitle').hidden = false; padOff();
   const done = save.pts; $('tInfo').innerHTML = '<p><b>★ ' + done + ' / ' + LV.total() + '</b>　' + esc(L('スターシャード', 'Star Shards')) + '　●' + save.cn + '</p>';
+  $('tEnd').hidden = !(save.stats.final >= 1); $('tEnd').textContent = L('エンディングをみる', 'Watch the ending'); $('tEnd').onclick = () => showEnding();
   $('tGo').textContent = done ? L('ほしみ台へ', 'To the Station') : L('はじめる', 'Start'); try { $('tGo').focus({ preventScroll: true }); } catch (e) {}
   if (R && (!G || G.gid !== 'hub' || !G.live)) { newRun('hub', 'free'); G.intro = false; G.introDur = 0; }
   kick();
@@ -623,10 +638,20 @@ function showResult() {
   const kv = []; if (ok) { kv.push([L('タイム', 'Time'), fmtT(r.f)]); if (r.ob && !r.newBest) kv.push([L('ベスト', 'Best'), fmtT(r.ob)]); kv.push([L('コイン', 'Coins'), r.coin]); if (r.crystal) kv.push([L('クリスタル', 'Crystals'), r.crystal]); kv.push([L('ミス', 'Falls / KOs'), r.die]); kv.push([L('スターシャード', 'Star Shards'), save.pts + ' / ' + LV.total()]); kv.push([L('ルミ', 'Lumi found'), popc((save.lm[G.gid] | 0) & 7) + ' / 3']); }
   $('rKv').innerHTML = kv.map(a => '<span>' + esc(a[0]) + '</span><span>' + esc(a[1]) + '</span>').join('');
   $('rNote').textContent = ok ? (G.gid !== 'hub' && galUnlockedNew() ? L('あたらしい銀河が ひらいたよ！ ほしみ台のゲートへ', 'A new galaxy has opened! Check the gates on the Deck.') : '') : (r.why === 'time' ? L('たすけの せっていで、時間を 1.6ばいに できます', 'You can give yourself 1.6x time in Settings (Assist).') : L('もう一度 ちょうせんしよう', 'Give it another go!'));
-  const nx = nextMission(); const bn = $('rNext'); bn.textContent = ok ? (nx ? L('つぎの ミッション', 'Next mission') : L('ほしみ台へ', 'To the Station')) : L('もう一度', 'Try again');
-  bn.onclick = () => { if (!ok) restartMission(); else if (nx) startMission(nx.gid, nx.mid); else enterHub({ from: G.gid }); };
+  const nx = nextMission(), fin = ok && G.m.kind === 'final'; const bn = $('rNext'); bn.textContent = fin ? L('エンディングへ', 'To the ending') : ok ? (nx ? L('つぎの ミッション', 'Next mission') : L('ほしみ台へ', 'To the Station')) : L('もう一度', 'Try again');
+  bn.onclick = () => { if (fin) showEnding(); else if (!ok) restartMission(); else if (nx) startMission(nx.gid, nx.mid); else enterHub({ from: G.gid }); };
   $('rAgain').onclick = () => restartMission(); $('rHub').onclick = () => { const g = G.gid; enterHub({ from: g }); };
   try { bn.focus({ preventScroll: true }); } catch (e) {}
+}
+function showEnding() {
+  hideOverlays(); mode = 'result'; $('ovEnd').hidden = false; $('endTitle').textContent = L('おしまい。ありがとう！', 'The End. Thank you!');
+  const sec = (h, ps) => '<h3>' + esc(h) + '</h3>' + ps.map(p => '<p>' + esc(p) + '</p>').join('');
+  $('endRoll').innerHTML = sec(L('ほしの おうさまは ねむりについた', 'The Star King sleeps again'), [L('ピップは すべての 星ぐんの シャードを つなげて、', 'Pip joined the shards of every galaxy,'), L('宇宙に ひかりが もどりました。', 'and light returned to the universe.')])
+    + sec(L('きみの ぼうけん', 'Your adventure'), [L('スターシャード ', 'Star Shards ') + save.pts + ' / ' + LV.total(), L('コイン ', 'Coins ') + save.cn, L('クリスタル ', 'Crystals ') + save.cr, L('ルミ ', 'Lumi ') + GALS.reduce((n, g) => n + popc((save.lm[g.id] | 0) & 7), 0) + ' / ' + GALS.length * 3])
+    + sec(L('つくった人', 'Made by'), [L('ひまつぶし工房', 'Himatsubushi Kobo'), L('ゲームデザイン・プログラム・えがく・さくせい', 'Design, code and art')])
+    + sec(L('ぜんぶ オリジナル', 'All original'), [L('キャラクター・星・しかけ・ことば', 'Characters, planets, gadgets and words'), L('音楽は ありません。ひろうも ばくちも ありません', 'No music, no ads, no gambling')])
+    + sec(L('あそんでくれて ありがとう', 'Thanks for playing'), [L('まだ のこっている ルミと、ぜんぶの しれんに ちょうせん！', 'Try the hidden Lumi and the Grand Gauntlet!')]);
+  $('endGo').textContent = L('ほしみ台へ', 'To the Station'); $('endGo').onclick = () => { enterHub({ from: 'g8' }); }; try { $('endGo').focus({ preventScroll: true }); } catch (e) {} snd('done');
 }
 function galUnlockedNew() { for (const g of GALS) if (g.need > 0 && save.pts >= g.need && save.pts - 1 < g.need) return true; return false; }
 function nextMission() { const d = LV.def(G.gid), i = G.m.idx + 1; if (G.gid === 'hub') return null; if (i < d.missions.length) return { gid: G.gid, mid: d.missions[i].id }; return null; }
@@ -642,7 +667,7 @@ function drawSelect() {
   $('selTabs').innerHTML = GALS.map(g => '<button type="button" data-g="' + g.id + '" aria-pressed="' + (g.id === selG) + '">' + esc(gname(g.id)) + (galUnlocked(g.id) ? '' : ' 🔒') + '</button>').join('');
   $('selTabs').querySelectorAll('button').forEach(b => { b.onclick = () => { selG = b.dataset.g; drawSelect(); }; });
   let h = ''; if (!open) h += '<p>' + esc(L('スターシャードを ' + gi.need + ' こ あつめると ひらきます（いま ' + save.pts + ' こ）。', 'Open this galaxy with ' + gi.need + ' Star Shards (you have ' + save.pts + ').')) + '</p>';
-  d.missions.forEach((m, i) => { const got = m.kind === 'hunt' ? !!((save.lm[selG] | 0) & 128) : !!((save.sh[selG] | 0) & (1 << i)), bt = save.bt[m.id]; h += '<button class="qm' + (got ? ' done' : '') + '" type="button" data-m="' + m.id + '"' + (open ? '' : ' disabled') + '><span><b>' + esc(mname(m)) + (m.kind === 'boss' ? ' ★' : m.kind === 'hunt' ? ' ✿' : '') + '</b><small>' + esc(L(m.desc.ja, m.desc.en)) + (bt ? ' · ' + esc(L('ベスト', 'Best')) + ' ' + fmtT(bt) : '') + '</small></span><span class="go" aria-hidden="true">' + (got ? '✓' : '▶') + '</span></button>'; });
+  d.missions.forEach((m, i) => { const got = m.kind === 'hunt' ? !!((save.lm[selG] | 0) & 128) : !!((save.sh[selG] | 0) & (1 << i)), bt = save.bt[m.id]; h += '<button class="qm' + (got ? ' done' : '') + '" type="button" data-m="' + m.id + '"' + (open && (!m.need || save.pts >= m.need || DBG_UNLOCK) ? '' : ' disabled') + '><span><b>' + esc(mname(m)) + (m.kind === 'boss' ? ' ★' : m.kind === 'hunt' ? ' ✿' : '') + '</b><small>' + esc(L(m.desc.ja, m.desc.en)) + (m.need && save.pts < m.need && !DBG_UNLOCK ? ' · ' + esc(L('★', 'Needs ★') + m.need + L('こで ひらく', '')) : '') + (bt ? ' · ' + esc(L('ベスト', 'Best')) + ' ' + fmtT(bt) : '') + '</small></span><span class="go" aria-hidden="true">' + (got ? '✓' : '▶') + '</span></button>'; });
   $('selBody').innerHTML = h; $('selBody').querySelectorAll('.qm').forEach(b => { b.onclick = () => { const g = KG(); if (g) g.menuClosed(); $('ovSel').hidden = true; startMission(selG, b.dataset.m); }; });
 }
 $('selClose').onclick = () => closeSelect();

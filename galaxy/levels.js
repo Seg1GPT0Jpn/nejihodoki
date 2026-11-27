@@ -43,7 +43,7 @@
     const b = Builder('hub', T('ほしみ台', 'Stargazer Deck'), 'hub', { n1: [0.1, 0.14, 0.45], n2: [0.6, 0.3, 0.7], band: [0.3, 0.9, 0.3], sun: [0.5, 0.55, -0.65], sunc: [1, 0.9, 0.7], stars: 1 });
     b.sph('deck', [0, 0, 0], 9, { surf: 'metal' });
     b.sph('moon', [0, 0, 0], 2, { surf: 'stone', mv: [{ t: 'orbit', c: [0, 0, 0], a: [0.3, 1, 0.1], T: 24 }], g: 1 }); b.d.bodies[1].p = [17, 3, 0]; b.d.bodies[1].mv[0].c = [0, 0, 0];
-    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'].forEach((g, i) => b.ent('gate', 'deck', b.ll('deck', i % 2 ? 4 : 28, i * 60, 0.9), { id: 'gate' + (i + 1), gal: g }));
+    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8'].forEach((g, i) => b.ent('gate', 'deck', b.ll('deck', i % 2 ? 4 : 28, i * 45, 0.9), { id: 'gate' + (i + 1), gal: g }));
     for (let i = 0; i < 6; i++) b.ent('coin', 'deck', b.ll('deck', -20 + (i % 3) * 8, 60 + i * 20, 1), {});
     b.ent('coin', 'moon', b.at('moon', [0, 1, 0], 1), {}); b.ent('crystal', 'moon', b.at('moon', [1, 0, 0], 1), {});
     b.ent('crate', 'deck', b.ll('deck', 62, 40, 0.7), { id: 'hc1', drop: 'heart' });
@@ -281,6 +281,62 @@
     return b.d;
   }
 
+  // ================== 7. おばけ星雲（ちょうちんをともす） ==================
+  function g7() {
+    const b = Builder('g7', T('おばけ星雲', 'Haunted Nebula'), 'dusk', { n1: [0.1, 0.04, 0.22], n2: [0.5, 0.28, 0.85], band: [0.5, 0.5, 0.7], sun: [-0.4, 0.5, -0.6], sunc: [0.7, 0.6, 1], stars: 1.1, dark: 1 });
+    b.sph('hn1', [0, 0, 0], 9, { surf: 'dusk' }); b.sph('hn2', [26, 2, 0], 5, { surf: 'dusk' }); b.sph('hn3', [48, -3, 10], 4, { surf: 'stone' });
+    [120, 180, 240].forEach((a, i) => { const r = a * Math.PI / 180; b.cyl('pd' + (i + 1), [9.7 * Math.cos(r), 9.7 * Math.sin(r), 0], 1.3, 0.7, { rot: [0, 0, r - Math.PI / 2], rr: 0.3, surf: 'stone', g: 0 }); });
+    const lan = (m, id, ll) => b.ent('lantern', 'hn1', b.ll('hn1', ll[0], ll[1], 0.8), { m, id });
+    // m1：ちょうちんを ぜんぶ ともそう（おばけが うろうろ）
+    const m1 = ['g7m1']; [[0, 60], [0, 150], [0, 240], [0, 330]].forEach((c, i) => lan(m1, 'ln' + (i + 1), c));
+    b.ent('walker', 'hn1', b.ll('hn1', 0, 105, 0.6), { m: m1, id: 'w1', look: 'ghost', l0: b.ll('hn1', 0, 105, 0.6), ax: [0, 1, 0], w: 0.7, ph: 0 }); b.ent('walker', 'hn1', b.ll('hn1', 0, 285, 0.6), { m: m1, id: 'w2', look: 'ghost', l0: b.ll('hn1', 0, 285, 0.6), ax: [0, 1, 0], w: -0.8, ph: 0 });
+    b.ent('crate', 'hn1', b.ll('hn1', 60, 300, 0.7), { m: m1, id: 'shc', drop: 'shield' });
+    b.ent('shard', 'hn1', b.ll('hn1', 70, 0, 1.0), { m: m1, id: 's1', req: 'lanterns' });
+    b.mission({ id: 'g7m1', name: T('ちょうちんを ともせ', 'Light the Lanterns'), desc: T('くらい星の ちょうちん4つに ふれて あかりを ともそう。おばけは スピンで おいはらえる', 'Touch all 4 lanterns on the dark planet. Spin the ghosts away!'), start: { b: 'hn1', l: b.ll('hn1', 40, 0, 0.5), fw: [0, 0, 1] }, shard: 's1', route: ['ln1', 'ln2', 'ln3', 'ln4', 's1'], par: 40 });
+    // m2：おばけの だいざ（ちょうちんは だいざの 上）
+    const m2 = ['g7m2']; [1, 2, 3].forEach(i => b.ent('lantern', 'pd' + i, [0, 1.6, 0], { m: m2, id: 'pl' + i }));
+    b.ent('shard', 'hn1', b.ll('hn1', 75, 200, 1.0), { m: m2, id: 's2', req: 'lanterns' });
+    b.mission({ id: 'g7m2', name: T('だいざの ちょうちん', 'Pedestal Lights'), desc: T('石のだいざに ジャンプで のって、上の ちょうちんを ともそう', 'Jump up on the stone pedestals and light the lanterns on top.'), start: { b: 'hn1', l: b.ll('hn1', 0, 80, 0.5), fw: [0, 0, 1] }, shard: 's2', route: [{ to: 'pl1', j: 3.6, land: 1 }, { to: 'pl2', j: 3.6, land: 1 }, { to: 'pl3', j: 3.6, land: 1 }, 's2'], par: 40 });
+    // m3：ともしびの すいせい
+    const m3 = ['g7m3']; for (let i = 0; i < 5; i++) lan(m3, 'lc' + (i + 1), [-25, 40 + i * 60]);
+    b.ent('launch', 'hn1', b.at('hn1', b.to('hn1', 'hn2'), 0.9), { m: m3.concat('g7hunt'), id: 'L1', mode: 'star', T: 1.3, arc: 6, to: { b: 'hn2', l: b.at('hn2', b.to('hn2', 'hn1'), 2.4) } });
+    b.ent('walker', 'hn2', b.at('hn2', [0.2, 1, 0.2], 0.6), { m: m3, id: 'w3', look: 'ghost', l0: b.at('hn2', [0.2, 1, 0.2], 0.6), ax: [0, 0, 1], w: 0.9, ph: 1 });
+    b.ent('shard', 'hn2', b.at('hn2', b.to('hn2', 'hn1'), 1.0), { m: m3, id: 's3', req: 'lanterns' });
+    b.mission({ id: 'g7m3', name: T('ともしびの すいせい', 'Lantern Comet'), kind: 'comet', desc: T('時間内に 5つの ちょうちんを ともして、となりの星へ！', 'Light 5 lanterns in time, then launch to the next planet!'), timer: 30, start: { b: 'hn1', l: b.ll('hn1', -25, 10, 0.5), fw: [0, 0, 1] }, shard: 's3', route: ['lc1', 'lc2', 'lc3', 'lc4', 'lc5', { to: 'L1', launch: 1 }, 's3'], par: 30 });
+    b.ent('launch', 'hn2', b.at('hn2', b.to('hn2', 'hn3'), 0.9), { m: ['g7hunt'], id: 'L2', mode: 'pipe', T: 1.4, arc: 4, to: { b: 'hn3', l: b.at('hn3', b.to('hn3', 'hn2'), 2.6) } });
+    b.ent('lumi', 'hn1', b.ll('hn1', -50, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'hn2', b.at('hn2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'hn3', b.at('hn3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
+    b.mission({ id: 'g7hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('くらやみの 3つの星の ルミを みつけよう', 'Find the Lumi in the dark on the three planets.'), start: { b: 'hn1', l: b.ll('hn1', 20, 150, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'L2', launch: 1 }, 'lu3'], par: 40 });
+    b.d.deco = [{ dir: [-0.4, 0.4, -0.8], r: 44, col: [0.6, 0.45, 0.9], ring: 1 }, { dir: [0.8, 0.2, 0.5], r: 14, col: [0.9, 0.8, 1] }, { dir: [0.0, 0.8, -0.5], r: 22, col: [0.4, 0.35, 0.7] }];
+    return b.d;
+  }
+
+  // ================== 8. ほしの おうかん（ラスト） ==================
+  function g8() {
+    const b = Builder('g8', T('ほしの おうかん', 'Crown of Stars'), 'star', { n1: [0.2, 0.1, 0.5], n2: [1, 0.85, 0.4], band: [0.3, 0.8, 0.5], sun: [0.5, 0.6, -0.6], sunc: [1, 0.95, 0.8], stars: 1.2 });
+    b.sph('fs1', [0, 0, 0], 8, { surf: 'star' }); b.sph('fs2', [30, 0, 0], 6, { surf: 'star' }); b.sph('fs3', [60, 5, 0], 5, { surf: 'metal' }); b.sph('fs4', [90, 0, 0], 6, { surf: 'star', ring: 1 });
+    b.sph('ba', [0, 0, 200], 5, { surf: 'star' }); b.sph('bb', [19.5, 0, 200], 5.5, { surf: 'star' }); b.sph('arena', [0, 0, 300], 12, { surf: 'star' });
+    // m1：ほしのみち（ハチで 大きな すきまを わたる）
+    const m1 = ['g8m1'];
+    b.ent('crate', 'ba', b.at('ba', [1, 0.12, 0], 0.7), { m: m1, id: 'bx', drop: 'bee' }); b.ent('coin', 'ba', b.at('ba', [0, 1, 0], 1.0), { m: m1, id: 'e1' }); b.ent('coin', null, [9.6, 0.4, 200], { m: m1, id: 'e2' });
+    b.ent('shard', 'bb', b.at('bb', [-1, 0.05, 0], 1.0), { m: m1, id: 's1' });
+    b.mission({ id: 'g8m1', name: T('ほしの みち', 'Star Road'), desc: T('ハチの箱を スピンでわって、ホバリングで 大きな すきまを わたろう', 'Spin open the bee crate and hover across the big gap.'), start: { b: 'ba', l: b.at('ba', [0, 1, 0], 0.5), fw: [1, 0, 0] }, shard: 's1', route: ['e1', 'bx', { fly: 'e2' }, { fly: 's1' }], par: 25 });
+    // m2：ぜんぶの 銀河の しれん（ガントレット：すいせいを つなげる。ぜんぶの銀河をクリアしたら）
+    const m2 = ['g8m2'], chain = ['fs1', 'fs2', 'fs3', 'fs4']; let ct = 0;
+    chain.forEach((id, k) => { for (let i = 0; i < 3; i++) b.ent('orb', id, b.ll(id, k === 0 ? -20 : 20 - i * 5, 120 + i * 80 + k * 20, 1.0), { m: m2, id: 'o' + (++ct) });
+      if (k < 3) { const nx = chain[k + 1]; b.ent('launch', id, b.at(id, b.to(id, nx), 0.9), { m: m2.concat('g8hunt'), id: 'L' + (k + 1), mode: k === 1 ? 'cannon' : 'star', T: 1.6, arc: 8, to: { b: nx, l: b.at(nx, b.to(nx, id), 2.4) } }); } });
+    b.ent('shard', 'fs4', b.at('fs4', b.to('fs4', 'fs3'), 1.0), { m: m2, id: 's2', req: 'orbs' });
+    b.mission({ id: 'g8m2', name: T('ぜんぶの しれん', 'The Grand Gauntlet'), kind: 'comet', desc: T('4つの星を つなぐ ながい すいせいレース！ ぜんぶの銀河の シャードを あつめた人だけの ちょうせん', 'A long comet race across four planets. Only for those who cleared every other galaxy.'), timer: 75, need: 23, start: { b: 'fs1', l: b.ll('fs1', -20, 60, 0.5), fw: [0, 0, 1] }, shard: 's2', route: ['o1', 'o2', 'o3', { to: 'L1', launch: 1 }, 'o4', 'o5', 'o6', { to: 'L2', launch: 1 }, 'o7', 'o8', 'o9', { to: 'L3', launch: 1 }, 'o10', 'o11', 'o12', 's2'], par: 60 });
+    // m3：ラスボス ほしのおうさま
+    const m3 = ['g8m3'];
+    b.ent('boss', 'arena', b.at('arena', [0, 1, 0], 0), { m: m3, id: 'boss', hp: 6, rad: 1.9, spd: 0.48, rs: 12, dblAt: 4, triAt: 2, stun: 5.8, look: 'king' });
+    b.ent('shard', 'arena', b.at('arena', [0.2, 1, 0.1], 1.0), { m: m3, id: 's3', req: 'boss' }); b.ent('heart', 'arena', b.at('arena', [-1, 0.2, 0.4], 1.0), { m: m3, id: 'hh1' }); b.ent('heart', 'arena', b.at('arena', [1, -0.2, -0.4], 1.0), { m: m3, id: 'hh2' });
+    b.mission({ id: 'g8m3', name: T('ラスボス ほしのおうさま', 'Final Boss: Star King'), kind: 'final', desc: T('3だんかいの しょうげきは。ジャンプで よけて、スキを スピンで 6かい！', 'Three phases of shockwaves. Jump them, then spin the dazed king 6 times!'), start: { b: 'arena', l: b.at('arena', [0, -0.5, 0.9], 0.5), fw: [0, 0, 1] }, shard: 's3', route: [{ boss: 1, max: 7000 }, 's3'], par: 150 });
+    b.ent('lumi', 'fs1', b.ll('fs1', 40, 200, 1.2), { id: 'lu1', n2: 0 }); b.ent('lumi', 'fs2', b.at('fs2', [0.3, -1, 0.3], 1.2), { id: 'lu2', n2: 1 }); b.ent('lumi', 'fs3', b.at('fs3', [0.5, 0.6, 1], 1.2), { id: 'lu3', n2: 2 });
+    b.mission({ id: 'g8hunt', kind: 'hunt', lumi: 3, name: T('かくれルミを さがせ', 'Hidden Lumi Hunt'), desc: T('さいごの星ぐんの ルミを みつけよう', 'Find the last three Lumi.'), start: { b: 'fs1', l: b.ll('fs1', 20, 150, 0.5), fw: [0, 0, 1] }, route: ['lu1', { to: 'L1', launch: 1 }, 'lu2', { to: 'L2', launch: 1 }, 'lu3'], par: 40 });
+    b.d.deco = [{ dir: [0.5, 0.3, -0.8], r: 54, col: [1, 0.85, 0.4], ring: 1 }, { dir: [-0.8, 0.3, 0.4], r: 22, col: [0.6, 0.7, 1] }, { dir: [0.1, -0.5, -0.85], r: 16, col: [1, 0.6, 0.8] }];
+    return b.d;
+  }
+
   const GALAXIES = [
     { id: 'g1', build: g1, need: 0, theme: 'grass', col: '#7fdc79', icon: 'ポ' },
     { id: 'g2', build: g2, need: 3, theme: 'ice', col: '#8fd8ff', icon: 'ひ' },
@@ -288,6 +344,8 @@
     { id: 'g4', build: g4, need: 8, theme: 'candy', col: '#ff9ad0', icon: 'あ' },
     { id: 'g5', build: g5, need: 12, theme: 'ocean', col: '#6fe3ff', icon: 'ぷ' },
     { id: 'g6', build: g6, need: 16, theme: 'ruins', col: '#e0b860', icon: 'ぜ' },
+    { id: 'g7', build: g7, need: 18, theme: 'dusk', col: '#b48cf0', icon: 'お' },
+    { id: 'g8', build: g8, need: 22, theme: 'star', col: '#ffd24a', icon: 'ほ' },
   ];
   const cache = {};
   function def(id) { if (!cache[id]) cache[id] = id === 'hub' ? hub() : GALAXIES.find(g => g.id === id).build(); return cache[id]; }

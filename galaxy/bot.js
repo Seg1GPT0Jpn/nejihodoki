@@ -15,7 +15,7 @@
     function target(S, st) {
       const k = st.to || st.fly; if (m.pts && m.pts[k]) return { p: pt(S, m.pts[k]), i: -1 };
       const i = L.eidx[k]; if (i == null) throw new Error('route: no such thing ' + k);
-      return { p: S.ep[i] || V.add([0, 0, 0], S.h.x), i, gone: !!S.e[i] };
+      return { p: S.ep[i] || V.add([0, 0, 0], S.h.x), i, gone: !!S.e[i] || S.lit.indexOf(i) >= 0 };
     }
     // 世界の向き → スティック（カメラの向き基準。エンジンの camFrame と同じ）
     function stick(S, w, mag) {
@@ -42,8 +42,9 @@
       else {
         // にげる（ボスのいる向きと逆）
         let away = V.sub(h.x, bp); if (bo.st === 'jump') away = V.sub(h.x, V.add(c, V.mv(S.xf[bi].R, V.mul(bo.tg, R))));
-        const run = V.add(h.x, V.mul(V.norm(away), 6)); const o = go(S, run, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
-        if (bo.st === 'land' && bo.ring > 0 && h.on >= 0 && (Math.abs(dist - bo.ring) < 3.1 || (e.dbl && Math.abs(dist - (bo.ring - 5)) < 3.1)) && dist + 0.5 > bo.ring - 8) { if (!(S.pb & B.J)) inp.b |= B.J; }
+        let ta = V.sub(away, V.mul(h.up, V.dot(away, h.up))); if (V.len(ta) < 0.4) away = E.perp(h.up); const run = V.add(h.x, V.mul(V.norm(away), 6)); const o = go(S, run, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+        let near = false; for (let k = 0; k < (bo.nr || 1); k++) if (Math.abs(dist - (bo.ring - 5 * k)) < 3.1) near = true;
+        if (bo.st === 'land' && bo.ring > 0 && h.on >= 0 && near) { if (!(S.pb & B.J)) inp.b |= B.J; }
       }
       return inp;
     }
