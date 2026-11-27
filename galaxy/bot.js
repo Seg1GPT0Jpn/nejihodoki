@@ -79,7 +79,7 @@
       if (st.fly) {
         if (tg.gone) { nextStep(); return inp; }
         const o = go(S, tg.p, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
-        if (h.pw && h.pw.k === 'bee') { const tb = tg.i >= 0 ? L.ents[tg.i].bi : -1; if (h.on >= 0) { if (!(S.pb & B.J)) inp.b |= B.J; } else if (tb < 0 || h.gb !== tb) inp.b |= B.J; }
+        if (h.pw && h.pw.k === 'kite') { const tb = tg.i >= 0 ? L.ents[tg.i].bi : -1; if (h.on >= 0) { if (!(S.pb & B.J)) inp.b |= B.J; } else if (tb < 0 || h.gb !== tb) inp.b |= B.J; }
         return inp;
       }
       // ふつうの：そこまで行く
@@ -92,6 +92,8 @@
         nextStep(); return bot.act(S);
       }
       const o = go(S, tg.p, { stop: 0.15 }); inp.sx = o.sx; inp.sy = o.sy;
+      if (st.bounce && h.pw && h.pw.k === 'jelly') { if (!(S.pb & B.J)) inp.b |= B.J; return inp; }
+      if (st.dash && h.pw && h.pw.k === 'dash' && h.on < 0 && (h.aj | 0) < 1 && V.dot(h.v, h.up) < 1.5 && !(S.pb & B.J)) inp.b |= B.J;
       if (st.j != null && h.on >= 0 && dist < st.j && !(S.pb & B.J) && !(st.once && bot.jumped)) { bot.jh = 18; bot.jumped = true; }
       if (bot.jh > 0) { bot.jh--; if (!(bot.jh === 17 && (S.pb & B.J))) inp.b |= B.J; }
       else if (st.hold && bot.jumped && h.on < 0) inp.b |= B.J;
@@ -105,7 +107,8 @@
     while (!S.over && S.f < max && !bot.fail) {
       let inp = bot.act(S);
       if (sk) { q.push(inp); const d = q.length > sk.delay ? q.shift() : { sx: 0, sy: 0, b: 0 }; inp = { sx: d.sx + (rnd() - 0.5) * 2 * sk.noise, sy: d.sy + (rnd() - 0.5) * 2 * sk.noise, b: d.b }; if ((inp.b & B.J) && rnd() < sk.miss) inp.b &= ~B.J; if ((inp.b & B.S) && rnd() < sk.miss * 0.5) inp.b &= ~B.S; }
-      inp = E.quant(inp); rec.push(E.pack(inp)); E.step(S, E.unpack(rec[rec.length - 1]));
+      if (opt.naive) inp.b &= ~(B.S | B.P); // 「走ってジャンプ」だけのプレイヤー
+      inp = E.quant(inp); rec.push(E.pack(inp)); E.step(S, E.unpack(rec[rec.length - 1])); if (opt.strip && S.h.pw) S.h.pw = null; // スーツなし
     }
     return { ok: !!(S.res && S.res.ok), S, rec, frames: S.f, fail: bot.fail || (S.res && !S.res.ok ? S.res.why : S.over ? '' : 'timeout'), step: bot.i };
   }

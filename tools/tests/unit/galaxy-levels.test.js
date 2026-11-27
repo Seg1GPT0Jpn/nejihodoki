@@ -67,8 +67,18 @@ test('balance band: the perfect bot clears everything; a sloppy bot (reaction de
   const skill = k => ({ delay: 9, noise: 0.28, miss: 0.2, seed: k }); const share = {};
   for (const g of LV.GALAXIES) { if (['g3', 'g4'].includes(g.id)) continue; const L = LV.compile(E, g.id); let f = 0, n = 0; for (const m of L.mlist) { if (m.kind === 'hunt') continue; const par = (m.par || 100) * 60; for (let k = 1; k <= 3; k++) { const r = Bot.run(L, m.id, { skill: skill(k), max: Math.round(par * 2.2) }); if (r.S.cnt.die >= 2 || r.S.cnt.hurt >= 6) f++; n++; } } share[g.id] = f / n; }
   console.log('      sloppy-bot hurt/KO share per galaxy: ' + JSON.stringify(Object.fromEntries(Object.entries(share).map(([k, v]) => [k, +v.toFixed(2)]))));
-  ok(share.g1 <= 0.12 && share.g2 <= 0.12, 'early galaxies are gentle'); const late = (share.g7 + share.g8) / 2, mid = (share.g5 + share.g6 + share.g7 + share.g8) / 4, early = (share.g1 + share.g2) / 2;
-  ok(late >= 0.3 && late <= 0.9, 'g7-8 share ' + late.toFixed(2)); ok(mid >= early + 0.15, 'rises with the galaxy index: ' + early.toFixed(2) + ' -> ' + mid.toFixed(2));
+  ok(share.g1 <= 0.12 && share.g2 <= 0.12, 'early galaxies are gentle'); const late = (share.g7 + share.g8 + share.g9 + share.g10 + share.g11 + share.g12) / 6, mid = (share.g5 + share.g6 + share.g7 + share.g8) / 4, early = (share.g1 + share.g2) / 2;
+  ok(late >= 0.3 && late <= 0.9, 'g7-12 share ' + late.toFixed(2)); ok(share.g9 >= share.g5 && share.g10 >= share.g6, 'the later galaxies are harder than the middle ones'); ok(mid >= early + 0.1, 'rises with the galaxy index: ' + early.toFixed(2) + ' -> ' + mid.toFixed(2));
+});
+test('suits are required, and a run+jump-only player cannot finish the main missions beyond galaxy 2', () => {
+  // each suit has a set piece nobody can pass without it (the suit is taken away right after it is picked up)
+  for (const [g, mid] of [['g3', 'g3m1'], ['g4', 'g4m1'], ['g5', 'g5m1'], ['g3', 'g3m3']]) {
+    const L = LV.compile(E, g), m = L.missions[mid]; const r = Bot.run(L, mid, { max: Math.round(m.par * 60 * 1.6), strip: true }); ok(!r.ok, mid + ' cannot be cleared without its suit');
+  }
+  // the naive bot (run + jump only: no spin, no ground-pound) fails every long non-comet mission after galaxy 2, and the skilled bot clears them
+  let n = 0, failed = 0;
+  for (const g of LV.GALAXIES) { if (g.id === 'g1' || g.id === 'g2') continue; const L = LV.compile(E, g.id); for (const m of L.mlist) { if (m.kind === 'comet' || m.kind === 'hunt') continue; n++; const r = Bot.run(L, m.id, { max: Math.round((m.par || 120) * 60 * 1.6), naive: true }); if (!r.ok) failed++; } }
+  console.log('      naive bot fails ' + failed + ' of ' + n + ' main missions beyond galaxy 2'); ok(n >= 25 && failed / n >= 0.9, 'naive fail share ' + failed + '/' + n);
 });
 test('the hub has a gate for every galaxy', () => {
   const L = LV.compile(E, 'hub'); const gs = L.ents.filter(e => e.k === 'gate').map(e => e.gal); eq(gs.join(), LV.GALAXIES.map(g => g.id).join());

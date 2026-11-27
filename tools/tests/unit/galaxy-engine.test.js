@@ -72,7 +72,7 @@ test('lost in space: respawn (and no heart lost with the no-fall assist)', () =>
   const S2 = E.create(L, 'm', { assist: { nofall: 1 } }); S2.h.x = [0, 200, 0]; E.step(S2, {}); ok(S2.h.hp === 3, 'no damage');
 });
 test('crates, walkers, spin and pound', () => {
-  const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', id: 'w', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 0, ph: 0 }, { k: 'crate', id: 'c', b: 'a', l: [3, 5.4, 0], drop: 'bee' }], missions: [{ id: 'm', start: { p: [0, 7.2, 1.5] } }] });
+  const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', id: 'w', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 0, ph: 0 }, { k: 'crate', id: 'c', b: 'a', l: [3, 5.4, 0], drop: 'kite' }], missions: [{ id: 'm', start: { p: [0, 7.2, 1.5] } }] });
   const S = E.create(L, 'm'); runN(S, 4, i => ({ b: i === 1 ? B.S : 0 })); ok(S.e[0] === 1 || S.cnt.kill >= 1 || S.h.hp === 3, 'spin beats the walker');
 });
 test('jump feel: a jump pressed just before landing still jumps (buffer), and just after leaving the ground still jumps (coyote), but not too early / late', () => {
@@ -106,7 +106,17 @@ test('wind zones lift the hero (only in their mission and only during the gust);
   const Lw = E.compile({ id: 't', bodies: [sph()], zones: [{ s: 'box', c: [0, 10, 0], h: [3, 6, 3], m: 'wind', acc: [0, 60, 0], drag: 1, gust: { T: 6, d: 0.7 }, ms: ['m'] }], ents: [], missions: [{ id: 'm', start: { p: [0, 7.0, 0] } }, { id: 'n', start: { p: [0, 7.0, 0] } }] });
   const up = id => { const S = E.create(Lw, id); runN(S, 80); return S.h.x[1]; }; ok(up('m') > 9, 'lifted ' + up('m')); ok(up('n') < 7.2, 'other missions are not');
   const Ls = E.compile({ id: 't', bodies: [sph(), { id: 'br', k: 'b', p: [0, 0, 20], h: [2, 0.5, 2], sw: 3 }], ents: [{ k: 'switch', b: 'a', l: [0, 6.8, 0], n2: 3, id: 'sw' }], missions: [{ id: 'm', start: { p: [0, 6.5, 0.4] } }] }); const S = E.create(Ls, 'm'); ok(!E.bodyActive(S, 1)); runN(S, 3); ok(E.bodyActive(S, 1), 'the bridge appears once the switch is pressed');
-  const Lr = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 0, ph: 0 }], missions: [{ id: 'm', start: { p: [0, 6.5, 1.8] } }] }); const R = E.create(Lr, 'm'); R.h.pw = { k: 'rock', t: 99 }; runN(R, 40, { sx: 0, sy: 0 }); R.h.x = [0, 6.5, 0.3]; runN(R, 3); ok(R.e[0] === 1 || R.cnt.kill >= 1 || R.h.hp === 3, 'the rolling hero is not hurt by a walker');
+  const Lr = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 0, ph: 0 }], missions: [{ id: 'm', start: { p: [0, 6.5, 1.8] } }] }); const R = E.create(Lr, 'm'); R.h.pw = { k: 'drill', t: 99 }; runN(R, 40, { sx: 0, sy: 0 }); R.h.x = [0, 6.5, 0.3]; runN(R, 3); ok(R.e[0] === 1 || R.cnt.kill >= 1 || R.h.hp === 3, 'the rolling hero is not hurt by a walker');
+});
+test('original suits: kite glides slowly (no free hover), comet dash is one straight burst in the air, jelly bounces grow only with well-timed jumps, iron crates need the drill', () => {
+  const fall = pw => { const S = E.create(mk([sph({ g: 1, gr: 80 })], [], [], { p: [0, 40, 0] }), 'm'); if (pw) S.h.pw = { k: pw, t: 99 }; S.h.hov = 3; runN(S, 25, { b: B.J }); const y0 = S.h.x[1]; runN(S, 40, { b: B.J }); return y0 - S.h.x[1]; };
+  ok(fall('kite') < fall(null) * 0.45, 'kite sinks slowly ' + fall('kite') + ' vs ' + fall(null)); ok(fall('kite') > 0.5, 'no hover: it still sinks ' + fall('kite'));
+  const dash = use => { const S = E.create(mk([sph()], [], [], { p: [0, 6.5, 0] }), 'm'); S.h.pw = { k: 'dash', t: 99 }; runN(S, 20); runN(S, 30, i => ({ sx: 0, sy: 1, b: i === 0 ? B.J : 0 })); const x0 = S.h.x.slice(); runN(S, 40, i => ({ sx: 0, sy: 1, b: use && i === 0 ? B.J : 0 })); return V.len(V.sub(S.h.x, x0)); };
+  ok(dash(true) > dash(false) + 1.2, 'dash goes farther ' + dash(true) + ' vs ' + dash(false));
+  const apex = (pw, press) => { const S = E.create(mk([sph()]), 'm'); if (pw) S.h.pw = { k: pw, t: 99 }; runN(S, 20); const r0 = V.len(S.h.x); let top = 0; for (let i = 0; i < 700; i++) { const air = S.h.on < 0; E.step(S, { b: i === 0 || (press && !air && i % 2) || (press && air && S.h.v && V.dot(S.h.v, S.h.up) < -3 && i % 2) ? B.J : 0 }); if (i > 300) top = Math.max(top, V.len(S.h.x) - r0); } return top; };
+  ok(apex('jelly', true) > apex('jelly', false) + 1.0, 'timed jelly bounces climb ' + apex('jelly', true) + ' vs ' + apex('jelly', false));
+  const Li = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'crate', id: 'ir', b: 'a', l: [0, 6.8, 1.6], iron: 1 }], missions: [{ id: 'm', start: { p: [0, 6.5, 0] } }] }); const Si = E.create(Li, 'm'); runN(Si, 5); Si.h.x = [0, 6.8, 0.6]; for (let i = 0; i < 30; i++) E.step(Si, { sx: 0, sy: 0, b: i % 20 === 0 ? B.S : 0 }); ok(Si.e[0] === 0, 'spinning does not open an iron crate');
+  const Sd = E.create(Li, 'm'); Sd.h.pw = { k: 'drill', t: 99 }; runN(Sd, 5); Sd.h.x = [0, 6.7, 0.9]; runN(Sd, 6); ok(Sd.e[0] === 1, 'the drill opens it');
 });
 test('charging boss: a telegraphed aim, then a dash, then a dazed opening (never a surprise hit)', () => {
   const L = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, spd: 0.5, charge: 1 }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(L, 'm'); const seen = []; for (let i = 0; i < 4800 && seen.filter(x => x === 'stun').length < 2; i++) { E.step(S, {}); if (seen[seen.length - 1] !== S.boss.st) seen.push(S.boss.st); }
