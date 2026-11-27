@@ -131,6 +131,19 @@ test('the same input feels different per galaxy: ice slides far, sticky candy is
   const pu = (pulse) => { const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'spike', id: 's', b: 'a', l: [0, 6.5, 0], pulse }], missions: [{ id: 'm', start: { p: [0, 6.5, 0.2] } }] }); const S = E.create(L, 'm'); let hurt = 0; for (let i = 0; i < 400; i++) { E.step(S, {}); hurt += S.cnt.hurt || 0; S.h.x = [0, 6.5, 0.2]; } return S.cnt.hurt; };
   ok(pu({ T: 4, d: 0.3, o: 0 }) < pu(undefined), 'a pulsing spike is harmless while retracted');
 });
+test('galaxy rules: heat zones burn a hero who stands still, swim zones make you float and stroke, rotating gravity swings, chasers follow your trail, shy ghosts freeze when seen', () => {
+  const heat = still => { const S = E.create(mk([sph()], [], [{ s: 'sphere', c: [0, 0, 0], r: 12, m: 'heat' }]), 'm'); runN(S, 20); let hurt = 0; for (let i = 0; i < 200; i++) { E.step(S, still ? {} : { sx: 0, sy: 1 }); } return S.cnt.hurt; };
+  ok(heat(true) >= 1 && heat(false) === 0, 'standing still burns: ' + heat(true) + ' / moving ' + heat(false));
+  const fallDist = zones => { const S = E.create(mk([sph({ gr: 80 })], [], zones, { p: [0, 40, 0] }), 'm'); runN(S, 60); return 40 - S.h.x[1]; };
+  ok(fallDist([{ s: 'sphere', c: [0, 40, 0], r: 30, m: 'swim' }]) < fallDist([]) * 0.3, 'swim zone floats: ' + fallDist([{ s: 'sphere', c: [0, 40, 0], r: 30, m: 'swim' }]).toFixed(1) + ' vs ' + fallDist([]).toFixed(1));
+  const swimUp = () => { const S = E.create(mk([sph({ gr: 80 })], [], [{ s: 'sphere', c: [0, 30, 0], r: 40, m: 'swim' }], { p: [0, 30, 0] }), 'm'); runN(S, 5); const y0 = S.h.x[1]; let top = y0; for (let i = 0; i < 90; i++) { E.step(S, { b: i % 12 === 0 ? B.J : 0 }); top = Math.max(top, S.h.x[1]); } return top - y0; };
+  ok(swimUp() > 2.5, 'strokes lift the hero ' + swimUp().toFixed(1));
+  const tilt = t => { const S = E.create(mk([sph({ g: 0 })], [], [{ s: 'box', c: [0, 20, 0], h: [20, 30, 20], m: 'dir', dir: [0, -1, 0], rot: { a: [1, 0, 0], amp: 0.6, T: 8 } }], { p: [0, 20, 0] }), 'm'); S.t = t; runN(S, 40); return S.h.v.slice(); };
+  ok(Math.abs(tilt(0)[2] - tilt(2)[2]) > 1.5, 'the gravity direction swings over time');
+  const L = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'chaser', id: 'c', delay: 60 }], missions: [{ id: 'm', start: { p: [0, 6.5, 0] } }] }); const S = E.create(L, 'm'); runN(S, 90, { sx: 0, sy: 1 }); const d1 = V.len(V.sub(S.ep[0], S.h.x)); ok(d1 > 3, 'the chaser trails the hero ' + d1.toFixed(1)); const c0 = S.cnt.hurt; runN(S, 130, {}); ok(S.cnt.hurt > c0, 'a hero who stops gets caught');
+  const shy = look => { const L2 = E.compile({ id: 't', bodies: [sph()], ents: [{ k: 'walker', id: 'w', b: 'a', l0: [0, 6.6, 0], ax: [0, 0, 1], w: 1, ph: 0, shy: 1 }], missions: [{ id: 'm', start: { p: [0, 6.5, 6] } }] }); const S2 = E.create(L2, 'm'); S2.cam.fw = look ? V.norm(V.sub(S2.ep[0], S2.h.x)) : [0, 0, 1]; runN(S2, 120); return S2.sh[0] || 0; };
+  ok(shy(false) > 1.5 && shy(true) < 0.2, 'a shy ghost moves only when unseen: ' + shy(false).toFixed(1) + ' / watched ' + shy(true).toFixed(1));
+});
 test('charging boss: a telegraphed aim, then a dash, then a dazed opening (never a surprise hit)', () => {
   const L = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, spd: 0.5, charge: 1 }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(L, 'm'); const seen = []; for (let i = 0; i < 4800 && seen.filter(x => x === 'stun').length < 2; i++) { E.step(S, {}); if (seen[seen.length - 1] !== S.boss.st) seen.push(S.boss.st); }
   const ai = seen.indexOf('aim'); ok(ai >= 0 && seen[ai + 1] === 'charge' && seen[ai + 2] === 'stun', 'order ' + seen.join('>')); ok(seen.indexOf('jump') < ai, 'a slam first, then the charge');

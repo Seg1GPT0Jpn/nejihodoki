@@ -101,7 +101,7 @@ async function ending(env) {
   const s = await open(env); const p = s.page; const rec = E.unrle(PROOFS.g8m3.rec);
   await p.evaluate(([rec]) => { __galaxy.resetSave(); __galaxy.manual(true); __galaxy.startMission('g8', 'g8m3', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; __galaxy.runRec(rec); __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); }, [rec]);
   let a = await st(p); check('the final boss result shows "to the ending"', a.resultShown && /エンディング/.test(await p.locator('#rNext').innerText()), await p.locator('#rNext').innerText());
-  await p.click('#rNext'); await wait(p, () => !document.getElementById('ovEnd').hidden); const txt = await p.locator('#endRoll').innerText(); check('the credits roll (no music) with the player\'s stats', /46/.test(txt) && txt.length > 120, txt.slice(0, 200)); await shot(p, 'ending');
+  await p.click('#rNext'); await wait(p, () => !document.getElementById('ovEnd').hidden); const txt = await p.locator('#endRoll').innerText(); check('the credits roll (no music) with the player\'s stats', /47/.test(txt) && txt.length > 120, txt.slice(0, 200)); await shot(p, 'ending');
   const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('final clear is saved (stat) and the shard counted', sv.stats.final === 1 && sv.pts === 1, sv);
   await p.click('#endGo'); await wait(p, () => __kb.state().mode === 'hub'); check('back on the Stargazer Deck', true);
   await p.evaluate(() => __galaxy.showTitle()); check('the title offers to watch the ending again', await p.locator('#tEnd').isVisible());
@@ -147,9 +147,9 @@ async function saveTest(env) {
   const s = await open(env); const p = s.page;
   await p.evaluate(() => __galaxy.resetSave()); const rec = E.unrle(PROOFS.g1m1.rec);
   await p.evaluate(([rec]) => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; __galaxy.runRec(rec); __galaxy.stepN(130, { sx: 0, sy: 0, b: 0 }); __galaxy.release(); }, [rec]);
-  let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 46/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
+  let a = await st(p); check('the result shows the shard count', a.resultShown && /1 \/ 47/.test(await p.locator('#rKv').innerText()), await p.locator('#rKv').innerText());
   const sv = JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)); check('saved: shard bit, pts, best time, coins', sv.pts === 1 && (sv.sh.g1 & 1) === 1 && sv.bt.g1m1 > 0 && sv.cn >= 5 && sv.stats.clears === 1, sv);
-  await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes("1/46"), a.save);
+  await s.reload(); await p.waitForFunction(() => window.__galaxy); a = await st(p); check('after reload the progress is still there', a.save.pts === 1 && a.hud.shard.includes("1/47"), a.save);
   // a saved best never goes up when a slower run follows
   const bt = sv.bt.g1m1; await p.evaluate(() => { __galaxy.manual(true); __galaxy.startMission('g1', 'g1m1', { noIntro: true }); __galaxy.skip(); __galaxy.G.intro = false; for (let i = 0; i < 600; i++) __galaxy.stepN(1, { sx: i < 300 ? 0 : 1, sy: 0, b: 0 }); __galaxy.release(); __galaxy.manual(false); });
   check('a quit mission does not change the best time', JSON.parse(await p.evaluate(k => localStorage.getItem(k), SAVE)).bt.g1m1 === bt);

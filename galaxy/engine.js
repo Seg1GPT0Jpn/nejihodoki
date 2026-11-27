@@ -86,7 +86,7 @@
       b.surf = b.surf || 'grass'; b.fr = (SURF[b.surf] || SURF.grass).fr; b.mv = (b.mv || []).map(m => Object.assign({ ph: 0 }, m, m.a ? { a: norm(m.a) } : {}));
       b.p = b.p.slice(); L.bodies.push(b); if (b.id) L.idx[b.id] = i;
     });
-    (def.zones || []).forEach(z0 => { const z = copy(z0); if (typeof z.b === 'string') z.b = L.idx[z.b]; if (z.dir) z.dir = norm(z.dir); L.zones.push(z); });
+    (def.zones || []).forEach(z0 => { const z = copy(z0); if (typeof z.b === 'string') z.b = L.idx[z.b]; if (z.dir) z.dir = norm(z.dir); if (z.rot) z.rot.a = norm(z.rot.a); L.zones.push(z); });
     const S0 = { L, xf: L.bodies.map(b => xfAt(b, 0)), bOn: L.bodies.map(() => true), dis: L.bodies.map(() => 0), flag: {}, t: 0 };
     (def.ents || []).forEach((e0, i) => {
       const e = copy(e0); e.i = i; e.bi = e.b == null ? -1 : (typeof e.b === 'string' ? L.idx[e.b] : e.b); e.m = e.m || null;
@@ -134,7 +134,7 @@
     let up = bn, gm = best >= 0 ? K.G0 * L.bodies[best].g : 0, zone = -1;
     for (let zi = 0; zi < L.zones.length; zi++) {
       const z = L.zones[zi]; if (z.m === 'wind' || (z.ms && z.ms.indexOf(S.mid) < 0)) continue; if (!inZone(z, x)) continue;
-      if (z.m === 'dir') { up = mul(z.dir, -1); gm = K.G0 * (z.g == null ? 1 : z.g); zone = zi; }
+      if (z.m === 'dir') { const dr = z.rot ? rodr(z.dir, z.rot.a, z.rot.amp * sinD(TAU * S.t / z.rot.T)) : z.dir; up = mul(dr, -1); gm = K.G0 * (z.g == null ? 1 : z.g); zone = zi; }
       else if (z.m === 'inv' && bn) { up = mul(bn, -1); zone = zi; }
       else if (z.m === 'body' && z.b >= 0) { const r = sdfW(S, z.b, x); up = [r[1], r[2], r[3]]; best = z.b; bd = r[0]; gm = K.G0 * L.bodies[z.b].g; zone = zi; }
       else if (z.m === 'zero') { gm = 0; zone = zi; }
@@ -194,8 +194,8 @@
   const wAng = (e, t) => { if (e.dash) { const T = e.dash.T, d = e.dash.d, u = t / T, f = Math.floor(u); return e.w * T * (f + Math.min((u - f) / d, 1)); } return e.w * t; };
   const foeOn = (S, e) => !e.pulse || ((S.t / e.pulse.T + (e.pulse.o || 0)) % 1) < e.pulse.d;
   function entLocal(e, t) { if (e.k === 'walker') return rodr(e.l0, e.ax, (e.ph || 0) + wAng(e, t)); return e.l; }
-  function entPos(S, i) { const e = S.L.ents[i]; if (e.bi >= 0) { const p = bodyAt(S, e.bi, entLocal(e, S.t * (e.k === 'walker' ? S.wk : 1))); if (e.k === 'walker' && (e.hop || e.alt)) { const off = (e.alt || 0) + (e.hop ? e.hop.h * Math.abs(sinD(Math.PI * (S.t * S.wk) / e.hop.T + (e.ph || 0))) : 0); return add(p, mul(entUp(S, i), off)); } return p; } return e.p; }
-  function entUp(S, i) { const e = S.L.ents[i]; if (e.bi >= 0) { const n = e.n; if (e.k === 'walker') return mv(S.xf[e.bi].R, norm(entLocal(e, S.t * S.wk))); return mv(S.xf[e.bi].R, n); } return e.n; }
+  function entPos(S, i) { const e = S.L.ents[i]; if (e.k === 'chaser') { const tr = S.trail || [], d = e.delay || 130; return tr.length > d ? tr[tr.length - 1 - d] : S.h.x; } if (e.bi >= 0) { const p = bodyAt(S, e.bi, entLocal(e, e.shy ? (S.sh && S.sh[i]) || 0 : S.t * (e.k === 'walker' ? S.wk : 1))); if (e.k === 'walker' && (e.hop || e.alt)) { const off = (e.alt || 0) + (e.hop ? e.hop.h * Math.abs(sinD(Math.PI * (e.shy ? (S.sh && S.sh[i]) || 0 : S.t * S.wk) / e.hop.T + (e.ph || 0))) : 0); return add(p, mul(entUp(S, i), off)); } return p; } return e.p; }
+  function entUp(S, i) { const e = S.L.ents[i]; if (e.k === 'chaser') return S.h.up; if (e.bi >= 0) { const n = e.n; if (e.k === 'walker') return mv(S.xf[e.bi].R, norm(entLocal(e, e.shy ? (S.sh && S.sh[i]) || 0 : S.t * S.wk))); return mv(S.xf[e.bi].R, n); } return e.n; }
   function refreshEnts(S, dt) {
     S.ep.length = S.L.ents.length;
     for (const i of S.act) S.ep[i] = S.e[i] ? null : entPos(S, i);
@@ -248,6 +248,7 @@
     const h = S.h, L = S.L;
     if (S.cp >= 0) { const e = L.ents[S.cp], p = entPos(S, S.cp), up = entUp(S, S.cp); h.x = add(p, mul(up, 1.2)); h.up = up.slice(); }
     else { place(S, S.stCfg); }
+    S.trail = []; h.ht = 0;
     h.v = [0, 0, 0]; h.on = -1; h.lau = null; h.pound = 0; h.spin = 0; h.dead = 0; h.inv = DIF.inv[S.dif]; if (h.hp <= 0) h.hp = S.hpMax;
     const g = gravAt(S, h.x, -1); h.gb = g.i; if (g.up) h.up = g.up.slice(); S.ev.push(['respawn', h.x[0], h.x[1], h.x[2]]);
   }
@@ -278,6 +279,10 @@
     const sx = clamp(inp.sx || 0, -1, 1), sy = clamp(inp.sy || 0, -1, 1), bt = inp.b | 0;
     const jp = (bt & B.J) && !(S.pb & B.J), sp = (bt & B.S) && !(S.pb & B.S), po = (bt & B.P) && !(S.pb & B.P), jh = !!(bt & B.J);
     S.pb = bt;
+    if (!S.trail) { S.trail = []; S.sh = {}; }
+    if (h.burn) { h.burn = 0; hurt(S, sub(h.x, mul(h.up, 0.4))); }
+    S.trail.push(h.x.slice()); if (S.trail.length > 400) S.trail.shift();
+    for (const i of S.act) { const e = L.ents[i]; if (e.shy && !S.e[i] && S.ep[i]) { const dv = sub(S.ep[i], h.x), dd = len(dv); const seen = dd < 22 && dot(norm(dv), S.cam.fw) > 0.45; if (!seen) S.sh[i] = (S.sh[i] || 0) + DT * S.wk; } }
     // 体を動かす
     const hadGround = h.on >= 0, q0 = hadGround ? mtv(S.xf[h.on].R, sub(h.x, S.xf[h.on].p)) : null, R0 = hadGround ? S.xf[h.on].R : null;
     moveBodies(S);
@@ -314,7 +319,9 @@
     const n0 = grounded0 ? h.gn : gu;
     let v = h.v.slice();
     let stk = false; for (const z of L.zones) { if (z.m === 'sticky' && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { stk = true; break; } } h.stk = stk ? 1 : 0;
-    const speed = (stk ? 0.42 : 1) * K.RUN * (h.pw && h.pw.k === 'jelly' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'drill' ? 1.4 : 1);
+    let swim = false, hot = false; for (const z of L.zones) { if ((z.m === 'swim' || z.m === 'heat') && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { if (z.m === 'swim') swim = true; else hot = true; } } h.sw = swim ? 1 : 0;
+    if (hot && grounded0 && len(h.v) < 2.4) { h.ht = (h.ht || 0) + DT; if (h.ht > 1.15) { h.ht = 0; S.ev.push(['burn', h.x[0], h.x[1], h.x[2]]); h.burn = 1; } } else h.ht = Math.max(0, (h.ht || 0) - 2 * DT);
+    const speed = (stk ? 0.42 : 1) * (swim ? 0.8 : 1) * K.RUN * (h.pw && h.pw.k === 'jelly' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'drill' ? 1.4 : 1);
     if (grounded0) {
       let dsr = sub(dirW, mul(n0, dot(dirW, n0))); dsr = mul(dsr, speed);
       const vn = dot(v, n0), vt = sub(v, mul(n0, vn)), surf = L.bodies[h.on].fr * (h.pw && h.pw.k === 'skate' ? 0.55 : h.pw && h.pw.k === 'drill' ? 0.4 : 1);
@@ -329,8 +336,9 @@
     if (mag2) { const t = projT(dirW, gu); if (len(t)) { const f2 = projT(slerpN(h.fw, t, 1 - expD(-18 * DT)), gu); h.fw = len(f2) ? f2 : t; } } else { const t = projT(h.fw, gu); h.fw = len(t) ? t : perp(gu); }
     // 重力
     if (h.dsh > 0) h.dsh -= DT;
-    if (g.gm > 0) v = sub(v, mul(gu, g.gm * DT * (h.pound === 1 || h.dsh > 0 ? 0 : h.pw && h.pw.k === 'kite' && jh && !grounded0 && h.hov > 0 ? 0.22 : 1)));
+    if (g.gm > 0) v = sub(v, mul(gu, g.gm * DT * (h.pound === 1 || h.dsh > 0 ? 0 : h.sw ? 0.2 : h.pw && h.pw.k === 'kite' && jh && !grounded0 && h.hov > 0 ? 0.22 : 1)));
     else v = mul(v, 1 - 0.35 * DT);
+    if (h.sw && !grounded0) { v = mul(v, 1 - 1.4 * DT); const vu0 = dot(v, gu); if (vu0 < -3.2) v = add(v, mul(gu, -3.2 - vu0)); if (jp) { const vu = dot(v, gu); v = add(sub(v, mul(gu, vu)), mul(gu, Math.max(vu, 0) * 0.3 + 7.2)); S.ev.push(['swim', h.x[0], h.x[1], h.x[2]]); } } // およぎ：ジャンプでひとかき
     // ジャンプ・スピン・ドスン
     h.cy = grounded0 ? DIF.coyote[S.dif] : Math.max(0, h.cy - DT);
     const canJump = h.cy > 0;
@@ -493,6 +501,7 @@
         case 'shard': if (d < 1.7) { S.e[i] = 1; S.ev.push(['shard', p[0], p[1], p[2]]); const m = L.missions[S.mid]; if (m.kind !== 'hunt' && (!m.shard || m.shard === e.id)) finish(S, true, 'shard'); } break;
         case 'launch': if (d < DIF.launchR[S.dif] && !h.lau && h.lcd <= 0 && S.h.dead === 0) startLaunch(S, i); break;
         case 'pad': if (d < 1.4 && h.lcd <= 0) { const up = entUp(S, i), v = h.v; h.v = add(sub(v, mul(up, dot(v, up))), mul(up, e.power || 20)); h.on = -1; h.lcd = 0.3; h.jh = 0; S.ev.push(['pad', p[0], p[1], p[2]]); } break;
+        case 'chaser': if ((S.trail || []).length > (e.delay || 130) && d < 1.3) hurt(S, p); break;
         case 'spike': if (foeOn(S, e) && d < 0.95 + DIF.sp[S.dif]) hurt(S, p, true); break;
         case 'walker': if (foeOn(S, e) && d < K.ENEMY_R + 0.2 + DIF.er[S.dif]) {
           const up = h.up, rel = dot(sub(h.x, p), up), vu = dot(h.v, up);

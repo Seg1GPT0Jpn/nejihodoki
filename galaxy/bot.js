@@ -79,6 +79,7 @@
       if (st.fly) {
         if (tg.gone) { nextStep(); return inp; }
         const o = go(S, tg.p, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+        if (st.swim) { const above = V.dot(V.sub(tg.p, h.x), h.up), vu = V.dot(h.v, h.up); if ((h.on >= 0 || (h.sw && above > -0.2 && vu < 1.2)) && !(S.pb & B.J)) inp.b |= B.J; return inp; }
         if (h.pw && h.pw.k === 'kite') { const tb = tg.i >= 0 ? L.ents[tg.i].bi : -1; if (h.on >= 0) { if (!(S.pb & B.J)) inp.b |= B.J; } else if (tb < 0 || h.gb !== tb) inp.b |= B.J; }
         return inp;
       }
@@ -92,6 +93,7 @@
         nextStep(); return bot.act(S);
       }
       const o = go(S, tg.p, { stop: 0.15 }); inp.sx = o.sx; inp.sy = o.sy;
+      if (st.swim && h.sw) { const above = V.dot(V.sub(tg.p, h.x), h.up), vu = V.dot(h.v, h.up); if (above > -0.2 && vu < 1.2 && !(S.pb & B.J)) inp.b |= B.J; return inp; }
       if (st.bounce) { if (!(S.pb & B.J)) inp.b |= B.J; return inp; }
       if (st.dash && h.pw && h.pw.k === 'dash' && h.on < 0 && (h.aj | 0) < 1 && V.dot(h.v, h.up) < 1.5 && !(S.pb & B.J)) inp.b |= B.J;
       if (st.j != null && h.on >= 0 && dist < st.j && !(S.pb & B.J) && !(st.once && bot.jumped)) { bot.jh = 18; bot.jumped = true; }
