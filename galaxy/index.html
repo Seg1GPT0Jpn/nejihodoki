@@ -166,6 +166,7 @@ body.photo header, body.photo #touch, body.photo #pauseBtn, body.photo #mapBtn, 
 #photoBar #phShot { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.85); color: #222; border: 4px solid rgba(255,255,255,.4); }
 .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .pgrid button { padding: 0; border: 1px solid rgba(0,0,0,.2); border-radius: 8px; background: #112; overflow: hidden; aspect-ratio: 3/4; cursor: pointer; } .pgrid img { width: 100%; height: 100%; object-fit: cover; display: block; }
 #muBody .mugrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } #muBody a { display: grid; justify-items: center; gap: 2px; text-decoration: none; color: inherit; font-size: 11px; line-height: 1.2; text-align: center; padding: 6px 2px; border-radius: 12px; background: rgba(0,0,0,.06); } #muBody .mi { display: block; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; } #muBody .mi svg { width: 44px; height: 44px; display: block; }
+#endRoll .crow { display: flex; align-items: center; gap: 10px; text-align: left; padding: 4px 8px; } #endRoll .crow .mi { flex: none; width: 40px; height: 40px; border-radius: 10px; overflow: hidden; } #endRoll .crow .mi svg { width: 40px; height: 40px; display: block; }
 #alBig { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 8px; background: #000; }
 body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip, body.thumb #hud, body.thumb #labels, body.thumb #banner, body.thumb #compass { display: none !important; }
 </style>
@@ -218,6 +219,7 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     <button class="btn" id="tGo" type="button" data-i18n>ほしみ台へ</button>
     <div class="row2"><button class="btn sub" id="tHow" type="button" data-i18n>あそびかた</button><button class="btn sub" id="tSet" type="button" data-i18n>せってい</button></div>
     <button class="btn sub" id="tEnd" type="button" hidden></button>
+    <button class="btn sub" id="tCred" type="button" hidden></button>
     <a class="btn link" href="../" data-i18n>ゲーム一覧へ</a>
   </div>
 </div>
@@ -235,6 +237,7 @@ body.thumb header, body.thumb #touch, body.thumb #pauseBtn, body.thumb #landTip,
     <h2 id="muTitle"></h2>
     <p id="muSub"></p>
     <div class="scroll" id="muBody"></div>
+    <button class="btn sub" id="muCred" type="button" hidden></button>
     <button class="btn sub" id="muClose" type="button">×</button>
   </div>
 </div>
@@ -345,7 +348,7 @@ function readSave() {
   if (o.rk && typeof o.rk === 'object') for (const k in o.rk) { const v = Number(o.rk[k]); if (/^g\d{1,2}(m\d|hunt)$/.test(k) && v >= 0 && v <= 3) s.rk[k] = v | 0; }
   s.un = (o.un | 0) & 8191; s.cn = clamp(o.cn | 0, 0, 1e9); s.cr = clamp(o.cr | 0, 0, 1e9);
   if (o.stats && typeof o.stats === 'object') for (const k in o.stats) { const v = Number(o.stats[k]); if (isFinite(v) && v >= 0 && /^[a-z0-9_]{1,16}$/.test(k)) s.stats[k] = Math.min(1e9, v | 0); }
-  if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.gl = [0, 1, 2].indexOf(+t.gl) >= 0 ? +t.gl : 0; s.set.sk = clamp(t.sk | 0, 0, 5); s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
+  if (o.set && typeof o.set === 'object') { const t = o.set; s.set.sens = [0.6, 1, 1.5].indexOf(+t.sens) >= 0 ? +t.sens : 1; for (const k of ['ac', 'iy', 'ahp', 'anf', 'asl', 'rm', 'lp']) s.set[k] = t[k] ? 1 : 0; if (t.ac === 0) s.set.ac = 0; s.set.gl = [0, 1, 2].indexOf(+t.gl) >= 0 ? +t.gl : 0; s.set.sk = clamp(t.sk | 0, 0, 6); s.set.tc = ['auto', 'on', 'off'].indexOf(t.tc) >= 0 ? t.tc : 'auto'; }
   s.tut = o.tut ? 1 : 0; recompute(s); return s;
 }
 let save = readSave();
@@ -424,7 +427,7 @@ function npcHint(k) {
   const H = [
     [L('ガイドライトの さきに 星が あるよ。ゲートに 入ると ミッションを えらべる！', 'Follow the glow to a gate, then pick a mission!'), 0],
     [next ? L('つぎの ぎんがは ★' + next.need + 'こで ひらく。いま ★' + save.pts + 'こ だよ。', 'The next galaxy opens at ★' + next.need + '. You have ★' + save.pts + '.') : L('ぜんぶの ぎんがが ひらいたね！ ランクSを めざそう', 'Every galaxy is open! Go for rank S.'), 0],
-    [L('すべり台や ジャンプ台、風や じりょくの ゾーンに 気をつけて。ふしぎな 力で 星がうごくよ', 'Watch for wind, magnets and lanes between planets. Each galaxy bends the rules.'), 0]];
+    [save.stats.idle >= 1 ? L('ひまつぶしの おうさまを たおした きみは ひまつぶしマスター！ ミュージアムで クレジットも みられるよ', 'You beat the Idle King: Idle Master! Watch the credits from the Museum.') : L('すべり台や ジャンプ台、風や じりょくの ゾーンに 気をつけて。ふしぎな 力で 星がうごくよ', 'Watch for wind, magnets and lanes between planets. Each galaxy bends the rules.'), 0]];
   return H[k % 3][0];
 }
 function hubNpc(S) {
@@ -472,7 +475,7 @@ function endRun(reason) {
 function onClear() {
   const S = G.S, r = S.res, m = G.m, gi = G.gid; const hunt = m.kind === 'hunt', idx = m.idx, old = hunt ? (save.lm[gi] | 0) : (save.sh[gi] | 0), first = hunt ? !(old & 128) : !(old & (1 << idx));
   if (hunt) { save.lm[gi] = old | 128 | S.lumi; stat('hunts', 1); } else save.sh[gi] = old | (1 << idx);
-  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); if (G.mid === 'g13m2') stat('board', 1); if (G.mid === 'g13m3') stat('arcade', 1); if (G.mid === 'g13m4') stat('puzzle', 1); if (G.mid === 'g13m1') { stat('hima', 1); toast(L('ミュージアムが ひらいたよ！ ポーズメニューから いけるよ', 'The Museum is open! Find it in the pause menu'), 3800); } const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
+  if (m.kind === 'boss' && gi === 'g6') stat('boss2', 1); if (m.kind === 'final') stat('final', 1); if (G.mid === 'g8m2') stat('gauntlet', 1); if (G.mid === 'g13m5') { stat('idle', 1); toast(L('ひまつぶしの おうさまを たおした！ きんの ふくと クレジットが ひらいたよ', 'The Idle King is down! A golden costume and the credits are unlocked'), 4200); } if (G.mid === 'g13m2') stat('board', 1); if (G.mid === 'g13m3') stat('arcade', 1); if (G.mid === 'g13m4') stat('puzzle', 1); if (G.mid === 'g13m1') { stat('hima', 1); toast(L('ミュージアムが ひらいたよ！ ポーズメニューから いけるよ', 'The Museum is open! Find it in the pause menu'), 3800); } const ob = save.bt[G.mid] || 0, nb = r.f; const newBest = !ob || nb < ob; if (newBest) save.bt[G.mid] = nb;
   stat('clears', 1); if (r.die === 0) stat('nodie', 1); if (m.kind === 'comet') stat('comets', 1); if (m.kind === 'boss') stat('boss', 1); if (S.as.hp || S.as.nofall || S.as.slow) stat('assist', 1);
   const rk = E.rank(m, r, (S.lumi & 7) === 7), oldRk = save.rk[G.mid] == null ? -1 : save.rk[G.mid], bonus = rk > oldRk ? E.RANK_REWARD[rk] - (oldRk >= 0 ? E.RANK_REWARD[oldRk] : 0) : 0; if (rk > oldRk) save.rk[G.mid] = rk; save.cn = Math.min(1e9, save.cn + bonus); if (rk === 3) stat('rankS', 1);
   endRun('clear'); G.result = { ok: true, first, newBest, f: r.f, coin: r.coin, crystal: r.crystal, die: r.die, ob, lumi: S.cnt.lumi, rank: rk, bonus };
@@ -579,8 +582,9 @@ const COSTUMES = [
   { need: 12, ja: 'ミント', en: 'Mint', tint: [0.8, 1.2, 1.0] },
   { need: 20, ja: 'そら', en: 'Sky', tint: [0.8, 0.95, 1.3] },
   { need: 30, ja: 'きん', en: 'Gold', tint: [1.4, 1.15, 0.55] },
-  { need: 42, ja: 'よぞら', en: 'Midnight', tint: [0.6, 0.6, 0.95] }];
-const skinOk = i => save.pts >= COSTUMES[i].need || DBG_UNLOCK;
+  { need: 42, ja: 'よぞら', en: 'Midnight', tint: [0.6, 0.6, 0.95] },
+  { need: 0, stat: 'idle', ja: 'ひまつぶしの きん', en: 'Idle Gold', tint: [1.6, 1.3, 0.45] }];
+const skinOk = i => COSTUMES[i].stat ? (save.stats[COSTUMES[i].stat] || 0) >= 1 || DBG_UNLOCK : save.pts >= COSTUMES[i].need || DBG_UNLOCK;
 const curSkin = () => { const i = save.set.sk | 0; return skinOk(i) ? COSTUMES[i].tint : null; };
 const ALBUM_KEY = 'kusoge.galaxy.album';
 function loadAlbum() { try { const a = JSON.parse(store.get(ALBUM_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => x && typeof x.u === 'string' && x.u.startsWith('data:image/')).slice(0, 12) : []; } catch (e) { return []; } }
@@ -609,7 +613,7 @@ function tribute(gb) { const bid = G.L.bodies[gb] && G.L.bodies[gb].id; if (!bid
 function openMuseum() {
   const gs = window.KOBO_GAMES || []; paused = true; padOff(); $('muTitle').textContent = L('ひまつぶし ミュージアム', 'Idle Hours Museum'); $('muSub').textContent = L('ひまつぶし工房の ぜんぶの ゲーム。タップして あそびに いこう！', 'All of our games. Tap one to go and play!');
   $('muBody').innerHTML = '<div class="mugrid">' + gs.map(g => '<a href="../' + esc(g.path) + '" data-id="' + esc(g.id) + '"><i class="mi">' + (g.iconSvg || '') + '</i><span>' + esc(EN ? g.title.en : g.title.ja) + '</span></a>').join('') + '</div>';
-  $('ovMuseum').hidden = false; stat('museum', 1); writeSave(); snd('arrive');
+  $('muCred').hidden = !(save.stats.idle >= 1); $('muCred').textContent = L('クレジットを みる', 'Watch the credits'); $('muCred').onclick = () => showCredits(); $('ovMuseum').hidden = false; stat('museum', 1); writeSave(); snd('arrive');
 }
 $('muClose').onclick = () => { $('ovMuseum').hidden = true; if (mode === 'hub' || mode === 'play') { paused = false; acc = 0; kick(); } };
 function startFlyby() { if (!G || G.gid === 'hub' || mode !== 'play') return; const kg = KG(); if (kg) kg.menuClosed(); G.fly = true; G.intro = true; G.it = 0; G.introDur = save.set.rm ? 0.6 : 5.5; resumeGame(); }
@@ -653,7 +657,7 @@ function onEvents(S) {
   for (const e of S.ev) {
     const k = e[0]; if (k === 'banner') { if (e[1] === 'orbs') toast(L('すいせいのかけら ぜんぶ！ スターシャードが あらわれた', 'All orbs! The Star Shard appeared'), 2400); else if (e[1] === 'lanterns') toast(L('ちょうちん ぜんぶ ともった！ スターシャードが あらわれた', 'All lanterns lit! The Star Shard appeared'), 2400); else if (e[1] === 'boss') toast(L('おうさまを たおした！ スターシャードが あらわれた', 'The king is down! A Star Shard appeared'), 2600); continue; }
     snd(k);
-    if (k === 'shard') toast(L('スターシャード ゲット！', 'Star Shard get!'), 1800); else if (k === 'lumi') toast(L('ひみつの ルミを みつけた！', 'You found a hidden Lumi!'), 2000); else if (k === 'power') toast(({ kite: L('カイトの力！ ジャンプおしっぱなしで ふわっと すべる（風にのると上へ）', 'Kite suit! Hold jump to glide (updrafts lift you)'), jelly: L('ゼリーの力！ 着地に あわせてジャンプで どんどん高く', 'Jelly suit! Time jumps on landing to bounce higher'), dash: L('コメットダッシュ！ 空中でもう一回ジャンプで まっすぐ ぐいっと', 'Comet dash! Press jump again in the air for a straight burst'), drill: L('ドリルの力！ てつの はこも こわせる', 'Drill suit! Breaks iron crates'), skate: L('スケートの力！ とってもはやい', 'Skate power! Super speed'), fire: L('ほのおスピン！ トゲをとかせる', 'Fire spin! Melts spikes'), shield: L('バリア！ 1回だけ ダメージをふせぐ', 'Shield! Blocks one hit') })[e[4]] || '', 2200);
+    if (k === 'phase') { const nm = G.m.phaseNames && G.m.phaseNames[e[1] - 1], gm = nm && window.KOBO_GAMES && KOBO_GAMES.find(x => x.id === nm); showBanner(L('へんしん！ だんかい ', 'Phase ') + e[1], gm ? (EN ? gm.title.en : gm.title.ja) : '', 2400); snd('arrive'); } else if (k === 'shard') toast(L('スターシャード ゲット！', 'Star Shard get!'), 1800); else if (k === 'lumi') toast(L('ひみつの ルミを みつけた！', 'You found a hidden Lumi!'), 2000); else if (k === 'power') toast(({ kite: L('カイトの力！ ジャンプおしっぱなしで ふわっと すべる（風にのると上へ）', 'Kite suit! Hold jump to glide (updrafts lift you)'), jelly: L('ゼリーの力！ 着地に あわせてジャンプで どんどん高く', 'Jelly suit! Time jumps on landing to bounce higher'), dash: L('コメットダッシュ！ 空中でもう一回ジャンプで まっすぐ ぐいっと', 'Comet dash! Press jump again in the air for a straight burst'), drill: L('ドリルの力！ てつの はこも こわせる', 'Drill suit! Breaks iron crates'), skate: L('スケートの力！ とってもはやい', 'Skate power! Super speed'), fire: L('ほのおスピン！ トゲをとかせる', 'Fire spin! Melts spikes'), shield: L('バリア！ 1回だけ ダメージをふせぐ', 'Shield! Blocks one hit') })[e[4]] || '', 2200);
     else if (k === 'cp') toast(L('チェックポイント', 'Checkpoint'), 1200); else if (k === 'lantern') toast(L('あかりが ともった（' , 'Lantern lit (') + (S.lit.length) + '/' + S.need.lan + L('）', ')'), 1100); else if (k === 'void') toast(L('宇宙にでちゃった！', 'Lost in space!'), 1500);
   }
 }
@@ -721,7 +725,7 @@ const anyOverlay = () => OVS.some(id => !$(id).hidden);
 function showTitle() {
   mode = 'title'; hideOverlays(); document.body.classList.remove('playing'); $('ovTitle').hidden = false; padOff();
   const done = save.pts; $('tInfo').innerHTML = '<p><b>★ ' + done + ' / ' + LV.total() + '</b>　' + esc(L('スターシャード', 'Star Shards')) + '　●' + save.cn + '</p>';
-  $('tEnd').hidden = !(save.stats.final >= 1); $('tEnd').textContent = L('エンディングをみる', 'Watch the ending'); $('tEnd').onclick = () => showEnding();
+  $('tCred').hidden = !(save.stats.idle >= 1); $('tCred').textContent = L('★ ひまつぶしマスター：クレジット', '★ Idle Master: credits'); $('tCred').onclick = () => showCredits(); $('tEnd').hidden = !(save.stats.final >= 1); $('tEnd').textContent = L('エンディングをみる', 'Watch the ending'); $('tEnd').onclick = () => showEnding();
   $('tGo').textContent = done ? L('ほしみ台へ', 'To the Station') : L('はじめる', 'Start'); try { $('tGo').focus({ preventScroll: true }); } catch (e) {}
   if (R && (!G || G.gid !== 'hub' || !G.live)) { newRun('hub', 'free'); G.intro = false; G.introDur = 0; }
   kick();
@@ -752,7 +756,7 @@ function showSettings() {
     '<div class="og"><div class="ol">' + esc(L('たすけ：すいせいチャレンジの時間を1.6ばい', 'Assist: slower comets (1.6x time)')) + '</div>' + onoff('asl') + '</div>' +
     '<div class="og"><div class="ol">' + esc(L('うごきをへらす（ゆれ・光・演出）', 'Reduce motion (shake, flashes, fly-ins)')) + '</div>' + onoff('rm') + '</div>' +
     '<div class="og"><div class="ol">' + esc(L('かるい描画（低電力モード）', 'Light graphics (low power)')) + '</div>' + onoff('lp') + '</div>' +
-    '<div class="og"><div class="ol">' + esc(L('ピップの ふく', 'Pip\'s costume')) + '</div><div class="seg" id="skSeg" role="group">' + COSTUMES.map((c, i) => '<button class="opt" type="button" data-v="' + i + '"' + (skinOk(i) ? '' : ' disabled') + ' aria-pressed="' + ((save.set.sk | 0) === i) + '">' + esc(L(c.ja, c.en)) + (skinOk(i) ? '' : ' ★' + c.need) + '</button>').join('') + '</div></div>' +
+    '<div class="og"><div class="ol">' + esc(L('ピップの ふく', 'Pip\'s costume')) + '</div><div class="seg" id="skSeg" role="group">' + COSTUMES.map((c, i) => '<button class="opt" type="button" data-v="' + i + '"' + (skinOk(i) ? '' : ' disabled') + ' aria-pressed="' + ((save.set.sk | 0) === i) + '">' + esc(L(c.ja, c.en)) + (skinOk(i) ? '' : c.stat ? L(' ひみつ', ' secret') : ' ★' + c.need) + '</button>').join('') + '</div></div>' +
     '<div class="og"><div class="ol">' + esc(L('ひかりのにじみ（ブルーム）', 'Glow (bloom)')) + '</div>' + seg('gl', [[0, L('じどう', 'Auto')], [1, L('オン', 'On')], [2, L('オフ', 'Off')]]) + '</div>' +
     '<div class="og"><div class="ol">' + esc(L('タッチ操作ボタン', 'Touch buttons')) + '</div>' + seg('tc', [['auto', L('じどう', 'Auto')], ['on', L('出す', 'Show')], ['off', L('出さない', 'Hide')]]) + '</div>' +
     (window.KoboOrient ? '<div class="og"><div class="ol">' + esc(L('画面のむき', 'Screen orientation')) + '</div><div class="seg" id="oOri" role="group"></div><p>' + esc(L('スマホが回らないときは「よこ きょうせい」で、画面ごと回して出します。', 'If your phone will not rotate, “Landscape” turns the whole game for you.')) + '</p></div>' : '') +
@@ -780,8 +784,8 @@ function showResult() {
   const kv = []; if (ok) { kv.push([L('タイム', 'Time'), fmtT(r.f)]); if (r.ob && !r.newBest) kv.push([L('ベスト', 'Best'), fmtT(r.ob)]); kv.push([L('コイン', 'Coins'), r.coin]); kv.push([L('ランクのめやす', 'Rank target'), fmtT((G.m.par || 60) * 60)]); if (r.crystal) kv.push([L('クリスタル', 'Crystals'), r.crystal]); kv.push([L('ミス', 'Falls / KOs'), r.die]); kv.push([L('スターシャード', 'Star Shards'), save.pts + ' / ' + LV.total()]); kv.push([L('ルミ', 'Lumi found'), popc((save.lm[G.gid] | 0) & 7) + ' / 3']); }
   $('rKv').innerHTML = kv.map(a => '<span>' + esc(a[0]) + '</span><span>' + esc(a[1]) + '</span>').join('');
   $('rNote').textContent = ok ? (G.gid !== 'hub' && galUnlockedNew() ? L('あたらしい銀河が ひらいたよ！ ほしみ台のゲートへ', 'A new galaxy has opened! Check the gates on the Deck.') : '') : (r.why === 'time' ? L('たすけの せっていで、時間を 1.6ばいに できます', 'You can give yourself 1.6x time in Settings (Assist).') : L('もう一度 ちょうせんしよう', 'Give it another go!'));
-  const nx = nextMission(), fin = ok && G.m.kind === 'final'; const bn = $('rNext'); bn.textContent = fin ? L('エンディングへ', 'To the ending') : ok ? (nx ? L('つぎの ミッション', 'Next mission') : L('ほしみ台へ', 'To the Station')) : L('もう一度', 'Try again');
-  bn.onclick = () => { if (fin) showEnding(); else if (!ok) restartMission(); else if (nx) startMission(nx.gid, nx.mid); else enterHub({ from: G.gid }); };
+  const nx = nextMission(), fin = ok && G.m.kind === 'final', fin2 = ok && G.mid === 'g13m5'; const bn = $('rNext'); bn.textContent = fin ? L('エンディングへ', 'To the ending') : fin2 ? L('クレジットへ', 'To the credits') : ok ? (nx ? L('つぎの ミッション', 'Next mission') : L('ほしみ台へ', 'To the Station')) : L('もう一度', 'Try again');
+  bn.onclick = () => { if (fin) showEnding(); else if (fin2) showCredits(); else if (!ok) restartMission(); else if (nx) startMission(nx.gid, nx.mid); else enterHub({ from: G.gid }); };
   $('rAgain').onclick = () => restartMission(); $('rHub').onclick = () => { const g = G.gid; enterHub({ from: g }); };
   try { bn.focus({ preventScroll: true }); } catch (e) {}
 }
@@ -794,6 +798,18 @@ function showEnding() {
     + sec(L('ぜんぶ オリジナル', 'All original'), [L('キャラクター・星・しかけ・ことば', 'Characters, planets, gadgets and words'), L('音楽は ありません。ひろうも ばくちも ありません', 'No music, no ads, no gambling')])
     + sec(L('あそんでくれて ありがとう', 'Thanks for playing'), [L('まだ のこっている ルミと、ぜんぶの しれんに ちょうせん！', 'Try the hidden Lumi and the Grand Gauntlet!')]);
   $('endGo').textContent = L('ほしみ台へ', 'To the Station'); $('endGo').onclick = () => { enterHub({ from: 'g8' }); }; try { $('endGo').focus({ preventScroll: true }); } catch (e) {} snd('done');
+}
+
+// ---------- ひまつぶしの クレジット（ぜんぶの ゲームの ありがとう。音楽なし） ----------
+function showCredits() {
+  hideOverlays(); mode = 'result'; $('ovEnd').hidden = false; $('endTitle').textContent = L('ひまつぶしの ぎんがは おしまい。ありがとう！', 'The Galaxy of Idle Hours: Thank you!'); stat('credits', 1); writeSave();
+  const thanks = [L('あそんでくれて ありがとう', 'Thanks for playing'), L('ひまな ときに また あおう', 'See you in your spare time'), L('ちょっとだけ のつもりが…', 'Just one more round…'), L('のんびり いこう', 'Take it easy'), L('ぜんぶ じぶんの ペースで', 'At your own pace'), L('また あした', 'See you tomorrow')];
+  const gs = window.KOBO_GAMES || []; const sec = (hd, ps) => '<h3>' + esc(hd) + '</h3>' + ps.map(p => '<p>' + esc(p) + '</p>').join('');
+  $('endRoll').innerHTML = sec(L('ひまつぶしの おうさまは ねむった', 'The Idle King sleeps'), [L('ぜんぶの ゲームの わざを つかって、', 'Using every game\'s tricks,'), L('ピップは ひまつぶしの ぎんがを とりもどした！', 'Pip won back the Galaxy of Idle Hours!')])
+    + '<h3>' + esc(L('ひまつぶし工房の ゲームたち', 'The games of Himatsubushi Kobo')) + '</h3>' + gs.map((g, i) => '<div class="crow"><i class="mi">' + (g.iconSvg || '') + '</i><span><b>' + esc(EN ? g.title.en : g.title.ja) + '</b><br>' + esc(thanks[i % thanks.length]) + '</span></div>').join('')
+    + sec(L('きみの ぼうけん', 'Your adventure'), [L('スターシャード ', 'Star Shards ') + save.pts + ' / ' + LV.total(), L('ルミ ', 'Lumi ') + GALS.reduce((n, g) => n + popc((save.lm[g.id] | 0) & 7), 0) + ' / ' + GALS.length * 3]) + sec(L('ごほうび', 'Rewards'), [L('きんの ふく「ひまつぶしの きん」', 'The golden costume "Idle Gold"'), L('しょうごう「ひまつぶしマスター」', 'The title "Idle Master"')])
+    + sec(L('ぜんぶ オリジナル', 'All original'), [L('音楽は ありません。ひろうも ばくちも ありません', 'No music, no ads, no gambling')]);
+  $('endGo').textContent = L('ほしみ台へ', 'To the Station'); $('endGo').onclick = () => { enterHub({ from: 'g13' }); }; try { $('endGo').focus({ preventScroll: true }); } catch (e) {} snd('done');
 }
 function galUnlockedNew() { for (const g of GALS) if (g.need > 0 && save.pts >= g.need && save.pts - 1 < g.need) return true; return false; }
 function nextMission() { const d = LV.def(G.gid), i = G.m.idx + 1; if (G.gid === 'hub') return null; if (i < d.missions.length) return { gid: G.gid, mid: d.missions[i].id }; return null; }
@@ -882,7 +898,7 @@ if (DEBUG) {
   };
   window.__kb = Object.assign(window.__kb || {}, api);
   window.__galaxy = {
-    api, E, LV, ART, get G() { return G; }, get S() { return G && G.S; }, get save() { return save; }, get R() { return R; }, enterHub, startMission, showTitle, showSettings, showHowto, openPause, openMuseum, openSelect, skipIntro,
+    api, E, LV, ART, get G() { return G; }, get S() { return G && G.S; }, get save() { return save; }, get R() { return R; }, enterHub, startMission, showTitle, showSettings, showHowto, openPause, openMuseum, showCredits, openSelect, skipIntro,
     resetSave() { store.del(SAVE_KEY); save = readSave(); }, unlockAll() { DBG_UNLOCK = true; },
     hold(o) { dbg.sx = o.sx || 0; dbg.sy = o.sy || 0; dbg.b = o.b | 0; dbg.on = 1; }, release() { dbg.on = 0; }, manual(on) { MANUAL = !!on; acc = 0; kick(); },
     stepN(n, inp) { for (let i = 0; i < n && G && (mode === 'play' || mode === 'hub') && !G.intro; i++) { if (inp) { dbg.sx = inp.sx || 0; dbg.sy = inp.sy || 0; dbg.b = inp.b | 0; dbg.on = 1; } stepOnce(); } render(0.016); return G ? G.S.f : 0; },

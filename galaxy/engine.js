@@ -281,6 +281,7 @@
     const jp = (bt & B.J) && !(S.pb & B.J), sp = (bt & B.S) && !(S.pb & B.S), po = (bt & B.P) && !(S.pb & B.P), jh = !!(bt & B.J);
     S.pb = bt;
     if (!S.trail) { S.trail = []; S.sh = {}; }
+    if (S.boss && S.flag.ph1 === undefined) S.flag.ph1 = 1;
     if (!S.tg) { S.tg = {}; S.tin = {}; S.sq = {}; S.fc = {}; S.bl = {}; S.cd = {}; S.fb = {}; S.sT = {}; S.pk = {}; }
     for (const i of S.act) { const e = L.ents[i]; if (e.k !== 'ball' || S.e[i]) continue; let b = S.bl[i]; if (!b) b = S.bl[i] = { p: e.p.slice(), v: [0, 0] };
       const sp = Math.hypot(b.v[0], b.v[1]); if (sp > 0) { const ns = Math.max(0, sp - 3.2 * DT); b.v[0] *= ns / sp; b.v[1] *= ns / sp; }
@@ -324,8 +325,8 @@
     // ---- 速度 ----
     const n0 = grounded0 ? h.gn : gu;
     let v = h.v.slice();
-    let stk = false; for (const z of L.zones) { if (z.m === 'sticky' && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { stk = true; break; } } h.stk = stk ? 1 : 0;
-    let swim = false, hot = false, flz = null; for (const z of L.zones) { if ((z.m === 'swim' || z.m === 'heat' || z.m === 'fly') && (!z.ms || z.ms.indexOf(S.mid) >= 0) && inZone(z, h.x)) { if (z.m === 'swim') swim = true; else if (z.m === 'fly') flz = z; else hot = true; } } h.sw = swim ? 1 : 0; h.fl = flz && !grounded0 ? 1 : 0; if (!h.fl) h.fp = 0;
+    let stk = false; for (const z of L.zones) { if (z.m === 'sticky' && (!z.ms || z.ms.indexOf(S.mid) >= 0) && (!z.req || S.flag[z.req]) && !(z.until && S.flag[z.until]) && inZone(z, h.x)) { stk = true; break; } } h.stk = stk ? 1 : 0;
+    let swim = false, hot = false, flz = null; for (const z of L.zones) { if ((z.m === 'swim' || z.m === 'heat' || z.m === 'fly') && (!z.ms || z.ms.indexOf(S.mid) >= 0) && (!z.req || S.flag[z.req]) && !(z.until && S.flag[z.until]) && inZone(z, h.x)) { if (z.m === 'swim') swim = true; else if (z.m === 'fly') flz = z; else hot = true; } } h.sw = swim ? 1 : 0; h.fl = flz && !grounded0 ? 1 : 0; if (!h.fl) h.fp = 0;
     if (hot && grounded0 && len(h.v) < 2.4) { h.ht = (h.ht || 0) + DT; if (h.ht > 1.15) { h.ht = 0; S.ev.push(['burn', h.x[0], h.x[1], h.x[2]]); h.burn = 1; } } else h.ht = Math.max(0, (h.ht || 0) - 2 * DT);
     const speed = (stk ? 0.42 : 1) * (swim ? 0.8 : 1) * K.RUN * (h.pw && h.pw.k === 'jelly' ? 1.05 : h.pw && h.pw.k === 'skate' ? 1.6 : h.pw && h.pw.k === 'drill' ? 1.4 : 1);
     if (grounded0) {
@@ -471,7 +472,7 @@
     const h = S.h, L = S.L;
     const fire = h.pw && h.pw.k === 'fire', R0 = K.SPIN_R * (fire ? 1.6 : 1);
     for (const i of S.act) {
-      const e = L.ents[i]; if (S.e[i]) continue;
+      const e = L.ents[i]; if (S.e[i]) continue; if ((e.req && !S.flag[e.req]) || (e.until && S.flag[e.until])) continue;
       if (e.k === 'drift' && !e.shot && S.ep[i] && len(sub(S.ep[i], h.x)) < R0 + 0.3) { S.e[i] = 1; S.cnt.kill++; S.cnt.coin++; S.ev.push(['kill', S.ep[i][0], S.ep[i][1], S.ep[i][2], 0]); continue; }
       if (e.k === 'ball' && S.bl && S.bl[i]) { const b = S.bl[i], dx = b.p[0] - h.x[0], dz = b.p[2] - h.x[2], dd = Math.hypot(dx, dz); if (dd < R0 + 0.6 && dd > 1e-3 && Math.hypot(b.v[0], b.v[1]) < 6) { b.v = [dx / dd * 13, dz / dd * 13]; S.ev.push(['jump', b.p[0], b.p[1], b.p[2], 1]); } continue; }
       if ((e.k === 'walker' || e.k === 'crate') && foeOn(S, e) && !e.bnc) { const p = S.ep[i]; if (len(sub(p, h.x)) < R0 + (e.k === 'crate' ? 0.5 : 0.2)) hitEnt(S, i, 'spin'); }
@@ -498,7 +499,7 @@
   function pickups(S) {
     const h = S.h, L = S.L;
     for (const i of S.act) {
-      if (S.e[i]) continue; const e = L.ents[i]; if (e.req && !S.flag[e.req]) continue;
+      if (S.e[i]) continue; const e = L.ents[i]; if ((e.req && !S.flag[e.req]) || (e.until && S.flag[e.until])) continue;
       const p = S.ep[i]; if (!p) continue; const d = len(sub(p, h.x));
       switch (e.k) {
         case 'coin': if (d < (e.rad || 1.15) * DIF.pick[S.dif] + magR(S)) { S.e[i] = 1; S.cnt.coin++; S.ev.push(['coin', p[0], p[1], p[2]]); } break;
@@ -539,7 +540,7 @@
   }
   // ---------- ボス：グツグツおうさま ----------
   function bossHit(S) {
-    const bo = S.boss; if (bo.st !== 'stun') return; { const be = S.L.ents[bo.i]; if (be.needLit && !S.flag['lanterns' + be.needLit]) { const p0 = bossPos(S); S.ev.push(['clang', p0[0], p0[1], p0[2]]); return; } } bo.hp--; bo.flash = 0.7; bo.st = bo.hp <= 0 ? 'dead' : 'hurt'; bo.t = bo.hp <= 0 ? 2.2 : 0.9; S.cnt.hit++;
+    const bo = S.boss; if (bo.st !== 'stun') return; { const be = S.L.ents[bo.i]; if (be.needLit && !S.flag['lanterns' + be.needLit]) { const p0 = bossPos(S); S.ev.push(['clang', p0[0], p0[1], p0[2]]); return; } } bo.hp--; { const ph = bo.hp0 - bo.hp + 1; S.flag['ph' + ph] = 1; S.flag['ph' + (ph - 1)] = 0; if (bo.hp > 0) S.ev.push(['phase', ph]); } bo.flash = 0.7; bo.st = bo.hp <= 0 ? 'dead' : 'hurt'; bo.t = bo.hp <= 0 ? 2.2 : 0.9; S.cnt.hit++;
     const p = bossPos(S); S.ev.push([bo.hp <= 0 ? 'boom' : 'bosshit', p[0], p[1], p[2]]);
     if (bo.hp <= 0) { S.flag.boss = 1; S.ev.push(['banner', 'boss']); }
   }

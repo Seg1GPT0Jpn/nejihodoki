@@ -175,7 +175,7 @@
     opt = opt || {}; const L = S.L, h = S.h, objs = [], bn = [];
     const O = (m, pos, fw, up, sc, tint, emis, rim) => objs.push({ m, M: GL.M.basis(pos, fw, up, sc), tint, emis, rim });
     for (const i of S.act) {
-      const e = L.ents[i]; if (S.e[i]) continue; if (e.req && !S.flag[e.req]) continue; const p = S.ep[i]; if (!p) continue; const up = E.entUp(S, i), spin = ROT(up, t * 2.2 + i), bob = V.add(p, V.mul(up, Math.sin(t * 2.4 + i) * 0.1));
+      const e = L.ents[i]; if (S.e[i]) continue; if ((e.req && !S.flag[e.req]) || (e.until && S.flag[e.until])) continue; const p = S.ep[i]; if (!p) continue; const up = E.entUp(S, i), spin = ROT(up, t * 2.2 + i), bob = V.add(p, V.mul(up, Math.sin(t * 2.4 + i) * 0.1));
       switch (e.k) {
         case 'shard': O('shard', V.add(p, V.mul(up, 0.2 + Math.sin(t * 2 + i) * 0.12)), spin, up, 1.0, null, 0.55); fx.glow(p, [1, 0.85, 0.3], 7, 0.5); break;
         case 'coin': O('coin', bob, spin, up, 1, null, 0.4); break;
@@ -207,9 +207,9 @@
     }
     // ボス
     if (S.boss && S.boss.st !== 'gone') { const bo = S.boss, bp = E.bossPos(S), e = L.ents[bo.i], R = S.xf[e.bi].R, up = V.norm(V.mv(R, bo.d)); const k = bo.st === 'stun' ? 0.85 + Math.sin(t * 14) * 0.04 : 1; const fl = bo.flash > 0 && Math.floor(t * 20) % 2 === 0;
-      const hh = V.norm(V.sub(S.h.x, bp)), fw = V.norm(V.sub(hh, V.mul(up, V.dot(hh, up)))); const look = L.ents[bo.i].look, base = look === 'guard' ? [0.75, 0.85, 1.2] : look === 'king' ? [1.2, 0.95, 1.6] : look === 'plant' ? [0.6, 1.3, 0.6] : look === 'slider' ? [0.7, 1.1, 1.5] : look === 'gumking' ? [1.4, 0.8, 1.2] : look === 'tide' ? [0.6, 1.0, 1.3] : look === 'queen' ? [0.8, 0.7, 1.4] : look === 'gale' ? [0.9, 1.2, 1.5] : look === 'sandking' ? [1.4, 1.1, 0.7] : null; const tg = bo.st === 'stun' ? [0.8, 0.8, 1.1] : fl ? [2, 2, 2] : base;
+      const hh = V.norm(V.sub(S.h.x, bp)), fw = V.norm(V.sub(hh, V.mul(up, V.dot(hh, up)))); const look = L.ents[bo.i].look, base = look === 'guard' ? [0.75, 0.85, 1.2] : look === 'king' ? [1.2, 0.95, 1.6] : look === 'plant' ? [0.6, 1.3, 0.6] : look === 'slider' ? [0.7, 1.1, 1.5] : look === 'gumking' ? [1.4, 0.8, 1.2] : look === 'tide' ? [0.6, 1.0, 1.3] : look === 'queen' ? [0.8, 0.7, 1.4] : look === 'gale' ? [0.9, 1.2, 1.5] : look === 'sandking' ? [1.4, 1.1, 0.7] : look === 'idle' ? [1.5, 1.25, 0.5] : null; const tg = bo.st === 'stun' ? [0.8, 0.8, 1.1] : fl ? [2, 2, 2] : base;
       const dead = bo.st === 'dead' ? Math.max(0, bo.t / 2.2) : 1; O('boss', bp, V.len(fw) > 0.1 ? fw : E.perp(up), up, [1.7 * k * dead * (1.2 - 0.2 * dead), 1.7 * (2 - k) * dead, 1.7 * k * dead], tg, bo.st === 'stun' ? 0 : 0.25); fx.glow(bp, [1, 0.5, 0.2], 12, 0.55);
-      { const cr = { plant: 'snap', slider: 'icicle', gumking: 'gum', tide: 'urchin', queen: 'wisp', gale: 'galebird', sandking: 'scarab' }[look]; if (cr && bo.st !== 'dead') O(cr, V.add(bp, V.mul(up, 2.0)), E.perp(up), up, 2.2, null, 0.2); }
+      { const cr = { plant: 'snap', slider: 'icicle', gumking: 'gum', tide: 'urchin', queen: 'wisp', gale: 'galebird', sandking: 'scarab', idle: 'invader' }[look]; if (cr && bo.st !== 'dead') O(cr, V.add(bp, V.mul(up, 2.0)), E.perp(up), up, 2.2, null, 0.2); }
       if (bo.st === 'jump' && bo.tg) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, mp = V.add(c, V.mv(R, V.mul(bo.tg, rad + 0.1))), mu = V.norm(V.mv(R, bo.tg)); const pulse = 1 + Math.sin(t * 20) * 0.1; O('ring', mp, E.perp(mu), mu, 2.2 * pulse, [1, 0.3, 0.2], 1); }
       if (bo.st === 'land' && bo.ring > 0) { const c = S.xf[e.bi].p, rad = L.bodies[e.bi].r, bu = V.norm(V.mv(R, bo.d)); const bc = V.add(c, V.mul(bu, rad * Math.cos(bo.ring / rad) + 0.2)), rr = rad * Math.sin(bo.ring / rad); if (rr > 0.1) { const bn2 = bu; O('stonering', bc, E.perp(bn2), bn2, rr, [3, 1.2, 0.3], 1); } }
     }

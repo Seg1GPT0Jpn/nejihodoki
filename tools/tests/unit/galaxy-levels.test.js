@@ -7,7 +7,7 @@ const E = require(path.join(ROOT, 'galaxy/engine.js')), LV = require(path.join(R
 const V = E.vec;
 
 test('galaxies: 3 galaxies, at least 3 shards each, 10 missions, unique ids, shards unlock in order', () => {
-  eq(LV.GALAXIES.length, 13); ok(LV.total() >= 51, 'missions ' + LV.total()); let before = 0; const ids = new Set();
+  eq(LV.GALAXIES.length, 13); ok(LV.total() >= 52, 'missions ' + LV.total()); let before = 0; const ids = new Set();
   LV.GALAXIES.forEach((g, i) => { const d = LV.def(g.id); ok(g.secret || d.missions.filter(m => m.kind !== 'hunt').length >= 3, g.id + ' has >= 3 missions'); ok(g.need <= before, 'reachable unlock ' + g.id + ' ' + g.need + ' <= ' + before); before += d.missions.filter(m => m.kind !== 'hunt').length; ok(d.missions.some(m => m.kind === 'hunt'), g.id + ' has a hunt');
     for (const m of d.missions) { ok(!ids.has(m.id), 'unique ' + m.id); ids.add(m.id); ok(m.name.ja && m.name.en && m.desc.ja && m.desc.en, 'texts ' + m.id); ok(m.route && m.route.length, 'route ' + m.id); } });
   ok(LV.def('g3').missions.some(m => m.kind === 'boss') && LV.def('g6').missions.some(m => m.kind === 'boss') && LV.def('g8').missions.some(m => m.kind === 'final'), 'three bosses (the last is the final boss)');
@@ -127,6 +127,12 @@ test('arcade + puzzle wings (C3): shooter lane with bullets, invader formation, 
   for (const id of Object.keys(need)) { const m = d.missions.find(x => x.id === id); for (const k of need[id]) ok(m.mech.indexOf(k) >= 0, id + ' has ' + k); const r = Bot.run(L, id, { max: 60000 }); ok(r.ok && r.frames / 60 >= 120 && r.frames / 60 <= 300 && r.S.cnt.hurt <= 8 && r.S.cnt.die <= 3, id + ' cleared in ' + (r.frames / 60).toFixed(0) + ' s, hurt ' + r.S.cnt.hurt); ok(!Bot.run(L, id, { max: 9000, naive: true }).ok, id + ' needs more than run+jump'); }
   ok(d.ents.some(e => e.k === 'drift' && e.shot) && d.ents.some(e => e.k === 'drift' && !e.shot) && d.ents.some(e => e.k === 'park') && d.ents.some(e => e.k === 'tog' && e.code) && d.ents.some(e => e.k === 'tog' && e.tap != null) && d.ents.some(e => e.k === 'tog' && e.odd != null) && d.ents.some(e => e.k === 'tog' && e.ans != null), 'all the new rule entities exist');
   ok(d.bodies.some(b => b.swt != null) && d.bodies.some(b => b.mv && b.mv.some(q => q.t === 'lin')), 'timed platforms and a moving train exist');
+});
+test('the Idle King (C4): a five-phase boss borrowing the games\' tricks, bot-cleared, with rewards and credits wired', () => {
+  const d = LV.def('g13'), m = d.missions.find(x => x.id === 'g13m5'); ok(m && m.kind === 'boss' && m.phaseNames.length === 5, 'a boss with five named phases'); const boss = d.ents.find(e => e.k === 'boss' && e.look === 'idle'); ok(boss && boss.hp === 5, 'five hits = five phases');
+  for (const rq of ['ph2', 'ph3', 'ph4', 'ph5']) ok(d.ents.some(e => e.req === rq) || d.zones.some(z => z.req === rq), 'hazards for ' + rq); ok(d.ents.some(e => e.until === 'ph3') && d.zones.some(z => z.until === 'ph5'), 'old-phase hazards are removed');
+  const L = LV.compile(E, 'g13'); const r = Bot.run(L, 'g13m5', { max: 60000 }); ok(r.ok && r.frames / 60 >= 180 && r.frames / 60 <= 360 && r.S.cnt.hurt <= 8 && r.S.cnt.die <= 3, 'cleared in ' + (r.frames / 60).toFixed(0) + ' s, hurt ' + r.S.cnt.hurt + ' KO ' + r.S.cnt.die); ok(r.S.flag.ph6 === 1, 'the bot went through all five phases');
+  ok(!Bot.run(L, 'g13m5', { max: 12000, naive: true }).ok, 'run+jump alone cannot beat it');
 });
 test('the hub has a gate for every galaxy', () => {
   const L = LV.compile(E, 'hub'); const gs = L.ents.filter(e => e.k === 'gate').map(e => e.gal); eq(gs.join(), LV.GALAXIES.map(g => g.id).join());
