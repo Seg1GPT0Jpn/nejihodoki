@@ -7,7 +7,7 @@ const E = require(path.join(ROOT, 'galaxy/engine.js')), LV = require(path.join(R
 const V = E.vec;
 
 test('galaxies: 3 galaxies, at least 3 shards each, 10 missions, unique ids, shards unlock in order', () => {
-  eq(LV.GALAXIES.length, 13); ok(LV.total() >= 48, 'missions ' + LV.total()); let before = 0; const ids = new Set();
+  eq(LV.GALAXIES.length, 13); ok(LV.total() >= 49, 'missions ' + LV.total()); let before = 0; const ids = new Set();
   LV.GALAXIES.forEach((g, i) => { const d = LV.def(g.id); ok(g.secret || d.missions.filter(m => m.kind !== 'hunt').length >= 3, g.id + ' has >= 3 missions'); ok(g.need <= before, 'reachable unlock ' + g.id + ' ' + g.need + ' <= ' + before); before += d.missions.filter(m => m.kind !== 'hunt').length; ok(d.missions.some(m => m.kind === 'hunt'), g.id + ' has a hunt');
     for (const m of d.missions) { ok(!ids.has(m.id), 'unique ' + m.id); ids.add(m.id); ok(m.name.ja && m.name.en && m.desc.ja && m.desc.en, 'texts ' + m.id); ok(m.route && m.route.length, 'route ' + m.id); } });
   ok(LV.def('g3').missions.some(m => m.kind === 'boss') && LV.def('g6').missions.some(m => m.kind === 'boss') && LV.def('g8').missions.some(m => m.kind === 'final'), 'three bosses (the last is the final boss)');
@@ -113,6 +113,13 @@ test('secret final galaxy (C1): hidden until all other shards + the gauntlet + t
   const hub = LV.def('hub'); ok(hub.ents.some(e => e.k === 'gate' && e.gal === 'g13' && e.secret), 'the secret gate is in the hub');
   const m = LV.def('g13').missions.find(x => x.id === 'g13m1'); ok(m.tribute.length >= 12, 'tribute planets'); const ids = new Set(require(path.join(ROOT, 'common/games.js')).games.map(x => x.id)); for (const t of m.tribute) ok(ids.has(t), 'tribute ' + t + ' is a real game');
   const r = Bot.run(LV.compile(E, 'g13'), 'g13m1', { max: 60000 }); ok(r.ok && r.frames / 60 >= 180 && r.frames / 60 <= 300, 'g13m1 is a long course: ' + (r.frames / 60).toFixed(0) + ' s');
+});
+test('board game wing (C2): chess knight board, reversi lights-out plates, mahjong maze, number-order plates, fishing and mini golf each need their own rule; the bot plays them on the real engine', () => {
+  const m = LV.def('g13').missions.find(x => x.id === 'g13m2'); for (const k of ['chessboard', 'reversi', 'mahjong', 'seqplates', 'pond', 'golf']) ok(m.mech.indexOf(k) >= 0, 'has ' + k);
+  const d = LV.def('g13'); ok(d.ents.some(e => e.k === 'tog' && e.seq) && d.ents.some(e => e.k === 'tog' && e.flips) && d.ents.some(e => e.k === 'fish') && d.ents.some(e => e.k === 'ball'), 'plates, fish and a ball exist');
+  const L = LV.compile(E, 'g13'); const r = Bot.run(L, 'g13m2', { max: 60000 }); ok(r.ok && r.frames / 60 >= 120 && r.frames / 60 <= 300, 'cleared in ' + (r.frames / 60).toFixed(0) + ' s');
+  const S = r.S; ok(['sw13', 'sw16', 'sw18', 'sw20'].every(f => S.flag[f]), 'the puzzles were solved: ' + Object.keys(S.flag).filter(f => S.flag[f]).join(','));
+  const naive = Bot.run(L, 'g13m2', { max: 12000, naive: true }); ok(!naive.ok, 'a run+jump-only player cannot finish it');
 });
 test('the hub has a gate for every galaxy', () => {
   const L = LV.compile(E, 'hub'); const gs = L.ents.filter(e => e.k === 'gate').map(e => e.gal); eq(gs.join(), LV.GALAXIES.map(g => g.id).join());

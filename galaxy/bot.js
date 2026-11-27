@@ -69,6 +69,16 @@
         const i = L.eidx[st.melt]; if (S.e[i]) { nextStep(); return inp; }
         const p = S.ep[i], d = V.len(V.sub(p, h.x)); const o = go(S, p, { stop: 0.1 }); if (d > (st.at || 2.6)) { inp.sx = o.sx; inp.sy = o.sy; } else if (h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S; return inp;
       }
+      if (st.fish) { // つり：さかなの いちへ およいで、ちかづいたら スピン
+        const i = L.eidx[st.fish]; if (S.e[i]) { nextStep(); return inp; } const p = S.ep[i], d = V.len(V.sub(p, h.x)); const o = go(S, p, { stop: 0.1 }); inp.sx = o.sx; inp.sy = o.sy;
+        const above = V.dot(V.sub(p, h.x), h.up), vu = V.dot(h.v, h.up); if (h.on >= 0 && !(S.pb & B.J)) inp.b |= B.J; else if (h.sw && above > -0.3 && vu < 1.2 && !(S.pb & B.J)) inp.b |= B.J;
+        if (d < 2.3 && h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S; return inp;
+      }
+      if (st.golf) { // ミニゴルフ：ボールの うしろに まわって スピンで うつ
+        const i = L.eidx[st.golf]; if (S.e[i]) { nextStep(); return inp; } const bl = S.bl && S.bl[i]; if (!bl) return inp; const H = pt(S, m.pts[st.hole]); let dx = H[0] - bl.p[0], dz = H[2] - bl.p[2]; const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+        if (Math.hypot(bl.v[0], bl.v[1]) > 0.8) return inp; const stand = [bl.p[0] - dx * 1.5, h.x[1], bl.p[2] - dz * 1.5], dd = V.len(V.sub(stand, h.x)); const o = go(S, stand, { stop: 0.08 }); if (dd > 0.35) { inp.sx = o.sx; inp.sy = o.sy; return inp; }
+        const o2 = go(S, [bl.p[0], h.x[1], bl.p[2]], { stop: 0.05 }); inp.sx = o2.sx * 0.3; inp.sy = o2.sy * 0.3; if (h.scd <= 0 && !(S.pb & B.S)) inp.b |= B.S; return inp;
+      }
       const tg = target(S, st);
       if (st.launch) {
         // はっしゃ台まで歩き、飛んで、着地するまで

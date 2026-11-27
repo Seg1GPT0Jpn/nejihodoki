@@ -1270,7 +1270,7 @@
       // pts = Star Shards collected (one per mission, 10 in the first release; the cap leaves room for the 6-8 galaxies planned)
       score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 999, maxRate: null },
       rankSource: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', offset: 0 },
-      record: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/48', en: 'Shards {n}/48' } },
+      record: { key: 'kusoge.galaxy.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}/49', en: 'Shards {n}/49' } },
       keys: {
         'kusoge.galaxy.save': '{ v:1, pts（スターシャードの合計＝ランキング。sh から毎回計算し直す）, sh:{ "<銀河 g1〜>":ミッションごとのシャードのビット }, lm:{ "<銀河>":かくれルミのビット }, bt:{ "<ミッション ID>":ベストタイム（1/60秒。小さいほどよい） }, un（ひらいた銀河を見たビット）, rk:{ "<ミッション ID>":ベストランク 0〜3（C・B・A・S） }, cn（コイン）, cr（クリスタル）, stats:{ plays, clears, nodie, comets, boss, jumps, spins, pounds, wallkicks, launches, kills, stomps, deaths, lumi, assist, hunts（かくれルミさがしのクリア数）, boss2, pki・pje・pda・pdr・psk・pfi（カイト・ゼリー・ダッシュ・ドリル・スケート・ほのおの力をとった数） }（lm の 7ビット目 128 ＝その銀河のルミさがしクリア）, set:{ sens（カメラのかんど 0.6/1/1.5）, ac（じどう追いかけ）, iy（上下反対）, ahp・anf・asl（たすけ：体力6・落下ダメージなし・すいせいの時間1.6倍）, rm（うごきをへらす）, lp（かるい描画）, tc（タッチボタン auto/on/off） }, tut }',
         'kusoge.galaxy.howto': 'あそびかたを見た（\'1\'）。この端末だけ（同期しない）',
@@ -2010,6 +2010,8 @@
       { id: 'galaxy.shard46', tier: 4, icon: 'trophy', title: { ja: '星わたり ほんとうの ぜんぶ', en: 'Every Shard, Truly' }, desc: { ja: 'ボスを ふくむ スターシャード46こ ぜんぶ集める', en: 'Collect all 46 Star Shards, bosses included' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 46 } },
       { id: 'galaxy.shard47', tier: 4, icon: 'trophy', title: { ja: '星わたり ほんとうの ほんとうの ぜんぶ', en: 'Every Shard, For Real' }, desc: { ja: 'スターシャード47こ ぜんぶ集める', en: 'Collect all 47 Star Shards' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 47 } },
       { id: 'galaxy.shard48', tier: 4, icon: 'trophy', title: { ja: 'ひまつぶしの ぎんがの かんぜんせいは', en: 'Idle Hours Complete' }, desc: { ja: 'ひみつの 銀河まで ふくめて スターシャード48こ ぜんぶ集める', en: 'Collect all 48 Star Shards, secret galaxy included' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 48 } },
+      { id: 'galaxy.shard49', tier: 4, icon: 'trophy', title: { ja: 'ひまつぶしの ぎんが ぜんぶ', en: 'Every Idle Hour' }, desc: { ja: 'スターシャード49こ ぜんぶ集める', en: 'Collect all 49 Star Shards' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'pts' }, gte: 49 } },
+      { id: 'galaxy.board1', tier: 3, icon: 'check', title: { ja: 'ボードゲームの ウィング', en: 'Board Game Wing' }, desc: { ja: 'ボードゲームの ウィングを クリアする', en: 'Clear the Board Game Wing' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.board' }, gte: 1 } },
       { id: 'galaxy.hima1', tier: 3, icon: 'trophy', title: { ja: 'ひまつぶしの ぎんがへ', en: 'Welcome to Idle Hours' }, desc: { ja: 'ひみつの 銀河「ひまつぶしの ぎんが」の たびを クリアする', en: 'Clear the secret Galaxy of Idle Hours trip' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.hima' }, gte: 1 } },
       { id: 'galaxy.museum', tier: 2, icon: 'star', title: { ja: 'ミュージアムを おとずれた', en: 'Museum Visitor' }, desc: { ja: 'ひまつぶし ミュージアムを ひらく', en: 'Open the Idle Hours Museum' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.museum' }, gte: 1 } },
       { id: 'galaxy.photo1', tier: 1, icon: 'check', title: { ja: 'パシャッ', en: 'Say Cheese' }, desc: { ja: 'しゃしんモードで 1まい とる', en: 'Take a photo in Photo mode' }, when: { rec: { key: 'kusoge.galaxy.save', path: 'stats.photos' }, gte: 1 } },

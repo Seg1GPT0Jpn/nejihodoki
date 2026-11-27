@@ -154,6 +154,17 @@ test('flight: in a fly zone the hero flies forward and steers with the stick; a 
   S.boss.st = 'stun'; const hp0 = S.boss.hp; const bp = E.bossPos(S); S.h.x = [bp[0], bp[1] + 0.2, bp[2] + 1]; E.step(S, { b: B.S }); ok(S.boss.hp === hp0, 'a shielded boss takes no damage until the lanterns are lit');
   S.flag.lanternsbq = 1; S.boss.st = 'stun'; S.h.x = [bp[0], bp[1] + 0.2, bp[2] + 1]; for (let i = 0; i < 6; i++) E.step(S, { b: i === 0 ? B.S : 0 }); ok(S.boss.hp < hp0, 'it takes damage once lit');
 });
+test('mini-game rules (C2): lights-out plates flip neighbours, number plates reset on a wrong order, fish are caught by spinning, a spun ball rolls into the hole', () => {
+  const flat = ents => E.compile({ id: 't', bodies: [{ id: 'a', k: 'b', p: [0, 0, 0], h: [14, 1.5, 8], rr: 0.4 }], ents, zones: [], missions: [{ id: 'm', start: { p: [-10, 2, 0] } }] });
+  const onto = (S, p) => { S.h.x = [p[0], 2.0, p[2]]; S.h.v = [0, 0, 0]; runN(S, 3); S.h.x = [p[0] + 6, 2.0, p[2]]; runN(S, 3); };
+  const tg = (i, fl) => ({ k: 'tog', id: 'p' + i, b: 'a', l: [-4 + i * 4, 1.6, 0], grp: 7, idx: i, gn: 3, flips: fl });
+  const L1 = flat([tg(0, [0, 1]), tg(1, [1, 2]), tg(2, [2])]); const S1 = E.create(L1, 'm'); runN(S1, 3); S1.h.x = [4, 2, 0]; runN(S1, 3); ok(S1.tg['7:2'] === 1 && !S1.flag.sw7, 'plate 2 flips only itself'); S1.h.x = [-4, 2, 0]; runN(S1, 3); ok(S1.tg['7:0'] === 1 && S1.tg['7:1'] === 1 && S1.flag.sw7 === 1, 'plate 0 flips 0 and 1 -> all on opens the bridge flag');
+  const sq = i => ({ k: 'tog', id: 's' + i, b: 'a', l: [-6 + i * 4, 1.6, 0], grp: 8, idx: i, gn: 3, seq: 1 });
+  const L2 = flat([sq(1), sq(2), sq(3)]); const S2 = E.create(L2, 'm'); runN(S2, 3); S2.h.x = [-2, 2, 0]; runN(S2, 3); ok(S2.sq[8] === 1, 'number 1 first'); onto(S2, [6, 0, 0]); ok(S2.sq[8] === 0 && !S2.tg['8:1'], 'a wrong order starts over (and nothing is lost)');
+  const fish = spin => { const L3 = flat([{ k: 'fish', id: 'f', p: [0, 3, 0], grp: 9, gn: 1, ax: [1, 0, 0], amp: 0, T: 4 }]); const S3 = E.create(L3, 'm'); runN(S3, 3); S3.h.x = [0, 2.3, 0.8]; S3.h.v = [0, 0, 0]; runN(S3, 20, { b: spin ? B.S : 0 }); return S3.e[0]; };
+  ok(fish(true) === 1 && fish(false) !== 1, 'only a spin catches the fish');
+  const L4 = flat([{ k: 'ball', id: 'b', p: [-6, 2.05, 0], grp: 6, hole: [4, 1.5, 0], box: [-13, 13, -7, 7] }]); const S4 = E.create(L4, 'm'); runN(S4, 3); S4.h.x = [-7.4, 2.0, 0]; S4.h.v = [0, 0, 0]; E.step(S4, { b: B.S }); runN(S4, 120); ok(S4.e[0] === 1 && S4.flag.sw6 === 1, 'the spun ball rolls into the hole and opens the bridge');
+});
 test('charging boss: a telegraphed aim, then a dash, then a dazed opening (never a surprise hit)', () => {
   const L = E.compile({ id: 't', bodies: [sph({ r: 10 })], ents: [{ k: 'boss', id: 'boss', b: 'a', l: [0, 10, 0], hp: 3, rad: 1.7, spd: 0.5, charge: 1 }], missions: [{ id: 'm', start: { p: [0, -10.5, 0] } }] }); const S = E.create(L, 'm'); const seen = []; for (let i = 0; i < 4800 && seen.filter(x => x === 'stun').length < 2; i++) { E.step(S, {}); if (seen[seen.length - 1] !== S.boss.st) seen.push(S.boss.st); }
   const ai = seen.indexOf('aim'); ok(ai >= 0 && seen[ai + 1] === 'charge' && seen[ai + 2] === 'stun', 'order ' + seen.join('>')); ok(seen.indexOf('jump') < ai, 'a slam first, then the charge');
