@@ -1,0 +1,101 @@
+# ひまつぶしガード（Android アプリ）をビルドする。
+#   - android-guard/ に変更が入ったときと、手動実行のときだけ動く（Web のゲーム・公開の流れには触れない）。
+#   - 純 Kotlin の中身（:core）の JUnit テストと、アプリのビルドを通す。
+#   - APK は Actions の成果物（guard/himatsubushi-guard.apk）と、GitHub の「guard-latest」リリースに置く。
+#     Firebase Hosting には載せない：hosting の公開は main のたびに「リポジトリの中身ぜんぶ」で入れ替わるので、
+#     APK を足すには firebase-hosting.yml にこのビルドを組みこむ必要があり、ビルドの失敗が公開を止めるおそれがあるため。
+#   - 署名：リポジトリの Secrets に GUARD_KEYSTORE_BASE64 / GUARD_KEYSTORE_PASSWORD / GUARD_KEY_ALIAS / GUARD_KEY_PASSWORD
+#     があれば、その鍵で署名する（毎回同じ署名になり、上書きインストールできる）。なければデバッグ鍵（実行のたびに変わる）。
+name: ひまつぶしガード（Android）をビルド
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android-guard/**'
+      - '.github/workflows/android-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-guard-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write   # guard-latest リリースの更新のため（このジョブだけ）
+    defaults:
+      run:
+        working-directory: android-guard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 署名の鍵を用意（Secrets があるときだけ）
+        env:
+          KS: ${{ secrets.GUARD_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.GUARD_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.GUARD_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.GUARD_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KS" ]; then
+            printf '%s' "$KS" | base64 -d > "$RUNNER_TEMP/guard.jks"
+            {
+              echo "GUARD_KEYSTORE_PATH=$RUNNER_TEMP/guard.jks"
+              echo "GUARD_KEYSTORE_PASSWORD=$KS_PASS"
+              echo "GUARD_KEY_ALIAS=$KEY_ALIAS"
+              echo "GUARD_KEY_PASSWORD=${KEY_PASS:-$KS_PASS}"
+            } >> "$GITHUB_ENV"
+            echo "固定の鍵で署名します"
+          else
+            echo "::notice::署名の Secrets がないため、デバッグ鍵で署名します（更新のたびに署名が変わります）"
+          fi
+
+      - name: テストとビルド
+        run: ./gradlew --no-daemon --stacktrace :core:test :app:testDebugUnitTest :app:assembleDebug
+
+      - name: APK を ASCII 名で置く
+        run: |
+          mkdir -p dist/guard
+          cp app/build/outputs/apk/debug/app-debug.apk dist/guard/himatsubushi-guard.apk
+          (cd dist/guard && sha256sum himatsubushi-guard.apk | tee himatsubushi-guard.apk.sha256)
+          ls -l dist/guard
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: himatsubushi-guard-apk
+          path: android-guard/dist/guard/
+          if-no-files-found: error
+          retention-days: 90
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: android-guard-reports
+          path: |
+            android-guard/core/build/reports/tests
+            android-guard/app/build/reports
+          if-no-files-found: ignore
+
+      - name: guard-latest リリースを更新（main のときだけ）
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete guard-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create guard-latest dist/guard/himatsubushi-guard.apk dist/guard/himatsubushi-guard.apk.sha256 \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "ひまつぶしガード（最新ビルド）" \
+            --notes "main の ${GITHUB_SHA::7} からビルドした APK（デバッグ署名）。インストール方法は guard/index.html を参照。"
