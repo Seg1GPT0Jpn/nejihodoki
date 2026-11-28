@@ -1,0 +1,28 @@
+    {
+      id: 'igo', order: 35, path: 'igo/', added: '2026-11-26',
+      title: { ja: '囲碁工房', en: 'Go Workshop' },
+      short: { ja: '囲碁', en: 'Go' },
+      desc: { ja: '白と黒の石で陣地を囲う、いちばん古いボードゲーム。9路・13路・19路の盤で、CPUと対局（5段階。自作のモンテカルロ木探索で、シチョウやあたりも読みます）。日本ルール（地を数える。セキの中は数えない）と中国ルール、コミ、置き石、コウ（スーパーコウも選べる）、死に石えらびと自動の提案、投了とパス、秒読みの持ち時間に対応。ヒント（おすすめと理由）・もどす・手の番号・座標・地の見積もり・あたりの警告、すべて読み済みの詰碁100問以上と毎日の1問、棋譜（SGF）の書き出しと枝わかれつきの検討、ふたりで1台、友だちとのオンライン対戦もできます。', en: 'The oldest board game: surround territory with black and white stones. Play the CPU (five levels, a home-made Monte-Carlo tree search that reads ladders and ataris) on 9×9, 13×13 or 19×19. Japanese (territory, no points in seki) and Chinese (area) scoring, komi, handicap stones, ko (with an optional superko rule), dead-stone marking with an automatic suggestion, pass and resign, and byo-yomi clocks. Hints with a short reason, undo, move numbers, coordinates, a territory estimate and atari warnings, 100+ life-and-death problems that were all proven by a solver plus a daily one, SGF export and review with branches, two players on one device, and online play with friends.' },
+      label: { ja: 'ボードゲーム', en: 'Board game' },
+      genres: ['board'], tags: ['2d', 'turn', 'board', 'casual', 'daily', 'versus', 'online'],
+      keywords: { ja: ['囲碁', 'いご', '碁', '碁盤', '詰碁', '詰め碁', '九路盤', '19路', '棋譜', 'SGF', 'コミ', '置き碁', 'ボード', 'CPU', 'ふたりで', 'オンライン対戦', '友だちと'], en: ['go', 'igo', 'baduk', 'weiqi', 'tsumego', 'life and death', 'sgf', 'komi', 'handicap', 'board game', '9x9', '19x19', 'two player', 'cpu', 'online', 'multiplayer'] },
+      icon: 'img/icons/igo.svg', iconSvg: '<svg viewBox="0 0 72 72" aria-hidden="true"><rect width="72" height="72" fill="#d9ac62"/><g stroke="#5a3d1a" stroke-width="1.4" stroke-opacity=".8"><path d="M10 10h52M10 24h52M10 38h52M10 52h52M10 66h52M10 10v56M24 10v56M38 10v56M52 10v56M66 10v56"/></g><circle cx="24" cy="24" r="2.3" fill="#5a3d1a"/><circle cx="52" cy="52" r="2.3" fill="#5a3d1a"/><g fill="#2b2e3a" stroke="#e8c15c" stroke-width="1.4"><circle cx="24" cy="38" r="6.6"/><circle cx="38" cy="24" r="6.6"/><circle cx="38" cy="52" r="6.6"/></g><g fill="#f3f1ea" stroke="#6d7894" stroke-width="1.6"><circle cx="38" cy="38" r="6.6"/><circle cx="52" cy="38" r="6.6"/><circle cx="24" cy="52" r="6.6"/></g><g fill="#e8c15c" fill-opacity=".8"><circle cx="24" cy="38" r="1.8"/><circle cx="38" cy="24" r="1.8"/><circle cx="38" cy="52" r="1.8"/></g><g fill="none" stroke="#6d7894" stroke-width="1.6"><circle cx="38" cy="38" r="1.8"/><circle cx="52" cy="38" r="1.8"/><circle cx="24" cy="52" r="1.8"/></g></svg>',
+      thumb: 'img/thumbs/igo.webp', thumb2x: 'img/thumbs/igo@2x.webp',
+      tech: '2d',
+      // turn-based: hiding the page saves the unfinished game (kusoge.igo.game); online matches (2 players, host-authoritative, no undo) run on RTDB tr/igo/* through common/turnroom.js (database.rules.json). Online results do not feed the ranking
+      flags: { ranking: true, achievements: true, daily: true, versus: true, pause: false, stages: false },
+      versus: 'own',
+      // ★: a win against the CPU in an even game (no handicap) with no hint and no undo: 1 / 2 / 3 / 5 / 8 for the five levels, x1 on 9x9, x2 on 13x13, x3 on 19x19 (two players on one device, handicap games, tsumego and online count nothing). The cap leaves room for years of play
+      score: { unit: { ja: '★', en: '★' }, fmt: { ja: '★ {n}', en: '★ {n}' }, order: 'desc', cap: 100000, maxRate: null },
+      rankSource: { key: 'kusoge.igo.save', paths: ['pts'], agg: 'first', offset: 0 },
+      record: { key: 'kusoge.igo.save', paths: ['pts'], agg: 'first', min: 1, num: true, tpl: { ja: '★ {n}', en: '★ {n}' } },
+      keys: {
+        'kusoge.igo.save': '{ v:1, pts（★の合計＝ランキング）, w:{ "<盤 9|13|19>-<強さ 1〜5>":{ p（遊んだ回数）, w（勝った回数） } }, stats:{ plays, wins, cap（取った石の数）, ko（コウを取った数）, lv3, lv5（中級・強豪に勝った）, w13, w19, cn（中国ルールで勝った）, hcw（置き碁で勝った）, rsg（相手が投了）, long（150手以上で勝った）, clean（ヒント・もどすなしで勝った）, twop, pz（解いた詰碁の数）, pzc（ヒントなし・1回で解いた）, pzd（今日の詰碁を解いた日）, pzx（まちがえた回数）, onl, onw（オンライン。★・ランキングには入らない）, sgf（書き出した）, sgfi（読みこんだ）, rev（検討した） }, set:{ n（9|13|19）, rule（jp|cn）, level（1〜5）, me（b|w|r）, hc（置き石 0・2〜9）, komi（-1＝おまかせ・0・0.5・5.5・6.5・7.5）, superko, clock（持ち時間 0〜4）, coords, nums, terr（地の見積もり）, atari（あたりの警告）, conf（タップで決める 0|1|2）, fast, on }, pz:{ done:{ "<詰碁の番号 g001…>":1 } }, dl:{ last（今日の詰碁を解いた日 YYYYMMDD）, ok, st（連続日数）, bs（最長）}, tut }',
+        'kusoge.igo.game': 'とちゅうのゲーム（1手ごとに自動保存）{ v:1, mode（cpu|pass）, cfg:{ n, rule, level, hc, komi, superko, clock, me }, me, level, moves:[[マス,色]…（マス -1＝パス）], hinted, undone, ms, clk, at }。この端末だけ（同期しない）。終わると消す',
+        'kusoge.igo.howto': 'ルールを見た（\'1\'）',
+      },
+      // counters, stars, solved-puzzle flags and the daily streak only grow (max); the last settings are a whole value (newest)
+      sync: {
+        'kusoge.igo.save': { fields: { pts: 'max', w: { each: { each: 'max' } }, stats: { each: 'max' }, set: 'newest', pz: { fields: { done: { each: 'max' } }, rest: 'max' }, dl: { fields: { last: 'max', ok: 'max', st: 'max', bs: 'max' }, rest: 'max' }, tut: 'max' }, rest: 'newest' },
+      },
+    },
